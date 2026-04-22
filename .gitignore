@@ -1,0 +1,134 @@
+# ==========================================
+# Genexus Open API Builder
+# Windows + VSCode + Visual Studio + .NET
+# PowerShell + CLI + AI Tools
+# ==========================================
+
+# ----------------------
+# OS / Windows
+# ----------------------
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ----------------------
+# Logs
+# ----------------------
+*.log
+logs/
+*.tmp
+
+# ----------------------
+# Environment / Secrets
+# ----------------------
+.env
+.env.*
+*.secret
+*.key
+*.token
+
+# ----------------------
+# Build Outputs (.NET)
+# ----------------------
+bin/
+obj/
+out/
+publish/
+
+# ----------------------
+# User / IDE Files
+# ----------------------
+*.user
+*.suo
+*.userprefs
+*.rsuser
+*.sln.docstates
+
+# ----------------------
+# Visual Studio
+# ----------------------
+.vs/
+
+# ----------------------
+# VS Code
+# ----------------------
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# ----------------------
+# JetBrains (future safe)
+# ----------------------
+.idea/
+
+# ----------------------
+# Claude / Codex / AI local tools
+# ----------------------
+.claude/
+.codex/
+.opencode/
+.ai/
+sessions/
+transcripts/
+prompts-cache/
+
+# ----------------------
+# PowerShell / CLI temp
+# ----------------------
+*.ps1.tmp
+*.history
+.history/
+
+# ----------------------
+# Temp folders in repo
+# ----------------------
+Temp/*
+!Temp/.gitkeep
+
+# ----------------------
+# Test outputs
+# ----------------------
+TestResults/
+coverage/
+*.coverage
+*.trx
+
+# ----------------------
+# NuGet
+# ----------------------
+packages/
+*.nupkg
+
+# ----------------------
+# Node (future UI helpers)
+# ----------------------
+node_modules/
+dist/
+.next/
+
+# ----------------------
+# Python (future tooling)
+# ----------------------
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ----------------------
+# Archives
+# ----------------------
+*.zip
+*.7z
+*.rar
+
+# ----------------------
+# Keep structure
+# ----------------------
+!Docs/
+!Src/
+!Tests/
+!Samples/
+!Tools/
