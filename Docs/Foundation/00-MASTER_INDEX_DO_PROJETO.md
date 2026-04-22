@@ -1,150 +1,246 @@
-# 00-MASTER_INDEX_DO_PROJETO.md
+# 00-MASTER_INDEX_DO_PROJETO
 
-## Índice Mestre do Projeto
+## Índice Mestre, Estado Atual e Direção do Projeto
 
-| Campo | Valor |
-|------|-------|
-| Projeto | Genexus Open API Builder |
-| Repositório esperado | Genexus-Open-API-Builder |
-| Objetivo | Índice oficial, estado atual, ordem de leitura e decisões centrais |
-| Idioma | Português BR |
-| Público principal | Agentes de IA + mantenedores humanos |
-| Data inicial | Abril/2026 |
-| Status geral | Planejamento avançado pré-codificação |
+**Projeto:** Genexus Open API Builder  
+**Status documental:** Coleção Foundation consolidada e em revisão final para orientar implementação  
+**Status técnico:** Implementação prática ainda não iniciada  
+**Status público:** Repositório em preparação para abertura gradual e futura validação externa  
+**Idioma:** Português BR  
+**Público principal:** mantenedor principal, futuros colaboradores técnicos e comunidade interessada  
+**Data:** Abril/2026
 
 ---
 
-# 1. Missão do Projeto
+# 1. Objetivo deste Documento
 
-Criar uma alternativa **Open Source** para geração de APIs em GeneXus, inspirada em soluções comerciais do mercado, com foco inicial em:
+Este é o documento principal da pasta `Docs/Foundation`.
 
-- produtividade real
-- padronização
-- uso dentro da IDE GeneXus 18
-- suporte a grandes KBs
-- colaboração comunitária
-- futura integração com agentes de IA
+Ele existe para:
 
----
+- apresentar o projeto com clareza
+- registrar o estado atual real
+- orientar a leitura dos demais documentos
+- consolidar decisões já tomadas
+- reduzir interpretações erradas
+- servir como referência inicial para evolução futura
 
-# 2. Escopo Inicial (MVP)
-
-Gerar rapidamente APIs REST básicas a partir de Transactions GeneXus, com:
-
-- wizard simples
-- criação automática de API Object
-- CRUD padrão inicial
-- Request/Response SDTs
-- reuso opcional de SDTs existentes
-- operação dentro da IDE
-- tratamento de conflitos
-- proteção básica contra campos sensíveis
+Este documento não substitui código-fonte, backlog, testes, decisões futuras ou validação prática.
 
 ---
 
-# 3. Decisões Estratégicas Congeladas
+# 2. Resumo Executivo
 
-| Tema | Decisão |
-|------|---------|
-| Nome produto | Genexus Open API Builder |
-| Licença | Open Source |
-| Foco inicial | GeneXus 18 |
-| Ambiente inicial | IDE desktop GeneXus |
-| Prioridade técnica | .NET primeiro |
-| Java | Pós-MVP |
-| Entrada principal | Menu contextual de Transaction |
-| UX inicial | Wizard 3 passos |
-| CRUD MVP | 5 endpoints padrão |
-| Persistência interna | Mínima |
-| Banco próprio | Fora do MVP |
+O **Genexus Open API Builder** é um projeto open source criado para acelerar a geração inicial de APIs REST baseadas em **Transactions GeneXus**.
+
+Seu foco é reduzir trabalho repetitivo, aumentar consistência técnica e entregar uma base inicial útil e editável dentro do ecossistema GeneXus.
+
+O projeto ainda está no início, mas já possui direção documental clara.
 
 ---
 
-# 4. Ordem Oficial de Leitura dos Documentos
+# 3. Problema Central
 
-| Ordem | Arquivo | Status |
-|------:|---------|--------|
-| 00 | MASTER_INDEX_DO_PROJETO.md | Atual |
-| 01 | LEVANTAMENTO_Funcionalidades_Publicas_WWP_e_K2B.md | Aprovado |
-| 02 | COMPARATIVO_ESTRATEGICO_Mercado_e_Oportunidade.md | Aprovado |
-| 03 | LACUNAS_DOR_REAL_Desenvolvedor_GeneXus.md | Aprovado |
-| 04 | REQUISITOS_MVP_Genexus_Open_API_Builder.md | Aprovado |
-| 05 | ARQUITETURA_FUNCIONAL_MVP.md | Aprovado |
-| 06 | BACKLOG_v0.1.md | Aprovado |
-| 07 | UX_WIZARD_INICIAL.md | Aprovado |
-| 08 | MODELO_DADOS_E_METADATA.md | Aprovado |
-| 09 | INTEGRACAO_GeneXus_Extensibility_SDK.md | Pendente |
-| 10 | ENGINE_GERACAO_OBJETOS.md | Pendente |
-| 11 | CONVENCOES_NOMES_E_OUTPUTS.md | Pendente |
-| 12 | REGRAS_CRIACAO_API_OBJECTS.md | Futuro |
-| 13 | REUSO_E_GERACAO_SDTS.md | Futuro |
-| 14 | DETECCAO_CONFLITOS_E_REEXECUCAO.md | Futuro |
-| 15 | TESTES_MVP_E_VALIDACAO.md | Futuro |
-| 16 | LOGGING_DIAGNOSTICO_E_SUPORTE.md | Futuro |
-| 17 | PERFORMANCE_ESCALABILIDADE_KBS_GRANDES.md | Futuro |
-| 18 | SEGURANCA_E_BOAS_PRATICAS.md | Futuro |
-| 19 | GOVERNANCA_OPEN_SOURCE_GITHUB.md | Futuro |
-| 20 | ROADMAP_POS_MVP.md | Futuro |
-| 21 | GUIA_CONTRIBUIDORES_COMUNIDADE.md | Futuro |
-| 22 | COMPATIBILIDADE_GX18_GX19_FUTURO.md | Futuro |
-| 23 | SUPORTE_MULTIGERADOR_DOTNET_JAVA.md | Futuro |
-| 24 | OPENAPI_SWAGGER_FUTURO.md | Futuro |
-| 25 | INTEGRACAO_IA_AGENTES_COPILOT.md | Futuro |
+Times GeneXus frequentemente enfrentam:
+
+- criação manual repetitiva de CRUDs REST
+- falta de padrão entre projetos
+- retrabalho técnico recorrente
+- demora até a primeira API útil
+- esforço excessivo para demandas previsíveis
+
+## Resultado comum
+
+Tempo valioso consumido em tarefas repetitivas.
 
 ---
 
-# 5. Estado Atual do Projeto
+# 4. Solução Proposta
 
-| Área | Situação |
-|------|----------|
-| Benchmark inicial | Concluído |
-| Oportunidade mercado | Concluído |
-| MVP definido | Concluído |
-| Arquitetura funcional | Concluído |
-| UX inicial | Concluído |
-| Modelo interno dados | Concluído |
-| Integração SDK real | Próximo passo |
-| Geração real objetos | Próximo passo |
+Transformar uma `Transaction` em estrutura inicial REST por meio de um fluxo previsível:
 
----
+Transaction  
+→ leitura de metadata  
+→ plano interno de geração  
+→ criação de objetos REST  
+→ saída editável para evolução manual
 
-# 6. Roadmap Curto Prazo
+## Saídas esperadas do MVP
 
-| Prioridade | Documento |
-|-----------|-----------|
-| Alta | 09-INTEGRACAO_GeneXus_Extensibility_SDK.md |
-| Alta | 10-ENGINE_GERACAO_OBJETOS.md |
-| Alta | 11-CONVENCOES_NOMES_E_OUTPUTS.md |
-| Média | 12-REGRAS_CRIACAO_API_OBJECTS.md |
-| Média | 13-REUSO_E_GERACAO_SDTS.md |
-| Média | 14-DETECCAO_CONFLITOS_E_REEXECUCAO.md |
-| Média | 15-TESTES_MVP_E_VALIDACAO.md |
+- API principal
+- Request SDT
+- Response SDT
+- ListResponse SDT
+- endpoints CRUD iniciais
+- naming consistente
+- base reutilizável
 
 ---
 
-# 7. Padrão Editorial Oficial
+# 5. Escopo Inicial (MVP)
 
-Todos os documentos devem seguir:
+## Inclui
 
-- português BR
-- foco em agentes de IA
-- linguagem objetiva
-- rastreabilidade entre arquivos
-- versões claras
-- decisões separadas de hipóteses
-- prontos para execução
+- foco em casos simples e frequentes
+- CRUD inicial
+- PK simples prioritária
+- interface inicial dentro da IDE
+- geração previsível
+- reexecução segura
+- logs básicos
+
+## Não inclui inicialmente
+
+- todos os cenários existentes
+- automação de regras complexas
+- cobertura total de edge cases
+- promessas irreais de produtividade
+- substituição de desenvolvedores
 
 ---
 
-# 8. Como Continuar em Nova Conversa
+# 6. Decisões Estratégicas Atuais
 
-Usar prompt base:
+- **Plataforma-alvo:** GeneXus 18
+- **Forma do produto:** extensão para a IDE GeneXus
+- **Entrada principal:** ação contextual sobre Transaction
+- **Público inicial:** comunidade GeneXus
+- **Natureza:** open source
+- **Licença:** MIT
+- **Prioridade atual:** utilidade real
+- **Meta inicial:** MVP funcional
 
-```text
-Estamos continuando o projeto Genexus Open API Builder.
+---
 
-Leia este índice mestre como fonte principal.
-Documentos 01 a 08 já estão aprovados.
+# 7. Filosofia do Projeto
 
-Agora vamos trabalhar no documento XX.
-Mantenha consistência técnica e editorial.
+## O projeto valoriza
+
+- simplicidade
+- utilidade prática
+- código editável
+- transparência
+- evolução incremental
+- feedback real
+- foco técnico
+
+## O projeto evita
+
+- hype vazio
+- promessas mágicas
+- escopo infinito
+- complexidade precoce
+- teoria sem entrega
+
+---
+
+# 8. Estrutura Geral do Repositório
+
+- Docs
+- Src
+- Tests
+- Samples
+- Tools
+- Temp
+
+## Intenção resumida
+
+- `Docs` → conhecimento e alinhamento
+- `Src` → produto real
+- `Tests` → validação
+- `Samples` → exemplos
+- `Tools` → apoio interno
+
+---
+
+# 9. Ordem Recomendada de Leitura
+
+## Mercado e oportunidade
+
+- 01 - LEVANTAMENTO_PUBLICO_DE_NECESSIDADE_E_OPORTUNIDADE
+- 02 - COMPARATIVO_Detalhado_WWP_vs_K2B
+- 03 - GAPS_e_Oportunidades_Mercado
+
+## Produto inicial
+
+- 04 - REQUISITOS_MVP_Genexus_Open_API_Builder
+- 05 - ARQUITETURA_FUNCIONAL_MVP
+- 06 - BACKLOG_v0.1
+- 07 - UX_WIZARD_INICIAL
+
+## Base técnica
+
+- 08 - MODELO_DADOS_E_METADATA
+- 09 - INTEGRACAO_GeneXus_Extensibility_SDK
+- 10 - ENGINE_GERACAO_OBJETOS
+- 11 - CONVENCOES_NOMES_E_OUTPUTS
+- 12 - REGRAS_CRIACAO_API_OBJECTS
+- 13 - REUSO_E_GERACAO_SDTS
+- 14 - CONFLITOS_REEXECUCAO_E_VERSIONAMENTO
+
+## Validação, evolução e comunidade
+
+- 15 - TESTES_VALIDACAO_E_QUALIDADE
+- 16 - ROADMAP_POS_MVP_E_EXPANSAO
+- 17 - POSICIONAMENTO_PUBLICO_E_VALOR_COMUNITARIO
+- 18 - LANCAMENTO_OPEN_SOURCE_E_ADOCAO_COMUNIDADE
+- 19 - OPERACAO_INTERNA_SUPORTE_E_GOVERNANCA_OPEN_SOURCE
+- 20 - GUIA_CONTRIBUICAO_E_COLABORADORES
+- 21 - CHECKLIST_RELEASE_PUBLICA_E_MATURIDADE
+- 22 - FAQ_TECNICO_E_DECISOES_DE_PROJETO
+- 23 - RISCOS_LIMITACOES_E_NAO_OBJETIVOS
+
+## Consolidação e execução prática
+
+- 24 - PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS
+- 25 - MASTER_SUMARIO_EXECUTIVO_FINAL
+
+---
+
+# 10. Como Interpretar Esta Coleção
+
+Os documentos representam:
+
+- visão consolidada
+- hipóteses bem pensadas
+- decisões iniciais
+- direcionamento técnico
+- preparação para execução real
+
+Se a prática mostrar conflito entre documento e realidade técnica validada, a realidade deve prevalecer e a documentação deve ser atualizada depois.
+
+---
+
+# 11. Próximo Movimento Natural do Projeto
+
+Converter a base documental em software funcional, começando pela validação real do SDK de extensibilidade GeneXus e pelo fluxo mínimo de geração.
+
+---
+
+# 12. Critério de Sucesso Inicial
+
+O projeto começa a provar valor quando conseguir:
+
+- gerar algo útil de verdade
+- economizar tempo real
+- ser usado no dia a dia
+- receber feedback externo
+- evoluir com consistência
+
+---
+
+# 13. Mensagem do Projeto
+
+Menos repetição.  
+Mais entrega.  
+Mais valor para a comunidade GeneXus.
+
+---
+
+# 14. Conclusão Final
+
+O Genexus Open API Builder ainda está no começo.
+
+Mas já começa com algo raro:
+
+clareza de direção, foco correto e intenção de construir valor real.
