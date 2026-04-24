@@ -3,10 +3,10 @@
 ## Requisitos Estruturados do Produto Mínimo Viável
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v2.2  
+**Versão:** vFinal  
 **Objetivo:** definir o escopo mínimo executável do produto, com requisitos claros, rastreáveis e testáveis.  
 **Idioma:** Português BR  
-**Público principal:** Agentes de IA + mantenedores humanos  
+**Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA  
 **Data:** Abril/2026
 
 ---
@@ -20,7 +20,7 @@ Este documento existe para:
 - definir requisitos objetivos
 - preparar backlog técnico posterior
 
-Este documento **não define arquitetura interna detalhada**, **não cria tarefas técnicas** e **não amplia escopo além do MVP**.
+Este documento não define arquitetura interna detalhada, não cria tarefas técnicas e não amplia escopo além do MVP.
 
 ---
 
@@ -39,39 +39,21 @@ As afirmações utilizam a seguinte taxonomia:
 
 # 3. Fontes e Rastreabilidade
 
-## [F01] 01-LEVANTAMENTO_Funcionalidades_Publicas_WWP_e_K2B.md
+## [F01] 01-LEVANTAMENTO_PUBLICO_DE_NECESSIDADE_E_OPORTUNIDADE.md
 
-Base de mercado e existência de demanda.
+Base consolidada de necessidade e oportunidade.
 
-Tipo: documento interno consolidado  
-Consultado em: 21/04/2026
+## [F02] 02-COMPARATIVO_PUBLICO_DE_ABORDAGENS_NO_ECOSSISTEMA_GENEXUS.md
 
----
+Comparação pública de abordagens relevantes no ecossistema GeneXus.
 
-## [F02] 02-COMPARATIVO_Detalhado_WWP_vs_K2B.md
+## [F03] 03-GAPS_E_OPORTUNIDADES_EM_PRODUTIVIDADE_E_APIS_GENEXUS.md
 
-Comparação pública de posicionamento.
-
-Tipo: documento interno consolidado  
-Consultado em: 21/04/2026
-
----
-
-## [F03] 03-GAPS_e_Oportunidades_Mercado.md
-
-Lacunas plausíveis e oportunidades.
-
-Tipo: documento interno consolidado  
-Consultado em: 21/04/2026
-
----
+Lacunas plausíveis e oportunidades práticas.
 
 ## [F04] Decisões internas do projeto
 
 Definições estratégicas do Genexus Open API Builder.
-
-Tipo: governança interna  
-Consultado em: 21/04/2026
 
 ---
 
@@ -94,7 +76,7 @@ Não significa:
 
 # 5. Problema Principal a Resolver
 
-Há indícios de que times GeneXus frequentemente precisam:
+Há sinais consistentes de que times GeneXus frequentemente precisam:
 
 - expor dados via API
 - integrar sistemas externos
@@ -125,7 +107,7 @@ Desenvolvedor GeneXus que:
 
 ## Entrada principal
 
-Selecionar uma Transaction existente. [DP-F04]
+Selecionar uma Transaction existente.
 
 Exemplos:
 
@@ -134,23 +116,27 @@ Exemplos:
 - Pedido
 - Fornecedor
 
+[DP-F04]
+
 ---
 
 ## Saída principal
 
-Gerar API REST funcional para essa Transaction. [DP-F04]
+Gerar API REST funcional para essa Transaction.
+
+[DP-F04]
 
 ---
 
-## 7.1 Definição de API Funcional no MVP
+## 7.1 Definição de API REST Funcional no MVP
 
-Para este projeto, API funcional significa:
+Para este projeto, API REST funcional significa:
 
 - objetos gerados com convenção consistente
 - endpoints CRUD básicos disponíveis
 - estrutura compilável em cenário simples
 - passível de teste inicial
-- customizações avançadas fora do escopo inicial
+- customizações avançadas fora do escopo do MVP
 
 [DP-F04]
 
@@ -160,11 +146,11 @@ Para este projeto, API funcional significa:
 
 ## 8.1 Geração por Transaction [DP-F04]
 
-Selecionar Transaction e iniciar geração da API correspondente.
+Selecionar Transaction válida e iniciar geração da API correspondente.
 
 ### Critério de aceite
 
-Usuário consegue selecionar Transaction válida e iniciar geração sem editar código manual.
+Usuário consegue iniciar geração sem editar código manual.
 
 ---
 
@@ -188,7 +174,7 @@ Endpoints básicos gerados e prontos para teste inicial em cenário simples.
 
 Criar objetos com padrão previsível.
 
-Exemplo:
+Exemplos:
 
 - ClienteApi
 - ProdutoApi
@@ -204,13 +190,9 @@ Objetos gerados seguem convenção única configurada.
 
 Se houver SDT compatível, permitir reaproveitamento.
 
-### Definição de compatível
-
-SDT com estrutura suficiente para representar entrada e/ou saída sem ausência obrigatória de campos essenciais.
-
 ### Critério de aceite
 
-Usuário pode optar por reutilizar SDT detectado.
+Quando houver compatibilidade suficiente, usuário pode optar pelo reuso.
 
 ---
 
@@ -220,27 +202,48 @@ Criar novos contratos quando inexistentes ou incompatíveis.
 
 ### Critério de aceite
 
-Geração ocorre sem bloquear ausência prévia de SDT.
+Geração ocorre sem depender obrigatoriamente de SDTs pré-existentes.
 
 ---
 
-## 8.6 Wizard simples [DP-F04]
+## 8.6 Fluxo simples para iniciar geração [DP-F04]
 
-Fluxo curto e objetivo.
+Processo curto e objetivo dentro da IDE.
 
 ### Critério de aceite
 
-Fluxo padrão concluído em até 3 passos sem navegação para ferramenta externa.
+Usuário inicia e conclui geração sem depender de ferramenta externa.
 
 ---
 
-## 8.7 Operação dentro da IDE [DP-F04]
+## 8.7 Reexecução segura [DP-F04]
 
-Acesso via menu/contexto do GeneXus.
+Ao rodar novamente:
+
+- detectar objetos existentes
+- permitir atualizar
+- permitir cancelar
+- evitar sobrescrita silenciosa
 
 ### Critério de aceite
 
-Usuário não depende de ferramenta externa para iniciar geração.
+Usuário entende claramente o impacto antes de confirmar.
+
+---
+
+## 8.8 Resumo final da geração [DP-F04]
+
+Exibir resultado final com:
+
+- objetos criados
+- objetos atualizados
+- objetos ignorados
+- avisos relevantes
+- erros encontrados
+
+### Critério de aceite
+
+Usuário entende o resultado sem investigar manualmente a KB.
 
 ---
 
@@ -248,7 +251,9 @@ Usuário não depende de ferramenta externa para iniciar geração.
 
 ## 9.1 Seleção de atributos expostos [DP-F04]
 
-Escolher campos da API.
+Capacidade desejável para versões evoluídas, sem compor a linha mínima obrigatória do MVP.
+
+Permitir escolher campos expostos pela API REST quando a base principal estiver estável.
 
 ---
 
@@ -269,9 +274,9 @@ Organizar saída na KB.
 
 ---
 
-## 9.4 Nome customizado da API [DP-F04]
+## 9.4 Nome customizado da estrutura gerada [DP-F04]
 
-Exemplo:
+Exemplos:
 
 - ClienteApi
 - ClientesService
@@ -292,6 +297,7 @@ Não entram nesta fase:
 - analytics
 - múltiplos templates complexos
 - suíte corporativa completa
+- revisão manual detalhada de atributos
 
 [DP-F04]
 
@@ -299,48 +305,31 @@ Não entram nesta fase:
 
 # 11. Requisitos de UX
 
-## Fluxo ideal [DP-F04]
-
-1. Selecionar Transaction  
-2. Confirmar opções  
-3. Gerar
-
----
+Fluxo mínimo claro e de baixo atrito, compatível com processo curto de seleção, confirmação e geração dentro da IDE.
 
 ## Meta operacional [HP-F04]
 
-Primeira geração concluída em menos de 30 segundos em cenário simples.
+Primeira geração em cenário simples com baixo atrito operacional.
 
 ---
 
 # 12. Requisitos Técnicos
 
-## Compatibilidade inicial [DP-F04]
+## Versão inicial suportada [DP-F04]
 
 - GeneXus 18
 
----
-
-## Gerador prioritário [DP-F04]
+## Gerador prioritário inicial [DP-F04]
 
 - .NET
 
----
-
-## Futuro possível [HP-F04]
+## Expansão futura possível [HP-F04]
 
 - Java
 
----
+## Execução local integrada [DP-F04]
 
-## Reexecução segura [DP-F04]
-
-Ao rodar novamente:
-
-- detectar objetos existentes
-- permitir atualizar
-- permitir cancelar
-- evitar sobrescrita silenciosa
+Operação dentro da IDE sem dependência de aplicação externa.
 
 ---
 
@@ -353,10 +342,6 @@ Código gerado deve ser:
 - consistente
 - editável manualmente
 - sem dependência externa crítica não declarada
-
-[DP-F04]
-
----
 
 ## Critérios objetivos mínimos [DP-F04]
 
@@ -374,7 +359,7 @@ Código gerado deve ser:
 
 ### Caso A
 
-Usuário gera primeira API funcional rapidamente.
+Usuário gera primeira API REST funcional rapidamente.
 
 ### Caso B
 
@@ -390,13 +375,13 @@ Usuário reutiliza o processo em segunda Transaction sem reaprendizado.
 
 # 15. Riscos do MVP
 
-| Risco | Tipo | Mitigação | Evidência |
-|---|---|---|---|
-| Escopo inflado | Alto | foco estrito | [DP-F04] |
-| Wizard confuso | Médio | poucas opções | [DP-F04] |
-| Código ruim | Alto | templates simples | [DP-F04] |
-| Falha em KB grande | Médio | testes progressivos | [DP-F04] |
-| Excesso de promessas | Médio | roadmap realista | [DP-F04] |
+| Risco | Grau | Mitigação |
+|---|---|---|
+| Escopo inflado | Alto | foco estrito |
+| Wizard confuso | Médio | poucas opções |
+| Código pouco legível ou inconsistente | Alto | templates simples |
+| Falha em KB grande | Médio | testes progressivos |
+| Excesso de promessas | Médio | roadmap realista |
 
 ---
 
@@ -404,15 +389,16 @@ Usuário reutiliza o processo em segunda Transaction sem reaprendizado.
 
 ## Pode assumir com boa confiança
 
-- MVP será focado em CRUD REST inicial [DP-F04]
-- integração à IDE é requisito central [DP-F04]
-- simplicidade é prioridade [DP-F04]
+- MVP focado em CRUD REST inicial
+- integração à IDE é requisito central
+- simplicidade é prioridade
+- geração editável é valor importante
 
 ## Deve tratar com cautela
 
 - MVP não significa produto final
 - critérios futuros podem mudar após testes reais
-- metas de tempo dependem de implementação
+- metas dependem de implementação
 - features fora do MVP não devem contaminar backlog inicial
 
 ---
@@ -429,18 +415,16 @@ Este documento alimenta:
 
 # 18. Grau de Confiança
 
-| Área | Grau | Evidência |
-|---|---|---|
-| Necessidade de geração rápida de APIs | Alto | [IP-F01][IP-F02][IP-F03] |
-| Foco correto do MVP em CRUD REST | Alto | [DP-F04] |
-| Prioridade de UX simples | Alto | [DP-F04] |
-| Compatibilidade inicial GX18 + .NET | Alto | [DP-F04] |
-| Meta de 30 segundos | Médio | [HP-F04] |
+| Área | Grau |
+|---|---|
+| Necessidade de geração rápida de APIs | Alto |
+| Foco correto do MVP em CRUD REST | Alto |
+| Prioridade de UX simples | Alto |
+| Compatibilidade inicial GX18 + .NET | Alto |
+| Reuso de SDTs no MVP viável em casos simples | Médio |
 
 ---
 
 # 19. Conclusão Objetiva
 
-O MVP deve entregar geração inicial de APIs REST funcionais com rapidez, previsibilidade e baixo atrito operacional.
-
----
+O MVP deve entregar geração inicial de APIs REST funcionais com rapidez, previsibilidade e baixo atrito operacional, dentro da IDE GeneXus.
