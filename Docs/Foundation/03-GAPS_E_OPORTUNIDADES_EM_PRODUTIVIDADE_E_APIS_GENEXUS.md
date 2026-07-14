@@ -3,7 +3,8 @@
 ## Gaps e Oportunidades em Produtividade e APIs no Ecossistema GeneXus
 
 **Projeto relacionado:** Genexus Open API Builder  
-**Versão:** v1.0  
+**Versão:** v1.0
+
 **Objetivo:** identificar lacunas legítimas e oportunidades públicas relacionadas a produtividade, geração de APIs e aceleração de serviços no ecossistema GeneXus.  
 **Idioma:** Português BR  
 **Público principal:** mantenedores humanos, colaboradores técnicos, comunidade e apoio por IA  
