@@ -3,7 +3,7 @@
 ## Estratégia Oficial de Lançamento Público, Primeiros Usuários e Crescimento Comunitário
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v2  
+**Versão:** v1.0
 **Base Primária:** 17-POSICIONAMENTO_PUBLICO_E_VALOR_COMUNITARIO.md v2  
 **Dependência direta:** 16-ROADMAP_POS_MVP_E_EXPANSAO.md v1  
 **Relacionamento adicional:** 01 a 17 aprovados  
@@ -272,17 +272,7 @@ Projeto vivo, útil, transparente e mantido com seriedade.
 
 ---
 
-# 18. Próxima Etapa Recomendada
-
-Criar:
-
-19-OPERACAO_INTERNA_SUPORTE_E_GOVERNANCA_OPEN_SOURCE.md
-
-Para sustentar evolução pública com organização.
-
----
-
-# 19. Conclusão Objetiva
+# 18. Conclusão Objetiva
 
 No open source, lançamento não termina no publish.
 

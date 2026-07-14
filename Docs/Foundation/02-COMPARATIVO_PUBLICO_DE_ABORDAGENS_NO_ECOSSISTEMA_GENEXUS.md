@@ -3,7 +3,7 @@
 ## Comparativo Público de Abordagens no Ecossistema GeneXus
 
 **Projeto relacionado:** Genexus Open API Builder  
-**Versão:** vFinal  
+**Versão:** v1.0  
 **Objetivo:** comparar modelos de abordagem voltados a produtividade, geração de APIs e aceleração de serviços no ecossistema GeneXus, sem foco em marcas específicas.  
 **Idioma:** Português BR  
 **Público principal:** mantenedores humanos, colaboradores técnicos, comunidade e apoio por IA  

@@ -3,7 +3,7 @@
 ## Guia Oficial para Contribuições Externas e Colaboração no Projeto
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1  
+**Versão:** v1.0
 **Base Primária:** 19-OPERACAO_INTERNA_SUPORTE_E_GOVERNANCA_OPEN_SOURCE.md v1  
 **Dependência direta:** 15-TESTES_VALIDACAO_E_QUALIDADE.md v1  
 **Relacionamento adicional:** 01 a 19 aprovados  
@@ -264,17 +264,7 @@ Valorizar:
 
 ---
 
-# 18. Próxima Etapa Recomendada
-
-Criar:
-
-21-CHECKLIST_RELEASE_PUBLICA_E_MATURIDADE.md
-
-Para consolidar quando lançar versões importantes.
-
----
-
-# 19. Conclusão Objetiva
+# 18. Conclusão Objetiva
 
 Código aberto atrai pessoas.
 

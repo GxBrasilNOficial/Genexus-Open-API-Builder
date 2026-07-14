@@ -3,7 +3,7 @@
 ## Checklist Oficial para Releases Públicas e Evolução Madura do Projeto
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1  
+**Versão:** v1.0
 **Base Primária:** 19-OPERACAO_INTERNA_SUPORTE_E_GOVERNANCA_OPEN_SOURCE.md v1  
 **Dependência direta:** 20-GUIA_CONTRIBUICAO_E_COLABORADORES.md v1  
 **Relacionamento adicional:** 01 a 20 aprovados  
@@ -275,17 +275,7 @@ Antes da versão 1.0:
 
 ---
 
-# 18. Próxima Etapa Recomendada
-
-Criar:
-
-22-FAQ_TECNICO_E_DECISOES_DE_PROJETO.md
-
-Para responder dúvidas recorrentes com consistência.
-
----
-
-# 19. Conclusão Objetiva
+# 18. Conclusão Objetiva
 
 Release pública não é só publicar arquivo.
 

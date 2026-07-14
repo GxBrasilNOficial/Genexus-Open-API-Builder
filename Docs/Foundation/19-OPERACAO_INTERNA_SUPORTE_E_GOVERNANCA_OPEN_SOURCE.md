@@ -3,7 +3,7 @@
 ## Regras Oficiais de Operação, Manutenção, Suporte e Governança do Projeto
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1  
+**Versão:** v1.0
 **Base Primária:** 18-LANCAMENTO_OPEN_SOURCE_E_ADOCAO_COMUNIDADE.md v2  
 **Dependência direta:** 15-TESTES_VALIDACAO_E_QUALIDADE.md v1  
 **Relacionamento adicional:** 01 a 18 aprovados  
@@ -299,17 +299,7 @@ Recusar ou adiar se:
 
 ---
 
-# 19. Próxima Etapa Recomendada
-
-Criar:
-
-20-GUIA_CONTRIBUICAO_E_COLABORADORES.md
-
-Para facilitar entrada de contribuidores externos.
-
----
-
-# 20. Conclusão Objetiva
+# 19. Conclusão Objetiva
 
 Projetos open source crescem com código bom.
 

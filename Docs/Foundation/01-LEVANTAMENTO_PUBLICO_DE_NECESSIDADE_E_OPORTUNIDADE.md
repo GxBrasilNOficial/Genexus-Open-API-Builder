@@ -3,7 +3,7 @@
 ## Levantamento Público de Necessidade e Oportunidade
 
 **Projeto relacionado:** Genexus Open API Builder  
-**Versão:** vFinal  
+**Versão:** v1.0  
 **Objetivo:** registrar sinais públicos de mercado que indiquem necessidade real e espaço legítimo para soluções de produtividade voltadas a APIs e serviços no ecossistema GeneXus.  
 **Idioma:** Português BR  
 **Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA  
@@ -130,8 +130,8 @@ Ao consumir este documento:
 
 Este documento alimenta principalmente:
 
-- 02-COMPARATIVO_Detalhado_WWP_vs_K2B.md
-- 03-GAPS_e_Oportunidades_Mercado.md
+- 02-COMPARATIVO_PUBLICO_DE_ABORDAGENS_NO_ECOSSISTEMA_GENEXUS.md
+- 03-GAPS_E_OPORTUNIDADES_EM_PRODUTIVIDADE_E_APIS_GENEXUS.md
 - 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md
 
 ---

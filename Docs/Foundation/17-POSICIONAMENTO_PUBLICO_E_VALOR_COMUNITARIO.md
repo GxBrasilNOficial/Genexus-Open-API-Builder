@@ -3,9 +3,9 @@
 ## Posicionamento Público, Valor para a Comunidade e Narrativa Oficial
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v2  
+**Versão:** v1.0
 **Base Primária:** 16-ROADMAP_POS_MVP_E_EXPANSAO.md v1  
-**Dependência direta:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v2.2  
+**Dependência direta:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
 **Relacionamento adicional:** 01 a 16 aprovados  
 **Objetivo:** definir como o projeto deve ser apresentado publicamente para a comunidade GeneXus, reforçando valor técnico, utilidade prática e espírito open source.  
 **Idioma:** Português BR  
@@ -250,17 +250,7 @@ Ferramenta séria, útil e aberta, feita por quem conhece dores reais do GeneXus
 
 ---
 
-# 17. Próxima Etapa Recomendada
-
-Criar:
-
-18-LANCAMENTO_OPEN_SOURCE_E_ADOCAO_COMUNIDADE.md
-
-Para organizar publicação pública e primeiros usuários.
-
----
-
-# 18. Conclusão Objetiva
+# 17. Conclusão Objetiva
 
 O projeto não precisa prometer tudo.
 
