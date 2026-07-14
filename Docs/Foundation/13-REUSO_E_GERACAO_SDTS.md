@@ -2,14 +2,14 @@
 
 ## Regras Oficiais de Criação e Reencontro de SDTs no MVP
 
-**Projeto:** Genexus Open API Builder  
-**Versão:** v1.0  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
-**Dependência direta:** 08-MODELO_DADOS_E_METADATA.md v1.0  
-**Relacionamento adicional:** 10-ENGINE_GERACAO_OBJETOS.md v1.0 / 11-CONVENCOES_NOMES_E_OUTPUTS.md v1.0 / 12-REGRAS_CRIACAO_API_OBJECTS.md v1.0  
-**Objetivo:** definir como o produto cria SDTs próprios da API e reencontra apenas SDTs previamente gerados pelo próprio produto.  
-**Idioma:** Português BR  
-**Público principal:** Agentes de IA + mantenedores humanos  
+**Projeto:** Genexus Open API Builder
+**Versão:** v1.0
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
+**Dependência direta:** 08-MODELO_DADOS_E_METADATA.md v1.0
+**Relacionamento adicional:** 10-ENGINE_GERACAO_OBJETOS.md v1.0 / 11-CONVENCOES_NOMES_E_OUTPUTS.md v1.0 / 12-REGRAS_CRIACAO_API_OBJECTS.md v1.0
+**Objetivo:** definir como o produto cria SDTs próprios da API e reencontra apenas SDTs previamente gerados pelo próprio produto.
+**Idioma:** Português BR
+**Público principal:** Agentes de IA + mantenedores humanos
 **Data:** Abril/2026
 
 ---
@@ -83,11 +83,11 @@ No MVP:
 
 # 6. Fluxo de Decisão Oficial
 
-Transaction selecionada  
-→ consultar metadata persistente  
-→ reencontrar SDTs próprios quando houver metadata compatível  
-→ criar SDTs próprios quando não houver metadata  
-→ bloquear colisão com SDT externo de mesmo nome  
+Transaction selecionada
+→ consultar metadata persistente
+→ reencontrar SDTs próprios quando houver metadata compatível
+→ criar SDTs próprios quando não houver metadata
+→ bloquear colisão com SDT externo de mesmo nome
 → registrar decisão no plano final
 
 [ENG-F10][SDT-F13]
@@ -98,9 +98,9 @@ Transaction selecionada
 
 ## Prioridade
 
-1. metadata persistente em File  
-2. mesmo módulo da Transaction  
-3. nome oficial do contrato  
+1. metadata persistente em File
+2. mesmo módulo da Transaction
+3. nome oficial do contrato
 
 ## Regra
 

@@ -2,12 +2,12 @@
 
 ## Metadata Persistente, Regeneração e Ciclo de Vida
 
-**Projeto:** Genexus Open API Builder  
-**Versão:** v1.0  
-**Base Primária:** Checkpoint funcional de 2026-07-14  
-**Objetivo:** definir como o MVP identifica objetos gerados, regenera com segurança, sincroniza com a Transaction e remove APIs geradas.  
-**Idioma:** Português BR  
-**Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA  
+**Projeto:** Genexus Open API Builder
+**Versão:** v1.0
+**Base Primária:** Checkpoint funcional de 2026-07-14
+**Objetivo:** definir como o MVP identifica objetos gerados, regenera com segurança, sincroniza com a Transaction e remove APIs geradas.
+**Idioma:** Português BR
+**Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA
 **Data:** Julho/2026
 
 ---
@@ -132,4 +132,3 @@ Colisões incompatíveis bloqueiam a geração até decisão explícita.
 - `_v2` não é criado automaticamente
 - remoção lista e remove apenas objetos próprios
 - Business Component não é revertido pela remoção
-

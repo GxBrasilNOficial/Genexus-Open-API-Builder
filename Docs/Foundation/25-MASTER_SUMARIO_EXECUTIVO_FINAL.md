@@ -2,13 +2,13 @@
 
 ## Documento Mestre de Visão, Estado Atual e Direção Oficial do Projeto
 
-**Projeto:** Genexus Open API Builder  
+**Projeto:** Genexus Open API Builder
 **Versão:** v1.0
-**Base Primária:** 00-MASTER_INDEX_DO_PROJETO.md  
-**Relacionamento adicional:** 01 a 24 e 26 a 28 em consolidação  
-**Objetivo:** consolidar toda a coleção documental em uma visão única, clara e executiva para humanos e agentes de IA.  
-**Idioma:** Português BR  
-**Público principal:** comunidade GeneXus + mantenedores + contribuidores + novos interessados  
+**Base Primária:** 00-MASTER_INDEX_DO_PROJETO.md
+**Relacionamento adicional:** 01 a 24 e 26 a 28 em consolidação
+**Objetivo:** consolidar toda a coleção documental em uma visão única, clara e executiva para humanos e agentes de IA.
+**Idioma:** Português BR
+**Público principal:** comunidade GeneXus + mantenedores + contribuidores + novos interessados
 **Data:** Abril/2026
 
 ---
@@ -224,10 +224,10 @@ Ecossistema maduro.
 
 # 15. Como Novos Usuários Devem Começar
 
-1. Ler README  
-2. Instalar versão atual  
-3. Testar com Transaction simples  
-4. Reportar feedback  
+1. Ler README
+2. Instalar versão atual
+3. Testar com Transaction simples
+4. Reportar feedback
 5. Acompanhar roadmap
 
 ---
@@ -251,8 +251,8 @@ Ecossistema maduro.
 
 # 17. Mensagem Oficial do Projeto
 
-Menos repetição.  
-Mais entrega.  
+Menos repetição.
+Mais entrega.
 Mais valor para a comunidade GeneXus.
 
 ---

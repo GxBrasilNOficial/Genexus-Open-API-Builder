@@ -2,12 +2,12 @@
 
 ## Contrato HTTP, Erros e SDTs Compartilhados
 
-**Projeto:** Genexus Open API Builder  
-**Versão:** v1.0  
-**Base Primária:** Checkpoint funcional de 2026-07-14  
-**Objetivo:** definir o contrato HTTP mínimo e os SDTs compartilhados gerados no Root Module.  
-**Idioma:** Português BR  
-**Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA  
+**Projeto:** Genexus Open API Builder
+**Versão:** v1.0
+**Base Primária:** Checkpoint funcional de 2026-07-14
+**Objetivo:** definir o contrato HTTP mínimo e os SDTs compartilhados gerados no Root Module.
+**Idioma:** Português BR
+**Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA
 **Data:** Julho/2026
 
 ---
@@ -119,4 +119,3 @@ Quando a KB usar GAM, o gerador deve explicitar a decisão de segurança por ser
 - `Update` retorna 200 com Response completo
 - não há endpoint `Delete` no MVP
 - status de erro são testáveis em cenário simples
-

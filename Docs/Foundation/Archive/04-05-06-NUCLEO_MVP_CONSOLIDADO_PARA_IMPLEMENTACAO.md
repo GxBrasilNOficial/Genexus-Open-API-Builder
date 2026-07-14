@@ -4,13 +4,13 @@
 
 ## Documento Operacional Consolidado para Execução do MVP por IA
 
-**Projeto:** Genexus Open API Builder  
-**Versão:** v1.2  
-**Tipo:** Artefato derivado operacional  
-**Origem oficial:**  
-- 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1  
-- 05-ARQUITETURA_FUNCIONAL_MVP.md v1.1  
-- 06-BACKLOG_v0.1.md v1.1  
+**Projeto:** Genexus Open API Builder
+**Versão:** v1.2
+**Tipo:** Artefato derivado operacional
+**Origem oficial:**
+- 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1
+- 05-ARQUITETURA_FUNCIONAL_MVP.md v1.1
+- 06-BACKLOG_v0.1.md v1.1
 
 **Objetivo:** consolidar os documentos-base em um pacote único, claro e implementável para agentes técnicos (ex.: Codex), reduzindo ambiguidade e acelerando o início do MVP.
 
@@ -26,7 +26,7 @@ Ele existe como **documento auxiliar derivado para implementação**.
 
 Em caso de conflito:
 
-1. prevalecem os documentos-base 04, 05 e 06  
+1. prevalecem os documentos-base 04, 05 e 06
 2. salvo decisão posterior formalmente registrada
 
 ---
@@ -58,12 +58,12 @@ Se **não for tecnicamente viável criar ou manipular API Objects oficiais** por
 
 MVP = menor conjunto funcional capaz de:
 
-1. operar dentro da IDE  
-2. ler uma Transaction real  
-3. gerar API Object oficial  
-4. gerar contratos básicos (SDTs)  
-5. salvar na KB  
-6. permitir teste inicial simples  
+1. operar dentro da IDE
+2. ler uma Transaction real
+3. gerar API Object oficial
+4. gerar contratos básicos (SDTs)
+5. salvar na KB
+6. permitir teste inicial simples
 7. repetir o fluxo com previsibilidade
 
 ---
@@ -194,13 +194,13 @@ Somente se exigido e suportado oficialmente pelo SDK.
 
 # 9. Fluxo Oficial do Produto
 
-Transaction selecionada  
-→ leitura metadata  
-→ GenerationPlan  
-→ análise de conflitos  
-→ geração SDTs  
-→ criação API Object  
-→ persistência KB  
+Transaction selecionada
+→ leitura metadata
+→ GenerationPlan
+→ análise de conflitos
+→ geração SDTs
+→ criação API Object
+→ persistência KB
 → relatório final
 
 ---
@@ -302,7 +302,7 @@ Depois completar:
 
 ## Regra
 
-GET inicial valida pipeline técnico.  
+GET inicial valida pipeline técnico.
 POST/PUT/DELETE continuam parte oficial do MVP.
 
 ---
@@ -392,10 +392,10 @@ Se parte dos objetos for criada e outra parte falhar:
 
 # 15. Primeira Vitória Concreta
 
-Selecionar `Cliente`  
-→ gerar `ClienteApi`  
-→ gerar SDTs  
-→ salvar KB  
+Selecionar `Cliente`
+→ gerar `ClienteApi`
+→ gerar SDTs
+→ salvar KB
 → testar GET lista
 
 Se isso funcionar:
@@ -422,6 +422,6 @@ Depois propor:
 
 # 17. Mensagem Final
 
-Menos preparação infinita.  
-Mais prova real.  
+Menos preparação infinita.
+Mais prova real.
 Mais produto existente.

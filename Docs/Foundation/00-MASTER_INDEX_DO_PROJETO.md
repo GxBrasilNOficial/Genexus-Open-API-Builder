@@ -2,12 +2,12 @@
 
 ## Índice Mestre, Estado Atual e Direção do Projeto
 
-**Projeto:** Genexus Open API Builder  
-**Status documental:** Coleção Foundation consolidada e em revisão final para orientar implementação  
-**Status técnico:** Implementação prática ainda não iniciada  
-**Status público:** Repositório em preparação para abertura gradual e futura validação externa  
-**Idioma:** Português BR  
-**Público principal:** mantenedor principal, futuros colaboradores técnicos e comunidade interessada  
+**Projeto:** Genexus Open API Builder
+**Status documental:** Coleção Foundation consolidada e em revisão final para orientar implementação
+**Status técnico:** Implementação prática ainda não iniciada
+**Status público:** Repositório em preparação para abertura gradual e futura validação externa
+**Idioma:** Português BR
+**Público principal:** mantenedor principal, futuros colaboradores técnicos e comunidade interessada
 **Data:** Abril/2026
 
 ---
@@ -59,11 +59,11 @@ Tempo valioso consumido em tarefas repetitivas.
 
 Transformar uma `Transaction` em estrutura inicial REST por meio de um fluxo previsível:
 
-Transaction  
-→ leitura de metadata  
-→ plano interno de geração  
-→ criação de SDTs, Procedures e API Object  
-→ metadata persistente  
+Transaction
+→ leitura de metadata
+→ plano interno de geração
+→ criação de SDTs, Procedures e API Object
+→ metadata persistente
 → saída rastreável para evolução segura
 
 ## Saídas esperadas do MVP
@@ -238,8 +238,8 @@ O projeto começa a provar valor quando conseguir:
 
 # 13. Mensagem do Projeto
 
-Menos repetição.  
-Mais entrega.  
+Menos repetição.
+Mais entrega.
 Mais valor para a comunidade GeneXus.
 
 ---

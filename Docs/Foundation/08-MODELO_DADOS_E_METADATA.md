@@ -2,14 +2,14 @@
 
 ## Modelo de Dados Interno e Metadata do Gerador MVP
 
-**Projeto:** Genexus Open API Builder  
-**Versão:** v1.0  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
-**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0  
-**Relacionamento adicional:** 07-UX_WIZARD_INICIAL.md v1.0  
-**Objetivo:** definir quais dados internos o produto precisa ler, persistir como metadata de geração e processar para gerar APIs no MVP.  
-**Idioma:** Português BR  
-**Público principal:** Agentes de IA + mantenedores humanos  
+**Projeto:** Genexus Open API Builder
+**Versão:** v1.0
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
+**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0
+**Relacionamento adicional:** 07-UX_WIZARD_INICIAL.md v1.0
+**Objetivo:** definir quais dados internos o produto precisa ler, persistir como metadata de geração e processar para gerar APIs no MVP.
+**Idioma:** Português BR
+**Público principal:** Agentes de IA + mantenedores humanos
 **Data:** Abril/2026
 
 ---
@@ -353,12 +353,12 @@ O contrato detalhado de metadata, regeneração, sincronização e remoção est
 
 # 15. Fluxo de Dados Oficial
 
-ProjectContext  
-→ TransactionInfo  
-→ AttributeInfo  
-→ GeneratedObjectInfo  
-→ ApiPlan  
-→ ConflictInfo (se existir)  
+ProjectContext
+→ TransactionInfo
+→ AttributeInfo
+→ GeneratedObjectInfo
+→ ApiPlan
+→ ConflictInfo (se existir)
 → ExecutionResult
 
 [AF-F05][MD-F08]

@@ -2,14 +2,14 @@
 
 ## Integração com GeneXus Extensibility SDK para o MVP
 
-**Projeto:** Genexus Open API Builder  
-**Versão:** v1.0  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
-**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0  
-**Relacionamento adicional:** 07-UX_WIZARD_INICIAL.md v1.0 / 08-MODELO_DADOS_E_METADATA.md v1.0  
-**Objetivo:** definir integração técnica realista com GeneXus 18 via Extensibility SDK, usando Upgrade 15 como ambiente inicial de validação, separando fatos confirmados, hipóteses validáveis e o caminho técnico oficial.  
-**Idioma:** Português BR  
-**Público principal:** Agentes de IA + mantenedores humanos  
+**Projeto:** Genexus Open API Builder
+**Versão:** v1.0
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
+**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0
+**Relacionamento adicional:** 07-UX_WIZARD_INICIAL.md v1.0 / 08-MODELO_DADOS_E_METADATA.md v1.0
+**Objetivo:** definir integração técnica realista com GeneXus 18 via Extensibility SDK, usando Upgrade 15 como ambiente inicial de validação, separando fatos confirmados, hipóteses validáveis e o caminho técnico oficial.
+**Idioma:** Português BR
+**Público principal:** Agentes de IA + mantenedores humanos
 **Data:** Abril/2026
 
 ---
@@ -81,7 +81,7 @@ No MVP:
 
 ## Observação
 
-Confirmado significa existência geral.  
+Confirmado significa existência geral.
 Não significa garantia do fluxo exato deste produto.
 
 [FP-F09]
@@ -131,13 +131,13 @@ Se ausente, o MVP continua viável.
 
 # 8. Fluxo Técnico Oficial (alinhado F05/F07/F08)
 
-Comando IDE  
-→ Resolver contexto  
-→ Abrir Wizard (F07)  
-→ Ler metadata (F08)  
-→ Montar ApiPlan (F08)  
-→ Executar geração (F05)  
-→ Persistir objetos e metadata em File  
+Comando IDE
+→ Resolver contexto
+→ Abrir Wizard (F07)
+→ Ler metadata (F08)
+→ Montar ApiPlan (F08)
+→ Executar geração (F05)
+→ Persistir objetos e metadata em File
 → Mostrar resultado
 
 [AF-F05][UX-F07][MD-F08]
@@ -152,8 +152,8 @@ Generate Open API
 
 ## Prioridade de canais
 
-1. Context menu Transaction  
-2. Menu Tools  
+1. Context menu Transaction
+2. Menu Tools
 3. Comando geral IDE
 
 ## Regra
@@ -330,5 +330,5 @@ Se update for arriscado:
 
 O documento 09 transforma sonho em validação prática.
 
-Primeiro provar integração mínima.  
+Primeiro provar integração mínima.
 Depois automatizar geração REST com segurança.

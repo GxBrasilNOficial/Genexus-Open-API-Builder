@@ -2,13 +2,13 @@
 
 ## Backlog Inicial Priorizado do MVP
 
-**Projeto:** Genexus Open API Builder  
-**Versão:** v1.1  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1  
-**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.1  
-**Objetivo:** converter requisitos e arquitetura em entregas incrementais rastreáveis.  
-**Idioma:** Português BR  
-**Público principal:** Agentes de IA + mantenedores humanos  
+**Projeto:** Genexus Open API Builder
+**Versão:** v1.1
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1
+**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.1
+**Objetivo:** converter requisitos e arquitetura em entregas incrementais rastreáveis.
+**Idioma:** Português BR
+**Público principal:** Agentes de IA + mantenedores humanos
 **Data:** Abril/2026
 
 ---

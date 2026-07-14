@@ -2,14 +2,14 @@
 
 ## Engine de Geração de Objetos do MVP
 
-**Projeto:** Genexus Open API Builder  
-**Versão:** v1.0  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
-**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0  
-**Relacionamento adicional:** 08-MODELO_DADOS_E_METADATA.md v1.0 / 09-INTEGRACAO_GeneXus_Extensibility_SDK.md v1.0  
-**Objetivo:** definir como a engine interna transforma metadata + ApiPlan em objetos reais dentro da KB GeneXus.  
-**Idioma:** Português BR  
-**Público principal:** Agentes de IA + mantenedores humanos  
+**Projeto:** Genexus Open API Builder
+**Versão:** v1.0
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
+**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0
+**Relacionamento adicional:** 08-MODELO_DADOS_E_METADATA.md v1.0 / 09-INTEGRACAO_GeneXus_Extensibility_SDK.md v1.0
+**Objetivo:** definir como a engine interna transforma metadata + ApiPlan em objetos reais dentro da KB GeneXus.
+**Idioma:** Português BR
+**Público principal:** Agentes de IA + mantenedores humanos
 **Data:** Abril/2026
 
 ---
@@ -147,16 +147,16 @@ Persistência só ocorre após plano resolvido válido.
 
 # 8. Pipeline Interno Oficial
 
-ApiPlan recebido  
-→ validar entrada  
-→ resolver conflitos  
-→ montar ResolvedGenerationPlan  
-→ criar dependências (SDTs)  
-→ criar Procedures  
-→ criar API Object  
-→ gravar metadata em File  
-→ persistir  
-→ validar resultado  
+ApiPlan recebido
+→ validar entrada
+→ resolver conflitos
+→ montar ResolvedGenerationPlan
+→ criar dependências (SDTs)
+→ criar Procedures
+→ criar API Object
+→ gravar metadata em File
+→ persistir
+→ validar resultado
 → retornar ExecutionResult
 
 [AF-F05][ENG-F10]

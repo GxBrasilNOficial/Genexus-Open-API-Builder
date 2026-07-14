@@ -2,11 +2,11 @@
 
 ## Requisitos Estruturados do Produto Mínimo Viável
 
-**Projeto:** Genexus Open API Builder  
-**Versão:** v1.1  
-**Objetivo:** definir o escopo mínimo executável do produto, com requisitos claros, rastreáveis e testáveis.  
-**Idioma:** Português BR  
-**Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA  
+**Projeto:** Genexus Open API Builder
+**Versão:** v1.1
+**Objetivo:** definir o escopo mínimo executável do produto, com requisitos claros, rastreáveis e testáveis.
+**Idioma:** Português BR
+**Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA
 **Data:** Abril/2026
 
 ---

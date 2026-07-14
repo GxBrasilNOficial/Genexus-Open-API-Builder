@@ -2,14 +2,14 @@
 
 ## Regras Oficiais de Conflitos, Reexecução e Ciclo de Vida no MVP
 
-**Projeto:** Genexus Open API Builder  
+**Projeto:** Genexus Open API Builder
 **Versão:** v1.0
-**Base Primária:** 10-ENGINE_GERACAO_OBJETOS.md v1.0  
-**Dependência direta:** 11-CONVENCOES_NOMES_E_OUTPUTS.md v1.0  
-**Relacionamento adicional:** 12-REGRAS_CRIACAO_API_OBJECTS.md v1.0 / 13-REUSO_E_GERACAO_SDTS.md v1.0  
-**Objetivo:** definir como o produto reage quando já existem objetos prévios, nomes ocupados ou nova geração sobre a mesma Transaction.  
-**Idioma:** Português BR  
-**Público principal:** Agentes de IA + mantenedores humanos  
+**Base Primária:** 10-ENGINE_GERACAO_OBJETOS.md v1.0
+**Dependência direta:** 11-CONVENCOES_NOMES_E_OUTPUTS.md v1.0
+**Relacionamento adicional:** 12-REGRAS_CRIACAO_API_OBJECTS.md v1.0 / 13-REUSO_E_GERACAO_SDTS.md v1.0
+**Objetivo:** definir como o produto reage quando já existem objetos prévios, nomes ocupados ou nova geração sobre a mesma Transaction.
+**Idioma:** Português BR
+**Público principal:** Agentes de IA + mantenedores humanos
 **Data:** Abril/2026
 
 ---
@@ -112,10 +112,10 @@ Safe.
 
 # 8. Regra Geral de Decisão
 
-Conflito detectado  
-→ identificar tipo  
-→ verificar modo atual  
-→ aplicar ação segura  
+Conflito detectado
+→ identificar tipo
+→ verificar modo atual
+→ aplicar ação segura
 → registrar resultado
 
 [CFG-F14]

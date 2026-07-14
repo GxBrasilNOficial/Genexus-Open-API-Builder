@@ -2,12 +2,12 @@
 
 ## Arquitetura Funcional do Produto Mínimo Viável
 
-**Projeto:** Genexus Open API Builder  
-**Versão:** v1.1  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md  
-**Objetivo:** descrever a arquitetura funcional mínima para transformar uma Transaction GeneXus em um API Object inicial, de forma segura, simples e executável dentro da IDE.  
-**Idioma:** Português BR  
-**Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA  
+**Projeto:** Genexus Open API Builder
+**Versão:** v1.1
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md
+**Objetivo:** descrever a arquitetura funcional mínima para transformar uma Transaction GeneXus em um API Object inicial, de forma segura, simples e executável dentro da IDE.
+**Idioma:** Português BR
+**Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA
 **Data:** Abril/2026
 
 ---
@@ -69,15 +69,15 @@ A arquitetura inicial deve seguir:
 
 # 4. Fluxo Central do Produto
 
-Transaction  
-→ leitura de metadata  
-→ GenerationPlan mínimo  
-→ análise de conflitos  
-→ geração de contratos (SDTs)  
-→ geração de Procedures de apoio  
-→ geração do API Object  
-→ gravação de metadata persistente em File  
-→ persistência na KB  
+Transaction
+→ leitura de metadata
+→ GenerationPlan mínimo
+→ análise de conflitos
+→ geração de contratos (SDTs)
+→ geração de Procedures de apoio
+→ geração do API Object
+→ gravação de metadata persistente em File
+→ persistência na KB
 → relatório final
 
 ## Regra principal
@@ -280,9 +280,9 @@ Exibir:
 
 Fluxo mínimo e rápido, compatível com processo curto dentro da IDE:
 
-1. confirmar origem  
-2. revisar opções essenciais  
-3. confirmar geração  
+1. confirmar origem
+2. revisar opções essenciais
+3. confirmar geração
 4. visualizar resultado
 
 Detalhes de UX pertencem ao documento 07.
@@ -343,7 +343,7 @@ Exemplo base:
 - sdtCliente_API_Response
 - procCliente_API_List
 
-Este documento não congela o padrão final de naming.  
+Este documento não congela o padrão final de naming.
 As convenções oficiais pertencem ao documento 11.
 
 Detalhes de pluralização, path final e refinamentos dependem da implementação real.
@@ -543,13 +543,13 @@ A arquitetura funcional do MVP deve permanecer simples, segura e adaptável à r
 
 Fluxo central:
 
-Transaction  
-→ Metadata  
-→ Plan  
-→ Conflitos  
-→ SDTs  
-→ API Object  
-→ Persistência  
+Transaction
+→ Metadata
+→ Plan
+→ Conflitos
+→ SDTs
+→ API Object
+→ Persistência
 → Relatório
 
 Essa base permite gerar valor rápido, desde que a viabilidade técnica de API Objects via Extensibility seja confirmada.

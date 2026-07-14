@@ -2,14 +2,14 @@
 
 ## Plano Oficial de Execução Prática do Projeto em Sprints Reais
 
-**Projeto:** Genexus Open API Builder  
+**Projeto:** Genexus Open API Builder
 **Versão:** v1.0
-**Base Primária:** 23-RISCOS_LIMITACOES_E_NAO_OBJETIVOS.md v1  
-**Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.0  
-**Relacionamento adicional:** 01 a 23 aprovados  
-**Objetivo:** converter toda a documentação consolidada em um plano realista de implementação incremental, validável e executável.  
-**Idioma:** Português BR  
-**Público principal:** maintainer principal + contribuidores técnicos + agentes de IA  
+**Base Primária:** 23-RISCOS_LIMITACOES_E_NAO_OBJETIVOS.md v1
+**Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.0
+**Relacionamento adicional:** 01 a 23 aprovados
+**Objetivo:** converter toda a documentação consolidada em um plano realista de implementação incremental, validável e executável.
+**Idioma:** Português BR
+**Público principal:** maintainer principal + contribuidores técnicos + agentes de IA
 **Data:** Abril/2026
 
 ---
@@ -57,10 +57,10 @@ Este documento **não exige metodologia rígida**, **não congela datas**, **nã
 
 Executar em ciclos curtos:
 
-1. construir base mínima  
-2. validar rápido  
-3. corrigir cedo  
-4. expandir com controle  
+1. construir base mínima
+2. validar rápido
+3. corrigir cedo
+4. expandir com controle
 5. publicar incrementalmente
 
 [OPS-F24]

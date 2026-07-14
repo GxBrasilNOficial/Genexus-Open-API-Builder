@@ -115,8 +115,8 @@ Expansão técnica.
 
 # Mensagem Oficial
 
-Menos repetição.  
-Mais entrega.  
+Menos repetição.
+Mais entrega.
 Mais valor para a comunidade GeneXus.
 
 ---

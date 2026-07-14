@@ -2,14 +2,14 @@
 
 ## Convenções Oficiais de Nomes e Saídas do MVP
 
-**Projeto:** Genexus Open API Builder  
-**Versão:** v1.0  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
-**Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.0  
-**Relacionamento adicional:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0 / 08-MODELO_DADOS_E_METADATA.md v1.0  
-**Objetivo:** definir padrões obrigatórios de nomenclatura e outputs gerados pelo produto, garantindo previsibilidade, idempotência e manutenção simples.  
-**Idioma:** Português BR  
-**Público principal:** Agentes de IA + mantenedores humanos  
+**Projeto:** Genexus Open API Builder
+**Versão:** v1.0
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
+**Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.0
+**Relacionamento adicional:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0 / 08-MODELO_DADOS_E_METADATA.md v1.0
+**Objetivo:** definir padrões obrigatórios de nomenclatura e outputs gerados pelo produto, garantindo previsibilidade, idempotência e manutenção simples.
+**Idioma:** Português BR
+**Público principal:** Agentes de IA + mantenedores humanos
 **Data:** Abril/2026
 
 ---
@@ -54,10 +54,10 @@ Este documento **não trata UX**, **não trata SDK**, **não redefine contrato d
 
 No MVP:
 
-1. nomes simples  
-2. nomes previsíveis  
-3. nomes derivados da Transaction  
-4. mínimo de abreviações  
+1. nomes simples
+2. nomes previsíveis
+3. nomes derivados da Transaction
+4. mínimo de abreviações
 5. baixa surpresa ao usuário
 
 [NOM-F11]
@@ -153,7 +153,7 @@ Se existir `apiCliente` sem metadata compatível, a geração deve bloquear.
 
 ## Prioridade
 
-1. módulo da Transaction  
+1. módulo da Transaction
 2. módulo raiz apenas se o SDK exigir e houver decisão explícita
 
 ## Regra

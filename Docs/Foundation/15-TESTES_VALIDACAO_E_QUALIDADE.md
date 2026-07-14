@@ -2,14 +2,14 @@
 
 ## Regras Oficiais de Testes, Validação e Critérios de Qualidade do MVP
 
-**Projeto:** Genexus Open API Builder  
+**Projeto:** Genexus Open API Builder
 **Versão:** v1.0
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
-**Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.0  
-**Relacionamento adicional:** 12-REGRAS_CRIACAO_API_OBJECTS.md v1.0 / 13-REUSO_E_GERACAO_SDTS.md v1.0 / 14-CONFLITOS_REEXECUCAO_E_VERSIONAMENTO.md v1  
-**Objetivo:** definir como validar se o produto gera objetos corretos, previsíveis e seguros antes de ser considerado pronto para uso interno.  
-**Idioma:** Português BR  
-**Público principal:** Agentes de IA + mantenedores humanos  
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
+**Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.0
+**Relacionamento adicional:** 12-REGRAS_CRIACAO_API_OBJECTS.md v1.0 / 13-REUSO_E_GERACAO_SDTS.md v1.0 / 14-CONFLITOS_REEXECUCAO_E_VERSIONAMENTO.md v1
+**Objetivo:** definir como validar se o produto gera objetos corretos, previsíveis e seguros antes de ser considerado pronto para uso interno.
+**Idioma:** Português BR
+**Público principal:** Agentes de IA + mantenedores humanos
 **Data:** Abril/2026
 
 ---

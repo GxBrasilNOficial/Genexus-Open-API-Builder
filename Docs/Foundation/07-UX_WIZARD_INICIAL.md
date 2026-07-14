@@ -2,14 +2,14 @@
 
 ## Experiência Inicial do Usuário e Fluxo do Wizard MVP
 
-**Projeto:** Genexus Open API Builder  
-**Versão:** v1.0  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
-**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0  
-**Relacionamento operacional:** 06-BACKLOG_v0.1.md v2  
-**Objetivo:** definir a experiência inicial do usuário no wizard oficial do MVP dentro da IDE GeneXus.  
-**Idioma:** Português BR  
-**Público principal:** Agentes de IA + mantenedores humanos  
+**Projeto:** Genexus Open API Builder
+**Versão:** v1.0
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
+**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0
+**Relacionamento operacional:** 06-BACKLOG_v0.1.md v2
+**Objetivo:** definir a experiência inicial do usuário no wizard oficial do MVP dentro da IDE GeneXus.
+**Idioma:** Português BR
+**Público principal:** Agentes de IA + mantenedores humanos
 **Data:** Abril/2026
 
 ---

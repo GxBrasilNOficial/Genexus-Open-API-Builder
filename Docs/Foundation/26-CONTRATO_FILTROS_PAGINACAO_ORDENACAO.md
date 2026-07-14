@@ -2,12 +2,12 @@
 
 ## Contrato Funcional para List no MVP
 
-**Projeto:** Genexus Open API Builder  
-**Versão:** v1.0  
-**Base Primária:** Checkpoint funcional de 2026-07-14  
-**Objetivo:** definir o contrato transversal de filtros, paginação e ordenação para o serviço `List` gerado pelo MVP.  
-**Idioma:** Português BR  
-**Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA  
+**Projeto:** Genexus Open API Builder
+**Versão:** v1.0
+**Base Primária:** Checkpoint funcional de 2026-07-14
+**Objetivo:** definir o contrato transversal de filtros, paginação e ordenação para o serviço `List` gerado pelo MVP.
+**Idioma:** Português BR
+**Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA
 **Data:** Julho/2026
 
 ---
@@ -160,4 +160,3 @@ Não usar campos auxiliares `Specified` no contrato público do MVP.
 - `false`, `0` e string vazia não são confundidos com ausência
 - paginação respeita padrão e limite máximo
 - ordenação é estável entre chamadas equivalentes
-
