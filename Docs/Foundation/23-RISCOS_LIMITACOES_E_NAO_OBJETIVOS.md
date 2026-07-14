@@ -3,9 +3,9 @@
 ## Registro Oficial de Riscos, Limitações Atuais e Não Objetivos do Projeto
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1  
+**Versão:** v1.0
 **Base Primária:** 22-FAQ_TECNICO_E_DECISOES_DE_PROJETO.md v1  
-**Dependência direta:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v2.2  
+**Dependência direta:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
 **Relacionamento adicional:** 01 a 22 aprovados  
 **Objetivo:** documentar com transparência os riscos reais, limitações conhecidas e itens que não fazem parte do escopo atual do projeto.  
 **Idioma:** Português BR  
@@ -101,7 +101,7 @@ Ser transparente fortalece mais que prometer demais.
 
 ## Podem existir no MVP:
 
-- suporte parcial a chave composta
+- limitações em cenários avançados de chave composta, sem degradar a chave no contrato MVP
 - casos específicos exigindo ajuste manual
 - naming não perfeito em 100% cenários
 - necessidade de revisão pós-geração
@@ -221,17 +221,7 @@ Somente se houver:
 
 ---
 
-# 17. Próxima Etapa Recomendada
-
-Criar:
-
-24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md
-
-Para transformar toda documentação em execução prática.
-
----
-
-# 18. Conclusão Objetiva
+# 17. Conclusão Objetiva
 
 Todo projeto sério tem limites.
 

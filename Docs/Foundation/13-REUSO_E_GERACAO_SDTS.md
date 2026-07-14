@@ -1,13 +1,13 @@
 # 13-REUSO_E_GERACAO_SDTS.md
 
-## Regras Oficiais de Reuso, Matching e Criação de SDTs no MVP
+## Regras Oficiais de Criação e Reencontro de SDTs no MVP
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1.1  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v2.2  
-**Dependência direta:** 08-MODELO_DADOS_E_METADATA.md v1.4  
-**Relacionamento adicional:** 10-ENGINE_GERACAO_OBJETOS.md v1.1 / 11-CONVENCOES_NOMES_E_OUTPUTS.md v1.1 / 12-REGRAS_CRIACAO_API_OBJECTS.md v1.1  
-**Objetivo:** definir como o produto decide entre reutilizar SDTs existentes ou criar novos SDTs automaticamente.  
+**Versão:** v1.0  
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
+**Dependência direta:** 08-MODELO_DADOS_E_METADATA.md v1.0  
+**Relacionamento adicional:** 10-ENGINE_GERACAO_OBJETOS.md v1.0 / 11-CONVENCOES_NOMES_E_OUTPUTS.md v1.0 / 12-REGRAS_CRIACAO_API_OBJECTS.md v1.0  
+**Objetivo:** definir como o produto cria SDTs próprios da API e reencontra apenas SDTs previamente gerados pelo próprio produto.  
 **Idioma:** Português BR  
 **Público principal:** Agentes de IA + mantenedores humanos  
 **Data:** Abril/2026
@@ -18,10 +18,10 @@
 
 Este documento existe para:
 
-- evitar SDTs duplicados desnecessários
-- acelerar geração
+- evitar reuso arbitrário de SDTs externos
+- acelerar regeneração segura por metadata
 - manter consistência estrutural
-- permitir reaproveitamento seguro
+- permitir reencontro de contratos próprios
 - reduzir lixo técnico na KB
 
 Este documento **não define endpoints REST**, **não trata UX**, **não substitui contrato de metadata**.
@@ -57,11 +57,11 @@ Este documento **não define endpoints REST**, **não trata UX**, **não substit
 
 No MVP:
 
-1. reutilizar quando houver alta confiança
-2. criar novo quando houver dúvida
-3. evitar alterar SDT existente automaticamente
-4. manter previsibilidade
-5. permitir modo assistido futuro
+1. criar SDTs próprios da API
+2. reencontrar apenas SDTs próprios por metadata persistente
+3. não reutilizar SDTs externos por compatibilidade estrutural
+4. não alterar SDT externo automaticamente
+5. manter previsibilidade
 
 [SDT-F13]
 
@@ -71,9 +71,11 @@ No MVP:
 
 | Finalidade | Nome padrão |
 |-----------|-------------|
-| Entrada | <NomeBase>Request |
-| Saída item | <NomeBase>Response |
-| Saída lista | <NomeBase>ListResponse |
+| Create | sdt<NomeBase>_API_CreateRequest |
+| Update | sdt<NomeBase>_API_UpdateRequest |
+| Saída item | sdt<NomeBase>_API_Response |
+| Filtros | sdt<NomeBase>_API_ListFilters |
+| Saída lista | sdt<NomeBase>_API_ListResponse |
 
 [NOM-F11][SDT-F13]
 
@@ -82,62 +84,43 @@ No MVP:
 # 6. Fluxo de Decisão Oficial
 
 Transaction selecionada  
-→ procurar SDTs candidatos  
-→ classificar compatibilidade  
-→ decidir reuso ou novo  
+→ consultar metadata persistente  
+→ reencontrar SDTs próprios quando houver metadata compatível  
+→ criar SDTs próprios quando não houver metadata  
+→ bloquear colisão com SDT externo de mesmo nome  
 → registrar decisão no plano final
 
 [ENG-F10][SDT-F13]
 
 ---
 
-# 7. Busca de SDTs Candidatos
+# 7. Reencontro de SDTs Próprios
 
 ## Prioridade
 
-1. mesmo módulo da Transaction  
-2. módulo escolhido no wizard  
-3. demais módulos da KB
+1. metadata persistente em File  
+2. mesmo módulo da Transaction  
+3. nome oficial do contrato  
 
-## Filtro inicial
+## Regra
 
-- nome relacionado ao NomeBase
-- estrutura semelhante
-- tipo SDT válido
+Sem metadata compatível, SDT existente é tratado como externo e não pode ser reutilizado automaticamente.
 
 ## Exemplos
 
-- ClienteRequest
-- ClienteResponse
-- ClienteDTO
+- sdtCliente_API_CreateRequest
+- sdtCliente_API_UpdateRequest
+- sdtCliente_API_Response
 
 [SDT-F13]
 
 ---
 
-# 8. Faixas Oficiais de Compatibilidade
+# 8. Compatibilidade Estrutural
 
-## Alta Compatibilidade
+Compatibilidade estrutural de SDT externo não autoriza reuso no MVP.
 
-Todos os itens abaixo:
-
-- nome compatível ou relacionado
-- PK presente
-- >= 80% campos esperados presentes
-- campos obrigatórios presentes
-- tipos compatíveis
-
-## Média Compatibilidade
-
-Atende parcialmente os critérios.
-
-## Baixa Compatibilidade
-
-Falta PK, baixa cobertura ou estrutura distante.
-
-## Regra
-
-No MVP, preferir simplicidade sobre matemática artificial.
+Ela pode ser usada apenas como diagnóstico para explicar por que um objeto existente bloqueou a geração.
 
 [SDT-F13]
 
@@ -145,15 +128,15 @@ No MVP, preferir simplicidade sobre matemática artificial.
 
 # 9. Regra de Decisão
 
-| Faixa | Decisão Automática MVP |
+| Situação | Decisão Automática MVP |
 |------|------------------------|
-| Alta | reutilizar |
-| Média | criar novo |
-| Baixa | criar novo |
+| SDT próprio por metadata compatível | atualizar conservadoramente |
+| SDT externo com mesmo nome | bloquear colisão |
+| SDT externo semelhante | ignorar para reuso |
 
 ## Evolução futura
 
-Modo assistido pode sugerir reuso em faixa média.
+Modo assistido de reuso externo fica pós-MVP.
 
 [SDT-F13]
 
@@ -187,13 +170,14 @@ Preferencialmente:
 
 # 11. Criação de Novo SDT
 
-Se não reutilizar:
+Ao criar:
 
 | Tipo | Nome |
 |------|------|
-| Entrada | ClienteRequest |
-| Saída | ClienteResponse |
-| Lista | ClienteListResponse |
+| Create | sdtCliente_API_CreateRequest |
+| Update | sdtCliente_API_UpdateRequest |
+| Saída | sdtCliente_API_Response |
+| Lista | sdtCliente_API_ListResponse |
 
 ## Estrutura
 
@@ -205,9 +189,13 @@ Derivada da metadata da Transaction.
 
 # 12. Regras por Tipo
 
-## Request
+## CreateRequest
 
 Preferir campos editáveis.
+
+## UpdateRequest
+
+Preferir campos editáveis, sem PK no corpo quando a chave vier pela rota.
 
 ## Response
 
@@ -217,7 +205,7 @@ Campos públicos úteis.
 
 Nome sempre distinto de Response.
 
-Estrutura pode inicialmente ser igual à Response no MVP.
+Estrutura deve conter envelope com `items`, `pagination` e `appliedFilters`.
 
 [SDT-F13]
 
@@ -225,14 +213,7 @@ Estrutura pode inicialmente ser igual à Response no MVP.
 
 # 13. Campos Sensíveis
 
-Nunca incluir automaticamente:
-
-- senha
-- password
-- hash
-- token
-- secret
-- auditoria interna
+Campos sensíveis entram desmarcados por padrão e com alerta. Campos de auditoria seguem política separada.
 
 ## Mesmo em SDT novo.
 
@@ -254,9 +235,9 @@ Considerar externo quando:
 
 Não alterar automaticamente.
 
-## Se reutilizado
+## Se for próprio por metadata
 
-Apenas referenciar.
+Atualizar conservadoramente.
 
 ## Evolução futura
 
@@ -272,8 +253,8 @@ Se nome oficial já existir mas incompatível:
 
 | Situação | Ação |
 |---------|------|
-| modo Safe | ClienteRequest_v2 |
-| modo Update | criar novo compatível ou perguntar |
+| modo Safe | bloquear colisão |
+| modo Update | atualizar apenas se metadata compatível |
 | modo Cancel | abortar |
 
 [ENG-F10][NOM-F11][SDT-F13]
@@ -284,12 +265,12 @@ Se nome oficial já existir mas incompatível:
 
 | Critério | Resultado Esperado |
 |------|--------------------|
-| ClienteRequest alta compatibilidade | reutiliza |
-| ClienteDTO compatibilidade média | cria novo |
-| SDT sem PK | cria novo |
-| Campo senha | omitido |
-| Nome ocupado | versiona ou aborta |
-| ListResponse | nome distinto |
+| SDT próprio por metadata | atualiza conservadoramente |
+| ClienteDTO compatibilidade média | ignorado para reuso |
+| SDT externo sem metadata | bloqueia se colidir |
+| Campo senha | desmarcado com alerta |
+| Nome ocupado | bloqueia se metadata incompatível |
+| ListResponse | envelope completo |
 
 [SDT-F13]
 
@@ -299,8 +280,8 @@ Se nome oficial já existir mas incompatível:
 
 ## Pode assumir
 
-- alta compatibilidade favorece reuso
-- dúvida favorece novo SDT
+- metadata compatível favorece atualização
+- dúvida favorece bloqueio ou criação própria sem colisão
 - SDT externo não deve ser alterado automaticamente
 - nome oficial deve ser preservado
 
@@ -312,18 +293,8 @@ Se nome oficial já existir mas incompatível:
 
 ---
 
-# 18. Próxima Etapa Recomendada
+# 18. Conclusão Objetiva
 
-Criar:
+O MVP deve reencontrar SDTs apenas quando houver metadata compatível.
 
-14-CONFLITOS_REEXECUCAO_E_VERSIONAMENTO.md
-
-Para consolidar colisões, reruns e updates.
-
----
-
-# 19. Conclusão Objetiva
-
-O MVP deve reutilizar SDTs apenas quando houver alta confiança estrutural.
-
-Na dúvida, criar novo é mais seguro que degradar ativos existentes.
+Na dúvida, bloquear colisão é mais seguro que degradar ativos existentes.

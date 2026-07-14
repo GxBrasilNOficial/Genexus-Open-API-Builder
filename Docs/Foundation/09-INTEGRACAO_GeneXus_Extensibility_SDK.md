@@ -3,11 +3,11 @@
 ## Integração com GeneXus Extensibility SDK para o MVP
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v3.1  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v2.2  
-**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v3.1  
-**Relacionamento adicional:** 07-UX_WIZARD_INICIAL.md v1.3 / 08-MODELO_DADOS_E_METADATA.md v1.4  
-**Objetivo:** definir integração técnica realista com GeneXus 18 via Extensibility SDK, separando fatos confirmados, hipóteses validáveis e fallbacks oficiais.  
+**Versão:** v1.0  
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
+**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0  
+**Relacionamento adicional:** 07-UX_WIZARD_INICIAL.md v1.0 / 08-MODELO_DADOS_E_METADATA.md v1.0  
+**Objetivo:** definir integração técnica realista com GeneXus 18 via Extensibility SDK, usando Upgrade 15 como ambiente inicial de validação, separando fatos confirmados, hipóteses validáveis e o caminho técnico oficial.  
 **Idioma:** Português BR  
 **Público principal:** Agentes de IA + mantenedores humanos  
 **Data:** Abril/2026
@@ -39,7 +39,6 @@ Este documento **não substitui teste prático**, **não garante APIs internas**
 | SDK-F09 | Integração SDK | Definição deste documento |
 | FP-F09 | Fato público | Evidência pública razoável |
 | HP-F09 | Hipótese | Precisa spike |
-| FB-F09 | Fallback | Caminho alternativo |
 | NA-F09 | Não assumido | Fora do MVP inicial |
 
 ---
@@ -61,8 +60,10 @@ No MVP:
 1. provar integração mínima cedo
 2. usar APIs públicas ou reproduzíveis
 3. preferir simplicidade operacional
-4. manter fallback funcional
-5. não travar projeto por feature ideal
+4. não travar projeto por feature ideal
+5. validar criação de API Objects como único caminho REST
+6. validar criação e persistência de Procedures, SDTs, Folder e File
+7. tratar YAML nativo como saída de validação/regressão, não como fonte primária da geração
 
 [SDK-F09]
 
@@ -97,8 +98,11 @@ Não significa garantia do fluxo exato deste produto.
 | S04 | Contexto atual detectável | retorna nome/tipo do objeto selecionado |
 | S05 | Ler KB atual | lista ao menos 1 Transaction real |
 | S06 | Criar SDT | SDT teste criado e salvo |
-| S07 | Criar artefato REST | objeto REST utilizável criado |
-| S08 | Persistir alterações | save/update simples concluído |
+| S07 | Criar Procedure | Procedure teste criada e salva |
+| S08 | Criar API Object | API Object utilizável criado |
+| S09 | Criar Folder | Folder teste criado ou reencontrado |
+| S10 | Criar File | File JSON criado, salvo e relido após reabrir KB |
+| S11 | Persistir alterações | save/update simples concluído |
 
 [HP-F09]
 
@@ -133,7 +137,7 @@ Comando IDE
 → Ler metadata (F08)  
 → Montar ApiPlan (F08)  
 → Executar geração (F05)  
-→ Persistir objetos  
+→ Persistir objetos e metadata em File  
 → Mostrar resultado
 
 [AF-F05][UX-F07][MD-F08]
@@ -156,7 +160,7 @@ Generate Open API
 
 Sempre usar o melhor canal realmente suportado.
 
-[FB-F09]
+[SDK-F09]
 
 ---
 
@@ -174,7 +178,7 @@ A UI operacional deve seguir documento 07:
 
 Usar janela modal simples com steps internos.
 
-[UX-F07][FB-F09]
+[UX-F07][SDK-F09]
 
 ---
 
@@ -192,36 +196,29 @@ Os dados lidos e produzidos devem seguir documento 08:
 
 ---
 
-# 12. Artefatos REST Suportados
+# 12. Artefato REST Alvo
 
-## Ordem preferencial
+## Alvo único
 
-| Ordem | Artefato |
-|------:|----------|
-| 1 | API Object oficial |
-| 2 | Objeto REST equivalente suportado |
-| 3 | Procedure REST inicial |
+O único artefato REST aceito é API Object oficial.
+
+Procedure REST como artefato REST público, objetos REST equivalentes ou qualquer outro tipo de artefato REST estão fora do escopo do projeto. Procedures internas de apoio ao API Object fazem parte do MVP quando suportadas pelo SDK.
 
 ## Regra
 
-O objetivo do MVP é expor CRUD REST inicial, não impor tipo específico.
+Sem API Object viável, o MVP perde seu sentido atual.
 
-[DP-F04][FB-F09]
+[DP-F04][SDK-F09]
 
 ---
 
-# 13. Fallback Oficial
+# 13. Sem Fallback
 
-Se artefato ideal falhar:
+O projeto não adota fallback para Procedure REST como superfície pública, objetos REST equivalentes ou qualquer outro tipo que não seja API Object oficial.
 
-Procedure REST inicial  
-+ SDTs  
-+ endpoints básicos  
-+ naming oficial
+Se a criação de API Objects via Extensibility SDK não for tecnicamente viável, o projeto perde seu sentido atual e deve ser reavaliado.
 
-Isso continua aderente ao objetivo do MVP.
-
-[FB-F09]
+[SDK-F09]
 
 ---
 
@@ -241,7 +238,7 @@ Se update for arriscado:
 - criar novo objeto versionado
 - manter existente intacto
 
-[HP-F09][FB-F09]
+[HP-F09][SDK-F09]
 
 ---
 
@@ -304,7 +301,7 @@ Se update for arriscado:
 | Existe entrada viável IDE | Sim |
 | Existe UI mínima viável | Sim |
 | Hipóteses possuem teste objetivo | Sim |
-| Fallback funcional definido | Sim |
+| API Object como único alvo definido | Sim |
 | Docs 07 e 08 conectados | Sim |
 | Anti-hack formalizado | Sim |
 
@@ -318,7 +315,7 @@ Se update for arriscado:
 
 - há indícios razoáveis de suporte a comandos/menu
 - UI simples é provável, porém validar
-- CRUD REST pode usar fallback
+- API Object é o único alvo técnico aceito
 - hipótese precisa prova prática
 
 ## Deve tratar com cautela
@@ -329,21 +326,7 @@ Se update for arriscado:
 
 ---
 
-# 20. Próxima Etapa Recomendada
-
-Executar inicialmente:
-
-1. S01 extensão carrega  
-2. S02 comando disponível  
-3. S03 UI abre
-
-Depois evoluir conforme resultados de S04 a S08.
-
-Sem núcleo mínimo validado, evitar código grande.
-
----
-
-# 21. Conclusão Objetiva
+# 20. Conclusão Objetiva
 
 O documento 09 transforma sonho em validação prática.
 

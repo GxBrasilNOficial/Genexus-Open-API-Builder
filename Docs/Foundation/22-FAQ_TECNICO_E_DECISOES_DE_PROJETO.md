@@ -3,9 +3,9 @@
 ## FAQ Oficial, Perguntas Recorrentes e Decisões Técnicas do Projeto
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1  
+**Versão:** v1.0
 **Base Primária:** 21-CHECKLIST_RELEASE_PUBLICA_E_MATURIDADE.md v1  
-**Dependência direta:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v2.2  
+**Dependência direta:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
 **Relacionamento adicional:** 01 a 21 aprovados  
 **Objetivo:** consolidar respostas oficiais para dúvidas recorrentes, explicar escolhas técnicas e reduzir ruído em discussões futuras.  
 **Idioma:** Português BR  
@@ -90,11 +90,11 @@ O foco principal atual é geração inicial de APIs REST baseadas em Transaction
 
 ---
 
-# 7. FAQ — Por Que Foco em CRUD Primeiro?
+# 7. FAQ — Por Que Foco em List/Get/Create/Update Primeiro?
 
 ## Resposta
 
-Porque CRUD simples resolve dores frequentes, gera valor rápido e reduz complexidade inicial.
+Porque `List`, `Get`, `Create` e `Update` resolvem dores frequentes, geram valor rápido e reduzem complexidade inicial. Endpoint `Delete` fica pós-MVP.
 
 [MVP-F04][FAQ-F22]
 
@@ -106,7 +106,7 @@ Porque CRUD simples resolve dores frequentes, gera valor rápido e reduz complex
 
 Sim.
 
-O código e objetos gerados devem ser legíveis e ajustáveis.
+O código e objetos gerados devem ser legíveis. Edições manuais precisam ser tratadas com cuidado, porque a regeneração usa metadata persistente e deve detectar conflito ou preservar alterações explicitamente.
 
 [FAQ-F22]
 
@@ -251,17 +251,7 @@ Preferencialmente via GitHub Issues com:
 
 ---
 
-# 20. Próxima Etapa Recomendada
-
-Criar:
-
-23-RISCOS_LIMITACOES_E_NAO_OBJETIVOS.md
-
-Para registrar limites honestos e riscos reais do projeto.
-
----
-
-# 21. Conclusão Objetiva
+# 20. Conclusão Objetiva
 
 Projetos sérios explicam o que fazem.
 

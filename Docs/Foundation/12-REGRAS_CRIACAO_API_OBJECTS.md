@@ -3,10 +3,10 @@
 ## Regras Oficiais de Criação dos Objetos REST do MVP
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1.1  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v2.2  
-**Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.1  
-**Relacionamento adicional:** 09-INTEGRACAO_GeneXus_Extensibility_SDK.md v3.1 / 11-CONVENCOES_NOMES_E_OUTPUTS.md v1.1  
+**Versão:** v1.0  
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
+**Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.0  
+**Relacionamento adicional:** 09-INTEGRACAO_GeneXus_Extensibility_SDK.md v1.0 / 11-CONVENCOES_NOMES_E_OUTPUTS.md v1.0  
 **Objetivo:** definir o conteúdo mínimo e comportamento esperado dos objetos REST gerados automaticamente no MVP.  
 **Idioma:** Português BR  
 **Público principal:** Agentes de IA + mantenedores humanos  
@@ -56,10 +56,10 @@ Este documento **não define UX**, **não redefine naming**, **não impõe tecno
 No MVP, todo objeto REST gerado deve:
 
 1. gerar estrutura utilizável
-2. expor CRUD básico quando suportado
-3. usar SDTs oficiais
+2. expor `List`, `Get`, `Create` e `Update`
+3. usar SDTs oficiais próprios e compartilhados
 4. seguir naming previsível
-5. permitir ajuste manual simples
+5. preservar regeneração conservadora por metadata
 
 ## Meta qualitativa
 
@@ -71,17 +71,15 @@ Quando possível, compilar imediatamente.
 
 # 5. Artefato REST Alvo
 
-## Ordem preferencial
+## Alvo único
 
-| Ordem | Tipo |
-|------:|------|
-| 1 | API Object oficial |
-| 2 | Objeto REST equivalente suportado |
-| 3 | Procedure REST |
+O único artefato REST aceito é API Object oficial.
+
+Procedure REST e outros tipos de artefato REST estão fora do escopo.
 
 ## Regra
 
-A implementação concreta depende do que a SDK suportar.
+Sem API Object viável, o projeto perde seu sentido.
 
 [DP-F04][API-F12]
 
@@ -91,28 +89,27 @@ A implementação concreta depende do que a SDK suportar.
 
 Seguir documento 11:
 
-<NomeBase>Api
+api<NomeBase>
 
 ## Exemplos
 
-- ClienteApi
-- ProdutoApi
+- apiCliente
+- apiProduto
 
 [NOM-F11][API-F12]
 
 ---
 
-# 7. Endpoints Obrigatórios do MVP
+# 7. Serviços Obrigatórios do MVP
 
-## Para PK simples
+## Serviços
 
-| Método | Path | Finalidade |
-|------|------|------------|
-| GET | /api/clientes | listar |
-| GET | /api/clientes/{id} | buscar por id |
-| POST | /api/clientes | criar |
-| PUT | /api/clientes/{id} | atualizar |
-| DELETE | /api/clientes/{id} | excluir |
+| Serviço | Finalidade |
+|------|------------|
+| List | listar com filtros, paginação e ordenação |
+| Get | buscar por chave simples ou composta |
+| Create | criar via BC |
+| Update | atualizar via BC |
 
 ## Regra
 
@@ -126,21 +123,19 @@ Estrutura gerada deve ficar pronta para teste inicial simples.
 
 ## MVP inicial
 
-Não gerar CRUD automático completo.
-
-## Permitido gerar
+Gerar serviços completos para chave simples e composta.
 
 | Recurso | Status |
 |--------|--------|
-| GET lista | Sim |
+| List | Sim |
 | Estrutura base do objeto | Sim |
-| GET por chave composta | Não automático |
-| PUT por chave composta | Não automático |
-| DELETE por chave composta | Não automático |
+| Get por chave composta | Sim |
+| Update por chave composta | Sim |
+| Delete por chave composta | Pós-MVP |
 
 ## Regra
 
-Informar limitação ao usuário.
+Não degradar chave composta para uso parcial.
 
 [API-F12]
 
@@ -150,10 +145,10 @@ Informar limitação ao usuário.
 
 | Operação | Contrato |
 |--------|----------|
-| POST | <NomeBase>Request |
-| PUT | <NomeBase>Request |
-| GET item | <NomeBase>Response |
-| GET lista | <NomeBase>ListResponse |
+| Create | sdt<NomeBase>_API_CreateRequest |
+| Update | sdt<NomeBase>_API_UpdateRequest |
+| Get | sdt<NomeBase>_API_Response |
+| List | sdt<NomeBase>_API_ListResponse |
 
 [NOM-F11][API-F12]
 
@@ -161,13 +156,12 @@ Informar limitação ao usuário.
 
 # 10. Regras Objetivas de Implementação
 
-| Endpoint | Estrutura mínima |
+| Serviço | Estrutura mínima |
 |---------|------------------|
-| GET lista | rota criada + retorno ListResponse |
-| GET item | rota criada + parâmetro PK |
-| POST | rota criada + Request |
-| PUT | rota criada + PK + Request |
-| DELETE | rota criada + PK |
+| List | serviço criado + retorno ListResponse |
+| Get | serviço criado + chave completa |
+| Create | serviço criado + CreateRequest |
+| Update | serviço criado + chave completa + UpdateRequest |
 
 ## Regra
 
@@ -181,13 +175,14 @@ Lógica interna pode variar conforme artefato final.
 
 ## Default MVP
 
-Delete físico simples, quando nenhuma convenção especial for detectada.
+Não gerar endpoint `Delete`.
 
 ## Evolução futura
 
 - soft delete
 - flags de inativação
 - auditoria avançada
+- endpoint `Delete` opt-in
 
 [API-F12]
 
@@ -197,15 +192,14 @@ Delete físico simples, quando nenhuma convenção especial for detectada.
 
 | Operação | Resposta comum |
 |--------|----------------|
-| GET lista | 200 |
-| GET item | 200 / 404 |
-| POST | 201 / 400 |
-| PUT | 200 / 204 / 404 |
-| DELETE | 200 / 204 / 404 |
+| List | 200 |
+| Get | 200 / 404 |
+| Create | 201 / 400 / 422 |
+| Update | 200 / 400 / 404 / 409 / 422 |
 
 ## Regra
 
-Valores exatos dependem do artefato REST final.
+`Update` retorna 200 com Response completo. Contrato completo em `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md`.
 
 [HP-F12]
 
@@ -213,27 +207,11 @@ Valores exatos dependem do artefato REST final.
 
 # 13. Campos Sensíveis
 
-## Não expor automaticamente em Response
+## Regra MVP
 
-- senha
-- password
-- hash
-- token
-- secret
+Campos sensíveis entram desmarcados por padrão e com alerta explícito. Campos de auditoria seguem política separada.
 
-## Não aceitar automaticamente em Request quando fizer sentido
-
-- hash interno
-- token interno
-- campos de auditoria técnica
-
-## Exemplos
-
-| Campo | Resultado |
-|------|-----------|
-| ClienteSenha | omitido |
-| UserToken | omitido |
-| Nome | mantido |
+Não omitir silenciosamente por heurística ampla.
 
 [API-F12]
 
@@ -243,11 +221,7 @@ Valores exatos dependem do artefato REST final.
 
 ## Estrutura lógica mínima
 
-| Campo | Obrigatório |
-|------|-------------|
-| message | Sim |
-| code | Opcional |
-| details | Opcional |
+Usar `sdt_API_ErrorResponse`, conforme `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md`.
 
 ## Regras
 
@@ -288,8 +262,8 @@ Se objeto já existir:
 
 | Modo | Ação |
 |------|------|
-| Safe | novo nome versionado |
-| Update | atualizar estrutura compatível |
+| Safe | atualizar apenas objetos próprios reconhecidos por metadata |
+| Update | atualizar estrutura compatível após validação de metadata |
 | Cancel | abortar |
 
 [ENG-F10][API-F12]
@@ -300,13 +274,14 @@ Se objeto já existir:
 
 | Critério | Resultado Esperado |
 |------|--------------------|
-| Cliente gera objeto | ClienteApi |
-| Cliente gera 5 rotas CRUD | Sim |
-| POST usa Request | Sim |
-| GET item usa Response | Sim |
-| GET lista usa ListResponse | Sim |
-| Campo senha | omitido |
-| PK composta | geração parcial + aviso |
+| Cliente gera objeto | apiCliente |
+| Cliente gera 4 serviços MVP | Sim |
+| Create usa CreateRequest | Sim |
+| Update usa UpdateRequest | Sim |
+| Get usa Response | Sim |
+| List usa ListResponse com envelope | Sim |
+| Campo senha | desmarcado com alerta |
+| PK composta | suportada sem degradação parcial |
 
 [API-F12]
 
@@ -316,31 +291,21 @@ Se objeto já existir:
 
 ## Pode assumir
 
-- CRUD simples é foco do MVP
-- PK simples é cenário principal
+- List/Get/Create/Update são o foco do MVP
+- chave simples e composta são suportadas
 - SDTs oficiais devem ser usados
-- estrutura gerada deve ser editável
+- estrutura gerada deve ser rastreável por metadata
 
 ## Deve tratar com cautela
 
 - detalhes variam por artefato REST final
-- status HTTP variam por tecnologia
+- contrato HTTP segue o documento 27
 - soft delete fica fora do MVP
 
 ---
 
-# 19. Próxima Etapa Recomendada
-
-Criar:
-
-13-REUSO_E_GERACAO_SDTS.md
-
-Para detalhar matching, criação e reaproveitamento dos SDTs.
-
----
-
-# 20. Conclusão Objetiva
+# 19. Conclusão Objetiva
 
 O objeto REST gerado no MVP deve resolver o básico muito bem:
 
-listar, buscar, criar, atualizar e excluir com previsibilidade.
+listar, buscar, criar e atualizar com previsibilidade.

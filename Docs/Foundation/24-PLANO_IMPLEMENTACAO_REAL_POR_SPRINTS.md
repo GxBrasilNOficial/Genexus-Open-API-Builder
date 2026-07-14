@@ -3,9 +3,9 @@
 ## Plano Oficial de Execução Prática do Projeto em Sprints Reais
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1  
+**Versão:** v1.0
 **Base Primária:** 23-RISCOS_LIMITACOES_E_NAO_OBJETIVOS.md v1  
-**Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.1  
+**Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.0  
 **Relacionamento adicional:** 01 a 23 aprovados  
 **Objetivo:** converter toda a documentação consolidada em um plano realista de implementação incremental, validável e executável.  
 **Idioma:** Português BR  
@@ -171,10 +171,13 @@ Gerar primeiros objetos reais.
 
 ## Entregas
 
-- ClienteApi
-- ClienteRequest
-- ClienteResponse
-- ClienteListResponse
+- apiCliente
+- procCliente_API_List/Get/Create/Update
+- sdtCliente_API_CreateRequest
+- sdtCliente_API_UpdateRequest
+- sdtCliente_API_Response
+- sdtCliente_API_ListResponse
+- File JSON de metadata
 - logs execução
 
 ## Gate
@@ -185,19 +188,19 @@ Objetos criados corretamente.
 
 ---
 
-# 11. Sprint 5 — CRUD Inicial
+# 11. Sprint 5 — Serviços REST Iniciais
 
 ## Objetivo
 
-Gerar endpoints base.
+Gerar serviços base.
 
 ## Entregas
 
-- GET lista
-- GET item
-- POST
-- PUT
-- DELETE
+- List
+- Get
+- Create
+- Update
+- validação de ausência de endpoint Delete no MVP
 
 ## Gate
 
@@ -207,21 +210,21 @@ Estrutura funcional pronta.
 
 ---
 
-# 12. Sprint 6 — SDTs e Reuso
+# 12. Sprint 6 — SDTs Próprios e Metadata
 
 ## Objetivo
 
-Evitar duplicação desnecessária.
+Garantir contratos próprios e reencontro seguro.
 
 ## Entregas
 
-- detectar SDT compatível
-- reutilizar quando seguro
-- criar novo quando necessário
+- criar SDTs próprios
+- reencontrar próprios por metadata
+- bloquear SDT externo em colisão
 
 ## Gate
 
-Reuso previsível.
+Reencontro previsível por metadata.
 
 [F13][SPR-F24]
 
@@ -236,7 +239,7 @@ Segurança operacional.
 ## Entregas
 
 - Safe mode
-- _v2 automático
+- bloqueio de colisão sem `_v2`
 - Update controlado
 - Cancel seguro
 - rerun consistente
@@ -355,17 +358,7 @@ Evitar:
 
 ---
 
-# 20. Próxima Etapa Recomendada
-
-Criar:
-
-25-MASTER_SUMARIO_EXECUTIVO_FINAL.md
-
-Para consolidar toda a coleção documental.
-
----
-
-# 21. Conclusão Objetiva
+# 20. Conclusão Objetiva
 
 Projeto cresce quando planejamento vira sprint.
 

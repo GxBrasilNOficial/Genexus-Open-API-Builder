@@ -3,11 +3,11 @@
 ## Modelo de Dados Interno e Metadata do Gerador MVP
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1.4  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v2.2  
-**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v3.1  
-**Relacionamento adicional:** 07-UX_WIZARD_INICIAL.md v1.3  
-**Objetivo:** definir quais dados internos o produto precisa ler, armazenar temporariamente e processar para gerar APIs no MVP.  
+**Versão:** v1.0  
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
+**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0  
+**Relacionamento adicional:** 07-UX_WIZARD_INICIAL.md v1.0  
+**Objetivo:** definir quais dados internos o produto precisa ler, persistir como metadata de geração e processar para gerar APIs no MVP.  
 **Idioma:** Português BR  
 **Público principal:** Agentes de IA + mantenedores humanos  
 **Data:** Abril/2026
@@ -24,7 +24,7 @@ Este documento existe para:
 - reduzir ambiguidade estrutural
 - preparar evolução futura
 
-Este documento **não define banco externo**, **não exige persistência obrigatória**, **não substitui F04-F07**.
+Este documento **não define banco externo**, **exige metadata persistente em objeto File**, **não substitui F04-F07**.
 
 ---
 
@@ -61,8 +61,8 @@ Este documento **não define banco externo**, **não exige persistência obrigat
 No MVP, preferir:
 
 1. ler metadata da KB em tempo real
-2. manter estado temporário em memória
-3. persistir apenas preferências simples se necessário
+2. manter estado transitório em memória durante a geração
+3. persistir metadata de geração em objeto `File`
 4. evitar banco próprio
 
 [MD-F08]
@@ -76,7 +76,7 @@ No MVP, preferir:
 | ProjectContext | KB ativa e ambiente |
 | TransactionInfo | Dados da Transaction escolhida |
 | AttributeInfo | Campos da Transaction |
-| SdtInfo | SDTs existentes |
+| GeneratedObjectInfo | Objetos próprios gerados |
 | ApiPlan | Plano de geração |
 | ConflictInfo | Conflitos detectados |
 | ExecutionResult | Resultado final |
@@ -135,8 +135,10 @@ No MVP, preferir:
 
 - alimentar wizard passo 1
 - definir nomes padrão
-- gerar endpoints
+- gerar serviços REST
 - gerar SDTs
+- gerar Procedures
+- compor metadata persistente
 
 [AF-F05][UX-F07][MD-F08]
 
@@ -157,6 +159,14 @@ No MVP, preferir:
 | DefaultValue | valor tipado compatível |
 | IsSensitive | boolean |
 | IsNullable | boolean |
+| IsAuditField | boolean |
+| IsWritableByBC | boolean |
+| IsFormula | boolean |
+| IsInferred | boolean |
+| IsRedundant | boolean |
+| IsAutonumber | boolean |
+| IsFilterEligible | boolean |
+| DomainName | texto |
 
 ## Exemplos DataType
 
@@ -171,39 +181,43 @@ No MVP, preferir:
 ## Uso
 
 - montar SDTs
-- excluir campos sensíveis
+- marcar campos sensíveis e de auditoria
 - gerar contratos corretos
 - validar campos obrigatórios
+- definir filtros elegíveis
 
 [DP-F04][MD-F08]
 
 ---
 
-# 9. Regra Inicial de Sensibilidade
+# 9. Regras de Sensibilidade e Auditoria
 
-Marcar como sensível quando nome sugerir:
+Classificar sensibilidade e auditoria por configuração explícita da KB, com nomes e sufixos exatos.
+
+## Sensíveis iniciais
 
 - password
 - senha
 - hash
 - token
 - secret
+
+## Auditoria inicial
+
 - audituser
 - auditdate
+- createdat
+- updatedat
 
-## MVP
+## Regra MVP
 
-Heurística por nome (case-insensitive).
-
-## Futuro
-
-Leitura avançada por metadata real.
+Campos sensíveis não devem ser omitidos silenciosamente. Eles entram desmarcados por padrão e com alerta no wizard. Campos de auditoria têm política separada.
 
 [HP-F08][MD-F08]
 
 ---
 
-# 10. SdtInfo
+# 10. GeneratedObjectInfo
 
 ## Campos mínimos
 
@@ -211,50 +225,17 @@ Leitura avançada por metadata real.
 |---|---|
 | Name | texto |
 | Module | texto |
-| ItemsCount | número |
-| IsCompatible | boolean |
-| CompatibilityScore | número |
-
-## Campos essenciais (MVP)
-
-Considerar essenciais:
-
-- todas PrimaryKeys
-- atributos com IsRequired = true
-- atributo descritivo principal
-
-## Regra para atributo descritivo principal
-
-Prioridade:
-
-1. Name
-2. Description
-3. Desc
-4. primeiro atributo texto que não seja PK
-
-## Regra de incompatibilidade imediata
-
-Se faltar qualquer PrimaryKey:
-
-- `IsCompatible = false`
-- `CompatibilityScore = 0`
-
-## Regra mínima de CompatibilityScore
-
-| Critério | Pontos |
-|---|---|
-| Contém todas PrimaryKeys | +40 |
-| Contém campos essenciais | +30 |
-| Nome relacionado à Transaction | +20 |
-| Mesmo módulo | +10 |
-
-Total máximo: 100
+| ObjectType | texto |
+| Role | texto |
+| MetadataId | texto |
+| LastKnownFingerprint | texto |
+| OwnedByGenerator | boolean |
 
 ## Uso
 
-- reuso de SDT
-- decisão automática
-- ranking de candidatos
+- reencontrar objetos próprios
+- diferenciar colisão externa de regeneração segura
+- compor remoção de API gerada
 
 [AF-F05][MD-F08]
 
@@ -267,22 +248,25 @@ Total máximo: 100
 | Campo | Tipo |
 |---|---|
 | TransactionName | texto |
-| ApiName | texto |
 | ModuleTarget | texto |
 | GeneratorTarget | texto |
-| ReuseSdt | boolean |
-| RequestSdtName | texto |
+| ApiName | texto |
+| ProcedureNames | lista texto |
+| CreateRequestSdtName | texto |
+| UpdateRequestSdtName | texto |
 | ResponseSdtName | texto |
-| ListSdtName | texto |
+| ListFiltersSdtName | texto |
+| ListResponseSdtName | texto |
 | EndpointsCount | número |
+| MetadataFileName | texto |
 
 ## Regra MVP
 
-CRUD padrão gera:
+Serviços padrão geram:
 
-`EndpointsCount = 5`
+`EndpointsCount = 4`
 
-Exceções futuras ficam fora do escopo atual.
+Os serviços são `List`, `Get`, `Create` e `Update`. `Delete` é pós-MVP como endpoint REST.
 
 ## Uso
 
@@ -347,19 +331,21 @@ Exceções futuras ficam fora do escopo atual.
 
 ## Obrigatório
 
-- nenhuma persistência externa
+- metadata de geração em objeto `File`, em JSON
 
 ## Opcional simples
 
 - último módulo usado
 - tamanho da janela
-- última opção SDT
+- preferências locais de interface
 
 ## Não usar no MVP
 
 - banco próprio
 - telemetria remota
 - histórico complexo
+
+O contrato detalhado de metadata, regeneração, sincronização e remoção está em `28-METADATA_REGENERACAO_SINCRONIZACAO_E_REMOCAO.md`.
 
 [MD-F08]
 
@@ -370,7 +356,7 @@ Exceções futuras ficam fora do escopo atual.
 ProjectContext  
 → TransactionInfo  
 → AttributeInfo  
-→ SdtInfo  
+→ GeneratedObjectInfo  
 → ApiPlan  
 → ConflictInfo (se existir)  
 → ExecutionResult
@@ -400,10 +386,11 @@ Evitar no MVP:
 | Selecionar Cliente | TransactionInfo preenchido |
 | Chave composta | HasCompositeKey = true e PrimaryKeys preenchido |
 | Ler atributos | lista AttributeInfo carregada |
-| Detectar padrões sensíveis | IsSensitive = true para senha/hash/token |
-| Reusar SDT | SdtInfo compatível encontrado |
+| Detectar sensíveis | IsSensitive definido por configuração explícita |
+| Detectar auditoria | IsAuditField definido separadamente |
 | Confirmar wizard | ApiPlan pronto |
-| CRUD padrão | EndpointsCount = 5 |
+| Serviços padrão | EndpointsCount = 4 |
+| Persistir metadata | File JSON criado e relido |
 | Finalizar geração | ExecutionResult preenchido |
 
 [MD-F08]
@@ -416,7 +403,7 @@ Evitar no MVP:
 
 - modelo é interno ao produto
 - entidades podem virar classes/records/DTOs
-- persistência mínima é preferida
+- metadata persistente em File é obrigatória
 - ApiPlan é núcleo operacional
 
 ## Deve tratar com cautela
@@ -433,7 +420,7 @@ Evitar no MVP:
 |---|---|---|
 | Necessidade dessas entidades | Alto | [F05][F07] |
 | Persistência mínima | Alto | [MD-F08] |
-| Heurística sensível por nome | Médio | [HP-F08] |
+| Configuração explícita de sensíveis/auditoria | Médio | [HP-F08] |
 | Campos exatos disponíveis via SDK | Médio | [HP-F08] |
 
 ---

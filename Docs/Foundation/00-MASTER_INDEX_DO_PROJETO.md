@@ -33,7 +33,7 @@ Este documento não substitui código-fonte, backlog, testes, decisões futuras 
 
 O **Genexus Open API Builder** é um projeto open source criado para acelerar a geração inicial de APIs REST baseadas em **Transactions GeneXus**.
 
-Seu foco é reduzir trabalho repetitivo, aumentar consistência técnica e entregar uma base inicial útil e editável dentro do ecossistema GeneXus.
+Seu foco é reduzir trabalho repetitivo, aumentar consistência técnica e entregar uma base inicial útil, rastreável e regenerável dentro do ecossistema GeneXus.
 
 O projeto ainda está no início, mas já possui direção documental clara.
 
@@ -62,18 +62,18 @@ Transformar uma `Transaction` em estrutura inicial REST por meio de um fluxo pre
 Transaction  
 → leitura de metadata  
 → plano interno de geração  
-→ criação de objetos REST  
-→ saída editável para evolução manual
+→ criação de SDTs, Procedures e API Object  
+→ metadata persistente  
+→ saída rastreável para evolução segura
 
 ## Saídas esperadas do MVP
 
 - API principal
-- Request SDT
-- Response SDT
-- ListResponse SDT
-- endpoints CRUD iniciais
+- Procedures de apoio
+- SDTs próprios de Create, Update, Response, filtros e lista
+- serviços `List`, `Get`, `Create` e `Update`
 - naming consistente
-- base reutilizável
+- metadata persistente
 
 ---
 
@@ -82,8 +82,8 @@ Transaction
 ## Inclui
 
 - foco em casos simples e frequentes
-- CRUD inicial
-- PK simples prioritária
+- serviços `List`, `Get`, `Create` e `Update`
+- chave simples e composta
 - interface inicial dentro da IDE
 - geração previsível
 - reexecução segura
@@ -101,7 +101,7 @@ Transaction
 
 # 6. Decisões Estratégicas Atuais
 
-- **Plataforma-alvo:** GeneXus 18
+- **Plataforma-alvo:** GeneXus 18, com Upgrade 15 como ambiente inicial de validação
 - **Forma do produto:** extensão para a IDE GeneXus
 - **Entrada principal:** ação contextual sobre Transaction
 - **Público inicial:** comunidade GeneXus
@@ -158,8 +158,8 @@ Transaction
 ## Mercado e oportunidade
 
 - 01 - LEVANTAMENTO_PUBLICO_DE_NECESSIDADE_E_OPORTUNIDADE
-- 02 - COMPARATIVO_Detalhado_WWP_vs_K2B
-- 03 - GAPS_e_Oportunidades_Mercado
+- 02 - COMPARATIVO_PUBLICO_DE_ABORDAGENS_NO_ECOSSISTEMA_GENEXUS
+- 03 - GAPS_E_OPORTUNIDADES_EM_PRODUTIVIDADE_E_APIS_GENEXUS
 
 ## Produto inicial
 
@@ -177,6 +177,9 @@ Transaction
 - 12 - REGRAS_CRIACAO_API_OBJECTS
 - 13 - REUSO_E_GERACAO_SDTS
 - 14 - CONFLITOS_REEXECUCAO_E_VERSIONAMENTO
+- 26 - CONTRATO_FILTROS_PAGINACAO_ORDENACAO
+- 27 - CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS
+- 28 - METADATA_REGENERACAO_SINCRONIZACAO_E_REMOCAO
 
 ## Validação, evolução e comunidade
 
@@ -194,6 +197,10 @@ Transaction
 
 - 24 - PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS
 - 25 - MASTER_SUMARIO_EXECUTIVO_FINAL
+
+## Arquivo morto
+
+- Archive - documentos históricos não normativos
 
 ---
 

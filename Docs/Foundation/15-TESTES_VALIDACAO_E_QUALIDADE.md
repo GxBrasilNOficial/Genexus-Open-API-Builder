@@ -3,10 +3,10 @@
 ## Regras Oficiais de Testes, Validação e Critérios de Qualidade do MVP
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v2.2  
-**Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.1  
-**Relacionamento adicional:** 12-REGRAS_CRIACAO_API_OBJECTS.md v1.1 / 13-REUSO_E_GERACAO_SDTS.md v1.1 / 14-CONFLITOS_REEXECUCAO_E_VERSIONAMENTO.md v1  
+**Versão:** v1.0
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
+**Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.0  
+**Relacionamento adicional:** 12-REGRAS_CRIACAO_API_OBJECTS.md v1.0 / 13-REUSO_E_GERACAO_SDTS.md v1.0 / 14-CONFLITOS_REEXECUCAO_E_VERSIONAMENTO.md v1  
 **Objetivo:** definir como validar se o produto gera objetos corretos, previsíveis e seguros antes de ser considerado pronto para uso interno.  
 **Idioma:** Português BR  
 **Público principal:** Agentes de IA + mantenedores humanos  
@@ -85,10 +85,10 @@ No MVP:
 ## Validar funções puras
 
 - naming base
-- versionamento _vN
-- pluralização MVP
-- detecção de campos sensíveis
-- classificação compatibilidade SDT
+- bloqueio de `_v2` automático
+- RestPath singular sem pluralização automática
+- classificação explícita de sensíveis/auditoria
+- reencontro de SDT próprio por metadata
 - decisão Safe / Update / Cancel
 
 ## Resultado esperado
@@ -124,18 +124,21 @@ Fluxo completo sem travar IDE.
 
 Validar geração de:
 
-- ClienteApi
-- ClienteRequest
-- ClienteResponse
-- ClienteListResponse
+- apiCliente
+- procCliente_API_List/Get/Create/Update
+- sdtCliente_API_CreateRequest
+- sdtCliente_API_UpdateRequest
+- sdtCliente_API_Response
+- sdtCliente_API_ListResponse
 
 ## Validar rotas
 
-- GET lista
-- GET item
-- POST
-- PUT
-- DELETE
+- List
+- Get
+- Create
+- Update
+
+Não deve existir endpoint `Delete` no MVP.
 
 ## Resultado esperado
 
@@ -147,17 +150,17 @@ Estrutura pronta para teste inicial.
 
 # 9. Casos de SDT
 
-## Reuso
+## Reencontro
 
-SDT compatível existente deve reutilizar.
+SDT próprio por metadata deve ser reencontrado.
 
 ## Novo
 
-SDT incompatível deve gerar novo.
+SDT externo incompatível deve bloquear se colidir.
 
 ## Sensível
 
-Campos senha/token devem ser omitidos.
+Campos senha/token devem iniciar desmarcados com alerta.
 
 [SDT-F13][QA-F15]
 
@@ -167,9 +170,9 @@ Campos senha/token devem ser omitidos.
 
 | Cenário | Resultado Esperado |
 |--------|--------------------|
-| ClienteApi existe + Safe | ClienteApi_v2 |
-| ClienteApi existe + Cancel | aborta |
-| ClienteApi existe + Update | tenta atualizar |
+| apiCliente externo existe + Safe | bloqueia |
+| apiCliente externo existe + Cancel | aborta |
+| apiCliente próprio + Update | tenta atualizar |
 | dúvida estrutural | fallback seguro |
 
 [CFG-F14][QA-F15]
@@ -313,17 +316,7 @@ Registrar:
 
 ---
 
-# 20. Próxima Etapa Recomendada
-
-Criar:
-
-16-ROADMAP_POS_MVP_E_EXPANSAO.md
-
-Para organizar evolução após validação inicial.
-
----
-
-# 21. Conclusão Objetiva
+# 20. Conclusão Objetiva
 
 No MVP, qualidade significa confiança operacional.
 

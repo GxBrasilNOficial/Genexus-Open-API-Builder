@@ -3,10 +3,10 @@
 ## Convenções Oficiais de Nomes e Saídas do MVP
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1.1  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v2.2  
-**Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.1  
-**Relacionamento adicional:** 05-ARQUITETURA_FUNCIONAL_MVP.md v3.1 / 08-MODELO_DADOS_E_METADATA.md v1.4  
+**Versão:** v1.0  
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
+**Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.0  
+**Relacionamento adicional:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0 / 08-MODELO_DADOS_E_METADATA.md v1.0  
 **Objetivo:** definir padrões obrigatórios de nomenclatura e outputs gerados pelo produto, garantindo previsibilidade, idempotência e manutenção simples.  
 **Idioma:** Português BR  
 **Público principal:** Agentes de IA + mantenedores humanos  
@@ -90,15 +90,15 @@ Não pluralizar no nome base.
 
 ## Padrão
 
-<NomeBase>Api
+api<NomeBase>
 
 ## Exemplos
 
 | Transaction | Resultado |
 |------------|-----------|
-| Cliente | ClienteApi |
-| Produto | ProdutoApi |
-| PedidoVenda | PedidoVendaApi |
+| Cliente | apiCliente |
+| Produto | apiProduto |
+| PedidoVenda | apiPedidoVenda |
 
 ## Regra
 
@@ -112,16 +112,18 @@ Primeira escolha oficial no MVP.
 
 | Finalidade | Padrão |
 |-----------|--------|
-| Request | <NomeBase>Request |
-| Response | <NomeBase>Response |
-| Lista | <NomeBase>ListResponse |
+| Create | sdt<NomeBase>_API_CreateRequest |
+| Update | sdt<NomeBase>_API_UpdateRequest |
+| Response | sdt<NomeBase>_API_Response |
+| Filtros | sdt<NomeBase>_API_ListFilters |
+| Lista | sdt<NomeBase>_API_ListResponse |
 
 ## Exemplos
 
-| Transaction | Request | Response | List |
-|------------|---------|----------|------|
-| Cliente | ClienteRequest | ClienteResponse | ClienteListResponse |
-| Produto | ProdutoRequest | ProdutoResponse | ProdutoListResponse |
+| Transaction | Create | Update | Response | List |
+|------------|--------|--------|----------|------|
+| Cliente | sdtCliente_API_CreateRequest | sdtCliente_API_UpdateRequest | sdtCliente_API_Response | sdtCliente_API_ListResponse |
+| Produto | sdtProduto_API_CreateRequest | sdtProduto_API_UpdateRequest | sdtProduto_API_Response | sdtProduto_API_ListResponse |
 
 [NOM-F11]
 
@@ -129,27 +131,19 @@ Primeira escolha oficial no MVP.
 
 # 8. Nome de Versão Segura (Reexecução)
 
-Quando objeto existir e modo Safe estiver ativo:
+Quando objeto existir sem metadata compatível:
 
-<NomeOriginal>_v2  
-<NomeOriginal>_v3  
-<NomeOriginal>_v4
+- bloquear colisão
+- informar objeto conflitante
+- exigir decisão explícita
 
 ## Regra obrigatória
 
-Buscar automaticamente o menor sufixo livre disponível.
+Não criar `_v2`, `_v3` ou variações automáticas no MVP.
 
 ## Exemplo
 
-Se existir:
-
-- ClienteApi
-- ClienteApi_v2
-- ClienteApi_v3
-
-Novo nome:
-
-- ClienteApi_v4
+Se existir `apiCliente` sem metadata compatível, a geração deve bloquear.
 
 [ENG-F10][NOM-F11]
 
@@ -159,13 +153,12 @@ Novo nome:
 
 ## Prioridade
 
-1. escolhido no wizard  
-2. módulo da Transaction  
-3. módulo raiz da KB
+1. módulo da Transaction  
+2. módulo raiz apenas se o SDK exigir e houver decisão explícita
 
 ## Regra
 
-Naming não altera módulo automaticamente.
+No MVP, o wizard não permite escolher livremente módulo destino.
 
 [NOM-F11]
 
@@ -175,53 +168,44 @@ Naming não altera módulo automaticamente.
 
 ## Estratégia MVP
 
-Usar plural simples quando seguro.  
-Quando houver dúvida, permitir override manual.
+Usar RestPath singular, hifenizado quando necessário, sem pluralização automática e sem prefixo `/api` implícito.
 
 ## Regras
 
 | Caso | Resultado |
 |------|-----------|
-| Cliente | /api/clientes |
-| Produto | /api/produtos |
-| Pedido | /api/pedidos |
-| Item | /api/items |
-| Nome incerto | wizard confirma path |
+| Cliente | cliente |
+| Produto | produto |
+| PedidoVenda | pedido-venda |
+| Item | item |
+| Nome incerto | wizard confirma RestPath |
 
 ## Heurística básica
 
-- termina com vogal: +s
-- termina com m: troca por ns
-- termina com s: manter
-- caso duvidoso: confirmação manual
+- converter para minúsculas
+- separar palavras por hífen quando necessário
+- não pluralizar
 
 [NOM-F11]
 
 ---
 
-# 11. Endpoints CRUD Padrão
+# 11. Serviços REST Padrão
 
-## Para PK simples
+## Serviços MVP
 
-| Método | Path |
-|------|------|
-| GET | /api/clientes |
-| GET | /api/clientes/{id} |
-| POST | /api/clientes |
-| PUT | /api/clientes/{id} |
-| DELETE | /api/clientes/{id} |
+- `List`
+- `Get`
+- `Create`
+- `Update`
 
-## Para chave composta
+## Chave composta
 
-Fora do escopo automático inicial do MVP.
+Chave simples e composta devem ser suportadas sem degradação parcial.
 
 ## Regra
 
-Se detectar PK composta:
-
-- avisar usuário
-- bloquear CRUD automático completo
-- permitir evolução futura
+`Delete` não compõe o endpoint REST do MVP. Chave composta não bloqueia `List`, `Get`, `Create` ou `Update`.
 
 [DP-F04][NOM-F11]
 
@@ -229,28 +213,9 @@ Se detectar PK composta:
 
 # 12. Campos Sensíveis
 
-## Não expor automaticamente
-
-- senha
-- password
-- hash
-- token
-- secret
-- audituser
-- auditdate
-
-## Exemplos
-
-| Campo | Resultado |
-|------|-----------|
-| ClienteSenha | omitido |
-| UserToken | omitido |
-| Nome | mantido |
-| Email | mantido |
-
 ## Regra
 
-Seguir heurística do doc 08.
+Naming não decide exposição de campos. Seguir classificação explícita do documento 08: sensíveis desmarcados com alerta e auditoria tratada separadamente.
 
 [NOM-F11]
 
@@ -260,11 +225,10 @@ Seguir heurística do doc 08.
 
 | Finalidade | Nome |
 |----------|------|
-| Listar | GetAll |
-| Buscar por id | GetById |
+| Listar | List |
+| Buscar por chave | Get |
 | Criar | Create |
 | Atualizar | Update |
-| Excluir | Delete |
 
 ## Observação
 
@@ -300,8 +264,8 @@ O `ResolvedGenerationPlan` do documento 10 utiliza estas regras para definir:
 
 - nomes finais
 - paths finais
-- nomes versionados
-- fallback de colisão
+- metadata de objetos próprios
+- bloqueio de colisão incompatível
 
 [NOM-F11]
 
@@ -318,9 +282,9 @@ O `ResolvedGenerationPlan` do documento 10 utiliza estas regras para definir:
 
 ## Preferir
 
-- ClienteApi
-- ClienteRequest
-- ClienteResponse
+- apiCliente
+- sdtCliente_API_CreateRequest
+- sdtCliente_API_Response
 
 [NOM-F11]
 
@@ -334,7 +298,8 @@ Mesma entrada + modo Update:
 
 Mesma entrada + modo Safe:
 
-- usa próximo _vN livre
+- atualiza apenas objetos próprios reconhecidos por metadata
+- bloqueia colisão incompatível
 
 ## Regra
 
@@ -348,11 +313,11 @@ Resultado previsível.
 
 | Critério | Resultado Esperado |
 |------|--------------------|
-| Cliente gera REST | ClienteApi |
-| Cliente gera SDTs | ClienteRequest / Response / ListResponse |
-| Safe com conflito | ClienteApi_v2 ou próximo livre |
-| Produto path base | /api/produtos |
-| ClienteSenha | omitido |
+| Cliente gera REST | apiCliente |
+| Cliente gera SDTs | sdtCliente_API_CreateRequest / Response / ListResponse |
+| Safe com conflito externo | bloqueia colisão |
+| Produto RestPath | produto |
+| ClienteSenha | desmarcado com alerta |
 | CliApi automático | não gerado |
 
 [NOM-F11]
@@ -365,28 +330,18 @@ Resultado previsível.
 
 - naming simples vence naming sofisticado
 - previsibilidade é prioridade
-- sufixos oficiais devem ser respeitados
+- metadata governa reexecução segura
 - doc 10 governa contrato da engine
 
 ## Deve tratar com cautela
 
 - pluralizações complexas futuras
-- chave composta pós-MVP
+- extensões pós-MVP de naming
 - convenções podem evoluir
 
 ---
 
-# 20. Próxima Etapa Recomendada
-
-Criar:
-
-12-REGRAS_CRIACAO_API_OBJECTS.md
-
-Para detalhar conteúdo interno dos objetos REST gerados.
-
----
-
-# 21. Conclusão Objetiva
+# 20. Conclusão Objetiva
 
 Se o naming for estável, todo o produto fica mais confiável.
 

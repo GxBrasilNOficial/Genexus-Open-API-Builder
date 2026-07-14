@@ -4,7 +4,7 @@
 
 Ferramenta open source para acelerar a geração de APIs REST baseadas em **Transactions GeneXus**.
 
-Transforma tarefas repetitivas em automação útil, previsível e editável.
+Transforma tarefas repetitivas em automação útil, previsível e rastreável.
 
 ---
 
@@ -21,12 +21,12 @@ Em vez de criar tudo manualmente, o projeto gera uma base pronta para evolução
 A partir de uma Transaction, o projeto busca gerar:
 
 - API principal
-- Request SDT
-- Response SDT
-- ListResponse SDT
-- endpoints CRUD iniciais
+- Procedures de apoio
+- SDTs próprios de Create, Update, Response, filtros e lista
+- SDTs compartilhados de erro e paginação
+- serviços `List`, `Get`, `Create` e `Update`
 - naming consistente
-- estrutura editável
+- metadata persistente para regeneração conservadora
 
 ---
 
@@ -44,9 +44,9 @@ A partir de uma Transaction, o projeto busca gerar:
 
 Em desenvolvimento inicial.
 
-Foundation Docs concluídos.
+Foundation Docs em revisão pós-entrevista funcional do MVP.
 
-Fase prática iniciando.
+Implementação prática ainda não iniciada.
 
 ---
 
@@ -74,7 +74,7 @@ Docs/Foundation/
 - Open Source real
 - Valor prático
 - Simplicidade inicial
-- Código editável
+- Código rastreável
 - Evolução pública
 - Sem hype vazio
 
@@ -123,4 +123,4 @@ Mais valor para a comunidade GeneXus.
 
 # Status
 
-Primeiras implementações práticas em andamento.
+Planejamento funcional do MVP em consolidação.

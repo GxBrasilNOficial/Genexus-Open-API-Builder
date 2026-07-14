@@ -3,8 +3,8 @@
 ## Roadmap Oficial Pós-MVP e Evolução Estratégica do Produto
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v2.2  
+**Versão:** v1.0
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
 **Dependência direta:** 15-TESTES_VALIDACAO_E_QUALIDADE.md v1  
 **Relacionamento adicional:** 09 a 14 aprovados  
 **Objetivo:** definir a evolução disciplinada do produto após validação do MVP, evitando crescimento precoce e maximizando valor real.  
@@ -76,7 +76,7 @@ O MVP só termina quando:
 - geração principal funciona repetidamente
 - rerun seguro funciona
 - conflitos previsíveis
-- CRUD simples operacional
+- serviços `List`, `Get`, `Create` e `Update` operacionais
 - sem bug crítico recorrente
 - uso real interno validado
 
@@ -93,10 +93,10 @@ Produto utilizável internamente.
 ## Entregas mínimas
 
 - geração por Transaction
-- ClienteApi padrão
-- Request / Response / ListResponse
-- 5 rotas básicas
-- Safe mode confiável
+- apiCliente padrão
+- CreateRequest / UpdateRequest / Response / ListResponse
+- 4 serviços básicos
+- regeneração por metadata confiável
 - logs claros
 
 ## Resultado esperado
@@ -115,7 +115,7 @@ Sair de protótipo técnico para ferramenta diária.
 
 ## Prioridades
 
-- chave composta parcial
+- refinamentos avançados de chave composta
 - wizard refinado
 - override manual de naming
 - melhoria de mensagens
@@ -139,9 +139,9 @@ Ferramenta madura e vendável.
 
 ## Prioridades
 
-- export OpenAPI / Swagger
+- recursos avançados sobre OpenAPI nativo
 - autenticação JWT
-- integração GAM opcional
+- políticas avançadas sobre GAM
 - soft delete configurável
 - múltiplos estilos REST
 - políticas enterprise
@@ -242,14 +242,11 @@ Desvia foco do valor principal.
 
 ---
 
-# 14. Possíveis Linhas Comerciais Futuras
+# 14. Expansão e Ideias Paralelas
 
-| Linha | Exemplo |
-|------|---------|
-| Community | grátis limitado |
-| Pro | recursos avançados |
-| Enterprise | templates + governança |
-| Consulting | implantação customizada |
+Este repositório é exclusivamente open source, gratuito e comunitário.
+
+Qualquer discussão sobre monetização, licenciamento comercial ou modelos de receita pertence ao repositório privado `Genexus-Open-API-Builder-PrivateMap` e não deve constar neste repositório público.
 
 [HP-F16]
 
@@ -285,17 +282,7 @@ Desvia foco do valor principal.
 
 ---
 
-# 17. Próxima Etapa Recomendada
-
-Criar:
-
-17-MODELO_COMERCIAL_E_POSICIONAMENTO.md
-
-Para estudar produto no mercado GeneXus.
-
----
-
-# 18. Conclusão Objetiva
+# 17. Conclusão Objetiva
 
 O MVP prova que funciona.
 

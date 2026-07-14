@@ -1,12 +1,12 @@
 # 14-CONFLITOS_REEXECUCAO_E_VERSIONAMENTO.md
 
-## Regras Oficiais de Conflitos, Nova Execução e Versionamento no MVP
+## Regras Oficiais de Conflitos, Reexecução e Ciclo de Vida no MVP
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1  
-**Base Primária:** 10-ENGINE_GERACAO_OBJETOS.md v1.1  
-**Dependência direta:** 11-CONVENCOES_NOMES_E_OUTPUTS.md v1.1  
-**Relacionamento adicional:** 12-REGRAS_CRIACAO_API_OBJECTS.md v1.1 / 13-REUSO_E_GERACAO_SDTS.md v1.1  
+**Versão:** v1.0
+**Base Primária:** 10-ENGINE_GERACAO_OBJETOS.md v1.0  
+**Dependência direta:** 11-CONVENCOES_NOMES_E_OUTPUTS.md v1.0  
+**Relacionamento adicional:** 12-REGRAS_CRIACAO_API_OBJECTS.md v1.0 / 13-REUSO_E_GERACAO_SDTS.md v1.0  
 **Objetivo:** definir como o produto reage quando já existem objetos prévios, nomes ocupados ou nova geração sobre a mesma Transaction.  
 **Idioma:** Português BR  
 **Público principal:** Agentes de IA + mantenedores humanos  
@@ -21,7 +21,7 @@ Este documento existe para:
 - evitar sobrescrita indevida
 - garantir reexecução previsível
 - reduzir dano em KB existente
-- padronizar versionamento
+- padronizar regeneração conservadora
 - permitir evolução segura
 
 Este documento **não define SDK**, **não trata UX detalhada**, **não redefine naming base**.
@@ -72,8 +72,8 @@ No MVP:
 |------|-----------|
 | Conflito | nome já ocupado ou estrutura incompatível |
 | Reexecução | nova geração para mesma Transaction |
-| Versionamento | criação de nova variante numerada |
-| Update | tentativa controlada de atualizar objeto existente |
+| Metadata | File JSON que identifica objetos próprios |
+| Update | atualização controlada de objeto próprio |
 | Cancel | abortar geração |
 
 [CFG-F14]
@@ -84,8 +84,8 @@ No MVP:
 
 | Tipo | Exemplo |
 |------|---------|
-| Nome ocupado | ClienteApi já existe |
-| SDT incompatível | ClienteRequest existe com estrutura divergente |
+| Nome ocupado | apiCliente já existe sem metadata compatível |
+| SDT incompatível | sdtCliente_API_Response existe sem metadata compatível |
 | Módulo divergente | objeto no módulo errado |
 | Tipo divergente | nome igual para tipo diferente |
 | Bloqueio técnico | objeto indisponível para update |
@@ -98,8 +98,8 @@ No MVP:
 
 | Modo | Comportamento |
 |------|---------------|
-| Safe | nunca sobrescreve automaticamente |
-| Update | tenta atualizar compatíveis |
+| Safe | atualiza apenas objetos próprios reconhecidos |
+| Update | tenta atualizar próprios compatíveis |
 | Cancel | aborta ao primeiro conflito |
 
 ## Default MVP
@@ -126,19 +126,19 @@ Conflito detectado
 
 ## Comportamento
 
-Se nome ocupado:
+Se nome ocupado sem metadata compatível:
 
-criar nova versão livre.
+bloquear geração.
 
 ## Exemplos
 
-- ClienteApi → ClienteApi_v2
-- ClienteApi_v2 → ClienteApi_v3
-- ClienteRequest → ClienteRequest_v2
+- apiCliente existente externo → bloqueia
+- sdtCliente_API_Response externo → bloqueia
+- objeto próprio com metadata compatível → atualiza conservadoramente
 
 ## Regra
 
-Buscar automaticamente o menor número livre.
+Não criar `_v2` automaticamente.
 
 [NOM-F11][CFG-F14]
 
@@ -172,8 +172,7 @@ Migrar para Safe.
 Considerar objeto atualizável quando ao menos um:
 
 - criado previamente pelo gerador
-- nome segue padrão oficial
-- metadata interna identifica origem
+- metadata persistente identifica origem
 - módulo alvo coincide e estrutura compatível
 
 ## Se não atender
@@ -207,7 +206,7 @@ Nova geração para mesma Transaction deve:
 - usar mesmo naming base
 - respeitar modo escolhido
 - manter previsibilidade
-- registrar se substituiu ou versionou
+- registrar se atualizou, bloqueou ou removeu
 
 [CFG-F14]
 
@@ -217,10 +216,10 @@ Nova geração para mesma Transaction deve:
 
 | Situação | Safe | Update | Cancel |
 |---------|------|--------|--------|
-| ClienteApi existe | ClienteApi_v2 | tenta update | aborta |
-| SDT incompatível | novo versionado | novo ou safe | aborta |
-| rota faltando | novo versionado | adiciona | aborta |
-| dúvida estrutural | novo versionado | safe | aborta |
+| apiCliente externo existe | bloqueia | bloqueia | aborta |
+| SDT incompatível | bloqueia | bloqueia | aborta |
+| serviço faltando em objeto próprio | atualiza conservadoramente | atualiza | aborta |
+| dúvida estrutural | bloqueia | bloqueia | aborta |
 
 [CFG-F14]
 
@@ -230,17 +229,15 @@ Nova geração para mesma Transaction deve:
 
 ## Formato
 
-<NomeOriginal>_v2  
-<NomeOriginal>_v3  
-<NomeOriginal>_v4
+Não há versionamento automático por sufixo no MVP.
 
 ## Regra
 
-Nunca usar datas aleatórias ou GUID no MVP.
+Não usar `_v2`, datas aleatórias ou GUID como solução automática de conflito.
 
 ## Motivo
 
-Legibilidade humana e previsibilidade IA.
+Metadata persistente e bloqueio explícito são mais seguros que multiplicar objetos parecidos.
 
 [NOM-F11][CFG-F14]
 
@@ -250,10 +247,11 @@ Legibilidade humana e previsibilidade IA.
 
 Se geração falhar após criar parte dos objetos:
 
-- registrar incompleta
-- listar criados
-- não apagar automaticamente no MVP
-- sugerir rerun Safe ou limpeza manual
+- pausar e informar o usuário sobre o estado atual
+- listar objetos criados com sucesso
+- listar etapa que falhou e o motivo
+- oferecer ao usuário a decisão: manter os objetos salvos ou removê-los
+- registrar a decisão tomada
 
 [ENG-F10][CFG-F14]
 
@@ -278,10 +276,10 @@ Registrar:
 
 | Critério | Resultado Esperado |
 |------|--------------------|
-| ClienteApi existe + Safe | ClienteApi_v2 |
-| ClienteApi existe + Cancel | aborta |
-| rota ausente + Update | tenta completar |
-| dúvida estrutural + Update | cai para Safe |
+| apiCliente externo existe + Safe | bloqueia |
+| apiCliente externo existe + Cancel | aborta |
+| serviço ausente em objeto próprio + Update | tenta completar |
+| dúvida estrutural + Update | bloqueia |
 | falha parcial | loga incompleta |
 
 [CFG-F14]
@@ -295,7 +293,7 @@ Registrar:
 - Safe é padrão preferido
 - overwrite automático é risco
 - rerun precisa previsibilidade
-- versionamento incremental é oficial
+- metadata persistente governa atualização
 
 ## Deve tratar com cautela
 
@@ -305,17 +303,7 @@ Registrar:
 
 ---
 
-# 20. Próxima Etapa Recomendada
-
-Criar:
-
-15-TESTES_VALIDACAO_E_QUALIDADE.md
-
-Para consolidar testes automáticos e critérios de pronto.
-
----
-
-# 21. Conclusão Objetiva
+# 20. Conclusão Objetiva
 
 Quando houver conflito, o MVP deve errar para o lado seguro.
 

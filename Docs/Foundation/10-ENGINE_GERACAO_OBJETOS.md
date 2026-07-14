@@ -3,10 +3,10 @@
 ## Engine de Geração de Objetos do MVP
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1.1  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v2.2  
-**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v3.1  
-**Relacionamento adicional:** 08-MODELO_DADOS_E_METADATA.md v1.4 / 09-INTEGRACAO_GeneXus_Extensibility_SDK.md v3.1  
+**Versão:** v1.0  
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
+**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0  
+**Relacionamento adicional:** 08-MODELO_DADOS_E_METADATA.md v1.0 / 09-INTEGRACAO_GeneXus_Extensibility_SDK.md v1.0  
 **Objetivo:** definir como a engine interna transforma metadata + ApiPlan em objetos reais dentro da KB GeneXus.  
 **Idioma:** Português BR  
 **Público principal:** Agentes de IA + mantenedores humanos  
@@ -81,13 +81,16 @@ Receber `ApiPlan`.
 | ApiName | objeto principal |
 | ModuleTarget | destino |
 | GeneratorTarget | .NET / Java |
-| ReuseSdt | reuso ou novo |
-| RequestSdtName | entrada |
+| ProcedureNames | Procedures de execução |
+| CreateRequestSdtName | entrada de Create |
+| UpdateRequestSdtName | entrada de Update |
 | ResponseSdtName | saída |
-| ListSdtName | lista |
+| ListFiltersSdtName | filtros de List |
+| ListResponseSdtName | envelope de List |
+| MetadataFileName | metadata persistente |
 | ConflictMode | tratar colisões |
 | ReexecutionMode | safe/update/cancel |
-| RestArtifactTarget | tipo REST desejado |
+| RestArtifactTarget | API Object |
 
 ## Regra
 
@@ -129,10 +132,10 @@ Converter intenção inicial em plano executável.
 
 | Entrada | Saída Resolvida |
 |--------|------------------|
-| Nome ocupado | ClienteApi_v2 |
+| Nome ocupado sem metadata compatível | bloquear colisão |
 | Update inseguro | modo Safe |
-| REST ideal indisponível | Procedure REST |
-| SDT compatível achado | ReuseSdt = true |
+| REST ideal indisponível | abortar geração |
+| Objeto próprio encontrado por metadata | atualizar conservadoramente |
 
 ## Regra
 
@@ -149,7 +152,9 @@ ApiPlan recebido
 → resolver conflitos  
 → montar ResolvedGenerationPlan  
 → criar dependências (SDTs)  
-→ criar artefato REST  
+→ criar Procedures  
+→ criar API Object  
+→ gravar metadata em File  
 → persistir  
 → validar resultado  
 → retornar ExecutionResult
@@ -181,13 +186,14 @@ Abortar antes de criar qualquer objeto.
 
 ## Ordem obrigatória
 
-1. Request SDT
-2. Response SDT
-3. List SDT
+1. SDTs compartilhados em `GxOpenAPI`
+2. SDTs próprios da API
+3. Procedures `proc<Nome>_API_*`
+4. Metadata inicial em File
 
 ## Regra
 
-Artefato REST principal só pode ser criado após dependências prontas.
+API Object só pode ser criado após contratos e Procedures estarem prontos.
 
 [ENG-F10]
 
@@ -195,15 +201,20 @@ Artefato REST principal só pode ser criado após dependências prontas.
 
 # 11. Fase 3 — Geração REST Principal
 
-Criar artefato escolhido no doc 09:
+Criar API Object, único artefato REST aceito conforme documento 09.
 
-| Prioridade | Tipo |
-|----------:|------|
-| 1 | API Object |
-| 2 | Equivalente suportado |
-| 3 | Procedure REST |
+## Deve conter serviços MVP.
 
-## Deve conter objetivo CRUD MVP.
+Serviços públicos:
+
+- `List`
+- `Get`
+- `Create`
+- `Update`
+
+Não gerar endpoint `Delete` no MVP.
+
+Se API Object não for viável, abortar geração.
 
 [DP-F04][SDK-F09][ENG-F10]
 
@@ -214,7 +225,9 @@ Criar artefato escolhido no doc 09:
 Salvar objetos em ordem:
 
 1. SDTs
-2. Artefato principal
+2. Procedures
+3. API Object
+4. File de metadata
 
 ## Regra
 
@@ -232,17 +245,24 @@ Se erro parcial:
 
 ## Exemplo
 
-SDTs salvos, REST falhou.
+SDTs e Procedures salvos, API Object falhou.
 
 ## MVP
 
-Aceitar resíduo controlado quando rollback não for suportado.
+Se falha parcial ocorrer, a engine deve **pausar e informar** o usuário:
+
+- quais objetos foram salvos com sucesso
+- qual etapa falhou e o motivo
+- oferecer opção: manter os objetos salvos e tentar novamente, ou removê-los
+
+Nunca deixar resíduo silencioso na KB sem o usuário saber.
 
 ## Obrigatório registrar
 
 - quais objetos ficaram salvos
 - etapa que falhou
-- sugestão de limpeza manual ou reexecução safe
+- decisão do usuário (manter ou remover)
+- sugestão de reexecução
 
 [ENG-F10]
 
@@ -256,8 +276,9 @@ Conflito = colisão pontual de nome/objeto durante execução atual.
 
 | Situação | Ação |
 |---------|------|
-| Novo obrigatório | abortar |
-| Update seguro permitido | atualizar |
+| Nome esperado existe sem metadata compatível | abortar |
+| Objeto próprio reconhecido por metadata | atualizar conservadoramente |
+| Metadata ausente ou corrompida | abortar |
 | Dúvida | pedir decisão usuário |
 
 ## MVP conservador
@@ -276,13 +297,15 @@ Reexecução = nova rodada intencional para mesma Transaction.
 
 | Modo | Ação |
 |------|------|
-| Safe | criar versão nova |
-| Update | atualizar existente |
+| Safe | atualizar apenas objetos próprios reconhecidos |
+| Update | atualizar objetos próprios após validação de metadata |
 | Cancel | não gerar |
 
 ## Default MVP
 
 Safe.
+
+Não criar versão nova por sufixo `_v2` automaticamente.
 
 [AF-F05][ENG-F10]
 
@@ -294,7 +317,7 @@ Mesmas entradas devem gerar comportamento previsível:
 
 - naming estável
 - mesma regra de conflito
-- mesma escolha de fallback
+- mesma decisão de geração
 - mesmo resultado lógico
 
 ## MVP
@@ -345,7 +368,9 @@ Registrar:
 | Plano resolvido | criado |
 | Conflito detectado | tratado corretamente |
 | SDTs criados | Sim |
-| Artefato REST criado | Sim |
+| Procedures criadas | Sim |
+| API Object criado | Sim |
+| Metadata em File criada e relida | Sim |
 | Falha parcial | resultado estruturado |
 | Resultado final | ExecutionResult preenchido |
 
@@ -370,17 +395,7 @@ Registrar:
 
 ---
 
-# 21. Próxima Etapa Recomendada
-
-Detalhar convenções de nomes em:
-
-`11-CONVENCOES_NOMES_E_OUTPUTS.md`
-
-Sem naming estável, engine perde previsibilidade.
-
----
-
-# 22. Conclusão Objetiva
+# 21. Conclusão Objetiva
 
 A engine do produto deve agir como compilador operacional:
 

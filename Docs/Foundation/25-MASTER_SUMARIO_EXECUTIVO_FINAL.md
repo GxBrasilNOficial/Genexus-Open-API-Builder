@@ -3,9 +3,9 @@
 ## Documento Mestre de Visão, Estado Atual e Direção Oficial do Projeto
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1  
+**Versão:** v1.0
 **Base Primária:** 00-MASTER_INDEX_DO_PROJETO.md  
-**Relacionamento adicional:** 01 a 24 aprovados  
+**Relacionamento adicional:** 01 a 24 e 26 a 28 em consolidação  
 **Objetivo:** consolidar toda a coleção documental em uma visão única, clara e executiva para humanos e agentes de IA.  
 **Idioma:** Português BR  
 **Público principal:** comunidade GeneXus + mantenedores + contribuidores + novos interessados  
@@ -17,7 +17,7 @@
 
 O Genexus Open API Builder é um projeto open source criado para acelerar a geração de APIs REST baseadas em Transactions GeneXus.
 
-Seu foco é transformar tarefas repetitivas em automação útil, previsível e editável.
+Seu foco é transformar tarefas repetitivas em automação útil, previsível e rastreável.
 
 O projeto nasce gratuito, comunitário e orientado à produtividade real.
 
@@ -44,12 +44,11 @@ Tempo caro gasto em trabalho repetitivo.
 Transformar uma Transaction em base REST utilizável, gerando:
 
 - API principal
-- Request SDT
-- Response SDT
-- ListResponse SDT
-- endpoints CRUD iniciais
+- Procedures de apoio
+- SDTs próprios de Create, Update, Response, filtros e lista
+- serviços `List`, `Get`, `Create` e `Update`
 - naming consistente
-- estrutura editável
+- metadata persistente para regeneração conservadora
 
 ---
 
@@ -75,7 +74,7 @@ Transformar uma Transaction em base REST utilizável, gerando:
 
 # 5. Estado Atual da Documentação
 
-00 até 25 consolidados.
+00 até 28 em consolidação, com documentos arquivados separados em `Docs/Foundation/Archive`.
 
 Coleção documental completa cobrindo:
 
@@ -111,9 +110,9 @@ Transaction GeneXus.
 - leitura metadata
 - ApiPlan
 - regras naming
-- decisão SDT
+- contratos próprios
 - engine geração
-- política conflito
+- metadata e política de conflito
 
 ## Saída
 
@@ -125,8 +124,8 @@ Objetos REST iniciais utilizáveis.
 
 Inclui:
 
-- CRUD simples
-- PK simples prioritária
+- serviços `List`, `Get`, `Create` e `Update`
+- chave simples e composta
 - wizard inicial
 - geração dentro IDE
 - rerun seguro
@@ -258,15 +257,7 @@ Mais valor para a comunidade GeneXus.
 
 ---
 
-# 18. Próxima Etapa Recomendada
-
-Iniciar implementação real conforme:
-
-24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md
-
----
-
-# 19. Conclusão Final
+# 18. Conclusão Final
 
 O Genexus Open API Builder não nasce para prometer tudo.
 

@@ -3,9 +3,9 @@
 ## Experiência Inicial do Usuário e Fluxo do Wizard MVP
 
 **Projeto:** Genexus Open API Builder  
-**Versão:** v1.3  
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v2.2  
-**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v3.1  
+**Versão:** v1.0  
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0  
+**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0  
 **Relacionamento operacional:** 06-BACKLOG_v0.1.md v2  
 **Objetivo:** definir a experiência inicial do usuário no wizard oficial do MVP dentro da IDE GeneXus.  
 **Idioma:** Português BR  
@@ -57,7 +57,8 @@ Este documento **não define código-fonte**, **não escolhe framework UI**, **n
 
 | Backlog | Reflexo UX |
 |---|---|
-| B020/B021/B022 | Wizard 3 passos |
+| B020/B021/B022 | seleção de Transaction |
+| B030-B035 | wizard mínimo com decisões obrigatórias |
 | B070 | Entrada via menu/contexto |
 | B071 | Tela final resultado |
 | B083 | Revisão manual futura |
@@ -106,13 +107,13 @@ Evitar:
 
 # 6. Estrutura Oficial do Wizard
 
-Wizard com **3 passos fixos**.
+Wizard com etapas mínimas e possibilidade de subdivisão visual conforme a implementação.
 
 | Passo | Nome | Objetivo |
 |---|---|---|
 | 1 | Selecionar Transaction | escolher Transaction |
-| 2 | Configurar API | revisar opções |
-| 3 | Gerar | confirmar e executar |
+| 2 | Configurar contrato | revisar serviços, campos, filtros, segurança e paginação |
+| 3 | Gerar | confirmar impacto e executar |
 
 [DP-F04][AF-F05][UX-F07]
 
@@ -155,28 +156,37 @@ Wizard com **3 passos fixos**.
 | Campo | Obrigatório |
 |---|---|
 | Nome da API | Sim |
-| Módulo destino | Sim |
-| Reutilizar SDT existente | Sim/checkbox |
+| RestPath | Sim |
+| Serviços `List/Get/Create/Update` | Sim |
+| Filtros e paginação | Sim |
+| Security Level/GAM | Sim quando aplicável |
 
 ## Valores padrão
 
 | Campo | Default |
 |---|---|
-| Nome API | `<Transaction>Api` |
-| Módulo | módulo da Transaction |
-| Reutilizar SDT | marcado |
+| Nome API | `api<Transaction>` |
+| Módulo | módulo da Transaction, não editável no MVP |
+| Serviços | List/Get/Create/Update habilitados |
 
 ## Aviso de Segurança
 
-Campos sensíveis comuns serão omitidos automaticamente:
+Campos sensíveis comuns começam desmarcados e com alerta explícito:
 
 - senha
 - hash
-- auditoria interna
+- auditoria interna segue política separada
+
+## SDTs
+
+O MVP não oferece reuso arbitrário de SDTs externos. O wizard pode mostrar apenas contratos próprios reencontrados por metadata.
+
+- Cancelar, ajustar o SDT antigo e tentar novamente
+- Desmarcar a opção e permitir que o gerador crie SDTs novos
 
 ## Revisão Manual de Campos
 
-Não faz parte do MVP v1.3.
+Não faz parte do MVP v1.0.
 
 Planejado para versão futura.
 
@@ -196,7 +206,7 @@ Se nome já existir ou objeto conflitar:
 
 | Opção | Resultado |
 |---|---|
-| Atualizar existente | reutiliza nome atual |
+| Atualizar existente | usa metadata para atualizar objeto próprio |
 | Gerar novo nome | sugere sufixo |
 | Cancelar | aborta fluxo |
 
@@ -385,7 +395,7 @@ Mensagem principal:
 
 | Área | Grau | Evidência |
 |---|---|---|
-| Wizard 3 passos | Alto | [F04][F05] |
+| Wizard mínimo com decisões obrigatórias | Alto | [F04][F05] |
 | Fluxo simples | Alto | [UX-F07] |
 | Painel de conflitos dentro do Passo 2 | Alto | [F05] |
 | Métricas de tempo | Médio | [HP-F07] |
