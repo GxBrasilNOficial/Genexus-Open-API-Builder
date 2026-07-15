@@ -5,7 +5,7 @@
 **Projeto:** Genexus Open API Builder
 **Versão:** v1.0
 **Base Primária:** 22-FAQ_TECNICO_E_DECISOES_DE_PROJETO.md v1
-**Dependência direta:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
+**Dependência direta:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1
 **Relacionamento adicional:** 01 a 22 aprovados
 **Objetivo:** documentar com transparência os riscos reais, limitações conhecidas e itens que não fazem parte do escopo atual do projeto.
 **Idioma:** Português BR

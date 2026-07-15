@@ -4,8 +4,8 @@
 
 **Projeto:** Genexus Open API Builder
 **Versão:** v1.0
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
-**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1
+**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.1
 **Relacionamento adicional:** 07-UX_WIZARD_INICIAL.md v1.0 / 08-MODELO_DADOS_E_METADATA.md v1.0
 **Objetivo:** definir integração técnica realista com GeneXus 18 via Extensibility SDK, usando Upgrade 15 como ambiente inicial de validação, separando fatos confirmados, hipóteses validáveis e o caminho técnico oficial.
 **Idioma:** Português BR

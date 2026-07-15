@@ -4,9 +4,9 @@
 
 **Projeto:** Genexus Open API Builder
 **Versão:** v1.0
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1
 **Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.0
-**Relacionamento adicional:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0 / 08-MODELO_DADOS_E_METADATA.md v1.0
+**Relacionamento adicional:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.1 / 08-MODELO_DADOS_E_METADATA.md v1.0
 **Objetivo:** definir padrões obrigatórios de nomenclatura e outputs gerados pelo produto, garantindo previsibilidade, idempotência e manutenção simples.
 **Idioma:** Português BR
 **Público principal:** Agentes de IA + mantenedores humanos

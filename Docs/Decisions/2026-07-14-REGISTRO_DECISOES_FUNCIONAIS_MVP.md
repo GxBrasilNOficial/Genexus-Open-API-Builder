@@ -17,7 +17,7 @@ Uma validação técnica posterior pode exigir revisão de uma decisão. Nesse c
 - Data: 2026-07-14.
 - Situação: entrevista funcional e consolidação documental do MVP concluídas.
 - Consolidação documental: auditada em 2026-07-14 e formalmente encerrada em 2026-07-15.
-- Próxima etapa: executar `B010`, conforme o [checkpoint operacional](../STATUS_ATUAL_E_PROXIMO_PASSO.md).
+- Próxima etapa vigente: consultar o [checkpoint operacional](../STATUS_ATUAL_E_PROXIMO_PASSO.md).
 - Implementação: ainda não iniciada.
 
 ## Objetivo e limites do produto
@@ -555,7 +555,3 @@ Não bloquearão o MVP:
 - A auditoria e o alinhamento dos documentos `Foundation` foram concluídos.
 - A implementação está liberada para começar pela Sprint 0 — Preparação.
 - O estado operacional e a próxima ação executável são mantidos no [checkpoint do projeto](../STATUS_ATUAL_E_PROXIMO_PASSO.md).
-
-## Próxima etapa executável
-
-> Executar `B010`: localizar e confirmar o SDK de Extensibility do GeneXus 18 Upgrade 15 e criar em `Src` a solution e o projeto mínimos da extensão, com build reproduzível e evidência registrada.

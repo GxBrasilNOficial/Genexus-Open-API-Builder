@@ -21,6 +21,13 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - LICENSE MIT
 - Planejamento da fase prática
 
+## Fixed
+
+- checkpoint preserva `B011` e `B012` antes de promover `B000`
+- linha de corte do MVP passa a cobrir exaustivamente os itens necessários aos dez gates
+- Sprints 3–7 distinguem ApiPlan, SDTs, Procedures/API/metadata, REST/segurança e operação conservadora
+- referências de backlog, versões documentais e conflitos no wizard foram alinhadas
+
 ## Planned
 
 - Sprint 0 — Preparação (`B010`–`B012`)

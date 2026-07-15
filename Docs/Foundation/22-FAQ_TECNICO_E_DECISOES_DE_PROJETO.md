@@ -5,7 +5,7 @@
 **Projeto:** Genexus Open API Builder
 **Versão:** v1.0
 **Base Primária:** 21-CHECKLIST_RELEASE_PUBLICA_E_MATURIDADE.md v1
-**Dependência direta:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
+**Dependência direta:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1
 **Relacionamento adicional:** 01 a 21 aprovados
 **Objetivo:** consolidar respostas oficiais para dúvidas recorrentes, explicar escolhas técnicas e reduzir ruído em discussões futuras.
 **Idioma:** Português BR

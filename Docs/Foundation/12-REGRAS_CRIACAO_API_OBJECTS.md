@@ -4,7 +4,7 @@
 
 **Projeto:** Genexus Open API Builder
 **Versão:** v1.0
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1
 **Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.0
 **Relacionamento adicional:** 09-INTEGRACAO_GeneXus_Extensibility_SDK.md v1.0 / 11-CONVENCOES_NOMES_E_OUTPUTS.md v1.0
 **Objetivo:** definir o conteúdo mínimo e comportamento esperado dos objetos REST gerados automaticamente no MVP.

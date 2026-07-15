@@ -44,7 +44,7 @@ A partir de uma Transaction, o projeto busca gerar:
 
 A consolidação documental posterior à entrevista funcional do MVP foi concluída.
 
-A implementação prática ainda não foi iniciada. A frente ativa é a **Sprint 0 — Preparação**, começando pelo item `B010`.
+A implementação prática ainda não foi iniciada. A frente ativa é a **Sprint 0 — Preparação**.
 
 Para retomar o trabalho em uma nova sessão, consulte o checkpoint operacional:
 
@@ -135,4 +135,4 @@ Mais valor para a comunidade GeneXus.
 
 # Status
 
-Fundação documental concluída. Próxima ação: `B010`, conforme o [checkpoint operacional](Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md).
+Fundação documental concluída. A próxima ação vigente está no [checkpoint operacional](Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md).

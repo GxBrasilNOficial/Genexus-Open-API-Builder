@@ -4,7 +4,7 @@
 
 **Projeto:** Genexus Open API Builder
 **Versão:** v1.0
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1
 **Dependência direta:** 15-TESTES_VALIDACAO_E_QUALIDADE.md v1
 **Relacionamento adicional:** 09 a 14 aprovados
 **Objetivo:** definir a evolução disciplinada do produto após validação do MVP, evitando crescimento precoce e maximizando valor real.

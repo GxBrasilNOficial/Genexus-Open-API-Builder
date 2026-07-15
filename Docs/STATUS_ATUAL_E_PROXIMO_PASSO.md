@@ -36,12 +36,6 @@ Executar `B010`:
 - evidência de build mínimo bem-sucedido;
 - nenhum wizard funcional nem alteração de KB nesta ação.
 
-## Ação imediatamente posterior
-
-Na **Sprint 1 — Spike SDK Real**, executar `B000`:
-
-> Carregar a extensão mínima na IDE GeneXus 18 Upgrade 15 e registrar a evidência do resultado.
-
 ## Sequência operacional vigente
 
 1. Sprint 0 executa a Fase 0 (`B010`–`B012`) e prepara o terreno.
@@ -49,8 +43,8 @@ Na **Sprint 1 — Spike SDK Real**, executar `B000`:
 3. As Fases 1–8 dependem da aprovação desse spike.
 4. Sprint 2 entrega apenas o protótipo navegável e não persistente do wizard.
 5. Sprint 3 cria metadata e `ApiPlan`.
-6. Sprint 4 integra o wizard ao engine pela primeira vez.
-7. Sprints 5–7 completam os contratos e a segurança operacional.
+6. Sprint 4 integra o wizard ao engine pela primeira vez e cria os SDTs.
+7. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
 8. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
 
 ## Bloqueios e fatos ainda não validados
@@ -78,3 +72,5 @@ Na **Sprint 1 — Spike SDK Real**, executar `B000`:
 ## Protocolo de atualização
 
 Toda mudança de marco, frente ativa ou próxima ação deve atualizar este checkpoint no mesmo commit que produz a mudança. O checkpoint deve manter uma única próxima ação e apontar para os contratos, sem duplicá-los.
+
+Ao concluir `B010`, a próxima atualização deste arquivo deve promover `B011`; `B000` somente poderá ser promovido depois da conclusão de `B010`–`B012`.

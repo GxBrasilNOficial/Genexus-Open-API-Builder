@@ -4,8 +4,8 @@
 
 **Projeto:** Genexus Open API Builder
 **Versão:** v1.0
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
-**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1
+**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.1
 **Relacionamento adicional:** 08-MODELO_DADOS_E_METADATA.md v1.0 / 09-INTEGRACAO_GeneXus_Extensibility_SDK.md v1.0
 **Objetivo:** definir como a engine interna transforma metadata + ApiPlan em objetos reais dentro da KB GeneXus.
 **Idioma:** Português BR

@@ -6,7 +6,7 @@
 **Versão:** v1.0
 **Base Primária:** 23-RISCOS_LIMITACOES_E_NAO_OBJETIVOS.md v1
 **Dependência direta:** 10-ENGINE_GERACAO_OBJETOS.md v1.0
-**Relacionamento adicional:** 01 a 23 aprovados
+**Relacionamento adicional:** 01 a 23 e contratos 26 a 28 consolidados
 **Objetivo:** converter toda a documentação consolidada em um plano realista de implementação incremental, validável e executável.
 **Idioma:** Português BR
 **Público principal:** maintainer principal + contribuidores técnicos + agentes de IA
@@ -153,8 +153,8 @@ Validar navegação, captura de decisões e cancelamento seguro sem persistir ne
 
 ## Entregas
 
-- selecionar uma Transaction a partir de estado somente leitura
-- navegar pelos passos previstos para nomes, serviços, campos, filtros, paginação, ordenação e segurança
+- `B020`–`B025`: detectar KB, listar e selecionar uma Transaction, ler módulo, objetos existentes, BC e chave completa em modo somente leitura
+- `B030`–`B037`: navegar pelos passos de serviços, campos elegíveis, obrigatoriedade no payload, filtros, paginação, ordenação e segurança
 - manter as escolhas apenas em memória
 - avançar, voltar e cancelar sem alterar a KB
 - exibir resumo não persistente das escolhas
@@ -163,7 +163,7 @@ Validar navegação, captura de decisões e cancelamento seguro sem persistir ne
 
 ## Gate
 
-Fluxo navegável completo, com estado em memória e cancelamento sem efeitos colaterais.
+Fases 1 e 2 do backlog cobertas pelo protótipo navegável, com estado em memória e cancelamento sem efeitos colaterais.
 
 [F07][SPR-F24]
 
@@ -173,101 +173,110 @@ Fluxo navegável completo, com estado em memória e cancelamento sem efeitos col
 
 ## Objetivo
 
-Transformar Transaction em plano interno.
+Transformar a Transaction e as escolhas do wizard em um `ApiPlan` completo, ainda sem gerar objetos.
 
 ## Entregas
 
 - ler atributos
-- identificar PK
-- marcar sensíveis
-- reconhecer auditoria operacional por nomes/sufixos específicos
+- identificar chave simples ou composta completa
+- `B090`: classificar campos sensíveis por configuração explícita
+- `B091`: classificar auditoria separadamente
+- `B092`: registrar no plano o `Security Level` e GAM/None quando aplicável
 - módulo alvo
 - montar decisões de filtros, payload, paginação, ordenação e segurança
-- montar ApiPlan
+- montar `ApiPlan`
 
 ## Gate
 
-Plano consistente gerado.
+`ApiPlan` consistente, completo e sem escrita na KB.
 
 [F08][SPR-F24]
 
 ---
 
-# 10. Sprint 4 — Engine Base
+# 10. Sprint 4 — Engine Base e SDTs
 
 ## Objetivo
 
-Realizar a primeira integração efetiva wizard → `ApiPlan` → engine e gerar os primeiros objetos reais.
+Realizar a primeira integração efetiva wizard → `ApiPlan` → engine, criando primeiro os contratos SDT dos quais Procedures e serviços dependerão.
 
 ## Entregas
 
 - receber o `ApiPlan` produzido a partir das decisões do wizard e entregá-lo ao engine
-- apiCliente
-- procCliente_API_List/Get/Create/Update
-- sdtCliente_API_CreateRequest
-- sdtCliente_API_UpdateRequest
-- sdtCliente_API_Response
-- sdtCliente_API_ListFilters
-- sdtCliente_API_ListResponse
-- sdt_API_ErrorResponse
-- sdt_API_Pagination
-- File JSON de metadata
-- `[Description]` nos serviços selecionados
-- operationIds no padrão `apiNome.Serviço`
-- logs execução
+- `B040`: criar `sdtCliente_API_CreateRequest`
+- `B041`: criar `sdtCliente_API_UpdateRequest`
+- `B042`: criar `sdtCliente_API_Response`
+- `B043`: criar `sdtCliente_API_ListFilters`
+- `B044`: criar `sdtCliente_API_ListResponse`
+- `B045`: criar ou reencontrar os SDTs compartilhados em `GxOpenAPI`
+- `B046`: validar `sdt_API_ErrorResponse` e `sdt_API_Pagination`
+- registrar logs da primeira escrita real na KB
 
 ## Gate
 
-Objetos criados corretamente.
+SDTs próprios e compartilhados criados pelo engine a partir do `ApiPlan`, sem criar ainda Procedures nem API Object.
 
-[F10][SPR-F24]
+[F10][F13][SPR-F24]
 
 ---
 
-# 11. Sprint 5 — Serviços REST Iniciais
+# 11. Sprint 5 — Procedures, API Object e Metadata
 
 ## Objetivo
 
-Gerar serviços base.
+Criar as Procedures e o API Object sobre os SDTs já existentes, organizando e registrando todos os objetos por metadata.
 
 ## Entregas
 
-- List
-- Get
-- Create
-- Update
-- Create retornando 201
-- Update usando PUT e retornando Response completo
-- ListResponse com `items`, `pagination` e `appliedFilters`
-- validação de ausência de endpoint Delete no MVP
+- `B050`–`B053`: criar as Procedures de List, Get, Create e Update
+- `B054`: criar `apiCliente` delegando para as Procedures
+- `B055`: validar o uso via Business Component
+- `B056`: gerar `[Description]` para os serviços selecionados
+- `B060`: gravar o File JSON de metadata
+- `B061`: manter os objetos no módulo da Transaction
+- `B062`: aplicar as convenções de nomes congeladas
+- `B063`: detectar colisões por metadata e por nome
+- `B064`: bloquear colisões incompatíveis sem criar `_v2`
+- `B065`: persistir paths, campos, filtros, paginação, ordenação e segurança na metadata
+- `B066`: distinguir Folder criado de Folder reutilizado
+- `B067`: registrar descrições geradas para detectar alteração manual posterior
+- preparar operationIds no padrão `apiNome.Serviço`
+- não completar ainda o comportamento REST, reservado à Sprint 6
 
 ## Gate
 
-Estrutura funcional pronta.
+API Object, Procedures e metadata criados e reencontráveis, sem duplicar os SDTs já produzidos na Sprint 4.
 
-[F12][SPR-F24]
+[F10][F12][F28][SPR-F24]
 
 ---
 
-# 12. Sprint 6 — SDTs Próprios e Metadata
+# 12. Sprint 6 — Serviços REST e Segurança
 
 ## Objetivo
 
-Garantir contratos próprios e reencontro seguro.
+Completar o comportamento REST sobre os objetos já criados e aplicar explicitamente a segurança planejada.
 
 ## Entregas
 
-- criar SDTs próprios
-- reencontrar próprios por metadata
-- bloquear SDT externo em colisão
-- validar SDTs compartilhados no Folder `GxOpenAPI`
-- validar ausência de campos públicos `Specified`
+- `B070`: completar List com filtros, paginação e ordenação determinística
+- `B071`: completar Get para chave simples ou composta
+- `B072`: completar Create com HTTP 201 e `Location` quando controlável com segurança
+- `B073`: completar Update com PUT, HTTP 200 e Response completo
+- `B074`: aplicar paths e operationIds convencionados
+- `B075`: comprovar ausência de endpoint Delete no MVP
+- `B076`: distinguir ausência JSON de vazio, `false` e zero sem campos públicos `Specified`
+- `B077`: comprovar `totalCount`, `totalPages` e `appliedFilters`
+- `B078`: validar operationIds no padrão `apiNome.Serviço`
+- `B079`: validar códigos HTTP, corpos e `Location`
+- `B093`: aplicar o `Security Level` explicitamente em todos os serviços
+- `B047`: validar no YAML gerado rotas, métodos, SDTs, segurança e nomes `_API_`
 
 ## Gate
 
-Reencontro previsível por metadata.
+List, Get, Create e Update funcionais, seguros e refletidos corretamente no YAML gerado pelo GeneXus.
 
-[F13][SPR-F24]
+[F12][F26][F27][SPR-F24]
 
 ---
 
@@ -275,17 +284,18 @@ Reencontro previsível por metadata.
 
 ## Objetivo
 
-Segurança operacional.
+Fechar a operação na IDE, o ciclo de vida conservador e a comprovação integrada dos dez gates.
 
 ## Entregas
 
-- Safe mode
-- bloqueio de colisão sem `_v2`
-- Update controlado
-- Cancel seguro
-- rerun consistente
-- sincronização com comparação explícita antes de alterar
-- remoção por comando explícito preservando Folder reutilizado e `GxOpenAPI`
+- `B080`: integrar menu/contexto na IDE
+- `B081`: exibir relatório final interno
+- `B083`: detectar conflito antes de salvar
+- `B084`: bloquear overwrite silencioso e `_v2`
+- `B085`: sincronizar com a Transaction por comparação explícita de metadata
+- `B086`: remover por comando explícito, preservando Folder reutilizado e `GxOpenAPI`
+- comprovar rerun consistente e cancelamento sem efeitos colaterais
+- executar a validação integrada final, inclusive dos gates de segurança B092/B093
 
 ## Gate
 
@@ -293,7 +303,7 @@ Sem overwrite indevido e com os dez gates técnicos transversais comprovados.
 
 Ao concluir esta sprint, o projeto atinge o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para iniciar a Alpha da Sprint 8.
 
-[F14][SPR-F24]
+[F14][F28][SPR-F24]
 
 ---
 

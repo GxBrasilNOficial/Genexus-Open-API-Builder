@@ -4,9 +4,9 @@
 
 **Projeto:** Genexus Open API Builder
 **Versão:** v1.0
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
-**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0
-**Relacionamento operacional:** 06-BACKLOG_v0.1.md v2
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1
+**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.1
+**Relacionamento operacional:** 06-BACKLOG_v0.1.md v1.1
 **Objetivo:** definir a experiência inicial do usuário no wizard oficial do MVP dentro da IDE GeneXus.
 **Idioma:** Português BR
 **Público principal:** Agentes de IA + mantenedores humanos
@@ -58,10 +58,10 @@ Este documento **não define código-fonte**, **não escolhe framework UI**, **n
 | Backlog | Reflexo UX |
 |---|---|
 | B020/B021/B022 | seleção de Transaction |
-| B030-B035 | wizard mínimo com decisões obrigatórias |
+| B030-B037 | wizard mínimo, campos elegíveis e obrigatoriedade no payload |
 | B080 | Entrada via menu/contexto |
 | B081 | Tela final resultado |
-| B083 | Revisão manual futura |
+| B083/B084 | painel de conflitos antes de salvar e bloqueio de overwrite silencioso |
 
 ---
 

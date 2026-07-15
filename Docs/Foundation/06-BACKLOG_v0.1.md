@@ -270,7 +270,7 @@ Se B004 falhar sem alternativa oficial viável:
 |---|---|
 | 1. Carregamento no GeneXus 18 Upgrade 15 | B000 |
 | 2. Ciclo de vida dos objetos nativos pelo SDK | B003–B005 |
-| 3. Delegação e propriedades do API Object | B004, B054, B056, B065 e B074 |
+| 3. Delegação, propriedades e segurança do API Object | B004, B054, B056, B065, B074, B092 e B093 |
 | 4. Contrato refletido no YAML gerado | B047, B054 e B070–B079 |
 | 5. Create/Update via BC com chaves simples e compostas | B025, B052, B053, B055 e B071–B073 |
 | 6. Presença JSON distinta de vazio, `false` e zero | B037 e B076 |
@@ -287,55 +287,37 @@ Esses gates são comprovados progressivamente. Todos devem estar aprovados antes
 
 # 8. MVP Real (linha de corte)
 
-Obrigatórios:
+Os itens e intervalos abaixo formam a linha de corte exaustiva do MVP. Um item omitido desta lista não é necessário para declarar o MVP concluído; qualquer mudança nessa interpretação exige atualizar esta seção e a matriz de gates em conjunto.
 
-- B010
-- B011
-- B012
-- B000
-- B001
-- B002
-- B003
-- B004
-- B005
-- B006
-- B020
-- B021
-- B030
-- B031
-- B032
-- B040
-- B041
-- B060
-- B070
-- B071
-- B072
-- B073
-- B075
-- B079
-- B080
-- B081
-- B083
-- B084
-- B090
+- Fase 0: B010–B012
+- Fase -1: B000–B006
+- Fase 1: B020–B025
+- Fase 2: B030–B037
+- Fase 3: B040–B047
+- Fase 4: B050–B056
+- Fase 5: B060–B067
+- Fase 6: B070–B079
+- Fase 7: B080, B081 e B083–B086
+- Fase 8: B090–B093
+
+`B082` fica fora da linha de corte: mostrar o tempo de execução é útil, mas não comprova contrato funcional, segurança nem ciclo de vida.
 
 [BG-F06]
 
 ---
 
-# 9. Ordem Recomendada de Execução
+# 9. Ordem Operacional por Dependência
 
 1. Fase 0 completa (`B010`–`B012`)
 2. Pacote inicial da Fase -1 completo (`B000`–`B006`)
-3. Fase 1 completa
-4. Fase 2 mínima
-5. Fase 3 mínima
-6. Fase 4 mínima
-7. Fase 5 mínima
-8. Fase 6 List/Get inicial
-9. Completar Create/Update
-10. Fase 7 mínima
-11. Fase 8 mínima
+3. Fases 1 e 2 (`B020`–`B037`) no protótipo navegável e não persistente
+4. Planejamento de segurança (`B090`–`B092`) dentro do `ApiPlan`
+5. Fase 3 até `B046`, criando os SDTs antes de seus consumidores
+6. Fases 4 e 5 (`B050`–`B067`), criando Procedures, API Object e metadata
+7. `B047`, Fase 6 (`B070`–`B079`) e aplicação da segurança em `B093`
+8. Fase 7 (`B080`, `B081`, `B083`–`B086`) e comprovação integrada dos dez gates
+
+`B047` é validado somente depois do API Object e dos serviços porque depende do YAML gerado pelo GeneXus; esse deslocamento de evidência não antecipa consumidores antes dos SDTs.
 
 [BG-F06]
 

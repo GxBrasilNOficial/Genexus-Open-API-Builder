@@ -5,7 +5,7 @@
 **Projeto:** Genexus Open API Builder  
 **Versão:** v1.0
 **Base Primária:** 16-ROADMAP_POS_MVP_E_EXPANSAO.md v1  
-**Dependência direta:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
+**Dependência direta:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1
 
 **Relacionamento adicional:** 01 a 16 aprovados  
 **Objetivo:** definir como o projeto deve ser apresentado publicamente para a comunidade GeneXus, reforçando valor técnico, utilidade prática e espírito open source.  

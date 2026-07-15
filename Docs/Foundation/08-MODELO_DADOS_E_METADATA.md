@@ -4,8 +4,8 @@
 
 **Projeto:** Genexus Open API Builder
 **Versão:** v1.0
-**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.0
-**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.0
+**Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1
+**Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.1
 **Relacionamento adicional:** 07-UX_WIZARD_INICIAL.md v1.0
 **Objetivo:** definir quais dados internos o produto precisa ler, persistir como metadata de geração e processar para gerar APIs no MVP.
 **Idioma:** Português BR
