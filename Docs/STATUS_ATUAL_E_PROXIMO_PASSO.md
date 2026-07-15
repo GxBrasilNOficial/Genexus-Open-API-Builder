@@ -16,6 +16,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - documentos Foundation alinhados e auditados;
 - base documental publicada na branch `main`;
 - `B010` concluído: SDK localizado, solution e projeto mínimo criados e build reproduzível validado.
+- `B011` concluído: estrutura interna confirmada sem introduzir projetos ou camadas vazias.
 
 ## Frente ativa
 
@@ -23,16 +24,15 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Próxima ação única
 
-Executar `B011`:
+Executar `B012`:
 
-> Confirmar e materializar a estrutura interna do código, conforme o documento 05, seção 5.7, sem introduzir camadas vazias.
+> Confirmar e aplicar as convenções de nomes já congeladas na documentação, sem antecipar objetos do wizard ou alterações de KB.
 
 ## Critério de conclusão e evidência esperada
 
-- responsabilidade de cada pasta em `Src` confirmada;
-- nenhuma camada ou projeto adicional criado sem necessidade comprovada;
-- estrutura pronta para o spike da IDE, preservando o projeto mínimo criado em `B010`;
-- decisão e evidência registradas na documentação de implementação aplicável;
+- convenções aplicáveis ao código e à extensão identificadas nas fontes governantes;
+- nomes da solution, projeto, namespace e artefatos mínimos confrontados com essas convenções;
+- decisões e eventuais lacunas registradas na documentação de implementação;
 - nenhum wizard funcional nem alteração de KB nesta ação.
 
 A compatibilidade das APIs e o carregamento da extensão na IDE permanecem no pacote de spike `B000`–`B006`.
