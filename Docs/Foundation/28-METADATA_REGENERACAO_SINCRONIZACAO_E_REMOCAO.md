@@ -4,7 +4,7 @@
 
 **Projeto:** Genexus Open API Builder
 **Versão:** v1.0
-**Base Primária:** Checkpoint funcional de 2026-07-14
+**Base Primária:** [Registro de decisões funcionais do MVP — 2026-07-14](../Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md)
 **Objetivo:** definir como o MVP identifica objetos gerados, regenera com segurança, sincroniza com a Transaction e remove APIs geradas.
 **Idioma:** Português BR
 **Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA

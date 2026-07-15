@@ -27,6 +27,14 @@ Ele existe para:
 
 Este documento não substitui código-fonte, backlog, testes, decisões futuras ou validação prática.
 
+## Fonte primária das decisões do MVP
+
+O registro consolidado da entrevista funcional de julho de 2026 é a fonte primária das decisões do MVP:
+
+[Registro de decisões funcionais do MVP — 2026-07-14](../Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md)
+
+Os documentos desta coleção devem materializar essas decisões nos contratos organizados por assunto. Enquanto a consolidação documental não estiver formalmente concluída, uma decisão explícita do registro prevalece sobre texto anterior ou contraditório existente em `Docs/Foundation`.
+
 ---
 
 # 2. Resumo Executivo

@@ -4,7 +4,7 @@
 
 **Projeto:** Genexus Open API Builder
 **Versão:** v1.0
-**Base Primária:** Checkpoint funcional de 2026-07-14
+**Base Primária:** [Registro de decisões funcionais do MVP — 2026-07-14](../Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md)
 **Objetivo:** definir o contrato HTTP mínimo e os SDTs compartilhados gerados no Root Module.
 **Idioma:** Português BR
 **Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA
