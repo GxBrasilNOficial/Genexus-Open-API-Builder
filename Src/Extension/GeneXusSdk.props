@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <!-- Define GeneXusInstallDir para instalações fora do caminho padrão. -->
+    <GeneXusInstallDir Condition="'$(GeneXusInstallDir)' == '' and Exists('$(MSBuildProgramFiles32)\GeneXus\GeneXus18\Artech.Architecture.Common.dll')">$(MSBuildProgramFiles32)\GeneXus\GeneXus18</GeneXusInstallDir>
+  </PropertyGroup>
+
+  <Target Name="ValidateGeneXusSdk" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(GeneXusInstallDir)' == '' or !Exists('$(GeneXusInstallDir)\Artech.Architecture.Common.dll')"
+           Text="GeneXus 18 Extensibility SDK não localizado. Defina GeneXusInstallDir para a pasta de instalação que contém Artech.Architecture.Common.dll." />
+  </Target>
+</Project>

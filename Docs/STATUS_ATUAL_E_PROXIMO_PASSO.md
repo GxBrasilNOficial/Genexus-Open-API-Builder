@@ -15,7 +15,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - entrevista funcional do MVP consolidada;
 - documentos Foundation alinhados e auditados;
 - base documental publicada na branch `main`;
-- implementação prática ainda não iniciada.
+- `B010` concluído: SDK localizado, solution e projeto mínimo criados e build reproduzível validado.
 
 ## Frente ativa
 
@@ -23,20 +23,19 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Próxima ação única
 
-Executar `B010`:
+Executar `B011`:
 
-> Localizar e confirmar o SDK de Extensibility do GeneXus 18 Upgrade 15 e criar em `Src` a solução e o projeto mínimos da extensão, com dependências documentadas e build reproduzível.
+> Confirmar e materializar a estrutura interna do código, conforme o documento 05, seção 5.7, sem introduzir camadas vazias.
 
 ## Critério de conclusão e evidência esperada
 
-- versão e origem do SDK registradas;
-- método reproduzível de localizar as dependências, sem versionar caminho absoluto específico da máquina;
-- solution em `Src/GenexusOpenApiBuilder.sln` e projeto mínimo em `Src/Extension/GenexusOpenApiBuilder.Extension.csproj`, conforme o documento 05, seção 5.7;
-- comando de build documentado;
-- ambiente-base, localização das dependências, comando e evidência de build mínimo bem-sucedido registrados em `Docs/Implementation/B010-SDK-E-BUILD-MINIMO.md`;
+- responsabilidade de cada pasta em `Src` confirmada;
+- nenhuma camada ou projeto adicional criado sem necessidade comprovada;
+- estrutura pronta para o spike da IDE, preservando o projeto mínimo criado em `B010`;
+- decisão e evidência registradas na documentação de implementação aplicável;
 - nenhum wizard funcional nem alteração de KB nesta ação.
 
-Framework, assemblies, tipo de projeto, empacotamento e mecanismo reproduzível de resolução das referências são resultados de `B010`, não premissas já confirmadas. A reprodutibilidade será comprovada para uma máquina Windows com GeneXus 18 Upgrade 15 e os pré-requisitos registrados na evidência.
+A compatibilidade das APIs e o carregamento da extensão na IDE permanecem no pacote de spike `B000`–`B006`.
 
 ## Sequência operacional vigente
 
@@ -51,7 +50,6 @@ Framework, assemblies, tipo de projeto, empacotamento e mecanismo reproduzível 
 
 ## Bloqueios e fatos ainda não validados
 
-- disponibilidade e forma oficial de obtenção do SDK no ambiente local;
 - compatibilidade prática das APIs do SDK com GeneXus 18 Upgrade 15;
 - comprovação progressiva dos gates técnicos transversais definidos nos documentos 09, 15 e 24.
 
@@ -64,7 +62,6 @@ Framework, assemblies, tipo de projeto, empacotamento e mecanismo reproduzível 
 
 ## Marcos ainda não iniciados
 
-- solução de Extensibility;
 - spike real na IDE;
 - protótipo navegável do wizard;
 - `ApiPlan`;
