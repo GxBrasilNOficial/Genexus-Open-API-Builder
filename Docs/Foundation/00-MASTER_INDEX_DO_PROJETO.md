@@ -156,6 +156,7 @@ Transaction
 ## Intenção resumida
 
 - `Docs` → conhecimento e alinhamento
+- `Docs/Implementation` → evidências reproduzíveis da execução prática
 - `Src` → produto real
 - `Tests` → validação
 - `Samples` → exemplos

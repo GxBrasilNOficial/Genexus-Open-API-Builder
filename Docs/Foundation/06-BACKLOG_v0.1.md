@@ -10,6 +10,7 @@
 **Idioma:** Português BR
 **Público principal:** Agentes de IA + mantenedores humanos
 **Data:** Abril/2026
+**Última revisão:** Julho/2026
 
 ---
 
@@ -242,8 +243,8 @@ Se B004 falhar sem alternativa oficial viável:
 
 | ID | Aceite |
 |---|---|
-| B010 | SDK identificado por versão e origem; dependências localizáveis sem caminho absoluto da máquina; solution/projeto em `Src`; comando e evidência de build registrados |
-| B011 | Estrutura interna criada conforme o layout documentado |
+| B010 | SDK identificado por versão e origem; dependências localizáveis sem caminho absoluto da máquina; `Src/GenexusOpenApiBuilder.sln` e `Src/Extension/GenexusOpenApiBuilder.Extension.csproj` criados; comando e evidência registrados em `Docs/Implementation/B010-SDK-E-BUILD-MINIMO.md` |
+| B011 | Estrutura interna confirmada conforme o layout do documento 05, seção 5.7 |
 | B012 | Convenções congeladas confirmadas e aplicadas à estrutura inicial |
 | B004 | Existe evidência prática de criação, alteração, releitura e exclusão de API Object oficial |
 | B005 | Existe evidência prática de criação, alteração, releitura e exclusão de Procedure, SDT, Folder e File |

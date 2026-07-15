@@ -31,10 +31,12 @@ Executar `B010`:
 
 - versão e origem do SDK registradas;
 - método reproduzível de localizar as dependências, sem versionar caminho absoluto específico da máquina;
-- solução e projeto salvos em caminho relativo dentro de `Src`;
+- solution em `Src/GenexusOpenApiBuilder.sln` e projeto mínimo em `Src/Extension/GenexusOpenApiBuilder.Extension.csproj`, conforme o documento 05, seção 5.7;
 - comando de build documentado;
-- evidência de build mínimo bem-sucedido;
+- ambiente-base, localização das dependências, comando e evidência de build mínimo bem-sucedido registrados em `Docs/Implementation/B010-SDK-E-BUILD-MINIMO.md`;
 - nenhum wizard funcional nem alteração de KB nesta ação.
+
+Framework, assemblies, tipo de projeto, empacotamento e mecanismo reproduzível de resolução das referências são resultados de `B010`, não premissas já confirmadas. A reprodutibilidade será comprovada para uma máquina Windows com GeneXus 18 Upgrade 15 e os pré-requisitos registrados na evidência.
 
 ## Sequência operacional vigente
 

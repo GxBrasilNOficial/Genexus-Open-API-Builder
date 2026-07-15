@@ -87,6 +87,8 @@ prompts-cache/
 # ----------------------
 Temp/*
 !Temp/.gitkeep
+Docs/Temp/*
+!Docs/Temp/.gitkeep
 
 # ----------------------
 # Test outputs

@@ -11,6 +11,7 @@
 **Idioma:** Português BR
 **Público principal:** Agentes de IA + mantenedores humanos
 **Data:** Abril/2026
+**Última revisão:** Julho/2026
 
 ---
 
@@ -64,6 +65,8 @@ No MVP:
 5. validar criação de API Objects como único caminho REST
 6. validar criação e persistência de Procedures, SDTs, Folder e File
 7. tratar YAML nativo como saída de validação/regressão, não como fonte primária da geração
+
+Na preparação `B010`, target framework, assemblies, tipo de projeto, empacotamento e mecanismo reproduzível de resolução das dependências são resultados a confirmar, não premissas. A evidência deve ser registrada em `Docs/Implementation/B010-SDK-E-BUILD-MINIMO.md`, sem tornar caminhos absolutos específicos da máquina parte da configuração versionada.
 
 [SDK-F09]
 

@@ -11,6 +11,7 @@
 **Idioma:** Português BR
 **Público principal:** maintainer principal + contribuidores técnicos + agentes de IA
 **Data:** Abril/2026
+**Última revisão:** Julho/2026
 
 ---
 
@@ -87,14 +88,14 @@ Executar a Fase 0 do backlog (`B010`–`B012`) e deixar o terreno técnico repro
 
 - `B010`: versão e origem do SDK registradas
 - `B010`: dependências localizáveis sem caminho absoluto específico da máquina
-- `B010`: solution e projeto em caminho relativo dentro de `Src`
-- `B010`: comando e evidência de build mínimo registrados
-- `B011`: pastas internas estruturadas
+- `B010`: `Src/GenexusOpenApiBuilder.sln` e `Src/Extension/GenexusOpenApiBuilder.Extension.csproj` criados conforme o layout do documento 05
+- `B010`: comando e evidência de build mínimo registrados em `Docs/Implementation/B010-SDK-E-BUILD-MINIMO.md`
+- `B011`: estrutura interna confirmada conforme o documento 05, seção 5.7
 - `B012`: convenções de nomes congeladas confirmadas e aplicadas
 
 ## Saída esperada
 
-Solution mínima reproduzível e pronta para o spike. O carregamento na IDE pertence ao `B000`, não ao `B010`.
+Solution mínima reproduzível, em máquina Windows com GeneXus 18 Upgrade 15 e os pré-requisitos registrados por `B010`, pronta para o spike. Framework, assemblies e resolução de referências são confirmados durante `B010`; o carregamento na IDE pertence ao `B000`.
 
 [SPR-F24]
 

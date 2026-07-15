@@ -11,6 +11,7 @@
 **Idioma:** Português BR
 **Público principal:** Agentes de IA + mantenedores humanos
 **Data:** Abril/2026
+**Última revisão:** Julho/2026
 
 ---
 
@@ -342,6 +343,8 @@ Registrar:
 - versão GeneXus
 - casos executados
 - falhas encontradas
+
+Para `B010`, centralizar ambiente, descoberta das dependências, comando e resultado do build em `Docs/Implementation/B010-SDK-E-BUILD-MINIMO.md`. Esse registro comprova somente o build mínimo; o carregamento na IDE continua pertencendo a `B000`.
 
 [QA-F15]
 

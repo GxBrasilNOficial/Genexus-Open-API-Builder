@@ -16,6 +16,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Pasta Docs organizada
 - Foundation Docs 00 até 28
 - checkpoint operacional `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`
+- template de evidência reproduzível de `B010` em `Docs/Implementation`
 - consolidação documental da entrevista funcional do MVP
 - README inicial
 - LICENSE MIT
@@ -27,6 +28,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - linha de corte do MVP passa a cobrir exaustivamente os itens necessários aos dez gates
 - Sprints 3–7 distinguem ApiPlan, SDTs, Procedures/API/metadata, REST/segurança e operação conservadora
 - referências de backlog, versões documentais e conflitos no wizard foram alinhadas
+- layout inicial de `Src`, destino das evidências e ambiente-base de `B010` foram explicitados
+- `Docs/Temp` foi protegido contra inclusão acidental no repositório público
 
 ## Planned
 

@@ -9,6 +9,7 @@
 **Idioma:** Português BR
 **Público principal:** mantenedores humanos, colaboradores técnicos e apoio por IA
 **Data:** Abril/2026
+**Última revisão:** Julho/2026
 
 ---
 
@@ -179,6 +180,23 @@ Funções:
 - avisos
 - erros
 - próximos passos
+
+---
+
+## 5.7 Layout inicial do código-fonte
+
+O layout abaixo é o contrato de organização inicial de `Src`. Ele define o destino dos primeiros artefatos sem congelar antecipadamente framework, assemblies ou detalhes de empacotamento que pertencem à investigação de `B010`.
+
+| Caminho | Responsabilidade inicial |
+|---|---|
+| `Src/GenexusOpenApiBuilder.sln` | solution principal do produto |
+| `Src/Extension/GenexusOpenApiBuilder.Extension.csproj` | projeto mínimo da extensão, ponto de entrada na IDE e referências ao Extensibility SDK |
+| `Src/Core/` | orquestração dos casos de uso e contratos internos independentes da UI |
+| `Src/Domain/` | modelos, decisões e invariantes do domínio, incluindo a evolução futura do `ApiPlan` |
+| `Src/Infrastructure/` | adaptadores para SDK, persistência, serialização e demais integrações técnicas |
+| `Src/UI/` | wizard e componentes de interação com o usuário dentro da IDE |
+
+`B010` cria somente a solution e o projeto mínimo em `Extension`. A criação ou separação de projetos adicionais nas demais pastas depende de necessidade comprovada; `B011` confirma e materializa a estrutura interna sem introduzir camadas vazias por obrigação arquitetural.
 
 [AF-F05]
 

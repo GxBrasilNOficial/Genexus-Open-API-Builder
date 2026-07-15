@@ -79,6 +79,10 @@ A fundação estratégica do projeto está em:
 
 Docs/Foundation/
 
+Evidências reproduzíveis da implementação prática ficam em:
+
+Docs/Implementation/
+
 ---
 
 # Filosofia
