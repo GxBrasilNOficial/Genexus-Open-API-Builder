@@ -51,6 +51,7 @@ A criação, leitura e persistência de objetos GeneXus serão tratadas separada
 
 ## Bloqueios e fatos ainda não validados
 
+- B000 está bloqueado: o Platform SDK/PackageBuilder não está disponível localmente e o fluxo oficial de registro exige escrever em `Packages` e executar `/install`, ações proibidas pela regra local de proteção da instalação;
 - compatibilidade prática das APIs do SDK com GeneXus 18 Upgrade 15;
 - comprovação progressiva dos gates técnicos transversais definidos nos documentos 09, 15 e 24.
 
