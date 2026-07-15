@@ -168,7 +168,7 @@ Se existir `apiCliente` sem metadata compatível, a geração deve bloquear.
 
 No MVP, o wizard não permite escolher livremente módulo destino.
 
-Objetos específicos da Transaction ficam no mesmo módulo da Transaction. A organização visual preferencial é associação sob a própria Transaction se o SDK público permitir; o fallback é Folder nativo `NomeDaTransactionOpenApi`.
+Objetos específicos da Transaction ficam no mesmo módulo da Transaction. A organização visual preferencial é associação sob a própria Transaction se o SDK público permitir; o fallback é Folder nativo `NomeDaTransacaoOpenApi`.
 
 Os SDTs compartilhados ficam no `Root Module`, dentro do Folder `GxOpenAPI`.
 

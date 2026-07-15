@@ -172,7 +172,7 @@ O wizard não terá campo de descrição de serviço. As descrições são gerad
 
 | Campo | Default |
 |---|---|
-| Nome API | `api<Transaction>` |
+| Nome API | `api<NomeDaTransacao>` |
 | Services base path | acompanha Nome API até edição manual |
 | RestPath | nome da Transaction em minúsculas separadas por hífen, sem pluralização automática |
 | Módulo | módulo da Transaction, não editável no MVP |

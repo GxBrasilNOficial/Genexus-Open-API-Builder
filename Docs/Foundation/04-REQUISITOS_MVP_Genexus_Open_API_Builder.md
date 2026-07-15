@@ -200,7 +200,7 @@ Exemplos:
 
 Objetos gerados seguem convenção única configurada.
 
-Objetos específicos da Transaction ficam no mesmo módulo da Transaction. Quando o SDK público permitir, devem ser associados visualmente sob ela; no fallback, ficam em Folder nativo `NomeDaTransactionOpenApi`. Objetos compartilhados ficam no `Root Module`, dentro do Folder `GxOpenAPI`.
+Objetos específicos da Transaction ficam no mesmo módulo da Transaction. Quando o SDK público permitir, devem ser associados visualmente sob ela; no fallback, ficam em Folder nativo `NomeDaTransacaoOpenApi`. Objetos compartilhados ficam no `Root Module`, dentro do Folder `GxOpenAPI`.
 
 ---
 

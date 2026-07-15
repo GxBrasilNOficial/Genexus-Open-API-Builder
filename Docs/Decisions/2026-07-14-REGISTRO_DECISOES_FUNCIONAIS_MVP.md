@@ -156,11 +156,11 @@ Uma validação técnica posterior pode exigir revisão de uma decisão. Nesse c
 
 ## Nome do objeto API e Services base path
 
-Para uma Transaction `NomeDaTransaction`:
+Para uma Transaction `NomeDaTransacao`:
 
 ```text
-Objeto API:          apiNomeDaTransaction
-Services base path:  apiNomeDaTransaction
+Objeto API:          apiNomeDaTransacao
+Services base path:  apiNomeDaTransacao
 ```
 
 - Ambos serão visíveis e editáveis no wizard.
@@ -235,7 +235,7 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 - Um spike medirá o impacto real dos objetos adicionais no build; eventual organização alternativa será reconsiderada apenas com evidência.
 - Um spike avaliará associação visual sob a Transaction, semelhante ao nó do WorkWithWeb.
 - A associação só será usada se o SDK público e estável permitir, sem dependência persistente de Pattern.
-- O fallback será uma `Folder` nativa chamada `NomeDaTransactionOpenApi`.
+- O fallback será uma `Folder` nativa chamada `NomeDaTransacaoOpenApi`.
 
 ## Metadados e regeneração
 
@@ -259,7 +259,7 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 - O wizard mostrará, para cada conflito, nome, tipo, módulo e Folder.
 - O MVP não sobrescreverá, adotará, apagará nem acrescentará sufixos automaticamente a objetos preexistentes.
 - O usuário poderá resolver o conflito na KB e executar novamente. Quando somente o nome do objeto `API` conflitar, também poderá alterar esse nome no campo já editável do wizard.
-- Folder preexistente com o nome `NomeDaTransactionOpenApi` no módulo correto poderá ser reutilizado, pois é apenas um contêiner organizacional.
+- Folder preexistente com o nome `NomeDaTransacaoOpenApi` no módulo correto poderá ser reutilizado, pois é apenas um contêiner organizacional.
 - O resumo do wizard informará explicitamente que o Folder existente será reutilizado.
 - Nenhum conteúdo preexistente será movido, alterado nem assumido como pertencente à extensão.
 - Os objetos planejados dentro dele continuarão sujeitos à verificação normal de colisões.
