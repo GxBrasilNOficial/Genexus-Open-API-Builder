@@ -150,6 +150,8 @@ Para este projeto, API REST funcional significa:
 
 Selecionar Transaction válida e iniciar geração da API correspondente.
 
+O núcleo técnico deve aceitar uma coleção de Transactions desde o início, mas o MVP limita cada execução a uma única Transaction selecionada.
+
 ### Critério de aceite
 
 Usuário consegue iniciar geração sem editar código manual.
@@ -168,6 +170,8 @@ Gerar estrutura para:
 ### Critério de aceite
 
 Serviços básicos gerados e prontos para teste inicial em cenário simples, com contrato tipado e delegação via Business Component.
+
+`Business Component` é obrigatório no MVP. Sem BC, a API não é gerada; se a propriedade estiver desabilitada, o wizard pode oferecer habilitação explícita, desmarcada por padrão, e cancelar o wizard não modifica a Transaction.
 
 ### Nota operacional
 
@@ -188,6 +192,8 @@ Exemplos:
 ### Critério de aceite
 
 Objetos gerados seguem convenção única configurada.
+
+Objetos específicos da Transaction ficam no mesmo módulo da Transaction. Quando o SDK público permitir, devem ser associados visualmente sob ela; no fallback, ficam em Folder nativo `NomeDaTransactionOpenApi`. Objetos compartilhados ficam no `Root Module`, dentro do Folder `GxOpenAPI`.
 
 ---
 
@@ -270,13 +276,23 @@ Campos sensíveis aparecem desmarcados por padrão e com alerta; campos de audit
 
 ---
 
+## 8.10 Seleção de campos e filtros no wizard [DP-F04]
+
+O MVP inclui seleção de campos de `CreateRequest`, seleção de campos de `UpdateRequest`, seleção dos filtros de `List`, paginação e ordenação estática.
+
+Campos tecnicamente inadequados devem aparecer desabilitados com motivo. Campos sensíveis elegíveis devem aparecer desmarcados e com alerta. Campos de auditoria seguem política separada.
+
+### Critério de aceite
+
+Usuário consegue revisar campos, filtros e obrigatoriedade no payload antes da geração, sem que campos sejam ocultados ou omitidos silenciosamente.
+
+---
+
 # 9. Funcionalidades Desejáveis (Should Have)
 
 ## 9.1 Seleção de atributos expostos [DP-F04]
 
-Capacidade desejável para versões evoluídas, sem compor a linha mínima obrigatória do MVP.
-
-Permitir escolher campos expostos pela API REST quando a base principal estiver estável.
+Evoluções futuras podem ampliar a seleção com perfis reutilizáveis, templates ou regras avançadas. A seleção inicial de campos de `Create`, `Update` e filtros de `List` já compõe o MVP.
 
 ---
 
@@ -309,11 +325,12 @@ Não entram nesta fase:
 - analytics
 - múltiplos templates complexos
 - suíte corporativa completa
-- revisão manual detalhada de atributos
 - endpoint `Delete`
 - reuso arbitrário de SDTs externos
 - versionamento automático por sufixo `_v2`
 - escolha livre de módulo destino
+- `PATCH`
+- filtros por subnível
 
 [DP-F04]
 
@@ -333,8 +350,8 @@ Primeira geração em cenário simples com baixo atrito operacional.
 
 ## Versão inicial suportada [DP-F04]
 
-- GeneXus 18 Upgrade 14 ou superior
-- Ambiente inicial de validação: GeneXus 18 Upgrade 15
+- GeneXus 18
+- Ambiente inicial e mínimo de validação: GeneXus 18 Upgrade 15
 
 ## Gerador prioritário inicial [DP-F04]
 

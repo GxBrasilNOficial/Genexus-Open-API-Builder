@@ -106,6 +106,9 @@ Ser transparente fortalece mais que prometer demais.
 - naming não perfeito em 100% cenários
 - necessidade de revisão pós-geração
 - cobertura gradual de edge cases
+- uniformidade do corpo de erros produzidos diretamente pelo GAM ou runtime depende de spike
+- distinção nativa entre ausência e valor vazio em JSON é gate técnico obrigatório
+- `Location` no `Create` depende de suporte nativo simples e não justifica solução complexa
 
 [LIM-F23]
 

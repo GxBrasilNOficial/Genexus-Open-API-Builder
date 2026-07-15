@@ -26,6 +26,8 @@ Este documento existe para:
 
 Este documento **não exige metodologia rígida**, **não congela datas**, **não impede adaptação prática**.
 
+As sprints que implementam `List`, contratos HTTP/erros e ciclo de vida devem seguir, respectivamente, `26-CONTRATO_FILTROS_PAGINACAO_ORDENACAO.md`, `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md` e `28-METADATA_REGENERACAO_SINCRONIZACAO_E_REMOCAO.md`.
+
 ---
 
 # 2. Taxonomia
@@ -129,7 +131,10 @@ Fluxo mínimo utilizável.
 ## Entregas
 
 - selecionar Transaction
-- confirmar opções básicas
+- configurar nome do objeto API e Services base path
+- configurar RestPath
+- selecionar serviços, campos de Create/Update e filtros de List
+- configurar paginação, ordenação e Security Level
 - executar geração
 - tela resultado simples
 
@@ -152,7 +157,9 @@ Transformar Transaction em plano interno.
 - ler atributos
 - identificar PK
 - marcar sensíveis
+- reconhecer auditoria operacional por nomes/sufixos específicos
 - módulo alvo
+- montar decisões de filtros, payload, paginação, ordenação e segurança
 - montar ApiPlan
 
 ## Gate
@@ -176,7 +183,10 @@ Gerar primeiros objetos reais.
 - sdtCliente_API_CreateRequest
 - sdtCliente_API_UpdateRequest
 - sdtCliente_API_Response
+- sdtCliente_API_ListFilters
 - sdtCliente_API_ListResponse
+- sdt_API_ErrorResponse
+- sdt_API_Pagination
 - File JSON de metadata
 - logs execução
 
@@ -200,6 +210,9 @@ Gerar serviços base.
 - Get
 - Create
 - Update
+- Create retornando 201
+- Update usando PUT e retornando Response completo
+- ListResponse com `items`, `pagination` e `appliedFilters`
 - validação de ausência de endpoint Delete no MVP
 
 ## Gate
@@ -221,6 +234,8 @@ Garantir contratos próprios e reencontro seguro.
 - criar SDTs próprios
 - reencontrar próprios por metadata
 - bloquear SDT externo em colisão
+- validar SDTs compartilhados no Folder `GxOpenAPI`
+- validar ausência de campos públicos `Specified`
 
 ## Gate
 
@@ -243,6 +258,8 @@ Segurança operacional.
 - Update controlado
 - Cancel seguro
 - rerun consistente
+- sincronização com comparação explícita antes de alterar
+- remoção por comando explícito preservando Folder reutilizado e `GxOpenAPI`
 
 ## Gate
 

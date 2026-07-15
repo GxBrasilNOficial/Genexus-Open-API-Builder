@@ -41,31 +41,54 @@ Esses SDTs pertencem ao gerador e devem ser reencontrados por metadata quando ap
 
 # 3. sdt_API_ErrorResponse
 
-Estrutura mínima:
+Estrutura obrigatória:
 
 - `Code`
 - `Message`
 - `Errors[]`
 
-Cada item de `Errors[]` deve conter, no mínimo:
+Cada item de `Errors[]` deve conter:
 
-- `Field`
+- `Code`
 - `Message`
+- `Field`
 
-`Code` deve ser estável e legível por máquina. Usar `snake_case`.
+Regras:
+
+- `Code` principal é estável, em inglês e `snake_case`
+- códigos principais previstos: `invalid_request`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `validation_error`, `internal_error`
+- `Message` e `Errors[].Message` são legíveis no idioma usado pela aplicação e pela KB
+- a extensão não traduz mensagens produzidas pelo BC
+- `Errors[].Code` preserva o identificador da mensagem do BC quando existir
+- sem identificador do BC, `Errors[].Code` usa `business_rule`
+- `Errors[].Field` usa exatamente o nome público da entrada quando houver associação confiável
+- `Errors[].Field` não expõe variáveis internas de Procedures
+- a extensão não tenta descobrir campo analisando texto de mensagem
+- regras gerais, mensagens sem associação confiável ou regras envolvendo vários campos deixam `Field` vazio
+- não há membro separado `Location` no contrato de erro do MVP
+- não criar `sdt_API_ErrorDetail` separado; `Errors` é subestrutura interna de `sdt_API_ErrorResponse`
 
 ---
 
 # 4. sdt_API_Pagination
 
-Estrutura mínima:
+Estrutura obrigatória dentro da KB:
+
+- `Page`
+- `PageSize`
+- `TotalCount`
+- `TotalPages`
+
+Nomes externos em JSON/OpenAPI:
 
 - `page`
 - `pageSize`
 - `totalCount`
-- `hasNextPage`
+- `totalPages`
 
-Se uma limitação técnica impedir `totalCount` confiável no MVP, o documento de implementação deve declarar a limitação e ajustar testes.
+`TotalCount` é obrigatório e confiável depois da aplicação dos filtros.
+
+`hasNextPage` não integra o contrato do MVP.
 
 ---
 
@@ -74,18 +97,22 @@ Se uma limitação técnica impedir `totalCount` confiável no MVP, o documento 
 | Situação | Status |
 |---|---|
 | Sucesso em `List` | 200 |
-| Sucesso em `Get` | 200 |
-| Sucesso em `Create` | 201 ou 200, conforme viabilidade do API Object validada |
+| `Get` encontrado | 200 |
+| `Get` inexistente | 404 |
+| Sucesso em `Create` | 201 |
 | Sucesso em `Update` | 200 |
 | Request inválido | 400 |
 | Não autenticado | 401 |
 | Não autorizado | 403 |
-| Registro não encontrado | 404 |
-| Conflito de negócio ou concorrência | 409 |
-| Erro de validação de regra de negócio | 422 |
+| Conflito seguramente identificado | 409 |
+| Rejeição por regras de negócio via BC | 422 |
 | Erro inesperado | 500 |
 
 `Update` não deve usar 204 no MVP; deve retornar Response completo.
+
+Se não for possível distinguir com segurança conflito de regra de negócio, usar `422`, não presumir `409`.
+
+O cabeçalho `Location` no `Create` é desejável, mas não obrigatório no MVP. Ele só deve ser gerado se houver suporte nativo simples no GeneXus; não justifica DLL, `External Object` ou solução complexa.
 
 ---
 
@@ -104,18 +131,46 @@ Operações públicas:
 
 # 7. Segurança
 
-Quando a KB usar GAM, o gerador deve explicitar a decisão de segurança por serviço:
+O wizard possui um único campo `Security Level`, aplicado inicialmente a todos os serviços.
 
-- Authentication habilitada
-- Security Level configurado
-- None apenas quando confirmado e coerente com o contexto
+KB com GAM:
+
+- opções `Authentication` e `None`
+- `Authentication` selecionada por padrão
+- `None` exige confirmação explícita
+
+KB sem GAM:
+
+- somente `None`
+- aviso explícito de API sem autenticação
+
+O valor deve ser gravado explicitamente em todos os serviços. O MVP não oferece configuração diferente por serviço.
+
+Autorização detalhada e permissões ficam para evolução posterior.
 
 ---
 
-# 8. Critérios de Aceite
+# 8. Erros Controlados e Runtime
+
+Erros controlados pelas Procedures e pelo objeto `API` usam `sdt_API_ErrorResponse`.
+
+Quando falhas do BC produzirem mensagens:
+
+- o erro principal usa `Code = validation_error`
+- a mensagem principal é um resumo
+- `Errors[]` deriva das mensagens do BC conforme as regras deste documento
+
+Um spike deve verificar se erros interceptados pelo GAM ou pelo runtime antes da Procedure podem preservar o mesmo corpo. A uniformidade nesses casos não é prometida antes dessa validação.
+
+---
+
+# 9. Critérios de Aceite
 
 - erros usam `sdt_API_ErrorResponse`
 - paginação usa `sdt_API_Pagination`
+- `sdt_API_Pagination` contém `TotalPages`, não `hasNextPage`
+- `sdt_API_ErrorResponse` contém `Errors[].Code`, `Errors[].Message` e `Errors[].Field`
 - `Update` retorna 200 com Response completo
+- `Create` retorna 201
 - não há endpoint `Delete` no MVP
 - status de erro são testáveis em cenário simples

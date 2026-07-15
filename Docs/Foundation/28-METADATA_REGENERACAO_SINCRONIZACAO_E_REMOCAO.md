@@ -39,21 +39,35 @@ Objetos pertencem a uma API gerada quando a metadata persistente os identifica c
 
 A metadata deve ser gravada em objeto `File` da KB, em JSON.
 
-Campos mínimos:
+Campos mínimos, conforme aplicável:
 
 - versão do schema
 - Transaction origem
-- módulo origem
-- API Object gerado
-- Procedures geradas
-- SDTs gerados
-- Folder usado
+- módulo da Transaction
+- objeto `API` gerado
+- `Services base path`
 - RestPath
 - serviços habilitados
 - chave primária completa
+- Folder específico usado e indicação de criado ou reutilizado
+- Procedures próprias
+- SDTs próprios
+- SDTs compartilhados usados
+- campos selecionados de `CreateRequest`
+- campos selecionados de `UpdateRequest`
+- obrigatoriedade no payload
+- filtros selecionados
+- operadores de filtros
+- períodos e intervalos configurados
+- paginação padrão e máxima
+- ordenação e direções
+- `Security Level`
+- descrições geradas
 - fingerprint estrutural da Transaction
 - data da geração
 - versão do gerador quando disponível
+- dados necessários para reconhecer propriedade
+- dados necessários para detectar alterações manuais
 
 ---
 
@@ -69,6 +83,8 @@ Na reexecução, o gerador deve:
 
 Metadata ausente, corrompida ou incompatível deve bloquear atualização automática.
 
+Propriedade de objetos nunca deve ser reconhecida apenas pelo nome.
+
 ---
 
 # 5. Regeneração Conservadora
@@ -80,6 +96,8 @@ Não usar `_v2` automático para resolver conflito.
 Não sobrescrever objeto externo com mesmo nome.
 
 Quando houver edição manual detectável, o fluxo deve preservar, bloquear ou pedir decisão explícita, conforme o tipo de divergência.
+
+Antes de qualquer gravação, a extensão deve verificar todos os nomes planejados para a execução. Se houver uma colisão, nenhum objeto planejado deve ser criado ou alterado.
 
 ---
 
@@ -95,11 +113,27 @@ A ação de sincronizar deve comparar:
 
 A sincronização deve reportar impacto antes de alterar qualquer objeto.
 
+O relatório deve cobrir:
+
+- campos adicionados
+- campos removidos
+- campos renomeados
+- mudanças de tipo
+- mudanças de gravabilidade
+- riscos de quebra por novo campo obrigatório ou nova regra aplicável via BC
+- conflitos em SDTs editados manualmente
+
+Nenhuma alteração deve ser aplicada antes da confirmação do usuário.
+
 ---
 
 # 7. Remoção de API Gerada
 
 Remover API gerada é operação de tooling, não endpoint REST.
+
+A remoção ocorre somente pelo comando explícito `Remover API gerada`.
+
+Desinstalar a extensão da IDE não remove objetos da KB.
 
 Ela deve:
 
@@ -108,6 +142,10 @@ Ela deve:
 - remover apenas objetos próprios
 - não remover nem desabilitar a Transaction
 - não reverter automaticamente a propriedade Business Component
+- nunca apagar Folder reutilizado
+- apagar Folder criado pela extensão apenas se ficar vazio
+- preservar Folder criado pela extensão quando contiver objetos alheios
+- preservar os SDTs compartilhados em `GxOpenAPI`
 
 ---
 
@@ -122,6 +160,10 @@ Colisão ocorre quando:
 
 Colisões incompatíveis bloqueiam a geração até decisão explícita.
 
+O MVP não deve sobrescrever, adotar, apagar nem criar sufixos automaticamente para resolver colisão.
+
+Folder preexistente específico da Transaction pode ser reutilizado com aviso. A metadata deve distinguir Folder reutilizado de Folder criado pela extensão.
+
 ---
 
 # 9. Critérios de Aceite
@@ -132,3 +174,6 @@ Colisões incompatíveis bloqueiam a geração até decisão explícita.
 - `_v2` não é criado automaticamente
 - remoção lista e remove apenas objetos próprios
 - Business Component não é revertido pela remoção
+- Folder reutilizado nunca é apagado pela remoção
+- SDTs compartilhados em `GxOpenAPI` permanecem ao remover uma API específica
+- sincronização apresenta comparação antes de alterar qualquer objeto

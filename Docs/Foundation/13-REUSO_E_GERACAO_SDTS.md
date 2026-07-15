@@ -26,6 +26,8 @@ Este documento existe para:
 
 Este documento **não define endpoints REST**, **não trata UX**, **não substitui contrato de metadata**.
 
+O contrato de metadata, regeneração, sincronização e remoção está em `28-METADATA_REGENERACAO_SINCRONIZACAO_E_REMOCAO.md`.
+
 ---
 
 # 2. Taxonomia
@@ -142,27 +144,17 @@ Modo assistido de reuso externo fica pós-MVP.
 
 ---
 
-# 10. Campos Obrigatórios Mínimos
+# 10. Contratos e Responsabilidades
 
-Para considerar compatível:
+Cada SDT próprio tem responsabilidade específica e não deve ser reencontrado por similaridade estrutural externa.
 
-- PK principal
-- campos IsRequired = true
-- campos essenciais de negócio
-- tipos compatíveis
-
-## Exemplo Cliente
-
-- ClienteId
-- ClienteNome
-
-## Campos essenciais de negócio
-
-Preferencialmente:
-
-- nome/descrição principal
-- identificador público
-- atributo central do cadastro
+| SDT | Responsabilidade |
+|------|------------------|
+| `sdt<NomeBase>_API_CreateRequest` | entrada selecionada para criação via BC |
+| `sdt<NomeBase>_API_UpdateRequest` | entrada selecionada para substituição completa via `PUT` |
+| `sdt<NomeBase>_API_Response` | representação pública do registro |
+| `sdt<NomeBase>_API_ListFilters` | filtros reconhecidos e aplicados na resposta |
+| `sdt<NomeBase>_API_ListResponse` | envelope de lista |
 
 [SDT-F13]
 
@@ -183,6 +175,8 @@ Ao criar:
 
 Derivada da metadata da Transaction.
 
+Os SDTs compartilhados `sdt_API_ErrorResponse` e `sdt_API_Pagination` ficam no `Root Module`, no Folder `GxOpenAPI`, conforme documento 27.
+
 [NOM-F11][MD-F08][SDT-F13]
 
 ---
@@ -191,21 +185,75 @@ Derivada da metadata da Transaction.
 
 ## CreateRequest
 
-Preferir campos editáveis.
+Contém somente atributos selecionados no wizard e atribuíveis ao BC antes de `Save()`.
+
+Padrões:
+
+- partes não autonumeradas da chave, atributos armazenados atribuíveis, chaves estrangeiras armazenadas e campos com regra `Default` vêm marcados
+- nullable e opcionais continuam elegíveis
+- chave autonumerada, fórmula, inferido da tabela estendida, redundante automático, subnível e não atribuível via BC ficam desabilitados
+- tipos de mídia/blob definidos no registro ficam desabilitados no MVP
+- campos sensíveis elegíveis ficam desmarcados com alerta
+- auditoria operacional fica desabilitada
+- `Obrigatório no payload` é separado da seleção do membro
+- membro obrigatório ausente retorna `400`
+- membro opcional ausente não é atribuído ao BC
+- vazio, `false` e `0` presentes são atribuídos como recebidos
+- não há campos públicos com sufixo `Specified`
 
 ## UpdateRequest
 
-Preferir campos editáveis, sem PK no corpo quando a chave vier pela rota.
+Representa substituição completa via `PUT`.
+
+Regras:
+
+- chave completa fica no `RestPath`, não no corpo
+- partes da chave aparecem desabilitadas no wizard
+- contém somente atributos selecionados e atribuíveis ao BC carregado
+- campos ordinários graváveis vêm selecionados por padrão
+- auditoria, fórmulas, inferidos, redundantes, subníveis e não atribuíveis ficam desabilitados
+- campos sensíveis elegíveis ficam desmarcados com alerta
+- todos os membros selecionados devem estar presentes
+- ausência de qualquer membro selecionado retorna `400` antes de atribuir ao BC
+- presença obrigatória não significa valor não vazio
+- vazio, `false` e `0` são valores realmente enviados
+- não há `PATCH` no MVP
+- não há campos públicos com sufixo `Specified`
 
 ## Response
 
-Campos públicos úteis.
+Contém todos os atributos do primeiro nível explicitamente declarados na estrutura da Transaction:
+
+- chave completa
+- armazenados
+- inferidos ou da tabela estendida declarados
+- fórmulas e calculados declarados
+- campos somente de leitura
+- campos de auditoria
+
+Não inclui automaticamente atributos alcançáveis pela tabela estendida que não estejam declarados na estrutura. Não inclui subníveis no MVP.
+
+`Get`, `Create`, `Update` e cada item de `List` usam o mesmo `Response`.
+
+## ListFilters
+
+Representa apenas, na resposta, os filtros reconhecidos e aplicados.
+
+Regras:
+
+- não é parâmetro de entrada
+- filtros de entrada continuam parâmetros planos
+- membros nulos significam filtro não aplicado
+- `false`, `0` e string vazia preservam valor informado
+- não devolve campos sensíveis, tokens ou credenciais
 
 ## ListResponse
 
 Nome sempre distinto de Response.
 
 Estrutura deve conter envelope com `items`, `pagination` e `appliedFilters`.
+
+`pagination` usa `sdt_API_Pagination` e `appliedFilters` usa `sdt<NomeBase>_API_ListFilters`.
 
 [SDT-F13]
 

@@ -60,6 +60,7 @@ A arquitetura inicial deve seguir:
 | Operações MVP | List, Get, Create, Update |
 | Delete | Pós-MVP como endpoint; remoção de API gerada é tooling |
 | Camada de execução | API Object delega para Procedures, que usam BC |
+| Configuração no wizard | campos de Create/Update, filtros de List, paginação, ordenação, Security Level, API name, Services base path e RestPath |
 | Gerador prioritário | .NET |
 | Expansão futura | Java |
 
@@ -130,6 +131,9 @@ Funções:
 - artefatos previstos
 - operações pretendidas (`List`, `Get`, `Create`, `Update`)
 - destino no mesmo módulo da Transaction
+- Folder específico da Transaction e SDTs compartilhados em `GxOpenAPI`
+- Services base path e RestPath
+- filtros, paginação, ordenação e Security Level
 - decisões pendentes
 
 ---
@@ -348,6 +352,8 @@ As convenções oficiais pertencem ao documento 11.
 
 Detalhes de pluralização, path final e refinamentos dependem da implementação real.
 
+O `Services base path` do objeto `API` e o `RestPath` dos serviços são conceitos distintos e pertencem ao documento 11. O MVP não pluraliza automaticamente o `RestPath`.
+
 [AF-F05]
 
 ---
@@ -362,6 +368,8 @@ Para Transactions compatíveis com o escopo inicial do MVP, o objetivo funcional
 - `Update`
 
 O API Object deve delegar a execução para Procedures geradas, e essas Procedures devem usar a Transaction como Business Component quando aplicável.
+
+Sem `Business Component`, o MVP não gera a API. `Create` deve retornar `201`; `Update` usa `PUT`, retorna `200` e devolve `Response` completo.
 
 `Delete` fica fora do endpoint REST do MVP. A operação de remover uma API gerada pertence ao ciclo de vida da ferramenta e deve ser tratada por metadata, não como serviço público da API.
 
@@ -392,6 +400,8 @@ Ao rodar novamente:
 ## Regra principal
 
 Nunca sobrescrever silenciosamente e nunca criar variações automáticas por sufixo `_v2` como solução de conflito.
+
+Antes de qualquer gravação, a engine deve verificar todos os nomes planejados. Qualquer colisão incompatível bloqueia a execução inteira.
 
 [DP-F04]
 

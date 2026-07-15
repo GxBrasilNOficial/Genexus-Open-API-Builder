@@ -26,6 +26,8 @@ Este documento existe para:
 
 Este documento **não define UX**, **não redefine naming**, **não impõe tecnologia REST única**.
 
+As regras de `List` seguem `26-CONTRATO_FILTROS_PAGINACAO_ORDENACAO.md`. O contrato HTTP, erros e SDTs compartilhados segue `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md`. O ciclo de vida e metadata seguem `28-METADATA_REGENERACAO_SINCRONIZACAO_E_REMOCAO.md`.
+
 ---
 
 # 2. Taxonomia
@@ -109,7 +111,7 @@ api<NomeBase>
 | List | listar com filtros, paginação e ordenação |
 | Get | buscar por chave simples ou composta |
 | Create | criar via BC |
-| Update | atualizar via BC |
+| Update | substituir via `PUT` usando BC |
 
 ## Regra
 
@@ -161,11 +163,13 @@ Não degradar chave composta para uso parcial.
 | List | serviço criado + retorno ListResponse |
 | Get | serviço criado + chave completa |
 | Create | serviço criado + CreateRequest |
-| Update | serviço criado + chave completa + UpdateRequest |
+| Update | serviço `PUT` criado + chave completa no RestPath + UpdateRequest |
 
 ## Regra
 
-Lógica interna pode variar conforme artefato final.
+Lógica interna deve respeitar os contratos dos documentos 26, 27 e 28.
+
+`List` e `Create` usam o caminho comum dos serviços. `Get` e `Update` acrescentam a chave completa ao `RestPath`.
 
 [API-F12]
 
@@ -201,6 +205,8 @@ Não gerar endpoint `Delete`.
 
 `Update` retorna 200 com Response completo. Contrato completo em `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md`.
 
+`Create` retorna 201. O cabeçalho `Location` é desejável, mas só será gerado se houver suporte nativo simples.
+
 [HP-F12]
 
 ---
@@ -228,6 +234,8 @@ Usar `sdt_API_ErrorResponse`, conforme `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILH
 - sem stack trace público
 - linguagem simples
 - log técnico interno separado
+- usar `Errors[].Code`, `Errors[].Message` e `Errors[].Field` conforme documento 27
+- não tentar associar campo por análise textual da mensagem do BC
 
 [API-F12]
 
@@ -282,6 +290,9 @@ Se objeto já existir:
 | List usa ListResponse com envelope | Sim |
 | Campo senha | desmarcado com alerta |
 | PK composta | suportada sem degradação parcial |
+| Update | usa PUT e chave completa no RestPath |
+| Create | retorna 201 |
+| Erro BC | usa 422 salvo conflito seguramente identificado |
 
 [API-F12]
 

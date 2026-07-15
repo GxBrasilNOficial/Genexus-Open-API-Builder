@@ -47,6 +47,8 @@ Transformar uma Transaction em base REST utilizável, gerando:
 - Procedures de apoio
 - SDTs próprios de Create, Update, Response, filtros e lista
 - serviços `List`, `Get`, `Create` e `Update`
+- seleção de campos de Create/Update e filtros de List
+- paginação, ordenação e contrato HTTP uniforme
 - naming consistente
 - metadata persistente para regeneração conservadora
 
@@ -111,6 +113,7 @@ Transaction GeneXus.
 - ApiPlan
 - regras naming
 - contratos próprios
+- contratos transversais de filtros, paginação, erros e metadata
 - engine geração
 - metadata e política de conflito
 
@@ -129,6 +132,9 @@ Inclui:
 - wizard inicial
 - geração dentro IDE
 - rerun seguro
+- metadata em objeto `File`
+- bloqueio de colisões sem sufixos automáticos
+- remoção por comando explícito, sem remover objetos alheios
 - logs básicos
 
 Não inclui promessa de cobrir todos cenários imediatamente.

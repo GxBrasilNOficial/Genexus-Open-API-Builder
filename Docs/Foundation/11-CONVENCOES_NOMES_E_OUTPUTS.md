@@ -104,6 +104,10 @@ api<NomeBase>
 
 Primeira escolha oficial no MVP.
 
+O nome do objeto `API` é visível e editável no wizard.
+
+O `Services base path` começa com o mesmo valor do objeto `API`, também é visível e editável, e acompanha o nome do objeto enquanto não tiver sido alterado manualmente. Depois de alterado manualmente, deve ser preservado e gravado explicitamente no objeto `API`.
+
 [NOM-F11]
 
 ---
@@ -160,6 +164,10 @@ Se existir `apiCliente` sem metadata compatível, a geração deve bloquear.
 
 No MVP, o wizard não permite escolher livremente módulo destino.
 
+Objetos específicos da Transaction ficam no mesmo módulo da Transaction. A organização visual preferencial é associação sob a própria Transaction se o SDK público permitir; o fallback é Folder nativo `NomeDaTransactionOpenApi`.
+
+Os SDTs compartilhados ficam no `Root Module`, dentro do Folder `GxOpenAPI`.
+
 [NOM-F11]
 
 ---
@@ -168,7 +176,7 @@ No MVP, o wizard não permite escolher livremente módulo destino.
 
 ## Estratégia MVP
 
-Usar RestPath singular, hifenizado quando necessário, sem pluralização automática e sem prefixo `/api` implícito.
+Usar o campo `Caminho comum dos serviços (RestPath)`, hifenizado quando necessário, sem pluralização automática e sem prefixo `/api` implícito.
 
 ## Regras
 
@@ -185,6 +193,10 @@ Usar RestPath singular, hifenizado quando necessário, sem pluralização autom�
 - converter para minúsculas
 - separar palavras por hífen quando necessário
 - não pluralizar
+
+`List` e `Create` usam o caminho comum diretamente. `Get` e `Update` acrescentam todas as partes da chave no `RestPath`, preservando ordem e tipos.
+
+O `Services base path` não é o mesmo conceito que o `RestPath`: o primeiro participa da base exposta pelo objeto `API`; o segundo é o caminho comum dos serviços.
 
 [NOM-F11]
 

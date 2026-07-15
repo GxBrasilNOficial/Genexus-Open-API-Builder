@@ -40,21 +40,34 @@ Não faz parte do MVP:
 - linguagem dinâmica de consulta
 - filtros por subnível
 - ordenação arbitrária informada por string livre
+- parâmetros públicos `sortBy` ou `sortDirection`
 - busca textual global
 
 ---
 
 # 3. Elegibilidade de Atributos
 
-Um atributo só pode participar de filtros quando:
+O wizard deve mostrar os atributos do primeiro nível da Transaction como candidatos a filtro.
+
+Regras:
 
 - pertence ao primeiro nível da Transaction
-- é legível via Business Component
 - tem tipo suportado pelo contrato de filtros
-- não é campo interno de auditoria bloqueado por configuração da KB
-- não é atributo inferido ou redundante sem leitura confiável no contexto do BC
+- atributos de subníveis não são oferecidos no MVP
+- atributos tecnicamente inadequados aparecem desabilitados, com motivo
+- atributos `LongVarChar`, `Image`, `Audio`, `Video` e tipos ainda não validados aparecem desabilitados
+- tipos disponíveis somente no GeneXus Next, como `Embedding`, permanecem desabilitados até validação específica
+- `DateTime` com `DateFormat = None` usa somente igualdade no MVP
 
-Campos sensíveis podem existir como candidatos, mas devem iniciar desmarcados e com alerta explícito.
+Padrões de seleção:
+
+- todas as partes da chave primária vêm marcadas por padrão
+- o `Description Attribute`, quando existir, vem marcado por padrão
+- os demais atributos vêm desmarcados
+- campos de auditoria operacional podem ser filtros, mas vêm desmarcados por padrão
+- campos sensíveis elegíveis vêm desmarcados e com alerta explícito
+
+Campos sensíveis, tokens e credenciais nunca devem ser devolvidos em `appliedFilters`.
 
 ---
 
@@ -62,34 +75,63 @@ Campos sensíveis podem existir como candidatos, mas devem iniciar desmarcados e
 
 ## Texto
 
-Operadores mínimos:
+Operadores disponíveis:
 
-- igual
-- contém
-- começa com
+- `Igual`
+- `Contém`
+- `Começa com`
+
+Regras:
+
+- cada atributo textual usa um único operador
+- chaves primárias textuais usam `Igual` por padrão
+- demais textos usam `Contém` por padrão
+- o parâmetro público preserva o nome do atributo
+- `Termina com` não integra o MVP
+- a extensão não promete busca indiferente a maiúsculas e minúsculas; o comportamento segue DBMS e collation
 
 ## Numérico
 
-Operadores mínimos:
+Regras:
 
-- igual
-- maior ou igual
-- menor ou igual
-- intervalo
+- chaves primárias numéricas usam somente `Igual`
+- chaves estrangeiras numéricas usam somente `Igual`
+- domínios enumerados usam somente `Igual`, mesmo quando o tipo físico for numérico
+- demais numéricos usam `Igual` por padrão
+- demais numéricos podem receber `Usar intervalo`, desmarcado por padrão, quando aplicável
+
+Quando `Usar intervalo` estiver marcado:
+
+- gerar parâmetros opcionais e independentes `NomeDoAtributoMin` e `NomeDoAtributoMax`
+- os limites são inclusivos
+- `Min` maior que `Max` retorna `400 Bad Request`
+- igualdade e intervalo não são usados simultaneamente para o mesmo atributo
 
 ## Data e DateTime
 
-Operadores mínimos:
+Regras:
 
-- data inicial
-- data final
-- período fechado
+- `Date` e `DateTime` podem receber a opção `Usar período`
+- `Usar período` vem marcado por padrão quando o campo for selecionado como filtro
+- o usuário pode desmarcar para gerar igualdade direta
+- limites `From` e `To` são opcionais e independentes
+- período com início posterior ao fim retorna `400 Bad Request`
+- parâmetros preservam o nome do atributo com sufixos `From` e `To`
+- período de `DateTime` usa parâmetros públicos do tipo `Date`
+- em `DateTime`, o período considera somente a parte da data
+- para `Date`, início e fim são inclusivos
+- para `DateTime`, o início é o começo do dia e o limite final é exclusivo, correspondente ao começo do dia seguinte
+- limites efetivamente aplicados aparecem em `appliedFilters` como datas `YYYY-MM-DD`
 
-## Boolean
+Se `Usar período` for desmarcado, haverá apenas o parâmetro com o nome e tipo originais do atributo para igualdade direta.
 
-Operador mínimo:
+## Boolean, Guid e enumerados
 
-- igual
+Regras:
+
+- usam somente `Igual`
+- não recebem intervalo nem operadores textuais
+- preservam o tipo e os valores definidos pelo domínio enumerado
 
 ---
 
@@ -102,24 +144,37 @@ Parâmetros públicos mínimos:
 
 Regras:
 
-- `page` inicia em 1
-- `pageSize` deve respeitar valor padrão e valor máximo definidos na configuração da geração
-- valores inválidos retornam erro de validação
+- `page` tem padrão fixo `1`
+- `page` não é campo configurável no wizard do MVP
+- `Default Page Size` é editável no wizard e inicia em `50`
+- `Maximum Page Size` é editável no wizard e inicia em `200`
+- a validação exige `1 <= Default Page Size <= Maximum Page Size`
+- `page` abaixo de `1` retorna `400 Bad Request`
+- `pageSize` abaixo de `1` retorna `400 Bad Request`
+- `pageSize` acima do máximo configurado retorna `400 Bad Request`
+- a API não reduz `pageSize` silenciosamente
+- paginação não pode ser desativada no MVP
+- valores configurados são preservados na metadata
 
-O envelope de resposta deve incluir dados suficientes para o consumidor entender a página retornada.
+O envelope usa `sdt_API_Pagination`, definido no documento 27, com `Page`, `PageSize`, `TotalCount` e `TotalPages`.
 
 ---
 
 # 6. Ordenação
 
-A ordenação deve ser determinística.
+Ordenação é estática, definida no wizard e preservada na metadata.
 
-Regra mínima:
+Regras:
 
-- usar ordenação estática definida pela geração
-- aplicar desempate por chave primária completa
+- o usuário pode selecionar zero, um ou vários atributos ordenáveis
+- cada atributo selecionado tem direção ascendente ou descendente
+- o padrão é a chave primária completa, na ordem da Transaction, ascendente
+- a ordem no wizard define prioridade de ordenação
+- se o usuário escolher outra ordenação, partes ausentes da chave primária são acrescentadas ao final como desempate ascendente
+- se nenhum atributo for selecionado, usa-se a chave primária completa ascendente
+- não há `sortBy` nem `sortDirection` públicos no MVP
 
-Não usar ordenação dinâmica por string livre no MVP.
+`totalCount` deve ser confiável e representar o total depois da aplicação dos filtros.
 
 ---
 
@@ -135,28 +190,45 @@ Não usar ordenação dinâmica por string livre no MVP.
 
 `pagination` deve usar contrato compartilhado documentado em `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md`.
 
-`appliedFilters` deve refletir os filtros aceitos e efetivamente aplicados, sem inventar filtros omitidos pelo request.
+`appliedFilters`:
+
+- usa o SDT específico `sdtNomeDaTransacao_API_ListFilters`
+- confirma somente filtros reconhecidos e aplicados
+- mantém membros nulos quando o filtro não foi aplicado
+- preserva `false`, `0` e string vazia como valores informados
+- não é parâmetro de entrada
+- não devolve campos sensíveis, tokens ou credenciais
+
+Os filtros de entrada permanecem parâmetros planos da query string.
+
+Lista válida sem resultados retorna `200 OK`, coleção vazia e totais zero, nunca `404`.
 
 ---
 
 # 8. Ausência vs Valor Vazio
 
-A geração deve distinguir:
+A geração de filtros opcionais deve distinguir:
 
-- membro ausente
-- membro presente com string vazia
-- membro presente com `false`
-- membro presente com `0`
+- parâmetro ausente
+- parâmetro presente com string vazia
+- parâmetro presente com `false`
+- parâmetro presente com `0`
 
 Não usar campos auxiliares `Specified` no contrato público do MVP.
+
+Essa distinção é gate técnico obrigatório. Ela não pode depender apenas de `IsEmpty()`. O spike deve validar como o objeto `API` informa a presença do parâmetro e, se necessário, avaliar recursos HTTP nativos do GeneXus sem alterar o tipo público nem recorrer a DLL.
 
 ---
 
 # 9. Critérios de Aceite
 
 - `List` compila e executa em cenário simples
+- filtros oferecidos vêm somente do primeiro nível
+- chaves primárias vêm marcadas por padrão
 - filtros aceitos aparecem em `appliedFilters`
 - filtros omitidos não são tratados como valores enviados
 - `false`, `0` e string vazia não são confundidos com ausência
-- paginação respeita padrão e limite máximo
+- paginação respeita padrão e limite máximo sem redução silenciosa
+- `totalCount` e `totalPages` estão corretos
 - ordenação é estável entre chamadas equivalentes
+- não há filtros por subnível

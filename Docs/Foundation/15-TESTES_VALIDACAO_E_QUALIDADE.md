@@ -26,6 +26,8 @@ Este documento existe para:
 
 Este documento **não define roadmap**, **não substitui QA humano**, **não trata marketing**.
 
+Os testes de `List` devem cobrir o contrato de `26-CONTRATO_FILTROS_PAGINACAO_ORDENACAO.md`. Os testes de HTTP, erros e SDTs compartilhados devem cobrir `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md`. Os testes de metadata, regeneração, sincronização e remoção devem cobrir `28-METADATA_REGENERACAO_SINCRONIZACAO_E_REMOCAO.md`.
+
 ---
 
 # 2. Taxonomia
@@ -87,9 +89,13 @@ No MVP:
 - naming base
 - bloqueio de `_v2` automático
 - RestPath singular sem pluralização automática
+- distinção entre `Services base path` e RestPath
 - classificação explícita de sensíveis/auditoria
 - reencontro de SDT próprio por metadata
 - decisão Safe / Update / Cancel
+- seleção de filtros, operadores, períodos e intervalos conforme documento 26
+- cálculo de `totalCount` e `totalPages`
+- distinção entre ausência, string vazia, `false` e `0`
 
 ## Resultado esperado
 
@@ -129,7 +135,10 @@ Validar geração de:
 - sdtCliente_API_CreateRequest
 - sdtCliente_API_UpdateRequest
 - sdtCliente_API_Response
+- sdtCliente_API_ListFilters
 - sdtCliente_API_ListResponse
+- sdt_API_ErrorResponse
+- sdt_API_Pagination
 
 ## Validar rotas
 
@@ -137,6 +146,9 @@ Validar geração de:
 - Get
 - Create
 - Update
+- Create com status 201
+- Update com PUT e status 200
+- List sem resultados com 200, coleção vazia e totais zero
 
 Não deve existir endpoint `Delete` no MVP.
 
@@ -161,6 +173,12 @@ SDT externo incompatível deve bloquear se colidir.
 ## Sensível
 
 Campos senha/token devem iniciar desmarcados com alerta.
+
+## Contratos compartilhados
+
+`sdt_API_ErrorResponse` deve conter `Code`, `Message` e `Errors[]` com `Code`, `Message` e `Field`.
+
+`sdt_API_Pagination` deve conter `Page`, `PageSize`, `TotalCount` e `TotalPages`.
 
 [SDT-F13][QA-F15]
 
@@ -203,6 +221,9 @@ Gerar duas vezes mesma Transaction.
 - KB sem permissão
 - metadata incompleta
 - nome inválido
+- `page` ou `pageSize` inválidos
+- filtro ou período inválido
+- membro obrigatório ausente em Create ou Update
 
 ## Resultado esperado
 
@@ -221,6 +242,8 @@ Erro claro + sem lixo técnico novo.
 | Dependência oculta crítica | Não |
 | Duplicação extrema | Não |
 | Campos sensíveis expostos | Não |
+| Campos públicos `Specified` | Não |
+| Stack trace público em erro | Não |
 
 [QA-F15]
 

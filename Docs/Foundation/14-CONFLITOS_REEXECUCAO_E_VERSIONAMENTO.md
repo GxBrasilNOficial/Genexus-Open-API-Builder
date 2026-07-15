@@ -26,6 +26,8 @@ Este documento existe para:
 
 Este documento **não define SDK**, **não trata UX detalhada**, **não redefine naming base**.
 
+O contrato de metadata, regeneração, sincronização e remoção está em `28-METADATA_REGENERACAO_SINCRONIZACAO_E_REMOCAO.md`.
+
 ---
 
 # 2. Taxonomia
@@ -169,11 +171,9 @@ Migrar para Safe.
 
 # 11. Ownership Compatível
 
-Considerar objeto atualizável quando ao menos um:
+Considerar objeto atualizável somente quando a metadata persistente identifica o objeto como pertencente à mesma API gerada e à mesma Transaction.
 
-- criado previamente pelo gerador
-- metadata persistente identifica origem
-- módulo alvo coincide e estrutura compatível
+Nome, módulo coincidente ou estrutura semelhante não bastam para assumir propriedade.
 
 ## Se não atender
 
@@ -207,6 +207,8 @@ Nova geração para mesma Transaction deve:
 - respeitar modo escolhido
 - manter previsibilidade
 - registrar se atualizou, bloqueou ou removeu
+- comparar explicitamente metadata, fingerprint e objetos próprios antes de sincronizar
+- não alterar objeto algum antes de confirmação quando houver impacto material
 
 [CFG-F14]
 
@@ -234,6 +236,8 @@ Não há versionamento automático por sufixo no MVP.
 ## Regra
 
 Não usar `_v2`, datas aleatórias ou GUID como solução automática de conflito.
+
+Também não adotar, sobrescrever ou apagar objeto externo automaticamente.
 
 ## Motivo
 
@@ -281,6 +285,8 @@ Registrar:
 | serviço ausente em objeto próprio + Update | tenta completar |
 | dúvida estrutural + Update | bloqueia |
 | falha parcial | loga incompleta |
+| Folder reutilizado | preserva na remoção |
+| SDTs compartilhados `GxOpenAPI` | preserva ao remover API específica |
 
 [CFG-F14]
 

@@ -235,8 +235,11 @@ Se a criação de API Objects via Extensibility SDK não for tecnicamente viáve
 
 Se update for arriscado:
 
-- criar novo objeto versionado
+- bloquear a atualização antes de gravar
 - manter existente intacto
+- informar a divergência para decisão manual
+
+O MVP não cria novo objeto versionado nem sufixos automáticos para resolver colisão.
 
 [HP-F09][SDK-F09]
 

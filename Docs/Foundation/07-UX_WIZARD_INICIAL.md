@@ -91,10 +91,10 @@ Evitar:
 ## Obrigatório no MVP
 
 - menu contextual de Transaction
+- menu principal com seleção nativa filtrada para Transaction e seleção única
 
 ## Opcional pós-MVP
 
-- menu Tools
 - botão contextual dedicado
 
 ## Nome inicial da ação
@@ -156,39 +156,53 @@ Wizard com etapas mínimas e possibilidade de subdivisão visual conforme a impl
 | Campo | Obrigatório |
 |---|---|
 | Nome da API | Sim |
-| RestPath | Sim |
+| Services base path | Sim |
+| Caminho comum dos serviços (RestPath) | Sim |
 | Serviços `List/Get/Create/Update` | Sim |
-| Filtros e paginação | Sim |
-| Security Level/GAM | Sim quando aplicável |
+| Campos de Create e Update | Sim |
+| Filtros de List | Sim |
+| Paginação e ordenação | Sim |
+| Security Level | Sim |
 
 ## Valores padrão
 
 | Campo | Default |
 |---|---|
 | Nome API | `api<Transaction>` |
+| Services base path | acompanha Nome API até edição manual |
+| RestPath | nome da Transaction em minúsculas separadas por hífen, sem pluralização automática |
 | Módulo | módulo da Transaction, não editável no MVP |
 | Serviços | List/Get/Create/Update habilitados |
+| Default Page Size | 50 |
+| Maximum Page Size | 200 |
+| Ordenação | chave primária completa ascendente |
 
 ## Aviso de Segurança
 
-Campos sensíveis comuns começam desmarcados e com alerta explícito:
+Campos sensíveis elegíveis começam visíveis, desmarcados e com alerta explícito.
 
 - senha
 - hash
 - auditoria interna segue política separada
 
+Campos tecnicamente inadequados aparecem desabilitados, com motivo. Campos de auditoria operacional aparecem desabilitados nos Requests e podem aparecer como filtros desmarcados por padrão.
+
 ## SDTs
 
 O MVP não oferece reuso arbitrário de SDTs externos. O wizard pode mostrar apenas contratos próprios reencontrados por metadata.
 
-- Cancelar, ajustar o SDT antigo e tentar novamente
-- Desmarcar a opção e permitir que o gerador crie SDTs novos
+Colisão com SDT externo de mesmo nome bloqueia a geração até o usuário resolver na KB e executar novamente.
 
-## Revisão Manual de Campos
+## Revisão de Campos
 
-Não faz parte do MVP v1.0.
+Faz parte do MVP:
 
-Planejado para versão futura.
+- seleção de campos de `CreateRequest`
+- seleção de campos de `UpdateRequest`
+- campo visível `Obrigatório no payload`
+- seleção de filtros de `List`
+- escolha de operador/período/intervalo conforme `26-CONTRATO_FILTROS_PAGINACAO_ORDENACAO.md`
+- seleção de ordenação estática
 
 ## Ações
 
@@ -207,12 +221,13 @@ Se nome já existir ou objeto conflitar:
 | Opção | Resultado |
 |---|---|
 | Atualizar existente | usa metadata para atualizar objeto próprio |
-| Gerar novo nome | sugere sufixo |
 | Cancelar | aborta fluxo |
 
 ## Regra
 
 Nunca sobrescrever silenciosamente.
+
+O MVP não cria sufixos automáticos, não adota objeto externo e não altera nenhum objeto planejado se houver colisão incompatível.
 
 [AF-F05][UX-F07]
 
@@ -224,9 +239,14 @@ Nunca sobrescrever silenciosamente.
 
 - Transaction escolhida
 - Nome API
+- Services base path
+- RestPath
 - Módulo destino
-- Estratégia SDT
+- Folder específico da Transaction
+- SDTs compartilhados em `GxOpenAPI`
 - Possíveis objetos a criar
+- campos e filtros selecionados
+- paginação, ordenação e `Security Level`
 
 ## Botões
 
@@ -263,7 +283,8 @@ Mensagem principal:
 - objetos atualizados
 - tempo total
 - avisos
-- campos sensíveis comuns foram omitidos automaticamente
+- campos sensíveis selecionados ou mantidos desmarcados
+- colisões ou itens que exigem ação manual
 - botão Abrir objeto principal
 
 ## Estado parcial

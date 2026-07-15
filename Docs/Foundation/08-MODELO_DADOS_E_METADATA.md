@@ -26,6 +26,8 @@ Este documento existe para:
 
 Este documento **não define banco externo**, **exige metadata persistente em objeto File**, **não substitui F04-F07**.
 
+As decisões internas de filtros, paginação e ordenação devem seguir `26-CONTRATO_FILTROS_PAGINACAO_ORDENACAO.md`.
+
 ---
 
 # 2. Taxonomia
@@ -166,6 +168,13 @@ No MVP, preferir:
 | IsRedundant | boolean |
 | IsAutonumber | boolean |
 | IsFilterEligible | boolean |
+| FilterOperator | texto |
+| UsesPeriod | boolean |
+| UsesRange | boolean |
+| IsPayloadRequired | boolean |
+| IsSelectedForCreate | boolean |
+| IsSelectedForUpdate | boolean |
+| IsSelectedForResponse | boolean |
 | DomainName | texto |
 
 ## Exemplos DataType
@@ -202,16 +211,24 @@ Classificar sensibilidade e auditoria por configuração explícita da KB, com n
 - token
 - secret
 
-## Auditoria inicial
+## Auditoria operacional inicial
 
-- audituser
-- auditdate
-- createdat
-- updatedat
+- InclusaoDataHora
+- InclusaoUsuarioId
+- InclusaoUsuarioNome
+- UltimaAtualizacaoDataHora
+- UltimaAtualizacaoUsuarioId
+- UltimaAtualizacaoUsuarioNome
 
 ## Regra MVP
 
-Campos sensíveis não devem ser omitidos silenciosamente. Eles entram desmarcados por padrão e com alerta no wizard. Campos de auditoria têm política separada.
+Campos sensíveis não devem ser omitidos silenciosamente. Eles entram desmarcados por padrão e com alerta no wizard.
+
+Campos de auditoria operacional são reconhecidos por nomes exatos ou sufixos suficientemente específicos. Fragmentos genéricos como `Atualizacao`, `ResumoAtualizacao`, `Usuario` ou `DataHora` não devem ser usados isoladamente.
+
+Campos de auditoria ficam desabilitados em `CreateRequest` e `UpdateRequest`, entram normalmente no `Response` e podem ser filtros de `List`, desmarcados por padrão.
+
+Campos de origem de migração não são auditoria operacional. Um campo como `PessoaOrigemResumoAtualizacao` continua candidato normal a `CreateRequest` e `UpdateRequest` quando atribuível via BC.
 
 [HP-F08][MD-F08]
 
@@ -251,12 +268,21 @@ Campos sensíveis não devem ser omitidos silenciosamente. Eles entram desmarcad
 | ModuleTarget | texto |
 | GeneratorTarget | texto |
 | ApiName | texto |
+| ServicesBasePath | texto |
+| RestPath | texto |
 | ProcedureNames | lista texto |
 | CreateRequestSdtName | texto |
 | UpdateRequestSdtName | texto |
 | ResponseSdtName | texto |
 | ListFiltersSdtName | texto |
 | ListResponseSdtName | texto |
+| SharedSdtNames | lista texto |
+| TransactionFolderName | texto |
+| TransactionFolderWasCreated | boolean |
+| SecurityLevel | texto |
+| DefaultPageSize | número |
+| MaximumPageSize | número |
+| StaticOrder | lista |
 | EndpointsCount | número |
 | MetadataFileName | texto |
 
@@ -287,7 +313,6 @@ Os serviços são `List`, `Get`, `Create` e `Update`. `Delete` é pós-MVP como 
 |---|---|
 | ObjectName | texto |
 | ConflictType | texto |
-| SuggestedName | texto |
 | CanUpdate | boolean |
 
 ## Tipos iniciais
@@ -295,10 +320,13 @@ Os serviços são `List`, `Get`, `Create` e `Update`. `Delete` é pós-MVP como 
 - NameAlreadyExists
 - InvalidName
 - ModuleBlocked
+- ExternalObjectCollision
+- IncompatibleMetadata
 
 ## Uso
 
 - painel de conflitos no passo 2
+- bloquear execução sem sugerir sufixo automático
 
 [AF-F05][UX-F07][MD-F08]
 
@@ -346,6 +374,8 @@ Os serviços são `List`, `Get`, `Create` e `Update`. `Delete` é pós-MVP como 
 - histórico complexo
 
 O contrato detalhado de metadata, regeneração, sincronização e remoção está em `28-METADATA_REGENERACAO_SINCRONIZACAO_E_REMOCAO.md`.
+
+Esta metadata deve preservar também as decisões de campos selecionados, obrigatoriedade no payload, filtros, operadores, períodos, paginação, ordenação, `Services base path`, `RestPath`, `Security Level`, descrições e indicação de Folder criado ou reutilizado.
 
 [MD-F08]
 

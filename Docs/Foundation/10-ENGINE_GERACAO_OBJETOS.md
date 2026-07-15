@@ -79,6 +79,8 @@ Receber `ApiPlan`.
 |------|-----|
 | TransactionName | base da geração |
 | ApiName | objeto principal |
+| ServicesBasePath | propriedade Services base path do objeto API |
+| RestPath | caminho comum dos serviços |
 | ModuleTarget | destino |
 | GeneratorTarget | .NET / Java |
 | ProcedureNames | Procedures de execução |
@@ -87,6 +89,11 @@ Receber `ApiPlan`.
 | ResponseSdtName | saída |
 | ListFiltersSdtName | filtros de List |
 | ListResponseSdtName | envelope de List |
+| SharedSdtNames | SDTs compartilhados em `GxOpenAPI` |
+| SecurityLevel | valor aplicado aos serviços |
+| DefaultPageSize | paginação padrão |
+| MaximumPageSize | limite máximo de paginação |
+| StaticOrder | ordenação definida no wizard |
 | MetadataFileName | metadata persistente |
 | ConflictMode | tratar colisões |
 | ReexecutionMode | safe/update/cancel |
@@ -95,6 +102,8 @@ Receber `ApiPlan`.
 ## Regra
 
 Sem contrato mínimo válido, a engine não inicia.
+
+O contrato de filtros, paginação e ordenação é detalhado em `26-CONTRATO_FILTROS_PAGINACAO_ORDENACAO.md`. O contrato HTTP, erros e SDTs compartilhados é detalhado em `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md`. O contrato de metadata, regeneração, sincronização e remoção é detalhado em `28-METADATA_REGENERACAO_SINCRONIZACAO_E_REMOCAO.md`.
 
 [MD-F08][ENG-F10]
 
@@ -151,6 +160,7 @@ ApiPlan recebido
 → validar entrada
 → resolver conflitos
 → montar ResolvedGenerationPlan
+→ verificar todos os nomes planejados
 → criar dependências (SDTs)
 → criar Procedures
 → criar API Object
@@ -173,6 +183,9 @@ Verificar:
 - metadata mínima disponível
 - capacidade de criar objeto no destino
 - capacidade de salvar via SDK
+- `Business Component` habilitado ou autorização explícita para habilitar
+- `Security Level`, paginação, ordenação, RestPath e Services base path resolvidos
+- ausência de colisão em qualquer nome planejado
 
 ## Se falhar
 
@@ -279,11 +292,14 @@ Conflito = colisão pontual de nome/objeto durante execução atual.
 | Nome esperado existe sem metadata compatível | abortar |
 | Objeto próprio reconhecido por metadata | atualizar conservadoramente |
 | Metadata ausente ou corrompida | abortar |
+| Qualquer colisão entre nomes planejados | abortar antes de gravar |
 | Dúvida | pedir decisão usuário |
 
 ## MVP conservador
 
 Preferir abortar a sobrescrever.
+
+O MVP não sobrescreve, adota, apaga nem cria sufixo automaticamente para objetos preexistentes.
 
 [ENG-F10]
 

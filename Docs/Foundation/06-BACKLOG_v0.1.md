@@ -135,10 +135,12 @@ Se B004 falhar sem alternativa oficial viável:
 |---|---|---|
 | B030 | Passo 1 selecionar Transaction | Alta |
 | B031 | Passo 2 selecionar serviços, campos e filtros essenciais | Alta |
-| B032 | Passo 3 revisar segurança, paginação, ordenação e RestPath | Alta |
+| B032 | Passo 3 revisar segurança, paginação, ordenação, Services base path e RestPath | Alta |
 | B033 | Validar campos obrigatórios | Alta |
 | B034 | Cancelamento seguro | Média |
 | B035 | Bloquear geração sem BC ou oferecer habilitação explícita | Alta |
+| B036 | Exibir campos tecnicamente inadequados desabilitados com motivo | Alta |
+| B037 | Configurar `Obrigatório no payload` para Create e Update | Alta |
 
 ---
 
@@ -152,6 +154,7 @@ Se B004 falhar sem alternativa oficial viável:
 | B043 | Gerar `sdt<Nome>_API_ListFilters` | Alta |
 | B044 | Gerar `sdt<Nome>_API_ListResponse` com envelope | Alta |
 | B045 | Gerar/reencontrar SDTs compartilhados em `GxOpenAPI` | Alta |
+| B046 | Validar `sdt_API_ErrorResponse` e `sdt_API_Pagination` conforme documento 27 | Alta |
 
 ---
 
@@ -177,6 +180,8 @@ Se B004 falhar sem alternativa oficial viável:
 | B062 | Aplicar nomenclatura padrão | Alta |
 | B063 | Detectar colisões por metadata e por nome | Alta |
 | B064 | Bloquear colisões incompatíveis sem criar `_v2` | Alta |
+| B065 | Gravar Services base path, RestPath, campos, filtros, paginação, ordenação e Security Level na metadata | Alta |
+| B066 | Diferenciar Folder específico criado de Folder reutilizado | Alta |
 
 ---
 
@@ -187,9 +192,11 @@ Se B004 falhar sem alternativa oficial viável:
 | B070 | Gerar `List` com filtros, paginação e ordenação determinística | Alta |
 | B071 | Gerar `Get` por chave simples ou composta | Alta |
 | B072 | Gerar `Create` | Alta |
-| B073 | Gerar `Update` com resposta 200 completa | Alta |
+| B073 | Gerar `Update` com `PUT` e resposta 200 completa | Alta |
 | B074 | Gerar paths e operationIds conforme convenção | Alta |
 | B075 | Validar ausência de endpoint `Delete` no MVP | Alta |
+| B076 | Distinguir parâmetro ausente de `false`, `0` e string vazia | Alta |
+| B077 | Retornar paginação com `totalCount` e `totalPages` confiáveis | Alta |
 
 ### Nota operacional
 
@@ -218,7 +225,7 @@ Se B004 falhar sem alternativa oficial viável:
 | B090 | Classificar sensíveis por configuração explícita | Alta |
 | B091 | Classificar auditoria separadamente | Alta |
 | B092 | Configurar Security Level e GAM/None quando aplicável | Alta |
-| B093 | Permitir revisão manual de campos no wizard | Média |
+| B093 | Aplicar Security Level explicitamente em todos os serviços | Alta |
 
 ---
 
@@ -238,6 +245,8 @@ Se B004 falhar sem alternativa oficial viável:
 | B072 | Existe `Create` funcional |
 | B073 | Existe `Update` funcional com HTTP 200 e Response completo |
 | B075 | Não existe endpoint `Delete` no MVP |
+| B076 | Filtros distinguem ausência de valores válidos `false`, `0` e string vazia |
+| B077 | ListResponse retorna `items`, `pagination` e `appliedFilters` |
 | B080 | Menu/contexto acessível dentro IDE |
 | B081 | Relatório lista criados/atualizados |
 
