@@ -17,6 +17,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - base documental publicada na branch `main`;
 - `B010` concluído: SDK localizado, solution e projeto mínimo criados e build reproduzível validado.
 - `B011` concluído: estrutura interna confirmada sem introduzir projetos ou camadas vazias.
+- `B012` concluído: convenções aplicáveis confirmadas sem antecipar objetos da geração.
 
 ## Frente ativa
 
@@ -24,18 +25,18 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Próxima ação única
 
-Executar `B012`:
+Executar `B000`:
 
-> Confirmar e aplicar as convenções de nomes já congeladas na documentação, sem antecipar objetos do wizard ou alterações de KB.
+> Comprovar que a extensão mínima carrega no GeneXus 18 Upgrade 15, sem criar ou alterar objetos em uma Knowledge Base.
 
 ## Critério de conclusão e evidência esperada
 
-- convenções aplicáveis ao código e à extensão identificadas nas fontes governantes;
-- nomes da solution, projeto, namespace e artefatos mínimos confrontados com essas convenções;
-- decisões e eventuais lacunas registradas na documentação de implementação;
-- nenhum wizard funcional nem alteração de KB nesta ação.
+- mecanismo de empacotamento e descoberta da extensão identificado por documentação pública ou artefato oficial instalado;
+- extensão mínima carregada na IDE sem erro;
+- log, configuração e instruções de reprodução registrados em documentação de implementação;
+- nenhuma alteração de KB nesta ação.
 
-A compatibilidade das APIs e o carregamento da extensão na IDE permanecem no pacote de spike `B000`–`B006`.
+A criação, leitura e persistência de objetos GeneXus serão tratadas separadamente em `B001`–`B006`.
 
 ## Sequência operacional vigente
 
