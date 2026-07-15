@@ -8,16 +8,16 @@ Os documentos em `Docs/Foundation` devem materializar essas decisões nos contra
 
 ## Autoridade documental e precedência
 
-Enquanto a consolidação documental de julho de 2026 não estiver formalmente concluída, uma decisão explícita deste registro prevalece sobre texto anterior ou contraditório existente em `Docs/Foundation`.
+A consolidação documental de julho de 2026 foi formalmente concluída em 2026-07-15. Este registro permanece a fonte primária das decisões funcionais do MVP; os documentos `Foundation` materializam seus contratos por assunto.
 
 Uma validação técnica posterior pode exigir revisão de uma decisão. Nesse caso, a mudança deve ser registrada explicitamente neste documento ou em registro sucessor, com atualização dos documentos `Foundation` afetados.
 
 ## Estado da revisão
 
 - Data: 2026-07-14.
-- Situação: entrevista funcional do MVP concluída no ponto de parada registrado; decisões em consolidação nos documentos `Foundation`.
-- Consolidação documental: iniciada, auditada em 2026-07-14 e ainda não concluída.
-- Próxima etapa: mapear cada decisão deste registro para os documentos `Foundation`, corrigir contradições e comprovar a cobertura integral.
+- Situação: entrevista funcional e consolidação documental do MVP concluídas.
+- Consolidação documental: auditada em 2026-07-14 e formalmente encerrada em 2026-07-15.
+- Próxima etapa: executar `B010`, conforme o [checkpoint operacional](../STATUS_ATUAL_E_PROXIMO_PASSO.md).
 - Implementação: ainda não iniciada.
 
 ## Objetivo e limites do produto
@@ -525,9 +525,9 @@ Os YAMLs confirmaram a composição técnica entre o `Services base path` em `se
 - Cópia de teste da KB principal, atualizada a partir de XPZs da principal.
 - A validação começará na KB menor e avançará para a cópia de teste da principal.
 
-## Critérios técnicos obrigatórios da Sprint 0
+## Gates técnicos transversais do MVP
 
-Os seguintes experimentos técnicos são gates do MVP:
+Os seguintes experimentos são gates transversais do MVP. Sua comprovação será progressiva ao longo das Sprints 1–7, de acordo com as dependências de cada contrato; o conjunto completo deve estar aprovado antes do marco **wizard funcional do MVP concluído** e antes da Alpha.
 
 1. A extensão carrega e funciona no GeneXus 18 Upgrade 15.
 2. O SDK público permite criar, salvar, reabrir, alterar e excluir objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`.
@@ -540,7 +540,7 @@ Os seguintes experimentos técnicos são gates do MVP:
 9. Metadados em objeto `File` sobrevivem ao fechamento e à reabertura da KB e permitem reconhecer objetos próprios com segurança.
 10. Colisão, regeneração e remoção funcionam sem sobrescrever nem apagar objetos alheios.
 
-Se qualquer gate falhar sem alternativa nativa segura, o desenho será revisto antes da construção do wizard completo.
+Se qualquer gate falhar sem alternativa nativa segura, o desenho será revisto antes de declarar concluído o wizard funcional do MVP.
 
 Não bloquearão o MVP:
 
@@ -550,13 +550,12 @@ Não bloquearão o MVP:
 - migração assistida depois de renomear ou mover a Transaction;
 - suporte a GeneXus Next, base compartilhada como `api/v1` e otimizações de build.
 
-## Pendências após a entrevista
+## Encerramento da consolidação e liberação da implementação
 
-1. Reler integralmente os documentos `Foundation` e construir um mapa de impacto por documento e seção.
-2. Apresentar ao usuário as alterações propostas, incluindo contradições antigas, documentos afetados e ordem segura de edição.
-3. Depois de aprovação explícita, atualizar os documentos seção por seção e validar as transições e referências cruzadas.
-4. Somente depois da consolidação documental, iniciar os experimentos técnicos da Sprint 0.
+- A auditoria e o alinhamento dos documentos `Foundation` foram concluídos.
+- A implementação está liberada para começar pela Sprint 0 — Preparação.
+- O estado operacional e a próxima ação executável são mantidos no [checkpoint do projeto](../STATUS_ATUAL_E_PROXIMO_PASSO.md).
 
-## Próxima etapa proposta
+## Próxima etapa executável
 
-> Executar uma auditoria somente leitura de `Docs/Foundation` antes de solicitar autorização para alterar esses documentos.
+> Executar `B010`: localizar e confirmar o SDK de Extensibility do GeneXus 18 Upgrade 15 e criar em `Src` a solution e o projeto mínimos da extensão, com build reproduzível e evidência registrada.

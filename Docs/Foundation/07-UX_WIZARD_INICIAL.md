@@ -59,8 +59,8 @@ Este documento **não define código-fonte**, **não escolhe framework UI**, **n
 |---|---|
 | B020/B021/B022 | seleção de Transaction |
 | B030-B035 | wizard mínimo com decisões obrigatórias |
-| B070 | Entrada via menu/contexto |
-| B071 | Tela final resultado |
+| B080 | Entrada via menu/contexto |
+| B081 | Tela final resultado |
 | B083 | Revisão manual futura |
 
 ---

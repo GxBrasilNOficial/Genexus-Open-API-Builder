@@ -3,12 +3,12 @@
 ## Índice Mestre, Estado Atual e Direção do Projeto
 
 **Projeto:** Genexus Open API Builder
-**Status documental:** Coleção Foundation consolidada e em revisão final para orientar implementação
+**Status documental:** Coleção Foundation consolidada e liberada para orientar a implementação
 **Status técnico:** Implementação prática ainda não iniciada
-**Status público:** Repositório em preparação para abertura gradual e futura validação externa
+**Status público:** Repositório público; implementação ainda não iniciada
 **Idioma:** Português BR
 **Público principal:** mantenedor principal, futuros colaboradores técnicos e comunidade interessada
-**Data:** Abril/2026
+**Data:** 2026-07-15
 
 ---
 
@@ -33,7 +33,9 @@ O registro consolidado da entrevista funcional de julho de 2026 é a fonte prim�
 
 [Registro de decisões funcionais do MVP — 2026-07-14](../Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md)
 
-Os documentos desta coleção devem materializar essas decisões nos contratos organizados por assunto. Enquanto a consolidação documental não estiver formalmente concluída, uma decisão explícita do registro prevalece sobre texto anterior ou contraditório existente em `Docs/Foundation`.
+Os documentos desta coleção materializam essas decisões nos contratos organizados por assunto. Mudanças posteriores devem atualizar explicitamente o registro de decisões ou seu sucessor e todos os documentos `Foundation` afetados.
+
+O estado operacional e a próxima ação executável são mantidos no [checkpoint do projeto](../STATUS_ATUAL_E_PROXIMO_PASSO.md).
 
 ---
 
@@ -228,7 +230,7 @@ Se a prática mostrar conflito entre documento e realidade técnica validada, a 
 
 # 11. Próximo Movimento Natural do Projeto
 
-Converter a base documental em software funcional, começando pela validação real do SDK de extensibilidade GeneXus e pelo fluxo mínimo de geração.
+Consultar o [checkpoint operacional](../STATUS_ATUAL_E_PROXIMO_PASSO.md) e executar a única próxima ação nele registrada. Este índice não mantém uma segunda definição independente do próximo passo.
 
 ---
 

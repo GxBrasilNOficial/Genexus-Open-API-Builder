@@ -284,9 +284,9 @@ O MVP não cria novo objeto versionado nem sufixos automáticos para resolver co
 
 ---
 
-# 17. Gates Técnicos Obrigatórios da Sprint 0
+# 17. Gates Técnicos Transversais do MVP
 
-Os seguintes gates devem ser comprovados antes de assumir o desenho como implementável:
+Os seguintes gates serão comprovados progressivamente nas Sprints 1–7, conforme cada capacidade for implementada. O conjunto deve estar aprovado antes do marco **wizard funcional do MVP concluído** e antes da Alpha:
 
 1. extensão carrega no GeneXus 18 Upgrade 15
 2. SDK cria, salva, reabre, altera e exclui objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`
@@ -299,7 +299,7 @@ Os seguintes gates devem ser comprovados antes de assumir o desenho como impleme
 9. metadata em `File` sobrevive a fechar/reabrir a KB e reconhece objetos próprios
 10. colisão, regeneração e remoção não sobrescrevem nem apagam objetos alheios
 
-Se qualquer gate falhar sem alternativa nativa segura, o desenho deve ser revisto antes da construção completa do wizard.
+Se qualquer gate falhar sem alternativa nativa segura, o desenho deve ser revisto antes de declarar concluído o wizard funcional do MVP.
 
 Não bloqueiam o MVP:
 

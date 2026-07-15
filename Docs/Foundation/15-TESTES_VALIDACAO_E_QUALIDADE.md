@@ -201,9 +201,9 @@ Campos senha/token devem iniciar desmarcados com alerta.
 
 ---
 
-# 10.1 Gates Técnicos Obrigatórios da Sprint 0
+# 10.1 Gates Técnicos Transversais do MVP
 
-Antes de considerar o desenho implementável, validar:
+Validar progressivamente nas Sprints 1–7 e aprovar o conjunto antes do marco **wizard funcional do MVP concluído** e antes da Alpha:
 
 1. extensão carrega no GeneXus 18 Upgrade 15
 2. SDK cria, salva, reabre, altera e exclui objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`
@@ -216,7 +216,7 @@ Antes de considerar o desenho implementável, validar:
 9. metadata em `File` sobrevive a fechar/reabrir a KB e reconhece objetos próprios
 10. colisão, regeneração e remoção não sobrescrevem nem apagam objetos alheios
 
-Se qualquer gate falhar sem alternativa nativa segura, o desenho deve ser revisto antes da construção completa do wizard.
+Se qualquer gate falhar sem alternativa nativa segura, o desenho deve ser revisto antes de declarar concluído o wizard funcional do MVP.
 
 Não são bloqueadores: associação visual sob a Transaction, uso de objeto `Documentation` como fonte de metadata, uniformidade de erros interceptados antes da Procedure, migração assistida após renomear ou mover Transaction, GeneXus Next, base compartilhada `api/v1` e otimizações de build.
 

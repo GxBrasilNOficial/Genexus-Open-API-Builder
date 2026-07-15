@@ -81,20 +81,20 @@ Versão simples funcionando vale mais que arquitetura perfeita parada.
 
 ## Objetivo
 
-Deixar terreno pronto.
+Executar a Fase 0 do backlog (`B010`–`B012`) e deixar o terreno técnico reproduzível.
 
 ## Entregas
 
-- repositório organizado
-- estrutura solução/projeto
-- padrões de branch
-- backlog inicial
-- docs mínimas
-- ambiente buildando
+- `B010`: versão e origem do SDK registradas
+- `B010`: dependências localizáveis sem caminho absoluto específico da máquina
+- `B010`: solution e projeto em caminho relativo dentro de `Src`
+- `B010`: comando e evidência de build mínimo registrados
+- `B011`: pastas internas estruturadas
+- `B012`: convenções de nomes congeladas confirmadas e aplicadas
 
 ## Saída esperada
 
-Projeto pronto para codar.
+Solution mínima reproduzível e pronta para o spike. O carregamento na IDE pertence ao `B000`, não ao `B010`.
 
 [SPR-F24]
 
@@ -104,27 +104,29 @@ Projeto pronto para codar.
 
 ## Objetivo
 
-Validar integração GeneXus real.
+Executar o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
 
 ## Entregas
 
-- extensão carrega
-- comando/menu acessível
-- detectar objeto selecionado
-- abrir UI simples
-- log básico
+- `B000`: extensão mínima carrega na IDE
+- `B001`: KB ativa é detectada
+- `B002`: Transactions reais são listadas por API oficial disponível
+- `B003`: objeto simples suportado pelo SDK é criado
+- `B004`: ciclo de vida de API Object oficial é validado
+- `B005`: ciclo de vida de Procedure, SDT, Folder e File é validado
+- `B006`: metadata em File persiste após fechar e reabrir a KB
 
 ## Gate
 
-Se falhar, ajustar estratégia antes de crescer.
+Se `B004` falhar sem alternativa oficial viável, revisar ou encerrar a tese atual do produto.
 
 [F09][SPR-F24]
 
 ---
 
-## Gates obrigatórios antes do wizard completo
+## Gates técnicos transversais do MVP
 
-Antes de tratar o desenho como implementável, a Sprint 1 deve comprovar:
+Os gates abaixo são comprovados progressivamente nas Sprints 1–7. A Sprint 1 inicia essa comprovação com `B000`–`B006`; ela não precisa concluir antecipadamente capacidades que dependem do engine e dos contratos posteriores:
 
 1. extensão carrega no GeneXus 18 Upgrade 15
 2. SDK cria, salva, reabre, altera e exclui objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`
@@ -137,32 +139,31 @@ Antes de tratar o desenho como implementável, a Sprint 1 deve comprovar:
 9. metadata em `File` sobrevive a fechar/reabrir a KB e reconhece objetos próprios
 10. colisão, regeneração e remoção não sobrescrevem nem apagam objetos alheios
 
-Se qualquer gate falhar sem alternativa nativa segura, revisar o desenho antes de construir o wizard completo.
+Se qualquer gate falhar sem alternativa nativa segura, revisar o desenho antes de declarar concluído o wizard funcional do MVP.
 
 Não bloqueiam o MVP: associação visual sob a Transaction, objeto `Documentation` como fonte de metadata, uniformidade de erros interceptados antes da Procedure, migração assistida após renomear/mover Transaction, GeneXus Next, base `api/v1` e otimizações de build.
 
 ---
 
-# 8. Sprint 2 — Wizard Inicial
+# 8. Sprint 2 — Protótipo Navegável do Wizard
 
 ## Objetivo
 
-Fluxo mínimo utilizável.
+Validar navegação, captura de decisões e cancelamento seguro sem persistir nem gerar objetos.
 
 ## Entregas
 
-- selecionar Transaction
-- configurar nome do objeto API e Services base path
-- configurar RestPath
-- selecionar serviços, campos de Create/Update e filtros de List
-- configurar paginação, ordenação e Security Level
-- executar geração
-- tela resultado simples
-- resumo com fallback de descrição para inglês quando aplicável
+- selecionar uma Transaction a partir de estado somente leitura
+- navegar pelos passos previstos para nomes, serviços, campos, filtros, paginação, ordenação e segurança
+- manter as escolhas apenas em memória
+- avançar, voltar e cancelar sem alterar a KB
+- exibir resumo não persistente das escolhas
+- não criar `ApiPlan` definitivo
+- não chamar engine nem gerar objetos reais
 
 ## Gate
 
-Usuário consegue operar sozinho.
+Fluxo navegável completo, com estado em memória e cancelamento sem efeitos colaterais.
 
 [F07][SPR-F24]
 
@@ -196,10 +197,11 @@ Plano consistente gerado.
 
 ## Objetivo
 
-Gerar primeiros objetos reais.
+Realizar a primeira integração efetiva wizard → `ApiPlan` → engine e gerar os primeiros objetos reais.
 
 ## Entregas
 
+- receber o `ApiPlan` produzido a partir das decisões do wizard e entregá-lo ao engine
 - apiCliente
 - procCliente_API_List/Get/Create/Update
 - sdtCliente_API_CreateRequest
@@ -287,7 +289,9 @@ Segurança operacional.
 
 ## Gate
 
-Sem overwrite indevido.
+Sem overwrite indevido e com os dez gates técnicos transversais comprovados.
+
+Ao concluir esta sprint, o projeto atinge o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para iniciar a Alpha da Sprint 8.
 
 [F14][SPR-F24]
 

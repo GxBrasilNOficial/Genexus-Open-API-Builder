@@ -69,8 +69,8 @@ Prioridade máxima:
 
 | Fase | Base | Meta |
 |---|---|---|
-| -1 | F05 | Spike técnico crítico |
-| 0 | Setup | Estrutura mínima |
+| 0 | Setup | Estrutura mínima e reproduzível |
+| -1 | F05 | Pacote inicial de viabilidade do SDK |
 | 1 | F04 8.1 | Seleção Transaction |
 | 2 | F04 8.6 | Wizard mínimo com decisões obrigatórias |
 | 3 | F04 8.5 | Criar contratos próprios da API |
@@ -86,7 +86,11 @@ Prioridade máxima:
 
 # 6. Backlog Priorizado
 
-## FASE -1 — Spike Técnico Crítico
+As subseções abaixo preservam a numeração histórica dos pacotes. A ordem operacional vigente está na seção 9: primeiro a Fase 0, depois o pacote inicial da Fase -1.
+
+## FASE -1 — Pacote Inicial de Viabilidade do SDK
+
+Esta fase executa o primeiro pacote do spike técnico. Ela não concentra sozinha os dez gates transversais do MVP, que serão comprovados progressivamente até o fim da Sprint 7.
 
 | ID | Item | Prioridade |
 |---|---|---|
@@ -94,8 +98,8 @@ Prioridade máxima:
 | B001 | Detectar KB ativa | Alta |
 | B002 | Listar Transactions reais via API oficial disponível | Alta |
 | B003 | Criar objeto simples de teste suportado pelo SDK | Alta |
-| B004 | Validar criação/manipulação de API Object oficial | Altíssima |
-| B005 | Validar criação/manipulação de Procedure, SDT, Folder e File | Altíssima |
+| B004 | Validar criação, alteração, releitura e exclusão de API Object oficial | Altíssima |
+| B005 | Validar criação, alteração, releitura e exclusão de Procedure, SDT, Folder e File | Altíssima |
 | B006 | Validar persistência e releitura de metadata em File após reabrir KB | Altíssima |
 
 ### Gate
@@ -110,9 +114,9 @@ Se B004 falhar sem alternativa oficial viável:
 
 | ID | Item | Prioridade |
 |---|---|---|
-| B010 | Criar solução extensibility | Alta |
+| B010 | Localizar SDK e criar solution/projeto extensibility com build reproduzível | Alta |
 | B011 | Estruturar pastas internas | Alta |
-| B012 | Definir convenções provisórias de nomes | Alta |
+| B012 | Confirmar e aplicar as convenções de nomes já congeladas na documentação | Alta |
 
 ---
 
@@ -201,6 +205,7 @@ Se B004 falhar sem alternativa oficial viável:
 | B076 | Distinguir parâmetro ausente de `false`, `0` e string vazia | Alta |
 | B077 | Retornar paginação com `totalCount` e `totalPages` confiáveis | Alta |
 | B078 | Validar `operationId` no padrão `apiNome.Serviço` | Alta |
+| B079 | Validar códigos HTTP, corpos de resposta e `Location` opcional de `Create` | Alta |
 
 ### Nota operacional
 
@@ -237,8 +242,11 @@ Se B004 falhar sem alternativa oficial viável:
 
 | ID | Aceite |
 |---|---|
-| B004 | Existe evidência prática de criação/manipulação oficial de API Object |
-| B005 | Existe evidência prática de criação/manipulação de Procedure, SDT, Folder e File |
+| B010 | SDK identificado por versão e origem; dependências localizáveis sem caminho absoluto da máquina; solution/projeto em `Src`; comando e evidência de build registrados |
+| B011 | Estrutura interna criada conforme o layout documentado |
+| B012 | Convenções congeladas confirmadas e aplicadas à estrutura inicial |
+| B004 | Existe evidência prática de criação, alteração, releitura e exclusão de API Object oficial |
+| B005 | Existe evidência prática de criação, alteração, releitura e exclusão de Procedure, SDT, Folder e File |
 | B006 | Metadata em File sobrevive ao fechamento e reabertura da KB |
 | B060 | Cliente grava metadata de geração persistente |
 | B040 | Cliente gera `sdtCliente_API_CreateRequest` |
@@ -252,8 +260,26 @@ Se B004 falhar sem alternativa oficial viável:
 | B076 | Filtros distinguem ausência de valores válidos `false`, `0` e string vazia |
 | B077 | ListResponse retorna `items`, `pagination` e `appliedFilters` |
 | B078 | OperationIds seguem `apiCliente.List`, `apiCliente.Get`, `apiCliente.Create` e `apiCliente.Update` |
+| B079 | Códigos HTTP e corpos respeitam o contrato; `Location` é emitido em `Create` quando o runtime permitir controle seguro |
 | B080 | Menu/contexto acessível dentro IDE |
 | B081 | Relatório lista criados/atualizados |
+
+## 7.1 Rastreabilidade dos Gates Técnicos Transversais
+
+| Gate | Evidência principal no backlog |
+|---|---|
+| 1. Carregamento no GeneXus 18 Upgrade 15 | B000 |
+| 2. Ciclo de vida dos objetos nativos pelo SDK | B003–B005 |
+| 3. Delegação e propriedades do API Object | B004, B054, B056, B065 e B074 |
+| 4. Contrato refletido no YAML gerado | B047, B054 e B070–B079 |
+| 5. Create/Update via BC com chaves simples e compostas | B025, B052, B053, B055 e B071–B073 |
+| 6. Presença JSON distinta de vazio, `false` e zero | B037 e B076 |
+| 7. Códigos HTTP, corpos e `Location` | B046, B052, B053, B072, B073 e B079 |
+| 8. List com filtros, períodos, paginação, totais e ordem determinística | B031, B043, B044, B050, B070 e B077 |
+| 9. Metadata persistente e reconhecimento seguro | B006, B060, B063, B065–B067, B085 e B086 |
+| 10. Colisão, regeneração e remoção conservadoras | B063, B064 e B083–B086 |
+
+Esses gates são comprovados progressivamente. Todos devem estar aprovados antes do marco **wizard funcional do MVP concluído**, ao fim da Sprint 7, e antes da Alpha.
 
 [BG-F06]
 
@@ -263,11 +289,16 @@ Se B004 falhar sem alternativa oficial viável:
 
 Obrigatórios:
 
+- B010
+- B011
+- B012
 - B000
 - B001
 - B002
 - B003
 - B004
+- B005
+- B006
 - B020
 - B021
 - B030
@@ -281,6 +312,7 @@ Obrigatórios:
 - B072
 - B073
 - B075
+- B079
 - B080
 - B081
 - B083
@@ -293,8 +325,8 @@ Obrigatórios:
 
 # 9. Ordem Recomendada de Execução
 
-1. Fase -1 completa
-2. Fase 0 completa
+1. Fase 0 completa (`B010`–`B012`)
+2. Pacote inicial da Fase -1 completo (`B000`–`B006`)
 3. Fase 1 completa
 4. Fase 2 mínima
 5. Fase 3 mínima
@@ -331,7 +363,9 @@ Obrigatórios:
 
 | Item | Depende de |
 |---|---|
-| Todas as fases | Spike técnico aprovado |
+| Fase 0 | Consolidação documental concluída |
+| Fase -1 | Fase 0 concluída |
+| Fases 1–8 | Pacote inicial do spike (`B000`–`B006`) aprovado |
 | Wizard | Seleção Transaction |
 | Criar SDT | Wizard |
 | Procedures/API Object | Criar SDT |
@@ -391,7 +425,7 @@ Parar e revisar se ocorrer:
 ## Pode assumir
 
 - backlog segue ordem do F05
-- gate técnico vem antes de tudo
+- a Fase 0 precede o pacote inicial do spike; os dez gates técnicos são comprovados progressivamente até o fim da Sprint 7
 - itens Alta entram primeiro
 - segurança mínima já está no MVP
 

@@ -14,16 +14,18 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 - Estrutura inicial do repositório
 - Pasta Docs organizada
-- Foundation Docs 00 até 25
+- Foundation Docs 00 até 28
+- checkpoint operacional `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`
+- consolidação documental da entrevista funcional do MVP
 - README inicial
 - LICENSE MIT
 - Planejamento da fase prática
 
 ## Planned
 
-- Sprint 0
-- Spike GeneXus Extensibility SDK
-- Primeira arquitetura em Src
+- Sprint 0 — Preparação (`B010`–`B012`)
+- Sprint 1 — pacote inicial do Spike GeneXus Extensibility SDK (`B000`–`B006`)
+- Primeira solution e arquitetura em `Src`
 - Protótipo inicial do wizard
 - Primeira geração experimental
 
@@ -37,7 +39,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Definição de visão open source
 - Coleção documental completa
 - Estrutura base de diretórios
-- Início da fase de implementação
+- Preparação documental para a futura fase de implementação
 
 ---
 

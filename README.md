@@ -42,11 +42,13 @@ A partir de uma Transaction, o projeto busca gerar:
 
 # Estado Atual
 
-Em desenvolvimento inicial.
+A consolidação documental posterior à entrevista funcional do MVP foi concluída.
 
-Foundation Docs em revisão pós-entrevista funcional do MVP.
+A implementação prática ainda não foi iniciada. A frente ativa é a **Sprint 0 — Preparação**, começando pelo item `B010`.
 
-Implementação prática ainda não iniciada.
+Para retomar o trabalho em uma nova sessão, consulte o checkpoint operacional:
+
+[Estado atual e próximo passo](Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md)
 
 ---
 
@@ -56,7 +58,7 @@ O registro consolidado da entrevista funcional de julho de 2026 é a fonte prim�
 
 [Registro de decisões funcionais do MVP — 2026-07-14](Docs/Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md)
 
-Enquanto a consolidação documental não estiver formalmente concluída, uma decisão explícita desse registro prevalece sobre texto anterior ou contraditório em `Docs/Foundation`.
+Esse registro preserva as decisões funcionais consolidadas. Os documentos em `Docs/Foundation` materializam os contratos organizados por assunto; mudanças posteriores devem atualizar explicitamente as fontes afetadas.
 
 ---
 
@@ -133,4 +135,4 @@ Mais valor para a comunidade GeneXus.
 
 # Status
 
-Planejamento funcional do MVP em consolidação.
+Fundação documental concluída. Próxima ação: `B010`, conforme o [checkpoint operacional](Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md).

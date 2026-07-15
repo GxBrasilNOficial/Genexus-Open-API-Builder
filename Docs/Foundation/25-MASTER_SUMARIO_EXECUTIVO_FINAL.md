@@ -5,11 +5,11 @@
 **Projeto:** Genexus Open API Builder
 **Versão:** v1.0
 **Base Primária:** 00-MASTER_INDEX_DO_PROJETO.md
-**Relacionamento adicional:** 01 a 24 e 26 a 28 em consolidação
+**Relacionamento adicional:** coleção Foundation 00 a 28 consolidada
 **Objetivo:** consolidar toda a coleção documental em uma visão única, clara e executiva para humanos e agentes de IA.
 **Idioma:** Português BR
 **Público principal:** comunidade GeneXus + mantenedores + contribuidores + novos interessados
-**Data:** Abril/2026
+**Data:** 2026-07-15
 
 ---
 
@@ -76,7 +76,7 @@ Transformar uma Transaction em base REST utilizável, gerando:
 
 # 5. Estado Atual da Documentação
 
-00 até 28 em consolidação, com documentos arquivados separados em `Docs/Foundation/Archive`.
+Os documentos 00 até 28 estão consolidados, com documentos arquivados separados em `Docs/Foundation/Archive`. A implementação prática ainda não foi iniciada.
 
 Coleção documental completa cobrindo:
 
@@ -230,11 +230,11 @@ Ecossistema maduro.
 
 # 15. Como Novos Usuários Devem Começar
 
-1. Ler README
-2. Instalar versão atual
-3. Testar com Transaction simples
-4. Reportar feedback
-5. Acompanhar roadmap
+1. Ler o `README.md`.
+2. Se for contribuir ou retomar a implementação, consultar o [checkpoint operacional](../STATUS_ATUAL_E_PROXIMO_PASSO.md).
+3. Aguardar uma release antes de procurar uma versão instalável; ainda não existe implementação publicada.
+4. Acompanhar o roadmap e, quando houver Alpha, testar primeiro em KB de teste.
+5. Reportar feedback e contribuir conforme `CONTRIBUTING.md`.
 
 ---
 
