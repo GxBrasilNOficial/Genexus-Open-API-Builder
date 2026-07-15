@@ -152,6 +152,13 @@ Selecionar Transaction válida e iniciar geração da API correspondente.
 
 O núcleo técnico deve aceitar uma coleção de Transactions desde o início, mas o MVP limita cada execução a uma única Transaction selecionada.
 
+Entradas obrigatórias:
+
+- menu principal com seleção nativa filtrada para Transaction e seleção única
+- menu de contexto de uma Transaction
+
+As duas entradas usam o mesmo wizard e o mesmo motor. Seleção múltipla fica para evolução posterior.
+
 ### Critério de aceite
 
 Usuário consegue iniciar geração sem editar código manual.
@@ -240,6 +247,16 @@ Ao rodar novamente:
 ### Critério de aceite
 
 Usuário entende claramente o impacto antes de confirmar.
+
+---
+
+## 8.7.1 Remoção limpa e dependências [DP-F04]
+
+Os objetos gerados devem ser objetos nativos do GeneXus.
+
+Remover a extensão não pode impedir build, geração ou execução da KB. A desinstalação não apaga automaticamente objetos gerados, não deixa dependência obrigatória de runtime e não reverte automaticamente a propriedade `Business Component`.
+
+O MVP não terá uma `Procedure` utilitária compartilhada obrigatória em runtime. DLL própria como `External Object` só será admitida se SDK e comandos nativos não resolverem; nesse caso, o fonte deverá ficar no repositório.
 
 ---
 

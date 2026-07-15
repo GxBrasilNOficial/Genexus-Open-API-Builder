@@ -30,12 +30,25 @@ Ele deve ser referenciado por 10, 12, 15 e 26.
 
 O MVP deve criar ou reencontrar os SDTs compartilhados no Root Module, dentro do Folder `GxOpenAPI`.
 
-SDTs mínimos:
+O conjunto de SDTs compartilhados do MVP é fechado:
 
 - `sdt_API_ErrorResponse`
 - `sdt_API_Pagination`
 
 Esses SDTs pertencem ao gerador e devem ser reencontrados por metadata quando aplicável.
+
+Não criar no MVP:
+
+- `sdt_API_ErrorDetail`
+- `sdt_API_ListOptions`
+- `sdt_API_SuccessResponse`
+- SDTs genéricos para filtros aplicados
+- SDTs genéricos para períodos
+- SDTs genéricos para ordenação
+- SDTs genéricos para auditoria
+- SDTs genéricos para links de paginação
+
+Novos compartilhados só entram futuramente quando tiverem estrutura idêntica entre APIs, significado independente da Transaction e benefício concreto de reutilização.
 
 ---
 

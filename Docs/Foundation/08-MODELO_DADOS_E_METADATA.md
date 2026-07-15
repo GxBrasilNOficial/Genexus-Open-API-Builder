@@ -283,6 +283,9 @@ Campos de origem de migração não são auditoria operacional. Um campo como `P
 | DefaultPageSize | número |
 | MaximumPageSize | número |
 | StaticOrder | lista |
+| ServiceDescriptions | lista |
+| ServiceDescriptionLanguage | texto |
+| ServiceDescriptionFallbackUsed | boolean |
 | EndpointsCount | número |
 | MetadataFileName | texto |
 
@@ -375,7 +378,9 @@ Os serviços são `List`, `Get`, `Create` e `Update`. `Delete` é pós-MVP como 
 
 O contrato detalhado de metadata, regeneração, sincronização e remoção está em `28-METADATA_REGENERACAO_SINCRONIZACAO_E_REMOCAO.md`.
 
-Esta metadata deve preservar também as decisões de campos selecionados, obrigatoriedade no payload, filtros, operadores, períodos, paginação, ordenação, `Services base path`, `RestPath`, `Security Level`, descrições e indicação de Folder criado ou reutilizado.
+Esta metadata deve preservar também as decisões de campos selecionados, obrigatoriedade no payload, filtros, operadores, períodos, paginação, ordenação, `Services base path`, `RestPath`, `Security Level`, descrições geradas, idioma das descrições, fallback usado e indicação de Folder criado ou reutilizado.
+
+As descrições preservadas na metadata devem permitir detectar alteração manual posterior no objeto `API`, sem sobrescrever silenciosamente o texto editado pelo usuário.
 
 [MD-F08]
 

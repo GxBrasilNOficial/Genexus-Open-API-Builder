@@ -63,6 +63,9 @@ Campos mínimos, conforme aplicável:
 - ordenação e direções
 - `Security Level`
 - descrições geradas
+- idioma usado nas descrições
+- fallback de descrição para inglês quando aplicável
+- dados para detectar alteração manual posterior nas descrições dos serviços
 - fingerprint estrutural da Transaction
 - data da geração
 - versão do gerador quando disponível

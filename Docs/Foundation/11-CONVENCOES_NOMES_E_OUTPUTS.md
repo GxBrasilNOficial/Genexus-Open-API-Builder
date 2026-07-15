@@ -129,6 +129,10 @@ O `Services base path` começa com o mesmo valor do objeto `API`, também é vis
 | Cliente | sdtCliente_API_CreateRequest | sdtCliente_API_UpdateRequest | sdtCliente_API_Response | sdtCliente_API_ListResponse |
 | Produto | sdtProduto_API_CreateRequest | sdtProduto_API_UpdateRequest | sdtProduto_API_Response | sdtProduto_API_ListResponse |
 
+O marcador `_API_` faz parte do nome público levado pelo GeneXus para `components/schemas` no OpenAPI. Essa exposição foi aceita conscientemente para favorecer organização e identificação dentro da KB.
+
+O YAML gerado pelo GeneXus e ao menos um gerador de cliente OpenAPI devem validar a compatibilidade prática desses nomes.
+
 [NOM-F11]
 
 ---
@@ -210,6 +214,7 @@ O `Services base path` não é o mesmo conceito que o `RestPath`: o primeiro par
 - `Get`
 - `Create`
 - `Update`
+- `Delete` fica reservado para evolução futura
 
 ## Chave composta
 
@@ -218,6 +223,25 @@ Chave simples e composta devem ser suportadas sem degradação parcial.
 ## Regra
 
 `Delete` não compõe o endpoint REST do MVP. Chave composta não bloqueia `List`, `Get`, `Create` ou `Update`.
+
+## Terminologia
+
+A interface e a documentação usam **serviço**, conforme a terminologia do objeto `API` GeneXus.
+
+“Recurso” pode aparecer apenas em explicações conceituais de REST.
+
+## OperationId
+
+Os `operationId` seguem o nome do objeto `API` e o nome fixo do serviço:
+
+- `apiProduto.List`
+- `apiProduto.Get`
+- `apiProduto.Create`
+- `apiProduto.Update`
+
+`Create` foi escolhido em vez de `Insert`. `Get` foi escolhido em vez de `GetById`, pois a chave pode ser composta.
+
+APIs manuais de negócio continuam livres para usar outras convenções.
 
 [DP-F04][NOM-F11]
 
@@ -242,11 +266,55 @@ Naming não decide exposição de campos. Seguir classificação explícita do d
 | Criar | Create |
 | Atualizar | Update |
 
-## Observação
+## Regra
 
-Pode variar conforme artefato REST final.
+Os nomes dos serviços do MVP são fixos. O artefato REST final não pode alterar implicitamente `List`, `Get`, `Create` e `Update`.
 
-[HP-F11]
+[NOM-F11]
+
+---
+
+# 13.1 Descrições dos Serviços
+
+A extensão deve gerar uma anotação `[Description]` curta e padronizada para cada serviço selecionado.
+
+Regras:
+
+- o wizard não terá campo de descrição
+- usar preferencialmente a descrição legível da Transaction
+- quando a descrição estiver vazia, usar o nome do objeto
+- a descrição continua editável no objeto `API` nativo
+- alteração manual posterior não é sobrescrita silenciosamente
+- o idioma é escolhido automaticamente pelo idioma principal da KB
+- há modelos de descrição em português, espanhol e inglês
+- idioma sem modelo usa inglês
+- fallback para inglês deve aparecer no resumo da geração
+- a descrição legível da Transaction é preservada no idioma original, sem tradução automática
+- a metadata deve preservar as descrições geradas e permitir detectar alteração manual
+
+[NOM-F11]
+
+---
+
+# 13.2 Procedures Geradas
+
+Para uma Transaction `NomeDaTransacao`, os nomes das Procedures são:
+
+- `procNomeDaTransacao_API_List`
+- `procNomeDaTransacao_API_Get`
+- `procNomeDaTransacao_API_Create`
+- `procNomeDaTransacao_API_Update`
+
+Regras:
+
+- o prefixo `proc` identifica o tipo de objeto
+- `_API_` separa essas Procedures das preexistentes
+- nomes são derivados automaticamente e não editáveis no wizard do MVP
+- ficam no mesmo módulo e Folder dos demais objetos específicos da Transaction
+- a Procedure nomeia a operação, não o Request
+- o objeto `API` delega cada serviço à Procedure correspondente
+
+[NOM-F11]
 
 ---
 

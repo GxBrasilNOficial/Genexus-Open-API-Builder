@@ -51,8 +51,7 @@ A arquitetura inicial deve seguir:
 | Entrada principal | Transaction GeneXus |
 | Saída principal | API Object funcional inicial |
 | Execução | Dentro da IDE |
-| Entrada ideal | Ação contextual em Transaction |
-| Alternativa aceitável | Seleção manual via menu oficial |
+| Entradas MVP | Menu principal com seleção nativa filtrada para Transaction; menu de contexto de uma Transaction |
 | Prioridade inicial | Gerar valor rápido com segurança |
 | SDTs padrão | Criar contratos próprios da API |
 | Reuso de SDTs | Fora do MVP, exceto reencontro dos próprios por metadata |
@@ -189,13 +188,12 @@ Funções:
 
 ## Etapa 1 — Início
 
-Preferência:
+Entradas obrigatórias do MVP:
 
 - menu contextual sobre Transaction
-
-Alternativa aceitável:
-
 - menu geral da IDE com seleção manual oficial
+
+As duas entradas usam o mesmo wizard e o mesmo motor de geração. O núcleo técnico aceita coleção de Transactions, mas o MVP executa uma Transaction por vez.
 
 [HP-F05]
 
@@ -427,13 +425,14 @@ Antes de qualquer gravação, a engine deve verificar todos os nomes planejados.
 
 ## Base inicial
 
-- GeneXus 18 Upgrade 14 ou superior
+- GeneXus 18 como versão mínima
 - Ambiente de referência inicial: GeneXus 18 Upgrade 15
 - .NET prioritário
 
 ## Expansão possível
 
 - Java
+- GeneXus Next desejável futuramente, sem bloquear o MVP
 
 ## Hipótese Técnica Dependente de Spike
 

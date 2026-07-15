@@ -122,6 +122,27 @@ Se falhar, ajustar estratégia antes de crescer.
 
 ---
 
+## Gates obrigatórios antes do wizard completo
+
+Antes de tratar o desenho como implementável, a Sprint 1 deve comprovar:
+
+1. extensão carrega no GeneXus 18 Upgrade 15
+2. SDK cria, salva, reabre, altera e exclui objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`
+3. objeto `API` delega às Procedures e persiste `RestMethod`, `RestPath`, `Description` e `SecurityLevel`
+4. YAML gerado pelo GeneXus reflete rotas, métodos, parâmetros, SDTs e nomes `_API_`
+5. `Create` e `Update` via BC funcionam com chave simples e composta, preservando regras e mensagens
+6. ausência JSON é distinguida de vazio, `false` e zero sem membros públicos `Specified`
+7. implementação controla códigos HTTP, corpo e `Location`, respeitando seu caráter opcional
+8. `List` funciona com filtros opcionais, períodos, paginação, totalização e ordenação determinística
+9. metadata em `File` sobrevive a fechar/reabrir a KB e reconhece objetos próprios
+10. colisão, regeneração e remoção não sobrescrevem nem apagam objetos alheios
+
+Se qualquer gate falhar sem alternativa nativa segura, revisar o desenho antes de construir o wizard completo.
+
+Não bloqueiam o MVP: associação visual sob a Transaction, objeto `Documentation` como fonte de metadata, uniformidade de erros interceptados antes da Procedure, migração assistida após renomear/mover Transaction, GeneXus Next, base `api/v1` e otimizações de build.
+
+---
+
 # 8. Sprint 2 — Wizard Inicial
 
 ## Objetivo
@@ -137,6 +158,7 @@ Fluxo mínimo utilizável.
 - configurar paginação, ordenação e Security Level
 - executar geração
 - tela resultado simples
+- resumo com fallback de descrição para inglês quando aplicável
 
 ## Gate
 
@@ -188,6 +210,8 @@ Gerar primeiros objetos reais.
 - sdt_API_ErrorResponse
 - sdt_API_Pagination
 - File JSON de metadata
+- `[Description]` nos serviços selecionados
+- operationIds no padrão `apiNome.Serviço`
 - logs execução
 
 ## Gate
@@ -266,6 +290,16 @@ Segurança operacional.
 Sem overwrite indevido.
 
 [F14][SPR-F24]
+
+---
+
+# 13.1 KBs de Teste
+
+A validação prática deve começar por uma KB menor, fora de produção, com backup disponível.
+
+Depois, deve avançar para uma cópia de teste atualizada da KB principal.
+
+Não executar validação diretamente na KB principal de produção.
 
 ---
 

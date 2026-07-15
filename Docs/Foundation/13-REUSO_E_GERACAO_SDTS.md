@@ -190,15 +190,24 @@ Contém somente atributos selecionados no wizard e atribuíveis ao BC antes de `
 Padrões:
 
 - partes não autonumeradas da chave, atributos armazenados atribuíveis, chaves estrangeiras armazenadas e campos com regra `Default` vêm marcados
-- nullable e opcionais continuam elegíveis
+- nullable e opcionais continuam elegíveis e marcados
 - chave autonumerada, fórmula, inferido da tabela estendida, redundante automático, subnível e não atribuível via BC ficam desabilitados
-- tipos de mídia/blob definidos no registro ficam desabilitados no MVP
+- tipos `Image`, `Video`, `Audio`, `Blob` e `BlobFile` ficam desabilitados no MVP
 - campos sensíveis elegíveis ficam desmarcados com alerta
 - auditoria operacional fica desabilitada
 - `Obrigatório no payload` é separado da seleção do membro
+- partes não autonumeradas da chave devem estar presentes
+- campos necessários para criar o registro, sem `Default` e sem preenchimento automático conhecido, devem estar presentes
+- campos com `Default`, nullable, opcionais ou preenchidos por regras aplicáveis via BC podem ser omitidos
+- campos de origem de migração selecionados são opcionais por padrão, salvo escolha explícita segura
 - membro obrigatório ausente retorna `400`
 - membro opcional ausente não é atribuído ao BC
 - vazio, `false` e `0` presentes são atribuídos como recebidos
+- a presença obrigatória não significa valor não vazio
+- preserva a ordem da estrutura da Transaction
+- preserva nome exato do atributo no SDT, JSON e OpenAPI
+- preserva tipo, domínio, tamanho, decimais, nulabilidade e características aplicáveis
+- não contém envelope, metadata, subníveis nem campos exclusivos de resposta
 - não há campos públicos com sufixo `Specified`
 
 ## UpdateRequest
@@ -212,11 +221,14 @@ Regras:
 - contém somente atributos selecionados e atribuíveis ao BC carregado
 - campos ordinários graváveis vêm selecionados por padrão
 - auditoria, fórmulas, inferidos, redundantes, subníveis e não atribuíveis ficam desabilitados
+- tipos `Image`, `Video`, `Audio`, `Blob` e `BlobFile` ficam desabilitados no MVP
 - campos sensíveis elegíveis ficam desmarcados com alerta
-- todos os membros selecionados devem estar presentes
+- todos os membros selecionados têm `Required = True`
 - ausência de qualquer membro selecionado retorna `400` antes de atribuir ao BC
 - presença obrigatória não significa valor não vazio
 - vazio, `false` e `0` são valores realmente enviados
+- preserva ordem, tipos e nomes dos atributos
+- fluxo obrigatório: carregar BC pela chave simples ou composta, retornar `404` quando inexistente, preservar chave, autonumeração, auditoria e campos controlados pelo sistema, validar presença integral, atribuir valores recebidos, salvar via BC, recarregar pela chave final e devolver `sdt<NomeBase>_API_Response` completo
 - não há `PATCH` no MVP
 - não há campos públicos com sufixo `Specified`
 
@@ -227,11 +239,16 @@ Contém todos os atributos do primeiro nível explicitamente declarados na estru
 - chave completa
 - armazenados
 - inferidos ou da tabela estendida declarados
-- fórmulas e calculados declarados
+- fórmulas
+- calculados
 - campos somente de leitura
 - campos de auditoria
 
-Não inclui automaticamente atributos alcançáveis pela tabela estendida que não estejam declarados na estrutura. Não inclui subníveis no MVP.
+Não inclui automaticamente atributos alcançáveis pela tabela estendida que não estejam declarados na estrutura. Não inclui subníveis nem campos sintéticos no MVP.
+
+Preserva a ordem da estrutura. Cada membro é baseado no atributo original e preserva domínio, tipo, tamanho, decimais, nulabilidade e características aplicáveis.
+
+Usa exatamente o nome do atributo na KB e no JSON. Dados da Transaction preservam nomes GeneXus; somente o envelope genérico usa lower camel case.
 
 `Get`, `Create`, `Update` e cada item de `List` usam o mesmo `Response`.
 
@@ -242,18 +259,44 @@ Representa apenas, na resposta, os filtros reconhecidos e aplicados.
 Regras:
 
 - não é parâmetro de entrada
+- é o tipo de `AppliedFilters`
+- contém somente membros correspondentes aos filtros escolhidos no wizard
 - filtros de entrada continuam parâmetros planos
+- igualdade, `Contém` e `Começa com` usam membro com mesmo nome e tipo público do parâmetro
+- períodos usam `NomeDoAtributoFrom` e `NomeDoAtributoTo`
+- intervalos numéricos usam `NomeDoAtributoMin` e `NomeDoAtributoMax`
+- não contém paginação
+- não repete o operador fixado na geração
+- o operador deve estar descrito no contrato OpenAPI
+- membros permitem `null`
 - membros nulos significam filtro não aplicado
 - `false`, `0` e string vazia preservam valor informado
+- não cria membros auxiliares como `NomeDoAtributoApplied`
 - não devolve campos sensíveis, tokens ou credenciais
+- um spike deve validar `AllowNull` e serialização JSON no GeneXus 18
 
 ## ListResponse
 
 Nome sempre distinto de Response.
 
-Estrutura deve conter envelope com `items`, `pagination` e `appliedFilters`.
+Estrutura deve conter exatamente três membros:
 
-`pagination` usa `sdt_API_Pagination` e `appliedFilters` usa `sdt<NomeBase>_API_ListFilters`.
+- `Items`
+- `Pagination`
+- `AppliedFilters`
+
+Regras:
+
+- `Items` é coleção de `sdt<NomeBase>_API_Response`
+- `Pagination` usa `sdt_API_Pagination`
+- `AppliedFilters` usa `sdt<NomeBase>_API_ListFilters`
+- os três membros aparecem em toda resposta `200`
+- sem registros, `Items` é coleção vazia, `TotalCount = 0` e `TotalPages = 0`
+- `Pagination` reflete página e tamanho efetivamente aplicados
+- não inclui `Success`, `Message`, `Status`, links nem outro envelope
+- dentro da KB usa PascalCase
+- externamente usa `items`, `pagination`, `appliedFilters`, `page`, `pageSize`, `totalCount` e `totalPages`
+- um spike deve validar a estrutura no YAML gerado pelo GeneXus
 
 [SDT-F13]
 

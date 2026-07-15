@@ -93,6 +93,8 @@ Evitar:
 - menu contextual de Transaction
 - menu principal com seleção nativa filtrada para Transaction e seleção única
 
+O SDK público já demonstrou diálogo de seleção por tipo e suporte a seleção múltipla; o wizard do MVP usa apenas seleção única de Transaction.
+
 ## Opcional pós-MVP
 
 - botão contextual dedicado
@@ -163,6 +165,8 @@ Wizard com etapas mínimas e possibilidade de subdivisão visual conforme a impl
 | Filtros de List | Sim |
 | Paginação e ordenação | Sim |
 | Security Level | Sim |
+
+O wizard não terá campo de descrição de serviço. As descrições são geradas automaticamente conforme as convenções do documento 11.
 
 ## Valores padrão
 
@@ -247,6 +251,7 @@ O MVP não cria sufixos automáticos, não adota objeto externo e não altera ne
 - Possíveis objetos a criar
 - campos e filtros selecionados
 - paginação, ordenação e `Security Level`
+- idioma usado nos `[Description]` dos serviços e eventual fallback para inglês
 
 ## Botões
 
@@ -285,6 +290,7 @@ Mensagem principal:
 - avisos
 - campos sensíveis selecionados ou mantidos desmarcados
 - colisões ou itens que exigem ação manual
+- fallback de descrições para inglês, quando o idioma principal da KB não tiver modelo próprio
 - botão Abrir objeto principal
 
 ## Estado parcial

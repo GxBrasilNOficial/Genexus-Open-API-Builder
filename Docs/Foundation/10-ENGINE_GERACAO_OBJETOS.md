@@ -94,6 +94,7 @@ Receber `ApiPlan`.
 | DefaultPageSize | paginação padrão |
 | MaximumPageSize | limite máximo de paginação |
 | StaticOrder | ordenação definida no wizard |
+| ServiceDescriptions | descrições `[Description]` previstas para os serviços |
 | MetadataFileName | metadata persistente |
 | ConflictMode | tratar colisões |
 | ReexecutionMode | safe/update/cancel |
@@ -185,6 +186,7 @@ Verificar:
 - capacidade de salvar via SDK
 - `Business Component` habilitado ou autorização explícita para habilitar
 - `Security Level`, paginação, ordenação, RestPath e Services base path resolvidos
+- descrições `[Description]` resolvidas por idioma da KB, com fallback registrado quando aplicável
 - ausência de colisão em qualquer nome planejado
 
 ## Se falhar

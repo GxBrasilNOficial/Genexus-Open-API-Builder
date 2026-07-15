@@ -171,6 +171,8 @@ Lógica interna deve respeitar os contratos dos documentos 26, 27 e 28.
 
 `List` e `Create` usam o caminho comum dos serviços. `Get` e `Update` acrescentam a chave completa ao `RestPath`.
 
+Cada serviço selecionado deve receber anotação `[Description]` curta e padronizada. A descrição é gerada a partir da descrição legível da Transaction ou, se vazia, do nome do objeto. O texto permanece editável no objeto `API` nativo e alterações manuais posteriores não podem ser sobrescritas silenciosamente.
+
 [API-F12]
 
 ---

@@ -155,6 +155,7 @@ Se B004 falhar sem alternativa oficial viável:
 | B044 | Gerar `sdt<Nome>_API_ListResponse` com envelope | Alta |
 | B045 | Gerar/reencontrar SDTs compartilhados em `GxOpenAPI` | Alta |
 | B046 | Validar `sdt_API_ErrorResponse` e `sdt_API_Pagination` conforme documento 27 | Alta |
+| B047 | Validar nomes `_API_` no YAML e em ao menos um gerador de cliente OpenAPI | Alta |
 
 ---
 
@@ -168,6 +169,7 @@ Se B004 falhar sem alternativa oficial viável:
 | B053 | Gerar `proc<Nome>_API_Update` | Alta |
 | B054 | Gerar API Object `api<Nome>` delegando para as Procedures | Alta |
 | B055 | Validar uso via Business Component | Alta |
+| B056 | Gerar `[Description]` por serviço, sem campo no wizard, com fallback de idioma registrado | Alta |
 
 ---
 
@@ -182,6 +184,7 @@ Se B004 falhar sem alternativa oficial viável:
 | B064 | Bloquear colisões incompatíveis sem criar `_v2` | Alta |
 | B065 | Gravar Services base path, RestPath, campos, filtros, paginação, ordenação e Security Level na metadata | Alta |
 | B066 | Diferenciar Folder específico criado de Folder reutilizado | Alta |
+| B067 | Gravar descrições geradas e dados para detectar alteração manual posterior | Alta |
 
 ---
 
@@ -197,6 +200,7 @@ Se B004 falhar sem alternativa oficial viável:
 | B075 | Validar ausência de endpoint `Delete` no MVP | Alta |
 | B076 | Distinguir parâmetro ausente de `false`, `0` e string vazia | Alta |
 | B077 | Retornar paginação com `totalCount` e `totalPages` confiáveis | Alta |
+| B078 | Validar `operationId` no padrão `apiNome.Serviço` | Alta |
 
 ### Nota operacional
 
@@ -247,6 +251,7 @@ Se B004 falhar sem alternativa oficial viável:
 | B075 | Não existe endpoint `Delete` no MVP |
 | B076 | Filtros distinguem ausência de valores válidos `false`, `0` e string vazia |
 | B077 | ListResponse retorna `items`, `pagination` e `appliedFilters` |
+| B078 | OperationIds seguem `apiCliente.List`, `apiCliente.Get`, `apiCliente.Create` e `apiCliente.Update` |
 | B080 | Menu/contexto acessível dentro IDE |
 | B081 | Relatório lista criados/atualizados |
 

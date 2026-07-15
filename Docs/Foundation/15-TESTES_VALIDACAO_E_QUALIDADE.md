@@ -96,6 +96,8 @@ No MVP:
 - seleção de filtros, operadores, períodos e intervalos conforme documento 26
 - cálculo de `totalCount` e `totalPages`
 - distinção entre ausência, string vazia, `false` e `0`
+- nomes fixos de serviço e `operationId` no padrão `apiNome.Serviço`
+- seleção de modelo de `[Description]` por idioma da KB e fallback para inglês
 
 ## Resultado esperado
 
@@ -149,6 +151,8 @@ Validar geração de:
 - Create com status 201
 - Update com PUT e status 200
 - List sem resultados com 200, coleção vazia e totais zero
+- operationIds no padrão `apiCliente.List`, `apiCliente.Get`, `apiCliente.Create` e `apiCliente.Update`
+- descrições `[Description]` curtas nos serviços selecionados
 
 Não deve existir endpoint `Delete` no MVP.
 
@@ -194,6 +198,27 @@ Campos senha/token devem iniciar desmarcados com alerta.
 | dúvida estrutural | fallback seguro |
 
 [CFG-F14][QA-F15]
+
+---
+
+# 10.1 Gates Técnicos Obrigatórios da Sprint 0
+
+Antes de considerar o desenho implementável, validar:
+
+1. extensão carrega no GeneXus 18 Upgrade 15
+2. SDK cria, salva, reabre, altera e exclui objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`
+3. objeto `API` delega às Procedures e persiste `RestMethod`, `RestPath`, `Description` e `SecurityLevel`
+4. YAML gerado pelo GeneXus reflete rotas, métodos, parâmetros, SDTs e nomes `_API_`
+5. `Create` e `Update` via BC funcionam com chave simples e composta, preservando regras e mensagens
+6. ausência JSON é distinguida de vazio, `false` e zero sem membros públicos `Specified`
+7. implementação controla códigos HTTP, corpo e `Location`, respeitando seu caráter opcional
+8. `List` funciona com filtros opcionais, períodos, paginação, totalização e ordenação determinística
+9. metadata em `File` sobrevive a fechar/reabrir a KB e reconhece objetos próprios
+10. colisão, regeneração e remoção não sobrescrevem nem apagam objetos alheios
+
+Se qualquer gate falhar sem alternativa nativa segura, o desenho deve ser revisto antes da construção completa do wizard.
+
+Não são bloqueadores: associação visual sob a Transaction, uso de objeto `Documentation` como fonte de metadata, uniformidade de erros interceptados antes da Procedure, migração assistida após renomear ou mover Transaction, GeneXus Next, base compartilhada `api/v1` e otimizações de build.
 
 ---
 
@@ -319,6 +344,16 @@ Registrar:
 - falhas encontradas
 
 [QA-F15]
+
+---
+
+# 18.1 KBs de Teste
+
+A validação deve começar por uma KB menor, fora de produção, com backup disponível.
+
+Depois, deve avançar para uma cópia de teste atualizada da KB principal.
+
+Nenhuma operação de validação deve ser feita diretamente na KB principal de produção.
 
 ---
 

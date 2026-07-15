@@ -114,7 +114,7 @@ Itens desejáveis, porém não pré-condições:
 
 | Item | Status |
 |------|--------|
-| Context menu específico perfeito | Opcional |
+| Context menu visualmente sofisticado | Opcional |
 | Wizard nativo sofisticado | Opcional |
 | Toolbar dedicada | Opcional |
 | Atualização in-place avançada | Opcional |
@@ -124,6 +124,8 @@ Itens desejáveis, porém não pré-condições:
 ## Regra
 
 Se ausente, o MVP continua viável.
+
+A sofisticação visual do menu contextual é opcional; a entrada pelo menu de contexto da Transaction continua parte prevista do MVP.
 
 [NA-F09]
 
@@ -153,8 +155,10 @@ Generate Open API
 ## Prioridade de canais
 
 1. Context menu Transaction
-2. Menu Tools
+2. Menu principal com seleção nativa filtrada para Transaction
 3. Comando geral IDE
+
+O SDK público já demonstrou diálogo de seleção por tipo e suporte a seleção múltipla. O MVP usa seleção única filtrada para Transaction; seleção múltipla fica para fase posterior.
 
 ## Regra
 
@@ -280,18 +284,32 @@ O MVP não cria novo objeto versionado nem sufixos automáticos para resolver co
 
 ---
 
-# 17. Plano Oficial de Spikes
+# 17. Gates Técnicos Obrigatórios da Sprint 0
 
-| Ordem | Spike | Meta |
-|------:|------|------|
-| 1 | S01 | extensão carrega |
-| 2 | S02 | comando aparece |
-| 3 | S03 | janela abre |
-| 4 | S04 | contexto detectado |
-| 5 | S05 | KB consultada |
-| 6 | S06 | SDT criado |
-| 7 | S07 | REST inicial criado |
-| 8 | S08 | save/update simples |
+Os seguintes gates devem ser comprovados antes de assumir o desenho como implementável:
+
+1. extensão carrega no GeneXus 18 Upgrade 15
+2. SDK cria, salva, reabre, altera e exclui objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`
+3. objeto `API` delega às Procedures e persiste `RestMethod`, `RestPath`, `Description` e `SecurityLevel`
+4. YAML gerado pelo GeneXus reflete rotas, métodos, parâmetros, SDTs e nomes `_API_`
+5. `Create` e `Update` via BC funcionam com chave simples e composta, preservando regras e mensagens
+6. ausência JSON é distinguida de vazio, `false` e zero sem membros públicos `Specified`
+7. implementação controla códigos HTTP, corpo e `Location`, respeitando seu caráter opcional
+8. `List` funciona com filtros opcionais, períodos, paginação, totalização e ordenação determinística
+9. metadata em `File` sobrevive a fechar/reabrir a KB e reconhece objetos próprios
+10. colisão, regeneração e remoção não sobrescrevem nem apagam objetos alheios
+
+Se qualquer gate falhar sem alternativa nativa segura, o desenho deve ser revisto antes da construção completa do wizard.
+
+Não bloqueiam o MVP:
+
+- associação visual sob a Transaction
+- objeto `Documentation` como fonte de metadata
+- uniformidade de erros interceptados antes da Procedure
+- migração assistida após renomear ou mover Transaction
+- GeneXus Next
+- base compartilhada `api/v1`
+- otimizações de build
 
 [SDK-F09]
 
