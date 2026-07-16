@@ -1,28 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="GeneXus.Package.UI.Sdk">
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
     <OutputType>Library</OutputType>
+    <PackageId>GenexusOpenApiBuilder.Extension</PackageId>
+    <Version>0.1.0-preview.1</Version>
+    <Authors>Genexus Open API Builder contributors</Authors>
+    <Description>Extensão mínima da IDE para o GeneXus Open API Builder.</Description>
     <AssemblyName>GenexusOpenApiBuilder.Extension</AssemblyName>
     <RootNamespace>GenexusOpenApiBuilder.Extension</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
-
-  <Import Project="GeneXusSdk.props" />
-
-  <ItemGroup>
-    <Reference Include="Artech.Architecture.Common">
-      <HintPath>$(GeneXusInstallDir)\Artech.Architecture.Common.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Artech.Architecture.BL.Framework">
-      <HintPath>$(GeneXusInstallDir)\Artech.Architecture.BL.Framework.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Artech.Architecture.UI.Framework">
-      <HintPath>$(GeneXusInstallDir)\Artech.Architecture.UI.Framework.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-  </ItemGroup>
 </Project>

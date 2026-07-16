@@ -368,7 +368,7 @@ Primeira geração em cenário simples com baixo atrito operacional.
 ## Versão inicial suportada [DP-F04]
 
 - GeneXus 18
-- Ambiente inicial e mínimo de validação: GeneXus 18 Upgrade 15
+- Compatibilidade mínima: GeneXus 18 Upgrade 14; ambiente inicial de validação: GeneXus 18 Upgrade 15
 
 ## Gerador prioritário inicial [DP-F04]
 

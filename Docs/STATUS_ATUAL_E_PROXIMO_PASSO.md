@@ -8,39 +8,39 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-07-15.
+2026-07-16.
 
 ## Último marco concluído
 
 - entrevista funcional do MVP consolidada;
 - documentos Foundation alinhados e auditados;
-- base documental publicada na branch `main`;
-- `B010` concluído: SDK localizado, solution e projeto mínimo criados e build reproduzível validado.
-- `B011` concluído: estrutura interna confirmada sem introduzir projetos ou camadas vazias.
+- `B010` revalidado pelo método oficial U14+: feed NuGet, MSBuild SDKs, lockfile, solution, projeto e pacote mínimos;
+- `B011` concluído: estrutura interna confirmada sem introduzir projetos ou camadas vazias;
 - `B012` concluído: convenções aplicáveis confirmadas sem antecipar objetos da geração.
 
 ## Frente ativa
 
-**Sprint 0 — Preparação**, correspondente à **Fase 0 — Setup** do backlog.
+**Sprint 1 — Spike de viabilidade**, correspondente ao pacote inicial da **Fase -1** do backlog.
 
 ## Próxima ação única
 
 Executar `B000`:
 
-> Comprovar que a extensão mínima carrega no GeneXus 18 Upgrade 15, sem criar ou alterar objetos em uma Knowledge Base.
+> Identificar o procedimento oficial de instalação do pacote `.nupkg` e comprovar manualmente que a extensão mínima carrega em GeneXus 18 U14 ou posterior, usando o U15 local como ambiente inicial de validação e sem alterar uma Knowledge Base.
 
 ## Critério de conclusão e evidência esperada
 
-- mecanismo de empacotamento e descoberta da extensão identificado por documentação pública ou artefato oficial instalado;
+- artefato e mecanismo oficial de instalação/descoberta identificados;
+- pacote instalado manualmente pelo usuário;
 - extensão mínima carregada na IDE sem erro;
-- log, configuração e instruções de reprodução registrados em documentação de implementação;
+- log, configuração e instruções de reprodução registrados;
 - nenhuma alteração de KB nesta ação.
 
 A criação, leitura e persistência de objetos GeneXus serão tratadas separadamente em `B001`–`B006`.
 
 ## Sequência operacional vigente
 
-1. Sprint 0 executa a Fase 0 (`B010`–`B012`) e prepara o terreno.
+1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 executa o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
 3. As Fases 1–8 dependem da aprovação desse spike.
 4. Sprint 2 entrega apenas o protótipo navegável e não persistente do wizard.
@@ -51,9 +51,12 @@ A criação, leitura e persistência de objetos GeneXus serão tratadas separada
 
 ## Bloqueios e fatos ainda não validados
 
-- B000 está bloqueado: o Platform SDK/PackageBuilder não está disponível localmente e o fluxo oficial de registro exige escrever em `Packages` e executar `/install`, ações proibidas pela regra local de proteção da instalação;
-- compatibilidade prática das APIs do SDK com GeneXus 18 Upgrade 15;
+- procedimento oficial para instalar e registrar o `.nupkg` na IDE;
+- carregamento real do pacote em U14 e no U15 local;
+- compatibilidade prática das APIs do SDK com as duas versões;
 - comprovação progressiva dos gates técnicos transversais definidos nos documentos 09, 15 e 24.
+
+A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: este projeto não escreve em `C:\Program Files (x86)\GeneXus`.
 
 ## Documentos governantes
 
@@ -73,5 +76,3 @@ A criação, leitura e persistência de objetos GeneXus serão tratadas separada
 ## Protocolo de atualização
 
 Toda mudança de marco, frente ativa ou próxima ação deve atualizar este checkpoint no mesmo commit que produz a mudança. O checkpoint deve manter uma única próxima ação e apontar para os contratos, sem duplicá-los.
-
-Ao concluir `B010`, a próxima atualização deste arquivo deve promover `B011`; `B000` somente poderá ser promovido depois da conclusão de `B010`–`B012`.

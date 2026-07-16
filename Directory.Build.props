@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <GeneXusPackageReferenceVersion>18.13.2</GeneXusPackageReferenceVersion>
+    <GeneXusSdkTargetFrameworks>net471</GeneXusSdkTargetFrameworks>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+</Project>

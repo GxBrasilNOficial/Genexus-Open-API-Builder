@@ -1,0 +1,264 @@
+{
+  "version": 1,
+  "dependencies": {
+    ".NETFramework,Version=v4.7.1": {
+      "Artech.Architecture.BL.Framework.Sdk": {
+        "type": "Direct",
+        "requested": "[18.13.2, )",
+        "resolved": "18.13.2",
+        "contentHash": "KWXpxKI8NhSyv/xZXosssCjJiFsVXeP60InOxPViS8bTqr5IEGv4PGhvMxKdcnT2WONCAWzZMGlTE7WU9Aiwew==",
+        "dependencies": {
+          "Artech.Architecture.Common.Sdk": "18.13.2"
+        }
+      },
+      "Artech.Architecture.Common.Sdk": {
+        "type": "Direct",
+        "requested": "[18.13.2, )",
+        "resolved": "18.13.2",
+        "contentHash": "0UBOvfkniFkvwfH+Cgst7dtjI/zHKGJbxi9DWCleweHj8aoAq4HvbD/ukzdnVvAIWXccSoEUZTCpyHiSfo65sA==",
+        "dependencies": {
+          "Antlr4.Runtime.Standard": "4.7.1.1",
+          "Artech.Architecture.Interfaces.Sdk": "18.13.2",
+          "Artech.Common.Framework.Sdk": "18.13.2",
+          "Artech.Common.Helpers.Sdk": "18.13.2",
+          "Artech.Common.Properties.Sdk": "18.13.2",
+          "Artech.Common.Sdk": "18.13.2",
+          "Artech.Udm.Architecture.Common.Sdk": "18.13.2",
+          "Artech.Udm.Framework.Sdk": "18.13.2",
+          "Artech.Udm.Layers.Common.Sdk": "18.13.2"
+        }
+      },
+      "Artech.Architecture.Interfaces.Sdk": {
+        "type": "Direct",
+        "requested": "[18.13.2, )",
+        "resolved": "18.13.2",
+        "contentHash": "LuONscw306p8qi0xoTS/FX1QBhw7+xKZFHIB57l0YCR5Ik+rb/2ZmNIlFeBMU8sUHOZ15Vjy6Z/fLfQ8093d2Q=="
+      },
+      "Artech.Architecture.UI.Framework.Sdk": {
+        "type": "Direct",
+        "requested": "[18.13.2, )",
+        "resolved": "18.13.2",
+        "contentHash": "yuvWodV3BGlPQMfwHkynRJKhQuyxIWJ7iyoDE4w3IAcG+9iI8aX+QrrrL+COrQfXC21KkJJOT4xh3los+UXH5g==",
+        "dependencies": {
+          "Artech.Architecture.Common.Sdk": "18.13.2",
+          "Artech.Architecture.Interfaces.Sdk": "18.13.2",
+          "Artech.Common.Framework.Sdk": "18.13.2",
+          "Artech.Common.Helpers.Sdk": "18.13.2",
+          "Artech.Common.Properties.Sdk": "18.13.2",
+          "Artech.Common.Sdk": "18.13.2",
+          "Artech.Udm.Framework.Sdk": "18.13.2",
+          "Artech.Udm.Layers.Common.Sdk": "18.13.2"
+        }
+      },
+      "Artech.Common.Controls.Sdk": {
+        "type": "Direct",
+        "requested": "[18.13.2, )",
+        "resolved": "18.13.2",
+        "contentHash": "qHe8Kef1iO1O5rdGt4bFKC7+jnYKXpt7/bnk2yMt32Ve7pCTmBg45k+cowmQLA7rpFl7kAA4iouksaINgacFHw==",
+        "dependencies": {
+          "Artech.Common.Framework.Sdk": "18.13.2",
+          "Artech.Common.Helpers.Sdk": "18.13.2",
+          "Artech.Common.Properties.Sdk": "18.13.2",
+          "Artech.Common.Sdk": "18.13.2"
+        }
+      },
+      "Artech.Common.Framework.Sdk": {
+        "type": "Direct",
+        "requested": "[18.13.2, )",
+        "resolved": "18.13.2",
+        "contentHash": "N6HC2Z/fM+/X5FoSyEDoGJ0IrEum9gMriCUBiFcfIxPAeqgxcqDMVW4vaCR/Y6tE8WonbCzbPPpxc3dfwpCmfg==",
+        "dependencies": {
+          "Artech.Common.Helpers.Sdk": "18.13.2"
+        }
+      },
+      "Artech.Common.Properties.Sdk": {
+        "type": "Direct",
+        "requested": "[18.13.2, )",
+        "resolved": "18.13.2",
+        "contentHash": "tWeVPQPSym4wrCojHo2nKboeJngnATmVdKub6t1CEi3a7g4CkfLSRCaBYfRmOLD3I8BUHqoR54/N+J4pCmR2sQ==",
+        "dependencies": {
+          "Artech.Common.Helpers.Sdk": "18.13.2",
+          "Artech.Common.Sdk": "18.13.2"
+        }
+      },
+      "Artech.Common.Sdk": {
+        "type": "Direct",
+        "requested": "[18.13.2, )",
+        "resolved": "18.13.2",
+        "contentHash": "qLEvg0rzPhGrbhakhtU4CclFkFL2I42jbMrbtSSbTJCrq8uaIBrCrYqkBrjNGjeuWXY7VQyEEKHk8liwafFHCQ==",
+        "dependencies": {
+          "Svg": "3.0.49",
+          "log4net": "2.0.11"
+        }
+      },
+      "Artech.FrameworkDE.Sdk": {
+        "type": "Direct",
+        "requested": "[18.13.2, )",
+        "resolved": "18.13.2",
+        "contentHash": "UbC4gFe1O+lqu2WiGLGafUsVok229R8vOcfuuip4qrFoejm38EXxYQe6P6Y3SUMU4de9x7UDNIMlUuHivqPUIw==",
+        "dependencies": {
+          "Artech.Architecture.BL.Framework.Sdk": "18.13.2",
+          "Artech.Architecture.Common.Sdk": "18.13.2",
+          "Artech.Architecture.Interfaces.Sdk": "18.13.2",
+          "Artech.Architecture.UI.Framework.Sdk": "18.13.2",
+          "Artech.Common.Controls.Sdk": "18.13.2",
+          "Artech.Common.Framework.Sdk": "18.13.2",
+          "Artech.Common.Helpers.Sdk": "18.13.2",
+          "Artech.Common.Properties.Sdk": "18.13.2",
+          "Artech.Common.Sdk": "18.13.2",
+          "Artech.Udm.Framework.Sdk": "18.13.2",
+          "HtmlAgilityPack": "1.8.11",
+          "System.Reactive.Core": "3.1.1",
+          "System.Reactive.Interfaces": "3.1.1",
+          "System.Reactive.Linq": "3.1.1"
+        }
+      },
+      "Artech.Genexus.Common.Sdk": {
+        "type": "Direct",
+        "requested": "[18.13.2, )",
+        "resolved": "18.13.2",
+        "contentHash": "jTHnU1Bd+Eg4l7dCetTFu8hUtse+hWaXoE5zpjLDIwAVdlFftDXOPwkVoCawKx77/+dyLJQ2WRDYZoXO3lnNiQ==",
+        "dependencies": {
+          "Antlr4.Runtime.Standard": "4.7.1.1",
+          "Artech.Architecture.BL.Framework.Sdk": "18.13.2",
+          "Artech.Architecture.Common.Sdk": "18.13.2",
+          "Artech.Architecture.Interfaces.Sdk": "18.13.2",
+          "Artech.Architecture.UI.Framework.Sdk": "18.13.2",
+          "Artech.Common.Controls.Sdk": "18.13.2",
+          "Artech.Common.Framework.Sdk": "18.13.2",
+          "Artech.Common.Helpers.Sdk": "18.13.2",
+          "Artech.Common.Properties.Sdk": "18.13.2",
+          "Artech.Common.Sdk": "18.13.2",
+          "Artech.Udm.Framework.Sdk": "18.13.2",
+          "BouncyCastle.Cryptography": "2.3.1",
+          "HtmlAgilityPack": "1.8.11",
+          "Kajabity.Tools": "0.4.5928.1510",
+          "Newtonsoft.Json": "10.0.3",
+          "Svg": "3.0.49"
+        }
+      },
+      "Artech.Udm.Framework.Sdk": {
+        "type": "Direct",
+        "requested": "[18.13.2, )",
+        "resolved": "18.13.2",
+        "contentHash": "hBhAFj1/LfBZGRfvBPjEwWUbbQ9TcBn5WlTQPHHXGnj9RCtdjB5699yZ6IhHumHWh8sA7+3AW00ddOqk6HPY0A==",
+        "dependencies": {
+          "Artech.Common.Helpers.Sdk": "18.13.2",
+          "Artech.Common.Properties.Sdk": "18.13.2",
+          "Artech.Common.Sdk": "18.13.2",
+          "Artech.Udm.Architecture.Common.Sdk": "18.13.2",
+          "Artech.Udm.Layers.Common.Sdk": "18.13.2"
+        }
+      },
+      "Antlr3.Runtime": {
+        "type": "Transitive",
+        "resolved": "3.5.1",
+        "contentHash": "ZwCEpLCLZXkjzf1lYEixp9hgVlYYk33ACHn6xjFyVhGRi2BpoYQez0qtatbetdylASWYTG+cGz0CGR4z66JM4w=="
+      },
+      "Antlr4.Runtime.Standard": {
+        "type": "Transitive",
+        "resolved": "4.7.1.1",
+        "contentHash": "MLfYNoV/Xhurvv1Jo704YsOOZ3UPnc12RrRjUx5bJ4kO/xLKhK9rnSvZOv5nq6ZP+lckiigw6FMjNXCbzUxaWQ=="
+      },
+      "Artech.Common.Helpers.Sdk": {
+        "type": "Transitive",
+        "resolved": "18.13.2",
+        "contentHash": "oCj/7kxgYgSmU1hPRCJlRYYNe/0Xe49fCy3P8d46XDsYTi6Ur30hdyihO4yfURFOxB+8PiZ5Pcfk+Ir2sb/XfA==",
+        "dependencies": {
+          "Artech.Common.Sdk": "18.13.2",
+          "Mvp.Xml": "2.3.0",
+          "SharpZipLib": "1.3.3",
+          "StringTemplate4": "4.0.8"
+        }
+      },
+      "Artech.Udm.Architecture.Common.Sdk": {
+        "type": "Transitive",
+        "resolved": "18.13.2",
+        "contentHash": "//l4MJcSKUhRc4MMmVoNt+dAQ5Dr1NVvzQHPr+QocOnhmVeZ7fPRj1eCex3vbNPF8JNOpJBGGv6h7TEP/LR4AQ==",
+        "dependencies": {
+          "Artech.Common.Helpers.Sdk": "18.13.2",
+          "Artech.Common.Sdk": "18.13.2"
+        }
+      },
+      "Artech.Udm.Layers.Common.Sdk": {
+        "type": "Transitive",
+        "resolved": "18.13.2",
+        "contentHash": "obxfpH7wgDFrJEYAXNDsXqYn/2qhrBSWvpUrnNesOBk3LI22sxPaqNbN4yTnmGI7qn/l9THDHmdlkleM8Z/dFg==",
+        "dependencies": {
+          "Artech.Common.Helpers.Sdk": "18.13.2",
+          "Artech.Common.Sdk": "18.13.2",
+          "Artech.Udm.Architecture.Common.Sdk": "18.13.2"
+        }
+      },
+      "BouncyCastle.Cryptography": {
+        "type": "Transitive",
+        "resolved": "2.3.1",
+        "contentHash": "buwoISwecYke3CmgG1AQSg+sNZjJeIb93vTAtJiHZX35hP/teYMxsfg0NDXGUKjGx6BKBTNKc77O2M3vKvlXZQ=="
+      },
+      "HtmlAgilityPack": {
+        "type": "Transitive",
+        "resolved": "1.8.11",
+        "contentHash": "aHMG6oLnTIvepPiyRt+k19OuDFZDhhSrB3U251kT24zrEmIdJJzYHtazvJioxjFR1fv4bjZ5v+sdb6QRxVKZww=="
+      },
+      "Kajabity.Tools": {
+        "type": "Transitive",
+        "resolved": "0.4.5928.1510",
+        "contentHash": "ao8iPtIJmFoRm0pGFPi1PfNgwcUJPBZn/T85bks5zYOltfT9/k5ORx89LCX+6gxai1pLCtnOnwm5xjCcEkac6A=="
+      },
+      "log4net": {
+        "type": "Transitive",
+        "resolved": "2.0.11",
+        "contentHash": "4MEfp6dSN/Cl4XHRqBo8eOkhlH9AOt/ydmPRaj/FHuKHTNoPuKjbaT97aACmePpkW5QHQ+YudhYYvVStabOZmQ=="
+      },
+      "Mvp.Xml": {
+        "type": "Transitive",
+        "resolved": "2.3.0",
+        "contentHash": "us4ukKyok9OAuLKFfdrCha/8/ehF7FZ1oAUotcb6dowiTVEcDHdsz9pzFKbWBJ4JLB99xACTL6bd5k3ArSHALw=="
+      },
+      "Newtonsoft.Json": {
+        "type": "Transitive",
+        "resolved": "10.0.3",
+        "contentHash": "hSXaFmh7hNCuEoC4XNY5DrRkLDzYHqPx/Ik23R4J86Z7PE/Y6YidhG602dFVdLBRSdG6xp9NabH3dXpcoxWvww=="
+      },
+      "SharpZipLib": {
+        "type": "Transitive",
+        "resolved": "1.3.3",
+        "contentHash": "N8+hwhsKZm25tDJfWpBSW7EGhH/R7EMuiX+KJ4C4u+fCWVc1lJ5zg1u3S1RPPVYgTqhx/C3hxrqUpi6RwK5+Tg=="
+      },
+      "StringTemplate4": {
+        "type": "Transitive",
+        "resolved": "4.0.8",
+        "contentHash": "Rx3C673O+nvM1ZvOXDslzmIbpgCR8QHd0FD1iKP/srNZPi5Zhr5Ln4gHzRGLvofMkpVf/aJPBRkcD6VzqgV4rQ==",
+        "dependencies": {
+          "Antlr3.Runtime": "3.5.1"
+        }
+      },
+      "Svg": {
+        "type": "Transitive",
+        "resolved": "3.0.49",
+        "contentHash": "+iFmZDXGEaBaT/VjrkJIAas9EDtZwK2AH/4s1wSeTMdc5ABnLJl1Z7RPcmXJyGkmYxPcs1FVKd3+v2FjOkRebg=="
+      },
+      "System.Reactive.Core": {
+        "type": "Transitive",
+        "resolved": "3.1.1",
+        "contentHash": "CKWC+UP1aM75taNX+sTBn2P97uHIUjKxq+z45iy7P91QGFqNFleR2tsqIC76HMVvYl7o8oWyMiycdsc9rC1Z/g==",
+        "dependencies": {
+          "System.Reactive.Interfaces": "3.1.1"
+        }
+      },
+      "System.Reactive.Interfaces": {
+        "type": "Transitive",
+        "resolved": "3.1.1",
+        "contentHash": "aNVY3QoRznGFeQ+w+bMqhD8ElNWoyYq+7XTQIoxKKjBOyTOjUqIMEf1wvSdtwC4y92zg2W9q38b4Sr6cYNHVLg=="
+      },
+      "System.Reactive.Linq": {
+        "type": "Transitive",
+        "resolved": "3.1.1",
+        "contentHash": "HwsZsoYRg51cLGBOEa0uoZ5+d4CMcHEg/KrbqePhLxoz/SLA+ULISphBtn3woABPATOQ6j5YgGZWh4jxnJ3KYQ==",
+        "dependencies": {
+          "System.Reactive.Core": "3.1.1"
+        }
+      }
+    }
+  }
+}

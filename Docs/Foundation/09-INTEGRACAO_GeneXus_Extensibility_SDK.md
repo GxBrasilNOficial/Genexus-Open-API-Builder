@@ -7,7 +7,7 @@
 **Base Primária:** 04-REQUISITOS_MVP_Genexus_Open_API_Builder.md v1.1
 **Dependência direta:** 05-ARQUITETURA_FUNCIONAL_MVP.md v1.1
 **Relacionamento adicional:** 07-UX_WIZARD_INICIAL.md v1.0 / 08-MODELO_DADOS_E_METADATA.md v1.0
-**Objetivo:** definir integração técnica realista com GeneXus 18 via Extensibility SDK, usando Upgrade 15 como ambiente inicial de validação, separando fatos confirmados, hipóteses validáveis e o caminho técnico oficial.
+**Objetivo:** definir integração técnica realista com GeneXus 18 U14 ou posterior via Extensibility SDK, usando Upgrade 15 como ambiente inicial de validação, separando fatos confirmados, hipóteses validáveis e o caminho técnico oficial.
 **Idioma:** Português BR
 **Público principal:** Agentes de IA + mantenedores humanos
 **Data:** Abril/2026
@@ -66,7 +66,7 @@ No MVP:
 6. validar criação e persistência de Procedures, SDTs, Folder e File
 7. tratar YAML nativo como saída de validação/regressão, não como fonte primária da geração
 
-Na preparação `B010`, target framework, assemblies, tipo de projeto, empacotamento e mecanismo reproduzível de resolução das dependências são resultados a confirmar, não premissas. A evidência deve ser registrada em `Docs/Implementation/B010-SDK-E-BUILD-MINIMO.md`, sem tornar caminhos absolutos específicos da máquina parte da configuração versionada.
+A partir de GeneXus 18 U14, a preparação `B010` usa o feed NuGet e os MSBuild SDKs oficiais (`GeneXus.Package.UI.Sdk` e dependências) em vez do instalador legado. Target framework, propriedades de pacote e mecanismo de instalação na IDE continuam sujeitos à evidência de build e ao spike `B000`. A configuração versionada não pode depender de caminhos da instalação do GeneXus.
 
 [SDK-F09]
 
@@ -291,7 +291,7 @@ O MVP não cria novo objeto versionado nem sufixos automáticos para resolver co
 
 Os seguintes gates serão comprovados progressivamente nas Sprints 1–7, conforme cada capacidade for implementada. O conjunto deve estar aprovado antes do marco **wizard funcional do MVP concluído** e antes da Alpha:
 
-1. extensão carrega no GeneXus 18 Upgrade 15
+1. extensão carrega no GeneXus 18 U14 ou posterior, com U15 como ambiente inicial
 2. SDK cria, salva, reabre, altera e exclui objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`
 3. objeto `API` delega às Procedures e persiste `RestMethod`, `RestPath`, `Description` e `SecurityLevel`
 4. YAML gerado pelo GeneXus reflete rotas, métodos, parâmetros, SDTs e nomes `_API_`

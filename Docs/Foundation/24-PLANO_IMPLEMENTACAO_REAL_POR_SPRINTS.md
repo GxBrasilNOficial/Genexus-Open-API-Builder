@@ -95,7 +95,7 @@ Executar a Fase 0 do backlog (`B010`–`B012`) e deixar o terreno técnico repro
 
 ## Saída esperada
 
-Solution mínima reproduzível, em máquina Windows com GeneXus 18 Upgrade 15 e os pré-requisitos registrados por `B010`, pronta para o spike. Framework, assemblies e resolução de referências são confirmados durante `B010`; o carregamento na IDE pertence ao `B000`.
+Solution mínima reproduzível, compatível com GeneXus 18 U14 ou posterior e validada inicialmente no U15 local, pronta para o spike. O build usa feed NuGet e MSBuild SDKs oficiais registrados por `B010`; o carregamento na IDE pertence ao `B000`.
 
 [SPR-F24]
 
@@ -129,7 +129,7 @@ Se `B004` falhar sem alternativa oficial viável, revisar ou encerrar a tese atu
 
 Os gates abaixo são comprovados progressivamente nas Sprints 1–7. A Sprint 1 inicia essa comprovação com `B000`–`B006`; ela não precisa concluir antecipadamente capacidades que dependem do engine e dos contratos posteriores:
 
-1. extensão carrega no GeneXus 18 Upgrade 15
+1. extensão carrega no GeneXus 18 U14 ou posterior, com U15 como ambiente inicial
 2. SDK cria, salva, reabre, altera e exclui objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`
 3. objeto `API` delega às Procedures e persiste `RestMethod`, `RestPath`, `Description` e `SecurityLevel`
 4. YAML gerado pelo GeneXus reflete rotas, métodos, parâmetros, SDTs e nomes `_API_`

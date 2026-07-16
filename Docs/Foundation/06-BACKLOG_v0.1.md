@@ -269,7 +269,7 @@ Se B004 falhar sem alternativa oficial viável:
 
 | Gate | Evidência principal no backlog |
 |---|---|
-| 1. Carregamento no GeneXus 18 Upgrade 15 | B000 |
+| 1. Carregamento no GeneXus 18 U14 ou posterior (U15 como validação inicial) | B000 |
 | 2. Ciclo de vida dos objetos nativos pelo SDK | B003–B005 |
 | 3. Delegação, propriedades e segurança do API Object | B004, B054, B056, B065, B074, B092 e B093 |
 | 4. Contrato refletido no YAML gerado | B047, B054 e B070–B079 |

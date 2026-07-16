@@ -111,7 +111,7 @@ Transaction
 
 # 6. Decisões Estratégicas Atuais
 
-- **Plataforma-alvo:** GeneXus 18, com Upgrade 15 como ambiente inicial de validação
+- **Plataforma-alvo:** GeneXus 18 U14 ou posterior, com Upgrade 15 como ambiente inicial de validação
 - **Forma do produto:** extensão para a IDE GeneXus
 - **Entrada principal:** ação contextual sobre Transaction
 - **Público inicial:** comunidade GeneXus

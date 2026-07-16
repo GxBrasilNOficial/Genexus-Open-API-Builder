@@ -206,7 +206,7 @@ Campos senha/token devem iniciar desmarcados com alerta.
 
 Validar progressivamente nas Sprints 1–7 e aprovar o conjunto antes do marco **wizard funcional do MVP concluído** e antes da Alpha:
 
-1. extensão carrega no GeneXus 18 Upgrade 15
+1. extensão carrega no GeneXus 18 U14 ou posterior, com U15 como ambiente inicial
 2. SDK cria, salva, reabre, altera e exclui objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`
 3. objeto `API` delega às Procedures e persiste `RestMethod`, `RestPath`, `Description` e `SecurityLevel`
 4. YAML gerado pelo GeneXus reflete rotas, métodos, parâmetros, SDTs e nomes `_API_`

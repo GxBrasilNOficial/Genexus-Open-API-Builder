@@ -20,14 +20,19 @@ Uma validação técnica posterior pode exigir revisão de uma decisão. Nesse c
 - Próxima etapa vigente: consultar o [checkpoint operacional](../STATUS_ATUAL_E_PROXIMO_PASSO.md).
 - Implementação: ainda não iniciada.
 
-## Objetivo e limites do produto
+## Emenda técnica — 2026-07-16
 
+A validação técnica posterior substitui a premissa de que a extensão depende do instalador legado do Platform SDK. Para GeneXus 18 Upgrade 14 ou posterior, o build deve usar o feed NuGet e os MSBuild SDKs oficiais. O alvo mínimo de compatibilidade passa a ser GeneXus 18 U14; o U15 local permanece como primeiro ambiente de validação. A diferença U15 relativa a chamadas de `API Object` a partir de eventos Angular está fora do escopo do MVP.
+
+A emenda preserva o objetivo funcional — extensão dentro da IDE que gera objeto `API` nativo — e exige que a instalação/carregamento seja comprovada separadamente no spike `B000`.
+
+## Objetivo e limites do produto
 ### Decisões aceitas
 
 - O produto deve ser uma extensão executada dentro da IDE GeneXus.
 - Seu objetivo central é gerar um objeto `API` oficial e nativo do GeneXus.
 - Geração fora da IDE pertence a outros projetos e não satisfaz este objetivo.
-- GeneXus 18 é a versão mínima; o ambiente inicial é GeneXus 18 Upgrade 15.
+- GeneXus 18 Upgrade 14 é a versão mínima de compatibilidade; GeneXus 18 Upgrade 15 é o ambiente inicial de validação.
 - Compatibilidade futura com GeneXus Next é desejável, mas não bloqueia o MVP.
 - O projeto será totalmente open source e sem limite de uso.
 - O mantenedor será o primeiro usuário, em suas próprias KBs, mas o produto deve servir à comunidade.
@@ -517,7 +522,7 @@ Os YAMLs confirmaram a composição técnica entre o `Services base path` em `se
 - O desenho e a implementação devem atuar sobre objetos GeneXus, propriedades, serviços, anotações, variáveis, SDTs e Procedures.
 - Exemplos em YAML representam resultados esperados, não artefatos-fonte controlados pela extensão.
 - O YAML gerado será usado para validar o contrato público resultante e para testes de regressão.
-- A forma exata emitida pelo GeneXus 18 Upgrade 15 deverá ser confirmada por spike e testes na IDE.
+- A forma exata emitida para GeneXus 18 U14 ou posterior deverá ser confirmada por spike e testes na IDE, com U15 como ambiente inicial.
 
 ## KBs para testes
 
@@ -529,7 +534,7 @@ Os YAMLs confirmaram a composição técnica entre o `Services base path` em `se
 
 Os seguintes experimentos são gates transversais do MVP. Sua comprovação será progressiva ao longo das Sprints 1–7, de acordo com as dependências de cada contrato; o conjunto completo deve estar aprovado antes do marco **wizard funcional do MVP concluído** e antes da Alpha.
 
-1. A extensão carrega e funciona no GeneXus 18 Upgrade 15.
+1. A extensão carrega e funciona no GeneXus 18 U14 ou posterior, com validação inicial no U15.
 2. O SDK público permite criar, salvar, reabrir, alterar e excluir objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`.
 3. O objeto `API` delega às Procedures e persiste corretamente `RestMethod`, `RestPath`, `Description` e `SecurityLevel`.
 4. O YAML gerado pelo GeneXus reflete corretamente rotas, métodos, parâmetros, SDTs e nomes com `_API_`.

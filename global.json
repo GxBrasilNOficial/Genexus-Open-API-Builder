@@ -1,0 +1,8 @@
+{
+  "msbuild-sdks": {
+    "GeneXus.Base.Sdk": "3.0.0-beta5",
+    "GeneXus.Build.Sdk": "3.0.0-beta5",
+    "GeneXus.Package.BL.Sdk": "3.0.0-beta5",
+    "GeneXus.Package.UI.Sdk": "3.0.0-beta5"
+  }
+}

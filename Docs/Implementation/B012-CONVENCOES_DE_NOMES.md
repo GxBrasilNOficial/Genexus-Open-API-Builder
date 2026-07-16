@@ -18,7 +18,7 @@ Concluído em 2026-07-15.
 | Solution | `GenexusOpenApiBuilder.sln`. | Caminho exigido pelo documento 05, seção 5.7. |
 | Projeto de extensão | `GenexusOpenApiBuilder.Extension`. | Nome do `.csproj`, `AssemblyName` e `RootNamespace`. |
 | Namespace inicial | `GenexusOpenApiBuilder.Extension`. | Mantém correspondência direta com o assembly e evita um namespace genérico. |
-| Referências do SDK | `Artech.Architecture.*` com os nomes fornecidos pelo GeneXus. | Não foram renomeadas ou encapsuladas. |
+| Referências do SDK | Pacotes NuGet e MSBuild SDKs oficiais do GeneXus. | Não há referências diretas a DLLs da instalação. |
 
 Os nomes já presentes permanecem sem alteração, pois atendem ao contrato de layout e não conflitam com as convenções do produto.
 
@@ -35,4 +35,4 @@ Ainda não há Transaction, `ApiPlan` ou objetos GeneXus a gerar. Portanto, os s
 
 ## Decisão
 
-B012 não cria classes, projetos, objetos GeneXus ou regras de transformação de nomes. Esses artefatos dependem de uma Transaction e das APIs públicas que serão verificadas no pacote de spike. A próxima missão é `B000`: comprovar que a extensão mínima carrega na IDE GeneXus 18 Upgrade 15.
+B012 não cria classes, projetos, objetos GeneXus ou regras de transformação de nomes. Esses artefatos dependem de uma Transaction e das APIs públicas que serão verificadas no pacote de spike. A próxima missão é `B000`: comprovar que o pacote mínimo carrega na IDE GeneXus 18 U14 ou posterior, usando U15 como validação inicial.

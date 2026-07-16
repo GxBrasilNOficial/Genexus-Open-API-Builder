@@ -23,7 +23,7 @@ Ele existe para:
 - definir responsabilidades funcionais mínimas
 - orientar implementação inicial
 - reduzir ambiguidades técnicas
-- manter coerência com limitações reais do GeneXus 18, usando Upgrade 15 como ambiente inicial de validação
+- manter coerência com limitações reais do GeneXus 18 U14 ou posterior, usando Upgrade 15 como ambiente inicial de validação
 
 Este documento não substitui o documento 04, não define design final de classes e não presume capacidades ainda não validadas do SDK.
 
@@ -444,7 +444,7 @@ Antes de qualquer gravação, a engine deve verificar todos os nomes planejados.
 ## Base inicial
 
 - GeneXus 18 como versão mínima
-- Ambiente de referência inicial: GeneXus 18 Upgrade 15
+- Compatibilidade mínima: GeneXus 18 Upgrade 14; ambiente de referência inicial: GeneXus 18 Upgrade 15
 - .NET prioritário
 
 ## Expansão possível

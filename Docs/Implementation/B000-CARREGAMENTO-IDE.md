@@ -2,34 +2,40 @@
 
 ## Estado
 
-Bloqueado em 2026-07-15 antes de qualquer tentativa de implantação na IDE.
+Pendente de instalação manual e teste em IDE. O bloqueio anterior baseado na ausência do instalador Platform SDK foi removido em 2026-07-16, pois o método oficial para GeneXus 18 Upgrade 14 ou posterior usa pacotes NuGet e MSBuild SDKs.
 
 ## Objetivo
 
-Comprovar que a extensão mínima carrega no GeneXus 18 Upgrade 15 sem criar ou alterar objetos em uma Knowledge Base.
+Comprovar que o pacote mínimo da extensão carrega na IDE GeneXus 18 U14 ou posterior, usando o U15 local como primeiro ambiente de validação, sem criar ou alterar objetos em uma Knowledge Base.
 
-## Evidência coletada
+## Evidência disponível
 
-- a instalação localizada é GeneXus 18 Upgrade 15, build `18.0.15.188745`;
-- há assemblies `Artech.Architecture.*` suficientes para compilar a biblioteca mínima;
-- não há instalação separada do GeneXus Platform SDK no registro do Windows;
-- não foram encontrados diretórios dedicados `PackageBuilder`, `Samples` ou SDK na raiz da instalação consultada;
-- a documentação oficial do Platform SDK estabelece que extensões clássicas são disponibilizadas ao copiar a DLL para a pasta `Packages` do GeneXus e iniciar a IDE uma vez com `/install`.
+- o projeto foi migrado para `GeneXus.Package.UI.Sdk` e compilado com as referências oficiais do feed GeneXus Azure Artifacts;
+- a build produziu `Src/Packages/Release/GenexusOpenApiBuilder.Extension.0.1.0-preview.1.nupkg`;
+- esse pacote contém `lib/net471/GenexusOpenApiBuilder.Extension.dll`;
+- o formato do pacote foi confirmado pela build, mas o fluxo de registro e descoberta na IDE ainda não foi demonstrado;
+- a instalação local disponível é GeneXus 18 Upgrade 15, build `18.0.15.188745`, e serve somente como ambiente de teste.
 
-Fonte oficial: [GeneXus Platform SDK](https://wiki.genexus.com/commwiki/wiki?3271,GeneXus+Platform+SDK).
+Fonte oficial: [GeneXus Platform SDK Download](https://docs.genexus.com/en/wiki?27521,GeneXus+Platform+SDK+Download).
 
-## Bloqueio
+## Regra de segurança
 
-A regra local em `AGENTS.md` proíbe criar, alterar, mover, renomear ou excluir itens em `C:\Program Files (x86)\GeneXus` e subpastas. Portanto, não foi copiada DLL para `Packages`, não foi executado `genexus.exe /install` e a IDE não foi iniciada para registrar a extensão.
+`AGENTS.md` proíbe criar, alterar, mover, renomear ou excluir itens em `C:\Program Files (x86)\GeneXus` e subpastas. Portanto, este repositório não automatiza cópia, registro, execução de `/install` nem outra alteração na instalação do GeneXus.
 
-Os assemblies instalados permitem validar a compilação realizada em B010, mas não substituem os artefatos, o assistente e o fluxo de implantação do Platform SDK.
+## Próxima execução autorizável
 
-## Sem efeitos colaterais
+Antes de qualquer instalação, identificar no exemplo/documentação oficial o procedimento exato para consumir o `.nupkg` produzido. Depois, o usuário poderá executar manualmente esse procedimento na instalação normal de teste. O agente apenas poderá observar o resultado em modo leitura, salvo autorização explícita que também altere a regra local de proteção.
+
+## Critério de conclusão e evidência esperada
+
+- artefato e procedimento oficial de instalação identificados;
+- pacote instalado manualmente pelo usuário em GeneXus 18 U14 ou posterior;
+- extensão mínima carregada sem erro na IDE;
+- log e instruções reproduzíveis registrados;
+- nenhuma Knowledge Base aberta, criada ou alterada durante o teste.
+
+## Sem efeitos colaterais até aqui
 
 - nenhuma pasta ou arquivo da instalação do GeneXus foi alterado;
 - nenhuma Knowledge Base foi aberta ou modificada;
-- nenhum registro de extensão foi criado.
-
-## Condição para retomar
-
-É necessário um ambiente de teste explicitamente autorizado, fora da instalação protegida, contendo GeneXus 18 Upgrade 15 e o Platform SDK compatível, ou autorização explícita e limitada para registrar a extensão em uma instalação de teste. A partir dele, B000 poderá criar o pacote mínimo, implantar a DLL, executar `/install` e comprovar o carregamento.
+- nenhum registro de extensão foi criado pelo projeto ou pelo agente.
