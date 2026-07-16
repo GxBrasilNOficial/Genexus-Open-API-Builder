@@ -26,11 +26,12 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 Executar `B000`:
 
-> Identificar o procedimento oficial de instalação do pacote `.nupkg` e comprovar manualmente que a extensão mínima carrega em GeneXus 18 U14 ou posterior, usando o U15 local como ambiente inicial de validação e sem alterar uma Knowledge Base.
+> No `B000`, derivar do contrato oficial o manifesto, ponto de entrada e demais elementos mínimos que tornem o pacote descobrível/carregável; recompilar e só então comprovar manualmente o carregamento em U14 ou U15, sem alterar uma Knowledge Base.
 
 ## Critério de conclusão e evidência esperada
 
-- artefato e mecanismo oficial de instalação/descoberta identificados;
+- contrato oficial de instalação/descoberta identificado;
+- manifesto, ponto de entrada ou equivalentes mínimos implementados e recompilados conforme esse contrato;
 - pacote instalado manualmente pelo usuário;
 - extensão mínima carregada na IDE sem erro;
 - log, configuração e instruções de reprodução registrados;

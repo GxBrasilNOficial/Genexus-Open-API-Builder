@@ -22,14 +22,18 @@ Fonte oficial: [GeneXus Platform SDK Download](https://docs.genexus.com/en/wiki?
 
 `AGENTS.md` proíbe criar, alterar, mover, renomear ou excluir itens em `C:\Program Files (x86)\GeneXus` e subpastas. Portanto, este repositório não automatiza cópia, registro, execução de `/install` nem outra alteração na instalação do GeneXus.
 
-## Próxima execução autorizável
+## Próxima tarefa técnica
 
-Antes de qualquer instalação, identificar no exemplo/documentação oficial o procedimento exato para consumir o `.nupkg` produzido. Depois, o usuário poderá executar manualmente esse procedimento na instalação normal de teste. O agente apenas poderá observar o resultado em modo leitura, salvo autorização explícita que também altere a regra local de proteção.
+O `.nupkg` de B010 prova apenas o empacotamento NuGet mínimo. Ele não possui ainda manifesto `.package` nem ponto de entrada de extensão; portanto, não há base para supor que seja descoberto pela IDE.
+
+O primeiro passo de B000 é consultar o contrato oficial e o exemplo de extensões, determinar quais arquivos, metadados e classe de entrada tornam um pacote descobrível, e implementar somente esse mínimo. Caso o contrato exija manifesto `.package`, ele será criado nesta etapa; se não exigir, a evidência deve registrar o mecanismo alternativo. Depois de recompilar e inspecionar o novo artefato, o usuário poderá executar manualmente o procedimento de instalação na instalação normal de teste. O agente permanece limitado a observação em modo leitura, salvo alteração explícita da regra local de proteção.
 
 ## Critério de conclusão e evidência esperada
 
-- artefato e procedimento oficial de instalação identificados;
-- pacote instalado manualmente pelo usuário em GeneXus 18 U14 ou posterior;
+- contrato oficial de descoberta/carregamento identificado e citado;
+- manifesto, ponto de entrada ou equivalentes mínimos criados somente conforme esse contrato;
+- pacote recompilado e conteúdo inspecionado;
+- pacote instalado manualmente pelo usuário em U14 e, quando disponível, no U15 local;
 - extensão mínima carregada sem erro na IDE;
 - log e instruções reproduzíveis registrados;
 - nenhuma Knowledge Base aberta, criada ou alterada durante o teste.

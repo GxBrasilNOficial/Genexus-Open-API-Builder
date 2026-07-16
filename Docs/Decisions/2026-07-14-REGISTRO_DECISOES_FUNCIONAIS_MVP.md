@@ -18,13 +18,25 @@ Uma validação técnica posterior pode exigir revisão de uma decisão. Nesse c
 - Situação: entrevista funcional e consolidação documental do MVP concluídas.
 - Consolidação documental: auditada em 2026-07-14 e formalmente encerrada em 2026-07-15.
 - Próxima etapa vigente: consultar o [checkpoint operacional](../STATUS_ATUAL_E_PROXIMO_PASSO.md).
-- Implementação: ainda não iniciada.
+- Implementação funcional: ainda não iniciada; a preparação técnica mínima de build foi concluída em B010.
 
 ## Emenda técnica — 2026-07-16
 
-A validação técnica posterior substitui a premissa de que a extensão depende do instalador legado do Platform SDK. Para GeneXus 18 Upgrade 14 ou posterior, o build deve usar o feed NuGet e os MSBuild SDKs oficiais. O alvo mínimo de compatibilidade passa a ser GeneXus 18 U14; o U15 local permanece como primeiro ambiente de validação. A diferença U15 relativa a chamadas de `API Object` a partir de eventos Angular está fora do escopo do MVP.
+### Fato oficial que motivou a emenda
 
-A emenda preserva o objetivo funcional — extensão dentro da IDE que gera objeto `API` nativo — e exige que a instalação/carregamento seja comprovada separadamente no spike `B000`.
+A documentação oficial informa que o instalador do Platform SDK foi descontinuado a partir de GeneXus 18 Upgrade 14. Para U14+, as assemblies de referência são pacotes NuGet do feed GeneXus Azure Artifacts e os tipos de projeto são MSBuild SDKs. Esse fato substitui a premissa anterior de que o projeto deveria localizar DLLs do SDK sob a instalação local.
+
+### Decisão de produto e manutenção
+
+O mantenedor aprovou U14+ como baseline de compatibilidade do MVP, mantendo U15 como primeiro ambiente disponível de validação. A razão é operacional: U14 é o primeiro upgrade coberto pelo mecanismo oficial moderno, permitindo uma única cadeia versionada de feed, SDKs e lockfile.
+
+U13 e anteriores não foram considerados tecnicamente impossíveis. Eles podem exigir o Platform SDK legado, mas incluí-los significaria manter, documentar e testar uma segunda cadeia de build e empacotamento. Esse custo não foi aceito para o MVP. O baseline U14+ é, portanto, decisão de escopo reversível pelo mantenedor, não afirmação de incompatibilidade de U13.
+
+### Limite da evidência
+
+A build comprovou o mecanismo moderno no repositório, não o carregamento da extensão em U14 ou U15. Assim, “U14+” significa alvo de produto e de teste pendente; suporte prático só poderá ser anunciado após o `B000`. A diferença U15 relativa a chamadas de `API Object` a partir de eventos Angular está fora do escopo do MVP e não determina o baseline.
+
+A emenda preserva o objetivo funcional — extensão dentro da IDE que gera objeto `API` nativo — e exige que o `B000` torne o pacote minimamente descobrível e carregável antes da instalação manual.
 
 ## Objetivo e limites do produto
 ### Decisões aceitas

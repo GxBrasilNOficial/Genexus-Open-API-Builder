@@ -70,6 +70,14 @@ A partir de GeneXus 18 U14, a preparação `B010` usa o feed NuGet e os MSBuild 
 
 [SDK-F09]
 
+### 4.1 Evidência de B010 e limites
+
+- **Fato oficial:** U14+ usa feed NuGet e MSBuild SDKs; isso substitui o instalador legado como método de build.
+- **Fato de build:** o projeto mínimo restaurou e compilou em `net471`, gerando um `.nupkg` sem depender de DLLs da instalação.
+- **Decisão de produto:** o MVP mira U14+ para manter uma única cadeia moderna; U15 é o primeiro ambiente de validação disponível.
+- **Inferência não validada:** esse `.nupkg` será descoberto/carregado pela IDE U14 ou U15. Não deve ser tratado como suporte comprovado.
+- **Próxima responsabilidade de B000:** derivar do contrato oficial o manifesto, a classe de entrada e demais elementos mínimos de descoberta/carregamento; só depois haverá instalação manual.
+
 ---
 
 # 5. Capacidades Confirmadas Publicamente
