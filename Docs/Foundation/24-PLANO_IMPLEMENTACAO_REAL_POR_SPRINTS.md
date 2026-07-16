@@ -95,7 +95,7 @@ Executar a Fase 0 do backlog (`B010`–`B012`) e deixar o terreno técnico repro
 
 ## Saída esperada
 
-Solution mínima reproduzível, compatível com GeneXus 18 U14 ou posterior e validada inicialmente no U15 local, pronta para o spike. O build usa feed NuGet e MSBuild SDKs oficiais registrados por `B010`; o carregamento na IDE pertence ao `B000`.
+Solution mínima reproduzível, construída pelo mecanismo oficial disponível a partir do GeneXus 18 U14 e pronta para o spike. O build usa feed NuGet e MSBuild SDKs oficiais registrados por `B010`; o carregamento e a compatibilidade prática serão validados primeiro no U15 local pelo `B000`. A validação posterior do limite inferior no U14 dependerá de colegas da comunidade, sem data definida e sem bloquear o MVP.
 
 [SPR-F24]
 

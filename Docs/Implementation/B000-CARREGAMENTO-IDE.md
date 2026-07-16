@@ -33,7 +33,8 @@ O primeiro passo de B000 é consultar o contrato oficial e o exemplo de extensõ
 - contrato oficial de descoberta/carregamento identificado e citado;
 - manifesto, ponto de entrada ou equivalentes mínimos criados somente conforme esse contrato;
 - pacote recompilado e conteúdo inspecionado;
-- pacote instalado manualmente pelo usuário em U14 e, quando disponível, no U15 local;
+- pacote instalado manualmente pelo usuário no U15 local como primeira validação;
+- validação posterior no U14 por colegas da comunidade, sem data definida e sem bloquear o MVP;
 - extensão mínima carregada sem erro na IDE;
 - log e instruções reproduzíveis registrados;
 - nenhuma Knowledge Base aberta, criada ou alterada durante o teste.
