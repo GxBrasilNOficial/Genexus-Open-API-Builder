@@ -17,7 +17,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B010` revalidado pelo método oficial U14+: feed NuGet, MSBuild SDKs, lockfile, solution, projeto e pacote mínimos;
 - `B011` concluído: estrutura interna confirmada sem introduzir projetos ou camadas vazias;
 - `B012` concluído: convenções aplicáveis confirmadas sem antecipar objetos da geração.
-- `B000` concluído no U15: extensão mínima compilada, registrada, marcada e carregada sem erro de compatibilidade com os metadados públicos corrigidos; a coluna Description vazia foi aceita como limitação não bloqueante.
+- `B000` validado no U15: extensão mínima compilada, registrada, marcada e carregada sem erro de compatibilidade com os metadados públicos corrigidos; a estabilização da DLL Release requer reinstalação final.
 
 ## Frente ativa
 
@@ -25,16 +25,17 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Próxima ação única
 
-Iniciar `B001` — Detectar KB ativa:
+Concluir a revalidação final de `B000`:
 
-> Identificar e comprovar, pela API oficial disponível, como obter a Knowledge Base ativa em modo somente leitura, sem criar, abrir, alterar ou persistir objetos GeneXus.
+> Compilar duas vezes a extensão Release sem SourceLink, confirmar hashes idênticos, reinstalar a DLL estável e verificar que permanece marcada no Extensions Manager, sem abrir uma Knowledge Base.
 
 ## Critério de conclusão e evidência esperada
 
-- API oficial ou contrato de SDK identificado para obter a KB ativa;
-- leitura da KB ativa demonstrada em sessão existente, sem criar ou modificar objetos;
+- dois rebuilds Release produzem a mesma DLL por SHA-256;
+- DLL instalada idêntica à build recompilada por SHA-256;
+- extensão marcada no Extensions Manager após o reinício da IDE;
 - log e instruções de reprodução registrados;
-- nenhuma alteração de KB nesta ação.
+- nenhuma Knowledge Base aberta, criada ou alterada nesta ação.
 
 A criação, leitura e persistência de objetos GeneXus serão tratadas separadamente em `B001`–`B006`.
 

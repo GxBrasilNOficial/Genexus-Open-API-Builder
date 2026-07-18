@@ -17,5 +17,6 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <EnableSourceLink>false</EnableSourceLink>
   </PropertyGroup>
 </Project>
