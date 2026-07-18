@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-07-16.
+2026-07-17.
 
 ## Último marco concluído
 
@@ -17,6 +17,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B010` revalidado pelo método oficial U14+: feed NuGet, MSBuild SDKs, lockfile, solution, projeto e pacote mínimos;
 - `B011` concluído: estrutura interna confirmada sem introduzir projetos ou camadas vazias;
 - `B012` concluído: convenções aplicáveis confirmadas sem antecipar objetos da geração.
+- `B000` concluído no U15: extensão mínima compilada, registrada, marcada e carregada sem erro de compatibilidade; a coluna Description vazia foi aceita como limitação não bloqueante.
 
 ## Frente ativa
 
@@ -24,17 +25,15 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Próxima ação única
 
-Executar `B000`:
+Iniciar `B001` — Detectar KB ativa:
 
-> No `B000`, derivar do contrato oficial o manifesto, ponto de entrada e demais elementos mínimos que tornem o pacote descobrível/carregável; recompilar e só então comprovar manualmente o carregamento em U14 ou U15, sem alterar uma Knowledge Base.
+> Identificar e comprovar, pela API oficial disponível, como obter a Knowledge Base ativa em modo somente leitura, sem criar, abrir, alterar ou persistir objetos GeneXus.
 
 ## Critério de conclusão e evidência esperada
 
-- contrato oficial de instalação/descoberta identificado;
-- manifesto, ponto de entrada ou equivalentes mínimos implementados e recompilados conforme esse contrato;
-- pacote instalado manualmente pelo usuário;
-- extensão mínima carregada na IDE sem erro;
-- log, configuração e instruções de reprodução registrados;
+- API oficial ou contrato de SDK identificado para obter a KB ativa;
+- leitura da KB ativa demonstrada em sessão existente, sem criar ou modificar objetos;
+- log e instruções de reprodução registrados;
 - nenhuma alteração de KB nesta ação.
 
 A criação, leitura e persistência de objetos GeneXus serão tratadas separadamente em `B001`–`B006`.
@@ -52,9 +51,8 @@ A criação, leitura e persistência de objetos GeneXus serão tratadas separada
 
 ## Bloqueios e fatos ainda não validados
 
-- procedimento oficial para instalar e registrar o `.nupkg` na IDE;
-- carregamento real do pacote em U14 e no U15 local;
-- compatibilidade prática das APIs do SDK com as duas versões;
+- carregamento real do pacote em U14;
+- compatibilidade prática das APIs do SDK com U14;
 - comprovação progressiva dos gates técnicos transversais definidos nos documentos 09, 15 e 24.
 
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: este projeto não escreve em `C:\Program Files (x86)\GeneXus`.
@@ -68,7 +66,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- spike real na IDE;
+- B001 — detecção da KB ativa;
 - protótipo navegável do wizard;
 - `ApiPlan`;
 - engine de geração;

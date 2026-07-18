@@ -4,11 +4,18 @@
     <PackageId>GenexusOpenApiBuilder.Extension</PackageId>
     <Version>0.1.0-preview.1</Version>
     <Authors>Genexus Open API Builder contributors</Authors>
-    <Description>Extensão mínima da IDE para o GeneXus Open API Builder.</Description>
+    <Company>GxBrasilNOficial</Company>
+    <Description>Genexus Open API Build - Preview</Description>
+    <AssemblyTitle>Genexus Open API Build - Preview</AssemblyTitle>
+    <Product>Genexus Open API Build - Preview</Product>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <InformationalVersion>0.1.0-preview.1</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <AssemblyName>GenexusOpenApiBuilder.Extension</AssemblyName>
     <RootNamespace>GenexusOpenApiBuilder.Extension</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   </PropertyGroup>
 </Project>
