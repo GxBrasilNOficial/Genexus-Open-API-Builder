@@ -18,6 +18,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B011` concluído: estrutura interna confirmada sem introduzir projetos ou camadas vazias;
 - `B012` concluído: convenções aplicáveis confirmadas sem antecipar objetos da geração.
 - `B000` concluído no U15: extensão mínima compilada, registrada, marcada e carregada sem erro de compatibilidade com a DLL Release estável e os metadados públicos corrigidos; a coluna Description vazia foi aceita como limitação não bloqueante.
+- `B001` concluído no U15: a extensão detectou a KB de teste `wsEducacaoSpTeste` pelo evento público `OnAfterOpenKB` e pela KB recebida em `e.KB`, exibindo nome, GUID e localização na janela Output sem operações de escrita.
 
 ## Frente ativa
 
@@ -25,18 +26,18 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Próxima ação única
 
-Iniciar `B001` — Detectar KB ativa:
+Iniciar `B002` — Listar Transactions reais:
 
-> Identificar e comprovar, pela API oficial disponível, como obter a Knowledge Base ativa em modo somente leitura, sem criar, abrir, alterar ou persistir objetos GeneXus.
+> Identificar e comprovar, pela API oficial disponível, como listar Transactions da KB ativa em modo somente leitura, sem criar, abrir, alterar ou persistir objetos GeneXus.
 
 ## Critério de conclusão e evidência esperada
 
-- API oficial ou contrato de SDK identificado para obter a KB ativa;
-- leitura da KB ativa demonstrada em sessão existente, sem criar ou modificar objetos;
+- API oficial ou contrato de SDK identificado para listar Transactions;
+- ao menos uma Transaction real listada em uma KB de teste existente;
 - log e instruções de reprodução registrados;
-- nenhuma alteração de KB nesta ação.
+- nenhuma alteração de KB ou de objetos nesta ação.
 
-A criação, leitura e persistência de objetos GeneXus serão tratadas separadamente em `B001`–`B006`.
+A criação, releitura e persistência de objetos GeneXus serão tratadas separadamente em `B003`–`B006`.
 
 ## Sequência operacional vigente
 
@@ -66,7 +67,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- B001 — detecção da KB ativa;
+- B002 — listagem de Transactions reais;
 - protótipo navegável do wizard;
 - `ApiPlan`;
 - engine de geração;
