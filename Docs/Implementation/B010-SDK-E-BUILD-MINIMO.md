@@ -82,4 +82,4 @@ Validação em 2026-07-16: restore em modo bloqueado e build `Release` concluír
 
 ## Critério de encerramento
 
-A solução e o pacote mínimos são restauráveis e compiláveis sem depender da instalação do GeneXus. O B000 posterior tornou o pacote minimamente descobrível e carregável e comprovou seu teste manual no U15; a próxima frente operacional é B001, conforme `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
+A solução e o pacote mínimos são restauráveis e compiláveis sem depender da instalação do GeneXus. B000–B003 foram concluídos posteriormente no U15; a próxima frente operacional é B004, conforme `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.

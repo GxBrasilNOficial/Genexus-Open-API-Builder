@@ -23,6 +23,10 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Planejamento da fase prática
 - Sprint 0 concluído: build mínima reproduzível (`B010`–`B012`), solution e projeto de extensão em `Src`
 - B000 concluído no U15: extensão mínima registrada, marcada e carregada na IDE com a DLL Release estável e os metadados públicos corrigidos
+- B001 concluído no U15: detecção da KB ativa por API oficial, em modo somente leitura
+- B002 concluído no U15: listagem de 10 Transactions reais por API oficial, em modo somente leitura
+- B003 concluído no U15: criação controlada de Folder de teste com autorização explícita
+- correção de segurança pós-B003 validada: a DLL atual não executa sondas automaticamente ao abrir uma KB
 
 ## Fixed
 
@@ -35,7 +39,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Sprint 1 — tarefas restantes do Spike GeneXus Extensibility SDK (`B001`–`B006`)
+- Sprint 1 — tarefas restantes do Spike GeneXus Extensibility SDK (`B004`–`B006`)
 - Protótipo inicial do wizard
 - Primeira geração experimental
 

@@ -51,7 +51,7 @@ O `.ps1` pode continuar sendo chamado diretamente com `-Apply`, mas essa forma p
 
 ## Próxima tarefa técnica
 
-O B000 está concluído. A próxima frente é B001 — detectar a Knowledge Base ativa apenas por APIs oficiais, em modo leitura e sem criar ou alterar objetos. A coluna Description vazia é uma limitação conhecida do Extensions Manager no U15 e não bloqueia este marco.
+B000–B003 estão concluídos. A próxima frente é B004 — validar o ciclo de vida de um API Object oficial na KB de teste, com autorização explícita antes de cada fase de escrita. O checkpoint canônico é `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. A coluna Description vazia é uma limitação conhecida do Extensions Manager no U15 e não bloqueia este marco.
 
 ## Critério de conclusão e evidência esperada
 
