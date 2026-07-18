@@ -30,6 +30,13 @@ public sealed class Package : AbstractPackageUI
         WriteOutput(
             $"[Genexus Open API Builder][B001] Knowledge Base ativa detectada: " +
             $"Name='{activeKnowledgeBase.Name}', Guid='{activeKnowledgeBase.Guid}', Location='{activeKnowledgeBase.Location}'.");
+
+        var transactions = TransactionProbe.ReadNames(e.KB);
+        WriteOutput($"[Genexus Open API Builder][B002] Transactions encontradas: {transactions.Count}.");
+        foreach (var transactionName in transactions)
+        {
+            WriteOutput($"[Genexus Open API Builder][B002] Transaction: {transactionName}");
+        }
     }
 
     private static void WriteOutput(string message)
