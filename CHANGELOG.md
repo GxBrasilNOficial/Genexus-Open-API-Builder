@@ -22,7 +22,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - LICENSE MIT
 - Planejamento da fase prática
 - Sprint 0 concluído: build mínima reproduzível (`B010`–`B012`), solution e projeto de extensão em `Src`
-- B000 validado no U15: extensão mínima registrada, marcada e carregada na IDE com os metadados públicos corrigidos; pendente de revalidação após estabilização da DLL Release
+- B000 concluído no U15: extensão mínima registrada, marcada e carregada na IDE com a DLL Release estável e os metadados públicos corrigidos
 
 ## Fixed
 

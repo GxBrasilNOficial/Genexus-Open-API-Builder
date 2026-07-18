@@ -2,7 +2,7 @@
 
 ## Estado
 
-Revalidação final pendente no GeneXus 18 Upgrade 15: a extensão mínima foi compilada, registrada e confirmada como marcada no Extensions Manager, sem abrir uma Knowledge Base. A correção de estabilidade da DLL Release desabilita SourceLink, cujo commit incorporado alterava a identidade binária após cada commit; por isso exige nova reinstalação e confirmação visual. O bloqueio anterior baseado na ausência do instalador Platform SDK foi removido em 2026-07-16, pois o método oficial para GeneXus 18 Upgrade 14 ou posterior usa pacotes NuGet e MSBuild SDKs.
+Concluído no GeneXus 18 Upgrade 15: a extensão mínima foi recompilada sem SourceLink, registrada e confirmada como marcada no Extensions Manager, sem abrir uma Knowledge Base. Dois rebuilds Release e a DLL instalada coincidiram pelo SHA-256 `9612C8B689DA194E748E2DC396B56B2612C99F173840B03F5CB43CC69947F836`. O bloqueio anterior baseado na ausência do instalador Platform SDK foi removido em 2026-07-16, pois o método oficial para GeneXus 18 Upgrade 14 ou posterior usa pacotes NuGet e MSBuild SDKs.
 
 ## Objetivo
 
@@ -20,8 +20,8 @@ Comprovar que o pacote mínimo da extensão carrega na IDE GeneXus 18 U14 ou pos
 - após reiniciar a IDE, a extensão apareceu no Extensions Manager, mas estava desmarcada. Logo, a instalação e a cópia foram demonstradas; a ativação/carregamento ainda não.
 - a comparação com um pacote UI ativo do U15 identificou a diferença: a classe de entrada agora herda de `AbstractPackageUI`, em vez de `AbstractPackage`;
 - a execução manual de `genexus /install` registrou a DLL como adicionada, mas recusou a carga com `Compatibility: cannot load package ... version '0', expecting version '143920'`;
-- com `GenerateAssemblyInfo` habilitado, o SDK gerou `PackageCompatibility(Version = 143920)` para a DLL; a build com os metadados públicos corrigidos produziu o SHA-256 `5F5E309BDD499B19AAEC999419EB98079F55F52446E8A775DEE65CF0E9640C98`.
-- a DLL instalada corresponde exatamente à build então validada por SHA-256; após o commit, o SourceLink incorporou o novo hash de commit e fez o rebuild normal gerar `B736C9B56F5B75F46ED90FC44CAE16CAACDA24A754C81155D0A113B7A8EE94DF`, embora a estrutura funcional permanecesse igual.
+- com `GenerateAssemblyInfo` habilitado, o SDK gerou `PackageCompatibility(Version = 143920)` para a DLL; com `EnableSourceLink=false`, dois rebuilds Release produziram o mesmo SHA-256 `9612C8B689DA194E748E2DC396B56B2612C99F173840B03F5CB43CC69947F836`.
+- a DLL instalada corresponde exatamente à build Release estável por SHA-256, e a confirmação visual posterior mostrou a extensão marcada no Extensions Manager com fabricante `GxBrasilNOficial` e versão `0.1.0-preview.1`.
 - a DLL atual contém `AssemblyDescription`, `FileDescription`, `ProductName` e `Comments` com `Genexus Open API Builder - Preview`, mas o Extensions Manager do U15 mantém a coluna Description vazia; essa exibição não bloqueia o B000, pois a extensão está marcada, carregada e identificada por Nome, Fabricante e Versão;
 - a instalação local disponível é GeneXus 18 Upgrade 15, build `18.0.15.188745`, e serve somente como ambiente de teste.
 
@@ -51,7 +51,7 @@ O `.ps1` pode continuar sendo chamado diretamente com `-Apply`, mas essa forma p
 
 ## Próxima tarefa técnica
 
-A próxima ação é recompilar duas vezes, reinstalar e confirmar visualmente a DLL Release sem SourceLink. A coluna Description vazia é uma limitação conhecida do Extensions Manager no U15 e não bloqueia este marco. Depois dessa revalidação, a próxima frente será B001 — detectar a Knowledge Base ativa apenas por APIs oficiais, em modo leitura e sem criar ou alterar objetos.
+O B000 está concluído. A próxima frente é B001 — detectar a Knowledge Base ativa apenas por APIs oficiais, em modo leitura e sem criar ou alterar objetos. A coluna Description vazia é uma limitação conhecida do Extensions Manager no U15 e não bloqueia este marco.
 
 ## Critério de conclusão e evidência esperada
 
