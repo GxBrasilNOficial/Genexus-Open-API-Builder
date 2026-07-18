@@ -37,6 +37,8 @@ public sealed class Package : AbstractPackageUI
         {
             WriteOutput($"[Genexus Open API Builder][B002] Transaction: {transactionName}");
         }
+        var folderResult = FolderCreationProbe.CreateIfAbsent(e.KB, "GxOpenApi_B003_Probe");
+        WriteOutput($"[Genexus Open API Builder][B003] {folderResult}");
     }
 
     private static void WriteOutput(string message)

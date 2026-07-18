@@ -20,6 +20,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B000` concluído no U15: extensão mínima compilada, registrada, marcada e carregada sem erro de compatibilidade com a DLL Release estável e os metadados públicos corrigidos; a coluna Description vazia foi aceita como limitação não bloqueante.
 - `B001` concluído no U15: a extensão detectou a KB de teste `wsEducacaoSpTeste` pelo evento público `OnAfterOpenKB` e pela KB recebida em `e.KB`, exibindo nome, GUID e localização na janela Output sem operações de escrita.
 - `B002` concluído no U15: a extensão listou 10 Transactions reais da KB de teste `wsEducacaoSpTeste` com `Transaction.GetAll(knowledgeBase.DesignModel)`, exibindo o total e os nomes na janela Output sem operações de escrita.
+- `B003` concluído no U15: a extensão criou o Folder de teste `GxOpenApi_B003_Probe` no Root Module da KB `wsEducacaoSpTeste`, confirmado na janela Output e no painel Properties, sem alterar objetos preexistentes.
 
 ## Frente ativa
 
@@ -27,19 +28,19 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Próxima ação única
 
-Iniciar `B003` — Criar objeto simples de teste suportado pelo SDK:
+Iniciar `B004` — Validar ciclo de vida do API Object oficial:
 
-> Identificar e comprovar, pela API oficial disponível, a criação controlada de um único objeto simples em uma KB de teste, com nome exclusivo e sem substituir objetos existentes.
+> Identificar e comprovar, pela API oficial disponível, a criação, alteração, releitura e exclusão de um API Object de teste na KB de teste, sem afetar APIs existentes.
 
 ## Critério de conclusão e evidência esperada
 
-- API oficial ou contrato de SDK identificada para criar o objeto escolhido;
-- objeto de teste criado e visualizado na KB de teste;
+- API oficial ou contrato de SDK identificado para criar e salvar o API Object;
+- API Object de teste criado, alterado, relido e excluído na KB de teste;
 - log e instruções de reprodução registrados;
-- nenhuma alteração em objetos preexistentes;
-- autorização explícita do usuário antes de qualquer escrita na KB.
+- nenhuma alteração em APIs ou objetos preexistentes;
+- autorização explícita do usuário antes de cada fase de escrita na KB.
 
-A releitura, alteração, exclusão e persistência de outros objetos GeneXus serão tratadas separadamente em `B004`–`B006`.
+A validação do ciclo de vida de Procedure, SDT, Folder e File permanece em `B005`; a persistência de metadata em File permanece em `B006`.
 
 ## Sequência operacional vigente
 
@@ -69,7 +70,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- B003 — criação controlada de objeto simples;
+- B004 — ciclo de vida de API Object;
 - protótipo navegável do wizard;
 - `ApiPlan`;
 - engine de geração;
