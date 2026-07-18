@@ -35,4 +35,4 @@ Ainda não há Transaction, `ApiPlan` ou objetos GeneXus a gerar. Portanto, os s
 
 ## Decisão
 
-B012 não cria classes, projetos, objetos GeneXus ou regras de transformação de nomes. Esses artefatos dependem de uma Transaction e das APIs públicas que serão verificadas no pacote de spike. A próxima missão é `B000`: comprovar que o pacote mínimo carrega na IDE GeneXus 18 U14 ou posterior, usando U15 como validação inicial.
+B012 não cria classes, projetos, objetos GeneXus ou regras de transformação de nomes. Esses artefatos dependem de uma Transaction e das APIs públicas que serão verificadas no pacote de spike. O `B000` posterior comprovou que o pacote mínimo carrega no U15; a próxima missão é `B001`, detectar a Knowledge Base ativa apenas por APIs oficiais e em modo leitura.

@@ -95,7 +95,7 @@ Executar a Fase 0 do backlog (`B010`–`B012`) e deixar o terreno técnico repro
 
 ## Saída esperada
 
-Solution mínima reproduzível, construída pelo mecanismo oficial disponível a partir do GeneXus 18 U14 e pronta para o spike. O build usa feed NuGet e MSBuild SDKs oficiais registrados por `B010`; o carregamento e a compatibilidade prática serão validados primeiro no U15 local pelo `B000`. A validação posterior do limite inferior no U14 dependerá de colegas da comunidade, sem data definida e sem bloquear o MVP.
+Solution mínima reproduzível, construída pelo mecanismo oficial disponível a partir do GeneXus 18 U14 e usada no spike. O build usa feed NuGet e MSBuild SDKs oficiais registrados por `B010`; o `B000` posterior validou carregamento e compatibilidade prática inicial no U15 local. A validação do limite inferior no U14 continua dependendo de colegas da comunidade, sem data definida e sem bloquear o MVP.
 
 [SPR-F24]
 
@@ -109,7 +109,7 @@ Executar o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
 
 ## Entregas
 
-- `B000`: extensão mínima carrega na IDE
+- `B000` (concluído): extensão mínima carregou na IDE U15
 - `B001`: KB ativa é detectada
 - `B002`: Transactions reais são listadas por API oficial disponível
 - `B003`: objeto simples suportado pelo SDK é criado
@@ -129,7 +129,7 @@ Se `B004` falhar sem alternativa oficial viável, revisar ou encerrar a tese atu
 
 Os gates abaixo são comprovados progressivamente nas Sprints 1–7. A Sprint 1 inicia essa comprovação com `B000`–`B006`; ela não precisa concluir antecipadamente capacidades que dependem do engine e dos contratos posteriores:
 
-1. extensão carrega no GeneXus 18 U14 ou posterior, com U15 como ambiente inicial
+1. extensão carregou no GeneXus 18 U15; a confirmação do limite inferior U14 permanece pendente
 2. SDK cria, salva, reabre, altera e exclui objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`
 3. objeto `API` delega às Procedures e persiste `RestMethod`, `RestPath`, `Description` e `SecurityLevel`
 4. YAML gerado pelo GeneXus reflete rotas, métodos, parâmetros, SDTs e nomes `_API_`

@@ -66,7 +66,7 @@ No MVP:
 6. validar criação e persistência de Procedures, SDTs, Folder e File
 7. tratar YAML nativo como saída de validação/regressão, não como fonte primária da geração
 
-A partir de GeneXus 18 U14, a preparação `B010` usa o feed NuGet e os MSBuild SDKs oficiais (`GeneXus.Package.UI.Sdk` e dependências) em vez do instalador legado. Target framework, propriedades de pacote e mecanismo de instalação na IDE continuam sujeitos à evidência de build e ao spike `B000`. A configuração versionada não pode depender de caminhos da instalação do GeneXus.
+A partir de GeneXus 18 U14, a preparação `B010` usa o feed NuGet e os MSBuild SDKs oficiais (`GeneXus.Package.UI.Sdk` e dependências) em vez do instalador legado. O `B000` posterior comprovou no U15 o manifesto, o ponto de entrada e o mecanismo de instalação local; a validação prática do limite inferior U14 continua pendente. A configuração versionada não pode depender de caminhos da instalação do GeneXus.
 
 [SDK-F09]
 
@@ -75,8 +75,8 @@ A partir de GeneXus 18 U14, a preparação `B010` usa o feed NuGet e os MSBuild 
 - **Fato oficial:** U14+ usa feed NuGet e MSBuild SDKs; isso substitui o instalador legado como método de build.
 - **Fato de build:** o projeto mínimo restaurou e compilou em `net471`, gerando um `.nupkg` sem depender de DLLs da instalação.
 - **Decisão de produto:** o MVP mira U14+ para manter uma única cadeia moderna; U15 é o primeiro ambiente de validação disponível.
-- **Inferência não validada:** esse `.nupkg` será descoberto/carregado pela IDE U14 ou U15. Não deve ser tratado como suporte comprovado.
-- **Próxima responsabilidade de B000:** derivar do contrato oficial o manifesto, a classe de entrada e demais elementos mínimos de descoberta/carregamento; só depois haverá instalação manual.
+- **Evidência B000:** a DLL Release com manifesto e classe de entrada foi descoberta, registrada e carregada pelo U15 local; essa prova não confirma ainda o limite inferior U14.
+- **Próxima responsabilidade operacional:** `B001` deve detectar a Knowledge Base ativa apenas por APIs oficiais e em modo leitura.
 
 ---
 

@@ -6,8 +6,8 @@ using Artech.Architecture.UI.Framework.Packages;
 namespace GenexusOpenApiBuilder.Extension;
 
 /// <summary>
-/// Ponto de entrada mínimo sob teste no B000. Não registra comandos, abre UI ou
-/// acessa Knowledge Bases; o carregamento será comprovado manualmente na IDE.
+/// Ponto de entrada mínimo validado no B000. Não registra comandos, abre UI ou
+/// acessa Knowledge Bases; o carregamento foi comprovado manualmente no U15.
 /// </summary>
 public sealed class Package : AbstractPackageUI
 {
