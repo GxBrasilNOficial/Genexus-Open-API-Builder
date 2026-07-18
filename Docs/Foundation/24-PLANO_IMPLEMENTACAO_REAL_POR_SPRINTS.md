@@ -110,9 +110,9 @@ Executar o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
 ## Entregas
 
 - `B000` (concluído): extensão mínima carregou na IDE U15
-- `B001`: KB ativa é detectada
-- `B002`: Transactions reais são listadas por API oficial disponível
-- `B003`: objeto simples suportado pelo SDK é criado
+- `B001` (concluído): KB ativa detectada no U15, em modo somente leitura
+- `B002` (concluído): 10 Transactions reais listadas no U15 por API oficial, em modo somente leitura
+- `B003` (concluído): Folder de teste criado no U15 com autorização explícita e sem alterar objetos existentes
 - `B004`: ciclo de vida de API Object oficial é validado
 - `B005`: ciclo de vida de Procedure, SDT, Folder e File é validado
 - `B006`: metadata em File persiste após fechar e reabrir a KB

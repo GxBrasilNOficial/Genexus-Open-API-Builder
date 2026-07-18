@@ -18,7 +18,9 @@ Transaction.GetAll(knowledgeBase.DesignModel)
 - `Transaction.GetAll` retorna as Transactions existentes nesse modelo;
 - a sonda lê somente o nome de cada Transaction e ordena o resultado em memória.
 
-## Roteiro de validação manual
+## Roteiro de validação executado (histórico)
+
+Este roteiro foi executado com a DLL de validação, antes da retirada da enumeração automática. Ele não deve ser repetido com a DLL atual, que não lista Transactions ao abrir uma KB.
 
 1. Instalar manualmente a DLL Release atualizada.
 2. Iniciar o GeneXus 18 U15 com a extensão marcada.
@@ -38,6 +40,10 @@ Transaction.GetAll(knowledgeBase.DesignModel)
 - Transactions observadas: `Carga`, `Contrato`, `DiretoriaDeEnsino`, `Distribuidora`, `Escola`, `GuiaPed`, `Laudo`, `Lote`, `NotaFiscal` e `Produto`;
 - a grade da IDE confirmou as mesmas 10 Transactions no Root Module;
 - nenhuma operação de criação, salvamento, fechamento ou alteração de objeto foi acionada pela extensão.
+
+## Nota de segurança posterior
+
+A enumeração automática foi removida da DLL após o B003. A versão atual não lista Transactions ao abrir uma KB; uma futura execução deverá ser disparada por comando explícito e sob autorização.
 
 ## Critério de conclusão
 

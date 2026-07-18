@@ -20,7 +20,9 @@ folder.Save();
 
 Antes da criação, a sonda percorre `Folder.GetAll(knowledgeBase.DesignModel)` e compara os nomes em memória. Caso o Folder exista, ela apenas informa o fato na janela Output.
 
-## Roteiro de validação manual
+## Roteiro de validação executado (histórico)
+
+Este roteiro foi executado com a DLL de validação, antes da retirada da chamada automática. Ele não deve ser repetido com a DLL atual, que não cria Folder ao abrir uma KB.
 
 1. Instalar manualmente a DLL Release atualizada.
 2. Iniciar o GeneXus 18 U15 com a extensão marcada.
@@ -44,3 +46,7 @@ Antes da criação, a sonda percorre `Folder.GetAll(knowledgeBase.DesignModel)` 
 ## Critério de conclusão
 
 Critério atendido em 2026-07-18: o Folder de teste foi criado e visualizado no Root Module, com a evidência registrada neste documento e no checkpoint operacional.
+
+## Nota de segurança posterior
+
+A chamada automática desta sonda foi removida da DLL após a validação. O Folder de evidência permanece na KB de teste, mas a versão atual da extensão não cria objetos automaticamente ao abrir qualquer KB.

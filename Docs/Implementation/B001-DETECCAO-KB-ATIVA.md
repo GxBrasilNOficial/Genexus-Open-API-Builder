@@ -32,9 +32,11 @@ As referências vêm dos pacotes oficiais de SDK restaurados pelo projeto, vers�
 
 `Src/Extension/Diagnostics/ActiveKnowledgeBaseProbe.cs` isola a leitura. O método `TryRead` recebe a KB fornecida pelo evento e retorna `null` apenas se ela não estiver disponível; caso contrário, mantém os dados observados apenas em memória.
 
-Quando uma KB termina de abrir, `Package.OnAfterOpenKB` usa o `IOutputService` oficial para acrescentar uma linha e exibir a janela Output da IDE. Não há chamadas de criação, abertura, persistência, alteração ou fechamento de KB e objetos.
+Durante a validação do B001, um gatilho temporário registrou o resultado na janela Output. Esse gatilho foi removido da DLL após o B003: a versão atual da extensão não lê nem acessa automaticamente uma KB ao abrir a IDE.
 
-## Roteiro de validação manual
+## Roteiro de validação executado (histórico)
+
+Este roteiro foi executado com a DLL de validação, antes da retirada do gatilho automático. Ele não deve ser repetido com a DLL atual, que não registra B001 ao abrir uma KB.
 
 1. Compilar a solução em Release.
 2. Instalar manualmente a DLL Release conforme `Docs/Implementation/B000-CARREGAMENTO-IDE.md`.
