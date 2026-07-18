@@ -1,8 +1,8 @@
 namespace GenexusOpenApiBuilder.Extension;
 
 /// <summary>
-/// Marca o projeto mínimo da extensão. A implementação do ponto de entrada da IDE
-/// será criada no spike B000, depois da validação de carregamento.
+/// Marca a base mínima de build da extensão. O ponto de entrada da IDE foi
+/// implementado e validado no B000 em Package.cs; este marcador não possui responsabilidade de runtime.
 /// </summary>
 public static class SdkBuildMarker
 {

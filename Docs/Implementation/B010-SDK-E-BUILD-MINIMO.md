@@ -61,7 +61,7 @@ A versão do .NET SDK foi registrada como evidência, mas não foi fixada na se�
 - pacote: `Src/Packages/Release/GenexusOpenApiBuilder.Extension.0.1.0-preview.1.nupkg`;
 - símbolos: `Src/Packages/Release/GenexusOpenApiBuilder.Extension.0.1.0-preview.1.snupkg`.
 
-O `.nupkg` contém apenas `lib/net471/GenexusOpenApiBuilder.Extension.dll` e metadados NuGet. Ele ainda não contém manifesto `.package` nem ponto de entrada de extensão. Isso não é falha de B010: a missão foi obter o menor pacote compilável. Tornar o pacote minimamente descobrível e carregável, segundo o contrato oficial que ainda será confirmado, é a próxima etapa técnica de `B000` antes de qualquer instalação manual.
+Na evidência original de B010, o `.nupkg` continha apenas `lib/net471/GenexusOpenApiBuilder.Extension.dll` e metadados NuGet, sem manifesto `.package` nem ponto de entrada de extensão. Isso não foi falha de B010: sua missão era obter o menor pacote compilável. O B000 posterior criou esses elementos, confirmou o carregamento no U15 e registrou a evidência em `Docs/Implementation/B000-CARREGAMENTO-IDE.md`.
 
 ## Build reproduzível
 
@@ -74,14 +74,12 @@ dotnet build Src\GenexusOpenApiBuilder.sln --configuration Release --no-restore
 
 Validação em 2026-07-16: restore em modo bloqueado e build `Release` concluíram com 0 avisos e 0 erros. A validação prova restauração, resolução da cadeia de SDKs, compilação de `net471` e geração dos artefatos acima. Não prova instalação, descoberta, carregamento, comandos, UI, acesso à KB ou compatibilidade prática com U14/U15.
 
-## Limites e continuação
+## Limites da evidência B010 e continuidade posterior
 
-- não há ponto de entrada funcional, comando ou UI implementados;
-- não foi copiado arquivo para a instalação do GeneXus;
-- o procedimento de instalação/registro do `.nupkg` ainda não foi identificado;
-- o `B000` deve primeiro confirmar esse contrato, criar os elementos mínimos de descoberta/carregamento que ele exigir (incluindo manifesto `.package`, se aplicável), recompilar o pacote e só então orientar a instalação manual pelo usuário;
-- nenhum resultado desta evidência autoriza escrita em `C:\Program Files (x86)\GeneXus`.
+- a evidência B010, isoladamente, não comprovava ponto de entrada funcional, comando, UI ou instalação na IDE;
+- o B000 posterior criou o manifesto e o ponto de entrada, validou o procedimento de cópia/registro e comprovou o carregamento no U15;
+- nenhum resultado de B010 ou B000 autoriza o agente a escrever em `C:\Program Files (x86)\GeneXus`.
 
 ## Critério de encerramento
 
-A solução e o pacote mínimos são restauráveis e compiláveis sem depender da instalação do GeneXus. O próximo passo técnico é tornar o pacote minimamente descobrível e carregável no `B000`, antes do teste manual na IDE.
+A solução e o pacote mínimos são restauráveis e compiláveis sem depender da instalação do GeneXus. O B000 posterior tornou o pacote minimamente descobrível e carregável e comprovou seu teste manual no U15; a próxima frente operacional é B001, conforme `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
