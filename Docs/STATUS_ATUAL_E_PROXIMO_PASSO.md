@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-07-17.
+2026-07-18.
 
 ## Último marco concluído
 
@@ -17,7 +17,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B010` revalidado pelo método oficial U14+: feed NuGet, MSBuild SDKs, lockfile, solution, projeto e pacote mínimos;
 - `B011` concluído: estrutura interna confirmada sem introduzir projetos ou camadas vazias;
 - `B012` concluído: convenções aplicáveis confirmadas sem antecipar objetos da geração.
-- `B000` concluído no U15: extensão mínima compilada, registrada, marcada e carregada sem erro de compatibilidade; a coluna Description vazia foi aceita como limitação não bloqueante.
+- `B000` concluído no U15: extensão mínima compilada, registrada, marcada e carregada sem erro de compatibilidade com os metadados públicos corrigidos; a coluna Description vazia foi aceita como limitação não bloqueante.
 
 ## Frente ativa
 
@@ -55,7 +55,7 @@ A criação, leitura e persistência de objetos GeneXus serão tratadas separada
 - compatibilidade prática das APIs do SDK com U14;
 - comprovação progressiva dos gates técnicos transversais definidos nos documentos 09, 15 e 24.
 
-A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: este projeto não escreve em `C:\Program Files (x86)\GeneXus`.
+A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 
 ## Documentos governantes
 

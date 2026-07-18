@@ -44,7 +44,7 @@ A partir de uma Transaction, o projeto busca gerar:
 
 A consolidação documental posterior à entrevista funcional do MVP foi concluída.
 
-A base de build mínima foi validada pelo mecanismo oficial disponível a partir do GeneXus 18 U14. A compatibilidade prática com U14 e com o U15 local ainda depende do spike de carregamento do pacote na IDE.
+A base de build mínima e o carregamento da extensão foram validados no GeneXus 18 U15 pelo mecanismo oficial disponível a partir do U14. Permanece pendente somente a validação prática no U14.
 
 Para retomar o trabalho em uma nova sessão, consulte o checkpoint operacional:
 

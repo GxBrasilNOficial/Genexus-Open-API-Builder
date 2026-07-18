@@ -2,7 +2,7 @@
 
 ## Estado
 
-Concluído no GeneXus 18 Upgrade 15: a extensão mínima foi compilada, registrada e confirmada como marcada no Extensions Manager, sem abrir uma Knowledge Base. O bloqueio anterior baseado na ausência do instalador Platform SDK foi removido em 2026-07-16, pois o método oficial para GeneXus 18 Upgrade 14 ou posterior usa pacotes NuGet e MSBuild SDKs.
+Concluído no GeneXus 18 Upgrade 15: a extensão mínima foi compilada, registrada e confirmada como marcada no Extensions Manager, sem abrir uma Knowledge Base. Os metadados públicos corrigidos para `Genexus Open API Builder - Preview` foram reinstalados e confirmados visualmente. O bloqueio anterior baseado na ausência do instalador Platform SDK foi removido em 2026-07-16, pois o método oficial para GeneXus 18 Upgrade 14 ou posterior usa pacotes NuGet e MSBuild SDKs.
 
 ## Objetivo
 
@@ -20,9 +20,9 @@ Comprovar que o pacote mínimo da extensão carrega na IDE GeneXus 18 U14 ou pos
 - após reiniciar a IDE, a extensão apareceu no Extensions Manager, mas estava desmarcada. Logo, a instalação e a cópia foram demonstradas; a ativação/carregamento ainda não.
 - a comparação com um pacote UI ativo do U15 identificou a diferença: a classe de entrada agora herda de `AbstractPackageUI`, em vez de `AbstractPackage`;
 - a execução manual de `genexus /install` registrou a DLL como adicionada, mas recusou a carga com `Compatibility: cannot load package ... version '0', expecting version '143920'`;
-- com `GenerateAssemblyInfo` habilitado, o SDK gerou `PackageCompatibility(Version = 143920)` para a DLL; a build final validada produziu o SHA-256 `60215EE36DE3E650A96B60B2685FEDA89D63ED1B2FDEF0639BEDDAB6F11FD4EC`.
-- a DLL instalada corresponde exatamente à build final por SHA-256; o registro em `GXLogging.log` adicionou `GenexusOpenApiBuilder.Extension.dll` sem erro de compatibilidade, e a confirmação visual posterior mostrou a extensão marcada no Extensions Manager.
-- a DLL atual contém `AssemblyDescription`, `FileDescription`, `ProductName` e `Comments` com `Genexus Open API Build - Preview`, mas o Extensions Manager do U15 mantém a coluna Description vazia; essa exibição não bloqueia o B000, pois a extensão está marcada, carregada e identificada por Nome, Fabricante e Versão;
+- com `GenerateAssemblyInfo` habilitado, o SDK gerou `PackageCompatibility(Version = 143920)` para a DLL; a build com os metadados públicos corrigidos produziu o SHA-256 `5F5E309BDD499B19AAEC999419EB98079F55F52446E8A775DEE65CF0E9640C98`.
+- a DLL instalada corresponde exatamente à build com os metadados corrigidos por SHA-256; o registro em `GXLogging.log` adicionou `GenexusOpenApiBuilder.Extension.dll` sem erro de compatibilidade, e a confirmação visual posterior mostrou a extensão marcada no Extensions Manager.
+- a DLL atual contém `AssemblyDescription`, `FileDescription`, `ProductName` e `Comments` com `Genexus Open API Builder - Preview`, mas o Extensions Manager do U15 mantém a coluna Description vazia; essa exibição não bloqueia o B000, pois a extensão está marcada, carregada e identificada por Nome, Fabricante e Versão;
 - a instalação local disponível é GeneXus 18 Upgrade 15, build `18.0.15.188745`, e serve somente como ambiente de teste.
 
 Fonte oficial: [GeneXus Platform SDK Download](https://docs.genexus.com/en/wiki?27521,GeneXus+Platform+SDK+Download).

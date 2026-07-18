@@ -21,6 +21,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - README inicial
 - LICENSE MIT
 - Planejamento da fase prática
+- Sprint 0 concluído: build mínima reproduzível (`B010`–`B012`), solution e projeto de extensão em `Src`
+- B000 concluído no U15: extensão mínima registrada, marcada e carregada na IDE com os metadados públicos corrigidos
 
 ## Fixed
 
@@ -33,9 +35,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Sprint 0 — Preparação (`B010`–`B012`)
-- Sprint 1 — pacote inicial do Spike GeneXus Extensibility SDK (`B000`–`B006`)
-- Primeira solution e arquitetura em `Src`
+- Sprint 1 — tarefas restantes do Spike GeneXus Extensibility SDK (`B001`–`B006`)
 - Protótipo inicial do wizard
 - Primeira geração experimental
 
