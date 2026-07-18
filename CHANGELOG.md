@@ -27,6 +27,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B002 concluído no U15: listagem de 10 Transactions reais por API oficial, em modo somente leitura
 - B003 concluído no U15: criação controlada de Folder de teste com autorização explícita
 - correção de segurança pós-B003 validada: a DLL atual não executa sondas automaticamente ao abrir uma KB
+- B004 concluído no U15: ciclo de vida de API Object oficial comprovado com criação, alteração, releitura após reinstalação e exclusão confirmada
 
 ## Fixed
 

@@ -22,6 +22,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B002` concluído no U15: a extensão listou 10 Transactions reais da KB de teste `wsEducacaoSpTeste` com `Transaction.GetAll(knowledgeBase.DesignModel)`, exibindo o total e os nomes na janela Output sem operações de escrita.
 - `B003` concluído no U15: a extensão criou o Folder de teste `GxOpenApi_B003_Probe` no Root Module da KB `wsEducacaoSpTeste`, confirmado na janela Output e no painel Properties, sem alterar objetos preexistentes.
 - correção de segurança pós-B003 validada no U15: a DLL atual foi reinstalada e a abertura de uma KB não emitiu mensagens B001–B003 na Output nem realizou escrita automática.
+- `B004` concluído no U15: um API Object de teste foi criado, alterado, relido após reinstalação da extensão e excluído com ausência confirmada pelo GUID, exclusivamente por APIs públicas.
 
 ## Frente ativa
 
@@ -29,19 +30,19 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Próxima ação única
 
-Iniciar `B004` — Validar ciclo de vida do API Object oficial:
+Iniciar `B005` — Validar ciclo de vida de Procedure, SDT, Folder e File:
 
-> Identificar e comprovar, pela API oficial disponível, a criação, alteração, releitura e exclusão de um API Object de teste na KB de teste, sem afetar APIs existentes.
+> Identificar e comprovar, pelas APIs oficiais disponíveis, a criação, alteração, releitura e exclusão de objetos de teste dessas quatro famílias na KB de teste, sem afetar objetos preexistentes.
 
 ## Critério de conclusão e evidência esperada
 
-- API oficial ou contrato de SDK identificado para criar e salvar o API Object;
-- API Object de teste criado, alterado, relido e excluído na KB de teste;
+- APIs oficiais ou contratos de SDK identificados para criar, salvar e excluir Procedure, SDT, Folder e File;
+- objetos de teste das quatro famílias criados, alterados, relidos e excluídos na KB de teste;
 - log e instruções de reprodução registrados;
 - nenhuma alteração em APIs ou objetos preexistentes;
 - autorização explícita do usuário antes de cada fase de escrita na KB.
 
-A validação do ciclo de vida de Procedure, SDT, Folder e File permanece em `B005`; a persistência de metadata em File permanece em `B006`.
+A persistência de metadata em File permanece em `B006`.
 
 ## Sequência operacional vigente
 
@@ -71,7 +72,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- B004 — ciclo de vida de API Object;
+- B005 — ciclo de vida de Procedure, SDT, Folder e File;
 - protótipo navegável do wizard;
 - `ApiPlan`;
 - engine de geração;

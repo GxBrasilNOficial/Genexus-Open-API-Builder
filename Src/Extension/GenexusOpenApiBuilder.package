@@ -1,4 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.genexus.com/addin/v1.0"
          id="7be72bf4-8884-40dc-955d-ed9d31b69b74"
-         name="Genexus Open API Builder" />
+         name="Genexus Open API Builder">
+  <Commands>
+    <CommandDefinition id="B004PreflightApiObject" context="selection" />
+    <CommandDefinition id="B004CreateApiObject" context="selection" />
+    <CommandDefinition id="B004UpdateApiObject" context="selection" />
+    <CommandDefinition id="B004ReadApiObject" context="selection" />
+    <CommandDefinition id="B004DeleteApiObject" context="selection" />
+  </Commands>
+  <Groups>
+    <Group id="B004ApiObjectGroup">
+      <Command refid="B004PreflightApiObject" />
+      <Command refid="B004CreateApiObject" />
+      <Command refid="B004UpdateApiObject" />
+      <Command refid="B004ReadApiObject" />
+      <Command refid="B004DeleteApiObject" />
+    </Group>
+    <Group refid="KBObjectGrp" package="98121D96-A7D8-468b-9310-B1F468F812AE">
+      <Popup id="B004ApiObjectPopup" name="Genexus Open API Builder">
+        <Group refid="B004ApiObjectGroup" />
+      </Popup>
+    </Group>
+  </Groups>
+</Package>

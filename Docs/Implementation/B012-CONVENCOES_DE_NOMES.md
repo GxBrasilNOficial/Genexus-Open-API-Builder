@@ -35,4 +35,4 @@ Ainda não há Transaction, `ApiPlan` ou objetos GeneXus a gerar. Portanto, os s
 
 ## Decisão
 
-B012 não cria classes, projetos, objetos GeneXus ou regras de transformação de nomes. Esses artefatos dependem de uma Transaction e das APIs públicas verificadas no pacote de spike. B000–B003 foram concluídos posteriormente no U15; a próxima missão é `B004`, validar o ciclo de vida de um API Object oficial conforme o checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
+B012 não cria classes, projetos, objetos GeneXus ou regras de transformação de nomes. Esses artefatos dependem de uma Transaction e das APIs públicas verificadas no pacote de spike. B000–B004 foram concluídos posteriormente no U15; a próxima missão é `B005`, validar o ciclo de vida de Procedure, SDT, Folder e File conforme o checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
