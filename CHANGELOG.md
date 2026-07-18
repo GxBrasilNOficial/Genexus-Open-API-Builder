@@ -37,10 +37,11 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - referências de backlog, versões documentais e conflitos no wizard foram alinhadas
 - layout inicial de `Src`, destino das evidências e ambiente-base de `B010` foram explicitados
 - `Docs/Temp` foi protegido contra inclusão acidental no repositório público
+- comandos experimentais B004 removidos do runtime após a validação do ciclo de vida do API Object
 
 ## Planned
 
-- Sprint 1 — tarefas restantes do Spike GeneXus Extensibility SDK (`B004`–`B006`)
+- Sprint 1 — tarefas restantes do Spike GeneXus Extensibility SDK (`B005`–`B006`)
 - Protótipo inicial do wizard
 - Primeira geração experimental
 

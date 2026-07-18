@@ -52,6 +52,10 @@ Se houver zero, mais de um ou descrição diferente, a operação é bloqueada s
 | Releitura independente | Mesmo nome, GUID e descrição alterada após reinstalação da extensão |
 | Exclusão | `API Object de teste excluído e ausência confirmada: Guid='06baea65-0638-4195-8f84-694ff6411820'` |
 
+## Segurança posterior à validação
+
+Após a validação, os cinco comandos experimentais B004 foram removidos do manifesto e do runtime da extensão. A DLL final desta frente não cria, altera nem exclui API Objects automaticamente e não oferece os comandos temporários B004 no menu de contexto.
+
 ## Conclusão
 
 B004 está concluído. O ciclo de vida de um API Object oficial foi comprovado por APIs públicas, com confirmação de persistência e de exclusão. Nenhuma API preexistente foi alterada. A próxima frente é B005, conforme `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
