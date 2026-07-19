@@ -23,6 +23,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B003` concluído no U15: a extensão criou o Folder de teste `GxOpenApi_B003_Probe` no Root Module da KB `wsEducacaoSpTeste`, confirmado na janela Output e no painel Properties, sem alterar objetos preexistentes.
 - correção de segurança pós-B003 validada no U15: a DLL atual foi reinstalada e a abertura de uma KB não emitiu mensagens B001–B003 na Output nem realizou escrita automática.
 - `B004` concluído no U15: um API Object de teste foi criado, alterado, relido após reinstalação da extensão e excluído com ausência confirmada pelo GUID, exclusivamente por APIs públicas.
+- `B005` concluído no U15: Procedure, SDT, Folder e File de teste foram criados, alterados, relidos e excluídos com ausência confirmada, exclusivamente por APIs públicas e com autorização explícita antes de cada fase de escrita.
 
 ## Frente ativa
 
@@ -30,19 +31,17 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Próxima ação única
 
-Iniciar `B005` — Validar ciclo de vida de Procedure, SDT, Folder e File:
+Iniciar `B006` — Validar persistência de metadata em File após fechar e reabrir a KB:
 
-> Identificar e comprovar, pelas APIs oficiais disponíveis, a criação, alteração, releitura e exclusão de objetos de teste dessas quatro famílias na KB de teste, sem afetar objetos preexistentes.
+> Identificar e comprovar, pelas APIs oficiais disponíveis, que um File JSON de metadata criado pela extensão permanece íntegro e reencontrável após fechar e reabrir a KB de teste.
 
 ## Critério de conclusão e evidência esperada
 
-- APIs oficiais ou contratos de SDK identificados para criar, salvar e excluir Procedure, SDT, Folder e File;
-- objetos de teste das quatro famílias criados, alterados, relidos e excluídos na KB de teste;
-- log e instruções de reprodução registrados;
+- API pública de File reutilizada ou refinada para gravar metadata JSON;
+- File de metadata criado, relido antes de fechar, relido após reabrir a KB e excluído ao final;
+- log e instruções de reprodução registrados em documentação de implementação;
 - nenhuma alteração em APIs ou objetos preexistentes;
 - autorização explícita do usuário antes de cada fase de escrita na KB.
-
-A persistência de metadata em File permanece em `B006`.
 
 ## Sequência operacional vigente
 
@@ -72,7 +71,6 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- B005 — ciclo de vida de Procedure, SDT, Folder e File;
 - protótipo navegável do wizard;
 - `ApiPlan`;
 - engine de geração;

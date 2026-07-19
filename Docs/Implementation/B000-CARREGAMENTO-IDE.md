@@ -51,7 +51,7 @@ O `.ps1` pode continuar sendo chamado diretamente com `-Apply`, mas essa forma p
 
 ## Próxima tarefa técnica
 
-B000–B004 estão concluídos. A próxima frente é B005 — validar o ciclo de vida de Procedure, SDT, Folder e File na KB de teste, com autorização explícita antes de cada fase de escrita. O checkpoint canônico é `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. A coluna Description vazia é uma limitação conhecida do Extensions Manager no U15 e não bloqueia este marco.
+B000–B005 estão concluídos. A próxima frente canônica é B006 — validar persistência de metadata em File após fechar e reabrir a KB de teste, com autorização explícita antes de cada fase de escrita. O checkpoint canônico é `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. A coluna Description vazia é uma limitação conhecida do Extensions Manager no U15 e não bloqueia este marco.
 
 ## Critério de conclusão e evidência esperada
 

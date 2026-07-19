@@ -114,7 +114,7 @@ Executar o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
 - `B002` (concluído): 10 Transactions reais listadas no U15 por API oficial, em modo somente leitura
 - `B003` (concluído): Folder de teste criado no U15 com autorização explícita e sem alterar objetos existentes
 - `B004` (concluído): ciclo de vida de API Object oficial validado no U15
-- `B005`: ciclo de vida de Procedure, SDT, Folder e File é validado
+- `B005` (concluído): ciclo de vida de Procedure, SDT, Folder e File validado no U15
 - `B006`: metadata em File persiste após fechar e reabrir a KB
 
 ## Gate

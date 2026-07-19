@@ -77,7 +77,7 @@ A partir de GeneXus 18 U14, a preparação `B010` usa o feed NuGet e os MSBuild 
 - **Decisão de produto:** o MVP mira U14+ para manter uma única cadeia moderna; U15 é o primeiro ambiente de validação disponível.
 - **Evidência B000:** a DLL Release com manifesto e classe de entrada foi descoberta, registrada e carregada pelo U15 local; essa prova não confirma ainda o limite inferior U14.
 - **Evidência B004:** o ciclo de vida de um API Object oficial foi validado no U15, com criação, alteração, releitura após reinstalação e exclusão confirmada por GUID.
-- **Próxima responsabilidade operacional:** `B005` deve validar o ciclo de vida de Procedure, SDT, Folder e File na KB de teste, com autorização explícita antes de cada fase de escrita e conforme `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
+- **Próxima responsabilidade operacional:** `B006` deve validar persistência de metadata em File após fechar e reabrir a KB de teste, com autorização explícita antes de cada fase de escrita e conforme `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
 
 ---
 

@@ -58,4 +58,4 @@ Após a validação, os cinco comandos experimentais B004 foram removidos do man
 
 ## Conclusão
 
-B004 está concluído. O ciclo de vida de um API Object oficial foi comprovado por APIs públicas, com confirmação de persistência e de exclusão. Nenhuma API preexistente foi alterada. A próxima frente é B005, conforme `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
+B004 está concluído. O ciclo de vida de um API Object oficial foi comprovado por APIs públicas, com confirmação de persistência e de exclusão. Nenhuma API preexistente foi alterada. B005 também foi concluído posteriormente; a próxima frente canônica é B006, conforme `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.

@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.genexus.com/addin/v1.0"
          id="7be72bf4-8884-40dc-955d-ed9d31b69b74"
-         name="Genexus Open API Builder" />
+         name="Genexus Open API Builder">
+  <Commands>
+    <CommandDefinition id="Futura Primeira Opção" context="selection" />
+  </Commands>
+  <Groups>
+    <Group id="GenexusOpenApiBuilderPlaceholderGroup">
+      <Command refid="Futura Primeira Opção" />
+    </Group>
+    <Group refid="KBObjectGrp" package="98121D96-A7D8-468b-9310-B1F468F812AE">
+      <Popup id="GenexusOpenApiBuilderPopup" name="Genexus Open API Builder">
+        <Group refid="GenexusOpenApiBuilderPlaceholderGroup" />
+      </Popup>
+    </Group>
+  </Groups>
+</Package>
