@@ -7,7 +7,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $repositoryRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$checker = Join-Path $repositoryRoot 'scripts\Invoke-OpenApiBuilderPrePushChecks.ps1'
+$checker = Join-Path $repositoryRoot 'scripts\Invoke-PrePushMechanicalChecks.ps1'
 
 function Assert-True {
     param([bool]$Condition, [string]$Message)
@@ -63,13 +63,13 @@ try {
         Assert-True ($LASTEXITCODE -eq 0) 'Não foi possível criar o projeto mínimo da fixture.'
         & dotnet sln Src\GenexusOpenApiBuilder.sln add Src\Fixture\Fixture.csproj | Out-Null
         Assert-True ($LASTEXITCODE -eq 0) 'Não foi possível adicionar o projeto à solution da fixture.'
-        [System.IO.File]::Copy($checker, (Join-Path $PWD 'scripts\Invoke-OpenApiBuilderPrePushChecks.ps1'))
+        [System.IO.File]::Copy($checker, (Join-Path $PWD 'scripts\Invoke-PrePushMechanicalChecks.ps1'))
         & git add .gitignore README.md Src scripts
         & git commit -m 'Fixture do checker' | Out-Null
         & git remote add origin (Join-Path $tempRoot 'remote.git')
         & git push -u origin main | Out-Null
 
-        $json = & pwsh -NoProfile -File scripts/Invoke-OpenApiBuilderPrePushChecks.ps1 -AsJson
+        $json = & pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
         $checkerExit = $LASTEXITCODE
         $result = $json | ConvertFrom-Json
         Assert-True ($checkerExit -eq 0) 'A fixture limpa deve concluir todos os checks mecânicos.'
@@ -78,7 +78,7 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'git.branch' }).status -eq 'passed') 'A checagem de branch deveria passar na fixture.'
         Assert-True (@($result.warnings).Count -eq 0) 'O checker não deve registrar "0 Aviso(s)" como warning.'
 
-        $fetchJson = & pwsh -NoProfile -File scripts/Invoke-OpenApiBuilderPrePushChecks.ps1 -AsJson -Fetch
+        $fetchJson = & pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson -Fetch
         $fetchExit = $LASTEXITCODE
         $fetchResult = $fetchJson | ConvertFrom-Json
         Assert-True ($fetchExit -eq 0) 'A fixture com fetch deve concluir todos os checks mecânicos.'
@@ -86,7 +86,7 @@ try {
         Assert-True ($fetchResult.remoteReadiness -eq 'confirmed') 'Com fetch bem-sucedido, a referência remota deve ser confirmed.'
 
         [System.IO.File]::AppendAllText((Join-Path $PWD 'README.md'), 'alteração preexistente' + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
-        $dirtyJson = & pwsh -NoProfile -File scripts/Invoke-OpenApiBuilderPrePushChecks.ps1 -AsJson
+        $dirtyJson = & pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
         $dirtyExit = $LASTEXITCODE
         $dirtyResult = $dirtyJson | ConvertFrom-Json
         Assert-True ($dirtyExit -eq 3) 'A fixture com working tree suja deve exigir revisão humana.'

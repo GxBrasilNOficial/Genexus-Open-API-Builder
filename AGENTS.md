@@ -41,6 +41,24 @@ pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1
 - Preservar `Futura Primeira Opção` como placeholder não operacional; comandos temporários devem ser acrescentados sem substituir o placeholder.
 - No fechamento de uma sonda, remover seus comandos das três camadas e executar novamente o teste.
 
+## Revisão pré-push do repositório
+
+Antes de qualquer push:
+
+1. executar `git fetch origin` separadamente para atualizar `origin/main`;
+2. na raiz do repositório, executar exatamente:
+
+```powershell
+pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
+```
+
+3. ler `pushReadiness`, `incompleteReasons`, `manualRequired` e `notCovered` no JSON;
+4. concluir a revisão semântica exigida pelas instruções globais; `exit 0` mecânico não substitui essa revisão;
+5. quando o checker ou seu teste mudar, executar também `pwsh -NoProfile -File Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`.
+
+- `scripts/Invoke-PrePushMechanicalChecks.ps1` é o nome canônico e não deve divergir do contrato global.
+- `manualRequired` bloqueia o push até a revisão humana registrar gaps confirmados, flags descartados e áreas não cobertas.
+
 ## Fechamento de spikes e sondas temporárias
 
 Antes de concluir e commitar qualquer item de spike `B000`–`B006`, o agente deve:

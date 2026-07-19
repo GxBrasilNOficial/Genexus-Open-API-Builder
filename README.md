@@ -74,6 +74,25 @@ O agente não executa os instaladores nem altera diretamente a pasta de instala�
 
 ---
 
+# Validação Pré-Push
+
+Antes de enviar commits, atualize a referência remota e execute o checker mecânico pelo nome canônico:
+
+```powershell
+git fetch origin
+pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
+```
+
+O JSON valida branch, divergência remota, whitespace, parse dos scripts, restore, build e limpeza da working tree. Resultado mecânico não substitui a revisão semântica: quando `manualRequired` estiver preenchido, o push permanece bloqueado até revisar os itens e registrar gaps confirmados, flags descartados e áreas não cobertas.
+
+Quando o checker ou seu teste for alterado, execute também:
+
+```powershell
+pwsh -NoProfile -File Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1
+```
+
+---
+
 # Fonte Primária das Decisões do MVP
 
 O registro consolidado da entrevista funcional de julho de 2026 é a fonte primária das decisões do MVP:
