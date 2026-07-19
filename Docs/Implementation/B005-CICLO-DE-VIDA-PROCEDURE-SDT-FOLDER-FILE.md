@@ -28,6 +28,18 @@ Durante a validação, foram usados comandos manuais temporários:
 
 Após a validação, esses comandos foram removidos do runtime. A IDE não exibiu o popup quando o submenu ficou vazio; por isso, o manifesto preserva o popup **Genexus Open API Builder** com um comando placeholder não operacional chamado **Futura Primeira Opção**. Esse placeholder não lê nem escreve na KB.
 
+### Checklist para comandos temporários
+
+Para qualquer sonda posterior:
+
+1. incluir ou remover o `AddCommand(new CommandKey(...))` em `Src/Extension/Package.cs`;
+2. incluir ou remover o `CommandDefinition` correspondente no manifesto;
+3. incluir ou remover o `Command refid` correspondente no grupo de comandos em `Groups` que o submenu referencia;
+4. preservar **Futura Primeira Opção** como placeholder não operacional;
+5. executar `pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1` antes do build e novamente no fechamento passivo.
+
+Os IDs devem coincidir exatamente nas três camadas. Build bem-sucedido, isoladamente, não comprova que o comando aparecerá na IDE.
+
 ## Correção durante a validação
 
 A primeira execução de criação falhou com `Validation of Structured Data Type 'sdtGxOpenApiB005Probe' failed`, porque o SDT temporário estava vazio. A sonda foi corrigida para criar o membro mínimo `ProbeValue` do tipo `VarChar(128)`.

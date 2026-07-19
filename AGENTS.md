@@ -22,6 +22,25 @@ Sempre que uma nova DLL precisar ser instalada para teste no GeneXus 18, o agent
 - Não substituir esse fluxo por uma chamada direta a `Tools/Copy-ExtensionForGeneXus18.ps1`. O `.ps1` é implementação interna exclusiva da etapa de cópia e validação; ele não registra a extensão.
 - Ao avisar que chegou a hora de atualizar e testar, citar sempre os dois `.bat`, suas exigências de elevação distintas e a sequência `genexus /install` seguida de `exit`.
 
+## Registro de comandos no menu de contexto
+
+Cada inclusão, alteração ou remoção de comando do menu de contexto deve manter sincronizadas, no mesmo passo, estas três camadas:
+
+1. registro em runtime por `AddCommand(new CommandKey(...))` em `Src/Extension/Package.cs`;
+2. `CommandDefinition` em `Src/Extension/GenexusOpenApiBuilder.package`;
+3. `Command refid` dentro do grupo de comandos em `Groups` no mesmo manifesto, grupo que o submenu referencia.
+
+- O ID deve ser exatamente igual nas três camadas.
+- O build bem-sucedido não comprova essa sincronização.
+- Antes de gerar uma DLL para atualização manual, executar:
+
+```powershell
+pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1
+```
+
+- Preservar `Futura Primeira Opção` como placeholder não operacional; comandos temporários devem ser acrescentados sem substituir o placeholder.
+- No fechamento de uma sonda, remover seus comandos das três camadas e executar novamente o teste.
+
 ## Fechamento de spikes e sondas temporárias
 
 Antes de concluir e commitar qualquer item de spike `B000`–`B006`, o agente deve:

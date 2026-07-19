@@ -47,6 +47,18 @@ Para a cópia controlada, execute `Install-ExtensionForGeneXus18.bat` na raiz do
 
 O registro é uma segunda etapa, executada sem elevação por `Register-ExtensionForGeneXus18.bat`. Esse arquivo abre um prompt normal na pasta de instalação do GeneXus, no qual o usuário digita `genexus /install`. No U15 local, esse é o contexto que efetivamente atualiza o log de pacotes e registra a extensão; a chamada elevada de `genexus /install` termina sem varrer os pacotes.
 
+## Contrato operacional do menu contextual
+
+Um comando só está completamente registrado quando o mesmo ID aparece nas três camadas: `AddCommand(new CommandKey(...))` em `Src/Extension/Package.cs`, `CommandDefinition` no manifesto e `Command refid` no grupo de comandos em `Groups` que o submenu referencia. Alterar apenas uma ou duas camadas pode compilar sem erro, mas não produz a opção esperada na IDE.
+
+Antes de cada build destinada à atualização manual da DLL, validar o contrato com:
+
+```powershell
+pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1
+```
+
+O placeholder não operacional **Futura Primeira Opção** deve permanecer no submenu; sondas temporárias são acrescentadas a ele e, no fechamento, removidas das três camadas.
+
 O caminho legado que tentava executar `genexus /install` dentro do PowerShell elevado foi removido. Ele podia não capturar a saída e, no U15 local, não realizava a varredura efetiva dos pacotes. O registro permanece exclusivamente no segundo `.bat`, sem Administrador.
 
 ## Próxima tarefa técnica
