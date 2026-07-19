@@ -1,0 +1,257 @@
+#requires -Version 7.4
+
+[CmdletBinding()]
+param(
+    [switch]$AsJson,
+    [switch]$Fetch
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+if (-not $AsJson) {
+    throw 'Este checker requer -AsJson.'
+}
+
+$repositoryRoot = Split-Path -Parent $PSScriptRoot
+
+function Invoke-ExternalProcess {
+    param(
+        [Parameter(Mandatory)] [string]$FileName,
+        [Parameter(Mandatory)] [string[]]$Arguments,
+        [Parameter(Mandatory)] [string]$WorkingDirectory
+    )
+
+    $info = [System.Diagnostics.ProcessStartInfo]::new()
+    $info.FileName = $FileName
+    $info.WorkingDirectory = $WorkingDirectory
+    $info.UseShellExecute = $false
+    $info.RedirectStandardOutput = $true
+    $info.RedirectStandardError = $true
+    $info.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+    $info.StandardErrorEncoding = [System.Text.Encoding]::UTF8
+    foreach ($argument in $Arguments) { [void]$info.ArgumentList.Add($argument) }
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $info
+    [void]$process.Start()
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    $process.WaitForExit()
+    [System.Threading.Tasks.Task]::WaitAll(@($stdoutTask, $stderrTask))
+    return [pscustomobject]@{
+        ExitCode = $process.ExitCode
+        StdOut = $stdoutTask.Result
+        StdErr = $stderrTask.Result
+    }
+}
+
+function ConvertTo-SanitizedText {
+    param([AllowNull()] [string]$Text)
+    if ($null -eq $Text) { return '' }
+    $value = $Text -replace '(?im)(password|pwd|token|api[_-]?key|authorization)\s*[:=]\s*[^\s]+', '$1=<redacted>'
+    $value = $value -replace '(?i)(https?://)[^\s/@:]+:[^\s/@]+@', '$1<redacted>@'
+    return ($value -replace '(?i)bearer\s+[^\s]+', 'Bearer <redacted>').Trim()
+}
+
+function New-Check {
+    param(
+        [string]$Name,
+        [ValidateSet('passed', 'failed', 'environmentBlocked', 'skipped')] [string]$Status,
+        [string]$Summary,
+        [AllowNull()] [object]$Evidence
+    )
+    return [ordered]@{ name = $Name; status = $Status; summary = $Summary; evidence = $Evidence }
+}
+
+function Get-GitStatusSnapshot {
+    param([string]$WorkingDirectory)
+    $result = Invoke-ExternalProcess -FileName 'git' -Arguments @('status', '--porcelain=v1', '-z', '--untracked-files=normal') -WorkingDirectory $WorkingDirectory
+    if ($result.ExitCode -ne 0) { throw "git status falhou: $(ConvertTo-SanitizedText ($result.StdErr + $result.StdOut))" }
+    $parts = @($result.StdOut -split [string][char]0)
+    $entries = [System.Collections.Generic.List[string]]::new()
+    for ($index = 0; $index -lt $parts.Count; $index++) {
+        $part = $parts[$index]
+        if ([string]::IsNullOrEmpty($part)) { continue }
+        $xy = if ($part.Length -ge 2) { $part.Substring(0, 2) } else { '??' }
+        $path = if ($part.Length -ge 4) { $part.Substring(3) } else { $part }
+        $record = "$xy`t$path"
+        if ($xy[0] -in @('R', 'C') -or $xy[1] -in @('R', 'C')) {
+            $index++
+            if ($index -lt $parts.Count) { $record = "$record`t$($parts[$index])" }
+        }
+        $entries.Add($record)
+    }
+    return @($entries | Sort-Object -Unique)
+}
+
+function Get-FailureKind {
+    param([string]$Output, [ValidateSet('restore', 'build')] [string]$Phase)
+    $text = ConvertTo-SanitizedText $Output
+    if ($Phase -eq 'restore' -and $text -match '(?i)(lock file.*(inconsistent|out of date)|NU1004|--locked-mode)') { return 'lockFileInconsistent' }
+    if ($text -match '(?i)(NU1301|unable to load the service index|no such host|name or service not known|network.*(unavailable|error)|timed out|proxy|connection.*(refused|reset))') { return 'networkOrFeedUnavailable' }
+    if ($text -match '(?i)(NETSDK[0-9]+|SDK.*(not found|could not be found)|A compatible installed .NET SDK)') { return 'sdkUnavailable' }
+    if ($Phase -eq 'build') { return 'compilationOrBuildFailure' }
+    return 'restoreFailure'
+}
+
+function Add-DiagnosticWarnings {
+    param([string]$Output)
+    foreach ($line in @($Output -split "`r?`n")) {
+        if ($line -match '(?i)\b(warning|aviso)\b' -and -not [string]::IsNullOrWhiteSpace($line)) {
+            $warnings.Add($line.Trim())
+        }
+    }
+}
+
+function Get-ManualRequirements {
+    param([string]$WorkingDirectory, [string]$CurrentFront)
+    $patch = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--no-ext-diff', 'origin/main...HEAD') -WorkingDirectory $WorkingDirectory
+    $worktreePatch = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--no-ext-diff') -WorkingDirectory $WorkingDirectory
+    $paths = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--name-only', '-z', 'origin/main...HEAD') -WorkingDirectory $WorkingDirectory
+    $worktreePaths = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--name-only', '-z') -WorkingDirectory $WorkingDirectory
+    if ($patch.ExitCode -ne 0 -or $worktreePatch.ExitCode -ne 0 -or $paths.ExitCode -ne 0 -or $worktreePaths.ExitCode -ne 0) { return @() }
+    $frontPattern = 'B000|B001|B002|B003|B004|B005|B006'
+    if (-not [string]::IsNullOrWhiteSpace($CurrentFront)) { $frontPattern = "$frontPattern|$([regex]::Escape($CurrentFront))" }
+    if (($patch.StdOut + $worktreePatch.StdOut) -notmatch "(?i)\b($frontPattern)\b") { return @() }
+    $allPaths = @(
+        (@($paths.StdOut -split [string][char]0) + @($worktreePaths.StdOut -split [string][char]0)) |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            Sort-Object -Unique
+    )
+    $requirements = [System.Collections.Generic.List[object]]::new()
+    foreach ($path in $allPaths) {
+        $isRelevant = $path -match '^(Src|Tests|Tools|scripts)/' -or $path -match '^Docs/Implementation/B00[0-6].*\.md$' -or $path -in @('CHANGELOG.md', 'Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md', 'Docs/Foundation/24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md', 'AGENTS.md') -or $path -match '^Docs/Foundation/'
+        if ($isRelevant) {
+            $requirements.Add([ordered]@{
+                path = $path
+                reason = 'O patch menciona um spike B000–B006 ou a frente vigente.'
+                requiredHumanCheck = 'Confirmar os gates de encerramento e a coerência documental aplicáveis ao escopo alterado.'
+            })
+        }
+    }
+    return @($requirements)
+}
+
+$checks = [System.Collections.Generic.List[object]]::new()
+$warnings = [System.Collections.Generic.List[string]]::new()
+$commands = [System.Collections.Generic.List[object]]::new()
+$environmentBlocked = $false
+$failed = $false
+$remoteFetchStatus = if ($Fetch) { 'notRun' } else { 'notRequested' }
+$remoteReadiness = if ($Fetch) { 'pending' } else { 'unverified' }
+$pushReadiness = 'readyLocal'
+$gitContext = [ordered]@{ branch = $null; ahead = $null; behind = $null; baseRef = 'origin/main'; preexistingChanges = @(); newNonIgnoredChanges = @() }
+
+try {
+    $gitContext.preexistingChanges = @(Get-GitStatusSnapshot -WorkingDirectory $repositoryRoot)
+    if ($Fetch) {
+        $fetchResult = Invoke-ExternalProcess -FileName 'git' -Arguments @('fetch', 'origin') -WorkingDirectory $repositoryRoot
+        $commands.Add([ordered]@{ command = 'git fetch origin'; exitCode = $fetchResult.ExitCode; output = ConvertTo-SanitizedText ($fetchResult.StdOut + $fetchResult.StdErr) })
+        if ($fetchResult.ExitCode -eq 0) { $remoteFetchStatus = 'succeeded'; $remoteReadiness = 'confirmed'; $checks.Add((New-Check 'git.fetch' 'passed' 'origin atualizado.' $null)) }
+        else { $remoteFetchStatus = 'failed'; $remoteReadiness = 'unverified'; $environmentBlocked = $true; $checks.Add((New-Check 'git.fetch' 'environmentBlocked' 'Não foi possível atualizar origin.' (ConvertTo-SanitizedText ($fetchResult.StdOut + $fetchResult.StdErr)))) }
+    }
+
+    $branch = Invoke-ExternalProcess -FileName 'git' -Arguments @('branch', '--show-current') -WorkingDirectory $repositoryRoot
+    $gitContext.branch = $branch.StdOut.Trim()
+    if ($branch.ExitCode -ne 0) { $environmentBlocked = $true; $checks.Add((New-Check 'git.branch' 'environmentBlocked' 'Não foi possível identificar a branch atual.' (ConvertTo-SanitizedText $branch.StdErr))) }
+    elseif ($gitContext.branch -ne 'main') { $failed = $true; $checks.Add((New-Check 'git.branch' 'failed' "A branch atual deve ser main; encontrada '$($gitContext.branch)'." $null)) }
+    else { $checks.Add((New-Check 'git.branch' 'passed' 'A branch atual é main.' $null)) }
+
+    $revision = Invoke-ExternalProcess -FileName 'git' -Arguments @('rev-list', '--left-right', '--count', 'origin/main...HEAD') -WorkingDirectory $repositoryRoot
+    if ($revision.ExitCode -ne 0) { $environmentBlocked = $true; $checks.Add((New-Check 'git.remoteBase' 'environmentBlocked' 'origin/main não está disponível para comparação.' (ConvertTo-SanitizedText ($revision.StdOut + $revision.StdErr)))) }
+    else {
+        $counts = @($revision.StdOut.Trim() -split '\s+')
+        $gitContext.behind = [int]$counts[0]
+        $gitContext.ahead = [int]$counts[1]
+        if ($gitContext.behind -gt 0) { $failed = $true; $checks.Add((New-Check 'git.remoteBase' 'failed' "A main local está $($gitContext.behind) commit(s) atrás de origin/main." $gitContext)) }
+        else { $checks.Add((New-Check 'git.remoteBase' 'passed' "Comparação concluída: $($gitContext.ahead) à frente e $($gitContext.behind) atrás." $gitContext)) }
+    }
+
+    foreach ($diffSpec in @(
+        [ordered]@{ Name = 'git.diffInterval'; Arguments = @('diff', '--check', 'origin/main...HEAD'); Summary = 'O diff contra origin/main não contém erro de whitespace.' },
+        [ordered]@{ Name = 'git.diffWorkingTree'; Arguments = @('diff', '--check'); Summary = 'O diff da working tree não contém erro de whitespace.' }
+    )) {
+        $diff = Invoke-ExternalProcess -FileName 'git' -Arguments $diffSpec.Arguments -WorkingDirectory $repositoryRoot
+        $output = ConvertTo-SanitizedText ($diff.StdOut + $diff.StdErr)
+        $commands.Add([ordered]@{ command = "git $($diffSpec.Arguments -join ' ')"; exitCode = $diff.ExitCode; output = $output })
+        if ($diff.ExitCode -eq 0) { $checks.Add((New-Check $diffSpec.Name 'passed' $diffSpec.Summary $null)) }
+        else { $failed = $true; $checks.Add((New-Check $diffSpec.Name 'failed' $diffSpec.Summary.Replace('não contém', 'contém') $output)) }
+    }
+
+    $listed = Invoke-ExternalProcess -FileName 'git' -Arguments @('ls-files', '-z', '--', 'Tools', 'scripts') -WorkingDirectory $repositoryRoot
+    $parseTargets = [System.Collections.Generic.List[string]]::new()
+    if ($listed.ExitCode -eq 0) {
+        foreach ($relativePath in @($listed.StdOut -split [string][char]0)) { if ($relativePath -match '\.ps1$') { $parseTargets.Add((Join-Path $repositoryRoot $relativePath)) } }
+    }
+    else { $environmentBlocked = $true; $checks.Add((New-Check 'powershell.parse' 'environmentBlocked' 'Não foi possível obter os scripts versionados.' (ConvertTo-SanitizedText $listed.StdErr))) }
+    if (-not $parseTargets.Contains($PSCommandPath)) { $parseTargets.Add($PSCommandPath) }
+    if (-not $environmentBlocked) {
+        $parseErrors = [System.Collections.Generic.List[string]]::new()
+        foreach ($target in $parseTargets) {
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($target, [ref]$null, [ref]$errors)
+            foreach ($error in @($errors)) { $parseErrors.Add("${target}:$($error.Extent.StartLineNumber): $($error.Message)") }
+        }
+        if ($parseErrors.Count -eq 0) { $checks.Add((New-Check 'powershell.parse' 'passed' "Parse concluído para $($parseTargets.Count) script(s)." @($parseTargets))) }
+        else { $failed = $true; $checks.Add((New-Check 'powershell.parse' 'failed' 'Há erro de parse em scripts PowerShell.' @($parseErrors))) }
+    }
+
+    foreach ($dotnetSpec in @(
+        [ordered]@{ Name = 'dotnet.restore'; Phase = 'restore'; Arguments = @('restore', 'Src\GenexusOpenApiBuilder.sln', '--locked-mode'); Command = 'dotnet restore Src\GenexusOpenApiBuilder.sln --locked-mode' },
+        [ordered]@{ Name = 'dotnet.build'; Phase = 'build'; Arguments = @('build', 'Src\GenexusOpenApiBuilder.sln', '--configuration', 'Release', '--no-restore'); Command = 'dotnet build Src\GenexusOpenApiBuilder.sln --configuration Release --no-restore' }
+    )) {
+        $commandResult = Invoke-ExternalProcess -FileName 'dotnet' -Arguments $dotnetSpec.Arguments -WorkingDirectory $repositoryRoot
+        $output = ConvertTo-SanitizedText ($commandResult.StdOut + $commandResult.StdErr)
+        Add-DiagnosticWarnings -Output $output
+        $commands.Add([ordered]@{ command = $dotnetSpec.Command; exitCode = $commandResult.ExitCode; output = $output })
+        if ($commandResult.ExitCode -eq 0) { $checks.Add((New-Check $dotnetSpec.Name 'passed' "$($dotnetSpec.Phase) concluído." $null)); continue }
+        $kind = Get-FailureKind -Output $output -Phase $dotnetSpec.Phase
+        $status = if ($kind -in @('networkOrFeedUnavailable', 'sdkUnavailable')) { 'environmentBlocked' } else { 'failed' }
+        if ($status -eq 'environmentBlocked') { $environmentBlocked = $true } else { $failed = $true }
+        $checks.Add((New-Check $dotnetSpec.Name $status "$($dotnetSpec.Phase) falhou: $kind." $output))
+    }
+}
+catch {
+    $environmentBlocked = $true
+    $checks.Add((New-Check 'checker.execution' 'environmentBlocked' 'O checker não conseguiu concluir sua execução.' (ConvertTo-SanitizedText $_.Exception.Message)))
+}
+finally {
+    try {
+        $postStatus = Get-GitStatusSnapshot -WorkingDirectory $repositoryRoot
+        $gitContext.newNonIgnoredChanges = @($postStatus | Where-Object { $_ -notin $gitContext.preexistingChanges })
+        if ($gitContext.newNonIgnoredChanges.Count -gt 0) { $failed = $true; $checks.Add((New-Check 'git.statusPost' 'failed' 'O checker deixou mudanças novas não ignoradas.' $gitContext.newNonIgnoredChanges)) }
+        else { $checks.Add((New-Check 'git.statusPost' 'passed' 'O checker não deixou mudanças novas não ignoradas.' $null)) }
+    }
+    catch { $environmentBlocked = $true; $checks.Add((New-Check 'git.statusPost' 'environmentBlocked' 'Não foi possível comparar o status Git final.' (ConvertTo-SanitizedText $_.Exception.Message))) }
+}
+
+$currentFront = $null
+$checkpoint = Join-Path $repositoryRoot 'Docs\STATUS_ATUAL_E_PROXIMO_PASSO.md'
+if (Test-Path -LiteralPath $checkpoint -PathType Leaf) {
+    $front = [regex]::Match((Get-Content -LiteralPath $checkpoint -Raw), '(?s)## Próxima ação única.*?\b(B00[0-6])\b')
+    if ($front.Success) { $currentFront = $front.Groups[1].Value }
+}
+$manualRequired = @(Get-ManualRequirements -WorkingDirectory $repositoryRoot -CurrentFront $currentFront)
+$incomplete = $manualRequired.Count -gt 0
+if ($environmentBlocked) { $overallStatus = 'environmentBlocked'; $exitCode = 2; $pushReadiness = 'environmentBlocked' }
+elseif ($failed) { $overallStatus = 'failed'; $exitCode = 1; $pushReadiness = 'blocked' }
+elseif ($incomplete) { $overallStatus = 'incomplete'; $exitCode = 3; $pushReadiness = 'blocked' }
+else { $overallStatus = 'passed'; $exitCode = 0; $pushReadiness = if ($Fetch) { 'readyRemote' } else { 'readyLocal' } }
+$localReadiness = if ($overallStatus -in @('passed', 'incomplete')) { 'ready' } else { 'blocked' }
+
+[ordered]@{
+    status = $overallStatus
+    exitCode = $exitCode
+    pushReadiness = $pushReadiness
+    localReadiness = $localReadiness
+    remoteReadiness = $remoteReadiness
+    remoteFetchStatus = $remoteFetchStatus
+    gitContext = $gitContext
+    commands = @($commands)
+    checks = @($checks)
+    warnings = @($warnings)
+    manualRequired = @($manualRequired)
+    notCovered = @('Validação funcional na IDE GeneXus, acesso a KB, instalação de DLL e scripts em Tools não são executados.', 'manualRequired é um lembrete humano diff-scoped; não comprova fechamento semântico.')
+} | ConvertTo-Json -Depth 8
+
+exit $exitCode
