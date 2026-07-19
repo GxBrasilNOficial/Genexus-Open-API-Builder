@@ -44,6 +44,18 @@ dotnet build Src\Extension\GenexusOpenApiBuilder.Extension.csproj --configuratio
 
 Resultado: compilação com sucesso, 0 avisos e 0 erros.
 
+## Fechamento passivo
+
+Após a validação funcional, os comandos experimentais B005 foram removidos do runtime e a extensão foi recompilada sem comandos de escrita B005 ativos. A DLL passiva final foi instalada manualmente pelo usuário com `Install-ExtensionForGeneXus18.bat`.
+
+A verificação local confirmou:
+
+- build final Release com 0 avisos e 0 erros;
+- DLL instalada coincide com a build (`InstalledMatchesBuild=True`);
+- SHA-256 final da DLL: `A94A3420EE0BB694E2B6480159F3CBCBE40443E55B86959E2D28A2759E757246`;
+- menu de contexto exibido como `Genexus Open API Builder > Futura Primeira Opção`;
+- placeholder `Futura Primeira Opção` é não operacional e não lê nem escreve na KB.
+
 ## Evidência capturada
 
 1. `B005PreflightProcedureSdtFolderFile` confirmou nomes disponíveis, sem alteração.
