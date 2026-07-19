@@ -97,17 +97,22 @@ function Get-FailureKind {
 function Add-DiagnosticWarnings {
     param([string]$Output)
     foreach ($line in @($Output -split "`r?`n")) {
-        if ($line -match '(?i)\b(warning|aviso)\b' -and -not [string]::IsNullOrWhiteSpace($line)) {
-            $warnings.Add($line.Trim())
+        $trimmedLine = $line.Trim()
+        if ([string]::IsNullOrWhiteSpace($trimmedLine)) { continue }
+        if ($trimmedLine -match '(?i)^(?<count>\d+)\s+(warning|aviso)') {
+            if ([int]$Matches['count'] -eq 0) { continue }
+        }
+        if ($trimmedLine -match '(?i)\b(warning|aviso)\b') {
+            $warnings.Add($trimmedLine)
         }
     }
 }
 
 function Get-ManualRequirements {
     param([string]$WorkingDirectory, [string]$CurrentFront)
-    $patch = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--no-ext-diff', 'origin/main...HEAD') -WorkingDirectory $WorkingDirectory
+    $patch = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--no-ext-diff', 'origin/main..HEAD') -WorkingDirectory $WorkingDirectory
     $worktreePatch = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--no-ext-diff') -WorkingDirectory $WorkingDirectory
-    $paths = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--name-only', '-z', 'origin/main...HEAD') -WorkingDirectory $WorkingDirectory
+    $paths = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--name-only', '-z', 'origin/main..HEAD') -WorkingDirectory $WorkingDirectory
     $worktreePaths = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--name-only', '-z') -WorkingDirectory $WorkingDirectory
     if ($patch.ExitCode -ne 0 -or $worktreePatch.ExitCode -ne 0 -or $paths.ExitCode -ne 0 -or $worktreePaths.ExitCode -ne 0) { return @() }
     $frontPattern = 'B000|B001|B002|B003|B004|B005|B006'
@@ -137,13 +142,23 @@ $warnings = [System.Collections.Generic.List[string]]::new()
 $commands = [System.Collections.Generic.List[object]]::new()
 $environmentBlocked = $false
 $failed = $false
+$workingTreeDirty = $false
 $remoteFetchStatus = if ($Fetch) { 'notRun' } else { 'notRequested' }
 $remoteReadiness = if ($Fetch) { 'pending' } else { 'unverified' }
 $pushReadiness = 'readyLocal'
-$gitContext = [ordered]@{ branch = $null; ahead = $null; behind = $null; baseRef = 'origin/main'; preexistingChanges = @(); newNonIgnoredChanges = @() }
+$gitContext = [ordered]@{ branch = $null; ahead = $null; behind = $null; baseRef = 'origin/main'; workingTreeDirty = $false; preexistingChanges = @(); newNonIgnoredChanges = @() }
 
 try {
     $gitContext.preexistingChanges = @(Get-GitStatusSnapshot -WorkingDirectory $repositoryRoot)
+    $workingTreeDirty = $gitContext.preexistingChanges.Count -gt 0
+    $gitContext.workingTreeDirty = $workingTreeDirty
+    if ($workingTreeDirty) {
+        $warnings.Add('A working tree já possuía alterações não ignoradas antes da execução; push requer revisão humana.')
+        $checks.Add((New-Check 'git.statusPre' 'skipped' 'A working tree já estava suja antes da execução.' $gitContext.preexistingChanges))
+    }
+    else {
+        $checks.Add((New-Check 'git.statusPre' 'passed' 'A working tree estava limpa antes da execução.' $null))
+    }
     if ($Fetch) {
         $fetchResult = Invoke-ExternalProcess -FileName 'git' -Arguments @('fetch', 'origin') -WorkingDirectory $repositoryRoot
         $commands.Add([ordered]@{ command = 'git fetch origin'; exitCode = $fetchResult.ExitCode; output = ConvertTo-SanitizedText ($fetchResult.StdOut + $fetchResult.StdErr) })
@@ -168,7 +183,7 @@ try {
     }
 
     foreach ($diffSpec in @(
-        [ordered]@{ Name = 'git.diffInterval'; Arguments = @('diff', '--check', 'origin/main...HEAD'); Summary = 'O diff contra origin/main não contém erro de whitespace.' },
+        [ordered]@{ Name = 'git.diffInterval'; Arguments = @('diff', '--check', 'origin/main..HEAD'); Summary = 'O diff contra origin/main não contém erro de whitespace.' },
         [ordered]@{ Name = 'git.diffWorkingTree'; Arguments = @('diff', '--check'); Summary = 'O diff da working tree não contém erro de whitespace.' }
     )) {
         $diff = Invoke-ExternalProcess -FileName 'git' -Arguments $diffSpec.Arguments -WorkingDirectory $repositoryRoot
@@ -232,12 +247,15 @@ if (Test-Path -LiteralPath $checkpoint -PathType Leaf) {
     if ($front.Success) { $currentFront = $front.Groups[1].Value }
 }
 $manualRequired = @(Get-ManualRequirements -WorkingDirectory $repositoryRoot -CurrentFront $currentFront)
-$incomplete = $manualRequired.Count -gt 0
+$incompleteReasons = [System.Collections.Generic.List[string]]::new()
+if ($workingTreeDirty) { $incompleteReasons.Add('workingTreeDirty') }
+if ($manualRequired.Count -gt 0) { $incompleteReasons.Add('manualRequired') }
+$incomplete = $incompleteReasons.Count -gt 0
 if ($environmentBlocked) { $overallStatus = 'environmentBlocked'; $exitCode = 2; $pushReadiness = 'environmentBlocked' }
 elseif ($failed) { $overallStatus = 'failed'; $exitCode = 1; $pushReadiness = 'blocked' }
 elseif ($incomplete) { $overallStatus = 'incomplete'; $exitCode = 3; $pushReadiness = 'blocked' }
 else { $overallStatus = 'passed'; $exitCode = 0; $pushReadiness = if ($Fetch) { 'readyRemote' } else { 'readyLocal' } }
-$localReadiness = if ($overallStatus -in @('passed', 'incomplete')) { 'ready' } else { 'blocked' }
+$localReadiness = if ($overallStatus -eq 'passed') { 'ready' } else { 'blocked' }
 
 [ordered]@{
     status = $overallStatus
@@ -250,8 +268,9 @@ $localReadiness = if ($overallStatus -in @('passed', 'incomplete')) { 'ready' } 
     commands = @($commands)
     checks = @($checks)
     warnings = @($warnings)
+    incompleteReasons = @($incompleteReasons)
     manualRequired = @($manualRequired)
-    notCovered = @('Validação funcional na IDE GeneXus, acesso a KB, instalação de DLL e scripts em Tools não são executados.', 'manualRequired é um lembrete humano diff-scoped; não comprova fechamento semântico.')
+    notCovered = @('Validação funcional na IDE GeneXus, acesso a KB, instalação de DLL e scripts em Tools não são executados.', 'manualRequired e workingTreeDirty exigem revisão humana; não comprovam fechamento semântico.')
 } | ConvertTo-Json -Depth 8
 
 exit $exitCode

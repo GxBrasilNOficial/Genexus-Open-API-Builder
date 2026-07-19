@@ -30,6 +30,8 @@ $source = Get-Content -LiteralPath $checker -Raw
 # não interpreta referências em mensagens ou fixtures como invocações operacionais.
 Assert-True ($source -notmatch '(?im)^\s*(?:&|\.)\s+.*\bTools[\\/]') 'O checker não pode invocar scripts de Tools.'
 Assert-True ($source -notmatch '(?i)Invoke-Expression|ScriptBlock::Create|&\s*\(') 'O checker não pode usar invocação dinâmica.'
+Assert-True ($source -notmatch '(?i)(?:C:|%ProgramFiles%)\\[^\r\n]*Program Files|C:\\GxModels') 'O checker não pode acessar Program Files nem uma KB local.'
+Assert-True ($source -notmatch '(?i)Start-Process\s+.*(?:genexus|dll)') 'O checker não pode iniciar IDE ou operações de DLL.'
 
 $fixtures = @(
     @{ Text = 'error NU1004: The package lock file is inconsistent.'; Phase = 'restore'; Expected = 'lockFileInconsistent' },
@@ -45,6 +47,7 @@ $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("OpenApiBuilderPrePushC
 try {
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'remote.git'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\scripts'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Src'))
     & git init --bare (Join-Path $tempRoot 'remote.git') | Out-Null
     Push-Location (Join-Path $tempRoot 'repo')
     try {
@@ -53,8 +56,15 @@ try {
         & git config user.email 'checker@example.invalid'
         & git config user.name 'PrePush Checker Test'
         [System.IO.File]::WriteAllText((Join-Path $PWD 'README.md'), "fixture`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD '.gitignore'), "bin/`nobj/`n", [System.Text.UTF8Encoding]::new($false))
+        & dotnet new sln --name GenexusOpenApiBuilder --output Src --format sln | Out-Null
+        Assert-True ($LASTEXITCODE -eq 0) 'Não foi possível criar a solution mínima da fixture.'
+        & dotnet new classlib --name Fixture --output Src\Fixture --framework net10.0 --no-restore | Out-Null
+        Assert-True ($LASTEXITCODE -eq 0) 'Não foi possível criar o projeto mínimo da fixture.'
+        & dotnet sln Src\GenexusOpenApiBuilder.sln add Src\Fixture\Fixture.csproj | Out-Null
+        Assert-True ($LASTEXITCODE -eq 0) 'Não foi possível adicionar o projeto à solution da fixture.'
         [System.IO.File]::Copy($checker, (Join-Path $PWD 'scripts\Invoke-OpenApiBuilderPrePushChecks.ps1'))
-        & git add README.md scripts
+        & git add .gitignore README.md Src scripts
         & git commit -m 'Fixture do checker' | Out-Null
         & git remote add origin (Join-Path $tempRoot 'remote.git')
         & git push -u origin main | Out-Null
@@ -62,17 +72,27 @@ try {
         $json = & pwsh -NoProfile -File scripts/Invoke-OpenApiBuilderPrePushChecks.ps1 -AsJson
         $checkerExit = $LASTEXITCODE
         $result = $json | ConvertFrom-Json
-        Assert-True ($checkerExit -eq 1) 'A fixture sem solution deve falhar somente no build obrigatório.'
+        Assert-True ($checkerExit -eq 0) 'A fixture limpa deve concluir todos os checks mecânicos.'
         Assert-True ($result.gitContext.branch -eq 'main') 'O checker não reconheceu a branch main na fixture.'
         Assert-True ($result.remoteReadiness -eq 'unverified') 'Sem -Fetch, a referência remota deve permanecer unverified.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'git.branch' }).status -eq 'passed') 'A checagem de branch deveria passar na fixture.'
+        Assert-True (@($result.warnings).Count -eq 0) 'O checker não deve registrar "0 Aviso(s)" como warning.'
 
         $fetchJson = & pwsh -NoProfile -File scripts/Invoke-OpenApiBuilderPrePushChecks.ps1 -AsJson -Fetch
         $fetchExit = $LASTEXITCODE
         $fetchResult = $fetchJson | ConvertFrom-Json
-        Assert-True ($fetchExit -eq 1) 'A fixture com fetch também deve falhar somente no build obrigatório.'
+        Assert-True ($fetchExit -eq 0) 'A fixture com fetch deve concluir todos os checks mecânicos.'
         Assert-True ($fetchResult.remoteFetchStatus -eq 'succeeded') 'O fetch local da fixture deveria concluir.'
         Assert-True ($fetchResult.remoteReadiness -eq 'confirmed') 'Com fetch bem-sucedido, a referência remota deve ser confirmed.'
+
+        [System.IO.File]::AppendAllText((Join-Path $PWD 'README.md'), 'alteração preexistente' + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
+        $dirtyJson = & pwsh -NoProfile -File scripts/Invoke-OpenApiBuilderPrePushChecks.ps1 -AsJson
+        $dirtyExit = $LASTEXITCODE
+        $dirtyResult = $dirtyJson | ConvertFrom-Json
+        Assert-True ($dirtyExit -eq 3) 'A fixture com working tree suja deve exigir revisão humana.'
+        Assert-True ($dirtyResult.pushReadiness -eq 'blocked') 'A working tree suja deve bloquear push.'
+        Assert-True ('workingTreeDirty' -in @($dirtyResult.incompleteReasons)) 'O JSON deve explicitar workingTreeDirty.'
+        Assert-True (@($dirtyResult.warnings | Where-Object { $_ -match 'working tree' }).Count -eq 1) 'A working tree suja deve gerar aviso explícito.'
     }
     finally {
         Pop-Location
@@ -82,4 +102,4 @@ finally {
     if (Test-Path -LiteralPath $tempRoot) { Remove-Item -LiteralPath $tempRoot -Recurse -Force }
 }
 
-'OK: fixtures de classificação, fronteira operacional e repositório Git temporário validados.'
+'OK: fixtures de classificação, fronteira operacional, Git limpo/sujo e fetch local validados.'
