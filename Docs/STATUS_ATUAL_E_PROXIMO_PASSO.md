@@ -25,6 +25,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B004` concluído no U15: um API Object de teste foi criado, alterado, relido após reinstalação da extensão e excluído com ausência confirmada pelo GUID, exclusivamente por APIs públicas.
 - `B005` concluído no U15: Procedure, SDT, Folder e File de teste foram criados, alterados, relidos e excluídos com ausência confirmada, exclusivamente por APIs públicas e com autorização explícita antes de cada fase de escrita.
 - `B006` concluído no U15: metadata JSON em File preservou GUID, nome, descrição, 316 bytes UTF-8 e SHA-256 após fechar e reabrir a KB; o File temporário foi excluído com ausência confirmada.
+- `B020` concluído no U15: a extensão detectou manualmente a KB ativa `wsEducacaoSpTeste` no fluxo do protótipo, exibindo nome, GUID e localização na Output sem persistência e sem operações de escrita.
 
 ## Frente ativa
 
@@ -32,22 +33,22 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Próxima ação única
 
-Iniciar `B020` — Detectar KB ativa no fluxo do protótipo:
+Iniciar `B021` — Listar Transactions elegíveis no fluxo do protótipo:
 
-> Consolidar a detecção da KB ativa como primeira capacidade somente leitura do wizard, reutilizando a evidência pública obtida no B001 sem reativar sondas automáticas.
+> Listar Transactions elegíveis da KB ativa em fluxo manual e somente leitura, preparando a seleção da Transaction sem persistir escolhas e sem criar, alterar ou excluir objetos.
 
 ## Critério de conclusão e evidência esperada
 
-- KB ativa detectada por API pública dentro do fluxo manual do protótipo;
-- nome, GUID e localização apresentados sem persistência;
+- Transactions elegíveis listadas por API pública a partir da KB ativa;
+- total e nomes apresentados sem persistência;
 - nenhuma criação, alteração ou exclusão de objetos;
-- base pronta para `B021`, que listará Transactions elegíveis.
+- base pronta para `B022`, que selecionará uma Transaction no fluxo do protótipo.
 
 ## Sequência operacional vigente
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
-3. Sprint 2 inicia por `B020` e entrega apenas o protótipo navegável e não persistente do wizard.
+3. Sprint 2 iniciou por `B020`, já concluído, e segue por `B021`, mantendo apenas o protótipo navegável e não persistente do wizard.
 4. Sprint 3 cria metadata e `ApiPlan`.
 5. Sprint 4 integra o wizard ao engine pela primeira vez e cria os SDTs.
 6. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.

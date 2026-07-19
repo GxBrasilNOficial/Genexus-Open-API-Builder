@@ -31,6 +31,7 @@ Cada inclusão, alteração ou remoção de comando do menu de contexto deve man
 3. `Command refid` dentro do grupo de comandos em `Groups` no mesmo manifesto, grupo que o submenu referencia.
 
 - O ID deve ser exatamente igual nas três camadas.
+- Para comandos de menu, registrar o ID em `Package.cs` como string literal no `CommandKey`, no formato `new CommandKey(Id, "Nome do Comando")`. O checker `Tools/Test-ExtensionCommandRegistration.ps1` valida esse contrato por leitura textual e não resolve constantes ou campos intermediários.
 - O build bem-sucedido não comprova essa sincronização.
 - Antes de gerar uma DLL para atualização manual, executar:
 
@@ -40,6 +41,32 @@ pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1
 
 - Preservar `Futura Primeira Opção` como placeholder não operacional; comandos temporários devem ser acrescentados sem substituir o placeholder.
 - No fechamento de uma sonda, remover seus comandos das três camadas e executar novamente o teste.
+
+## Escrita na janela Output da IDE
+
+Para mensagens da extensão na janela Output do GeneXus, reutilizar o padrão validado no B001/B020:
+
+1. conferir `CommonServices.IsOutputAvailable`;
+2. obter `CommonServices.Output`;
+3. exigir `IOutputService2` e usar `DefaultOutputId`;
+4. escrever com `AddLine(outputId, mensagem)`;
+5. chamar `Show(outputId)` após escrever.
+
+Não escrever em um Output customizado sem criação/seleção comprovada na IDE. O primeiro teste manual de B020 mostrou que o comando podia aparecer e executar sem mensagem visível quando a implementação tentava usar um `outputId` customizado. O Output padrão da IDE foi o caminho confirmado no U15.
+
+## Promoção de frente e próximo passo
+
+Ao concluir uma frente e promover a próxima ação, não atualizar apenas o checkpoint operacional. Antes de commitar, buscar no repositório inteiro pelo ID concluído, pelo ID seguinte e por expressões como `próxima frente`, `próxima missão`, `próxima ação`, `próxima responsabilidade operacional`, nomes de comandos adicionados/removidos e nomes de classes de sonda.
+
+Quando a frente alterar o comportamento em runtime da extensão, revisar também comentários XML/C#, descrições de classe/método e termos de transição como `passivo`, `placeholder`, `temporário`, `sonda`, `runtime`, `manual`, `somente leitura`, `comando` e `protótipo`. Comentários e documentos devem declarar se o comando ou comportamento permanece, foi removido ou será absorvido por fluxo futuro.
+
+Para cada ocorrência encontrada:
+
+- atualizar quando ela afirmar um próximo passo que deixou de ser vigente;
+- manter quando for range, histórico da própria frente ou referência governante ainda correta;
+- registrar mentalmente a justificativa para flags descartadas, para reportar na revisão pré-push quando aplicável.
+
+O checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` continua sendo a fonte canônica do próximo passo, mas documentos antigos não devem contradizê-lo com frases operacionais obsoletas.
 
 ## Revisão pré-push do repositório
 

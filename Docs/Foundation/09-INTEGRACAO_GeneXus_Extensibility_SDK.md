@@ -78,7 +78,7 @@ A partir de GeneXus 18 U14, a preparação `B010` usa o feed NuGet e os MSBuild 
 - **Evidência B000:** a DLL Release com manifesto e classe de entrada foi descoberta, registrada e carregada pelo U15 local; essa prova não confirma ainda o limite inferior U14.
 - **Evidência B004:** o ciclo de vida de um API Object oficial foi validado no U15, com criação, alteração, releitura após reinstalação e exclusão confirmada por GUID.
 - **Evidência B006:** metadata JSON em File preservou GUID, nome, descrição, bytes UTF-8 e SHA-256 após fechar e reabrir a KB de teste; o objeto temporário foi excluído ao final.
-- **Próxima responsabilidade operacional:** `B020` deve consolidar a detecção da KB ativa no fluxo somente leitura do protótipo navegável, conforme `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
+- **Evidência B020:** a detecção manual da KB ativa foi consolidada no fluxo somente leitura do protótipo navegável, conforme `Docs/Implementation/B020-DETECCAO-KB-ATIVA-PROTOTIPO.md`; a próxima responsabilidade operacional vigente fica no checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
 
 ---
 
