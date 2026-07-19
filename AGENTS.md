@@ -6,6 +6,22 @@
 - Essa instalação pode ser consultada somente em modo leitura para localizar e inspecionar o Extensibility SDK e suas dependências.
 - Artefatos do projeto devem ser criados apenas dentro deste repositório.
 
+## Atualização manual da extensão para testes
+
+Sempre que uma nova DLL precisar ser instalada para teste no GeneXus 18, o agente deve apresentar ao usuário o fluxo operacional completo abaixo, nesta ordem:
+
+1. fechar completamente a IDE GeneXus;
+2. executar `Install-ExtensionForGeneXus18.bat`, na raiz do repositório, usando **Executar como administrador**;
+3. executar `Register-ExtensionForGeneXus18.bat` normalmente, sem Administrador;
+4. no prompt aberto pelo segundo arquivo, digitar `genexus /install`, conferir a varredura e depois digitar `exit`;
+5. abrir novamente a IDE e executar a validação funcional indicada para a frente;
+6. quando solicitado, executar `pwsh -NoProfile -File Tools/Test-InstalledExtension.ps1` para conferir por leitura se a DLL instalada coincide com a build.
+
+- Os dois arquivos `.bat` da raiz são o caminho operacional primário para o usuário.
+- O agente não executa esses arquivos nem altera `C:\Program Files (x86)\GeneXus`; apenas orienta a execução manual.
+- Não substituir esse fluxo por uma chamada direta a `Tools/Copy-ExtensionForGeneXus18.ps1`. O `.ps1` é implementação interna exclusiva da etapa de cópia e validação; ele não registra a extensão.
+- Ao avisar que chegou a hora de atualizar e testar, citar sempre os dois `.bat`, suas exigências de elevação distintas e a sequência `genexus /install` seguida de `exit`.
+
 ## Fechamento de spikes e sondas temporárias
 
 Antes de concluir e commitar qualquer item de spike `B000`–`B006`, o agente deve:

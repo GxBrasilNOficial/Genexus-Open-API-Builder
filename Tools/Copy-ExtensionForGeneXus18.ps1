@@ -1,7 +1,6 @@
 [CmdletBinding()]
 param(
     [switch]$Apply,
-    [switch]$SkipGeneXusInstall,
     [string]$BuildDll = (Join-Path (Split-Path -Parent $PSScriptRoot) 'Src\Extension\bin\Release\net471\GenexusOpenApiBuilder.Extension.dll'),
     [string]$GeneXusDirectory = 'C:\Program Files (x86)\GeneXus\GeneXus18',
     [string]$LogDirectory = 'C:\Temp'
@@ -31,7 +30,10 @@ if (-not $Apply) {
         BuildSha256 = $buildHash
         TargetDll = $targetDll
         GeneXusDirectory = $GeneXusDirectory
-        NextCommand = 'pwsh -NoProfile -File Tools/Install-ExtensionForGeneXus18.ps1 -Apply'
+        NextCommand = 'Install-ExtensionForGeneXus18.bat'
+        FollowingCommand = 'Register-ExtensionForGeneXus18.bat'
+        RegistrationInput = 'genexus /install; depois exit'
+        OperationalNote = 'O PowerShell apenas copia e valida. O registro ocorre somente pelo segundo .bat, sem Administrador.'
     }
     return
 }
@@ -45,7 +47,7 @@ if (-not $principal.IsInRole($administratorRole)) {
 
 $runningGeneXus = @(Get-Process -Name GeneXus -ErrorAction SilentlyContinue)
 if ($runningGeneXus.Count -gt 0) {
-    throw 'Feche completamente a IDE GeneXus antes de instalar a extensão.'
+    throw 'Feche completamente a IDE GeneXus antes de copiar a extensão.'
 }
 
 if (-not (Test-Path -LiteralPath $LogDirectory -PathType Container)) {
@@ -54,7 +56,6 @@ if (-not (Test-Path -LiteralPath $LogDirectory -PathType Container)) {
 
 $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $backupDll = Join-Path $LogDirectory "GenexusOpenApiBuilder.Extension.backup-$timestamp.dll"
-$installLog = Join-Path $LogDirectory "GenexusOpenApiBuilder.Extension.install-$timestamp.log"
 
 if (Test-Path -LiteralPath $targetDll -PathType Leaf) {
     Copy-Item -LiteralPath $targetDll -Destination $backupDll -Force
@@ -71,54 +72,13 @@ if (Test-Path -LiteralPath $backupDll -PathType Leaf) {
     $backupPath = $backupDll
 }
 
-if ($SkipGeneXusInstall) {
-    [pscustomobject]@{
-        InstalledMatchesBuild = ($installedHash -eq $buildHash)
-        GeneXusInstallDeferred = $true
-        BackupDll = $backupPath
-        InstallLog = $null
-    }
-    return
-}
-
-Push-Location -LiteralPath $GeneXusDirectory
-try {
-    $installOutput = @(& $env:ComSpec /d /c 'genexus.exe /install' 2>&1 | ForEach-Object { $_.ToString() })
-    $exitCode = $LASTEXITCODE
-}
-finally {
-    Pop-Location
-}
-
-Set-Content -LiteralPath $installLog -Value $installOutput -Encoding utf8
-$addedLine = "Package '$extensionFileName' added"
-$compatibilityError = "Compatibility: cannot load package 'GenexusOpenApiBuilder.Extension.Package'"
-$attributeError = "Package Attribute not found '$extensionFileName'"
-$consoleOutputCaptured = $installOutput.Count -gt 0
-$wasAdded = $null
-$hasCompatibilityError = $false
-$hasAttributeError = $false
-if ($consoleOutputCaptured) {
-    $wasAdded = $installOutput -contains $addedLine
-    $hasCompatibilityError = [bool]($installOutput | Where-Object { $_ -like "$compatibilityError*" })
-    $hasAttributeError = $installOutput -contains $attributeError
-}
-$result = [pscustomobject]@{
+[pscustomobject]@{
     InstalledMatchesBuild = ($installedHash -eq $buildHash)
-    GeneXusInstallDeferred = $false
-    PackageAdded = $wasAdded
-    ConsoleOutputCaptured = $consoleOutputCaptured
-    ManualConsoleReviewRequired = (-not $consoleOutputCaptured)
-    CompatibilityError = [bool]$hasCompatibilityError
-    PackageAttributeError = $hasAttributeError
-    ExitCode = $exitCode
+    BuildDll = $BuildDll
+    InstalledDll = $targetDll
+    BuildSha256 = $buildHash
+    InstalledSha256 = $installedHash
     BackupDll = $backupPath
-    InstallLog = $installLog
-}
-
-$result
-
-if (($result.ConsoleOutputCaptured -and -not $result.PackageAdded) -or $result.CompatibilityError -or $result.PackageAttributeError -or $result.ExitCode -ne 0) {
-    Write-Error 'A instalação não passou na validação. Consulte InstallLog e restaure BackupDll se necessário.'
-    exit 1
+    RegistrationDeferred = $true
+    NextCommand = 'Register-ExtensionForGeneXus18.bat'
 }

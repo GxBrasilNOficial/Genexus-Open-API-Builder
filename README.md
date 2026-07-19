@@ -52,6 +52,28 @@ Para retomar o trabalho em uma nova sessão, consulte o checkpoint operacional:
 
 ---
 
+# Atualização Manual da Extensão no GeneXus 18
+
+Quando uma nova DLL estiver pronta para teste:
+
+1. feche completamente a IDE GeneXus;
+2. execute [`Install-ExtensionForGeneXus18.bat`](Install-ExtensionForGeneXus18.bat) na raiz do repositório usando **Executar como administrador**;
+3. execute [`Register-ExtensionForGeneXus18.bat`](Register-ExtensionForGeneXus18.bat) normalmente, sem Administrador;
+4. no prompt aberto, digite `genexus /install`, confira a varredura e depois digite `exit`;
+5. abra novamente a IDE e siga o roteiro de teste da frente ativa.
+
+O primeiro arquivo delega a cópia, o backup e a validação de hash ao script interno `Tools/Copy-ExtensionForGeneXus18.ps1`. Esse script não registra a extensão. O segundo `.bat` executa o registro no contexto normal em que o GeneXus local efetivamente varre os pacotes.
+
+Para conferir posteriormente, somente por leitura, se a DLL instalada coincide com a build:
+
+```powershell
+pwsh -NoProfile -File Tools/Test-InstalledExtension.ps1
+```
+
+O agente não executa os instaladores nem altera diretamente a pasta de instalação do GeneXus. O histórico técnico detalhado está em [B000 — Carregamento na IDE](Docs/Implementation/B000-CARREGAMENTO-IDE.md).
+
+---
+
 # Fonte Primária das Decisões do MVP
 
 O registro consolidado da entrevista funcional de julho de 2026 é a fonte primária das decisões do MVP:

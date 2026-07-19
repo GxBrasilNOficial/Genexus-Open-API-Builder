@@ -1,11 +1,10 @@
 @echo off
 setlocal EnableExtensions
 
-set "SCRIPT=%~dp0Tools\Install-ExtensionForGeneXus18.ps1"
-set "GENEXUS_DIRECTORY=C:\Program Files (x86)\GeneXus\GeneXus18"
+set "SCRIPT=%~dp0Tools\Copy-ExtensionForGeneXus18.ps1"
 
 if not exist "%SCRIPT%" (
-    echo ERRO: instalador PowerShell nao encontrado: %SCRIPT%
+    echo ERRO: script PowerShell de copia nao encontrado: %SCRIPT%
     pause
     exit /b 1
 )
@@ -14,7 +13,7 @@ echo Este arquivo deve ser iniciado manualmente como Administrador.
 echo Feche completamente a IDE GeneXus antes de continuar.
 echo.
 echo Aguarde. Copiando e validando a extensao...
-pwsh.exe -NoProfile -File "%SCRIPT%" -Apply -SkipGeneXusInstall
+pwsh.exe -NoProfile -File "%SCRIPT%" -Apply
 set "EXITCODE=%ERRORLEVEL%"
 
 :report

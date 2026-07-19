@@ -29,7 +29,7 @@ Fonte oficial: [GeneXus Platform SDK Download](https://docs.genexus.com/en/wiki?
 
 ## Regra de segurança
 
-`AGENTS.md` proíbe o agente de criar, alterar, mover, renomear ou excluir itens em `C:\Program Files (x86)\GeneXus` e subpastas. O instalador controlado deste repositório só atua quando o usuário o executa explicitamente com `-Apply`, em PowerShell elevado; o agente não o executa nem altera a instalação do GeneXus.
+`AGENTS.md` proíbe o agente de criar, alterar, mover, renomear ou excluir itens em `C:\Program Files (x86)\GeneXus` e subpastas. A cópia controlada só ocorre quando o usuário executa `Install-ExtensionForGeneXus18.bat` como Administrador; o agente não executa o arquivo nem altera a instalação do GeneXus.
 
 ## Diagnóstico reproduzível
 
@@ -43,11 +43,11 @@ O campo `ActivationVerified` permanece propositalmente como `false`: a marcaçã
 
 As tentativas de capturar o texto da janela de inicialização com `Start-Process -RedirectStandardOutput/-RedirectStandardError` produziram arquivos vazios em `C:\Temp`; essa janela não usa a saída padrão do processo `GeneXus.exe`.
 
-Para a cópia controlada, execute `Install-ExtensionForGeneXus18.bat` na raiz do repositório usando **Executar como administrador**. O arquivo não tenta elevar ou relançar processos: exige que a IDE esteja fechada, cria backup em `C:\Temp`, copia a DLL compilada para `Packages\GenexusOpenApiBuilder.Extension.dll` e valida o hash.
+Para a cópia controlada, execute `Install-ExtensionForGeneXus18.bat` na raiz do repositório usando **Executar como administrador**. O arquivo delega ao script interno `Tools/Copy-ExtensionForGeneXus18.ps1`, que exige a IDE fechada, cria backup em `C:\Temp`, copia a DLL compilada para `Packages\GenexusOpenApiBuilder.Extension.dll` e valida o hash. O script PowerShell não executa registro.
 
 O registro é uma segunda etapa, executada sem elevação por `Register-ExtensionForGeneXus18.bat`. Esse arquivo abre um prompt normal na pasta de instalação do GeneXus, no qual o usuário digita `genexus /install`. No U15 local, esse é o contexto que efetivamente atualiza o log de pacotes e registra a extensão; a chamada elevada de `genexus /install` termina sem varrer os pacotes.
 
-O `.ps1` pode continuar sendo chamado diretamente com `-Apply`, mas essa forma pode retornar `ManualConsoleReviewRequired : True`; para o teste operacional, o `.bat` é o caminho recomendado.
+O caminho legado que tentava executar `genexus /install` dentro do PowerShell elevado foi removido. Ele podia não capturar a saída e, no U15 local, não realizava a varredura efetiva dos pacotes. O registro permanece exclusivamente no segundo `.bat`, sem Administrador.
 
 ## Próxima tarefa técnica
 
