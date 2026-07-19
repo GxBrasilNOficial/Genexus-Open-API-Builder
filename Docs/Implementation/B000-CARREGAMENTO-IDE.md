@@ -63,7 +63,7 @@ O caminho legado que tentava executar `genexus /install` dentro do PowerShell el
 
 ## Próxima tarefa técnica
 
-B000–B005 estão concluídos. A próxima frente canônica é B006 — validar persistência de metadata em File após fechar e reabrir a KB de teste, com autorização explícita antes de cada fase de escrita. O checkpoint canônico é `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. A coluna Description vazia é uma limitação conhecida do Extensions Manager no U15 e não bloqueia este marco.
+B000–B006 estão concluídos no U15. A próxima frente canônica é B020 — detectar a KB ativa no fluxo somente leitura do protótipo navegável. O checkpoint canônico é `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. A coluna Description vazia é uma limitação conhecida do Extensions Manager no U15 e não bloqueia o B000.
 
 ## Critério de conclusão e evidência esperada
 

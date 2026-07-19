@@ -29,6 +29,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - correção de segurança pós-B003 validada: a DLL atual não executa sondas automaticamente ao abrir uma KB
 - B004 concluído no U15: ciclo de vida de API Object oficial comprovado com criação, alteração, releitura após reinstalação e exclusão confirmada
 - B005 concluído no U15: ciclo de vida de Procedure, SDT, Folder e File comprovado com criação, alteração, releitura e exclusão confirmada
+- B006 concluído no U15: metadata JSON em File preservou GUID, nome, descrição, bytes UTF-8 e SHA-256 após fechar e reabrir a KB
 
 ## Fixed
 
@@ -40,11 +41,11 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - `Docs/Temp` foi protegido contra inclusão acidental no repositório público
 - comandos experimentais B004 removidos do runtime após a validação do ciclo de vida do API Object
 - comandos experimentais B005 removidos do runtime após a validação; o popup `Genexus Open API Builder` permanece no menu de contexto com o placeholder não operacional `Futura Primeira Opção`
+- comandos experimentais B006 removidos do runtime após a validação de persistência; a sonda permanece apenas como evidência histórica não invocada
 
 ## Planned
 
-- Sprint 1 — tarefas restantes do Spike GeneXus Extensibility SDK (`B006`)
-- Protótipo inicial do wizard
+- Sprint 2 — protótipo navegável e não persistente do wizard, iniciando por `B020`
 - Primeira geração experimental
 
 ---

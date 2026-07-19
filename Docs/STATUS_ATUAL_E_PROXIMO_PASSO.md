@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-07-18.
+2026-07-19.
 
 ## Último marco concluído
 
@@ -24,35 +24,34 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - correção de segurança pós-B003 validada no U15: a DLL atual foi reinstalada e a abertura de uma KB não emitiu mensagens B001–B003 na Output nem realizou escrita automática.
 - `B004` concluído no U15: um API Object de teste foi criado, alterado, relido após reinstalação da extensão e excluído com ausência confirmada pelo GUID, exclusivamente por APIs públicas.
 - `B005` concluído no U15: Procedure, SDT, Folder e File de teste foram criados, alterados, relidos e excluídos com ausência confirmada, exclusivamente por APIs públicas e com autorização explícita antes de cada fase de escrita.
+- `B006` concluído no U15: metadata JSON em File preservou GUID, nome, descrição, 316 bytes UTF-8 e SHA-256 após fechar e reabrir a KB; o File temporário foi excluído com ausência confirmada.
 
 ## Frente ativa
 
-**Sprint 1 — Spike de viabilidade**, correspondente ao pacote inicial da **Fase -1** do backlog.
+**Sprint 2 — Protótipo Navegável do Wizard**, cobrindo as **Fases 1 e 2** do backlog sem persistir escolhas nem gerar objetos.
 
 ## Próxima ação única
 
-Iniciar `B006` — Validar persistência de metadata em File após fechar e reabrir a KB:
+Iniciar `B020` — Detectar KB ativa no fluxo do protótipo:
 
-> Identificar e comprovar, pelas APIs oficiais disponíveis, que um File JSON de metadata criado pela extensão permanece íntegro e reencontrável após fechar e reabrir a KB de teste.
+> Consolidar a detecção da KB ativa como primeira capacidade somente leitura do wizard, reutilizando a evidência pública obtida no B001 sem reativar sondas automáticas.
 
 ## Critério de conclusão e evidência esperada
 
-- API pública de File reutilizada ou refinada para gravar metadata JSON;
-- File de metadata criado, relido antes de fechar, relido após reabrir a KB e excluído ao final;
-- log e instruções de reprodução registrados em documentação de implementação;
-- nenhuma alteração em APIs ou objetos preexistentes;
-- autorização explícita do usuário antes de cada fase de escrita na KB.
+- KB ativa detectada por API pública dentro do fluxo manual do protótipo;
+- nome, GUID e localização apresentados sem persistência;
+- nenhuma criação, alteração ou exclusão de objetos;
+- base pronta para `B021`, que listará Transactions elegíveis.
 
 ## Sequência operacional vigente
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
-2. Sprint 1 executa o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
-3. As Fases 1–8 dependem da aprovação desse spike.
-4. Sprint 2 entrega apenas o protótipo navegável e não persistente do wizard.
-5. Sprint 3 cria metadata e `ApiPlan`.
-6. Sprint 4 integra o wizard ao engine pela primeira vez e cria os SDTs.
-7. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
-8. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
+2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
+3. Sprint 2 inicia por `B020` e entrega apenas o protótipo navegável e não persistente do wizard.
+4. Sprint 3 cria metadata e `ApiPlan`.
+5. Sprint 4 integra o wizard ao engine pela primeira vez e cria os SDTs.
+6. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
+7. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -71,7 +70,6 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- protótipo navegável do wizard;
 - `ApiPlan`;
 - engine de geração;
 - Alpha público.

@@ -115,11 +115,11 @@ Executar o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
 - `B003` (concluído): Folder de teste criado no U15 com autorização explícita e sem alterar objetos existentes
 - `B004` (concluído): ciclo de vida de API Object oficial validado no U15
 - `B005` (concluído): ciclo de vida de Procedure, SDT, Folder e File validado no U15
-- `B006`: metadata em File persiste após fechar e reabrir a KB
+- `B006` (concluído): metadata JSON em File preservou identidade, descrição e bytes após fechar e reabrir a KB
 
 ## Gate
 
-Se `B004` falhar sem alternativa oficial viável, revisar ou encerrar a tese atual do produto.
+Gate aprovado no U15: o pacote inicial comprovou carregamento, leitura e ciclo de vida dos objetos necessários, incluindo persistência de metadata em File. A validação do limite inferior U14 continua pendente e não bloqueia o MVP.
 
 [F09][SPR-F24]
 

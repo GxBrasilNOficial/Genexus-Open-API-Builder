@@ -8,8 +8,8 @@ using Artech.Common.Framework.Commands;
 namespace GenexusOpenApiBuilder.Extension;
 
 /// <summary>
-/// Ponto de entrada passivo da extensão. As sondas B001-B005 permanecem como
-/// evidências históricas e não são invocadas em runtime, nem na abertura de KBs.
+/// Ponto de entrada passivo da extensão. As sondas B001-B006 permanecem como
+/// evidências históricas e não são invocadas em runtime nem na abertura de KBs.
 /// O comando placeholder mantém o submenu do produto visível sem ler ou escrever na KB.
 /// </summary>
 public sealed class Package : AbstractPackageUI
