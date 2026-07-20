@@ -1,10 +1,7 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using Artech.Architecture.Common.Descriptors;
+using Artech.Architecture.Common.Helpers;
 using Artech.Architecture.Common.Packages;
 using Artech.Architecture.Common.Services;
 using Artech.Architecture.UI.Framework.Packages;
@@ -256,7 +253,7 @@ public sealed class Package : AbstractPackageUI
 
         PrototypeTransactionSelectionState.ClearIfKnowledgeBaseChanged(knowledgeBase);
 
-        var transaction = TryResolveTransactionFromCommandData(data);
+        var transaction = TryResolveTransactionFromContext(data);
         if (transaction is not null)
         {
             var transactionGuid = transaction.Guid;
@@ -298,68 +295,9 @@ public sealed class Package : AbstractPackageUI
         return true;
     }
 
-    private static Transaction? TryResolveTransactionFromCommandData(CommandData data)
+    private static Transaction? TryResolveTransactionFromContext(CommandData data)
     {
-        var visited = new HashSet<object>(ReferenceEqualityComparer.Instance);
-        return TryFindTransaction(data.Context, visited, 0) ?? TryFindTransaction(data.Parameters, visited, 0);
-    }
-
-    private static Transaction? TryFindTransaction(object? value, ISet<object> visited, int depth)
-    {
-        if (value is null || depth > 4)
-        {
-            return null;
-        }
-
-        if (value is Transaction transaction)
-        {
-            return transaction;
-        }
-
-        var type = value.GetType();
-        if (type.IsPrimitive || value is string || value is Guid || value is DateTime)
-        {
-            return null;
-        }
-
-        if (type.Name is "KnowledgeBase" or "KBModel" || !visited.Add(value))
-        {
-            return null;
-        }
-
-        if (value is IEnumerable enumerable)
-        {
-            foreach (var item in enumerable)
-            {
-                var transactionFromItem = TryFindTransaction(item, visited, depth + 1);
-                if (transactionFromItem is not null)
-                {
-                    return transactionFromItem;
-                }
-            }
-        }
-
-        foreach (var property in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
-        {
-            if (property.GetIndexParameters().Length != 0)
-            {
-                continue;
-            }
-
-            try
-            {
-                var transactionFromProperty = TryFindTransaction(property.GetValue(value), visited, depth + 1);
-                if (transactionFromProperty is not null)
-                {
-                    return transactionFromProperty;
-                }
-            }
-            catch (Exception)
-            {
-            }
-        }
-
-        return null;
+        return KBObjectSelectionHelper.TryGetOnlyOneKBObjectFrom(data.Context) as Transaction;
     }
 
     private static void WriteOutput(string message)
@@ -380,18 +318,4 @@ public sealed class Package : AbstractPackageUI
         output.Show(outputId);
     }
 
-    private sealed class ReferenceEqualityComparer : IEqualityComparer<object>
-    {
-        public static readonly ReferenceEqualityComparer Instance = new();
-
-        public new bool Equals(object? x, object? y)
-        {
-            return ReferenceEquals(x, y);
-        }
-
-        public int GetHashCode(object obj)
-        {
-            return RuntimeHelpers.GetHashCode(obj);
-        }
-    }
 }
