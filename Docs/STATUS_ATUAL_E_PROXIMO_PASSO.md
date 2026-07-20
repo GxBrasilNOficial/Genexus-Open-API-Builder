@@ -28,6 +28,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B020` concluído no U15: a extensão detectou manualmente a KB ativa `wsEducacaoSpTeste` no fluxo do protótipo, exibindo nome, GUID e localização na Output sem persistência e sem operações de escrita.
 - `B021` concluído no U15: a extensão listou manualmente 10 Transactions da KB ativa `wsEducacaoSpTeste` na Output, sem persistência e sem operações de escrita.
 - `B022` concluído no U15: a extensão selecionou manualmente a Transaction `Escola` no diálogo nativo e leu seu módulo `Root Module` na Output, sem persistência e sem operações de escrita.
+- `B023` concluído no U15: a extensão detectou manualmente 15 objetos planejados para a Transaction `Laudo`, incluindo o File `apiLaudo_Metadata`, com 0 existentes e 15 ausentes na Output, sem persistência e sem operações de escrita.
 
 ## Frente ativa
 
@@ -80,5 +81,14 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 ## Protocolo de atualização
 
 Toda mudança de marco, frente ativa ou próxima ação deve atualizar este checkpoint no mesmo commit que produz a mudança. O checkpoint deve manter uma única próxima ação e apontar para os contratos, sem duplicá-los.
+
+Ao promover uma frente concluída para a próxima ação, atualizar em conjunto:
+
+- a seção `Último marco concluído`, registrando a frente encerrada e sua evidência mínima;
+- a seção `Próxima ação única`;
+- a seção `Critério de conclusão e evidência esperada`;
+- a seção `Sequência operacional vigente`.
+
+Divergência entre essas seções é gap documental confirmado na revisão pré-push.
 
 O fechamento de cada spike `B000`–`B006` também deve cumprir o checklist obrigatório de retirada de sondas temporárias, reinstalação da DLL passiva e alinhamento documental definido em `AGENTS.md`, antes de o marco ser considerado pronto para revisão pré-push.
