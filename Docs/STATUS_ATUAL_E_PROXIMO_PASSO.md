@@ -27,6 +27,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B006` concluído no U15: metadata JSON em File preservou GUID, nome, descrição, 316 bytes UTF-8 e SHA-256 após fechar e reabrir a KB; o File temporário foi excluído com ausência confirmada.
 - `B020` concluído no U15: a extensão detectou manualmente a KB ativa `wsEducacaoSpTeste` no fluxo do protótipo, exibindo nome, GUID e localização na Output sem persistência e sem operações de escrita.
 - `B021` concluído no U15: a extensão listou manualmente 10 Transactions da KB ativa `wsEducacaoSpTeste` na Output, sem persistência e sem operações de escrita.
+- `B022` concluído no U15: a extensão selecionou manualmente a Transaction `Escola` no diálogo nativo e leu seu módulo `Root Module` na Output, sem persistência e sem operações de escrita.
 
 ## Frente ativa
 
@@ -34,22 +35,22 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Próxima ação única
 
-Iniciar `B022` — Ler módulo da Transaction no fluxo do protótipo:
+Iniciar `B023` — Detectar objetos existentes no fluxo do protótipo:
 
-> Ler o módulo da Transaction selecionada no fluxo manual e somente leitura, preparando as verificações posteriores sem persistir escolhas e sem criar, alterar ou excluir objetos.
+> Verificar, para a Transaction selecionada em memória, os objetos existentes por API pública e somente leitura, sem persistir escolhas e sem criar, alterar ou excluir objetos.
 
 ## Critério de conclusão e evidência esperada
 
-- módulo da Transaction lido por API pública no fluxo do protótipo;
-- nome da Transaction e módulo apresentados sem persistência;
+- objetos existentes verificados por API pública para a Transaction selecionada;
+- nome da Transaction e resultado da verificação apresentados sem persistência;
 - nenhuma criação, alteração ou exclusão de objetos;
-- base pronta para `B023`, que verificará objetos existentes.
+- base pronta para `B024`, que verificará a capacidade de operar como Business Component.
 
 ## Sequência operacional vigente
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
-3. Sprint 2 concluiu `B020` e `B021` e segue por `B022`, mantendo apenas o protótipo navegável e não persistente do wizard.
+3. Sprint 2 concluiu `B020`, `B021` e `B022` e segue por `B023`, mantendo apenas o protótipo navegável e não persistente do wizard.
 4. Sprint 3 cria metadata e `ApiPlan`.
 5. Sprint 4 integra o wizard ao engine pela primeira vez e cria os SDTs.
 6. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.

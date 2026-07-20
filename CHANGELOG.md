@@ -32,6 +32,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B006 concluído no U15: metadata JSON em File preservou GUID, nome, descrição, bytes UTF-8 e SHA-256 após fechar e reabrir a KB
 - B020 concluído no U15: detecção manual da KB ativa no fluxo do protótipo navegável, em modo somente leitura
 - B021 concluído no U15: listagem manual de 10 Transactions da KB ativa no fluxo do protótipo navegável, em modo somente leitura
+- B022 concluído no U15: seleção nativa manual de Transaction e leitura de seu módulo no fluxo do protótipo, em modo somente leitura
 
 ## Fixed
 
@@ -47,7 +48,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Sprint 2 — protótipo navegável e não persistente do wizard, seguindo por `B022`
+- Sprint 2 — protótipo navegável e não persistente do wizard, seguindo por `B023`
 - Primeira geração experimental
 
 ---
