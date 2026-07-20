@@ -5,11 +5,13 @@
   <Commands>
     <CommandDefinition id="Futura Primeira Opção" context="selection" />
     <CommandDefinition id="Detectar KB Ativa (B020)" context="selection" />
+    <CommandDefinition id="Listar Transactions Elegíveis (B021)" context="selection" />
   </Commands>
   <Groups>
     <Group id="GenexusOpenApiBuilderPlaceholderGroup">
       <Command refid="Futura Primeira Opção" />
       <Command refid="Detectar KB Ativa (B020)" />
+      <Command refid="Listar Transactions Elegíveis (B021)" />
     </Group>
     <Group refid="KBObjectGrp" package="98121D96-A7D8-468b-9310-B1F468F812AE">
       <Popup id="GenexusOpenApiBuilderPopup" name="Genexus Open API Builder">

@@ -12,8 +12,8 @@ namespace GenexusOpenApiBuilder.Extension;
 /// <summary>
 /// Ponto de entrada da extensão. As sondas B001-B006 permanecem como
 /// evidências históricas e não são invocadas em runtime nem na abertura de KBs.
-/// O placeholder mantém o submenu do produto visível, e o comando B020 executa
-/// leitura manual e somente leitura da KB ativa para o protótipo navegável.
+/// O placeholder mantém o submenu do produto visível, e os comandos B020/B021
+/// executam leituras manuais e somente leitura para o protótipo navegável.
 /// </summary>
 public sealed class Package : AbstractPackageUI
 {
@@ -25,6 +25,7 @@ public sealed class Package : AbstractPackageUI
 
         AddCommand(new CommandKey(Id, "Futura Primeira Opção"), ExecuteFutureFirstOption, QueryFutureFirstOption);
         AddCommand(new CommandKey(Id, "Detectar KB Ativa (B020)"), ExecuteDetectActiveKnowledgeBase, QueryDetectActiveKnowledgeBase);
+        AddCommand(new CommandKey(Id, "Listar Transactions Elegíveis (B021)"), ExecuteListEligibleTransactions, QueryListEligibleTransactions);
     }
 
     private static bool QueryFutureFirstOption(CommandData data, ref CommandStatus status)
@@ -53,6 +54,37 @@ public sealed class Package : AbstractPackageUI
             snapshot is null
                 ? "[Genexus Open API Builder][B020] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente."
                 : $"[Genexus Open API Builder][B020] Knowledge Base ativa detectada: Name='{snapshot.Name}', Guid='{snapshot.Guid}', Location='{snapshot.Location}'.");
+
+        return true;
+    }
+
+    private static bool QueryListEligibleTransactions(CommandData data, ref CommandStatus status)
+    {
+        status.Visible(true);
+        return true;
+    }
+
+    private static bool ExecuteListEligibleTransactions(CommandData data)
+    {
+        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
+        if (knowledgeBase is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B021] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
+            return true;
+        }
+
+        var transactionNames = EligibleTransactionReader.ReadNames(knowledgeBase);
+        if (transactionNames.Count == 0)
+        {
+            WriteOutput("[Genexus Open API Builder][B021] Nenhuma Transaction elegível foi encontrada na Knowledge Base ativa.");
+            return true;
+        }
+
+        WriteOutput($"[Genexus Open API Builder][B021] Transactions elegíveis encontradas: Total={transactionNames.Count}.");
+        foreach (var transactionName in transactionNames)
+        {
+            WriteOutput($"[Genexus Open API Builder][B021] Transaction elegível: Name='{transactionName}'.");
+        }
 
         return true;
     }
