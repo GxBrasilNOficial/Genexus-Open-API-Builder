@@ -29,6 +29,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B021` concluído no U15: a extensão listou manualmente 10 Transactions da KB ativa `wsEducacaoSpTeste` na Output, sem persistência e sem operações de escrita.
 - `B022` concluído no U15: a extensão selecionou manualmente a Transaction `Escola` no diálogo nativo e leu seu módulo `Root Module` na Output, sem persistência e sem operações de escrita.
 - `B023` concluído no U15: a extensão detectou manualmente 15 objetos planejados para a Transaction `Laudo`, incluindo o File `apiLaudo_Metadata`, com 0 existentes e 15 ausentes na Output, sem persistência e sem operações de escrita.
+- `B024` concluído no U15: a extensão verificou manualmente a propriedade `Business Component` da Transaction `Carga`, reportando `IsBusinessComponent=False` como bloqueio e `IsBusinessComponent=True` como aptidão após habilitação manual temporária da propriedade, sem persistência pela extensão e sem operações de escrita pela extensão. Após o fechamento funcional, o menu principal `Genexus Open API Builder` também foi validado antes de `Help`, com B020-B024 acionáveis e B023/B024 mantendo a proteção quando B022 ainda não selecionou uma `Transaction` em memória.
 
 ## Frente ativa
 
@@ -36,22 +37,22 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Próxima ação única
 
-Iniciar `B024` — Verificar se a Transaction pode operar como Business Component:
+Iniciar `B025` — Ler chave simples ou composta completa:
 
-> Verificar, para a Transaction selecionada em memória, a capacidade de operar via `Business Component` por API pública e somente leitura, sem persistir escolhas e sem criar, alterar ou excluir objetos.
+> Ler, para a Transaction selecionada em memória, a chave primária simples ou composta completa por API pública e somente leitura, preservando ordem e tipos, sem persistir escolhas e sem criar, alterar ou excluir objetos.
 
 ## Critério de conclusão e evidência esperada
 
-- capacidade de operar via `Business Component` verificada por API pública para a Transaction selecionada;
-- nome da Transaction e resultado da verificação apresentados sem persistência;
-- nenhuma criação, alteração ou exclusão de objetos;
-- base pronta para `B025`, que lerá chave simples ou composta completa.
+- chave primária simples ou composta completa lida por API pública para a Transaction selecionada;
+- nome da Transaction, quantidade de partes da chave, ordem e tipos apresentados sem persistência;
+- nenhuma criação, alteração ou exclusão de objetos pela extensão;
+- base pronta para `B030`, que iniciará o passo 1 de seleção da Transaction no wizard.
 
 ## Sequência operacional vigente
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
-3. Sprint 2 concluiu `B020`, `B021`, `B022` e `B023` e segue por `B024`, mantendo apenas o protótipo navegável e não persistente do wizard.
+3. Sprint 2 concluiu `B020`, `B021`, `B022`, `B023` e `B024` e segue por `B025`, mantendo apenas o protótipo navegável e não persistente do wizard.
 4. Sprint 3 cria metadata e `ApiPlan`.
 5. Sprint 4 integra o wizard ao engine pela primeira vez e cria os SDTs.
 6. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.

@@ -82,6 +82,7 @@ A partir de GeneXus 18 U14, a preparação `B010` usa o feed NuGet e os MSBuild 
 - **Evidência B021:** a listagem manual de 10 Transactions da KB ativa foi consolidada no fluxo somente leitura do protótipo navegável, conforme `Docs/Implementation/B021-LISTAGEM-TRANSACTIONS-ELEGIVEIS-PROTOTIPO.md`; a próxima responsabilidade operacional vigente fica no checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
 - **Evidência B022:** a seleção nativa manual de uma Transaction e a leitura de seu módulo foram consolidadas no fluxo somente leitura do protótipo navegável, conforme `Docs/Implementation/B022-LEITURA-MODULO-TRANSACTION-PROTOTIPO.md`.
 - **Evidência B023:** a detecção manual dos nomes planejados para a Transaction selecionada foi consolidada no fluxo somente leitura do protótipo navegável, conforme `Docs/Implementation/B023-DETECCAO-OBJETOS-EXISTENTES-PROTOTIPO.md`; a próxima responsabilidade operacional vigente fica no checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
+- **Evidência B024:** a verificação manual da propriedade `Business Component` da Transaction selecionada foi consolidada no fluxo somente leitura do protótipo navegável, conforme `Docs/Implementation/B024-VERIFICACAO-BUSINESS-COMPONENT-PROTOTIPO.md`; a próxima responsabilidade operacional vigente fica no checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
 
 ---
 

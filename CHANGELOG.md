@@ -34,6 +34,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B021 concluído no U15: listagem manual de 10 Transactions da KB ativa no fluxo do protótipo navegável, em modo somente leitura
 - B022 concluído no U15: seleção nativa manual de Transaction e leitura de seu módulo no fluxo do protótipo, em modo somente leitura
 - B023 concluído no U15: detecção manual dos objetos planejados para a Transaction selecionada, incluindo `api<NomeBase>_Metadata`, em modo somente leitura
+- B024 concluído no U15: verificação manual de `Business Component` da Transaction selecionada, em modo somente leitura
+- Menu principal `Genexus Open API Builder` validado no U15 com acesso aos comandos B020-B024, preservando o submenu de contexto da Transaction
 
 ## Fixed
 
@@ -49,7 +51,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Sprint 2 — protótipo navegável e não persistente do wizard, seguindo por `B024`
+- Sprint 2 — protótipo navegável e não persistente do wizard, seguindo por `B025`
 - Primeira geração experimental
 
 ---
