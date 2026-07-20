@@ -9,6 +9,7 @@
     <CommandDefinition id="Selecionar Transaction e Ler Módulo (B022)" context="selection" />
     <CommandDefinition id="Detectar Objetos Existentes (B023)" context="selection" />
     <CommandDefinition id="Verificar Business Component (B024)" context="selection" />
+    <CommandDefinition id="Ler Chave Primária (B025)" context="selection" />
   </Commands>
   <Groups>
     <Group id="GenexusOpenApiBuilderPlaceholderGroup">
@@ -18,6 +19,7 @@
       <Command refid="Selecionar Transaction e Ler Módulo (B022)" />
       <Command refid="Detectar Objetos Existentes (B023)" />
       <Command refid="Verificar Business Component (B024)" />
+      <Command refid="Ler Chave Primária (B025)" />
     </Group>
     <Group refid="KBObjectGrp" package="98121D96-A7D8-468b-9310-B1F468F812AE">
       <Popup id="GenexusOpenApiBuilderPopup" name="Genexus Open API Builder">

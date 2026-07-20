@@ -1,4 +1,9 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Artech.Architecture.Common.Descriptors;
 using Artech.Architecture.Common.Packages;
 using Artech.Architecture.Common.Services;
@@ -15,7 +20,7 @@ namespace GenexusOpenApiBuilder.Extension;
 /// <summary>
 /// Ponto de entrada da extensão. As sondas B001-B006 permanecem como
 /// evidências históricas e não são invocadas em runtime nem na abertura de KBs.
-/// O placeholder mantém o submenu do produto visível, e os comandos B020-B024
+/// O placeholder mantém o submenu do produto visível, e os comandos B020-B025
 /// executam leituras manuais e somente leitura para o protótipo navegável.
 /// </summary>
 public sealed class Package : AbstractPackageUI
@@ -32,6 +37,7 @@ public sealed class Package : AbstractPackageUI
         AddCommand(new CommandKey(Id, "Selecionar Transaction e Ler Módulo (B022)"), ExecuteSelectTransactionAndReadModule, QuerySelectTransactionAndReadModule);
         AddCommand(new CommandKey(Id, "Detectar Objetos Existentes (B023)"), ExecuteDetectExistingObjects, QueryDetectExistingObjects);
         AddCommand(new CommandKey(Id, "Verificar Business Component (B024)"), ExecuteCheckBusinessComponent, QueryCheckBusinessComponent);
+        AddCommand(new CommandKey(Id, "Ler Chave Primária (B025)"), ExecuteReadPrimaryKey, QueryReadPrimaryKey);
     }
 
     private static bool QueryFutureFirstOption(CommandData data, ref CommandStatus status)
@@ -233,6 +239,129 @@ public sealed class Package : AbstractPackageUI
         return true;
     }
 
+    private static bool QueryReadPrimaryKey(CommandData data, ref CommandStatus status)
+    {
+        status.Visible(true);
+        return true;
+    }
+
+    private static bool ExecuteReadPrimaryKey(CommandData data)
+    {
+        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
+        if (knowledgeBase is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B025] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
+            return true;
+        }
+
+        PrototypeTransactionSelectionState.ClearIfKnowledgeBaseChanged(knowledgeBase);
+
+        var transaction = TryResolveTransactionFromCommandData(data);
+        if (transaction is not null)
+        {
+            var transactionGuid = transaction.Guid;
+            transaction = Transaction.GetAll(knowledgeBase.DesignModel)
+                .SingleOrDefault(item => item.Guid == transactionGuid);
+            if (transaction is null)
+            {
+                WriteOutput("[Genexus Open API Builder][B025] A Transaction do menu de contexto não foi reencontrada na Knowledge Base ativa. Nenhuma escolha foi persistida.");
+                return true;
+            }
+
+            PrototypeTransactionSelectionState.Store(knowledgeBase, transaction);
+        }
+        else
+        {
+            var selectedTransaction = PrototypeTransactionSelectionState.Current;
+            if (selectedTransaction is null)
+            {
+                WriteOutput("[Genexus Open API Builder][B025] Nenhuma Transaction selecionada. Use o menu de contexto de uma Transaction ou execute primeiro o comando B022.");
+                return true;
+            }
+
+            transaction = Transaction.GetAll(knowledgeBase.DesignModel)
+                .SingleOrDefault(item => item.Guid == selectedTransaction.TransactionGuid);
+            if (transaction is null)
+            {
+                WriteOutput($"[Genexus Open API Builder][B025] A Transaction selecionada em memória não foi reencontrada: Name='{selectedTransaction.TransactionName}', Guid='{selectedTransaction.TransactionGuid}'. Nenhuma escolha foi persistida.");
+                return true;
+            }
+        }
+
+        var snapshot = PrototypePrimaryKeyReader.Read(transaction);
+        WriteOutput($"[Genexus Open API Builder][B025] Transaction selecionada: Name='{snapshot.TransactionName}', PrimaryKeyParts={snapshot.Count}, HasCompositeKey={snapshot.HasCompositeKey}.");
+        foreach (var part in snapshot.Parts)
+        {
+            WriteOutput($"[Genexus Open API Builder][B025] KeyPart: Order={part.Order}, Name='{part.Name}', Type='{part.Type}', Length={part.Length}, Decimals={part.Decimals}.");
+        }
+
+        return true;
+    }
+
+    private static Transaction? TryResolveTransactionFromCommandData(CommandData data)
+    {
+        var visited = new HashSet<object>(ReferenceEqualityComparer.Instance);
+        return TryFindTransaction(data.Context, visited, 0) ?? TryFindTransaction(data.Parameters, visited, 0);
+    }
+
+    private static Transaction? TryFindTransaction(object? value, ISet<object> visited, int depth)
+    {
+        if (value is null || depth > 4)
+        {
+            return null;
+        }
+
+        if (value is Transaction transaction)
+        {
+            return transaction;
+        }
+
+        var type = value.GetType();
+        if (type.IsPrimitive || value is string || value is Guid || value is DateTime)
+        {
+            return null;
+        }
+
+        if (type.Name is "KnowledgeBase" or "KBModel" || !visited.Add(value))
+        {
+            return null;
+        }
+
+        if (value is IEnumerable enumerable)
+        {
+            foreach (var item in enumerable)
+            {
+                var transactionFromItem = TryFindTransaction(item, visited, depth + 1);
+                if (transactionFromItem is not null)
+                {
+                    return transactionFromItem;
+                }
+            }
+        }
+
+        foreach (var property in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
+        {
+            if (property.GetIndexParameters().Length != 0)
+            {
+                continue;
+            }
+
+            try
+            {
+                var transactionFromProperty = TryFindTransaction(property.GetValue(value), visited, depth + 1);
+                if (transactionFromProperty is not null)
+                {
+                    return transactionFromProperty;
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        return null;
+    }
+
     private static void WriteOutput(string message)
     {
         if (!CommonServices.IsOutputAvailable)
@@ -249,5 +378,20 @@ public sealed class Package : AbstractPackageUI
         var outputId = outputWithDefault.DefaultOutputId;
         output.AddLine(outputId, message);
         output.Show(outputId);
+    }
+
+    private sealed class ReferenceEqualityComparer : IEqualityComparer<object>
+    {
+        public static readonly ReferenceEqualityComparer Instance = new();
+
+        public new bool Equals(object? x, object? y)
+        {
+            return ReferenceEquals(x, y);
+        }
+
+        public int GetHashCode(object obj)
+        {
+            return RuntimeHelpers.GetHashCode(obj);
+        }
     }
 }
