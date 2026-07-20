@@ -39,6 +39,12 @@ Objetos pertencem a uma API gerada quando a metadata persistente os identifica c
 
 A metadata deve ser gravada em objeto `File` da KB, em JSON.
 
+O nome do objeto `File` de metadata deve seguir `api<NomeBase>_Metadata`, usando o mesmo nome base da `Transaction` que origina a API.
+
+O objeto `File` de metadata é interno da extensão e não deve ser exportado para artefatos de nenhum gerador. A criação e a atualização desse objeto devem garantir `False` em todas as propriedades de extração por gerador disponíveis no GeneXus, incluindo `Extract for Java Generator`, `Extract for .Net Generator`, `Extract for .Net Core Generator`, `Extract for iOS Generator`, `Extract for Android Generator`, `Extract for .NET Framework Generator` quando disponível, `Extract` legado/deprecated quando disponível e `Extract Zip`.
+
+Novas propriedades futuras de extração de `File` por gerador devem ser classificadas conservadoramente como não exportáveis e mantidas em `False` até revisão explícita.
+
 Campos mínimos, conforme aplicável:
 
 - versão do schema

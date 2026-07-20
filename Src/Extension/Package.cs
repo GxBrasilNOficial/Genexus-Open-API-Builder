@@ -1,3 +1,4 @@
+using System.Linq;
 using Artech.Architecture.Common.Descriptors;
 using Artech.Architecture.Common.Packages;
 using Artech.Architecture.Common.Services;
@@ -14,7 +15,7 @@ namespace GenexusOpenApiBuilder.Extension;
 /// <summary>
 /// Ponto de entrada da extensão. As sondas B001-B006 permanecem como
 /// evidências históricas e não são invocadas em runtime nem na abertura de KBs.
-/// O placeholder mantém o submenu do produto visível, e os comandos B020/B021/B022
+/// O placeholder mantém o submenu do produto visível, e os comandos B020-B023
 /// executam leituras manuais e somente leitura para o protótipo navegável.
 /// </summary>
 public sealed class Package : AbstractPackageUI
@@ -29,6 +30,7 @@ public sealed class Package : AbstractPackageUI
         AddCommand(new CommandKey(Id, "Detectar KB Ativa (B020)"), ExecuteDetectActiveKnowledgeBase, QueryDetectActiveKnowledgeBase);
         AddCommand(new CommandKey(Id, "Listar Transactions Elegíveis (B021)"), ExecuteListEligibleTransactions, QueryListEligibleTransactions);
         AddCommand(new CommandKey(Id, "Selecionar Transaction e Ler Módulo (B022)"), ExecuteSelectTransactionAndReadModule, QuerySelectTransactionAndReadModule);
+        AddCommand(new CommandKey(Id, "Detectar Objetos Existentes (B023)"), ExecuteDetectExistingObjects, QueryDetectExistingObjects);
     }
 
     private static bool QueryFutureFirstOption(CommandData data, ref CommandStatus status)
@@ -146,6 +148,48 @@ public sealed class Package : AbstractPackageUI
         PrototypeTransactionSelectionState.Store(knowledgeBase, transaction);
         WriteOutput($"[Genexus Open API Builder][B022] Transaction selecionada: Name='{transaction.Name}'.");
         WriteOutput($"[Genexus Open API Builder][B022] Módulo da Transaction: Name='{module.Name}'.");
+
+        return true;
+    }
+
+    private static bool QueryDetectExistingObjects(CommandData data, ref CommandStatus status)
+    {
+        status.Visible(true);
+        return true;
+    }
+
+    private static bool ExecuteDetectExistingObjects(CommandData data)
+    {
+        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
+        if (knowledgeBase is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B023] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
+            return true;
+        }
+
+        PrototypeTransactionSelectionState.ClearIfKnowledgeBaseChanged(knowledgeBase);
+        var selectedTransaction = PrototypeTransactionSelectionState.Current;
+        if (selectedTransaction is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B023] Nenhuma Transaction selecionada em memória. Execute primeiro o comando B022.");
+            return true;
+        }
+
+        var transaction = Transaction.GetAll(knowledgeBase.DesignModel)
+            .SingleOrDefault(item => item.Guid == selectedTransaction.TransactionGuid);
+        if (transaction is null)
+        {
+            WriteOutput($"[Genexus Open API Builder][B023] A Transaction selecionada em memória não foi reencontrada: Name='{selectedTransaction.TransactionName}', Guid='{selectedTransaction.TransactionGuid}'. Nenhuma escolha foi persistida.");
+            return true;
+        }
+
+        var snapshot = PrototypeExistingObjectReader.Read(knowledgeBase.DesignModel, transaction);
+        WriteOutput($"[Genexus Open API Builder][B023] Transaction selecionada: Name='{snapshot.TransactionName}', MetadataFile='{snapshot.MetadataFileName}'.");
+        WriteOutput($"[Genexus Open API Builder][B023] Objetos planejados verificados: Total={snapshot.Results.Count}, Existentes={snapshot.ExistingCount}, Ausentes={snapshot.MissingCount}.");
+        foreach (var result in snapshot.Results)
+        {
+            WriteOutput($"[Genexus Open API Builder][B023] {result.ObjectType}: Name='{result.Name}', Count={result.Count}, Status='{result.Status}'.");
+        }
 
         return true;
     }

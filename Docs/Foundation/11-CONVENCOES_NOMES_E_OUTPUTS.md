@@ -112,6 +112,41 @@ O `Services base path` começa com o mesmo valor do objeto `API`, também é vis
 
 ---
 
+# 6.1 File de Metadata
+
+## Padrão
+
+api<NomeBase>_Metadata
+
+## Exemplos
+
+| Transaction | Resultado |
+|------------|-----------|
+| Cliente | apiCliente_Metadata |
+| Produto | apiProduto_Metadata |
+| PedidoVenda | apiPedidoVenda_Metadata |
+
+## Regra
+
+O objeto `File` de metadata guarda JSON técnico persistente da API gerada para a Transaction. O nome é derivado do objeto `API` principal e não recebe sufixo de formato, porque o conteúdo JSON é contrato interno do MVP.
+
+Por ser artefato interno da extensão, o objeto `File` de metadata não deve ser extraído para nenhum gerador. Ao criar ou atualizar esse objeto, a extensão deve manter em `False` todas as propriedades de extração por gerador disponíveis no GeneXus, incluindo:
+
+- `Extract for Java Generator`
+- `Extract for .Net Generator`
+- `Extract for .Net Core Generator`
+- `Extract for iOS Generator`
+- `Extract for Android Generator`
+- `Extract for .NET Framework Generator`, quando disponível em versões/geradores legados
+- `Extract`, quando disponível como propriedade legada/deprecated
+- `Extract Zip`
+
+Se uma versão futura do GeneXus expuser nova propriedade de extração do `File` para outro gerador, ela deve ser tratada por padrão como não exportável e mantida em `False` até revisão explícita.
+
+[NOM-F11]
+
+---
+
 # 7. SDTs Oficiais
 
 | Finalidade | Padrão |
