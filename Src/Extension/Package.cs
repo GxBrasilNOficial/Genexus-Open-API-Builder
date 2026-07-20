@@ -17,7 +17,7 @@ namespace GenexusOpenApiBuilder.Extension;
 /// <summary>
 /// Ponto de entrada da extensão. As sondas B001-B006 permanecem como
 /// evidências históricas e não são invocadas em runtime nem na abertura de KBs.
-/// O placeholder mantém o submenu do produto visível, e os comandos B020-B025
+/// O placeholder mantém o submenu do produto visível, e os comandos B020-B030
 /// executam leituras manuais e somente leitura para o protótipo navegável.
 /// </summary>
 public sealed class Package : AbstractPackageUI
@@ -35,6 +35,7 @@ public sealed class Package : AbstractPackageUI
         AddCommand(new CommandKey(Id, "Detectar Objetos Existentes (B023)"), ExecuteDetectExistingObjects, QueryDetectExistingObjects);
         AddCommand(new CommandKey(Id, "Verificar Business Component (B024)"), ExecuteCheckBusinessComponent, QueryCheckBusinessComponent);
         AddCommand(new CommandKey(Id, "Ler Chave Primária (B025)"), ExecuteReadPrimaryKey, QueryReadPrimaryKey);
+        AddCommand(new CommandKey(Id, "Abrir Wizard (B030)"), ExecuteOpenWizardStepOne, QueryOpenWizardStepOne);
     }
 
     private static bool QueryFutureFirstOption(CommandData data, ref CommandStatus status)
@@ -291,6 +292,91 @@ public sealed class Package : AbstractPackageUI
         {
             WriteOutput($"[Genexus Open API Builder][B025] KeyPart: Order={part.Order}, Name='{part.Name}', Type='{part.Type}', Length={part.Length}, Decimals={part.Decimals}.");
         }
+
+        return true;
+    }
+
+    private static bool QueryOpenWizardStepOne(CommandData data, ref CommandStatus status)
+    {
+        status.Visible(true);
+        return true;
+    }
+
+    private static bool ExecuteOpenWizardStepOne(CommandData data)
+    {
+        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
+        if (knowledgeBase is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B030] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
+            return true;
+        }
+
+        PrototypeTransactionSelectionState.ClearIfKnowledgeBaseChanged(knowledgeBase);
+
+        var transaction = TryResolveTransactionFromContext(data);
+        var selectionSource = "Contexto";
+        if (transaction is not null)
+        {
+            var transactionGuid = transaction.Guid;
+            transaction = Transaction.GetAll(knowledgeBase.DesignModel)
+                .SingleOrDefault(item => item.Guid == transactionGuid);
+            if (transaction is null)
+            {
+                WriteOutput("[Genexus Open API Builder][B030] A Transaction do menu de contexto não foi reencontrada na Knowledge Base ativa. Nenhuma escolha foi persistida.");
+                return true;
+            }
+        }
+        else
+        {
+            selectionSource = "Seletor";
+
+            if (!UIServices.IsSelectObjectDialogAvailable)
+            {
+                WriteOutput("[Genexus Open API Builder][B030] O diálogo público de seleção não está disponível nesta IDE.");
+                return true;
+            }
+
+            var options = new SelectObjectOptions
+            {
+                MultipleSelection = false,
+                DialogTitle = "Selecionar Transaction para o wizard (B030)",
+                SupportCreateAction = false
+            };
+            options.ObjectTypes.Add(KBObjectDescriptor.Get<Transaction>());
+
+            var selectedObject = UIServices.SelectObjectDialog.SelectObject(options);
+            if (selectedObject is null)
+            {
+                WriteOutput("[Genexus Open API Builder][B030] Nenhuma Transaction foi selecionada. O wizard permaneceu no Passo 1 e nada foi persistido.");
+                return true;
+            }
+
+            if (selectedObject is not Transaction selectedTransaction)
+            {
+                WriteOutput("[Genexus Open API Builder][B030] A seleção retornada não é uma Transaction. Nenhuma escolha foi mantida.");
+                return true;
+            }
+
+            var transactionGuid = selectedTransaction.Guid;
+            transaction = Transaction.GetAll(knowledgeBase.DesignModel)
+                .SingleOrDefault(item => item.Guid == transactionGuid);
+            if (transaction is null)
+            {
+                WriteOutput("[Genexus Open API Builder][B030] A Transaction selecionada não foi reencontrada na Knowledge Base ativa. Nenhuma escolha foi persistida.");
+                return true;
+            }
+        }
+
+        var module = transaction.Module;
+        if (module is null)
+        {
+            WriteOutput($"[Genexus Open API Builder][B030] A Transaction selecionada não possui módulo disponível: Name='{transaction.Name}'. Nenhuma escolha foi persistida.");
+            return true;
+        }
+
+        PrototypeTransactionSelectionState.Store(knowledgeBase, transaction);
+        WriteOutput($"[Genexus Open API Builder][B030] Wizard Passo 1 concluido em memoria: Transaction='{transaction.Name}', Module='{module.Name}', SelectionSource='{selectionSource}'.");
+        WriteOutput("[Genexus Open API Builder][B030] Proximo passo habilitado para B031. Nenhuma escolha foi persistida e nenhum objeto foi criado, alterado ou excluido.");
 
         return true;
     }

@@ -50,4 +50,4 @@ Saída observada para chave composta:
 
 ## Resultado
 
-Critério atendido em 2026-07-20: a chave primária simples e composta foi lida por API pública para a `Transaction` selecionada, com nome, quantidade de partes, ordem e tipos apresentados sem persistência nem escrita pela extensão na KB. A base está pronta para B030, que iniciará o passo 1 de seleção da `Transaction` no wizard.
+Critério atendido em 2026-07-20: a chave primária simples e composta foi lida por API pública para a `Transaction` selecionada, com nome, quantidade de partes, ordem e tipos apresentados sem persistência nem escrita pela extensão na KB. B030 foi concluído posteriormente; a próxima ação vigente fica no checkpoint operacional.

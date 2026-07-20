@@ -62,4 +62,4 @@ O manifesto `Src/Extension/GenexusOpenApiBuilder.package` mantém o mesmo ID do 
 
 ## Critério de conclusão
 
-Critério atendido em 2026-07-20: a capacidade de operar via `Business Component` foi verificada por API pública para a `Transaction` selecionada, com nome da `Transaction` e resultado apresentados sem persistência nem escrita pela extensão na KB. B025 foi concluído posteriormente e a base agora segue para B030, conforme o checkpoint operacional.
+Critério atendido em 2026-07-20: a capacidade de operar via `Business Component` foi verificada por API pública para a `Transaction` selecionada, com nome da `Transaction` e resultado apresentados sem persistência nem escrita pela extensão na KB. B025 e B030 foram concluídos posteriormente; a próxima ação vigente fica no checkpoint operacional.

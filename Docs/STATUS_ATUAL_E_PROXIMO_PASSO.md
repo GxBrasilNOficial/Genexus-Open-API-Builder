@@ -31,6 +31,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B023` concluído no U15: a extensão detectou manualmente 15 objetos planejados para a Transaction `Laudo`, incluindo o File `apiLaudo_Metadata`, com 0 existentes e 15 ausentes na Output, sem persistência e sem operações de escrita.
 - `B024` concluído no U15: a extensão verificou manualmente a propriedade `Business Component` da Transaction `Carga`, reportando `IsBusinessComponent=False` como bloqueio e `IsBusinessComponent=True` como aptidão após habilitação manual temporária da propriedade, sem persistência pela extensão e sem operações de escrita pela extensão. Após o fechamento funcional, o menu principal `Genexus Open API Builder` também foi validado antes de `Help`, com B020-B024 acionáveis e B023/B024 mantendo a proteção quando B022 ainda não selecionou uma `Transaction` em memória.
 - `B025` concluído no U15: a extensão leu manualmente a chave primária completa da `Transaction` pelo menu de contexto e pelo fluxo com seleção em memória, reportando `Carga` com chave simples `CargaId` e `AbateOrdem` com chave composta `AbateOrdemEmpresaId` + `AbateOrdemId`, preservando ordem, tipos `NUMERIC`, tamanho e casas decimais, sem persistência pela extensão e sem operações de escrita pela extensão.
+- `B030` concluído no U15: o primeiro passo do protótipo navegável do wizard selecionou `Transaction` pelo menu principal via seletor nativo e pelo menu de contexto, reportando `Carga` com `SelectionSource='Seletor'` e `Contrato` com `SelectionSource='Contexto'`, mantendo a escolha somente em memória e sem operações de escrita pela extensão.
 
 ## Frente ativa
 
@@ -38,23 +39,24 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Próxima ação única
 
-Iniciar `B030` — Passo 1 selecionar Transaction no wizard:
+Iniciar `B031` — Passo 2 selecionar serviços, campos e filtros essenciais:
 
-> Implementar o primeiro passo do protótipo navegável do wizard para selecionar uma `Transaction`, usando os aprendizados de B020-B025, mantendo o estado apenas em memória, sem persistir escolhas e sem criar, alterar ou excluir objetos.
+> Implementar o segundo passo do protótipo navegável do wizard para configurar serviços, campos e filtros essenciais da `Transaction` selecionada, mantendo o estado apenas em memória, sem persistir escolhas e sem criar, alterar ou excluir objetos.
 
 ## Critério de conclusão e evidência esperada
 
-- passo 1 do wizard abre pela entrada da extensão e apresenta seleção de `Transaction` em fluxo navegável;
-- `Transaction` escolhida permanece apenas em memória e pode alimentar os passos seguintes do protótipo;
-- ausência de seleção, cancelamento e fechamento não alteram a KB;
+- passo 2 do wizard parte da `Transaction` selecionada em memória por B030;
+- serviços essenciais `List`, `Get`, `Create` e `Update` aparecem como decisões navegáveis do protótipo;
+- campos e filtros essenciais são apresentados sem gerar `ApiPlan` definitivo;
+- ausência de seleção, cancelamento, voltar e fechamento não alteram a KB;
 - nenhuma criação, alteração ou exclusão de objetos pela extensão;
-- base pronta para `B031`, que configurará serviços, campos e filtros essenciais.
+- base pronta para `B032`, que revisará segurança, paginação, ordenação, Services base path e RestPath.
 
 ## Sequência operacional vigente
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
-3. Sprint 2 concluiu `B020`, `B021`, `B022`, `B023`, `B024` e `B025` e segue por `B030`, mantendo apenas o protótipo navegável e não persistente do wizard.
+3. Sprint 2 concluiu `B020`, `B021`, `B022`, `B023`, `B024`, `B025` e `B030` e segue por `B031`, mantendo apenas o protótipo navegável e não persistente do wizard.
 4. Sprint 3 cria metadata e `ApiPlan`.
 5. Sprint 4 integra o wizard ao engine pela primeira vez e cria os SDTs.
 6. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.

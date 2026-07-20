@@ -36,7 +36,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B023 concluído no U15: detecção manual dos objetos planejados para a Transaction selecionada, incluindo `api<NomeBase>_Metadata`, em modo somente leitura
 - B024 concluído no U15: verificação manual de `Business Component` da Transaction selecionada, em modo somente leitura
 - B025 concluído no U15: leitura manual da chave primária simples e composta completa da Transaction selecionada, em modo somente leitura
-- Menu principal `Genexus Open API Builder` validado no U15 com acesso aos comandos B020-B025, preservando o submenu de contexto da Transaction
+- Menu principal `Genexus Open API Builder` validado no U15 com acesso aos comandos B020-B030, preservando o submenu de contexto da Transaction
+- B030 validado no U15: `Abrir Wizard (B030)` seleciona `Transaction` pelo menu principal via seletor nativo e pelo contexto da Transaction, mantendo a escolha apenas em memória
 
 ## Fixed
 
@@ -52,7 +53,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Sprint 2 — protótipo navegável e não persistente do wizard, seguindo por `B030`
+- Sprint 2 — protótipo navegável e não persistente do wizard, seguindo por `B031`
 - Primeira geração experimental
 
 ---
