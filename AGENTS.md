@@ -72,6 +72,8 @@ O checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` continua sendo a fonte canô
 
 Antes de qualquer push:
 
+**Aviso obrigatório:** a rotina pré-push deste repositório deve ser executada somente depois de a frente estar commitada. Não tratar execução sobre working tree suja como rotina pré-push válida; nesse caso, no máximo é diagnóstico intermediário. Primeiro criar o commit local da frente e só então executar os passos abaixo para revisar o intervalo commitado contra `origin/main`.
+
 1. executar `git fetch origin` separadamente para atualizar `origin/main`;
 2. na raiz do repositório, executar exatamente:
 
