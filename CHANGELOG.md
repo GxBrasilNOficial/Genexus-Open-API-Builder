@@ -40,6 +40,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B030 validado no U15: `Abrir Wizard (B030)` seleciona `Transaction` pelo menu principal via seletor nativo e pelo contexto da Transaction, mantendo a escolha apenas em memória
 - B031 validado no U15: `Configurar Contrato (B031)` navega sequencialmente por serviços, requests, response, filtros e resumo B032, acumulando escolhas apenas em memória sem criar `ApiPlan` nem alterar a KB
 - B032 validado no U15: `Revisar Paths e Segurança (B032)` funciona pelo menu de contexto da `Transaction`, chama B031 automaticamente quando necessário e revisa paths, segurança, paginação e ordenação apenas em memória
+- B033 validado no U15: `Abrir Wizard (B030)` passa a abrir o wizard único, absorvendo B031, B032 e B033 como páginas sequenciais e validando campos obrigatórios apenas em memória
 
 ## Fixed
 
@@ -55,11 +56,11 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B031 limpa contrato em memória ao trocar a Transaction no B030 ou ao detectar ausência de seleção válida, evitando reutilização de decisões antigas por passos posteriores
 - B031 desabilita partes da chave primária no `UpdateRequest`, preservando a regra de chave completa no `RestPath`
 - B031 desabilita fórmulas em requests por API pública e bloqueia chave primária no `CreateRequest` até validação pública de autonumeração, sem reflexão em internos do SDK
-- B032 sincroniza `Services base path` com `ApiName` até edição manual, invalida revisão B032 ao executar B031 direto e registra que o teste de consumo por B033 depende da implementação do comando B033
+- B032 sincroniza `Services base path` com `ApiName` até edição manual e o consumo por B033 foi validado posteriormente dentro do wizard único
 
 ## Planned
 
-- Sprint 2 — protótipo navegável e não persistente do wizard, seguindo por `B033`
+- Sprint 2 — protótipo navegável e não persistente do wizard, seguindo por `B034`
 - Primeira geração experimental
 
 ---

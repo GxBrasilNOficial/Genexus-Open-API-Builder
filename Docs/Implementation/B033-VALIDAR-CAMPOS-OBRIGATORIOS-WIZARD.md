@@ -36,9 +36,23 @@ Implementar a validacao navegavel de obrigatoriedade de membros JSON a partir da
 - `dotnet build Src\GenexusOpenApiBuilder.sln -c Release`: OK, com avisos NU1900 de consulta de vulnerabilidade bloqueada por rede/sandbox, sem erros de compilacao;
 - `pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1`: OK, com 8 comandos registrados e sincronizados.
 
-## Validacao manual pendente
+## Validacao manual no U15
 
-A DLL ainda precisa ser instalada manualmente no GeneXus 18 Upgrade 15 para validar visualmente o wizard unico, confirmar a remocao operacional dos comandos B031/B032 do menu e conferir a aba `Obrigatorios` com uma `Transaction` real.
+Validacao manual concluida no U15 com `Transaction='DiretoriaDeEnsino'`, selecionada pelo B030 via seletor nativo. O fluxo visual confirmou uma unica janela com as abas `Servicos`, `Requests`, `Response`, `Filtros List`, `Paths`, `Seguranca`, `Paginacao`, `Ordenacao`, `Obrigatorios` e `Resumo B034`.
+
+A Output confirmou a consolidacao do fluxo em memoria:
+
+```text
+[Genexus Open API Builder][B030] Wizard único concluido em memoria: Transaction='DiretoriaDeEnsino', Module='Root Module', SelectionSource='Seletor'.
+[Genexus Open API Builder][B031] Contrato em memoria: Services='List,Get,Create,Update', Create=1, Update=1, Response=2, ListFilters=2.
+[Genexus Open API Builder][B032] Paths e segurança em memoria: ApiName='apiDiretoriaDeEnsino', ServicesBasePath='apiDiretoriaDeEnsino', RestPath='/diretoriadeensino', SecurityLevel='Authentication'.
+[Genexus Open API Builder][B033] Obrigatoriedade em memoria: CreateRequired=0, UpdateRequired=1. Required significa presença do membro JSON, nao valor nao-vazio.
+[Genexus Open API Builder][B033] Proximo passo habilitado para B034. Nenhum ApiPlan foi criado, nenhuma escolha foi persistida e nenhum objeto foi criado, alterado ou excluido.
+```
+
+A aba `Obrigatorios` confirmou `DiretoriaDeEnsinoNome` opcional no `CreateRequest` por ser nullable e obrigatorio no `UpdateRequest` por PUT completo. O `Resumo B034` confirmou os mesmos totais: `CreateRequest: 1 campo(s), 0 obrigatorio(s) no payload` e `UpdateRequest: 1 campo(s), 1 obrigatorio(s) no payload`.
+
+Observacoes visuais nao bloqueantes: em largura estreita, as abas finais exigem setas de navegacao, e textos longos na aba `Obrigatorios` podem exigir rolagem horizontal.
 
 ## Resultado
 
