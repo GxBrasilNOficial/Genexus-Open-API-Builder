@@ -2,6 +2,8 @@
 
 Concluído no GeneXus 18 Upgrade 15: a extensão abriu o segundo passo do protótipo navegável do wizard, configurou serviços, campos e filtros essenciais da `Transaction` selecionada, manteve as decisões somente em memória e não realizou persistência nem escrita na KB.
 
+Estado runtime atual após B033: este passo foi absorvido pelo wizard único aberto por `Abrir Wizard (B030)`. O comando separado B031 deixou de ser exposto no menu; este documento preserva a evidência histórica da frente B031.
+
 ## Objetivo
 
 Implementar o Passo 2 do wizard para configurar o contrato inicial da API a partir da `Transaction` selecionada por B030, preservando o contrato de protótipo navegável sem criação, alteração ou exclusão de objetos.
@@ -24,7 +26,7 @@ Implementar o Passo 2 do wizard para configurar o contrato inicial da API a part
 
 ## Implementação
 
-`Src/Extension/Package.cs` registra o comando B031 e concentra a resolução da KB ativa, da seleção em memória e da abertura da janela modal. O manifesto `Src/Extension/GenexusOpenApiBuilder.package` mantém o mesmo ID do comando nas duas camadas XML: `CommandDefinition` e `Command refid`.
+Na implementação validada em B031, `Src/Extension/Package.cs` registrava o comando B031 e concentrava a resolução da KB ativa, da seleção em memória e da abertura da janela modal. Após B033, esse comportamento permanece no fluxo unificado de `Abrir Wizard (B030)`, sem `CommandDefinition` nem `Command refid` separados para B031 no manifesto.
 
 `Src/Extension/Diagnostics/PrototypeWizardContract.cs` monta o snapshot somente leitura do contrato prototípico: serviços, campos de payload, response e filtros candidatos. O snapshot desabilita fórmulas em requests por propriedade pública `Formula`, desabilita toda chave primária no `CreateRequest` até validação pública de autonumeração e desabilita toda chave primária no `UpdateRequest`. Esse snapshot é deliberadamente transitório e não é `ApiPlan`.
 

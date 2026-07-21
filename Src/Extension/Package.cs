@@ -17,8 +17,8 @@ namespace GenexusOpenApiBuilder.Extension;
 /// <summary>
 /// Ponto de entrada da extensão. As sondas B001-B006 permanecem como
 /// evidências históricas e não são invocadas em runtime nem na abertura de KBs.
-/// O placeholder mantém o submenu do produto visível, e os comandos B020-B032
-/// executam leituras manuais e somente leitura para o protótipo navegável.
+/// O placeholder mantém o submenu do produto visível, os comandos B020-B025
+/// executam leituras manuais e B030 abre o wizard prototípico navegável único.
 /// </summary>
 public sealed class Package : AbstractPackageUI
 {
@@ -36,8 +36,6 @@ public sealed class Package : AbstractPackageUI
         AddCommand(new CommandKey(Id, "Verificar Business Component (B024)"), ExecuteCheckBusinessComponent, QueryCheckBusinessComponent);
         AddCommand(new CommandKey(Id, "Ler Chave Primária (B025)"), ExecuteReadPrimaryKey, QueryReadPrimaryKey);
         AddCommand(new CommandKey(Id, "Abrir Wizard (B030)"), ExecuteOpenWizardStepOne, QueryOpenWizardStepOne);
-        AddCommand(new CommandKey(Id, "Configurar Contrato (B031)"), ExecuteConfigureWizardContract, QueryConfigureWizardContract);
-        AddCommand(new CommandKey(Id, "Revisar Paths e Segurança (B032)"), ExecuteReviewWizardPathsAndSecurity, QueryReviewWizardPathsAndSecurity);
     }
 
     private static bool QueryFutureFirstOption(CommandData data, ref CommandStatus status)
@@ -376,11 +374,55 @@ public sealed class Package : AbstractPackageUI
             return true;
         }
 
+        PrototypeWizardFlowSessionState.Clear();
         PrototypeWizardSessionState.ClearContractSelection();
         PrototypeWizardReviewSessionState.ClearReviewSelection();
         PrototypeTransactionSelectionState.Store(knowledgeBase, transaction);
-        WriteOutput($"[Genexus Open API Builder][B030] Wizard Passo 1 concluido em memoria: Transaction='{transaction.Name}', Module='{module.Name}', SelectionSource='{selectionSource}'.");
-        WriteOutput("[Genexus Open API Builder][B030] Proximo passo habilitado para B031. Nenhuma escolha foi persistida e nenhum objeto foi criado, alterado ou excluido.");
+
+        var snapshot = PrototypeWizardContractReader.Read(transaction);
+        using var dialog = new PrototypeWizardDialog(snapshot);
+        var result = dialog.ShowDialog();
+
+        if (result == System.Windows.Forms.DialogResult.Retry)
+        {
+            PrototypeWizardFlowSessionState.Clear();
+            PrototypeWizardSessionState.ClearContractSelection();
+            PrototypeWizardReviewSessionState.ClearReviewSelection();
+            PrototypeTransactionSelectionState.Clear();
+            WriteOutput($"[Genexus Open API Builder][B030] Voltar acionado no início do wizard único. Transaction='{transaction.Name}' foi descartada da memoria; execute o comando novamente para selecionar outra Transaction.");
+            return true;
+        }
+
+        if (result == System.Windows.Forms.DialogResult.Cancel)
+        {
+            PrototypeWizardFlowSessionState.Clear();
+            PrototypeWizardSessionState.ClearContractSelection();
+            PrototypeWizardReviewSessionState.ClearReviewSelection();
+            PrototypeTransactionSelectionState.Clear();
+            WriteOutput($"[Genexus Open API Builder][B030] Wizard único cancelado para Transaction='{transaction.Name}'. Escolhas em memoria descartadas; nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        if (result != System.Windows.Forms.DialogResult.OK || dialog.Selection is null)
+        {
+            PrototypeWizardFlowSessionState.Clear();
+            PrototypeWizardSessionState.ClearContractSelection();
+            PrototypeWizardReviewSessionState.ClearReviewSelection();
+            WriteOutput($"[Genexus Open API Builder][B030] Wizard único fechado sem conclusao para Transaction='{transaction.Name}'. Nenhuma escolha foi persistida.");
+            return true;
+        }
+
+        var selection = dialog.Selection;
+        var createRequiredCount = selection.RequiredFields.Count(item => item.RequestName == "CreateRequest" && item.IsRequired);
+        var updateRequiredCount = selection.RequiredFields.Count(item => item.RequestName == "UpdateRequest" && item.IsRequired);
+        PrototypeWizardFlowSessionState.Store(selection);
+        PrototypeWizardSessionState.StoreContractSelection(selection.ContractSelection);
+        PrototypeWizardReviewSessionState.StoreReviewSelection(selection.ReviewSelection);
+        WriteOutput($"[Genexus Open API Builder][B030] Wizard único concluido em memoria: Transaction='{transaction.Name}', Module='{module.Name}', SelectionSource='{selectionSource}'.");
+        WriteOutput($"[Genexus Open API Builder][B031] Contrato em memoria: Services='{string.Join(",", selection.ContractSelection.SelectedServices)}', Create={selection.ContractSelection.CreateFields.Count}, Update={selection.ContractSelection.UpdateFields.Count}, Response={selection.ContractSelection.ResponseFields.Count}, ListFilters={selection.ContractSelection.ListFilters.Count}.");
+        WriteOutput($"[Genexus Open API Builder][B032] Paths e segurança em memoria: ApiName='{selection.ReviewSelection.ApiName}', ServicesBasePath='{selection.ReviewSelection.ServicesBasePath}', RestPath='{selection.ReviewSelection.RestPath}', SecurityLevel='{selection.ReviewSelection.SecurityLevel}'.");
+        WriteOutput($"[Genexus Open API Builder][B033] Obrigatoriedade em memoria: CreateRequired={createRequiredCount}, UpdateRequired={updateRequiredCount}. Required significa presença do membro JSON, nao valor nao-vazio.");
+        WriteOutput("[Genexus Open API Builder][B033] Proximo passo habilitado para B034. Nenhum ApiPlan foi criado, nenhuma escolha foi persistida e nenhum objeto foi criado, alterado ou excluido.");
 
         return true;
     }

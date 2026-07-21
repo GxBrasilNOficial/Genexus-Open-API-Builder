@@ -2,6 +2,8 @@
 
 Concluido no GeneXus 18 Upgrade 15: a extensao abriu o terceiro passo do prototipo navegavel do wizard a partir do menu de contexto de uma `Transaction`, acionou B031 automaticamente quando o contrato ainda nao estava em memoria, revisou paths, seguranca, paginacao e ordenacao, manteve as decisoes somente em memoria e nao realizou persistencia nem escrita na KB.
 
+Estado runtime atual apos B033: este passo foi absorvido pelo wizard unico aberto por `Abrir Wizard (B030)`. O comando separado B032 deixou de ser exposto no menu; este documento preserva a evidencia historica da frente B032.
+
 ## Objetivo
 
 Implementar o Passo 3 do wizard para revisar seguranca, paginacao, ordenacao, `Services base path` e `RestPath`, partindo da `Transaction` selecionada e das decisoes acumuladas por B031, preservando o contrato de prototipo navegavel sem criacao, alteracao ou exclusao de objetos.
@@ -29,7 +31,7 @@ Implementar o Passo 3 do wizard para revisar seguranca, paginacao, ordenacao, `S
 
 ## Implementacao
 
-`Src/Extension/Package.cs` registra o comando B032, resolve a KB ativa, revalida a `Transaction` do menu de contexto e orquestra a chamada automatica a B031 quando o contrato em memoria nao existe ou pertence a outra `Transaction`.
+Na implementacao validada em B032, `Src/Extension/Package.cs` registrava o comando B032, resolvia a KB ativa, revalidava a `Transaction` do menu de contexto e orquestrava a chamada automatica a B031 quando o contrato em memoria nao existia ou pertencia a outra `Transaction`. Apos B033, esse comportamento permanece no fluxo unificado de `Abrir Wizard (B030)`, sem `CommandDefinition` nem `Command refid` separados para B032 no manifesto.
 
 `Src/Extension/Diagnostics/PrototypeWizardReview.cs` monta o snapshot somente leitura do Passo 3: defaults de `ApiName`, `Services base path`, `RestPath`, seguranca, paginacao, paths por servico e ordenacao estatica. Esse snapshot e deliberadamente transitorio e nao e `ApiPlan`.
 
@@ -51,7 +53,7 @@ A navegacao visual foi validada manualmente no U15 com `Transaction='Escola'`, a
 
 A validacao visual confirmou as abas `Paths`, `Seguranca`, `Paginacao`, `Ordenacao` e `Resumo B033`, incluindo os paths `List/Get/Create/Update`, `Security Level=Authentication`, paginacao `50/200`, ordenacao `EscolaCodigo ASC` e resumo final sem persistencia.
 
-A validacao complementar pos-correcao confirmou que `Services base path` acompanha `ApiName` ate a primeira edicao manual e depois preserva o valor manual. O mesmo teste executou B031 direto e cancelou o Passo 2, cobrindo a limpeza de revisao B032 que e possivel validar antes de B033 existir no menu:
+A validacao complementar pos-correcao confirmou que `Services base path` acompanha `ApiName` ate a primeira edicao manual e depois preserva o valor manual. O mesmo teste executou B031 direto e cancelou o Passo 2, cobrindo a limpeza de revisao B032 disponivel na frente historica:
 
 ```text
 [Genexus Open API Builder][B032] Transaction resolvida para o wizard: Name='Escola', Module='Root Module', SelectionSource='Contexto'.
@@ -64,11 +66,11 @@ A validacao complementar pos-correcao confirmou que `Services base path` acompan
 [Genexus Open API Builder][B031] Wizard cancelado no Passo 2 para Transaction='Escola'. Escolhas em memoria descartadas; nenhuma alteracao foi feita na KB.
 ```
 
-Como B033 ainda nao existe no menu, a validacao funcional de consumo da revisao B032 por B033 fica pendente para a implementacao de B033. O comportamento atual ja limpa a revisao B032 quando B031 direto cancela, volta, fecha sem conclusao ou grava novo contrato.
+Com B033 concluido no U15, o consumo da revisao B032 passou a ocorrer dentro do wizard unico antes do resumo B034.
 
 ## Validacao local
 
-- `pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1`: OK, com 10 comandos registrados e sincronizados;
+- `pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1`: OK na frente B032 historica, com 10 comandos registrados e sincronizados;
 - `dotnet build Src\GenexusOpenApiBuilder.sln -c Release`: compilacao com sucesso, 0 erros;
 - `git diff --check`: sem erros de whitespace;
 - avisos NU1900 ocorreram apenas por indisponibilidade de consulta de vulnerabilidades nos feeds NuGet durante o build interativo.
