@@ -55,6 +55,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B031 limpa contrato em memória ao trocar a Transaction no B030 ou ao detectar ausência de seleção válida, evitando reutilização de decisões antigas por passos posteriores
 - B031 desabilita partes da chave primária no `UpdateRequest`, preservando a regra de chave completa no `RestPath`
 - B031 desabilita fórmulas em requests por API pública e bloqueia chave primária no `CreateRequest` até validação pública de autonumeração, sem reflexão em internos do SDK
+- B032 sincroniza `Services base path` com `ApiName` até edição manual, invalida revisão B032 ao executar B031 direto e registra que o teste de consumo por B033 depende da implementação do comando B033
 
 ## Planned
 
