@@ -23,6 +23,8 @@ internal sealed class PrototypeWizardReviewDialog : Form
 
     private Button? _nextButton;
     private bool _showingSummary;
+    private bool _loadingSnapshot;
+    private bool _servicesBasePathEditedManually;
 
     public PrototypeWizardReviewDialog(PrototypeWizardReviewSnapshot snapshot)
     {
@@ -38,6 +40,7 @@ internal sealed class PrototypeWizardReviewDialog : Form
         FormBorderStyle = FormBorderStyle.Sizable;
 
         BuildLayout();
+        WirePathSynchronization();
         LoadSnapshot();
     }
 
@@ -209,9 +212,12 @@ internal sealed class PrototypeWizardReviewDialog : Form
 
     private void LoadSnapshot()
     {
+        _loadingSnapshot = true;
         _apiNameText.Text = _snapshot.ApiName;
         _servicesBasePathText.Text = _snapshot.ServicesBasePath;
         _restPathText.Text = _snapshot.RestPath;
+        _servicesBasePathEditedManually = false;
+        _loadingSnapshot = false;
         _securityLevelCombo.Items.Add("Authentication");
         _securityLevelCombo.Items.Add("None");
         _securityLevelCombo.SelectedItem = _snapshot.SecurityLevel;
@@ -223,6 +229,25 @@ internal sealed class PrototypeWizardReviewDialog : Form
         {
             _staticOrderList.Items.Add($"{item.Order}. {item.AttributeName} {item.Direction}");
         }
+    }
+
+    private void WirePathSynchronization()
+    {
+        _apiNameText.TextChanged += (_, _) =>
+        {
+            if (!_loadingSnapshot && !_servicesBasePathEditedManually)
+            {
+                _servicesBasePathText.Text = _apiNameText.Text;
+            }
+        };
+
+        _servicesBasePathText.TextChanged += (_, _) =>
+        {
+            if (!_loadingSnapshot && !string.Equals(_servicesBasePathText.Text, _apiNameText.Text, StringComparison.Ordinal))
+            {
+                _servicesBasePathEditedManually = true;
+            }
+        };
     }
 
     private static Button CreateButton(string text)
@@ -345,7 +370,6 @@ internal sealed class PrototypeWizardReviewDialog : Form
     }
 
     private void ShowSummary()
-
     {
         if (Selection is null)
         {

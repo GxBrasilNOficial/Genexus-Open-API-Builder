@@ -397,6 +397,7 @@ public sealed class Package : AbstractPackageUI
         if (knowledgeBase is null)
         {
             PrototypeWizardSessionState.ClearContractSelection();
+            PrototypeWizardReviewSessionState.ClearReviewSelection();
             WriteOutput("[Genexus Open API Builder][B031] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
             return true;
         }
@@ -406,6 +407,7 @@ public sealed class Package : AbstractPackageUI
         if (selectedTransaction is null)
         {
             PrototypeWizardSessionState.ClearContractSelection();
+            PrototypeWizardReviewSessionState.ClearReviewSelection();
             WriteOutput("[Genexus Open API Builder][B031] Nenhuma Transaction selecionada em memoria. Execute primeiro o comando Abrir Wizard (B030).");
             return true;
         }
@@ -415,6 +417,7 @@ public sealed class Package : AbstractPackageUI
         if (transaction is null)
         {
             PrototypeWizardSessionState.ClearContractSelection();
+            PrototypeWizardReviewSessionState.ClearReviewSelection();
             WriteOutput($"[Genexus Open API Builder][B031] A Transaction selecionada em memoria nao foi reencontrada: Name='{selectedTransaction.TransactionName}', Guid='{selectedTransaction.TransactionGuid}'. Nenhuma escolha foi persistida.");
             return true;
         }
@@ -426,6 +429,7 @@ public sealed class Package : AbstractPackageUI
         if (result == System.Windows.Forms.DialogResult.Retry)
         {
             PrototypeWizardSessionState.ClearContractSelection();
+            PrototypeWizardReviewSessionState.ClearReviewSelection();
             WriteOutput($"[Genexus Open API Builder][B031] Voltar acionado no Passo 2. Transaction='{transaction.Name}' permaneceu selecionada em memoria; nenhuma escolha de contrato foi persistida.");
             return true;
         }
@@ -433,6 +437,7 @@ public sealed class Package : AbstractPackageUI
         if (result == System.Windows.Forms.DialogResult.Cancel)
         {
             PrototypeWizardSessionState.ClearContractSelection();
+            PrototypeWizardReviewSessionState.ClearReviewSelection();
             PrototypeTransactionSelectionState.Clear();
             WriteOutput($"[Genexus Open API Builder][B031] Wizard cancelado no Passo 2 para Transaction='{transaction.Name}'. Escolhas em memoria descartadas; nenhuma alteracao foi feita na KB.");
             return true;
@@ -441,12 +446,14 @@ public sealed class Package : AbstractPackageUI
         if (result != System.Windows.Forms.DialogResult.OK || dialog.Selection is null)
         {
             PrototypeWizardSessionState.ClearContractSelection();
+            PrototypeWizardReviewSessionState.ClearReviewSelection();
             WriteOutput($"[Genexus Open API Builder][B031] Passo 2 fechado sem conclusao para Transaction='{transaction.Name}'. Nenhuma escolha foi persistida.");
             return true;
         }
 
         var selection = dialog.Selection;
         PrototypeWizardSessionState.StoreContractSelection(selection);
+        PrototypeWizardReviewSessionState.ClearReviewSelection();
         WriteOutput($"[Genexus Open API Builder][B031] Wizard Passo 2 concluido em memoria: Transaction='{selection.TransactionName}', Services='{string.Join(",", selection.SelectedServices)}'.");
         WriteOutput($"[Genexus Open API Builder][B031] Campos selecionados: Create={selection.CreateFields.Count}, Update={selection.UpdateFields.Count}, Response={selection.ResponseFields.Count}, ListFilters={selection.ListFilters.Count}.");
         WriteOutput("[Genexus Open API Builder][B031] Proximo passo habilitado para B032. Nenhum ApiPlan foi criado, nenhuma escolha foi persistida e nenhum objeto foi criado, alterado ou excluido.");
