@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-07-20.
+2026-07-21.
 
 ## Último marco concluído
 
@@ -33,6 +33,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B025` concluído no U15: a extensão leu manualmente a chave primária completa da `Transaction` pelo menu de contexto e pelo fluxo com seleção em memória, reportando `Carga` com chave simples `CargaId` e `AbateOrdem` com chave composta `AbateOrdemEmpresaId` + `AbateOrdemId`, preservando ordem, tipos `NUMERIC`, tamanho e casas decimais, sem persistência pela extensão e sem operações de escrita pela extensão.
 - `B030` concluído no U15: o primeiro passo do protótipo navegável do wizard selecionou `Transaction` pelo menu principal via seletor nativo e pelo menu de contexto, reportando `Carga` com `SelectionSource='Seletor'` e `Contrato` com `SelectionSource='Contexto'`, mantendo a escolha somente em memória e sem operações de escrita pela extensão.
 - `B031` concluído no U15: o segundo passo do protótipo navegável configurou serviços `List`, `Get`, `Create` e `Update`, campos de `CreateRequest`, `UpdateRequest`, `Response` e filtros de `List` para a Transaction `Distribuidora`, navegando sequencialmente por `Servicos`, `Requests`, `Response`, `Filtros List` e `Resumo B032`, com fórmulas desabilitadas em requests por API pública, chave primária bloqueada no `CreateRequest` até validação pública de autonumeração, chave primária desabilitada no `UpdateRequest`, decisões apenas em memória e sem criar `ApiPlan` nem alterar a KB.
+- `B032` concluído no U15: o terceiro passo do protótipo navegável revisou `ApiName`, `Services base path`, `RestPath`, paths por serviço, `Security Level`, paginação e ordenação para a Transaction `Escola`, acionado diretamente pelo menu de contexto da `Transaction`, abrindo B031 automaticamente quando o contrato estava ausente, com `ApiName='apiEscola'`, `ServicesBasePath='apiEscola'`, `RestPath='/escola'`, `SecurityLevel='Authentication'`, `DefaultPageSize=50`, `MaximumPageSize=200` e `StaticOrder='EscolaCodigo ASC'`, mantendo decisões apenas em memória e sem criar `ApiPlan` nem alterar a KB.
 
 ## Frente ativa
 
@@ -40,24 +41,24 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Próxima ação única
 
-Iniciar `B032` — Passo 3 revisar segurança, paginação, ordenação, Services base path e RestPath:
+Iniciar `B033` — Validar campos obrigatórios:
 
-> Implementar o terceiro passo do protótipo navegável do wizard para revisar segurança, paginação, ordenação, `Services base path` e `RestPath`, partindo das escolhas acumuladas em memória por B030 e B031, sem persistir escolhas e sem criar, alterar ou excluir objetos.
+> Implementar a validação prototípica de campos obrigatórios do wizard, partindo das escolhas acumuladas em memória por B030, B031 e B032, sem persistir escolhas e sem criar, alterar ou excluir objetos.
 
 ## Critério de conclusão e evidência esperada
 
-- passo 3 do wizard parte da `Transaction` selecionada em memória por B030 e das decisões de contrato acumuladas por B031;
-- segurança, paginação, ordenação, `Services base path` e `RestPath` aparecem como decisões navegáveis do protótipo;
-- valores padrão são apresentados sem gerar `ApiPlan` definitivo;
+- o fluxo parte da `Transaction` selecionada e das decisões acumuladas em memória por B031 e B032;
+- campos obrigatórios são identificados e apresentados como validação navegável do protótipo;
+- presença obrigatória no payload continua separada da seleção do membro e não equivale a valor não vazio;
 - voltar, cancelamento e fechamento não alteram a KB;
 - nenhuma criação, alteração ou exclusão de objetos pela extensão;
-- base pronta para `B033`, que validará campos obrigatórios.
+- base pronta para `B034`, que validará cancelamento seguro.
 
 ## Sequência operacional vigente
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
-3. Sprint 2 concluiu `B020`, `B021`, `B022`, `B023`, `B024`, `B025`, `B030` e `B031` e segue por `B032`, mantendo apenas o protótipo navegável e não persistente do wizard.
+3. Sprint 2 concluiu `B020`, `B021`, `B022`, `B023`, `B024`, `B025`, `B030`, `B031` e `B032` e segue por `B033`, mantendo apenas o protótipo navegável e não persistente do wizard.
 4. Sprint 3 cria metadata e `ApiPlan`.
 5. Sprint 4 integra o wizard ao engine pela primeira vez e cria os SDTs.
 6. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.

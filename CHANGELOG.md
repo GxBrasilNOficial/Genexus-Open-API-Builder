@@ -39,6 +39,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Menu principal `Genexus Open API Builder` validado no U15 com acesso aos comandos B020-B030, preservando o submenu de contexto da Transaction
 - B030 validado no U15: `Abrir Wizard (B030)` seleciona `Transaction` pelo menu principal via seletor nativo e pelo contexto da Transaction, mantendo a escolha apenas em memória
 - B031 validado no U15: `Configurar Contrato (B031)` navega sequencialmente por serviços, requests, response, filtros e resumo B032, acumulando escolhas apenas em memória sem criar `ApiPlan` nem alterar a KB
+- B032 validado no U15: `Revisar Paths e Segurança (B032)` funciona pelo menu de contexto da `Transaction`, chama B031 automaticamente quando necessário e revisa paths, segurança, paginação e ordenação apenas em memória
 
 ## Fixed
 
@@ -57,7 +58,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Sprint 2 — protótipo navegável e não persistente do wizard, seguindo por `B032`
+- Sprint 2 — protótipo navegável e não persistente do wizard, seguindo por `B033`
 - Primeira geração experimental
 
 ---

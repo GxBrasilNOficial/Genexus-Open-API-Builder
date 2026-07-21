@@ -12,6 +12,7 @@
     <CommandDefinition id="Ler Chave Primária (B025)" context="selection" />
     <CommandDefinition id="Abrir Wizard (B030)" context="selection" />
     <CommandDefinition id="Configurar Contrato (B031)" context="selection" />
+    <CommandDefinition id="Revisar Paths e Segurança (B032)" context="selection" />
   </Commands>
   <Groups>
     <Group id="GenexusOpenApiBuilderPlaceholderGroup">
@@ -24,6 +25,7 @@
       <Command refid="Ler Chave Primária (B025)" />
       <Command refid="Abrir Wizard (B030)" />
       <Command refid="Configurar Contrato (B031)" />
+      <Command refid="Revisar Paths e Segurança (B032)" />
     </Group>
     <Group refid="KBObjectGrp" package="98121D96-A7D8-468b-9310-B1F468F812AE">
       <Popup id="GenexusOpenApiBuilderPopup" name="Genexus Open API Builder">
