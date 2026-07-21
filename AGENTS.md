@@ -6,6 +6,12 @@
 - Essa instalação pode ser consultada somente em modo leitura para localizar e inspecionar o Extensibility SDK e suas dependências.
 - Artefatos do projeto devem ser criados apenas dentro deste repositório.
 
+## Higiene de documentação Markdown
+
+- Após qualquer alteração em arquivos `.md`, validar que o arquivo termina com LF final, especialmente porque `.gitattributes` define `*.md text eol=lf`.
+- Em PowerShell, uma verificação direta é `[IO.File]::ReadAllBytes($path)[-1] -eq 10`; não considerar a edição concluída enquanto o último byte não for `10`.
+- `git diff --check` não acusa ausência de newline final, então esta conferência deve ser explícita antes de commitar documentação.
+
 ## Atualização manual da extensão para testes
 
 Sempre que uma nova DLL precisar ser instalada para teste no GeneXus 18, o agente deve apresentar ao usuário o fluxo operacional completo abaixo, nesta ordem:
