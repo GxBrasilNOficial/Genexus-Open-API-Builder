@@ -41,6 +41,11 @@ internal static class PrototypeTransactionSelectionState
         }
     }
 
+    public static void Clear()
+    {
+        Current = null;
+    }
+
     public static void Store(KnowledgeBase knowledgeBase, Transaction transaction)
     {
         if (knowledgeBase is null)

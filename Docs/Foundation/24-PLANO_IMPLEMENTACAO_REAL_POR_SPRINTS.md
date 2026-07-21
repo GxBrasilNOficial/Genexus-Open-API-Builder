@@ -157,7 +157,8 @@ Validar navegação, captura de decisões e cancelamento seguro sem persistir ne
 - `B020`–`B025`: detectar KB, listar e selecionar uma Transaction, ler módulo, objetos existentes, BC e chave completa em modo somente leitura
 - `B020`–`B025` (concluídos): KB ativa, Transactions elegíveis, módulo, objetos planejados, Business Component e chave primária completa verificados no U15 sem persistência e sem escrita pela extensão
 - `B030` (concluído): Passo 1 do wizard selecionou `Transaction` pelo menu principal e pelo contexto no U15, mantendo estado apenas em memória
-- `B031`–`B037`: navegar pelos passos de serviços, campos elegíveis, obrigatoriedade no payload, filtros, paginação, ordenação e segurança
+- `B031` (concluído): Passo 2 do wizard configurou serviços, campos e filtros essenciais no U15, mantendo decisões apenas em memória
+- `B032`–`B037`: navegar pelos passos de segurança, paginação, ordenação, obrigatoriedade no payload e validações restantes do wizard
 - manter as escolhas apenas em memória
 - avançar, voltar e cancelar sem alterar a KB
 - exibir resumo não persistente das escolhas

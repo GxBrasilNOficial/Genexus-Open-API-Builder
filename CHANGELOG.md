@@ -38,6 +38,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B025 concluído no U15: leitura manual da chave primária simples e composta completa da Transaction selecionada, em modo somente leitura
 - Menu principal `Genexus Open API Builder` validado no U15 com acesso aos comandos B020-B030, preservando o submenu de contexto da Transaction
 - B030 validado no U15: `Abrir Wizard (B030)` seleciona `Transaction` pelo menu principal via seletor nativo e pelo contexto da Transaction, mantendo a escolha apenas em memória
+- B031 validado no U15: `Configurar Contrato (B031)` navega sequencialmente por serviços, requests, response, filtros e resumo B032, acumulando escolhas apenas em memória sem criar `ApiPlan` nem alterar a KB
 
 ## Fixed
 
@@ -50,10 +51,13 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - comandos experimentais B004 removidos do runtime após a validação do ciclo de vida do API Object
 - comandos experimentais B005 removidos do runtime após a validação; o popup `Genexus Open API Builder` permanece no menu de contexto com o placeholder não operacional `Futura Primeira Opção`
 - comandos experimentais B006 removidos do runtime após a validação de persistência; a sonda permanece apenas como evidência histórica não invocada
+- B031 limpa contrato em memória ao trocar a Transaction no B030 ou ao detectar ausência de seleção válida, evitando reutilização de decisões antigas por passos posteriores
+- B031 desabilita partes da chave primária no `UpdateRequest`, preservando a regra de chave completa no `RestPath`
+- B031 desabilita fórmulas em requests por API pública e bloqueia chave primária no `CreateRequest` até validação pública de autonumeração, sem reflexão em internos do SDK
 
 ## Planned
 
-- Sprint 2 — protótipo navegável e não persistente do wizard, seguindo por `B031`
+- Sprint 2 — protótipo navegável e não persistente do wizard, seguindo por `B032`
 - Primeira geração experimental
 
 ---

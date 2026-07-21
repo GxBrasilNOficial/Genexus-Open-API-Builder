@@ -1,0 +1,480 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Artech.Genexus.Common.Objects;
+
+namespace GenexusOpenApiBuilder.Extension.Diagnostics;
+
+/// <summary>
+/// Monta, em modo somente leitura, as decisoes iniciais do Passo 2 do wizard.
+/// Este snapshot e prototipico: nao e ApiPlan e nao deve ser persistido na KB.
+/// </summary>
+internal static class PrototypeWizardContractReader
+{
+    private static readonly string[] ServiceNames = { "List", "Get", "Create", "Update" };
+
+    private static readonly string[] SensitiveTokens = { "password", "senha", "hash", "token", "secret" };
+
+    private static readonly string[] AuditSuffixes =
+    {
+        "InclusaoDataHora",
+        "InclusaoUsuarioId",
+        "InclusaoUsuarioNome",
+        "UltimaAtualizacaoDataHora",
+        "UltimaAtualizacaoUsuarioId",
+        "UltimaAtualizacaoUsuarioNome",
+    };
+
+    public static PrototypeWizardContractSnapshot Read(Transaction transaction)
+    {
+        if (transaction is null)
+        {
+            throw new ArgumentNullException(nameof(transaction));
+        }
+
+        var moduleName = transaction.Module?.Name ?? "<sem modulo>";
+        var root = transaction.Structure.Root;
+        var primaryKeyNames = new HashSet<string>(
+            root.PrimaryKey.Select(part => part.Name),
+            StringComparer.OrdinalIgnoreCase);
+        var descriptionAttributeName = root.DescriptionAttribute?.Name;
+
+        var services = ServiceNames
+            .Select(name => new PrototypeWizardServiceDecision(name, true))
+            .ToArray();
+
+        var attributes = root.Attributes
+            .Select((item, index) => CreateAttributeDecision(index + 1, item, primaryKeyNames, descriptionAttributeName))
+            .ToArray();
+
+        return new PrototypeWizardContractSnapshot(transaction.Name, moduleName, services, attributes);
+    }
+
+    private static PrototypeWizardAttributeDecision CreateAttributeDecision(
+        int order,
+        Artech.Genexus.Common.Parts.TransactionAttribute item,
+        ISet<string> primaryKeyNames,
+        string? descriptionAttributeName)
+    {
+        var attribute = item.Attribute;
+        var name = item.Name;
+        var type = attribute.Type.ToString();
+        var isPrimaryKey = primaryKeyNames.Contains(name);
+        var isDescription = string.Equals(name, descriptionAttributeName, StringComparison.OrdinalIgnoreCase) || item.IsDescriptionAttribute;
+        var isSensitive = IsSensitive(name);
+        var isAudit = IsAudit(name);
+        var isFormula = IsFormula(attribute);
+        var isTechnicallyInadequate = IsTechnicallyInadequate(type) || item.IsImageAttribute;
+        var payloadDisabledReason = DescribePayloadDisabledReason(item, isPrimaryKey, isAudit, isFormula, isTechnicallyInadequate);
+        var updatePayloadDisabledReason = DescribeUpdatePayloadDisabledReason(isPrimaryKey, payloadDisabledReason);
+        var filter = ResolveFilter(type, isPrimaryKey, isDescription, isSensitive, isAudit, isTechnicallyInadequate);
+        var isCreatePayloadCandidate = payloadDisabledReason.Length == 0;
+        var isUpdatePayloadCandidate = updatePayloadDisabledReason.Length == 0;
+        var defaultCreateSelected = isCreatePayloadCandidate && !isSensitive;
+        var defaultUpdateSelected = isUpdatePayloadCandidate && !isSensitive;
+
+        return new PrototypeWizardAttributeDecision(
+            order,
+            name,
+            type,
+            attribute.Length,
+            attribute.Decimals,
+            isPrimaryKey,
+            isDescription,
+            IsNullable(item.IsNullable),
+            item.IsInferred,
+            item.IsRedundant,
+            item.IsForeignKey,
+            isSensitive,
+            isFormula,
+            isAudit,
+            payloadDisabledReason,
+            updatePayloadDisabledReason,
+            defaultCreateSelected,
+            defaultUpdateSelected,
+            !isSensitive,
+            filter.IsEligible,
+            filter.DefaultSelected,
+            filter.Operator,
+            filter.UsesPeriod,
+            filter.UsesRange,
+            filter.DisabledReason);
+    }
+
+    private static string DescribePayloadDisabledReason(
+        Artech.Genexus.Common.Parts.TransactionAttribute item,
+        bool isPrimaryKey,
+        bool isAudit,
+        bool isFormula,
+        bool isTechnicallyInadequate)
+    {
+        if (item.IsInferred)
+        {
+            return "Desabilitado: atributo inferido";
+        }
+
+        if (item.IsRedundant)
+        {
+            return "Desabilitado: atributo redundante";
+        }
+
+        if (isFormula)
+        {
+            return "Desabilitado: formula nao atribuivel via BC";
+        }
+
+        if (isPrimaryKey)
+        {
+            return "Desabilitado no CreateRequest: chave primaria aguarda validacao publica de autonumeracao";
+        }
+
+        if (isAudit)
+        {
+            return "Desabilitado em request: auditoria operacional";
+        }
+
+        if (isTechnicallyInadequate)
+        {
+            return "Desabilitado: tipo tecnico inadequado";
+        }
+
+        return string.Empty;
+    }
+
+    private static string DescribeUpdatePayloadDisabledReason(bool isPrimaryKey, string payloadDisabledReason)
+    {
+        if (isPrimaryKey)
+        {
+            return "Desabilitado no UpdateRequest: chave primaria fica no RestPath";
+        }
+
+        return payloadDisabledReason;
+    }
+
+    private static PrototypeWizardFilterDefaults ResolveFilter(
+        string type,
+        bool isPrimaryKey,
+        bool isDescription,
+        bool isSensitive,
+        bool isAudit,
+        bool isTechnicallyInadequate)
+    {
+        if (isSensitive)
+        {
+            return PrototypeWizardFilterDefaults.Disabled("Desabilitado: campo sensivel nao retorna em appliedFilters");
+        }
+
+        if (isTechnicallyInadequate)
+        {
+            return PrototypeWizardFilterDefaults.Disabled("Desabilitado: tipo tecnico inadequado para filtro MVP");
+        }
+
+        if (IsText(type))
+        {
+            return PrototypeWizardFilterDefaults.Enabled(isPrimaryKey ? "Igual" : "Contem", isPrimaryKey || isDescription, false, false);
+        }
+
+        if (IsDateOrDateTime(type))
+        {
+            return PrototypeWizardFilterDefaults.Enabled("Periodo", isPrimaryKey || isDescription, true, false);
+        }
+
+        if (IsNumeric(type) || IsBoolean(type) || IsGuid(type))
+        {
+            return PrototypeWizardFilterDefaults.Enabled("Igual", isPrimaryKey || isDescription, false, false);
+        }
+
+        if (isAudit)
+        {
+            return PrototypeWizardFilterDefaults.Enabled("Igual", false, false, false);
+        }
+
+        return PrototypeWizardFilterDefaults.Disabled("Desabilitado: tipo ainda nao validado para filtro MVP");
+    }
+
+    private static bool IsNullable(object value)
+    {
+        var text = value.ToString();
+        return string.Equals(text, "True", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(text, "Yes", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(text, "Nullable", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsFormula(Artech.Genexus.Common.Objects.Attribute attribute)
+    {
+        return attribute.Formula is not null;
+    }
+
+    private static bool IsSensitive(string name)
+    {
+        return SensitiveTokens.Any(token => name.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0);
+    }
+
+    private static bool IsAudit(string name)
+    {
+        return AuditSuffixes.Any(suffix => name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsTechnicallyInadequate(string type)
+    {
+        return ContainsAny(type, "LongVarChar", "Image", "Audio", "Video", "Blob");
+    }
+
+    private static bool IsText(string type)
+    {
+        return ContainsAny(type, "Character", "VarChar", "Char", "LongVarChar") && !IsTechnicallyInadequate(type);
+    }
+
+    private static bool IsNumeric(string type)
+    {
+        return ContainsAny(type, "Numeric", "Integer", "SmallInt", "Int", "Decimal", "Float", "Double");
+    }
+
+    private static bool IsDateOrDateTime(string type)
+    {
+        return ContainsAny(type, "DateTime", "Date");
+    }
+
+    private static bool IsBoolean(string type)
+    {
+        return ContainsAny(type, "Boolean");
+    }
+
+    private static bool IsGuid(string type)
+    {
+        return ContainsAny(type, "Guid", "GUID");
+    }
+
+    private static bool ContainsAny(string value, params string[] tokens)
+    {
+        return tokens.Any(token => value.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0);
+    }
+}
+
+internal sealed class PrototypeWizardContractSnapshot
+{
+    public PrototypeWizardContractSnapshot(
+        string transactionName,
+        string moduleName,
+        IReadOnlyList<PrototypeWizardServiceDecision> services,
+        IReadOnlyList<PrototypeWizardAttributeDecision> attributes)
+    {
+        TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
+        ModuleName = moduleName ?? throw new ArgumentNullException(nameof(moduleName));
+        Services = services ?? throw new ArgumentNullException(nameof(services));
+        Attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
+    }
+
+    public string TransactionName { get; }
+
+    public string ModuleName { get; }
+
+    public IReadOnlyList<PrototypeWizardServiceDecision> Services { get; }
+
+    public IReadOnlyList<PrototypeWizardAttributeDecision> Attributes { get; }
+}
+
+internal sealed class PrototypeWizardServiceDecision
+{
+    public PrototypeWizardServiceDecision(string name, bool defaultSelected)
+    {
+        Name = name ?? throw new ArgumentNullException(nameof(name));
+        DefaultSelected = defaultSelected;
+    }
+
+    public string Name { get; }
+
+    public bool DefaultSelected { get; }
+}
+
+internal sealed class PrototypeWizardAttributeDecision
+{
+    public PrototypeWizardAttributeDecision(
+        int order,
+        string name,
+        string dataType,
+        int length,
+        int decimals,
+        bool isPrimaryKey,
+        bool isDescription,
+        bool isNullable,
+        bool isInferred,
+        bool isRedundant,
+        bool isForeignKey,
+        bool isSensitive,
+        bool isFormula,
+        bool isAudit,
+        string payloadDisabledReason,
+        string updatePayloadDisabledReason,
+        bool defaultCreateSelected,
+        bool defaultUpdateSelected,
+        bool defaultResponseSelected,
+        bool isFilterEligible,
+        bool defaultFilterSelected,
+        string filterOperator,
+        bool usesPeriod,
+        bool usesRange,
+        string filterDisabledReason)
+    {
+        Order = order;
+        Name = name ?? throw new ArgumentNullException(nameof(name));
+        DataType = dataType ?? throw new ArgumentNullException(nameof(dataType));
+        Length = length;
+        Decimals = decimals;
+        IsPrimaryKey = isPrimaryKey;
+        IsDescription = isDescription;
+        IsNullable = isNullable;
+        IsInferred = isInferred;
+        IsRedundant = isRedundant;
+        IsForeignKey = isForeignKey;
+        IsSensitive = isSensitive;
+        IsFormula = isFormula;
+        IsAudit = isAudit;
+        PayloadDisabledReason = payloadDisabledReason ?? throw new ArgumentNullException(nameof(payloadDisabledReason));
+        UpdatePayloadDisabledReason = updatePayloadDisabledReason ?? throw new ArgumentNullException(nameof(updatePayloadDisabledReason));
+        DefaultCreateSelected = defaultCreateSelected;
+        DefaultUpdateSelected = defaultUpdateSelected;
+        DefaultResponseSelected = defaultResponseSelected;
+        IsFilterEligible = isFilterEligible;
+        DefaultFilterSelected = defaultFilterSelected;
+        FilterOperator = filterOperator ?? throw new ArgumentNullException(nameof(filterOperator));
+        UsesPeriod = usesPeriod;
+        UsesRange = usesRange;
+        FilterDisabledReason = filterDisabledReason ?? throw new ArgumentNullException(nameof(filterDisabledReason));
+    }
+
+    public int Order { get; }
+
+    public string Name { get; }
+
+    public string DataType { get; }
+
+    public int Length { get; }
+
+    public int Decimals { get; }
+
+    public bool IsPrimaryKey { get; }
+
+    public bool IsDescription { get; }
+
+    public bool IsNullable { get; }
+
+    public bool IsInferred { get; }
+
+    public bool IsRedundant { get; }
+
+    public bool IsForeignKey { get; }
+
+    public bool IsSensitive { get; }
+
+    public bool IsFormula { get; }
+
+    public bool IsAudit { get; }
+
+    public string PayloadDisabledReason { get; }
+
+    public string UpdatePayloadDisabledReason { get; }
+
+    public bool IsPayloadEligible => PayloadDisabledReason.Length == 0;
+
+    public bool IsUpdatePayloadEligible => UpdatePayloadDisabledReason.Length == 0;
+
+    public bool DefaultCreateSelected { get; }
+
+    public bool DefaultUpdateSelected { get; }
+
+    public bool DefaultResponseSelected { get; }
+
+    public bool IsFilterEligible { get; }
+
+    public bool DefaultFilterSelected { get; }
+
+    public string FilterOperator { get; }
+
+    public bool UsesPeriod { get; }
+
+    public bool UsesRange { get; }
+
+    public string FilterDisabledReason { get; }
+}
+
+internal sealed class PrototypeWizardFilterDefaults
+{
+    private PrototypeWizardFilterDefaults(bool isEligible, bool defaultSelected, string @operator, bool usesPeriod, bool usesRange, string disabledReason)
+    {
+        IsEligible = isEligible;
+        DefaultSelected = defaultSelected;
+        Operator = @operator;
+        UsesPeriod = usesPeriod;
+        UsesRange = usesRange;
+        DisabledReason = disabledReason;
+    }
+
+    public bool IsEligible { get; }
+
+    public bool DefaultSelected { get; }
+
+    public string Operator { get; }
+
+    public bool UsesPeriod { get; }
+
+    public bool UsesRange { get; }
+
+    public string DisabledReason { get; }
+
+    public static PrototypeWizardFilterDefaults Enabled(string @operator, bool defaultSelected, bool usesPeriod, bool usesRange)
+    {
+        return new PrototypeWizardFilterDefaults(true, defaultSelected, @operator, usesPeriod, usesRange, string.Empty);
+    }
+
+    public static PrototypeWizardFilterDefaults Disabled(string reason)
+    {
+        return new PrototypeWizardFilterDefaults(false, false, string.Empty, false, false, reason);
+    }
+}
+
+internal sealed class PrototypeWizardContractSelection
+{
+    public PrototypeWizardContractSelection(
+        string transactionName,
+        IReadOnlyList<string> selectedServices,
+        IReadOnlyList<string> createFields,
+        IReadOnlyList<string> updateFields,
+        IReadOnlyList<string> responseFields,
+        IReadOnlyList<string> listFilters)
+    {
+        TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
+        SelectedServices = selectedServices ?? throw new ArgumentNullException(nameof(selectedServices));
+        CreateFields = createFields ?? throw new ArgumentNullException(nameof(createFields));
+        UpdateFields = updateFields ?? throw new ArgumentNullException(nameof(updateFields));
+        ResponseFields = responseFields ?? throw new ArgumentNullException(nameof(responseFields));
+        ListFilters = listFilters ?? throw new ArgumentNullException(nameof(listFilters));
+    }
+
+    public string TransactionName { get; }
+
+    public IReadOnlyList<string> SelectedServices { get; }
+
+    public IReadOnlyList<string> CreateFields { get; }
+
+    public IReadOnlyList<string> UpdateFields { get; }
+
+    public IReadOnlyList<string> ResponseFields { get; }
+
+    public IReadOnlyList<string> ListFilters { get; }
+}
+
+internal static class PrototypeWizardSessionState
+{
+    public static PrototypeWizardContractSelection? ContractSelection { get; private set; }
+
+    public static void StoreContractSelection(PrototypeWizardContractSelection selection)
+    {
+        ContractSelection = selection ?? throw new ArgumentNullException(nameof(selection));
+    }
+
+    public static void ClearContractSelection()
+    {
+        ContractSelection = null;
+    }
+}
