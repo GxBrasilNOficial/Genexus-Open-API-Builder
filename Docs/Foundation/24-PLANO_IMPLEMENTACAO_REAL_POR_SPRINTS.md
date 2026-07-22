@@ -160,7 +160,8 @@ Validar navegação, captura de decisões e cancelamento seguro sem persistir ne
 - `B031` (concluído): Passo 2 do wizard configurou serviços, campos e filtros essenciais no U15, mantendo decisões apenas em memória
 - `B032` (concluído): Passo 3 do wizard revisou paths, segurança, paginação e ordenação no U15, acionado pelo contexto da `Transaction` e chamando B031 automaticamente quando necessário
 - `B033` (concluído): campos obrigatórios foram incorporados ao wizard único aberto por B030 e validados manualmente no U15 sem persistência e sem escrita pela extensão
-- `B034`–`B037`: navegar pelos passos de cancelamento seguro, BC, campos tecnicamente inadequados e obrigatoriedade técnica no payload
+- `B034` (concluído): cancelamento seguro do wizard único foi validado manualmente no U15, descartando estado em memória sem `ApiPlan`, persistência ou escrita na KB
+- `B035`–`B037`: navegar pelos passos de BC, campos tecnicamente inadequados e obrigatoriedade técnica no payload
 - manter as escolhas apenas em memória
 - avançar, voltar e cancelar sem alterar a KB
 - exibir resumo não persistente das escolhas

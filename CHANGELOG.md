@@ -41,6 +41,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B031 validado no U15: `Configurar Contrato (B031)` navega sequencialmente por serviços, requests, response, filtros e resumo B032, acumulando escolhas apenas em memória sem criar `ApiPlan` nem alterar a KB
 - B032 validado no U15: `Revisar Paths e Segurança (B032)` funciona pelo menu de contexto da `Transaction`, chama B031 automaticamente quando necessário e revisa paths, segurança, paginação e ordenação apenas em memória
 - B033 validado no U15: `Abrir Wizard (B030)` passa a abrir o wizard único, absorvendo B031, B032 e B033 como páginas sequenciais e validando campos obrigatórios apenas em memória
+- B034 validado no U15: cancelamento seguro do wizard único descarta `Transaction`, contrato, paths/segurança e obrigatoriedade em memória sem criar `ApiPlan` nem alterar a KB
 
 ## Fixed
 
@@ -60,7 +61,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Sprint 2 — protótipo navegável e não persistente do wizard, seguindo por `B034`
+- Sprint 2 — protótipo navegável e não persistente do wizard, seguindo por `B035`
 - Primeira geração experimental
 
 ---

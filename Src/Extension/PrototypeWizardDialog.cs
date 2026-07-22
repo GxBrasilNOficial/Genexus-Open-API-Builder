@@ -53,6 +53,17 @@ internal sealed class PrototypeWizardDialog : Form
 
     public PrototypeWizardFlowSelection? Selection { get; private set; }
 
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        if (DialogResult == DialogResult.None)
+        {
+            Selection = null;
+            DialogResult = DialogResult.Cancel;
+        }
+
+        base.OnFormClosing(e);
+    }
+
     private void BuildLayout()
     {
         var root = new TableLayoutPanel
@@ -317,7 +328,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private TabPage CreateSummaryTab()
     {
-        var tab = new TabPage("Resumo B034");
+        var tab = new TabPage("Resumo B035");
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -327,7 +338,7 @@ internal sealed class PrototypeWizardDialog : Form
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Resumo das decisoes acumuladas. B034 validara cancelamento seguro.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Resumo das decisoes acumuladas. B035 validara Business Component no fluxo do wizard.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
         panel.Controls.Add(_summaryText, 0, 1);
         tab.Controls.Add(panel);
         return tab;
@@ -582,7 +593,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"Paginacao: Default={review.DefaultPageSize}, Maximum={review.MaximumPageSize}{Environment.NewLine}" +
             $"Ordenacao: {string.Join(", ", review.StaticOrder.Select(item => item.AttributeName + " " + item.Direction))}{Environment.NewLine}{Environment.NewLine}" +
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
-            "B034 validara cancelamento seguro. Nenhum ApiPlan foi criado, nenhuma escolha foi persistida e nenhum objeto foi criado, alterado ou excluido.";
+            "B035 validara Business Component no fluxo do wizard. Nenhum ApiPlan foi criado, nenhuma escolha foi persistida e nenhum objeto foi criado, alterado ou excluido.";
         _showingSummary = true;
         _tabs.SelectedIndex = _tabs.TabPages.Count - 1;
         if (_nextButton is not null)

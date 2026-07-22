@@ -322,7 +322,8 @@ public sealed class Package : AbstractPackageUI
                 .SingleOrDefault(item => item.Guid == transactionGuid);
             if (transaction is null)
             {
-                WriteOutput("[Genexus Open API Builder][B030] A Transaction do menu de contexto não foi reencontrada na Knowledge Base ativa. Nenhuma escolha foi persistida.");
+                ClearPrototypeWizardMemory(clearTransaction: true);
+                WriteOutput("[Genexus Open API Builder][B034] A Transaction do menu de contexto não foi reencontrada na Knowledge Base ativa. Estado anterior do wizard descartado; nenhuma escolha foi persistida.");
                 return true;
             }
         }
@@ -332,7 +333,8 @@ public sealed class Package : AbstractPackageUI
 
             if (!UIServices.IsSelectObjectDialogAvailable)
             {
-                WriteOutput("[Genexus Open API Builder][B030] O diálogo público de seleção não está disponível nesta IDE.");
+                ClearPrototypeWizardMemory(clearTransaction: true);
+                WriteOutput("[Genexus Open API Builder][B034] O diálogo público de seleção não está disponível nesta IDE. Estado anterior do wizard descartado; nenhuma escolha foi persistida.");
                 return true;
             }
 
@@ -347,13 +349,15 @@ public sealed class Package : AbstractPackageUI
             var selectedObject = UIServices.SelectObjectDialog.SelectObject(options);
             if (selectedObject is null)
             {
-                WriteOutput("[Genexus Open API Builder][B030] Nenhuma Transaction foi selecionada. O wizard permaneceu no Passo 1 e nada foi persistido.");
+                ClearPrototypeWizardMemory(clearTransaction: true);
+                WriteOutput("[Genexus Open API Builder][B034] Nenhuma Transaction foi selecionada. Estado anterior do wizard descartado; nenhum ApiPlan foi criado e nenhuma alteracao foi feita na KB.");
                 return true;
             }
 
             if (selectedObject is not Transaction selectedTransaction)
             {
-                WriteOutput("[Genexus Open API Builder][B030] A seleção retornada não é uma Transaction. Nenhuma escolha foi mantida.");
+                ClearPrototypeWizardMemory(clearTransaction: true);
+                WriteOutput("[Genexus Open API Builder][B034] A seleção retornada não é uma Transaction. Estado anterior do wizard descartado; nenhuma escolha foi mantida.");
                 return true;
             }
 
@@ -362,7 +366,8 @@ public sealed class Package : AbstractPackageUI
                 .SingleOrDefault(item => item.Guid == transactionGuid);
             if (transaction is null)
             {
-                WriteOutput("[Genexus Open API Builder][B030] A Transaction selecionada não foi reencontrada na Knowledge Base ativa. Nenhuma escolha foi persistida.");
+                ClearPrototypeWizardMemory(clearTransaction: true);
+                WriteOutput("[Genexus Open API Builder][B034] A Transaction selecionada não foi reencontrada na Knowledge Base ativa. Estado do wizard descartado; nenhuma escolha foi persistida.");
                 return true;
             }
         }
@@ -370,13 +375,12 @@ public sealed class Package : AbstractPackageUI
         var module = transaction.Module;
         if (module is null)
         {
-            WriteOutput($"[Genexus Open API Builder][B030] A Transaction selecionada não possui módulo disponível: Name='{transaction.Name}'. Nenhuma escolha foi persistida.");
+            ClearPrototypeWizardMemory(clearTransaction: true);
+            WriteOutput($"[Genexus Open API Builder][B034] A Transaction selecionada não possui módulo disponível: Name='{transaction.Name}'. Estado do wizard descartado; nenhuma escolha foi persistida.");
             return true;
         }
 
-        PrototypeWizardFlowSessionState.Clear();
-        PrototypeWizardSessionState.ClearContractSelection();
-        PrototypeWizardReviewSessionState.ClearReviewSelection();
+        ClearPrototypeWizardMemory(clearTransaction: false);
         PrototypeTransactionSelectionState.Store(knowledgeBase, transaction);
 
         var snapshot = PrototypeWizardContractReader.Read(transaction);
@@ -385,30 +389,22 @@ public sealed class Package : AbstractPackageUI
 
         if (result == System.Windows.Forms.DialogResult.Retry)
         {
-            PrototypeWizardFlowSessionState.Clear();
-            PrototypeWizardSessionState.ClearContractSelection();
-            PrototypeWizardReviewSessionState.ClearReviewSelection();
-            PrototypeTransactionSelectionState.Clear();
-            WriteOutput($"[Genexus Open API Builder][B030] Voltar acionado no início do wizard único. Transaction='{transaction.Name}' foi descartada da memoria; execute o comando novamente para selecionar outra Transaction.");
+            ClearPrototypeWizardMemory(clearTransaction: true);
+            WriteOutput($"[Genexus Open API Builder][B034] Voltar acionado no início do wizard único. Transaction='{transaction.Name}' e decisões em memoria foram descartadas; nenhum ApiPlan foi criado e nenhuma alteracao foi feita na KB.");
             return true;
         }
 
         if (result == System.Windows.Forms.DialogResult.Cancel)
         {
-            PrototypeWizardFlowSessionState.Clear();
-            PrototypeWizardSessionState.ClearContractSelection();
-            PrototypeWizardReviewSessionState.ClearReviewSelection();
-            PrototypeTransactionSelectionState.Clear();
-            WriteOutput($"[Genexus Open API Builder][B030] Wizard único cancelado para Transaction='{transaction.Name}'. Escolhas em memoria descartadas; nenhuma alteracao foi feita na KB.");
+            ClearPrototypeWizardMemory(clearTransaction: true);
+            WriteOutput($"[Genexus Open API Builder][B034] Wizard único cancelado ou fechado para Transaction='{transaction.Name}'. Transaction e decisões em memoria descartadas; nenhum ApiPlan foi criado e nenhuma alteracao foi feita na KB.");
             return true;
         }
 
         if (result != System.Windows.Forms.DialogResult.OK || dialog.Selection is null)
         {
-            PrototypeWizardFlowSessionState.Clear();
-            PrototypeWizardSessionState.ClearContractSelection();
-            PrototypeWizardReviewSessionState.ClearReviewSelection();
-            WriteOutput($"[Genexus Open API Builder][B030] Wizard único fechado sem conclusao para Transaction='{transaction.Name}'. Nenhuma escolha foi persistida.");
+            ClearPrototypeWizardMemory(clearTransaction: true);
+            WriteOutput($"[Genexus Open API Builder][B034] Wizard único fechado sem conclusao para Transaction='{transaction.Name}'. Estado em memoria descartado; nenhum ApiPlan foi criado e nenhuma alteracao foi feita na KB.");
             return true;
         }
 
@@ -422,7 +418,7 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B031] Contrato em memoria: Services='{string.Join(",", selection.ContractSelection.SelectedServices)}', Create={selection.ContractSelection.CreateFields.Count}, Update={selection.ContractSelection.UpdateFields.Count}, Response={selection.ContractSelection.ResponseFields.Count}, ListFilters={selection.ContractSelection.ListFilters.Count}.");
         WriteOutput($"[Genexus Open API Builder][B032] Paths e segurança em memoria: ApiName='{selection.ReviewSelection.ApiName}', ServicesBasePath='{selection.ReviewSelection.ServicesBasePath}', RestPath='{selection.ReviewSelection.RestPath}', SecurityLevel='{selection.ReviewSelection.SecurityLevel}'.");
         WriteOutput($"[Genexus Open API Builder][B033] Obrigatoriedade em memoria: CreateRequired={createRequiredCount}, UpdateRequired={updateRequiredCount}. Required significa presença do membro JSON, nao valor nao-vazio.");
-        WriteOutput("[Genexus Open API Builder][B033] Proximo passo habilitado para B034. Nenhum ApiPlan foi criado, nenhuma escolha foi persistida e nenhum objeto foi criado, alterado ou excluido.");
+        WriteOutput("[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes permanecem somente em memoria; nenhum ApiPlan foi criado e nenhum objeto foi criado, alterado ou excluido.");
 
         return true;
     }
@@ -685,6 +681,18 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B031] Campos selecionados: Create={selection.CreateFields.Count}, Update={selection.UpdateFields.Count}, Response={selection.ResponseFields.Count}, ListFilters={selection.ListFilters.Count}.");
         return true;
     }
+
+    private static void ClearPrototypeWizardMemory(bool clearTransaction)
+    {
+        PrototypeWizardFlowSessionState.Clear();
+        PrototypeWizardSessionState.ClearContractSelection();
+        PrototypeWizardReviewSessionState.ClearReviewSelection();
+        if (clearTransaction)
+        {
+            PrototypeTransactionSelectionState.Clear();
+        }
+    }
+
     private static Transaction? TryResolveTransactionFromContext(CommandData data)
     {
         return KBObjectSelectionHelper.TryGetOnlyOneKBObjectFrom(data.Context) as Transaction;
