@@ -2,6 +2,8 @@
 
 Concluido no GeneXus 18 Upgrade 15 em 2026-07-22: o wizard unico aberto por `Abrir Wizard (B030)` validou cancelamento seguro em pontos de saida distintos, descartando `Transaction` e decisoes mantidas em memoria, sem criar `ApiPlan`, sem persistencia e sem escrita na KB.
 
+Nota posterior B035: a afirmacao acima descreve o escopo validado em B034. A partir de B035, se o usuario confirmar explicitamente a habilitacao de `Business Component`, cancelar ou fechar o wizard depois disso descarta as decisoes em memoria, mas nao reverte essa propriedade ja gravada na `Transaction`.
+
 ## Objetivo
 
 Implementar e validar o comportamento de cancelamento seguro do prototipo navegavel do wizard unico, garantindo que decisoes acumuladas em memoria sejam descartadas quando o usuario aborta o fluxo antes da conclusao.
@@ -56,4 +58,4 @@ A conclusao normal tambem foi validada, mantendo decisoes somente em memoria:
 
 ## Resultado
 
-Criterio atendido em 2026-07-22: B034 comprovou descarte completo das decisoes em memoria nos pontos de saida do wizard unico e confirmou que a conclusao normal preserva apenas memoria de sessao, sem `ApiPlan`, sem persistencia e sem escrita na KB.
+Criterio atendido em 2026-07-22: B034 comprovou descarte completo das decisoes em memoria nos pontos de saida do wizard unico e confirmou que a conclusao normal preserva apenas memoria de sessao, sem `ApiPlan`, sem persistencia e sem escrita na KB no escopo entao validado. O B035 refinou esse contrato para ressalvar a habilitacao confirmada de `Business Component`, que permanece gravada na `Transaction` mesmo se o wizard for cancelado depois.
