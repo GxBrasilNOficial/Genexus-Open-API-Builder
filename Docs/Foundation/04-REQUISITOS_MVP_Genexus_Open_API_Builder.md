@@ -178,7 +178,7 @@ Gerar estrutura para:
 
 Serviços básicos gerados e prontos para teste inicial em cenário simples, com contrato tipado e delegação via Business Component.
 
-`Business Component` é obrigatório no MVP. Sem BC, a API não é gerada; se a propriedade estiver desabilitada, o wizard pode oferecer habilitação explícita, desmarcada por padrão, e cancelar o wizard não modifica a Transaction.
+`Business Component` é obrigatório no MVP. Sem BC, a API não é gerada; se a propriedade estiver desabilitada, o wizard pode oferecer habilitação explícita, desmarcada por padrão. Cancelar sem confirmar a habilitação não modifica a Transaction; se o usuário confirmar a habilitação, a propriedade é gravada na Transaction e não é revertida automaticamente por cancelamento posterior do wizard.
 
 ### Nota operacional
 

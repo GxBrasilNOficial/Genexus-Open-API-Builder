@@ -384,27 +384,35 @@ public sealed class Package : AbstractPackageUI
         PrototypeTransactionSelectionState.Store(knowledgeBase, transaction);
 
         var snapshot = PrototypeWizardContractReader.Read(transaction);
-        using var dialog = new PrototypeWizardDialog(snapshot);
+        var businessComponentSnapshot = PrototypeBusinessComponentReader.Read(transaction);
+        using var dialog = new PrototypeWizardDialog(
+            snapshot,
+            businessComponentSnapshot,
+            () => EnableBusinessComponentForWizard(transaction),
+            WriteOutput);
         var result = dialog.ShowDialog();
+        var businessComponentExitStatus = dialog.BusinessComponentEnabledDuringWizard
+            ? "Business Component foi habilitado por confirmacao explicita antes da saida; essa alteracao foi gravada na KB e nao foi revertida automaticamente."
+            : "Nenhuma alteracao foi feita na KB.";
 
         if (result == System.Windows.Forms.DialogResult.Retry)
         {
             ClearPrototypeWizardMemory(clearTransaction: true);
-            WriteOutput($"[Genexus Open API Builder][B034] Voltar acionado no início do wizard único. Transaction='{transaction.Name}' e decisões em memoria foram descartadas; nenhum ApiPlan foi criado e nenhuma alteracao foi feita na KB.");
+            WriteOutput($"[Genexus Open API Builder][B034] Voltar acionado no início do wizard único. Transaction='{transaction.Name}' e decisões em memoria foram descartadas; nenhum ApiPlan foi criado. {businessComponentExitStatus}");
             return true;
         }
 
         if (result == System.Windows.Forms.DialogResult.Cancel)
         {
             ClearPrototypeWizardMemory(clearTransaction: true);
-            WriteOutput($"[Genexus Open API Builder][B034] Wizard único cancelado ou fechado para Transaction='{transaction.Name}'. Transaction e decisões em memoria descartadas; nenhum ApiPlan foi criado e nenhuma alteracao foi feita na KB.");
+            WriteOutput($"[Genexus Open API Builder][B034] Wizard único cancelado ou fechado para Transaction='{transaction.Name}'. Transaction e decisões em memoria descartadas; nenhum ApiPlan foi criado. {businessComponentExitStatus}");
             return true;
         }
 
         if (result != System.Windows.Forms.DialogResult.OK || dialog.Selection is null)
         {
             ClearPrototypeWizardMemory(clearTransaction: true);
-            WriteOutput($"[Genexus Open API Builder][B034] Wizard único fechado sem conclusao para Transaction='{transaction.Name}'. Estado em memoria descartado; nenhum ApiPlan foi criado e nenhuma alteracao foi feita na KB.");
+            WriteOutput($"[Genexus Open API Builder][B034] Wizard único fechado sem conclusao para Transaction='{transaction.Name}'. Estado em memoria descartado; nenhum ApiPlan foi criado. {businessComponentExitStatus}");
             return true;
         }
 
@@ -418,7 +426,8 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B031] Contrato em memoria: Services='{string.Join(",", selection.ContractSelection.SelectedServices)}', Create={selection.ContractSelection.CreateFields.Count}, Update={selection.ContractSelection.UpdateFields.Count}, Response={selection.ContractSelection.ResponseFields.Count}, ListFilters={selection.ContractSelection.ListFilters.Count}.");
         WriteOutput($"[Genexus Open API Builder][B032] Paths e segurança em memoria: ApiName='{selection.ReviewSelection.ApiName}', ServicesBasePath='{selection.ReviewSelection.ServicesBasePath}', RestPath='{selection.ReviewSelection.RestPath}', SecurityLevel='{selection.ReviewSelection.SecurityLevel}'.");
         WriteOutput($"[Genexus Open API Builder][B033] Obrigatoriedade em memoria: CreateRequired={createRequiredCount}, UpdateRequired={updateRequiredCount}. Required significa presença do membro JSON, nao valor nao-vazio.");
-        WriteOutput("[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes permanecem somente em memoria; nenhum ApiPlan foi criado e nenhum objeto foi criado, alterado ou excluido.");
+        WriteOutput($"[Genexus Open API Builder][B035] Business Component em memoria: IsBusinessComponent={selection.BusinessComponentSelection.IsBusinessComponent}, EnabledDuringWizard={selection.BusinessComponentSelection.EnabledDuringWizard}, Status='{selection.BusinessComponentSelection.Status}'.");
+        WriteOutput("[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes permanecem somente em memoria; nenhum ApiPlan foi criado e nenhuma geracao de objetos de API foi executada.");
 
         return true;
     }
@@ -680,6 +689,22 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B031] Wizard Passo 2 concluido em memoria durante o fluxo B032: Transaction='{selection.TransactionName}', Services='{string.Join(",", selection.SelectedServices)}'.");
         WriteOutput($"[Genexus Open API Builder][B031] Campos selecionados: Create={selection.CreateFields.Count}, Update={selection.UpdateFields.Count}, Response={selection.ResponseFields.Count}, ListFilters={selection.ListFilters.Count}.");
         return true;
+    }
+
+    private static bool EnableBusinessComponentForWizard(Transaction transaction)
+    {
+        if (transaction is null)
+        {
+            throw new ArgumentNullException(nameof(transaction));
+        }
+
+        if (!transaction.IsBusinessComponent)
+        {
+            transaction.SetPropertyValue("idISBUSINESSCOMPONENT", true);
+            transaction.Save();
+        }
+
+        return transaction.IsBusinessComponent;
     }
 
     private static void ClearPrototypeWizardMemory(bool clearTransaction)

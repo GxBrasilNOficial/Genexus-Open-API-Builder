@@ -36,32 +36,33 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B032` concluído no U15: o terceiro passo do protótipo navegável revisou `ApiName`, `Services base path`, `RestPath`, paths por serviço, `Security Level`, paginação e ordenação para a Transaction `Escola`, acionado diretamente pelo menu de contexto da `Transaction`, abrindo B031 automaticamente quando o contrato estava ausente, com `ApiName='apiEscola'`, `ServicesBasePath='apiEscola'`, `RestPath='/escola'`, `SecurityLevel='Authentication'`, `DefaultPageSize=50`, `MaximumPageSize=200` e `StaticOrder='EscolaCodigo ASC'`, mantendo decisões apenas em memória e sem criar `ApiPlan` nem alterar a KB. A validação complementar confirmou que `Services base path` acompanha `ApiName` até edição manual e depois preserva o valor manual.
 - `B033` concluído no U15: o wizard foi unificado em uma única chamada operacional por `Abrir Wizard (B030)`, absorvendo B031, B032 e B033 como páginas sequenciais da mesma janela; a aba `Obrigatorios` validou presença obrigatória de membros JSON para `DiretoriaDeEnsino`, com `CreateRequired=0` por campo nullable no `CreateRequest` e `UpdateRequired=1` por PUT completo no `UpdateRequest`, mantendo o resultado em memória e seguindo sem `ApiPlan`, sem persistência e sem escrita na KB.
 - `B034` concluído no U15: o wizard único validou cancelamento seguro no seletor nativo, no botão `Cancelar`, na tecla Esc/fechamento, em `Voltar` no início do fluxo e na conclusão normal sem cancelamento; em todos os abortos descartou `Transaction`, contrato, paths/segurança e obrigatoriedade em memória, sem criar `ApiPlan`, sem persistência e sem escrita na KB.
+- `B035` concluído no U15: o wizard único incorporou a verificação de `Business Component`, bloqueou avanço quando `Contrato` estava com `Business Component=False`, exigiu checkbox e confirmação modal antes de habilitar a propriedade, gravou `Business Component=True` na `Transaction` após autorização explícita, observou a geração/reload do pattern `WorkWithWebContrato` pela IDE e concluiu mantendo decisões apenas em memória, sem criar `ApiPlan` nem objetos de API.
 
 ## Frente ativa
 
-**Sprint 2 — Protótipo Navegável do Wizard**, cobrindo as **Fases 1 e 2** do backlog sem persistir escolhas nem gerar objetos.
+**Sprint 2 — Protótipo Navegável do Wizard**, cobrindo as **Fases 1 e 2** do backlog sem persistir escolhas do wizard nem gerar objetos de API. A exceção já validada é a habilitação explícita de `Business Component` na própria `Transaction`, quando confirmada pelo usuário.
 
 ## Próxima ação única
 
-Iniciar `B035` — Validar Business Component no fluxo do wizard:
+Iniciar `B036` — Exibir campos tecnicamente inadequados desabilitados com motivo:
 
-> Incorporar ao wizard único a verificação de `Business Component`, bloqueando geração/prosseguimento quando a Transaction não estiver apta ou oferecendo apenas a habilitação explícita prevista em contrato futuro, ainda sem persistir escolhas nem alterar a KB.
+> Consolidar no wizard único a exposição dos campos tecnicamente inadequados para payload/filtro, mantendo-os desabilitados e exibindo o motivo operacional, ainda sem criar `ApiPlan` nem gerar objetos de API.
 
 ## Critério de conclusão e evidência esperada
 
 - o fluxo parte do wizard único aberto por `Abrir Wizard (B030)`;
-- a verificação de `Business Component` ocorre dentro do fluxo do wizard, sem depender de comando separado;
-- Transaction com `Business Component=False` bloqueia o avanço para geração/prosseguimento operacional do protótipo;
-- se a UI oferecer habilitação explícita, ela permanece desmarcada por padrão e não altera a KB nesta fase;
-- a Output informa claramente aptidão, bloqueio ou ausência de conclusão;
-- nenhuma criação, alteração ou exclusão de objetos pela extensão;
-- base pronta para `B036`, que exibirá campos tecnicamente inadequados desabilitados com motivo.
+- campos tecnicamente inadequados para request ou filtro aparecem desabilitados na UI;
+- o motivo exibido distingue pelo menos tipo técnico inadequado, fórmula não atribuível via BC, atributo inferido, redundante, auditoria operacional, chave primária e campo sensível quando aplicável;
+- o usuário não consegue selecionar campos bloqueados;
+- a Output ou resumo final preserva contagem/visibilidade suficiente para validar que a decisão ficou apenas em memória;
+- nenhuma criação de `ApiPlan` e nenhuma geração de objetos de API pela extensão;
+- base pronta para `B037`, que revisará obrigatoriedade técnica no payload conforme o contrato vigente.
 
 ## Sequência operacional vigente
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
-3. Sprint 2 concluiu `B020`, `B021`, `B022`, `B023`, `B024`, `B025`, `B030`, `B031`, `B032`, `B033` e `B034` e segue por `B035`, mantendo apenas o protótipo navegável e não persistente do wizard.
+3. Sprint 2 concluiu `B020`, `B021`, `B022`, `B023`, `B024`, `B025`, `B030`, `B031`, `B032`, `B033`, `B034` e `B035` e segue por `B036`, mantendo o protótipo navegável do wizard com escolhas em memória, sem `ApiPlan` e sem geração de objetos de API.
 4. Sprint 3 cria metadata e `ApiPlan`.
 5. Sprint 4 integra o wizard ao engine pela primeira vez e cria os SDTs.
 6. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.

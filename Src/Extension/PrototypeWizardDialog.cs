@@ -11,6 +11,9 @@ namespace GenexusOpenApiBuilder.Extension;
 internal sealed class PrototypeWizardDialog : Form
 {
     private readonly PrototypeWizardContractSnapshot _snapshot;
+    private readonly PrototypeBusinessComponentSnapshot _businessComponentSnapshot;
+    private readonly Func<bool> _enableBusinessComponent;
+    private readonly Action<string> _writeBusinessComponentOutput;
     private readonly CheckedListBox _servicesList = CreateCheckedListBox();
     private readonly CheckedListBox _createFieldsList = CreateCheckedListBox();
     private readonly CheckedListBox _updateFieldsList = CreateCheckedListBox();
@@ -25,6 +28,8 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly NumericUpDown _maximumPageSize = CreateNumericInput();
     private readonly ListBox _staticOrderList = new() { Dock = DockStyle.Fill, HorizontalScrollbar = true, IntegralHeight = false };
     private readonly TextBox _requiredText = CreateReadOnlyTextBox();
+    private readonly TextBox _businessComponentText = CreateReadOnlyTextBox();
+    private readonly CheckBox _enableBusinessComponentCheck = new() { AutoSize = true, Text = "Habilitar Business Component agora", Dock = DockStyle.Top };
     private readonly TextBox _summaryText = CreateReadOnlyTextBox();
     private readonly TabControl _tabs = new() { Dock = DockStyle.Fill };
 
@@ -32,10 +37,14 @@ internal sealed class PrototypeWizardDialog : Form
     private bool _showingSummary;
     private bool _loadingSnapshot;
     private bool _servicesBasePathEditedManually;
+    private bool _businessComponentEnabledDuringWizard;
 
-    public PrototypeWizardDialog(PrototypeWizardContractSnapshot snapshot)
+    public PrototypeWizardDialog(PrototypeWizardContractSnapshot snapshot, PrototypeBusinessComponentSnapshot businessComponentSnapshot, Func<bool> enableBusinessComponent, Action<string> writeBusinessComponentOutput)
     {
         _snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
+        _businessComponentSnapshot = businessComponentSnapshot ?? throw new ArgumentNullException(nameof(businessComponentSnapshot));
+        _enableBusinessComponent = enableBusinessComponent ?? throw new ArgumentNullException(nameof(enableBusinessComponent));
+        _writeBusinessComponentOutput = writeBusinessComponentOutput ?? throw new ArgumentNullException(nameof(writeBusinessComponentOutput));
 
         Text = "Genexus Open API Builder - Wizard";
         StartPosition = FormStartPosition.CenterParent;
@@ -52,6 +61,8 @@ internal sealed class PrototypeWizardDialog : Form
     }
 
     public PrototypeWizardFlowSelection? Selection { get; private set; }
+
+    public bool BusinessComponentEnabledDuringWizard => _businessComponentEnabledDuringWizard;
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
@@ -97,6 +108,7 @@ internal sealed class PrototypeWizardDialog : Form
         _tabs.TabPages.Add(CreatePaginationTab());
         _tabs.TabPages.Add(CreateOrderTab());
         _tabs.TabPages.Add(CreateRequiredTab());
+        _tabs.TabPages.Add(CreateBusinessComponentTab());
         _tabs.TabPages.Add(CreateSummaryTab());
         root.Controls.Add(_tabs, 0, 1);
 
@@ -326,6 +338,26 @@ internal sealed class PrototypeWizardDialog : Form
         return tab;
     }
 
+    private TabPage CreateBusinessComponentTab()
+    {
+        var tab = new TabPage("Business Component");
+        var panel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Padding = new Padding(8),
+        };
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Business Component e obrigatorio para gerar a API do MVP preservando regras via BC.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(_enableBusinessComponentCheck, 0, 1);
+        panel.Controls.Add(_businessComponentText, 0, 2);
+        tab.Controls.Add(panel);
+        return tab;
+    }
+
     private TabPage CreateSummaryTab()
     {
         var tab = new TabPage("Resumo B035");
@@ -338,7 +370,7 @@ internal sealed class PrototypeWizardDialog : Form
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Resumo das decisoes acumuladas. B035 validara Business Component no fluxo do wizard.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Resumo das decisoes acumuladas apos validacao de Business Component.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
         panel.Controls.Add(_summaryText, 0, 1);
         tab.Controls.Add(panel);
         return tab;
@@ -399,6 +431,7 @@ internal sealed class PrototypeWizardDialog : Form
 
         RefreshEndpointsText();
         RefreshRequiredText();
+        RefreshBusinessComponentText();
     }
 
     private void WirePathSynchronization()
@@ -498,6 +531,11 @@ internal sealed class PrototypeWizardDialog : Form
             RefreshRequiredText();
         }
 
+        if (_tabs.SelectedTab?.Text == "Business Component" && !EnsureBusinessComponentReady())
+        {
+            return;
+        }
+
         if (_tabs.SelectedIndex < _tabs.TabPages.Count - 2)
         {
             _tabs.SelectedIndex++;
@@ -566,7 +604,8 @@ internal sealed class PrototypeWizardDialog : Form
         Selection = new PrototypeWizardFlowSelection(
             contractSelection,
             reviewSelection,
-            GetRequiredDecisions(contractSelection));
+            GetRequiredDecisions(contractSelection),
+            CreateBusinessComponentSelection());
         return true;
     }
     private void ShowSummary()
@@ -579,6 +618,7 @@ internal sealed class PrototypeWizardDialog : Form
         var review = Selection.ReviewSelection;
         var createRequired = Selection.RequiredFields.Count(item => item.RequestName == "CreateRequest" && item.IsRequired);
         var updateRequired = Selection.RequiredFields.Count(item => item.RequestName == "UpdateRequest" && item.IsRequired);
+        var businessComponent = Selection.BusinessComponentSelection;
         _summaryText.Text =
             $"Transaction: {contract.TransactionName}{Environment.NewLine}" +
             $"Servicos: {string.Join(", ", contract.SelectedServices)}{Environment.NewLine}" +
@@ -591,9 +631,10 @@ internal sealed class PrototypeWizardDialog : Form
             $"RestPath: {review.RestPath}{Environment.NewLine}" +
             $"Security Level: {review.SecurityLevel}{Environment.NewLine}" +
             $"Paginacao: Default={review.DefaultPageSize}, Maximum={review.MaximumPageSize}{Environment.NewLine}" +
-            $"Ordenacao: {string.Join(", ", review.StaticOrder.Select(item => item.AttributeName + " " + item.Direction))}{Environment.NewLine}{Environment.NewLine}" +
+            $"Ordenacao: {string.Join(", ", review.StaticOrder.Select(item => item.AttributeName + " " + item.Direction))}{Environment.NewLine}" +
+            $"Business Component: IsBusinessComponent={businessComponent.IsBusinessComponent}, Status='{businessComponent.Status}', EnabledDuringWizard={businessComponent.EnabledDuringWizard}{Environment.NewLine}{Environment.NewLine}" +
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
-            "B035 validara Business Component no fluxo do wizard. Nenhum ApiPlan foi criado, nenhuma escolha foi persistida e nenhum objeto foi criado, alterado ou excluido.";
+            "B035 validou Business Component no fluxo do wizard. Nenhum ApiPlan foi criado, nenhuma escolha foi persistida e nenhum objeto foi criado, alterado ou excluido pela geracao.";
         _showingSummary = true;
         _tabs.SelectedIndex = _tabs.TabPages.Count - 1;
         if (_nextButton is not null)
@@ -683,6 +724,89 @@ internal sealed class PrototypeWizardDialog : Form
             .Select((attribute, index) => new PrototypeWizardStaticOrderPart(index + 1, attribute.Name, "ASC"))
             .ToArray();
     }
+    private void RefreshBusinessComponentText()
+    {
+        var effectiveStatus = IsBusinessComponentReady()
+            ? "Apta via Business Component"
+            : _businessComponentSnapshot.Status;
+        _businessComponentText.Text =
+            $"Transaction: {_businessComponentSnapshot.TransactionName}{Environment.NewLine}" +
+            $"IsBusinessComponent: {IsBusinessComponentReady()}{Environment.NewLine}" +
+            $"Status: {effectiveStatus}{Environment.NewLine}{Environment.NewLine}" +
+            "Sem Business Component, o MVP bloqueia a geracao da API. A habilitacao exige confirmacao explicita e altera a Transaction na KB; cancelar o wizard depois disso nao reverte automaticamente a propriedade.";
+        _enableBusinessComponentCheck.Enabled = !_businessComponentSnapshot.IsBusinessComponent && !_businessComponentEnabledDuringWizard;
+        _enableBusinessComponentCheck.Visible = !_businessComponentSnapshot.IsBusinessComponent;
+    }
+
+    private bool EnsureBusinessComponentReady()
+    {
+        if (IsBusinessComponentReady())
+        {
+            return true;
+        }
+
+        if (!_enableBusinessComponentCheck.Checked)
+        {
+            _writeBusinessComponentOutput($"[Genexus Open API Builder][B035] Transaction='{_businessComponentSnapshot.TransactionName}' bloqueada: Business Component desabilitado e habilitacao explicita nao confirmada. Nenhum ApiPlan foi criado e nenhuma alteracao foi feita na KB.");
+            MessageBox.Show(this, "Business Component esta desabilitado. Marque a habilitacao explicita para continuar ou cancele o wizard.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            RefreshBusinessComponentText();
+            return false;
+        }
+
+        var confirmation = MessageBox.Show(
+            this,
+            $"Habilitar Business Component altera a Transaction '{_businessComponentSnapshot.TransactionName}' na KB. A alteracao nao sera revertida automaticamente ao cancelar o wizard ou remover a extensao. Deseja habilitar agora?",
+            Text,
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning,
+            MessageBoxDefaultButton.Button2);
+        if (confirmation != DialogResult.Yes)
+        {
+            _writeBusinessComponentOutput($"[Genexus Open API Builder][B035] Habilitacao de Business Component cancelada para Transaction='{_businessComponentSnapshot.TransactionName}'. Nenhuma alteracao foi feita na KB.");
+            _enableBusinessComponentCheck.Checked = false;
+            RefreshBusinessComponentText();
+            return false;
+        }
+
+        try
+        {
+            if (!_enableBusinessComponent())
+            {
+                _writeBusinessComponentOutput($"[Genexus Open API Builder][B035] Falha ao confirmar Business Component habilitado para Transaction='{_businessComponentSnapshot.TransactionName}' apos gravacao.");
+                MessageBox.Show(this, "Nao foi possivel confirmar Business Component habilitado apos a gravacao.", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                RefreshBusinessComponentText();
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _writeBusinessComponentOutput($"[Genexus Open API Builder][B035] Falha ao habilitar Business Component para Transaction='{_businessComponentSnapshot.TransactionName}': {ex.Message}");
+            MessageBox.Show(this, "Falha ao habilitar Business Component: " + ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            RefreshBusinessComponentText();
+            return false;
+        }
+
+        _businessComponentEnabledDuringWizard = true;
+        _writeBusinessComponentOutput($"[Genexus Open API Builder][B035] Business Component habilitado por confirmacao explicita para Transaction='{_businessComponentSnapshot.TransactionName}'. A alteracao foi gravada na KB e nao sera revertida automaticamente.");
+        _enableBusinessComponentCheck.Checked = false;
+        RefreshBusinessComponentText();
+        return true;
+    }
+
+    private bool IsBusinessComponentReady()
+    {
+        return _businessComponentSnapshot.IsBusinessComponent || _businessComponentEnabledDuringWizard;
+    }
+
+    private PrototypeWizardBusinessComponentSelection CreateBusinessComponentSelection()
+    {
+        return new PrototypeWizardBusinessComponentSelection(
+            _businessComponentSnapshot.TransactionName,
+            IsBusinessComponentReady(),
+            _businessComponentEnabledDuringWizard,
+            IsBusinessComponentReady() ? "Apta via Business Component" : _businessComponentSnapshot.Status);
+    }
+
     private void RefreshRequiredText()
     {
         var selection = new PrototypeWizardContractSelection(
@@ -787,11 +911,13 @@ internal sealed class PrototypeWizardFlowSelection
     public PrototypeWizardFlowSelection(
         PrototypeWizardContractSelection contractSelection,
         PrototypeWizardReviewSelection reviewSelection,
-        IReadOnlyList<PrototypeWizardRequiredFieldDecision> requiredFields)
+        IReadOnlyList<PrototypeWizardRequiredFieldDecision> requiredFields,
+        PrototypeWizardBusinessComponentSelection businessComponentSelection)
     {
         ContractSelection = contractSelection ?? throw new ArgumentNullException(nameof(contractSelection));
         ReviewSelection = reviewSelection ?? throw new ArgumentNullException(nameof(reviewSelection));
         RequiredFields = requiredFields ?? throw new ArgumentNullException(nameof(requiredFields));
+        BusinessComponentSelection = businessComponentSelection ?? throw new ArgumentNullException(nameof(businessComponentSelection));
     }
 
     public PrototypeWizardContractSelection ContractSelection { get; }
@@ -799,6 +925,27 @@ internal sealed class PrototypeWizardFlowSelection
     public PrototypeWizardReviewSelection ReviewSelection { get; }
 
     public IReadOnlyList<PrototypeWizardRequiredFieldDecision> RequiredFields { get; }
+
+    public PrototypeWizardBusinessComponentSelection BusinessComponentSelection { get; }
+}
+
+internal sealed class PrototypeWizardBusinessComponentSelection
+{
+    public PrototypeWizardBusinessComponentSelection(string transactionName, bool isBusinessComponent, bool enabledDuringWizard, string status)
+    {
+        TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
+        IsBusinessComponent = isBusinessComponent;
+        EnabledDuringWizard = enabledDuringWizard;
+        Status = status ?? throw new ArgumentNullException(nameof(status));
+    }
+
+    public string TransactionName { get; }
+
+    public bool IsBusinessComponent { get; }
+
+    public bool EnabledDuringWizard { get; }
+
+    public string Status { get; }
 }
 
 internal sealed class PrototypeWizardRequiredFieldDecision
