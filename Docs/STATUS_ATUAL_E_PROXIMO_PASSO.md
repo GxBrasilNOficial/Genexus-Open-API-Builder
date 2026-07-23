@@ -38,33 +38,33 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B034` concluído no U15: o wizard único validou cancelamento seguro no seletor nativo, no botão `Cancelar`, na tecla Esc/fechamento, em `Voltar` no início do fluxo e na conclusão normal sem cancelamento; em todos os abortos descartou `Transaction`, contrato, paths/segurança e obrigatoriedade em memória, sem criar `ApiPlan`, sem persistência e sem escrita na KB.
 - `B035` concluído no U15: o wizard único incorporou a verificação de `Business Component`, bloqueou avanço quando `Contrato` estava com `Business Component=False`, exigiu checkbox e confirmação modal antes de habilitar a propriedade, gravou `Business Component=True` na `Transaction` após autorização explícita, observou a geração/reload do pattern `WorkWithWebContrato` pela IDE e concluiu mantendo decisões apenas em memória, sem criar `ApiPlan` nem objetos de API.
 - `B036` concluído no U15: o wizard único exibiu campos tecnicamente inadequados desabilitados e com motivo em `Requests` e `Filtros List`, impediu seleção de bloqueados, registrou contagens B036 na Output e manteve contrato, paths, obrigatoriedade, BC e resumo apenas em memória para `Contrato`, `Escola` e `GuiaPed`, sem criar `ApiPlan` nem gerar objetos de API.
+- `B037` concluído no U15: o wizard único consolidou `Obrigatório no payload` para `CreateRequest` e `UpdateRequest`, separou as decisões por request na aba `Obrigatórios`, registrou `CreateRequired=0` e `UpdateRequired=1` para `Contrato`, esclareceu que `Required` significa presença do membro JSON e manteve decisões apenas em memória, sem criar `ApiPlan` nem gerar objetos de API.
 
 ## Frente ativa
 
-**Sprint 2 — Protótipo Navegável do Wizard**, cobrindo as **Fases 1 e 2** do backlog sem persistir escolhas do wizard nem gerar objetos de API. A exceção já validada é a habilitação explícita de `Business Component` na própria `Transaction`, quando confirmada pelo usuário.
+**Sprint 3 — Metadata + ApiPlan**, iniciando a transformação das escolhas capturadas pelo wizard em um plano interno completo, ainda sem gerar objetos de API e sem escrever na KB.
 
 ## Próxima ação única
 
-Iniciar `B037` — Configurar `Obrigatório no payload` para Create e Update:
+Iniciar Sprint 3 — estruturar `ApiPlan` em memória a partir da `Transaction` e das decisões do wizard:
 
-> Revisar e consolidar no wizard único a decisão de obrigatoriedade técnica no payload para `CreateRequest` e `UpdateRequest`, distinguindo presença do membro JSON de valor não vazio, ainda sem criar `ApiPlan` nem gerar objetos de API.
+> Criar a representação interna inicial do `ApiPlan`, cobrindo `Transaction`, módulo, serviços, campos, obrigatoriedade no payload, paths, segurança, paginação e ordenação já capturados pelo wizard, ainda sem persistir metadata e sem gerar objetos de API.
 
 ## Critério de conclusão e evidência esperada
 
-- o fluxo parte do wizard único aberto por `Abrir Wizard (B030)`;
-- a aba `Obrigatórios` apresenta as decisões por `CreateRequest` e `UpdateRequest` com motivo legível;
-- `CreateRequest` mantém nullable opcional e identifica campos selecionados que exigem presença do membro JSON;
-- `UpdateRequest` preserva a regra de PUT completo para os campos selecionados;
-- a UI e o resumo deixam claro que `Required` significa presença do membro JSON, não valor não vazio;
-- nenhuma criação de `ApiPlan` e nenhuma geração de objetos de API pela extensão;
-- base pronta para encerrar as Fases 1 e 2 do protótipo navegável e iniciar a Sprint 3.
+- o fluxo parte da seleção consolidada pelo wizard único aberto por `Abrir Wizard (B030)`;
+- existe um modelo interno de `ApiPlan` em código, ainda sem persistência em `File` e sem escrita na KB;
+- o plano representa serviços, requests, response, filtros, obrigatoriedade no payload, paths, segurança, paginação e ordenação;
+- `Business Component` continua tratado como pré-condição, com a exceção persistente já validada em B035;
+- nenhuma geração de SDT, Procedure, API Object ou metadata persistente é executada pela extensão;
+- base pronta para evoluir para metadata persistente e geração posterior.
 
 ## Sequência operacional vigente
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
-3. Sprint 2 concluiu `B020`, `B021`, `B022`, `B023`, `B024`, `B025`, `B030`, `B031`, `B032`, `B033`, `B034`, `B035` e `B036` e segue por `B037`, mantendo o protótipo navegável do wizard com escolhas em memória, sem `ApiPlan` e sem geração de objetos de API.
-4. Sprint 3 cria metadata e `ApiPlan`.
+3. Sprint 2 concluiu `B020`, `B021`, `B022`, `B023`, `B024`, `B025`, `B030`, `B031`, `B032`, `B033`, `B034`, `B035`, `B036` e `B037`, encerrando as Fases 1 e 2 do protótipo navegável com escolhas em memória, sem `ApiPlan` e sem geração de objetos de API.
+4. Sprint 3 inicia metadata e `ApiPlan`, começando pelo modelo interno em memória.
 5. Sprint 4 integra o wizard ao engine pela primeira vez e cria os SDTs.
 6. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
 7. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.

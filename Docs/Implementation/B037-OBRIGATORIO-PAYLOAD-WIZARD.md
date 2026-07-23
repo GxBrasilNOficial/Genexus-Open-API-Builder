@@ -1,6 +1,6 @@
 # B037 - Obrigatorio no Payload no Wizard
 
-Implementacao local preparada em 2026-07-23: o wizard unico aberto por `Abrir Wizard (B030)` consolidou a leitura de `Obrigatorio no payload` para `CreateRequest` e `UpdateRequest`, distinguindo presenca do membro JSON de valor nao vazio.
+Concluido no GeneXus 18 Upgrade 15 em 2026-07-23: o wizard unico aberto por `Abrir Wizard (B030)` consolidou a leitura de `Obrigatorio no payload` para `CreateRequest` e `UpdateRequest`, distinguindo presenca do membro JSON de valor nao vazio.
 
 ## Objetivo
 
@@ -30,18 +30,18 @@ Revisar e consolidar no wizard unico a decisao de obrigatoriedade tecnica no pay
 - `pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1`: OK, com 8 comandos registrados e sincronizados;
 - `git diff --check`: OK.
 
-## Validacao manual pendente
+## Validacao manual no U15
 
-A validacao funcional no GeneXus 18 U15 ainda deve confirmar, por `Abrir Wizard (B030)`, que:
+Validacao funcional concluida no GeneXus 18 U15 pelo wizard unico por `Abrir Wizard (B030)`, usando `Transaction='Contrato'` pelo contexto.
 
-- a aba `Obrigatorios` exibe `CreateRequest` e `UpdateRequest` em areas separadas;
-- campos nullable selecionados no `CreateRequest` aparecem com `Required=False`;
-- campos selecionados sem nulabilidade conhecida aparecem com `Required=True` no `CreateRequest`;
-- todos os campos selecionados no `UpdateRequest` aparecem com `Required=True`;
-- o resumo `B037` deixa claro que `Required` significa presenca do membro JSON, nao valor nao vazio;
-- a Output inclui a linha `[B037] Obrigatorio no payload consolidado`;
-- nenhuma escolha e persistida, nenhum `ApiPlan` e criado e nenhum objeto de API e gerado.
+- a aba `Obrigatorios` exibiu `CreateRequest` e `UpdateRequest` em areas separadas;
+- `ContratoProcessoDeCompraNumero` apareceu com `Required=False` no `CreateRequest` por nullable;
+- `ContratoProcessoDeCompraNumero` apareceu com `Required=True` no `UpdateRequest`, seguindo PUT completo;
+- o resumo `B037` deixou claro que `Required` significa presenca do membro JSON, nao valor nao vazio;
+- a Output incluiu `[B037] Obrigatorio no payload consolidado: CreateRequired=0, UpdateRequired=1`;
+- a sequencia visual das abas foi preservada com `TabControl` nativo e o cabecalho passou a indicar `Aba atual`;
+- nenhuma escolha foi persistida, nenhum `ApiPlan` foi criado e nenhum objeto de API foi gerado.
 
-## Resultado parcial
+## Resultado
 
-Criterio local atendido em 2026-07-23: B037 esta implementado e compilando, pronto para instalacao manual da DLL e validacao funcional na IDE. O checkpoint operacional nao foi promovido porque a validacao manual no GeneXus ainda esta pendente.
+Criterio atendido em 2026-07-23: B037 consolidou a obrigatoriedade tecnica no payload no wizard unico, registrou a decisao em memoria e deixou as Fases 1 e 2 do prototipo navegavel prontas para encerramento, sem `ApiPlan`, sem persistencia das escolhas e sem geracao de objetos de API.

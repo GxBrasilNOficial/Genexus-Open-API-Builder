@@ -163,7 +163,7 @@ Validar navegação, captura de decisões e cancelamento seguro sem persistir ne
 - `B034` (concluído): cancelamento seguro do wizard único foi validado manualmente no U15, descartando estado em memória sem `ApiPlan`, persistência ou escrita na KB
 - `B035` (concluído): Business Component foi verificado no wizard único, com avanço bloqueado sem BC e habilitação persistente somente após confirmação explícita no U15
 - `B036` (concluído): campos tecnicamente inadequados foram exibidos desabilitados, com motivo, contagens na Output e seleção impedida no wizard único no U15
-- `B037`: revisar e consolidar a obrigatoriedade técnica no payload
+- `B037` (concluído): obrigatoriedade técnica no payload foi consolidada para `CreateRequest` e `UpdateRequest` no wizard único no U15
 - manter as escolhas apenas em memória
 - avançar, voltar e cancelar sem alterar a KB, exceto pela habilitação explícita de `Business Component` em B035
 - exibir resumo não persistente das escolhas
@@ -172,7 +172,7 @@ Validar navegação, captura de decisões e cancelamento seguro sem persistir ne
 
 ## Gate
 
-Fases 1 e 2 do backlog cobertas pelo protótipo navegável, com escolhas em memória, sem criação de `ApiPlan` e sem geração de objetos de API. A habilitação de `Business Component` é o único efeito persistente admitido nesta sprint e exige confirmação explícita do usuário.
+Fases 1 e 2 do backlog cobertas e validadas no protótipo navegável, com escolhas em memória, sem criação de `ApiPlan` e sem geração de objetos de API. A habilitação de `Business Component` é o único efeito persistente admitido nesta sprint e exige confirmação explícita do usuário.
 
 [F07][SPR-F24]
 

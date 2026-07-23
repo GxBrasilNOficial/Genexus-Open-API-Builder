@@ -73,4 +73,4 @@ A Output observada confirmou `GuiaPed` com volume maior de campos bloqueados:
 
 ## Resultado
 
-Criterio atendido em 2026-07-23: B036 tornou campos tecnicamente inadequados visiveis, desabilitados, motivados e nao selecionaveis no wizard unico, com contagem na Output e resumo em memoria, sem `ApiPlan`, sem persistencia das escolhas e sem geracao de objetos de API. A base esta pronta para B037, que revisara a obrigatoriedade tecnica no payload.
+Criterio atendido em 2026-07-23: B036 tornou campos tecnicamente inadequados visiveis, desabilitados, motivados e nao selecionaveis no wizard unico, com contagem na Output e resumo em memoria, sem `ApiPlan`, sem persistencia das escolhas e sem geracao de objetos de API. B037 foi concluido posteriormente, consolidando a obrigatoriedade tecnica no payload para `CreateRequest` e `UpdateRequest`.
