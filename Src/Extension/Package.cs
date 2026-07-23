@@ -9,6 +9,7 @@ using Artech.Architecture.UI.Framework.Services;
 using Artech.Common.Framework.Commands;
 using Artech.Genexus.Common.Objects;
 using GenexusOpenApiBuilder.Extension.Diagnostics;
+using GenexusOpenApiBuilder.Extension.Domain;
 
 [assembly: Package(typeof(GenexusOpenApiBuilder.Extension.Package))]
 

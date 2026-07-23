@@ -17,7 +17,7 @@ Transformar as escolhas ja capturadas pelo wizard em uma representacao interna i
 
 ## Arquivos principais
 
-- `Src/Extension/Diagnostics/ApiPlan.cs`
+- `Src/Domain/ApiPlan.cs`
 - `Src/Extension/Package.cs`
 - `Src/Extension/PrototypeWizardDialog.cs`
 

@@ -20,6 +20,9 @@
     <EnableSourceLink>false</EnableSourceLink>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Domain\**\*.cs" LinkBase="Domain" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>

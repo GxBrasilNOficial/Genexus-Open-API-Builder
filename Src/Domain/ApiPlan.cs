@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Artech.Genexus.Common.Objects;
+using GenexusOpenApiBuilder.Extension.Diagnostics;
 
-namespace GenexusOpenApiBuilder.Extension.Diagnostics;
+namespace GenexusOpenApiBuilder.Extension.Domain;
 
 /// <summary>
 /// Monta o plano interno inicial da Sprint 3 a partir das decisoes do wizard.
