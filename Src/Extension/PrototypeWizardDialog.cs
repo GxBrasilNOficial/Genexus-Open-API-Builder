@@ -14,24 +14,27 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly PrototypeBusinessComponentSnapshot _businessComponentSnapshot;
     private readonly Func<bool> _enableBusinessComponent;
     private readonly Action<string> _writeBusinessComponentOutput;
-    private readonly CheckedListBox _servicesList = CreateCheckedListBox();
-    private readonly CheckedListBox _createFieldsList = CreateCheckedListBox();
-    private readonly CheckedListBox _updateFieldsList = CreateCheckedListBox();
-    private readonly CheckedListBox _responseFieldsList = CreateCheckedListBox();
-    private readonly CheckedListBox _filtersList = CreateCheckedListBox();
+    private readonly FlowLayoutPanel _servicesList = CreateChoicePanel();
+    private readonly FlowLayoutPanel _createFieldsList = CreateChoicePanel();
+    private readonly FlowLayoutPanel _updateFieldsList = CreateChoicePanel();
+    private readonly FlowLayoutPanel _responseFieldsList = CreateChoicePanel();
+    private readonly FlowLayoutPanel _filtersList = CreateChoicePanel();
     private readonly TextBox _apiNameText = CreateSingleLineTextBox();
     private readonly TextBox _servicesBasePathText = CreateSingleLineTextBox();
     private readonly TextBox _restPathText = CreateSingleLineTextBox();
     private readonly TextBox _endpointsText = CreateReadOnlyTextBox();
-    private readonly ComboBox _securityLevelCombo = new() { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Top };
+    private readonly RadioButton _securityAuthenticationRadio = new() { AutoSize = true, Text = "Authentication", Checked = true, Margin = new Padding(0, 2, 18, 2) };
+    private readonly RadioButton _securityAuthorizationRadio = new() { AutoSize = true, Text = "Authorization", Margin = new Padding(0, 2, 18, 2) };
+    private readonly RadioButton _securityNoneRadio = new() { AutoSize = true, Text = "None", Margin = new Padding(0, 2, 18, 2) };
     private readonly NumericUpDown _defaultPageSize = CreateNumericInput();
     private readonly NumericUpDown _maximumPageSize = CreateNumericInput();
     private readonly ListBox _staticOrderList = new() { Dock = DockStyle.Fill, HorizontalScrollbar = true, IntegralHeight = false };
     private readonly TextBox _requiredText = CreateReadOnlyTextBox();
     private readonly TextBox _businessComponentText = CreateReadOnlyTextBox();
     private readonly CheckBox _enableBusinessComponentCheck = new() { AutoSize = true, Text = "Habilitar Business Component agora", Dock = DockStyle.Top };
-    private readonly TextBox _summaryText = CreateReadOnlyTextBox();
-    private readonly TabControl _tabs = new() { Dock = DockStyle.Fill };
+    private readonly TextBox _summaryDecisionText = CreateReadOnlyTextBox();
+    private readonly TextBox _summaryEndpointText = CreateReadOnlyTextBox();
+    private readonly TabControl _tabs = new() { Dock = DockStyle.Fill, Multiline = true };
 
     private Button? _nextButton;
     private bool _showingSummary;
@@ -94,15 +97,15 @@ internal sealed class PrototypeWizardDialog : Form
             AutoSize = true,
             Dock = DockStyle.Fill,
             Font = new Font(Font, FontStyle.Bold),
-            Text = $"Wizard prototipico: Transaction '{_snapshot.TransactionName}' | Module '{_snapshot.ModuleName}'",
+            Text = $"Wizard prototípico: Transaction '{_snapshot.TransactionName}' | Module '{_snapshot.ModuleName}'",
             Padding = new Padding(0, 0, 0, 8),
         };
         root.Controls.Add(header, 0, 0);
 
-        _tabs.TabPages.Add(CreateListTab("Servicos", _servicesList, "Servicos REST do MVP. Todos iniciam habilitados."));
+        _tabs.TabPages.Add(CreateListTab("Serviços", _servicesList, "Serviços REST do MVP. Todos iniciam habilitados."));
         _tabs.TabPages.Add(CreateRequestTab());
         _tabs.TabPages.Add(CreateListTab("Response", _responseFieldsList, "Campos devolvidos no response principal."));
-        _tabs.TabPages.Add(CreateListTab("Filtros List", _filtersList, "Filtros candidatos para o servico List."));
+        _tabs.TabPages.Add(CreateFilterTab());
         _tabs.TabPages.Add(CreatePathsTab());
         _tabs.TabPages.Add(CreateSecurityTab());
         _tabs.TabPages.Add(CreatePaginationTab());
@@ -120,7 +123,7 @@ internal sealed class PrototypeWizardDialog : Form
             Padding = new Padding(0, 10, 0, 0),
         };
 
-        var next = CreateButton("Proximo");
+        var next = CreateButton("Próximo");
         _nextButton = next;
         next.Click += (_, _) => AcceptSelection();
         var cancel = CreateButton("Cancelar");
@@ -148,25 +151,59 @@ internal sealed class PrototypeWizardDialog : Form
         };
     }
 
-    private static CheckedListBox CreateCheckedListBox()
+    private static FlowLayoutPanel CreateChoicePanel()
     {
-        var list = new CheckedListBox
+        var panel = new FlowLayoutPanel
         {
-            CheckOnClick = true,
             Dock = DockStyle.Fill,
-            HorizontalScrollbar = true,
-            IntegralHeight = false,
+            AutoScroll = true,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
         };
-        list.ItemCheck += (_, args) =>
-        {
-            if (args.Index >= 0 && list.Items[args.Index] is ChoiceItem item && !item.Enabled)
-            {
-                args.NewValue = CheckState.Unchecked;
-            }
-        };
-        return list;
+        panel.Resize += (_, _) => ResizeChoicePanelItems(panel);
+        return panel;
     }
 
+    private static void AddChoice(FlowLayoutPanel panel, ChoiceItem item, bool selected)
+    {
+        var check = new CheckBox
+        {
+            AutoSize = false,
+            AutoEllipsis = false,
+            CheckAlign = ContentAlignment.TopLeft,
+            TextAlign = ContentAlignment.TopLeft,
+            Text = item.ToString(),
+            Tag = item,
+            AutoCheck = item.Enabled,
+            Checked = item.Enabled && selected,
+            ForeColor = item.Enabled ? SystemColors.ControlText : SystemColors.ControlDarkDark,
+            TabStop = item.Enabled,
+            Margin = new Padding(0, 2, 0, 2),
+        };
+        panel.Controls.Add(check);
+        ResizeChoice(check, panel);
+    }
+
+    private static void ResizeChoicePanelItems(FlowLayoutPanel panel)
+    {
+        foreach (var check in panel.Controls.OfType<CheckBox>())
+        {
+            ResizeChoice(check, panel);
+        }
+    }
+
+    private static void ResizeChoice(CheckBox check, FlowLayoutPanel panel)
+    {
+        var width = Math.Max(80, panel.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - 8);
+        var textWidth = Math.Max(40, width - 22);
+        var measured = TextRenderer.MeasureText(
+            check.Text,
+            check.Font,
+            new Size(textWidth, int.MaxValue),
+            TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix);
+        check.Width = width;
+        check.Height = Math.Max(22, measured.Height + 8);
+    }
     private static TextBox CreateSingleLineTextBox()
     {
         return new TextBox { Dock = DockStyle.Top };
@@ -180,7 +217,7 @@ internal sealed class PrototypeWizardDialog : Form
             Multiline = true,
             ReadOnly = true,
             ScrollBars = ScrollBars.Vertical,
-            WordWrap = false,
+            WordWrap = true,
         };
     }
 
@@ -188,7 +225,8 @@ internal sealed class PrototypeWizardDialog : Form
     {
         return new NumericUpDown
         {
-            Dock = DockStyle.Top,
+            Anchor = AnchorStyles.Left,
+            Width = 120,
             Minimum = 1,
             Maximum = 100000,
         };
@@ -230,6 +268,24 @@ internal sealed class PrototypeWizardDialog : Form
         return tab;
     }
 
+    private TabPage CreateFilterTab()
+    {
+        var tab = new TabPage("Filtros List");
+        var panel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Padding = new Padding(8),
+        };
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Filtros candidatos para o serviço List.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(_filtersList, 0, 1);
+        tab.Controls.Add(panel);
+        return tab;
+    }
+
     private TabPage CreatePathsTab()
     {
         var tab = new TabPage("Paths");
@@ -258,14 +314,14 @@ internal sealed class PrototypeWizardDialog : Form
         AddField(fields, 2, "RestPath", _restPathText);
 
         panel.Controls.Add(fields, 0, 0);
-        panel.Controls.Add(CreateGroup("Paths dos servicos", _endpointsText), 0, 1);
+        panel.Controls.Add(CreateGroup("Paths dos serviços", _endpointsText), 0, 1);
         tab.Controls.Add(panel);
         return tab;
     }
 
     private TabPage CreateSecurityTab()
     {
-        var tab = new TabPage("Seguranca");
+        var tab = new TabPage("Segurança");
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -276,16 +332,34 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Security Level unico aplicado aos servicos gerados no MVP.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
-        panel.Controls.Add(_securityLevelCombo, 0, 1);
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Authentication inicia selecionado por seguranca. None permanece apenas como decisao prototipica nesta etapa.", Padding = new Padding(0, 12, 0, 0) }, 0, 2);
+
+        var options = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            Dock = DockStyle.Top,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = true,
+        };
+        options.Controls.Add(_securityAuthenticationRadio);
+        options.Controls.Add(_securityAuthorizationRadio);
+        options.Controls.Add(_securityNoneRadio);
+
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Security Level único aplicado aos serviços gerados no MVP.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(options, 0, 1);
+        panel.Controls.Add(new Label
+        {
+            AutoSize = false,
+            Dock = DockStyle.Fill,
+            Text = "Authentication inicia selecionado por segurança. Authorization exige permissões GAM coerentes. None deixa a API pública e exigirá confirmação antes da geração.",
+            Padding = new Padding(0, 12, 0, 0),
+        }, 0, 2);
         tab.Controls.Add(panel);
         return tab;
     }
 
     private TabPage CreatePaginationTab()
     {
-        var tab = new TabPage("Paginacao");
+        var tab = new TabPage("Paginação");
         var fields = new TableLayoutPanel
         {
             Dock = DockStyle.Top,
@@ -295,7 +369,7 @@ internal sealed class PrototypeWizardDialog : Form
             Padding = new Padding(8),
         };
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
-        fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
         AddField(fields, 0, "Default Page Size", _defaultPageSize);
         AddField(fields, 1, "Maximum Page Size", _maximumPageSize);
         tab.Controls.Add(fields);
@@ -304,7 +378,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private TabPage CreateOrderTab()
     {
-        var tab = new TabPage("Ordenacao");
+        var tab = new TabPage("Ordenação");
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -314,7 +388,7 @@ internal sealed class PrototypeWizardDialog : Form
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Ordenacao estatica inicial. A chave primaria completa e acrescentada como desempate ascendente.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Ordenação estática inicial. A chave primária completa é acrescentada como desempate ascendente.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
         panel.Controls.Add(_staticOrderList, 0, 1);
         tab.Controls.Add(panel);
         return tab;
@@ -322,7 +396,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private TabPage CreateRequiredTab()
     {
-        var tab = new TabPage("Obrigatorios");
+        var tab = new TabPage("Obrigatórios");
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -332,7 +406,7 @@ internal sealed class PrototypeWizardDialog : Form
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Obrigatorio no payload significa presenca do membro no JSON, nao valor nao vazio.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Obrigatório no payload significa presença do membro no JSON, não valor não vazio.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
         panel.Controls.Add(_requiredText, 0, 1);
         tab.Controls.Add(panel);
         return tab;
@@ -351,7 +425,7 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Business Component e obrigatorio para gerar a API do MVP preservando regras via BC.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Business Component é obrigatório para gerar a API do MVP preservando regras via BC.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
         panel.Controls.Add(_enableBusinessComponentCheck, 0, 1);
         panel.Controls.Add(_businessComponentText, 0, 2);
         tab.Controls.Add(panel);
@@ -360,7 +434,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private TabPage CreateSummaryTab()
     {
-        var tab = new TabPage("Resumo B035");
+        var tab = new TabPage("Resumo B036");
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -370,8 +444,20 @@ internal sealed class PrototypeWizardDialog : Form
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Resumo das decisoes acumuladas apos validacao de Business Component.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
-        panel.Controls.Add(_summaryText, 0, 1);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Resumo das decisões acumuladas após exposição de bloqueios e validação de Business Component.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+
+        var split = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+        };
+        split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        split.Controls.Add(CreateGroup("Decisões", _summaryDecisionText), 0, 0);
+        split.Controls.Add(CreateGroup("Endpoints e garantias", _summaryEndpointText), 1, 0);
+
+        panel.Controls.Add(split, 0, 1);
         tab.Controls.Add(panel);
         return tab;
     }
@@ -418,9 +504,6 @@ internal sealed class PrototypeWizardDialog : Form
         _servicesBasePathEditedManually = false;
         _loadingSnapshot = false;
 
-        _securityLevelCombo.Items.Add("Authentication");
-        _securityLevelCombo.Items.Add("None");
-        _securityLevelCombo.SelectedItem = "Authentication";
         _defaultPageSize.Value = 50;
         _maximumPageSize.Value = 200;
 
@@ -468,12 +551,12 @@ internal sealed class PrototypeWizardDialog : Form
 
         if (attribute.IsSensitive)
         {
-            markers.Add("Sensivel");
+            markers.Add("Sensível");
         }
 
         if (attribute.IsFormula)
         {
-            markers.Add("Formula");
+            markers.Add("Fórmula");
         }
 
         if (attribute.IsAudit)
@@ -496,7 +579,7 @@ internal sealed class PrototypeWizardDialog : Form
         var options = new List<string> { attribute.FilterOperator };
         if (attribute.UsesPeriod)
         {
-            options.Add("Periodo");
+            options.Add("Período");
         }
 
         if (attribute.UsesRange)
@@ -505,11 +588,6 @@ internal sealed class PrototypeWizardDialog : Form
         }
 
         return baseText + " -> " + string.Join(" / ", options);
-    }
-
-    private static void AddChoice(CheckedListBox list, ChoiceItem item, bool selected)
-    {
-        list.Items.Add(item, item.Enabled && selected);
     }
 
     private void AcceptSelection()
@@ -526,7 +604,7 @@ internal sealed class PrototypeWizardDialog : Form
             RefreshEndpointsText();
         }
 
-        if (_tabs.SelectedTab?.Text == "Obrigatorios")
+        if (_tabs.SelectedTab?.Text == "Obrigatórios")
         {
             RefreshRequiredText();
         }
@@ -539,7 +617,7 @@ internal sealed class PrototypeWizardDialog : Form
         if (_tabs.SelectedIndex < _tabs.TabPages.Count - 2)
         {
             _tabs.SelectedIndex++;
-            if (_tabs.SelectedTab?.Text == "Obrigatorios")
+            if (_tabs.SelectedTab?.Text == "Obrigatórios")
             {
                 RefreshRequiredText();
             }
@@ -555,12 +633,21 @@ internal sealed class PrototypeWizardDialog : Form
         ShowSummary();
     }
 
+    private string GetSelectedSecurityLevel()
+    {
+        if (_securityAuthorizationRadio.Checked)
+        {
+            return "Authorization";
+        }
+
+        return _securityNoneRadio.Checked ? "None" : "Authentication";
+    }
     private bool TryCreateSelection()
     {
         var selectedServices = GetCheckedValues(_servicesList);
         if (selectedServices.Count == 0)
         {
-            MessageBox.Show(this, "Selecione ao menos um servico.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, "Selecione ao menos um serviço.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return false;
         }
 
@@ -597,7 +684,7 @@ internal sealed class PrototypeWizardDialog : Form
             apiName,
             servicesBasePath,
             restPath,
-            _securityLevelCombo.SelectedItem?.ToString() ?? "Authentication",
+            GetSelectedSecurityLevel(),
             (int)_defaultPageSize.Value,
             (int)_maximumPageSize.Value,
             GetStaticOrder());
@@ -619,22 +706,30 @@ internal sealed class PrototypeWizardDialog : Form
         var createRequired = Selection.RequiredFields.Count(item => item.RequestName == "CreateRequest" && item.IsRequired);
         var updateRequired = Selection.RequiredFields.Count(item => item.RequestName == "UpdateRequest" && item.IsRequired);
         var businessComponent = Selection.BusinessComponentSelection;
-        _summaryText.Text =
+        var createBlocked = CountBlocked(_createFieldsList);
+        var updateBlocked = CountBlocked(_updateFieldsList);
+        var filterBlocked = CountBlocked(_filtersList);
+        _summaryDecisionText.Text =
             $"Transaction: {contract.TransactionName}{Environment.NewLine}" +
-            $"Servicos: {string.Join(", ", contract.SelectedServices)}{Environment.NewLine}" +
-            $"CreateRequest: {contract.CreateFields.Count} campo(s), {createRequired} obrigatorio(s) no payload{Environment.NewLine}" +
-            $"UpdateRequest: {contract.UpdateFields.Count} campo(s), {updateRequired} obrigatorio(s) no payload{Environment.NewLine}" +
+            $"Serviços: {string.Join(", ", contract.SelectedServices)}{Environment.NewLine}" +
+            $"CreateRequest: {contract.CreateFields.Count} campo(s), {createRequired} obrigatório(s) no payload{Environment.NewLine}" +
+            $"UpdateRequest: {contract.UpdateFields.Count} campo(s), {updateRequired} obrigatório(s) no payload{Environment.NewLine}" +
             $"Response: {contract.ResponseFields.Count} campo(s){Environment.NewLine}" +
             $"ListFilters: {contract.ListFilters.Count} filtro(s){Environment.NewLine}" +
             $"ApiName: {review.ApiName}{Environment.NewLine}" +
             $"Services base path: {review.ServicesBasePath}{Environment.NewLine}" +
             $"RestPath: {review.RestPath}{Environment.NewLine}" +
             $"Security Level: {review.SecurityLevel}{Environment.NewLine}" +
-            $"Paginacao: Default={review.DefaultPageSize}, Maximum={review.MaximumPageSize}{Environment.NewLine}" +
-            $"Ordenacao: {string.Join(", ", review.StaticOrder.Select(item => item.AttributeName + " " + item.Direction))}{Environment.NewLine}" +
-            $"Business Component: IsBusinessComponent={businessComponent.IsBusinessComponent}, Status='{businessComponent.Status}', EnabledDuringWizard={businessComponent.EnabledDuringWizard}{Environment.NewLine}{Environment.NewLine}" +
+            $"Paginação: Default={review.DefaultPageSize}, Maximum={review.MaximumPageSize}{Environment.NewLine}" +
+            $"Ordenação: {string.Join(", ", review.StaticOrder.Select(item => item.AttributeName + " " + item.Direction))}{Environment.NewLine}" +
+            $"B036 bloqueados visíveis: CreateRequest={createBlocked}, UpdateRequest={updateBlocked}, ListFilters={filterBlocked}{Environment.NewLine}" +
+            $"Business Component: IsBusinessComponent={businessComponent.IsBusinessComponent}, Status='{businessComponent.Status}', EnabledDuringWizard={businessComponent.EnabledDuringWizard}";
+        _summaryEndpointText.Text =
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
-            "B035 validou Business Component no fluxo do wizard. Nenhum ApiPlan foi criado, nenhuma escolha foi persistida e nenhum objeto foi criado, alterado ou excluido pela geracao.";
+            "B036 exibiu campos bloqueados com motivo no fluxo do wizard." + Environment.NewLine +
+            "Nenhum ApiPlan foi criado." + Environment.NewLine +
+            "Nenhuma escolha foi persistida." + Environment.NewLine +
+            "Nenhum objeto foi criado, alterado ou excluído pela geração.";
         _showingSummary = true;
         _tabs.SelectedIndex = _tabs.TabPages.Count - 1;
         if (_nextButton is not null)
@@ -650,7 +745,7 @@ internal sealed class PrototypeWizardDialog : Form
             _tabs.SelectedIndex = _tabs.TabPages.Count - 2;
             if (_nextButton is not null)
             {
-                _nextButton.Text = "Proximo";
+                _nextButton.Text = "Próximo";
             }
             return;
         }
@@ -698,7 +793,7 @@ internal sealed class PrototypeWizardDialog : Form
             }
             else
             {
-                lines.Add(service + " <nao definido> " + restPath);
+                lines.Add(service + " <não definido> " + restPath);
             }
         }
         return string.Join(Environment.NewLine, lines);
@@ -733,7 +828,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"Transaction: {_businessComponentSnapshot.TransactionName}{Environment.NewLine}" +
             $"IsBusinessComponent: {IsBusinessComponentReady()}{Environment.NewLine}" +
             $"Status: {effectiveStatus}{Environment.NewLine}{Environment.NewLine}" +
-            "Sem Business Component, o MVP bloqueia a geracao da API. A habilitacao exige confirmacao explicita e altera a Transaction na KB; cancelar o wizard depois disso nao reverte automaticamente a propriedade.";
+            "Sem Business Component, o MVP bloqueia a geração da API. A habilitação exige confirmação explícita e altera a Transaction na KB; cancelar o wizard depois disso não reverte automaticamente a propriedade.";
         _enableBusinessComponentCheck.Enabled = !_businessComponentSnapshot.IsBusinessComponent && !_businessComponentEnabledDuringWizard;
         _enableBusinessComponentCheck.Visible = !_businessComponentSnapshot.IsBusinessComponent;
     }
@@ -748,14 +843,14 @@ internal sealed class PrototypeWizardDialog : Form
         if (!_enableBusinessComponentCheck.Checked)
         {
             _writeBusinessComponentOutput($"[Genexus Open API Builder][B035] Transaction='{_businessComponentSnapshot.TransactionName}' bloqueada: Business Component desabilitado e habilitacao explicita nao confirmada. Nenhum ApiPlan foi criado e nenhuma alteracao foi feita na KB.");
-            MessageBox.Show(this, "Business Component esta desabilitado. Marque a habilitacao explicita para continuar ou cancele o wizard.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, "Business Component está desabilitado. Marque a habilitação explícita para continuar ou cancele o wizard.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             RefreshBusinessComponentText();
             return false;
         }
 
         var confirmation = MessageBox.Show(
             this,
-            $"Habilitar Business Component altera a Transaction '{_businessComponentSnapshot.TransactionName}' na KB. A alteracao nao sera revertida automaticamente ao cancelar o wizard ou remover a extensao. Deseja habilitar agora?",
+            $"Habilitar Business Component altera a Transaction '{_businessComponentSnapshot.TransactionName}' na KB. A alteração não será revertida automaticamente ao cancelar o wizard ou remover a extensão. Deseja habilitar agora?",
             Text,
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Warning,
@@ -773,7 +868,7 @@ internal sealed class PrototypeWizardDialog : Form
             if (!_enableBusinessComponent())
             {
                 _writeBusinessComponentOutput($"[Genexus Open API Builder][B035] Falha ao confirmar Business Component habilitado para Transaction='{_businessComponentSnapshot.TransactionName}' apos gravacao.");
-                MessageBox.Show(this, "Nao foi possivel confirmar Business Component habilitado apos a gravacao.", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, "Não foi possível confirmar Business Component habilitado após a gravação.", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 RefreshBusinessComponentText();
                 return false;
             }
@@ -826,7 +921,7 @@ internal sealed class PrototypeWizardDialog : Form
             .Select(name => CreateRequiredDecision(name))
             .ToArray();
         var update = selection.UpdateFields
-            .Select(name => new PrototypeWizardRequiredFieldDecision("UpdateRequest", name, true, "Update via PUT exige presenca de todo membro selecionado."))
+            .Select(name => new PrototypeWizardRequiredFieldDecision("UpdateRequest", name, true, "Update via PUT exige presença de todo membro selecionado."))
             .ToArray();
         return create.Concat(update).ToArray();
     }
@@ -835,7 +930,7 @@ internal sealed class PrototypeWizardDialog : Form
         var attribute = _snapshot.Attributes.Single(item => string.Equals(item.Name, fieldName, StringComparison.Ordinal));
         if (attribute.IsSensitive)
         {
-            return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, false, "Campo sensivel selecionado permanece opcional no prototipo.");
+            return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, false, "Campo sensível selecionado permanece opcional no protótipo.");
         }
         if (attribute.IsNullable)
         {
@@ -843,13 +938,22 @@ internal sealed class PrototypeWizardDialog : Form
         }
         return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, true, "Campo selecionado sem nulabilidade conhecida deve estar presente no JSON.");
     }
-    private static IReadOnlyList<string> GetCheckedValues(CheckedListBox list)
+    private static IReadOnlyList<string> GetCheckedValues(FlowLayoutPanel panel)
     {
-        return list.CheckedItems
-            .OfType<ChoiceItem>()
-            .Select(item => item.Value)
+        return panel.Controls
+            .OfType<CheckBox>()
+            .Where(control => control.Checked && control.Tag is ChoiceItem)
+            .Select(control => ((ChoiceItem)control.Tag).Value)
             .ToArray();
     }
+    private static int CountBlocked(FlowLayoutPanel panel)
+    {
+        return panel.Controls
+            .OfType<CheckBox>()
+            .Select(control => control.Tag as ChoiceItem)
+            .Count(item => item is not null && !item.Enabled);
+    }
+
     private static string ToKebabCase(string value)
     {
         var builder = new StringBuilder(value.Length);
@@ -901,7 +1005,7 @@ internal sealed class PrototypeWizardDialog : Form
                 return Label;
             }
 
-            return Label + " (bloqueado: " + DisabledReason + ")";
+            return Label + " [Bloqueado - Motivo: " + DisabledReason + "]";
         }
     }
 }

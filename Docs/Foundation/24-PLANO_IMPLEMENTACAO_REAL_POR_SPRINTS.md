@@ -162,7 +162,8 @@ Validar navegação, captura de decisões e cancelamento seguro sem persistir ne
 - `B033` (concluído): campos obrigatórios foram incorporados ao wizard único aberto por B030 e validados manualmente no U15 sem persistência e sem escrita pela extensão
 - `B034` (concluído): cancelamento seguro do wizard único foi validado manualmente no U15, descartando estado em memória sem `ApiPlan`, persistência ou escrita na KB
 - `B035` (concluído): Business Component foi verificado no wizard único, com avanço bloqueado sem BC e habilitação persistente somente após confirmação explícita no U15
-- `B036`–`B037`: navegar pelos passos de campos tecnicamente inadequados e obrigatoriedade técnica no payload
+- `B036` (concluído): campos tecnicamente inadequados foram exibidos desabilitados, com motivo, contagens na Output e seleção impedida no wizard único no U15
+- `B037`: revisar e consolidar a obrigatoriedade técnica no payload
 - manter as escolhas apenas em memória
 - avançar, voltar e cancelar sem alterar a KB, exceto pela habilitação explícita de `Business Component` em B035
 - exibir resumo não persistente das escolhas

@@ -67,4 +67,6 @@ O GeneXus disparou a verificacao/geracao do pattern `WorkWithWebContrato` e reca
 
 ## Resultado
 
-Criterio atendido em 2026-07-22: B035 incorporou `Business Component` ao wizard unico, bloqueou Transaction sem BC, gravou BC apenas com confirmacao explicita e manteve as demais decisoes somente em memoria, sem `ApiPlan` e sem geracao de objetos de API. A base esta pronta para B036, que exibira campos tecnicamente inadequados desabilitados com motivo.
+Criterio atendido em 2026-07-22: B035 incorporou `Business Component` ao wizard unico, bloqueou Transaction sem BC, gravou BC apenas com confirmacao explicita e manteve as demais decisoes somente em memoria, sem `ApiPlan` e sem geracao de objetos de API.
+
+Nota posterior: B036 foi concluido em seguida e passou a exibir campos tecnicamente inadequados desabilitados com motivo dentro do mesmo wizard unico.

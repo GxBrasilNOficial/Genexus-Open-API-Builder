@@ -148,8 +148,9 @@ O wizard possui um único campo `Security Level`, aplicado inicialmente a todos 
 
 KB com GAM:
 
-- opções `Authentication` e `None`
+- opções oficiais `Authentication`, `Authorization` e `None`
 - `Authentication` selecionada por padrão
+- `Authorization` exige permissões GAM coerentes antes da geração definitiva
 - `None` exige confirmação explícita
 
 KB sem GAM:
@@ -159,7 +160,7 @@ KB sem GAM:
 
 O valor deve ser gravado explicitamente em todos os serviços. O MVP não oferece configuração diferente por serviço.
 
-Autorização detalhada e permissões ficam para evolução posterior.
+`SecurityPermission` granular por serviço fica para evolução posterior.
 
 ---
 

@@ -141,11 +141,13 @@ A emenda preserva o objetivo funcional — extensão dentro da IDE que gera obje
 ## Segurança
 
 - O wizard terá um único campo `Security Level`, aplicado inicialmente a todos os serviços gerados.
-- Em KB com GAM, as opções do MVP serão `Authentication`, selecionada por padrão, e `None`. Escolher `None` exigirá confirmação explícita antes da geração.
+- Em KB com GAM, o wizard exibirá os valores oficiais de `SecurityLevel`: `Authentication`, `Authorization` e `None`; `Authentication` permanecerá selecionada por padrão.
+- Escolher `Authorization` exigirá permissões GAM coerentes antes da geração definitiva.
+- Escolher `None` exigirá confirmação explícita antes da geração.
 - Em KB sem GAM, `None` será o único valor aplicável e o wizard exibirá aviso explícito de que a API será gerada sem autenticação.
 - O valor será gravado explicitamente em cada serviço; a API não poderá ficar silenciosamente pública por causa do padrão implícito `None` do GeneXus.
 - O MVP não permitirá níveis diferentes para `List`, `Get`, `Create` e `Update`.
-- `Authorization` e `SecurityPermission` ficarão para uma evolução posterior, com permissões coerentes e possivelmente distintas para leitura, criação e alteração.
+- `SecurityPermission` granular por serviço ficará para evolução posterior, com permissões coerentes e possivelmente distintas para leitura, criação e alteração.
 
 ## Paginação e ordenação
 
