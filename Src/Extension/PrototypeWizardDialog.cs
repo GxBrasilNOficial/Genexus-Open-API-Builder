@@ -29,11 +29,20 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly NumericUpDown _defaultPageSize = CreateNumericInput();
     private readonly NumericUpDown _maximumPageSize = CreateNumericInput();
     private readonly ListBox _staticOrderList = new() { Dock = DockStyle.Fill, HorizontalScrollbar = true, IntegralHeight = false };
-    private readonly TextBox _requiredText = CreateReadOnlyTextBox();
+    private readonly TextBox _createRequiredText = CreateReadOnlyTextBox();
+    private readonly TextBox _updateRequiredText = CreateReadOnlyTextBox();
     private readonly TextBox _businessComponentText = CreateReadOnlyTextBox();
     private readonly CheckBox _enableBusinessComponentCheck = new() { AutoSize = true, Text = "Habilitar Business Component agora", Dock = DockStyle.Top };
     private readonly TextBox _summaryDecisionText = CreateReadOnlyTextBox();
     private readonly TextBox _summaryEndpointText = CreateReadOnlyTextBox();
+    private readonly Label _headerLabel = new()
+    {
+        AutoSize = true,
+        Dock = DockStyle.Fill,
+        Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold),
+        Padding = new Padding(0, 0, 0, 8),
+        TextAlign = ContentAlignment.MiddleLeft,
+    };
     private readonly TabControl _tabs = new() { Dock = DockStyle.Fill, Multiline = true };
 
     private Button? _nextButton;
@@ -92,15 +101,7 @@ internal sealed class PrototypeWizardDialog : Form
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         Controls.Add(root);
 
-        var header = new Label
-        {
-            AutoSize = true,
-            Dock = DockStyle.Fill,
-            Font = new Font(Font, FontStyle.Bold),
-            Text = $"Wizard prototípico: Transaction '{_snapshot.TransactionName}' | Module '{_snapshot.ModuleName}'",
-            Padding = new Padding(0, 0, 0, 8),
-        };
-        root.Controls.Add(header, 0, 0);
+        root.Controls.Add(_headerLabel, 0, 0);
 
         _tabs.TabPages.Add(CreateListTab("Serviços", _servicesList, "Serviços REST do MVP. Todos iniciam habilitados."));
         _tabs.TabPages.Add(CreateRequestTab());
@@ -113,6 +114,8 @@ internal sealed class PrototypeWizardDialog : Form
         _tabs.TabPages.Add(CreateRequiredTab());
         _tabs.TabPages.Add(CreateBusinessComponentTab());
         _tabs.TabPages.Add(CreateSummaryTab());
+        _tabs.SelectedIndexChanged += (_, _) => RefreshCurrentTabLabel();
+        RefreshCurrentTabLabel();
         root.Controls.Add(_tabs, 0, 1);
 
         var buttons = new FlowLayoutPanel
@@ -140,6 +143,23 @@ internal sealed class PrototypeWizardDialog : Form
         CancelButton = cancel;
     }
 
+    private void RefreshCurrentTabLabel()
+    {
+        var selectedPage = _tabs.SelectedTab;
+        if (selectedPage is null && _tabs.SelectedIndex >= 0 && _tabs.SelectedIndex < _tabs.TabPages.Count)
+        {
+            selectedPage = _tabs.TabPages[_tabs.SelectedIndex];
+        }
+
+        if (selectedPage is null && _tabs.TabPages.Count > 0)
+        {
+            selectedPage = _tabs.TabPages[0];
+        }
+
+        var tabName = selectedPage?.Text;
+        var currentTab = string.IsNullOrWhiteSpace(tabName) ? "<nenhuma>" : tabName;
+        _headerLabel.Text = $"Wizard prototípico: Module '{_snapshot.ModuleName}' | Transaction '{_snapshot.TransactionName}' | Aba atual: {currentTab}";
+    }
     private static Button CreateButton(string text)
     {
         return new Button
@@ -401,15 +421,39 @@ internal sealed class PrototypeWizardDialog : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 2,
+            RowCount = 3,
             Padding = new Padding(8),
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Obrigatório no payload significa presença do membro no JSON, não valor não vazio.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
-        panel.Controls.Add(_requiredText, 0, 1);
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Required significa presença do membro no JSON; vazio, false e 0 continuam valores enviados e validados pelo BC.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+
+        var createGroup = new GroupBox
+        {
+            Dock = DockStyle.Fill,
+            Text = "CreateRequest - Obrigatório no payload",
+            Padding = new Padding(8),
+        };
+        createGroup.Controls.Add(_createRequiredText);
+
+        var updateGroup = new GroupBox
+        {
+            Dock = DockStyle.Fill,
+            Text = "UpdateRequest - Obrigatório no payload",
+            Padding = new Padding(8),
+        };
+        updateGroup.Controls.Add(_updateRequiredText);
+
+        panel.Controls.Add(createGroup, 0, 1);
+        panel.Controls.Add(updateGroup, 0, 2);
         tab.Controls.Add(panel);
         return tab;
+    }
+
+    private static string FormatRequiredDecision(PrototypeWizardRequiredFieldDecision item)
+    {
+        return $"{item.FieldName}: Required={item.IsRequired} | {item.Reason}";
     }
 
     private TabPage CreateBusinessComponentTab()
@@ -434,7 +478,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private TabPage CreateSummaryTab()
     {
-        var tab = new TabPage("Resumo B036");
+        var tab = new TabPage("Resumo B037");
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -714,6 +758,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"Serviços: {string.Join(", ", contract.SelectedServices)}{Environment.NewLine}" +
             $"CreateRequest: {contract.CreateFields.Count} campo(s), {createRequired} obrigatório(s) no payload{Environment.NewLine}" +
             $"UpdateRequest: {contract.UpdateFields.Count} campo(s), {updateRequired} obrigatório(s) no payload{Environment.NewLine}" +
+            $"Required: presença do membro JSON; não exige valor não vazio{Environment.NewLine}" +
             $"Response: {contract.ResponseFields.Count} campo(s){Environment.NewLine}" +
             $"ListFilters: {contract.ListFilters.Count} filtro(s){Environment.NewLine}" +
             $"ApiName: {review.ApiName}{Environment.NewLine}" +
@@ -727,6 +772,7 @@ internal sealed class PrototypeWizardDialog : Form
         _summaryEndpointText.Text =
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
             "B036 exibiu campos bloqueados com motivo no fluxo do wizard." + Environment.NewLine +
+            "B037 consolidou Required como presença do membro JSON, distinguindo de valor não vazio." + Environment.NewLine +
             "Nenhum ApiPlan foi criado." + Environment.NewLine +
             "Nenhuma escolha foi persistida." + Environment.NewLine +
             "Nenhum objeto foi criado, alterado ou excluído pela geração.";
@@ -912,8 +958,12 @@ internal sealed class PrototypeWizardDialog : Form
             GetCheckedValues(_responseFieldsList),
             GetCheckedValues(_filtersList));
         var decisions = GetRequiredDecisions(selection);
-        var lines = decisions.Select(item => $"{item.RequestName}: {item.FieldName} -> Required={item.IsRequired} ({item.Reason})");
-        _requiredText.Text = string.Join(Environment.NewLine, lines);
+        _createRequiredText.Text = string.Join(Environment.NewLine, decisions
+            .Where(item => item.RequestName == "CreateRequest")
+            .Select(FormatRequiredDecision));
+        _updateRequiredText.Text = string.Join(Environment.NewLine, decisions
+            .Where(item => item.RequestName == "UpdateRequest")
+            .Select(FormatRequiredDecision));
     }
     private IReadOnlyList<PrototypeWizardRequiredFieldDecision> GetRequiredDecisions(PrototypeWizardContractSelection selection)
     {
@@ -930,13 +980,13 @@ internal sealed class PrototypeWizardDialog : Form
         var attribute = _snapshot.Attributes.Single(item => string.Equals(item.Name, fieldName, StringComparison.Ordinal));
         if (attribute.IsSensitive)
         {
-            return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, false, "Campo sensível selecionado permanece opcional no protótipo.");
+            return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, false, "Campo sensível selecionado permanece opcional no protótipo; se enviado, o valor é validado pelo BC.");
         }
         if (attribute.IsNullable)
         {
-            return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, false, "Campo nullable pode ser omitido; valor vazio presente continua sujeito ao BC.");
+            return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, false, "Campo nullable pode ser omitido; valor vazio presente continua valor enviado e sujeito ao BC.");
         }
-        return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, true, "Campo selecionado sem nulabilidade conhecida deve estar presente no JSON.");
+        return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, true, "Campo selecionado sem nulabilidade conhecida deve estar presente no JSON; isso não exige valor não vazio.");
     }
     private static IReadOnlyList<string> GetCheckedValues(FlowLayoutPanel panel)
     {
