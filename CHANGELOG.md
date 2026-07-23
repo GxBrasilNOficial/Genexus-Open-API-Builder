@@ -45,6 +45,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B035 validado no U15: wizard único verifica `Business Component`, bloqueia avanço sem BC e habilita a propriedade somente com confirmação explícita, mantendo decisões apenas em memória e sem criar `ApiPlan`
 - B036 validado no U15: wizard único exibe campos tecnicamente inadequados desabilitados com motivo em `Requests` e `Filtros List`, mantém bloqueados não selecionáveis e registra contagens apenas em memória sem criar `ApiPlan`
 - B037 validado no U15: wizard único consolida `Obrigatório no payload` para `CreateRequest` e `UpdateRequest`, explicita `Required` como presença do membro JSON e mantém decisões apenas em memória
+- B038 validado no U15: wizard único monta `ApiPlan` interno em memória para `Contrato`, com `MetadataFile='apiContrato_Metadata'`, 4 endpoints, 4 Procedures planejadas e 2 SDTs compartilhados, sem persistir metadata nem gerar objetos na KB
 
 ## Fixed
 
@@ -64,7 +65,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Sprint 3 — metadata + `ApiPlan`, ainda sem geração de objetos reais
+- Sprint 3 — aprofundar `ApiPlan` com segurança, sensibilidade/auditoria e preparação futura da metadata persistente
 - Primeira geração experimental
 
 ---

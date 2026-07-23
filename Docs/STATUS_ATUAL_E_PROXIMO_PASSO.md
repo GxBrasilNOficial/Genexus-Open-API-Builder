@@ -39,22 +39,23 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B035` concluído no U15: o wizard único incorporou a verificação de `Business Component`, bloqueou avanço quando `Contrato` estava com `Business Component=False`, exigiu checkbox e confirmação modal antes de habilitar a propriedade, gravou `Business Component=True` na `Transaction` após autorização explícita, observou a geração/reload do pattern `WorkWithWebContrato` pela IDE e concluiu mantendo decisões apenas em memória, sem criar `ApiPlan` nem objetos de API.
 - `B036` concluído no U15: o wizard único exibiu campos tecnicamente inadequados desabilitados e com motivo em `Requests` e `Filtros List`, impediu seleção de bloqueados, registrou contagens B036 na Output e manteve contrato, paths, obrigatoriedade, BC e resumo apenas em memória para `Contrato`, `Escola` e `GuiaPed`, sem criar `ApiPlan` nem gerar objetos de API.
 - `B037` concluído no U15: o wizard único consolidou `Obrigatório no payload` para `CreateRequest` e `UpdateRequest`, separou as decisões por request na aba `Obrigatórios`, registrou `CreateRequired=0` e `UpdateRequired=1` para `Contrato`, esclareceu que `Required` significa presença do membro JSON e manteve decisões apenas em memória, sem criar `ApiPlan` nem gerar objetos de API.
+- `B038` concluído no U15: o wizard único montou `ApiPlan` interno em memória para `Contrato`, com `MetadataFile='apiContrato_Metadata'`, `EndpointsCount=4`, chave primária, campos de `CreateRequest`, `UpdateRequest`, `Response`, filtros, required por request, 4 Procedures planejadas e 2 SDTs compartilhados, sem persistir metadata nem gerar SDT, Procedure, API Object ou File na KB.
 
 ## Frente ativa
 
-**Sprint 3 — Metadata + ApiPlan**, iniciando a transformação das escolhas capturadas pelo wizard em um plano interno completo, ainda sem gerar objetos de API e sem escrever na KB.
+**Sprint 3 — Metadata + ApiPlan**, aprofundando o plano interno em memória depois da criação inicial validada em B038, ainda sem gerar objetos de API e sem escrever na KB.
 
 ## Próxima ação única
 
-Iniciar Sprint 3 — estruturar `ApiPlan` em memória a partir da `Transaction` e das decisões do wizard:
+Continuar Sprint 3 — aprofundar o `ApiPlan` em memória com as regras de segurança, sensibilidade/auditoria e preparação para metadata persistente:
 
-> Criar a representação interna inicial do `ApiPlan`, cobrindo `Transaction`, módulo, serviços, campos, obrigatoriedade no payload, paths, segurança, paginação e ordenação já capturados pelo wizard, ainda sem persistir metadata e sem gerar objetos de API.
+> Completar a próxima camada do `ApiPlan`, revisando `B090`, `B091` e `B092`: classificação explícita de campos sensíveis, auditoria operacional separada, registro do `Security Level` e da condição GAM/None no plano, ainda sem persistir metadata e sem gerar objetos de API.
 
 ## Critério de conclusão e evidência esperada
 
-- o fluxo parte da seleção consolidada pelo wizard único aberto por `Abrir Wizard (B030)`;
-- existe um modelo interno de `ApiPlan` em código, ainda sem persistência em `File` e sem escrita na KB;
-- o plano representa serviços, requests, response, filtros, obrigatoriedade no payload, paths, segurança, paginação e ordenação;
+- o `ApiPlan` em memória parte da seleção consolidada pelo wizard único aberto por `Abrir Wizard (B030)`;
+- sensibilidade e auditoria operacional ficam representadas de forma explícita e separada no plano;
+- o plano registra `Security Level` e a condição aplicável de GAM/None sem aplicar segurança em objetos reais;
 - `Business Component` continua tratado como pré-condição, com a exceção persistente já validada em B035;
 - nenhuma geração de SDT, Procedure, API Object ou metadata persistente é executada pela extensão;
 - base pronta para evoluir para metadata persistente e geração posterior.
@@ -64,7 +65,7 @@ Iniciar Sprint 3 — estruturar `ApiPlan` em memória a partir da `Transaction` 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
 3. Sprint 2 concluiu `B020`, `B021`, `B022`, `B023`, `B024`, `B025`, `B030`, `B031`, `B032`, `B033`, `B034`, `B035`, `B036` e `B037`, encerrando as Fases 1 e 2 do protótipo navegável com escolhas em memória, sem `ApiPlan` e sem geração de objetos de API.
-4. Sprint 3 inicia metadata e `ApiPlan`, começando pelo modelo interno em memória.
+4. Sprint 3 iniciou metadata e `ApiPlan` com B038, criando o modelo interno em memória, e continua com segurança, sensibilidade/auditoria e preparação da futura metadata persistente.
 5. Sprint 4 integra o wizard ao engine pela primeira vez e cria os SDTs.
 6. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
 7. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
@@ -86,7 +87,6 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- `ApiPlan`;
 - engine de geração;
 - Alpha público.
 

@@ -186,6 +186,7 @@ Transformar a Transaction e as escolhas do wizard em um `ApiPlan` completo, aind
 
 ## Entregas
 
+- `B038` (concluído): wizard único montou `ApiPlan` interno em memória no U15, cobrindo contrato, paths, segurança, paginação, ordenação, nomes planejados, required por request e precondição de `Business Component`, sem persistir metadata e sem gerar objetos na KB
 - ler atributos
 - identificar chave simples ou composta completa
 - `B090`: classificar campos sensíveis por configuração explícita

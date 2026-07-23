@@ -422,9 +422,11 @@ public sealed class Package : AbstractPackageUI
         var createBlockedCount = snapshot.Attributes.Count(item => !item.IsPayloadEligible);
         var updateBlockedCount = snapshot.Attributes.Count(item => !item.IsUpdatePayloadEligible);
         var filterBlockedCount = snapshot.Attributes.Count(item => !item.IsFilterEligible);
+        var apiPlan = ApiPlanBuilder.Build(transaction, selection);
         PrototypeWizardFlowSessionState.Store(selection);
         PrototypeWizardSessionState.StoreContractSelection(selection.ContractSelection);
         PrototypeWizardReviewSessionState.StoreReviewSelection(selection.ReviewSelection);
+        ApiPlanSessionState.Store(apiPlan);
         WriteOutput($"[Genexus Open API Builder][B030] Wizard único concluido em memoria: Transaction='{transaction.Name}', Module='{module.Name}', SelectionSource='{selectionSource}'.");
         WriteOutput($"[Genexus Open API Builder][B031] Contrato em memoria: Services='{string.Join(",", selection.ContractSelection.SelectedServices)}', Create={selection.ContractSelection.CreateFields.Count}, Update={selection.ContractSelection.UpdateFields.Count}, Response={selection.ContractSelection.ResponseFields.Count}, ListFilters={selection.ContractSelection.ListFilters.Count}.");
         WriteOutput($"[Genexus Open API Builder][B032] Paths e segurança em memoria: ApiName='{selection.ReviewSelection.ApiName}', ServicesBasePath='{selection.ReviewSelection.ServicesBasePath}', RestPath='{selection.ReviewSelection.RestPath}', SecurityLevel='{selection.ReviewSelection.SecurityLevel}'.");
@@ -432,7 +434,9 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B037] Obrigatorio no payload consolidado: CreateRequired={createRequiredCount}, UpdateRequired={updateRequiredCount}. Required e presenca do membro JSON; vazio, false e 0 continuam valores enviados. UpdateRequest segue PUT completo.");
         WriteOutput($"[Genexus Open API Builder][B036] Campos bloqueados visiveis no wizard: CreateRequest={createBlockedCount}, UpdateRequest={updateBlockedCount}, ListFilters={filterBlockedCount}. Itens bloqueados ficaram desmarcados, com motivo, e nao podem ser selecionados.");
         WriteOutput($"[Genexus Open API Builder][B035] Business Component em memoria: IsBusinessComponent={selection.BusinessComponentSelection.IsBusinessComponent}, EnabledDuringWizard={selection.BusinessComponentSelection.EnabledDuringWizard}, Status='{selection.BusinessComponentSelection.Status}'.");
-        WriteOutput("[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes permanecem somente em memoria; nenhum ApiPlan foi criado e nenhuma geracao de objetos de API foi executada.");
+        WriteOutput($"[Genexus Open API Builder][B038] ApiPlan em memoria criado: Transaction='{apiPlan.TransactionName}', ModuleTarget='{apiPlan.ModuleTarget}', ApiName='{apiPlan.ApiName}', MetadataFile='{apiPlan.MetadataFileName}', EndpointsCount={apiPlan.EndpointsCount}.");
+        WriteOutput($"[Genexus Open API Builder][B038] ApiPlan cobre: PrimaryKey={apiPlan.PrimaryKey.Count}, CreateFields={apiPlan.CreateRequestFields.Count}, UpdateFields={apiPlan.UpdateRequestFields.Count}, ResponseFields={apiPlan.ResponseFields.Count}, ListFilters={apiPlan.ListFilters.Count}, RequiredFields={apiPlan.RequiredFields.Count}, Procedures={apiPlan.ProcedureNames.Count}, SharedSdts={apiPlan.SharedSdtNames.Count}. Sem persistir metadata e sem gerar SDT, Procedure, API Object ou File na KB.");
+        WriteOutput("[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem somente em memoria; nenhuma geracao de objetos de API foi executada.");
 
         return true;
     }
@@ -717,6 +721,7 @@ public sealed class Package : AbstractPackageUI
         PrototypeWizardFlowSessionState.Clear();
         PrototypeWizardSessionState.ClearContractSelection();
         PrototypeWizardReviewSessionState.ClearReviewSelection();
+        ApiPlanSessionState.Clear();
         if (clearTransaction)
         {
             PrototypeTransactionSelectionState.Clear();

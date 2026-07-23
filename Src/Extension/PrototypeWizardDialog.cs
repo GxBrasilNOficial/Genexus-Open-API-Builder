@@ -478,7 +478,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private TabPage CreateSummaryTab()
     {
-        var tab = new TabPage("Resumo B037");
+        var tab = new TabPage("Resumo B038");
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -488,7 +488,7 @@ internal sealed class PrototypeWizardDialog : Form
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Resumo das decisões acumuladas após exposição de bloqueios e validação de Business Component.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Resumo das decisões acumuladas para montagem do ApiPlan em memória.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
 
         var split = new TableLayoutPanel
         {
@@ -773,7 +773,7 @@ internal sealed class PrototypeWizardDialog : Form
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
             "B036 exibiu campos bloqueados com motivo no fluxo do wizard." + Environment.NewLine +
             "B037 consolidou Required como presença do membro JSON, distinguindo de valor não vazio." + Environment.NewLine +
-            "Nenhum ApiPlan foi criado." + Environment.NewLine +
+            "ApiPlan será montado somente em memória ao concluir o wizard." + Environment.NewLine +
             "Nenhuma escolha foi persistida." + Environment.NewLine +
             "Nenhum objeto foi criado, alterado ou excluído pela geração.";
         _showingSummary = true;
