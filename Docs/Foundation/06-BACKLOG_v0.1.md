@@ -146,6 +146,13 @@ Se B004 falhar sem alternativa oficial viável:
 | B035 | Bloquear geração sem BC ou oferecer habilitação explícita | Alta |
 | B036 | Exibir campos tecnicamente inadequados desabilitados com motivo | Alta |
 | B037 | Configurar `Obrigatório no payload` para Create e Update | Alta |
+
+---
+
+## SPRINT 3 — Metadata + ApiPlan
+
+| ID | Item | Prioridade |
+|---|---|---|
 | B038 | Montar `ApiPlan` inicial em memória, ainda não pronto para engine | Alta |
 
 ---
