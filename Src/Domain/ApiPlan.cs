@@ -57,6 +57,7 @@ internal static class ApiPlanBuilder
             .Select(item => new ApiPlanRequiredField(item.RequestName, item.FieldName, item.IsRequired, item.Reason))
             .ToArray();
         var services = CreateServices(contract.SelectedServices, review.ApiName, review.RestPath, primaryKey);
+        var security = ApiPlanSecurity.CreatePending(review.SecurityLevel);
         var names = ApiPlanNames.Create(transaction.Name, contract.SelectedServices);
 
         return new ApiPlan(
@@ -76,6 +77,7 @@ internal static class ApiPlanBuilder
             names.TransactionFolderName,
             false,
             review.SecurityLevel,
+            security,
             review.DefaultPageSize,
             review.MaximumPageSize,
             review.StaticOrder.Select(item => new ApiPlanStaticOrder(item.Order, item.AttributeName, item.Direction)).ToArray(),
@@ -149,6 +151,10 @@ internal static class ApiPlanBuilder
             attribute.IsNullable,
             attribute.IsSensitive,
             attribute.IsAudit,
+            attribute.SensitiveClassificationSource,
+            attribute.SensitiveClassificationReason,
+            attribute.AuditClassificationSource,
+            attribute.AuditClassificationReason,
             attribute.IsFormula,
             attribute.IsInferred,
             attribute.IsRedundant,
@@ -244,6 +250,7 @@ internal sealed class ApiPlan
         string transactionFolderName,
         bool transactionFolderWasCreated,
         string securityLevel,
+        ApiPlanSecurity security,
         int defaultPageSize,
         int maximumPageSize,
         IReadOnlyList<ApiPlanStaticOrder> staticOrder,
@@ -282,6 +289,7 @@ internal sealed class ApiPlan
         TransactionFolderName = transactionFolderName ?? throw new ArgumentNullException(nameof(transactionFolderName));
         TransactionFolderWasCreated = transactionFolderWasCreated;
         SecurityLevel = securityLevel ?? throw new ArgumentNullException(nameof(securityLevel));
+        Security = security ?? throw new ArgumentNullException(nameof(security));
         DefaultPageSize = defaultPageSize;
         MaximumPageSize = maximumPageSize;
         StaticOrder = staticOrder ?? throw new ArgumentNullException(nameof(staticOrder));
@@ -337,6 +345,8 @@ internal sealed class ApiPlan
 
     public string SecurityLevel { get; }
 
+    public ApiPlanSecurity Security { get; }
+
     public int DefaultPageSize { get; }
 
     public int MaximumPageSize { get; }
@@ -380,9 +390,48 @@ internal sealed class ApiPlan
     public PrototypeWizardBusinessComponentSelection BusinessComponent { get; }
 }
 
+internal sealed class ApiPlanSecurity
+{
+    public const string PendingGamCondition = "UNRESOLVED_B092_GAM_CONDITION";
+
+    private ApiPlanSecurity(string securityLevel, string gamCondition, bool requiresGenerationConfirmation, IReadOnlyList<string> notes)
+    {
+        SecurityLevel = securityLevel ?? throw new ArgumentNullException(nameof(securityLevel));
+        GamCondition = gamCondition ?? throw new ArgumentNullException(nameof(gamCondition));
+        RequiresGenerationConfirmation = requiresGenerationConfirmation;
+        Notes = notes ?? throw new ArgumentNullException(nameof(notes));
+    }
+
+    public string SecurityLevel { get; }
+
+    public string GamCondition { get; }
+
+    public bool RequiresGenerationConfirmation { get; }
+
+    public IReadOnlyList<string> Notes { get; }
+
+    public static ApiPlanSecurity CreatePending(string securityLevel)
+    {
+        if (securityLevel is null)
+        {
+            throw new ArgumentNullException(nameof(securityLevel));
+        }
+
+        var requiresConfirmation = string.Equals(securityLevel, "None", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(securityLevel, "Authorization", StringComparison.OrdinalIgnoreCase);
+        var notes = new[]
+        {
+            "B092 registrou Security Level no ApiPlan sem aplicar seguranca em objetos reais.",
+            "Condicao GAM/None ainda depende de deteccao por API publica ou confirmacao antes da geracao definitiva.",
+        };
+
+        return new ApiPlanSecurity(securityLevel, PendingGamCondition, requiresConfirmation, notes);
+    }
+}
+
 internal sealed class ApiPlanField
 {
-    public ApiPlanField(int order, string name, string dataType, int length, int decimals, bool isPrimaryKey, bool isNullable, bool isSensitive, bool isAuditField, bool isFormula, bool isInferred, bool isRedundant, bool isWritableByCreate, bool isWritableByUpdate, bool isFilterEligible)
+    public ApiPlanField(int order, string name, string dataType, int length, int decimals, bool isPrimaryKey, bool isNullable, bool isSensitive, bool isAuditField, string sensitiveClassificationSource, string sensitiveClassificationReason, string auditClassificationSource, string auditClassificationReason, bool isFormula, bool isInferred, bool isRedundant, bool isWritableByCreate, bool isWritableByUpdate, bool isFilterEligible)
     {
         Order = order;
         Name = name ?? throw new ArgumentNullException(nameof(name));
@@ -393,6 +442,10 @@ internal sealed class ApiPlanField
         IsNullable = isNullable;
         IsSensitive = isSensitive;
         IsAuditField = isAuditField;
+        SensitiveClassificationSource = sensitiveClassificationSource ?? throw new ArgumentNullException(nameof(sensitiveClassificationSource));
+        SensitiveClassificationReason = sensitiveClassificationReason ?? throw new ArgumentNullException(nameof(sensitiveClassificationReason));
+        AuditClassificationSource = auditClassificationSource ?? throw new ArgumentNullException(nameof(auditClassificationSource));
+        AuditClassificationReason = auditClassificationReason ?? throw new ArgumentNullException(nameof(auditClassificationReason));
         IsFormula = isFormula;
         IsInferred = isInferred;
         IsRedundant = isRedundant;
@@ -418,6 +471,14 @@ internal sealed class ApiPlanField
     public bool IsSensitive { get; }
 
     public bool IsAuditField { get; }
+
+    public string SensitiveClassificationSource { get; }
+
+    public string SensitiveClassificationReason { get; }
+
+    public string AuditClassificationSource { get; }
+
+    public string AuditClassificationReason { get; }
 
     public bool IsFormula { get; }
 

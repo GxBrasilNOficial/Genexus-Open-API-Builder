@@ -13,18 +13,6 @@ internal static class PrototypeWizardContractReader
 {
     private static readonly string[] ServiceNames = { "List", "Get", "Create", "Update" };
 
-    private static readonly string[] SensitiveTokens = { "password", "senha", "hash", "token", "secret" };
-
-    private static readonly string[] AuditSuffixes =
-    {
-        "InclusaoDataHora",
-        "InclusaoUsuarioId",
-        "InclusaoUsuarioNome",
-        "UltimaAtualizacaoDataHora",
-        "UltimaAtualizacaoUsuarioId",
-        "UltimaAtualizacaoUsuarioNome",
-    };
-
     public static PrototypeWizardContractSnapshot Read(Transaction transaction)
     {
         if (transaction is null)
@@ -43,8 +31,9 @@ internal static class PrototypeWizardContractReader
             .Select(name => new PrototypeWizardServiceDecision(name, true))
             .ToArray();
 
+        var classificationPolicy = PrototypeWizardFieldClassificationPolicy.CreateDefault();
         var attributes = root.Attributes
-            .Select((item, index) => CreateAttributeDecision(index + 1, item, primaryKeyNames, descriptionAttributeName))
+            .Select((item, index) => CreateAttributeDecision(index + 1, item, primaryKeyNames, descriptionAttributeName, classificationPolicy))
             .ToArray();
 
         return new PrototypeWizardContractSnapshot(transaction.Name, moduleName, services, attributes);
@@ -54,15 +43,18 @@ internal static class PrototypeWizardContractReader
         int order,
         Artech.Genexus.Common.Parts.TransactionAttribute item,
         ISet<string> primaryKeyNames,
-        string? descriptionAttributeName)
+        string? descriptionAttributeName,
+        PrototypeWizardFieldClassificationPolicy classificationPolicy)
     {
         var attribute = item.Attribute;
         var name = item.Name;
         var type = attribute.Type.ToString();
         var isPrimaryKey = primaryKeyNames.Contains(name);
         var isDescription = string.Equals(name, descriptionAttributeName, StringComparison.OrdinalIgnoreCase) || item.IsDescriptionAttribute;
-        var isSensitive = IsSensitive(name);
-        var isAudit = IsAudit(name);
+        var sensitiveClassification = classificationPolicy.ClassifySensitivity(name);
+        var auditClassification = classificationPolicy.ClassifyAudit(name);
+        var isSensitive = sensitiveClassification.IsMatch;
+        var isAudit = auditClassification.IsMatch;
         var isFormula = IsFormula(attribute);
         var isTechnicallyInadequate = IsTechnicallyInadequate(type) || item.IsImageAttribute;
         var payloadDisabledReason = DescribePayloadDisabledReason(item, isPrimaryKey, isAudit, isFormula, isTechnicallyInadequate);
@@ -88,8 +80,12 @@ internal static class PrototypeWizardContractReader
             isSensitive,
             isFormula,
             isAudit,
+            sensitiveClassification.Source,
+            sensitiveClassification.Reason,
             payloadDisabledReason,
             updatePayloadDisabledReason,
+            auditClassification.Source,
+            auditClassification.Reason,
             defaultCreateSelected,
             defaultUpdateSelected,
             !isSensitive,
@@ -205,16 +201,6 @@ internal static class PrototypeWizardContractReader
         return attribute.Formula is not null;
     }
 
-    private static bool IsSensitive(string name)
-    {
-        return SensitiveTokens.Any(token => name.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0);
-    }
-
-    private static bool IsAudit(string name)
-    {
-        return AuditSuffixes.Any(suffix => name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
-    }
-
     private static bool IsTechnicallyInadequate(string type)
     {
         return ContainsAny(type, "LongVarChar", "Image", "Audio", "Video", "Blob");
@@ -248,6 +234,99 @@ internal static class PrototypeWizardContractReader
     private static bool ContainsAny(string value, params string[] tokens)
     {
         return tokens.Any(token => value.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0);
+    }
+}
+
+internal sealed class PrototypeWizardFieldClassificationPolicy
+{
+    private const string DefaultPolicySource = "DefaultInMemoryB090B091Policy";
+
+    private static readonly string[] SensitiveTokens = { "password", "senha", "hash", "token", "secret" };
+
+    private static readonly string[] AuditSuffixes =
+    {
+        "InclusaoDataHora",
+        "InclusaoUsuarioId",
+        "InclusaoUsuarioNome",
+        "UltimaAtualizacaoDataHora",
+        "UltimaAtualizacaoUsuarioId",
+        "UltimaAtualizacaoUsuarioNome",
+    };
+
+    private readonly IReadOnlyList<string> _sensitiveTokens;
+    private readonly IReadOnlyList<string> _auditSuffixes;
+
+    private PrototypeWizardFieldClassificationPolicy(IReadOnlyList<string> sensitiveTokens, IReadOnlyList<string> auditSuffixes)
+    {
+        _sensitiveTokens = sensitiveTokens ?? throw new ArgumentNullException(nameof(sensitiveTokens));
+        _auditSuffixes = auditSuffixes ?? throw new ArgumentNullException(nameof(auditSuffixes));
+    }
+
+    public static PrototypeWizardFieldClassificationPolicy CreateDefault()
+    {
+        return new PrototypeWizardFieldClassificationPolicy(SensitiveTokens, AuditSuffixes);
+    }
+
+    public PrototypeWizardFieldClassification ClassifySensitivity(string name)
+    {
+        if (name is null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        var token = _sensitiveTokens.FirstOrDefault(item => name.IndexOf(item, StringComparison.OrdinalIgnoreCase) >= 0);
+        if (token is null)
+        {
+            return PrototypeWizardFieldClassification.NotMatched(DefaultPolicySource, "Nenhuma regra explicita de sensibilidade aplicavel.");
+        }
+
+        return PrototypeWizardFieldClassification.Matched(
+            DefaultPolicySource,
+            $"Nome contem token sensivel explicito '{token}'.");
+    }
+
+    public PrototypeWizardFieldClassification ClassifyAudit(string name)
+    {
+        if (name is null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        var suffix = _auditSuffixes.FirstOrDefault(item => name.EndsWith(item, StringComparison.OrdinalIgnoreCase));
+        if (suffix is null)
+        {
+            return PrototypeWizardFieldClassification.NotMatched(DefaultPolicySource, "Nenhuma regra explicita de auditoria operacional aplicavel.");
+        }
+
+        return PrototypeWizardFieldClassification.Matched(
+            DefaultPolicySource,
+            $"Nome termina com sufixo de auditoria operacional explicito '{suffix}'.");
+    }
+}
+
+internal sealed class PrototypeWizardFieldClassification
+{
+    private PrototypeWizardFieldClassification(bool isMatch, string source, string reason)
+    {
+        IsMatch = isMatch;
+        Source = source ?? throw new ArgumentNullException(nameof(source));
+        Reason = reason ?? throw new ArgumentNullException(nameof(reason));
+    }
+
+    public bool IsMatch { get; }
+
+    public string Source { get; }
+
+    public string Reason { get; }
+
+    public static PrototypeWizardFieldClassification Matched(string source, string reason)
+    {
+        return new PrototypeWizardFieldClassification(true, source, reason);
+    }
+
+    public static PrototypeWizardFieldClassification NotMatched(string source, string reason)
+    {
+        return new PrototypeWizardFieldClassification(false, source, reason);
     }
 }
 
@@ -304,8 +383,12 @@ internal sealed class PrototypeWizardAttributeDecision
         bool isSensitive,
         bool isFormula,
         bool isAudit,
+        string sensitiveClassificationSource,
+        string sensitiveClassificationReason,
         string payloadDisabledReason,
         string updatePayloadDisabledReason,
+        string auditClassificationSource,
+        string auditClassificationReason,
         bool defaultCreateSelected,
         bool defaultUpdateSelected,
         bool defaultResponseSelected,
@@ -330,8 +413,12 @@ internal sealed class PrototypeWizardAttributeDecision
         IsSensitive = isSensitive;
         IsFormula = isFormula;
         IsAudit = isAudit;
+        SensitiveClassificationSource = sensitiveClassificationSource ?? throw new ArgumentNullException(nameof(sensitiveClassificationSource));
+        SensitiveClassificationReason = sensitiveClassificationReason ?? throw new ArgumentNullException(nameof(sensitiveClassificationReason));
         PayloadDisabledReason = payloadDisabledReason ?? throw new ArgumentNullException(nameof(payloadDisabledReason));
         UpdatePayloadDisabledReason = updatePayloadDisabledReason ?? throw new ArgumentNullException(nameof(updatePayloadDisabledReason));
+        AuditClassificationSource = auditClassificationSource ?? throw new ArgumentNullException(nameof(auditClassificationSource));
+        AuditClassificationReason = auditClassificationReason ?? throw new ArgumentNullException(nameof(auditClassificationReason));
         DefaultCreateSelected = defaultCreateSelected;
         DefaultUpdateSelected = defaultUpdateSelected;
         DefaultResponseSelected = defaultResponseSelected;
@@ -370,6 +457,14 @@ internal sealed class PrototypeWizardAttributeDecision
     public bool IsFormula { get; }
 
     public bool IsAudit { get; }
+
+    public string SensitiveClassificationSource { get; }
+
+    public string SensitiveClassificationReason { get; }
+
+    public string AuditClassificationSource { get; }
+
+    public string AuditClassificationReason { get; }
 
     public string PayloadDisabledReason { get; }
 

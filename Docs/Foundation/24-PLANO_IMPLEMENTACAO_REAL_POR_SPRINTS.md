@@ -189,16 +189,16 @@ Transformar a Transaction e as escolhas do wizard em um `ApiPlan` progressivamen
 - `B038` (concluído): wizard único montou `ApiPlan` inicial em memória no U15, cobrindo contrato, paths, segurança, paginação, ordenação, nomes planejados, required por request e precondição de `Business Component`, com `IsEngineReady=false` e marcadores `UNRESOLVED_B038_*` para campos ainda não resolvidos do contrato mínimo da engine, sem persistir metadata e sem gerar objetos na KB
 - ler atributos
 - identificar chave simples ou composta completa
-- `B090`: classificar campos sensíveis por configuração explícita
-- `B091`: classificar auditoria separadamente
-- `B092`: registrar no plano o `Security Level` e GAM/None quando aplicável
+- `B090` (concluído): wizard único classificou campos sensíveis por política inicial explícita em memória, preservando origem/razão no `ApiPlan`
+- `B091` (concluído): wizard único classificou auditoria operacional separadamente por política inicial explícita em memória, preservando origem/razão no `ApiPlan`
+- `B092` (concluído no escopo de plano): wizard único registrou `Security Level` no `ApiPlan` e manteve a condição GAM como `UNRESOLVED_B092_GAM_CONDITION` até validação pública segura, sem aplicar segurança em objetos reais
 - módulo alvo
 - montar decisões de filtros, payload, paginação, ordenação e segurança
 - montar `ApiPlan`
 
 ## Gate
 
-`ApiPlan` inicial consistente e sem escrita na KB. O gate de prontidão para engine permanece aberto enquanto `GeneratorTarget`, `ConflictMode`, `ReexecutionMode` e descrições de serviço estiverem marcados como `UNRESOLVED_B038_*`.
+`ApiPlan` inicial consistente e sem escrita na KB, com sensibilidade, auditoria operacional e segurança registradas explicitamente em memória. O gate de prontidão para engine permanece aberto enquanto `GeneratorTarget`, `ConflictMode`, `ReexecutionMode` e descrições de serviço estiverem marcados como `UNRESOLVED_B038_*`; a condição GAM permanece pendente até validação pública segura ou decisão posterior do fluxo de segurança.
 
 [F08][SPR-F24]
 
