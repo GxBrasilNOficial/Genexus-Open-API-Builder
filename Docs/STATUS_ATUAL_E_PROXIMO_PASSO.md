@@ -39,17 +39,17 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B035` concluído no U15: o wizard único incorporou a verificação de `Business Component`, bloqueou avanço quando `Contrato` estava com `Business Component=False`, exigiu checkbox e confirmação modal antes de habilitar a propriedade, gravou `Business Component=True` na `Transaction` após autorização explícita, observou a geração/reload do pattern `WorkWithWebContrato` pela IDE e concluiu mantendo decisões apenas em memória, sem criar `ApiPlan` nem objetos de API.
 - `B036` concluído no U15: o wizard único exibiu campos tecnicamente inadequados desabilitados e com motivo em `Requests` e `Filtros List`, impediu seleção de bloqueados, registrou contagens B036 na Output e manteve contrato, paths, obrigatoriedade, BC e resumo apenas em memória para `Contrato`, `Escola` e `GuiaPed`, sem criar `ApiPlan` nem gerar objetos de API.
 - `B037` concluído no U15: o wizard único consolidou `Obrigatório no payload` para `CreateRequest` e `UpdateRequest`, separou as decisões por request na aba `Obrigatórios`, registrou `CreateRequired=0` e `UpdateRequired=1` para `Contrato`, esclareceu que `Required` significa presença do membro JSON e manteve decisões apenas em memória, sem criar `ApiPlan` nem gerar objetos de API.
-- `B038` concluído no U15: o wizard único montou `ApiPlan` interno em memória para `Contrato`, com `MetadataFile='apiContrato_Metadata'`, `EndpointsCount=4`, chave primária, campos de `CreateRequest`, `UpdateRequest`, `Response`, filtros, required por request, 4 Procedures planejadas e 2 SDTs compartilhados, sem persistir metadata nem gerar SDT, Procedure, API Object ou File na KB.
+- `B038` concluído no U15: o wizard único montou `ApiPlan` inicial em memória para `Contrato`, com `MetadataFile='apiContrato_Metadata'`, `EndpointsCount=4`, chave primária, campos de `CreateRequest`, `UpdateRequest`, `Response`, filtros, required por request, 4 Procedures planejadas e 2 SDTs compartilhados. O plano fica marcado como `IsEngineReady=false`, com `UNRESOLVED_B038_*` nos campos ainda não resolvidos do contrato mínimo da engine, sem persistir metadata nem gerar SDT, Procedure, API Object ou File na KB.
 
 ## Frente ativa
 
-**Sprint 3 — Metadata + ApiPlan**, aprofundando o plano interno em memória depois da criação inicial validada em B038, ainda sem gerar objetos de API e sem escrever na KB.
+**Sprint 3 — Metadata + ApiPlan**, aprofundando o plano interno em memória depois da criação inicial validada em B038. O plano ainda não é entrada válida da engine enquanto houver marcadores `UNRESOLVED_B038_*`; não gerar objetos de API e não escrever na KB.
 
 ## Próxima ação única
 
 Continuar Sprint 3 — aprofundar o `ApiPlan` em memória com as regras de segurança, sensibilidade/auditoria e preparação para metadata persistente:
 
-> Completar a próxima camada do `ApiPlan`, revisando `B090`, `B091` e `B092`: classificação explícita de campos sensíveis, auditoria operacional separada, registro do `Security Level` e da condição GAM/None no plano, ainda sem persistir metadata e sem gerar objetos de API.
+> Completar a próxima camada do `ApiPlan`, revisando `B090`, `B091` e `B092`: classificação explícita de campos sensíveis, auditoria operacional separada, registro do `Security Level` e da condição GAM/None no plano, além de resolver ou manter explicitamente pendentes os campos mínimos de engine (`GeneratorTarget`, `ConflictMode`, `ReexecutionMode` e descrições de serviço), ainda sem persistir metadata e sem gerar objetos de API.
 
 ## Critério de conclusão e evidência esperada
 
@@ -58,7 +58,7 @@ Continuar Sprint 3 — aprofundar o `ApiPlan` em memória com as regras de segur
 - o plano registra `Security Level` e a condição aplicável de GAM/None sem aplicar segurança em objetos reais;
 - `Business Component` continua tratado como pré-condição, com a exceção persistente já validada em B035;
 - nenhuma geração de SDT, Procedure, API Object ou metadata persistente é executada pela extensão;
-- base pronta para evoluir para metadata persistente e geração posterior.
+- base pronta para evoluir para metadata persistente e geração posterior somente depois que a prontidão da engine deixar de ser `IsEngineReady=false`.
 
 ## Sequência operacional vigente
 

@@ -1,6 +1,6 @@
 # B038 - ApiPlan em memoria
 
-Concluido no GeneXus 18 Upgrade 15 em 2026-07-23: o wizard unico aberto por `Abrir Wizard (B030)` passou a montar um `ApiPlan` interno em memoria a partir da `Transaction` e das decisoes acumuladas do wizard, sem persistir metadata e sem gerar objetos de API.
+Concluido no GeneXus 18 Upgrade 15 em 2026-07-23: o wizard unico aberto por `Abrir Wizard (B030)` passou a montar um `ApiPlan` inicial em memoria a partir da `Transaction` e das decisoes acumuladas do wizard, sem persistir metadata e sem gerar objetos de API. Esse plano inicial nao e contrato minimo valido da engine.
 
 ## Objetivo
 
@@ -13,7 +13,10 @@ Transformar as escolhas ja capturadas pelo wizard em uma representacao interna i
 - cancelamentos continuam descartando `Transaction`, decisoes e `ApiPlan` em memoria;
 - o plano guarda servicos, requests, response, filtros, required por request, paths, seguranca, paginacao, ordenacao, chave primaria, nomes de SDTs, Procedures, File de metadata e SDTs compartilhados;
 - nenhuma escolha e persistida como metadata;
-- nenhum SDT, Procedure, API Object ou File e criado, alterado ou excluido pela geracao.
+- nenhum SDT, Procedure, API Object ou File e criado, alterado ou excluido pela geracao;
+- `IsEngineReady=false` deixa explicito que o plano inicial ainda nao pode ser entregue a engine;
+- `GeneratorTarget`, `ConflictMode`, `ReexecutionMode` e descricoes de servico ficam marcados como `UNRESOLVED_B038_*`;
+- `RestArtifactTarget` fica registrado como `API Object`, por ser alvo ja definido pelo contrato F10.
 
 ## Arquivos principais
 
@@ -54,4 +57,4 @@ Resultados: build Release OK com 0 erros, checker de comandos OK com 8 comandos 
 
 ## Criterio de aceite
 
-Criterio atendido em 2026-07-23: B038 criou e validou o primeiro `ApiPlan` em memoria a partir do wizard unico, preservando cancelamento seguro e mantendo a KB sem novos SDTs, Procedures, API Object ou File de metadata. A frente deixa a Sprint 3 pronta para aprofundar as regras de seguranca, sensibilidade/auditoria e preparacao futura da metadata persistente.
+Criterio atendido em 2026-07-23: B038 criou e validou o primeiro `ApiPlan` em memoria a partir do wizard unico, preservando cancelamento seguro e mantendo a KB sem novos SDTs, Procedures, API Object ou File de metadata. A frente deixa a Sprint 3 pronta para aprofundar as regras de seguranca, sensibilidade/auditoria, resolucao dos campos pendentes do contrato minimo da engine e preparacao futura da metadata persistente.

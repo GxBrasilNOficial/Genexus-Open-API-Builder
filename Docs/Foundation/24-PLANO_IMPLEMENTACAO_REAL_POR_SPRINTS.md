@@ -182,11 +182,11 @@ Fases 1 e 2 do backlog cobertas e validadas no protótipo navegável, com escolh
 
 ## Objetivo
 
-Transformar a Transaction e as escolhas do wizard em um `ApiPlan` completo, ainda sem gerar objetos.
+Transformar a Transaction e as escolhas do wizard em um `ApiPlan` progressivamente completo, ainda sem gerar objetos. B038 cria apenas o plano inicial em memória; a prontidão mínima para engine só ocorre depois de resolver os campos pendentes do contrato F10.
 
 ## Entregas
 
-- `B038` (concluído): wizard único montou `ApiPlan` interno em memória no U15, cobrindo contrato, paths, segurança, paginação, ordenação, nomes planejados, required por request e precondição de `Business Component`, sem persistir metadata e sem gerar objetos na KB
+- `B038` (concluído): wizard único montou `ApiPlan` inicial em memória no U15, cobrindo contrato, paths, segurança, paginação, ordenação, nomes planejados, required por request e precondição de `Business Component`, com `IsEngineReady=false` e marcadores `UNRESOLVED_B038_*` para campos ainda não resolvidos do contrato mínimo da engine, sem persistir metadata e sem gerar objetos na KB
 - ler atributos
 - identificar chave simples ou composta completa
 - `B090`: classificar campos sensíveis por configuração explícita
@@ -198,7 +198,7 @@ Transformar a Transaction e as escolhas do wizard em um `ApiPlan` completo, aind
 
 ## Gate
 
-`ApiPlan` consistente, completo e sem escrita na KB.
+`ApiPlan` inicial consistente e sem escrita na KB. O gate de prontidão para engine permanece aberto enquanto `GeneratorTarget`, `ConflictMode`, `ReexecutionMode` e descrições de serviço estiverem marcados como `UNRESOLVED_B038_*`.
 
 [F08][SPR-F24]
 

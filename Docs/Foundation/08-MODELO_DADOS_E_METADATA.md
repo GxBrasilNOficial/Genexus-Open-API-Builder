@@ -288,6 +288,11 @@ Campos de origem de migração não são auditoria operacional. Um campo como `P
 | ServiceDescriptionFallbackUsed | boolean |
 | EndpointsCount | número |
 | MetadataFileName | texto |
+| ConflictMode | texto |
+| ReexecutionMode | texto |
+| RestArtifactTarget | texto |
+| IsEngineReady | boolean |
+| EngineReadinessNotes | lista texto |
 
 ## Regra MVP
 
@@ -303,6 +308,7 @@ Os serviços são `List`, `Get`, `Create` e `Update`. `Delete` é pós-MVP como 
 - execução final
 - distinguir .NET / Java
 - auditoria técnica futura
+- impedir que um plano inicial seja tratado como entrada válida da engine antes de resolver campos pendentes
 
 [AF-F05][UX-F07][MD-F08]
 

@@ -62,7 +62,7 @@ internal static class ApiPlanBuilder
         return new ApiPlan(
             transaction.Name,
             snapshot.ModuleName,
-            string.Empty,
+            ApiPlan.UnresolvedGeneratorTarget,
             review.ApiName,
             review.ServicesBasePath,
             review.RestPath,
@@ -79,11 +79,16 @@ internal static class ApiPlanBuilder
             review.DefaultPageSize,
             review.MaximumPageSize,
             review.StaticOrder.Select(item => new ApiPlanStaticOrder(item.Order, item.AttributeName, item.Direction)).ToArray(),
-            Array.Empty<ApiPlanServiceDescription>(),
-            string.Empty,
-            false,
+            CreateServiceDescriptions(services),
+            ApiPlan.UnresolvedValue,
+            true,
             services.Count,
             names.MetadataFileName,
+            ApiPlan.UnresolvedConflictMode,
+            ApiPlan.UnresolvedReexecutionMode,
+            ApiPlan.RestArtifactTargetApiObject,
+            false,
+            ApiPlan.B038EngineReadinessNotes,
             primaryKey,
             createFields,
             updateFields,
@@ -189,6 +194,13 @@ internal static class ApiPlanBuilder
         return new ApiPlanService(serviceName, string.Empty, restPath, apiName + "." + serviceName);
     }
 
+    private static IReadOnlyList<ApiPlanServiceDescription> CreateServiceDescriptions(IEnumerable<ApiPlanService> services)
+    {
+        return services
+            .Select(service => new ApiPlanServiceDescription(service.Name, ApiPlan.UnresolvedServiceDescription))
+            .ToArray();
+    }
+
     private static string AppendKeyPath(string restPath, IReadOnlyList<ApiPlanField> primaryKey)
     {
         if (primaryKey.Count == 0)
@@ -202,6 +214,19 @@ internal static class ApiPlanBuilder
 
 internal sealed class ApiPlan
 {
+    public const string UnresolvedValue = "UNRESOLVED_B038";
+    public const string UnresolvedGeneratorTarget = "UNRESOLVED_B038_GENERATOR_TARGET";
+    public const string UnresolvedConflictMode = "UNRESOLVED_B038_CONFLICT_MODE";
+    public const string UnresolvedReexecutionMode = "UNRESOLVED_B038_REEXECUTION_MODE";
+    public const string UnresolvedServiceDescription = "UNRESOLVED_B038_SERVICE_DESCRIPTION";
+    public const string RestArtifactTargetApiObject = "API Object";
+
+    public static readonly IReadOnlyList<string> B038EngineReadinessNotes = new[]
+    {
+        "B038 criou um ApiPlan inicial em memoria para rastrear decisoes do wizard.",
+        "O plano ainda nao e entrada valida da engine: GeneratorTarget, ConflictMode, ReexecutionMode e descricoes de servico exigem resolucao posterior.",
+    };
+
     public ApiPlan(
         string transactionName,
         string moduleTarget,
@@ -227,6 +252,11 @@ internal sealed class ApiPlan
         bool serviceDescriptionFallbackUsed,
         int endpointsCount,
         string metadataFileName,
+        string conflictMode,
+        string reexecutionMode,
+        string restArtifactTarget,
+        bool isEngineReady,
+        IReadOnlyList<string> engineReadinessNotes,
         IReadOnlyList<ApiPlanField> primaryKey,
         IReadOnlyList<ApiPlanField> createRequestFields,
         IReadOnlyList<ApiPlanField> updateRequestFields,
@@ -260,6 +290,11 @@ internal sealed class ApiPlan
         ServiceDescriptionFallbackUsed = serviceDescriptionFallbackUsed;
         EndpointsCount = endpointsCount;
         MetadataFileName = metadataFileName ?? throw new ArgumentNullException(nameof(metadataFileName));
+        ConflictMode = conflictMode ?? throw new ArgumentNullException(nameof(conflictMode));
+        ReexecutionMode = reexecutionMode ?? throw new ArgumentNullException(nameof(reexecutionMode));
+        RestArtifactTarget = restArtifactTarget ?? throw new ArgumentNullException(nameof(restArtifactTarget));
+        IsEngineReady = isEngineReady;
+        EngineReadinessNotes = engineReadinessNotes ?? throw new ArgumentNullException(nameof(engineReadinessNotes));
         PrimaryKey = primaryKey ?? throw new ArgumentNullException(nameof(primaryKey));
         CreateRequestFields = createRequestFields ?? throw new ArgumentNullException(nameof(createRequestFields));
         UpdateRequestFields = updateRequestFields ?? throw new ArgumentNullException(nameof(updateRequestFields));
@@ -317,6 +352,16 @@ internal sealed class ApiPlan
     public int EndpointsCount { get; }
 
     public string MetadataFileName { get; }
+
+    public string ConflictMode { get; }
+
+    public string ReexecutionMode { get; }
+
+    public string RestArtifactTarget { get; }
+
+    public bool IsEngineReady { get; }
+
+    public IReadOnlyList<string> EngineReadinessNotes { get; }
 
     public IReadOnlyList<ApiPlanField> PrimaryKey { get; }
 
