@@ -36,6 +36,8 @@ O follow-up [B038 follow-up - Campos escalares de engine no ApiPlan](B038-FOLLOW
 
 Validacao recebida em 2026-07-23 para a Transaction `Contrato`:
 
+Observacao posterior: o bloco abaixo preserva a captura manual historica de 2026-07-23. Depois dessa validacao, o runtime foi alinhado para emitir `Politica inicial hardcoded aplicada sem metadata persistente nem configuracao por KB`; uma nova captura manual e necessaria antes de tratar essa linha como evidencia atual.
+
 ```text
 [Genexus Open API Builder][B030] Wizard único concluido em memoria: Transaction='Contrato', Module='Root Module', SelectionSource='Contexto'.
 [Genexus Open API Builder][B031] Contrato em memoria: Services='List,Get,Create,Update', Create=1, Update=1, Response=2, ListFilters=1.
