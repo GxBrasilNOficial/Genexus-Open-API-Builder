@@ -239,9 +239,9 @@ internal static class PrototypeWizardContractReader
 
 internal sealed class PrototypeWizardFieldClassificationPolicy
 {
-    private const string DefaultPolicySource = "DefaultInMemoryB090B091Policy";
+    private const string DefaultPolicySource = "DefaultInMemoryHardcodedB090B091Policy";
 
-    private static readonly string[] SensitiveTokens = { "password", "senha", "hash", "token", "secret" };
+    private static readonly string[] SensitiveNames = { "Password", "Senha", "Hash", "Token", "Secret" };
 
     private static readonly string[] AuditSuffixes =
     {
@@ -253,18 +253,18 @@ internal sealed class PrototypeWizardFieldClassificationPolicy
         "UltimaAtualizacaoUsuarioNome",
     };
 
-    private readonly IReadOnlyList<string> _sensitiveTokens;
+    private readonly IReadOnlyList<string> _sensitiveNames;
     private readonly IReadOnlyList<string> _auditSuffixes;
 
-    private PrototypeWizardFieldClassificationPolicy(IReadOnlyList<string> sensitiveTokens, IReadOnlyList<string> auditSuffixes)
+    private PrototypeWizardFieldClassificationPolicy(IReadOnlyList<string> sensitiveNames, IReadOnlyList<string> auditSuffixes)
     {
-        _sensitiveTokens = sensitiveTokens ?? throw new ArgumentNullException(nameof(sensitiveTokens));
+        _sensitiveNames = sensitiveNames ?? throw new ArgumentNullException(nameof(sensitiveNames));
         _auditSuffixes = auditSuffixes ?? throw new ArgumentNullException(nameof(auditSuffixes));
     }
 
     public static PrototypeWizardFieldClassificationPolicy CreateDefault()
     {
-        return new PrototypeWizardFieldClassificationPolicy(SensitiveTokens, AuditSuffixes);
+        return new PrototypeWizardFieldClassificationPolicy(SensitiveNames, AuditSuffixes);
     }
 
     public PrototypeWizardFieldClassification ClassifySensitivity(string name)
@@ -274,7 +274,7 @@ internal sealed class PrototypeWizardFieldClassificationPolicy
             throw new ArgumentNullException(nameof(name));
         }
 
-        var token = _sensitiveTokens.FirstOrDefault(item => name.IndexOf(item, StringComparison.OrdinalIgnoreCase) >= 0);
+        var token = _sensitiveNames.FirstOrDefault(item => string.Equals(name, item, StringComparison.OrdinalIgnoreCase));
         if (token is null)
         {
             return PrototypeWizardFieldClassification.NotMatched(DefaultPolicySource, "Nenhuma regra explicita de sensibilidade aplicavel.");
@@ -282,7 +282,7 @@ internal sealed class PrototypeWizardFieldClassificationPolicy
 
         return PrototypeWizardFieldClassification.Matched(
             DefaultPolicySource,
-            $"Nome contem token sensivel explicito '{token}'.");
+            $"Nome igual a regra sensivel explicita '{token}'.");
     }
 
     public PrototypeWizardFieldClassification ClassifyAudit(string name)

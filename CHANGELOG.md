@@ -46,8 +46,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B036 validado no U15: wizard único exibe campos tecnicamente inadequados desabilitados com motivo em `Requests` e `Filtros List`, mantém bloqueados não selecionáveis e registra contagens apenas em memória sem criar `ApiPlan`
 - B037 validado no U15: wizard único consolida `Obrigatório no payload` para `CreateRequest` e `UpdateRequest`, explicita `Required` como presença do membro JSON e mantém decisões apenas em memória
 - B038 validado no U15: wizard único monta `ApiPlan` inicial em memória para `Contrato`, com `MetadataFile='apiContrato_Metadata'`, 4 endpoints, 4 Procedures planejadas e 2 SDTs compartilhados, marcado como `IsEngineReady=false` e com pendências `UNRESOLVED_B038_*`, sem persistir metadata nem gerar objetos na KB
-- B090/B091/B092 validados no U15: wizard único classifica sensíveis e auditoria por política inicial explícita em memória, registra origem/razão no `ApiPlan` e grava `SecurityLevel` com `GamCondition='UNRESOLVED_B092_GAM_CONDITION'`, sem persistir metadata nem gerar objetos na KB
-- Follow-up da Sprint 3 implementado para validação: `ApiPlan` em memória resolve `GeneratorTarget='.NET'`, `ConflictMode='BlockOnCollision'` e `ReexecutionMode='Safe'`, mantendo descrições, idioma/fallback de descrição, GAM e prontidão da engine explicitamente pendentes, sem persistir metadata nem gerar objetos na KB
+- B090/B091/B092 validados no U15 no escopo provisório do `ApiPlan`: wizard único classifica sensíveis e auditoria por política inicial hardcoded em memória, registra origem/razão no `ApiPlan` e grava `SecurityLevel` com `GamCondition='UNRESOLVED_B092_GAM_CONDITION'`, mantendo configuração por KB/metadata pendente e sem persistir metadata nem gerar objetos na KB
+- Follow-up da Sprint 3 validado manualmente: `ApiPlan` em memória resolve `GeneratorTarget='.NET'`, `ConflictMode='BlockOnCollision'` e `ReexecutionMode='Safe'`, mantendo descrições, idioma/fallback de descrição, GAM e prontidão da engine explicitamente pendentes, sem persistir metadata nem gerar objetos na KB
 
 ## Fixed
 
@@ -64,10 +64,11 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B031 desabilita partes da chave primária no `UpdateRequest`, preservando a regra de chave completa no `RestPath`
 - B031 desabilita fórmulas em requests por API pública e bloqueia chave primária no `CreateRequest` até validação pública de autonumeração, sem reflexão em internos do SDK
 - B032 sincroniza `Services base path` com `ApiName` até edição manual e o consumo por B033 foi validado posteriormente dentro do wizard único
+- B090/B091 alinhados como política inicial hardcoded em memória, sem fechar a configuração explícita por KB prevista para metadata persistente
 
 ## Planned
 
-- Sprint 3 — validar manualmente os campos escalares do `ApiPlan` na Output e preparar a evolução posterior de metadata persistente sem gerar objetos na KB
+- Sprint 3 — preparar configuração explícita por KB para sensíveis/auditoria em metadata persistente futura, sem gerar objetos na KB
 - Primeira geração experimental
 
 ---
