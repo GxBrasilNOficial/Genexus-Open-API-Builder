@@ -12,6 +12,7 @@
     <CommandDefinition id="Ler Chave Primária (B025)" context="selection" />
     <CommandDefinition id="Abrir Wizard (B030)" context="selection" />
     <CommandDefinition id="Criar SDTs (B040-B046)" context="selection" />
+    <CommandDefinition id="Criar Procedures (B050-B053)" context="selection" />
   </Commands>
   <Groups>
     <Group id="GenexusOpenApiBuilderPlaceholderGroup">
@@ -24,6 +25,7 @@
       <Command refid="Ler Chave Primária (B025)" />
       <Command refid="Abrir Wizard (B030)" />
       <Command refid="Criar SDTs (B040-B046)" />
+      <Command refid="Criar Procedures (B050-B053)" />
     </Group>
     <Group refid="KBObjectGrp" package="98121D96-A7D8-468b-9310-B1F468F812AE">
       <Popup id="GenexusOpenApiBuilderPopup" name="Genexus Open API Builder">

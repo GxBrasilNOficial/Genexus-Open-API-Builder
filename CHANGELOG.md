@@ -53,6 +53,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B092 validado no U15 dentro do `ApiPlan`: `Authentication`, `Authorization` e `None` agora resolvem `GamCondition` explicitamente no plano, com confirmação obrigatória para `Authorization` e `None`, ainda sem aplicar segurança em objeto `API` real e sem gerar objetos na KB
 - B039 validado no U15: preview de engine SDT recebe o `ApiPlan`, resolve cinco SDTs próprios e dois compartilhados com status `ResolvedSdtContractPreviewNoKbWrite`, registra `WritesKnowledgeBase=False` e não escreve na KB
 - B040-B046 validados no U15: comando `Criar SDTs (B040-B046)` criou 7 SDTs a partir do `ApiPlan` após confirmação modal explícita na IDE, com 5 próprios e 2 compartilhados, sem Procedures, API Object ou metadata persistente definitiva
+- B050-B053 preparados: comando `Criar Procedures (B050-B053)` cria ou reencontra 4 Procedures skeleton a partir do `ApiPlan` somente após reencontrar os SDTs B040-B046 e receber confirmação modal explícita na IDE, sem API Object, REST completo ou metadata persistente definitiva
 
 ## Fixed
 
@@ -73,7 +74,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Sprint 5 — preparar criação ou reencontro das Procedures B050-B053 sobre os SDTs existentes
+- Sprint 5 — validar no U15 o comando `Criar Procedures (B050-B053)` e registrar a evidência da primeira escrita real de Procedures
 - Primeira geração experimental de Procedures/API sobre os SDTs já criados
 
 ---

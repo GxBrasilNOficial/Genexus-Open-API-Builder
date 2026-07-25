@@ -98,4 +98,4 @@ A evidência visual da IDE confirmou a presença dos cinco SDTs próprios no mó
 
 ## Próximo passo
 
-B040-B046 estão concluídos. A próxima frente deve iniciar a Sprint 5 preparando B050-B053, ainda com foco conservador em criação ou reencontro de Procedures sobre os SDTs existentes e sem antecipar comportamento REST completo.
+B040-B046 estão concluídos. B050-B053 foram preparados posteriormente; a próxima ação executável vigente deve ser consultada no checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.

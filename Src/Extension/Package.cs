@@ -38,6 +38,7 @@ public sealed class Package : AbstractPackageUI
         AddCommand(new CommandKey(Id, "Ler Chave Primária (B025)"), ExecuteReadPrimaryKey, QueryReadPrimaryKey);
         AddCommand(new CommandKey(Id, "Abrir Wizard (B030)"), ExecuteOpenWizardStepOne, QueryOpenWizardStepOne);
         AddCommand(new CommandKey(Id, "Criar SDTs (B040-B046)"), ExecuteCreateSdts, QueryCreateSdts);
+        AddCommand(new CommandKey(Id, "Criar Procedures (B050-B053)"), ExecuteCreateProcedures, QueryCreateProcedures);
     }
 
     private static bool QueryFutureFirstOption(CommandData data, ref CommandStatus status)
@@ -370,6 +371,80 @@ public sealed class Package : AbstractPackageUI
 
         return true;
     }
+
+    private static bool QueryCreateProcedures(CommandData data, ref CommandStatus status)
+    {
+        status.Visible(true);
+        return true;
+    }
+
+    private static bool ExecuteCreateProcedures(CommandData data)
+    {
+        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
+        if (knowledgeBase is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B050-B053] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
+            return true;
+        }
+
+        PrototypeTransactionSelectionState.ClearIfKnowledgeBaseChanged(knowledgeBase);
+        var apiPlan = ApiPlanSessionState.Current;
+        if (apiPlan is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B050-B053] Nenhum ApiPlan em memoria foi encontrado. Execute e conclua primeiro o comando Abrir Wizard (B030). Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        var selectedTransaction = PrototypeTransactionSelectionState.Current;
+        if (selectedTransaction is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B050-B053] Nenhuma Transaction selecionada em memoria foi encontrada. Execute e conclua primeiro o comando Abrir Wizard (B030). Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        var transaction = Transaction.GetAll(knowledgeBase.DesignModel)
+            .SingleOrDefault(item => item.Guid == selectedTransaction.TransactionGuid);
+        if (transaction is null)
+        {
+            WriteOutput($"[Genexus Open API Builder][B050-B053] A Transaction selecionada em memoria nao foi reencontrada: Name='{selectedTransaction.TransactionName}', Guid='{selectedTransaction.TransactionGuid}'. Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        if (!string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.Ordinal))
+        {
+            WriteOutput($"[Genexus Open API Builder][B050-B053] ApiPlan em memoria pertence a Transaction='{apiPlan.TransactionName}', mas a selecao atual e Transaction='{transaction.Name}'. Execute novamente o wizard. Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        var confirmation = System.Windows.Forms.MessageBox.Show(
+            "B050-B053 vai reencontrar os 7 SDTs de B040-B046 e criar ou reencontrar 4 Procedures skeleton a partir do ApiPlan em memoria. Nao cria API Object, REST completo ou metadata persistente definitiva. Confirma a escrita dessas Procedures na KB ativa?",
+            "Confirmar criacao de Procedures B050-B053",
+            System.Windows.Forms.MessageBoxButtons.YesNo,
+            System.Windows.Forms.MessageBoxIcon.Warning,
+            System.Windows.Forms.MessageBoxDefaultButton.Button2);
+        if (confirmation != System.Windows.Forms.DialogResult.Yes)
+        {
+            WriteOutput($"[Genexus Open API Builder][B050-B053] Criacao de Procedures cancelada pelo usuario para Transaction='{transaction.Name}'. Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        try
+        {
+            var result = ApiPlanProcedureWriter.CreateOrReencounter(knowledgeBase.DesignModel, transaction, apiPlan);
+            WriteOutput($"[Genexus Open API Builder][B050-B053] Escrita de Procedures concluida: Transaction='{transaction.Name}', PlannedProcedures={result.PlannedProcedures}, ReencounteredSdts={result.ReencounteredSdts}, Created={result.CreatedProcedures}, Reencountered={result.ReencounteredProcedures}. Nenhum API Object, REST completo ou metadata persistente definitiva foi criado.");
+            foreach (var item in result.Items)
+            {
+                WriteOutput($"[Genexus Open API Builder][B050-B053] Procedure {item.Status}: Backlog='{item.BacklogId}', Service='{item.ServiceName}', Name='{item.Name}', Guid='{item.Guid}'.");
+            }
+        }
+        catch (Exception ex)
+        {
+            WriteOutput($"[Genexus Open API Builder][B050-B053] Criacao de Procedures bloqueada ou falhou: {ex.Message}");
+        }
+
+        return true;
+    }
+
     private static bool QueryOpenWizardStepOne(CommandData data, ref CommandStatus status)
     {
         status.Visible(true);
