@@ -1,13 +1,13 @@
 # B090/B091/B092 - ApiPlan com seguranca, sensibilidade e auditoria
 
-Concluido no GeneXus 18 Upgrade 15 em 2026-07-23 no escopo provisorio do `ApiPlan` em memoria: o wizard unico aberto por `Abrir Wizard (B030)` passou a registrar classificacao explicita inicial de campos sensiveis, auditoria operacional separada e seguranca, sem persistir metadata e sem gerar objetos de API. Esse marco nao conclui a configuracao por KB prevista nos contratos governantes.
+Representacao provisoria validada no GeneXus 18 Upgrade 15 em 2026-07-23 dentro do `ApiPlan` em memoria: o wizard unico aberto por `Abrir Wizard (B030)` passou a registrar classificacao explicita inicial de campos sensiveis, auditoria operacional separada e seguranca, sem persistir metadata e sem gerar objetos de API. Esse marco nao conclui B090/B091 canonicos, que permanecem abertos ate existir configuracao por KB em metadata persistente.
 
 ## Objetivo
 
 Registrar no plano interno a proxima camada da Sprint 3:
 
-- `B090`: campos sensiveis classificados por politica explicita inicial hardcoded em memoria;
-- `B091`: auditoria operacional classificada separadamente por politica explicita inicial hardcoded em memoria;
+- representacao provisoria de `B090`: campos sensiveis classificados por politica explicita inicial hardcoded em memoria;
+- representacao provisoria de `B091`: auditoria operacional classificada separadamente por politica explicita inicial hardcoded em memoria;
 - `B092`: `Security Level` registrado no `ApiPlan`, com condicao GAM mantida explicitamente pendente ate validacao publica segura.
 
 ## Escopo validado
@@ -67,4 +67,4 @@ Resultados: build Release OK com 0 erros, checker de comandos OK com 8 comandos 
 
 ## Criterio de aceite
 
-Criterio atendido em 2026-07-23 no escopo provisorio do `ApiPlan` em memoria: B090/B091/B092 registraram classificacao inicial explicita de sensiveis, auditoria operacional separada e seguranca no plano. A frente nao persistiu metadata nem gerou SDT, Procedure, API Object ou File na KB. B090/B091 nao encerram a configuracao por KB; essa responsabilidade permanece pendente para metadata persistente. No estado validado naquela frente, a Sprint 3 continuava com `IsEngineReady=false` ate resolver `GeneratorTarget`, `ConflictMode`, `ReexecutionMode` e descricoes de servico; a condicao GAM permanecia explicitamente pendente ate validacao publica segura ou decisao posterior do fluxo de seguranca.
+Criterio atendido em 2026-07-23 para a representacao provisoria no `ApiPlan` em memoria: foram registradas classificacao inicial explicita de sensiveis, auditoria operacional separada e seguranca no plano. A frente nao persistiu metadata nem gerou SDT, Procedure, API Object ou File na KB. B090/B091 canonicos continuam abertos ate configuracao por KB em metadata persistente. No estado validado naquela frente, a Sprint 3 continuava com `IsEngineReady=false` ate resolver `GeneratorTarget`, `ConflictMode`, `ReexecutionMode` e descricoes de servico; a condicao GAM permanecia explicitamente pendente ate validacao publica segura ou decisao posterior do fluxo de seguranca.

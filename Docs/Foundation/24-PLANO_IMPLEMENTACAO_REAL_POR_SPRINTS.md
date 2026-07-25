@@ -189,8 +189,8 @@ Transformar a Transaction e as escolhas do wizard em um `ApiPlan` progressivamen
 - `B038` (concluído): wizard único montou `ApiPlan` inicial em memória no U15, cobrindo contrato, paths, segurança, paginação, ordenação, nomes planejados, required por request e precondição de `Business Component`, com `IsEngineReady=false` e marcadores `UNRESOLVED_B038_*` para campos ainda não resolvidos do contrato mínimo da engine, sem persistir metadata e sem gerar objetos na KB
 - ler atributos
 - identificar chave simples ou composta completa
-- `B090` (concluído no escopo provisório do plano): wizard único classificou campos sensíveis por política inicial hardcoded em memória, preservando origem/razão no `ApiPlan`; configuração por KB/metadata permanece pendente
-- `B091` (concluído no escopo provisório do plano): wizard único classificou auditoria operacional separadamente por política inicial hardcoded em memória, preservando origem/razão no `ApiPlan`; configuração por KB/metadata permanece pendente
+- planejamento inicial de `B090` registrado no `ApiPlan`: wizard único classificou campos sensíveis por política inicial hardcoded em memória, preservando origem/razão; `B090` canônico permanece aberto até configuração por KB/metadata
+- planejamento inicial de `B091` registrado no `ApiPlan`: wizard único classificou auditoria operacional separadamente por política inicial hardcoded em memória, preservando origem/razão; `B091` canônico permanece aberto até configuração por KB/metadata
 - `B092` (concluído no escopo de plano): wizard único registrou `Security Level` no `ApiPlan` e manteve a condição GAM como `UNRESOLVED_B092_GAM_CONDITION` até validação pública segura, sem aplicar segurança em objetos reais
 - follow-up da Sprint 3 (implementado para validação manual): `GeneratorTarget='.NET'` como gerador prioritário inicial do MVP, `ConflictMode='BlockOnCollision'` para colisão externa/incompatível e `ReexecutionMode='Safe'`; descrições, idioma/fallback, condição GAM e engine real permanecem pendentes, sem gerar objetos
 - módulo alvo
@@ -199,7 +199,7 @@ Transformar a Transaction e as escolhas do wizard em um `ApiPlan` progressivamen
 
 ## Gate
 
-`ApiPlan` inicial consistente e sem escrita na KB, com sensibilidade, auditoria operacional, segurança e campos escalares de engine registrados explicitamente em memória. B090/B091 fecham apenas a política inicial hardcoded em memória; a configuração explícita por KB via metadata persistente permanece pendente. O gate de prontidão para engine permanece aberto enquanto descrições de serviço, idioma/fallback das descrições, condição GAM, engine real e validação de geração estiverem pendentes; `ConflictMode='BlockOnCollision'` governa colisão externa/incompatível e não substitui a reexecução conservadora de objeto próprio.
+`ApiPlan` inicial consistente e sem escrita na KB, com sensibilidade, auditoria operacional, segurança e campos escalares de engine registrados explicitamente em memória. A representação provisória de B090/B091 cobre apenas a política inicial hardcoded em memória; os itens canônicos permanecem abertos até configuração explícita por KB via metadata persistente. O gate de prontidão para engine permanece aberto enquanto descrições de serviço, idioma/fallback das descrições, condição GAM, engine real e validação de geração estiverem pendentes; `ConflictMode='BlockOnCollision'` governa colisão externa/incompatível e não substitui a reexecução conservadora de objeto próprio.
 
 [F08][SPR-F24]
 
