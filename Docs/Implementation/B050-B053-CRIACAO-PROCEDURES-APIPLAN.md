@@ -4,7 +4,7 @@
 
 B050-B053 foram validados manualmente no GeneXus 18 U15 como primeira escrita real de Procedures a partir do `ApiPlan` em memória e dos SDTs já existentes.
 
-O comando adicionado é `Criar Procedures (B050-B053)`.
+O comando adicionado é `Criar Procedures (B050-B053)`. Depois da validação inicial, a mesma etapa foi integrada ao encerramento de `Abrir Wizard (B030)`, executando somente após B040-B046 ser confirmado e concluído no mesmo fluxo do wizard.
 
 ## Escopo implementado
 
@@ -100,6 +100,12 @@ Procedures criadas:
 
 A evidência visual da IDE confirmou a presença das quatro Procedures no módulo da Transaction. A Output confirmou que nenhum `API Object`, REST completo ou metadata persistente definitiva foi criado.
 
+## Integração com o wizard
+
+Após a validação dos comandos separados, B050-B053 foi incorporado ao encerramento de `Abrir Wizard (B030)`. O wizard só oferece essa etapa quando a criação ou reencontro dos SDTs B040-B046 foi confirmada e concluída no mesmo fluxo. A Output deve registrar `Trigger='Wizard'` e preservar o limite de não criar API Object, REST completo ou metadata persistente definitiva.
+
+Essa integração ainda precisa de validação manual no GeneXus 18 U15.
+
 ## Próximo passo
 
-B050-B053 estão concluídos. A próxima frente deve preparar B054 para criar ou reencontrar o objeto `API` sobre as Procedures existentes, ainda sem completar a Sprint 6 de comportamento REST e segurança definitivos.
+B050-B053 estão concluídos como comando separado. A próxima ação executável vigente é validar o fluxo integrado do wizard conforme o checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`; B054 só deve ser promovido depois dessa evidência.

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Artech.Architecture.Common.Descriptors;
 using Artech.Architecture.Common.Helpers;
+using Artech.Architecture.Common.Objects;
 using Artech.Architecture.Common.Packages;
 using Artech.Architecture.Common.Services;
 using Artech.Architecture.UI.Framework.Packages;
@@ -343,32 +344,7 @@ public sealed class Package : AbstractPackageUI
             return true;
         }
 
-        var confirmation = System.Windows.Forms.MessageBox.Show(
-            "B040-B046 vai criar ou reencontrar 2 SDTs compartilhados e 5 SDTs proprios a partir do ApiPlan em memoria. Nao cria Procedures, API Object ou metadata persistente definitiva. Confirma a escrita desses SDTs na KB ativa?",
-            "Confirmar criacao de SDTs B040-B046",
-            System.Windows.Forms.MessageBoxButtons.YesNo,
-            System.Windows.Forms.MessageBoxIcon.Warning,
-            System.Windows.Forms.MessageBoxDefaultButton.Button2);
-        if (confirmation != System.Windows.Forms.DialogResult.Yes)
-        {
-            WriteOutput($"[Genexus Open API Builder][B040-B046] Criacao de SDTs cancelada pelo usuario para Transaction='{transaction.Name}'. Nenhuma alteracao foi feita na KB.");
-            return true;
-        }
-
-        try
-        {
-            var result = ApiPlanSdtWriter.CreateOrReencounter(knowledgeBase.DesignModel, transaction, apiPlan);
-            WriteOutput($"[Genexus Open API Builder][B040-B046] Escrita de SDTs concluida: Transaction='{transaction.Name}', PlannedOwnSdts={result.PlannedOwnSdts}, PlannedSharedSdts={result.PlannedSharedSdts}, Created={result.CreatedSdts}, Reencountered={result.ReencounteredSdts}. Nenhuma Procedure, API Object ou metadata persistente definitiva foi criada.");
-            foreach (var item in result.Items)
-            {
-                WriteOutput($"[Genexus Open API Builder][B040-B046] SDT {item.Status}: Backlog='{item.BacklogId}', Kind='{item.Kind}', Name='{item.Name}', Scope='{item.Scope}', Guid='{item.Guid}'.");
-            }
-        }
-        catch (Exception ex)
-        {
-            WriteOutput($"[Genexus Open API Builder][B040-B046] Criacao de SDTs bloqueada ou falhou: {ex.Message}");
-        }
-
+        TryConfirmAndCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "Comando");
         return true;
     }
 
@@ -416,6 +392,44 @@ public sealed class Package : AbstractPackageUI
             return true;
         }
 
+        TryConfirmAndCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "Comando");
+        return true;
+    }
+
+    private static bool TryConfirmAndCreateSdts(KBModel designModel, Transaction transaction, ApiPlan apiPlan, string triggerSource)
+    {
+        var confirmation = System.Windows.Forms.MessageBox.Show(
+            "B040-B046 vai criar ou reencontrar 2 SDTs compartilhados e 5 SDTs proprios a partir do ApiPlan em memoria. Nao cria Procedures, API Object ou metadata persistente definitiva. Confirma a escrita desses SDTs na KB ativa?",
+            "Confirmar criacao de SDTs B040-B046",
+            System.Windows.Forms.MessageBoxButtons.YesNo,
+            System.Windows.Forms.MessageBoxIcon.Warning,
+            System.Windows.Forms.MessageBoxDefaultButton.Button2);
+        if (confirmation != System.Windows.Forms.DialogResult.Yes)
+        {
+            WriteOutput($"[Genexus Open API Builder][B040-B046] Criacao de SDTs cancelada pelo usuario para Transaction='{transaction.Name}', Trigger='{triggerSource}'. Nenhuma alteracao foi feita na KB.");
+            return false;
+        }
+
+        try
+        {
+            var result = ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan);
+            WriteOutput($"[Genexus Open API Builder][B040-B046] Escrita de SDTs concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedOwnSdts={result.PlannedOwnSdts}, PlannedSharedSdts={result.PlannedSharedSdts}, Created={result.CreatedSdts}, Reencountered={result.ReencounteredSdts}. Nenhuma Procedure, API Object ou metadata persistente definitiva foi criada.");
+            foreach (var item in result.Items)
+            {
+                WriteOutput($"[Genexus Open API Builder][B040-B046] SDT {item.Status}: Backlog='{item.BacklogId}', Kind='{item.Kind}', Name='{item.Name}', Scope='{item.Scope}', Guid='{item.Guid}'.");
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            WriteOutput($"[Genexus Open API Builder][B040-B046] Criacao de SDTs bloqueada ou falhou: Trigger='{triggerSource}', Error='{ex.Message}'");
+            return false;
+        }
+    }
+
+    private static bool TryConfirmAndCreateProcedures(KBModel designModel, Transaction transaction, ApiPlan apiPlan, string triggerSource)
+    {
         var confirmation = System.Windows.Forms.MessageBox.Show(
             "B050-B053 vai reencontrar os 7 SDTs de B040-B046 e criar ou reencontrar 4 Procedures skeleton a partir do ApiPlan em memoria. Nao cria API Object, REST completo ou metadata persistente definitiva. Confirma a escrita dessas Procedures na KB ativa?",
             "Confirmar criacao de Procedures B050-B053",
@@ -424,27 +438,27 @@ public sealed class Package : AbstractPackageUI
             System.Windows.Forms.MessageBoxDefaultButton.Button2);
         if (confirmation != System.Windows.Forms.DialogResult.Yes)
         {
-            WriteOutput($"[Genexus Open API Builder][B050-B053] Criacao de Procedures cancelada pelo usuario para Transaction='{transaction.Name}'. Nenhuma alteracao foi feita na KB.");
-            return true;
+            WriteOutput($"[Genexus Open API Builder][B050-B053] Criacao de Procedures cancelada pelo usuario para Transaction='{transaction.Name}', Trigger='{triggerSource}'. Nenhuma alteracao foi feita na KB.");
+            return false;
         }
 
         try
         {
-            var result = ApiPlanProcedureWriter.CreateOrReencounter(knowledgeBase.DesignModel, transaction, apiPlan);
-            WriteOutput($"[Genexus Open API Builder][B050-B053] Escrita de Procedures concluida: Transaction='{transaction.Name}', PlannedProcedures={result.PlannedProcedures}, ReencounteredSdts={result.ReencounteredSdts}, Created={result.CreatedProcedures}, Reencountered={result.ReencounteredProcedures}. Nenhum API Object, REST completo ou metadata persistente definitiva foi criado.");
+            var result = ApiPlanProcedureWriter.CreateOrReencounter(designModel, transaction, apiPlan);
+            WriteOutput($"[Genexus Open API Builder][B050-B053] Escrita de Procedures concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedProcedures={result.PlannedProcedures}, ReencounteredSdts={result.ReencounteredSdts}, Created={result.CreatedProcedures}, Reencountered={result.ReencounteredProcedures}. Nenhum API Object, REST completo ou metadata persistente definitiva foi criado.");
             foreach (var item in result.Items)
             {
                 WriteOutput($"[Genexus Open API Builder][B050-B053] Procedure {item.Status}: Backlog='{item.BacklogId}', Service='{item.ServiceName}', Name='{item.Name}', Guid='{item.Guid}'.");
             }
+
+            return true;
         }
         catch (Exception ex)
         {
-            WriteOutput($"[Genexus Open API Builder][B050-B053] Criacao de Procedures bloqueada ou falhou: {ex.Message}");
+            WriteOutput($"[Genexus Open API Builder][B050-B053] Criacao de Procedures bloqueada ou falhou: Trigger='{triggerSource}', Error='{ex.Message}'");
+            return false;
         }
-
-        return true;
     }
-
     private static bool QueryOpenWizardStepOne(CommandData data, ref CommandStatus status)
     {
         status.Visible(true);
@@ -603,7 +617,16 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][Sprint3] Campos de engine no ApiPlan: GeneratorTarget='{apiPlan.GeneratorTarget}' como gerador prioritario inicial do MVP, ConflictMode='{apiPlan.ConflictMode}' para colisao externa/incompativel, ReexecutionMode='{apiPlan.ReexecutionMode}', ServiceDescriptionsPending={serviceDescriptionsPendingCount}/{apiPlan.ServiceDescriptions.Count}, ServiceDescriptionLanguage='{apiPlan.ServiceDescriptionLanguage}', ServiceDescriptionFallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, IsEngineReady={apiPlan.IsEngineReady}. Sem validar engine real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B056] Descricoes no ApiPlan: Resolved={serviceDescriptionsResolvedCount}/{apiPlan.ServiceDescriptions.Count}, Language='{apiPlan.ServiceDescriptionLanguage}', LanguageSource='{apiPlan.ServiceDescriptionLanguageSource}', FallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, FallbackReason='{apiPlan.ServiceDescriptionFallbackReason}'. Sem aplicar [Description] em objeto API real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B092] Seguranca no ApiPlan: SecurityLevel='{apiPlan.Security.SecurityLevel}', GamCondition='{apiPlan.Security.GamCondition}', RequiresGenerationConfirmation={apiPlan.Security.RequiresGenerationConfirmation}. Sem aplicar seguranca em objetos reais.");
-        WriteOutput("[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem somente em memoria; nenhuma geracao de objetos de API foi executada.");
+        WriteOutput("[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria e a geracao confirmada de SDTs/Procedures sera oferecida no proprio fluxo do wizard.");
+        var wizardCreatedOrReencounteredSdts = TryConfirmAndCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
+        if (wizardCreatedOrReencounteredSdts)
+        {
+            TryConfirmAndCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
+        }
+        else
+        {
+            WriteOutput($"[Genexus Open API Builder][B050-B053] Etapa de Procedures nao executada pelo wizard para Transaction='{transaction.Name}' porque B040-B046 nao foi confirmado ou concluido neste fluxo. Nenhuma Procedure foi criada pelo wizard.");
+        }
 
         return true;
     }

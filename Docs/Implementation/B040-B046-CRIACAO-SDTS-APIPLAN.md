@@ -4,7 +4,7 @@
 
 B040-B046 foram validados manualmente no GeneXus 18 U15 como primeira escrita real de SDTs a partir do `ApiPlan` em memória.
 
-O comando adicionado é `Criar SDTs (B040-B046)`.
+O comando adicionado é `Criar SDTs (B040-B046)`. Depois da validação inicial, a mesma etapa foi integrada ao encerramento de `Abrir Wizard (B030)`, mantendo confirmação modal própria e os mesmos limites de escrita.
 
 ## Escopo implementado
 
@@ -96,6 +96,12 @@ SDTs próprios criados:
 
 A evidência visual da IDE confirmou a presença dos cinco SDTs próprios no módulo da Transaction. A Output confirmou também os dois SDTs compartilhados no escopo `RootModuleFolder:GxOpenAPI`.
 
+## Integração com o wizard
+
+Após a validação dos comandos separados, B040-B046 foi incorporado ao encerramento de `Abrir Wizard (B030)`. O wizard conclui o `ApiPlan`, solicita confirmação explícita para criar ou reencontrar os SDTs e registra a Output com `Trigger='Wizard'`. Se essa etapa for cancelada ou bloqueada, o wizard não deve oferecer a criação de Procedures no mesmo fluxo.
+
+Essa integração ainda precisa de validação manual no GeneXus 18 U15.
+
 ## Próximo passo
 
-B040-B046 estão concluídos. B050-B053 foram preparados posteriormente; a próxima ação executável vigente deve ser consultada no checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
+B040-B046 estão concluídos como comando separado. A próxima ação executável vigente é validar o fluxo integrado do wizard conforme o checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.

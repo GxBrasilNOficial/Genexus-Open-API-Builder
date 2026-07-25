@@ -54,6 +54,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B039 validado no U15: preview de engine SDT recebe o `ApiPlan`, resolve cinco SDTs próprios e dois compartilhados com status `ResolvedSdtContractPreviewNoKbWrite`, registra `WritesKnowledgeBase=False` e não escreve na KB
 - B040-B046 validados no U15: comando `Criar SDTs (B040-B046)` criou 7 SDTs a partir do `ApiPlan` após confirmação modal explícita na IDE, com 5 próprios e 2 compartilhados, sem Procedures, API Object ou metadata persistente definitiva
 - B050-B053 validados no U15: comando `Criar Procedures (B050-B053)` bloqueou execução sem `ApiPlan`, depois criou 4 Procedures skeleton a partir do `ApiPlan` e reencontrou 7 SDTs B040-B046, sem API Object, REST completo ou metadata persistente definitiva
+- `Abrir Wizard (B030)` passa a oferecer B040-B046 e B050-B053 no próprio encerramento do wizard, com confirmações modais separadas, Output marcada com `Trigger='Wizard'` e preservação dos comandos separados para reexecução/diagnóstico
 
 ## Fixed
 
@@ -74,8 +75,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Sprint 5 — preparar criação ou reencontro do objeto `API` B054 sobre as Procedures existentes
-- Primeira geração experimental de API Object sobre Procedures e SDTs já criados
+- Validar no GeneXus 18 U15 o fluxo integrado do wizard criando ou reencontrando SDTs e Procedures com `Trigger='Wizard'`
+- Depois da validação do wizard integrado, preparar criação ou reencontro do objeto `API` B054 sobre as Procedures existentes
 
 ---
 

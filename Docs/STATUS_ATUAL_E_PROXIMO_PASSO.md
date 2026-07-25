@@ -49,22 +49,24 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - B039 validado manualmente em 2026-07-25 na Transaction `Contrato`: a Output registrou `Phase='Sprint4SdtEnginePreviewOnly'`, `Status='ResolvedSdtContractPreviewNoKbWrite'`, `WritesKnowledgeBase=False`, `OwnSdts=5` e `SharedSdts=2`, listando dois SDTs compartilhados e cinco SDTs próprios planejados, sem criar, alterar ou excluir objetos na KB.
 - B040-B046 validados manualmente em 2026-07-25 na Transaction `Contrato`: após confirmação explícita no modal da IDE, o comando `Criar SDTs (B040-B046)` criou 7 SDTs a partir do `ApiPlan` (`PlannedOwnSdts=5`, `PlannedSharedSdts=2`, `Created=7`, `Reencountered=0`), incluindo `sdt_API_ErrorResponse`, `sdt_API_Pagination` e os cinco SDTs próprios `sdtContrato_API_*`, sem criar Procedure, API Object ou metadata persistente definitiva.
 - B050-B053 validados manualmente em 2026-07-25 na Transaction `Contrato`: o comando bloqueou corretamente a execução sem `ApiPlan`; depois, com `ApiPlan` recriado pelo wizard, reencontrou 7 SDTs, criou 4 Procedures skeleton (`procContrato_API_List`, `procContrato_API_Get`, `procContrato_API_Create`, `procContrato_API_Update`) e registrou `Created=4`, `Reencountered=0`, sem criar API Object, REST completo ou metadata persistente definitiva.
+- Integração do wizard com B040-B046 e B050-B053 preparada em 2026-07-25: `Abrir Wizard (B030)` agora oferece, ao concluir o `ApiPlan`, a confirmação de criação ou reencontro dos SDTs e, se essa etapa for confirmada e concluída, a confirmação de criação ou reencontro das Procedures. Os comandos separados permanecem disponíveis para reexecução e diagnóstico. A integração ainda precisa de validação manual no GeneXus 18 U15 antes de promover B054.
 
 ## Frente ativa
 
-**Sprint 5 — Procedures, API Object e Metadata**, com B050-B053 validado manualmente e as Procedures skeleton criadas sobre os SDTs existentes. A próxima frente deve preparar B054 para criação ou reencontro conservador do objeto `API` sobre essas Procedures, ainda sem completar REST/segurança definitivos da Sprint 6 nem metadata persistente definitiva fora do escopo aprovado.
+**Sprint 5 — Procedures, API Object e Metadata**, com B040-B046 e B050-B053 já validados pelos comandos separados e agora integrados ao encerramento do wizard. A próxima frente imediata é validar no GeneXus 18 U15 que `Abrir Wizard (B030)` oferece as duas confirmações de escrita na ordem correta e mantém os comandos separados como reexecução/diagnóstico, antes de preparar B054.
 
 ## Próxima ação única
 
-Preparar B054 no runtime da extensão para criar ou reencontrar o objeto `API` `api<NomeBase>` sobre as Procedures B050-B053 já existentes, mantendo bloqueio conservador contra colisões externas e sem antecipar a Sprint 6 de comportamento REST completo e segurança definitivos.
+Validar manualmente no GeneXus 18 U15 o fluxo integrado de `Abrir Wizard (B030)`: concluir o `ApiPlan`, confirmar a etapa B040-B046 de SDTs, confirmar a etapa B050-B053 de Procedures e registrar a Output com `Trigger='Wizard'`, sem criar API Object, REST completo ou metadata persistente definitiva.
 
 ## Critério de conclusão e evidência esperada
 
-- o comando ou fluxo B054 só executa com `ApiPlan` em memória compatível com a Transaction selecionada;
-- os SDTs B040-B046 e as Procedures B050-B053 existentes são reencontrados antes da criação do objeto `API`;
-- o objeto `API` planejado é criado ou reencontrado com nome convencionado `api<NomeBase>`;
-- colisões externas ou incompatíveis bloqueiam a geração por nome e descrição sentinela ou metadata disponível;
-- a Output da IDE registra o objeto `API` criado ou reencontrado e confirma que o passo não completa ainda REST/segurança definitivos nem metadata persistente definitiva fora do escopo aprovado.
+- o wizard só oferece escrita depois de concluir o `ApiPlan` compatível com a Transaction selecionada;
+- B040-B046 exibe confirmação modal própria antes de criar ou reencontrar SDTs;
+- B050-B053 só é oferecido pelo wizard quando B040-B046 foi confirmado e concluído no mesmo fluxo;
+- ao cancelar ou bloquear B040-B046, o wizard registra que Procedures não foram executadas e nenhuma Procedure é criada;
+- a Output da IDE registra B040-B046 e B050-B053 com `Trigger='Wizard'` e confirma que nenhum API Object, REST completo ou metadata persistente definitiva foi criado;
+- os comandos separados `Criar SDTs (B040-B046)` e `Criar Procedures (B050-B053)` continuam disponíveis para reexecução e diagnóstico.
 
 ## Sequência operacional vigente
 
@@ -74,8 +76,9 @@ Preparar B054 no runtime da extensão para criar ou reencontrar o objeto `API` `
 4. Sprint 3 iniciou metadata e `ApiPlan` com B038, registrou representação provisória de B090/B091/B092 em memória, resolveu e validou os campos escalares `GeneratorTarget`, `ConflictMode` e `ReexecutionMode`, validou manualmente o contrato preparatório de configuração por KB, o contrato mínimo da metadata persistente futura para B090/B091, B056 e a condição B092 no escopo de plano; B090/B091 canônicos continuam abertos para regras carregadas de metadata persistente real.
 5. Sprint 4 validou B039 como preview de engine SDT em memória e concluiu B040-B046 com a primeira escrita real de SDTs próprios e compartilhados a partir do `ApiPlan`.
 6. Sprint 5 validou B050-B053 com a criação das Procedures skeleton sobre os SDTs existentes, ainda sem API Object, REST completo ou metadata persistente definitiva.
-7. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
-8. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
+7. Sprint 5 integrou B040-B046 e B050-B053 ao encerramento do wizard, mantendo confirmações explícitas separadas e comandos independentes para reexecução/diagnóstico; falta validar esse fluxo integrado no U15.
+8. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
+9. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
 
 ## Bloqueios e fatos ainda não validados
 
