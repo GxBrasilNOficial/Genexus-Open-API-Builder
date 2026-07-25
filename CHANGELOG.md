@@ -47,7 +47,9 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B037 validado no U15: wizard único consolida `Obrigatório no payload` para `CreateRequest` e `UpdateRequest`, explicita `Required` como presença do membro JSON e mantém decisões apenas em memória
 - B038 validado no U15: wizard único monta `ApiPlan` inicial em memória para `Contrato`, com `MetadataFile='apiContrato_Metadata'`, 4 endpoints, 4 Procedures planejadas e 2 SDTs compartilhados, marcado como `IsEngineReady=false` e com pendências `UNRESOLVED_B038_*`, sem persistir metadata nem gerar objetos na KB
 - Representação provisória de B090/B091 e B092 validada no U15 dentro do `ApiPlan`: wizard único classifica sensíveis e auditoria por política inicial hardcoded em memória, registra origem/razão no `ApiPlan` e grava `SecurityLevel` com `GamCondition='UNRESOLVED_B092_GAM_CONDITION'`, mantendo B090/B091 canônicos abertos até configuração por KB/metadata e sem persistir metadata nem gerar objetos na KB
-- Follow-up da Sprint 3 validado manualmente: `ApiPlan` em memória resolve `GeneratorTarget='.NET'`, `ConflictMode='BlockOnCollision'` e `ReexecutionMode='Safe'`, mantendo descrições, idioma/fallback de descrição, GAM e prontidão da engine explicitamente pendentes, sem persistir metadata nem gerar objetos na KB
+- Follow-up da Sprint 3 validado manualmente: `ApiPlan` em memória resolve `GeneratorTarget='.NET'`, `ConflictMode='BlockOnCollision'` e `ReexecutionMode='Safe'`, mantendo condição GAM e prontidão da engine explicitamente pendentes, sem persistir metadata nem gerar objetos na KB
+- Contrato preparatório de configuração por KB para B090/B091 validado no U15 dentro do `ApiPlan`, ainda sem metadata persistente e sem gerar objetos na KB
+- B056 validado no U15 dentro do `ApiPlan`: descrições de serviço resolvidas em memória com `ServiceDescriptionsPending=0/4`, idioma `English` e fallback técnico registrado, ainda sem aplicar `[Description]` em objeto `API` real e sem gerar objetos na KB
 
 ## Fixed
 
@@ -68,7 +70,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Sprint 3 — preparar configuração explícita por KB para sensíveis/auditoria em metadata persistente futura, sem gerar objetos na KB
+- Sprint 3 — resolver a condição GAM de B092 no `ApiPlan`, ainda sem aplicar segurança em objetos reais e sem gerar objetos na KB
 - Primeira geração experimental
 
 ---

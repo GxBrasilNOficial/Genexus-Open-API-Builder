@@ -65,4 +65,4 @@ Criterio atendido em 2026-07-25 quando:
 - a mensagem preserva que `[Description]` nao foi aplicado em objeto `API` real;
 - o plano permanece em memoria, sem metadata persistente e sem gerar SDT, Procedure, API Object ou File na KB.
 
-B056 canonico ainda dependera, em frente posterior, da validacao publica de leitura do idioma principal da KB para substituir o fallback tecnico por selecao automatica real quando houver modelo em portugues, espanhol ou ingles.
+B056 canonico continua aberto fora deste escopo de plano: ainda sera necessario aplicar e persistir `[Description]` nos servicos do objeto `API` real durante a geracao, com idioma/fallback resolvidos pela leitura validada do idioma principal da KB por API publica. Esta frente validou apenas as descricoes no `ApiPlan` em memoria.
