@@ -37,6 +37,7 @@ public sealed class Package : AbstractPackageUI
         AddCommand(new CommandKey(Id, "Verificar Business Component (B024)"), ExecuteCheckBusinessComponent, QueryCheckBusinessComponent);
         AddCommand(new CommandKey(Id, "Ler Chave Primária (B025)"), ExecuteReadPrimaryKey, QueryReadPrimaryKey);
         AddCommand(new CommandKey(Id, "Abrir Wizard (B030)"), ExecuteOpenWizardStepOne, QueryOpenWizardStepOne);
+        AddCommand(new CommandKey(Id, "Criar SDTs (B040-B046)"), ExecuteCreateSdts, QueryCreateSdts);
     }
 
     private static bool QueryFutureFirstOption(CommandData data, ref CommandStatus status)
@@ -297,6 +298,78 @@ public sealed class Package : AbstractPackageUI
         return true;
     }
 
+    private static bool QueryCreateSdts(CommandData data, ref CommandStatus status)
+    {
+        status.Visible(true);
+        return true;
+    }
+
+    private static bool ExecuteCreateSdts(CommandData data)
+    {
+        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
+        if (knowledgeBase is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B040-B046] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
+            return true;
+        }
+
+        PrototypeTransactionSelectionState.ClearIfKnowledgeBaseChanged(knowledgeBase);
+        var apiPlan = ApiPlanSessionState.Current;
+        if (apiPlan is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B040-B046] Nenhum ApiPlan em memoria foi encontrado. Execute e conclua primeiro o comando Abrir Wizard (B030). Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        var selectedTransaction = PrototypeTransactionSelectionState.Current;
+        if (selectedTransaction is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B040-B046] Nenhuma Transaction selecionada em memoria foi encontrada. Execute e conclua primeiro o comando Abrir Wizard (B030). Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        var transaction = Transaction.GetAll(knowledgeBase.DesignModel)
+            .SingleOrDefault(item => item.Guid == selectedTransaction.TransactionGuid);
+        if (transaction is null)
+        {
+            WriteOutput($"[Genexus Open API Builder][B040-B046] A Transaction selecionada em memoria nao foi reencontrada: Name='{selectedTransaction.TransactionName}', Guid='{selectedTransaction.TransactionGuid}'. Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        if (!string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.Ordinal))
+        {
+            WriteOutput($"[Genexus Open API Builder][B040-B046] ApiPlan em memoria pertence a Transaction='{apiPlan.TransactionName}', mas a selecao atual e Transaction='{transaction.Name}'. Execute novamente o wizard. Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        var confirmation = System.Windows.Forms.MessageBox.Show(
+            "B040-B046 vai criar ou reencontrar 2 SDTs compartilhados e 5 SDTs proprios a partir do ApiPlan em memoria. Nao cria Procedures, API Object ou metadata persistente definitiva. Confirma a escrita desses SDTs na KB ativa?",
+            "Confirmar criacao de SDTs B040-B046",
+            System.Windows.Forms.MessageBoxButtons.YesNo,
+            System.Windows.Forms.MessageBoxIcon.Warning,
+            System.Windows.Forms.MessageBoxDefaultButton.Button2);
+        if (confirmation != System.Windows.Forms.DialogResult.Yes)
+        {
+            WriteOutput($"[Genexus Open API Builder][B040-B046] Criacao de SDTs cancelada pelo usuario para Transaction='{transaction.Name}'. Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        try
+        {
+            var result = ApiPlanSdtWriter.CreateOrReencounter(knowledgeBase.DesignModel, transaction, apiPlan);
+            WriteOutput($"[Genexus Open API Builder][B040-B046] Escrita de SDTs concluida: Transaction='{transaction.Name}', PlannedOwnSdts={result.PlannedOwnSdts}, PlannedSharedSdts={result.PlannedSharedSdts}, Created={result.CreatedSdts}, Reencountered={result.ReencounteredSdts}. Nenhuma Procedure, API Object ou metadata persistente definitiva foi criada.");
+            foreach (var item in result.Items)
+            {
+                WriteOutput($"[Genexus Open API Builder][B040-B046] SDT {item.Status}: Backlog='{item.BacklogId}', Kind='{item.Kind}', Name='{item.Name}', Scope='{item.Scope}', Guid='{item.Guid}'.");
+            }
+        }
+        catch (Exception ex)
+        {
+            WriteOutput($"[Genexus Open API Builder][B040-B046] Criacao de SDTs bloqueada ou falhou: {ex.Message}");
+        }
+
+        return true;
+    }
     private static bool QueryOpenWizardStepOne(CommandData data, ref CommandStatus status)
     {
         status.Visible(true);
