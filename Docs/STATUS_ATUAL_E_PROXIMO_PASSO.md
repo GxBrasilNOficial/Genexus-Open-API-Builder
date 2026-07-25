@@ -46,26 +46,26 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Contrato mínimo da metadata persistente futura para B090/B091 validado manualmente em 2026-07-25 na Transaction `Contrato`: a Output registrou `SchemaVersion='B090B091_KB_FIELD_CLASSIFICATION_V1'`, `Section='fieldClassification'`, `SensitiveMember='sensitiveExactNames'`, `AuditExactMember='auditExactNames'`, `AuditSuffixMember='auditSuffixes'` e `RequiredMembers=5`, ainda sem ler ou gravar File de metadata e sem gerar objetos na KB.
 - B056 validado manualmente em 2026-07-25 na Transaction `Contrato`: a Output registrou `ServiceDescriptionsPending=0/4`, `ServiceDescriptionLanguage='English'`, `ServiceDescriptionFallbackUsed=True`, `Resolved=4/4`, `LanguageSource='PendingKbLanguageApiValidation'` e fallback técnico em inglês, sem aplicar `[Description]` em objeto `API` real e sem gerar SDT, Procedure, API Object ou File na KB.
 - B092 validado manualmente em 2026-07-25 na Transaction `Contrato`: a Output registrou `Authentication` com `GamCondition='GAM_AUTHENTICATION_REQUIRED'` e `RequiresGenerationConfirmation=False`, `Authorization` com `GamCondition='GAM_AUTHORIZATION_REQUIRED_PENDING_PERMISSIONS'` e `RequiresGenerationConfirmation=True`, e `None` com `GamCondition='NO_GAM_SECURITY_PUBLIC_API'` e `RequiresGenerationConfirmation=True`, ainda sem aplicar segurança em objeto `API` real e sem gerar SDT, Procedure, API Object ou File na KB.
-- B039 preparado localmente em 2026-07-25: o wizard passa a montar `ApiPlanSdtGenerationPlan` em memória a partir do `ApiPlan`, com `Phase='Sprint4SdtEnginePreviewOnly'`, `Status='ResolvedSdtContractPreviewNoKbWrite'`, `WritesKnowledgeBase=False`, cinco SDTs próprios e dois compartilhados planejados, ainda sem criar, alterar ou excluir objetos na KB; validação manual na IDE permanece pendente.
+- B039 validado manualmente em 2026-07-25 na Transaction `Contrato`: a Output registrou `Phase='Sprint4SdtEnginePreviewOnly'`, `Status='ResolvedSdtContractPreviewNoKbWrite'`, `WritesKnowledgeBase=False`, `OwnSdts=5` e `SharedSdts=2`, listando dois SDTs compartilhados e cinco SDTs próprios planejados, sem criar, alterar ou excluir objetos na KB.
 
 ## Frente ativa
 
-**Sprint 4 — Engine Base e SDTs**, com o primeiro preview `wizard -> ApiPlan -> engine` preparado em memória. A Sprint 3 deixou o plano em memória com `GeneratorTarget`, `ConflictMode`, `ReexecutionMode`, descrições B056, contrato preparatório B090/B091 por KB e condição B092 resolvida para `Authentication`, `Authorization` e `None`; B039 agora resolve o contrato de SDTs em memória sem escrita na KB. A próxima frente deve validar esse preview na IDE e então avançar para a primeira escrita real de SDTs somente com autorização explícita.
+**Sprint 4 — Engine Base e SDTs**, com o primeiro preview `wizard -> ApiPlan -> engine` validado manualmente no U15 sem escrita na KB. A próxima frente deve avançar para B040-B046, criando ou reencontrando os SDTs próprios e compartilhados a partir do `ApiPlan`, somente após autorização explícita para gravar SDTs na KB e ainda sem Procedures, API Object ou metadata persistente definitiva.
 
 ## Próxima ação única
 
-Validar no GeneXus 18 U15 o preview B039 do engine SDT e preparar a autorização explícita para a primeira criação real de SDTs:
+Preparar e executar a primeira escrita real de SDTs da Sprint 4, mediante autorização explícita para B040-B046:
 
-> Executar `Abrir Wizard (B030)`, confirmar as linhas `[Sprint4]` na Output com os SDTs planejados e, em seguida, decidir a autorização da etapa B040-B046 para criar ou reencontrar SDTs próprios e compartilhados na KB, sem Procedures, API Object ou metadata persistente definitiva.
+> Criar ou reencontrar os SDTs compartilhados `sdt_API_ErrorResponse` e `sdt_API_Pagination` no escopo `GxOpenAPI` e criar os SDTs próprios `CreateRequest`, `UpdateRequest`, `Response`, `ListFilters` e `ListResponse` da Transaction selecionada, sem criar Procedures, API Object ou metadata persistente definitiva.
 
 ## Critério de conclusão e evidência esperada
 
-- a Output da IDE registra `Phase='Sprint4SdtEnginePreviewOnly'`, `Status='ResolvedSdtContractPreviewNoKbWrite'` e `WritesKnowledgeBase=False`;
-- os cinco SDTs próprios planejados aparecem com nomes derivados do `ApiPlan` e escopo `TransactionModule`;
-- os SDTs compartilhados `sdt_API_ErrorResponse` e `sdt_API_Pagination` aparecem com escopo `RootModuleFolder:GxOpenAPI`;
-- nenhuma escrita na KB ocorre durante a validação B039;
-- a etapa seguinte de criação real B040-B046 só começa após autorização explícita para gravar SDTs na KB;
-- nenhuma Procedure, API Object ou metadata persistente definitiva é criada antes da etapa de SDTs ser validada.
+- o engine recebe o `ApiPlan` validado no B039 e usa os nomes planejados para SDTs próprios e compartilhados;
+- colisões externas ou incompatíveis bloqueiam a geração por `ConflictMode='BlockOnCollision'`;
+- os SDTs compartilhados são criados ou reencontrados no escopo `RootModuleFolder:GxOpenAPI`;
+- os SDTs próprios são criados no escopo da Transaction selecionada, preservando membros e ordem planejados;
+- a escrita real na KB só ocorre após autorização explícita para B040-B046 e evidência manual no U15;
+- nenhuma Procedure, API Object ou metadata persistente definitiva é criada nesta etapa.
 
 ## Sequência operacional vigente
 
@@ -73,7 +73,7 @@ Validar no GeneXus 18 U15 o preview B039 do engine SDT e preparar a autorizaçã
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
 3. Sprint 2 concluiu `B020`, `B021`, `B022`, `B023`, `B024`, `B025`, `B030`, `B031`, `B032`, `B033`, `B034`, `B035`, `B036` e `B037`, encerrando as Fases 1 e 2 do protótipo navegável com escolhas em memória, sem `ApiPlan` e sem geração de objetos de API.
 4. Sprint 3 iniciou metadata e `ApiPlan` com B038, registrou representação provisória de B090/B091/B092 em memória, resolveu e validou os campos escalares `GeneratorTarget`, `ConflictMode` e `ReexecutionMode`, validou manualmente o contrato preparatório de configuração por KB, o contrato mínimo da metadata persistente futura para B090/B091, B056 e a condição B092 no escopo de plano; B090/B091 canônicos continuam abertos para regras carregadas de metadata persistente real.
-5. Sprint 4 iniciou B039 com preview de engine SDT em memória e avança para validação IDE antes da primeira criação real de SDTs.
+5. Sprint 4 validou B039 como preview de engine SDT em memória e avança para B040-B046, a primeira criação real de SDTs mediante autorização explícita.
 6. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
 7. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
 

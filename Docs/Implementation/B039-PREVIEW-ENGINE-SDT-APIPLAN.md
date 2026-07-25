@@ -53,10 +53,20 @@ dotnet build Src\GenexusOpenApiBuilder.sln -c Release --no-restore
 
 Resultado: compilação com sucesso, 0 avisos e 0 erros.
 
-## Validação pendente na IDE
+## Validação manual na IDE
 
-A validação manual no GeneXus 18 U15 ainda deve confirmar as linhas `[Sprint4]` na Output após executar `Abrir Wizard (B030)` e concluir o wizard.
+B039 foi validado manualmente no GeneXus 18 U15 na Transaction `Contrato` após executar `Abrir Wizard (B030)` e concluir o wizard.
 
-Essa validação continua sem escrita na KB.
+A Output confirmou:
+
+- `Phase='Sprint4SdtEnginePreviewOnly'`;
+- `Status='ResolvedSdtContractPreviewNoKbWrite'`;
+- `WritesKnowledgeBase=False`;
+- `OwnSdts=5`;
+- `SharedSdts=2`;
+- SDTs compartilhados `sdt_API_ErrorResponse` e `sdt_API_Pagination` com escopo `RootModuleFolder:GxOpenAPI`;
+- SDTs próprios `sdtContrato_API_CreateRequest`, `sdtContrato_API_UpdateRequest`, `sdtContrato_API_Response`, `sdtContrato_API_ListFilters` e `sdtContrato_API_ListResponse` com escopo `TransactionModule`.
+
+A validação confirmou que nenhuma geração de objetos de API foi executada e que nenhuma escrita de SDT, Procedure, API Object ou File ocorreu na KB.
 
 ## Próximo passo
