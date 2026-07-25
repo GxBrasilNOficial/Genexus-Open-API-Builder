@@ -2,7 +2,7 @@
 
 ## Estado
 
-B040-B046 foram preparados no runtime da extensão com um comando explícito de escrita na KB, ainda pendente de validação manual no GeneXus 18 U15.
+B040-B046 foram validados manualmente no GeneXus 18 U15 como primeira escrita real de SDTs a partir do `ApiPlan` em memória.
 
 O comando adicionado é `Criar SDTs (B040-B046)`.
 
@@ -69,16 +69,33 @@ git diff --check
 
 Resultado local: build Release com 0 erros, registro de 9 comandos sincronizado e whitespace limpo.
 
-## Validação pendente na IDE
+## Validação manual na IDE
 
-A validação manual deve instalar a DLL atual e executar:
+A validação manual foi registrada em 2026-07-25 na Transaction `Contrato`.
 
-1. concluir `Abrir Wizard (B030)` para gerar o `ApiPlan` em memória;
-2. executar `Criar SDTs (B040-B046)`;
-3. confirmar o modal de escrita na KB;
-4. conferir na Output os SDTs criados ou reencontrados;
-5. confirmar no GeneXus que apenas os SDTs e o Folder necessário foram criados, sem Procedures, API Object ou File de metadata persistente definitiva.
+A IDE exibiu o modal de confirmação explícita antes da escrita na KB e a operação foi autorizada pelo usuário.
+
+A Output registrou:
+
+```text
+[Genexus Open API Builder][B040-B046] Escrita de SDTs concluida: Transaction='Contrato', PlannedOwnSdts=5, PlannedSharedSdts=2, Created=7, Reencountered=0. Nenhuma Procedure, API Object ou metadata persistente definitiva foi criada.
+```
+
+SDTs compartilhados criados:
+
+- `sdt_API_ErrorResponse`;
+- `sdt_API_Pagination`.
+
+SDTs próprios criados:
+
+- `sdtContrato_API_CreateRequest`;
+- `sdtContrato_API_UpdateRequest`;
+- `sdtContrato_API_Response`;
+- `sdtContrato_API_ListFilters`;
+- `sdtContrato_API_ListResponse`.
+
+A evidência visual da IDE confirmou a presença dos cinco SDTs próprios no módulo da Transaction. A Output confirmou também os dois SDTs compartilhados no escopo `RootModuleFolder:GxOpenAPI`.
 
 ## Próximo passo
 
-Validar manualmente B040-B046 no U15. Se a criação falhar por limitação de API pública para tipos SDT referenciados, ajustar o writer antes de considerar a primeira escrita real concluída.
+B040-B046 estão concluídos. A próxima frente deve iniciar a Sprint 5 preparando B050-B053, ainda com foco conservador em criação ou reencontro de Procedures sobre os SDTs existentes e sem antecipar comportamento REST completo.

@@ -52,7 +52,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B056 validado no U15 dentro do `ApiPlan`: descrições de serviço resolvidas em memória com `ServiceDescriptionsPending=0/4`, idioma `English` e fallback técnico registrado, ainda sem aplicar `[Description]` em objeto `API` real e sem gerar objetos na KB
 - B092 validado no U15 dentro do `ApiPlan`: `Authentication`, `Authorization` e `None` agora resolvem `GamCondition` explicitamente no plano, com confirmação obrigatória para `Authorization` e `None`, ainda sem aplicar segurança em objeto `API` real e sem gerar objetos na KB
 - B039 validado no U15: preview de engine SDT recebe o `ApiPlan`, resolve cinco SDTs próprios e dois compartilhados com status `ResolvedSdtContractPreviewNoKbWrite`, registra `WritesKnowledgeBase=False` e não escreve na KB
-- B040-B046 preparados: comando `Criar SDTs (B040-B046)` cria ou reencontra SDTs a partir do `ApiPlan` somente após confirmação modal explícita na IDE, sem Procedures, API Object ou metadata persistente definitiva
+- B040-B046 validados no U15: comando `Criar SDTs (B040-B046)` criou 7 SDTs a partir do `ApiPlan` após confirmação modal explícita na IDE, com 5 próprios e 2 compartilhados, sem Procedures, API Object ou metadata persistente definitiva
 
 ## Fixed
 
@@ -73,8 +73,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Sprint 4 — validar no U15 o comando `Criar SDTs (B040-B046)` e registrar a evidência da primeira escrita real de SDTs
-- Primeira geração experimental
+- Sprint 5 — preparar criação ou reencontro das Procedures B050-B053 sobre os SDTs existentes
+- Primeira geração experimental de Procedures/API sobre os SDTs já criados
 
 ---
 
