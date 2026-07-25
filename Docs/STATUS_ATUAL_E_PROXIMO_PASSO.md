@@ -48,25 +48,23 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - B092 validado manualmente em 2026-07-25 na Transaction `Contrato`: a Output registrou `Authentication` com `GamCondition='GAM_AUTHENTICATION_REQUIRED'` e `RequiresGenerationConfirmation=False`, `Authorization` com `GamCondition='GAM_AUTHORIZATION_REQUIRED_PENDING_PERMISSIONS'` e `RequiresGenerationConfirmation=True`, e `None` com `GamCondition='NO_GAM_SECURITY_PUBLIC_API'` e `RequiresGenerationConfirmation=True`, ainda sem aplicar segurança em objeto `API` real e sem gerar SDT, Procedure, API Object ou File na KB.
 - B039 validado manualmente em 2026-07-25 na Transaction `Contrato`: a Output registrou `Phase='Sprint4SdtEnginePreviewOnly'`, `Status='ResolvedSdtContractPreviewNoKbWrite'`, `WritesKnowledgeBase=False`, `OwnSdts=5` e `SharedSdts=2`, listando dois SDTs compartilhados e cinco SDTs próprios planejados, sem criar, alterar ou excluir objetos na KB.
 - B040-B046 validados manualmente em 2026-07-25 na Transaction `Contrato`: após confirmação explícita no modal da IDE, o comando `Criar SDTs (B040-B046)` criou 7 SDTs a partir do `ApiPlan` (`PlannedOwnSdts=5`, `PlannedSharedSdts=2`, `Created=7`, `Reencountered=0`), incluindo `sdt_API_ErrorResponse`, `sdt_API_Pagination` e os cinco SDTs próprios `sdtContrato_API_*`, sem criar Procedure, API Object ou metadata persistente definitiva.
-- B050-B053 preparados localmente em 2026-07-25: o comando `Criar Procedures (B050-B053)` foi registrado no runtime e no manifesto, exige confirmação modal explícita antes de escrever na KB, reencontra os 7 SDTs requeridos de B040-B046 e cria ou reencontra 4 Procedures skeleton a partir do `ApiPlan`, ainda pendente de validação manual no U15.
+- B050-B053 validados manualmente em 2026-07-25 na Transaction `Contrato`: o comando bloqueou corretamente a execução sem `ApiPlan`; depois, com `ApiPlan` recriado pelo wizard, reencontrou 7 SDTs, criou 4 Procedures skeleton (`procContrato_API_List`, `procContrato_API_Get`, `procContrato_API_Create`, `procContrato_API_Update`) e registrou `Created=4`, `Reencountered=0`, sem criar API Object, REST completo ou metadata persistente definitiva.
 
 ## Frente ativa
 
-**Sprint 5 — Procedures, API Object e Metadata**, com B050-B053 preparado localmente para criação ou reencontro conservador das Procedures sobre os SDTs existentes. A próxima frente deve validar o comando no U15, mediante confirmação explícita no modal da IDE, conferindo reencontro dos SDTs, criação ou reencontro das Procedures e ausência de API Object, REST completo e metadata persistente definitiva.
+**Sprint 5 — Procedures, API Object e Metadata**, com B050-B053 validado manualmente e as Procedures skeleton criadas sobre os SDTs existentes. A próxima frente deve preparar B054 para criação ou reencontro conservador do objeto `API` sobre essas Procedures, ainda sem completar REST/segurança definitivos da Sprint 6 nem metadata persistente definitiva fora do escopo aprovado.
 
 ## Próxima ação única
 
-Validar no GeneXus 18 U15 o comando `Criar Procedures (B050-B053)` como primeira escrita real de Procedures da Sprint 5:
-
-> Instalar a DLL atual, concluir `Abrir Wizard (B030)`, garantir que os SDTs B040-B046 existem, executar `Criar Procedures (B050-B053)`, confirmar o modal de escrita e registrar a Output com as Procedures criadas ou reencontradas, sem API Object, REST completo ou metadata persistente definitiva.
+Preparar B054 no runtime da extensão para criar ou reencontrar o objeto `API` `api<NomeBase>` sobre as Procedures B050-B053 já existentes, mantendo bloqueio conservador contra colisões externas e sem antecipar a Sprint 6 de comportamento REST completo e segurança definitivos.
 
 ## Critério de conclusão e evidência esperada
 
-- o comando ou fluxo de Sprint 5 só executa com `ApiPlan` em memória compatível com a Transaction selecionada;
-- os SDTs próprios e compartilhados existentes são reencontrados antes da criação das Procedures;
-- as Procedures planejadas para `List`, `Get`, `Create` e `Update` são criadas ou reencontradas com nomes convencionados;
+- o comando ou fluxo B054 só executa com `ApiPlan` em memória compatível com a Transaction selecionada;
+- os SDTs B040-B046 e as Procedures B050-B053 existentes são reencontrados antes da criação do objeto `API`;
+- o objeto `API` planejado é criado ou reencontrado com nome convencionado `api<NomeBase>`;
 - colisões externas ou incompatíveis bloqueiam a geração por nome e descrição sentinela ou metadata disponível;
-- a Output da IDE registra cada Procedure criada ou reencontrada e confirma que o passo não completa ainda API Object final, REST completo nem metadata persistente definitiva fora do escopo aprovado.
+- a Output da IDE registra o objeto `API` criado ou reencontrado e confirma que o passo não completa ainda REST/segurança definitivos nem metadata persistente definitiva fora do escopo aprovado.
 
 ## Sequência operacional vigente
 
@@ -75,7 +73,7 @@ Validar no GeneXus 18 U15 o comando `Criar Procedures (B050-B053)` como primeira
 3. Sprint 2 concluiu `B020`, `B021`, `B022`, `B023`, `B024`, `B025`, `B030`, `B031`, `B032`, `B033`, `B034`, `B035`, `B036` e `B037`, encerrando as Fases 1 e 2 do protótipo navegável com escolhas em memória, sem `ApiPlan` e sem geração de objetos de API.
 4. Sprint 3 iniciou metadata e `ApiPlan` com B038, registrou representação provisória de B090/B091/B092 em memória, resolveu e validou os campos escalares `GeneratorTarget`, `ConflictMode` e `ReexecutionMode`, validou manualmente o contrato preparatório de configuração por KB, o contrato mínimo da metadata persistente futura para B090/B091, B056 e a condição B092 no escopo de plano; B090/B091 canônicos continuam abertos para regras carregadas de metadata persistente real.
 5. Sprint 4 validou B039 como preview de engine SDT em memória e concluiu B040-B046 com a primeira escrita real de SDTs próprios e compartilhados a partir do `ApiPlan`.
-6. Sprint 5 preparou B050-B053 para criação ou reencontro das Procedures sobre os SDTs existentes, ainda pendente de validação manual no U15.
+6. Sprint 5 validou B050-B053 com a criação das Procedures skeleton sobre os SDTs existentes, ainda sem API Object, REST completo ou metadata persistente definitiva.
 7. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
 8. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
 

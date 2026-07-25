@@ -2,7 +2,7 @@
 
 ## Estado
 
-B050-B053 foram preparados no runtime da extensão com um comando explícito de escrita na KB, ainda pendente de validação manual no GeneXus 18 U15.
+B050-B053 foram validados manualmente no GeneXus 18 U15 como primeira escrita real de Procedures a partir do `ApiPlan` em memória e dos SDTs já existentes.
 
 O comando adicionado é `Criar Procedures (B050-B053)`.
 
@@ -75,9 +75,31 @@ pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1
 
 Resultado local: build Release com 0 erros e registro de 10 comandos sincronizado.
 
-## Validação pendente na IDE
+## Validação manual na IDE
 
-A validação manual deve instalar a DLL atual e executar:
+A validação manual foi registrada em 2026-07-25 na Transaction `Contrato`.
 
-1. concluir `Abrir Wizard (B030)` para gerar o `ApiPlan` em memória;
-2. garantir que B040-B046 já criou ou reencontrou os SDTs requeridos;
+Primeiro, a IDE confirmou o bloqueio seguro quando o comando foi executado sem `ApiPlan` em memória:
+
+```text
+[Genexus Open API Builder][B050-B053] Nenhum ApiPlan em memoria foi encontrado. Execute e conclua primeiro o comando Abrir Wizard (B030). Nenhuma alteracao foi feita na KB.
+```
+
+Depois de concluir `Abrir Wizard (B030)`, o comando reencontrou os 7 SDTs B040-B046 e criou as 4 Procedures planejadas:
+
+```text
+[Genexus Open API Builder][B050-B053] Escrita de Procedures concluida: Transaction='Contrato', PlannedProcedures=4, ReencounteredSdts=7, Created=4, Reencountered=0. Nenhum API Object, REST completo ou metadata persistente definitiva foi criado.
+```
+
+Procedures criadas:
+
+- `procContrato_API_List`;
+- `procContrato_API_Get`;
+- `procContrato_API_Create`;
+- `procContrato_API_Update`.
+
+A evidência visual da IDE confirmou a presença das quatro Procedures no módulo da Transaction. A Output confirmou que nenhum `API Object`, REST completo ou metadata persistente definitiva foi criado.
+
+## Próximo passo
+
+B050-B053 estão concluídos. A próxima frente deve preparar B054 para criar ou reencontrar o objeto `API` sobre as Procedures existentes, ainda sem completar a Sprint 6 de comportamento REST e segurança definitivos.
