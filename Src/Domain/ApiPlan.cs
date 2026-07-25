@@ -449,6 +449,7 @@ internal sealed class ApiPlanFieldClassificationConfiguration
         bool isKnowledgeBaseConfigured,
         IReadOnlyList<string> sensitiveExactNames,
         IReadOnlyList<string> auditSuffixes,
+        ApiPlanFieldClassificationMetadataContract metadataContract,
         IReadOnlyList<string> notes)
     {
         Scope = scope ?? throw new ArgumentNullException(nameof(scope));
@@ -458,6 +459,7 @@ internal sealed class ApiPlanFieldClassificationConfiguration
         IsKnowledgeBaseConfigured = isKnowledgeBaseConfigured;
         SensitiveExactNames = sensitiveExactNames ?? throw new ArgumentNullException(nameof(sensitiveExactNames));
         AuditSuffixes = auditSuffixes ?? throw new ArgumentNullException(nameof(auditSuffixes));
+        MetadataContract = metadataContract ?? throw new ArgumentNullException(nameof(metadataContract));
         Notes = notes ?? throw new ArgumentNullException(nameof(notes));
     }
 
@@ -474,6 +476,8 @@ internal sealed class ApiPlanFieldClassificationConfiguration
     public IReadOnlyList<string> SensitiveExactNames { get; }
 
     public IReadOnlyList<string> AuditSuffixes { get; }
+
+    public ApiPlanFieldClassificationMetadataContract MetadataContract { get; }
 
     public IReadOnlyList<string> Notes { get; }
 
@@ -492,7 +496,55 @@ internal sealed class ApiPlanFieldClassificationConfiguration
             configuration.IsKnowledgeBaseConfigured,
             configuration.SensitiveExactNames.ToArray(),
             configuration.AuditSuffixes.ToArray(),
+            ApiPlanFieldClassificationMetadataContract.Create(configuration.MetadataContract),
             configuration.Notes.ToArray());
+    }
+}
+
+internal sealed class ApiPlanFieldClassificationMetadataContract
+{
+    private ApiPlanFieldClassificationMetadataContract(
+        string schemaVersion,
+        string sectionName,
+        string sensitiveExactNamesMember,
+        string auditExactNamesMember,
+        string auditSuffixesMember,
+        IReadOnlyList<string> requiredMembers)
+    {
+        SchemaVersion = schemaVersion ?? throw new ArgumentNullException(nameof(schemaVersion));
+        SectionName = sectionName ?? throw new ArgumentNullException(nameof(sectionName));
+        SensitiveExactNamesMember = sensitiveExactNamesMember ?? throw new ArgumentNullException(nameof(sensitiveExactNamesMember));
+        AuditExactNamesMember = auditExactNamesMember ?? throw new ArgumentNullException(nameof(auditExactNamesMember));
+        AuditSuffixesMember = auditSuffixesMember ?? throw new ArgumentNullException(nameof(auditSuffixesMember));
+        RequiredMembers = requiredMembers ?? throw new ArgumentNullException(nameof(requiredMembers));
+    }
+
+    public string SchemaVersion { get; }
+
+    public string SectionName { get; }
+
+    public string SensitiveExactNamesMember { get; }
+
+    public string AuditExactNamesMember { get; }
+
+    public string AuditSuffixesMember { get; }
+
+    public IReadOnlyList<string> RequiredMembers { get; }
+
+    public static ApiPlanFieldClassificationMetadataContract Create(PrototypeWizardFieldClassificationMetadataContract contract)
+    {
+        if (contract is null)
+        {
+            throw new ArgumentNullException(nameof(contract));
+        }
+
+        return new ApiPlanFieldClassificationMetadataContract(
+            contract.SchemaVersion,
+            contract.SectionName,
+            contract.SensitiveExactNamesMember,
+            contract.AuditExactNamesMember,
+            contract.AuditSuffixesMember,
+            contract.RequiredMembers.ToArray());
     }
 }
 

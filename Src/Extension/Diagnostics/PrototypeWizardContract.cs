@@ -322,6 +322,7 @@ internal sealed class PrototypeWizardFieldClassificationConfiguration
         bool isKnowledgeBaseConfigured,
         IReadOnlyList<string> sensitiveExactNames,
         IReadOnlyList<string> auditSuffixes,
+        PrototypeWizardFieldClassificationMetadataContract metadataContract,
         IReadOnlyList<string> notes)
     {
         Scope = scope ?? throw new ArgumentNullException(nameof(scope));
@@ -331,6 +332,7 @@ internal sealed class PrototypeWizardFieldClassificationConfiguration
         IsKnowledgeBaseConfigured = isKnowledgeBaseConfigured;
         SensitiveExactNames = sensitiveExactNames ?? throw new ArgumentNullException(nameof(sensitiveExactNames));
         AuditSuffixes = auditSuffixes ?? throw new ArgumentNullException(nameof(auditSuffixes));
+        MetadataContract = metadataContract ?? throw new ArgumentNullException(nameof(metadataContract));
         Notes = notes ?? throw new ArgumentNullException(nameof(notes));
     }
 
@@ -347,6 +349,8 @@ internal sealed class PrototypeWizardFieldClassificationConfiguration
     public IReadOnlyList<string> SensitiveExactNames { get; }
 
     public IReadOnlyList<string> AuditSuffixes { get; }
+
+    public PrototypeWizardFieldClassificationMetadataContract MetadataContract { get; }
 
     public IReadOnlyList<string> Notes { get; }
 
@@ -378,7 +382,59 @@ internal sealed class PrototypeWizardFieldClassificationConfiguration
             false,
             sensitiveExactNames.ToArray(),
             auditSuffixes.ToArray(),
+            PrototypeWizardFieldClassificationMetadataContract.CreateV1(),
             notes);
+    }
+}
+
+internal sealed class PrototypeWizardFieldClassificationMetadataContract
+{
+    private static readonly string[] V1RequiredMembers =
+    {
+        "schemaVersion",
+        "fieldClassification",
+        "sensitiveExactNames",
+        "auditExactNames",
+        "auditSuffixes",
+    };
+
+    private PrototypeWizardFieldClassificationMetadataContract(
+        string schemaVersion,
+        string sectionName,
+        string sensitiveExactNamesMember,
+        string auditExactNamesMember,
+        string auditSuffixesMember,
+        IReadOnlyList<string> requiredMembers)
+    {
+        SchemaVersion = schemaVersion ?? throw new ArgumentNullException(nameof(schemaVersion));
+        SectionName = sectionName ?? throw new ArgumentNullException(nameof(sectionName));
+        SensitiveExactNamesMember = sensitiveExactNamesMember ?? throw new ArgumentNullException(nameof(sensitiveExactNamesMember));
+        AuditExactNamesMember = auditExactNamesMember ?? throw new ArgumentNullException(nameof(auditExactNamesMember));
+        AuditSuffixesMember = auditSuffixesMember ?? throw new ArgumentNullException(nameof(auditSuffixesMember));
+        RequiredMembers = requiredMembers ?? throw new ArgumentNullException(nameof(requiredMembers));
+    }
+
+    public string SchemaVersion { get; }
+
+    public string SectionName { get; }
+
+    public string SensitiveExactNamesMember { get; }
+
+    public string AuditExactNamesMember { get; }
+
+    public string AuditSuffixesMember { get; }
+
+    public IReadOnlyList<string> RequiredMembers { get; }
+
+    public static PrototypeWizardFieldClassificationMetadataContract CreateV1()
+    {
+        return new PrototypeWizardFieldClassificationMetadataContract(
+            "B090B091_KB_FIELD_CLASSIFICATION_V1",
+            "fieldClassification",
+            "sensitiveExactNames",
+            "auditExactNames",
+            "auditSuffixes",
+            V1RequiredMembers);
     }
 }
 
