@@ -426,6 +426,7 @@ public sealed class Package : AbstractPackageUI
         var classifiedSensitiveCount = snapshot.Attributes.Count(item => item.IsSensitive);
         var classifiedAuditCount = snapshot.Attributes.Count(item => item.IsAudit);
         var apiPlan = ApiPlanBuilder.Build(transaction, selection);
+        var sdtGenerationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var classificationConfiguration = apiPlan.FieldClassificationConfiguration;
         var classificationMetadataContract = classificationConfiguration.MetadataContract;
         var serviceDescriptionsPendingCount = apiPlan.ServiceDescriptions.Count(item => string.Equals(item.Description, ApiPlan.UnresolvedB056ServiceDescription, StringComparison.Ordinal));
@@ -445,6 +446,12 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B035] Business Component em memoria: IsBusinessComponent={selection.BusinessComponentSelection.IsBusinessComponent}, EnabledDuringWizard={selection.BusinessComponentSelection.EnabledDuringWizard}, Status='{selection.BusinessComponentSelection.Status}'.");
         WriteOutput($"[Genexus Open API Builder][B038] ApiPlan em memoria criado: Transaction='{apiPlan.TransactionName}', ModuleTarget='{apiPlan.ModuleTarget}', ApiName='{apiPlan.ApiName}', MetadataFile='{apiPlan.MetadataFileName}', EndpointsCount={apiPlan.EndpointsCount}.");
         WriteOutput($"[Genexus Open API Builder][B038] ApiPlan cobre: PrimaryKey={apiPlan.PrimaryKey.Count}, CreateFields={apiPlan.CreateRequestFields.Count}, UpdateFields={apiPlan.UpdateRequestFields.Count}, ResponseFields={apiPlan.ResponseFields.Count}, ListFilters={apiPlan.ListFilters.Count}, RequiredFields={apiPlan.RequiredFields.Count}, Procedures={apiPlan.ProcedureNames.Count}, SharedSdts={apiPlan.SharedSdtNames.Count}. Sem persistir metadata e sem gerar SDT, Procedure, API Object ou File na KB.");
+        WriteOutput($"[Genexus Open API Builder][Sprint4] Preview de engine SDT: Phase='{sdtGenerationPlan.Phase}', Status='{sdtGenerationPlan.Status}', WritesKnowledgeBase={sdtGenerationPlan.WritesKnowledgeBase}, OwnSdts={sdtGenerationPlan.OwnSdts.Count}, SharedSdts={sdtGenerationPlan.SharedSdts.Count}. Sem criar, alterar ou excluir objetos na KB.");
+        foreach (var sdt in sdtGenerationPlan.SharedSdts.Concat(sdtGenerationPlan.OwnSdts))
+        {
+            WriteOutput($"[Genexus Open API Builder][Sprint4] SDT planejado: Backlog='{sdt.BacklogId}', Kind='{sdt.Kind}', Name='{sdt.Name}', Scope='{sdt.Scope}', Members={sdt.Members.Count}.");
+        }
+
         WriteOutput($"[Genexus Open API Builder][Sprint3] Campos de engine no ApiPlan: GeneratorTarget='{apiPlan.GeneratorTarget}' como gerador prioritario inicial do MVP, ConflictMode='{apiPlan.ConflictMode}' para colisao externa/incompativel, ReexecutionMode='{apiPlan.ReexecutionMode}', ServiceDescriptionsPending={serviceDescriptionsPendingCount}/{apiPlan.ServiceDescriptions.Count}, ServiceDescriptionLanguage='{apiPlan.ServiceDescriptionLanguage}', ServiceDescriptionFallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, IsEngineReady={apiPlan.IsEngineReady}. Sem validar engine real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B056] Descricoes no ApiPlan: Resolved={serviceDescriptionsResolvedCount}/{apiPlan.ServiceDescriptions.Count}, Language='{apiPlan.ServiceDescriptionLanguage}', LanguageSource='{apiPlan.ServiceDescriptionLanguageSource}', FallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, FallbackReason='{apiPlan.ServiceDescriptionFallbackReason}'. Sem aplicar [Description] em objeto API real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B092] Seguranca no ApiPlan: SecurityLevel='{apiPlan.Security.SecurityLevel}', GamCondition='{apiPlan.Security.GamCondition}', RequiresGenerationConfirmation={apiPlan.Security.RequiresGenerationConfirmation}. Sem aplicar seguranca em objetos reais.");

@@ -217,6 +217,7 @@ Realizar a primeira integração efetiva wizard → `ApiPlan` → engine, criand
 ## Entregas
 
 - receber o `ApiPlan` produzido a partir das decisões do wizard e entregá-lo ao engine
+- `B039`: preparar preview de engine SDT em memória, sem escrita na KB, antes da primeira criação real
 - `B040`: criar `sdtCliente_API_CreateRequest`
 - `B041`: criar `sdtCliente_API_UpdateRequest`
 - `B042`: criar `sdtCliente_API_Response`

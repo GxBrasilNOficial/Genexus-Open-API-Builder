@@ -51,6 +51,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Contrato preparatório de configuração por KB para B090/B091 validado no U15 dentro do `ApiPlan`, ainda sem metadata persistente e sem gerar objetos na KB
 - B056 validado no U15 dentro do `ApiPlan`: descrições de serviço resolvidas em memória com `ServiceDescriptionsPending=0/4`, idioma `English` e fallback técnico registrado, ainda sem aplicar `[Description]` em objeto `API` real e sem gerar objetos na KB
 - B092 validado no U15 dentro do `ApiPlan`: `Authentication`, `Authorization` e `None` agora resolvem `GamCondition` explicitamente no plano, com confirmação obrigatória para `Authorization` e `None`, ainda sem aplicar segurança em objeto `API` real e sem gerar objetos na KB
+- B039 preparado em memória: preview de engine SDT recebe o `ApiPlan`, resolve cinco SDTs próprios e dois compartilhados com status `ResolvedSdtContractPreviewNoKbWrite`, sem escrever na KB
 
 ## Fixed
 
@@ -71,7 +72,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Sprint 4 — integrar o wizard ao engine pela primeira vez e iniciar a criação dos SDTs a partir do `ApiPlan`
+- Sprint 4 — validar na IDE o preview de engine SDT e avançar para a primeira criação real de SDTs a partir do `ApiPlan`, com autorização explícita
 - Primeira geração experimental
 
 ---
