@@ -47,6 +47,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B037 validado no U15: wizard único consolida `Obrigatório no payload` para `CreateRequest` e `UpdateRequest`, explicita `Required` como presença do membro JSON e mantém decisões apenas em memória
 - B038 validado no U15: wizard único monta `ApiPlan` inicial em memória para `Contrato`, com `MetadataFile='apiContrato_Metadata'`, 4 endpoints, 4 Procedures planejadas e 2 SDTs compartilhados, marcado como `IsEngineReady=false` e com pendências `UNRESOLVED_B038_*`, sem persistir metadata nem gerar objetos na KB
 - B090/B091/B092 validados no U15: wizard único classifica sensíveis e auditoria por política inicial explícita em memória, registra origem/razão no `ApiPlan` e grava `SecurityLevel` com `GamCondition='UNRESOLVED_B092_GAM_CONDITION'`, sem persistir metadata nem gerar objetos na KB
+- Follow-up da Sprint 3 implementado para validação: `ApiPlan` em memória resolve `GeneratorTarget='.NET'`, `ConflictMode='BlockOnCollision'` e `ReexecutionMode='Safe'`, mantendo descrições, idioma/fallback de descrição, GAM e prontidão da engine explicitamente pendentes, sem persistir metadata nem gerar objetos na KB
 
 ## Fixed
 
@@ -66,7 +67,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Sprint 3 — resolver campos mínimos pendentes da engine no `ApiPlan` (`GeneratorTarget`, `ConflictMode`, `ReexecutionMode` e descrições de serviço) e preparar metadata persistente futura
+- Sprint 3 — validar manualmente os campos escalares do `ApiPlan` na Output e preparar a evolução posterior de metadata persistente sem gerar objetos na KB
 - Primeira geração experimental
 
 ---

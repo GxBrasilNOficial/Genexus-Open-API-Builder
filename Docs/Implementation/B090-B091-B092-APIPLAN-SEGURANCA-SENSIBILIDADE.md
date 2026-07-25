@@ -20,7 +20,11 @@ Registrar no plano interno a proxima camada da Sprint 3:
 - `None` e `Authorization` ficam marcados como exigindo confirmacao antes da geracao;
 - `Authentication` nao exige confirmacao adicional no plano atual;
 - nenhum SDT, Procedure, API Object ou File de metadata e criado, alterado ou excluido pela geracao;
-- `IsEngineReady` continua `false` enquanto `GeneratorTarget`, `ConflictMode`, `ReexecutionMode` e descricoes de servico estiverem pendentes.
+- no estado validado nesta frente, `IsEngineReady` continuava `false` enquanto `GeneratorTarget`, `ConflictMode`, `ReexecutionMode` e descricoes de servico estivessem pendentes.
+
+## Evolucao posterior
+
+O follow-up [B038 follow-up - Campos escalares de engine no ApiPlan](B038-FOLLOWUP-CAMPOS-ESCALARES-ENGINE.md) resolve posteriormente `GeneratorTarget`, `ConflictMode` e `ReexecutionMode` em memoria, mas mantem `IsEngineReady=false` por descricoes/idioma/fallback pendentes para B056, condicao GAM pendente e engine real ainda inexistente.
 
 ## Arquivos principais
 
@@ -61,4 +65,4 @@ Resultados: build Release OK com 0 erros, checker de comandos OK com 8 comandos 
 
 ## Criterio de aceite
 
-Criterio atendido em 2026-07-23: B090/B091/B092 aprofundaram o `ApiPlan` em memoria com classificacao explicita de sensiveis, auditoria operacional separada e seguranca registrada no plano. A frente nao persistiu metadata nem gerou SDT, Procedure, API Object ou File na KB. A Sprint 3 continua com `IsEngineReady=false` ate resolver `GeneratorTarget`, `ConflictMode`, `ReexecutionMode` e descricoes de servico; a condicao GAM permanece explicitamente pendente ate validacao publica segura ou decisao posterior do fluxo de seguranca.
+Criterio atendido em 2026-07-23: B090/B091/B092 aprofundaram o `ApiPlan` em memoria com classificacao explicita de sensiveis, auditoria operacional separada e seguranca registrada no plano. A frente nao persistiu metadata nem gerou SDT, Procedure, API Object ou File na KB. No estado validado naquela frente, a Sprint 3 continuava com `IsEngineReady=false` ate resolver `GeneratorTarget`, `ConflictMode`, `ReexecutionMode` e descricoes de servico; a condicao GAM permanecia explicitamente pendente ate validacao publica segura ou decisao posterior do fluxo de seguranca.

@@ -182,7 +182,7 @@ Fases 1 e 2 do backlog cobertas e validadas no protótipo navegável, com escolh
 
 ## Objetivo
 
-Transformar a Transaction e as escolhas do wizard em um `ApiPlan` progressivamente completo, ainda sem gerar objetos. B038 cria apenas o plano inicial em memória; a prontidão mínima para engine só ocorre depois de resolver os campos pendentes do contrato F10.
+Transformar a Transaction e as escolhas do wizard em um `ApiPlan` progressivamente completo, ainda sem gerar objetos. B038 criou apenas o plano inicial em memória; a Sprint 3 também fixa os campos escalares iniciais de engine quando houver contrato suficiente, mantendo pendências que pertencem a B056, B092 e à engine real.
 
 ## Entregas
 
@@ -192,13 +192,14 @@ Transformar a Transaction e as escolhas do wizard em um `ApiPlan` progressivamen
 - `B090` (concluído): wizard único classificou campos sensíveis por política inicial explícita em memória, preservando origem/razão no `ApiPlan`
 - `B091` (concluído): wizard único classificou auditoria operacional separadamente por política inicial explícita em memória, preservando origem/razão no `ApiPlan`
 - `B092` (concluído no escopo de plano): wizard único registrou `Security Level` no `ApiPlan` e manteve a condição GAM como `UNRESOLVED_B092_GAM_CONDITION` até validação pública segura, sem aplicar segurança em objetos reais
+- follow-up da Sprint 3 (implementado para validação manual): `GeneratorTarget='.NET'` como gerador prioritário inicial do MVP, `ConflictMode='BlockOnCollision'` para colisão externa/incompatível e `ReexecutionMode='Safe'`; descrições, idioma/fallback, condição GAM e engine real permanecem pendentes, sem gerar objetos
 - módulo alvo
 - montar decisões de filtros, payload, paginação, ordenação e segurança
 - montar `ApiPlan`
 
 ## Gate
 
-`ApiPlan` inicial consistente e sem escrita na KB, com sensibilidade, auditoria operacional e segurança registradas explicitamente em memória. O gate de prontidão para engine permanece aberto enquanto `GeneratorTarget`, `ConflictMode`, `ReexecutionMode` e descrições de serviço estiverem marcados como `UNRESOLVED_B038_*`; a condição GAM permanece pendente até validação pública segura ou decisão posterior do fluxo de segurança.
+`ApiPlan` inicial consistente e sem escrita na KB, com sensibilidade, auditoria operacional, segurança e campos escalares de engine registrados explicitamente em memória. O gate de prontidão para engine permanece aberto enquanto descrições de serviço, idioma/fallback das descrições, condição GAM, engine real e validação de geração estiverem pendentes; `ConflictMode='BlockOnCollision'` governa colisão externa/incompatível e não substitui a reexecução conservadora de objeto próprio.
 
 [F08][SPR-F24]
 

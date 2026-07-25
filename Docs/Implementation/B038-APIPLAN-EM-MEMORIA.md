@@ -18,6 +18,10 @@ Transformar as escolhas ja capturadas pelo wizard em uma representacao interna i
 - `GeneratorTarget`, `ConflictMode`, `ReexecutionMode` e descricoes de servico ficam marcados como `UNRESOLVED_B038_*`;
 - `RestArtifactTarget` fica registrado como `API Object`, por ser alvo ja definido pelo contrato F10.
 
+## Evolucao posterior
+
+A evidencia acima descreve o estado validado em B038. O follow-up [B038 follow-up - Campos escalares de engine no ApiPlan](B038-FOLLOWUP-CAMPOS-ESCALARES-ENGINE.md) evolui o estado corrente da Sprint 3 ao resolver `GeneratorTarget`, `ConflictMode` e `ReexecutionMode` em memoria, mantendo descricoes/idioma/fallback pendentes para B056 e `IsEngineReady=false`.
+
 ## Arquivos principais
 
 - `Src/Domain/ApiPlan.cs`

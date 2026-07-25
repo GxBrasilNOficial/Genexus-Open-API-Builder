@@ -426,6 +426,7 @@ public sealed class Package : AbstractPackageUI
         var classifiedSensitiveCount = snapshot.Attributes.Count(item => item.IsSensitive);
         var classifiedAuditCount = snapshot.Attributes.Count(item => item.IsAudit);
         var apiPlan = ApiPlanBuilder.Build(transaction, selection);
+        var serviceDescriptionsPendingCount = apiPlan.ServiceDescriptions.Count(item => string.Equals(item.Description, ApiPlan.UnresolvedB056ServiceDescription, StringComparison.Ordinal));
         PrototypeWizardFlowSessionState.Store(selection);
         PrototypeWizardSessionState.StoreContractSelection(selection.ContractSelection);
         PrototypeWizardReviewSessionState.StoreReviewSelection(selection.ReviewSelection);
@@ -440,6 +441,7 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B035] Business Component em memoria: IsBusinessComponent={selection.BusinessComponentSelection.IsBusinessComponent}, EnabledDuringWizard={selection.BusinessComponentSelection.EnabledDuringWizard}, Status='{selection.BusinessComponentSelection.Status}'.");
         WriteOutput($"[Genexus Open API Builder][B038] ApiPlan em memoria criado: Transaction='{apiPlan.TransactionName}', ModuleTarget='{apiPlan.ModuleTarget}', ApiName='{apiPlan.ApiName}', MetadataFile='{apiPlan.MetadataFileName}', EndpointsCount={apiPlan.EndpointsCount}.");
         WriteOutput($"[Genexus Open API Builder][B038] ApiPlan cobre: PrimaryKey={apiPlan.PrimaryKey.Count}, CreateFields={apiPlan.CreateRequestFields.Count}, UpdateFields={apiPlan.UpdateRequestFields.Count}, ResponseFields={apiPlan.ResponseFields.Count}, ListFilters={apiPlan.ListFilters.Count}, RequiredFields={apiPlan.RequiredFields.Count}, Procedures={apiPlan.ProcedureNames.Count}, SharedSdts={apiPlan.SharedSdtNames.Count}. Sem persistir metadata e sem gerar SDT, Procedure, API Object ou File na KB.");
+        WriteOutput($"[Genexus Open API Builder][Sprint3] Campos de engine no ApiPlan: GeneratorTarget='{apiPlan.GeneratorTarget}' como gerador prioritario inicial do MVP, ConflictMode='{apiPlan.ConflictMode}' para colisao externa/incompativel, ReexecutionMode='{apiPlan.ReexecutionMode}', ServiceDescriptionsPending={serviceDescriptionsPendingCount}/{apiPlan.ServiceDescriptions.Count}, ServiceDescriptionLanguage='{apiPlan.ServiceDescriptionLanguage}', ServiceDescriptionFallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, IsEngineReady={apiPlan.IsEngineReady}. Sem validar engine real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B092] Seguranca no ApiPlan: SecurityLevel='{apiPlan.Security.SecurityLevel}', GamCondition='{apiPlan.Security.GamCondition}', RequiresGenerationConfirmation={apiPlan.Security.RequiresGenerationConfirmation}. Sem aplicar seguranca em objetos reais.");
         WriteOutput("[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem somente em memoria; nenhuma geracao de objetos de API foi executada.");
 

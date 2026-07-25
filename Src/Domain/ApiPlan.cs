@@ -63,7 +63,7 @@ internal static class ApiPlanBuilder
         return new ApiPlan(
             transaction.Name,
             snapshot.ModuleName,
-            ApiPlan.UnresolvedGeneratorTarget,
+            ApiPlan.GeneratorTargetDotNet,
             review.ApiName,
             review.ServicesBasePath,
             review.RestPath,
@@ -82,15 +82,15 @@ internal static class ApiPlanBuilder
             review.MaximumPageSize,
             review.StaticOrder.Select(item => new ApiPlanStaticOrder(item.Order, item.AttributeName, item.Direction)).ToArray(),
             CreateServiceDescriptions(services),
-            ApiPlan.UnresolvedValue,
-            true,
+            ApiPlan.UnresolvedB056DescriptionLanguage,
+            false,
             services.Count,
             names.MetadataFileName,
-            ApiPlan.UnresolvedConflictMode,
-            ApiPlan.UnresolvedReexecutionMode,
+            ApiPlan.ConflictModeBlockOnCollision,
+            ApiPlan.ReexecutionModeSafe,
             ApiPlan.RestArtifactTargetApiObject,
             false,
-            ApiPlan.B038EngineReadinessNotes,
+            ApiPlan.Sprint3EngineReadinessNotes,
             primaryKey,
             createFields,
             updateFields,
@@ -203,7 +203,7 @@ internal static class ApiPlanBuilder
     private static IReadOnlyList<ApiPlanServiceDescription> CreateServiceDescriptions(IEnumerable<ApiPlanService> services)
     {
         return services
-            .Select(service => new ApiPlanServiceDescription(service.Name, ApiPlan.UnresolvedServiceDescription))
+            .Select(service => new ApiPlanServiceDescription(service.Name, ApiPlan.UnresolvedB056ServiceDescription))
             .ToArray();
     }
 
@@ -220,17 +220,20 @@ internal static class ApiPlanBuilder
 
 internal sealed class ApiPlan
 {
-    public const string UnresolvedValue = "UNRESOLVED_B038";
-    public const string UnresolvedGeneratorTarget = "UNRESOLVED_B038_GENERATOR_TARGET";
-    public const string UnresolvedConflictMode = "UNRESOLVED_B038_CONFLICT_MODE";
-    public const string UnresolvedReexecutionMode = "UNRESOLVED_B038_REEXECUTION_MODE";
-    public const string UnresolvedServiceDescription = "UNRESOLVED_B038_SERVICE_DESCRIPTION";
+    public const string GeneratorTargetDotNet = ".NET";
+    public const string ConflictModeBlockOnCollision = "BlockOnCollision";
+    public const string ReexecutionModeSafe = "Safe";
+    public const string UnresolvedB056ServiceDescription = "UNRESOLVED_B056_SERVICE_DESCRIPTION";
+    public const string UnresolvedB056DescriptionLanguage = "UNRESOLVED_B056_DESCRIPTION_LANGUAGE";
     public const string RestArtifactTargetApiObject = "API Object";
 
-    public static readonly IReadOnlyList<string> B038EngineReadinessNotes = new[]
+    public static readonly IReadOnlyList<string> Sprint3EngineReadinessNotes = new[]
     {
-        "B038 criou um ApiPlan inicial em memoria para rastrear decisoes do wizard.",
-        "O plano ainda nao e entrada valida da engine: GeneratorTarget, ConflictMode, ReexecutionMode e descricoes de servico exigem resolucao posterior.",
+        "Sprint 3 resolveu GeneratorTarget como gerador prioritario inicial do MVP e ReexecutionMode como Safe.",
+        "ConflictMode usa BlockOnCollision como politica conservadora inicial para colisao externa ou incompativel; update conservador de objeto proprio permanece governado por ReexecutionMode e ResolvedGenerationPlan futuro.",
+        "ServiceDescriptions, idioma das descricoes e fallback de idioma permanecem pendentes para B056.",
+        "GamCondition permanece pendente como UNRESOLVED_B092_GAM_CONDITION ate validacao publica segura ou decisao posterior do fluxo de seguranca.",
+        "O plano ainda nao e entrada valida da engine real e nenhuma geracao foi validada.",
     };
 
     public ApiPlan(
