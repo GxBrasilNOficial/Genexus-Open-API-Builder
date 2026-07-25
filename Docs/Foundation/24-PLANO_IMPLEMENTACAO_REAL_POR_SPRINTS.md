@@ -194,14 +194,15 @@ Transformar a Transaction e as escolhas do wizard em um `ApiPlan` progressivamen
 - contrato preparatório de configuração por KB para `B090`/`B091` validado manualmente no `ApiPlan`: `ConfigScope='KnowledgeBase'`, `ConfigStatus='PendingPersistentMetadata'`, `PersistedMetadata=False` e `KbConfigured=False`, sem metadata persistente e sem geração; `B090`/`B091` canônicos permanecem abertos até regras carregadas de metadata persistente
 - contrato mínimo da metadata persistente futura para `B090`/`B091` validado manualmente no `ApiPlan`: schema `B090B091_KB_FIELD_CLASSIFICATION_V1`, seção `fieldClassification`, membros `sensitiveExactNames`, `auditExactNames` e `auditSuffixes`, sem ler ou gravar File de metadata
 - `B092` (concluído no escopo de plano): wizard único registrou `Security Level` no `ApiPlan` e manteve a condição GAM como `UNRESOLVED_B092_GAM_CONDITION` até validação pública segura, sem aplicar segurança em objetos reais
-- follow-up da Sprint 3 (implementado para validação manual): `GeneratorTarget='.NET'` como gerador prioritário inicial do MVP, `ConflictMode='BlockOnCollision'` para colisão externa/incompatível e `ReexecutionMode='Safe'`; descrições, idioma/fallback, condição GAM e engine real permanecem pendentes, sem gerar objetos
+- follow-up da Sprint 3 (validado manualmente): `GeneratorTarget='.NET'` como gerador prioritário inicial do MVP, `ConflictMode='BlockOnCollision'` para colisão externa/incompatível e `ReexecutionMode='Safe'`; condição GAM e engine real permanecem pendentes, sem gerar objetos
+- `B056` validado manualmente no escopo de plano: `ServiceDescriptions` resolvidas para os serviços selecionados, `ServiceDescriptionLanguage='English'`, `ServiceDescriptionLanguageSource='PendingKbLanguageApiValidation'`, `ServiceDescriptionFallbackUsed=true` e fallback técnico registrado, sem aplicar `[Description]` em objeto `API` real e sem gerar objetos
 - módulo alvo
 - montar decisões de filtros, payload, paginação, ordenação e segurança
 - montar `ApiPlan`
 
 ## Gate
 
-`ApiPlan` inicial consistente e sem escrita na KB, com sensibilidade, auditoria operacional, segurança e campos escalares de engine registrados explicitamente em memória. A representação provisória de B090/B091 cobre a política inicial hardcoded em memória, o contrato preparatório por KB já validado no `ApiPlan` e o contrato mínimo da metadata persistente futura; os itens canônicos permanecem abertos até configuração explícita carregada de metadata persistente real. O gate de prontidão para engine permanece aberto enquanto descrições de serviço, idioma/fallback das descrições, condição GAM, engine real e validação de geração estiverem pendentes; `ConflictMode='BlockOnCollision'` governa colisão externa/incompatível e não substitui a reexecução conservadora de objeto próprio.
+`ApiPlan` inicial consistente e sem escrita na KB, com sensibilidade, auditoria operacional, segurança e campos escalares de engine registrados explicitamente em memória. A representação provisória de B090/B091 cobre a política inicial hardcoded em memória, o contrato preparatório por KB já validado no `ApiPlan` e o contrato mínimo da metadata persistente futura; os itens canônicos permanecem abertos até configuração explícita carregada de metadata persistente real. O gate de prontidão para engine permanece aberto enquanto a condição GAM, a engine real e a validação de geração estiverem pendentes; `ConflictMode='BlockOnCollision'` governa colisão externa/incompatível e não substitui a reexecução conservadora de objeto próprio.
 
 [F08][SPR-F24]
 

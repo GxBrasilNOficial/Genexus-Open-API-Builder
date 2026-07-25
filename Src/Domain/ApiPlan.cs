@@ -83,9 +83,11 @@ internal static class ApiPlanBuilder
             review.DefaultPageSize,
             review.MaximumPageSize,
             review.StaticOrder.Select(item => new ApiPlanStaticOrder(item.Order, item.AttributeName, item.Direction)).ToArray(),
-            CreateServiceDescriptions(services),
-            ApiPlan.UnresolvedB056DescriptionLanguage,
-            false,
+            CreateServiceDescriptions(services, ResolveServiceDescriptionSubject(transaction)),
+            ApiPlan.ServiceDescriptionLanguageEnglish,
+            ApiPlan.ServiceDescriptionLanguageSourcePendingKbLanguageApi,
+            true,
+            ApiPlan.ServiceDescriptionFallbackReasonPendingKbLanguageApi,
             services.Count,
             names.MetadataFileName,
             ApiPlan.ConflictModeBlockOnCollision,
@@ -202,11 +204,42 @@ internal static class ApiPlanBuilder
         return new ApiPlanService(serviceName, string.Empty, restPath, apiName + "." + serviceName);
     }
 
-    private static IReadOnlyList<ApiPlanServiceDescription> CreateServiceDescriptions(IEnumerable<ApiPlanService> services)
+    private static IReadOnlyList<ApiPlanServiceDescription> CreateServiceDescriptions(IEnumerable<ApiPlanService> services, string transactionDescriptionSubject)
     {
         return services
-            .Select(service => new ApiPlanServiceDescription(service.Name, ApiPlan.UnresolvedB056ServiceDescription))
+            .Select(service => new ApiPlanServiceDescription(service.Name, CreateServiceDescription(service.Name, transactionDescriptionSubject)))
             .ToArray();
+    }
+
+    private static string ResolveServiceDescriptionSubject(Transaction transaction)
+    {
+        var description = transaction.Description;
+        return string.IsNullOrWhiteSpace(description) ? transaction.Name : description.Trim();
+    }
+
+    private static string CreateServiceDescription(string serviceName, string transactionDescriptionSubject)
+    {
+        if (string.Equals(serviceName, "List", StringComparison.OrdinalIgnoreCase))
+        {
+            return "List " + transactionDescriptionSubject;
+        }
+
+        if (string.Equals(serviceName, "Get", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Get " + transactionDescriptionSubject;
+        }
+
+        if (string.Equals(serviceName, "Create", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Create " + transactionDescriptionSubject;
+        }
+
+        if (string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Update " + transactionDescriptionSubject;
+        }
+
+        return serviceName + " " + transactionDescriptionSubject;
     }
 
     private static string AppendKeyPath(string restPath, IReadOnlyList<ApiPlanField> primaryKey)
@@ -227,13 +260,16 @@ internal sealed class ApiPlan
     public const string ReexecutionModeSafe = "Safe";
     public const string UnresolvedB056ServiceDescription = "UNRESOLVED_B056_SERVICE_DESCRIPTION";
     public const string UnresolvedB056DescriptionLanguage = "UNRESOLVED_B056_DESCRIPTION_LANGUAGE";
+    public const string ServiceDescriptionLanguageEnglish = "English";
+    public const string ServiceDescriptionLanguageSourcePendingKbLanguageApi = "PendingKbLanguageApiValidation";
+    public const string ServiceDescriptionFallbackReasonPendingKbLanguageApi = "Idioma principal da KB ainda nao validado por API publica; fallback tecnico em ingles registrado no ApiPlan.";
     public const string RestArtifactTargetApiObject = "API Object";
 
     public static readonly IReadOnlyList<string> Sprint3EngineReadinessNotes = new[]
     {
         "Sprint 3 resolveu GeneratorTarget como gerador prioritario inicial do MVP e ReexecutionMode como Safe.",
         "ConflictMode usa BlockOnCollision como politica conservadora inicial para colisao externa ou incompativel; update conservador de objeto proprio permanece governado por ReexecutionMode e ResolvedGenerationPlan futuro.",
-        "ServiceDescriptions, idioma das descricoes e fallback de idioma permanecem pendentes para B056.",
+        "ServiceDescriptions resolvidas no ApiPlan por B056 com fallback tecnico em ingles enquanto a API publica para idioma principal da KB nao for validada.",
         "GamCondition permanece pendente como UNRESOLVED_B092_GAM_CONDITION ate validacao publica segura ou decisao posterior do fluxo de seguranca.",
         "Configuracao por KB para B090/B091 esta representada no ApiPlan, mas ainda usa politica inicial em memoria sem metadata persistente.",
         "O plano ainda nao e entrada valida da engine real e nenhuma geracao foi validada.",
@@ -263,7 +299,9 @@ internal sealed class ApiPlan
         IReadOnlyList<ApiPlanStaticOrder> staticOrder,
         IReadOnlyList<ApiPlanServiceDescription> serviceDescriptions,
         string serviceDescriptionLanguage,
+        string serviceDescriptionLanguageSource,
         bool serviceDescriptionFallbackUsed,
+        string serviceDescriptionFallbackReason,
         int endpointsCount,
         string metadataFileName,
         string conflictMode,
@@ -303,7 +341,9 @@ internal sealed class ApiPlan
         StaticOrder = staticOrder ?? throw new ArgumentNullException(nameof(staticOrder));
         ServiceDescriptions = serviceDescriptions ?? throw new ArgumentNullException(nameof(serviceDescriptions));
         ServiceDescriptionLanguage = serviceDescriptionLanguage ?? throw new ArgumentNullException(nameof(serviceDescriptionLanguage));
+        ServiceDescriptionLanguageSource = serviceDescriptionLanguageSource ?? throw new ArgumentNullException(nameof(serviceDescriptionLanguageSource));
         ServiceDescriptionFallbackUsed = serviceDescriptionFallbackUsed;
+        ServiceDescriptionFallbackReason = serviceDescriptionFallbackReason ?? throw new ArgumentNullException(nameof(serviceDescriptionFallbackReason));
         EndpointsCount = endpointsCount;
         MetadataFileName = metadataFileName ?? throw new ArgumentNullException(nameof(metadataFileName));
         ConflictMode = conflictMode ?? throw new ArgumentNullException(nameof(conflictMode));
@@ -367,7 +407,11 @@ internal sealed class ApiPlan
 
     public string ServiceDescriptionLanguage { get; }
 
+    public string ServiceDescriptionLanguageSource { get; }
+
     public bool ServiceDescriptionFallbackUsed { get; }
+
+    public string ServiceDescriptionFallbackReason { get; }
 
     public int EndpointsCount { get; }
 
