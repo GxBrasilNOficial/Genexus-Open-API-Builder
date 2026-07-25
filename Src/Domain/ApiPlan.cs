@@ -43,6 +43,7 @@ internal static class ApiPlanBuilder
         }
 
         var snapshot = PrototypeWizardContractReader.Read(transaction);
+        var classificationConfiguration = ApiPlanFieldClassificationConfiguration.Create(snapshot.FieldClassificationConfiguration);
         var attributesByName = snapshot.Attributes.ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase);
         var primaryKey = snapshot.Attributes
             .Where(item => item.IsPrimaryKey)
@@ -78,6 +79,7 @@ internal static class ApiPlanBuilder
             false,
             review.SecurityLevel,
             security,
+            classificationConfiguration,
             review.DefaultPageSize,
             review.MaximumPageSize,
             review.StaticOrder.Select(item => new ApiPlanStaticOrder(item.Order, item.AttributeName, item.Direction)).ToArray(),
@@ -233,6 +235,7 @@ internal sealed class ApiPlan
         "ConflictMode usa BlockOnCollision como politica conservadora inicial para colisao externa ou incompativel; update conservador de objeto proprio permanece governado por ReexecutionMode e ResolvedGenerationPlan futuro.",
         "ServiceDescriptions, idioma das descricoes e fallback de idioma permanecem pendentes para B056.",
         "GamCondition permanece pendente como UNRESOLVED_B092_GAM_CONDITION ate validacao publica segura ou decisao posterior do fluxo de seguranca.",
+        "Configuracao por KB para B090/B091 esta representada no ApiPlan, mas ainda usa politica inicial em memoria sem metadata persistente.",
         "O plano ainda nao e entrada valida da engine real e nenhuma geracao foi validada.",
     };
 
@@ -254,6 +257,7 @@ internal sealed class ApiPlan
         bool transactionFolderWasCreated,
         string securityLevel,
         ApiPlanSecurity security,
+        ApiPlanFieldClassificationConfiguration fieldClassificationConfiguration,
         int defaultPageSize,
         int maximumPageSize,
         IReadOnlyList<ApiPlanStaticOrder> staticOrder,
@@ -293,6 +297,7 @@ internal sealed class ApiPlan
         TransactionFolderWasCreated = transactionFolderWasCreated;
         SecurityLevel = securityLevel ?? throw new ArgumentNullException(nameof(securityLevel));
         Security = security ?? throw new ArgumentNullException(nameof(security));
+        FieldClassificationConfiguration = fieldClassificationConfiguration ?? throw new ArgumentNullException(nameof(fieldClassificationConfiguration));
         DefaultPageSize = defaultPageSize;
         MaximumPageSize = maximumPageSize;
         StaticOrder = staticOrder ?? throw new ArgumentNullException(nameof(staticOrder));
@@ -349,6 +354,8 @@ internal sealed class ApiPlan
     public string SecurityLevel { get; }
 
     public ApiPlanSecurity Security { get; }
+
+    public ApiPlanFieldClassificationConfiguration FieldClassificationConfiguration { get; }
 
     public int DefaultPageSize { get; }
 
@@ -429,6 +436,63 @@ internal sealed class ApiPlanSecurity
         };
 
         return new ApiPlanSecurity(securityLevel, PendingGamCondition, requiresConfirmation, notes);
+    }
+}
+
+internal sealed class ApiPlanFieldClassificationConfiguration
+{
+    private ApiPlanFieldClassificationConfiguration(
+        string scope,
+        string source,
+        string status,
+        bool isPersistedMetadata,
+        bool isKnowledgeBaseConfigured,
+        IReadOnlyList<string> sensitiveExactNames,
+        IReadOnlyList<string> auditSuffixes,
+        IReadOnlyList<string> notes)
+    {
+        Scope = scope ?? throw new ArgumentNullException(nameof(scope));
+        Source = source ?? throw new ArgumentNullException(nameof(source));
+        Status = status ?? throw new ArgumentNullException(nameof(status));
+        IsPersistedMetadata = isPersistedMetadata;
+        IsKnowledgeBaseConfigured = isKnowledgeBaseConfigured;
+        SensitiveExactNames = sensitiveExactNames ?? throw new ArgumentNullException(nameof(sensitiveExactNames));
+        AuditSuffixes = auditSuffixes ?? throw new ArgumentNullException(nameof(auditSuffixes));
+        Notes = notes ?? throw new ArgumentNullException(nameof(notes));
+    }
+
+    public string Scope { get; }
+
+    public string Source { get; }
+
+    public string Status { get; }
+
+    public bool IsPersistedMetadata { get; }
+
+    public bool IsKnowledgeBaseConfigured { get; }
+
+    public IReadOnlyList<string> SensitiveExactNames { get; }
+
+    public IReadOnlyList<string> AuditSuffixes { get; }
+
+    public IReadOnlyList<string> Notes { get; }
+
+    public static ApiPlanFieldClassificationConfiguration Create(PrototypeWizardFieldClassificationConfiguration configuration)
+    {
+        if (configuration is null)
+        {
+            throw new ArgumentNullException(nameof(configuration));
+        }
+
+        return new ApiPlanFieldClassificationConfiguration(
+            configuration.Scope,
+            configuration.Source,
+            configuration.Status,
+            configuration.IsPersistedMetadata,
+            configuration.IsKnowledgeBaseConfigured,
+            configuration.SensitiveExactNames.ToArray(),
+            configuration.AuditSuffixes.ToArray(),
+            configuration.Notes.ToArray());
     }
 }
 

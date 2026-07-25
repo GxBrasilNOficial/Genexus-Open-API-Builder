@@ -42,21 +42,24 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B038` concluído no U15: o wizard único montou `ApiPlan` inicial em memória para `Contrato`, com `MetadataFile='apiContrato_Metadata'`, `EndpointsCount=4`, chave primária, campos de `CreateRequest`, `UpdateRequest`, `Response`, filtros, required por request, 4 Procedures planejadas e 2 SDTs compartilhados. O plano fica marcado como `IsEngineReady=false`, com `UNRESOLVED_B038_*` nos campos ainda não resolvidos do contrato mínimo da engine, sem persistir metadata nem gerar SDT, Procedure, API Object ou File na KB.
 - Representação provisória de B090/B091 e B092 validada no U15 dentro do `ApiPlan` em memória: o wizard registrou `SensitiveFields=0` e `AuditFields=0` para `Contrato` pela política inicial hardcoded em memória, preservou origem/razão de classificação no plano e registrou `SecurityLevel='Authentication'`, `GamCondition='UNRESOLVED_B092_GAM_CONDITION'` e `RequiresGenerationConfirmation=False`, sem persistir metadata nem gerar SDT, Procedure, API Object ou File na KB. B090/B091 canônicos permanecem abertos até existir configuração explícita por KB em metadata persistente.
 - Follow-up da Sprint 3 validado manualmente em 2026-07-25: o `ApiPlan` em memória resolve `GeneratorTarget='.NET'` como gerador prioritário inicial do MVP, `ConflictMode='BlockOnCollision'` como política conservadora inicial para colisão externa/incompatível e `ReexecutionMode='Safe'`; descrições de serviço, idioma/fallback das descrições, condição GAM e engine real permanecem pendentes, com `IsEngineReady=false`, sem persistir metadata nem gerar SDT, Procedure, API Object ou File na KB.
+- Contrato preparatório de configuração por KB para B090/B091 validado manualmente em 2026-07-25 na Transaction `Contrato`: a Output registrou `ConfigScope='KnowledgeBase'`, `ConfigSource='DefaultInMemoryHardcodedB090B091Policy'`, `ConfigStatus='PendingPersistentMetadata'`, `PersistedMetadata=False`, `KbConfigured=False`, `SensitiveRules=5` e `AuditRules=6`, preservando decisões apenas em memória, sem metadata persistente e sem gerar SDT, Procedure, API Object ou File na KB.
 
 ## Frente ativa
 
-**Sprint 3 — Metadata + ApiPlan**, aprofundando o plano interno em memória depois de B038 e da representação provisória de B090/B091/B092. O plano já resolve os campos escalares `GeneratorTarget`, `ConflictMode` e `ReexecutionMode` para o alvo inicial do MVP, mas B090/B091 canônicos ainda dependem de configuração explícita por KB via metadata persistente, e o plano ainda não é entrada válida da engine porque descrições de serviço/idioma/fallback permanecem pendentes para B056, a condição GAM segue pendente e a engine real ainda não foi implementada; não gerar objetos de API e não escrever na KB.
+**Sprint 3 — Metadata + ApiPlan**, aprofundando o plano interno em memória depois de B038 e da representação provisória de B090/B091/B092. O plano já resolve os campos escalares `GeneratorTarget`, `ConflictMode` e `ReexecutionMode` para o alvo inicial do MVP e já preserva no `ApiPlan` o contrato preparatório de configuração por KB para B090/B091, validado manualmente no U15. B090/B091 canônicos ainda dependem de regras carregadas de metadata persistente, e o plano ainda não é entrada válida da engine porque descrições de serviço/idioma/fallback permanecem pendentes para B056, a condição GAM segue pendente e a engine real ainda não foi implementada; não gerar objetos de API e não escrever na KB.
 
 ## Próxima ação única
 
-Continuar Sprint 3 preparando a configuração explícita por KB para sensíveis e auditoria no `ApiPlan`, ainda sem metadata persistente e sem geração:
+Continuar Sprint 3 definindo o contrato mínimo da futura metadata persistente para configuração por KB de sensíveis e auditoria, ainda sem gravar metadata e sem gerar objetos:
 
-> Definir o contrato mínimo para substituir a política inicial hardcoded de B090/B091 por configuração explícita por KB em metadata futura, mantendo o wizard e o `ApiPlan` somente em memória até nova autorização. Ainda sem persistir metadata e sem gerar SDT, Procedure, API Object ou File na KB.
+> Especificar quais dados de B090/B091 serão carregados de metadata persistente para substituir `DefaultInMemoryHardcodedB090B091Policy`, mantendo o wizard e o `ApiPlan` somente em memória até nova autorização. Ainda sem persistir metadata e sem gerar SDT, Procedure, API Object ou File na KB.
 
 ## Critério de conclusão e evidência esperada
 
 - o `ApiPlan` em memória parte da seleção consolidada pelo wizard único aberto por `Abrir Wizard (B030)`;
 - sensibilidade e auditoria operacional ficam representadas de forma explícita e separada no plano, com política inicial hardcoded marcada como provisória;
+- o contrato preparatório de configuração por KB já fica preservado no `ApiPlan`, com `ConfigStatus='PendingPersistentMetadata'`, `PersistedMetadata=False` e `KbConfigured=False`;
+- o próximo contrato define os dados mínimos que a metadata persistente futura precisará fornecer para sensíveis e auditoria, sem ainda criar ou gravar o File de metadata;
 - o plano registra `Security Level` e a condição aplicável de GAM/None sem aplicar segurança em objetos reais;
 - o plano registra `GeneratorTarget='.NET'`, `ConflictMode='BlockOnCollision'` e `ReexecutionMode='Safe'` como decisões em memória da Sprint 3;
 - descrições de serviço, idioma e fallback permanecem pendentes para B056, sem aplicar `[Description]` em objeto `API` real;
@@ -69,7 +72,7 @@ Continuar Sprint 3 preparando a configuração explícita por KB para sensíveis
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
 3. Sprint 2 concluiu `B020`, `B021`, `B022`, `B023`, `B024`, `B025`, `B030`, `B031`, `B032`, `B033`, `B034`, `B035`, `B036` e `B037`, encerrando as Fases 1 e 2 do protótipo navegável com escolhas em memória, sem `ApiPlan` e sem geração de objetos de API.
-4. Sprint 3 iniciou metadata e `ApiPlan` com B038, registrou representação provisória de B090/B091/B092 em memória, resolveu e validou os campos escalares `GeneratorTarget`, `ConflictMode` e `ReexecutionMode`, e continua com B090/B091 canônicos abertos para configuração por KB de sensíveis/auditoria, descrições/idioma/fallback pendentes para B056, condição GAM pendente e preparação da futura metadata persistente.
+4. Sprint 3 iniciou metadata e `ApiPlan` com B038, registrou representação provisória de B090/B091/B092 em memória, resolveu e validou os campos escalares `GeneratorTarget`, `ConflictMode` e `ReexecutionMode`, validou manualmente o contrato preparatório de configuração por KB para B090/B091, e continua com B090/B091 canônicos abertos para regras carregadas de metadata persistente, descrições/idioma/fallback pendentes para B056, condição GAM pendente e preparação da futura metadata persistente.
 5. Sprint 4 integra o wizard ao engine pela primeira vez e cria os SDTs.
 6. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
 7. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.

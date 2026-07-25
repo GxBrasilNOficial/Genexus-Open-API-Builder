@@ -36,7 +36,7 @@ internal static class PrototypeWizardContractReader
             .Select((item, index) => CreateAttributeDecision(index + 1, item, primaryKeyNames, descriptionAttributeName, classificationPolicy))
             .ToArray();
 
-        return new PrototypeWizardContractSnapshot(transaction.Name, moduleName, services, attributes);
+        return new PrototypeWizardContractSnapshot(transaction.Name, moduleName, services, attributes, classificationPolicy.Configuration);
     }
 
     private static PrototypeWizardAttributeDecision CreateAttributeDecision(
@@ -239,8 +239,6 @@ internal static class PrototypeWizardContractReader
 
 internal sealed class PrototypeWizardFieldClassificationPolicy
 {
-    private const string DefaultPolicySource = "DefaultInMemoryHardcodedB090B091Policy";
-
     private static readonly string[] SensitiveNames = { "Password", "Senha", "Hash", "Token", "Secret" };
 
     private static readonly string[] AuditSuffixes =
@@ -253,18 +251,26 @@ internal sealed class PrototypeWizardFieldClassificationPolicy
         "UltimaAtualizacaoUsuarioNome",
     };
 
+    public PrototypeWizardFieldClassificationConfiguration Configuration { get; }
+
     private readonly IReadOnlyList<string> _sensitiveNames;
     private readonly IReadOnlyList<string> _auditSuffixes;
 
-    private PrototypeWizardFieldClassificationPolicy(IReadOnlyList<string> sensitiveNames, IReadOnlyList<string> auditSuffixes)
+    private PrototypeWizardFieldClassificationPolicy(PrototypeWizardFieldClassificationConfiguration configuration)
     {
-        _sensitiveNames = sensitiveNames ?? throw new ArgumentNullException(nameof(sensitiveNames));
-        _auditSuffixes = auditSuffixes ?? throw new ArgumentNullException(nameof(auditSuffixes));
+        Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _sensitiveNames = configuration.SensitiveExactNames;
+        _auditSuffixes = configuration.AuditSuffixes;
     }
 
     public static PrototypeWizardFieldClassificationPolicy CreateDefault()
     {
-        return new PrototypeWizardFieldClassificationPolicy(SensitiveNames, AuditSuffixes);
+        return FromConfiguration(PrototypeWizardFieldClassificationConfiguration.CreateDefaultInMemory(SensitiveNames, AuditSuffixes));
+    }
+
+    public static PrototypeWizardFieldClassificationPolicy FromConfiguration(PrototypeWizardFieldClassificationConfiguration configuration)
+    {
+        return new PrototypeWizardFieldClassificationPolicy(configuration);
     }
 
     public PrototypeWizardFieldClassification ClassifySensitivity(string name)
@@ -277,11 +283,11 @@ internal sealed class PrototypeWizardFieldClassificationPolicy
         var token = _sensitiveNames.FirstOrDefault(item => string.Equals(name, item, StringComparison.OrdinalIgnoreCase));
         if (token is null)
         {
-            return PrototypeWizardFieldClassification.NotMatched(DefaultPolicySource, "Nenhuma regra explicita de sensibilidade aplicavel.");
+            return PrototypeWizardFieldClassification.NotMatched(Configuration.Source, "Nenhuma regra explicita de sensibilidade aplicavel.");
         }
 
         return PrototypeWizardFieldClassification.Matched(
-            DefaultPolicySource,
+            Configuration.Source,
             $"Nome igual a regra sensivel explicita '{token}'.");
     }
 
@@ -295,12 +301,84 @@ internal sealed class PrototypeWizardFieldClassificationPolicy
         var suffix = _auditSuffixes.FirstOrDefault(item => name.EndsWith(item, StringComparison.OrdinalIgnoreCase));
         if (suffix is null)
         {
-            return PrototypeWizardFieldClassification.NotMatched(DefaultPolicySource, "Nenhuma regra explicita de auditoria operacional aplicavel.");
+            return PrototypeWizardFieldClassification.NotMatched(Configuration.Source, "Nenhuma regra explicita de auditoria operacional aplicavel.");
         }
 
         return PrototypeWizardFieldClassification.Matched(
-            DefaultPolicySource,
+            Configuration.Source,
             $"Nome termina com sufixo de auditoria operacional explicito '{suffix}'.");
+    }
+}
+
+internal sealed class PrototypeWizardFieldClassificationConfiguration
+{
+    private const string DefaultPolicySource = "DefaultInMemoryHardcodedB090B091Policy";
+
+    private PrototypeWizardFieldClassificationConfiguration(
+        string scope,
+        string source,
+        string status,
+        bool isPersistedMetadata,
+        bool isKnowledgeBaseConfigured,
+        IReadOnlyList<string> sensitiveExactNames,
+        IReadOnlyList<string> auditSuffixes,
+        IReadOnlyList<string> notes)
+    {
+        Scope = scope ?? throw new ArgumentNullException(nameof(scope));
+        Source = source ?? throw new ArgumentNullException(nameof(source));
+        Status = status ?? throw new ArgumentNullException(nameof(status));
+        IsPersistedMetadata = isPersistedMetadata;
+        IsKnowledgeBaseConfigured = isKnowledgeBaseConfigured;
+        SensitiveExactNames = sensitiveExactNames ?? throw new ArgumentNullException(nameof(sensitiveExactNames));
+        AuditSuffixes = auditSuffixes ?? throw new ArgumentNullException(nameof(auditSuffixes));
+        Notes = notes ?? throw new ArgumentNullException(nameof(notes));
+    }
+
+    public string Scope { get; }
+
+    public string Source { get; }
+
+    public string Status { get; }
+
+    public bool IsPersistedMetadata { get; }
+
+    public bool IsKnowledgeBaseConfigured { get; }
+
+    public IReadOnlyList<string> SensitiveExactNames { get; }
+
+    public IReadOnlyList<string> AuditSuffixes { get; }
+
+    public IReadOnlyList<string> Notes { get; }
+
+    public static PrototypeWizardFieldClassificationConfiguration CreateDefaultInMemory(
+        IReadOnlyList<string> sensitiveExactNames,
+        IReadOnlyList<string> auditSuffixes)
+    {
+        if (sensitiveExactNames is null)
+        {
+            throw new ArgumentNullException(nameof(sensitiveExactNames));
+        }
+
+        if (auditSuffixes is null)
+        {
+            throw new ArgumentNullException(nameof(auditSuffixes));
+        }
+
+        var notes = new[]
+        {
+            "Contrato minimo de configuracao por KB preparado em memoria; metadata persistente ainda nao existe.",
+            "B090/B091 canonicos continuam abertos ate carregar regras explicitas por KB a partir de metadata persistente.",
+        };
+
+        return new PrototypeWizardFieldClassificationConfiguration(
+            "KnowledgeBase",
+            DefaultPolicySource,
+            "PendingPersistentMetadata",
+            false,
+            false,
+            sensitiveExactNames.ToArray(),
+            auditSuffixes.ToArray(),
+            notes);
     }
 }
 
@@ -336,12 +414,14 @@ internal sealed class PrototypeWizardContractSnapshot
         string transactionName,
         string moduleName,
         IReadOnlyList<PrototypeWizardServiceDecision> services,
-        IReadOnlyList<PrototypeWizardAttributeDecision> attributes)
+        IReadOnlyList<PrototypeWizardAttributeDecision> attributes,
+        PrototypeWizardFieldClassificationConfiguration fieldClassificationConfiguration)
     {
         TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
         ModuleName = moduleName ?? throw new ArgumentNullException(nameof(moduleName));
         Services = services ?? throw new ArgumentNullException(nameof(services));
         Attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
+        FieldClassificationConfiguration = fieldClassificationConfiguration ?? throw new ArgumentNullException(nameof(fieldClassificationConfiguration));
     }
 
     public string TransactionName { get; }
@@ -351,6 +431,8 @@ internal sealed class PrototypeWizardContractSnapshot
     public IReadOnlyList<PrototypeWizardServiceDecision> Services { get; }
 
     public IReadOnlyList<PrototypeWizardAttributeDecision> Attributes { get; }
+
+    public PrototypeWizardFieldClassificationConfiguration FieldClassificationConfiguration { get; }
 }
 
 internal sealed class PrototypeWizardServiceDecision

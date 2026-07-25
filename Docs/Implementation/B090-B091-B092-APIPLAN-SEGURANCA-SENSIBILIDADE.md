@@ -24,7 +24,9 @@ Registrar no plano interno a proxima camada da Sprint 3:
 
 ## Evolucao posterior
 
-O follow-up [B038 follow-up - Campos escalares de engine no ApiPlan](B038-FOLLOWUP-CAMPOS-ESCALARES-ENGINE.md) resolve posteriormente `GeneratorTarget`, `ConflictMode` e `ReexecutionMode` em memoria, mas mantem `IsEngineReady=false` por descricoes/idioma/fallback pendentes para B056, condicao GAM pendente e engine real ainda inexistente. A configuracao por KB para sensiveis e auditoria operacional permanece pendente para a evolucao de metadata persistente.
+O follow-up [B038 follow-up - Campos escalares de engine no ApiPlan](B038-FOLLOWUP-CAMPOS-ESCALARES-ENGINE.md) resolve posteriormente `GeneratorTarget`, `ConflictMode` e `ReexecutionMode` em memoria, mas mantem `IsEngineReady=false` por descricoes/idioma/fallback pendentes para B056, condicao GAM pendente e engine real ainda inexistente.
+
+O follow-up [B090/B091 - Contrato de configuracao por KB no ApiPlan](B090-B091-CONTRATO-CONFIGURACAO-KB-APIPLAN.md) validou posteriormente o contrato preparatorio de configuracao por KB no snapshot do wizard e no `ApiPlan`, ainda sem metadata persistente e sem concluir B090/B091 canonicos.
 
 ## Arquivos principais
 
@@ -36,7 +38,7 @@ O follow-up [B038 follow-up - Campos escalares de engine no ApiPlan](B038-FOLLOW
 
 Validacao recebida em 2026-07-23 para a Transaction `Contrato`:
 
-Observacao posterior: o bloco abaixo preserva a captura manual historica de 2026-07-23. Depois dessa validacao, o runtime foi alinhado para emitir `Politica inicial hardcoded aplicada sem metadata persistente nem configuracao por KB`; uma nova captura manual e necessaria antes de tratar essa linha como evidencia atual.
+Observacao posterior: o bloco abaixo preserva a captura manual historica de 2026-07-23. Depois dessa validacao, o runtime mudou duas vezes: primeiro passou a explicitar a ausencia de metadata/configuracao por KB, e em 2026-07-25 passou a emitir o contrato preparatorio com `ConfigScope`, `ConfigSource`, `ConfigStatus`, `PersistedMetadata`, `KbConfigured`, `SensitiveRules` e `AuditRules`. A captura atual desse follow-up esta registrada em `B090-B091-CONTRATO-CONFIGURACAO-KB-APIPLAN.md`.
 
 ```text
 [Genexus Open API Builder][B030] Wizard único concluido em memoria: Transaction='Contrato', Module='Root Module', SelectionSource='Contexto'.

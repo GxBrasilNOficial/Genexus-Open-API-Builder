@@ -191,6 +191,7 @@ Transformar a Transaction e as escolhas do wizard em um `ApiPlan` progressivamen
 - identificar chave simples ou composta completa
 - planejamento inicial de `B090` registrado no `ApiPlan`: wizard único classificou campos sensíveis por política inicial hardcoded em memória, preservando origem/razão; `B090` canônico permanece aberto até configuração por KB/metadata
 - planejamento inicial de `B091` registrado no `ApiPlan`: wizard único classificou auditoria operacional separadamente por política inicial hardcoded em memória, preservando origem/razão; `B091` canônico permanece aberto até configuração por KB/metadata
+- contrato preparatório de configuração por KB para `B090`/`B091` validado manualmente no `ApiPlan`: `ConfigScope='KnowledgeBase'`, `ConfigStatus='PendingPersistentMetadata'`, `PersistedMetadata=False` e `KbConfigured=False`, sem metadata persistente e sem geração; `B090`/`B091` canônicos permanecem abertos até regras carregadas de metadata persistente
 - `B092` (concluído no escopo de plano): wizard único registrou `Security Level` no `ApiPlan` e manteve a condição GAM como `UNRESOLVED_B092_GAM_CONDITION` até validação pública segura, sem aplicar segurança em objetos reais
 - follow-up da Sprint 3 (implementado para validação manual): `GeneratorTarget='.NET'` como gerador prioritário inicial do MVP, `ConflictMode='BlockOnCollision'` para colisão externa/incompatível e `ReexecutionMode='Safe'`; descrições, idioma/fallback, condição GAM e engine real permanecem pendentes, sem gerar objetos
 - módulo alvo
@@ -199,7 +200,7 @@ Transformar a Transaction e as escolhas do wizard em um `ApiPlan` progressivamen
 
 ## Gate
 
-`ApiPlan` inicial consistente e sem escrita na KB, com sensibilidade, auditoria operacional, segurança e campos escalares de engine registrados explicitamente em memória. A representação provisória de B090/B091 cobre apenas a política inicial hardcoded em memória; os itens canônicos permanecem abertos até configuração explícita por KB via metadata persistente. O gate de prontidão para engine permanece aberto enquanto descrições de serviço, idioma/fallback das descrições, condição GAM, engine real e validação de geração estiverem pendentes; `ConflictMode='BlockOnCollision'` governa colisão externa/incompatível e não substitui a reexecução conservadora de objeto próprio.
+`ApiPlan` inicial consistente e sem escrita na KB, com sensibilidade, auditoria operacional, segurança e campos escalares de engine registrados explicitamente em memória. A representação provisória de B090/B091 cobre a política inicial hardcoded em memória e o contrato preparatório por KB já validado no `ApiPlan`; os itens canônicos permanecem abertos até configuração explícita carregada de metadata persistente. O gate de prontidão para engine permanece aberto enquanto descrições de serviço, idioma/fallback das descrições, condição GAM, engine real e validação de geração estiverem pendentes; `ConflictMode='BlockOnCollision'` governa colisão externa/incompatível e não substitui a reexecução conservadora de objeto próprio.
 
 [F08][SPR-F24]
 
