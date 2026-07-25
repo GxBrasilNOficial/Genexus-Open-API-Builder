@@ -43,6 +43,8 @@ Validacao recebida em 2026-07-25 para a Transaction `Contrato`:
 [Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem somente em memoria; nenhuma geracao de objetos de API foi executada.
 ```
 
+Observacao posterior: a captura acima preserva o estado manual desta frente B090/B091. A condicao GAM foi resolvida depois no escopo de plano em [B092 - Condicao GAM resolvida no ApiPlan](B092-CONDICAO-GAM-APIPLAN.md), ainda sem aplicar seguranca em objeto API real.
+
 ## Validacoes mecanicas
 
 Executadas durante a implementacao local:

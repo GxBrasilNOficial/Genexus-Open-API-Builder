@@ -58,7 +58,7 @@ internal static class ApiPlanBuilder
             .Select(item => new ApiPlanRequiredField(item.RequestName, item.FieldName, item.IsRequired, item.Reason))
             .ToArray();
         var services = CreateServices(contract.SelectedServices, review.ApiName, review.RestPath, primaryKey);
-        var security = ApiPlanSecurity.CreatePending(review.SecurityLevel);
+        var security = ApiPlanSecurity.CreateResolved(review.SecurityLevel);
         var names = ApiPlanNames.Create(transaction.Name, contract.SelectedServices);
 
         return new ApiPlan(
@@ -270,7 +270,7 @@ internal sealed class ApiPlan
         "Sprint 3 resolveu GeneratorTarget como gerador prioritario inicial do MVP e ReexecutionMode como Safe.",
         "ConflictMode usa BlockOnCollision como politica conservadora inicial para colisao externa ou incompativel; update conservador de objeto proprio permanece governado por ReexecutionMode e ResolvedGenerationPlan futuro.",
         "ServiceDescriptions resolvidas no ApiPlan por B056 com fallback tecnico em ingles enquanto a API publica para idioma principal da KB nao for validada.",
-        "GamCondition permanece pendente como UNRESOLVED_B092_GAM_CONDITION ate validacao publica segura ou decisao posterior do fluxo de seguranca.",
+        "GamCondition de B092 fica resolvida no ApiPlan conforme SecurityLevel selecionado, sem detectar GAM real da KB e sem aplicar seguranca em objetos reais.",
         "Configuracao por KB para B090/B091 esta representada no ApiPlan, mas ainda usa politica inicial em memoria sem metadata persistente.",
         "O plano ainda nao e entrada valida da engine real e nenhuma geracao foi validada.",
     };
@@ -447,6 +447,9 @@ internal sealed class ApiPlan
 internal sealed class ApiPlanSecurity
 {
     public const string PendingGamCondition = "UNRESOLVED_B092_GAM_CONDITION";
+    public const string AuthenticationGamCondition = "GAM_AUTHENTICATION_REQUIRED";
+    public const string AuthorizationGamCondition = "GAM_AUTHORIZATION_REQUIRED_PENDING_PERMISSIONS";
+    public const string NoneGamCondition = "NO_GAM_SECURITY_PUBLIC_API";
 
     private ApiPlanSecurity(string securityLevel, string gamCondition, bool requiresGenerationConfirmation, IReadOnlyList<string> notes)
     {
@@ -464,22 +467,53 @@ internal sealed class ApiPlanSecurity
 
     public IReadOnlyList<string> Notes { get; }
 
-    public static ApiPlanSecurity CreatePending(string securityLevel)
+    public static ApiPlanSecurity CreateResolved(string securityLevel)
     {
         if (securityLevel is null)
         {
             throw new ArgumentNullException(nameof(securityLevel));
         }
 
-        var requiresConfirmation = string.Equals(securityLevel, "None", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(securityLevel, "Authorization", StringComparison.OrdinalIgnoreCase);
-        var notes = new[]
+        if (string.Equals(securityLevel, "Authentication", StringComparison.OrdinalIgnoreCase))
         {
-            "B092 registrou Security Level no ApiPlan sem aplicar seguranca em objetos reais.",
-            "Condicao GAM/None ainda depende de deteccao por API publica ou confirmacao antes da geracao definitiva.",
-        };
+            return new ApiPlanSecurity(
+                "Authentication",
+                AuthenticationGamCondition,
+                false,
+                new[]
+                {
+                    "B092 resolveu Authentication no ApiPlan como autenticacao GAM obrigatoria para a futura geracao.",
+                    "Ainda nao detecta GAM real da KB e nao aplica SecurityLevel em objetos reais.",
+                });
+        }
 
-        return new ApiPlanSecurity(securityLevel, PendingGamCondition, requiresConfirmation, notes);
+        if (string.Equals(securityLevel, "Authorization", StringComparison.OrdinalIgnoreCase))
+        {
+            return new ApiPlanSecurity(
+                "Authorization",
+                AuthorizationGamCondition,
+                true,
+                new[]
+                {
+                    "B092 resolveu Authorization no ApiPlan como autorizacao GAM pendente de permissoes coerentes.",
+                    "Geracao definitiva deve bloquear ate permissao GAM segura ou confirmacao posterior do fluxo de seguranca.",
+                });
+        }
+
+        if (string.Equals(securityLevel, "None", StringComparison.OrdinalIgnoreCase))
+        {
+            return new ApiPlanSecurity(
+                "None",
+                NoneGamCondition,
+                true,
+                new[]
+                {
+                    "B092 resolveu None no ApiPlan como API publica sem seguranca GAM.",
+                    "Geracao definitiva deve exigir confirmacao explicita antes de aplicar SecurityLevel None nos servicos.",
+                });
+        }
+
+        throw new InvalidOperationException($"Security Level nao suportado para B092: {securityLevel}.");
     }
 }
 

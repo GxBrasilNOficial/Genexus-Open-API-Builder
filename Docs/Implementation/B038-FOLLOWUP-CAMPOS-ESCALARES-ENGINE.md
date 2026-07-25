@@ -22,7 +22,7 @@ Evoluir o plano criado em B038 sem reabrir a evidencia historica de B038 nem ant
 - `BlockOnCollision` governa colisao externa ou incompativel, como nome ocupado sem metadata compativel, tipo divergente, modulo divergente ou objeto externo;
 - update conservador de objeto proprio reconhecido por metadata permanece responsabilidade futura de `ReexecutionMode`/`ResolvedGenerationPlan`;
 - descricoes finais, idioma das descricoes, fallback de idioma e aplicacao de `[Description]` no objeto `API` continuam para B056;
-- condicao GAM permanece `UNRESOLVED_B092_GAM_CONDITION` ate validacao publica segura ou decisao posterior do fluxo de seguranca.
+- naquele momento historico, condicao GAM permanecia `UNRESOLVED_B092_GAM_CONDITION`; ela foi resolvida depois no escopo de plano em [B092 - Condicao GAM resolvida no ApiPlan](B092-CONDICAO-GAM-APIPLAN.md).
 
 ## Arquivos principais
 
@@ -49,4 +49,4 @@ git diff --check
 
 ## Criterio de aceite
 
-A frente fica pronta quando a IDE confirmar que o wizard unico registra os campos escalares resolvidos e os bloqueios remanescentes na Output, sem persistir metadata e sem gerar SDT, Procedure, API Object ou File na KB. B056 continua sendo a frente responsavel por descricoes finais, idioma/fallback e aplicacao de `[Description]`.
+A frente ficou pronta quando a IDE confirmou que o wizard unico registrava os campos escalares resolvidos e os bloqueios remanescentes na Output, sem persistir metadata e sem gerar SDT, Procedure, API Object ou File na KB. B056 continuava sendo a frente responsavel por descricoes finais, idioma/fallback e aplicacao de `[Description]`; B092 foi resolvido posteriormente apenas no escopo de plano.

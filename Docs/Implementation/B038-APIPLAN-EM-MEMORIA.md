@@ -20,7 +20,7 @@ Transformar as escolhas ja capturadas pelo wizard em uma representacao interna i
 
 ## Evolucao posterior
 
-A evidencia acima descreve o estado validado em B038. O follow-up [B038 follow-up - Campos escalares de engine no ApiPlan](B038-FOLLOWUP-CAMPOS-ESCALARES-ENGINE.md) resolveu posteriormente `GeneratorTarget`, `ConflictMode` e `ReexecutionMode` em memoria, ainda mantendo descricoes/idioma/fallback pendentes naquele momento historico. A frente [B056 - Descricoes de servico no ApiPlan](B056-DESCRICOES-SERVICO-APIPLAN.md) validou depois as descricoes no plano; `IsEngineReady=false` permanece por condicao GAM e engine real pendentes.
+A evidencia acima descreve o estado validado em B038. O follow-up [B038 follow-up - Campos escalares de engine no ApiPlan](B038-FOLLOWUP-CAMPOS-ESCALARES-ENGINE.md) resolveu posteriormente `GeneratorTarget`, `ConflictMode` e `ReexecutionMode` em memoria, ainda mantendo descricoes/idioma/fallback pendentes naquele momento historico. A frente [B056 - Descricoes de servico no ApiPlan](B056-DESCRICOES-SERVICO-APIPLAN.md) validou depois as descricoes no plano. O follow-up [B092 - Condicao GAM resolvida no ApiPlan](B092-CONDICAO-GAM-APIPLAN.md) resolveu posteriormente as condicoes de seguranca no plano; `IsEngineReady=false` permanece pela engine real ainda pendente.
 
 ## Arquivos principais
 
