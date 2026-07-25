@@ -24,7 +24,7 @@ Registrar no plano interno a proxima camada da Sprint 3:
 
 ## Evolucao posterior
 
-O follow-up [B038 follow-up - Campos escalares de engine no ApiPlan](B038-FOLLOWUP-CAMPOS-ESCALARES-ENGINE.md) resolve posteriormente `GeneratorTarget`, `ConflictMode` e `ReexecutionMode` em memoria, mas mantem `IsEngineReady=false` por descricoes/idioma/fallback pendentes para B056, condicao GAM pendente e engine real ainda inexistente.
+O follow-up [B038 follow-up - Campos escalares de engine no ApiPlan](B038-FOLLOWUP-CAMPOS-ESCALARES-ENGINE.md) resolveu posteriormente `GeneratorTarget`, `ConflictMode` e `ReexecutionMode` em memoria, mantendo descricoes/idioma/fallback pendentes naquele momento historico. A frente [B056 - Descricoes de servico no ApiPlan](B056-DESCRICOES-SERVICO-APIPLAN.md) validou depois as descricoes no plano; `IsEngineReady=false` permanece por condicao GAM e engine real ainda inexistente.
 
 O follow-up [B090/B091 - Contrato de configuracao por KB no ApiPlan](B090-B091-CONTRATO-CONFIGURACAO-KB-APIPLAN.md) validou posteriormente o contrato preparatorio de configuracao por KB no snapshot do wizard e no `ApiPlan`, ainda sem metadata persistente e sem concluir B090/B091 canonicos.
 

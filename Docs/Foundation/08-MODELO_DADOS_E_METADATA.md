@@ -280,12 +280,15 @@ Campos de origem de migração não são auditoria operacional. Um campo como `P
 | TransactionFolderName | texto |
 | TransactionFolderWasCreated | boolean |
 | SecurityLevel | texto |
+| FieldClassificationConfiguration | objeto |
 | DefaultPageSize | número |
 | MaximumPageSize | número |
 | StaticOrder | lista |
 | ServiceDescriptions | lista |
 | ServiceDescriptionLanguage | texto |
+| ServiceDescriptionLanguageSource | texto |
 | ServiceDescriptionFallbackUsed | boolean |
+| ServiceDescriptionFallbackReason | texto |
 | EndpointsCount | número |
 | MetadataFileName | texto |
 | ConflictMode | texto |

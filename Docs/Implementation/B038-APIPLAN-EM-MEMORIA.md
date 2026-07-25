@@ -20,7 +20,7 @@ Transformar as escolhas ja capturadas pelo wizard em uma representacao interna i
 
 ## Evolucao posterior
 
-A evidencia acima descreve o estado validado em B038. O follow-up [B038 follow-up - Campos escalares de engine no ApiPlan](B038-FOLLOWUP-CAMPOS-ESCALARES-ENGINE.md) evolui o estado corrente da Sprint 3 ao resolver `GeneratorTarget`, `ConflictMode` e `ReexecutionMode` em memoria, mantendo descricoes/idioma/fallback pendentes para B056 e `IsEngineReady=false`.
+A evidencia acima descreve o estado validado em B038. O follow-up [B038 follow-up - Campos escalares de engine no ApiPlan](B038-FOLLOWUP-CAMPOS-ESCALARES-ENGINE.md) resolveu posteriormente `GeneratorTarget`, `ConflictMode` e `ReexecutionMode` em memoria, ainda mantendo descricoes/idioma/fallback pendentes naquele momento historico. A frente [B056 - Descricoes de servico no ApiPlan](B056-DESCRICOES-SERVICO-APIPLAN.md) validou depois as descricoes no plano; `IsEngineReady=false` permanece por condicao GAM e engine real pendentes.
 
 ## Arquivos principais
 
