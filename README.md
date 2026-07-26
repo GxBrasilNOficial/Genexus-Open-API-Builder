@@ -58,11 +58,10 @@ Quando uma nova DLL estiver pronta para teste:
 
 1. feche completamente a IDE GeneXus;
 2. execute [`Install-ExtensionForGeneXus18.bat`](Install-ExtensionForGeneXus18.bat) na raiz do repositório usando **Executar como administrador**;
-3. execute [`Register-ExtensionForGeneXus18.bat`](Register-ExtensionForGeneXus18.bat) normalmente, sem Administrador;
-4. no prompt aberto, digite `genexus /install`, confira a varredura e depois digite `exit`;
-5. abra novamente a IDE e siga o roteiro de teste da frente ativa.
+3. se houve alteração desde o último `genexus /install` bem-sucedido em `Src/Extension/GenexusOpenApiBuilder.package`, na identidade do pacote ou no registro de comandos, execute [`Register-ExtensionForGeneXus18.bat`](Register-ExtensionForGeneXus18.bat) normalmente, sem Administrador; no prompt aberto, digite `genexus /install`, confira a varredura e depois digite `exit`;
+4. abra novamente a IDE e siga o roteiro de teste da frente ativa.
 
-O primeiro arquivo delega a cópia, o backup e a validação de hash ao script interno `Tools/Copy-ExtensionForGeneXus18.ps1`. Esse script não registra a extensão. O segundo `.bat` executa o registro no contexto normal em que o GeneXus local efetivamente varre os pacotes.
+O primeiro arquivo delega a cópia, o backup e a validação de hash ao script interno `Tools/Copy-ExtensionForGeneXus18.ps1`. Esse script não registra a extensão. O segundo `.bat` e `genexus /install` são condicionais: atualizam o registro e o manifesto carregados pela IDE, mas não são necessários quando somente a DLL foi alterada desde o último registro bem-sucedido.
 
 Para conferir posteriormente, somente por leitura, se a DLL instalada coincide com a build:
 
