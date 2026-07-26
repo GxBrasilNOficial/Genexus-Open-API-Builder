@@ -107,6 +107,8 @@ Após a validação dos comandos separados, B050-B053 foi incorporado ao encerra
 
 A integração foi validada manualmente em 2026-07-25 na Transaction `Contrato`. O wizard registrou B050-B053 com `Trigger='Wizard'`, reencontrou os 7 SDTs existentes, reencontrou as 4 Procedures existentes (`Created=0`, `Reencountered=4`) e preservou o limite de não criar API Object, REST completo ou metadata persistente definitiva.
 
+A correção pós-revisão foi validada manualmente em 2026-07-26 na Transaction `Contrato`. A aba `Procedures` exibiu as 4 Procedures planejadas, com dependência de SDTs confirmada; o resumo final registrou `Gerar Procedures B050-B053=True`. Ao concluir, a Output registrou `GenerateProcedures=True`, `Trigger='Wizard'`, `ReencounteredSdts=7`, `Created=0` e `Reencountered=4`, sem modal pós-wizard e sem criar API Object, REST completo ou metadata persistente definitiva.
+
 ## Próximo passo
 
 B050-B053 estão concluídos como comando separado e como etapa integrada ao wizard. A próxima frente deve preparar B054 para criar ou reencontrar o objeto `API` sobre as Procedures existentes, ainda sem completar a Sprint 6 de comportamento REST e segurança definitivos.

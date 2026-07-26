@@ -103,6 +103,8 @@ Após a validação dos comandos separados, B040-B046 foi incorporado ao encerra
 
 A integração foi validada manualmente em 2026-07-25 na Transaction `Contrato`. O wizard registrou B040-B046 com `Trigger='Wizard'`, reencontrou os 7 SDTs existentes (`Created=0`, `Reencountered=7`) e preservou o limite de não criar Procedure, API Object ou metadata persistente definitiva.
 
+A correção pós-revisão foi validada manualmente em 2026-07-26 na Transaction `Contrato`. A aba `SDTs` exibiu os 7 SDTs planejados e a confirmação marcada; o resumo final registrou `Gerar SDTs B040-B046=True`. Ao concluir, a Output registrou `GenerateSdts=True`, `Trigger='Wizard'`, `Created=0` e `Reencountered=7`, sem modal pós-wizard e sem criar Procedure, API Object ou metadata persistente definitiva.
+
 ## Próximo passo
 
 B040-B046 estão concluídos como comando separado e como etapa integrada ao wizard. A próxima ação executável vigente deve ser consultada no checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.

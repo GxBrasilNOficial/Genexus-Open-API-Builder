@@ -55,6 +55,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B040-B046 validados no U15: comando `Criar SDTs (B040-B046)` criou 7 SDTs a partir do `ApiPlan` após confirmação modal explícita na IDE, com 5 próprios e 2 compartilhados, sem Procedures, API Object ou metadata persistente definitiva
 - B050-B053 validados no U15: comando `Criar Procedures (B050-B053)` bloqueou execução sem `ApiPlan`, depois criou 4 Procedures skeleton a partir do `ApiPlan` e reencontrou 7 SDTs B040-B046, sem API Object, REST completo ou metadata persistente definitiva
 - `Abrir Wizard (B030)` validado no U15 oferecendo B040-B046 e B050-B053 em abas próprias de confirmação no wizard, com Output marcada com `Trigger='Wizard'`, reencontro de 7 SDTs e 4 Procedures existentes e preservação dos comandos separados para reexecução/diagnóstico
+- Correção pós-revisão B040-B046/B050-B053 validada no U15: abas `SDTs` e `Procedures` do wizard confirmam a escrita antes do resumo, Output registra `GenerateSdts=True`, `GenerateProcedures=True`, `Trigger='Wizard'`, reencontro de 7 SDTs e 4 Procedures, sem modais pós-wizard e sem criar API Object, REST completo ou metadata persistente definitiva
 
 ## Fixed
 
@@ -76,7 +77,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Validar na IDE a correção pós-revisão das abas `SDTs`/`Procedures` do wizard e do preflight completo B040-B046/B050-B053 antes de retomar B054
+- Preparar criação ou reencontro do objeto `API` B054 sobre as Procedures existentes
 
 ---
 
