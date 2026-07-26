@@ -14,19 +14,25 @@
 
 ## Atualização manual da extensão para testes
 
-Sempre que uma nova DLL precisar ser instalada para teste no GeneXus 18, o agente deve apresentar ao usuário o fluxo operacional completo abaixo, nesta ordem:
+Sempre que uma nova DLL precisar ser instalada para teste no GeneXus 18, o agente deve primeiro distinguir atualização de código de atualização de manifesto/registro.
+
+Para atualização apenas de DLL, sem alteração em `Src/Extension/GenexusOpenApiBuilder.package`, na identidade do pacote ou no registro da extensão:
 
 1. fechar completamente a IDE GeneXus;
 2. executar `Install-ExtensionForGeneXus18.bat`, na raiz do repositório, usando **Executar como administrador**;
-3. executar `Register-ExtensionForGeneXus18.bat` normalmente, sem Administrador;
-4. no prompt aberto pelo segundo arquivo, digitar `genexus /install`, conferir a varredura e depois digitar `exit`;
-5. abrir novamente a IDE e executar a validação funcional indicada para a frente;
-6. quando solicitado, executar `pwsh -NoProfile -File Tools/Test-InstalledExtension.ps1` para conferir por leitura se a DLL instalada coincide com a build.
+3. abrir novamente a IDE e executar a validação funcional indicada para a frente.
 
-- Os dois arquivos `.bat` da raiz são o caminho operacional primário para o usuário.
+O instalador já executa `Tools/Test-InstalledExtension.ps1` ao final e falha quando a DLL instalada não corresponde à build atual.
+
+Quando houver, desde o ultimo `genexus /install` bem-sucedido, alteracao em `Src/Extension/GenexusOpenApiBuilder.package`, na identidade do pacote ou no registro da extensao, acrescentar entre os passos 2 e 3:
+
+1. executar `Register-ExtensionForGeneXus18.bat` normalmente, sem Administrador;
+2. no prompt aberto pelo segundo arquivo, digitar `genexus /install`, conferir a varredura e depois digitar `exit`.
+
+- `Install-ExtensionForGeneXus18.bat` é sempre o caminho operacional primário para instalar a nova DLL; `Register-ExtensionForGeneXus18.bat` é condicional à atualização de manifesto/registro.
 - O agente não executa esses arquivos nem altera `C:\Program Files (x86)\GeneXus`; apenas orienta a execução manual.
-- Não substituir esse fluxo por uma chamada direta a `Tools/Copy-ExtensionForGeneXus18.ps1`. O `.ps1` é implementação interna exclusiva da etapa de cópia e validação; ele não registra a extensão.
-- Ao avisar que chegou a hora de atualizar e testar, citar sempre os dois `.bat`, suas exigências de elevação distintas e a sequência `genexus /install` seguida de `exit`.
+- Não substituir a instalação por uma chamada direta a `Tools/Copy-ExtensionForGeneXus18.ps1`. O `.ps1` é implementação interna exclusiva da etapa de cópia e validação; ele não registra a extensão.
+- Ao avisar que chegou a hora de atualizar e testar, declarar explicitamente se o manifesto/registro mudou e solicitar `genexus /install` somente nesse caso.
 
 ## Registro de comandos no menu de contexto
 

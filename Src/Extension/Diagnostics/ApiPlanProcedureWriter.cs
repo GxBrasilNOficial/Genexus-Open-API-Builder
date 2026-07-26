@@ -38,11 +38,12 @@ internal static class ApiPlanProcedureWriter
         var resolvedSdts = PreflightRequiredSdts(designModel, sdtGenerationPlan);
         var definitions = CreateProcedureDefinitions(apiPlan);
         var preflight = PreflightProcedures(designModel, definitions);
+        var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan);
         var results = new List<ApiPlanProcedureWriteItemResult>();
 
         foreach (var definition in definitions)
         {
-            results.Add(CreateOrReencounterProcedure(designModel, transaction, definition, preflight));
+            results.Add(CreateOrReencounterProcedure(designModel, transaction, transactionFolder, definition, preflight));
         }
 
         return new ApiPlanProcedureWriteResult(
@@ -50,6 +51,8 @@ internal static class ApiPlanProcedureWriter
             resolvedSdts.Count,
             results.Count(item => item.Status == ApiPlanProcedureWriteStatus.Created),
             results.Count(item => item.Status == ApiPlanProcedureWriteStatus.Reencountered),
+            transactionFolder.Name,
+            transactionFolder.Guid,
             results);
     }
 
@@ -146,10 +149,12 @@ internal static class ApiPlanProcedureWriter
         return new ApiPlanProcedurePreflightResult(existingByName);
     }
 
-    private static ApiPlanProcedureWriteItemResult CreateOrReencounterProcedure(KBModel designModel, Transaction transaction, ApiPlanProcedureDefinition definition, ApiPlanProcedurePreflightResult preflight)
+    private static ApiPlanProcedureWriteItemResult CreateOrReencounterProcedure(KBModel designModel, Transaction transaction, Folder transactionFolder, ApiPlanProcedureDefinition definition, ApiPlanProcedurePreflightResult preflight)
     {
         if (preflight.ExistingProceduresByName.TryGetValue(definition.Name, out var existingProcedure))
         {
+            existingProcedure.Parent = transactionFolder;
+            existingProcedure.Save();
             return new ApiPlanProcedureWriteItemResult(definition.BacklogId, definition.ServiceName, definition.Name, ApiPlanProcedureWriteStatus.Reencountered, existingProcedure.Guid);
         }
 
@@ -159,10 +164,7 @@ internal static class ApiPlanProcedureWriter
             Description = CreateOwnedDescription(definition),
         };
 
-        if (transaction.Module is not null)
-        {
-            procedure.Module = transaction.Module;
-        }
+        procedure.Parent = transactionFolder;
 
         ConfigureProcedure(procedure, definition);
         procedure.Save();
@@ -219,12 +221,14 @@ internal sealed class ApiPlanProcedurePreflightResult
 }
 internal sealed class ApiPlanProcedureWriteResult
 {
-    public ApiPlanProcedureWriteResult(int plannedProcedures, int reencounteredSdts, int createdProcedures, int reencounteredProcedures, IReadOnlyList<ApiPlanProcedureWriteItemResult> items)
+    public ApiPlanProcedureWriteResult(int plannedProcedures, int reencounteredSdts, int createdProcedures, int reencounteredProcedures, string transactionFolderName, Guid transactionFolderGuid, IReadOnlyList<ApiPlanProcedureWriteItemResult> items)
     {
         PlannedProcedures = plannedProcedures;
         ReencounteredSdts = reencounteredSdts;
         CreatedProcedures = createdProcedures;
         ReencounteredProcedures = reencounteredProcedures;
+        TransactionFolderName = transactionFolderName ?? throw new ArgumentNullException(nameof(transactionFolderName));
+        TransactionFolderGuid = transactionFolderGuid;
         Items = items ?? throw new ArgumentNullException(nameof(items));
     }
 
@@ -235,6 +239,10 @@ internal sealed class ApiPlanProcedureWriteResult
     public int CreatedProcedures { get; }
 
     public int ReencounteredProcedures { get; }
+
+    public string TransactionFolderName { get; }
+
+    public Guid TransactionFolderGuid { get; }
 
     public IReadOnlyList<ApiPlanProcedureWriteItemResult> Items { get; }
 }

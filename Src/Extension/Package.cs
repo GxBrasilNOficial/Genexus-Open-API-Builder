@@ -20,7 +20,7 @@ namespace GenexusOpenApiBuilder.Extension;
 /// Ponto de entrada da extensão. As sondas B001-B006 permanecem como
 /// evidências históricas e não são invocadas em runtime nem na abertura de KBs.
 /// O placeholder mantém o submenu do produto visível, os comandos B020-B025
-/// executam leituras manuais e B030 abre o wizard prototípico navegável único.
+/// executam leituras manuais e B030 abre o wizard navegável com geração incremental.
 /// </summary>
 public sealed class Package : AbstractPackageUI
 {
@@ -37,9 +37,10 @@ public sealed class Package : AbstractPackageUI
         AddCommand(new CommandKey(Id, "Detectar Objetos Existentes (B023)"), ExecuteDetectExistingObjects, QueryDetectExistingObjects);
         AddCommand(new CommandKey(Id, "Verificar Business Component (B024)"), ExecuteCheckBusinessComponent, QueryCheckBusinessComponent);
         AddCommand(new CommandKey(Id, "Ler Chave Primária (B025)"), ExecuteReadPrimaryKey, QueryReadPrimaryKey);
-        AddCommand(new CommandKey(Id, "Abrir Wizard (B030)"), ExecuteOpenWizardStepOne, QueryOpenWizardStepOne);
         AddCommand(new CommandKey(Id, "Criar SDTs (B040-B046)"), ExecuteCreateSdts, QueryCreateSdts);
         AddCommand(new CommandKey(Id, "Criar Procedures (B050-B053)"), ExecuteCreateProcedures, QueryCreateProcedures);
+        AddCommand(new CommandKey(Id, "Criar API Object (B054)"), ExecuteCreateApiObject, QueryCreateApiObject);
+        AddCommand(new CommandKey(Id, "Abrir Wizard (B030)"), ExecuteOpenWizardStepOne, QueryOpenWizardStepOne);
     }
 
     private static bool QueryFutureFirstOption(CommandData data, ref CommandStatus status)
@@ -396,6 +397,53 @@ public sealed class Package : AbstractPackageUI
         return true;
     }
 
+    private static bool QueryCreateApiObject(CommandData data, ref CommandStatus status)
+    {
+        status.Visible(true);
+        return true;
+    }
+
+    private static bool ExecuteCreateApiObject(CommandData data)
+    {
+        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
+        if (knowledgeBase is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B054] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
+            return true;
+        }
+
+        PrototypeTransactionSelectionState.ClearIfKnowledgeBaseChanged(knowledgeBase);
+        var apiPlan = ApiPlanSessionState.Current;
+        if (apiPlan is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B054] Nenhum ApiPlan em memoria foi encontrado. Execute e conclua primeiro o comando Abrir Wizard (B030). Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        var selectedTransaction = PrototypeTransactionSelectionState.Current;
+        if (selectedTransaction is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B054] Nenhuma Transaction selecionada em memoria foi encontrada. Execute e conclua primeiro o comando Abrir Wizard (B030). Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        var transaction = Transaction.GetAll(knowledgeBase.DesignModel)
+            .SingleOrDefault(item => item.Guid == selectedTransaction.TransactionGuid);
+        if (transaction is null)
+        {
+            WriteOutput($"[Genexus Open API Builder][B054] A Transaction selecionada em memoria nao foi reencontrada: Name='{selectedTransaction.TransactionName}', Guid='{selectedTransaction.TransactionGuid}'. Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        if (!string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.Ordinal))
+        {
+            WriteOutput($"[Genexus Open API Builder][B054] ApiPlan em memoria pertence a Transaction='{apiPlan.TransactionName}', mas a selecao atual e Transaction='{transaction.Name}'. Execute novamente o wizard. Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        TryConfirmAndCreateApiObject(knowledgeBase.DesignModel, transaction, apiPlan, "Comando");
+        return true;
+    }
     private static bool TryConfirmAndCreateSdts(KBModel designModel, Transaction transaction, ApiPlan apiPlan, string triggerSource)
     {
         var confirmation = System.Windows.Forms.MessageBox.Show(
@@ -418,7 +466,7 @@ public sealed class Package : AbstractPackageUI
         try
         {
             var result = ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan);
-            WriteOutput($"[Genexus Open API Builder][B040-B046] Escrita de SDTs concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedOwnSdts={result.PlannedOwnSdts}, PlannedSharedSdts={result.PlannedSharedSdts}, Created={result.CreatedSdts}, Reencountered={result.ReencounteredSdts}. Nenhuma Procedure, API Object ou metadata persistente definitiva foi criada.");
+            WriteOutput($"[Genexus Open API Builder][B040-B046] Escrita de SDTs concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedOwnSdts={result.PlannedOwnSdts}, PlannedSharedSdts={result.PlannedSharedSdts}, Created={result.CreatedSdts}, Reencountered={result.ReencounteredSdts}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhuma Procedure, API Object ou metadata persistente definitiva foi criada.");
             foreach (var item in result.Items)
             {
                 WriteOutput($"[Genexus Open API Builder][B040-B046] SDT {item.Status}: Backlog='{item.BacklogId}', Kind='{item.Kind}', Name='{item.Name}', Scope='{item.Scope}', Guid='{item.Guid}'.");
@@ -455,7 +503,7 @@ public sealed class Package : AbstractPackageUI
         try
         {
             var result = ApiPlanProcedureWriter.CreateOrReencounter(designModel, transaction, apiPlan);
-            WriteOutput($"[Genexus Open API Builder][B050-B053] Escrita de Procedures concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedProcedures={result.PlannedProcedures}, ReencounteredSdts={result.ReencounteredSdts}, Created={result.CreatedProcedures}, Reencountered={result.ReencounteredProcedures}. Nenhum API Object, REST completo ou metadata persistente definitiva foi criado.");
+            WriteOutput($"[Genexus Open API Builder][B050-B053] Escrita de Procedures concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedProcedures={result.PlannedProcedures}, ReencounteredSdts={result.ReencounteredSdts}, Created={result.CreatedProcedures}, Reencountered={result.ReencounteredProcedures}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhum API Object, REST completo ou metadata persistente definitiva foi criado.");
             foreach (var item in result.Items)
             {
                 WriteOutput($"[Genexus Open API Builder][B050-B053] Procedure {item.Status}: Backlog='{item.BacklogId}', Service='{item.ServiceName}', Name='{item.Name}', Guid='{item.Guid}'.");
@@ -466,6 +514,43 @@ public sealed class Package : AbstractPackageUI
         catch (Exception ex)
         {
             WriteOutput($"[Genexus Open API Builder][B050-B053] Criacao de Procedures bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
+            return false;
+        }
+    }
+    private static bool TryConfirmAndCreateApiObject(KBModel designModel, Transaction transaction, ApiPlan apiPlan, string triggerSource)
+    {
+        var confirmation = System.Windows.Forms.MessageBox.Show(
+            $"B054 vai reencontrar os 7 SDTs de B040-B046 e as 4 Procedures de B050-B053 para criar ou reencontrar o API Object '{apiPlan.ApiName}'. Nao completa REST, seguranca definitiva ou metadata persistente definitiva. Confirma a escrita desse API Object na KB ativa?",
+            "Confirmar criacao de API Object B054",
+            System.Windows.Forms.MessageBoxButtons.YesNo,
+            System.Windows.Forms.MessageBoxIcon.Warning,
+            System.Windows.Forms.MessageBoxDefaultButton.Button2);
+        if (confirmation != System.Windows.Forms.DialogResult.Yes)
+        {
+            WriteOutput($"[Genexus Open API Builder][B054] Criacao de API Object cancelada pelo usuario para Transaction='{transaction.Name}', Trigger='{triggerSource}'. Nenhuma alteracao foi feita na KB.");
+            return false;
+        }
+
+        return TryCreateApiObject(designModel, transaction, apiPlan, triggerSource);
+    }
+
+    private static bool TryCreateApiObject(KBModel designModel, Transaction transaction, ApiPlan apiPlan, string triggerSource)
+    {
+        try
+        {
+            var result = ApiPlanApiObjectWriter.CreateOrReencounter(designModel, transaction, apiPlan);
+            WriteOutput($"[Genexus Open API Builder][B054] Escrita de API Object concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiName='{result.ApiName}', Status='{result.Status}', ReencounteredSdts={result.ReencounteredSdts}, ReencounteredProcedures={result.ReencounteredProcedures}, PlannedServices={result.PlannedServices}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhum REST completo, seguranca definitiva ou metadata persistente definitiva foi criado.");
+            foreach (var procedure in result.Procedures)
+            {
+                WriteOutput($"[Genexus Open API Builder][B054] Procedure reencontrada para API Object: Backlog='{procedure.BacklogId}', Service='{procedure.ServiceName}', Name='{procedure.Name}', Guid='{procedure.Guid}'.");
+            }
+
+            WriteOutput($"[Genexus Open API Builder][B054] API Object {result.Status}: Name='{result.ApiName}', Guid='{result.Guid}'.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            WriteOutput($"[Genexus Open API Builder][B054] Criacao de API Object bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
             return false;
         }
     }
@@ -559,6 +644,8 @@ public sealed class Package : AbstractPackageUI
         var snapshot = PrototypeWizardContractReader.Read(transaction);
         var businessComponentSnapshot = PrototypeBusinessComponentReader.Read(transaction);
         using var dialog = new PrototypeWizardDialog(
+            knowledgeBase.DesignModel,
+            transaction,
             snapshot,
             businessComponentSnapshot,
             () => EnableBusinessComponentForWizard(transaction),
@@ -608,7 +695,7 @@ public sealed class Package : AbstractPackageUI
         PrototypeWizardReviewSessionState.StoreReviewSelection(selection.ReviewSelection);
         ApiPlanSessionState.Store(apiPlan);
         WriteOutput($"[Genexus Open API Builder][B030] Wizard único concluido em memoria: Transaction='{transaction.Name}', Module='{module.Name}', SelectionSource='{selectionSource}'.");
-        WriteOutput($"[Genexus Open API Builder][B031] Contrato em memoria: Services='{string.Join(",", selection.ContractSelection.SelectedServices)}', Create={selection.ContractSelection.CreateFields.Count}, Update={selection.ContractSelection.UpdateFields.Count}, Response={selection.ContractSelection.ResponseFields.Count}, ListFilters={selection.ContractSelection.ListFilters.Count}.");
+        WriteOutput($"[Genexus Open API Builder][B031] Contrato de API da Transacao='{transaction.Name}' em memoria: Services='{string.Join(",", selection.ContractSelection.SelectedServices)}', Create={selection.ContractSelection.CreateFields.Count}, Update={selection.ContractSelection.UpdateFields.Count}, Response={selection.ContractSelection.ResponseFields.Count}, ListFilters={selection.ContractSelection.ListFilters.Count}.");
         WriteOutput($"[Genexus Open API Builder][B032] Paths e segurança em memoria: ApiName='{selection.ReviewSelection.ApiName}', ServicesBasePath='{selection.ReviewSelection.ServicesBasePath}', RestPath='{selection.ReviewSelection.RestPath}', SecurityLevel='{selection.ReviewSelection.SecurityLevel}'.");
         WriteOutput($"[Genexus Open API Builder][B033] Obrigatoriedade em memoria: CreateRequired={createRequiredCount}, UpdateRequired={updateRequiredCount}. Required significa presença do membro JSON, nao valor nao-vazio.");
         WriteOutput($"[Genexus Open API Builder][B037] Obrigatorio no payload consolidado: CreateRequired={createRequiredCount}, UpdateRequired={updateRequiredCount}. Required e presenca do membro JSON; vazio, false e 0 continuam valores enviados. UpdateRequest segue PUT completo.");
@@ -627,26 +714,61 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][Sprint3] Campos de engine no ApiPlan: GeneratorTarget='{apiPlan.GeneratorTarget}' como gerador prioritario inicial do MVP, ConflictMode='{apiPlan.ConflictMode}' para colisao externa/incompativel, ReexecutionMode='{apiPlan.ReexecutionMode}', ServiceDescriptionsPending={serviceDescriptionsPendingCount}/{apiPlan.ServiceDescriptions.Count}, ServiceDescriptionLanguage='{apiPlan.ServiceDescriptionLanguage}', ServiceDescriptionFallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, IsEngineReady={apiPlan.IsEngineReady}. Sem validar engine real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B056] Descricoes no ApiPlan: Resolved={serviceDescriptionsResolvedCount}/{apiPlan.ServiceDescriptions.Count}, Language='{apiPlan.ServiceDescriptionLanguage}', LanguageSource='{apiPlan.ServiceDescriptionLanguageSource}', FallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, FallbackReason='{apiPlan.ServiceDescriptionFallbackReason}'. Sem aplicar [Description] em objeto API real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B092] Seguranca no ApiPlan: SecurityLevel='{apiPlan.Security.SecurityLevel}', GamCondition='{apiPlan.Security.GamCondition}', RequiresGenerationConfirmation={apiPlan.Security.RequiresGenerationConfirmation}. Sem aplicar seguranca em objetos reais.");
-        WriteOutput($"[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria. GenerateSdts={selection.GenerateSdts}, GenerateProcedures={selection.GenerateProcedures}; escritas confirmadas no wizard exigem preflight completo antes de qualquer Save().");
+        WriteOutput($"[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria. GenerateSdts={selection.GenerateSdts}, GenerateProcedures={selection.GenerateProcedures}, GenerateApiObject={selection.GenerateApiObject}; escritas confirmadas no wizard exigem preflight completo antes de qualquer Save().");
+        if (!selection.GenerateSdts && !selection.GenerateProcedures && !selection.GenerateApiObject)
+        {
+            WriteOutput($"[Genexus Open API Builder][B040-B046] Etapa de SDTs nao confirmada no wizard para Transaction='{transaction.Name}'. Nenhuma escrita foi solicitada.");
+            return true;
+        }
+
+        var sdtsReady = true;
         if (selection.GenerateSdts)
         {
-            var wizardCreatedOrReencounteredSdts = TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
-            if (wizardCreatedOrReencounteredSdts && selection.GenerateProcedures)
-            {
-                TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
-            }
-            else if (selection.GenerateProcedures)
-            {
-                WriteOutput($"[Genexus Open API Builder][B050-B053] Etapa de Procedures nao executada pelo wizard para Transaction='{transaction.Name}' porque B040-B046 nao foi concluido neste fluxo. Nenhuma Procedure foi criada pelo wizard.");
-            }
+            sdtsReady = TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
         }
-        else
+        else if (selection.GenerateProcedures || selection.GenerateApiObject)
         {
-            WriteOutput($"[Genexus Open API Builder][B040-B046] Etapa de SDTs nao confirmada no wizard para Transaction='{transaction.Name}'. Nenhum SDT foi criado pelo wizard.");
+            WriteOutput($"[Genexus Open API Builder][B040-B046] Etapa de SDTs nao confirmada no wizard para Transaction='{transaction.Name}'. A dependencia sera reencontrada e validada pelo preflight da etapa seguinte.");
+        }
+
+        if (!sdtsReady)
+        {
             if (selection.GenerateProcedures)
             {
-                WriteOutput($"[Genexus Open API Builder][B050-B053] Etapa de Procedures nao executada pelo wizard para Transaction='{transaction.Name}' porque B040-B046 nao foi confirmado neste fluxo. Nenhuma Procedure foi criada pelo wizard.");
+                WriteOutput($"[Genexus Open API Builder][B050-B053] Etapa de Procedures nao executada pelo wizard para Transaction='{transaction.Name}' porque B040-B046 falhou ou foi bloqueado neste fluxo. Nenhuma Procedure foi criada pelo wizard.");
             }
+
+            if (selection.GenerateApiObject)
+            {
+                WriteOutput($"[Genexus Open API Builder][B054] Etapa de API Object nao executada pelo wizard para Transaction='{transaction.Name}' porque B040-B046 falhou ou foi bloqueado neste fluxo. Nenhum API Object foi criado pelo wizard.");
+            }
+
+            return true;
+        }
+
+        var proceduresReady = true;
+        if (selection.GenerateProcedures)
+        {
+            proceduresReady = TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
+        }
+        else if (selection.GenerateApiObject)
+        {
+            WriteOutput($"[Genexus Open API Builder][B050-B053] Etapa de Procedures nao confirmada no wizard para Transaction='{transaction.Name}'. A dependencia sera reencontrada e validada pelo preflight de B054.");
+        }
+
+        if (!proceduresReady)
+        {
+            if (selection.GenerateApiObject)
+            {
+                WriteOutput($"[Genexus Open API Builder][B054] Etapa de API Object nao executada pelo wizard para Transaction='{transaction.Name}' porque B050-B053 falhou ou foi bloqueado neste fluxo. Nenhum API Object foi criado pelo wizard.");
+            }
+
+            return true;
+        }
+
+        if (selection.GenerateApiObject)
+        {
+            TryCreateApiObject(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
         }
         return true;
     }

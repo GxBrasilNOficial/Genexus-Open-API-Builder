@@ -53,21 +53,24 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 - Correção pós-revisão validada manualmente em 2026-07-26 na Transaction `Contrato`: `Abrir Wizard (B030)` exibiu abas próprias `SDTs` e `Procedures`, registrou no resumo `Gerar SDTs B040-B046=True` e `Gerar Procedures B050-B053=True`, concluiu sem modais pós-wizard e a Output registrou `GenerateSdts=True`, `GenerateProcedures=True`, B040-B046 com `Trigger='Wizard'`, `Created=0`, `Reencountered=7`, e B050-B053 com `Trigger='Wizard'`, `Created=0`, `Reencountered=4`. A validação confirmou o reencontro conservador dos objetos existentes e manteve o limite de não criar API Object, REST completo ou metadata persistente definitiva.
 
+- B054 validado manualmente em 2026-07-26 nas Transactions `Contrato` e `Carga`: o wizard e o comando separado criaram ou reencontraram conservadoramente `api<NomeBase>` sobre os sete SDTs e quatro Procedures planejados. A reexecução direta com apenas `Gerar API Object B054=True` reencontrou `apiCarga`; colisões por nome ou descrição incompatível permanecem bloqueadas. O passo não completa REST, segurança definitiva, descrições aplicadas ou metadata persistente.
+- O wizard passou a reconhecer o estado atual dos artefatos planejados antes da escrita: apresenta `plano em memoria`, teste de criação, complementação, reencontro ou bloqueio; as abas SDTs, Procedures e API Object refletem os objetos reencontráveis e permitem aplicar somente a etapa pendente. O resumo usa `Concluir Teste` sem escrita e `Concluir e aplicar` quando há geração confirmada.
+- Os objetos gerados foram organizados no Folder irmão `<Transaction>OpenApi`; reexecuções realinham o Folder existente ao módulo e Folder físico da Transaction quando a API pública o permite.
+
 ## Frente ativa
 
-**Sprint 5 — Procedures, API Object e Metadata**, com B040-B046/B050-B053 validados pelos comandos separados, pelo encerramento integrado do wizard e pela correção pós-revisão das abas `SDTs`/`Procedures`. A próxima frente deve preparar B054 para criação ou reencontro conservador do objeto `API` sobre as Procedures existentes, ainda sem completar REST/segurança definitivos da Sprint 6 nem metadata persistente definitiva fora do escopo aprovado.
+**Sprint 5 — Procedures, API Object e Metadata**, com B040-B046, B050-B053 e B054 validados pelos comandos separados e pelo encerramento integrado do wizard. O próximo recorte é B055: comprovar o uso real de Create e Update via Business Component nas Procedures já existentes, sem antecipar o comportamento REST completo da Sprint 6, segurança definitiva ou metadata persistente.
 
 ## Próxima ação única
 
-Preparar B054 no runtime da extensão para criar ou reencontrar o objeto `API` `api<NomeBase>` sobre as Procedures B050-B053 já existentes, mantendo bloqueio conservador contra colisões externas e sem antecipar a Sprint 6 de comportamento REST completo e segurança definitivos.
+Investigar e preparar B055 no runtime da extensão para validar o uso de Business Component pelas Procedures de Create e Update já geradas, cobrindo chaves simples e compostas sem ainda definir códigos HTTP, paths finais, segurança definitiva ou metadata persistente.
 
 ## Critério de conclusão e evidência esperada
 
-- o comando ou fluxo B054 só executa com `ApiPlan` em memória compatível com a Transaction selecionada;
-- os SDTs B040-B046 e as Procedures B050-B053 existentes são reencontrados antes da criação do objeto `API`;
-- o objeto `API` planejado é criado ou reencontrado com nome convencionado `api<NomeBase>`;
-- colisões externas ou incompatíveis bloqueiam a geração por nome e descrição sentinela ou metadata disponível;
-- a Output da IDE registra o objeto `API` criado ou reencontrado e confirma que o passo não completa ainda REST/segurança definitivos nem metadata persistente definitiva fora do escopo aprovado.
+- as Procedures de Create e Update usam a Transaction como Business Component exclusivamente por APIs públicas já comprovadas;
+- a validação cobre Transaction com chave simples e com chave composta, preservando os contratos de request e response já planejados;
+- o comando ou fluxo bloqueia quando Business Component não está habilitado e não altera a propriedade sem confirmação explícita;
+- a Output da IDE registra o caminho BC exercitado e confirma que B055 não completa ainda REST, códigos HTTP, segurança definitiva ou metadata persistente.
 
 ## Sequência operacional vigente
 
@@ -79,8 +82,9 @@ Preparar B054 no runtime da extensão para criar ou reencontrar o objeto `API` `
 6. Sprint 5 validou B050-B053 com a criação das Procedures skeleton sobre os SDTs existentes, ainda sem API Object, REST completo ou metadata persistente definitiva.
 7. Sprint 5 validou B040-B046 e B050-B053 também no encerramento integrado do wizard, com Trigger='Wizard', reencontro dos objetos existentes e preservação dos comandos independentes para reexecução/diagnóstico.
 8. A correção pós-revisão de B040-B046/B050-B053 foi validada na IDE antes de B054, cobrindo abas próprias de confirmação no wizard, ausência de modais pós-wizard e reencontro conservador dos objetos existentes com preflight completo.
-9. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
-10. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
+9. Sprint 5 validou B054 com criação ou reencontro conservador de `api<NomeBase>`, dependente dos SDTs e Procedures existentes, e passou o wizard a reconhecer o estado atual de geração para aplicar somente etapas pendentes.
+10. Sprints 5–7 completam uso via BC, descrições/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
+11. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -99,7 +103,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- geração real de API Object e metadata persistente;
+- metadata persistente;
 - Alpha público.
 
 ## Protocolo de atualização

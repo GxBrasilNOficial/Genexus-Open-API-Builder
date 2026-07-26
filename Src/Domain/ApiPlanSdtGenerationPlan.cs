@@ -15,6 +15,7 @@ internal static class ApiPlanSdtGenerationPlanBuilder
 
         var responseSdtName = apiPlan.ResponseSdtName;
         var listFiltersSdtName = apiPlan.ListFiltersSdtName;
+        var transactionFolderScope = ApiPlanSdtScope.CreateTransactionModuleFolderScope(apiPlan.TransactionFolderName);
 
         var ownSdts = new[]
         {
@@ -22,25 +23,25 @@ internal static class ApiPlanSdtGenerationPlanBuilder
                 apiPlan.CreateRequestSdtName,
                 "B040",
                 "CreateRequest",
-                ApiPlanSdtScope.TransactionModule,
+                transactionFolderScope,
                 apiPlan.CreateRequestFields,
                 "CreateRequest"),
             CreateFieldBackedSdt(
                 apiPlan.UpdateRequestSdtName,
                 "B041",
                 "UpdateRequest",
-                ApiPlanSdtScope.TransactionModule,
+                transactionFolderScope,
                 apiPlan.UpdateRequestFields,
                 "UpdateRequest"),
             CreateFieldBackedSdt(
                 apiPlan.ResponseSdtName,
                 "B042",
                 "Response",
-                ApiPlanSdtScope.TransactionModule,
+                transactionFolderScope,
                 apiPlan.ResponseFields,
                 "Response"),
-            CreateListFiltersSdt(apiPlan),
-            CreateListResponseSdt(apiPlan.ListResponseSdtName, responseSdtName, listFiltersSdtName),
+            CreateListFiltersSdt(apiPlan, transactionFolderScope),
+            CreateListResponseSdt(apiPlan.ListResponseSdtName, responseSdtName, listFiltersSdtName, transactionFolderScope),
         };
 
         var sharedSdts = new[]
@@ -73,13 +74,13 @@ internal static class ApiPlanSdtGenerationPlanBuilder
             fields.Select(field => CreateMember(field, source)).ToArray());
     }
 
-    private static ApiPlanSdtDefinition CreateListFiltersSdt(ApiPlan apiPlan)
+    private static ApiPlanSdtDefinition CreateListFiltersSdt(ApiPlan apiPlan, string scope)
     {
         return new ApiPlanSdtDefinition(
             apiPlan.ListFiltersSdtName,
             "B043",
             "ListFilters",
-            ApiPlanSdtScope.TransactionModule,
+            scope,
             apiPlan.ListFilters.SelectMany(CreateFilterMembers).ToArray());
     }
 
@@ -122,13 +123,13 @@ internal static class ApiPlanSdtGenerationPlanBuilder
             "ListFilters");
     }
 
-    private static ApiPlanSdtDefinition CreateListResponseSdt(string name, string responseSdtName, string listFiltersSdtName)
+    private static ApiPlanSdtDefinition CreateListResponseSdt(string name, string responseSdtName, string listFiltersSdtName, string scope)
     {
         return new ApiPlanSdtDefinition(
             name,
             "B044",
             "ListResponse",
-            ApiPlanSdtScope.TransactionModule,
+            scope,
             new[]
             {
                 new ApiPlanSdtMember("Items", responseSdtName, 0, 0, false, true, responseSdtName, "ListResponse"),
@@ -187,8 +188,18 @@ internal static class ApiPlanSdtGenerationPlanBuilder
 
 internal static class ApiPlanSdtScope
 {
-    public const string TransactionModule = "TransactionModule";
+    private const string TransactionModuleFolderPrefix = "TransactionModuleFolder:";
     public const string RootModuleGxOpenApiFolder = "RootModuleFolder:GxOpenAPI";
+
+    public static string CreateTransactionModuleFolderScope(string folderName)
+    {
+        if (string.IsNullOrWhiteSpace(folderName))
+        {
+            throw new ArgumentException("Folder name is required.", nameof(folderName));
+        }
+
+        return TransactionModuleFolderPrefix + folderName;
+    }
 }
 
 internal sealed class ApiPlanSdtGenerationPlan

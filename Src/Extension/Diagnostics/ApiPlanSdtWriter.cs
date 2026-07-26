@@ -40,6 +40,7 @@ internal static class ApiPlanSdtWriter
         var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var preflight = Preflight(designModel, generationPlan);
         var sharedFolder = preflight.SharedFolder ?? CreateSharedFolder(designModel);
+        var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan);
         var results = new List<ApiPlanSdtWriteItemResult>();
 
         foreach (var sdt in generationPlan.SharedSdts)
@@ -49,7 +50,7 @@ internal static class ApiPlanSdtWriter
 
         foreach (var sdt in generationPlan.OwnSdts)
         {
-            results.Add(CreateOrReencounterSdt(designModel, transaction, null, sdt, preflight));
+            results.Add(CreateOrReencounterSdt(designModel, transaction, transactionFolder, sdt, preflight));
         }
 
         return new ApiPlanSdtWriteResult(
@@ -57,6 +58,8 @@ internal static class ApiPlanSdtWriter
             generationPlan.SharedSdts.Count,
             results.Count(item => item.Status == ApiPlanSdtWriteStatus.Created),
             results.Count(item => item.Status == ApiPlanSdtWriteStatus.Reencountered),
+            transactionFolder.Name,
+            transactionFolder.Guid,
             results);
     }
 
@@ -152,10 +155,16 @@ internal static class ApiPlanSdtWriter
         return folder;
     }
 
-    private static ApiPlanSdtWriteItemResult CreateOrReencounterSdt(KBModel designModel, Transaction transaction, Folder? sharedFolder, ApiPlanSdtDefinition definition, ApiPlanSdtPreflightResult preflight)
+    private static ApiPlanSdtWriteItemResult CreateOrReencounterSdt(KBModel designModel, Transaction transaction, Folder? targetFolder, ApiPlanSdtDefinition definition, ApiPlanSdtPreflightResult preflight)
     {
         if (preflight.ExistingSdtsByName.TryGetValue(definition.Name, out var existingSdt))
         {
+            if (targetFolder is not null)
+            {
+                existingSdt.Parent = targetFolder;
+                existingSdt.Save();
+            }
+
             return new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, ApiPlanSdtWriteStatus.Reencountered, existingSdt.Guid);
         }
 
@@ -165,9 +174,9 @@ internal static class ApiPlanSdtWriter
             Description = CreateOwnedDescription(definition),
         };
 
-        if (sharedFolder is not null)
+        if (targetFolder is not null)
         {
-            sdt.Parent = sharedFolder;
+            sdt.Parent = targetFolder;
         }
         else if (transaction.Module is not null)
         {
@@ -316,12 +325,14 @@ internal sealed class ApiPlanSdtPreflightResult
 
 internal sealed class ApiPlanSdtWriteResult
 {
-    public ApiPlanSdtWriteResult(int plannedOwnSdts, int plannedSharedSdts, int createdSdts, int reencounteredSdts, IReadOnlyList<ApiPlanSdtWriteItemResult> items)
+    public ApiPlanSdtWriteResult(int plannedOwnSdts, int plannedSharedSdts, int createdSdts, int reencounteredSdts, string transactionFolderName, Guid transactionFolderGuid, IReadOnlyList<ApiPlanSdtWriteItemResult> items)
     {
         PlannedOwnSdts = plannedOwnSdts;
         PlannedSharedSdts = plannedSharedSdts;
         CreatedSdts = createdSdts;
         ReencounteredSdts = reencounteredSdts;
+        TransactionFolderName = transactionFolderName ?? throw new ArgumentNullException(nameof(transactionFolderName));
+        TransactionFolderGuid = transactionFolderGuid;
         Items = items ?? throw new ArgumentNullException(nameof(items));
     }
 
@@ -329,6 +340,8 @@ internal sealed class ApiPlanSdtWriteResult
     public int PlannedSharedSdts { get; }
     public int CreatedSdts { get; }
     public int ReencounteredSdts { get; }
+    public string TransactionFolderName { get; }
+    public Guid TransactionFolderGuid { get; }
     public IReadOnlyList<ApiPlanSdtWriteItemResult> Items { get; }
 }
 

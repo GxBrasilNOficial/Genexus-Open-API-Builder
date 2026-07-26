@@ -4,12 +4,17 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using Artech.Architecture.Common.Objects;
+using Artech.Genexus.Common.Objects;
+using GenexusOpenApiBuilder.Extension.Domain;
 using GenexusOpenApiBuilder.Extension.Diagnostics;
 
 namespace GenexusOpenApiBuilder.Extension;
 
 internal sealed class PrototypeWizardDialog : Form
 {
+    private readonly KBModel _designModel;
+    private readonly Transaction _transaction;
     private readonly PrototypeWizardContractSnapshot _snapshot;
     private readonly PrototypeBusinessComponentSnapshot _businessComponentSnapshot;
     private readonly Func<bool> _enableBusinessComponent;
@@ -37,8 +42,10 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly TextBox _summaryEndpointText = CreateReadOnlyTextBox();
     private readonly CheckBox _generateSdtsCheck = new() { AutoSize = true, Text = "Confirmar criacao ou reencontro de SDTs B040-B046 ao concluir", Dock = DockStyle.Top };
     private readonly CheckBox _generateProceduresCheck = new() { AutoSize = true, Text = "Confirmar criacao ou reencontro de Procedures B050-B053 ao concluir", Dock = DockStyle.Top };
+    private readonly CheckBox _generateApiObjectCheck = new() { AutoSize = true, Text = "Confirmar criacao ou reencontro de API Object B054 ao concluir", Dock = DockStyle.Top };
     private readonly TextBox _sdtGenerationText = CreateReadOnlyTextBox();
     private readonly TextBox _procedureGenerationText = CreateReadOnlyTextBox();
+    private readonly TextBox _apiObjectGenerationText = CreateReadOnlyTextBox();
     private readonly Label _headerLabel = new()
     {
         AutoSize = true,
@@ -54,9 +61,12 @@ internal sealed class PrototypeWizardDialog : Form
     private bool _loadingSnapshot;
     private bool _servicesBasePathEditedManually;
     private bool _businessComponentEnabledDuringWizard;
+    private string _generationContext = "Plano da Transaction ainda nao consultado na KB.";
 
-    public PrototypeWizardDialog(PrototypeWizardContractSnapshot snapshot, PrototypeBusinessComponentSnapshot businessComponentSnapshot, Func<bool> enableBusinessComponent, Action<string> writeBusinessComponentOutput)
+    public PrototypeWizardDialog(KBModel designModel, Transaction transaction, PrototypeWizardContractSnapshot snapshot, PrototypeBusinessComponentSnapshot businessComponentSnapshot, Func<bool> enableBusinessComponent, Action<string> writeBusinessComponentOutput)
     {
+        _designModel = designModel ?? throw new ArgumentNullException(nameof(designModel));
+        _transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
         _snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
         _businessComponentSnapshot = businessComponentSnapshot ?? throw new ArgumentNullException(nameof(businessComponentSnapshot));
         _enableBusinessComponent = enableBusinessComponent ?? throw new ArgumentNullException(nameof(enableBusinessComponent));
@@ -75,6 +85,7 @@ internal sealed class PrototypeWizardDialog : Form
         WirePathSynchronization();
         LoadSnapshot();
         WireGenerationConfirmation();
+        RefreshGenerationPreview();
     }
 
     public PrototypeWizardFlowSelection? Selection { get; private set; }
@@ -120,6 +131,7 @@ internal sealed class PrototypeWizardDialog : Form
         _tabs.TabPages.Add(CreateBusinessComponentTab());
         _tabs.TabPages.Add(CreateSdtGenerationTab());
         _tabs.TabPages.Add(CreateProcedureGenerationTab());
+        _tabs.TabPages.Add(CreateApiObjectGenerationTab());
         _tabs.TabPages.Add(CreateSummaryTab());
         _tabs.SelectedIndexChanged += (_, _) =>
         {
@@ -169,7 +181,7 @@ internal sealed class PrototypeWizardDialog : Form
 
         var tabName = selectedPage?.Text;
         var currentTab = string.IsNullOrWhiteSpace(tabName) ? "<nenhuma>" : tabName;
-        _headerLabel.Text = $"Wizard prototípico: Module '{_snapshot.ModuleName}' | Transaction '{_snapshot.TransactionName}' | Aba atual: {currentTab}";
+        _headerLabel.Text = $"Wizard: Module '{_snapshot.ModuleName}' | Transaction '{_snapshot.TransactionName}' | {_generationContext} | Aba atual: {currentTab}";
     }
     private static Button CreateButton(string text)
     {
@@ -527,6 +539,25 @@ internal sealed class PrototypeWizardDialog : Form
         return tab;
     }
 
+    private TabPage CreateApiObjectGenerationTab()
+    {
+        var tab = new TabPage("API Object");
+        var panel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Padding = new Padding(8),
+        };
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise o API Object planejado. Esta etapa depende dos SDTs B040-B046 e das Procedures B050-B053 ja confirmados ou reencontraveis na KB ativa.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(_generateApiObjectCheck, 0, 1);
+        panel.Controls.Add(CreateGroup("API Object planejado", _apiObjectGenerationText), 0, 2);
+        tab.Controls.Add(panel);
+        return tab;
+    }
     private TabPage CreateSummaryTab()
     {
         var tab = new TabPage("Resumo B038");
@@ -626,6 +657,8 @@ internal sealed class PrototypeWizardDialog : Form
         };
         _generateProceduresCheck.Enabled = false;
         _generateProceduresCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
+        _generateApiObjectCheck.Enabled = false;
+        _generateApiObjectCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
     }
 
     private void WirePathSynchronization()
@@ -705,6 +738,11 @@ internal sealed class PrototypeWizardDialog : Form
     {
         if (_showingSummary)
         {
+            if (!TryCreateSelection())
+            {
+                return;
+            }
+
             DialogResult = DialogResult.OK;
             Close();
             return;
@@ -720,7 +758,7 @@ internal sealed class PrototypeWizardDialog : Form
             RefreshRequiredText();
         }
 
-        if (_tabs.SelectedTab?.Text == "SDTs" || _tabs.SelectedTab?.Text == "Procedures")
+        if (_tabs.SelectedTab?.Text == "SDTs" || _tabs.SelectedTab?.Text == "Procedures" || _tabs.SelectedTab?.Text == "API Object")
         {
             RefreshGenerationPreview();
         }
@@ -810,7 +848,8 @@ internal sealed class PrototypeWizardDialog : Form
             GetRequiredDecisions(contractSelection),
             CreateBusinessComponentSelection(),
             _generateSdtsCheck.Checked,
-            _generateSdtsCheck.Checked && _generateProceduresCheck.Checked);
+            _generateProceduresCheck.Checked,
+            _generateApiObjectCheck.Checked);
         return true;
     }
     private void ShowSummary()
@@ -844,20 +883,30 @@ internal sealed class PrototypeWizardDialog : Form
             $"B036 bloqueados visíveis: CreateRequest={createBlocked}, UpdateRequest={updateBlocked}, ListFilters={filterBlocked}{Environment.NewLine}" +
             $"Business Component: IsBusinessComponent={businessComponent.IsBusinessComponent}, Status='{businessComponent.Status}', EnabledDuringWizard={businessComponent.EnabledDuringWizard}{Environment.NewLine}" +
             $"Gerar SDTs B040-B046: {Selection.GenerateSdts}{Environment.NewLine}" +
-            $"Gerar Procedures B050-B053: {Selection.GenerateProcedures}";
+            $"Gerar Procedures B050-B053: {Selection.GenerateProcedures}{Environment.NewLine}" +
+            $"Gerar API Object B054: {Selection.GenerateApiObject}{Environment.NewLine}" +
+            $"Estado da geracao: {_generationContext}";
         _summaryEndpointText.Text =
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
             "B036 exibiu campos bloqueados com motivo no fluxo do wizard." + Environment.NewLine +
             "B037 consolidou Required como presença do membro JSON, distinguindo de valor não vazio." + Environment.NewLine +
             "ApiPlan sera montado em memoria ao concluir o wizard." + Environment.NewLine +
-            "SDTs e Procedures so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK." + Environment.NewLine +
-            "Nenhuma escolha foi persistida; nenhuma metadata definitiva ou API Object sera criado neste passo.";
+            "SDTs, Procedures e API Object so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK." + Environment.NewLine +
+            "B054 cria ou reencontra o objeto API, mas nao completa REST, seguranca definitiva ou metadata persistente definitiva neste passo.";
         _showingSummary = true;
         _tabs.SelectedIndex = _tabs.TabPages.Count - 1;
-        if (_nextButton is not null)
+        RefreshCompletionCaption();
+    }
+    private void RefreshCompletionCaption()
+    {
+        if (_nextButton is null)
         {
-            _nextButton.Text = "Fechar";
+            return;
         }
+
+        _nextButton.Text = _generateSdtsCheck.Checked || _generateProceduresCheck.Checked || _generateApiObjectCheck.Checked
+            ? "Concluir e aplicar"
+            : "Concluir Teste";
     }
     private void GoBack()
     {
@@ -922,34 +971,137 @@ internal sealed class PrototypeWizardDialog : Form
     }
     private void RefreshGenerationPreview()
     {
-        var transactionName = _snapshot.TransactionName;
-        var ownSdts = new[]
-        {
-            $"B040 CreateRequest: sdt{transactionName}_API_CreateRequest | Escopo: modulo da Transaction",
-            $"B041 UpdateRequest: sdt{transactionName}_API_UpdateRequest | Escopo: modulo da Transaction",
-            $"B042 Response: sdt{transactionName}_API_Response | Escopo: modulo da Transaction",
-            $"B043 ListFilters: sdt{transactionName}_API_ListFilters | Escopo: modulo da Transaction",
-            $"B044 ListResponse: sdt{transactionName}_API_ListResponse | Escopo: modulo da Transaction",
-        };
-        var sharedSdts = new[]
-        {
-            "B045/B046 SharedErrorResponse: sdt_API_ErrorResponse | Escopo: RootModuleFolder:GxOpenAPI",
-            "B045/B046 SharedPagination: sdt_API_Pagination | Escopo: RootModuleFolder:GxOpenAPI",
-        };
-        _sdtGenerationText.Text =
-            $"Confirmado para escrita: {_generateSdtsCheck.Checked}{Environment.NewLine}" +
-            "Preflight obrigatorio antes de qualquer Save(): nomes, descricoes sentinela, tipos e dependencias. A validacao de escopo fisico fica pendente ate metadata persistente." + Environment.NewLine + Environment.NewLine +
-            string.Join(Environment.NewLine, sharedSdts.Concat(ownSdts));
+        var state = ReadGenerationState();
+        _generationContext = FormatGenerationContext(state);
+        RefreshCurrentTabLabel();
+        var sdtState = state?.Sdts;
+        var procedureState = state?.Procedures;
+        var apiState = state?.ApiObject;
 
-        var selectedServices = GetCheckedValues(_servicesList);
-        var procedureLines = selectedServices.Select(service => $"{ResolveProcedureBacklogId(service)} {service}: proc{transactionName}_API_{service} | Escopo: modulo da Transaction").ToArray();
-        _procedureGenerationText.Text =
-            $"Confirmado para escrita: {_generateProceduresCheck.Checked}{Environment.NewLine}" +
-            $"Dependencia SDTs confirmada: {_generateSdtsCheck.Checked}{Environment.NewLine}" +
-            "Preflight obrigatorio antes de qualquer Save(): SDTs proprios/compativeis e todas as Procedures livres ou reencontraveis." + Environment.NewLine + Environment.NewLine +
-            string.Join(Environment.NewLine, procedureLines);
+        var sdtsAvailable = IsDependencyAvailable(sdtState, _generateSdtsCheck.Checked);
+        var proceduresAvailable = IsDependencyAvailable(procedureState, _generateProceduresCheck.Checked);
+        ApplyGenerationControlState(_generateSdtsCheck, sdtState, true);
+        ApplyGenerationControlState(_generateProceduresCheck, procedureState, sdtsAvailable);
+        ApplyGenerationControlState(_generateApiObjectCheck, apiState, proceduresAvailable);
+
+        _sdtGenerationText.Text = FormatGenerationState(sdtState, _generateSdtsCheck.Checked);
+        _procedureGenerationText.Text = FormatGenerationState(procedureState, _generateProceduresCheck.Checked) + Environment.NewLine + Environment.NewLine +
+            $"Dependencia SDTs: {FormatDependencyState(sdtState, _generateSdtsCheck.Checked)}";
+        _apiObjectGenerationText.Text = FormatGenerationState(apiState, _generateApiObjectCheck.Checked) + Environment.NewLine + Environment.NewLine +
+            $"Dependencia Procedures: {FormatDependencyState(procedureState, _generateProceduresCheck.Checked)}";
     }
 
+    private static bool IsDependencyAvailable(ApiPlanGenerationStageState? state, bool confirmed)
+    {
+        return confirmed || string.Equals(state?.Action, "Reencontrar e validar", StringComparison.Ordinal);
+    }
+
+    private static string FormatDependencyState(ApiPlanGenerationStageState? state, bool confirmed)
+    {
+        if (confirmed)
+        {
+            return "confirmada nesta execucao";
+        }
+
+        return string.Equals(state?.Action, "Reencontrar e validar", StringComparison.Ordinal)
+            ? "ja reencontrada na KB ativa"
+            : "nao confirmada";
+    }
+    private static string FormatGenerationContext(ApiPlanGenerationState? state)
+    {
+        if (state is null)
+        {
+            return "Estado: plano em memoria";
+        }
+
+        var stages = new[] { state.Sdts, state.Procedures, state.ApiObject };
+        if (stages.Any(stage => stage.IsBlocked))
+        {
+            return "Estado: teste bloqueado";
+        }
+
+        if (stages.All(stage => string.Equals(stage.Action, "Reencontrar e validar", StringComparison.Ordinal)))
+        {
+            return "Estado: teste de reencontro";
+        }
+
+        if (stages.All(stage => string.Equals(stage.Action, "Criar", StringComparison.Ordinal)))
+        {
+            return "Estado: teste de criacao";
+        }
+
+        return "Estado: teste de complementacao";
+    }
+    private void ApplyGenerationControlState(CheckBox checkBox, ApiPlanGenerationStageState? state, bool dependencyConfirmed)
+    {
+        if (state is null)
+        {
+            checkBox.Text = "Estado atual indisponivel";
+            checkBox.Enabled = false;
+            checkBox.Checked = false;
+            return;
+        }
+
+        checkBox.Text = $"Confirmar: {state.Action} {state.StageName} ao concluir";
+        checkBox.Enabled = !state.IsBlocked && dependencyConfirmed;
+        if (!checkBox.Enabled)
+        {
+            checkBox.Checked = false;
+        }
+    }
+
+    private static string FormatGenerationState(ApiPlanGenerationStageState? state, bool confirmed)
+    {
+        if (state is null)
+        {
+            return "Estado atual da KB indisponivel. Ajuste os campos obrigatorios do contrato para consultar a geracao.";
+        }
+
+        return $"Estado atual da KB: {state.Action}{Environment.NewLine}{state.Detail}{Environment.NewLine}{Environment.NewLine}Confirmado para escrita: {confirmed}";
+    }
+
+    private ApiPlanGenerationState? ReadGenerationState()
+    {
+        var selectedServices = GetCheckedValues(_servicesList);
+        if (selectedServices.Count == 0)
+        {
+            return null;
+        }
+
+        try
+        {
+            var contract = new PrototypeWizardContractSelection(
+                _snapshot.TransactionName,
+                selectedServices,
+                GetCheckedValues(_createFieldsList),
+                GetCheckedValues(_updateFieldsList),
+                GetCheckedValues(_responseFieldsList),
+                GetCheckedValues(_filtersList));
+            var apiName = string.IsNullOrWhiteSpace(_apiNameText.Text) ? "api" + _snapshot.TransactionName : _apiNameText.Text.Trim();
+            var review = new PrototypeWizardReviewSelection(
+                _snapshot.TransactionName,
+                apiName,
+                string.IsNullOrWhiteSpace(_servicesBasePathText.Text) ? apiName : _servicesBasePathText.Text.Trim(),
+                string.IsNullOrWhiteSpace(_restPathText.Text) ? "/" + ToKebabCase(_snapshot.TransactionName) : _restPathText.Text.Trim(),
+                GetSelectedSecurityLevel(),
+                (int)_defaultPageSize.Value,
+                (int)_maximumPageSize.Value,
+                GetStaticOrder());
+            var selection = new PrototypeWizardFlowSelection(
+                contract,
+                review,
+                GetRequiredDecisions(contract),
+                CreateBusinessComponentSelection(),
+                false,
+                false,
+                false);
+            return ApiPlanGenerationStateReader.Read(_designModel, ApiPlanBuilder.Build(_transaction, selection));
+        }
+        catch
+        {
+            return null;
+        }
+    }
     private static string ResolveProcedureBacklogId(string serviceName)
     {
         if (string.Equals(serviceName, "List", StringComparison.OrdinalIgnoreCase))
@@ -1194,7 +1346,8 @@ internal sealed class PrototypeWizardFlowSelection
         IReadOnlyList<PrototypeWizardRequiredFieldDecision> requiredFields,
         PrototypeWizardBusinessComponentSelection businessComponentSelection,
         bool generateSdts,
-        bool generateProcedures)
+        bool generateProcedures,
+        bool generateApiObject)
     {
         ContractSelection = contractSelection ?? throw new ArgumentNullException(nameof(contractSelection));
         ReviewSelection = reviewSelection ?? throw new ArgumentNullException(nameof(reviewSelection));
@@ -1202,6 +1355,7 @@ internal sealed class PrototypeWizardFlowSelection
         BusinessComponentSelection = businessComponentSelection ?? throw new ArgumentNullException(nameof(businessComponentSelection));
         GenerateSdts = generateSdts;
         GenerateProcedures = generateProcedures;
+        GenerateApiObject = generateApiObject;
     }
 
     public PrototypeWizardContractSelection ContractSelection { get; }
@@ -1215,6 +1369,8 @@ internal sealed class PrototypeWizardFlowSelection
     public bool GenerateSdts { get; }
 
     public bool GenerateProcedures { get; }
+
+    public bool GenerateApiObject { get; }
 }
 
 internal sealed class PrototypeWizardBusinessComponentSelection

@@ -56,6 +56,9 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B050-B053 validados no U15: comando `Criar Procedures (B050-B053)` bloqueou execução sem `ApiPlan`, depois criou 4 Procedures skeleton a partir do `ApiPlan` e reencontrou 7 SDTs B040-B046, sem API Object, REST completo ou metadata persistente definitiva
 - `Abrir Wizard (B030)` validado no U15 oferecendo B040-B046 e B050-B053 em abas próprias de confirmação no wizard, com Output marcada com `Trigger='Wizard'`, reencontro de 7 SDTs e 4 Procedures existentes e preservação dos comandos separados para reexecução/diagnóstico
 - Correção pós-revisão B040-B046/B050-B053 validada no U15: abas `SDTs` e `Procedures` do wizard confirmam a escrita antes do resumo, Output registra `GenerateSdts=True`, `GenerateProcedures=True`, `Trigger='Wizard'`, reencontro de 7 SDTs e 4 Procedures, sem modais pós-wizard e sem criar API Object, REST completo ou metadata persistente definitiva
+- B054 validado no U15: o comando separado e a aba `API Object` do wizard criam ou reencontram conservadoramente `api<NomeBase>` após preflight dos 7 SDTs e 4 Procedures; a reexecução direta da etapa pendente é permitida quando as dependências são reencontráveis, sem completar REST, segurança definitiva, descrições aplicadas ou metadata persistente
+- wizard passou a reconhecer em leitura o estado atual de SDTs, Procedures e API Object, apresentando criação, complementação, reencontro ou bloqueio antes de qualquer escrita e usando `Concluir Teste` quando não há etapa confirmada
+- Folder `<Transaction>OpenApi` criado ou reencontrado como irmão físico da Transaction, com realinhamento conservador em reexecuções
 
 ## Fixed
 
@@ -78,7 +81,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Preparar criação ou reencontro do objeto `API` B054 sobre as Procedures existentes
+- Investigar B055 para comprovar o uso real de Business Component nas Procedures de Create e Update
 
 ---
 
