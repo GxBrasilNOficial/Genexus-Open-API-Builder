@@ -56,21 +56,22 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - B054 validado manualmente em 2026-07-26 na Transaction `Carga`: após reencontrar os 7 SDTs e as 4 Procedures, o wizard salvou `apiCarga`; a aba `Service Source` exibiu `List`, `Get`, `Create` e `Update`, cada serviço delegando sem parâmetros para a Procedure skeleton `procCarga_API_*` correspondente. A reexecução bloqueia fonte de serviços divergente. O passo não aplica ainda paths/métodos HTTP, segurança definitiva, descrições ou metadata persistente.
 - O wizard passou a reconhecer o estado atual dos artefatos planejados antes da escrita: apresenta `plano em memoria`, teste de criação, complementação, reencontro ou bloqueio; as abas SDTs, Procedures e API Object refletem os objetos reencontráveis e permitem aplicar somente a etapa pendente. O resumo usa `Concluir Teste` sem escrita e `Concluir e aplicar` quando há geração confirmada.
 - Os objetos gerados foram organizados no Folder irmão `<Transaction>OpenApi`; reexecuções realinham o Folder existente ao módulo e Folder físico da Transaction quando a API pública o permite.
+- B055 validado manualmente em 2026-07-26: na Transaction `Carga`, as Procedures `procCarga_API_Create` e `procCarga_API_Update` passaram a persistir Source, Rules e variáveis reais via APIs públicas e foram especificadas/geradas/compiladas com sucesso; na Transaction `Teste`, com chave composta `TesteDate` + `TesteId`, o wizard criou novamente SDTs, Procedures e `apiTeste`, aplicou Create/Update via Business Component com `PrimaryKeyParts=2`, gerou `parm(in:&TesteDate, in:&TesteId, in:&UpdateRequest, out:&UpdateResponse);`, usou `&Teste.Load(&TesteDate, &TesteId)` e as duas Procedures especificaram, geraram e compilaram com sucesso. O passo não completa REST, códigos HTTP, segurança definitiva ou metadata persistente.
 
 ## Frente ativa
 
-**Sprint 5 — Procedures, API Object e Metadata**, com B040-B046, B050-B053 e B054 validados pelos comandos separados e pelo encerramento integrado do wizard. O próximo recorte é B055: comprovar o uso real de Create e Update via Business Component nas Procedures já existentes, sem antecipar o comportamento REST completo da Sprint 6, segurança definitiva ou metadata persistente.
+**Sprint 5 — Procedures, API Object e Metadata**, com B040-B046, B050-B053, B054 e B055 validados no encerramento integrado do wizard. O próximo recorte é B056: aplicar descrições de serviços no API Object real, reaproveitando as descrições já resolvidas no ApiPlan, sem antecipar o comportamento REST completo da Sprint 6, segurança definitiva ou metadata persistente.
 
 ## Próxima ação única
 
-Investigar e preparar B055 no runtime da extensão para validar o uso de Business Component pelas Procedures de Create e Update já geradas, cobrindo chaves simples e compostas sem ainda definir códigos HTTP, paths finais, segurança definitiva ou metadata persistente.
+Preparar B056 no runtime da extensão para aplicar descrições nos serviços do API Object real já criado ou reencontrado, reaproveitando `ServiceDescriptions` do ApiPlan, sem ainda definir códigos HTTP, paths finais, segurança definitiva ou metadata persistente.
 
 ## Critério de conclusão e evidência esperada
 
-- as Procedures de Create e Update usam a Transaction como Business Component exclusivamente por APIs públicas já comprovadas;
-- a validação cobre Transaction com chave simples e com chave composta, preservando os contratos de request e response já planejados;
-- o comando ou fluxo bloqueia quando Business Component não está habilitado e não altera a propriedade sem confirmação explícita;
-- a Output da IDE registra o caminho BC exercitado e confirma que B055 não completa ainda REST, códigos HTTP, segurança definitiva ou metadata persistente.
+- o API Object próprio é reencontrado por nome único e descrição sentinela antes de qualquer alteração;
+- as descrições resolvidas no ApiPlan são aplicadas aos serviços reais selecionados, com evidência visual ou textual na IDE;
+- reexecução conserva objetos próprios e bloqueia colisões externas ou divergências incompatíveis;
+- a Output da IDE registra que B056 aplica somente descrições, sem completar REST, códigos HTTP, segurança definitiva ou metadata persistente.
 
 ## Sequência operacional vigente
 
@@ -83,8 +84,9 @@ Investigar e preparar B055 no runtime da extensão para validar o uso de Busines
 7. Sprint 5 validou B040-B046 e B050-B053 também no encerramento integrado do wizard, com Trigger='Wizard', reencontro dos objetos existentes e preservação dos comandos independentes para reexecução/diagnóstico.
 8. A correção pós-revisão de B040-B046/B050-B053 foi validada na IDE antes de B054, cobrindo abas próprias de confirmação no wizard, ausência de modais pós-wizard e reencontro conservador dos objetos existentes com preflight completo.
 9. Sprint 5 validou B054: `api<NomeBase>` cria ou reencontra de forma conservadora e expõe os serviços selecionados delegando às Procedures skeleton B050-B053; o wizard aplica somente etapas pendentes conforme o estado atual de geração.
-10. Sprints 5–7 completam uso via BC, descrições/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
-11. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
+10. Sprint 5 validou B055: Create e Update usam Business Component nas Procedures já geradas, com chave simples e composta, sem completar REST, códigos HTTP, segurança definitiva ou metadata persistente.
+11. Sprints 5–7 completam descrições/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
+12. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
 
 ## Bloqueios e fatos ainda não validados
 

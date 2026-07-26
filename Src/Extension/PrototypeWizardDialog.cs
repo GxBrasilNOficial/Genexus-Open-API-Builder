@@ -43,6 +43,7 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly CheckBox _generateSdtsCheck = new() { AutoSize = true, Text = "Confirmar criacao ou reencontro de SDTs B040-B046 ao concluir", Dock = DockStyle.Top };
     private readonly CheckBox _generateProceduresCheck = new() { AutoSize = true, Text = "Confirmar criacao ou reencontro de Procedures B050-B053 ao concluir", Dock = DockStyle.Top };
     private readonly CheckBox _generateApiObjectCheck = new() { AutoSize = true, Text = "Confirmar criacao ou reencontro de API Object B054 ao concluir", Dock = DockStyle.Top };
+    private readonly CheckBox _applyBusinessComponentCheck = new() { AutoSize = true, Text = "Aplicar Create/Update via Business Component ao concluir", Dock = DockStyle.Top };
     private readonly TextBox _sdtGenerationText = CreateReadOnlyTextBox();
     private readonly TextBox _procedureGenerationText = CreateReadOnlyTextBox();
     private readonly TextBox _apiObjectGenerationText = CreateReadOnlyTextBox();
@@ -74,9 +75,9 @@ internal sealed class PrototypeWizardDialog : Form
 
         Text = "Genexus Open API Builder - Wizard";
         StartPosition = FormStartPosition.CenterParent;
-        Width = 980;
-        Height = 680;
-        MinimumSize = new Size(780, 540);
+        Width = 1200;
+        Height = 800;
+        MinimumSize = new Size(900, 640);
         ShowIcon = false;
         ShowInTaskbar = false;
         FormBorderStyle = FormBorderStyle.Sizable;
@@ -133,11 +134,7 @@ internal sealed class PrototypeWizardDialog : Form
         _tabs.TabPages.Add(CreateProcedureGenerationTab());
         _tabs.TabPages.Add(CreateApiObjectGenerationTab());
         _tabs.TabPages.Add(CreateSummaryTab());
-        _tabs.SelectedIndexChanged += (_, _) =>
-        {
-            RefreshGenerationPreview();
-            RefreshCurrentTabLabel();
-        };
+        _tabs.SelectedIndexChanged += (_, _) => HandleSelectedTabChanged();
         RefreshCurrentTabLabel();
         root.Controls.Add(_tabs, 0, 1);
 
@@ -486,15 +483,17 @@ internal sealed class PrototypeWizardDialog : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 3,
+            RowCount = 4,
             Padding = new Padding(8),
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Business Component é obrigatório para gerar a API do MVP preservando regras via BC.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Business Component preserva as regras da Transaction. A confirmação abaixo altera as Procedures de Create e Update já geradas; não cria novos objetos.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
         panel.Controls.Add(_enableBusinessComponentCheck, 0, 1);
-        panel.Controls.Add(_businessComponentText, 0, 2);
+        panel.Controls.Add(_applyBusinessComponentCheck, 0, 2);
+        panel.Controls.Add(_businessComponentText, 0, 3);
         tab.Controls.Add(panel);
         return tab;
     }
@@ -659,6 +658,7 @@ internal sealed class PrototypeWizardDialog : Form
         _generateProceduresCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
         _generateApiObjectCheck.Enabled = false;
         _generateApiObjectCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
+        _applyBusinessComponentCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
     }
 
     private void WirePathSynchronization()
@@ -787,6 +787,31 @@ internal sealed class PrototypeWizardDialog : Form
         ShowSummary();
     }
 
+    private void HandleSelectedTabChanged()
+    {
+        RefreshGenerationPreview();
+        if (_tabs.SelectedTab?.Text == "Resumo B038")
+        {
+            if (!_showingSummary && TryCreateSelection())
+            {
+                ShowSummary();
+            }
+
+            RefreshCurrentTabLabel();
+            return;
+        }
+
+        if (_showingSummary)
+        {
+            _showingSummary = false;
+            if (_nextButton is not null)
+            {
+                _nextButton.Text = "Próximo";
+            }
+        }
+
+        RefreshCurrentTabLabel();
+    }
     private string GetSelectedSecurityLevel()
     {
         if (_securityAuthorizationRadio.Checked)
@@ -849,7 +874,8 @@ internal sealed class PrototypeWizardDialog : Form
             CreateBusinessComponentSelection(),
             _generateSdtsCheck.Checked,
             _generateProceduresCheck.Checked,
-            _generateApiObjectCheck.Checked);
+            _generateApiObjectCheck.Checked,
+            _applyBusinessComponentCheck.Checked);
         return true;
     }
     private void ShowSummary()
@@ -885,6 +911,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"Gerar SDTs B040-B046: {Selection.GenerateSdts}{Environment.NewLine}" +
             $"Gerar Procedures B050-B053: {Selection.GenerateProcedures}{Environment.NewLine}" +
             $"Gerar API Object B054: {Selection.GenerateApiObject}{Environment.NewLine}" +
+            $"Aplicar Create/Update via Business Component: {Selection.ApplyBusinessComponent}{Environment.NewLine}" +
             $"Estado da geracao: {_generationContext}";
         _summaryEndpointText.Text =
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
@@ -892,6 +919,7 @@ internal sealed class PrototypeWizardDialog : Form
             "B037 consolidou Required como presença do membro JSON, distinguindo de valor não vazio." + Environment.NewLine +
             "ApiPlan sera montado em memoria ao concluir o wizard." + Environment.NewLine +
             "SDTs, Procedures e API Object so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK." + Environment.NewLine +
+            "A opção de Business Component altera somente Create e Update nas Procedures já geradas." + Environment.NewLine +
             "B054 cria ou reencontra o objeto API, mas nao completa REST, seguranca definitiva ou metadata persistente definitiva neste passo.";
         _showingSummary = true;
         _tabs.SelectedIndex = _tabs.TabPages.Count - 1;
@@ -904,7 +932,7 @@ internal sealed class PrototypeWizardDialog : Form
             return;
         }
 
-        _nextButton.Text = _generateSdtsCheck.Checked || _generateProceduresCheck.Checked || _generateApiObjectCheck.Checked
+        _nextButton.Text = _generateSdtsCheck.Checked || _generateProceduresCheck.Checked || _generateApiObjectCheck.Checked || _applyBusinessComponentCheck.Checked
             ? "Concluir e aplicar"
             : "Concluir Teste";
     }
@@ -1094,6 +1122,7 @@ internal sealed class PrototypeWizardDialog : Form
                 CreateBusinessComponentSelection(),
                 false,
                 false,
+                false,
                 false);
             return ApiPlanGenerationStateReader.Read(_designModel, ApiPlanBuilder.Build(_transaction, selection));
         }
@@ -1152,7 +1181,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"Transaction: {_businessComponentSnapshot.TransactionName}{Environment.NewLine}" +
             $"IsBusinessComponent: {IsBusinessComponentReady()}{Environment.NewLine}" +
             $"Status: {effectiveStatus}{Environment.NewLine}{Environment.NewLine}" +
-            "Sem Business Component, o MVP bloqueia a geração da API. A habilitação exige confirmação explícita e altera a Transaction na KB; cancelar o wizard depois disso não reverte automaticamente a propriedade.";
+            "Sem Business Component, a geração da API e a aplicação de Create/Update pelas regras da Transaction ficam bloqueadas. A habilitação exige confirmação explícita e altera a Transaction na KB; cancelar o wizard depois disso não reverte automaticamente a propriedade.";
         _enableBusinessComponentCheck.Enabled = !_businessComponentSnapshot.IsBusinessComponent && !_businessComponentEnabledDuringWizard;
         _enableBusinessComponentCheck.Visible = !_businessComponentSnapshot.IsBusinessComponent;
     }
@@ -1347,7 +1376,8 @@ internal sealed class PrototypeWizardFlowSelection
         PrototypeWizardBusinessComponentSelection businessComponentSelection,
         bool generateSdts,
         bool generateProcedures,
-        bool generateApiObject)
+        bool generateApiObject,
+        bool applyBusinessComponent)
     {
         ContractSelection = contractSelection ?? throw new ArgumentNullException(nameof(contractSelection));
         ReviewSelection = reviewSelection ?? throw new ArgumentNullException(nameof(reviewSelection));
@@ -1356,6 +1386,7 @@ internal sealed class PrototypeWizardFlowSelection
         GenerateSdts = generateSdts;
         GenerateProcedures = generateProcedures;
         GenerateApiObject = generateApiObject;
+        ApplyBusinessComponent = applyBusinessComponent;
     }
 
     public PrototypeWizardContractSelection ContractSelection { get; }
@@ -1371,6 +1402,8 @@ internal sealed class PrototypeWizardFlowSelection
     public bool GenerateProcedures { get; }
 
     public bool GenerateApiObject { get; }
+
+    public bool ApplyBusinessComponent { get; }
 }
 
 internal sealed class PrototypeWizardBusinessComponentSelection

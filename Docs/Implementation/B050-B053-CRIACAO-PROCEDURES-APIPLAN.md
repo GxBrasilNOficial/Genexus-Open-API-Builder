@@ -111,4 +111,4 @@ A correção pós-revisão foi validada manualmente em 2026-07-26 na Transaction
 
 ## Próximo passo
 
-B050-B053 estão concluídos como comando separado e como etapa integrada ao wizard. B054 foi validado posteriormente: `apiCarga` expõe os serviços que delegam sem parâmetros para estas Procedures skeleton. A próxima frente canônica é B055, para comprovar o uso real de Business Component nas Procedures de Create e Update, ainda sem completar a Sprint 6 de comportamento REST e segurança definitivos.
+B050-B053 estão concluídos como comando separado e como etapa integrada ao wizard. B054 foi validado posteriormente: `apiCarga` expõe os serviços que delegam para estas Procedures. B055 também foi validado posteriormente: Create e Update deixaram de permanecer como skeleton quando a opção Business Component é aplicada e passaram a usar a Transaction via BC nas Procedures próprias. A próxima frente canônica é B056, para aplicar descrições de serviços no API Object real, ainda sem completar a Sprint 6 de comportamento REST e segurança definitivos.

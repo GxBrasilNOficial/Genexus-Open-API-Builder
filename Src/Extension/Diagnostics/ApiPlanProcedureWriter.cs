@@ -180,12 +180,10 @@ internal static class ApiPlanProcedureWriter
 
     private static void ConfigureProcedure(Procedure procedure, ApiPlanProcedureDefinition definition)
     {
-        procedure.ProcedurePart.Content.ContentType = ContentType.PlainText;
-        procedure.ProcedurePart.Content.Content =
+        procedure.ProcedurePart.Source =
             $"// Genexus Open API Builder {definition.BacklogId}: Procedure skeleton for {definition.ServiceName}. REST behavior remains pending Sprint 6." + Environment.NewLine +
             $"msg(!\"Genexus Open API Builder {definition.BacklogId} {definition.ServiceName} skeleton. REST behavior pending Sprint 6.\", status)";
-        procedure.Rules.Content.ContentType = ContentType.PlainText;
-        procedure.Rules.Content.Content = string.Empty;
+        procedure.Rules.Source = string.Empty;
     }
 }
 

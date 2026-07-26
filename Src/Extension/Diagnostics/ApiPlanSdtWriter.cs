@@ -301,6 +301,60 @@ internal static class ApiPlanSdtWriter
             return eDBType.LONGVARCHAR;
         }
 
+        if (string.Equals(dataType, "Bitmap", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "BITMAP", StringComparison.OrdinalIgnoreCase))
+        {
+            return eDBType.BITMAP;
+        }
+
+        if (string.Equals(dataType, "Binary", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "BINARY", StringComparison.OrdinalIgnoreCase))
+        {
+            return eDBType.BINARY;
+        }
+
+        if (string.Equals(dataType, "BinaryFile", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "BINARYFILE", StringComparison.OrdinalIgnoreCase))
+        {
+            return eDBType.BINARYFILE;
+        }
+
+        if (string.Equals(dataType, "Geography", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "GEOGRAPHY", StringComparison.OrdinalIgnoreCase))
+        {
+            return eDBType.GEOGRAPHY;
+        }
+
+        if (string.Equals(dataType, "GeoPoint", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "GEOPOINT", StringComparison.OrdinalIgnoreCase))
+        {
+            return eDBType.GEOPOINT;
+        }
+
+        if (string.Equals(dataType, "GeoPolygon", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "GEOPOLYGON", StringComparison.OrdinalIgnoreCase))
+        {
+            return eDBType.GEOPOLYGON;
+        }
+
+        if (string.Equals(dataType, "GeoLine", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "GEOLINE", StringComparison.OrdinalIgnoreCase))
+        {
+            return eDBType.GEOLINE;
+        }
+
+        if (string.Equals(dataType, "Video", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "VIDEO", StringComparison.OrdinalIgnoreCase))
+        {
+            return eDBType.VIDEO;
+        }
+
+        if (string.Equals(dataType, "Audio", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "AUDIO", StringComparison.OrdinalIgnoreCase))
+        {
+            return eDBType.AUDIO;
+        }
+
         throw new InvalidOperationException($"Tipo de dado ainda nao suportado para criacao de SDT: '{dataType}'. Nenhuma alteracao foi feita.");
     }
 }
