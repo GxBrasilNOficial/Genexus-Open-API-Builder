@@ -938,7 +938,7 @@ internal sealed class PrototypeWizardDialog : Form
         };
         _sdtGenerationText.Text =
             $"Confirmado para escrita: {_generateSdtsCheck.Checked}{Environment.NewLine}" +
-            "Preflight obrigatorio antes de qualquer Save(): nomes, descricoes sentinela, escopo, tipos e dependencias." + Environment.NewLine + Environment.NewLine +
+            "Preflight obrigatorio antes de qualquer Save(): nomes, descricoes sentinela, tipos e dependencias. A validacao de escopo fisico fica pendente ate metadata persistente." + Environment.NewLine + Environment.NewLine +
             string.Join(Environment.NewLine, sharedSdts.Concat(ownSdts));
 
         var selectedServices = GetCheckedValues(_servicesList);
