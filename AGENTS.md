@@ -100,6 +100,37 @@ pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
 - `scripts/Invoke-PrePushMechanicalChecks.ps1` é o nome canônico e não deve divergir do contrato global.
 - `manualRequired` bloqueia o push até a revisão humana registrar gaps confirmados, flags descartados e áreas não cobertas.
 
+### Revisão semântica de contrato runtime
+
+Além de buscar termos e inconsistências documentais, a revisão semântica pré-push deve reconstruir o fluxo runtime afetado pelo commit.
+
+Para cada mudança que altere assinatura, `Source`, `Rules`, variáveis, parâmetros, chamada entre objetos, geração de artefatos ou estado persistido:
+
+1. Identificar todos os produtores e consumidores do contrato alterado. Exemplos:
+   - `Procedure.Rules.Source` com `parm(...)` alterado exige revisar todos os callers gerados;
+   - `API.ServiceGroupSource.Source` alterado exige revisar variáveis, parâmetros e Procedures chamadas;
+   - SDT alterado exige revisar variáveis, payloads, API Object e Procedures que usam o SDT.
+2. Conferir se cada consumidor foi atualizado no mesmo commit. Build Release da extensão não valida semanticamente o código GeneXus gerado.
+3. Conferir se o preflight cobre todos os objetos que serão gravados antes do primeiro `Save()`. Quando o fluxo grava mais de um objeto, procurar risco de escrita parcial em resolução de tipos, criação/remoção de variáveis, `Source`, `Rules`, objetos ausentes, colisões externas e validação pós-save.
+4. Conferir se a evidência manual cobre o consumidor final do contrato. Se uma Procedure é chamada por API Object, validar também especificação/build do API Object, não só da Procedure.
+5. Declarar no relatório da revisão:
+   - contratos alterados;
+   - produtores;
+   - consumidores;
+   - evidência de atualização de cada consumidor;
+   - risco de escrita parcial encontrado ou descartado;
+   - validação manual/runtime ainda faltante.
+
+### GeneXus Open API Builder — trio API/Procedure/SDT
+
+Quando a mudança afetar `API Object`, `Procedure`, `SDT`, `Rules parm`, `Variables` ou `ServiceGroupSource`, a revisão pré-push deve verificar obrigatoriamente o trio:
+
+- assinatura declarada em `Procedure.Rules.Source`;
+- chamada gerada em `API.ServiceGroupSource.Source`;
+- variáveis declaradas em `API.Variables.Content.Content` e `Procedure.Variables`.
+
+Qualquer divergência entre esses três pontos é gap P1 e bloqueia push.
+
 ## Fechamento de spikes e sondas temporárias
 
 Antes de concluir e commitar qualquer item de spike `B000`–`B006`, o agente deve:
