@@ -38,17 +38,18 @@ internal static class ApiPlanSdtWriter
         }
 
         var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
-        var sharedFolder = EnsureSharedFolder(designModel);
+        var preflight = Preflight(designModel, generationPlan);
+        var sharedFolder = preflight.SharedFolder ?? CreateSharedFolder(designModel);
         var results = new List<ApiPlanSdtWriteItemResult>();
 
         foreach (var sdt in generationPlan.SharedSdts)
         {
-            results.Add(CreateOrReencounterSdt(designModel, transaction, sharedFolder, sdt));
+            results.Add(CreateOrReencounterSdt(designModel, transaction, sharedFolder, sdt, preflight));
         }
 
         foreach (var sdt in generationPlan.OwnSdts)
         {
-            results.Add(CreateOrReencounterSdt(designModel, transaction, null, sdt));
+            results.Add(CreateOrReencounterSdt(designModel, transaction, null, sdt, preflight));
         }
 
         return new ApiPlanSdtWriteResult(
@@ -59,22 +60,90 @@ internal static class ApiPlanSdtWriter
             results);
     }
 
-    private static Folder EnsureSharedFolder(KBModel designModel)
+    internal static string CreateOwnedDescriptionFor(string backlogId, string kind)
     {
+        return $"{OwnedDescriptionPrefix} - {backlogId} - {kind}";
+    }
+
+    private static ApiPlanSdtPreflightResult Preflight(KBModel designModel, ApiPlanSdtGenerationPlan generationPlan)
+    {
+        var allDefinitions = generationPlan.SharedSdts.Concat(generationPlan.OwnSdts).ToArray();
+        var plannedNames = new HashSet<string>(allDefinitions.Select(item => item.Name), StringComparer.OrdinalIgnoreCase);
+        var existingByName = new Dictionary<string, SDT>(StringComparer.OrdinalIgnoreCase);
+
         var folders = Folder.GetAll(designModel)
             .Where(folder => string.Equals(folder.Name, SharedFolderName, StringComparison.OrdinalIgnoreCase))
             .ToArray();
-
         if (folders.Length > 1)
         {
             throw new InvalidOperationException($"Criacao de SDTs bloqueada: foram encontrados {folders.Length} Folders chamados '{SharedFolderName}'. Nenhuma alteracao foi feita.");
         }
 
-        if (folders.Length == 1)
+        foreach (var definition in allDefinitions)
         {
-            return folders[0];
+            ValidateSdtDefinitionTypes(designModel, definition, plannedNames);
+            var existing = SDT.GetAll(designModel)
+                .Where(sdt => string.Equals(sdt.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            if (existing.Length > 1)
+            {
+                throw new InvalidOperationException($"Criacao de SDT bloqueada: foram encontrados {existing.Length} SDTs chamados '{definition.Name}'. Nenhuma alteracao foi feita.");
+            }
+
+            var description = CreateOwnedDescription(definition);
+            if (existing.Length == 1)
+            {
+                var existingSdt = existing[0];
+                if (!string.Equals(existingSdt.Description, description, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException($"Criacao de SDT bloqueada: ja existe SDT externo ou incompativel chamado '{definition.Name}'. Nenhuma alteracao foi feita.");
+                }
+
+                existingByName.Add(definition.Name, existingSdt);
+            }
         }
 
+        return new ApiPlanSdtPreflightResult(folders.SingleOrDefault(), existingByName);
+    }
+
+    private static void ValidateSdtDefinitionTypes(KBModel designModel, ApiPlanSdtDefinition definition, HashSet<string> plannedNames)
+    {
+        if (string.Equals(definition.Kind, "SharedErrorResponse", StringComparison.Ordinal))
+        {
+            foreach (var member in definition.Members.Where(item => item.Name.IndexOf(".", StringComparison.Ordinal) >= 0 || !string.Equals(item.Name, "Errors", StringComparison.Ordinal)))
+            {
+                ResolveDbType(member.DataType);
+            }
+
+            return;
+        }
+
+        foreach (var member in definition.Members.Where(item => item.Name.IndexOf(".", StringComparison.Ordinal) < 0))
+        {
+            if (member.IsCollection || IsSdtReference(member.DataType))
+            {
+                if (!plannedNames.Contains(member.DataType) && !OwnedSdtExists(designModel, member.DataType))
+                {
+                    throw new InvalidOperationException($"Criacao de SDT bloqueada: tipo SDT requerido nao foi validado antes da escrita para membro '{member.Name}': '{member.DataType}'. Nenhuma alteracao foi feita.");
+                }
+
+                continue;
+            }
+
+            ResolveDbType(member.DataType);
+        }
+    }
+
+    private static bool OwnedSdtExists(KBModel designModel, string name)
+    {
+        return SDT.GetAll(designModel)
+            .Any(sdt => string.Equals(sdt.Name, name, StringComparison.OrdinalIgnoreCase) &&
+                        (sdt.Description ?? string.Empty).StartsWith(OwnedDescriptionPrefix, StringComparison.Ordinal));
+    }
+
+    private static Folder CreateSharedFolder(KBModel designModel)
+    {
         var folder = new Folder(designModel, SharedFolderName)
         {
             Description = "Genexus Open API Builder shared SDTs folder",
@@ -83,33 +152,17 @@ internal static class ApiPlanSdtWriter
         return folder;
     }
 
-    private static ApiPlanSdtWriteItemResult CreateOrReencounterSdt(KBModel designModel, Transaction transaction, Folder? sharedFolder, ApiPlanSdtDefinition definition)
+    private static ApiPlanSdtWriteItemResult CreateOrReencounterSdt(KBModel designModel, Transaction transaction, Folder? sharedFolder, ApiPlanSdtDefinition definition, ApiPlanSdtPreflightResult preflight)
     {
-        var existing = SDT.GetAll(designModel)
-            .Where(sdt => string.Equals(sdt.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-
-        if (existing.Length > 1)
+        if (preflight.ExistingSdtsByName.TryGetValue(definition.Name, out var existingSdt))
         {
-            throw new InvalidOperationException($"Criacao de SDT bloqueada: foram encontrados {existing.Length} SDTs chamados '{definition.Name}'. Nenhuma alteracao foi feita.");
-        }
-
-        var description = CreateOwnedDescription(definition);
-        if (existing.Length == 1)
-        {
-            var existingSdt = existing[0];
-            if (!string.Equals(existingSdt.Description, description, StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException($"Criacao de SDT bloqueada: ja existe SDT externo ou incompativel chamado '{definition.Name}'. Nenhuma alteracao foi feita.");
-            }
-
             return new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, ApiPlanSdtWriteStatus.Reencountered, existingSdt.Guid);
         }
 
         var sdt = new SDT(designModel)
         {
             Name = definition.Name,
-            Description = description,
+            Description = CreateOwnedDescription(definition),
         };
 
         if (sharedFolder is not null)
@@ -130,7 +183,7 @@ internal static class ApiPlanSdtWriter
 
     private static string CreateOwnedDescription(ApiPlanSdtDefinition definition)
     {
-        return $"{OwnedDescriptionPrefix} - {definition.BacklogId} - {definition.Kind}";
+        return CreateOwnedDescriptionFor(definition.BacklogId, definition.Kind);
     }
 
     private static void ConfigureSdt(KBModel designModel, SDT sdt, ApiPlanSdtDefinition definition)
@@ -246,6 +299,19 @@ internal static class ApiPlanSdtWriteStatus
 {
     public const string Created = "Created";
     public const string Reencountered = "Reencountered";
+}
+
+internal sealed class ApiPlanSdtPreflightResult
+{
+    public ApiPlanSdtPreflightResult(Folder? sharedFolder, IReadOnlyDictionary<string, SDT> existingSdtsByName)
+    {
+        SharedFolder = sharedFolder;
+        ExistingSdtsByName = existingSdtsByName ?? throw new ArgumentNullException(nameof(existingSdtsByName));
+    }
+
+    public Folder? SharedFolder { get; }
+
+    public IReadOnlyDictionary<string, SDT> ExistingSdtsByName { get; }
 }
 
 internal sealed class ApiPlanSdtWriteResult

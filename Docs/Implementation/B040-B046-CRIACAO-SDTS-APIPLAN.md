@@ -4,15 +4,16 @@
 
 B040-B046 foram validados manualmente no GeneXus 18 U15 como primeira escrita real de SDTs a partir do `ApiPlan` em memória.
 
-O comando adicionado é `Criar SDTs (B040-B046)`. Depois da validação inicial, a mesma etapa foi integrada ao encerramento de `Abrir Wizard (B030)`, mantendo confirmação modal própria e os mesmos limites de escrita.
+O comando adicionado é `Criar SDTs (B040-B046)`. Depois da validação inicial, a mesma etapa foi integrada ao encerramento de `Abrir Wizard (B030)` por uma aba própria de confirmação, mantendo os mesmos limites de escrita.
 
 ## Escopo implementado
 
 - registro do comando em `Package.cs`;
 - registro do comando no manifesto `GenexusOpenApiBuilder.package`;
 - criação de `ApiPlanSdtWriter` para receber o `ApiPlan` em memória validado em B039;
-- confirmação modal obrigatória antes de qualquer escrita na KB;
+- confirmação explícita antes de qualquer escrita na KB: modal no comando separado e checkbox na aba `SDTs` do wizard;
 - criação ou reencontro dos SDTs compartilhados e próprios planejados;
+- preflight completo antes de qualquer Save(), incluindo Folder compartilhado, nomes planejados, descrições sentinela e tipos suportados;
 - bloqueio conservador quando já existe SDT com mesmo nome sem descrição sentinela do gerador;
 - registro na Output de cada SDT criado ou reencontrado.
 
@@ -24,9 +25,9 @@ O comando não executa sem:
 - `ApiPlan` em memória criado pelo wizard;
 - `Transaction` em memória reencontrada na KB ativa;
 - correspondência entre `ApiPlan.TransactionName` e a Transaction selecionada;
-- confirmação explícita do usuário no modal da IDE.
+- confirmação explícita do usuário no modal da IDE, quando acionado pelo comando separado, ou na aba `SDTs` do wizard, quando acionado por `Abrir Wizard (B030)`.
 
-Se qualquer condição falhar, a Output registra o bloqueio e nenhuma alteração é feita na KB.
+Se qualquer condição falhar no preflight, a Output registra o bloqueio e nenhuma alteração é feita na KB. O writer valida todos os SDTs planejados antes de criar o Folder `GxOpenAPI` ou salvar o primeiro SDT.
 
 ## Objetos que podem ser escritos após confirmação
 
@@ -98,7 +99,7 @@ A evidência visual da IDE confirmou a presença dos cinco SDTs próprios no mó
 
 ## Integração com o wizard
 
-Após a validação dos comandos separados, B040-B046 foi incorporado ao encerramento de `Abrir Wizard (B030)`. O wizard conclui o `ApiPlan`, solicita confirmação explícita para criar ou reencontrar os SDTs e registra a Output com `Trigger='Wizard'`. Se essa etapa for cancelada ou bloqueada, o wizard não deve oferecer a criação de Procedures no mesmo fluxo.
+Após a validação dos comandos separados, B040-B046 foi incorporado ao encerramento de `Abrir Wizard (B030)`. O wizard conclui o `ApiPlan`, exibe a aba `SDTs` com os SDTs planejados e só cria ou reencontra os SDTs se o checkbox de confirmação estiver marcado. A Output registra `Trigger='Wizard'`. Se essa etapa não for confirmada ou for bloqueada pelo preflight, o wizard não executa a criação de Procedures no mesmo fluxo.
 
 A integração foi validada manualmente em 2026-07-25 na Transaction `Contrato`. O wizard registrou B040-B046 com `Trigger='Wizard'`, reencontrou os 7 SDTs existentes (`Created=0`, `Reencountered=7`) e preservou o limite de não criar Procedure, API Object ou metadata persistente definitiva.
 

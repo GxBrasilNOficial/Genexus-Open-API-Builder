@@ -4,16 +4,17 @@
 
 B050-B053 foram validados manualmente no GeneXus 18 U15 como primeira escrita real de Procedures a partir do `ApiPlan` em memória e dos SDTs já existentes.
 
-O comando adicionado é `Criar Procedures (B050-B053)`. Depois da validação inicial, a mesma etapa foi integrada ao encerramento de `Abrir Wizard (B030)`, executando somente após B040-B046 ser confirmado e concluído no mesmo fluxo do wizard.
+O comando adicionado é `Criar Procedures (B050-B053)`. Depois da validação inicial, a mesma etapa foi integrada ao encerramento de `Abrir Wizard (B030)` por uma aba própria de confirmação, executando somente após B040-B046 estar confirmado e concluído no mesmo fluxo do wizard.
 
 ## Escopo implementado
 
 - registro do comando em `Package.cs`;
 - registro do comando no manifesto `GenexusOpenApiBuilder.package`;
 - criação de `ApiPlanProcedureWriter` para receber o `ApiPlan` em memória;
-- confirmação modal obrigatória antes de qualquer escrita de Procedures na KB;
-- reencontro obrigatório dos 7 SDTs produzidos por B040-B046 antes de criar Procedures;
+- confirmação explícita antes de qualquer escrita de Procedures na KB: modal no comando separado e checkbox na aba `Procedures` do wizard;
+- preflight obrigatório dos 7 SDTs produzidos por B040-B046 antes de criar Procedures, exigindo nome único e descrição sentinela esperada;
 - criação ou reencontro das 4 Procedures planejadas pelo `ApiPlan`;
+- preflight completo de todas as Procedures planejadas antes de qualquer gravação;
 - bloqueio conservador quando já existe Procedure com mesmo nome sem descrição sentinela do gerador;
 - registro na Output de cada Procedure criada ou reencontrada.
 
@@ -25,10 +26,10 @@ O comando não executa sem:
 - `ApiPlan` em memória criado pelo wizard;
 - `Transaction` em memória reencontrada na KB ativa;
 - correspondência entre `ApiPlan.TransactionName` e a Transaction selecionada;
-- SDTs próprios e compartilhados já existentes na KB ativa;
-- confirmação explícita do usuário no modal da IDE.
+- SDTs próprios e compartilhados já existentes na KB ativa, únicos e com descrição sentinela compatível;
+- confirmação explícita do usuário no modal da IDE, quando acionado pelo comando separado, ou nas abas `SDTs` e `Procedures` do wizard, quando acionado por `Abrir Wizard (B030)`.
 
-Se qualquer condição falhar, a Output registra o bloqueio e nenhuma alteração é feita na KB.
+Se qualquer condição falhar no preflight, a Output registra o bloqueio e nenhuma alteração é feita na KB. O writer valida todos os SDTs requeridos e todas as Procedures planejadas antes de salvar a primeira Procedure.
 
 ## Objetos que podem ser escritos após confirmação
 
@@ -56,13 +57,13 @@ As Procedures criadas nesta frente contêm skeleton explícito de Sprint 5. A im
 
 ## Política de reencontro
 
-O reencontro usa descrição sentinela do gerador:
+O reencontro das Procedures usa descrição sentinela do gerador:
 
 ```text
 Genexus Open API Builder B050-B053 Procedure - <Backlog> - <Service>
 ```
 
-Se já existir Procedure com mesmo nome e descrição diferente, a geração é bloqueada como colisão externa ou incompatível.
+Se já existir Procedure com mesmo nome e descrição diferente, a geração é bloqueada como colisão externa ou incompatível. Os SDTs exigidos por B050-B053 também são aceitos apenas quando reencontrados por nome único e descrição sentinela B040-B046 esperada; SDT externo com nome coincidente bloqueia a escrita de Procedures.
 
 ## Validação local
 
@@ -102,7 +103,7 @@ A evidência visual da IDE confirmou a presença das quatro Procedures no módul
 
 ## Integração com o wizard
 
-Após a validação dos comandos separados, B050-B053 foi incorporado ao encerramento de `Abrir Wizard (B030)`. O wizard só oferece essa etapa quando a criação ou reencontro dos SDTs B040-B046 foi confirmada e concluída no mesmo fluxo. A Output registra `Trigger='Wizard'` e preserva o limite de não criar API Object, REST completo ou metadata persistente definitiva.
+Após a validação dos comandos separados, B050-B053 foi incorporado ao encerramento de `Abrir Wizard (B030)`. O wizard exibe a aba `Procedures` com as Procedures planejadas, mas só habilita sua confirmação quando a aba `SDTs` também está confirmada. A escrita só é executada após B040-B046 ser concluído no mesmo fluxo. A Output registra `Trigger='Wizard'` e preserva o limite de não criar API Object, REST completo ou metadata persistente definitiva.
 
 A integração foi validada manualmente em 2026-07-25 na Transaction `Contrato`. O wizard registrou B050-B053 com `Trigger='Wizard'`, reencontrou os 7 SDTs existentes, reencontrou as 4 Procedures existentes (`Created=0`, `Reencountered=4`) e preservou o limite de não criar API Object, REST completo ou metadata persistente definitiva.
 

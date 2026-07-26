@@ -35,6 +35,10 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly CheckBox _enableBusinessComponentCheck = new() { AutoSize = true, Text = "Habilitar Business Component agora", Dock = DockStyle.Top };
     private readonly TextBox _summaryDecisionText = CreateReadOnlyTextBox();
     private readonly TextBox _summaryEndpointText = CreateReadOnlyTextBox();
+    private readonly CheckBox _generateSdtsCheck = new() { AutoSize = true, Text = "Confirmar criacao ou reencontro de SDTs B040-B046 ao concluir", Dock = DockStyle.Top };
+    private readonly CheckBox _generateProceduresCheck = new() { AutoSize = true, Text = "Confirmar criacao ou reencontro de Procedures B050-B053 ao concluir", Dock = DockStyle.Top };
+    private readonly TextBox _sdtGenerationText = CreateReadOnlyTextBox();
+    private readonly TextBox _procedureGenerationText = CreateReadOnlyTextBox();
     private readonly Label _headerLabel = new()
     {
         AutoSize = true,
@@ -70,6 +74,7 @@ internal sealed class PrototypeWizardDialog : Form
         BuildLayout();
         WirePathSynchronization();
         LoadSnapshot();
+        WireGenerationConfirmation();
     }
 
     public PrototypeWizardFlowSelection? Selection { get; private set; }
@@ -113,8 +118,14 @@ internal sealed class PrototypeWizardDialog : Form
         _tabs.TabPages.Add(CreateOrderTab());
         _tabs.TabPages.Add(CreateRequiredTab());
         _tabs.TabPages.Add(CreateBusinessComponentTab());
+        _tabs.TabPages.Add(CreateSdtGenerationTab());
+        _tabs.TabPages.Add(CreateProcedureGenerationTab());
         _tabs.TabPages.Add(CreateSummaryTab());
-        _tabs.SelectedIndexChanged += (_, _) => RefreshCurrentTabLabel();
+        _tabs.SelectedIndexChanged += (_, _) =>
+        {
+            RefreshGenerationPreview();
+            RefreshCurrentTabLabel();
+        };
         RefreshCurrentTabLabel();
         root.Controls.Add(_tabs, 0, 1);
 
@@ -476,6 +487,46 @@ internal sealed class PrototypeWizardDialog : Form
         return tab;
     }
 
+    private TabPage CreateSdtGenerationTab()
+    {
+        var tab = new TabPage("SDTs");
+        var panel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Padding = new Padding(8),
+        };
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise os SDTs planejados. A escrita so sera executada ao concluir o wizard se esta confirmacao estiver marcada e o preflight tecnico estiver OK.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(_generateSdtsCheck, 0, 1);
+        panel.Controls.Add(CreateGroup("SDTs planejados", _sdtGenerationText), 0, 2);
+        tab.Controls.Add(panel);
+        return tab;
+    }
+
+    private TabPage CreateProcedureGenerationTab()
+    {
+        var tab = new TabPage("Procedures");
+        var panel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Padding = new Padding(8),
+        };
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise as Procedures planejadas. Esta etapa depende dos SDTs B040-B046 confirmados ou ja reencontraveis na KB ativa.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(_generateProceduresCheck, 0, 1);
+        panel.Controls.Add(CreateGroup("Procedures planejadas", _procedureGenerationText), 0, 2);
+        tab.Controls.Add(panel);
+        return tab;
+    }
+
     private TabPage CreateSummaryTab()
     {
         var tab = new TabPage("Resumo B038");
@@ -559,6 +610,22 @@ internal sealed class PrototypeWizardDialog : Form
         RefreshEndpointsText();
         RefreshRequiredText();
         RefreshBusinessComponentText();
+    }
+
+    private void WireGenerationConfirmation()
+    {
+        _generateSdtsCheck.CheckedChanged += (_, _) =>
+        {
+            if (!_generateSdtsCheck.Checked)
+            {
+                _generateProceduresCheck.Checked = false;
+            }
+
+            _generateProceduresCheck.Enabled = _generateSdtsCheck.Checked;
+            RefreshGenerationPreview();
+        };
+        _generateProceduresCheck.Enabled = false;
+        _generateProceduresCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
     }
 
     private void WirePathSynchronization()
@@ -653,6 +720,11 @@ internal sealed class PrototypeWizardDialog : Form
             RefreshRequiredText();
         }
 
+        if (_tabs.SelectedTab?.Text == "SDTs" || _tabs.SelectedTab?.Text == "Procedures")
+        {
+            RefreshGenerationPreview();
+        }
+
         if (_tabs.SelectedTab?.Text == "Business Component" && !EnsureBusinessComponentReady())
         {
             return;
@@ -736,7 +808,9 @@ internal sealed class PrototypeWizardDialog : Form
             contractSelection,
             reviewSelection,
             GetRequiredDecisions(contractSelection),
-            CreateBusinessComponentSelection());
+            CreateBusinessComponentSelection(),
+            _generateSdtsCheck.Checked,
+            _generateSdtsCheck.Checked && _generateProceduresCheck.Checked);
         return true;
     }
     private void ShowSummary()
@@ -768,14 +842,16 @@ internal sealed class PrototypeWizardDialog : Form
             $"Paginação: Default={review.DefaultPageSize}, Maximum={review.MaximumPageSize}{Environment.NewLine}" +
             $"Ordenação: {string.Join(", ", review.StaticOrder.Select(item => item.AttributeName + " " + item.Direction))}{Environment.NewLine}" +
             $"B036 bloqueados visíveis: CreateRequest={createBlocked}, UpdateRequest={updateBlocked}, ListFilters={filterBlocked}{Environment.NewLine}" +
-            $"Business Component: IsBusinessComponent={businessComponent.IsBusinessComponent}, Status='{businessComponent.Status}', EnabledDuringWizard={businessComponent.EnabledDuringWizard}";
+            $"Business Component: IsBusinessComponent={businessComponent.IsBusinessComponent}, Status='{businessComponent.Status}', EnabledDuringWizard={businessComponent.EnabledDuringWizard}{Environment.NewLine}" +
+            $"Gerar SDTs B040-B046: {Selection.GenerateSdts}{Environment.NewLine}" +
+            $"Gerar Procedures B050-B053: {Selection.GenerateProcedures}";
         _summaryEndpointText.Text =
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
             "B036 exibiu campos bloqueados com motivo no fluxo do wizard." + Environment.NewLine +
             "B037 consolidou Required como presença do membro JSON, distinguindo de valor não vazio." + Environment.NewLine +
-            "ApiPlan será montado somente em memória ao concluir o wizard." + Environment.NewLine +
-            "Nenhuma escolha foi persistida." + Environment.NewLine +
-            "Nenhum objeto foi criado, alterado ou excluído pela geração.";
+            "ApiPlan sera montado em memoria ao concluir o wizard." + Environment.NewLine +
+            "SDTs e Procedures so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK." + Environment.NewLine +
+            "Nenhuma escolha foi persistida; nenhuma metadata definitiva ou API Object sera criado neste passo.";
         _showingSummary = true;
         _tabs.SelectedIndex = _tabs.TabPages.Count - 1;
         if (_nextButton is not null)
@@ -844,6 +920,56 @@ internal sealed class PrototypeWizardDialog : Form
         }
         return string.Join(Environment.NewLine, lines);
     }
+    private void RefreshGenerationPreview()
+    {
+        var transactionName = _snapshot.TransactionName;
+        var ownSdts = new[]
+        {
+            $"B040 CreateRequest: sdt{transactionName}_API_CreateRequest | Escopo: modulo da Transaction",
+            $"B041 UpdateRequest: sdt{transactionName}_API_UpdateRequest | Escopo: modulo da Transaction",
+            $"B042 Response: sdt{transactionName}_API_Response | Escopo: modulo da Transaction",
+            $"B043 ListFilters: sdt{transactionName}_API_ListFilters | Escopo: modulo da Transaction",
+            $"B044 ListResponse: sdt{transactionName}_API_ListResponse | Escopo: modulo da Transaction",
+        };
+        var sharedSdts = new[]
+        {
+            "B045/B046 SharedErrorResponse: sdt_API_ErrorResponse | Escopo: RootModuleFolder:GxOpenAPI",
+            "B045/B046 SharedPagination: sdt_API_Pagination | Escopo: RootModuleFolder:GxOpenAPI",
+        };
+        _sdtGenerationText.Text =
+            $"Confirmado para escrita: {_generateSdtsCheck.Checked}{Environment.NewLine}" +
+            "Preflight obrigatorio antes de qualquer Save(): nomes, descricoes sentinela, escopo, tipos e dependencias." + Environment.NewLine + Environment.NewLine +
+            string.Join(Environment.NewLine, sharedSdts.Concat(ownSdts));
+
+        var selectedServices = GetCheckedValues(_servicesList);
+        var procedureLines = selectedServices.Select(service => $"{ResolveProcedureBacklogId(service)} {service}: proc{transactionName}_API_{service} | Escopo: modulo da Transaction").ToArray();
+        _procedureGenerationText.Text =
+            $"Confirmado para escrita: {_generateProceduresCheck.Checked}{Environment.NewLine}" +
+            $"Dependencia SDTs confirmada: {_generateSdtsCheck.Checked}{Environment.NewLine}" +
+            "Preflight obrigatorio antes de qualquer Save(): SDTs proprios/compativeis e todas as Procedures livres ou reencontraveis." + Environment.NewLine + Environment.NewLine +
+            string.Join(Environment.NewLine, procedureLines);
+    }
+
+    private static string ResolveProcedureBacklogId(string serviceName)
+    {
+        if (string.Equals(serviceName, "List", StringComparison.OrdinalIgnoreCase))
+        {
+            return "B050";
+        }
+
+        if (string.Equals(serviceName, "Get", StringComparison.OrdinalIgnoreCase))
+        {
+            return "B051";
+        }
+
+        if (string.Equals(serviceName, "Create", StringComparison.OrdinalIgnoreCase))
+        {
+            return "B052";
+        }
+
+        return string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase) ? "B053" : "B050-B053";
+    }
+
     private string FormatKeySuffix()
     {
         var primaryKeyParts = _snapshot.Attributes
@@ -1066,12 +1192,16 @@ internal sealed class PrototypeWizardFlowSelection
         PrototypeWizardContractSelection contractSelection,
         PrototypeWizardReviewSelection reviewSelection,
         IReadOnlyList<PrototypeWizardRequiredFieldDecision> requiredFields,
-        PrototypeWizardBusinessComponentSelection businessComponentSelection)
+        PrototypeWizardBusinessComponentSelection businessComponentSelection,
+        bool generateSdts,
+        bool generateProcedures)
     {
         ContractSelection = contractSelection ?? throw new ArgumentNullException(nameof(contractSelection));
         ReviewSelection = reviewSelection ?? throw new ArgumentNullException(nameof(reviewSelection));
         RequiredFields = requiredFields ?? throw new ArgumentNullException(nameof(requiredFields));
         BusinessComponentSelection = businessComponentSelection ?? throw new ArgumentNullException(nameof(businessComponentSelection));
+        GenerateSdts = generateSdts;
+        GenerateProcedures = generateProcedures;
     }
 
     public PrototypeWizardContractSelection ContractSelection { get; }
@@ -1081,6 +1211,10 @@ internal sealed class PrototypeWizardFlowSelection
     public IReadOnlyList<PrototypeWizardRequiredFieldDecision> RequiredFields { get; }
 
     public PrototypeWizardBusinessComponentSelection BusinessComponentSelection { get; }
+
+    public bool GenerateSdts { get; }
+
+    public bool GenerateProcedures { get; }
 }
 
 internal sealed class PrototypeWizardBusinessComponentSelection

@@ -410,6 +410,11 @@ public sealed class Package : AbstractPackageUI
             return false;
         }
 
+        return TryCreateSdts(designModel, transaction, apiPlan, triggerSource);
+    }
+
+    private static bool TryCreateSdts(KBModel designModel, Transaction transaction, ApiPlan apiPlan, string triggerSource)
+    {
         try
         {
             var result = ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan);
@@ -423,7 +428,7 @@ public sealed class Package : AbstractPackageUI
         }
         catch (Exception ex)
         {
-            WriteOutput($"[Genexus Open API Builder][B040-B046] Criacao de SDTs bloqueada ou falhou: Trigger='{triggerSource}', Error='{ex.Message}'");
+            WriteOutput($"[Genexus Open API Builder][B040-B046] Criacao de SDTs bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
             return false;
         }
     }
@@ -442,6 +447,11 @@ public sealed class Package : AbstractPackageUI
             return false;
         }
 
+        return TryCreateProcedures(designModel, transaction, apiPlan, triggerSource);
+    }
+
+    private static bool TryCreateProcedures(KBModel designModel, Transaction transaction, ApiPlan apiPlan, string triggerSource)
+    {
         try
         {
             var result = ApiPlanProcedureWriter.CreateOrReencounter(designModel, transaction, apiPlan);
@@ -455,7 +465,7 @@ public sealed class Package : AbstractPackageUI
         }
         catch (Exception ex)
         {
-            WriteOutput($"[Genexus Open API Builder][B050-B053] Criacao de Procedures bloqueada ou falhou: Trigger='{triggerSource}', Error='{ex.Message}'");
+            WriteOutput($"[Genexus Open API Builder][B050-B053] Criacao de Procedures bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
             return false;
         }
     }
@@ -617,17 +627,27 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][Sprint3] Campos de engine no ApiPlan: GeneratorTarget='{apiPlan.GeneratorTarget}' como gerador prioritario inicial do MVP, ConflictMode='{apiPlan.ConflictMode}' para colisao externa/incompativel, ReexecutionMode='{apiPlan.ReexecutionMode}', ServiceDescriptionsPending={serviceDescriptionsPendingCount}/{apiPlan.ServiceDescriptions.Count}, ServiceDescriptionLanguage='{apiPlan.ServiceDescriptionLanguage}', ServiceDescriptionFallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, IsEngineReady={apiPlan.IsEngineReady}. Sem validar engine real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B056] Descricoes no ApiPlan: Resolved={serviceDescriptionsResolvedCount}/{apiPlan.ServiceDescriptions.Count}, Language='{apiPlan.ServiceDescriptionLanguage}', LanguageSource='{apiPlan.ServiceDescriptionLanguageSource}', FallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, FallbackReason='{apiPlan.ServiceDescriptionFallbackReason}'. Sem aplicar [Description] em objeto API real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B092] Seguranca no ApiPlan: SecurityLevel='{apiPlan.Security.SecurityLevel}', GamCondition='{apiPlan.Security.GamCondition}', RequiresGenerationConfirmation={apiPlan.Security.RequiresGenerationConfirmation}. Sem aplicar seguranca em objetos reais.");
-        WriteOutput("[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria e a geracao confirmada de SDTs/Procedures sera oferecida no proprio fluxo do wizard.");
-        var wizardCreatedOrReencounteredSdts = TryConfirmAndCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
-        if (wizardCreatedOrReencounteredSdts)
+        WriteOutput($"[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria. GenerateSdts={selection.GenerateSdts}, GenerateProcedures={selection.GenerateProcedures}; escritas confirmadas no wizard exigem preflight completo antes de qualquer Save().");
+        if (selection.GenerateSdts)
         {
-            TryConfirmAndCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
+            var wizardCreatedOrReencounteredSdts = TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
+            if (wizardCreatedOrReencounteredSdts && selection.GenerateProcedures)
+            {
+                TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
+            }
+            else if (selection.GenerateProcedures)
+            {
+                WriteOutput($"[Genexus Open API Builder][B050-B053] Etapa de Procedures nao executada pelo wizard para Transaction='{transaction.Name}' porque B040-B046 nao foi concluido neste fluxo. Nenhuma Procedure foi criada pelo wizard.");
+            }
         }
         else
         {
-            WriteOutput($"[Genexus Open API Builder][B050-B053] Etapa de Procedures nao executada pelo wizard para Transaction='{transaction.Name}' porque B040-B046 nao foi confirmado ou concluido neste fluxo. Nenhuma Procedure foi criada pelo wizard.");
+            WriteOutput($"[Genexus Open API Builder][B040-B046] Etapa de SDTs nao confirmada no wizard para Transaction='{transaction.Name}'. Nenhum SDT foi criado pelo wizard.");
+            if (selection.GenerateProcedures)
+            {
+                WriteOutput($"[Genexus Open API Builder][B050-B053] Etapa de Procedures nao executada pelo wizard para Transaction='{transaction.Name}' porque B040-B046 nao foi confirmado neste fluxo. Nenhuma Procedure foi criada pelo wizard.");
+            }
         }
-
         return true;
     }
 

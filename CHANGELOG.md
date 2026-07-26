@@ -54,7 +54,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B039 validado no U15: preview de engine SDT recebe o `ApiPlan`, resolve cinco SDTs próprios e dois compartilhados com status `ResolvedSdtContractPreviewNoKbWrite`, registra `WritesKnowledgeBase=False` e não escreve na KB
 - B040-B046 validados no U15: comando `Criar SDTs (B040-B046)` criou 7 SDTs a partir do `ApiPlan` após confirmação modal explícita na IDE, com 5 próprios e 2 compartilhados, sem Procedures, API Object ou metadata persistente definitiva
 - B050-B053 validados no U15: comando `Criar Procedures (B050-B053)` bloqueou execução sem `ApiPlan`, depois criou 4 Procedures skeleton a partir do `ApiPlan` e reencontrou 7 SDTs B040-B046, sem API Object, REST completo ou metadata persistente definitiva
-- `Abrir Wizard (B030)` validado no U15 oferecendo B040-B046 e B050-B053 no próprio encerramento do wizard, com confirmações modais separadas, Output marcada com `Trigger='Wizard'`, reencontro de 7 SDTs e 4 Procedures existentes e preservação dos comandos separados para reexecução/diagnóstico
+- `Abrir Wizard (B030)` validado no U15 oferecendo B040-B046 e B050-B053 em abas próprias de confirmação no wizard, com Output marcada com `Trigger='Wizard'`, reencontro de 7 SDTs e 4 Procedures existentes e preservação dos comandos separados para reexecução/diagnóstico
 
 ## Fixed
 
@@ -72,10 +72,11 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B031 desabilita fórmulas em requests por API pública e bloqueia chave primária no `CreateRequest` até validação pública de autonumeração, sem reflexão em internos do SDK
 - B032 sincroniza `Services base path` com `ApiName` até edição manual e o consumo por B033 foi validado posteriormente dentro do wizard único
 - B090/B091 alinhados como representação provisória hardcoded em memória; os itens canônicos permanecem abertos até configuração explícita por KB em metadata persistente
+- B040-B046 e B050-B053 agora executam preflight completo antes de qualquer `Save()`: SDTs validam colisões, descrições sentinela e tipos; Procedures validam todos os SDTs próprios/compatíveis e todas as Procedures planejadas antes de gravar a primeira
 
 ## Planned
 
-- Preparar criação ou reencontro do objeto `API` B054 sobre as Procedures existentes
+- Validar na IDE a correção pós-revisão das abas `SDTs`/`Procedures` do wizard e do preflight completo B040-B046/B050-B053 antes de retomar B054
 
 ---
 

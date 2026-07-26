@@ -51,21 +51,24 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - B050-B053 validados manualmente em 2026-07-25 na Transaction `Contrato`: o comando bloqueou corretamente a execução sem `ApiPlan`; depois, com `ApiPlan` recriado pelo wizard, reencontrou 7 SDTs, criou 4 Procedures skeleton (`procContrato_API_List`, `procContrato_API_Get`, `procContrato_API_Create`, `procContrato_API_Update`) e registrou `Created=4`, `Reencountered=0`, sem criar API Object, REST completo ou metadata persistente definitiva.
 - Integração do wizard com B040-B046 e B050-B053 validada manualmente em 2026-07-25 na Transaction `Contrato`: `Abrir Wizard (B030)` concluiu o `ApiPlan`, ofereceu a escrita de SDTs e Procedures no próprio fluxo e reencontrou 7 SDTs (`Created=0`, `Reencountered=7`) e 4 Procedures (`Created=0`, `Reencountered=4`) com `Trigger='Wizard'`, sem criar API Object, REST completo ou metadata persistente definitiva.
 
+- Correção pós-revisão preparada em runtime: Abrir Wizard (B030) passa a confirmar B040-B046 e B050-B053 por abas próprias (SDTs e Procedures) em vez de modais após o encerramento; ApiPlanSdtWriter e ApiPlanProcedureWriter executam preflight completo antes de qualquer Save(), com Procedures aceitando SDTs somente por nome único e descrição sentinela B040-B046 compatível. Esta correção ainda exige validação manual na IDE antes de promover B054.
+
 ## Frente ativa
 
-**Sprint 5 — Procedures, API Object e Metadata**, com B040-B046 e B050-B053 validados pelos comandos separados e pelo encerramento integrado do wizard. A próxima frente deve preparar B054 para criação ou reencontro conservador do objeto `API` sobre as Procedures existentes, ainda sem completar REST/segurança definitivos da Sprint 6 nem metadata persistente definitiva fora do escopo aprovado.
+**Sprint 5 — Procedures, API Object e Metadata**, com correção pós-revisão de B040-B046/B050-B053 preparada no runtime. Antes de promover B054, a próxima frente deve validar manualmente na IDE que as abas `SDTs` e `Procedures` do wizard substituem os modais pós-wizard e que os writers bloqueiam colisões externas sem escrita parcial.
 
 ## Próxima ação única
 
-Preparar B054 no runtime da extensão para criar ou reencontrar o objeto `API` `api<NomeBase>` sobre as Procedures B050-B053 já existentes, mantendo bloqueio conservador contra colisões externas e sem antecipar a Sprint 6 de comportamento REST completo e segurança definitivos.
+Atualizar manualmente a extensão no GeneXus 18 U15 e validar a correção pós-revisão de B040-B046/B050-B053: abas `SDTs` e `Procedures` no wizard, dependência Procedures -> SDTs, ausência de modais pós-wizard e bloqueio por preflight completo antes de qualquer `Save()`.
 
 ## Critério de conclusão e evidência esperada
 
-- o comando ou fluxo B054 só executa com `ApiPlan` em memória compatível com a Transaction selecionada;
-- os SDTs B040-B046 e as Procedures B050-B053 existentes são reencontrados antes da criação do objeto `API`;
-- o objeto `API` planejado é criado ou reencontrado com nome convencionado `api<NomeBase>`;
-- colisões externas ou incompatíveis bloqueiam a geração por nome e descrição sentinela ou metadata disponível;
-- a Output da IDE registra o objeto `API` criado ou reencontrado e confirma que o passo não completa ainda REST/segurança definitivos nem metadata persistente definitiva fora do escopo aprovado.
+- `Abrir Wizard (B030)` exibe abas `SDTs` e `Procedures` antes do resumo final;
+- a aba `Procedures` só fica habilitada para confirmação quando `SDTs` também está confirmado;
+- ao concluir o wizard sem confirmar SDTs, nenhuma escrita B040-B046/B050-B053 ocorre;
+- ao confirmar SDTs e Procedures, a Output registra `GenerateSdts=True`, `GenerateProcedures=True`, `Trigger='Wizard'` e reencontro/criação conforme a KB ativa;
+- colisões externas de SDT ou Procedure, ou SDTs requeridos sem descrição sentinela B040-B046 compatível, bloqueiam a execução no preflight antes da primeira gravação;
+- após essa validação manual, a próxima ação volta a ser preparar B054 para criar ou reencontrar o objeto `API` `api<NomeBase>` sobre as Procedures existentes.
 
 ## Sequência operacional vigente
 
@@ -76,8 +79,9 @@ Preparar B054 no runtime da extensão para criar ou reencontrar o objeto `API` `
 5. Sprint 4 validou B039 como preview de engine SDT em memória e concluiu B040-B046 com a primeira escrita real de SDTs próprios e compartilhados a partir do `ApiPlan`.
 6. Sprint 5 validou B050-B053 com a criação das Procedures skeleton sobre os SDTs existentes, ainda sem API Object, REST completo ou metadata persistente definitiva.
 7. Sprint 5 validou B040-B046 e B050-B053 também no encerramento integrado do wizard, com Trigger='Wizard', reencontro dos objetos existentes e preservação dos comandos independentes para reexecução/diagnóstico.
-8. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
-9. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
+8. A correção pós-revisão de B040-B046/B050-B053 deve ser validada na IDE antes de B054, cobrindo abas próprias de confirmação no wizard e preflight completo sem escrita parcial.
+9. Sprints 5–7 completam Procedures/API/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
+10. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
 
 ## Bloqueios e fatos ainda não validados
 

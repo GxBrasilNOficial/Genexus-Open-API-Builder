@@ -34,14 +34,15 @@ internal static class ApiPlanProcedureWriter
             throw new InvalidOperationException("Criacao de Procedures bloqueada: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
         }
 
-        var requiredSdts = GetRequiredSdtNames(apiPlan);
-        var resolvedSdts = ReencounterRequiredSdts(designModel, requiredSdts);
+        var sdtGenerationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
+        var resolvedSdts = PreflightRequiredSdts(designModel, sdtGenerationPlan);
         var definitions = CreateProcedureDefinitions(apiPlan);
+        var preflight = PreflightProcedures(designModel, definitions);
         var results = new List<ApiPlanProcedureWriteItemResult>();
 
         foreach (var definition in definitions)
         {
-            results.Add(CreateOrReencounterProcedure(designModel, transaction, definition));
+            results.Add(CreateOrReencounterProcedure(designModel, transaction, definition, preflight));
         }
 
         return new ApiPlanProcedureWriteResult(
@@ -52,46 +53,37 @@ internal static class ApiPlanProcedureWriter
             results);
     }
 
-    private static IReadOnlyList<string> GetRequiredSdtNames(ApiPlan apiPlan)
-    {
-        return apiPlan.SharedSdtNames
-            .Concat(new[]
-            {
-                apiPlan.CreateRequestSdtName,
-                apiPlan.UpdateRequestSdtName,
-                apiPlan.ResponseSdtName,
-                apiPlan.ListFiltersSdtName,
-                apiPlan.ListResponseSdtName,
-            })
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-    }
-
-    private static IReadOnlyList<Guid> ReencounterRequiredSdts(KBModel designModel, IReadOnlyList<string> names)
+    private static IReadOnlyList<Guid> PreflightRequiredSdts(KBModel designModel, ApiPlanSdtGenerationPlan generationPlan)
     {
         var resolved = new List<Guid>();
-        foreach (var name in names)
+        foreach (var definition in generationPlan.SharedSdts.Concat(generationPlan.OwnSdts))
         {
             var matches = SDT.GetAll(designModel)
-                .Where(sdt => string.Equals(sdt.Name, name, StringComparison.OrdinalIgnoreCase))
+                .Where(sdt => string.Equals(sdt.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
                 .ToArray();
 
             if (matches.Length == 0)
             {
-                throw new InvalidOperationException($"Criacao de Procedures bloqueada: SDT requerido nao foi reencontrado: '{name}'. Execute B040-B046 antes. Nenhuma alteracao foi feita.");
+                throw new InvalidOperationException($"Criacao de Procedures bloqueada: SDT requerido nao foi reencontrado: '{definition.Name}'. Execute B040-B046 antes. Nenhuma alteracao foi feita.");
             }
 
             if (matches.Length > 1)
             {
-                throw new InvalidOperationException($"Criacao de Procedures bloqueada: foram encontrados {matches.Length} SDTs chamados '{name}'. Nenhuma alteracao foi feita.");
+                throw new InvalidOperationException($"Criacao de Procedures bloqueada: foram encontrados {matches.Length} SDTs chamados '{definition.Name}'. Nenhuma alteracao foi feita.");
             }
 
-            resolved.Add(matches[0].Guid);
+            var expectedDescription = ApiPlanSdtWriter.CreateOwnedDescriptionFor(definition.BacklogId, definition.Kind);
+            var sdt = matches[0];
+            if (!string.Equals(sdt.Description, expectedDescription, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"Criacao de Procedures bloqueada: SDT requerido externo ou incompativel chamado '{definition.Name}'. Execute B040-B046 para reencontrar SDTs proprios antes. Nenhuma alteracao foi feita.");
+            }
+
+            resolved.Add(sdt.Guid);
         }
 
         return resolved;
     }
-
     private static IReadOnlyList<ApiPlanProcedureDefinition> CreateProcedureDefinitions(ApiPlan apiPlan)
     {
         return apiPlan.Services
@@ -124,33 +116,47 @@ internal static class ApiPlanProcedureWriter
         return "B050-B053";
     }
 
-    private static ApiPlanProcedureWriteItemResult CreateOrReencounterProcedure(KBModel designModel, Transaction transaction, ApiPlanProcedureDefinition definition)
+    private static ApiPlanProcedurePreflightResult PreflightProcedures(KBModel designModel, IReadOnlyList<ApiPlanProcedureDefinition> definitions)
     {
-        var existing = Procedure.GetAll(designModel)
-            .Where(procedure => string.Equals(procedure.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-
-        if (existing.Length > 1)
+        var existingByName = new Dictionary<string, Procedure>(StringComparer.OrdinalIgnoreCase);
+        foreach (var definition in definitions)
         {
-            throw new InvalidOperationException($"Criacao de Procedure bloqueada: foram encontradas {existing.Length} Procedures chamadas '{definition.Name}'. Nenhuma alteracao foi feita.");
-        }
+            var existing = Procedure.GetAll(designModel)
+                .Where(procedure => string.Equals(procedure.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
 
-        var description = CreateOwnedDescription(definition);
-        if (existing.Length == 1)
-        {
-            var existingProcedure = existing[0];
-            if (!string.Equals(existingProcedure.Description, description, StringComparison.Ordinal))
+            if (existing.Length > 1)
             {
-                throw new InvalidOperationException($"Criacao de Procedure bloqueada: ja existe Procedure externa ou incompativel chamada '{definition.Name}'. Nenhuma alteracao foi feita.");
+                throw new InvalidOperationException($"Criacao de Procedure bloqueada: foram encontradas {existing.Length} Procedures chamadas '{definition.Name}'. Nenhuma alteracao foi feita.");
             }
 
+            var description = CreateOwnedDescription(definition);
+            if (existing.Length == 1)
+            {
+                var existingProcedure = existing[0];
+                if (!string.Equals(existingProcedure.Description, description, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException($"Criacao de Procedure bloqueada: ja existe Procedure externa ou incompativel chamada '{definition.Name}'. Nenhuma alteracao foi feita.");
+                }
+
+                existingByName.Add(definition.Name, existingProcedure);
+            }
+        }
+
+        return new ApiPlanProcedurePreflightResult(existingByName);
+    }
+
+    private static ApiPlanProcedureWriteItemResult CreateOrReencounterProcedure(KBModel designModel, Transaction transaction, ApiPlanProcedureDefinition definition, ApiPlanProcedurePreflightResult preflight)
+    {
+        if (preflight.ExistingProceduresByName.TryGetValue(definition.Name, out var existingProcedure))
+        {
             return new ApiPlanProcedureWriteItemResult(definition.BacklogId, definition.ServiceName, definition.Name, ApiPlanProcedureWriteStatus.Reencountered, existingProcedure.Guid);
         }
 
         var procedure = new Procedure(designModel)
         {
             Name = definition.Name,
-            Description = description,
+            Description = CreateOwnedDescription(definition),
         };
 
         if (transaction.Module is not null)
@@ -202,6 +208,15 @@ internal sealed class ApiPlanProcedureDefinition
     public string Name { get; }
 }
 
+internal sealed class ApiPlanProcedurePreflightResult
+{
+    public ApiPlanProcedurePreflightResult(IReadOnlyDictionary<string, Procedure> existingProceduresByName)
+    {
+        ExistingProceduresByName = existingProceduresByName ?? throw new ArgumentNullException(nameof(existingProceduresByName));
+    }
+
+    public IReadOnlyDictionary<string, Procedure> ExistingProceduresByName { get; }
+}
 internal sealed class ApiPlanProcedureWriteResult
 {
     public ApiPlanProcedureWriteResult(int plannedProcedures, int reencounteredSdts, int createdProcedures, int reencounteredProcedures, IReadOnlyList<ApiPlanProcedureWriteItemResult> items)
