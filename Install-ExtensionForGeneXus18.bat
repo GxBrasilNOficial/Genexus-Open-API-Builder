@@ -35,6 +35,6 @@ if not "%EXITCODE%"=="0" (
 ) else (
     echo A copia e a validacao da extensao terminaram sem erro de processo.
 )
-echo Execute Register-ExtensionForGeneXus18.bat normalmente para registrar a extensao.
+echo Execute Register-ExtensionForGeneXus18.bat normalmente somente se o manifesto, a identidade do pacote ou o registro de comandos mudou desde o ultimo genexus /install bem-sucedido.
 pause
 exit /b %EXITCODE%

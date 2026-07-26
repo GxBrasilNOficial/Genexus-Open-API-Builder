@@ -39,6 +39,7 @@ internal static class ApiPlanSdtWriter
 
         var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var preflight = Preflight(designModel, generationPlan);
+        ApiPlanTransactionFolder.Preflight(designModel, apiPlan);
         var sharedFolder = preflight.SharedFolder ?? CreateSharedFolder(designModel);
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan);
         var results = new List<ApiPlanSdtWriteItemResult>();

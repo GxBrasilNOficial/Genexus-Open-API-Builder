@@ -188,7 +188,23 @@ internal static class ApiPlanApiObjectWriter
             throw new InvalidOperationException($"Criacao de API Object bloqueada: ja existe API Object externo ou incompativel chamado '{apiPlan.ApiName}'. Nenhuma alteracao foi feita.");
         }
 
+        var expectedSource = CreateServiceGroupSource(apiPlan);
+        var currentSource = apiObject.ServiceGroupSource.Source;
+        if (!string.IsNullOrWhiteSpace(currentSource) && !string.Equals(currentSource, expectedSource, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Criacao de API Object bloqueada: o API Object '{apiPlan.ApiName}' possui servicos diferentes da geracao B054. Nenhuma alteracao foi feita.");
+        }
+
         return new ApiPlanApiObjectPreflightResult(apiObject);
+    }
+
+    private static string CreateServiceGroupSource(ApiPlan apiPlan)
+    {
+        var services = CreateProcedureDefinitions(apiPlan)
+            .Select(definition => $"    {definition.ServiceName}(){Environment.NewLine}        => {definition.Name}();")
+            .ToArray();
+
+        return $"{apiPlan.ApiName}{Environment.NewLine}{{{Environment.NewLine}{string.Join(Environment.NewLine + Environment.NewLine, services)}{Environment.NewLine}}}";
     }
 
     private static ApiPlanApiObjectWriteCoreResult CreateOrReencounterApiObject(KBModel designModel, Folder transactionFolder, ApiPlan apiPlan, ApiPlanApiObjectPreflightResult preflight)
@@ -196,6 +212,7 @@ internal static class ApiPlanApiObjectWriter
         if (preflight.ExistingApiObject is not null)
         {
             preflight.ExistingApiObject.Parent = transactionFolder;
+            preflight.ExistingApiObject.ServiceGroupSource.Source = CreateServiceGroupSource(apiPlan);
             preflight.ExistingApiObject.Save();
             return new ApiPlanApiObjectWriteCoreResult(ApiPlanApiObjectWriteStatus.Reencountered, preflight.ExistingApiObject.Guid);
         }
@@ -204,6 +221,7 @@ internal static class ApiPlanApiObjectWriter
         apiObject.Name = apiPlan.ApiName;
         apiObject.Description = CreateOwnedDescription(apiPlan);
         apiObject.Parent = transactionFolder;
+        apiObject.ServiceGroupSource.Source = CreateServiceGroupSource(apiPlan);
 
         apiObject.Save();
 

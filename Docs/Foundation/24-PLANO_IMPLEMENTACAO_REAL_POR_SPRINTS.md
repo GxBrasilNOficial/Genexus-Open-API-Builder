@@ -260,7 +260,7 @@ Criar as Procedures e o API Object sobre os SDTs já existentes, organizando e r
 
 ## Status atual
 
-B040-B046, B050-B053 e B054 foram validados no U15. B054 cria ou reencontra conservadoramente `api<NomeBase>` depois de validar os SDTs e Procedures planejados, e o wizard pode aplicar apenas a etapa pendente conforme o estado lido da KB. A frente não completa REST, segurança definitiva, descrições aplicadas nem metadata persistente.
+B040-B046, B050-B053 e B054 foram validados no U15. B054 cria ou reencontra `api<NomeBase>` e grava os serviços selecionados delegando sem parâmetros para as Procedures skeleton; a validação visual em `apiCarga` confirmou List, Get, Create e Update. O wizard pode aplicar somente a etapa pendente conforme o estado lido da KB. A frente não completa REST, segurança definitiva, descrições aplicadas nem metadata persistente.
 
 ## Gate
 
