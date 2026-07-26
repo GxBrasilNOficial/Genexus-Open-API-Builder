@@ -102,10 +102,10 @@ A evidência visual da IDE confirmou a presença das quatro Procedures no módul
 
 ## Integração com o wizard
 
-Após a validação dos comandos separados, B050-B053 foi incorporado ao encerramento de `Abrir Wizard (B030)`. O wizard só oferece essa etapa quando a criação ou reencontro dos SDTs B040-B046 foi confirmada e concluída no mesmo fluxo. A Output deve registrar `Trigger='Wizard'` e preservar o limite de não criar API Object, REST completo ou metadata persistente definitiva.
+Após a validação dos comandos separados, B050-B053 foi incorporado ao encerramento de `Abrir Wizard (B030)`. O wizard só oferece essa etapa quando a criação ou reencontro dos SDTs B040-B046 foi confirmada e concluída no mesmo fluxo. A Output registra `Trigger='Wizard'` e preserva o limite de não criar API Object, REST completo ou metadata persistente definitiva.
 
-Essa integração ainda precisa de validação manual no GeneXus 18 U15.
+A integração foi validada manualmente em 2026-07-25 na Transaction `Contrato`. O wizard registrou B050-B053 com `Trigger='Wizard'`, reencontrou os 7 SDTs existentes, reencontrou as 4 Procedures existentes (`Created=0`, `Reencountered=4`) e preservou o limite de não criar API Object, REST completo ou metadata persistente definitiva.
 
 ## Próximo passo
 
-B050-B053 estão concluídos como comando separado. A próxima ação executável vigente é validar o fluxo integrado do wizard conforme o checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`; B054 só deve ser promovido depois dessa evidência.
+B050-B053 estão concluídos como comando separado e como etapa integrada ao wizard. A próxima frente deve preparar B054 para criar ou reencontrar o objeto `API` sobre as Procedures existentes, ainda sem completar a Sprint 6 de comportamento REST e segurança definitivos.
