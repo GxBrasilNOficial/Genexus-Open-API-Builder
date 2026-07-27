@@ -81,6 +81,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Texto do wizard alinhado ao contrato provisório: preflight B040-B046/B050-B053 não promete validação de escopo físico enquanto ownership depender de descrição sentinela e metadata persistente ainda estiver pendente
 - SDT writer ampliado para tipos públicos usados na validação composta (BITMAP, BINARY, BINARYFILE, VIDEO, AUDIO, GEOGRAPHY, GEOPOINT, GEOPOLYGON e GEOLINE)
 - Correção pós-revisão B055 sincroniza API Object e Procedures: o Service Source parametrizado de Create/Update agora é acompanhado das variáveis reais do API Object, gravadas pela coleção pública de variáveis, com preflight do contrato antes das gravações
+- Correção pós-revisão B055 preserva domínios nos SDTs próprios de request/response usando membros baseados nos atributos da Transaction; rerun em `GuiaPed` reconfigurou SDTs próprios e `Build All` passou com `apiGuiaPed`, `procGuiaPed_API_Create` e `procGuiaPed_API_Update` no U15
 
 ## Planned
 
