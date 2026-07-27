@@ -61,6 +61,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Folder `<Transaction>OpenApi` criado ou reencontrado como irmão físico da Transaction, com realinhamento conservador em reexecuções
 - B055 validado no U15: Create e Update passaram a ser aplicados via Business Component nas Procedures já geradas, com variáveis reais, Source/Rules persistidos nas partes públicas corretas, preflight conservador, validação em chave simples (`Carga`) e composta (`Teste`) e API Object sincronizado com assinatura/variáveis compatíveis
 - B056 aplicado e validado no U15 em API Object real: `apiGuiaPed` recebeu `[Description]` nos serviços `List`, `Get`, `Create` e `Update`, preservou as assinaturas parametrizadas de B055 em `Create`/`Update`, e `Build All` passou gerando documentação REST
+- B060 implementado e validado em recorte inicial no U15: wizard grava ou reencontra o File JSON `apiGuiaPed_Metadata`, persiste `External File Name` via `BlobPart.FileName`, bloqueia JSON inválido ou identidade incompatível no preflight visual, restaura reencontro válido e preserva o escopo sem completar REST, códigos HTTP finais ou segurança definitiva
 
 ## Fixed
 
@@ -85,10 +86,11 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Correção pós-revisão B055 preserva domínios nos SDTs próprios de request/response usando membros baseados nos atributos da Transaction; rerun em `GuiaPed` reconfigurou SDTs próprios e `Build All` passou com `apiGuiaPed`, `procGuiaPed_API_Create` e `procGuiaPed_API_Update` no U15
 - Correção pré-push B055 força reconfiguração dos SDTs requeridos mesmo quando somente Business Component é aplicado, adia o realinhamento do Folder até depois do preflight principal e bloqueia Procedures B055 e API Object B055 reencontrados com variáveis extras, ausentes ou com tipo, atributo base, domínio ou objeto nomeado incompatível; Procedure já B055 sem variáveis não padrão também deixa de ser reparada silenciosamente
 - Correção B056 faz B054 atualizar API Object B055 legado para a variante B055 com descrições, sem remover parâmetros de `Create`/`Update`, e mantém B054 legado atualizado para B054 com descrições
+- Correção B060 alinha o preflight visual do wizard ao writer real para validar também `ownership.transactionGuid` e `ownership.apiGuid` antes de apresentar o File de metadata como reencontro válido
 
 ## Planned
 
-- Preparar B060 para gravar o File JSON de metadata, sem antecipar REST completo ou segurança definitiva
+- Validar os testes restantes de B060: colisão externa e descrições especiais B056 com aspas, barra invertida e caracteres incomuns
 
 ---
 

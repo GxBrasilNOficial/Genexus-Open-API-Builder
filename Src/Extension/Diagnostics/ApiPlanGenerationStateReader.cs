@@ -161,7 +161,7 @@ internal static class ApiPlanGenerationStateReader
             return new ApiPlanGenerationInspection(1, 0, 1, 0);
         }
 
-        if (matches.Length == 1 && string.Equals(matches[0].Description, ApiPlanMetadataFileWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal) && HasCompatibleMetadata(matches[0], apiPlan))
+        if (matches.Length == 1 && string.Equals(matches[0].Description, ApiPlanMetadataFileWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal) && HasCompatibleMetadata(designModel, matches[0], apiPlan))
         {
             return new ApiPlanGenerationInspection(1, 1, 0, 0);
         }
@@ -169,7 +169,7 @@ internal static class ApiPlanGenerationStateReader
         return new ApiPlanGenerationInspection(1, 0, 0, 1);
     }
 
-    private static bool HasCompatibleMetadata(WikiFileKBObject file, ApiPlan apiPlan)
+    private static bool HasCompatibleMetadata(KBModel designModel, WikiFileKBObject file, ApiPlan apiPlan)
     {
         var bytes = file.BlobPart?.Data?.GetBytes();
         if (bytes is null || bytes.Length == 0)
@@ -187,9 +187,29 @@ internal static class ApiPlanGenerationStateReader
             return false;
         }
 
+        var transactionMatches = Transaction.GetAll(designModel)
+            .Where(transaction => string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        var apiMatches = API.GetAll(designModel)
+            .Where(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (transactionMatches.Length != 1 || apiMatches.Length != 1)
+        {
+            return false;
+        }
+
+        var transaction = transactionMatches[0];
+        var apiObject = apiMatches[0];
+        if (!string.Equals(apiObject.Description, ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal) || !ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject))
+        {
+            return false;
+        }
+
         return HasString(metadata["schemaVersion"], ApiPlanMetadataFileWriter.SchemaVersion)
             && HasString(metadata.SelectToken("ownership.transactionName"), apiPlan.TransactionName)
+            && HasString(metadata.SelectToken("ownership.transactionGuid"), transaction.Guid.ToString())
             && HasString(metadata.SelectToken("ownership.apiName"), apiPlan.ApiName)
+            && HasString(metadata.SelectToken("ownership.apiGuid"), apiObject.Guid.ToString())
             && HasString(metadata.SelectToken("ownership.metadataFileName"), apiPlan.MetadataFileName);
     }
 
