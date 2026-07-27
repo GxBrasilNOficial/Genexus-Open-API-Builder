@@ -34,7 +34,7 @@ internal static class ApiPlanBusinessComponentWriter
         var updateContent = UpdateContent(plan);
         var updateRules = UpdateRules(plan);
         var updateVariables = UpdateVariables(plan);
-        var apiSource = CreateServiceGroupSource(plan);
+        var apiSource = CreateB055ServiceGroupSource(plan);
         var apiVariables = ApiVariableSpecs(plan);
 
         var create = FindProcedure(model, plan, "Create", "B052");
@@ -60,17 +60,37 @@ internal static class ApiPlanBusinessComponentWriter
         if (plan is null) throw new ArgumentNullException(nameof(plan));
         if (api is null) throw new ArgumentNullException(nameof(api));
         var source = NormalizeForComparison(api.ServiceGroupSource.Source);
-        return string.Equals(source, NormalizeForComparison(B054Source(plan)), StringComparison.Ordinal)
-            || (string.Equals(source, NormalizeForComparison(CreateServiceGroupSource(plan)), StringComparison.Ordinal) && HasExpectedVariables(model, api, ApiVariableSpecs(plan)));
+        return IsB054ServiceGroupSource(plan, source)
+            || (IsB055ServiceGroupSource(plan, source) && HasExpectedVariables(model, api, ApiVariableSpecs(plan)));
     }
 
     internal static bool IsB055ApiObject(KBModel model, ApiPlan plan, API api) =>
-        api is not null && string.Equals(NormalizeForComparison(api.ServiceGroupSource.Source), NormalizeForComparison(CreateServiceGroupSource(plan)), StringComparison.Ordinal) &&
+        api is not null && IsB055ServiceGroupSource(plan, NormalizeForComparison(api.ServiceGroupSource.Source)) &&
         HasExpectedVariables(model, api, ApiVariableSpecs(plan));
 
-    internal static string CreateServiceGroupSource(ApiPlan plan)
+    internal static bool IsCurrentB055ApiObject(KBModel model, ApiPlan plan, API api) =>
+        api is not null && string.Equals(NormalizeForComparison(api.ServiceGroupSource.Source), NormalizeForComparison(CreateB055ServiceGroupSource(plan)), StringComparison.Ordinal) &&
+        HasExpectedVariables(model, api, ApiVariableSpecs(plan));
+
+    internal static string CreateB054ServiceGroupSource(ApiPlan plan) => CreateServiceGroupSource(plan, includeBusinessComponentParameters: false, includeDescriptions: true);
+
+    internal static string CreateB055ServiceGroupSource(ApiPlan plan) => CreateServiceGroupSource(plan, includeBusinessComponentParameters: true, includeDescriptions: true);
+
+    private static bool IsB054ServiceGroupSource(ApiPlan plan, string normalizedSource) =>
+        string.Equals(normalizedSource, NormalizeForComparison(CreateB054ServiceGroupSource(plan)), StringComparison.Ordinal) ||
+        string.Equals(normalizedSource, NormalizeForComparison(CreateLegacyB054ServiceGroupSource(plan)), StringComparison.Ordinal);
+
+    private static bool IsB055ServiceGroupSource(ApiPlan plan, string normalizedSource) =>
+        string.Equals(normalizedSource, NormalizeForComparison(CreateB055ServiceGroupSource(plan)), StringComparison.Ordinal) ||
+        string.Equals(normalizedSource, NormalizeForComparison(CreateLegacyB055ServiceGroupSource(plan)), StringComparison.Ordinal);
+
+    private static string CreateLegacyB054ServiceGroupSource(ApiPlan plan) => CreateServiceGroupSource(plan, includeBusinessComponentParameters: false, includeDescriptions: false);
+
+    private static string CreateLegacyB055ServiceGroupSource(ApiPlan plan) => CreateServiceGroupSource(plan, includeBusinessComponentParameters: true, includeDescriptions: false);
+
+    private static string CreateServiceGroupSource(ApiPlan plan, bool includeBusinessComponentParameters, bool includeDescriptions)
     {
-        var services = plan.Services.Select(service => ServiceSource(plan, service.Name));
+        var services = plan.Services.Select(service => ServiceSource(plan, service.Name, includeBusinessComponentParameters, includeDescriptions));
         return $"{plan.ApiName}{Environment.NewLine}{{{Environment.NewLine}{string.Join(Environment.NewLine + Environment.NewLine, services)}{Environment.NewLine}}}";
     }
 
@@ -443,21 +463,48 @@ internal static class ApiPlanBusinessComponentWriter
     private static string LoadArguments(ApiPlan plan, string prefix) => string.Join(", ", plan.PrimaryKey.Select(field => prefix == "&" ? $"&{field.Name}" : $"{prefix}.{field.Name}"));
     private static bool HasService(ApiPlan plan, string name) => plan.Services.Any(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
     private static string Skeleton(string backlog, string service) => $"// Genexus Open API Builder {backlog}: Procedure skeleton for {service}. REST behavior remains pending Sprint 6." + Environment.NewLine + $"msg(!\"Genexus Open API Builder {backlog} {service} skeleton. REST behavior pending Sprint 6.\", status)";
-    private static string B054Source(ApiPlan plan) => $"{plan.ApiName}{Environment.NewLine}{{{Environment.NewLine}{string.Join(Environment.NewLine + Environment.NewLine, plan.Services.Select(service => $"    {service.Name}(){Environment.NewLine}        => proc{plan.TransactionName}_API_{service.Name}();"))}{Environment.NewLine}}}";
-
-    private static string ServiceSource(ApiPlan plan, string service)
+    private static string ServiceSource(ApiPlan plan, string service, bool includeBusinessComponentParameters, bool includeDescriptions)
     {
         var procedure = $"proc{plan.TransactionName}_API_{service}";
-        if (string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase))
-            return $"    Create(in: &CreateRequest, out: &CreateResponse){Environment.NewLine}        => {procedure}(&CreateRequest, &CreateResponse);";
-        if (string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase))
+        var annotation = includeDescriptions ? DescriptionAnnotation(plan, service) + Environment.NewLine : string.Empty;
+        if (includeBusinessComponentParameters && string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase))
+            return annotation + $"    Create(in: &CreateRequest, out: &CreateResponse){Environment.NewLine}        => {procedure}(&CreateRequest, &CreateResponse);";
+        if (includeBusinessComponentParameters && string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase))
         {
             var parameters = string.Join(", ", plan.PrimaryKey.Select(field => $"in: &{field.Name}").Concat(new[] { "in: &UpdateRequest", "out: &UpdateResponse" }));
             var arguments = string.Join(", ", plan.PrimaryKey.Select(field => $"&{field.Name}").Concat(new[] { "&UpdateRequest", "&UpdateResponse" }));
-            return $"    Update({parameters}){Environment.NewLine}        => {procedure}({arguments});";
+            return annotation + $"    Update({parameters}){Environment.NewLine}        => {procedure}({arguments});";
         }
-        return $"    {service}(){Environment.NewLine}        => {procedure}();";
+        return annotation + $"    {service}(){Environment.NewLine}        => {procedure}();";
     }
+
+    private static string DescriptionAnnotation(ApiPlan plan, string service) => $"    [Description(\"{EscapeDescription(ResolveServiceDescription(plan, service))}\")]";
+
+    private static string ResolveServiceDescription(ApiPlan plan, string service)
+    {
+        var matches = plan.ServiceDescriptions
+            .Where(item => string.Equals(item.ServiceName, service, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            throw new InvalidOperationException($"B056 bloqueado: descricao do servico '{service}' nao foi reencontrada de forma unica no ApiPlan. Nenhuma alteracao foi feita.");
+        }
+
+        var description = matches[0].Description?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(description) || string.Equals(description, ApiPlan.UnresolvedB056ServiceDescription, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"B056 bloqueado: descricao do servico '{service}' nao esta resolvida no ApiPlan. Nenhuma alteracao foi feita.");
+        }
+
+        if (description.IndexOfAny(new[] { '\r', '\n' }) >= 0)
+        {
+            throw new InvalidOperationException($"B056 bloqueado: descricao do servico '{service}' contem quebra de linha. Nenhuma alteracao foi feita.");
+        }
+
+        return description;
+    }
+
+    private static string EscapeDescription(string description) => description.Replace("\\", "\\\\").Replace("\"", "\\\"");
 }
 
 internal sealed class VariableSpec

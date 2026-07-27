@@ -196,23 +196,22 @@ internal static class ApiPlanApiObjectWriter
         return new ApiPlanApiObjectPreflightResult(apiObject);
     }
 
-    private static string CreateServiceGroupSource(ApiPlan apiPlan)
-    {
-        var services = CreateProcedureDefinitions(apiPlan)
-            .Select(definition => $"    {definition.ServiceName}(){Environment.NewLine}        => {definition.Name}();")
-            .ToArray();
-
-        return $"{apiPlan.ApiName}{Environment.NewLine}{{{Environment.NewLine}{string.Join(Environment.NewLine + Environment.NewLine, services)}{Environment.NewLine}}}";
-    }
 
     private static ApiPlanApiObjectWriteCoreResult CreateOrReencounterApiObject(KBModel designModel, Folder transactionFolder, ApiPlan apiPlan, ApiPlanApiObjectPreflightResult preflight)
     {
         if (preflight.ExistingApiObject is not null)
         {
             preflight.ExistingApiObject.Parent = transactionFolder;
-            if (!ApiPlanBusinessComponentWriter.IsB055ApiObject(designModel, apiPlan, preflight.ExistingApiObject))
+            if (ApiPlanBusinessComponentWriter.IsB055ApiObject(designModel, apiPlan, preflight.ExistingApiObject))
             {
-                preflight.ExistingApiObject.ServiceGroupSource.Source = CreateServiceGroupSource(apiPlan);
+                if (!ApiPlanBusinessComponentWriter.IsCurrentB055ApiObject(designModel, apiPlan, preflight.ExistingApiObject))
+                {
+                    preflight.ExistingApiObject.ServiceGroupSource.Source = ApiPlanBusinessComponentWriter.CreateB055ServiceGroupSource(apiPlan);
+                }
+            }
+            else
+            {
+                preflight.ExistingApiObject.ServiceGroupSource.Source = ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan);
             }
 
             preflight.ExistingApiObject.Save();
@@ -223,7 +222,7 @@ internal static class ApiPlanApiObjectWriter
         apiObject.Name = apiPlan.ApiName;
         apiObject.Description = CreateOwnedDescription(apiPlan);
         apiObject.Parent = transactionFolder;
-        apiObject.ServiceGroupSource.Source = CreateServiceGroupSource(apiPlan);
+        apiObject.ServiceGroupSource.Source = ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan);
 
         apiObject.Save();
 

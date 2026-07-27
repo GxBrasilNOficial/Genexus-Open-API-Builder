@@ -546,6 +546,7 @@ public sealed class Package : AbstractPackageUI
             }
 
             WriteOutput($"[Genexus Open API Builder][B054] API Object {result.Status}: Name='{result.ApiName}', Guid='{result.Guid}'.");
+            WriteOutput($"[Genexus Open API Builder][B056] Descricoes aplicadas no API Object real: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiName='{result.ApiName}', DescribedServices={apiPlan.ServiceDescriptions.Count}. Sem antecipar REST completo, codigo HTTP, seguranca definitiva ou metadata persistente.");
             return true;
         }
         catch (Exception ex)
@@ -561,6 +562,7 @@ public sealed class Package : AbstractPackageUI
         {
             var result = ApiPlanBusinessComponentWriter.Apply(designModel, transaction, apiPlan);
             WriteOutput($"[Genexus Open API Builder][B055] Create/Update aplicados via Business Component e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', CreateProcedureGuid='{result.CreateProcedureGuid}', UpdateProcedureGuid='{result.UpdateProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', PrimaryKeyParts={result.PrimaryKeyParts}, CreateFields={result.CreateFields}, UpdateFields={result.UpdateFields}, ResponseFields={result.ResponseFields}. Nenhum REST completo, codigo HTTP, seguranca definitiva ou metadata persistente foi criado.");
+            WriteOutput($"[Genexus Open API Builder][B056] Descricoes reaplicadas no API Object real durante B055: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiObjectGuid='{result.ApiObjectGuid}', DescribedServices={apiPlan.ServiceDescriptions.Count}. Service Source permaneceu limitado ao contrato Procedure/API Object atual.");
             return true;
         }
         catch (Exception ex)
