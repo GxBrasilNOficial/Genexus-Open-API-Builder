@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-07-26.
+2026-07-27.
 
 ## Último marco concluído
 
@@ -44,7 +44,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Follow-up da Sprint 3 validado manualmente em 2026-07-25: o `ApiPlan` em memória resolve `GeneratorTarget='.NET'` como gerador prioritário inicial do MVP, `ConflictMode='BlockOnCollision'` como política conservadora inicial para colisão externa/incompatível e `ReexecutionMode='Safe'`; naquele momento, condição GAM e engine real permaneciam pendentes, com `IsEngineReady=false`, sem persistir metadata nem gerar SDT, Procedure, API Object ou File na KB.
 - Contrato preparatório de configuração por KB para B090/B091 validado manualmente em 2026-07-25 na Transaction `Contrato`: a Output registrou `ConfigScope='KnowledgeBase'`, `ConfigSource='DefaultInMemoryHardcodedB090B091Policy'`, `ConfigStatus='PendingPersistentMetadata'`, `PersistedMetadata=False`, `KbConfigured=False`, `SensitiveRules=5` e `AuditRules=6`, preservando decisões apenas em memória, sem metadata persistente e sem gerar SDT, Procedure, API Object ou File na KB.
 - Contrato mínimo da metadata persistente futura para B090/B091 validado manualmente em 2026-07-25 na Transaction `Contrato`: a Output registrou `SchemaVersion='B090B091_KB_FIELD_CLASSIFICATION_V1'`, `Section='fieldClassification'`, `SensitiveMember='sensitiveExactNames'`, `AuditExactMember='auditExactNames'`, `AuditSuffixMember='auditSuffixes'` e `RequiredMembers=5`, ainda sem ler ou gravar File de metadata e sem gerar objetos na KB.
-- B056 validado manualmente em 2026-07-25 na Transaction `Contrato`: a Output registrou `ServiceDescriptionsPending=0/4`, `ServiceDescriptionLanguage='English'`, `ServiceDescriptionFallbackUsed=True`, `Resolved=4/4`, `LanguageSource='PendingKbLanguageApiValidation'` e fallback técnico em inglês, sem aplicar `[Description]` em objeto `API` real e sem gerar SDT, Procedure, API Object ou File na KB.
+- B056 validado manualmente em 2026-07-25 na Transaction `Contrato` como contrato preparatório no `ApiPlan`: a Output registrou `ServiceDescriptionsPending=0/4`, `ServiceDescriptionLanguage='English'`, `ServiceDescriptionFallbackUsed=True`, `Resolved=4/4`, `LanguageSource='PendingKbLanguageApiValidation'` e fallback técnico em inglês, ainda sem aplicar `[Description]` em objeto `API` real naquele recorte.
 - B092 validado manualmente em 2026-07-25 na Transaction `Contrato`: a Output registrou `Authentication` com `GamCondition='GAM_AUTHENTICATION_REQUIRED'` e `RequiresGenerationConfirmation=False`, `Authorization` com `GamCondition='GAM_AUTHORIZATION_REQUIRED_PENDING_PERMISSIONS'` e `RequiresGenerationConfirmation=True`, e `None` com `GamCondition='NO_GAM_SECURITY_PUBLIC_API'` e `RequiresGenerationConfirmation=True`, ainda sem aplicar segurança em objeto `API` real e sem gerar SDT, Procedure, API Object ou File na KB.
 - B039 validado manualmente em 2026-07-25 na Transaction `Contrato`: a Output registrou `Phase='Sprint4SdtEnginePreviewOnly'`, `Status='ResolvedSdtContractPreviewNoKbWrite'`, `WritesKnowledgeBase=False`, `OwnSdts=5` e `SharedSdts=2`, listando dois SDTs compartilhados e cinco SDTs próprios planejados, sem criar, alterar ou excluir objetos na KB.
 - B040-B046 validados manualmente em 2026-07-25 na Transaction `Contrato`: após confirmação explícita no modal da IDE, o comando `Criar SDTs (B040-B046)` criou 7 SDTs a partir do `ApiPlan` (`PlannedOwnSdts=5`, `PlannedSharedSdts=2`, `Created=7`, `Reencountered=0`), incluindo `sdt_API_ErrorResponse`, `sdt_API_Pagination` e os cinco SDTs próprios `sdtContrato_API_*`, sem criar Procedure, API Object ou metadata persistente definitiva.
@@ -57,21 +57,22 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - O wizard passou a reconhecer o estado atual dos artefatos planejados antes da escrita: apresenta `plano em memoria`, teste de criação, complementação, reencontro ou bloqueio; as abas SDTs, Procedures e API Object refletem os objetos reencontráveis e permitem aplicar somente a etapa pendente. O resumo usa `Concluir Teste` sem escrita e `Concluir e aplicar` quando há geração confirmada.
 - Os objetos gerados foram organizados no Folder irmão `<Transaction>OpenApi`; reexecuções realinham o Folder existente ao módulo e Folder físico da Transaction quando a API pública o permite.
 - B055 validado manualmente em 2026-07-26: na Transaction `Carga`, as Procedures `procCarga_API_Create` e `procCarga_API_Update` passaram a persistir Source, Rules e variáveis reais via APIs públicas e foram especificadas/geradas/compiladas com sucesso; na Transaction `Teste`, com chave composta `TesteDate` + `TesteId`, o wizard criou novamente SDTs, Procedures e `apiTeste`, aplicou Create/Update via Business Component com `PrimaryKeyParts=2`, gerou `parm(in:&TesteDate, in:&TesteId, in:&UpdateRequest, out:&UpdateResponse);`, usou `&Teste.Load(&TesteDate, &TesteId)` e as duas Procedures especificaram, geraram e compilaram com sucesso. A correção pós-revisão sincronizou também o API Object: `apiTeste` passou a declarar Create/Update parametrizados, a aba Variables exibiu chaves, requests e responses compatíveis, e `Build With This Only` de `apiTeste` passou por especificação, geração, documentação REST, Protocol Buffer, compilação e atualização de configuração web. O warning de `LSI.Extensions` sobre variáveis não usadas foi descartado como bloqueante porque o build nativo do API Object reconheceu o contrato. A correção posterior de SDTs baseados em domínio foi validada na Transaction `GuiaPed`: o wizard reencontrou e reconfigurou 7 SDTs próprios/compartilhados, sincronizou `apiGuiaPed` via B055 e `Build All` passou especificando `apiGuiaPed`, `procGuiaPed_API_Create` e `procGuiaPed_API_Update`, gerando os SDTs de request/response e documentação REST sem erro. A correção pré-push posterior tornou B055 responsável por reconfigurar os SDTs requeridos mesmo quando somente a opção de Business Component é aplicada, adiou o realinhamento de Folder até depois do preflight principal e passou a bloquear Procedures B055 e API Object B055 reencontrados com variáveis extras, ausentes ou com tipo, atributo base, domínio ou objeto nomeado incompatível; Procedure já B055 sem variáveis não padrão também deixa de ser reparada silenciosamente. O passo não completa REST, códigos HTTP, segurança definitiva ou metadata persistente.
+- B056 aplicado e validado manualmente em 2026-07-27 na Transaction `GuiaPed`: com somente `API Object` marcado, B054 reencontrou SDTs e Procedures, atualizou `apiGuiaPed` de B055 legado para B055 com `[Description]` em `List`, `Get`, `Create` e `Update`, preservou `Create`/`Update` parametrizados e variáveis compatíveis, e `Build All` passou especificando `apiGuiaPed`, gerando documentação REST e permissão GAM sem erro relacionado. O warning de `FBiTextSharp.dll` foi classificado como ambiental e não relacionado ao B056.
 
 ## Frente ativa
 
-**Sprint 5 — Procedures, API Object e Metadata**, com B040-B046, B050-B053, B054 e B055 validados no encerramento integrado do wizard. O próximo recorte é B056: aplicar descrições de serviços no API Object real, reaproveitando as descrições já resolvidas no ApiPlan, sem antecipar o comportamento REST completo da Sprint 6, segurança definitiva ou metadata persistente.
+**Sprint 5 — Procedures, API Object e Metadata**, com B040-B046, B050-B053, B054, B055 e B056 validados no encerramento integrado do wizard. O próximo recorte é B060: gravar o File JSON de metadata próprio, sem antecipar o comportamento REST completo da Sprint 6 ou segurança definitiva.
 
 ## Próxima ação única
 
-Preparar B056 no runtime da extensão para aplicar descrições nos serviços do API Object real já criado ou reencontrado, reaproveitando `ServiceDescriptions` do ApiPlan, sem ainda definir códigos HTTP, paths finais, segurança definitiva ou metadata persistente.
+Preparar B060 no runtime da extensão para gravar o File JSON de metadata próprio do API Object gerado ou reencontrado, reaproveitando o `ApiPlan` em memória, sem ainda definir códigos HTTP finais, comportamento REST completo ou segurança definitiva.
 
 ## Critério de conclusão e evidência esperada
 
-- o API Object próprio é reencontrado por nome único e descrição sentinela antes de qualquer alteração;
-- as descrições resolvidas no ApiPlan são aplicadas aos serviços reais selecionados, com evidência visual ou textual na IDE;
-- reexecução conserva objetos próprios e bloqueia colisões externas ou divergências incompatíveis;
-- a Output da IDE registra que B056 aplica somente descrições, sem completar REST, códigos HTTP, segurança definitiva ou metadata persistente.
+- o File de metadata próprio é criado ou reencontrado por nome planejado e descrição sentinela antes de qualquer alteração;
+- o conteúdo JSON registra identidade do API Object, Transaction, serviços, SDTs, Procedures, descrições aplicadas e decisões do `ApiPlan` necessárias para reexecução conservadora;
+- reexecução conserva o File próprio e bloqueia colisões externas ou conteúdo incompatível;
+- a Output da IDE registra que B060 grava somente metadata persistente inicial, sem completar REST, códigos HTTP finais ou segurança definitiva.
 
 ## Sequência operacional vigente
 
@@ -85,8 +86,9 @@ Preparar B056 no runtime da extensão para aplicar descrições nos serviços do
 8. A correção pós-revisão de B040-B046/B050-B053 foi validada na IDE antes de B054, cobrindo abas próprias de confirmação no wizard, ausência de modais pós-wizard e reencontro conservador dos objetos existentes com preflight completo.
 9. Sprint 5 validou B054: `api<NomeBase>` cria ou reencontra de forma conservadora e expõe os serviços selecionados delegando às Procedures skeleton B050-B053; o wizard aplica somente etapas pendentes conforme o estado atual de geração.
 10. Sprint 5 validou B055: Create e Update usam Business Component nas Procedures já geradas e o API Object é sincronizado com assinatura e variáveis compatíveis, cobrindo chave simples, chave composta e atributos baseados em domínio nos SDTs de request/response; o preflight também bloqueia variáveis B055 ausentes, extras ou com referência divergente, sem completar REST, códigos HTTP, segurança definitiva ou metadata persistente.
-11. Sprints 5–7 completam descrições/metadata, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
-12. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
+11. Sprint 5 validou B056: descrições resolvidas no `ApiPlan` são aplicadas nos serviços reais do API Object, preservando o Service Source parametrizado de B055 quando existente.
+12. Sprints 5–7 completam metadata persistente, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
+13. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
 
 ## Bloqueios e fatos ainda não validados
 

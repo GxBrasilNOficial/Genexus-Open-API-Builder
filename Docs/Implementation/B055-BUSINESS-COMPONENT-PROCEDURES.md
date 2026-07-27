@@ -95,11 +95,10 @@ B055 não completa:
 - `Location` de Create;
 - semântica REST completa de List/Get/Create/Update;
 - segurança definitiva;
-- metadata persistente definitiva;
-- descrições reais em serviços do API Object.
+- metadata persistente definitiva.
 
-Esses itens permanecem nas próximas frentes da Sprint 5 e da Sprint 6.
+No fechamento original de B055, descrições reais em serviços do API Object ainda eram pendência. Essa pendência foi coberta posteriormente por B056; os itens remanescentes seguem nas próximas frentes da Sprint 5 e da Sprint 6.
 
 ## Próximo passo
 
-B056 é a próxima frente canônica: aplicar descrições de serviços no API Object real, reaproveitando as descrições já resolvidas no `ApiPlan`, sem antecipar REST completo, segurança definitiva ou metadata persistente.
+B056 foi validado posteriormente: descrições de serviços são aplicadas no API Object real a partir do `ApiPlan`, preservando o Service Source parametrizado de B055 quando existente. A próxima frente canônica deve ser consultada em `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.

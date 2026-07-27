@@ -49,7 +49,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Representação provisória de B090/B091 e B092 validada no U15 dentro do `ApiPlan`: wizard único classifica sensíveis e auditoria por política inicial hardcoded em memória, registra origem/razão no `ApiPlan` e grava `SecurityLevel` com `GamCondition='UNRESOLVED_B092_GAM_CONDITION'`, mantendo B090/B091 canônicos abertos até configuração por KB/metadata e sem persistir metadata nem gerar objetos na KB
 - Follow-up da Sprint 3 validado manualmente: `ApiPlan` em memória resolve `GeneratorTarget='.NET'`, `ConflictMode='BlockOnCollision'` e `ReexecutionMode='Safe'`, mantendo naquele momento condição GAM e prontidão da engine explicitamente pendentes, sem persistir metadata nem gerar objetos na KB
 - Contrato preparatório de configuração por KB para B090/B091 validado no U15 dentro do `ApiPlan`, ainda sem metadata persistente e sem gerar objetos na KB
-- B056 validado no U15 dentro do `ApiPlan`: descrições de serviço resolvidas em memória com `ServiceDescriptionsPending=0/4`, idioma `English` e fallback técnico registrado, ainda sem aplicar `[Description]` em objeto `API` real e sem gerar objetos na KB
+- B056 validado no U15 dentro do `ApiPlan`: descrições de serviço resolvidas em memória com `ServiceDescriptionsPending=0/4`, idioma `English` e fallback técnico registrado, ainda sem aplicar `[Description]` em objeto `API` real naquele recorte preparatório
 - B092 validado no U15 dentro do `ApiPlan`: `Authentication`, `Authorization` e `None` agora resolvem `GamCondition` explicitamente no plano, com confirmação obrigatória para `Authorization` e `None`, ainda sem aplicar segurança em objeto `API` real e sem gerar objetos na KB
 - B039 validado no U15: preview de engine SDT recebe o `ApiPlan`, resolve cinco SDTs próprios e dois compartilhados com status `ResolvedSdtContractPreviewNoKbWrite`, registra `WritesKnowledgeBase=False` e não escreve na KB
 - B040-B046 validados no U15: comando `Criar SDTs (B040-B046)` criou 7 SDTs a partir do `ApiPlan` após confirmação modal explícita na IDE, com 5 próprios e 2 compartilhados, sem Procedures, API Object ou metadata persistente definitiva
@@ -60,6 +60,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - wizard passou a reconhecer em leitura o estado atual de SDTs, Procedures e API Object, apresentando criação, complementação, reencontro ou bloqueio antes de qualquer escrita e usando `Concluir Teste` quando não há etapa confirmada
 - Folder `<Transaction>OpenApi` criado ou reencontrado como irmão físico da Transaction, com realinhamento conservador em reexecuções
 - B055 validado no U15: Create e Update passaram a ser aplicados via Business Component nas Procedures já geradas, com variáveis reais, Source/Rules persistidos nas partes públicas corretas, preflight conservador, validação em chave simples (`Carga`) e composta (`Teste`) e API Object sincronizado com assinatura/variáveis compatíveis
+- B056 aplicado e validado no U15 em API Object real: `apiGuiaPed` recebeu `[Description]` nos serviços `List`, `Get`, `Create` e `Update`, preservou as assinaturas parametrizadas de B055 em `Create`/`Update`, e `Build All` passou gerando documentação REST
 
 ## Fixed
 
@@ -83,10 +84,11 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Correção pós-revisão B055 sincroniza API Object e Procedures: o Service Source parametrizado de Create/Update agora é acompanhado das variáveis reais do API Object, gravadas pela coleção pública de variáveis, com preflight do contrato antes das gravações
 - Correção pós-revisão B055 preserva domínios nos SDTs próprios de request/response usando membros baseados nos atributos da Transaction; rerun em `GuiaPed` reconfigurou SDTs próprios e `Build All` passou com `apiGuiaPed`, `procGuiaPed_API_Create` e `procGuiaPed_API_Update` no U15
 - Correção pré-push B055 força reconfiguração dos SDTs requeridos mesmo quando somente Business Component é aplicado, adia o realinhamento do Folder até depois do preflight principal e bloqueia Procedures B055 e API Object B055 reencontrados com variáveis extras, ausentes ou com tipo, atributo base, domínio ou objeto nomeado incompatível; Procedure já B055 sem variáveis não padrão também deixa de ser reparada silenciosamente
+- Correção B056 faz B054 atualizar API Object B055 legado para a variante B055 com descrições, sem remover parâmetros de `Create`/`Update`, e mantém B054 legado atualizado para B054 com descrições
 
 ## Planned
 
-- Preparar B056 para aplicar descrições de serviços no API Object real, sem antecipar REST completo, segurança definitiva ou metadata persistente
+- Preparar B060 para gravar o File JSON de metadata, sem antecipar REST completo ou segurança definitiva
 
 ---
 
