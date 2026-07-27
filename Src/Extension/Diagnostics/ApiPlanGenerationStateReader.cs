@@ -1,9 +1,12 @@
 using System;
 using System.Linq;
+using System.Text;
 using Artech.Architecture.Common.Objects;
 using Artech.Genexus.Common.Objects;
 using Artech.Genexus.Common.Wiki;
 using GenexusOpenApiBuilder.Extension.Domain;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
@@ -158,12 +161,41 @@ internal static class ApiPlanGenerationStateReader
             return new ApiPlanGenerationInspection(1, 0, 1, 0);
         }
 
-        if (matches.Length == 1 && string.Equals(matches[0].Description, ApiPlanMetadataFileWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal))
+        if (matches.Length == 1 && string.Equals(matches[0].Description, ApiPlanMetadataFileWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal) && HasCompatibleMetadata(matches[0], apiPlan))
         {
             return new ApiPlanGenerationInspection(1, 1, 0, 0);
         }
 
         return new ApiPlanGenerationInspection(1, 0, 0, 1);
+    }
+
+    private static bool HasCompatibleMetadata(WikiFileKBObject file, ApiPlan apiPlan)
+    {
+        var bytes = file.BlobPart?.Data?.GetBytes();
+        if (bytes is null || bytes.Length == 0)
+        {
+            return false;
+        }
+
+        JObject metadata;
+        try
+        {
+            metadata = JObject.Parse(Encoding.UTF8.GetString(bytes));
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+
+        return HasString(metadata["schemaVersion"], ApiPlanMetadataFileWriter.SchemaVersion)
+            && HasString(metadata.SelectToken("ownership.transactionName"), apiPlan.TransactionName)
+            && HasString(metadata.SelectToken("ownership.apiName"), apiPlan.ApiName)
+            && HasString(metadata.SelectToken("ownership.metadataFileName"), apiPlan.MetadataFileName);
+    }
+
+    private static bool HasString(JToken? token, string expectedValue)
+    {
+        return token is not null && token.Type == JTokenType.String && string.Equals(token.Value<string>(), expectedValue, StringComparison.Ordinal);
     }
 
     private static string ResolveBacklogId(string serviceName)

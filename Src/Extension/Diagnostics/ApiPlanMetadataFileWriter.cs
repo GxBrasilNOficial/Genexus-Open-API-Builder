@@ -15,7 +15,7 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanMetadataFileWriter
 {
-    private const string SchemaVersion = "GOAB_API_METADATA_B060_V1";
+    internal const string SchemaVersion = "GOAB_API_METADATA_B060_V1";
     private const string OwnedDescriptionPrefix = "Genexus Open API Builder B060 Metadata File";
 
     public static ApiPlanMetadataFileWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
