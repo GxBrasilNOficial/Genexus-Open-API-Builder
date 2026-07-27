@@ -18,7 +18,7 @@ A etapa foi integrada ao encerramento de `Abrir Wizard (B030)` pela opção `Apl
 - persistência de Source por `ProcedurePart.Source` e Rules por `Rules.Source`, evitando o caminho textual que não alimentava o editor visível da IDE;
 - sincronização do API Object com `ServiceGroupSource.Source` parametrizado para Create/Update e variáveis reais de API contendo chaves, requests e responses usados nas chamadas;
 - realinhamento do API Object próprio para o Folder irmão `<Transaction>OpenApi` adiado para depois do preflight de Procedures, API Object e variáveis, reduzindo risco de alteração parcial antes de falhas detectáveis;
-- validação pré-save do contrato API/Procedure, incluindo resolução de tipos das variáveis das Procedures e do API Object, reencontro dos SDTs usados pelas variáveis do API Object, bloqueio de Service Source B054 manualmente divergente e bloqueio de variáveis extras, ausentes ou com tipo/atributo base incompatível nas Procedures B055 e no API Object B055 reencontrados;
+- validação pré-save do contrato API/Procedure, incluindo resolução de tipos das variáveis das Procedures e do API Object, reencontro dos SDTs usados pelas variáveis do API Object, bloqueio de Service Source B054 manualmente divergente e bloqueio de variáveis extras, ausentes ou com tipo, atributo base, domínio ou objeto nomeado incompatível nas Procedures B055 e no API Object B055 reencontrados, preservando como exceção somente as Procedures skeleton pré-B055 sem variáveis;
 - validação pós-save de Source, Rules e variáveis reencontradas nas Procedures e de Service Source/variáveis reencontradas no API Object;
 - suporte no SDT writer aos tipos públicos encontrados na validação composta: `BITMAP`, `BINARY`, `BINARYFILE`, `VIDEO`, `AUDIO`, `GEOGRAPHY`, `GEOPOINT`, `GEOPOLYGON` e `GEOLINE`.
 
@@ -83,6 +83,8 @@ A correção posterior do preflight de variáveis de Procedures B055 também foi
 
 - teste negativo: com variável não padrão divergente em `procGuiaPed_API_Update`, o wizard marcado somente com `Business Component` bloqueou B055 antes de gravar, registrando que a Procedure própria possuía variáveis divergentes da geração B053/Update;
 - teste positivo: após restaurar a variável para o tipo correto, o mesmo caminho marcado somente com `Business Component` aplicou Create/Update via Business Component, sincronizou `apiGuiaPed`, recarregou `procGuiaPed_API_Update` e `Build With This Only` de `apiGuiaPed` passou.
+
+A correção runtime posterior endureceu dois casos não reprodutíveis manualmente pela IDE nesta validação: Procedure já B055 sem variáveis não padrão deixa de ser tratada como skeleton pré-B055, e a comparação de variáveis passou a conferir também `KBObject`, `DomainBasedOn` e `DomainKey`, além de `Type` e `AttributeBasedOn`. A IDE impediu salvar manualmente os estados divergentes necessários para os negativos, mas o caminho positivo foi revalidado em `GuiaPed`: somente `Business Component` marcado reaplicou B055, manteve `apiGuiaPed` com Service Source e variáveis parametrizadas, manteve `procGuiaPed_API_Create`/`procGuiaPed_API_Update` com Rules, Source e variáveis coerentes, e `Build All` passou especificando `apiGuiaPed`, `procGuiaPed_API_Create` e `procGuiaPed_API_Update`, gerando SDTs e documentação REST sem erro.
 
 ## Limites explícitos
 

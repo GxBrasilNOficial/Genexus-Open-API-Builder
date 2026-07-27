@@ -132,7 +132,12 @@ internal static class ApiPlanBusinessComponentWriter
             .ToArray();
         if (currentVariables.Length == 0)
         {
-            return;
+            if (IsPreB055ProcedureSkeleton(currentSource, currentRules, skeleton))
+            {
+                return;
+            }
+
+            throw new InvalidOperationException($"B055 bloqueado: Procedure propria '{procedure.Name}' nao possui as variaveis esperadas da geracao {backlog}/{service}. Nenhuma alteracao foi feita.");
         }
 
         if (!HasExpectedVariables(procedure.Model, procedure, variables))
@@ -145,6 +150,9 @@ internal static class ApiPlanBusinessComponentWriter
     {
         return (value ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n").Trim();
     }
+
+    private static bool IsPreB055ProcedureSkeleton(string currentSource, string currentRules, string skeleton) =>
+        string.Equals(currentSource, NormalizeForComparison(skeleton), StringComparison.Ordinal) && string.IsNullOrWhiteSpace(currentRules);
 
     private static void SaveProcedure(KBModel model, Procedure procedure, string content, IReadOnlyList<VariableSpec> variables, string rules)
     {
@@ -289,8 +297,7 @@ internal static class ApiPlanBusinessComponentWriter
             return false;
         }
 
-        return current.Type == expected.Type &&
-            string.Equals(current.AttributeBasedOn?.Name ?? string.Empty, expected.AttributeBasedOn?.Name ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        return MatchesVariableSpec(current, expected);
     }
 
     private static bool MatchesVariableSpec(KBModel model, API api, VariableSpec variable)
@@ -307,9 +314,27 @@ internal static class ApiPlanBusinessComponentWriter
             return false;
         }
 
-        return current.Type == expected.Type &&
-            string.Equals(current.AttributeBasedOn?.Name ?? string.Empty, expected.AttributeBasedOn?.Name ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        return MatchesVariableSpec(current, expected);
     }
+
+    private static bool MatchesVariableSpec(Variable current, Variable expected) =>
+        current.Type == expected.Type &&
+        SameKbObject(current.AttributeBasedOn, expected.AttributeBasedOn) &&
+        SameKbObject(current.DomainBasedOn, expected.DomainBasedOn) &&
+        Equals(current.DomainKey, expected.DomainKey) &&
+        SameKbObject(current.KBObject, expected.KBObject);
+
+    private static bool SameKbObject(KBObject? current, KBObject? expected)
+    {
+        if (current is null || expected is null)
+        {
+            return current is null && expected is null;
+        }
+
+        return current.Guid == expected.Guid &&
+            string.Equals(current.Name, expected.Name, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool TrySetAttributeBasedOn(KBModel model, Variable variable, string dataType)
     {
         const string prefix = "Attribute:";
