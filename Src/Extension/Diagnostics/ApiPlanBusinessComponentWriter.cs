@@ -35,6 +35,7 @@ internal static class ApiPlanBusinessComponentWriter
         var updateVariables = UpdateVariables(plan);
         var apiSource = CreateServiceGroupSource(plan);
         var apiVariables = ApiVariableSpecs(plan);
+        var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
 
         var create = FindProcedure(model, plan, "Create", "B052");
         var update = FindProcedure(model, plan, "Update", "B053");
@@ -48,7 +49,7 @@ internal static class ApiPlanBusinessComponentWriter
 
         SaveProcedure(model, create, createContent, createVariables, createRules);
         SaveProcedure(model, update, updateContent, updateVariables, updateRules);
-        SaveApi(model, api, apiSource, apiVariables);
+        SaveApi(model, api, transactionFolder, apiSource, apiVariables);
         return new ApiPlanBusinessComponentWriteResult(create.Guid, update.Guid, api.Guid, plan.PrimaryKey.Count, plan.CreateRequestFields.Count, plan.UpdateRequestFields.Count, plan.ResponseFields.Count);
     }
 
@@ -57,25 +58,13 @@ internal static class ApiPlanBusinessComponentWriter
         if (plan is null) throw new ArgumentNullException(nameof(plan));
         if (api is null) throw new ArgumentNullException(nameof(api));
         var source = NormalizeForComparison(api.ServiceGroupSource.Source);
-        return string.Equals(source, NormalizeForComparison(B054Source(plan)), StringComparison.Ordinal) || IsB054ServiceOnlySource(plan, source)
+        return string.Equals(source, NormalizeForComparison(B054Source(plan)), StringComparison.Ordinal)
             || (string.Equals(source, NormalizeForComparison(CreateServiceGroupSource(plan)), StringComparison.Ordinal) && HasExpectedVariables(api, ApiVariableSpecs(plan)));
     }
 
     internal static bool IsB055ApiObject(ApiPlan plan, API api) =>
         api is not null && string.Equals(NormalizeForComparison(api.ServiceGroupSource.Source), NormalizeForComparison(CreateServiceGroupSource(plan)), StringComparison.Ordinal) &&
         HasExpectedVariables(api, ApiVariableSpecs(plan));
-
-    private static bool IsB054ServiceOnlySource(ApiPlan plan, string normalizedSource)
-    {
-        if (normalizedSource.IndexOf(plan.ApiName, StringComparison.OrdinalIgnoreCase) < 0)
-        {
-            return false;
-        }
-
-        return plan.Services.All(service =>
-            normalizedSource.IndexOf($"{service.Name}()", StringComparison.OrdinalIgnoreCase) >= 0 &&
-            normalizedSource.IndexOf($"proc{plan.TransactionName}_API_{service.Name}", StringComparison.OrdinalIgnoreCase) >= 0);
-    }
 
     internal static string CreateServiceGroupSource(ApiPlan plan)
     {
@@ -183,8 +172,9 @@ internal static class ApiPlanBusinessComponentWriter
         }
     }
 
-    private static void SaveApi(KBModel model, API api, string source, IReadOnlyList<VariableSpec> variables)
+    private static void SaveApi(KBModel model, API api, Folder transactionFolder, string source, IReadOnlyList<VariableSpec> variables)
     {
+        api.Parent = transactionFolder;
         api.ServiceGroupSource.Source = source;
         ReplaceVariables(model, api, variables);
         api.Save();

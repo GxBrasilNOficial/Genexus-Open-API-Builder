@@ -135,6 +135,12 @@ internal static class ApiPlanSdtWriter
                 continue;
             }
 
+            if (IsAttributeReference(member.DataType))
+            {
+                EnsureAttributeExists(designModel, member.Name, member.DataType);
+                continue;
+            }
+
             ResolveDbType(member.DataType);
         }
     }
@@ -163,8 +169,10 @@ internal static class ApiPlanSdtWriter
             if (targetFolder is not null)
             {
                 existingSdt.Parent = targetFolder;
-                existingSdt.Save();
             }
+
+            ConfigureSdt(designModel, existingSdt, definition);
+            existingSdt.Save();
 
             return new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, ApiPlanSdtWriteStatus.Reencountered, existingSdt.Guid);
         }
@@ -199,6 +207,7 @@ internal static class ApiPlanSdtWriter
     private static void ConfigureSdt(KBModel designModel, SDT sdt, ApiPlanSdtDefinition definition)
     {
         var root = sdt.SDTStructure.Root;
+        root.Items.Clear();
         root.Name = definition.Name;
 
         if (string.Equals(definition.Kind, "SharedErrorResponse", StringComparison.Ordinal))
@@ -238,6 +247,13 @@ internal static class ApiPlanSdtWriter
             return;
         }
 
+        if (IsAttributeReference(member.DataType))
+        {
+            var item = root.AddItem(member.Name, eDBType.CHARACTER, Math.Max(member.Length, 0), Math.Max(member.Decimals, 0));
+            item.AttributeBasedOn = EnsureAttributeExists(designModel, member.Name, member.DataType);
+            return;
+        }
+
         AddBuiltInMember(root, member.Name, member.DataType, member.Length, member.Decimals);
     }
 
@@ -249,6 +265,28 @@ internal static class ApiPlanSdtWriter
     private static bool IsSdtReference(string dataType)
     {
         return dataType.StartsWith("sdt", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsAttributeReference(string dataType)
+    {
+        return dataType.StartsWith("Attribute:", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static Artech.Genexus.Common.Objects.Attribute EnsureAttributeExists(KBModel model, string memberName, string dataType)
+    {
+        const string prefix = "Attribute:";
+        var attributeName = dataType.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+            ? dataType.Substring(prefix.Length).Trim()
+            : dataType.Trim();
+        var matches = Artech.Genexus.Common.Objects.Attribute.GetAll(model)
+            .Where(attribute => string.Equals(attribute.Name, attributeName, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            throw new InvalidOperationException($"Criacao de SDT bloqueada: atributo base requerido para membro '{memberName}' nao foi reencontrado com seguranca: '{attributeName}'. Nenhuma alteracao foi feita.");
+        }
+
+        return matches[0];
     }
 
     private static eDBType ResolveDbType(string dataType)

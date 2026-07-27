@@ -176,7 +176,7 @@ internal static class ApiPlanSdtGenerationPlanBuilder
     {
         return new ApiPlanSdtMember(
             field.Name,
-            field.DataType,
+            $"Attribute:{field.Name}",
             field.Length,
             field.Decimals,
             field.IsNullable,
