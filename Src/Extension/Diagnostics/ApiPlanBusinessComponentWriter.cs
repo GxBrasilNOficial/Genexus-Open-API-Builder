@@ -27,14 +27,28 @@ internal static class ApiPlanBusinessComponentWriter
             throw new InvalidOperationException("B055 bloqueado: o ApiPlan precisa conter Create e Update. Nenhuma alteracao foi feita.");
 
         EnsureSdts(model, plan);
+        var createContent = CreateContent(plan);
+        var createRules = CreateRules();
+        var createVariables = CreateVariables(plan);
+        var updateContent = UpdateContent(plan);
+        var updateRules = UpdateRules(plan);
+        var updateVariables = UpdateVariables(plan);
+        var apiSource = CreateServiceGroupSource(plan);
+        var apiVariables = ApiVariableSpecs(plan);
+
         var create = FindProcedure(model, plan, "Create", "B052");
         var update = FindProcedure(model, plan, "Update", "B053");
-        EnsureProcedure(create, "B052", "Create", Skeleton("B052", "Create"), CreateContent(plan), CreateVariables(plan), CreateRules());
-        EnsureProcedure(update, "B053", "Update", Skeleton("B053", "Update"), UpdateContent(plan), UpdateVariables(plan), UpdateRules(plan));
         var api = FindApi(model, plan);
+        EnsureProcedure(create, "B052", "Create", Skeleton("B052", "Create"), createContent, createVariables, createRules);
+        EnsureProcedure(update, "B053", "Update", Skeleton("B053", "Update"), updateContent, updateVariables, updateRules);
+        EnsureApi(api, plan);
+        ValidateProcedureVariableSpecs(model, create, createVariables);
+        ValidateProcedureVariableSpecs(model, update, updateVariables);
+        ValidateApiVariableSpecs(model, api, apiVariables);
 
-        SaveProcedure(model, create, CreateContent(plan), CreateVariables(plan), CreateRules());
-        SaveProcedure(model, update, UpdateContent(plan), UpdateVariables(plan), UpdateRules(plan));
+        SaveProcedure(model, create, createContent, createVariables, createRules);
+        SaveProcedure(model, update, updateContent, updateVariables, updateRules);
+        SaveApi(model, api, apiSource, apiVariables);
         return new ApiPlanBusinessComponentWriteResult(create.Guid, update.Guid, api.Guid, plan.PrimaryKey.Count, plan.CreateRequestFields.Count, plan.UpdateRequestFields.Count, plan.ResponseFields.Count);
     }
 
@@ -43,14 +57,25 @@ internal static class ApiPlanBusinessComponentWriter
         if (plan is null) throw new ArgumentNullException(nameof(plan));
         if (api is null) throw new ArgumentNullException(nameof(api));
         var source = NormalizeForComparison(api.ServiceGroupSource.Source);
-        var variables = NormalizeForComparison(api.Variables.Content.Content);
-        return (string.Equals(source, NormalizeForComparison(B054Source(plan)), StringComparison.Ordinal) && string.IsNullOrWhiteSpace(variables))
-            || (string.Equals(source, NormalizeForComparison(CreateServiceGroupSource(plan)), StringComparison.Ordinal) && string.Equals(variables, NormalizeForComparison(ApiVariables(plan)), StringComparison.Ordinal));
+        return string.Equals(source, NormalizeForComparison(B054Source(plan)), StringComparison.Ordinal) || IsB054ServiceOnlySource(plan, source)
+            || (string.Equals(source, NormalizeForComparison(CreateServiceGroupSource(plan)), StringComparison.Ordinal) && HasExpectedVariables(api, ApiVariableSpecs(plan)));
     }
 
     internal static bool IsB055ApiObject(ApiPlan plan, API api) =>
         api is not null && string.Equals(NormalizeForComparison(api.ServiceGroupSource.Source), NormalizeForComparison(CreateServiceGroupSource(plan)), StringComparison.Ordinal) &&
-        string.Equals(NormalizeForComparison(api.Variables.Content.Content), NormalizeForComparison(ApiVariables(plan)), StringComparison.Ordinal);
+        HasExpectedVariables(api, ApiVariableSpecs(plan));
+
+    private static bool IsB054ServiceOnlySource(ApiPlan plan, string normalizedSource)
+    {
+        if (normalizedSource.IndexOf(plan.ApiName, StringComparison.OrdinalIgnoreCase) < 0)
+        {
+            return false;
+        }
+
+        return plan.Services.All(service =>
+            normalizedSource.IndexOf($"{service.Name}()", StringComparison.OrdinalIgnoreCase) >= 0 &&
+            normalizedSource.IndexOf($"proc{plan.TransactionName}_API_{service.Name}", StringComparison.OrdinalIgnoreCase) >= 0);
+    }
 
     internal static string CreateServiceGroupSource(ApiPlan plan)
     {
@@ -83,6 +108,14 @@ internal static class ApiPlanBusinessComponentWriter
             var matches = SDT.GetAll(model).Where(item => string.Equals(item.Name, definition.Name, StringComparison.OrdinalIgnoreCase)).ToArray();
             if (matches.Length != 1 || !string.Equals(matches.Single().Description, ApiPlanSdtWriter.CreateOwnedDescriptionFor(definition.BacklogId, definition.Kind), StringComparison.Ordinal))
                 throw new InvalidOperationException($"B055 bloqueado: SDT proprio requerido '{definition.Name}' nao foi reencontrado com seguranca. Nenhuma alteracao foi feita.");
+        }
+    }
+
+    private static void EnsureApi(API api, ApiPlan plan)
+    {
+        if (!IsManagedApiObject(plan, api))
+        {
+            throw new InvalidOperationException($"B055 bloqueado: API Object proprio '{api.Name}' possui fonte ou variaveis divergentes da geracao B054/B055. Nenhuma alteracao foi feita.");
         }
     }
 
@@ -150,6 +183,48 @@ internal static class ApiPlanBusinessComponentWriter
         }
     }
 
+    private static void SaveApi(KBModel model, API api, string source, IReadOnlyList<VariableSpec> variables)
+    {
+        api.ServiceGroupSource.Source = source;
+        ReplaceVariables(model, api, variables);
+        api.Save();
+
+        var persisted = API.Get(model, api.Guid);
+        if (!string.Equals(NormalizeForComparison(persisted.ServiceGroupSource.Source), NormalizeForComparison(source), StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"B055 bloqueado: o API Object '{api.Name}' foi salvo, mas o Service Source persistido nao corresponde ao contrato API/Procedure planejado. Nenhuma outra alteracao sera feita.");
+        }
+
+        if (!HasExpectedVariables(persisted, variables))
+        {
+            throw new InvalidOperationException($"B055 bloqueado: o API Object '{api.Name}' foi salvo, mas as variaveis persistidas nao correspondem ao contrato API/Procedure planejado. Nenhuma outra alteracao sera feita.");
+        }
+    }
+
+    private static void ValidateProcedureVariableSpecs(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)
+    {
+        foreach (var variable in variables)
+        {
+            var item = new Variable(variable.Name, procedure.Variables);
+            if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            {
+                throw new InvalidOperationException($"B055 bloqueado: tipo da variavel '&{variable.Name}' nao foi resolvido antes da escrita: '{variable.DataType}'. Nenhuma alteracao foi feita.");
+            }
+        }
+    }
+
+    private static void ValidateApiVariableSpecs(KBModel model, API api, IReadOnlyList<VariableSpec> variables)
+    {
+        foreach (var variable in variables)
+        {
+            var item = new Variable(variable.Name, api.Variables);
+            if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            {
+                throw new InvalidOperationException($"B055 bloqueado: tipo da variavel de API '&{variable.Name}' nao foi resolvido antes da escrita: '{variable.DataType}'. Nenhuma alteracao foi feita.");
+            }
+        }
+    }
+
     private static void ReplaceVariables(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)
     {
         foreach (var existing in procedure.Variables.Variables.Where(variable => !variable.IsStandard).ToArray())
@@ -169,6 +244,27 @@ internal static class ApiPlanBusinessComponentWriter
         }
     }
 
+    private static void ReplaceVariables(KBModel model, API api, IReadOnlyList<VariableSpec> variables)
+    {
+        foreach (var existing in api.Variables.Variables.Where(variable => !variable.IsStandard).ToArray())
+        {
+            api.Variables.Variables.Remove(existing);
+        }
+
+        foreach (var variable in variables)
+        {
+            var item = new Variable(variable.Name, api.Variables);
+            if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            {
+                throw new InvalidOperationException($"B055 bloqueado: tipo da variavel de API '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
+            }
+
+            api.Variables.Variables.Add(item);
+        }
+    }
+
+    private static bool HasExpectedVariables(API api, IReadOnlyList<VariableSpec> variables) =>
+        variables.All(variable => api.Variables.GetVariable(variable.Name, false) is not null);
     private static bool TrySetAttributeBasedOn(KBModel model, Variable variable, string dataType)
     {
         const string prefix = "Attribute:";
@@ -177,17 +273,25 @@ internal static class ApiPlanBusinessComponentWriter
             return false;
         }
 
-        var attributeName = dataType.Substring(prefix.Length).Trim();
+        variable.AttributeBasedOn = EnsureAttributeExists(model, variable.Name, dataType);
+        return true;
+    }
+
+    private static Artech.Genexus.Common.Objects.Attribute EnsureAttributeExists(KBModel model, string variableName, string dataType)
+    {
+        const string prefix = "Attribute:";
+        var attributeName = dataType.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+            ? dataType.Substring(prefix.Length).Trim()
+            : dataType.Trim();
         var matches = Artech.Genexus.Common.Objects.Attribute.GetAll(model)
             .Where(attribute => string.Equals(attribute.Name, attributeName, StringComparison.OrdinalIgnoreCase))
             .ToArray();
         if (matches.Length != 1)
         {
-            throw new InvalidOperationException($"B055 bloqueado: atributo base da variavel '&{variable.Name}' nao foi reencontrado com seguranca: '{attributeName}'. Nenhuma alteracao foi feita.");
+            throw new InvalidOperationException($"B055 bloqueado: atributo base da variavel '&{variableName}' nao foi reencontrado com seguranca: '{attributeName}'. Nenhuma alteracao foi feita.");
         }
 
-        variable.AttributeBasedOn = matches[0];
-        return true;
+        return matches[0];
     }
 
     private static string CreateContent(ApiPlan plan)
@@ -252,11 +356,17 @@ internal static class ApiPlanBusinessComponentWriter
         })
         .ToArray();
 
-    private static string ApiVariables(ApiPlan plan) => string.Join(Environment.NewLine, plan.PrimaryKey.Select(field => $"{field.Name} [ DataType = 'Attribute:{field.Name}' ]").Concat(new[]
-    {
-        $"CreateRequest [ DataType = '{plan.CreateRequestSdtName}' ]", $"CreateResponse [ DataType = '{plan.ResponseSdtName}' ]",
-        $"UpdateRequest [ DataType = '{plan.UpdateRequestSdtName}' ]", $"UpdateResponse [ DataType = '{plan.ResponseSdtName}' ]",
-    }));
+    private static IReadOnlyList<VariableSpec> ApiVariableSpecs(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
+        .Concat(new[]
+        {
+            new VariableSpec("CreateRequest", plan.CreateRequestSdtName),
+            new VariableSpec("CreateResponse", plan.ResponseSdtName),
+            new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName),
+            new VariableSpec("UpdateResponse", plan.ResponseSdtName),
+        })
+        .ToArray();
+
+    private static string ApiVariables(ApiPlan plan) => string.Join(Environment.NewLine, ApiVariableSpecs(plan).Select(variable => $"{variable.Name} [ DataType = '{variable.DataType}' ]"));
 
     private static string CreateRules() => "parm(in:&CreateRequest, out:&CreateResponse);";
     private static string UpdateRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse" }))});";
@@ -269,10 +379,10 @@ internal static class ApiPlanBusinessComponentWriter
     {
         var procedure = $"proc{plan.TransactionName}_API_{service}";
         if (string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase))
-            return $"    Create(in:&CreateRequest, out:&CreateResponse){Environment.NewLine}        => {procedure}(&CreateRequest, &CreateResponse);";
+            return $"    Create(in: &CreateRequest, out: &CreateResponse){Environment.NewLine}        => {procedure}(&CreateRequest, &CreateResponse);";
         if (string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase))
         {
-            var parameters = string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse" }));
+            var parameters = string.Join(", ", plan.PrimaryKey.Select(field => $"in: &{field.Name}").Concat(new[] { "in: &UpdateRequest", "out: &UpdateResponse" }));
             var arguments = string.Join(", ", plan.PrimaryKey.Select(field => $"&{field.Name}").Concat(new[] { "&UpdateRequest", "&UpdateResponse" }));
             return $"    Update({parameters}){Environment.NewLine}        => {procedure}({arguments});";
         }

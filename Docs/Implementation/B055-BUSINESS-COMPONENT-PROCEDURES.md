@@ -2,7 +2,7 @@
 
 ## Estado
 
-B055 foi validado manualmente no GeneXus 18 U15 em 2026-07-26 como aplicação real de `Business Component` nas Procedures de Create e Update já criadas por B050-B053.
+B055 foi validado manualmente no GeneXus 18 U15 em 2026-07-26 como aplicação real de `Business Component` nas Procedures de Create e Update já criadas por B050-B053, com sincronização posterior do API Object como consumidor final do contrato.
 
 A etapa foi integrada ao encerramento de `Abrir Wizard (B030)` pela opção `Aplicar Create/Update via Business Component ao concluir`, localizada na aba `Business Component`.
 
@@ -14,7 +14,9 @@ A etapa foi integrada ao encerramento de `Abrir Wizard (B030)` pela opção `Apl
 - geração de Source e Rules das Procedures `proc<NomeBase>_API_Create` e `proc<NomeBase>_API_Update` usando a Transaction como BC;
 - criação de variáveis reais pelo modelo de variáveis da Procedure, incluindo variáveis de chave baseadas em `Attribute:<NomeAtributo>`;
 - persistência de Source por `ProcedurePart.Source` e Rules por `Rules.Source`, evitando o caminho textual que não alimentava o editor visível da IDE;
-- validação pós-save de Source, Rules e variáveis reencontradas;
+- sincronização do API Object com `ServiceGroupSource.Source` parametrizado para Create/Update e variáveis reais de API contendo chaves, requests e responses usados nas chamadas;
+- validação pré-save do contrato API/Procedure, incluindo resolução de tipos das variáveis das Procedures e reencontro dos SDTs usados pelas variáveis do API Object;
+- validação pós-save de Source, Rules e variáveis reencontradas nas Procedures e de Service Source/variáveis reencontradas no API Object;
 - suporte no SDT writer aos tipos públicos encontrados na validação composta: `BITMAP`, `BINARY`, `BINARYFILE`, `VIDEO`, `AUDIO`, `GEOGRAPHY`, `GEOPOINT`, `GEOPOLYGON` e `GEOLINE`.
 
 ## Comportamento validado
@@ -27,7 +29,8 @@ Na KB `wsEducacaoSpTeste`, Transaction `Carga`:
 - B055 aplicou Create/Update via Business Component;
 - `procCarga_API_Create` persistiu `parm(in:&CreateRequest, out:&CreateResponse);`, Source e variáveis reais;
 - `procCarga_API_Update` persistiu `parm(in:&CargaId, in:&UpdateRequest, out:&UpdateResponse);`, `&Carga.Load(&CargaId)`, Source e variáveis reais;
-- `Build With This Only` passou para `procCarga_API_Create` e `procCarga_API_Update`.
+- `Build With This Only` passou para `procCarga_API_Create` e `procCarga_API_Update`;
+- esta validação inicial não compilou o API Object depois da mudança de assinatura, gap corrigido no runtime e pendente de revalidação manual.
 
 ### Chave composta
 
@@ -38,7 +41,18 @@ Na KB `GxTest3`, Transaction `Teste`:
 - `procTeste_API_Update` persistiu `parm(in:&TesteDate, in:&TesteId, in:&UpdateRequest, out:&UpdateResponse);`;
 - o Source usa `&Teste.Load(&TesteDate, &TesteId)` antes e depois do `Save()`;
 - as variáveis `TesteDate` e `TesteId` foram criadas baseadas nos atributos correspondentes;
-- `Build With This Only` passou para `procTeste_API_Create` e `procTeste_API_Update`.
+- `Build With This Only` passou para `procTeste_API_Create` e `procTeste_API_Update`;
+- esta validação inicial não compilou o API Object depois da mudança de assinatura, gap corrigido no runtime e pendente de revalidação manual.
+
+## Revalidação pós-revisão do API Object
+
+Na KB `GxTest3`, Transaction `Teste`, após reinstalar a DLL corrigida:
+
+- `apiTeste` passou a declarar `Create(in: &CreateRequest, out: &CreateResponse)` delegando para `procTeste_API_Create(&CreateRequest, &CreateResponse)`;
+- `apiTeste` passou a declarar `Update(in: &TesteDate, in: &TesteId, in: &UpdateRequest, out: &UpdateResponse)` delegando para `procTeste_API_Update(&TesteDate, &TesteId, &UpdateRequest, &UpdateResponse)`;
+- a aba `Variables` do API Object exibiu `CreateRequest`, `CreateResponse`, `TesteDate`, `TesteId`, `UpdateRequest` e `UpdateResponse` com tipos compatíveis;
+- `Build With This Only` de `apiTeste` passou por especificação, geração, documentação REST, Protocol Buffer, compilação e atualização de configuração web;
+- o warning de `LSI.Extensions` sobre variáveis não usadas foi descartado como evidência bloqueante porque o build nativo do API Object reconheceu as variáveis usadas na assinatura e nas chamadas.
 
 ## Limites explícitos
 

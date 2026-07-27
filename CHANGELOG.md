@@ -59,7 +59,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B054 validado no U15: `apiCarga` exibe `List`, `Get`, `Create` e `Update` na aba `Service Source`, cada serviço delegando sem parâmetros à Procedure skeleton B050-B053 correspondente; reexecução bloqueia fonte divergente
 - wizard passou a reconhecer em leitura o estado atual de SDTs, Procedures e API Object, apresentando criação, complementação, reencontro ou bloqueio antes de qualquer escrita e usando `Concluir Teste` quando não há etapa confirmada
 - Folder `<Transaction>OpenApi` criado ou reencontrado como irmão físico da Transaction, com realinhamento conservador em reexecuções
-- B055 validado no U15: Create e Update passaram a ser aplicados via Business Component nas Procedures já geradas, com variáveis reais, Source/Rules persistidos nas partes públicas corretas, preflight conservador e validação manual em chave simples (`Carga`) e composta (`Teste`)
+- B055 validado no U15: Create e Update passaram a ser aplicados via Business Component nas Procedures já geradas, com variáveis reais, Source/Rules persistidos nas partes públicas corretas, preflight conservador, validação em chave simples (`Carga`) e composta (`Teste`) e API Object sincronizado com assinatura/variáveis compatíveis
 
 ## Fixed
 
@@ -79,7 +79,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B090/B091 alinhados como representação provisória hardcoded em memória; os itens canônicos permanecem abertos até configuração explícita por KB em metadata persistente
 - B040-B046 e B050-B053 agora executam preflight completo antes de qualquer `Save()`: SDTs validam colisões, descrições sentinela e tipos; Procedures validam todos os SDTs próprios/compatíveis e todas as Procedures planejadas antes de gravar a primeira
 - Texto do wizard alinhado ao contrato provisório: preflight B040-B046/B050-B053 não promete validação de escopo físico enquanto ownership depender de descrição sentinela e metadata persistente ainda estiver pendente
-- SDT writer ampliado para tipos públicos usados na validação composta (`BITMAP`, `BINARY`, `BINARYFILE`, `VIDEO`, `AUDIO`, `GEOGRAPHY`, `GEOPOINT`, `GEOPOLYGON` e `GEOLINE`)
+- SDT writer ampliado para tipos públicos usados na validação composta (BITMAP, BINARY, BINARYFILE, VIDEO, AUDIO, GEOGRAPHY, GEOPOINT, GEOPOLYGON e GEOLINE)
+- Correção pós-revisão B055 sincroniza API Object e Procedures: o Service Source parametrizado de Create/Update agora é acompanhado das variáveis reais do API Object, gravadas pela coleção pública de variáveis, com preflight do contrato antes das gravações
 
 ## Planned
 

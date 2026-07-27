@@ -560,12 +560,13 @@ public sealed class Package : AbstractPackageUI
         try
         {
             var result = ApiPlanBusinessComponentWriter.Apply(designModel, transaction, apiPlan);
-            WriteOutput($"[Genexus Open API Builder][B055] Create/Update aplicados via Business Component: Transaction='{transaction.Name}', Trigger='{triggerSource}', CreateProcedureGuid='{result.CreateProcedureGuid}', UpdateProcedureGuid='{result.UpdateProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', PrimaryKeyParts={result.PrimaryKeyParts}, CreateFields={result.CreateFields}, UpdateFields={result.UpdateFields}, ResponseFields={result.ResponseFields}. Nenhum REST completo, codigo HTTP, seguranca definitiva ou metadata persistente foi criado.");
+            WriteOutput($"[Genexus Open API Builder][B055] Create/Update aplicados via Business Component e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', CreateProcedureGuid='{result.CreateProcedureGuid}', UpdateProcedureGuid='{result.UpdateProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', PrimaryKeyParts={result.PrimaryKeyParts}, CreateFields={result.CreateFields}, UpdateFields={result.UpdateFields}, ResponseFields={result.ResponseFields}. Nenhum REST completo, codigo HTTP, seguranca definitiva ou metadata persistente foi criado.");
             return true;
         }
         catch (Exception ex)
         {
-            WriteOutput($"[Genexus Open API Builder][B055] Aplicacao de Create/Update via Business Component bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
+            var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
+            WriteOutput($"[Genexus Open API Builder][B055] Aplicacao de Create/Update via Business Component bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{errorDetail}'");
             return false;
         }
     }
@@ -792,9 +793,20 @@ public sealed class Package : AbstractPackageUI
         }
 
         var apiObjectReady = true;
-        if (selection.GenerateApiObject)
+        if (selection.GenerateApiObject && !selection.ApplyBusinessComponent)
         {
             apiObjectReady = TryCreateApiObject(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
+        }
+        else if (selection.GenerateApiObject && selection.ApplyBusinessComponent)
+        {
+            if (API.GetAll(knowledgeBase.DesignModel).Any(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase)))
+            {
+                WriteOutput($"[Genexus Open API Builder][B054] API Object ja existe para Transaction='{transaction.Name}'. Como B055 tambem foi confirmado, a atualizacao do API Object sera absorvida pelo preflight de Business Component.");
+            }
+            else
+            {
+                apiObjectReady = TryCreateApiObject(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
+            }
         }
         else if (selection.ApplyBusinessComponent)
         {
