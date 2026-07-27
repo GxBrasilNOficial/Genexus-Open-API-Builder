@@ -556,6 +556,22 @@ public sealed class Package : AbstractPackageUI
         }
     }
 
+    private static bool TryWriteMetadataFile(KBModel designModel, Transaction transaction, ApiPlan apiPlan, string triggerSource)
+    {
+        try
+        {
+            var result = ApiPlanMetadataFileWriter.CreateOrReencounter(designModel, transaction, apiPlan);
+            WriteOutput($"[Genexus Open API Builder][B060] Metadata persistente inicial gravada: Transaction='{transaction.Name}', Trigger='{triggerSource}', File='{result.FileName}', Status='{result.Status}', Guid='{result.Guid}', SchemaVersion='{result.SchemaVersion}', Bytes={result.Bytes}, Sha256='{result.Sha256}'. Sem completar REST, codigos HTTP finais ou seguranca definitiva.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
+            WriteOutput($"[Genexus Open API Builder][B060] Gravacao de metadata bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{errorDetail}'");
+            return false;
+        }
+    }
+
     private static bool TryApplyBusinessComponent(KBModel designModel, Transaction transaction, ApiPlan apiPlan, string triggerSource)
     {
         try
@@ -732,10 +748,10 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][Sprint3] Campos de engine no ApiPlan: GeneratorTarget='{apiPlan.GeneratorTarget}' como gerador prioritario inicial do MVP, ConflictMode='{apiPlan.ConflictMode}' para colisao externa/incompativel, ReexecutionMode='{apiPlan.ReexecutionMode}', ServiceDescriptionsPending={serviceDescriptionsPendingCount}/{apiPlan.ServiceDescriptions.Count}, ServiceDescriptionLanguage='{apiPlan.ServiceDescriptionLanguage}', ServiceDescriptionFallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, IsEngineReady={apiPlan.IsEngineReady}. Sem validar engine real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B056] Descricoes no ApiPlan: Resolved={serviceDescriptionsResolvedCount}/{apiPlan.ServiceDescriptions.Count}, Language='{apiPlan.ServiceDescriptionLanguage}', LanguageSource='{apiPlan.ServiceDescriptionLanguageSource}', FallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, FallbackReason='{apiPlan.ServiceDescriptionFallbackReason}'. Sem aplicar [Description] em objeto API real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B092] Seguranca no ApiPlan: SecurityLevel='{apiPlan.Security.SecurityLevel}', GamCondition='{apiPlan.Security.GamCondition}', RequiresGenerationConfirmation={apiPlan.Security.RequiresGenerationConfirmation}. Sem aplicar seguranca em objetos reais.");
-        WriteOutput($"[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria. GenerateSdts={selection.GenerateSdts}, GenerateProcedures={selection.GenerateProcedures}, GenerateApiObject={selection.GenerateApiObject}, ApplyBusinessComponent={selection.ApplyBusinessComponent}; escritas confirmadas no wizard exigem preflight completo antes de qualquer Save().");
-        if (!selection.GenerateSdts && !selection.GenerateProcedures && !selection.GenerateApiObject && !selection.ApplyBusinessComponent)
+        WriteOutput($"[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria. GenerateSdts={selection.GenerateSdts}, GenerateProcedures={selection.GenerateProcedures}, GenerateApiObject={selection.GenerateApiObject}, GenerateMetadata={selection.GenerateMetadata}, ApplyBusinessComponent={selection.ApplyBusinessComponent}; escritas confirmadas no wizard exigem preflight completo antes de qualquer Save().");
+        if (!selection.GenerateSdts && !selection.GenerateProcedures && !selection.GenerateApiObject && !selection.GenerateMetadata && !selection.ApplyBusinessComponent)
         {
-            WriteOutput($"[Genexus Open API Builder][B040-B046] Nenhuma etapa de escrita foi confirmada no wizard para Transaction='{transaction.Name}'. Nenhuma escrita foi solicitada.");
+            WriteOutput($"[Genexus Open API Builder][B040-B046/B060] Nenhuma etapa de escrita foi confirmada no wizard para Transaction='{transaction.Name}'. Nenhuma escrita foi solicitada.");
             return true;
         }
 
@@ -744,7 +760,7 @@ public sealed class Package : AbstractPackageUI
         {
             sdtsReady = TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
         }
-        else if (selection.GenerateProcedures || selection.GenerateApiObject || selection.ApplyBusinessComponent)
+        else if (selection.GenerateProcedures || selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyBusinessComponent)
         {
             WriteOutput($"[Genexus Open API Builder][B040-B046] Etapa de SDTs nao confirmada no wizard para Transaction='{transaction.Name}'. A dependencia sera reencontrada e validada pelo preflight da etapa seguinte.");
         }
@@ -766,6 +782,11 @@ public sealed class Package : AbstractPackageUI
                 WriteOutput($"[Genexus Open API Builder][B055] Create/Update via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque os SDTs requeridos falharam ou foram bloqueados neste fluxo.");
             }
 
+            if (selection.GenerateMetadata)
+            {
+                WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B040-B046 falhou ou foi bloqueado neste fluxo.");
+            }
+
             return true;
         }
 
@@ -774,7 +795,7 @@ public sealed class Package : AbstractPackageUI
         {
             proceduresReady = TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
         }
-        else if (selection.GenerateApiObject || selection.ApplyBusinessComponent)
+        else if (selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyBusinessComponent)
         {
             WriteOutput($"[Genexus Open API Builder][B050-B053] Etapa de Procedures nao confirmada no wizard para Transaction='{transaction.Name}'. A dependencia sera reencontrada e validada pelo preflight da etapa seguinte.");
         }
@@ -789,6 +810,11 @@ public sealed class Package : AbstractPackageUI
             if (selection.ApplyBusinessComponent)
             {
                 WriteOutput($"[Genexus Open API Builder][B055] Create/Update via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque as Procedures requeridas falharam ou foram bloqueadas neste fluxo.");
+            }
+
+            if (selection.GenerateMetadata)
+            {
+                WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B050-B053 falhou ou foi bloqueado neste fluxo.");
             }
 
             return true;
@@ -822,12 +848,33 @@ public sealed class Package : AbstractPackageUI
                 WriteOutput($"[Genexus Open API Builder][B055] Create/Update via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque o API Object falhou ou foi bloqueado neste fluxo.");
             }
 
+            if (selection.GenerateMetadata)
+            {
+                WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B054 falhou ou foi bloqueado neste fluxo.");
+            }
+
             return true;
         }
 
+        var businessComponentReady = true;
         if (selection.ApplyBusinessComponent)
         {
-            TryApplyBusinessComponent(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
+            businessComponentReady = TryApplyBusinessComponent(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
+        }
+
+        if (!businessComponentReady)
+        {
+            if (selection.GenerateMetadata)
+            {
+                WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B055 falhou ou foi bloqueado neste fluxo.");
+            }
+
+            return true;
+        }
+
+        if (selection.GenerateMetadata)
+        {
+            TryWriteMetadataFile(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard");
         }
 
         return true;

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Artech.Architecture.Common.Objects;
 using Artech.Genexus.Common.Objects;
+using Artech.Genexus.Common.Wiki;
 using GenexusOpenApiBuilder.Extension.Domain;
 
 namespace GenexusOpenApiBuilder.Extension.Diagnostics;
@@ -37,7 +38,12 @@ internal static class ApiPlanGenerationStateReader
             ? ApiPlanGenerationStageState.Blocked("API Object", "Bloqueado: o estado dos SDTs ou Procedures precisa ser resolvido antes.")
             : CreateState("API Object", apiObject, null);
 
-        return new ApiPlanGenerationState(sdtState, procedureState, apiState);
+        var metadataFile = InspectMetadataFile(designModel, apiPlan);
+        var metadataState = apiState.IsBlocked
+            ? ApiPlanGenerationStageState.Blocked("Metadata File", "Bloqueado: o API Object precisa estar disponivel antes.")
+            : CreateState("Metadata File", metadataFile, null);
+
+        return new ApiPlanGenerationState(sdtState, procedureState, apiState, metadataState);
     }
 
     private static ApiPlanGenerationStageState CreateState(string stageName, ApiPlanGenerationInspection inspection, ApiPlanGenerationInspection? folder)
@@ -144,6 +150,22 @@ internal static class ApiPlanGenerationStateReader
         return new ApiPlanGenerationInspection(1, 0, 0, 1);
     }
 
+    private static ApiPlanGenerationInspection InspectMetadataFile(KBModel designModel, ApiPlan apiPlan)
+    {
+        var matches = WikiFileKBObject.GetAll(designModel).Where(file => string.Equals(file.Name, apiPlan.MetadataFileName, StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (matches.Length == 0)
+        {
+            return new ApiPlanGenerationInspection(1, 0, 1, 0);
+        }
+
+        if (matches.Length == 1 && string.Equals(matches[0].Description, ApiPlanMetadataFileWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal))
+        {
+            return new ApiPlanGenerationInspection(1, 1, 0, 0);
+        }
+
+        return new ApiPlanGenerationInspection(1, 0, 0, 1);
+    }
+
     private static string ResolveBacklogId(string serviceName)
     {
         if (string.Equals(serviceName, "List", StringComparison.OrdinalIgnoreCase)) return "B050";
@@ -155,16 +177,18 @@ internal static class ApiPlanGenerationStateReader
 
 internal sealed class ApiPlanGenerationState
 {
-    public ApiPlanGenerationState(ApiPlanGenerationStageState sdts, ApiPlanGenerationStageState procedures, ApiPlanGenerationStageState apiObject)
+    public ApiPlanGenerationState(ApiPlanGenerationStageState sdts, ApiPlanGenerationStageState procedures, ApiPlanGenerationStageState apiObject, ApiPlanGenerationStageState metadataFile)
     {
         Sdts = sdts;
         Procedures = procedures;
         ApiObject = apiObject;
+        MetadataFile = metadataFile;
     }
 
     public ApiPlanGenerationStageState Sdts { get; }
     public ApiPlanGenerationStageState Procedures { get; }
     public ApiPlanGenerationStageState ApiObject { get; }
+    public ApiPlanGenerationStageState MetadataFile { get; }
 }
 
 internal sealed class ApiPlanGenerationStageState
