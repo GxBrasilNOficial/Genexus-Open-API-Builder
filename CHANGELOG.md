@@ -61,7 +61,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Folder `<Transaction>OpenApi` criado ou reencontrado como irmão físico da Transaction, com realinhamento conservador em reexecuções
 - B055 validado no U15: Create e Update passaram a ser aplicados via Business Component nas Procedures já geradas, com variáveis reais, Source/Rules persistidos nas partes públicas corretas, preflight conservador, validação em chave simples (`Carga`) e composta (`Teste`) e API Object sincronizado com assinatura/variáveis compatíveis
 - B056 aplicado e validado no U15 em API Object real: `apiGuiaPed` recebeu `[Description]` nos serviços `List`, `Get`, `Create` e `Update`, preservou as assinaturas parametrizadas de B055 em `Create`/`Update`, e `Build All` passou gerando documentação REST
-- B060 implementado e validado em recorte inicial no U15: wizard grava ou reencontra o File JSON `apiGuiaPed_Metadata`, persiste `External File Name` via `BlobPart.FileName`, bloqueia JSON inválido ou identidade incompatível no preflight visual, restaura reencontro válido e preserva o escopo sem completar REST, códigos HTTP finais ou segurança definitiva
+- B060 concluído no U15: wizard grava ou reencontra File JSON de metadata, persiste `External File Name` via `BlobPart.FileName`, bloqueia JSON inválido, identidade incompatível e colisão externa antes da escrita, preserva descrições especiais B056 com aspas, barra invertida e caracteres incomuns, exporta JSON válido e mantém o escopo sem completar REST, códigos HTTP finais ou segurança definitiva
 
 ## Fixed
 
@@ -90,7 +90,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Validar os testes restantes de B060: colisão externa e descrições especiais B056 com aspas, barra invertida e caracteres incomuns
+- Validar B061/B062: módulo/Folder dos objetos específicos da Transaction e nomenclatura padrão dos objetos persistidos
 
 ---
 

@@ -1,6 +1,6 @@
 # B060 - Metadata persistente em File
 
-Status em 2026-07-27: implementacao tecnica local concluida, build Release aprovado e validacoes manuais inicial e negativas aprovadas em GeneXus 18 U15 na KB `wsEducacaoSpTeste`, Transaction `GuiaPed`.
+Status em 2026-07-27: frente concluida, com implementacao tecnica local, build Release e validacoes manuais aprovadas em GeneXus 18 U15 na KB `wsEducacaoSpTeste`, Transactions `GuiaPed` e `Contrato`.
 
 ## Objetivo
 
@@ -50,7 +50,16 @@ Validacoes negativas complementares aprovadas manualmente no mesmo ambiente:
 - reexecucao final, feita logo depois da restauracao, com `GenerateMetadata=True` reencontrou e validou o File existente, registrando na Output `Status='Reencountered'`, `Guid='1b943d80-5961-4b25-a89a-2454dae9f45d'`, `Bytes=99432` e `Sha256='C518A9EEFF4F9785E5B63D27F92D1E451D2E70B8E0FCE5BE8F98472D6095DF54'`;
 - `Build All` executado em seguida passou com sucesso; nao havia objetos para especificar, e o warning `FBiTextSharp.dll` repetiu o comportamento ambiental ja classificado como nao relacionado ao B060.
 
+Validacoes finais aprovadas manualmente em 2026-07-27 na Transaction `Contrato`:
+
+- colisao externa: um File manual `apiContrato_Metadata`, carregado com JSON externo de teste e sem a descricao sentinela B060, fez a aba `Metadata B060` exibir `Estado atual da KB: Bloqueado` e `Bloqueado: 1 colisao(oes) externa(s), incompativel(is) ou ambigua(s) detectada(s). Nenhuma escrita sera permitida.`; a confirmacao ficou desabilitada e `Confirmado para escrita: False`;
+- descricoes especiais B056/B060: a descricao da Transaction foi ajustada para `Contrato "Especial" \ Ação Ç`; o wizard gerou SDTs, Procedures, API Object, aplicou B055/B056 e gravou `apiContrato_Metadata` com `Status='Created'`, `Guid='b901d9e0-b213-4369-be79-18db0129cb82'`, `Bytes=12616` e `Sha256='3E7D0E5EF54B171D348030E6D46A08ED5DC8EA9F7E394B933E41D42975752D39'`;
+- o JSON exportado em `Temp/apiContrato_Metadata.json` parseou com `schemaVersion='GOAB_API_METADATA_B060_V1'`, Transaction `Contrato`, API `apiContrato`, 4 servicos, 4 Procedures, 2 SDTs compartilhados, 1 campo de Create, 1 de Update, 2 de Response, 1 filtro List e 2 entradas de obrigatoriedade;
+- as descricoes especiais foram preservadas em `services[*].description` e `descriptions.services[*].description`, incluindo aspas, barra invertida, acentuacao e `Ç` como dados JSON;
+- `Build All` passou especificando e gerando `apiContrato`, `Contrato`, `procContrato_API_Create`, `procContrato_API_List`, `procContrato_API_Update`, `procContrato_API_Get` e objetos relacionados; o warning `FBiTextSharp.dll` repetiu o comportamento ambiental ja classificado como nao relacionado ao B060.
+
 Hash SHA-256 do arquivo exportado `D:\Temp\apiGuiaPed_Metadata.json`: `D2F16C9CCB66694911AE4EB31F8399627AC2562F40C067CC7828B869C809081E`.
 Fingerprint interno `metadataWithoutFingerprint`: `21D835C9A8DD8A3AC183723E7390DC4C7BF2BB6F50D6B186F63BE86BF5CB9B4E`.
+Hash SHA-256 do arquivo exportado `Temp/apiContrato_Metadata.json`: `3E7D0E5EF54B171D348030E6D46A08ED5DC8EA9F7E394B933E41D42975752D39`.
 
-Validacoes complementares ainda recomendadas antes de encerrar B060 como frente concluida: bloqueio de colisao externa e caso negativo real de descricoes com aspas, barra invertida e caracteres incomuns.
+B060 esta concluida no escopo canonico atual. Permanecem fora desta frente: REST completo, codigos HTTP finais, seguranca definitiva e metadata persistente alem do snapshot inicial.
