@@ -27,6 +27,7 @@ internal static class ApiPlanBusinessComponentWriter
             throw new InvalidOperationException("B055 bloqueado: o ApiPlan precisa conter Create e Update. Nenhuma alteracao foi feita.");
 
         EnsureSdts(model, plan);
+        ApiPlanTransactionFolder.Preflight(model, plan);
         var createContent = CreateContent(plan);
         var createRules = CreateRules();
         var createVariables = CreateVariables(plan);
@@ -35,7 +36,6 @@ internal static class ApiPlanBusinessComponentWriter
         var updateVariables = UpdateVariables(plan);
         var apiSource = CreateServiceGroupSource(plan);
         var apiVariables = ApiVariableSpecs(plan);
-        var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
 
         var create = FindProcedure(model, plan, "Create", "B052");
         var update = FindProcedure(model, plan, "Update", "B053");
@@ -47,24 +47,26 @@ internal static class ApiPlanBusinessComponentWriter
         ValidateProcedureVariableSpecs(model, update, updateVariables);
         ValidateApiVariableSpecs(model, api, apiVariables);
 
+        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan);
         SaveProcedure(model, create, createContent, createVariables, createRules);
         SaveProcedure(model, update, updateContent, updateVariables, updateRules);
+        var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
         SaveApi(model, api, transactionFolder, apiSource, apiVariables);
         return new ApiPlanBusinessComponentWriteResult(create.Guid, update.Guid, api.Guid, plan.PrimaryKey.Count, plan.CreateRequestFields.Count, plan.UpdateRequestFields.Count, plan.ResponseFields.Count);
     }
 
-    internal static bool IsManagedApiObject(ApiPlan plan, API api)
+    internal static bool IsManagedApiObject(KBModel model, ApiPlan plan, API api)
     {
         if (plan is null) throw new ArgumentNullException(nameof(plan));
         if (api is null) throw new ArgumentNullException(nameof(api));
         var source = NormalizeForComparison(api.ServiceGroupSource.Source);
         return string.Equals(source, NormalizeForComparison(B054Source(plan)), StringComparison.Ordinal)
-            || (string.Equals(source, NormalizeForComparison(CreateServiceGroupSource(plan)), StringComparison.Ordinal) && HasExpectedVariables(api, ApiVariableSpecs(plan)));
+            || (string.Equals(source, NormalizeForComparison(CreateServiceGroupSource(plan)), StringComparison.Ordinal) && HasExpectedVariables(model, api, ApiVariableSpecs(plan)));
     }
 
-    internal static bool IsB055ApiObject(ApiPlan plan, API api) =>
+    internal static bool IsB055ApiObject(KBModel model, ApiPlan plan, API api) =>
         api is not null && string.Equals(NormalizeForComparison(api.ServiceGroupSource.Source), NormalizeForComparison(CreateServiceGroupSource(plan)), StringComparison.Ordinal) &&
-        HasExpectedVariables(api, ApiVariableSpecs(plan));
+        HasExpectedVariables(model, api, ApiVariableSpecs(plan));
 
     internal static string CreateServiceGroupSource(ApiPlan plan)
     {
@@ -102,7 +104,7 @@ internal static class ApiPlanBusinessComponentWriter
 
     private static void EnsureApi(API api, ApiPlan plan)
     {
-        if (!IsManagedApiObject(plan, api))
+        if (!IsManagedApiObject(api.Model, plan, api))
         {
             throw new InvalidOperationException($"B055 bloqueado: API Object proprio '{api.Name}' possui fonte ou variaveis divergentes da geracao B054/B055. Nenhuma alteracao foi feita.");
         }
@@ -185,7 +187,7 @@ internal static class ApiPlanBusinessComponentWriter
             throw new InvalidOperationException($"B055 bloqueado: o API Object '{api.Name}' foi salvo, mas o Service Source persistido nao corresponde ao contrato API/Procedure planejado. Nenhuma outra alteracao sera feita.");
         }
 
-        if (!HasExpectedVariables(persisted, variables))
+        if (!HasExpectedVariables(model, persisted, variables))
         {
             throw new InvalidOperationException($"B055 bloqueado: o API Object '{api.Name}' foi salvo, mas as variaveis persistidas nao correspondem ao contrato API/Procedure planejado. Nenhuma outra alteracao sera feita.");
         }
@@ -253,8 +255,35 @@ internal static class ApiPlanBusinessComponentWriter
         }
     }
 
-    private static bool HasExpectedVariables(API api, IReadOnlyList<VariableSpec> variables) =>
-        variables.All(variable => api.Variables.GetVariable(variable.Name, false) is not null);
+    private static bool HasExpectedVariables(KBModel model, API api, IReadOnlyList<VariableSpec> variables)
+    {
+        var currentVariables = api.Variables.Variables
+            .Where(variable => !variable.IsStandard)
+            .Select(variable => variable.Name)
+            .ToArray();
+        var expectedVariables = new HashSet<string>(variables.Select(variable => variable.Name), StringComparer.OrdinalIgnoreCase);
+        return currentVariables.Length == expectedVariables.Count &&
+            currentVariables.All(variable => expectedVariables.Contains(variable)) &&
+            variables.All(variable => MatchesVariableSpec(model, api, variable));
+    }
+
+    private static bool MatchesVariableSpec(KBModel model, API api, VariableSpec variable)
+    {
+        var current = api.Variables.GetVariable(variable.Name, false);
+        if (current is null)
+        {
+            return false;
+        }
+
+        var expected = new Variable(variable.Name, api.Variables);
+        if (!TrySetAttributeBasedOn(model, expected, variable.DataType) && !DataType.ParseInto(model, variable.DataType, expected))
+        {
+            return false;
+        }
+
+        return current.Type == expected.Type &&
+            string.Equals(current.AttributeBasedOn?.Name ?? string.Empty, expected.AttributeBasedOn?.Name ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+    }
     private static bool TrySetAttributeBasedOn(KBModel model, Variable variable, string dataType)
     {
         const string prefix = "Attribute:";

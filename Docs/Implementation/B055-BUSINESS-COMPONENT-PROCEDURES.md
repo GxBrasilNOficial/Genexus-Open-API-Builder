@@ -10,15 +10,15 @@ A etapa foi integrada ao encerramento de `Abrir Wizard (B030)` pela opção `Apl
 
 - criação de `ApiPlanBusinessComponentWriter` para aplicar o recorte B055 a partir do `ApiPlan` em memória;
 - preflight de Transaction, SDTs, Procedures e API Object próprios antes de gravar;
-- reexecução dos SDTs próprios atualiza a estrutura gerenciada antes das Procedures, cobrindo SDTs criados anteriormente com tipo base incompatível com domínio;
+- B055 reexecuta B040-B046 para reencontrar e reconfigurar SDTs próprios/compartilhados antes de gravar Procedures e API Object, inclusive quando a aba SDTs não foi marcada nesta execução;
 - bloqueio quando a Transaction não está habilitada como `Business Component`;
 - geração de Source e Rules das Procedures `proc<NomeBase>_API_Create` e `proc<NomeBase>_API_Update` usando a Transaction como BC;
 - criação de variáveis reais pelo modelo de variáveis da Procedure, incluindo variáveis de chave baseadas em `Attribute:<NomeAtributo>`;
 - geração/reconfiguração dos SDTs próprios de request/response com membros baseados nos atributos da Transaction, preservando domínios usados pelo Business Component;
 - persistência de Source por `ProcedurePart.Source` e Rules por `Rules.Source`, evitando o caminho textual que não alimentava o editor visível da IDE;
 - sincronização do API Object com `ServiceGroupSource.Source` parametrizado para Create/Update e variáveis reais de API contendo chaves, requests e responses usados nas chamadas;
-- realinhamento do API Object próprio para o Folder irmão `<Transaction>OpenApi` quando B055 absorve a atualização do B054 no wizard;
-- validação pré-save do contrato API/Procedure, incluindo resolução de tipos das variáveis das Procedures, reencontro dos SDTs usados pelas variáveis do API Object e bloqueio de Service Source B054 manualmente divergente;
+- realinhamento do API Object próprio para o Folder irmão `<Transaction>OpenApi` adiado para depois do preflight de Procedures, API Object e variáveis, reduzindo risco de alteração parcial antes de falhas detectáveis;
+- validação pré-save do contrato API/Procedure, incluindo resolução de tipos das variáveis das Procedures e do API Object, reencontro dos SDTs usados pelas variáveis do API Object, bloqueio de Service Source B054 manualmente divergente e bloqueio de variáveis extras, ausentes ou com tipo/atributo base incompatível no API Object B055 reencontrado;
 - validação pós-save de Source, Rules e variáveis reencontradas nas Procedures e de Service Source/variáveis reencontradas no API Object;
 - suporte no SDT writer aos tipos públicos encontrados na validação composta: `BITMAP`, `BINARY`, `BINARYFILE`, `VIDEO`, `AUDIO`, `GEOGRAPHY`, `GEOPOINT`, `GEOPOLYGON` e `GEOLINE`.
 
@@ -68,6 +68,7 @@ Na Transaction `GuiaPed`, após reinstalar a DLL corrigida:
 - B055 aplicou Create/Update via Business Component e sincronizou o API Object `apiGuiaPed`;
 - `Build All` passou especificando `apiGuiaPed`, `procGuiaPed_API_Create` e `procGuiaPed_API_Update`, gerando os SDTs de request/response e a documentação REST sem erro;
 - a validação cobre o caso de atributos baseados em domínio nos SDTs de request/response usados por Business Component.
+
 ## Limites explícitos
 
 B055 não completa:

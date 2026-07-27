@@ -188,7 +188,7 @@ internal static class ApiPlanApiObjectWriter
             throw new InvalidOperationException($"Criacao de API Object bloqueada: ja existe API Object externo ou incompativel chamado '{apiPlan.ApiName}'. Nenhuma alteracao foi feita.");
         }
 
-        if (!ApiPlanBusinessComponentWriter.IsManagedApiObject(apiPlan, apiObject))
+        if (!ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject))
         {
             throw new InvalidOperationException($"Criacao de API Object bloqueada: o API Object '{apiPlan.ApiName}' possui fonte ou variaveis divergentes da geracao B054/B055. Nenhuma alteracao foi feita.");
         }
@@ -210,7 +210,7 @@ internal static class ApiPlanApiObjectWriter
         if (preflight.ExistingApiObject is not null)
         {
             preflight.ExistingApiObject.Parent = transactionFolder;
-            if (!ApiPlanBusinessComponentWriter.IsB055ApiObject(apiPlan, preflight.ExistingApiObject))
+            if (!ApiPlanBusinessComponentWriter.IsB055ApiObject(designModel, apiPlan, preflight.ExistingApiObject))
             {
                 preflight.ExistingApiObject.ServiceGroupSource.Source = CreateServiceGroupSource(apiPlan);
             }

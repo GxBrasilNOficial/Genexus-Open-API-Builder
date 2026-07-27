@@ -82,6 +82,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - SDT writer ampliado para tipos públicos usados na validação composta (BITMAP, BINARY, BINARYFILE, VIDEO, AUDIO, GEOGRAPHY, GEOPOINT, GEOPOLYGON e GEOLINE)
 - Correção pós-revisão B055 sincroniza API Object e Procedures: o Service Source parametrizado de Create/Update agora é acompanhado das variáveis reais do API Object, gravadas pela coleção pública de variáveis, com preflight do contrato antes das gravações
 - Correção pós-revisão B055 preserva domínios nos SDTs próprios de request/response usando membros baseados nos atributos da Transaction; rerun em `GuiaPed` reconfigurou SDTs próprios e `Build All` passou com `apiGuiaPed`, `procGuiaPed_API_Create` e `procGuiaPed_API_Update` no U15
+- Correção pré-push B055 força reconfiguração dos SDTs requeridos mesmo quando somente Business Component é aplicado, adia o realinhamento do Folder até depois do preflight principal e bloqueia API Object B055 reencontrado com variáveis extras, ausentes ou com tipo/atributo base incompatível
 
 ## Planned
 
