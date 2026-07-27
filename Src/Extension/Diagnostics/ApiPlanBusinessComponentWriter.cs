@@ -135,8 +135,7 @@ internal static class ApiPlanBusinessComponentWriter
             return;
         }
 
-        var expectedVariables = new HashSet<string>(variables.Select(variable => variable.Name), StringComparer.OrdinalIgnoreCase);
-        if (currentVariables.Length != expectedVariables.Count || currentVariables.Any(variable => !expectedVariables.Contains(variable)))
+        if (!HasExpectedVariables(procedure.Model, procedure, variables))
         {
             throw new InvalidOperationException($"B055 bloqueado: Procedure propria '{procedure.Name}' possui variaveis divergentes da geracao {backlog}/{service}. Nenhuma alteracao foi feita.");
         }
@@ -165,12 +164,9 @@ internal static class ApiPlanBusinessComponentWriter
             throw new InvalidOperationException($"B055 bloqueado: a Procedure '{procedure.Name}' foi salva, mas as Rules persistidas nao correspondem ao conteudo Business Component planejado. Nenhuma outra alteracao sera feita.");
         }
 
-        foreach (var variable in variables)
+        if (!HasExpectedVariables(model, persisted, variables))
         {
-            if (persisted.Variables.GetVariable(variable.Name, false) is null)
-            {
-                throw new InvalidOperationException($"B055 bloqueado: a Procedure '{procedure.Name}' foi salva, mas a variavel '&{variable.Name}' nao foi reencontrada. Nenhuma outra alteracao sera feita.");
-            }
+            throw new InvalidOperationException($"B055 bloqueado: a Procedure '{procedure.Name}' foi salva, mas as variaveis persistidas nao correspondem ao contrato Business Component planejado. Nenhuma outra alteracao sera feita.");
         }
     }
 
@@ -255,6 +251,18 @@ internal static class ApiPlanBusinessComponentWriter
         }
     }
 
+    private static bool HasExpectedVariables(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)
+    {
+        var currentVariables = procedure.Variables.Variables
+            .Where(variable => !variable.IsStandard)
+            .Select(variable => variable.Name)
+            .ToArray();
+        var expectedVariables = new HashSet<string>(variables.Select(variable => variable.Name), StringComparer.OrdinalIgnoreCase);
+        return currentVariables.Length == expectedVariables.Count &&
+            currentVariables.All(variable => expectedVariables.Contains(variable)) &&
+            variables.All(variable => MatchesVariableSpec(model, procedure, variable));
+    }
+
     private static bool HasExpectedVariables(KBModel model, API api, IReadOnlyList<VariableSpec> variables)
     {
         var currentVariables = api.Variables.Variables
@@ -265,6 +273,24 @@ internal static class ApiPlanBusinessComponentWriter
         return currentVariables.Length == expectedVariables.Count &&
             currentVariables.All(variable => expectedVariables.Contains(variable)) &&
             variables.All(variable => MatchesVariableSpec(model, api, variable));
+    }
+
+    private static bool MatchesVariableSpec(KBModel model, Procedure procedure, VariableSpec variable)
+    {
+        var current = procedure.Variables.GetVariable(variable.Name, false);
+        if (current is null)
+        {
+            return false;
+        }
+
+        var expected = new Variable(variable.Name, procedure.Variables);
+        if (!TrySetAttributeBasedOn(model, expected, variable.DataType) && !DataType.ParseInto(model, variable.DataType, expected))
+        {
+            return false;
+        }
+
+        return current.Type == expected.Type &&
+            string.Equals(current.AttributeBasedOn?.Name ?? string.Empty, expected.AttributeBasedOn?.Name ?? string.Empty, StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool MatchesVariableSpec(KBModel model, API api, VariableSpec variable)
