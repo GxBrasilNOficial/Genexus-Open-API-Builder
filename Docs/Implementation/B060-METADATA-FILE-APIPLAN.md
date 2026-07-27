@@ -54,12 +54,12 @@ Validacoes finais aprovadas manualmente em 2026-07-27 na Transaction `Contrato`:
 
 - colisao externa: um File manual `apiContrato_Metadata`, carregado com JSON externo de teste e sem a descricao sentinela B060, fez a aba `Metadata B060` exibir `Estado atual da KB: Bloqueado` e `Bloqueado: 1 colisao(oes) externa(s), incompativel(is) ou ambigua(s) detectada(s). Nenhuma escrita sera permitida.`; a confirmacao ficou desabilitada e `Confirmado para escrita: False`;
 - descricoes especiais B056/B060: a descricao da Transaction foi ajustada para `Contrato "Especial" \ Ação Ç`; o wizard gerou SDTs, Procedures, API Object, aplicou B055/B056 e gravou `apiContrato_Metadata` com `Status='Created'`, `Guid='b901d9e0-b213-4369-be79-18db0129cb82'`, `Bytes=12616` e `Sha256='3E7D0E5EF54B171D348030E6D46A08ED5DC8EA9F7E394B933E41D42975752D39'`;
-- o JSON exportado em `Temp/apiContrato_Metadata.json` parseou com `schemaVersion='GOAB_API_METADATA_B060_V1'`, Transaction `Contrato`, API `apiContrato`, 4 servicos, 4 Procedures, 2 SDTs compartilhados, 1 campo de Create, 1 de Update, 2 de Response, 1 filtro List e 2 entradas de obrigatoriedade;
+- o JSON exportado localmente a partir do File `apiContrato_Metadata` parseou com `schemaVersion='GOAB_API_METADATA_B060_V1'`, Transaction `Contrato`, API `apiContrato`, 4 servicos, 4 Procedures, 2 SDTs compartilhados, 1 campo de Create, 1 de Update, 2 de Response, 1 filtro List e 2 entradas de obrigatoriedade;
 - as descricoes especiais foram preservadas em `services[*].description` e `descriptions.services[*].description`, incluindo aspas, barra invertida, acentuacao e `Ç` como dados JSON;
 - `Build All` passou especificando e gerando `apiContrato`, `Contrato`, `procContrato_API_Create`, `procContrato_API_List`, `procContrato_API_Update`, `procContrato_API_Get` e objetos relacionados; o warning `FBiTextSharp.dll` repetiu o comportamento ambiental ja classificado como nao relacionado ao B060.
 
 Hash SHA-256 do arquivo exportado `D:\Temp\apiGuiaPed_Metadata.json`: `D2F16C9CCB66694911AE4EB31F8399627AC2562F40C067CC7828B869C809081E`.
 Fingerprint interno `metadataWithoutFingerprint`: `21D835C9A8DD8A3AC183723E7390DC4C7BF2BB6F50D6B186F63BE86BF5CB9B4E`.
-Hash SHA-256 do arquivo exportado `Temp/apiContrato_Metadata.json`: `3E7D0E5EF54B171D348030E6D46A08ED5DC8EA9F7E394B933E41D42975752D39`.
+Hash SHA-256 do JSON exportado localmente a partir do File `apiContrato_Metadata`: `3E7D0E5EF54B171D348030E6D46A08ED5DC8EA9F7E394B933E41D42975752D39`.
 
 B060 esta concluida no escopo canonico atual. Permanecem fora desta frente: REST completo, codigos HTTP finais, seguranca definitiva e metadata persistente alem do snapshot inicial.
