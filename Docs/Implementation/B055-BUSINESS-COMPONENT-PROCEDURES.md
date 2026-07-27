@@ -69,6 +69,16 @@ Na Transaction `GuiaPed`, após reinstalar a DLL corrigida:
 - `Build All` passou especificando `apiGuiaPed`, `procGuiaPed_API_Create` e `procGuiaPed_API_Update`, gerando os SDTs de request/response e a documentação REST sem erro;
 - a validação cobre o caso de atributos baseados em domínio nos SDTs de request/response usados por Business Component.
 
+## Revalidação dos caminhos isolados do wizard
+
+Na Transaction `GuiaPed`, após reinstalar a DLL corrigida, a reexecução isolada das etapas do wizard foi validada manualmente:
+
+- somente `Business Component` marcado: o wizard executou `GenerateSdts=False`, `GenerateProcedures=False`, `GenerateApiObject=False` e `ApplyBusinessComponent=True`; B055 reencontrou/reconfigurou dependências, sincronizou Procedures e API Object, e `Build With This Only` de `apiGuiaPed` passou;
+- somente `Procedures` marcado: o wizard executou `GenerateSdts=False`, `GenerateProcedures=True`, `GenerateApiObject=False` e `ApplyBusinessComponent=False`; B050-B053 reencontrou as 4 Procedures existentes sem sobrescrever o Source/Rules/variáveis B055 de Create/Update;
+- somente `API Object` marcado: o wizard executou `GenerateSdts=False`, `GenerateProcedures=False`, `GenerateApiObject=True` e `ApplyBusinessComponent=False`; B054 reencontrou SDTs e Procedures como dependências, reencontrou `apiGuiaPed`, preservou o Service Source parametrizado e as variáveis `CreateRequest`, `CreateResponse`, `GuiaPedIdboleto`, `UpdateRequest` e `UpdateResponse`, e `Build With This Only` de `apiGuiaPed` passou.
+
+Essa matriz cobre a reexecução conservadora das três confirmações independentes relacionadas ao trio SDT/Procedure/API no estado pós-B055, sem completar REST, códigos HTTP, segurança definitiva ou metadata persistente.
+
 ## Limites explícitos
 
 B055 não completa:
