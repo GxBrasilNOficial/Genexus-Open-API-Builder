@@ -65,7 +65,6 @@ public static class ApiPlanMetadataIntegrity
         string plannedContractHash,
         string actualDescriptionsHash,
         string descriptionSentinel,
-        string serviceSourceCurrent,
         string serviceSourceExpected,
         bool serviceSourceContractMatches)
     {

@@ -87,7 +87,7 @@ $plannedContractHash = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetad
 [string[]]$serviceNames = @('Get', 'List')
 $actualDescriptionsHash = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ComputeJsonSha256([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::CreateServiceDescriptionsContractFromSource($currentSource, $serviceNames))
 
-Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($metadata, $descriptionsHash, $plannedContractHash, $actualDescriptionsHash, $descriptionSentinel, $currentSource, $expectedSource, $true)) 'B067 deve aceitar metadata de integridade compatível.'
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($metadata, $descriptionsHash, $plannedContractHash, $actualDescriptionsHash, $descriptionSentinel, $expectedSource, $true)) 'B067 deve aceitar metadata de integridade compatível.'
 
 $formattedSource = @'
 apiTransaction2
@@ -102,20 +102,20 @@ apiTransaction2
 }
 '@
 $formattedDescriptionsHash = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ComputeJsonSha256([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::CreateServiceDescriptionsContractFromSource($formattedSource, $serviceNames))
-Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($metadata, $descriptionsHash, $plannedContractHash, $formattedDescriptionsHash, $descriptionSentinel, $formattedSource, $expectedSource, $true)) 'B067 deve aceitar formatação inofensiva quando descrição e contrato semântico permanecem compatíveis.'
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($metadata, $descriptionsHash, $plannedContractHash, $formattedDescriptionsHash, $descriptionSentinel, $expectedSource, $true)) 'B067 deve aceitar formatação inofensiva quando descrição e contrato semântico permanecem compatíveis.'
 
 $manualDescriptionChange = $currentSource.Replace('[Description("List Transaction2")]', '[Description("List Transaction 2")]')
 $manualDescriptionHash = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ComputeJsonSha256([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::CreateServiceDescriptionsContractFromSource($manualDescriptionChange, $serviceNames))
-Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($metadata, $descriptionsHash, $plannedContractHash, $manualDescriptionHash, $descriptionSentinel, $manualDescriptionChange, $expectedSource, $true)) 'B067 deve rejeitar alteração manual posterior em Description.'
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($metadata, $descriptionsHash, $plannedContractHash, $manualDescriptionHash, $descriptionSentinel, $expectedSource, $true)) 'B067 deve rejeitar alteração manual posterior em Description.'
 
 $manualContractChange = [Newtonsoft.Json.Linq.JObject]::Parse($plannedContract.ToString([Newtonsoft.Json.Formatting]::None))
 $manualContractChange['pagination']['maximumPageSize'] = 100
 $changedContractHash = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ComputeJsonSha256($manualContractChange)
-Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($metadata, $descriptionsHash, $changedContractHash, $actualDescriptionsHash, $descriptionSentinel, $currentSource, $expectedSource, $true)) 'B067 deve rejeitar divergência de contrato planejado essencial.'
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($metadata, $descriptionsHash, $changedContractHash, $actualDescriptionsHash, $descriptionSentinel, $expectedSource, $true)) 'B067 deve rejeitar divergência de contrato planejado essencial.'
 
-Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($metadata, $descriptionsHash, $plannedContractHash, $actualDescriptionsHash, $descriptionSentinel, $currentSource, $expectedSource, $false)) 'B067 deve rejeitar Service Source com contrato semântico divergente.'
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($metadata, $descriptionsHash, $plannedContractHash, $actualDescriptionsHash, $descriptionSentinel, $expectedSource, $false)) 'B067 deve rejeitar Service Source com contrato semântico divergente.'
 
 $legacyMetadata = [Newtonsoft.Json.Linq.JObject]::new()
-Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($legacyMetadata, $descriptionsHash, $plannedContractHash, $actualDescriptionsHash, $descriptionSentinel, $currentSource, $expectedSource, $false)) 'Metadata legada sem bloco integrity deve continuar aceita para primeiro upgrade conservador.'
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($legacyMetadata, $descriptionsHash, $plannedContractHash, $actualDescriptionsHash, $descriptionSentinel, $expectedSource, $false)) 'Metadata legada sem bloco integrity deve continuar aceita para primeiro upgrade conservador.'
 
 Write-Output 'PASS: ApiPlanMetadataIntegrity'

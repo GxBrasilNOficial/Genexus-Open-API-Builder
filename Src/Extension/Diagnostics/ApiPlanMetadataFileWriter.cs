@@ -214,7 +214,6 @@ internal static class ApiPlanMetadataFileWriter
             ComputePlannedContractHash(apiPlan),
             ComputeActualServiceDescriptionsHash(apiPlan, apiObject.ServiceGroupSource.Source),
             ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan),
-            apiObject.ServiceGroupSource.Source,
             ComputeExpectedServiceSource(apiPlan, apiObject),
             ApiPlanBusinessComponentWriter.IsManagedApiObject(apiObject.Model, apiPlan, apiObject));
     }
