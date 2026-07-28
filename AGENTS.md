@@ -94,8 +94,9 @@ pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
 ```
 
 3. ler `pushReadiness`, `incompleteReasons`, `manualRequired` e `notCovered` no JSON;
-4. concluir a revisão semântica exigida pelas instruções globais; `exit 0` mecânico não substitui essa revisão;
-5. quando o checker ou seu teste mudar, executar também `pwsh -NoProfile -File Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`.
+4. na resposta final da rotina, terminar sempre com uma frase explícita: `Sem impedimento para push.` quando `pushReadiness` estiver pronto, `behind=0`, working tree limpa, `manualRequired=[]`, `incompleteReasons=[]` e a revisão semântica não tiver gap bloqueante; caso contrário, terminar com `Com impedimento para push:` seguido do motivo objetivo;
+5. concluir a revisão semântica exigida pelas instruções globais; `exit 0` mecânico não substitui essa revisão;
+6. quando o checker ou seu teste mudar, executar também `pwsh -NoProfile -File Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`.
 
 - `scripts/Invoke-PrePushMechanicalChecks.ps1` é o nome canônico e não deve divergir do contrato global.
 - `manualRequired` bloqueia o push até a revisão humana registrar gaps confirmados, flags descartados e áreas não cobertas.
