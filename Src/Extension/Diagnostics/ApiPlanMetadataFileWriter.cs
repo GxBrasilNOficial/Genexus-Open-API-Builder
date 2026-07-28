@@ -52,6 +52,7 @@ internal static class ApiPlanMetadataFileWriter
 
         var externalFileName = CreateExternalFileName(apiPlan);
         file.Description = CreateOwnedDescription(apiPlan);
+        AlignWithTransactionModule(file, transaction);
         SetExtractionFlags(file);
         file.BlobPart.SetPropertyValue("FileName", externalFileName);
         file.BlobPart.Data = BinaryStream.FromBytes(bytes);
@@ -88,6 +89,14 @@ internal static class ApiPlanMetadataFileWriter
         }
 
         return $"{OwnedDescriptionPrefix} - Transaction={apiPlan.TransactionName} - Api={apiPlan.ApiName}";
+    }
+
+    private static void AlignWithTransactionModule(WikiFileKBObject file, Transaction transaction)
+    {
+        if (transaction.Module is not null)
+        {
+            file.Module = transaction.Module;
+        }
     }
 
     private static API PreflightApiObject(KBModel designModel, ApiPlan apiPlan)

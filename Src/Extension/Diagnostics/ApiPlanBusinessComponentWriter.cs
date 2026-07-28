@@ -61,6 +61,7 @@ internal static class ApiPlanBusinessComponentWriter
         if (api is null) throw new ArgumentNullException(nameof(api));
         var source = NormalizeForComparison(api.ServiceGroupSource.Source);
         return IsB054ServiceGroupSource(plan, source)
+            || (HasNoNonStandardVariables(api) && IsSemanticallyB054ServiceGroupSource(plan, source))
             || (IsB055ServiceGroupSource(plan, source) && HasExpectedVariables(model, api, ApiVariableSpecs(plan)));
     }
 
@@ -84,6 +85,53 @@ internal static class ApiPlanBusinessComponentWriter
         string.Equals(normalizedSource, NormalizeForComparison(CreateB055ServiceGroupSource(plan)), StringComparison.Ordinal) ||
         string.Equals(normalizedSource, NormalizeForComparison(CreateLegacyB055ServiceGroupSource(plan)), StringComparison.Ordinal);
 
+    private static bool HasNoNonStandardVariables(API api) => !api.Variables.Variables.Any(variable => !variable.IsStandard);
+
+    private static bool IsSemanticallyB054ServiceGroupSource(ApiPlan plan, string normalizedSource)
+    {
+        if (string.IsNullOrWhiteSpace(normalizedSource))
+        {
+            return false;
+        }
+
+        var compactSource = RemoveWhitespace(normalizedSource);
+        if (!compactSource.StartsWith(plan.ApiName + "{", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (CountOccurrences(compactSource, "=>") != plan.Services.Count)
+        {
+            return false;
+        }
+
+        return plan.Services.All(service => ContainsB054ServiceCall(compactSource, plan, service.Name));
+    }
+
+    private static bool ContainsB054ServiceCall(string compactSource, ApiPlan plan, string serviceName)
+    {
+        var procedure = $"proc{plan.TransactionName}_API_{serviceName}";
+        return ContainsOrdinal(compactSource, serviceName + "()") &&
+            (ContainsOrdinal(compactSource, "=>" + procedure + "()") ||
+             ContainsOrdinal(compactSource, "." + procedure + "()"));
+    }
+
+    private static bool ContainsOrdinal(string value, string token) => value.IndexOf(token, StringComparison.Ordinal) >= 0;
+
+    private static int CountOccurrences(string value, string token)
+    {
+        var count = 0;
+        var index = 0;
+        while ((index = value.IndexOf(token, index, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            index += token.Length;
+        }
+
+        return count;
+    }
+
+    private static string RemoveWhitespace(string value) => new(value.Where(character => !char.IsWhiteSpace(character)).ToArray());
     private static string CreateLegacyB054ServiceGroupSource(ApiPlan plan) => CreateServiceGroupSource(plan, includeBusinessComponentParameters: false, includeDescriptions: false);
 
     private static string CreateLegacyB055ServiceGroupSource(ApiPlan plan) => CreateServiceGroupSource(plan, includeBusinessComponentParameters: true, includeDescriptions: false);
