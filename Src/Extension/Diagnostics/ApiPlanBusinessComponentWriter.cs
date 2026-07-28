@@ -139,7 +139,7 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         var procedure = $"proc{plan.TransactionName}_API_{serviceName}";
-        return IsExpectedProcedureName(calledObject, procedure) &&
+        return IsExpectedProcedureName(plan, calledObject, procedure) &&
             string.Equals(calledArguments, B055ProcedureArguments(plan, serviceName), StringComparison.Ordinal);
     }
     private static bool ContainsB054ServiceCall(string compactSource, ApiPlan plan, string serviceName)
@@ -151,7 +151,7 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         var procedure = $"proc{plan.TransactionName}_API_{serviceName}";
-        return IsExpectedProcedureName(calledObject, procedure) && string.IsNullOrEmpty(calledArguments);
+        return IsExpectedProcedureName(plan, calledObject, procedure) && string.IsNullOrEmpty(calledArguments);
     }
 
     private static bool TryReadProcedureCall(string compactSource, string servicePrefix, out string calledObject, out string calledArguments)
@@ -183,9 +183,20 @@ internal static class ApiPlanBusinessComponentWriter
         return true;
     }
 
-    private static bool IsExpectedProcedureName(string calledObject, string procedure) =>
-        string.Equals(calledObject, procedure, StringComparison.Ordinal) ||
-        calledObject.EndsWith("." + procedure, StringComparison.Ordinal);
+    private static bool IsExpectedProcedureName(ApiPlan plan, string calledObject, string procedure)
+    {
+        return string.Equals(calledObject, ExpectedProcedureReference(plan, procedure), StringComparison.Ordinal);
+    }
+
+    private static string ExpectedProcedureReference(ApiPlan plan, string procedure)
+    {
+        if (string.IsNullOrWhiteSpace(plan.ModuleTarget) || string.Equals(plan.ModuleTarget, "Root Module", StringComparison.Ordinal))
+        {
+            return procedure;
+        }
+
+        return plan.ModuleTarget + "." + procedure;
+    }
 
     private static string B055ServiceSignature(ApiPlan plan, string serviceName)
     {
@@ -612,7 +623,7 @@ internal static class ApiPlanBusinessComponentWriter
     private static string Skeleton(string backlog, string service) => $"// Genexus Open API Builder {backlog}: Procedure skeleton for {service}. REST behavior remains pending Sprint 6." + Environment.NewLine + $"msg(!\"Genexus Open API Builder {backlog} {service} skeleton. REST behavior pending Sprint 6.\", status)";
     private static string ServiceSource(ApiPlan plan, string service, bool includeBusinessComponentParameters, bool includeDescriptions)
     {
-        var procedure = $"proc{plan.TransactionName}_API_{service}";
+        var procedure = ExpectedProcedureReference(plan, $"proc{plan.TransactionName}_API_{service}");
         var annotation = includeDescriptions ? DescriptionAnnotation(plan, service) + Environment.NewLine : string.Empty;
         if (includeBusinessComponentParameters && string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase))
             return annotation + $"    Create(in: &CreateRequest, out: &CreateResponse){Environment.NewLine}        => {procedure}(&CreateRequest, &CreateResponse);";
