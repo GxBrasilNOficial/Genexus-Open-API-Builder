@@ -63,6 +63,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B056 aplicado e validado no U15 em API Object real: `apiGuiaPed` recebeu `[Description]` nos serviços `List`, `Get`, `Create` e `Update`, preservou as assinaturas parametrizadas de B055 em `Create`/`Update`, e `Build All` passou gerando documentação REST
 - B060 concluído no U15: wizard grava ou reencontra File JSON de metadata, persiste `External File Name` via `BlobPart.FileName`, bloqueia JSON inválido, identidade incompatível e colisão externa antes da escrita, preserva descrições especiais B056 com aspas, barra invertida e caracteres incomuns, exporta JSON válido e mantém o escopo sem completar REST, códigos HTTP finais ou segurança definitiva
 - B061/B062 validados no U15: objetos específicos que suportam Folder permanecem no Folder `<Transaction>OpenApi` dentro do módulo da `Transaction`, cobrindo `ContratoOpenApi` no `Root Module` e `SimulationResultOpenApi` no módulo não-root `Entities`; SDTs compartilhados permanecem em `GxOpenAPI`, File de metadata permanece no módulo da Transaction e nomes persistidos seguem as convenções congeladas
+- B063-B066 validados no U15: preflight agregado bloqueia colisões externas/incompatíveis antes do primeiro `Save()`, metadata compatível permite reencontro conservador, paths/filtros/paginação/ordenação/segurança são persistidos e `transactionFolder.wasCreated` distingue Folder criado de Folder reutilizado
 
 ## Fixed
 
@@ -92,7 +93,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Validar B063/B064: detectar colisões por metadata/nome e bloquear colisões incompatíveis sem criar `_v2`
+- Implementar B067: registrar descrições geradas e dados para detectar alteração manual posterior
 
 ---
 
