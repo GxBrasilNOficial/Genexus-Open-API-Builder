@@ -51,7 +51,7 @@ internal static class ApiPlanBusinessComponentWriter
         SaveProcedure(model, create, createContent, createVariables, createRules);
         SaveProcedure(model, update, updateContent, updateVariables, updateRules);
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
-        SaveApi(model, api, transactionFolder, apiSource, apiVariables);
+        SaveApi(model, api, transactionFolder, plan, apiSource, apiVariables);
         return new ApiPlanBusinessComponentWriteResult(create.Guid, update.Guid, api.Guid, plan.PrimaryKey.Count, plan.CreateRequestFields.Count, plan.UpdateRequestFields.Count, plan.ResponseFields.Count);
     }
 
@@ -83,7 +83,8 @@ internal static class ApiPlanBusinessComponentWriter
 
     private static bool IsB055ServiceGroupSource(ApiPlan plan, string normalizedSource) =>
         string.Equals(normalizedSource, NormalizeForComparison(CreateB055ServiceGroupSource(plan)), StringComparison.Ordinal) ||
-        string.Equals(normalizedSource, NormalizeForComparison(CreateLegacyB055ServiceGroupSource(plan)), StringComparison.Ordinal);
+        string.Equals(normalizedSource, NormalizeForComparison(CreateLegacyB055ServiceGroupSource(plan)), StringComparison.Ordinal) ||
+        IsSemanticallyB055ServiceGroupSource(plan, normalizedSource);
 
     private static bool HasNoNonStandardVariables(API api) => !api.Variables.Variables.Any(variable => !variable.IsStandard);
 
@@ -108,16 +109,114 @@ internal static class ApiPlanBusinessComponentWriter
         return plan.Services.All(service => ContainsB054ServiceCall(compactSource, plan, service.Name));
     }
 
-    private static bool ContainsB054ServiceCall(string compactSource, ApiPlan plan, string serviceName)
+    private static bool IsSemanticallyB055ServiceGroupSource(ApiPlan plan, string normalizedSource)
     {
-        var procedure = $"proc{plan.TransactionName}_API_{serviceName}";
-        return ContainsOrdinal(compactSource, serviceName + "()") &&
-            (ContainsOrdinal(compactSource, "=>" + procedure + "()") ||
-             ContainsOrdinal(compactSource, "." + procedure + "()"));
+        if (string.IsNullOrWhiteSpace(normalizedSource))
+        {
+            return false;
+        }
+
+        var compactSource = RemoveWhitespace(normalizedSource);
+        if (!compactSource.StartsWith(plan.ApiName + "{", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (CountOccurrences(compactSource, "=>") != plan.Services.Count)
+        {
+            return false;
+        }
+
+        return plan.Services.All(service => ContainsB055ServiceCall(compactSource, plan, service.Name));
     }
 
-    private static bool ContainsOrdinal(string value, string token) => value.IndexOf(token, StringComparison.Ordinal) >= 0;
+    private static bool ContainsB055ServiceCall(string compactSource, ApiPlan plan, string serviceName)
+    {
+        var servicePrefix = B055ServiceSignature(plan, serviceName) + "=>";
+        if (!TryReadProcedureCall(compactSource, servicePrefix, out var calledObject, out var calledArguments))
+        {
+            return false;
+        }
 
+        var procedure = $"proc{plan.TransactionName}_API_{serviceName}";
+        return IsExpectedProcedureName(calledObject, procedure) &&
+            string.Equals(calledArguments, B055ProcedureArguments(plan, serviceName), StringComparison.Ordinal);
+    }
+    private static bool ContainsB054ServiceCall(string compactSource, ApiPlan plan, string serviceName)
+    {
+        var servicePrefix = serviceName + "()=>";
+        if (!TryReadProcedureCall(compactSource, servicePrefix, out var calledObject, out var calledArguments))
+        {
+            return false;
+        }
+
+        var procedure = $"proc{plan.TransactionName}_API_{serviceName}";
+        return IsExpectedProcedureName(calledObject, procedure) && string.IsNullOrEmpty(calledArguments);
+    }
+
+    private static bool TryReadProcedureCall(string compactSource, string servicePrefix, out string calledObject, out string calledArguments)
+    {
+        calledObject = string.Empty;
+        calledArguments = string.Empty;
+
+        var serviceIndex = compactSource.IndexOf(servicePrefix, StringComparison.Ordinal);
+        if (serviceIndex < 0)
+        {
+            return false;
+        }
+
+        var callStart = serviceIndex + servicePrefix.Length;
+        var argumentsStart = compactSource.IndexOf("(", callStart, StringComparison.Ordinal);
+        if (argumentsStart < 0)
+        {
+            return false;
+        }
+
+        var argumentsEnd = compactSource.IndexOf(");", argumentsStart, StringComparison.Ordinal);
+        if (argumentsEnd < 0)
+        {
+            return false;
+        }
+
+        calledObject = compactSource.Substring(callStart, argumentsStart - callStart);
+        calledArguments = compactSource.Substring(argumentsStart + 1, argumentsEnd - argumentsStart - 1);
+        return true;
+    }
+
+    private static bool IsExpectedProcedureName(string calledObject, string procedure) =>
+        string.Equals(calledObject, procedure, StringComparison.Ordinal) ||
+        calledObject.EndsWith("." + procedure, StringComparison.Ordinal);
+
+    private static string B055ServiceSignature(ApiPlan plan, string serviceName)
+    {
+        if (string.Equals(serviceName, "Create", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Create(in:&CreateRequest,out:&CreateResponse)";
+        }
+
+        if (string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase))
+        {
+            var parameters = string.Join(",", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse" }));
+            return "Update(" + parameters + ")";
+        }
+
+        return serviceName + "()";
+    }
+
+    private static string B055ProcedureArguments(ApiPlan plan, string serviceName)
+    {
+        if (string.Equals(serviceName, "Create", StringComparison.OrdinalIgnoreCase))
+        {
+            return "&CreateRequest,&CreateResponse";
+        }
+
+        if (string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Join(",", plan.PrimaryKey.Select(field => $"&{field.Name}").Concat(new[] { "&UpdateRequest", "&UpdateResponse" }));
+        }
+
+        return string.Empty;
+    }
     private static int CountOccurrences(string value, string token)
     {
         var count = 0;
@@ -246,7 +345,7 @@ internal static class ApiPlanBusinessComponentWriter
         }
     }
 
-    private static void SaveApi(KBModel model, API api, Folder transactionFolder, string source, IReadOnlyList<VariableSpec> variables)
+    private static void SaveApi(KBModel model, API api, Folder transactionFolder, ApiPlan plan, string source, IReadOnlyList<VariableSpec> variables)
     {
         api.Parent = transactionFolder;
         api.ServiceGroupSource.Source = source;
@@ -254,7 +353,7 @@ internal static class ApiPlanBusinessComponentWriter
         api.Save();
 
         var persisted = API.Get(model, api.Guid);
-        if (!string.Equals(NormalizeForComparison(persisted.ServiceGroupSource.Source), NormalizeForComparison(source), StringComparison.Ordinal))
+        if (!IsB055ServiceGroupSource(plan, NormalizeForComparison(persisted.ServiceGroupSource.Source)))
         {
             throw new InvalidOperationException($"B055 bloqueado: o API Object '{api.Name}' foi salvo, mas o Service Source persistido nao corresponde ao contrato API/Procedure planejado. Nenhuma outra alteracao sera feita.");
         }
