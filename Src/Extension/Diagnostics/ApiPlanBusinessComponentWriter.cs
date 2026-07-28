@@ -90,44 +90,23 @@ internal static class ApiPlanBusinessComponentWriter
 
     private static bool IsSemanticallyB054ServiceGroupSource(ApiPlan plan, string normalizedSource)
     {
-        if (string.IsNullOrWhiteSpace(normalizedSource))
-        {
-            return false;
-        }
-
-        var compactSource = RemoveWhitespace(normalizedSource);
-        if (!compactSource.StartsWith(plan.ApiName + "{", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        if (CountOccurrences(compactSource, "=>") != plan.Services.Count)
-        {
-            return false;
-        }
-
-        return plan.Services.All(service => ContainsB054ServiceCall(compactSource, plan, service.Name));
+        return ApiPlanServiceSourceContract.MatchesB054(
+            normalizedSource,
+            plan.ApiName,
+            plan.TransactionName,
+            plan.ModuleTarget,
+            plan.Services.Select(service => service.Name));
     }
 
     private static bool IsSemanticallyB055ServiceGroupSource(ApiPlan plan, string normalizedSource)
     {
-        if (string.IsNullOrWhiteSpace(normalizedSource))
-        {
-            return false;
-        }
-
-        var compactSource = RemoveWhitespace(normalizedSource);
-        if (!compactSource.StartsWith(plan.ApiName + "{", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        if (CountOccurrences(compactSource, "=>") != plan.Services.Count)
-        {
-            return false;
-        }
-
-        return plan.Services.All(service => ContainsB055ServiceCall(compactSource, plan, service.Name));
+        return ApiPlanServiceSourceContract.MatchesB055(
+            normalizedSource,
+            plan.ApiName,
+            plan.TransactionName,
+            plan.ModuleTarget,
+            plan.Services.Select(service => service.Name),
+            plan.PrimaryKey.Select(field => field.Name));
     }
 
     private static bool ContainsB055ServiceCall(string compactSource, ApiPlan plan, string serviceName)

@@ -755,6 +755,18 @@ public sealed class Package : AbstractPackageUI
             return true;
         }
 
+        try
+        {
+            ApiPlanWritePreflight.Validate(knowledgeBase.DesignModel, transaction, apiPlan);
+        }
+        catch (Exception ex)
+        {
+            WriteOutput($"[Genexus Open API Builder][B063/B064] Preflight agregado bloqueou o wizard antes do primeiro Save(): Transaction='{transaction.Name}', Error='{ex.Message}'");
+            return true;
+        }
+
+        WriteOutput($"[Genexus Open API Builder][B063/B064] Preflight agregado aprovado antes do primeiro Save(): Transaction='{transaction.Name}', ConflictMode='{apiPlan.ConflictMode}', ReexecutionMode='{apiPlan.ReexecutionMode}'.");
+
         var sdtsReady = true;
         if (selection.GenerateSdts)
         {

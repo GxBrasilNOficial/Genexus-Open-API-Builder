@@ -43,6 +43,7 @@ internal static class ApiPlanTransactionFolder
         AlignWithTransactionContainer(folder, transaction);
 
         folder.Save();
+        apiPlan.TransactionFolderWasCreated = true;
         return folder;
     }
 

@@ -389,7 +389,7 @@ internal sealed class ApiPlan
 
     public string TransactionFolderName { get; }
 
-    public bool TransactionFolderWasCreated { get; }
+    public bool TransactionFolderWasCreated { get; internal set; }
 
     public string SecurityLevel { get; }
 

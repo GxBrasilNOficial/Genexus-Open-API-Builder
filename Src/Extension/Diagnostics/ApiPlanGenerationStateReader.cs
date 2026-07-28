@@ -145,7 +145,9 @@ internal static class ApiPlanGenerationStateReader
             return new ApiPlanGenerationInspection(1, 0, 1, 0);
         }
 
-        if (matches.Length == 1 && string.Equals(matches[0].Description, ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal))
+        if (matches.Length == 1 &&
+            string.Equals(matches[0].Description, ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal) &&
+            ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, matches[0]))
         {
             return new ApiPlanGenerationInspection(1, 1, 0, 0);
         }

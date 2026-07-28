@@ -61,22 +61,21 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - B060 concluído manualmente em 2026-07-27 no GeneXus 18 U15: na Transaction `GuiaPed`, o wizard gravou/reencontrou o File `apiGuiaPed_Metadata`, persistiu `External File Name` via `BlobPart.FileName`, abriu/exportou o File na IDE, bloqueou JSON inválido e `ownership.apiName` incompatível no preflight visual, restaurou reencontro válido e registrou `Status='Reencountered'`, `Guid='1b943d80-5961-4b25-a89a-2454dae9f45d'`, `Bytes=99432`, `Sha256='C518A9EEFF4F9785E5B63D27F92D1E451D2E70B8E0FCE5BE8F98472D6095DF54'`; na Transaction `Contrato`, o preflight bloqueou colisão externa do File manual `apiContrato_Metadata` sem escrita, depois validou descrições especiais B056/B060 com `Contrato "Especial" \ Ação Ç`, gravou `apiContrato_Metadata` com `Status='Created'`, `Guid='b901d9e0-b213-4369-be79-18db0129cb82'`, `Bytes=12616`, `Sha256='3E7D0E5EF54B171D348030E6D46A08ED5DC8EA9F7E394B933E41D42975752D39'`, JSON válido e `Build All` aprovado mantendo apenas o warning ambiental de `FBiTextSharp.dll`. B060 permanece limitada ao snapshot inicial de metadata, sem completar REST, códigos HTTP finais ou segurança definitiva.
 - B061/B062 validados manualmente em 2026-07-27 e 2026-07-28: em `Contrato` no `Root Module`, a Output confirmou 5 SDTs próprios em `TransactionModuleFolder:ContratoOpenApi`, 2 SDTs compartilhados em `RootModuleFolder:GxOpenAPI`, 4 Procedures e o API Object `apiContrato` reencontrados em `TransactionFolder='ContratoOpenApi'`, com inspeção visual dos objetos dentro de `ContratoOpenApi` e File `apiContrato_Metadata` em `Module='Root Module'`; em `SimulationResult` no módulo não-root `Entities`, após correção de runtime, a Output confirmou 5 SDTs próprios em `TransactionModuleFolder:SimulationResultOpenApi`, 4 Procedures e o API Object `apiSimulationResult` em `TransactionFolder='SimulationResultOpenApi'`, B060 criou `apiSimulationResult_Metadata`, as Properties confirmaram `Module='Entities'` e `Qualified Name='Entities.apiSimulationResult_Metadata'`, o JSON exportado em `Temp/apiSimulationResult_Metadata.json` parseou com `ownership.transactionModule='Entities'`, 4 Procedures, 5 SDTs próprios e 2 SDTs compartilhados com nomes conforme B062, e o `Build All` especificou/gerou `Entities.apiSimulationResult` e concluiu com sucesso. A referência `object-file.md` da skill nexa e a wiki oficial confirmam que File é organizado por módulo, não por Folder.
 
+- B063–B066 validados em 2026-07-28 no U15: B063/B064 bloquearam colisão externa e metadata incompatível antes do primeiro Save(), sem _v2; B065 persistiu paths, filtros, paginação, ordenação e segurança; B066 persistiu transactionFolder.wasCreated=true na criação e false no reencontro, com Build All aprovado.
 ## Frente ativa
 
-**Sprint 5 — Procedures, API Object e Metadata**, com B040-B046, B050-B053, B054, B055, B056, B060 e B061/B062 validados no encerramento integrado do wizard. A próxima frente operacional é validar B063/B064 sobre detecção de colisões por metadata/nome e bloqueio conservador de colisões incompatíveis sem criar `_v2`.
+**Sprint 5 — Procedures, API Object e Metadata**, com B040-B046, B050-B053, B054-B056 e B060-B066 validados. A próxima frente operacional é B067: registrar descrições geradas e dados para detectar alteração manual posterior.
 
 ## Próxima ação única
 
-Validar B063/B064 em KB de teste: confirmar que colisões por metadata e por nome são detectadas antes de qualquer escrita e que colisões incompatíveis são bloqueadas conservadoramente, sem overwrite silencioso e sem criar `_v2`.
+Implementar e validar B067: persistir na metadata descrições geradas e dados de integridade para detectar e bloquear alteração manual posterior antes de qualquer escrita.
 
 ## Critério de conclusão e evidência esperada
 
-- um objeto planejado com nome ocupado por artefato externo, sem descrição sentinela ou metadata compatível, é reportado como colisão externa/incompatível antes do primeiro `Save()`;
-- metadata própria compatível continua permitindo reencontro conservador dos objetos já gerados;
-- divergência de tipo, nome, descrição sentinela, ownership ou contrato essencial bloqueia a aplicação sem sobrescrever objeto alheio;
-- parser semântico de `Service Source` B054/B055 ganha cobertura unitária para vínculo serviço-Procedure, argumentos, módulo esperado e rejeição de divergências;
-- o wizard/preflight não cria variantes `_v2` e não repara silenciosamente colisões incompatíveis;
-- a Output da IDE confirma o bloqueio ou reencontro seguro, ainda sem completar REST, códigos HTTP finais, segurança definitiva ou ciclo completo de regeneração.
+- metadata própria passa a registrar descrições geradas e dados suficientes para reconhecer alteração manual posterior;
+- alteração manual em descrição, ownership ou contrato essencial é detectada antes do primeiro Save();
+- divergência bloqueia a aplicação sem sobrescrever objeto alheio, sem _v2 e sem reparo silencioso;
+- a Output confirma a detecção e o bloqueio conservador.
 
 ## Sequência operacional vigente
 
@@ -93,9 +92,12 @@ Validar B063/B064 em KB de teste: confirmar que colisões por metadata e por nom
 11. Sprint 5 validou B056: descrições resolvidas no `ApiPlan` são aplicadas nos serviços reais do API Object, preservando o Service Source parametrizado de B055 quando existente.
 12. Sprint 5 concluiu B060: metadata persistente inicial em File com JSON versionado, abertura/exportação na IDE, reencontro após restauração do JSON válido, bloqueio conservador de JSON inválido, identidade incompatível e colisão externa, além da preservação de descrições especiais B056 com aspas, barra invertida e caracteres incomuns.
 13. Sprint 5 validou B061/B062: API Object, Procedures e SDTs específicos permanecem no Folder `<Transaction>OpenApi` dentro do módulo da `Transaction`, cobrindo `ContratoOpenApi` no `Root Module` e `SimulationResultOpenApi` no módulo não-root `Entities`; SDTs compartilhados permanecem em `GxOpenAPI`, File de metadata permanece no módulo da Transaction por contrato do objeto File, e todos os nomes persistidos seguem as convenções congeladas.
-14. A próxima validação operacional é B063/B064: colisões por metadata/nome e bloqueio conservador de colisões incompatíveis, sem overwrite silencioso e sem `_v2`.
-15. Sprints 5–7 completam metadata persistente, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
-16. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
+14. Sprint 5 validou B063/B064: preflight bloqueia colisões externas, incompatíveis ou ambíguas antes do primeiro Save(), sem sobrescrever objetos nem criar _v2; o parser de Service Source B054/B055 tem cobertura unitária.
+15. Sprint 5 validou B065: paths, filtros, paginação, ordenação e segurança são persistidos na metadata B060.
+16. Sprint 5 validou B066: a metadata distingue Folder criado de Folder reutilizado.
+17. A próxima validação operacional é B067: registrar descrições geradas e dados para detectar alteração manual posterior.
+18. Sprints 5–7 completam metadata persistente, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
+19. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
 
 ## Bloqueios e fatos ainda não validados
 
