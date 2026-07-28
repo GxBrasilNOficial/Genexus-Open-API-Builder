@@ -32,6 +32,7 @@ Assert-True ($source -notmatch '(?im)^\s*(?:&|\.)\s+.*\bTools[\\/]') 'O checker 
 Assert-True ($source -notmatch '(?i)Invoke-Expression|ScriptBlock::Create|&\s*\(') 'O checker não pode usar invocação dinâmica.'
 Assert-True ($source -notmatch '(?i)(?:C:|%ProgramFiles%)\\[^\r\n]*Program Files|C:\\GxModels') 'O checker não pode acessar Program Files nem uma KB local.'
 Assert-True ($source -notmatch '(?i)Start-Process\s+.*(?:genexus|dll)') 'O checker não pode iniciar IDE ou operações de DLL.'
+Assert-True ($source -match 'Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract\.ps1') 'O checker deve executar o teste unitário do parser Service Source.'
 
 $fixtures = @(
     @{ Text = 'error NU1004: The package lock file is inconsistent.'; Phase = 'restore'; Expected = 'lockFileInconsistent' },
@@ -48,6 +49,7 @@ try {
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'remote.git'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\scripts'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Src'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ServiceSourceContract'))
     & git init --bare (Join-Path $tempRoot 'remote.git') | Out-Null
     Push-Location (Join-Path $tempRoot 'repo')
     try {
@@ -64,7 +66,8 @@ try {
         & dotnet sln Src\GenexusOpenApiBuilder.sln add Src\Fixture\Fixture.csproj | Out-Null
         Assert-True ($LASTEXITCODE -eq 0) 'Não foi possível adicionar o projeto à solution da fixture.'
         [System.IO.File]::Copy($checker, (Join-Path $PWD 'scripts\Invoke-PrePushMechanicalChecks.ps1'))
-        & git add .gitignore README.md Src scripts
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ServiceSourceContract\Test-ApiPlanServiceSourceContract.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Service Source contract'`n", [System.Text.UTF8Encoding]::new($false))
+        & git add .gitignore README.md Src scripts Tests
         & git commit -m 'Fixture do checker' | Out-Null
         & git remote add origin (Join-Path $tempRoot 'remote.git')
         & git push -u origin main | Out-Null
@@ -76,6 +79,8 @@ try {
         Assert-True ($result.gitContext.branch -eq 'main') 'O checker não reconheceu a branch main na fixture.'
         Assert-True ($result.remoteReadiness -eq 'unverified') 'Sem -Fetch, a referência remota deve permanecer unverified.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'git.branch' }).status -eq 'passed') 'A checagem de branch deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.serviceSourceContract' }).status -eq 'passed') 'O teste unitário do parser Service Source deveria passar na fixture.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract.ps1' }).Count -eq 1) 'O comando do teste Service Source deve aparecer no JSON.'
         Assert-True (@($result.warnings).Count -eq 0) 'O checker não deve registrar "0 Aviso(s)" como warning.'
 
         $fetchJson = & pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson -Fetch

@@ -211,6 +211,19 @@ try {
         else { $failed = $true; $checks.Add((New-Check 'powershell.parse' 'failed' 'Há erro de parse em scripts PowerShell.' @($parseErrors))) }
     }
 
+    $serviceSourceContractTest = Join-Path $repositoryRoot 'Tests\ServiceSourceContract\Test-ApiPlanServiceSourceContract.ps1'
+    if (Test-Path -LiteralPath $serviceSourceContractTest -PathType Leaf) {
+        $testResult = Invoke-ExternalProcess -FileName 'pwsh' -Arguments @('-NoProfile', '-File', $serviceSourceContractTest) -WorkingDirectory $repositoryRoot
+        $testOutput = ConvertTo-SanitizedText ($testResult.StdOut + $testResult.StdErr)
+        $commands.Add([ordered]@{ command = 'pwsh -NoProfile -File Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract.ps1'; exitCode = $testResult.ExitCode; output = $testOutput })
+        if ($testResult.ExitCode -eq 0) { $checks.Add((New-Check 'tests.serviceSourceContract' 'passed' 'Teste unitário do parser Service Source concluído.' $testOutput)) }
+        else { $failed = $true; $checks.Add((New-Check 'tests.serviceSourceContract' 'failed' 'Teste unitário do parser Service Source falhou.' $testOutput)) }
+    }
+    else {
+        $failed = $true
+        $checks.Add((New-Check 'tests.serviceSourceContract' 'failed' 'Teste unitário do parser Service Source não encontrado.' $serviceSourceContractTest))
+    }
+
     foreach ($dotnetSpec in @(
         [ordered]@{ Name = 'dotnet.restore'; Phase = 'restore'; Arguments = @('restore', 'Src\GenexusOpenApiBuilder.sln', '--locked-mode'); Command = 'dotnet restore Src\GenexusOpenApiBuilder.sln --locked-mode' },
         [ordered]@{ Name = 'dotnet.build'; Phase = 'build'; Arguments = @('build', 'Src\GenexusOpenApiBuilder.sln', '--configuration', 'Release', '--no-restore'); Command = 'dotnet build Src\GenexusOpenApiBuilder.sln --configuration Release --no-restore' }

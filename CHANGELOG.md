@@ -90,6 +90,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Correção B056 faz B054 atualizar API Object B055 legado para a variante B055 com descrições, sem remover parâmetros de `Create`/`Update`, e mantém B054 legado atualizado para B054 com descrições
 - Correção B060 alinha o preflight visual do wizard ao writer real para validar também `ownership.transactionGuid` e `ownership.apiGuid` antes de apresentar o File de metadata como reencontro válido
 - Correção B060/B061 aceita reencontro de API Object B054 normalizado pela IDE com chamada qualificada de Procedure e grava o File de metadata no módulo da `Transaction`, validado em `SimulationResult` no módulo não-root `Entities`
+- Rotina pré-push passa a executar o teste unitário do parser Service Source B054/B055 como gate automático
 
 ## Planned
 
