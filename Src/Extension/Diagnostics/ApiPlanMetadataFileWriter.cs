@@ -16,7 +16,7 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 internal static class ApiPlanMetadataFileWriter
 {
     internal const string SchemaVersion = "GOAB_API_METADATA_B060_V1";
-    internal const string B067IntegrityVersion = "GOAB_B067_INTEGRITY_V1";
+    internal const string B067IntegrityVersion = ApiPlanMetadataIntegrity.Version;
     private const string OwnedDescriptionPrefix = "Genexus Open API Builder B060 Metadata File";
 
     public static ApiPlanMetadataFileWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
@@ -208,18 +208,15 @@ internal static class ApiPlanMetadataFileWriter
             throw new ArgumentNullException(nameof(apiObject));
         }
 
-        var integrity = metadata["integrity"] as JObject;
-        if (integrity is null)
-        {
-            return true;
-        }
-
-        return HasString(integrity["version"], B067IntegrityVersion) &&
-            HasString(integrity.SelectToken("generatedDescriptions.hash"), ComputeServiceDescriptionsHash(apiPlan)) &&
-            HasString(integrity.SelectToken("plannedContract.hash"), ComputePlannedContractHash(apiPlan)) &&
-            HasString(integrity.SelectToken("apiObject.descriptionSentinel"), ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan)) &&
-            HasString(integrity.SelectToken("apiObject.serviceSourceCurrentHash"), ComputeNormalizedTextSha256(apiObject.ServiceGroupSource.Source)) &&
-            HasString(integrity.SelectToken("apiObject.serviceSourceExpectedHash"), ComputeExpectedServiceSourceHash(apiPlan, apiObject));
+        return ApiPlanMetadataIntegrity.HasCompatibleIntegrity(
+            metadata,
+            ComputeServiceDescriptionsHash(apiPlan),
+            ComputePlannedContractHash(apiPlan),
+            ComputeActualServiceDescriptionsHash(apiPlan, apiObject.ServiceGroupSource.Source),
+            ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan),
+            apiObject.ServiceGroupSource.Source,
+            ComputeExpectedServiceSource(apiPlan, apiObject),
+            ApiPlanBusinessComponentWriter.IsManagedApiObject(apiObject.Model, apiPlan, apiObject));
     }
 
     private static void ValidateB067IntegrityIfPresent(JObject metadata, ApiPlan apiPlan, API apiObject)
@@ -368,31 +365,14 @@ internal static class ApiPlanMetadataFileWriter
 
     private static JObject CreateB067IntegrityObject(ApiPlan apiPlan, API apiObject)
     {
-        var descriptionsContract = CreateServiceDescriptionsContract(apiPlan);
-        var plannedContract = CreatePlannedContract(apiPlan);
-        return new JObject
-        {
-            ["version"] = B067IntegrityVersion,
-            ["scope"] = "Generated descriptions, ownership and essential planned API contract before conservative rewrite",
-            ["generatedDescriptions"] = new JObject
-            {
-                ["hash"] = ComputeJsonSha256(descriptionsContract),
-                ["services"] = descriptionsContract,
-            },
-            ["plannedContract"] = new JObject
-            {
-                ["hash"] = ComputeJsonSha256(plannedContract),
-                ["contract"] = plannedContract,
-            },
-            ["apiObject"] = new JObject
-            {
-                ["descriptionSentinel"] = ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan),
-                ["guid"] = apiObject.Guid.ToString(),
-                ["serviceSourceMode"] = ResolveServiceSourceMode(apiPlan, apiObject),
-                ["serviceSourceCurrentHash"] = ComputeNormalizedTextSha256(apiObject.ServiceGroupSource.Source),
-                ["serviceSourceExpectedHash"] = ComputeExpectedServiceSourceHash(apiPlan, apiObject),
-            },
-        };
+        return ApiPlanMetadataIntegrity.Create(
+            CreateServiceDescriptionsContract(apiPlan),
+            CreatePlannedContract(apiPlan),
+            ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan),
+            apiObject.Guid.ToString(),
+            ResolveServiceSourceMode(apiPlan, apiObject),
+            apiObject.ServiceGroupSource.Source,
+            ComputeExpectedServiceSource(apiPlan, apiObject));
     }
 
     private static JArray CreateServiceDescriptionsContract(ApiPlan apiPlan)
@@ -572,35 +552,29 @@ internal static class ApiPlanMetadataFileWriter
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
-        return ComputeJsonSha256(CreatePlannedContract(apiPlan));
+        return ApiPlanMetadataIntegrity.ComputeJsonSha256(CreatePlannedContract(apiPlan));
     }
 
     private static string ComputeServiceDescriptionsHash(ApiPlan apiPlan)
     {
-        return ComputeJsonSha256(CreateServiceDescriptionsContract(apiPlan));
+        return ApiPlanMetadataIntegrity.ComputeJsonSha256(CreateServiceDescriptionsContract(apiPlan));
     }
 
-    private static string ComputeExpectedServiceSourceHash(ApiPlan apiPlan, API apiObject)
+    private static string ComputeActualServiceDescriptionsHash(ApiPlan apiPlan, string source)
     {
-        var expectedSource = ApiPlanBusinessComponentWriter.IsB055ApiObject(apiObject.Model, apiPlan, apiObject)
+        return ApiPlanMetadataIntegrity.ComputeJsonSha256(ApiPlanMetadataIntegrity.CreateServiceDescriptionsContractFromSource(source, apiPlan.Services.Select(service => service.Name)));
+    }
+
+    private static string ComputeExpectedServiceSource(ApiPlan apiPlan, API apiObject)
+    {
+        return ApiPlanBusinessComponentWriter.IsB055ApiObject(apiObject.Model, apiPlan, apiObject)
             ? ApiPlanBusinessComponentWriter.CreateB055ServiceGroupSource(apiPlan)
             : ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan);
-        return ComputeNormalizedTextSha256(expectedSource);
     }
 
     private static string ResolveServiceSourceMode(ApiPlan apiPlan, API apiObject)
     {
         return ApiPlanBusinessComponentWriter.IsB055ApiObject(apiObject.Model, apiPlan, apiObject) ? "B055" : "B054";
-    }
-
-    private static string ComputeJsonSha256(JToken token)
-    {
-        return ComputeSha256(Encoding.UTF8.GetBytes(token.ToString(Formatting.None)));
-    }
-
-    private static string ComputeNormalizedTextSha256(string? value)
-    {
-        return ComputeSha256(Encoding.UTF8.GetBytes((value ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n").Trim()));
     }
 
     private static string ComputeSha256(byte[] bytes)

@@ -74,7 +74,7 @@ Campos mínimos, conforme aplicável:
 - dados para detectar alteração manual posterior nas descrições dos serviços
 - hash de integridade das descrições geradas
 - hash do contrato planejado essencial
-- dados de integridade do API Object próprio e do Service Source esperado
+- dados de integridade do API Object próprio, do Service Source esperado e do contrato semântico validado
 - fingerprint estrutural da Transaction
 - data da geração
 - versão do gerador quando disponível
@@ -97,7 +97,7 @@ Metadata ausente, corrompida ou incompatível deve bloquear atualização autom�
 
 Propriedade de objetos nunca deve ser reconhecida apenas pelo nome.
 
-Quando a metadata possuir bloco de integridade versionado, a reexecução deve validar esse bloco antes de classificar o API Object como próprio. Divergência nas descrições geradas, no contrato planejado essencial ou no Service Source esperado bloqueia a execução antes de qualquer `Save()`.
+Quando a metadata possuir bloco de integridade versionado, a reexecução deve validar esse bloco antes de classificar o API Object como próprio. Divergência nas descrições geradas, no contrato planejado essencial ou no contrato semântico do Service Source bloqueia a execução antes de qualquer `Save()`. Hash textual do Service Source pode ser persistido como evidência, mas não deve substituir a validação semântica.
 
 ---
 

@@ -224,6 +224,19 @@ try {
         $checks.Add((New-Check 'tests.serviceSourceContract' 'failed' 'Teste unitário do parser Service Source não encontrado.' $serviceSourceContractTest))
     }
 
+    $metadataIntegrityTest = Join-Path $repositoryRoot 'Tests\MetadataIntegrity\Test-ApiPlanMetadataIntegrity.ps1'
+    if (Test-Path -LiteralPath $metadataIntegrityTest -PathType Leaf) {
+        $testResult = Invoke-ExternalProcess -FileName 'pwsh' -Arguments @('-NoProfile', '-File', $metadataIntegrityTest) -WorkingDirectory $repositoryRoot
+        $testOutput = ConvertTo-SanitizedText ($testResult.StdOut + $testResult.StdErr)
+        $commands.Add([ordered]@{ command = 'pwsh -NoProfile -File Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity.ps1'; exitCode = $testResult.ExitCode; output = $testOutput })
+        if ($testResult.ExitCode -eq 0) { $checks.Add((New-Check 'tests.metadataIntegrity' 'passed' 'Teste unitário da integridade B067 concluído.' $testOutput)) }
+        else { $failed = $true; $checks.Add((New-Check 'tests.metadataIntegrity' 'failed' 'Teste unitário da integridade B067 falhou.' $testOutput)) }
+    }
+    else {
+        $failed = $true
+        $checks.Add((New-Check 'tests.metadataIntegrity' 'failed' 'Teste unitário da integridade B067 não encontrado.' $metadataIntegrityTest))
+    }
+
     foreach ($dotnetSpec in @(
         [ordered]@{ Name = 'dotnet.restore'; Phase = 'restore'; Arguments = @('restore', 'Src\GenexusOpenApiBuilder.sln', '--locked-mode'); Command = 'dotnet restore Src\GenexusOpenApiBuilder.sln --locked-mode' },
         [ordered]@{ Name = 'dotnet.build'; Phase = 'build'; Arguments = @('build', 'Src\GenexusOpenApiBuilder.sln', '--configuration', 'Release', '--no-restore'); Command = 'dotnet build Src\GenexusOpenApiBuilder.sln --configuration Release --no-restore' }

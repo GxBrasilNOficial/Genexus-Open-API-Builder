@@ -14,9 +14,11 @@ Esse bloco registra:
 - hash do contrato planejado relevante para paths, serviços, campos, filtros, paginação, ordenação e segurança;
 - sentinela de descrição do API Object próprio;
 - GUID do API Object reencontrado;
-- modo, hash atual e hash esperado do Service Source.
+- modo, hash atual e hash esperado do Service Source como evidência.
 
-Na reexecução, o reencontro conservador do API Object exige metadata compatível e integridade B067 compatível. Quando a metadata tem bloco `integrity`, divergência em descrição, ownership ou contrato planejado bloqueia o estado antes do primeiro `Save()`.
+Na reexecução, o reencontro conservador do API Object exige metadata compatível e integridade B067 compatível. Quando a metadata tem bloco `integrity`, divergência em descrição, ownership, contrato planejado ou contrato semântico do Service Source bloqueia o estado antes do primeiro `Save()`.
+
+O hash textual completo do Service Source é mantido para auditoria. O bloqueio do Service Source usa o parser semântico B054/B055, para tolerar diferenças inofensivas de formatação quando serviços, Procedures chamadas, argumentos e módulo esperado continuam compatíveis.
 
 Metadata legada sem bloco `integrity` continua aceita para permitir o primeiro upgrade conservador. Depois que B067 grava o bloco, a ausência ou divergência deixa de ser reparada silenciosamente.
 

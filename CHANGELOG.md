@@ -92,6 +92,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Correção B060 alinha o preflight visual do wizard ao writer real para validar também `ownership.transactionGuid` e `ownership.apiGuid` antes de apresentar o File de metadata como reencontro válido
 - Correção B060/B061 aceita reencontro de API Object B054 normalizado pela IDE com chamada qualificada de Procedure e grava o File de metadata no módulo da `Transaction`, validado em `SimulationResult` no módulo não-root `Entities`
 - Rotina pré-push passa a executar o teste unitário do parser Service Source B054/B055 como gate automático
+- Rotina pré-push passa a executar o teste unitário da integridade B067 como gate automático
+- Correção B067 deixa o hash textual do Service Source como evidência e usa contrato semântico para bloqueio, preservando bloqueio de `[Description]` divergente
 
 ## Planned
 
