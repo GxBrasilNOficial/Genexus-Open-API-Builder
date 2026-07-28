@@ -74,6 +74,7 @@ Validar B063/B064 em KB de teste: confirmar que colisões por metadata e por nom
 - um objeto planejado com nome ocupado por artefato externo, sem descrição sentinela ou metadata compatível, é reportado como colisão externa/incompatível antes do primeiro `Save()`;
 - metadata própria compatível continua permitindo reencontro conservador dos objetos já gerados;
 - divergência de tipo, nome, descrição sentinela, ownership ou contrato essencial bloqueia a aplicação sem sobrescrever objeto alheio;
+- parser semântico de `Service Source` B054/B055 ganha cobertura unitária para vínculo serviço-Procedure, argumentos, módulo esperado e rejeição de divergências;
 - o wizard/preflight não cria variantes `_v2` e não repara silenciosamente colisões incompatíveis;
 - a Output da IDE confirma o bloqueio ou reencontro seguro, ainda sem completar REST, códigos HTTP finais, segurança definitiva ou ciclo completo de regeneração.
 

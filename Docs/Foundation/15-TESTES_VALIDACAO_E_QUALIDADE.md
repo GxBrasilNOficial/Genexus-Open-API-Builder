@@ -99,6 +99,7 @@ No MVP:
 - distinção entre ausência, string vazia, `false` e `0`
 - nomes fixos de serviço e `operationId` no padrão `apiNome.Serviço`
 - seleção de modelo de `[Description]` por idioma da KB e fallback para inglês
+- parser semântico de `Service Source` B054/B055, cobrindo vínculo serviço-Procedure, argumentos, módulo esperado e rejeição de divergências antes do primeiro `Save()`
 
 ## Resultado esperado
 
