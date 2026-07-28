@@ -43,7 +43,7 @@ internal static class ApiPlanWritePreflight
         }
 
         throw new InvalidOperationException(
-            "B063/B064 bloqueado antes do primeiro Save(): foram detectadas colisao(oes) externa(s), incompativel(is) ou ambigua(s) em " +
+            "B063/B064/B067 bloqueado antes do primeiro Save(): foram detectadas colisao(oes) externa(s), incompativel(is), ambigua(s) ou metadata de integridade divergente em " +
             string.Join(", ", blockedStages) +
             ". Nenhum objeto planejado foi criado, alterado ou recebeu sufixo _v2.");
     }

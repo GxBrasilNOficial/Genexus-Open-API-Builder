@@ -62,20 +62,23 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - B061/B062 validados manualmente em 2026-07-27 e 2026-07-28: em `Contrato` no `Root Module`, a Output confirmou 5 SDTs próprios em `TransactionModuleFolder:ContratoOpenApi`, 2 SDTs compartilhados em `RootModuleFolder:GxOpenAPI`, 4 Procedures e o API Object `apiContrato` reencontrados em `TransactionFolder='ContratoOpenApi'`, com inspeção visual dos objetos dentro de `ContratoOpenApi` e File `apiContrato_Metadata` em `Module='Root Module'`; em `SimulationResult` no módulo não-root `Entities`, após correção de runtime, a Output confirmou 5 SDTs próprios em `TransactionModuleFolder:SimulationResultOpenApi`, 4 Procedures e o API Object `apiSimulationResult` em `TransactionFolder='SimulationResultOpenApi'`, B060 criou `apiSimulationResult_Metadata`, as Properties confirmaram `Module='Entities'` e `Qualified Name='Entities.apiSimulationResult_Metadata'`, o JSON exportado em `Temp/apiSimulationResult_Metadata.json` parseou com `ownership.transactionModule='Entities'`, 4 Procedures, 5 SDTs próprios e 2 SDTs compartilhados com nomes conforme B062, e o `Build All` especificou/gerou `Entities.apiSimulationResult` e concluiu com sucesso. A referência `object-file.md` da skill nexa e a wiki oficial confirmam que File é organizado por módulo, não por Folder.
 
 - B063–B066 validados em 2026-07-28 no U15: B063/B064 bloquearam colisão externa e metadata incompatível antes do primeiro Save(), sem _v2; B065 persistiu paths, filtros, paginação, ordenação e segurança; B066 persistiu transactionFolder.wasCreated=true na criação e false no reencontro, com Build All aprovado.
+- B067 validado em 2026-07-28 no U15: metadata passou a gravar integridade de descrições geradas, contrato planejado e Service Source; reexecução limpa preservou o mesmo `PlannedContractHash`, alteração manual de `[Description("List Transaction2")]` para `[Description("List Transaction 2")]` bloqueou o wizard antes do primeiro `Save()`, e a restauração da descrição original permitiu reencontro conservador. Com B067, a Sprint 5 fica concluída no escopo de API Object, Procedures e metadata.
+
 ## Frente ativa
 
-**Sprint 5 — Procedures, API Object e Metadata**, com B040-B046, B050-B053, B054-B056 e B060-B066 validados. A próxima frente operacional é B067: registrar descrições geradas e dados para detectar alteração manual posterior.
+**Sprint 6 — Serviços REST e Segurança**, com Sprint 5 concluída no escopo de API Object, Procedures e metadata. A próxima frente operacional é B070: completar `List` com filtros, paginação e ordenação determinística.
 
 ## Próxima ação única
 
-Implementar e validar B067: persistir na metadata descrições geradas e dados de integridade para detectar e bloquear alteração manual posterior antes de qualquer escrita.
+Implementar e validar B070: completar o serviço `List` com filtros, paginação e ordenação determinística sobre os objetos já criados.
 
 ## Critério de conclusão e evidência esperada
 
-- metadata própria passa a registrar descrições geradas e dados suficientes para reconhecer alteração manual posterior;
-- alteração manual em descrição, ownership ou contrato essencial é detectada antes do primeiro Save();
-- divergência bloqueia a aplicação sem sobrescrever objeto alheio, sem _v2 e sem reparo silencioso;
-- a Output confirma a detecção e o bloqueio conservador.
+- `List` compila e executa em cenário simples;
+- filtros elegíveis são aplicados conforme o contrato do documento 26;
+- paginação respeita `page`, `pageSize`, padrão e máximo configurados sem redução silenciosa;
+- ordenação é estável e usa a chave primária completa como desempate determinístico;
+- `totalCount`, `totalPages` e `appliedFilters` refletem os filtros efetivamente aplicados.
 
 ## Sequência operacional vigente
 
@@ -95,8 +98,8 @@ Implementar e validar B067: persistir na metadata descrições geradas e dados d
 14. Sprint 5 validou B063/B064: preflight bloqueia colisões externas, incompatíveis ou ambíguas antes do primeiro Save(), sem sobrescrever objetos nem criar _v2; o parser de Service Source B054/B055 tem cobertura unitária.
 15. Sprint 5 validou B065: paths, filtros, paginação, ordenação e segurança são persistidos na metadata B060.
 16. Sprint 5 validou B066: a metadata distingue Folder criado de Folder reutilizado.
-17. A próxima validação operacional é B067: registrar descrições geradas e dados para detectar alteração manual posterior.
-18. Sprints 5–7 completam metadata persistente, serviços REST/segurança e o ciclo conservador de conflitos, regeneração e remoção.
+17. Sprint 5 validou B067: a metadata registra integridade de descrições geradas, contrato planejado e Service Source, bloqueando alteração manual posterior antes do primeiro Save().
+18. Sprint 6 inicia em B070: completar `List` com filtros, paginação e ordenação determinística.
 19. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
 
 ## Bloqueios e fatos ainda não validados

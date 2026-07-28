@@ -72,6 +72,9 @@ Campos mínimos, conforme aplicável:
 - idioma usado nas descrições
 - fallback de descrição para inglês quando aplicável
 - dados para detectar alteração manual posterior nas descrições dos serviços
+- hash de integridade das descrições geradas
+- hash do contrato planejado essencial
+- dados de integridade do API Object próprio e do Service Source esperado
 - fingerprint estrutural da Transaction
 - data da geração
 - versão do gerador quando disponível
@@ -93,6 +96,8 @@ Na reexecução, o gerador deve:
 Metadata ausente, corrompida ou incompatível deve bloquear atualização automática.
 
 Propriedade de objetos nunca deve ser reconhecida apenas pelo nome.
+
+Quando a metadata possuir bloco de integridade versionado, a reexecução deve validar esse bloco antes de classificar o API Object como próprio. Divergência nas descrições geradas, no contrato planejado essencial ou no Service Source esperado bloqueia a execução antes de qualquer `Save()`.
 
 ---
 

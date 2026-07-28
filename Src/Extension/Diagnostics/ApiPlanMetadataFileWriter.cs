@@ -16,6 +16,7 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 internal static class ApiPlanMetadataFileWriter
 {
     internal const string SchemaVersion = "GOAB_API_METADATA_B060_V1";
+    internal const string B067IntegrityVersion = "GOAB_B067_INTEGRITY_V1";
     private const string OwnedDescriptionPrefix = "Genexus Open API Builder B060 Metadata File";
 
     public static ApiPlanMetadataFileWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
@@ -78,7 +79,9 @@ internal static class ApiPlanMetadataFileWriter
             preflight.ExistingFile is null ? ApiPlanMetadataFileWriteStatus.Created : ApiPlanMetadataFileWriteStatus.Reencountered,
             SchemaVersion,
             bytes.Length,
-            ComputeSha256(bytes));
+            ComputeSha256(bytes),
+            B067IntegrityVersion,
+            ComputePlannedContractHash(apiPlan));
     }
 
     internal static string CreateOwnedDescription(ApiPlan apiPlan)
@@ -185,6 +188,46 @@ internal static class ApiPlanMetadataFileWriter
         RequireString(metadata.SelectToken("ownership.apiName"), apiPlan.ApiName, "ownership.apiName", apiPlan.MetadataFileName);
         RequireString(metadata.SelectToken("ownership.apiGuid"), apiObject.Guid.ToString(), "ownership.apiGuid", apiPlan.MetadataFileName);
         RequireString(metadata.SelectToken("ownership.metadataFileName"), apiPlan.MetadataFileName, "ownership.metadataFileName", apiPlan.MetadataFileName);
+        ValidateB067IntegrityIfPresent(metadata, apiPlan, apiObject);
+    }
+
+    internal static bool HasCompatibleB067Integrity(JObject metadata, ApiPlan apiPlan, API apiObject)
+    {
+        if (metadata is null)
+        {
+            throw new ArgumentNullException(nameof(metadata));
+        }
+
+        if (apiPlan is null)
+        {
+            throw new ArgumentNullException(nameof(apiPlan));
+        }
+
+        if (apiObject is null)
+        {
+            throw new ArgumentNullException(nameof(apiObject));
+        }
+
+        var integrity = metadata["integrity"] as JObject;
+        if (integrity is null)
+        {
+            return true;
+        }
+
+        return HasString(integrity["version"], B067IntegrityVersion) &&
+            HasString(integrity.SelectToken("generatedDescriptions.hash"), ComputeServiceDescriptionsHash(apiPlan)) &&
+            HasString(integrity.SelectToken("plannedContract.hash"), ComputePlannedContractHash(apiPlan)) &&
+            HasString(integrity.SelectToken("apiObject.descriptionSentinel"), ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan)) &&
+            HasString(integrity.SelectToken("apiObject.serviceSourceCurrentHash"), ComputeNormalizedTextSha256(apiObject.ServiceGroupSource.Source)) &&
+            HasString(integrity.SelectToken("apiObject.serviceSourceExpectedHash"), ComputeExpectedServiceSourceHash(apiPlan, apiObject));
+    }
+
+    private static void ValidateB067IntegrityIfPresent(JObject metadata, ApiPlan apiPlan, API apiObject)
+    {
+        if (!HasCompatibleB067Integrity(metadata, apiPlan, apiObject))
+        {
+            throw new InvalidOperationException($"Gravacao de metadata B067 bloqueada: File proprio '{apiPlan.MetadataFileName}' indica alteracao manual posterior em descricoes, ownership ou contrato essencial. Nenhuma alteracao foi feita.");
+        }
     }
 
     private static string CreateMetadataJson(Transaction transaction, ApiPlan apiPlan, API apiObject)
@@ -288,6 +331,7 @@ internal static class ApiPlanMetadataFileWriter
                     ["description"] = description.Description,
                 })),
             },
+            ["integrity"] = CreateB067IntegrityObject(apiPlan, apiObject),
             ["classification"] = CreateClassificationObject(apiPlan.FieldClassificationConfiguration),
             ["businessComponent"] = new JObject
             {
@@ -320,6 +364,100 @@ internal static class ApiPlanMetadataFileWriter
         };
 
         return metadata.ToString(Formatting.Indented) + "\n";
+    }
+
+    private static JObject CreateB067IntegrityObject(ApiPlan apiPlan, API apiObject)
+    {
+        var descriptionsContract = CreateServiceDescriptionsContract(apiPlan);
+        var plannedContract = CreatePlannedContract(apiPlan);
+        return new JObject
+        {
+            ["version"] = B067IntegrityVersion,
+            ["scope"] = "Generated descriptions, ownership and essential planned API contract before conservative rewrite",
+            ["generatedDescriptions"] = new JObject
+            {
+                ["hash"] = ComputeJsonSha256(descriptionsContract),
+                ["services"] = descriptionsContract,
+            },
+            ["plannedContract"] = new JObject
+            {
+                ["hash"] = ComputeJsonSha256(plannedContract),
+                ["contract"] = plannedContract,
+            },
+            ["apiObject"] = new JObject
+            {
+                ["descriptionSentinel"] = ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan),
+                ["guid"] = apiObject.Guid.ToString(),
+                ["serviceSourceMode"] = ResolveServiceSourceMode(apiPlan, apiObject),
+                ["serviceSourceCurrentHash"] = ComputeNormalizedTextSha256(apiObject.ServiceGroupSource.Source),
+                ["serviceSourceExpectedHash"] = ComputeExpectedServiceSourceHash(apiPlan, apiObject),
+            },
+        };
+    }
+
+    private static JArray CreateServiceDescriptionsContract(ApiPlan apiPlan)
+    {
+        return new JArray(apiPlan.ServiceDescriptions
+            .OrderBy(description => description.ServiceName, StringComparer.Ordinal)
+            .Select(description => new JObject
+            {
+                ["serviceName"] = description.ServiceName,
+                ["description"] = description.Description,
+            }));
+    }
+
+    private static JObject CreatePlannedContract(ApiPlan apiPlan)
+    {
+        return new JObject
+        {
+            ["api"] = new JObject
+            {
+                ["name"] = apiPlan.ApiName,
+                ["servicesBasePath"] = apiPlan.ServicesBasePath,
+                ["restPath"] = apiPlan.RestPath,
+                ["securityLevel"] = apiPlan.Security.SecurityLevel,
+                ["gamCondition"] = apiPlan.Security.GamCondition,
+            },
+            ["services"] = new JArray(apiPlan.Services.Select(service => new JObject
+            {
+                ["name"] = service.Name,
+                ["httpMethod"] = service.HttpMethod,
+                ["restPath"] = service.RestPath,
+                ["operationId"] = service.OperationId,
+            })),
+            ["fields"] = new JObject
+            {
+                ["primaryKey"] = ToFieldArray(apiPlan.PrimaryKey),
+                ["createRequest"] = ToFieldArray(apiPlan.CreateRequestFields),
+                ["updateRequest"] = ToFieldArray(apiPlan.UpdateRequestFields),
+                ["response"] = ToFieldArray(apiPlan.ResponseFields),
+                ["listFilters"] = new JArray(apiPlan.ListFilters.Select(filter => new JObject
+                {
+                    ["field"] = ToFieldObject(filter.Field),
+                    ["operator"] = filter.FilterOperator,
+                    ["usesPeriod"] = filter.UsesPeriod,
+                    ["usesRange"] = filter.UsesRange,
+                })),
+                ["required"] = new JArray(apiPlan.RequiredFields.Select(field => new JObject
+                {
+                    ["requestName"] = field.RequestName,
+                    ["fieldName"] = field.FieldName,
+                    ["isRequired"] = field.IsRequired,
+                    ["reason"] = field.Reason,
+                })),
+            },
+            ["pagination"] = new JObject
+            {
+                ["defaultPageSize"] = apiPlan.DefaultPageSize,
+                ["maximumPageSize"] = apiPlan.MaximumPageSize,
+            },
+            ["order"] = new JArray(apiPlan.StaticOrder.Select(order => new JObject
+            {
+                ["order"] = order.Order,
+                ["attributeName"] = order.AttributeName,
+                ["direction"] = order.Direction,
+            })),
+        };
     }
 
     private static JObject CreateClassificationObject(ApiPlanFieldClassificationConfiguration configuration)
@@ -382,6 +520,11 @@ internal static class ApiPlanMetadataFileWriter
         return new JArray(values.Select(value => new JValue(value)));
     }
 
+    private static bool HasString(JToken? token, string expectedValue)
+    {
+        return token is not null && token.Type == JTokenType.String && string.Equals(token.Value<string>(), expectedValue, StringComparison.Ordinal);
+    }
+
     private static void RequireString(JToken? token, string expectedValue, string tokenPath, string fileName)
     {
         if (token is null || token.Type != JTokenType.String || !string.Equals(token.Value<string>(), expectedValue, StringComparison.Ordinal))
@@ -422,6 +565,44 @@ internal static class ApiPlanMetadataFileWriter
         }
     }
 
+    internal static string ComputePlannedContractHash(ApiPlan apiPlan)
+    {
+        if (apiPlan is null)
+        {
+            throw new ArgumentNullException(nameof(apiPlan));
+        }
+
+        return ComputeJsonSha256(CreatePlannedContract(apiPlan));
+    }
+
+    private static string ComputeServiceDescriptionsHash(ApiPlan apiPlan)
+    {
+        return ComputeJsonSha256(CreateServiceDescriptionsContract(apiPlan));
+    }
+
+    private static string ComputeExpectedServiceSourceHash(ApiPlan apiPlan, API apiObject)
+    {
+        var expectedSource = ApiPlanBusinessComponentWriter.IsB055ApiObject(apiObject.Model, apiPlan, apiObject)
+            ? ApiPlanBusinessComponentWriter.CreateB055ServiceGroupSource(apiPlan)
+            : ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan);
+        return ComputeNormalizedTextSha256(expectedSource);
+    }
+
+    private static string ResolveServiceSourceMode(ApiPlan apiPlan, API apiObject)
+    {
+        return ApiPlanBusinessComponentWriter.IsB055ApiObject(apiObject.Model, apiPlan, apiObject) ? "B055" : "B054";
+    }
+
+    private static string ComputeJsonSha256(JToken token)
+    {
+        return ComputeSha256(Encoding.UTF8.GetBytes(token.ToString(Formatting.None)));
+    }
+
+    private static string ComputeNormalizedTextSha256(string? value)
+    {
+        return ComputeSha256(Encoding.UTF8.GetBytes((value ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n").Trim()));
+    }
+
     private static string ComputeSha256(byte[] bytes)
     {
         using (var algorithm = SHA256.Create())
@@ -449,7 +630,7 @@ internal sealed class ApiPlanMetadataFilePreflightResult
 
 internal sealed class ApiPlanMetadataFileWriteResult
 {
-    public ApiPlanMetadataFileWriteResult(string fileName, Guid guid, string status, string schemaVersion, int bytes, string sha256)
+    public ApiPlanMetadataFileWriteResult(string fileName, Guid guid, string status, string schemaVersion, int bytes, string sha256, string integrityVersion, string plannedContractHash)
     {
         FileName = fileName ?? throw new ArgumentNullException(nameof(fileName));
         Guid = guid;
@@ -457,6 +638,8 @@ internal sealed class ApiPlanMetadataFileWriteResult
         SchemaVersion = schemaVersion ?? throw new ArgumentNullException(nameof(schemaVersion));
         Bytes = bytes;
         Sha256 = sha256 ?? throw new ArgumentNullException(nameof(sha256));
+        IntegrityVersion = integrityVersion ?? throw new ArgumentNullException(nameof(integrityVersion));
+        PlannedContractHash = plannedContractHash ?? throw new ArgumentNullException(nameof(plannedContractHash));
     }
 
     public string FileName { get; }
@@ -470,4 +653,8 @@ internal sealed class ApiPlanMetadataFileWriteResult
     public int Bytes { get; }
 
     public string Sha256 { get; }
+
+    public string IntegrityVersion { get; }
+
+    public string PlannedContractHash { get; }
 }

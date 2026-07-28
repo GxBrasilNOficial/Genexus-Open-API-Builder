@@ -64,6 +64,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B060 concluído no U15: wizard grava ou reencontra File JSON de metadata, persiste `External File Name` via `BlobPart.FileName`, bloqueia JSON inválido, identidade incompatível e colisão externa antes da escrita, preserva descrições especiais B056 com aspas, barra invertida e caracteres incomuns, exporta JSON válido e mantém o escopo sem completar REST, códigos HTTP finais ou segurança definitiva
 - B061/B062 validados no U15: objetos específicos que suportam Folder permanecem no Folder `<Transaction>OpenApi` dentro do módulo da `Transaction`, cobrindo `ContratoOpenApi` no `Root Module` e `SimulationResultOpenApi` no módulo não-root `Entities`; SDTs compartilhados permanecem em `GxOpenAPI`, File de metadata permanece no módulo da Transaction e nomes persistidos seguem as convenções congeladas
 - B063-B066 validados no U15: preflight agregado bloqueia colisões externas/incompatíveis antes do primeiro `Save()`, metadata compatível permite reencontro conservador, paths/filtros/paginação/ordenação/segurança são persistidos e `transactionFolder.wasCreated` distingue Folder criado de Folder reutilizado
+- B067 validado no U15: metadata grava integridade de descrições geradas, contrato planejado e Service Source; alteração manual posterior em `[Description]` bloqueia o wizard antes do primeiro `Save()` e a restauração da descrição original permite reencontro conservador
 
 ## Fixed
 
@@ -94,7 +95,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Implementar B067: registrar descrições geradas e dados para detectar alteração manual posterior
+- Implementar B070: completar `List` com filtros, paginação e ordenação determinística
 
 ---
 

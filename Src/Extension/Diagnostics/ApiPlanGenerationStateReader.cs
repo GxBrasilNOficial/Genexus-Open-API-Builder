@@ -54,7 +54,10 @@ internal static class ApiPlanGenerationStateReader
         var conflicts = inspection.Conflicts + (folder?.Conflicts ?? 0);
         if (conflicts > 0)
         {
-            return ApiPlanGenerationStageState.Blocked(stageName, $"Bloqueado: {conflicts} colisao(oes) externa(s), incompativel(is) ou ambigua(s) detectada(s). Nenhuma escrita sera permitida.");
+            var reason = string.Equals(stageName, "Metadata File", StringComparison.Ordinal)
+                ? "colisao(oes) externa(s), incompativel(is), ambigua(s) ou integridade B067 divergente"
+                : "colisao(oes) externa(s), incompativel(is) ou ambigua(s)";
+            return ApiPlanGenerationStageState.Blocked(stageName, $"Bloqueado: {conflicts} {reason} detectada(s). Nenhuma escrita sera permitida.");
         }
 
         var missing = inspection.Missing + (folder?.Missing ?? 0);
@@ -212,7 +215,8 @@ internal static class ApiPlanGenerationStateReader
             && HasString(metadata.SelectToken("ownership.transactionGuid"), transaction.Guid.ToString())
             && HasString(metadata.SelectToken("ownership.apiName"), apiPlan.ApiName)
             && HasString(metadata.SelectToken("ownership.apiGuid"), apiObject.Guid.ToString())
-            && HasString(metadata.SelectToken("ownership.metadataFileName"), apiPlan.MetadataFileName);
+            && HasString(metadata.SelectToken("ownership.metadataFileName"), apiPlan.MetadataFileName)
+            && ApiPlanMetadataFileWriter.HasCompatibleB067Integrity(metadata, apiPlan, apiObject);
     }
 
     private static bool HasString(JToken? token, string expectedValue)
