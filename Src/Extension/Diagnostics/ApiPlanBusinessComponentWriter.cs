@@ -30,12 +30,12 @@ internal static class ApiPlanBusinessComponentWriter
         ApiPlanTransactionFolder.Preflight(model, plan);
         var createContent = CreateContent(plan);
         var createRules = CreateRules();
-        var createVariables = CreateVariables(plan);
+        var createVariables = CoalesceVariableSpecs(CreateVariables(plan), "B055");
         var updateContent = UpdateContent(plan);
         var updateRules = UpdateRules(plan);
-        var updateVariables = UpdateVariables(plan);
+        var updateVariables = CoalesceVariableSpecs(UpdateVariables(plan), "B055");
         var apiSource = CreateB055ServiceGroupSource(plan);
-        var apiVariables = ApiVariableSpecs(plan);
+        var apiVariables = CoalesceVariableSpecs(ApiVariableSpecs(plan), "B055");
 
         var create = FindProcedure(model, plan, "Create", "B052");
         var update = FindProcedure(model, plan, "Update", "B053");
@@ -60,18 +60,19 @@ internal static class ApiPlanBusinessComponentWriter
         if (plan is null) throw new ArgumentNullException(nameof(plan));
         if (api is null) throw new ArgumentNullException(nameof(api));
         var source = NormalizeForComparison(api.ServiceGroupSource.Source);
-        return IsB054ServiceGroupSource(plan, source)
+        return ApiPlanListProcedureWriter.IsB070ApiObject(model, plan, api)
+            || IsB054ServiceGroupSource(plan, source)
             || (HasNoNonStandardVariables(api) && IsSemanticallyB054ServiceGroupSource(plan, source))
-            || (IsB055ServiceGroupSource(plan, source) && HasExpectedVariables(model, api, ApiVariableSpecs(plan)));
+            || (IsB055ServiceGroupSource(plan, source) && HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan), "B055")));
     }
 
     internal static bool IsB055ApiObject(KBModel model, ApiPlan plan, API api) =>
         api is not null && IsB055ServiceGroupSource(plan, NormalizeForComparison(api.ServiceGroupSource.Source)) &&
-        HasExpectedVariables(model, api, ApiVariableSpecs(plan));
+        HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan), "B055"));
 
     internal static bool IsCurrentB055ApiObject(KBModel model, ApiPlan plan, API api) =>
         api is not null && string.Equals(NormalizeForComparison(api.ServiceGroupSource.Source), NormalizeForComparison(CreateB055ServiceGroupSource(plan)), StringComparison.Ordinal) &&
-        HasExpectedVariables(model, api, ApiVariableSpecs(plan));
+        HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan), "B055"));
 
     internal static string CreateB054ServiceGroupSource(ApiPlan plan) => CreateServiceGroupSource(plan, includeBusinessComponentParameters: false, includeDescriptions: true);
 
@@ -592,6 +593,27 @@ internal static class ApiPlanBusinessComponentWriter
             new VariableSpec("UpdateResponse", plan.ResponseSdtName),
         })
         .ToArray();
+
+    private static IReadOnlyList<VariableSpec> CoalesceVariableSpecs(IEnumerable<VariableSpec> variables, string backlog)
+    {
+        var resolved = new List<VariableSpec>();
+        foreach (var variable in variables)
+        {
+            var existing = resolved.FirstOrDefault(item => string.Equals(item.Name, variable.Name, StringComparison.OrdinalIgnoreCase));
+            if (existing is null)
+            {
+                resolved.Add(variable);
+                continue;
+            }
+
+            if (!string.Equals(existing.DataType, variable.DataType, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"{backlog} bloqueado: variavel '&{variable.Name}' foi planejada com tipos divergentes: '{existing.DataType}' e '{variable.DataType}'. Nenhuma alteracao foi feita.");
+            }
+        }
+
+        return resolved;
+    }
 
     private static string ApiVariables(ApiPlan plan) => string.Join(Environment.NewLine, ApiVariableSpecs(plan).Select(variable => $"{variable.Name} [ DataType = '{variable.DataType}' ]"));
 

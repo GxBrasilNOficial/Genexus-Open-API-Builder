@@ -45,9 +45,11 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly CheckBox _generateApiObjectCheck = new() { AutoSize = true, Text = "Confirmar criacao ou reencontro de API Object B054 ao concluir", Dock = DockStyle.Top };
     private readonly CheckBox _generateMetadataCheck = new() { AutoSize = true, Text = "Confirmar criacao ou reencontro de File JSON de metadata B060 ao concluir", Dock = DockStyle.Top };
     private readonly CheckBox _applyBusinessComponentCheck = new() { AutoSize = true, Text = "Aplicar Create/Update via Business Component ao concluir", Dock = DockStyle.Top };
+    private readonly CheckBox _applyListCheck = new() { AutoSize = true, Text = "Completar List B070 ao concluir", Dock = DockStyle.Top };
     private readonly TextBox _sdtGenerationText = CreateReadOnlyTextBox();
     private readonly TextBox _procedureGenerationText = CreateReadOnlyTextBox();
     private readonly TextBox _apiObjectGenerationText = CreateReadOnlyTextBox();
+    private readonly TextBox _listGenerationText = CreateReadOnlyTextBox();
     private readonly TextBox _metadataGenerationText = CreateReadOnlyTextBox();
     private readonly Label _headerLabel = new()
     {
@@ -135,6 +137,7 @@ internal sealed class PrototypeWizardDialog : Form
         _tabs.TabPages.Add(CreateSdtGenerationTab());
         _tabs.TabPages.Add(CreateProcedureGenerationTab());
         _tabs.TabPages.Add(CreateApiObjectGenerationTab());
+        _tabs.TabPages.Add(CreateListGenerationTab());
         _tabs.TabPages.Add(CreateMetadataGenerationTab());
         _tabs.TabPages.Add(CreateSummaryTab());
         _tabs.SelectedIndexChanged += (_, _) => HandleSelectedTabChanged();
@@ -562,7 +565,7 @@ internal sealed class PrototypeWizardDialog : Form
     }
     private TabPage CreateMetadataGenerationTab()
     {
-        var tab = new TabPage("Metadata B060");
+        var tab = new TabPage("Metadata");
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -579,9 +582,30 @@ internal sealed class PrototypeWizardDialog : Form
         tab.Controls.Add(panel);
         return tab;
     }
+
+    private TabPage CreateListGenerationTab()
+    {
+        var tab = new TabPage("List");
+        var panel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Padding = new Padding(8),
+        };
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise a materializacao inicial do List. B070 altera a Procedure List e sincroniza o API Object com parametros de pagina, filtros e ListResponse.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(_applyListCheck, 0, 1);
+        panel.Controls.Add(CreateGroup("List planejado", _listGenerationText), 0, 2);
+        tab.Controls.Add(panel);
+        return tab;
+    }
+
     private TabPage CreateSummaryTab()
     {
-        var tab = new TabPage("Resumo B038");
+        var tab = new TabPage("Resumo");
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -680,6 +704,8 @@ internal sealed class PrototypeWizardDialog : Form
         _generateProceduresCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
         _generateApiObjectCheck.Enabled = false;
         _generateApiObjectCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
+        _applyListCheck.Enabled = false;
+        _applyListCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
         _generateMetadataCheck.Enabled = false;
         _generateMetadataCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
         _applyBusinessComponentCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
@@ -782,7 +808,7 @@ internal sealed class PrototypeWizardDialog : Form
             RefreshRequiredText();
         }
 
-        if (_tabs.SelectedTab?.Text == "SDTs" || _tabs.SelectedTab?.Text == "Procedures" || _tabs.SelectedTab?.Text == "API Object" || _tabs.SelectedTab?.Text == "Metadata B060")
+        if (_tabs.SelectedTab?.Text == "SDTs" || _tabs.SelectedTab?.Text == "Procedures" || _tabs.SelectedTab?.Text == "API Object" || _tabs.SelectedTab?.Text == "List" || _tabs.SelectedTab?.Text == "Metadata")
         {
             RefreshGenerationPreview();
         }
@@ -814,7 +840,7 @@ internal sealed class PrototypeWizardDialog : Form
     private void HandleSelectedTabChanged()
     {
         RefreshGenerationPreview();
-        if (_tabs.SelectedTab?.Text == "Resumo B038")
+        if (_tabs.SelectedTab?.Text == "Resumo")
         {
             if (!_showingSummary && TryCreateSelection())
             {
@@ -900,6 +926,7 @@ internal sealed class PrototypeWizardDialog : Form
             _generateProceduresCheck.Checked,
             _generateApiObjectCheck.Checked,
             _generateMetadataCheck.Checked,
+            _applyListCheck.Checked,
             _applyBusinessComponentCheck.Checked);
         return true;
     }
@@ -936,6 +963,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"Gerar SDTs B040-B046: {Selection.GenerateSdts}{Environment.NewLine}" +
             $"Gerar Procedures B050-B053: {Selection.GenerateProcedures}{Environment.NewLine}" +
             $"Gerar API Object B054: {Selection.GenerateApiObject}{Environment.NewLine}" +
+            $"Completar List B070: {Selection.ApplyList}{Environment.NewLine}" +
             $"Gravar metadata B060: {Selection.GenerateMetadata}{Environment.NewLine}" +
             $"Aplicar Create/Update via Business Component: {Selection.ApplyBusinessComponent}{Environment.NewLine}" +
             $"Estado da geracao: {_generationContext}";
@@ -944,9 +972,9 @@ internal sealed class PrototypeWizardDialog : Form
             "B036 exibiu campos bloqueados com motivo no fluxo do wizard." + Environment.NewLine +
             "B037 consolidou Required como presença do membro JSON, distinguindo de valor não vazio." + Environment.NewLine +
             "ApiPlan sera montado em memoria ao concluir o wizard." + Environment.NewLine +
-            "SDTs, Procedures, API Object e metadata so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK." + Environment.NewLine +
+            "SDTs, Procedures, API Object, List B070 e metadata so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK." + Environment.NewLine +
             "A opção de Business Component altera somente Create e Update nas Procedures já geradas." + Environment.NewLine +
-            "B060 grava apenas o File JSON de metadata inicial; REST completo, codigos HTTP finais e seguranca definitiva permanecem fora deste passo.";
+            "B070 completa a primeira versao do List; B060 grava o File JSON de metadata inicial.";
         _showingSummary = true;
         _tabs.SelectedIndex = _tabs.TabPages.Count - 1;
         RefreshCompletionCaption();
@@ -958,7 +986,7 @@ internal sealed class PrototypeWizardDialog : Form
             return;
         }
 
-        _nextButton.Text = _generateSdtsCheck.Checked || _generateProceduresCheck.Checked || _generateApiObjectCheck.Checked || _generateMetadataCheck.Checked || _applyBusinessComponentCheck.Checked
+        _nextButton.Text = _generateSdtsCheck.Checked || _generateProceduresCheck.Checked || _generateApiObjectCheck.Checked || _generateMetadataCheck.Checked || _applyListCheck.Checked || _applyBusinessComponentCheck.Checked
             ? "Concluir e aplicar"
             : "Concluir Teste";
     }
@@ -1039,6 +1067,7 @@ internal sealed class PrototypeWizardDialog : Form
         ApplyGenerationControlState(_generateSdtsCheck, sdtState, true);
         ApplyGenerationControlState(_generateProceduresCheck, procedureState, sdtsAvailable);
         ApplyGenerationControlState(_generateApiObjectCheck, apiState, proceduresAvailable);
+        ApplyListControlState(apiState, apiObjectAvailable);
         ApplyGenerationControlState(_generateMetadataCheck, metadataState, apiObjectAvailable);
 
         _sdtGenerationText.Text = FormatGenerationState(sdtState, _generateSdtsCheck.Checked);
@@ -1046,8 +1075,21 @@ internal sealed class PrototypeWizardDialog : Form
             $"Dependencia SDTs: {FormatDependencyState(sdtState, _generateSdtsCheck.Checked)}";
         _apiObjectGenerationText.Text = FormatGenerationState(apiState, _generateApiObjectCheck.Checked) + Environment.NewLine + Environment.NewLine +
             $"Dependencia Procedures: {FormatDependencyState(procedureState, _generateProceduresCheck.Checked)}";
+        _listGenerationText.Text = FormatGenerationState(apiState, _applyListCheck.Checked) + Environment.NewLine + Environment.NewLine +
+            $"Dependencia API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked || _applyBusinessComponentCheck.Checked)}" + Environment.NewLine +
+            $"Filtros planejados: {GetCheckedValues(_filtersList).Count}; Paginacao Default={_defaultPageSize.Value}, Maximum={_maximumPageSize.Value}.";
         _metadataGenerationText.Text = FormatGenerationState(metadataState, _generateMetadataCheck.Checked) + Environment.NewLine + Environment.NewLine +
-            $"Dependencia API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked)}";
+            $"Dependencia List/API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked || _applyBusinessComponentCheck.Checked || _applyListCheck.Checked)}";
+    }
+
+    private void ApplyListControlState(ApiPlanGenerationStageState? apiState, bool apiObjectAvailable)
+    {
+        _applyListCheck.Text = "Confirmar: Completar List B070 ao concluir";
+        _applyListCheck.Enabled = apiState is not null && !apiState.IsBlocked && apiObjectAvailable;
+        if (!_applyListCheck.Enabled)
+        {
+            _applyListCheck.Checked = false;
+        }
     }
 
     private static bool IsDependencyAvailable(ApiPlanGenerationStageState? state, bool confirmed)
@@ -1151,6 +1193,7 @@ internal sealed class PrototypeWizardDialog : Form
                 review,
                 GetRequiredDecisions(contract),
                 CreateBusinessComponentSelection(),
+                false,
                 false,
                 false,
                 false,
@@ -1410,6 +1453,7 @@ internal sealed class PrototypeWizardFlowSelection
         bool generateProcedures,
         bool generateApiObject,
         bool generateMetadata,
+        bool applyList,
         bool applyBusinessComponent)
     {
         ContractSelection = contractSelection ?? throw new ArgumentNullException(nameof(contractSelection));
@@ -1420,6 +1464,7 @@ internal sealed class PrototypeWizardFlowSelection
         GenerateProcedures = generateProcedures;
         GenerateApiObject = generateApiObject;
         GenerateMetadata = generateMetadata;
+        ApplyList = applyList;
         ApplyBusinessComponent = applyBusinessComponent;
     }
 
@@ -1438,6 +1483,8 @@ internal sealed class PrototypeWizardFlowSelection
     public bool GenerateApiObject { get; }
 
     public bool GenerateMetadata { get; }
+
+    public bool ApplyList { get; }
 
     public bool ApplyBusinessComponent { get; }
 }

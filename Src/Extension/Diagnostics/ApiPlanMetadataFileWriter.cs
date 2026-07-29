@@ -214,7 +214,7 @@ internal static class ApiPlanMetadataFileWriter
             ComputePlannedContractHash(apiPlan),
             ComputeActualServiceDescriptionsHash(apiPlan, apiObject.ServiceGroupSource.Source),
             ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan),
-            ComputeExpectedServiceSource(apiPlan, apiObject),
+            ComputeCompatibleExpectedServiceSources(apiPlan),
             ApiPlanBusinessComponentWriter.IsManagedApiObject(apiObject.Model, apiPlan, apiObject));
     }
 
@@ -566,15 +566,48 @@ internal static class ApiPlanMetadataFileWriter
 
     private static string ComputeExpectedServiceSource(ApiPlan apiPlan, API apiObject)
     {
+        if (ApiPlanListProcedureWriter.IsB070ApiObject(apiObject.Model, apiPlan, apiObject))
+        {
+            return ApiPlanListProcedureWriter.CreateB070ServiceGroupSource(
+                apiPlan,
+                includeBusinessComponentParameters: IsActualB070WithBusinessComponent(apiPlan, apiObject));
+        }
+
         return ApiPlanBusinessComponentWriter.IsB055ApiObject(apiObject.Model, apiPlan, apiObject)
             ? ApiPlanBusinessComponentWriter.CreateB055ServiceGroupSource(apiPlan)
             : ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan);
     }
 
+    private static IReadOnlyList<string> ComputeCompatibleExpectedServiceSources(ApiPlan apiPlan)
+    {
+        return new[]
+        {
+            ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan),
+            ApiPlanBusinessComponentWriter.CreateB055ServiceGroupSource(apiPlan),
+            ApiPlanListProcedureWriter.CreateB070ServiceGroupSource(apiPlan, includeBusinessComponentParameters: false),
+            ApiPlanListProcedureWriter.CreateB070ServiceGroupSource(apiPlan, includeBusinessComponentParameters: true),
+        };
+    }
+
+    private static bool IsActualB070WithBusinessComponent(ApiPlan apiPlan, API apiObject)
+    {
+        return string.Equals(
+            NormalizeForComparison(apiObject.ServiceGroupSource.Source),
+            NormalizeForComparison(ApiPlanListProcedureWriter.CreateB070ServiceGroupSource(apiPlan, includeBusinessComponentParameters: true)),
+            StringComparison.Ordinal);
+    }
+
     private static string ResolveServiceSourceMode(ApiPlan apiPlan, API apiObject)
     {
+        if (ApiPlanListProcedureWriter.IsB070ApiObject(apiObject.Model, apiPlan, apiObject))
+        {
+            return "B070";
+        }
+
         return ApiPlanBusinessComponentWriter.IsB055ApiObject(apiObject.Model, apiPlan, apiObject) ? "B055" : "B054";
     }
+
+    private static string NormalizeForComparison(string? value) => (value ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n").Trim();
 
     private static string ComputeSha256(byte[] bytes)
     {

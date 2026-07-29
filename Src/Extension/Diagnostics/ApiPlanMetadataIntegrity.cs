@@ -88,6 +88,40 @@ public static class ApiPlanMetadataIntegrity
             serviceSourceContractMatches;
     }
 
+    public static bool HasCompatibleIntegrity(
+        JObject metadata,
+        string generatedDescriptionsHash,
+        string plannedContractHash,
+        string actualDescriptionsHash,
+        string descriptionSentinel,
+        IEnumerable<string> compatibleServiceSourceExpectedValues,
+        bool serviceSourceContractMatches)
+    {
+        if (compatibleServiceSourceExpectedValues is null)
+        {
+            throw new ArgumentNullException(nameof(compatibleServiceSourceExpectedValues));
+        }
+
+        var integrity = metadata?["integrity"] as JObject;
+        if (integrity is null)
+        {
+            return true;
+        }
+
+        var expectedHashes = compatibleServiceSourceExpectedValues
+            .Select(ComputeNormalizedTextSha256)
+            .ToArray();
+        var storedExpectedHash = integrity.SelectToken("apiObject.serviceSourceExpectedHash")?.Value<string>() ?? string.Empty;
+
+        return HasString(integrity["version"], Version) &&
+            HasString(integrity.SelectToken("generatedDescriptions.hash"), generatedDescriptionsHash) &&
+            HasString(integrity.SelectToken("plannedContract.hash"), plannedContractHash) &&
+            string.Equals(actualDescriptionsHash, generatedDescriptionsHash, StringComparison.Ordinal) &&
+            HasString(integrity.SelectToken("apiObject.descriptionSentinel"), descriptionSentinel) &&
+            expectedHashes.Any(hash => string.Equals(hash, storedExpectedHash, StringComparison.Ordinal)) &&
+            serviceSourceContractMatches;
+    }
+
     public static JArray CreateServiceDescriptionsContractFromSource(string source, IEnumerable<string> serviceNames)
     {
         if (serviceNames is null)
