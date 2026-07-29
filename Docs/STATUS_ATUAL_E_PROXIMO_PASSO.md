@@ -109,6 +109,7 @@ Implementar e validar B071: completar o serviço `Get` sobre os objetos já cria
 - carregamento real do pacote em U14;
 - compatibilidade prática das APIs do SDK com U14;
 - comprovação progressiva dos gates técnicos transversais definidos nos documentos 09, 15 e 24.
+- atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação.
 
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 
