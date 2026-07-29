@@ -41,4 +41,4 @@ B067 não completa REST final, segurança definitiva, códigos HTTP finais, sinc
 
 ## Resultado
 
-B067 fecha o escopo de integridade inicial da metadata da Sprint 5. A próxima frente operacional passa a ser B070, iniciando a Sprint 6 para completar `List` com filtros, paginação e ordenação determinística.
+B067 fecha o escopo de integridade inicial da metadata da Sprint 5. Na conclusão desta frente, a próxima frente operacional passava a ser B070, iniciando a Sprint 6 para completar `List` com filtros, paginação e ordenação determinística. Esse encaminhamento foi consumado posteriormente no fechamento B070/B077.

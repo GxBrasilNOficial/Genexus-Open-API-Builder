@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-07-28.
+2026-07-29.
 
 ## Último marco concluído
 
@@ -63,22 +63,23 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 - B063–B066 validados em 2026-07-28 no U15: B063/B064 bloquearam colisão externa e metadata incompatível antes do primeiro Save(), sem _v2; B065 persistiu paths, filtros, paginação, ordenação e segurança; B066 persistiu transactionFolder.wasCreated=true na criação e false no reencontro, com Build All aprovado.
 - B067 validado em 2026-07-28 no U15: metadata passou a gravar integridade de descrições geradas, contrato planejado e Service Source; reexecução limpa preservou o mesmo `PlannedContractHash`, alteração manual de `[Description("List Transaction2")]` para `[Description("List Transaction 2")]` bloqueou o wizard antes do primeiro `Save()`, e a restauração da descrição original permitiu reencontro conservador. Com B067, a Sprint 5 fica concluída no escopo de API Object, Procedures e metadata.
+- B070/B077 validados em 2026-07-29 no U15: `List` real sincroniza Procedure e API Object com filtros elegíveis, paginação, ordenação determinística, `totalCount`, `totalPages` e `appliedFilters`; `sdtContrato_API_ListFilters.ContratoNumero` foi regravado com `Json Null Serialization = JSON null` por `idJsonInclude=idJsonJsonNull`, e o endpoint autenticado retornou HTTP 200 com `AppliedFilters.ContratoNumero=null` sem filtro, valor preenchido com filtro, totalização correta e página 2 estável.
 
 ## Frente ativa
 
-**Sprint 6 — Serviços REST e Segurança**, com Sprint 5 concluída no escopo de API Object, Procedures e metadata. A próxima frente operacional é B070: completar `List` com filtros, paginação e ordenação determinística.
+**Sprint 6 — Serviços REST e Segurança**, com Sprint 5 concluída no escopo de API Object, Procedures e metadata. O bloco B070/B077 foi concluído: `List` real compila, executa e retorna filtros aplicados, paginação, totalização e ordenação determinística.
 
 ## Próxima ação única
 
-Implementar e validar B070: completar o serviço `List` com filtros, paginação e ordenação determinística sobre os objetos já criados.
+Implementar e validar B071: completar o serviço `Get` sobre os objetos já criados, mantendo assinatura compatível entre API Object, Procedure, SDTs e metadata.
 
 ## Critério de conclusão e evidência esperada
 
-- `List` compila e executa em cenário simples;
-- filtros elegíveis são aplicados conforme o contrato do documento 26;
-- paginação respeita `page`, `pageSize`, padrão e máximo configurados sem redução silenciosa;
-- ordenação é estável e usa a chave primária completa como desempate determinístico;
-- `totalCount`, `totalPages` e `appliedFilters` refletem os filtros efetivamente aplicados.
+- `Get` compila e executa em cenário simples;
+- chaves primárias simples e compostas são transportadas de forma consistente entre API Object e Procedure;
+- resposta usa o SDT de response planejado e preserva ausência de `Delete` no MVP;
+- divergência em objetos reencontrados é bloqueada antes do primeiro `Save()`;
+- Build All valida o consumidor final do contrato, não apenas a Procedure isolada.
 
 ## Sequência operacional vigente
 
@@ -99,8 +100,9 @@ Implementar e validar B070: completar o serviço `List` com filtros, paginação
 15. Sprint 5 validou B065: paths, filtros, paginação, ordenação e segurança são persistidos na metadata B060.
 16. Sprint 5 validou B066: a metadata distingue Folder criado de Folder reutilizado.
 17. Sprint 5 validou B067: a metadata registra integridade de descrições geradas, contrato planejado e Service Source, bloqueando alteração manual posterior antes do primeiro Save().
-18. Sprint 6 inicia em B070: completar `List` com filtros, paginação e ordenação determinística.
-19. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
+18. Sprint 6 concluiu B070/B077: `List` foi aplicado à Procedure e ao API Object com paginação por `ApiPage`/`ApiPageSize`, parâmetros internos `pApiPage`/`pApiPageSize`, ordenação determinística, `totalCount`, `totalPages` e `AppliedFilters`; o SDT de filtros usa `Json Null Serialization = JSON null` para preservar membro nulo sem falso valor zero.
+19. Sprint 6 segue em B071: completar `Get` com contrato runtime validado no trio API Object/Procedure/SDT.
+20. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
 
 ## Bloqueios e fatos ainda não validados
 

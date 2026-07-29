@@ -233,6 +233,7 @@ internal static class ApiPlanSdtWriter
         if (member.IsCollection || IsSdtReference(member.DataType))
         {
             var item = root.AddItem(member.Name, eDBType.GX_SDT);
+            ConfigureJsonNullSerialization(item, member);
             if (!DataType.ParseInto(designModel, member.DataType, item))
             {
                 throw new InvalidOperationException($"Tipo SDT nao resolvido para membro '{member.Name}': '{member.DataType}'. Nenhuma alteracao foi feita.");
@@ -250,16 +251,34 @@ internal static class ApiPlanSdtWriter
         if (IsAttributeReference(member.DataType))
         {
             var item = root.AddItem(member.Name, eDBType.CHARACTER, Math.Max(member.Length, 0), Math.Max(member.Decimals, 0));
+            ConfigureJsonNullSerialization(item, member);
             item.AttributeBasedOn = EnsureAttributeExists(designModel, member.Name, member.DataType);
             return;
         }
 
-        AddBuiltInMember(root, member.Name, member.DataType, member.Length, member.Decimals);
+        AddBuiltInMember(root, member.Name, member.DataType, member.Length, member.Decimals, ShouldSerializeAsJsonNull(member));
     }
 
-    private static void AddBuiltInMember(SDTLevel root, string name, string dataType, int length, int decimals)
+    private static void AddBuiltInMember(SDTLevel root, string name, string dataType, int length, int decimals, bool serializeAsJsonNull = false)
     {
-        root.AddItem(name, ResolveDbType(dataType), Math.Max(length, 0), Math.Max(decimals, 0));
+        var item = root.AddItem(name, ResolveDbType(dataType), Math.Max(length, 0), Math.Max(decimals, 0));
+        if (serializeAsJsonNull)
+        {
+            item.SetPropertyValue("idJsonInclude", "idJsonJsonNull");
+        }
+    }
+
+    private static void ConfigureJsonNullSerialization(SDTItem item, ApiPlanSdtMember member)
+    {
+        if (ShouldSerializeAsJsonNull(member))
+        {
+            item.SetPropertyValue("idJsonInclude", "idJsonJsonNull");
+        }
+    }
+
+    private static bool ShouldSerializeAsJsonNull(ApiPlanSdtMember member)
+    {
+        return member.IsNullable && string.Equals(member.Source, "ListFilters", StringComparison.Ordinal);
     }
 
     private static bool IsSdtReference(string dataType)

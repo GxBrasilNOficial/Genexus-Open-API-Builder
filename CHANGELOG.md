@@ -65,6 +65,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B061/B062 validados no U15: objetos específicos que suportam Folder permanecem no Folder `<Transaction>OpenApi` dentro do módulo da `Transaction`, cobrindo `ContratoOpenApi` no `Root Module` e `SimulationResultOpenApi` no módulo não-root `Entities`; SDTs compartilhados permanecem em `GxOpenAPI`, File de metadata permanece no módulo da Transaction e nomes persistidos seguem as convenções congeladas
 - B063-B066 validados no U15: preflight agregado bloqueia colisões externas/incompatíveis antes do primeiro `Save()`, metadata compatível permite reencontro conservador, paths/filtros/paginação/ordenação/segurança são persistidos e `transactionFolder.wasCreated` distingue Folder criado de Folder reutilizado
 - B067 validado no U15: metadata grava integridade de descrições geradas, contrato planejado e Service Source; alteração manual posterior em `[Description]` bloqueia o wizard antes do primeiro `Save()` e a restauração da descrição original permite reencontro conservador
+- B070/B077 validados no U15: `List` real sincroniza Procedure e API Object com filtros elegíveis, paginação, ordenação determinística, `totalCount`, `totalPages` e `AppliedFilters`; membros nullable de `ListFilters` são gerados com `Json Null Serialization = JSON null`, preservando `AppliedFilters.ContratoNumero=null` quando o filtro não é informado
 
 ## Fixed
 
@@ -97,7 +98,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Planned
 
-- Implementar B070: completar `List` com filtros, paginação e ordenação determinística
+- Implementar B071: completar `Get` com contrato runtime validado no trio API Object/Procedure/SDT
 
 ---
 

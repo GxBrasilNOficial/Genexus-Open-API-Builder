@@ -119,9 +119,19 @@ internal static class ApiPlanListProcedureWriter
         var currentSource = NormalizeForComparison(procedure.ProcedurePart.Source);
         var skeleton = Skeleton();
         var legacySource = NormalizeForComparison(CreateLegacyListSource(plan));
+        var previousB070Source = NormalizeForComparison(CreatePreviousB070ListSource(plan));
+        var previousB077Source = NormalizeForComparison(CreatePreviousB077ListSource(plan));
+        var previousConditionalB077Source = NormalizeForComparison(CreatePreviousConditionalB077ListSource(plan));
+        var manualB077Source = NormalizeForComparison(CreateManualB077ListSource(plan));
+        var invalidB077Source = NormalizeForComparison(CreateInvalidB077ListSource(plan));
         if (!string.IsNullOrWhiteSpace(currentSource) &&
             !string.Equals(currentSource, NormalizeForComparison(skeleton), StringComparison.Ordinal) &&
             !string.Equals(currentSource, NormalizeForComparison(source), StringComparison.Ordinal) &&
+            !string.Equals(currentSource, invalidB077Source, StringComparison.Ordinal) &&
+            !string.Equals(currentSource, manualB077Source, StringComparison.Ordinal) &&
+            !string.Equals(currentSource, previousConditionalB077Source, StringComparison.Ordinal) &&
+            !string.Equals(currentSource, previousB077Source, StringComparison.Ordinal) &&
+            !string.Equals(currentSource, previousB070Source, StringComparison.Ordinal) &&
             !string.Equals(currentSource, legacySource, StringComparison.Ordinal))
         {
             throw new InvalidOperationException($"B070 bloqueado: Procedure propria '{procedure.Name}' possui Source divergente da geracao B050/B070. Nenhuma alteracao foi feita.");
@@ -139,6 +149,9 @@ internal static class ApiPlanListProcedureWriter
         var currentVariables = procedure.Variables.Variables.Where(variable => !variable.IsStandard).Select(variable => variable.Name).ToArray();
         if (currentVariables.Length > 0 &&
             !HasExpectedVariables(procedure.Model, procedure, variables) &&
+            !HasExpectedVariables(procedure.Model, procedure, PreviousConditionalB077ProcedureVariableSpecs(plan)) &&
+            !HasExpectedVariables(procedure.Model, procedure, InvalidB077ProcedureVariableSpecs(plan)) &&
+            !HasExpectedVariables(procedure.Model, procedure, PreviousB070ProcedureVariableSpecs(plan)) &&
             !HasExpectedVariables(procedure.Model, procedure, LegacyProcedureVariableSpecs(plan)))
         {
             throw new InvalidOperationException($"B070 bloqueado: Procedure propria '{procedure.Name}' possui variaveis divergentes da geracao B070. Nenhuma alteracao foi feita.");
@@ -160,15 +173,74 @@ internal static class ApiPlanListProcedureWriter
 
     private static string CreateLegacyListSource(ApiPlan plan)
     {
-        return CreateListSource(plan, includeParameterCopy: false);
+        return CreateListSource(plan, includeParameterCopy: false, initializeAppliedFilters: false);
+    }
+
+    private static string CreatePreviousB070ListSource(ApiPlan plan)
+    {
+        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: false);
+    }
+
+    private static string CreateInvalidB077ListSource(ApiPlan plan)
+    {
+        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: true, useAppliedFiltersVariable: false, assignAppliedFiltersThroughResponse: true, trackAppliedFilters: false);
+    }
+
+    private static string CreatePreviousB077ListSource(ApiPlan plan)
+    {
+        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: true, useAppliedFiltersVariable: true, attachAppliedFiltersImmediately: true, assignAppliedFiltersThroughResponse: true, trackAppliedFilters: false);
+    }
+
+    private static string CreatePreviousConditionalB077ListSource(ApiPlan plan)
+    {
+        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: true, useAppliedFiltersVariable: true, assignAppliedFiltersThroughResponse: false, trackAppliedFilters: true);
+    }
+
+    private static string CreateManualB077ListSource(ApiPlan plan)
+    {
+        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: true, useAppliedFiltersVariable: true, assignAppliedFiltersThroughResponse: false, trackAppliedFilters: true, commentConditionalAppliedFiltersAttachment: true);
     }
 
     private static string CreateListSource(ApiPlan plan, bool includeParameterCopy)
+    {
+        return CreateListSource(plan, includeParameterCopy, initializeAppliedFilters: true, useAppliedFiltersVariable: true, attachAppliedFiltersImmediately: true, assignAppliedFiltersThroughResponse: false, trackAppliedFilters: false);
+    }
+
+    private static string CreateListSource(
+        ApiPlan plan,
+        bool includeParameterCopy,
+        bool initializeAppliedFilters,
+        bool useAppliedFiltersVariable = true,
+        bool attachAppliedFiltersImmediately = false,
+        bool assignAppliedFiltersThroughResponse = false,
+        bool trackAppliedFilters = true,
+        bool commentConditionalAppliedFiltersAttachment = false)
     {
         var lines = new List<string>
         {
             "&ListResponse = new()",
         };
+        if (initializeAppliedFilters)
+        {
+            if (useAppliedFiltersVariable)
+            {
+                lines.Add("&AppliedFilters = new()");
+                if (attachAppliedFiltersImmediately)
+                {
+                    lines.Add("&ListResponse.AppliedFilters = &AppliedFilters");
+                }
+
+                if (trackAppliedFilters)
+                {
+                    lines.Add("&AppliedFiltersWereApplied = 0");
+                }
+            }
+            else
+            {
+                lines.Add("&ListResponse.AppliedFilters = new()");
+            }
+        }
+
         if (includeParameterCopy)
         {
             lines.Add($"&{PageVariableName} = &{PageParameterName}");
@@ -201,7 +273,14 @@ internal static class ApiPlanListProcedureWriter
         lines.Add($"&FirstRecord = ((&{PageVariableName} - 1) * &{PageSizeVariableName}) + 1");
         lines.Add($"&LastRecord = &{PageVariableName} * &{PageSizeVariableName}");
         lines.Add("&TotalCount = 0");
-        lines.AddRange(AssignAppliedFilters(plan));
+        lines.AddRange(AssignAppliedFilters(plan, assignAppliedFiltersThroughResponse, trackAppliedFilters));
+        if (initializeAppliedFilters && useAppliedFiltersVariable && trackAppliedFilters && !attachAppliedFiltersImmediately)
+        {
+            lines.Add((commentConditionalAppliedFiltersAttachment ? "//" : string.Empty) + "If &AppliedFiltersWereApplied = 1");
+            lines.Add("    &ListResponse.AppliedFilters = &AppliedFilters");
+            lines.Add((commentConditionalAppliedFiltersAttachment ? "//" : string.Empty) + "EndIf");
+        }
+
         lines.Add("For each");
         var order = ResolveDeterministicOrder(plan);
         if (order.Count > 0)
@@ -241,14 +320,21 @@ internal static class ApiPlanListProcedureWriter
         }
     }
 
-    private static IEnumerable<string> AssignAppliedFilters(ApiPlan plan)
+    private static IEnumerable<string> AssignAppliedFilters(ApiPlan plan, bool assignThroughResponse, bool trackAppliedFilters)
     {
         foreach (var filter in plan.ListFilters.Where(item => !item.Field.IsSensitive))
         {
             foreach (var variable in FilterVariableNames(filter))
             {
                 yield return $"If not &{variable}.IsEmpty()";
-                yield return $"    &ListResponse.AppliedFilters.{variable} = &{variable}";
+                yield return assignThroughResponse
+                    ? $"    &ListResponse.AppliedFilters.{variable} = &{variable}"
+                    : $"    &AppliedFilters.{variable} = &{variable}";
+                if (trackAppliedFilters)
+                {
+                    yield return "    &AppliedFiltersWereApplied = 1";
+                }
+
                 yield return "EndIf";
             }
         }
@@ -365,6 +451,64 @@ internal static class ApiPlanListProcedureWriter
     }
 
     private static IReadOnlyList<VariableSpec> ProcedureVariableSpecs(ApiPlan plan)
+    {
+        var variables = new List<VariableSpec>
+        {
+            new(PageParameterName, "Numeric(9.0)"),
+            new(PageSizeParameterName, "Numeric(9.0)"),
+            new(PageVariableName, "Numeric(9.0)"),
+            new(PageSizeVariableName, "Numeric(9.0)"),
+            new("ListResponse", plan.ListResponseSdtName),
+            new("AppliedFilters", plan.ListFiltersSdtName),
+            new("Item", plan.ResponseSdtName),
+            new("FirstRecord", "Numeric(18.0)"),
+            new("LastRecord", "Numeric(18.0)"),
+            new("TotalCount", "Numeric(18.0)"),
+        };
+        variables.AddRange(plan.ListFilters.SelectMany(FilterVariableSpecs));
+        return CoalesceVariableSpecs(variables);
+    }
+
+    private static IReadOnlyList<VariableSpec> PreviousConditionalB077ProcedureVariableSpecs(ApiPlan plan)
+    {
+        var variables = new List<VariableSpec>
+        {
+            new(PageParameterName, "Numeric(9.0)"),
+            new(PageSizeParameterName, "Numeric(9.0)"),
+            new(PageVariableName, "Numeric(9.0)"),
+            new(PageSizeVariableName, "Numeric(9.0)"),
+            new("ListResponse", plan.ListResponseSdtName),
+            new("AppliedFilters", plan.ListFiltersSdtName),
+            new("AppliedFiltersWereApplied", "Numeric(1.0)"),
+            new("Item", plan.ResponseSdtName),
+            new("FirstRecord", "Numeric(18.0)"),
+            new("LastRecord", "Numeric(18.0)"),
+            new("TotalCount", "Numeric(18.0)"),
+        };
+        variables.AddRange(plan.ListFilters.SelectMany(FilterVariableSpecs));
+        return CoalesceVariableSpecs(variables);
+    }
+
+    private static IReadOnlyList<VariableSpec> InvalidB077ProcedureVariableSpecs(ApiPlan plan)
+    {
+        var variables = new List<VariableSpec>
+        {
+            new(PageParameterName, "Numeric(9.0)"),
+            new(PageSizeParameterName, "Numeric(9.0)"),
+            new(PageVariableName, "Numeric(9.0)"),
+            new(PageSizeVariableName, "Numeric(9.0)"),
+            new("ListResponse", plan.ListResponseSdtName),
+            new("AppliedFilters", plan.ListFiltersSdtName),
+            new("Item", plan.ResponseSdtName),
+            new("FirstRecord", "Numeric(18.0)"),
+            new("LastRecord", "Numeric(18.0)"),
+            new("TotalCount", "Numeric(18.0)"),
+        };
+        variables.AddRange(plan.ListFilters.SelectMany(FilterVariableSpecs));
+        return CoalesceVariableSpecs(variables);
+    }
+
+    private static IReadOnlyList<VariableSpec> PreviousB070ProcedureVariableSpecs(ApiPlan plan)
     {
         var variables = new List<VariableSpec>
         {
