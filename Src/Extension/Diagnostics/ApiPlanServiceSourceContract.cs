@@ -13,7 +13,7 @@ public static class ApiPlanServiceSourceContract
         string moduleTarget,
         IEnumerable<string> services)
     {
-        return Matches(source, apiName, transactionName, moduleTarget, services, Array.Empty<string>(), false);
+        return Matches(source, apiName, transactionName, moduleTarget, services, Array.Empty<string>(), false, Array.Empty<string>(), false);
     }
 
     public static bool MatchesB055(
@@ -24,7 +24,20 @@ public static class ApiPlanServiceSourceContract
         IEnumerable<string> services,
         IEnumerable<string> primaryKeyNames)
     {
-        return Matches(source, apiName, transactionName, moduleTarget, services, primaryKeyNames, true);
+        return Matches(source, apiName, transactionName, moduleTarget, services, primaryKeyNames, true, Array.Empty<string>(), false);
+    }
+
+    public static bool MatchesB070(
+        string source,
+        string apiName,
+        string transactionName,
+        string moduleTarget,
+        IEnumerable<string> services,
+        IEnumerable<string> primaryKeyNames,
+        IEnumerable<string> listFilterNames,
+        bool includeBusinessComponentParameters)
+    {
+        return Matches(source, apiName, transactionName, moduleTarget, services, primaryKeyNames, includeBusinessComponentParameters, listFilterNames, true);
     }
 
     private static bool Matches(
@@ -34,7 +47,9 @@ public static class ApiPlanServiceSourceContract
         string moduleTarget,
         IEnumerable<string> services,
         IEnumerable<string> primaryKeyNames,
-        bool includeBusinessComponentParameters)
+        bool includeBusinessComponentParameters,
+        IEnumerable<string> listFilterNames,
+        bool hasListContract)
     {
         if (string.IsNullOrWhiteSpace(source) ||
             string.IsNullOrWhiteSpace(apiName) ||
@@ -47,6 +62,7 @@ public static class ApiPlanServiceSourceContract
 
         var normalizedServices = services.ToArray();
         var normalizedPrimaryKeyNames = primaryKeyNames.ToArray();
+        var normalizedListFilterNames = listFilterNames.ToArray();
         var compactSource = RemoveWhitespace(source);
         if (!compactSource.StartsWith(apiName + "{", StringComparison.Ordinal) ||
             CountOccurrences(compactSource, "=>") != normalizedServices.Length)
@@ -56,19 +72,29 @@ public static class ApiPlanServiceSourceContract
 
         return normalizedServices.All(service =>
         {
-            var servicePrefix = ServiceSignature(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters) + "=>";
+            var servicePrefix = ServiceSignature(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters, normalizedListFilterNames, hasListContract) + "=>";
             if (!TryReadProcedureCall(compactSource, servicePrefix, out var calledObject, out var calledArguments))
             {
                 return false;
             }
 
             return string.Equals(calledObject, ExpectedProcedureReference(moduleTarget, transactionName, service), StringComparison.Ordinal) &&
-                string.Equals(calledArguments, ProcedureArguments(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters), StringComparison.Ordinal);
+                string.Equals(calledArguments, ProcedureArguments(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters, normalizedListFilterNames, hasListContract), StringComparison.Ordinal);
         });
     }
 
-    private static string ServiceSignature(string service, IReadOnlyList<string> primaryKeyNames, bool includeBusinessComponentParameters)
+    private static string ServiceSignature(
+        string service,
+        IReadOnlyList<string> primaryKeyNames,
+        bool includeBusinessComponentParameters,
+        IReadOnlyList<string> listFilterNames,
+        bool hasListContract)
     {
+        if (hasListContract && string.Equals(service, "List", StringComparison.OrdinalIgnoreCase))
+        {
+            return "List(" + string.Join(",", new[] { "in:&ApiPage", "in:&ApiPageSize" }.Concat(listFilterNames.Select(name => "in:&" + name)).Concat(new[] { "out:&ListResponse" })) + ")";
+        }
+
         if (!includeBusinessComponentParameters || (!string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase) && !string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase)))
         {
             return service + "()";
@@ -82,8 +108,18 @@ public static class ApiPlanServiceSourceContract
         return "Update(" + string.Join(",", primaryKeyNames.Select(name => "in:&" + name).Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse" })) + ")";
     }
 
-    private static string ProcedureArguments(string service, IReadOnlyList<string> primaryKeyNames, bool includeBusinessComponentParameters)
+    private static string ProcedureArguments(
+        string service,
+        IReadOnlyList<string> primaryKeyNames,
+        bool includeBusinessComponentParameters,
+        IReadOnlyList<string> listFilterNames,
+        bool hasListContract)
     {
+        if (hasListContract && string.Equals(service, "List", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Join(",", new[] { "&ApiPage", "&ApiPageSize" }.Concat(listFilterNames.Select(name => "&" + name)).Concat(new[] { "&ListResponse" }));
+        }
+
         if (!includeBusinessComponentParameters)
         {
             return string.Empty;

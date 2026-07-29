@@ -95,6 +95,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Rotina pré-push passa a executar o teste unitário do parser Service Source B054/B055 como gate automático
 - Rotina pré-push passa a executar o teste unitário da integridade B067 como gate automático
 - Correção B067 deixa o hash textual do Service Source como evidência e usa contrato semântico para bloqueio, preservando bloqueio de `[Description]` divergente
+- Correção pré-push B070/B077 valida SDTs, Folder, Procedure, API Object e tipos planejados antes do primeiro `Save()` do `ApplyList`; depois reconfigura SDTs próprios mesmo sem a aba `SDTs` marcada e aceita reencontro semântico do API Object B070 para evitar falso bloqueio por normalização inofensiva do Service Source
 
 ## Planned
 

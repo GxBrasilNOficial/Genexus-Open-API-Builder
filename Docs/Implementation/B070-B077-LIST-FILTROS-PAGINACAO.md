@@ -21,6 +21,8 @@ A Procedure gerada:
 
 O SDT writer passou a gravar membros nullable de `ListFilters` com a propriedade GeneXus `idJsonInclude=idJsonJsonNull`, correspondente a `Json Null Serialization = JSON null`. Essa configuracao e obrigatoria para filtros aplicados: sem ela, membro numerico nao informado serializa como `0`, o que falsamente indicaria filtro aplicado.
 
+`ApplyList` executa primeiro um preflight sem escrita dos SDTs, da Procedure, do API Object, do Folder e dos tipos de variaveis planejados. Somente depois desse trio ser validado, reexecuta o reencontro conservador dos SDTs antes de alterar Procedure e API Object, mesmo quando a aba `SDTs` nao foi marcada no wizard. Assim, um `ListFilters` antigo e proprio da extensao e regravado para conter a estrutura B077 exigida antes do trio runtime ser sincronizado.
+
 O preflight de B070 aceita migração conservadora das variantes intermediarias geradas durante a validacao manual da frente, incluindo a versao com `new()` invalido em C# e a versao condicional de `AppliedFilters`.
 
 ## Validacao Manual

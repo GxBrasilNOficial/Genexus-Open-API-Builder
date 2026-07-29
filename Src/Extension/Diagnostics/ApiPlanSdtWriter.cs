@@ -38,7 +38,7 @@ internal static class ApiPlanSdtWriter
         }
 
         var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
-        var preflight = Preflight(designModel, generationPlan);
+        var preflight = CreatePreflightResult(designModel, generationPlan);
         ApiPlanTransactionFolder.Preflight(designModel, apiPlan);
         var sharedFolder = preflight.SharedFolder ?? CreateSharedFolder(designModel);
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan);
@@ -69,7 +69,23 @@ internal static class ApiPlanSdtWriter
         return $"{OwnedDescriptionPrefix} - {backlogId} - {kind}";
     }
 
-    private static ApiPlanSdtPreflightResult Preflight(KBModel designModel, ApiPlanSdtGenerationPlan generationPlan)
+    internal static void Preflight(KBModel designModel, ApiPlan apiPlan)
+    {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (apiPlan is null)
+        {
+            throw new ArgumentNullException(nameof(apiPlan));
+        }
+
+        CreatePreflightResult(designModel, ApiPlanSdtGenerationPlanBuilder.Create(apiPlan));
+        ApiPlanTransactionFolder.Preflight(designModel, apiPlan);
+    }
+
+    private static ApiPlanSdtPreflightResult CreatePreflightResult(KBModel designModel, ApiPlanSdtGenerationPlan generationPlan)
     {
         var allDefinitions = generationPlan.SharedSdts.Concat(generationPlan.OwnSdts).ToArray();
         var plannedNames = new HashSet<string>(allDefinitions.Select(item => item.Name), StringComparer.OrdinalIgnoreCase);

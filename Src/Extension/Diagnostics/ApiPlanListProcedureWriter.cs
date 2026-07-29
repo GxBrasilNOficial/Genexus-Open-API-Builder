@@ -27,7 +27,7 @@ internal static class ApiPlanListProcedureWriter
         if (!HasService(plan, "List"))
             throw new InvalidOperationException("B070 bloqueado: o ApiPlan precisa conter List. Nenhuma alteracao foi feita.");
 
-        EnsureSdts(model, plan);
+        ApiPlanSdtWriter.Preflight(model, plan);
         var procedure = FindListProcedure(model, plan);
         var api = FindApi(model, plan);
         var source = CreateListSource(plan);
@@ -43,10 +43,11 @@ internal static class ApiPlanListProcedureWriter
         EnsureProcedure(procedure, plan, source, rules, procedureVariables);
         EnsureApi(model, api, plan);
         ValidateVariableSpecs(model, procedure, procedureVariables);
-        ValidateVariableSpecs(model, procedure, apiVariables);
+        ValidateVariableSpecs(model, api, apiVariables);
 
-        SaveProcedure(model, procedure, source, procedureVariables, rules);
+        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan);
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
+        SaveProcedure(model, procedure, source, procedureVariables, rules);
         SaveApi(model, api, transactionFolder, plan, apiSource, apiVariables);
 
         return new ApiPlanListProcedureWriteResult(
@@ -65,10 +66,9 @@ internal static class ApiPlanListProcedureWriter
             return false;
         }
 
-        var source = NormalizeForComparison(api.ServiceGroupSource.Source);
-        return (string.Equals(source, NormalizeForComparison(CreateB070ServiceGroupSource(plan, includeBusinessComponentParameters: false)), StringComparison.Ordinal) &&
+        return (IsB070ServiceGroupSource(plan, api.ServiceGroupSource.Source, includeBusinessComponentParameters: false) &&
                 HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: false))))
-            || (string.Equals(source, NormalizeForComparison(CreateB070ServiceGroupSource(plan, includeBusinessComponentParameters: true)), StringComparison.Ordinal) &&
+            || (IsB070ServiceGroupSource(plan, api.ServiceGroupSource.Source, includeBusinessComponentParameters: true) &&
                 HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: true))));
     }
 
@@ -79,22 +79,25 @@ internal static class ApiPlanListProcedureWriter
             return false;
         }
 
-        return string.Equals(
-                NormalizeForComparison(api.ServiceGroupSource.Source),
-                NormalizeForComparison(CreateB070ServiceGroupSource(plan, includeBusinessComponentParameters: true)),
-                StringComparison.Ordinal) &&
+        return IsB070ServiceGroupSource(plan, api.ServiceGroupSource.Source, includeBusinessComponentParameters: true) &&
             HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: true)));
     }
 
-    private static void EnsureSdts(KBModel model, ApiPlan plan)
+    private static bool IsB070ServiceGroupSource(ApiPlan plan, string source, bool includeBusinessComponentParameters)
     {
-        var definitions = ApiPlanSdtGenerationPlanBuilder.Create(plan);
-        foreach (var definition in definitions.SharedSdts.Concat(definitions.OwnSdts))
-        {
-            var matches = SDT.GetAll(model).Where(item => string.Equals(item.Name, definition.Name, StringComparison.OrdinalIgnoreCase)).ToArray();
-            if (matches.Length != 1 || !string.Equals(matches.Single().Description, ApiPlanSdtWriter.CreateOwnedDescriptionFor(definition.BacklogId, definition.Kind), StringComparison.Ordinal))
-                throw new InvalidOperationException($"B070 bloqueado: SDT proprio requerido '{definition.Name}' nao foi reencontrado com seguranca. Nenhuma alteracao foi feita.");
-        }
+        return string.Equals(
+                NormalizeForComparison(source),
+                NormalizeForComparison(CreateB070ServiceGroupSource(plan, includeBusinessComponentParameters)),
+                StringComparison.Ordinal) ||
+            ApiPlanServiceSourceContract.MatchesB070(
+                source,
+                plan.ApiName,
+                plan.TransactionName,
+                plan.ModuleTarget,
+                plan.Services.Select(service => service.Name),
+                plan.PrimaryKey.Select(field => field.Name),
+                plan.ListFilters.SelectMany(FilterVariableNames),
+                includeBusinessComponentParameters);
     }
 
     private static Procedure FindListProcedure(KBModel model, ApiPlan plan)
@@ -660,6 +663,18 @@ internal static class ApiPlanListProcedureWriter
             var item = new Variable("GOABB070TypeProbe" + index, procedure.Variables);
             if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
                 throw new InvalidOperationException($"B070 bloqueado: tipo da variavel '&{variable.Name}' nao foi resolvido antes da escrita: '{variable.DataType}'. Nenhuma alteracao foi feita.");
+            index++;
+        }
+    }
+
+    private static void ValidateVariableSpecs(KBModel model, API api, IReadOnlyList<VariableSpec> variables)
+    {
+        var index = 0;
+        foreach (var variable in variables)
+        {
+            var item = new Variable("GOABB070ApiTypeProbe" + index, api.Variables);
+            if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+                throw new InvalidOperationException($"B070 bloqueado: tipo da variavel de API '&{variable.Name}' nao foi resolvido antes da escrita: '{variable.DataType}'. Nenhuma alteracao foi feita.");
             index++;
         }
     }

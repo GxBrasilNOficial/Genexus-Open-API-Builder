@@ -56,4 +56,24 @@ Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceCo
 Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB055($b055.Replace('&UpdateRequest, &UpdateResponse', '&UpdateResponse, &UpdateRequest'), 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey)) 'B055 deve rejeitar argumentos divergentes.'
 Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB055($b055.Replace('Entities.procSimulationResult_API_Create', 'Entities.procSimulationResult_API_Update'), 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey)) 'B055 deve rejeitar vinculo servico-Procedure divergente.'
 
+[string[]]$listFilters = @('SimulationResultId')
+
+$b070 = @'
+apiSimulationResult
+{
+    List(in: &ApiPage, in: &ApiPageSize, in: &SimulationResultId, out: &ListResponse)
+        => Entities.procSimulationResult_API_List(&ApiPage, &ApiPageSize, &SimulationResultId, &ListResponse);
+    Get()
+        => Entities.procSimulationResult_API_Get();
+    Create(in: &CreateRequest, out: &CreateResponse)
+        => Entities.procSimulationResult_API_Create(&CreateRequest, &CreateResponse);
+    Update(in: &SimulationResultId, in: &UpdateRequest, out: &UpdateResponse)
+        => Entities.procSimulationResult_API_Update(&SimulationResultId, &UpdateRequest, &UpdateResponse);
+}
+'@
+
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB070($b070, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B070 deve aceitar List parametrizado e Create/Update B055.'
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB070(($b070 -replace 'in: &ApiPage', 'in:&ApiPage' -replace 'out: &ListResponse', 'out:&ListResponse'), 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B070 deve aceitar normalizacao inofensiva de espacos.'
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB070($b070.Replace('&SimulationResultId, &ListResponse', '&ListResponse, &SimulationResultId'), 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B070 deve rejeitar argumentos de List divergentes.'
+
 Write-Output 'PASS: ApiPlanServiceSourceContract'
