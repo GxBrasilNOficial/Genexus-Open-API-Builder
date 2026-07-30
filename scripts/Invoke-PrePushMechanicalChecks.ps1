@@ -211,30 +211,25 @@ try {
         else { $failed = $true; $checks.Add((New-Check 'powershell.parse' 'failed' 'Há erro de parse em scripts PowerShell.' @($parseErrors))) }
     }
 
-    $serviceSourceContractTest = Join-Path $repositoryRoot 'Tests\ServiceSourceContract\Test-ApiPlanServiceSourceContract.ps1'
-    if (Test-Path -LiteralPath $serviceSourceContractTest -PathType Leaf) {
-        $testResult = Invoke-ExternalProcess -FileName 'pwsh' -Arguments @('-NoProfile', '-File', $serviceSourceContractTest) -WorkingDirectory $repositoryRoot
-        $testOutput = ConvertTo-SanitizedText ($testResult.StdOut + $testResult.StdErr)
-        $commands.Add([ordered]@{ command = 'pwsh -NoProfile -File Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract.ps1'; exitCode = $testResult.ExitCode; output = $testOutput })
-        if ($testResult.ExitCode -eq 0) { $checks.Add((New-Check 'tests.serviceSourceContract' 'passed' 'Teste unitário do parser Service Source concluído.' $testOutput)) }
-        else { $failed = $true; $checks.Add((New-Check 'tests.serviceSourceContract' 'failed' 'Teste unitário do parser Service Source falhou.' $testOutput)) }
-    }
-    else {
-        $failed = $true
-        $checks.Add((New-Check 'tests.serviceSourceContract' 'failed' 'Teste unitário do parser Service Source não encontrado.' $serviceSourceContractTest))
-    }
-
-    $metadataIntegrityTest = Join-Path $repositoryRoot 'Tests\MetadataIntegrity\Test-ApiPlanMetadataIntegrity.ps1'
-    if (Test-Path -LiteralPath $metadataIntegrityTest -PathType Leaf) {
-        $testResult = Invoke-ExternalProcess -FileName 'pwsh' -Arguments @('-NoProfile', '-File', $metadataIntegrityTest) -WorkingDirectory $repositoryRoot
-        $testOutput = ConvertTo-SanitizedText ($testResult.StdOut + $testResult.StdErr)
-        $commands.Add([ordered]@{ command = 'pwsh -NoProfile -File Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity.ps1'; exitCode = $testResult.ExitCode; output = $testOutput })
-        if ($testResult.ExitCode -eq 0) { $checks.Add((New-Check 'tests.metadataIntegrity' 'passed' 'Teste unitário da integridade B067 concluído.' $testOutput)) }
-        else { $failed = $true; $checks.Add((New-Check 'tests.metadataIntegrity' 'failed' 'Teste unitário da integridade B067 falhou.' $testOutput)) }
-    }
-    else {
-        $failed = $true
-        $checks.Add((New-Check 'tests.metadataIntegrity' 'failed' 'Teste unitário da integridade B067 não encontrado.' $metadataIntegrityTest))
+    foreach ($unitTest in @(
+        [ordered]@{ Name = 'tests.serviceSourceContract'; RelativePath = 'Tests\ServiceSourceContract\Test-ApiPlanServiceSourceContract.ps1'; Command = 'pwsh -NoProfile -File Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract.ps1'; Passed = 'Teste unitário do parser Service Source concluído.'; Failed = 'Teste unitário do parser Service Source falhou.'; Missing = 'Teste unitário do parser Service Source não encontrado.' },
+        [ordered]@{ Name = 'tests.metadataIntegrity'; RelativePath = 'Tests\MetadataIntegrity\Test-ApiPlanMetadataIntegrity.ps1'; Command = 'pwsh -NoProfile -File Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity.ps1'; Passed = 'Teste unitário da integridade B067 concluído.'; Failed = 'Teste unitário da integridade B067 falhou.'; Missing = 'Teste unitário da integridade B067 não encontrado.' },
+        [ordered]@{ Name = 'tests.wizardPreferences'; RelativePath = 'Tests\WizardPreferences\Test-PrototypeWizardPreferences.ps1'; Command = 'pwsh -NoProfile -File Tests/WizardPreferences/Test-PrototypeWizardPreferences.ps1'; Passed = 'Teste unitário das preferências do wizard concluído.'; Failed = 'Teste unitário das preferências do wizard falhou.'; Missing = 'Teste unitário das preferências do wizard não encontrado.' },
+        [ordered]@{ Name = 'tests.writePreflightScope'; RelativePath = 'Tests\WritePreflight\Test-ApiPlanWritePreflightScope.ps1'; Command = 'pwsh -NoProfile -File Tests/WritePreflight/Test-ApiPlanWritePreflightScope.ps1'; Passed = 'Teste unitário do escopo de preflight de escrita concluído.'; Failed = 'Teste unitário do escopo de preflight de escrita falhou.'; Missing = 'Teste unitário do escopo de preflight de escrita não encontrado.' },
+        [ordered]@{ Name = 'tests.listProcedureReencounterPolicy'; RelativePath = 'Tests\ListProcedure\Test-ApiPlanListProcedureReencounterPolicy.ps1'; Command = 'pwsh -NoProfile -File Tests/ListProcedure/Test-ApiPlanListProcedureReencounterPolicy.ps1'; Passed = 'Teste unitário do reencontro B070 de List concluído.'; Failed = 'Teste unitário do reencontro B070 de List falhou.'; Missing = 'Teste unitário do reencontro B070 de List não encontrado.' }
+    )) {
+        $testPath = Join-Path $repositoryRoot $unitTest.RelativePath
+        if (Test-Path -LiteralPath $testPath -PathType Leaf) {
+            $testResult = Invoke-ExternalProcess -FileName 'pwsh' -Arguments @('-NoProfile', '-File', $testPath) -WorkingDirectory $repositoryRoot
+            $testOutput = ConvertTo-SanitizedText ($testResult.StdOut + $testResult.StdErr)
+            $commands.Add([ordered]@{ command = $unitTest.Command; exitCode = $testResult.ExitCode; output = $testOutput })
+            if ($testResult.ExitCode -eq 0) { $checks.Add((New-Check $unitTest.Name 'passed' $unitTest.Passed $testOutput)) }
+            else { $failed = $true; $checks.Add((New-Check $unitTest.Name 'failed' $unitTest.Failed $testOutput)) }
+        }
+        else {
+            $failed = $true
+            $checks.Add((New-Check $unitTest.Name 'failed' $unitTest.Missing $testPath))
+        }
     }
 
     foreach ($dotnetSpec in @(

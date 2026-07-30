@@ -5,21 +5,20 @@ using Artech.Architecture.Common.Objects;
 using Artech.Common;
 using Artech.Genexus.Common.Wiki;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal sealed class PrototypeWizardPreferences
 {
-    public const string SchemaVersion = "GOAB_WIZARD_PREFERENCES_V1";
-    public const string FileName = "GxOpenApiBuilder_Settings";
+    public const string SchemaVersion = PrototypeWizardPreferencesCodec.SchemaVersion;
+    public const string FileName = PrototypeWizardPreferencesCodec.FileName;
     public const string ExternalFileName = FileName + ".json";
     public const string OwnedDescription = "Genexus Open API Builder Wizard Preferences";
-    public const string SecurityLevelAuthentication = "Authentication";
-    public const string SecurityLevelAuthorization = "Authorization";
-    public const string SecurityLevelNone = "None";
-    public const int DefaultPageSizeFallback = 50;
-    public const int MaximumPageSizeFallback = 200;
+    public const string SecurityLevelAuthentication = PrototypeWizardPreferencesCodec.SecurityLevelAuthentication;
+    public const string SecurityLevelAuthorization = PrototypeWizardPreferencesCodec.SecurityLevelAuthorization;
+    public const string SecurityLevelNone = PrototypeWizardPreferencesCodec.SecurityLevelNone;
+    public const int DefaultPageSizeFallback = PrototypeWizardPreferencesCodec.DefaultPageSizeFallback;
+    public const int MaximumPageSizeFallback = PrototypeWizardPreferencesCodec.MaximumPageSizeFallback;
 
     public bool GenerateSdtsByDefault { get; set; }
 
@@ -49,7 +48,7 @@ internal sealed class PrototypeWizardPreferences
 
     public static PrototypeWizardPreferences CreateDefault()
     {
-        return new PrototypeWizardPreferences();
+        return FromPreferenceValues(PrototypeWizardPreferencesCodec.CreateDefault());
     }
 
     public PrototypeWizardPreferences Clone()
@@ -74,17 +73,52 @@ internal sealed class PrototypeWizardPreferences
 
     public static string NormalizeSecurityLevel(string? value)
     {
-        if (string.Equals(value, SecurityLevelAuthorization, StringComparison.OrdinalIgnoreCase))
+        return PrototypeWizardPreferencesCodec.NormalizeSecurityLevel(value);
+    }
+
+    public static PrototypeWizardPreferences FromPreferenceValues(PrototypeWizardPreferenceValues values)
+    {
+        if (values is null)
         {
-            return SecurityLevelAuthorization;
+            throw new ArgumentNullException(nameof(values));
         }
 
-        if (string.Equals(value, SecurityLevelNone, StringComparison.OrdinalIgnoreCase))
+        return new PrototypeWizardPreferences
         {
-            return SecurityLevelNone;
-        }
+            GenerateSdtsByDefault = values.GenerateSdtsByDefault,
+            GenerateProceduresByDefault = values.GenerateProceduresByDefault,
+            GenerateApiObjectByDefault = values.GenerateApiObjectByDefault,
+            GenerateMetadataByDefault = values.GenerateMetadataByDefault,
+            ApplyListByDefault = values.ApplyListByDefault,
+            ApplyBusinessComponentByDefault = values.ApplyBusinessComponentByDefault,
+            ListServiceByDefault = values.ListServiceByDefault,
+            GetServiceByDefault = values.GetServiceByDefault,
+            CreateServiceByDefault = values.CreateServiceByDefault,
+            UpdateServiceByDefault = values.UpdateServiceByDefault,
+            SecurityLevelByDefault = values.SecurityLevelByDefault,
+            DefaultPageSizeByDefault = values.DefaultPageSizeByDefault,
+            MaximumPageSizeByDefault = values.MaximumPageSizeByDefault,
+        };
+    }
 
-        return SecurityLevelAuthentication;
+    public PrototypeWizardPreferenceValues ToPreferenceValues()
+    {
+        return new PrototypeWizardPreferenceValues
+        {
+            GenerateSdtsByDefault = GenerateSdtsByDefault,
+            GenerateProceduresByDefault = GenerateProceduresByDefault,
+            GenerateApiObjectByDefault = GenerateApiObjectByDefault,
+            GenerateMetadataByDefault = GenerateMetadataByDefault,
+            ApplyListByDefault = ApplyListByDefault,
+            ApplyBusinessComponentByDefault = ApplyBusinessComponentByDefault,
+            ListServiceByDefault = ListServiceByDefault,
+            GetServiceByDefault = GetServiceByDefault,
+            CreateServiceByDefault = CreateServiceByDefault,
+            UpdateServiceByDefault = UpdateServiceByDefault,
+            SecurityLevelByDefault = SecurityLevelByDefault,
+            DefaultPageSizeByDefault = DefaultPageSizeByDefault,
+            MaximumPageSizeByDefault = MaximumPageSizeByDefault,
+        };
     }
 }
 
@@ -251,160 +285,12 @@ internal static class PrototypeWizardPreferencesStore
 
     private static PrototypeWizardPreferences Parse(string json)
     {
-        var root = JObject.Parse(json);
-        RequireString(root, "schemaVersion", PrototypeWizardPreferences.SchemaVersion);
-        var defaults = root["wizardDefaults"] as JObject
-            ?? throw new JsonException("Membro obrigatorio 'wizardDefaults' ausente.");
-
-        var preferences = new PrototypeWizardPreferences
-        {
-            GenerateSdtsByDefault = ReadBool(defaults, "generateSdts"),
-            GenerateProceduresByDefault = ReadBool(defaults, "generateProcedures"),
-            GenerateApiObjectByDefault = ReadBool(defaults, "generateApiObject"),
-            GenerateMetadataByDefault = ReadBool(defaults, "generateMetadata"),
-            ApplyListByDefault = ReadBool(defaults, "applyList"),
-            ApplyBusinessComponentByDefault = ReadBool(defaults, "applyBusinessComponent"),
-            ListServiceByDefault = ReadOptionalBool(defaults["services"] as JObject, "list", true),
-            GetServiceByDefault = ReadOptionalBool(defaults["services"] as JObject, "get", true),
-            CreateServiceByDefault = ReadOptionalBool(defaults["services"] as JObject, "create", true),
-            UpdateServiceByDefault = ReadOptionalBool(defaults["services"] as JObject, "update", true),
-            SecurityLevelByDefault = PrototypeWizardPreferences.NormalizeSecurityLevel(ReadOptionalString(defaults, "securityLevel", PrototypeWizardPreferences.SecurityLevelAuthentication)),
-            DefaultPageSizeByDefault = ReadOptionalPositiveInt(defaults["pagination"] as JObject, "defaultPageSize", PrototypeWizardPreferences.DefaultPageSizeFallback),
-            MaximumPageSizeByDefault = ReadOptionalPositiveInt(defaults["pagination"] as JObject, "maximumPageSize", PrototypeWizardPreferences.MaximumPageSizeFallback),
-        };
-
-        if (preferences.DefaultPageSizeByDefault > preferences.MaximumPageSizeByDefault)
-        {
-            throw new JsonException("Preferencias de paginacao invalidas: 'defaultPageSize' deve ser menor ou igual a 'maximumPageSize'.");
-        }
-
-        if (!preferences.ListServiceByDefault
-            && !preferences.GetServiceByDefault
-            && !preferences.CreateServiceByDefault
-            && !preferences.UpdateServiceByDefault)
-        {
-            throw new JsonException("Preferencias de servico invalidas: ao menos um servico deve iniciar marcado.");
-        }
-
-        return preferences;
+        return PrototypeWizardPreferences.FromPreferenceValues(PrototypeWizardPreferencesCodec.Parse(json));
     }
 
     private static string Serialize(PrototypeWizardPreferences preferences)
     {
-        var root = new JObject
-        {
-            ["schemaVersion"] = PrototypeWizardPreferences.SchemaVersion,
-            ["scope"] = "KnowledgeBase",
-            ["fileName"] = PrototypeWizardPreferences.FileName,
-            ["wizardDefaults"] = new JObject
-            {
-                ["generateSdts"] = preferences.GenerateSdtsByDefault,
-                ["generateProcedures"] = preferences.GenerateProceduresByDefault,
-                ["generateApiObject"] = preferences.GenerateApiObjectByDefault,
-                ["generateMetadata"] = preferences.GenerateMetadataByDefault,
-                ["applyList"] = preferences.ApplyListByDefault,
-                ["applyBusinessComponent"] = preferences.ApplyBusinessComponentByDefault,
-                ["services"] = new JObject
-                {
-                    ["list"] = preferences.ListServiceByDefault,
-                    ["get"] = preferences.GetServiceByDefault,
-                    ["create"] = preferences.CreateServiceByDefault,
-                    ["update"] = preferences.UpdateServiceByDefault,
-                },
-                ["securityLevel"] = PrototypeWizardPreferences.NormalizeSecurityLevel(preferences.SecurityLevelByDefault),
-                ["pagination"] = new JObject
-                {
-                    ["defaultPageSize"] = Math.Max(1, preferences.DefaultPageSizeByDefault),
-                    ["maximumPageSize"] = Math.Max(1, preferences.MaximumPageSizeByDefault),
-                },
-            },
-        };
-
-        return root.ToString(Formatting.Indented);
-    }
-
-    private static void RequireString(JObject root, string propertyName, string expectedValue)
-    {
-        var actual = root[propertyName]?.Value<string>();
-        if (!string.Equals(actual, expectedValue, StringComparison.Ordinal))
-        {
-            throw new JsonException($"Membro '{propertyName}' esperado='{expectedValue}', atual='{actual ?? "<ausente>"}'.");
-        }
-    }
-
-    private static bool ReadBool(JObject root, string propertyName)
-    {
-        var token = root[propertyName];
-        if (token is null || token.Type != JTokenType.Boolean)
-        {
-            throw new JsonException($"Membro booleano obrigatorio '{propertyName}' ausente ou invalido.");
-        }
-
-        return token.Value<bool>();
-    }
-
-    private static bool ReadOptionalBool(JObject? root, string propertyName, bool fallback)
-    {
-        if (root is null)
-        {
-            return fallback;
-        }
-
-        var token = root[propertyName];
-        if (token is null)
-        {
-            return fallback;
-        }
-
-        if (token.Type != JTokenType.Boolean)
-        {
-            throw new JsonException($"Membro booleano opcional '{propertyName}' invalido.");
-        }
-
-        return token.Value<bool>();
-    }
-
-    private static string ReadOptionalString(JObject root, string propertyName, string fallback)
-    {
-        var token = root[propertyName];
-        if (token is null)
-        {
-            return fallback;
-        }
-
-        if (token.Type != JTokenType.String)
-        {
-            throw new JsonException($"Membro string opcional '{propertyName}' invalido.");
-        }
-
-        return token.Value<string>() ?? fallback;
-    }
-
-    private static int ReadOptionalPositiveInt(JObject? root, string propertyName, int fallback)
-    {
-        if (root is null)
-        {
-            return fallback;
-        }
-
-        var token = root[propertyName];
-        if (token is null)
-        {
-            return fallback;
-        }
-
-        if (token.Type != JTokenType.Integer)
-        {
-            throw new JsonException($"Membro inteiro opcional '{propertyName}' invalido.");
-        }
-
-        var value = token.Value<int>();
-        if (value < 1)
-        {
-            throw new JsonException($"Membro inteiro opcional '{propertyName}' deve ser maior ou igual a 1.");
-        }
-
-        return value;
+        return PrototypeWizardPreferencesCodec.Serialize(preferences.ToPreferenceValues());
     }
 
     private static void SetExtractionFlags(WikiFileKBObject file)

@@ -791,16 +791,19 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B092] Seguranca no ApiPlan: SecurityLevel='{apiPlan.Security.SecurityLevel}', GamCondition='{apiPlan.Security.GamCondition}', RequiresGenerationConfirmation={apiPlan.Security.RequiresGenerationConfirmation}. Sem aplicar seguranca em objetos reais.");
         WriteOutput($"[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria. GenerateSdts={selection.GenerateSdts}, GenerateProcedures={selection.GenerateProcedures}, GenerateApiObject={selection.GenerateApiObject}, GenerateMetadata={selection.GenerateMetadata}, ApplyList={selection.ApplyList}, ApplyBusinessComponent={selection.ApplyBusinessComponent}; escritas confirmadas no wizard exigem preflight completo antes de qualquer Save().");
         var generationState = ApiPlanGenerationStateReader.Read(knowledgeBase.DesignModel, apiPlan);
-        var requireSdts = selection.GenerateSdts || selection.GenerateProcedures || selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyList || selection.ApplyBusinessComponent;
-        var requireProcedures = selection.GenerateProcedures || selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyList || selection.ApplyBusinessComponent;
-        var requireApiObject = selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyList || selection.ApplyBusinessComponent;
-        var requireMetadataFile = selection.GenerateMetadata;
+        var preflightScope = ApiPlanWritePreflightScope.FromSelection(
+            selection.GenerateSdts,
+            selection.GenerateProcedures,
+            selection.GenerateApiObject,
+            selection.GenerateMetadata,
+            selection.ApplyList,
+            selection.ApplyBusinessComponent);
         var blockedGenerationStages = new[]
             {
-                requireSdts ? generationState.Sdts : null,
-                requireProcedures ? generationState.Procedures : null,
-                requireApiObject ? generationState.ApiObject : null,
-                requireMetadataFile ? generationState.MetadataFile : null,
+                preflightScope.RequireSdts ? generationState.Sdts : null,
+                preflightScope.RequireProcedures ? generationState.Procedures : null,
+                preflightScope.RequireApiObject ? generationState.ApiObject : null,
+                preflightScope.RequireMetadataFile ? generationState.MetadataFile : null,
             }
             .Where(stage => stage is not null)
             .Cast<ApiPlanGenerationStageState>()
@@ -822,10 +825,10 @@ public sealed class Package : AbstractPackageUI
                 knowledgeBase.DesignModel,
                 transaction,
                 apiPlan,
-                requireSdts,
-                requireProcedures,
-                requireApiObject,
-                requireMetadataFile);
+                preflightScope.RequireSdts,
+                preflightScope.RequireProcedures,
+                preflightScope.RequireApiObject,
+                preflightScope.RequireMetadataFile);
         }
         catch (Exception ex)
         {

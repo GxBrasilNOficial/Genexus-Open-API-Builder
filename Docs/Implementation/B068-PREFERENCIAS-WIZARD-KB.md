@@ -41,6 +41,16 @@ Depois da ampliacao de servicos, seguranca e paginacao, a validacao mecanica foi
 
 No reteste com `Produto`, a preferencia `ApplyBusinessComponent=True` revelou um gating insuficiente: a Transaction estava com Business Component desabilitado e, ainda assim, a opcao tentou executar B055, bloqueando a metadata no mesmo fluxo. O wizard foi ajustado para desabilitar e desmarcar essa opcao quando `IsBusinessComponentReady()` for falso; a preferencia so volta a marcar a etapa quando a Transaction ja e BC ou quando o usuario habilita BC explicitamente no wizard.
 
+## Cobertura automatizada pós-revisão
+
+A revisão externa de B068 aceitou o comportamento runtime, mas apontou dívida de teste automatizado. A cobertura adicionada após a validação funcional cobre:
+
+- `PrototypeWizardPreferencesCodec`: defaults conservadores, serialização/parsing do schema atual, normalização de `SecurityLevel`, validação de `DefaultPageSize <= MaximumPageSize`, fallback de campos opcionais e preservação de serviços, paginação e flags de geração;
+- `ApiPlanWritePreflightScope`: seleção de etapas exigidas pelo preflight agregado, garantindo que `GenerateMetadata=False` não selecione `Metadata File`, enquanto `List`, `Business Component` e `Metadata` preservam dependências de SDTs, Procedures e API Object;
+- `ApiPlanListProcedureReencounterPolicy`: reencontro B070 aceitando Source próprio conhecido quando apenas os literais `&ApiPageSize = N` e `If &ApiPageSize > N` mudam, e mantendo bloqueio para Source externo, Rules, variáveis e contrato B070 de API Object divergentes.
+
+Esses testes passaram a ser executados pela rotina pré-push local junto com os testes existentes de Service Source e integridade B067.
+
 ## Validacao manual
 
 Validacao funcional no GeneXus 18 U15 em 2026-07-29:

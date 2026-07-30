@@ -44,18 +44,14 @@ internal static class ApiPlanWritePreflight
         }
 
         var state = ApiPlanGenerationStateReader.Read(designModel, apiPlan);
-        var blockedStages = new[]
-            {
-                requireSdts ? state.Sdts : null,
-                requireProcedures ? state.Procedures : null,
-                requireApiObject ? state.ApiObject : null,
-                requireMetadataFile ? state.MetadataFile : null,
-            }
-            .Where(stage => stage is not null)
-            .Cast<ApiPlanGenerationStageState>()
-            .Where(stage => stage.IsBlocked)
-            .Select(stage => stage.StageName)
-            .ToArray();
+        var scope = ApiPlanWritePreflightScope.FromRequirements(requireSdts, requireProcedures, requireApiObject, requireMetadataFile);
+        var blockedStages = scope.SelectBlockedStageNames(new[]
+        {
+            ToStageBlock(ApiPlanWritePreflightStageKind.Sdts, state.Sdts),
+            ToStageBlock(ApiPlanWritePreflightStageKind.Procedures, state.Procedures),
+            ToStageBlock(ApiPlanWritePreflightStageKind.ApiObject, state.ApiObject),
+            ToStageBlock(ApiPlanWritePreflightStageKind.MetadataFile, state.MetadataFile),
+        });
 
         if (blockedStages.Length == 0)
         {
@@ -66,5 +62,10 @@ internal static class ApiPlanWritePreflight
             "B063/B064/B067 bloqueado antes do primeiro Save(): foram detectadas colisao(oes) externa(s), incompativel(is), ambigua(s) ou metadata de integridade divergente em " +
             string.Join(", ", blockedStages) +
             ". Nenhum objeto planejado foi criado, alterado ou recebeu sufixo _v2.");
+    }
+
+    private static ApiPlanWritePreflightStageBlock ToStageBlock(ApiPlanWritePreflightStageKind stageKind, ApiPlanGenerationStageState stage)
+    {
+        return new ApiPlanWritePreflightStageBlock(stageKind, stage.StageName, stage.IsBlocked);
     }
 }
