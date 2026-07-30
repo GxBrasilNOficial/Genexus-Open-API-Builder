@@ -67,6 +67,7 @@ internal sealed class PrototypeWizardDialog : Form
     private bool _loadingSnapshot;
     private bool _servicesBasePathEditedManually;
     private bool _businessComponentEnabledDuringWizard;
+    private bool _suppressGenerationPreviewRefresh;
     private string _generationContext = "Plano da Transaction ainda nao consultado na KB.";
 
     public PrototypeWizardDialog(KBModel designModel, Transaction transaction, PrototypeWizardContractSnapshot snapshot, PrototypeBusinessComponentSnapshot businessComponentSnapshot, PrototypeWizardPreferences preferences, Func<bool> enableBusinessComponent, Action<string> writeBusinessComponentOutput)
@@ -92,7 +93,6 @@ internal sealed class PrototypeWizardDialog : Form
         WirePathSynchronization();
         LoadSnapshot();
         WireGenerationConfirmation();
-        RefreshGenerationPreview();
         ApplyWizardPreferences();
     }
 
@@ -701,39 +701,45 @@ internal sealed class PrototypeWizardDialog : Form
             }
 
             _generateProceduresCheck.Enabled = _generateSdtsCheck.Checked;
-            RefreshGenerationPreview();
+            RefreshGenerationPreviewUnlessSuppressed();
         };
         _generateProceduresCheck.Enabled = false;
-        _generateProceduresCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
+        _generateProceduresCheck.CheckedChanged += (_, _) => RefreshGenerationPreviewUnlessSuppressed();
         _generateApiObjectCheck.Enabled = false;
-        _generateApiObjectCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
+        _generateApiObjectCheck.CheckedChanged += (_, _) => RefreshGenerationPreviewUnlessSuppressed();
         _applyListCheck.Enabled = false;
-        _applyListCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
+        _applyListCheck.CheckedChanged += (_, _) => RefreshGenerationPreviewUnlessSuppressed();
         _generateMetadataCheck.Enabled = false;
-        _generateMetadataCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
-        _applyBusinessComponentCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
+        _generateMetadataCheck.CheckedChanged += (_, _) => RefreshGenerationPreviewUnlessSuppressed();
+        _applyBusinessComponentCheck.CheckedChanged += (_, _) => RefreshGenerationPreviewUnlessSuppressed();
     }
 
     private void ApplyWizardPreferences()
     {
-        ApplyServicePreference("List", _preferences.ListServiceByDefault);
-        ApplyServicePreference("Get", _preferences.GetServiceByDefault);
-        ApplyServicePreference("Create", _preferences.CreateServiceByDefault);
-        ApplyServicePreference("Update", _preferences.UpdateServiceByDefault);
-        ApplySecurityPreference(_preferences.SecurityLevelByDefault);
-        _defaultPageSize.Value = ClampNumeric(_defaultPageSize, _preferences.DefaultPageSizeByDefault);
-        _maximumPageSize.Value = ClampNumeric(_maximumPageSize, _preferences.MaximumPageSizeByDefault);
-        RefreshEndpointsText();
-        RefreshRequiredText();
-        ApplyPreference(_generateSdtsCheck, _preferences.GenerateSdtsByDefault);
-        RefreshGenerationPreview();
-        ApplyPreference(_generateProceduresCheck, _preferences.GenerateProceduresByDefault);
-        RefreshGenerationPreview();
-        ApplyPreference(_generateApiObjectCheck, _preferences.GenerateApiObjectByDefault);
-        ApplyPreference(_applyBusinessComponentCheck, _preferences.ApplyBusinessComponentByDefault);
-        RefreshGenerationPreview();
-        ApplyPreference(_applyListCheck, _preferences.ApplyListByDefault);
-        ApplyPreference(_generateMetadataCheck, _preferences.GenerateMetadataByDefault);
+        _suppressGenerationPreviewRefresh = true;
+        try
+        {
+            ApplyServicePreference("List", _preferences.ListServiceByDefault);
+            ApplyServicePreference("Get", _preferences.GetServiceByDefault);
+            ApplyServicePreference("Create", _preferences.CreateServiceByDefault);
+            ApplyServicePreference("Update", _preferences.UpdateServiceByDefault);
+            ApplySecurityPreference(_preferences.SecurityLevelByDefault);
+            _defaultPageSize.Value = ClampNumeric(_defaultPageSize, _preferences.DefaultPageSizeByDefault);
+            _maximumPageSize.Value = ClampNumeric(_maximumPageSize, _preferences.MaximumPageSizeByDefault);
+            RefreshEndpointsText();
+            RefreshRequiredText();
+            ApplyPreference(_generateSdtsCheck, _preferences.GenerateSdtsByDefault);
+            ApplyPreference(_generateProceduresCheck, _preferences.GenerateProceduresByDefault);
+            ApplyPreference(_generateApiObjectCheck, _preferences.GenerateApiObjectByDefault);
+            ApplyPreference(_applyBusinessComponentCheck, _preferences.ApplyBusinessComponentByDefault);
+            ApplyPreference(_applyListCheck, _preferences.ApplyListByDefault);
+            ApplyPreference(_generateMetadataCheck, _preferences.GenerateMetadataByDefault);
+        }
+        finally
+        {
+            _suppressGenerationPreviewRefresh = false;
+        }
+
         RefreshGenerationPreview();
     }
 
@@ -764,7 +770,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private static void ApplyPreference(CheckBox checkBox, bool preferredChecked)
     {
-        if (preferredChecked && checkBox.Enabled)
+        if (preferredChecked)
         {
             checkBox.Checked = true;
         }
@@ -1110,6 +1116,15 @@ internal sealed class PrototypeWizardDialog : Form
         }
         return string.Join(Environment.NewLine, lines);
     }
+
+    private void RefreshGenerationPreviewUnlessSuppressed()
+    {
+        if (!_suppressGenerationPreviewRefresh)
+        {
+            RefreshGenerationPreview();
+        }
+    }
+
     private void RefreshGenerationPreview()
     {
         var state = ReadGenerationState();
