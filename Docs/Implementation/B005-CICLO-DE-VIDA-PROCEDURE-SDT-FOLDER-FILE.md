@@ -26,7 +26,7 @@ Durante a validação, foram usados comandos manuais temporários:
 - `B005ReadProcedureSdtFolderFile` — somente leitura;
 - `B005DeleteProcedureSdtFolderFile` — escrita de exclusão; também aceita limpar subconjunto parcial B005, desde que cada objeto encontrado tenha descrição sentinela B005.
 
-Após a validação, esses comandos foram removidos do runtime. A IDE não exibiu o popup quando o submenu ficou vazio; por isso, o manifesto preserva o popup **Genexus Open API Builder** com um comando placeholder não operacional chamado **Futura Primeira Opção**. Esse placeholder não lê nem escreve na KB.
+Após a validação, esses comandos foram removidos do runtime. Na época, a IDE não exibiu o popup quando o submenu ficou vazio; por isso, o manifesto preservou temporariamente o popup **Genexus Open API Builder** com um comando placeholder não operacional chamado **Futura Primeira Opção**. Esse placeholder foi removido posteriormente quando o menu passou a ter comandos permanentes do wizard.
 
 ### Checklist para comandos temporários
 
@@ -35,7 +35,7 @@ Para qualquer sonda posterior:
 1. incluir ou remover o `AddCommand(new CommandKey(...))` em `Src/Extension/Package.cs`;
 2. incluir ou remover o `CommandDefinition` correspondente no manifesto;
 3. incluir ou remover o `Command refid` correspondente no grupo de comandos em `Groups` que o submenu referencia;
-4. preservar **Futura Primeira Opção** como placeholder não operacional;
+4. manter no menu somente comandos operacionais vigentes;
 5. executar `pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1` antes do build e novamente no fechamento passivo.
 
 Os IDs devem coincidir exatamente nas três camadas. Build bem-sucedido, isoladamente, não comprova que o comando aparecerá na IDE.

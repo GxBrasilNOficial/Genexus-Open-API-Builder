@@ -10,7 +10,7 @@ Verificar, para a `Transaction` selecionada no protótipo navegável, os objetos
 
 ## Contrato aplicado
 
-- o comando é acionado por `Genexus Open API Builder > Detectar Objetos Existentes (B023)`;
+- o comando foi acionado, durante a validação da frente, por `Genexus Open API Builder > Detectar Objetos Existentes (B023)`;
 - a KB ativa é obtida pelo mesmo fluxo público manual de B020;
 - a `Transaction` é a escolha mantida em memória por B022;
 - se nenhuma `Transaction` estiver em memória, o comando informa a necessidade de executar B022 primeiro;
@@ -22,7 +22,7 @@ Verificar, para a `Transaction` selecionada no protótipo navegável, os objetos
 
 ## Implementação
 
-`Src/Extension/Package.cs` registra o comando B023 e concentra o fluxo manual: verifica a KB ativa, exige a seleção em memória de B022, reencontra a `Transaction` pelo GUID e escreve o resultado na Output.
+`Src/Extension/Package.cs` registrou o comando B023 e concentrou o fluxo manual: verifica a KB ativa, exige a seleção em memória de B022, reencontra a `Transaction` pelo GUID e escreve o resultado na Output.
 
 `Src/Extension/Diagnostics/PrototypeExistingObjectReader.cs` deriva e verifica os nomes planejados:
 

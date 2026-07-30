@@ -3,44 +3,27 @@
          id="7be72bf4-8884-40dc-955d-ed9d31b69b74"
          name="Genexus Open API Builder">
   <Commands>
-    <CommandDefinition id="Futura Primeira Opção" context="selection" />
     <CommandDefinition id="Configurar Preferências do Wizard" context="selection" />
-    <CommandDefinition id="Detectar KB Ativa (B020)" context="selection" />
-    <CommandDefinition id="Listar Transactions Elegíveis (B021)" context="selection" />
-    <CommandDefinition id="Selecionar Transaction e Ler Módulo (B022)" context="selection" />
-    <CommandDefinition id="Detectar Objetos Existentes (B023)" context="selection" />
-    <CommandDefinition id="Verificar Business Component (B024)" context="selection" />
-    <CommandDefinition id="Ler Chave Primária (B025)" context="selection" />
-    <CommandDefinition id="Criar SDTs (B040-B046)" context="selection" />
-    <CommandDefinition id="Criar Procedures (B050-B053)" context="selection" />
-    <CommandDefinition id="Criar API Object (B054)" context="selection" />
-    <CommandDefinition id="Abrir Wizard (B030)" context="selection" />
+    <CommandDefinition id="Wizard" context="selection" />
   </Commands>
   <Groups>
-    <Group id="GenexusOpenApiBuilderPlaceholderGroup">
-      <Command refid="Futura Primeira Opção" />
+    <Group id="GenexusOpenApiBuilderMainMenuGroup">
       <Command refid="Configurar Preferências do Wizard" />
-      <Command refid="Detectar KB Ativa (B020)" />
-      <Command refid="Listar Transactions Elegíveis (B021)" />
-      <Command refid="Selecionar Transaction e Ler Módulo (B022)" />
-      <Command refid="Detectar Objetos Existentes (B023)" />
-      <Command refid="Verificar Business Component (B024)" />
-      <Command refid="Ler Chave Primária (B025)" />
-      <Command refid="Criar SDTs (B040-B046)" />
-      <Command refid="Criar Procedures (B050-B053)" />
-      <Command refid="Criar API Object (B054)" />
-      <Command refid="Abrir Wizard (B030)" />
+      <Command refid="Wizard" />
+    </Group>
+    <Group id="GenexusOpenApiBuilderContextMenuGroup">
+      <Command refid="Wizard" />
     </Group>
     <Group refid="KBObjectGrp" package="98121D96-A7D8-468b-9310-B1F468F812AE">
       <Popup id="GenexusOpenApiBuilderPopup" name="Genexus Open API Builder">
-        <Group refid="GenexusOpenApiBuilderPlaceholderGroup" />
+        <Group refid="GenexusOpenApiBuilderContextMenuGroup" />
       </Popup>
     </Group>
   </Groups>
   <Menus>
     <Menu type="menubar">
       <Popup id="GenexusOpenApiBuilderMainMenuPopup" name="Genexus Open API Builder" insertBefore="Help">
-        <Group refid="GenexusOpenApiBuilderPlaceholderGroup" />
+        <Group refid="GenexusOpenApiBuilderMainMenuGroup" />
       </Popup>
     </Menu>
   </Menus>

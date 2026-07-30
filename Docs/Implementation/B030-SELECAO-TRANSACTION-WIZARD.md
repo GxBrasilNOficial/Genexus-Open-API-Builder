@@ -8,7 +8,7 @@ Implementar o Passo 1 do wizard para selecionar uma `Transaction`, usando os apr
 
 ## Escopo validado
 
-- o comando é acionado por `Genexus Open API Builder > Abrir Wizard (B030)`;
+- o comando foi validado originalmente como `Genexus Open API Builder > Abrir Wizard (B030)`; no menu atual, a legenda operacional é `Genexus Open API Builder > Wizard`;
 - pelo menu principal, a extensão abre o seletor nativo filtrado para `Transaction`, com seleção única;
 - pelo menu de contexto de uma `Transaction`, a extensão resolve diretamente a `Transaction` clicada;
 - a `Transaction` selecionada é reencontrada na KB ativa por GUID antes de ser aceita;

@@ -106,8 +106,7 @@ if ($runtimeIds.Count -eq 0) {
 
 foreach ($entry in @(
     @{ Label = 'Package.cs'; Values = $runtimeIds },
-    @{ Label = 'CommandDefinition'; Values = $definitionIds },
-    @{ Label = 'Command refid'; Values = $referenceIds }
+    @{ Label = 'CommandDefinition'; Values = $definitionIds }
 )) {
     $duplicates = @(Get-Duplicates -Values $entry.Values)
     if ($duplicates.Count -gt 0) {

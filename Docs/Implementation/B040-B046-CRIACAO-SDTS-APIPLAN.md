@@ -4,7 +4,7 @@
 
 B040-B046 foram validados manualmente no GeneXus 18 U15 como primeira escrita real de SDTs a partir do `ApiPlan` em memória.
 
-O comando adicionado é `Criar SDTs (B040-B046)`. Depois da validação inicial, a mesma etapa foi integrada ao encerramento de `Abrir Wizard (B030)` por uma aba própria de confirmação, mantendo os mesmos limites de escrita.
+O comando temporário adicionado foi `Criar SDTs (B040-B046)`. Depois da validação inicial, a mesma etapa foi integrada ao encerramento de `Abrir Wizard (B030)` por uma aba própria de confirmação, mantendo os mesmos limites de escrita; no fechamento posterior do menu, o comando separado foi removido do runtime e do manifesto.
 
 ## Escopo implementado
 

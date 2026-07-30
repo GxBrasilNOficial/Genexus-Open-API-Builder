@@ -19,7 +19,7 @@ Listar, por comando manual e somente leitura, as Transactions elegíveis da Know
 
 ## Implementação
 
-`Src/Extension/Diagnostics/EligibleTransactionReader.cs` concentra a enumeração somente leitura. `Src/Extension/Package.cs` registra o comando B021 e apresenta o total seguido dos nomes na Output. O placeholder `Futura Primeira Opção` e o comando B020 permanecem ativos durante a Sprint 2.
+`Src/Extension/Diagnostics/EligibleTransactionReader.cs` concentra a enumeração somente leitura. `Src/Extension/Package.cs` registrou o comando B021 e apresentou o total seguido dos nomes na Output. O placeholder `Futura Primeira Opção` e o comando B020 permaneceram ativos durante a Sprint 2; depois foram removidos quando o fluxo consolidado do wizard absorveu essas etapas.
 
 O manifesto `Src/Extension/GenexusOpenApiBuilder.package` mantém o mesmo ID do comando nas duas camadas XML: `CommandDefinition` e `Command refid` dentro do grupo usado pelo submenu.
 

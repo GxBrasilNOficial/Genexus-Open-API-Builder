@@ -67,6 +67,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B067 validado no U15: metadata grava integridade de descrições geradas, contrato planejado e Service Source; alteração manual posterior em `[Description]` bloqueia o wizard antes do primeiro `Save()` e a restauração da descrição original permite reencontro conservador
 - B070/B077 validados no U15: `List` real sincroniza Procedure e API Object com filtros elegíveis, paginação, ordenação determinística, `totalCount`, `totalPages` e `AppliedFilters`; membros nullable de `ListFilters` são gerados com `Json Null Serialization = JSON null`, preservando `AppliedFilters.ContratoNumero=null` quando o filtro não é informado
 - B068 implementado e validado funcionalmente no U15: novo comando `Configurar Preferências do Wizard` persiste defaults por KB no File `GxOpenApiBuilder_Settings`, e `Abrir Wizard (B030)` aplica esses defaults somente quando a etapa está habilitada pelo estado da KB; a configuração foi ampliada para serviços REST, `Security Level`, `Default Page Size` e `Maximum Page Size`; o preflight agregado respeita etapas selecionadas e B070 aceita reconfiguração segura de paginação em Source próprio conhecido
+- Menu `Genexus Open API Builder` simplificado: no menu principal ficam `Configurar Preferências do Wizard` e `Wizard`; no contexto da Transaction fica somente `Wizard`; comandos incrementais B020-B025, B040-B054 e o placeholder `Futura Primeira Opção` foram removidos do runtime e do manifesto após o wizard absorver o fluxo.
+- Preferência de `ApplyBusinessComponent` passa a ser aplicada somente quando a Transaction está apta via Business Component ou foi habilitada explicitamente no wizard, evitando bloqueio indevido de B055 e preservando List/Metadata quando BC está desabilitado.
 
 ## Fixed
 
@@ -77,7 +79,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - layout inicial de `Src`, destino das evidências e ambiente-base de `B010` foram explicitados
 - `Docs/Temp` foi protegido contra inclusão acidental no repositório público
 - comandos experimentais B004 removidos do runtime após a validação do ciclo de vida do API Object
-- comandos experimentais B005 removidos do runtime após a validação; o popup `Genexus Open API Builder` permanece no menu de contexto com o placeholder não operacional `Futura Primeira Opção`
+- comandos experimentais B005 removidos do runtime após a validação; o placeholder não operacional `Futura Primeira Opção` foi mantido apenas até o menu ganhar comandos permanentes do wizard
 - comandos experimentais B006 removidos do runtime após a validação de persistência; a sonda permanece apenas como evidência histórica não invocada
 - B031 limpa contrato em memória ao trocar a Transaction no B030 ou ao detectar ausência de seleção válida, evitando reutilização de decisões antigas por passos posteriores
 - B031 desabilita partes da chave primária no `UpdateRequest`, preservando a regra de chave completa no `RestPath`

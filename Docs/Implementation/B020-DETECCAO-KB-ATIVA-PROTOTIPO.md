@@ -12,7 +12,7 @@ Esta frente reutiliza a evidência pública comprovada no B001, mas não reativa
 
 ## Contrato aplicado
 
-- o comando é acionado manualmente pelo menu `Genexus Open API Builder > Detectar KB Ativa (B020)`;
+- o comando foi acionado manualmente, durante a validação da frente, pelo menu `Genexus Open API Builder > Detectar KB Ativa (B020)`;
 - a leitura usa API pública da IDE para obter a KB atualmente disponível;
 - `ActiveKnowledgeBaseProbe.TryRead` continua isolando a leitura de `Name`, `Guid` e `Location`;
 - o resultado é apresentado somente na janela Output;
@@ -22,7 +22,7 @@ Esta frente reutiliza a evidência pública comprovada no B001, mas não reativa
 
 ## Implementação
 
-`Src/Extension/Package.cs` registra um comando manual de protótipo para B020 e mantém o placeholder `Futura Primeira Opção`. O comando permanece no runtime durante a Sprint 2 enquanto serve como entrada navegável somente leitura; deverá ser removido ou substituído quando o fluxo consolidado do wizard absorver essa etapa.
+`Src/Extension/Package.cs` registrou um comando manual de protótipo para B020 e manteve, na época, o placeholder `Futura Primeira Opção`. O comando permaneceu no runtime durante a Sprint 2 enquanto serviu como entrada navegável somente leitura; depois foi removido quando o fluxo consolidado do wizard absorveu essa etapa.
 
 O manifesto `Src/Extension/GenexusOpenApiBuilder.package` registra o mesmo ID nas duas camadas XML exigidas: `CommandDefinition` e `Command refid` dentro do grupo usado pelo submenu.
 

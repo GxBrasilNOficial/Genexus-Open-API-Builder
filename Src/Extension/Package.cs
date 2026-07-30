@@ -19,9 +19,8 @@ namespace GenexusOpenApiBuilder.Extension;
 /// <summary>
 /// Ponto de entrada da extensão. As sondas B001-B006 permanecem como
 /// evidências históricas e não são invocadas em runtime nem na abertura de KBs.
-/// O placeholder mantém o submenu do produto visível, os comandos B020-B025
-/// executam leituras manuais, as preferências do wizard são persistidas por KB
-/// e B030 abre o wizard navegável com geração incremental.
+/// O menu principal expõe a configuração de preferências por KB e B030 abre
+/// o wizard navegável com geração incremental.
 /// </summary>
 public sealed class Package : AbstractPackageUI
 {
@@ -31,29 +30,8 @@ public sealed class Package : AbstractPackageUI
     {
         base.Initialize(services);
 
-        AddCommand(new CommandKey(Id, "Futura Primeira Opção"), ExecuteFutureFirstOption, QueryFutureFirstOption);
         AddCommand(new CommandKey(Id, "Configurar Preferências do Wizard"), ExecuteConfigureWizardPreferences, QueryConfigureWizardPreferences);
-        AddCommand(new CommandKey(Id, "Detectar KB Ativa (B020)"), ExecuteDetectActiveKnowledgeBase, QueryDetectActiveKnowledgeBase);
-        AddCommand(new CommandKey(Id, "Listar Transactions Elegíveis (B021)"), ExecuteListEligibleTransactions, QueryListEligibleTransactions);
-        AddCommand(new CommandKey(Id, "Selecionar Transaction e Ler Módulo (B022)"), ExecuteSelectTransactionAndReadModule, QuerySelectTransactionAndReadModule);
-        AddCommand(new CommandKey(Id, "Detectar Objetos Existentes (B023)"), ExecuteDetectExistingObjects, QueryDetectExistingObjects);
-        AddCommand(new CommandKey(Id, "Verificar Business Component (B024)"), ExecuteCheckBusinessComponent, QueryCheckBusinessComponent);
-        AddCommand(new CommandKey(Id, "Ler Chave Primária (B025)"), ExecuteReadPrimaryKey, QueryReadPrimaryKey);
-        AddCommand(new CommandKey(Id, "Criar SDTs (B040-B046)"), ExecuteCreateSdts, QueryCreateSdts);
-        AddCommand(new CommandKey(Id, "Criar Procedures (B050-B053)"), ExecuteCreateProcedures, QueryCreateProcedures);
-        AddCommand(new CommandKey(Id, "Criar API Object (B054)"), ExecuteCreateApiObject, QueryCreateApiObject);
-        AddCommand(new CommandKey(Id, "Abrir Wizard (B030)"), ExecuteOpenWizardStepOne, QueryOpenWizardStepOne);
-    }
-
-    private static bool QueryFutureFirstOption(CommandData data, ref CommandStatus status)
-    {
-        status.Visible(true);
-        return true;
-    }
-
-    private static bool ExecuteFutureFirstOption(CommandData data)
-    {
-        return true;
+        AddCommand(new CommandKey(Id, "Wizard"), ExecuteOpenWizardStepOne, QueryOpenWizardStepOne);
     }
 
     private static bool QueryConfigureWizardPreferences(CommandData data, ref CommandStatus status)

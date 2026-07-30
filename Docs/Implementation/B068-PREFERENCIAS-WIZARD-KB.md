@@ -34,10 +34,12 @@ Politicas por campo (`CreateRequest`, `UpdateRequest`, `Response` e `ListFilters
 
 ## Validacao mecanica
 
-- `pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1`: OK, 12 comandos sincronizados entre `Package.cs` e manifesto.
+- `pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1`: OK, inicialmente com 12 comandos sincronizados entre `Package.cs` e manifesto.
 - `dotnet build Src\GenexusOpenApiBuilder.sln --configuration Release --no-restore`: OK, 0 avisos, 0 erros.
 
-Depois da ampliacao de servicos, seguranca e paginacao, a validacao mecanica foi repetida com o mesmo resultado: checker de comandos OK com 12 comandos e build Release OK com 0 avisos e 0 erros.
+Depois da ampliacao de servicos, seguranca e paginacao, a validacao mecanica foi repetida com o mesmo resultado: checker de comandos OK com 12 comandos e build Release OK com 0 avisos e 0 erros. No fechamento da frente, o menu foi limpo: no menu principal ficam `Configurar Preferencias do Wizard` e `Wizard`; no contexto da Transaction fica somente `Wizard`; novo checker OK com 2 comandos.
+
+No reteste com `Produto`, a preferencia `ApplyBusinessComponent=True` revelou um gating insuficiente: a Transaction estava com Business Component desabilitado e, ainda assim, a opcao tentou executar B055, bloqueando a metadata no mesmo fluxo. O wizard foi ajustado para desabilitar e desmarcar essa opcao quando `IsBusinessComponentReady()` for falso; a preferencia so volta a marcar a etapa quando a Transaction ja e BC ou quando o usuario habilita BC explicitamente no wizard.
 
 ## Validacao manual
 

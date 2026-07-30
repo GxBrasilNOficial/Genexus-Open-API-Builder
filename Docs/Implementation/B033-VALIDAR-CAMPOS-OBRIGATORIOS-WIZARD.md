@@ -8,7 +8,7 @@ Implementar a validacao navegavel de obrigatoriedade de membros JSON a partir da
 
 ## Escopo implementado
 
-- o unico comando operacional do wizard e `Genexus Open API Builder > Abrir Wizard (B030)`;
+- o unico comando operacional do wizard e `Genexus Open API Builder > Wizard`;
 - o fluxo seleciona a `Transaction` pelo contexto ou pelo seletor nativo e abre uma unica janela WinForms sequencial;
 - a janela unificada percorre `Servicos`, `Requests`, `Response`, `Filtros List`, `Paths`, `Seguranca`, `Paginacao`, `Ordenacao`, `Obrigatorios` e `Resumo B034`;
 - B031, B032 e B033 continuam identificados nas mensagens da Output, mas nao sao comandos separados no menu;
@@ -27,9 +27,9 @@ Implementar a validacao navegavel de obrigatoriedade de membros JSON a partir da
 
 `Src/Extension/PrototypeWizardDialog.cs` implementa o fluxo unico do wizard e consolida as escolhas em `PrototypeWizardFlowSelection`, incluindo contrato, revisao de paths/seguranca e decisoes de obrigatoriedade.
 
-`Src/Extension/Package.cs` mantem apenas o comando `Abrir Wizard (B030)` como entrada operacional do wizard. Ao concluir o dialogo, ele registra em memoria os estados B031, B032 e B033 e escreve as evidencias correspondentes na Output.
+`Src/Extension/Package.cs` mantem apenas o comando `Wizard` como entrada operacional do wizard. Ao concluir o dialogo, ele registra em memoria os estados B031, B032 e B033 e escreve as evidencias correspondentes na Output.
 
-`Src/Extension/GenexusOpenApiBuilder.package` mantem apenas o `CommandDefinition` e o `Command refid` de `Abrir Wizard (B030)` para o wizard, evitando tres chamadas manuais para partes do mesmo fluxo.
+`Src/Extension/GenexusOpenApiBuilder.package` mantem apenas o `CommandDefinition` e o `Command refid` de `Wizard` para o wizard, evitando tres chamadas manuais para partes do mesmo fluxo.
 
 ## Validacao local
 

@@ -992,7 +992,7 @@ internal sealed class PrototypeWizardDialog : Form
             _generateApiObjectCheck.Checked,
             _generateMetadataCheck.Checked,
             _applyListCheck.Checked,
-            _applyBusinessComponentCheck.Checked);
+            _applyBusinessComponentCheck.Checked && IsBusinessComponentReady());
         return true;
     }
     private void ShowSummary()
@@ -1135,9 +1135,11 @@ internal sealed class PrototypeWizardDialog : Form
         var apiState = state?.ApiObject;
         var metadataState = state?.MetadataFile;
 
+        ApplyBusinessComponentControlState();
+        var businessComponentConfirmed = _applyBusinessComponentCheck.Checked && IsBusinessComponentReady();
         var sdtsAvailable = IsDependencyAvailable(sdtState, _generateSdtsCheck.Checked);
         var proceduresAvailable = IsDependencyAvailable(procedureState, _generateProceduresCheck.Checked);
-        var apiObjectAvailable = IsDependencyAvailable(apiState, _generateApiObjectCheck.Checked) || _applyBusinessComponentCheck.Checked;
+        var apiObjectAvailable = IsDependencyAvailable(apiState, _generateApiObjectCheck.Checked) || businessComponentConfirmed;
         ApplyGenerationControlState(_generateSdtsCheck, sdtState, true);
         ApplyGenerationControlState(_generateProceduresCheck, procedureState, sdtsAvailable);
         ApplyGenerationControlState(_generateApiObjectCheck, apiState, proceduresAvailable);
@@ -1150,10 +1152,22 @@ internal sealed class PrototypeWizardDialog : Form
         _apiObjectGenerationText.Text = FormatGenerationState(apiState, _generateApiObjectCheck.Checked) + Environment.NewLine + Environment.NewLine +
             $"Dependencia Procedures: {FormatDependencyState(procedureState, _generateProceduresCheck.Checked)}";
         _listGenerationText.Text = FormatGenerationState(apiState, _applyListCheck.Checked) + Environment.NewLine + Environment.NewLine +
-            $"Dependencia API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked || _applyBusinessComponentCheck.Checked)}" + Environment.NewLine +
+            $"Dependencia API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked || businessComponentConfirmed)}" + Environment.NewLine +
             $"Filtros planejados: {GetCheckedValues(_filtersList).Count}; Paginacao Default={_defaultPageSize.Value}, Maximum={_maximumPageSize.Value}.";
         _metadataGenerationText.Text = FormatGenerationState(metadataState, _generateMetadataCheck.Checked) + Environment.NewLine + Environment.NewLine +
-            $"Dependencia List/API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked || _applyBusinessComponentCheck.Checked || _applyListCheck.Checked)}";
+            $"Dependencia List/API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked || businessComponentConfirmed || _applyListCheck.Checked)}";
+    }
+
+    private void ApplyBusinessComponentControlState()
+    {
+        _applyBusinessComponentCheck.Text = IsBusinessComponentReady()
+            ? "Confirmar: Aplicar Create/Update via Business Component ao concluir"
+            : "Bloqueado: Business Component desabilitado";
+        _applyBusinessComponentCheck.Enabled = IsBusinessComponentReady();
+        if (!_applyBusinessComponentCheck.Enabled)
+        {
+            _applyBusinessComponentCheck.Checked = false;
+        }
     }
 
     private void ApplyListControlState(ApiPlanGenerationStageState? apiState, bool apiObjectAvailable)
@@ -1333,6 +1347,7 @@ internal sealed class PrototypeWizardDialog : Form
             "Sem Business Component, a geração da API e a aplicação de Create/Update pelas regras da Transaction ficam bloqueadas. A habilitação exige confirmação explícita e altera a Transaction na KB; cancelar o wizard depois disso não reverte automaticamente a propriedade.";
         _enableBusinessComponentCheck.Enabled = !_businessComponentSnapshot.IsBusinessComponent && !_businessComponentEnabledDuringWizard;
         _enableBusinessComponentCheck.Visible = !_businessComponentSnapshot.IsBusinessComponent;
+        ApplyBusinessComponentControlState();
     }
 
     private bool EnsureBusinessComponentReady()

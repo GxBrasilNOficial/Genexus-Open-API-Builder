@@ -10,7 +10,7 @@ Verificar, para a `Transaction` selecionada no protótipo navegável, se ela pod
 
 ## Contrato aplicado
 
-- o comando é acionado por `Genexus Open API Builder > Verificar Business Component (B024)`, tanto no menu de contexto da `Transaction` quanto no menu principal da IDE;
+- o comando foi acionado, durante a validação da frente, por `Genexus Open API Builder > Verificar Business Component (B024)`, tanto no menu de contexto da `Transaction` quanto no menu principal da IDE;
 - a KB ativa é obtida pelo mesmo fluxo público manual de B020;
 - a `Transaction` é a escolha mantida em memória por B022;
 - se nenhuma `Transaction` estiver em memória, o comando informa a necessidade de executar B022 primeiro;
@@ -20,7 +20,7 @@ Verificar, para a `Transaction` selecionada no protótipo navegável, se ela pod
 
 ## Implementação
 
-`Src/Extension/Package.cs` registra o comando B024 e concentra o fluxo manual: verifica a KB ativa, exige a seleção em memória de B022, reencontra a `Transaction` pelo GUID e escreve o resultado na Output.
+`Src/Extension/Package.cs` registrou o comando B024 e concentrou o fluxo manual: verifica a KB ativa, exige a seleção em memória de B022, reencontra a `Transaction` pelo GUID e escreve o resultado na Output.
 
 `Src/Extension/Diagnostics/PrototypeBusinessComponentReader.cs` encapsula a leitura somente leitura de `IsBusinessComponent` e produz o status operacional:
 
@@ -52,7 +52,7 @@ O manifesto `Src/Extension/GenexusOpenApiBuilder.package` mantém o mesmo ID do 
 - B022 selecionou a `Transaction` `Contrato` e leu o módulo `Root Module`;
 - B024 verificou `Contrato` e reportou `IsBusinessComponent=False` com `Status='Bloqueada: Business Component desabilitado'`;
 - B023 verificou os objetos planejados para `Contrato`, manteve o File de metadata `apiContrato_Metadata` e reportou `Total=15`, `Existentes=0`, `Ausentes=15`;
-- a validação confirmou que os comandos B020-B024 permanecem acessíveis pelo menu principal sem persistência de escolhas fora da seleção em memória de B022.
+- a validação confirmou, naquela etapa, que os comandos B020-B024 estavam acessíveis pelo menu principal sem persistência de escolhas fora da seleção em memória de B022. Eles foram removidos posteriormente quando o wizard absorveu o fluxo.
 
 ## Validações locais
 

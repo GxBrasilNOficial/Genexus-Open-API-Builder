@@ -57,7 +57,7 @@ Antes de cada build destinada à atualização manual da DLL, validar o contrato
 pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1
 ```
 
-O placeholder não operacional **Futura Primeira Opção** deve permanecer no submenu; sondas temporárias são acrescentadas a ele e, no fechamento, removidas das três camadas.
+O placeholder não operacional **Futura Primeira Opção** foi necessário enquanto o submenu ainda não tinha comandos permanentes. Após a consolidação do wizard e das preferências por KB, o menu principal deve manter somente comandos operacionais vigentes.
 
 O caminho legado que tentava executar `genexus /install` dentro do PowerShell elevado foi removido. Ele podia não capturar a saída e, no U15 local, não realizava a varredura efetiva dos pacotes. O registro permanece exclusivamente no segundo `.bat`, sem Administrador.
 

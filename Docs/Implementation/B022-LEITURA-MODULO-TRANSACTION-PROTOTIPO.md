@@ -10,7 +10,7 @@ Selecionar manualmente uma `Transaction` no protótipo navegável e ler seu mód
 
 ## Contrato aplicado
 
-- o comando é acionado por `Genexus Open API Builder > Selecionar Transaction e Ler Módulo (B022)`;
+- o comando foi acionado, durante a validação da frente, por `Genexus Open API Builder > Selecionar Transaction e Ler Módulo (B022)`;
 - a KB ativa é obtida pelo fluxo público manual de B020;
 - o diálogo público `UIServices.SelectObjectDialog` recebe seleção única filtrada para `Transaction`;
 - o retorno é validado como `Transaction`, cujo módulo é lido por `transaction.Module`;
@@ -20,7 +20,7 @@ Selecionar manualmente uma `Transaction` no protótipo navegável e ler seu mód
 
 ## Implementação
 
-`Src/Extension/Package.cs` registra o comando B022 e concentra o fluxo manual: verifica a KB ativa, abre o seletor nativo, lê o módulo e escreve o resultado na Output. `Src/Extension/Diagnostics/PrototypeTransactionSelection.cs` mantém o estado efêmero que foi reutilizado pela frente B023.
+`Src/Extension/Package.cs` registrou o comando B022 e concentrou o fluxo manual: verifica a KB ativa, abre o seletor nativo, lê o módulo e escreve o resultado na Output. `Src/Extension/Diagnostics/PrototypeTransactionSelection.cs` mantém o estado efêmero que foi reutilizado pela frente B023.
 
 O manifesto `Src/Extension/GenexusOpenApiBuilder.package` mantém o mesmo ID do comando nas duas camadas XML: `CommandDefinition` e `Command refid` no grupo usado pelo submenu.
 

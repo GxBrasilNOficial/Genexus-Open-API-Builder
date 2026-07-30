@@ -4,7 +4,7 @@
 
 B050-B053 foram validados manualmente no GeneXus 18 U15 como primeira escrita real de Procedures a partir do `ApiPlan` em memória e dos SDTs já existentes.
 
-O comando adicionado é `Criar Procedures (B050-B053)`. Depois da validação inicial, a mesma etapa foi integrada ao encerramento de `Abrir Wizard (B030)` por uma aba própria de confirmação, executando somente após B040-B046 estar confirmado e concluído no mesmo fluxo do wizard.
+O comando temporário adicionado foi `Criar Procedures (B050-B053)`. Depois da validação inicial, a mesma etapa foi integrada ao encerramento de `Abrir Wizard (B030)` por uma aba própria de confirmação, executando somente após B040-B046 estar confirmado e concluído no mesmo fluxo do wizard; no fechamento posterior do menu, o comando separado foi removido do runtime e do manifesto.
 
 ## Escopo implementado
 

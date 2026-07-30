@@ -73,7 +73,7 @@ Nenhum objeto B006 permaneceu na KB ao final.
 
 ## Fechamento do runtime
 
-Os cinco comandos experimentais B006 foram removidos de `Package.cs` e do manifesto. O submenu preserva somente o placeholder não operacional `Futura Primeira Opção`.
+Os cinco comandos experimentais B006 foram removidos de `Package.cs` e do manifesto. Na época, o submenu preservou somente o placeholder não operacional `Futura Primeira Opção`; esse placeholder foi removido posteriormente quando o menu passou a ter comandos permanentes do wizard.
 
 A sonda permanece no código apenas como evidência técnica sem invocação pelo runtime.
 
@@ -81,9 +81,9 @@ A sonda permanece no código apenas como evidência técnica sem invocação pel
 
 Validações locais:
 
-- registro sincronizado com exatamente um comando: `Futura Primeira Opção`;
+- registro sincronizado, na época, com exatamente um comando: `Futura Primeira Opção`;
 - busca sem referências B006 em `Package.cs` e no manifesto;
 - build Release com 0 avisos e 0 erros;
 - DLL instalada coincide com a build (`InstalledMatchesBuild=True`);
 - SHA-256 da DLL passiva instalada: `B7212897E8143758966D7DD03C93D2DACC2F12D60A9B358D6C970D8234D0E4EE`;
-- submenu confirmado apenas com `Futura Primeira Opção`, sem comandos ou execução automática B006.
+- submenu confirmado, na época, apenas com `Futura Primeira Opção`, sem comandos ou execução automática B006.

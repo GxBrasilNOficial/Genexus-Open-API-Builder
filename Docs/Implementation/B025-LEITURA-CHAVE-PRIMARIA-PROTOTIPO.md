@@ -8,7 +8,7 @@ Ler, para a `Transaction` selecionada no protótipo navegável, a chave primári
 
 ## Escopo validado
 
-- o comando é acionado por `Genexus Open API Builder > Ler Chave Primária (B025)`, tanto no menu principal quanto no menu de contexto da `Transaction`;
+- o comando foi acionado, durante a validação da frente, por `Genexus Open API Builder > Ler Chave Primária (B025)`, tanto no menu principal quanto no menu de contexto da `Transaction`;
 - quando acionado pelo menu de contexto, o comando tenta resolver diretamente a `Transaction` clicada;
 - quando acionado pelo menu principal, o comando usa a seleção mantida em memória por B022 como fallback;
 - a leitura usa `transaction.Structure.Root.PrimaryKey` e os metadados públicos do atributo associado;
@@ -17,7 +17,7 @@ Ler, para a `Transaction` selecionada no protótipo navegável, a chave primári
 
 ## Implementação
 
-`Src/Extension/Package.cs` registra o comando B025, resolve a `Transaction` do contexto do comando quando disponível, mantém o fallback para a seleção em memória e escreve o resultado na Output padrão.
+`Src/Extension/Package.cs` registrou o comando B025, resolveu a `Transaction` do contexto do comando quando disponível, manteve o fallback para a seleção em memória e escreveu o resultado na Output padrão.
 
 `Src/Extension/Diagnostics/PrototypePrimaryKeyReader.cs` encapsula a leitura somente leitura da chave primária e produz:
 
