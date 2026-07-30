@@ -17,6 +17,7 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly Transaction _transaction;
     private readonly PrototypeWizardContractSnapshot _snapshot;
     private readonly PrototypeBusinessComponentSnapshot _businessComponentSnapshot;
+    private readonly PrototypeWizardPreferences _preferences;
     private readonly Func<bool> _enableBusinessComponent;
     private readonly Action<string> _writeBusinessComponentOutput;
     private readonly FlowLayoutPanel _servicesList = CreateChoicePanel();
@@ -68,12 +69,13 @@ internal sealed class PrototypeWizardDialog : Form
     private bool _businessComponentEnabledDuringWizard;
     private string _generationContext = "Plano da Transaction ainda nao consultado na KB.";
 
-    public PrototypeWizardDialog(KBModel designModel, Transaction transaction, PrototypeWizardContractSnapshot snapshot, PrototypeBusinessComponentSnapshot businessComponentSnapshot, Func<bool> enableBusinessComponent, Action<string> writeBusinessComponentOutput)
+    public PrototypeWizardDialog(KBModel designModel, Transaction transaction, PrototypeWizardContractSnapshot snapshot, PrototypeBusinessComponentSnapshot businessComponentSnapshot, PrototypeWizardPreferences preferences, Func<bool> enableBusinessComponent, Action<string> writeBusinessComponentOutput)
     {
         _designModel = designModel ?? throw new ArgumentNullException(nameof(designModel));
         _transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
         _snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
         _businessComponentSnapshot = businessComponentSnapshot ?? throw new ArgumentNullException(nameof(businessComponentSnapshot));
+        _preferences = preferences?.Clone() ?? throw new ArgumentNullException(nameof(preferences));
         _enableBusinessComponent = enableBusinessComponent ?? throw new ArgumentNullException(nameof(enableBusinessComponent));
         _writeBusinessComponentOutput = writeBusinessComponentOutput ?? throw new ArgumentNullException(nameof(writeBusinessComponentOutput));
 
@@ -91,6 +93,7 @@ internal sealed class PrototypeWizardDialog : Form
         LoadSnapshot();
         WireGenerationConfirmation();
         RefreshGenerationPreview();
+        ApplyWizardPreferences();
     }
 
     public PrototypeWizardFlowSelection? Selection { get; private set; }
@@ -709,6 +712,62 @@ internal sealed class PrototypeWizardDialog : Form
         _generateMetadataCheck.Enabled = false;
         _generateMetadataCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
         _applyBusinessComponentCheck.CheckedChanged += (_, _) => RefreshGenerationPreview();
+    }
+
+    private void ApplyWizardPreferences()
+    {
+        ApplyServicePreference("List", _preferences.ListServiceByDefault);
+        ApplyServicePreference("Get", _preferences.GetServiceByDefault);
+        ApplyServicePreference("Create", _preferences.CreateServiceByDefault);
+        ApplyServicePreference("Update", _preferences.UpdateServiceByDefault);
+        ApplySecurityPreference(_preferences.SecurityLevelByDefault);
+        _defaultPageSize.Value = ClampNumeric(_defaultPageSize, _preferences.DefaultPageSizeByDefault);
+        _maximumPageSize.Value = ClampNumeric(_maximumPageSize, _preferences.MaximumPageSizeByDefault);
+        RefreshEndpointsText();
+        RefreshRequiredText();
+        ApplyPreference(_generateSdtsCheck, _preferences.GenerateSdtsByDefault);
+        RefreshGenerationPreview();
+        ApplyPreference(_generateProceduresCheck, _preferences.GenerateProceduresByDefault);
+        RefreshGenerationPreview();
+        ApplyPreference(_generateApiObjectCheck, _preferences.GenerateApiObjectByDefault);
+        ApplyPreference(_applyBusinessComponentCheck, _preferences.ApplyBusinessComponentByDefault);
+        RefreshGenerationPreview();
+        ApplyPreference(_applyListCheck, _preferences.ApplyListByDefault);
+        ApplyPreference(_generateMetadataCheck, _preferences.GenerateMetadataByDefault);
+        RefreshGenerationPreview();
+    }
+
+    private void ApplyServicePreference(string serviceName, bool preferredChecked)
+    {
+        foreach (var check in _servicesList.Controls.OfType<CheckBox>())
+        {
+            if (check.Tag is ChoiceItem item && string.Equals(item.Value, serviceName, StringComparison.OrdinalIgnoreCase) && item.Enabled)
+            {
+                check.Checked = preferredChecked;
+                return;
+            }
+        }
+    }
+
+    private void ApplySecurityPreference(string securityLevel)
+    {
+        var normalized = PrototypeWizardPreferences.NormalizeSecurityLevel(securityLevel);
+        _securityAuthorizationRadio.Checked = string.Equals(normalized, PrototypeWizardPreferences.SecurityLevelAuthorization, StringComparison.Ordinal);
+        _securityNoneRadio.Checked = string.Equals(normalized, PrototypeWizardPreferences.SecurityLevelNone, StringComparison.Ordinal);
+        _securityAuthenticationRadio.Checked = string.Equals(normalized, PrototypeWizardPreferences.SecurityLevelAuthentication, StringComparison.Ordinal);
+    }
+
+    private static decimal ClampNumeric(NumericUpDown input, int value)
+    {
+        return Math.Max(input.Minimum, Math.Min(input.Maximum, value));
+    }
+
+    private static void ApplyPreference(CheckBox checkBox, bool preferredChecked)
+    {
+        if (preferredChecked && checkBox.Enabled)
+        {
+            checkBox.Checked = true;
+        }
     }
 
     private void WirePathSynchronization()

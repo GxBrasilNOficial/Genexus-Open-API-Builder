@@ -279,6 +279,7 @@ Completar o comportamento REST sobre os objetos já criados e aplicar explicitam
 ## Entregas
 
 - `B070`: completar List com filtros, paginação e ordenação determinística
+- `B068`: validar preferências do wizard por KB, incluindo defaults de geração, serviços, segurança e paginação, antes de retomar Get
 - `B071`: completar Get para chave simples ou composta
 - `B072`: completar Create com HTTP 201 e `Location` quando controlável com segurança
 - `B073`: completar Update com PUT, HTTP 200 e Response completo

@@ -20,7 +20,8 @@ namespace GenexusOpenApiBuilder.Extension;
 /// Ponto de entrada da extensão. As sondas B001-B006 permanecem como
 /// evidências históricas e não são invocadas em runtime nem na abertura de KBs.
 /// O placeholder mantém o submenu do produto visível, os comandos B020-B025
-/// executam leituras manuais e B030 abre o wizard navegável com geração incremental.
+/// executam leituras manuais, as preferências do wizard são persistidas por KB
+/// e B030 abre o wizard navegável com geração incremental.
 /// </summary>
 public sealed class Package : AbstractPackageUI
 {
@@ -31,6 +32,7 @@ public sealed class Package : AbstractPackageUI
         base.Initialize(services);
 
         AddCommand(new CommandKey(Id, "Futura Primeira Opção"), ExecuteFutureFirstOption, QueryFutureFirstOption);
+        AddCommand(new CommandKey(Id, "Configurar Preferências do Wizard"), ExecuteConfigureWizardPreferences, QueryConfigureWizardPreferences);
         AddCommand(new CommandKey(Id, "Detectar KB Ativa (B020)"), ExecuteDetectActiveKnowledgeBase, QueryDetectActiveKnowledgeBase);
         AddCommand(new CommandKey(Id, "Listar Transactions Elegíveis (B021)"), ExecuteListEligibleTransactions, QueryListEligibleTransactions);
         AddCommand(new CommandKey(Id, "Selecionar Transaction e Ler Módulo (B022)"), ExecuteSelectTransactionAndReadModule, QuerySelectTransactionAndReadModule);
@@ -51,6 +53,45 @@ public sealed class Package : AbstractPackageUI
 
     private static bool ExecuteFutureFirstOption(CommandData data)
     {
+        return true;
+    }
+
+    private static bool QueryConfigureWizardPreferences(CommandData data, ref CommandStatus status)
+    {
+        status.Visible(true);
+        return true;
+    }
+
+    private static bool ExecuteConfigureWizardPreferences(CommandData data)
+    {
+        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
+        if (knowledgeBase is null)
+        {
+            WriteOutput("[Genexus Open API Builder][Prefs] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
+            return true;
+        }
+
+        var loadResult = PrototypeWizardPreferencesStore.Load(knowledgeBase.DesignModel);
+        using var dialog = new PrototypeWizardPreferencesDialog(loadResult.Preferences, loadResult.Status);
+        var result = dialog.ShowDialog();
+        if (result != System.Windows.Forms.DialogResult.OK || dialog.Preferences is null)
+        {
+            WriteOutput("[Genexus Open API Builder][Prefs] Configuracao de preferencias do wizard cancelada. Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        try
+        {
+            var saveResult = PrototypeWizardPreferencesStore.Save(knowledgeBase.DesignModel, dialog.Preferences);
+            var statusText = saveResult.Created ? "Created" : "Updated";
+            WriteOutput($"[Genexus Open API Builder][Prefs] Preferencias do wizard gravadas na KB ativa: File='{saveResult.FileName}', Status='{statusText}', Guid='{saveResult.Guid}', Bytes={saveResult.Bytes}. O proximo wizard aplicara esses defaults quando a etapa estiver habilitada pelo estado da KB.");
+        }
+        catch (Exception ex)
+        {
+            var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
+            WriteOutput($"[Genexus Open API Builder][Prefs] Gravacao de preferencias bloqueada ou falhou antes de concluir: Error='{errorDetail}'");
+        }
+
         return true;
     }
 
@@ -693,6 +734,9 @@ public sealed class Package : AbstractPackageUI
         ClearPrototypeWizardMemory(clearTransaction: false);
         PrototypeTransactionSelectionState.Store(knowledgeBase, transaction);
 
+        var preferencesLoadResult = PrototypeWizardPreferencesStore.Load(knowledgeBase.DesignModel);
+        WriteOutput($"[Genexus Open API Builder][Prefs] {preferencesLoadResult.Status}");
+
         var snapshot = PrototypeWizardContractReader.Read(transaction);
         var businessComponentSnapshot = PrototypeBusinessComponentReader.Read(transaction);
         using var dialog = new PrototypeWizardDialog(
@@ -700,6 +744,7 @@ public sealed class Package : AbstractPackageUI
             transaction,
             snapshot,
             businessComponentSnapshot,
+            preferencesLoadResult.Preferences,
             () => EnableBusinessComponentForWizard(transaction),
             WriteOutput);
         var result = dialog.ShowDialog();
@@ -748,7 +793,7 @@ public sealed class Package : AbstractPackageUI
         ApiPlanSessionState.Store(apiPlan);
         WriteOutput($"[Genexus Open API Builder][B030] Wizard único concluido em memoria: Transaction='{transaction.Name}', Module='{module.Name}', SelectionSource='{selectionSource}'.");
         WriteOutput($"[Genexus Open API Builder][B031] Contrato de API da Transacao='{transaction.Name}' em memoria: Services='{string.Join(",", selection.ContractSelection.SelectedServices)}', Create={selection.ContractSelection.CreateFields.Count}, Update={selection.ContractSelection.UpdateFields.Count}, Response={selection.ContractSelection.ResponseFields.Count}, ListFilters={selection.ContractSelection.ListFilters.Count}.");
-        WriteOutput($"[Genexus Open API Builder][B032] Paths e segurança em memoria: ApiName='{selection.ReviewSelection.ApiName}', ServicesBasePath='{selection.ReviewSelection.ServicesBasePath}', RestPath='{selection.ReviewSelection.RestPath}', SecurityLevel='{selection.ReviewSelection.SecurityLevel}'.");
+        WriteOutput($"[Genexus Open API Builder][B032] Paths, segurança e paginacao em memoria: ApiName='{selection.ReviewSelection.ApiName}', ServicesBasePath='{selection.ReviewSelection.ServicesBasePath}', RestPath='{selection.ReviewSelection.RestPath}', SecurityLevel='{selection.ReviewSelection.SecurityLevel}', DefaultPageSize={selection.ReviewSelection.DefaultPageSize}, MaximumPageSize={selection.ReviewSelection.MaximumPageSize}.");
         WriteOutput($"[Genexus Open API Builder][B033] Obrigatoriedade em memoria: CreateRequired={createRequiredCount}, UpdateRequired={updateRequiredCount}. Required significa presença do membro JSON, nao valor nao-vazio.");
         WriteOutput($"[Genexus Open API Builder][B037] Obrigatorio no payload consolidado: CreateRequired={createRequiredCount}, UpdateRequired={updateRequiredCount}. Required e presenca do membro JSON; vazio, false e 0 continuam valores enviados. UpdateRequest segue PUT completo.");
         WriteOutput($"[Genexus Open API Builder][B036] Campos bloqueados visiveis no wizard: CreateRequest={createBlockedCount}, UpdateRequest={updateBlockedCount}, ListFilters={filterBlockedCount}. Itens bloqueados ficaram desmarcados, com motivo, e nao podem ser selecionados.");
@@ -768,7 +813,19 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B092] Seguranca no ApiPlan: SecurityLevel='{apiPlan.Security.SecurityLevel}', GamCondition='{apiPlan.Security.GamCondition}', RequiresGenerationConfirmation={apiPlan.Security.RequiresGenerationConfirmation}. Sem aplicar seguranca em objetos reais.");
         WriteOutput($"[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria. GenerateSdts={selection.GenerateSdts}, GenerateProcedures={selection.GenerateProcedures}, GenerateApiObject={selection.GenerateApiObject}, GenerateMetadata={selection.GenerateMetadata}, ApplyList={selection.ApplyList}, ApplyBusinessComponent={selection.ApplyBusinessComponent}; escritas confirmadas no wizard exigem preflight completo antes de qualquer Save().");
         var generationState = ApiPlanGenerationStateReader.Read(knowledgeBase.DesignModel, apiPlan);
-        var blockedGenerationStages = new[] { generationState.Sdts, generationState.Procedures, generationState.ApiObject, generationState.MetadataFile }
+        var requireSdts = selection.GenerateSdts || selection.GenerateProcedures || selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyList || selection.ApplyBusinessComponent;
+        var requireProcedures = selection.GenerateProcedures || selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyList || selection.ApplyBusinessComponent;
+        var requireApiObject = selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyList || selection.ApplyBusinessComponent;
+        var requireMetadataFile = selection.GenerateMetadata;
+        var blockedGenerationStages = new[]
+            {
+                requireSdts ? generationState.Sdts : null,
+                requireProcedures ? generationState.Procedures : null,
+                requireApiObject ? generationState.ApiObject : null,
+                requireMetadataFile ? generationState.MetadataFile : null,
+            }
+            .Where(stage => stage is not null)
+            .Cast<ApiPlanGenerationStageState>()
             .Where(stage => stage.IsBlocked)
             .ToArray();
         if (blockedGenerationStages.Length > 0)
@@ -783,7 +840,14 @@ public sealed class Package : AbstractPackageUI
 
         try
         {
-            ApiPlanWritePreflight.Validate(knowledgeBase.DesignModel, transaction, apiPlan);
+            ApiPlanWritePreflight.Validate(
+                knowledgeBase.DesignModel,
+                transaction,
+                apiPlan,
+                requireSdts,
+                requireProcedures,
+                requireApiObject,
+                requireMetadataFile);
         }
         catch (Exception ex)
         {

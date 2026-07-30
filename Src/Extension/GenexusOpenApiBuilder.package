@@ -4,6 +4,7 @@
          name="Genexus Open API Builder">
   <Commands>
     <CommandDefinition id="Futura Primeira Opção" context="selection" />
+    <CommandDefinition id="Configurar Preferências do Wizard" context="selection" />
     <CommandDefinition id="Detectar KB Ativa (B020)" context="selection" />
     <CommandDefinition id="Listar Transactions Elegíveis (B021)" context="selection" />
     <CommandDefinition id="Selecionar Transaction e Ler Módulo (B022)" context="selection" />
@@ -18,6 +19,7 @@
   <Groups>
     <Group id="GenexusOpenApiBuilderPlaceholderGroup">
       <Command refid="Futura Primeira Opção" />
+      <Command refid="Configurar Preferências do Wizard" />
       <Command refid="Detectar KB Ativa (B020)" />
       <Command refid="Listar Transactions Elegíveis (B021)" />
       <Command refid="Selecionar Transaction e Ler Módulo (B022)" />

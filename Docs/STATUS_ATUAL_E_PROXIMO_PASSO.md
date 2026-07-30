@@ -64,22 +64,23 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - B063–B066 validados em 2026-07-28 no U15: B063/B064 bloquearam colisão externa e metadata incompatível antes do primeiro Save(), sem _v2; B065 persistiu paths, filtros, paginação, ordenação e segurança; B066 persistiu transactionFolder.wasCreated=true na criação e false no reencontro, com Build All aprovado.
 - B067 validado em 2026-07-28 no U15: metadata passou a gravar integridade de descrições geradas, contrato planejado e Service Source; reexecução limpa preservou o mesmo `PlannedContractHash`, alteração manual de `[Description("List Transaction2")]` para `[Description("List Transaction 2")]` bloqueou o wizard antes do primeiro `Save()`, e a restauração da descrição original permitiu reencontro conservador. Com B067, a Sprint 5 fica concluída no escopo de API Object, Procedures e metadata.
 - B070/B077 validados em 2026-07-29 no U15: `List` real sincroniza Procedure e API Object com filtros elegíveis, paginação, ordenação determinística, `totalCount`, `totalPages` e `appliedFilters`; `sdtContrato_API_ListFilters.ContratoNumero` foi regravado com `Json Null Serialization = JSON null` por `idJsonInclude=idJsonJsonNull`, e o endpoint autenticado retornou HTTP 200 com `AppliedFilters.ContratoNumero=null` sem filtro, valor preenchido com filtro, totalização correta e página 2 estável.
+- B068 implementado em 2026-07-29 com validação mecânica local e validação funcional no U15: o menu `Genexus Open API Builder` ganhou `Configurar Preferências do Wizard`, sincronizado em `Package.cs` e `GenexusOpenApiBuilder.package`; o comando grava o File próprio `GxOpenApiBuilder_Settings` com schema `GOAB_WIZARD_PREFERENCES_V1`, `External File Name='GxOpenApiBuilder_Settings.json'` e defaults por KB para SDTs, Procedures, API Object, Metadata, List e Create/Update via Business Component. `Abrir Wizard (B030)` carrega essas preferências e só marca automaticamente etapas habilitadas pelo estado atual da KB. Evidência: cancelamento não alterou a KB; gravação criou `GxOpenApiBuilder_Settings` com `Status='Created'`, `Guid='312bb1f6-ec00-4a82-8019-adc43a0aa0ed'` e `Bytes=338`; reabertura carregou as preferências e o wizard concluiu com `GenerateSdts=True`, `GenerateProcedures=True`, `GenerateApiObject=True`, `GenerateMetadata=True`, `ApplyList=True` e `ApplyBusinessComponent=True`, aplicando SDTs, Procedures, API Object, List, metadata e integridade nas etapas habilitadas. Validação mecânica inicial: `Tools/Test-ExtensionCommandRegistration.ps1` OK com 12 comandos e `dotnet build Src\GenexusOpenApiBuilder.sln --configuration Release --no-restore` OK com 0 avisos e 0 erros. Em seguida, B068 foi ampliado para persistir também servicos REST selecionados, `Security Level`, `Default Page Size` e `Maximum Page Size`, mantendo politicas por campo fora desta leva; o checker de comandos e o build Release foram repetidos com sucesso após a ampliação. A gravação do formato ampliado foi validada no U15 com `Status='Updated'`, mesmo `Guid='312bb1f6-ec00-4a82-8019-adc43a0aa0ed'` e `Bytes=579`; a aplicação foi validada com carregamento do File, `Services='List,Get,Create,Update'`, `SecurityLevel='Authorization'`, `DefaultPageSize=40`, `MaximumPageSize=100` e defaults de geração refletidos em B034. O bug de escopo do preflight agregado foi corrigido e validado: com `GenerateMetadata=False`, `Metadata File` divergente deixou de bloquear e o preflight agregado foi aprovado antes do primeiro `Save()`. O bloqueio posterior em B070 revelou reconfiguração legítima de paginação: `procContrato_API_List` era própria e seguia Source B070/B077 conhecido com `50/200`, enquanto o plano novo esperava `40/100`; o preflight B070 foi ajustado para aceitar apenas essa divergência de literais de paginação em templates próprios conhecidos, mantendo bloqueio para Rules, variáveis, API Object ou Source externo divergente. O reteste validou a correção: B070 aplicou List e sincronizou API Object com `DefaultPageSize=40`, `MaximumPageSize=100`, `Filters=1`, `OrderParts=1`, e a IDE recarregou `procContrato_API_List`.
 
 ## Frente ativa
 
-**Sprint 6 — Serviços REST e Segurança**, com Sprint 5 concluída no escopo de API Object, Procedures e metadata. O bloco B070/B077 foi concluído: `List` real compila, executa e retorna filtros aplicados, paginação, totalização e ordenação determinística.
+**Sprint 6 — Serviços REST e Segurança**, com Sprint 5 concluída no escopo de API Object, Procedures e metadata. B068 está validado no U15, incluindo preferências ampliadas, correção do preflight agregado e ajuste conservador de B070 para reconfiguração de paginação em Source próprio conhecido.
 
 ## Próxima ação única
 
-Implementar e validar B071: completar o serviço `Get` sobre os objetos já criados, mantendo assinatura compatível entre API Object, Procedure, SDTs e metadata.
+Retomar B071: completar `Get` com contrato runtime validado no trio API Object/Procedure/SDT.
 
 ## Critério de conclusão e evidência esperada
 
-- `Get` compila e executa em cenário simples;
-- chaves primárias simples e compostas são transportadas de forma consistente entre API Object e Procedure;
-- resposta usa o SDT de response planejado e preserva ausência de `Delete` no MVP;
-- divergência em objetos reencontrados é bloqueada antes do primeiro `Save()`;
-- Build All valida o consumidor final do contrato, não apenas a Procedure isolada.
+- Procedure `proc<Transacao>_API_Get` deve receber contrato real de `Get` com chave simples ou composta;
+- API Object deve expor `Get` com assinatura compatível e variáveis declaradas;
+- SDTs usados pelo response devem permanecer compatíveis com o `ApiPlan`;
+- preflight deve validar o trio API Object/Procedure/SDT antes do primeiro `Save()`;
+- evidência runtime deve cobrir especificação/build e chamada HTTP do endpoint `Get`.
 
 ## Sequência operacional vigente
 
@@ -101,8 +102,9 @@ Implementar e validar B071: completar o serviço `Get` sobre os objetos já cria
 16. Sprint 5 validou B066: a metadata distingue Folder criado de Folder reutilizado.
 17. Sprint 5 validou B067: a metadata registra integridade de descrições geradas, contrato planejado e Service Source, bloqueando alteração manual posterior antes do primeiro Save().
 18. Sprint 6 concluiu B070/B077: `List` foi aplicado à Procedure e ao API Object com paginação por `ApiPage`/`ApiPageSize`, parâmetros internos `pApiPage`/`pApiPageSize`, ordenação determinística, `totalCount`, `totalPages` e `AppliedFilters`; o SDT de filtros usa `Json Null Serialization = JSON null` para preservar membro nulo sem falso valor zero.
-19. Sprint 6 segue em B071: completar `Get` com contrato runtime validado no trio API Object/Procedure/SDT.
-20. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
+19. B068 implementou preferências do wizard por KB no File `GxOpenApiBuilder_Settings`, com comando de configuração no menu principal e aplicação de defaults no B030 somente quando a etapa está habilitada pelo estado da KB; a validação mecânica local passou e a validação funcional no U15 confirmou cancelamento seguro, gravação, carregamento e aplicação dos defaults no fluxo completo. A frente foi ampliada em seguida para serviços REST, segurança e paginação, e a correção do preflight agregado foi validada com `GenerateMetadata=False`.
+20. Sprint 6 segue para B071: completar `Get` com contrato runtime validado no trio API Object/Procedure/SDT.
+21. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
 
 ## Bloqueios e fatos ainda não validados
 

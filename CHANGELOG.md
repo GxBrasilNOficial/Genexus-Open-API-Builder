@@ -66,6 +66,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B063-B066 validados no U15: preflight agregado bloqueia colisões externas/incompatíveis antes do primeiro `Save()`, metadata compatível permite reencontro conservador, paths/filtros/paginação/ordenação/segurança são persistidos e `transactionFolder.wasCreated` distingue Folder criado de Folder reutilizado
 - B067 validado no U15: metadata grava integridade de descrições geradas, contrato planejado e Service Source; alteração manual posterior em `[Description]` bloqueia o wizard antes do primeiro `Save()` e a restauração da descrição original permite reencontro conservador
 - B070/B077 validados no U15: `List` real sincroniza Procedure e API Object com filtros elegíveis, paginação, ordenação determinística, `totalCount`, `totalPages` e `AppliedFilters`; membros nullable de `ListFilters` são gerados com `Json Null Serialization = JSON null`, preservando `AppliedFilters.ContratoNumero=null` quando o filtro não é informado
+- B068 implementado e validado funcionalmente no U15: novo comando `Configurar Preferências do Wizard` persiste defaults por KB no File `GxOpenApiBuilder_Settings`, e `Abrir Wizard (B030)` aplica esses defaults somente quando a etapa está habilitada pelo estado da KB; a configuração foi ampliada para serviços REST, `Security Level`, `Default Page Size` e `Maximum Page Size`; o preflight agregado respeita etapas selecionadas e B070 aceita reconfiguração segura de paginação em Source próprio conhecido
 
 ## Fixed
 

@@ -130,11 +130,17 @@ internal static class ApiPlanListProcedureWriter
         if (!string.IsNullOrWhiteSpace(currentSource) &&
             !string.Equals(currentSource, NormalizeForComparison(skeleton), StringComparison.Ordinal) &&
             !string.Equals(currentSource, NormalizeForComparison(source), StringComparison.Ordinal) &&
+            !MatchesKnownListSourceIgnoringPagination(currentSource, source) &&
             !string.Equals(currentSource, invalidB077Source, StringComparison.Ordinal) &&
+            !MatchesKnownListSourceIgnoringPagination(currentSource, invalidB077Source) &&
             !string.Equals(currentSource, manualB077Source, StringComparison.Ordinal) &&
+            !MatchesKnownListSourceIgnoringPagination(currentSource, manualB077Source) &&
             !string.Equals(currentSource, previousConditionalB077Source, StringComparison.Ordinal) &&
+            !MatchesKnownListSourceIgnoringPagination(currentSource, previousConditionalB077Source) &&
             !string.Equals(currentSource, previousB077Source, StringComparison.Ordinal) &&
+            !MatchesKnownListSourceIgnoringPagination(currentSource, previousB077Source) &&
             !string.Equals(currentSource, previousB070Source, StringComparison.Ordinal) &&
+            !MatchesKnownListSourceIgnoringPagination(currentSource, previousB070Source) &&
             !string.Equals(currentSource, legacySource, StringComparison.Ordinal))
         {
             throw new InvalidOperationException($"B070 bloqueado: Procedure propria '{procedure.Name}' possui Source divergente da geracao B050/B070. Nenhuma alteracao foi feita.");
@@ -846,6 +852,40 @@ internal static class ApiPlanListProcedureWriter
 
     private static string EscapeDescription(string description) => description.Replace("\\", "\\\\").Replace("\"", "\\\"");
     private static string NormalizeForComparison(string? value) => (value ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n").Trim();
+    private static bool MatchesKnownListSourceIgnoringPagination(string currentSource, string knownSource) =>
+        string.Equals(NormalizePaginationLiterals(currentSource), NormalizePaginationLiterals(knownSource), StringComparison.Ordinal);
+
+    private static string NormalizePaginationLiterals(string source)
+    {
+        var lines = NormalizeForComparison(source).Split('\n');
+        for (var index = 0; index < lines.Length; index++)
+        {
+            var trimmed = lines[index].TrimStart();
+            var indent = lines[index].Substring(0, lines[index].Length - trimmed.Length);
+            if (IsIntegerAssignment(trimmed, $"&{PageSizeVariableName} = "))
+            {
+                lines[index] = indent + $"&{PageSizeVariableName} = <DefaultPageSize>";
+            }
+            else if (IsIntegerAssignment(trimmed, $"If &{PageSizeVariableName} > "))
+            {
+                lines[index] = indent + $"If &{PageSizeVariableName} > <MaximumPageSize>";
+            }
+        }
+
+        return string.Join("\n", lines);
+    }
+
+    private static bool IsIntegerAssignment(string line, string prefix)
+    {
+        if (!line.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var value = line.Substring(prefix.Length).Trim();
+        return value.Length > 0 && value.All(char.IsDigit);
+    }
+
     private static bool HasService(ApiPlan plan, string name) => plan.Services.Any(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
     private static string Skeleton() => "// Genexus Open API Builder B050: Procedure skeleton for List. REST behavior remains pending Sprint 6." + Environment.NewLine + "msg(!\"Genexus Open API Builder B050 List skeleton. REST behavior pending Sprint 6.\", status)";
 }

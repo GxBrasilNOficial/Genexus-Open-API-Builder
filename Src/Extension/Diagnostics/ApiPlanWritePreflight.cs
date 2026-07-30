@@ -11,6 +11,18 @@ internal static class ApiPlanWritePreflight
 {
     public static void Validate(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
+        Validate(designModel, transaction, apiPlan, true, true, true, true);
+    }
+
+    public static void Validate(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        bool requireSdts,
+        bool requireProcedures,
+        bool requireApiObject,
+        bool requireMetadataFile)
+    {
         if (designModel is null)
         {
             throw new ArgumentNullException(nameof(designModel));
@@ -32,7 +44,15 @@ internal static class ApiPlanWritePreflight
         }
 
         var state = ApiPlanGenerationStateReader.Read(designModel, apiPlan);
-        var blockedStages = new[] { state.Sdts, state.Procedures, state.ApiObject, state.MetadataFile }
+        var blockedStages = new[]
+            {
+                requireSdts ? state.Sdts : null,
+                requireProcedures ? state.Procedures : null,
+                requireApiObject ? state.ApiObject : null,
+                requireMetadataFile ? state.MetadataFile : null,
+            }
+            .Where(stage => stage is not null)
+            .Cast<ApiPlanGenerationStageState>()
             .Where(stage => stage.IsBlocked)
             .Select(stage => stage.StageName)
             .ToArray();
