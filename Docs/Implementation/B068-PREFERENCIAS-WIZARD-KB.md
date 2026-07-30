@@ -51,15 +51,13 @@ Validacao funcional no GeneXus 18 U15 em 2026-07-29:
 - conclusao do wizard registrou `GenerateSdts=True`, `GenerateProcedures=True`, `GenerateApiObject=True`, `GenerateMetadata=True`, `ApplyList=True` e `ApplyBusinessComponent=True`;
 - o preflight foi aprovado e o fluxo aplicou as etapas habilitadas: SDTs e Procedures reencontrados, API Object sincronizado por B055, List aplicado por B070, metadata escrita por B060 e integridade registrada por B067.
 
-Pendente visual/runtime: reinstalar a DLL gerada apos a ampliacao das preferencias e confirmar que o dialogo de preferencias nao abre comprimido, salva os novos defaults e o wizard aplica servicos, seguranca e paginacao no proximo fluxo.
+Validacao visual/runtime posterior confirmou que o dialogo de preferencias abre com tamanho adequado, salva os novos defaults e que o wizard aplica servicos, seguranca e paginacao no proximo fluxo.
 
 Validacao parcial da ampliacao no GeneXus 18 U15 em 2026-07-29:
 
 - gravacao do formato ampliado atualizou o File `GxOpenApiBuilder_Settings` existente com `Status='Updated'`, preservando `Guid='312bb1f6-ec00-4a82-8019-adc43a0aa0ed'` e registrando `Bytes=579`.
 
-Ainda falta confirmar que o proximo wizard aplica os defaults ampliados de servicos, seguranca e paginacao.
-
-Validacao parcial de aplicacao da ampliacao no GeneXus 18 U15 em 2026-07-29:
+Validacao de aplicacao da ampliacao no GeneXus 18 U15 em 2026-07-29:
 
 - o wizard carregou `GxOpenApiBuilder_Settings` apos a gravacao ampliada;
 - o contrato em memoria iniciou com `Services='List,Get,Create,Update'`;
