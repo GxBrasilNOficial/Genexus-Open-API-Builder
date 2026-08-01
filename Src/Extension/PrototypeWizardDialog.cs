@@ -68,6 +68,7 @@ internal sealed class PrototypeWizardDialog : Form
     private bool _servicesBasePathEditedManually;
     private bool _businessComponentEnabledDuringWizard;
     private bool _suppressGenerationPreviewRefresh;
+    private bool _applyBusinessComponentWhenReady;
     private string _generationContext = "Plano da Transaction ainda nao consultado na KB.";
 
     public PrototypeWizardDialog(KBModel designModel, Transaction transaction, PrototypeWizardContractSnapshot snapshot, PrototypeBusinessComponentSnapshot businessComponentSnapshot, PrototypeWizardPreferences preferences, Func<bool> enableBusinessComponent, Action<string> writeBusinessComponentOutput)
@@ -136,10 +137,10 @@ internal sealed class PrototypeWizardDialog : Form
         _tabs.TabPages.Add(CreatePaginationTab());
         _tabs.TabPages.Add(CreateOrderTab());
         _tabs.TabPages.Add(CreateRequiredTab());
-        _tabs.TabPages.Add(CreateBusinessComponentTab());
         _tabs.TabPages.Add(CreateSdtGenerationTab());
         _tabs.TabPages.Add(CreateProcedureGenerationTab());
         _tabs.TabPages.Add(CreateApiObjectGenerationTab());
+        _tabs.TabPages.Add(CreateBusinessComponentTab());
         _tabs.TabPages.Add(CreateListGenerationTab());
         _tabs.TabPages.Add(CreateMetadataGenerationTab());
         _tabs.TabPages.Add(CreateSummaryTab());
@@ -711,7 +712,16 @@ internal sealed class PrototypeWizardDialog : Form
         _applyListCheck.CheckedChanged += (_, _) => RefreshGenerationPreviewUnlessSuppressed();
         _generateMetadataCheck.Enabled = false;
         _generateMetadataCheck.CheckedChanged += (_, _) => RefreshGenerationPreviewUnlessSuppressed();
-        _applyBusinessComponentCheck.CheckedChanged += (_, _) => RefreshGenerationPreviewUnlessSuppressed();
+        _enableBusinessComponentCheck.CheckedChanged += (_, _) => RefreshGenerationPreviewUnlessSuppressed();
+        _applyBusinessComponentCheck.CheckedChanged += (_, _) =>
+        {
+            if (_applyBusinessComponentCheck.Enabled)
+            {
+                _applyBusinessComponentWhenReady = _applyBusinessComponentCheck.Checked;
+            }
+
+            RefreshGenerationPreviewUnlessSuppressed();
+        };
     }
 
     private void ApplyWizardPreferences()
@@ -731,6 +741,7 @@ internal sealed class PrototypeWizardDialog : Form
             ApplyPreference(_generateSdtsCheck, _preferences.GenerateSdtsByDefault);
             ApplyPreference(_generateProceduresCheck, _preferences.GenerateProceduresByDefault);
             ApplyPreference(_generateApiObjectCheck, _preferences.GenerateApiObjectByDefault);
+            _applyBusinessComponentWhenReady = _preferences.ApplyBusinessComponentByDefault;
             ApplyPreference(_applyBusinessComponentCheck, _preferences.ApplyBusinessComponentByDefault);
             ApplyPreference(_applyListCheck, _preferences.ApplyListByDefault);
             ApplyPreference(_generateMetadataCheck, _preferences.GenerateMetadataByDefault);
@@ -853,6 +864,11 @@ internal sealed class PrototypeWizardDialog : Form
     {
         if (_showingSummary)
         {
+            if (!CompletePendingExplicitActions())
+            {
+                return;
+            }
+
             if (!TryCreateSelection())
             {
                 return;
@@ -879,8 +895,7 @@ internal sealed class PrototypeWizardDialog : Form
         }
 
         if (_tabs.SelectedTab?.Text == "Business Component" &&
-            PrototypeWizardBusinessComponentNavigationPolicy.ShouldRequestEnableOnNext(IsBusinessComponentReady(), _enableBusinessComponentCheck.Checked) &&
-            !EnsureBusinessComponentReady())
+            !CompletePendingExplicitActions())
         {
             return;
         }
@@ -896,7 +911,7 @@ internal sealed class PrototypeWizardDialog : Form
             return;
         }
 
-        if (!TryCreateSelection())
+        if (!CompletePendingExplicitActions() || !TryCreateSelection())
         {
             return;
         }
@@ -909,7 +924,7 @@ internal sealed class PrototypeWizardDialog : Form
         RefreshGenerationPreview();
         if (_tabs.SelectedTab?.Text == "Resumo")
         {
-            if (!_showingSummary && TryCreateSelection())
+            if (!_showingSummary && CompletePendingExplicitActions() && TryCreateSelection())
             {
                 ShowSummary();
             }
@@ -929,6 +944,22 @@ internal sealed class PrototypeWizardDialog : Form
 
         RefreshCurrentTabLabel();
     }
+
+    private bool CompletePendingExplicitActions()
+    {
+        if (PrototypeWizardBusinessComponentNavigationPolicy.ShouldRequestEnableBeforeLeavingWizard(IsBusinessComponentReady(), _enableBusinessComponentCheck.Checked))
+        {
+            if (!EnsureBusinessComponentReady())
+            {
+                return false;
+            }
+
+            RefreshGenerationPreview();
+        }
+
+        return true;
+    }
+
     private string GetSelectedSecurityLevel()
     {
         if (_securityAuthorizationRadio.Checked)
@@ -1137,11 +1168,12 @@ internal sealed class PrototypeWizardDialog : Form
         var apiState = state?.ApiObject;
         var metadataState = state?.MetadataFile;
 
-        ApplyBusinessComponentControlState();
-        var businessComponentConfirmed = _applyBusinessComponentCheck.Checked && IsBusinessComponentReady();
         var sdtsAvailable = IsDependencyAvailable(sdtState, _generateSdtsCheck.Checked);
         var proceduresAvailable = IsDependencyAvailable(procedureState, _generateProceduresCheck.Checked);
-        var apiObjectAvailable = IsDependencyAvailable(apiState, _generateApiObjectCheck.Checked) || businessComponentConfirmed;
+        var baseApiObjectAvailable = IsDependencyAvailable(apiState, _generateApiObjectCheck.Checked);
+        ApplyBusinessComponentControlState(sdtsAvailable, proceduresAvailable, baseApiObjectAvailable);
+        var businessComponentConfirmed = _applyBusinessComponentCheck.Checked && IsBusinessComponentReady();
+        var apiObjectAvailable = baseApiObjectAvailable || businessComponentConfirmed;
         ApplyGenerationControlState(_generateSdtsCheck, sdtState, true);
         ApplyGenerationControlState(_generateProceduresCheck, procedureState, sdtsAvailable);
         ApplyGenerationControlState(_generateApiObjectCheck, apiState, proceduresAvailable);
@@ -1160,16 +1192,46 @@ internal sealed class PrototypeWizardDialog : Form
             $"Dependencia List/API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked || businessComponentConfirmed || _applyListCheck.Checked)}";
     }
 
+    private void ApplyBusinessComponentControlState(bool sdtsAvailable, bool proceduresAvailable, bool apiObjectAvailable)
+    {
+        var shouldApplyWhenAllowed = PrototypeWizardBusinessComponentNavigationPolicy.ResolveApplyBusinessComponentAfterGenerationRefresh(
+            IsBusinessComponentReady(),
+            _enableBusinessComponentCheck.Checked,
+            sdtsAvailable,
+            proceduresAvailable,
+            apiObjectAvailable,
+            _applyBusinessComponentCheck.Checked,
+            _applyBusinessComponentWhenReady);
+        var canApplyBusinessComponent = PrototypeWizardBusinessComponentNavigationPolicy.ShouldAllowApplyBusinessComponent(
+            IsBusinessComponentReady(),
+            _enableBusinessComponentCheck.Checked,
+            sdtsAvailable,
+            proceduresAvailable,
+            apiObjectAvailable);
+        if (IsBusinessComponentReady())
+        {
+            _applyBusinessComponentCheck.Text = canApplyBusinessComponent
+                ? "Confirmar: Aplicar Create/Update via Business Component ao concluir"
+                : "Bloqueado: confirme SDTs, Procedures e API Object";
+        }
+        else if (_enableBusinessComponentCheck.Checked)
+        {
+            _applyBusinessComponentCheck.Text = canApplyBusinessComponent
+                ? "Confirmar: Aplicar Create/Update via Business Component após habilitar"
+                : "Bloqueado: confirme SDTs, Procedures e API Object antes de aplicar BC";
+        }
+        else
+        {
+            _applyBusinessComponentCheck.Text = "Bloqueado: Business Component desabilitado";
+        }
+
+        _applyBusinessComponentCheck.Enabled = canApplyBusinessComponent;
+        _applyBusinessComponentCheck.Checked = shouldApplyWhenAllowed;
+    }
+
     private void ApplyBusinessComponentControlState()
     {
-        _applyBusinessComponentCheck.Text = IsBusinessComponentReady()
-            ? "Confirmar: Aplicar Create/Update via Business Component ao concluir"
-            : "Bloqueado: Business Component desabilitado";
-        _applyBusinessComponentCheck.Enabled = IsBusinessComponentReady();
-        if (!_applyBusinessComponentCheck.Enabled)
-        {
-            _applyBusinessComponentCheck.Checked = false;
-        }
+        ApplyBusinessComponentControlState(false, false, false);
     }
 
     private void ApplyListControlState(ApiPlanGenerationStageState? apiState, bool apiObjectAvailable)

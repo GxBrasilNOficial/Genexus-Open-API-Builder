@@ -69,6 +69,13 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - B068 implementado e validado funcionalmente no U15: novo comando `Configurar Preferências do Wizard` persiste defaults por KB no File `GxOpenApiBuilder_Settings`, e `Abrir Wizard (B030)` aplica esses defaults somente quando a etapa está habilitada pelo estado da KB; a configuração foi ampliada para serviços REST, `Security Level`, `Default Page Size` e `Maximum Page Size`; o preflight agregado respeita etapas selecionadas e B070 aceita reconfiguração segura de paginação em Source próprio conhecido
 - Menu `Genexus Open API Builder` simplificado: no menu principal ficam `Configurar Preferências do Wizard` e `Wizard`; no contexto da Transaction fica somente `Wizard`; comandos incrementais B020-B025, B040-B054 e o placeholder `Futura Primeira Opção` foram removidos do runtime e do manifesto após o wizard absorver o fluxo.
 - Preferência de `ApplyBusinessComponent` passa a ser aplicada somente quando a Transaction está apta via Business Component ou foi habilitada explicitamente no wizard, evitando bloqueio indevido de B055 e preservando List/Metadata quando BC está desabilitado.
+- Navegação do wizard deixa de depender da passagem sequencial pela aba `Business Component`: a habilitação explícita pendente agora é avaliada também ao abrir o `Resumo` diretamente e antes da conclusão.
+- Intenção de aplicar Create/Update via Business Component é preservada enquanto a habilitação explícita de BC ainda está pendente, permitindo que B055 rode no mesmo wizard após a Transaction ser habilitada.
+- Ao marcar `Habilitar Business Component agora`, a aba passa a liberar `Aplicar Create/Update via Business Component após habilitar` como decisão pendente, sem antecipar gravação na KB.
+- `Aplicar Create/Update via Business Component` passa a exigir SDTs, Procedures e API Object disponíveis ou confirmados no wizard, evitando B055 isolado quando a KB não tem dependências seguras.
+- Aba `Business Component` foi reposicionada depois de `SDTs`, `Procedures` e `API Object`, alinhando a navegação com as dependências de B055.
+- Após habilitar Business Component ao entrar direto no `Resumo`, o wizard recalcula as dependências antes de montar a seleção final, preservando `ApplyBusinessComponent=True` quando B055 estava marcado.
+- Cobertura automatizada da navegação B055 passou a simular refresh local sem dependências seguido de refresh completo, garantindo restauração da intenção pendente antes da seleção final.
 
 ## Fixed
 
