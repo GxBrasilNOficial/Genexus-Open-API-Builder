@@ -104,6 +104,44 @@ apiTransaction2
 $formattedDescriptionsHash = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ComputeJsonSha256([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::CreateServiceDescriptionsContractFromSource($formattedSource, $serviceNames))
 Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($metadata, $descriptionsHash, $plannedContractHash, $formattedDescriptionsHash, $descriptionSentinel, $expectedSource, $true)) 'B067 deve aceitar formatação inofensiva quando descrição e contrato semântico permanecem compatíveis.'
 
+$sourceWithRestMethodBetweenDescriptionAndService = @'
+apiTransaction2
+{
+    [Description("Get Transaction2")]
+    Get()
+        => procTransaction2_API_Get();
+
+    [Description("List Transaction2")]
+    List()
+        => procTransaction2_API_List();
+
+    [Description("Create Transaction2")]
+    [RestMethod(POST)]
+    Create(in: &CreateRequest, out: &CreateResponse)
+        => procTransaction2_API_Create(&CreateRequest, &CreateResponse);
+}
+'@
+$descriptionsWithCreate = [Newtonsoft.Json.Linq.JArray]::Parse(@'
+[
+  { "serviceName": "Create", "description": "Create Transaction2" },
+  { "serviceName": "Get", "description": "Get Transaction2" },
+  { "serviceName": "List", "description": "List Transaction2" }
+]
+'@)
+[string[]]$serviceNamesWithCreate = @('Get', 'List', 'Create')
+$descriptionsWithCreateHash = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ComputeJsonSha256($descriptionsWithCreate)
+$actualDescriptionsWithRestMethodHash = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ComputeJsonSha256([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::CreateServiceDescriptionsContractFromSource($sourceWithRestMethodBetweenDescriptionAndService, $serviceNamesWithCreate))
+$metadataWithCreate = [Newtonsoft.Json.Linq.JObject]::new()
+$metadataWithCreate['integrity'] = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::Create(
+    $descriptionsWithCreate,
+    $plannedContract,
+    $descriptionSentinel,
+    '11111111-1111-1111-1111-111111111111',
+    'B079',
+    $sourceWithRestMethodBetweenDescriptionAndService,
+    $sourceWithRestMethodBetweenDescriptionAndService)
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($metadataWithCreate, $descriptionsWithCreateHash, $plannedContractHash, $actualDescriptionsWithRestMethodHash, $descriptionSentinel, $sourceWithRestMethodBetweenDescriptionAndService, $true)) 'B067 deve aceitar Description seguida de RestMethod antes do serviço.'
+
 $manualDescriptionChange = $currentSource.Replace('[Description("List Transaction2")]', '[Description("List Transaction 2")]')
 $manualDescriptionHash = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ComputeJsonSha256([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::CreateServiceDescriptionsContractFromSource($manualDescriptionChange, $serviceNames))
 Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($metadata, $descriptionsHash, $plannedContractHash, $manualDescriptionHash, $descriptionSentinel, $expectedSource, $true)) 'B067 deve rejeitar alteração manual posterior em Description.'

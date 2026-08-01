@@ -584,8 +584,10 @@ internal static class ApiPlanMetadataFileWriter
         {
             ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan),
             ApiPlanBusinessComponentWriter.CreateB055ServiceGroupSource(apiPlan),
+            ApiPlanBusinessComponentWriter.CreateB079InternalErrorOnlyServiceGroupSource(apiPlan),
             ApiPlanListProcedureWriter.CreateB070ServiceGroupSource(apiPlan, includeBusinessComponentParameters: false),
             ApiPlanListProcedureWriter.CreateB070ServiceGroupSource(apiPlan, includeBusinessComponentParameters: true),
+            ApiPlanListProcedureWriter.CreateB070InternalErrorOnlyServiceGroupSource(apiPlan, includeBusinessComponentParameters: true),
         };
     }
 

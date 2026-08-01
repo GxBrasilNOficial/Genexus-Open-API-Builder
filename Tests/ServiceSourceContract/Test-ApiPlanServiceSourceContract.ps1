@@ -76,4 +76,27 @@ Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceCo
 Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB070(($b070 -replace 'in: &ApiPage', 'in:&ApiPage' -replace 'out: &ListResponse', 'out:&ListResponse'), 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B070 deve aceitar normalizacao inofensiva de espacos.'
 Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB070($b070.Replace('&SimulationResultId, &ListResponse', '&ListResponse, &SimulationResultId'), 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B070 deve rejeitar argumentos de List divergentes.'
 
+$b079 = @'
+apiSimulationResult
+{
+    List(in: &ApiPage, in: &ApiPageSize, in: &SimulationResultId, out: &ListResponse)
+        => Entities.procSimulationResult_API_List(&ApiPage, &ApiPageSize, &SimulationResultId, &ListResponse);
+    Get(in: &SimulationResultId, out: &GetResponse, out: &ErrorResponse)
+        => Entities.procSimulationResult_API_Get(&SimulationResultId, &GetResponse, &ErrorResponse, &RestStatusCode);
+    [RestMethod(POST)]
+    Create(in: &CreateRequest, out: &CreateResponse, out: &ErrorResponse)
+        => Entities.procSimulationResult_API_Create(&CreateRequest, &CreateResponse, &ErrorResponse, &RestStatusCode);
+    Update(in: &SimulationResultId, in: &UpdateRequest, out: &UpdateResponse, out: &ErrorResponse)
+        => Entities.procSimulationResult_API_Update(&SimulationResultId, &UpdateRequest, &UpdateResponse, &ErrorResponse, &RestStatusCode);
+}
+'@
+
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079($b079, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B079 deve aceitar Get/Create/Update com status e erro internos preservando List B070.'
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079($b079.Replace('&ErrorResponse, &RestStatusCode', '&RestStatusCode, &ErrorResponse'), 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B079 deve rejeitar argumentos internos de status/erro divergentes.'
+$b079WithoutPost = $b079 -replace '(?m)^\s*\[RestMethod\(POST\)\]\r?\n', ''
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079($b079WithoutPost, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B079 deve exigir Create exposto como POST no API Object.'
+$b079InternalErrorOnly = $b079.Replace(', out: &ErrorResponse)', ')')
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079($b079InternalErrorOnly, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B079 atual deve rejeitar ErrorResponse apenas interno no API Object.'
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079InternalErrorOnly($b079InternalErrorOnly, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B079 legado deve reconhecer ErrorResponse apenas interno para migracao conservadora.'
+
 Write-Output 'PASS: ApiPlanServiceSourceContract'

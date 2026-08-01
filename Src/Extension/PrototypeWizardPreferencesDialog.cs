@@ -10,9 +10,9 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
     private readonly CheckBox _generateSdtsCheck = CreateCheckBox("Marcar SDTs por padrao");
     private readonly CheckBox _generateProceduresCheck = CreateCheckBox("Marcar Procedures por padrao");
     private readonly CheckBox _generateApiObjectCheck = CreateCheckBox("Marcar API Object por padrao");
-    private readonly CheckBox _generateMetadataCheck = CreateCheckBox("Marcar Metadata por padrao");
-    private readonly CheckBox _applyListCheck = CreateCheckBox("Marcar List por padrao");
-    private readonly CheckBox _applyBusinessComponentCheck = CreateCheckBox("Marcar Create/Update via Business Component por padrao");
+    private readonly CheckBox _generateMetadataCheck = CreateCheckBox("Marcar metadata da API por padrao");
+    private readonly CheckBox _applyListCheck = CreateCheckBox("Marcar listagem por padrao");
+    private readonly CheckBox _applyBusinessComponentCheck = CreateCheckBox("Marcar Get/Create/Update REST por padrao");
     private readonly CheckBox _listServiceCheck = CreateCheckBox("List");
     private readonly CheckBox _getServiceCheck = CreateCheckBox("Get");
     private readonly CheckBox _createServiceCheck = CreateCheckBox("Create");
@@ -91,22 +91,24 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         var checks = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 7,
+            ColumnCount = 2,
+            RowCount = 4,
             AutoScroll = true,
         };
-        for (var index = 0; index < 6; index++)
+        checks.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        checks.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        for (var index = 0; index < 3; index++)
         {
             checks.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         }
 
         checks.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         checks.Controls.Add(_generateSdtsCheck, 0, 0);
-        checks.Controls.Add(_generateProceduresCheck, 0, 1);
-        checks.Controls.Add(_generateApiObjectCheck, 0, 2);
-        checks.Controls.Add(_applyBusinessComponentCheck, 0, 3);
-        checks.Controls.Add(_applyListCheck, 0, 4);
-        checks.Controls.Add(_generateMetadataCheck, 0, 5);
+        checks.Controls.Add(_generateProceduresCheck, 1, 0);
+        checks.Controls.Add(_generateApiObjectCheck, 0, 1);
+        checks.Controls.Add(_applyBusinessComponentCheck, 1, 1);
+        checks.Controls.Add(_applyListCheck, 0, 2);
+        checks.Controls.Add(_generateMetadataCheck, 1, 2);
         optionsGroup.Controls.Add(checks);
         root.Controls.Add(optionsGroup, 0, 2);
 

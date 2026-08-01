@@ -23,36 +23,43 @@ internal static class ApiPlanBusinessComponentWriter
             throw new InvalidOperationException("B055 bloqueado: o ApiPlan nao pertence a Transaction atual. Nenhuma alteracao foi feita.");
         if (!transaction.IsBusinessComponent)
             throw new InvalidOperationException($"B055 bloqueado: Transaction='{transaction.Name}' esta com Business Component desabilitado. Nenhuma alteracao foi feita.");
-        if (!HasService(plan, "Create") || !HasService(plan, "Update"))
-            throw new InvalidOperationException("B055 bloqueado: o ApiPlan precisa conter Create e Update. Nenhuma alteracao foi feita.");
+        if (!HasService(plan, "Get") || !HasService(plan, "Create") || !HasService(plan, "Update"))
+            throw new InvalidOperationException("B071-B073/B079 bloqueado: o ApiPlan precisa conter Get, Create e Update. Nenhuma alteracao foi feita.");
 
         EnsureSdts(model, plan);
         ApiPlanTransactionFolder.Preflight(model, plan);
+        var getContent = GetContent(plan);
+        var getRules = GetRules(plan);
+        var getVariables = CoalesceVariableSpecs(GetVariables(plan), "B071-B073/B079");
         var createContent = CreateContent(plan);
         var createRules = CreateRules();
-        var createVariables = CoalesceVariableSpecs(CreateVariables(plan), "B055");
+        var createVariables = CoalesceVariableSpecs(CreateVariables(plan), "B071-B073/B079");
         var updateContent = UpdateContent(plan);
         var updateRules = UpdateRules(plan);
-        var updateVariables = CoalesceVariableSpecs(UpdateVariables(plan), "B055");
+        var updateVariables = CoalesceVariableSpecs(UpdateVariables(plan), "B071-B073/B079");
         var apiSource = CreateB055ServiceGroupSource(plan);
-        var apiVariables = CoalesceVariableSpecs(ApiVariableSpecs(plan), "B055");
+        var apiVariables = CoalesceVariableSpecs(ApiVariableSpecs(plan), "B071-B073/B079");
 
+        var get = FindProcedure(model, plan, "Get", "B051");
         var create = FindProcedure(model, plan, "Create", "B052");
         var update = FindProcedure(model, plan, "Update", "B053");
         var api = FindApi(model, plan);
-        EnsureProcedure(create, "B052", "Create", Skeleton("B052", "Create"), createContent, createVariables, createRules);
-        EnsureProcedure(update, "B053", "Update", Skeleton("B053", "Update"), updateContent, updateVariables, updateRules);
+        EnsureProcedure(get, plan, "B051", "Get", Skeleton("B051", "Get"), getContent, getVariables, getRules, IsManagedGetSource);
+        EnsureProcedure(create, plan, "B052", "Create", Skeleton("B052", "Create"), createContent, createVariables, createRules, IsManagedCreateSource, LegacyCreateContent(plan), LegacyCreateRules(), LegacyCreateVariables(plan), PreviousB079CreateVariables(plan));
+        EnsureProcedure(update, plan, "B053", "Update", Skeleton("B053", "Update"), updateContent, updateVariables, updateRules, IsManagedUpdateSource, LegacyUpdateContent(plan), LegacyUpdateRules(plan), LegacyUpdateVariables(plan), PreviousB079UpdateVariables(plan));
         EnsureApi(api, plan);
+        ValidateProcedureVariableSpecs(model, get, getVariables);
         ValidateProcedureVariableSpecs(model, create, createVariables);
         ValidateProcedureVariableSpecs(model, update, updateVariables);
         ValidateApiVariableSpecs(model, api, apiVariables);
 
         ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan);
+        SaveProcedure(model, get, getContent, getVariables, getRules);
         SaveProcedure(model, create, createContent, createVariables, createRules);
         SaveProcedure(model, update, updateContent, updateVariables, updateRules);
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
         SaveApi(model, api, transactionFolder, plan, apiSource, apiVariables);
-        return new ApiPlanBusinessComponentWriteResult(create.Guid, update.Guid, api.Guid, plan.PrimaryKey.Count, plan.CreateRequestFields.Count, plan.UpdateRequestFields.Count, plan.ResponseFields.Count);
+        return new ApiPlanBusinessComponentWriteResult(get.Guid, create.Guid, update.Guid, api.Guid, plan.PrimaryKey.Count, plan.CreateRequestFields.Count, plan.UpdateRequestFields.Count, plan.ResponseFields.Count);
     }
 
     internal static bool IsManagedApiObject(KBModel model, ApiPlan plan, API api)
@@ -63,20 +70,28 @@ internal static class ApiPlanBusinessComponentWriter
         return ApiPlanListProcedureWriter.IsB070ApiObject(model, plan, api)
             || IsB054ServiceGroupSource(plan, source)
             || (HasNoNonStandardVariables(api) && IsSemanticallyB054ServiceGroupSource(plan, source))
-            || (IsB055ServiceGroupSource(plan, source) && HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan), "B055")));
+            || (IsB055ServiceGroupSource(plan, source) && HasManagedB055ApiVariables(model, plan, api) && HasExpectedApiEvents(api));
     }
 
     internal static bool IsB055ApiObject(KBModel model, ApiPlan plan, API api) =>
         api is not null && IsB055ServiceGroupSource(plan, NormalizeForComparison(api.ServiceGroupSource.Source)) &&
-        HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan), "B055"));
+        HasManagedB055ApiVariables(model, plan, api) &&
+        HasExpectedApiEvents(api);
 
     internal static bool IsCurrentB055ApiObject(KBModel model, ApiPlan plan, API api) =>
-        api is not null && string.Equals(NormalizeForComparison(api.ServiceGroupSource.Source), NormalizeForComparison(CreateB055ServiceGroupSource(plan)), StringComparison.Ordinal) &&
-        HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan), "B055"));
+        api is not null &&
+        ((string.Equals(NormalizeForComparison(api.ServiceGroupSource.Source), NormalizeForComparison(CreateB055ServiceGroupSource(plan)), StringComparison.Ordinal) &&
+          HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan), "B071-B073/B079")) &&
+          HasExpectedApiEvents(api)) ||
+         (IsSemanticallyB055ServiceGroupSource(plan, NormalizeForComparison(api.ServiceGroupSource.Source)) &&
+          HasExpectedVariables(model, api, CoalesceVariableSpecs(LegacyApiVariableSpecs(plan), "B055 legacy")) &&
+          string.IsNullOrWhiteSpace(api.Events.Source)));
 
     internal static string CreateB054ServiceGroupSource(ApiPlan plan) => CreateServiceGroupSource(plan, includeBusinessComponentParameters: false, includeDescriptions: true);
 
-    internal static string CreateB055ServiceGroupSource(ApiPlan plan) => CreateServiceGroupSource(plan, includeBusinessComponentParameters: true, includeDescriptions: true);
+    internal static string CreateB055ServiceGroupSource(ApiPlan plan) => CreateServiceGroupSource(plan, includeBusinessComponentParameters: true, includeDescriptions: true, exposeErrorResponse: true);
+
+    internal static string CreateB079InternalErrorOnlyServiceGroupSource(ApiPlan plan) => CreateServiceGroupSource(plan, includeBusinessComponentParameters: true, includeDescriptions: true);
 
     private static bool IsB054ServiceGroupSource(ApiPlan plan, string normalizedSource) =>
         string.Equals(normalizedSource, NormalizeForComparison(CreateB054ServiceGroupSource(plan)), StringComparison.Ordinal) ||
@@ -107,7 +122,25 @@ internal static class ApiPlanBusinessComponentWriter
             plan.TransactionName,
             plan.ModuleTarget,
             plan.Services.Select(service => service.Name),
-            plan.PrimaryKey.Select(field => field.Name));
+            plan.PrimaryKey.Select(field => field.Name)) ||
+            ApiPlanServiceSourceContract.MatchesB079(
+                normalizedSource,
+                plan.ApiName,
+                plan.TransactionName,
+                plan.ModuleTarget,
+                plan.Services.Select(service => service.Name),
+                plan.PrimaryKey.Select(field => field.Name),
+                Array.Empty<string>(),
+                hasListContract: false) ||
+            ApiPlanServiceSourceContract.MatchesB079InternalErrorOnly(
+                normalizedSource,
+                plan.ApiName,
+                plan.TransactionName,
+                plan.ModuleTarget,
+                plan.Services.Select(service => service.Name),
+                plan.PrimaryKey.Select(field => field.Name),
+                Array.Empty<string>(),
+                hasListContract: false);
     }
 
     private static bool ContainsB055ServiceCall(string compactSource, ApiPlan plan, string serviceName)
@@ -226,9 +259,9 @@ internal static class ApiPlanBusinessComponentWriter
 
     private static string CreateLegacyB055ServiceGroupSource(ApiPlan plan) => CreateServiceGroupSource(plan, includeBusinessComponentParameters: true, includeDescriptions: false);
 
-    private static string CreateServiceGroupSource(ApiPlan plan, bool includeBusinessComponentParameters, bool includeDescriptions)
+    private static string CreateServiceGroupSource(ApiPlan plan, bool includeBusinessComponentParameters, bool includeDescriptions, bool exposeErrorResponse = false)
     {
-        var services = plan.Services.Select(service => ServiceSource(plan, service.Name, includeBusinessComponentParameters, includeDescriptions));
+        var services = plan.Services.Select(service => ServiceSource(plan, service.Name, includeBusinessComponentParameters, includeDescriptions, exposeErrorResponse));
         return $"{plan.ApiName}{Environment.NewLine}{{{Environment.NewLine}{string.Join(Environment.NewLine + Environment.NewLine, services)}{Environment.NewLine}}}";
     }
 
@@ -266,20 +299,46 @@ internal static class ApiPlanBusinessComponentWriter
         {
             throw new InvalidOperationException($"B055 bloqueado: API Object proprio '{api.Name}' possui fonte ou variaveis divergentes da geracao B054/B055. Nenhuma alteracao foi feita.");
         }
+
+        if (!HasExpectedApiEvents(api))
+        {
+            throw new InvalidOperationException($"B071-B073/B079 bloqueado: API Object proprio '{api.Name}' possui Events divergentes da geracao REST runtime. Nenhuma alteracao foi feita.");
+        }
     }
 
-    private static void EnsureProcedure(Procedure procedure, string backlog, string service, string skeleton, string content, IReadOnlyList<VariableSpec> variables, string rules)
+    private static bool HasManagedB055ApiVariables(KBModel model, ApiPlan plan, API api) =>
+        HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan), "B071-B073/B079")) ||
+        HasExpectedVariables(model, api, CoalesceVariableSpecs(LegacyApiVariableSpecs(plan), "B055 legacy"));
+
+    private static void EnsureProcedure(
+        Procedure procedure,
+        ApiPlan plan,
+        string backlog,
+        string service,
+        string skeleton,
+        string content,
+        IReadOnlyList<VariableSpec> variables,
+        string rules,
+        Func<string, ApiPlan, bool>? isManagedCurrentSource = null,
+        string? legacyContent = null,
+        string? legacyRules = null,
+        IReadOnlyList<VariableSpec>? legacyVariables = null,
+        IReadOnlyList<VariableSpec>? previousB079Variables = null)
     {
         var currentSource = NormalizeForComparison(procedure.ProcedurePart.Source);
         if (!string.IsNullOrWhiteSpace(currentSource) &&
             !string.Equals(currentSource, NormalizeForComparison(skeleton), StringComparison.Ordinal) &&
-            !string.Equals(currentSource, NormalizeForComparison(content), StringComparison.Ordinal))
+            !string.Equals(currentSource, NormalizeForComparison(content), StringComparison.Ordinal) &&
+            (isManagedCurrentSource is null || !isManagedCurrentSource(currentSource, plan)) &&
+            (string.IsNullOrWhiteSpace(legacyContent) || !string.Equals(currentSource, NormalizeForComparison(legacyContent), StringComparison.Ordinal)))
         {
             throw new InvalidOperationException($"B055 bloqueado: Procedure propria '{procedure.Name}' possui Source divergente da geracao {backlog}/{service}. Nenhuma alteracao foi feita.");
         }
 
         var currentRules = NormalizeForComparison(procedure.Rules.Source);
-        if (!string.IsNullOrWhiteSpace(currentRules) && !string.Equals(currentRules, NormalizeForComparison(rules), StringComparison.Ordinal))
+        if (!string.IsNullOrWhiteSpace(currentRules) &&
+            !string.Equals(currentRules, NormalizeForComparison(rules), StringComparison.Ordinal) &&
+            (string.IsNullOrWhiteSpace(legacyRules) || !string.Equals(currentRules, NormalizeForComparison(legacyRules), StringComparison.Ordinal)))
         {
             throw new InvalidOperationException($"B055 bloqueado: Procedure propria '{procedure.Name}' possui Rules divergentes da geracao {backlog}/{service}. Nenhuma alteracao foi feita.");
         }
@@ -298,7 +357,9 @@ internal static class ApiPlanBusinessComponentWriter
             throw new InvalidOperationException($"B055 bloqueado: Procedure propria '{procedure.Name}' nao possui as variaveis esperadas da geracao {backlog}/{service}. Nenhuma alteracao foi feita.");
         }
 
-        if (!HasExpectedVariables(procedure.Model, procedure, variables))
+        if (!HasExpectedVariables(procedure.Model, procedure, variables) &&
+            (legacyVariables is null || !HasExpectedVariables(procedure.Model, procedure, legacyVariables)) &&
+            (previousB079Variables is null || !HasMigrablePreviousB079Variables(procedure.Model, procedure, previousB079Variables)))
         {
             throw new InvalidOperationException($"B055 bloqueado: Procedure propria '{procedure.Name}' possui variaveis divergentes da geracao {backlog}/{service}. Nenhuma alteracao foi feita.");
         }
@@ -312,15 +373,46 @@ internal static class ApiPlanBusinessComponentWriter
     private static bool IsPreB055ProcedureSkeleton(string currentSource, string currentRules, string skeleton) =>
         string.Equals(currentSource, NormalizeForComparison(skeleton), StringComparison.Ordinal) && string.IsNullOrWhiteSpace(currentRules);
 
+    private static bool IsManagedGetSource(string source, ApiPlan plan)
+    {
+        return HasEquivalentGeneratedSource(source, GetContent(plan));
+    }
+
+    private static bool IsManagedCreateSource(string source, ApiPlan plan)
+    {
+        return HasEquivalentGeneratedSource(source, CreateContent(plan)) ||
+            HasEquivalentGeneratedSource(source, PreviousB079CreateContent(plan));
+    }
+
+    private static bool IsManagedUpdateSource(string source, ApiPlan plan)
+    {
+        return HasEquivalentGeneratedSource(source, UpdateContent(plan)) ||
+            HasEquivalentGeneratedSource(source, PreviousB079UpdateContent(plan));
+    }
+
+    private static bool HasEquivalentGeneratedSource(string source, string expectedSource)
+    {
+        return string.Equals(RemoveWhitespace(source), RemoveWhitespace(expectedSource), StringComparison.Ordinal);
+    }
+
     private static void SaveProcedure(KBModel model, Procedure procedure, string content, IReadOnlyList<VariableSpec> variables, string rules)
     {
         procedure.ProcedurePart.Source = content;
         procedure.Rules.Source = rules;
         ReplaceVariables(model, procedure, variables);
-        procedure.Save();
+        try
+        {
+            procedure.Save();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                $"B071-B073/B079 falhou ao salvar a Procedure '{procedure.Name}': {ex.Message}. {DescribeProcedureSaveState(procedure, variables)}",
+                ex);
+        }
 
         var persisted = Procedure.Get(model, procedure.Guid);
-        if (!string.Equals(NormalizeForComparison(persisted.ProcedurePart.Source), NormalizeForComparison(content), StringComparison.Ordinal))
+        if (!HasEquivalentGeneratedSource(persisted.ProcedurePart.Source, content))
         {
             throw new InvalidOperationException($"B055 bloqueado: a Procedure '{procedure.Name}' foi salva, mas o Source persistido nao corresponde ao conteudo Business Component planejado. Nenhuma outra alteracao sera feita.");
         }
@@ -336,10 +428,38 @@ internal static class ApiPlanBusinessComponentWriter
         }
     }
 
+    private static string DescribeProcedureSaveState(Procedure procedure, IReadOnlyList<VariableSpec> variables)
+    {
+        var expectedVariables = string.Join(", ", variables.Select(variable => $"&{variable.Name}:{variable.DataType}"));
+        var currentVariables = string.Join(", ", procedure.Variables.Variables
+            .Where(variable => !variable.IsStandard)
+            .Select(variable => $"&{variable.Name}:Type={variable.Type};ATTCUSTOMTYPE={variable.GetPropertyValueString("ATTCUSTOMTYPE")};KBObject={variable.KBObject?.Name ?? string.Empty};Domain={variable.DomainBasedOn?.Name ?? string.Empty};Attribute={variable.AttributeBasedOn?.Name ?? string.Empty}"));
+        var relevantSource = ExtractRelevantProcedureLines(procedure.ProcedurePart.Source);
+        return $"Rules='{procedure.Rules.Source}'. ExpectedVariables=[{expectedVariables}]. CurrentVariables=[{currentVariables}]. SourceLines=[{relevantSource}]";
+    }
+
+    private static string ExtractRelevantProcedureLines(string source)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return string.Empty;
+        }
+
+        return string.Join(" | ", source
+            .Split(new[] { "\r\n", "\n" }, StringSplitOptions.None)
+            .Select(line => line.Trim())
+            .Where(line =>
+                line.IndexOf("ErrorResponse", StringComparison.Ordinal) >= 0 ||
+                line.IndexOf("Messages", StringComparison.Ordinal) >= 0 ||
+                line.IndexOf("RestStatusCode", StringComparison.Ordinal) >= 0)
+            .Take(30));
+    }
+
     private static void SaveApi(KBModel model, API api, Folder transactionFolder, ApiPlan plan, string source, IReadOnlyList<VariableSpec> variables)
     {
         api.Parent = transactionFolder;
         api.ServiceGroupSource.Source = source;
+        api.Events.Source = CreateB079ApiEvents();
         ReplaceVariables(model, api, variables);
         api.Save();
 
@@ -349,9 +469,9 @@ internal static class ApiPlanBusinessComponentWriter
             throw new InvalidOperationException($"B055 bloqueado: o API Object '{api.Name}' foi salvo, mas o Service Source persistido nao corresponde ao contrato API/Procedure planejado. Nenhuma outra alteracao sera feita.");
         }
 
-        if (!HasExpectedVariables(model, persisted, variables))
+        if (!HasExpectedVariables(model, persisted, variables) || !HasExpectedApiEvents(persisted))
         {
-            throw new InvalidOperationException($"B055 bloqueado: o API Object '{api.Name}' foi salvo, mas as variaveis persistidas nao correspondem ao contrato API/Procedure planejado. Nenhuma outra alteracao sera feita.");
+            throw new InvalidOperationException($"B055 bloqueado: o API Object '{api.Name}' foi salvo, mas eventos ou variaveis persistidas nao correspondem ao contrato API/Procedure planejado. Nenhuma outra alteracao sera feita.");
         }
     }
 
@@ -360,7 +480,7 @@ internal static class ApiPlanBusinessComponentWriter
         foreach (var variable in variables)
         {
             var item = new Variable(variable.Name, procedure.Variables);
-            if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            if (!TrySetVariableType(model, item, variable.DataType))
             {
                 throw new InvalidOperationException($"B055 bloqueado: tipo da variavel '&{variable.Name}' nao foi resolvido antes da escrita: '{variable.DataType}'. Nenhuma alteracao foi feita.");
             }
@@ -372,7 +492,7 @@ internal static class ApiPlanBusinessComponentWriter
         foreach (var variable in variables)
         {
             var item = new Variable(variable.Name, api.Variables);
-            if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            if (!TrySetVariableType(model, item, variable.DataType))
             {
                 throw new InvalidOperationException($"B055 bloqueado: tipo da variavel de API '&{variable.Name}' nao foi resolvido antes da escrita: '{variable.DataType}'. Nenhuma alteracao foi feita.");
             }
@@ -389,7 +509,7 @@ internal static class ApiPlanBusinessComponentWriter
         foreach (var variable in variables)
         {
             var item = new Variable(variable.Name, procedure.Variables);
-            if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            if (!TrySetVariableType(model, item, variable.DataType))
             {
                 throw new InvalidOperationException($"B055 bloqueado: tipo da variavel '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
             }
@@ -408,7 +528,7 @@ internal static class ApiPlanBusinessComponentWriter
         foreach (var variable in variables)
         {
             var item = new Variable(variable.Name, api.Variables);
-            if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            if (!TrySetVariableType(model, item, variable.DataType))
             {
                 throw new InvalidOperationException($"B055 bloqueado: tipo da variavel de API '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
             }
@@ -427,6 +547,20 @@ internal static class ApiPlanBusinessComponentWriter
         return currentVariables.Length == expectedVariables.Count &&
             currentVariables.All(variable => expectedVariables.Contains(variable)) &&
             variables.All(variable => MatchesVariableSpec(model, procedure, variable));
+    }
+
+    private static bool HasMigrablePreviousB079Variables(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)
+    {
+        var currentVariables = procedure.Variables.Variables
+            .Where(variable => !variable.IsStandard)
+            .Select(variable => variable.Name)
+            .ToArray();
+        var expectedVariables = new HashSet<string>(variables.Select(variable => variable.Name), StringComparer.OrdinalIgnoreCase);
+        return currentVariables.Length == expectedVariables.Count &&
+            currentVariables.All(variable => expectedVariables.Contains(variable)) &&
+            variables
+                .Where(variable => !string.Equals(variable.Name, "ErrorItem", StringComparison.OrdinalIgnoreCase))
+                .All(variable => MatchesVariableSpec(model, procedure, variable));
     }
 
     private static bool HasExpectedVariables(KBModel model, API api, IReadOnlyList<VariableSpec> variables)
@@ -450,7 +584,7 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         var expected = new Variable(variable.Name, procedure.Variables);
-        if (!TrySetAttributeBasedOn(model, expected, variable.DataType) && !DataType.ParseInto(model, variable.DataType, expected))
+        if (!TrySetVariableType(model, expected, variable.DataType))
         {
             return false;
         }
@@ -467,7 +601,7 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         var expected = new Variable(variable.Name, api.Variables);
-        if (!TrySetAttributeBasedOn(model, expected, variable.DataType) && !DataType.ParseInto(model, variable.DataType, expected))
+        if (!TrySetVariableType(model, expected, variable.DataType))
         {
             return false;
         }
@@ -480,7 +614,12 @@ internal static class ApiPlanBusinessComponentWriter
         SameKbObject(current.AttributeBasedOn, expected.AttributeBasedOn) &&
         SameKbObject(current.DomainBasedOn, expected.DomainBasedOn) &&
         Equals(current.DomainKey, expected.DomainKey) &&
-        SameKbObject(current.KBObject, expected.KBObject);
+        SameKbObject(current.KBObject, expected.KBObject) &&
+        string.Equals(current.GetPropertyValueString("ATTCUSTOMTYPE"), expected.GetPropertyValueString("ATTCUSTOMTYPE"), StringComparison.Ordinal);
+
+    private static bool TrySetVariableType(KBModel model, Variable variable, string dataType) =>
+        TrySetAttributeBasedOn(model, variable, dataType) ||
+        DataType.ParseInto(model, dataType, variable);
 
     private static bool SameKbObject(KBObject? current, KBObject? expected)
     {
@@ -525,6 +664,64 @@ internal static class ApiPlanBusinessComponentWriter
     private static string CreateContent(ApiPlan plan)
     {
         var bc = "&" + plan.TransactionName;
+        var lines = new List<string> { "&RestStatusCode = 201", $"{bc} = new()" };
+        lines.AddRange(plan.CreateRequestFields.Select(field => $"{bc}.{field.Name} = &CreateRequest.{field.Name}"));
+        lines.Add($"{bc}.Save()");
+        lines.Add($"If {bc}.Success()");
+        lines.Add($"    {bc}.Load({LoadArguments(plan, bc)})");
+        lines.Add("    &CreateResponse = new()");
+        lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", 4));
+        lines.Add("    &RestStatusCode = 201");
+        lines.Add("Else");
+        lines.AddRange(BusinessRuleFailureMessages(bc, 4));
+        lines.Add("EndIf");
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string GetContent(ApiPlan plan)
+    {
+        var bc = "&" + plan.TransactionName;
+        var lines = new List<string>
+        {
+            "&RestStatusCode = 200",
+            $"{bc}.Load({LoadArguments(plan, "&")})",
+            $"If {bc}.Success()",
+            "    &GetResponse = new()",
+        };
+        lines.AddRange(ResponseAssignments(plan, bc, "&GetResponse", 4));
+        lines.Add("    &RestStatusCode = 200");
+        lines.Add("Else");
+        lines.AddRange(NotFoundMessages(plan, 4));
+        lines.Add("EndIf");
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string UpdateContent(ApiPlan plan)
+    {
+        var bc = "&" + plan.TransactionName;
+        var lines = new List<string> { "&RestStatusCode = 200", $"{bc}.Load({LoadArguments(plan, "&")})", $"If {bc}.Success()" };
+        lines.AddRange(plan.UpdateRequestFields.Select(field => $"    {bc}.{field.Name} = &UpdateRequest.{field.Name}"));
+        lines.Add($"    {bc}.Save()");
+        lines.Add($"    If {bc}.Success()");
+        lines.Add($"        {bc}.Load({LoadArguments(plan, "&")})");
+        lines.Add("        &UpdateResponse = new()");
+        lines.AddRange(ResponseAssignments(plan, bc, "&UpdateResponse", 8));
+        lines.Add("        &RestStatusCode = 200");
+        lines.Add("    Else");
+        lines.AddRange(BusinessRuleFailureMessages(bc, 8));
+        lines.Add("    EndIf");
+        lines.Add("Else");
+        lines.AddRange(NotFoundMessages(plan, 4));
+        lines.Add("EndIf");
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static IEnumerable<string> ResponseAssignments(ApiPlan plan, string bc, string response, int spaces) =>
+        plan.ResponseFields.Select(field => $"{new string(' ', spaces)}{response}.{field.Name} = {bc}.{field.Name}");
+
+    private static string LegacyCreateContent(ApiPlan plan)
+    {
+        var bc = "&" + plan.TransactionName;
         var lines = new List<string> { $"{bc} = new()" };
         lines.AddRange(plan.CreateRequestFields.Select(field => $"{bc}.{field.Name} = &CreateRequest.{field.Name}"));
         lines.Add($"{bc}.Save()");
@@ -533,12 +730,29 @@ internal static class ApiPlanBusinessComponentWriter
         lines.Add("    &CreateResponse = new()");
         lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", 4));
         lines.Add("Else");
-        lines.AddRange(FailureMessages(bc, 4));
+        lines.AddRange(LegacyFailureMessages(bc, 4));
         lines.Add("EndIf");
         return string.Join(Environment.NewLine, lines);
     }
 
-    private static string UpdateContent(ApiPlan plan)
+    private static string PreviousB079CreateContent(ApiPlan plan)
+    {
+        var bc = "&" + plan.TransactionName;
+        var lines = new List<string> { "&RestStatusCode = 201", $"{bc} = new()" };
+        lines.AddRange(plan.CreateRequestFields.Select(field => $"{bc}.{field.Name} = &CreateRequest.{field.Name}"));
+        lines.Add($"{bc}.Save()");
+        lines.Add($"If {bc}.Success()");
+        lines.Add($"    {bc}.Load({LoadArguments(plan, bc)})");
+        lines.Add("    &CreateResponse = new()");
+        lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", 4));
+        lines.Add("    &RestStatusCode = 201");
+        lines.Add("Else");
+        lines.AddRange(PreviousB079BusinessRuleFailureMessages(bc, 4));
+        lines.Add("EndIf");
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string LegacyUpdateContent(ApiPlan plan)
     {
         var bc = "&" + plan.TransactionName;
         var lines = new List<string> { $"{bc}.Load({LoadArguments(plan, "&")})", $"If {bc}.Success()" };
@@ -549,24 +763,99 @@ internal static class ApiPlanBusinessComponentWriter
         lines.Add("        &UpdateResponse = new()");
         lines.AddRange(ResponseAssignments(plan, bc, "&UpdateResponse", 8));
         lines.Add("    Else");
-        lines.AddRange(FailureMessages(bc, 8));
+        lines.AddRange(LegacyFailureMessages(bc, 8));
         lines.Add("    EndIf");
         lines.Add("Else");
-        lines.AddRange(FailureMessages(bc, 4));
+        lines.AddRange(LegacyFailureMessages(bc, 4));
         lines.Add("EndIf");
         return string.Join(Environment.NewLine, lines);
     }
 
-    private static IEnumerable<string> ResponseAssignments(ApiPlan plan, string bc, string response, int spaces) =>
-        plan.ResponseFields.Select(field => $"{new string(' ', spaces)}{response}.{field.Name} = {bc}.{field.Name}");
+    private static string PreviousB079UpdateContent(ApiPlan plan)
+    {
+        var bc = "&" + plan.TransactionName;
+        var lines = new List<string> { "&RestStatusCode = 200", $"{bc}.Load({LoadArguments(plan, "&")})", $"If {bc}.Success()" };
+        lines.AddRange(plan.UpdateRequestFields.Select(field => $"    {bc}.{field.Name} = &UpdateRequest.{field.Name}"));
+        lines.Add($"    {bc}.Save()");
+        lines.Add($"    If {bc}.Success()");
+        lines.Add($"        {bc}.Load({LoadArguments(plan, "&")})");
+        lines.Add("        &UpdateResponse = new()");
+        lines.AddRange(ResponseAssignments(plan, bc, "&UpdateResponse", 8));
+        lines.Add("        &RestStatusCode = 200");
+        lines.Add("    Else");
+        lines.AddRange(PreviousB079BusinessRuleFailureMessages(bc, 8));
+        lines.Add("    EndIf");
+        lines.Add("Else");
+        lines.AddRange(NotFoundMessages(plan, 4));
+        lines.Add("EndIf");
+        return string.Join(Environment.NewLine, lines);
+    }
 
-    private static IEnumerable<string> FailureMessages(string bc, int spaces) => new[]
+    private static IEnumerable<string> LegacyFailureMessages(string bc, int spaces) => new[]
     {
         $"{new string(' ', spaces)}&Messages = {bc}.GetMessages()",
         $"{new string(' ', spaces)}msg(Format(!\"Genexus Open API Builder B055 BC failure: %1\", &Messages.ToJson()), status)",
     };
 
+    private static IEnumerable<string> BusinessRuleFailureMessages(string bc, int spaces)
+    {
+        var indent = new string(' ', spaces);
+        yield return $"{indent}&RestStatusCode = 422";
+        yield return $"{indent}&ErrorResponse = new()";
+        yield return $"{indent}&ErrorResponse.Code = !\"validation_error\"";
+        yield return $"{indent}&ErrorResponse.Message = !\"Business rules rejected the request.\"";
+        yield return $"{indent}&Messages = {bc}.GetMessages()";
+        yield return $"{indent}msg(Format(!\"Genexus Open API Builder B079 BC failure: %1\", &Messages.ToJson()), status)";
+    }
+
+    private static IEnumerable<string> PreviousB079BusinessRuleFailureMessages(string bc, int spaces)
+    {
+        var indent = new string(' ', spaces);
+        yield return $"{indent}&RestStatusCode = 422";
+        yield return $"{indent}&ErrorResponse = new()";
+        yield return $"{indent}&ErrorResponse.Code = !\"validation_error\"";
+        yield return $"{indent}&ErrorResponse.Message = !\"Business rules rejected the request.\"";
+        yield return $"{indent}&Messages = {bc}.GetMessages()";
+        yield return $"{indent}For &Message in &Messages";
+        yield return $"{indent}    &ErrorItem = new()";
+        yield return $"{indent}    &ErrorItem.Code = !\"business_rule\"";
+        yield return $"{indent}    &ErrorItem.Message = &Message.Description";
+        yield return $"{indent}    &ErrorItem.Field = !\"\"";
+        yield return $"{indent}    &ErrorResponse.Errors.Add(&ErrorItem)";
+        yield return $"{indent}EndFor";
+        yield return $"{indent}msg(Format(!\"Genexus Open API Builder B079 BC failure: %1\", &Messages.ToJson()), status)";
+    }
+
+    private static IEnumerable<string> NotFoundMessages(ApiPlan plan, int spaces)
+    {
+        var indent = new string(' ', spaces);
+        yield return $"{indent}&RestStatusCode = 404";
+        yield return $"{indent}&ErrorResponse = new()";
+        yield return $"{indent}&ErrorResponse.Code = !\"not_found\"";
+        yield return $"{indent}&ErrorResponse.Message = !\"{plan.TransactionName} was not found.\"";
+    }
+
+    private static IReadOnlyList<VariableSpec> GetVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
+        .Concat(new[]
+        {
+            new VariableSpec("GetResponse", plan.ResponseSdtName),
+            new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
+            new VariableSpec("RestStatusCode", "Numeric(3.0)"),
+            new VariableSpec(plan.TransactionName, plan.TransactionName),
+        })
+        .ToArray();
+
     private static IReadOnlyList<VariableSpec> CreateVariables(ApiPlan plan) => new[]
+    {
+        new VariableSpec("CreateRequest", plan.CreateRequestSdtName),
+        new VariableSpec("CreateResponse", plan.ResponseSdtName),
+        new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
+        new VariableSpec("RestStatusCode", "Numeric(3.0)"),
+        new VariableSpec(plan.TransactionName, plan.TransactionName),
+        new VariableSpec("Messages", "Messages, GeneXus.Common"),
+    };
+
+    private static IReadOnlyList<VariableSpec> LegacyCreateVariables(ApiPlan plan) => new[]
     {
         new VariableSpec("CreateRequest", plan.CreateRequestSdtName),
         new VariableSpec("CreateResponse", plan.ResponseSdtName),
@@ -574,7 +863,31 @@ internal static class ApiPlanBusinessComponentWriter
         new VariableSpec("Messages", "Messages, GeneXus.Common"),
     };
 
+    private static IReadOnlyList<VariableSpec> PreviousB079CreateVariables(ApiPlan plan) => new[]
+    {
+        new VariableSpec("CreateRequest", plan.CreateRequestSdtName),
+        new VariableSpec("CreateResponse", plan.ResponseSdtName),
+        new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
+        new VariableSpec("ErrorItem", "sdt_API_ErrorResponse.Error"),
+        new VariableSpec("RestStatusCode", "Numeric(3.0)"),
+        new VariableSpec(plan.TransactionName, plan.TransactionName),
+        new VariableSpec("Message", "Messages.Message, GeneXus.Common"),
+        new VariableSpec("Messages", "Messages, GeneXus.Common"),
+    };
+
     private static IReadOnlyList<VariableSpec> UpdateVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
+        .Concat(new[]
+        {
+            new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName),
+            new VariableSpec("UpdateResponse", plan.ResponseSdtName),
+            new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
+            new VariableSpec("RestStatusCode", "Numeric(3.0)"),
+            new VariableSpec(plan.TransactionName, plan.TransactionName),
+            new VariableSpec("Messages", "Messages, GeneXus.Common"),
+        })
+        .ToArray();
+
+    private static IReadOnlyList<VariableSpec> LegacyUpdateVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
         .Concat(new[]
         {
             new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName),
@@ -584,7 +897,34 @@ internal static class ApiPlanBusinessComponentWriter
         })
         .ToArray();
 
+    private static IReadOnlyList<VariableSpec> PreviousB079UpdateVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
+        .Concat(new[]
+        {
+            new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName),
+            new VariableSpec("UpdateResponse", plan.ResponseSdtName),
+            new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
+            new VariableSpec("ErrorItem", "sdt_API_ErrorResponse.Error"),
+            new VariableSpec("RestStatusCode", "Numeric(3.0)"),
+            new VariableSpec(plan.TransactionName, plan.TransactionName),
+            new VariableSpec("Message", "Messages.Message, GeneXus.Common"),
+            new VariableSpec("Messages", "Messages, GeneXus.Common"),
+        })
+        .ToArray();
+
     private static IReadOnlyList<VariableSpec> ApiVariableSpecs(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
+        .Concat(new[]
+        {
+            new VariableSpec("GetResponse", plan.ResponseSdtName),
+            new VariableSpec("CreateRequest", plan.CreateRequestSdtName),
+            new VariableSpec("CreateResponse", plan.ResponseSdtName),
+            new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName),
+            new VariableSpec("UpdateResponse", plan.ResponseSdtName),
+            new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
+            new VariableSpec("RestStatusCode", "Numeric(3.0)"),
+        })
+        .ToArray();
+
+    private static IReadOnlyList<VariableSpec> LegacyApiVariableSpecs(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
         .Concat(new[]
         {
             new VariableSpec("CreateRequest", plan.CreateRequestSdtName),
@@ -617,24 +957,63 @@ internal static class ApiPlanBusinessComponentWriter
 
     private static string ApiVariables(ApiPlan plan) => string.Join(Environment.NewLine, ApiVariableSpecs(plan).Select(variable => $"{variable.Name} [ DataType = '{variable.DataType}' ]"));
 
-    private static string CreateRules() => "parm(in:&CreateRequest, out:&CreateResponse);";
-    private static string UpdateRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse" }))});";
+    private static string GetRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "out:&GetResponse", "out:&ErrorResponse", "out:&RestStatusCode" }))});";
+    private static string CreateRules() => "parm(in:&CreateRequest, out:&CreateResponse, out:&ErrorResponse, out:&RestStatusCode);";
+    private static string UpdateRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse", "out:&ErrorResponse", "out:&RestStatusCode" }))});";
+    private static string LegacyCreateRules() => "parm(in:&CreateRequest, out:&CreateResponse);";
+    private static string LegacyUpdateRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse" }))});";
     private static string LoadArguments(ApiPlan plan, string prefix) => string.Join(", ", plan.PrimaryKey.Select(field => prefix == "&" ? $"&{field.Name}" : $"{prefix}.{field.Name}"));
     private static bool HasService(ApiPlan plan, string name) => plan.Services.Any(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
     private static string Skeleton(string backlog, string service) => $"// Genexus Open API Builder {backlog}: Procedure skeleton for {service}. REST behavior remains pending Sprint 6." + Environment.NewLine + $"msg(!\"Genexus Open API Builder {backlog} {service} skeleton. REST behavior pending Sprint 6.\", status)";
-    private static string ServiceSource(ApiPlan plan, string service, bool includeBusinessComponentParameters, bool includeDescriptions)
+    private static string ServiceSource(ApiPlan plan, string service, bool includeBusinessComponentParameters, bool includeDescriptions, bool exposeErrorResponse)
     {
         var procedure = ExpectedProcedureReference(plan, $"proc{plan.TransactionName}_API_{service}");
         var annotation = includeDescriptions ? DescriptionAnnotation(plan, service) + Environment.NewLine : string.Empty;
+        if (includeBusinessComponentParameters && string.Equals(service, "Get", StringComparison.OrdinalIgnoreCase))
+        {
+            var parameters = string.Join(", ", plan.PrimaryKey.Select(field => $"in: &{field.Name}").Concat(exposeErrorResponse ? new[] { "out: &GetResponse", "out: &ErrorResponse" } : new[] { "out: &GetResponse" }));
+            var arguments = string.Join(", ", plan.PrimaryKey.Select(field => $"&{field.Name}").Concat(new[] { "&GetResponse", "&ErrorResponse", "&RestStatusCode" }));
+            return annotation + $"    Get({parameters}){Environment.NewLine}        => {procedure}({arguments});";
+        }
+
         if (includeBusinessComponentParameters && string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase))
-            return annotation + $"    Create(in: &CreateRequest, out: &CreateResponse){Environment.NewLine}        => {procedure}(&CreateRequest, &CreateResponse);";
+            return annotation + $"    [RestMethod(POST)]{Environment.NewLine}    Create(in: &CreateRequest, out: &CreateResponse{(exposeErrorResponse ? ", out: &ErrorResponse" : string.Empty)}){Environment.NewLine}        => {procedure}(&CreateRequest, &CreateResponse, &ErrorResponse, &RestStatusCode);";
         if (includeBusinessComponentParameters && string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase))
         {
-            var parameters = string.Join(", ", plan.PrimaryKey.Select(field => $"in: &{field.Name}").Concat(new[] { "in: &UpdateRequest", "out: &UpdateResponse" }));
-            var arguments = string.Join(", ", plan.PrimaryKey.Select(field => $"&{field.Name}").Concat(new[] { "&UpdateRequest", "&UpdateResponse" }));
+            var parameters = string.Join(", ", plan.PrimaryKey.Select(field => $"in: &{field.Name}").Concat(exposeErrorResponse ? new[] { "in: &UpdateRequest", "out: &UpdateResponse", "out: &ErrorResponse" } : new[] { "in: &UpdateRequest", "out: &UpdateResponse" }));
+            var arguments = string.Join(", ", plan.PrimaryKey.Select(field => $"&{field.Name}").Concat(new[] { "&UpdateRequest", "&UpdateResponse", "&ErrorResponse", "&RestStatusCode" }));
             return annotation + $"    Update({parameters}){Environment.NewLine}        => {procedure}({arguments});";
         }
         return annotation + $"    {service}(){Environment.NewLine}        => {procedure}();";
+    }
+
+    internal static string CreateB079ApiEvents()
+    {
+        return string.Join(Environment.NewLine, new[]
+        {
+            "Event Get.After",
+            "    &RestCode = &RestStatusCode",
+            "EndEvent",
+            string.Empty,
+            "Event Create.After",
+            "    &RestCode = &RestStatusCode",
+            "EndEvent",
+            string.Empty,
+            "Event Update.After",
+            "    &RestCode = &RestStatusCode",
+            "EndEvent",
+        });
+    }
+
+    internal static bool HasExpectedApiEvents(API api)
+    {
+        if (api is null)
+        {
+            return false;
+        }
+
+        return string.IsNullOrWhiteSpace(api.Events.Source) ||
+            string.Equals(NormalizeForComparison(api.Events.Source), NormalizeForComparison(CreateB079ApiEvents()), StringComparison.Ordinal);
     }
 
     private static string DescriptionAnnotation(ApiPlan plan, string service) => $"    [Description(\"{EscapeDescription(ResolveServiceDescription(plan, service))}\")]";
@@ -680,8 +1059,9 @@ internal sealed class VariableSpec
 
 internal sealed class ApiPlanBusinessComponentWriteResult
 {
-    public ApiPlanBusinessComponentWriteResult(Guid createProcedureGuid, Guid updateProcedureGuid, Guid apiObjectGuid, int primaryKeyParts, int createFields, int updateFields, int responseFields)
+    public ApiPlanBusinessComponentWriteResult(Guid getProcedureGuid, Guid createProcedureGuid, Guid updateProcedureGuid, Guid apiObjectGuid, int primaryKeyParts, int createFields, int updateFields, int responseFields)
     {
+        GetProcedureGuid = getProcedureGuid;
         CreateProcedureGuid = createProcedureGuid;
         UpdateProcedureGuid = updateProcedureGuid;
         ApiObjectGuid = apiObjectGuid;
@@ -691,6 +1071,7 @@ internal sealed class ApiPlanBusinessComponentWriteResult
         ResponseFields = responseFields;
     }
 
+    public Guid GetProcedureGuid { get; }
     public Guid CreateProcedureGuid { get; }
     public Guid UpdateProcedureGuid { get; }
     public Guid ApiObjectGuid { get; }

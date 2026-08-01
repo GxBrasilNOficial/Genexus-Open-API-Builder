@@ -165,7 +165,7 @@ public static class ApiPlanMetadataIntegrity
             return string.Empty;
         }
 
-        var pattern = @"\[Description\(\s*""(?<description>(?:\\.|[^""\\])*)""\s*\)\]\s*" + Regex.Escape(serviceName) + @"\s*\(";
+        var pattern = @"\[Description\(\s*""(?<description>(?:\\.|[^""\\])*)""\s*\)\]\s*(?:\[(?!Description\s*\()[^\]]+\]\s*)*" + Regex.Escape(serviceName) + @"\s*\(";
         var match = Regex.Match(source, pattern, RegexOptions.CultureInvariant);
         return match.Success ? UnescapeDescription(match.Groups["description"].Value) : string.Empty;
     }

@@ -580,7 +580,7 @@ public sealed class Package : AbstractPackageUI
         try
         {
             var result = ApiPlanMetadataFileWriter.CreateOrReencounter(designModel, transaction, apiPlan);
-            WriteOutput($"[Genexus Open API Builder][B060] Metadata persistente inicial gravada: Transaction='{transaction.Name}', Trigger='{triggerSource}', File='{result.FileName}', Status='{result.Status}', Guid='{result.Guid}', SchemaVersion='{result.SchemaVersion}', Bytes={result.Bytes}, Sha256='{result.Sha256}'. Sem completar REST, codigos HTTP finais ou seguranca definitiva.");
+            WriteOutput($"[Genexus Open API Builder][B060] Metadata persistente inicial gravada: Transaction='{transaction.Name}', Trigger='{triggerSource}', File='{result.FileName}', Status='{result.Status}', Guid='{result.Guid}', SchemaVersion='{result.SchemaVersion}', Bytes={result.Bytes}, Sha256='{result.Sha256}'. A metadata registra o snapshot do ApiPlan e dos artefatos ja aplicados; seguranca definitiva permanece fora desta etapa.");
             WriteOutput($"[Genexus Open API Builder][B067] Metadata de integridade gravada: Transaction='{transaction.Name}', Trigger='{triggerSource}', File='{result.FileName}', IntegrityVersion='{result.IntegrityVersion}', PlannedContractHash='{result.PlannedContractHash}'. Reexecucoes com descricoes, ownership, Service Source ou contrato essencial divergente serao bloqueadas antes de qualquer Save().");
             return true;
         }
@@ -597,14 +597,14 @@ public sealed class Package : AbstractPackageUI
         try
         {
             var result = ApiPlanBusinessComponentWriter.Apply(designModel, transaction, apiPlan);
-            WriteOutput($"[Genexus Open API Builder][B055] Create/Update aplicados via Business Component e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', CreateProcedureGuid='{result.CreateProcedureGuid}', UpdateProcedureGuid='{result.UpdateProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', PrimaryKeyParts={result.PrimaryKeyParts}, CreateFields={result.CreateFields}, UpdateFields={result.UpdateFields}, ResponseFields={result.ResponseFields}. Nenhum REST completo, codigo HTTP, seguranca definitiva ou metadata persistente foi criado.");
-            WriteOutput($"[Genexus Open API Builder][B056] Descricoes reaplicadas no API Object real durante B055: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiObjectGuid='{result.ApiObjectGuid}', DescribedServices={apiPlan.ServiceDescriptions.Count}. Service Source permaneceu limitado ao contrato Procedure/API Object atual.");
+            WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Get/Create/Update aplicados via Business Component e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', GetProcedureGuid='{result.GetProcedureGuid}', CreateProcedureGuid='{result.CreateProcedureGuid}', UpdateProcedureGuid='{result.UpdateProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', PrimaryKeyParts={result.PrimaryKeyParts}, CreateFields={result.CreateFields}, UpdateFields={result.UpdateFields}, ResponseFields={result.ResponseFields}. Status HTTP controlado por RestCode no API Object; ErrorResponse exposto como saida publica dos servicos; Location de Create permanece pendente de validacao nativa simples.");
+            WriteOutput($"[Genexus Open API Builder][B056] Descricoes reaplicadas no API Object real durante B071-B073/B079: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiObjectGuid='{result.ApiObjectGuid}', DescribedServices={apiPlan.ServiceDescriptions.Count}. Service Source preserva o contrato Procedure/API Object atual.");
             return true;
         }
         catch (Exception ex)
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
-            WriteOutput($"[Genexus Open API Builder][B055] Aplicacao de Create/Update via Business Component bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{errorDetail}'");
+            WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Aplicacao REST de Get/Create/Update bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{errorDetail}'");
             return false;
         }
     }
@@ -614,7 +614,7 @@ public sealed class Package : AbstractPackageUI
         try
         {
             var result = ApiPlanListProcedureWriter.Apply(designModel, transaction, apiPlan);
-            WriteOutput($"[Genexus Open API Builder][B070] List aplicado e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', ListProcedureGuid='{result.ListProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', Filters={result.Filters}, OrderParts={result.OrderParts}, DefaultPageSize={result.DefaultPageSize}, MaximumPageSize={result.MaximumPageSize}. B076 e codigos HTTP finais permanecem pendentes de validacao runtime.");
+            WriteOutput($"[Genexus Open API Builder][B070] List aplicado e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', ListProcedureGuid='{result.ListProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', Filters={result.Filters}, OrderParts={result.OrderParts}, DefaultPageSize={result.DefaultPageSize}, MaximumPageSize={result.MaximumPageSize}. B076 e validacao runtime do List permanecem pendentes.");
             return true;
         }
         catch (Exception ex)
@@ -862,7 +862,7 @@ public sealed class Package : AbstractPackageUI
 
             if (selection.ApplyBusinessComponent)
             {
-                WriteOutput($"[Genexus Open API Builder][B055] Create/Update via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque os SDTs requeridos falharam ou foram bloqueados neste fluxo.");
+                WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Get/Create/Update REST nao foi aplicado para Transaction='{transaction.Name}' porque os SDTs requeridos falharam ou foram bloqueados neste fluxo.");
             }
 
             if (selection.ApplyList)
@@ -897,7 +897,7 @@ public sealed class Package : AbstractPackageUI
 
             if (selection.ApplyBusinessComponent)
             {
-                WriteOutput($"[Genexus Open API Builder][B055] Create/Update via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque as Procedures requeridas falharam ou foram bloqueadas neste fluxo.");
+                WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Get/Create/Update REST nao foi aplicado para Transaction='{transaction.Name}' porque as Procedures requeridas falharam ou foram bloqueadas neste fluxo.");
             }
 
             if (selection.ApplyList)
@@ -922,7 +922,7 @@ public sealed class Package : AbstractPackageUI
         {
             if (API.GetAll(knowledgeBase.DesignModel).Any(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase)))
             {
-                WriteOutput($"[Genexus Open API Builder][B054] API Object ja existe para Transaction='{transaction.Name}'. Como B055 tambem foi confirmado, a atualizacao do API Object sera absorvida pelo preflight de Business Component.");
+                WriteOutput($"[Genexus Open API Builder][B054] API Object ja existe para Transaction='{transaction.Name}'. Como B071-B073/B079 tambem foi confirmado, a atualizacao do API Object sera absorvida pelo preflight de Business Component.");
             }
             else
             {
@@ -938,7 +938,7 @@ public sealed class Package : AbstractPackageUI
         {
             if (selection.ApplyBusinessComponent)
             {
-                WriteOutput($"[Genexus Open API Builder][B055] Create/Update via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque o API Object falhou ou foi bloqueado neste fluxo.");
+                WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Get/Create/Update REST nao foi aplicado para Transaction='{transaction.Name}' porque o API Object falhou ou foi bloqueado neste fluxo.");
             }
 
             if (selection.ApplyList)
@@ -964,7 +964,7 @@ public sealed class Package : AbstractPackageUI
         {
             if (selection.GenerateMetadata)
             {
-                WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B055 falhou ou foi bloqueado neste fluxo.");
+                WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B071-B073/B079 falhou ou foi bloqueado neste fluxo.");
             }
 
             return true;

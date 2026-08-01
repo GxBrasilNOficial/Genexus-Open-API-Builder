@@ -69,7 +69,8 @@ internal static class ApiPlanListProcedureWriter
         return (IsB070ServiceGroupSource(plan, api.ServiceGroupSource.Source, includeBusinessComponentParameters: false) &&
                 HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: false))))
             || (IsB070ServiceGroupSource(plan, api.ServiceGroupSource.Source, includeBusinessComponentParameters: true) &&
-                HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: true))));
+                HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: true))) &&
+                ApiPlanBusinessComponentWriter.HasExpectedApiEvents(api));
     }
 
     private static bool IsB070ApiObjectWithBusinessComponentParameters(KBModel model, ApiPlan plan, API api)
@@ -97,7 +98,26 @@ internal static class ApiPlanListProcedureWriter
                 plan.Services.Select(service => service.Name),
                 plan.PrimaryKey.Select(field => field.Name),
                 plan.ListFilters.SelectMany(FilterVariableNames),
-                includeBusinessComponentParameters);
+                includeBusinessComponentParameters) ||
+            (includeBusinessComponentParameters &&
+             ApiPlanServiceSourceContract.MatchesB079(
+                 source,
+                 plan.ApiName,
+                 plan.TransactionName,
+                 plan.ModuleTarget,
+                 plan.Services.Select(service => service.Name),
+                 plan.PrimaryKey.Select(field => field.Name),
+                 plan.ListFilters.SelectMany(FilterVariableNames),
+                 hasListContract: true) ||
+             ApiPlanServiceSourceContract.MatchesB079InternalErrorOnly(
+                 source,
+                 plan.ApiName,
+                 plan.TransactionName,
+                 plan.ModuleTarget,
+                 plan.Services.Select(service => service.Name),
+                 plan.PrimaryKey.Select(field => field.Name),
+                 plan.ListFilters.SelectMany(FilterVariableNames),
+                 hasListContract: true));
     }
 
     private static Procedure FindListProcedure(KBModel model, ApiPlan plan)
@@ -427,11 +447,21 @@ internal static class ApiPlanListProcedureWriter
 
     internal static string CreateB070ServiceGroupSource(ApiPlan plan, bool includeBusinessComponentParameters)
     {
-        var services = plan.Services.Select(service => ServiceSource(plan, service.Name, includeBusinessComponentParameters));
+        return CreateB070ServiceGroupSource(plan, includeBusinessComponentParameters, exposeErrorResponse: true);
+    }
+
+    internal static string CreateB070InternalErrorOnlyServiceGroupSource(ApiPlan plan, bool includeBusinessComponentParameters)
+    {
+        return CreateB070ServiceGroupSource(plan, includeBusinessComponentParameters, exposeErrorResponse: false);
+    }
+
+    private static string CreateB070ServiceGroupSource(ApiPlan plan, bool includeBusinessComponentParameters, bool exposeErrorResponse)
+    {
+        var services = plan.Services.Select(service => ServiceSource(plan, service.Name, includeBusinessComponentParameters, exposeErrorResponse));
         return $"{plan.ApiName}{Environment.NewLine}{{{Environment.NewLine}{string.Join(Environment.NewLine + Environment.NewLine, services)}{Environment.NewLine}}}";
     }
 
-    private static string ServiceSource(ApiPlan plan, string service, bool includeBusinessComponentParameters)
+    private static string ServiceSource(ApiPlan plan, string service, bool includeBusinessComponentParameters, bool exposeErrorResponse)
     {
         var procedure = ExpectedProcedureReference(plan, $"proc{plan.TransactionName}_API_{service}");
         var annotation = DescriptionAnnotation(plan, service) + Environment.NewLine;
@@ -446,12 +476,19 @@ internal static class ApiPlanListProcedureWriter
             return annotation + $"    List({string.Join(", ", parameters)}){Environment.NewLine}        => {procedure}({string.Join(", ", arguments)});";
         }
 
+        if (includeBusinessComponentParameters && string.Equals(service, "Get", StringComparison.OrdinalIgnoreCase))
+        {
+            var parameters = string.Join(", ", plan.PrimaryKey.Select(field => $"in: &{field.Name}").Concat(exposeErrorResponse ? new[] { "out: &GetResponse", "out: &ErrorResponse" } : new[] { "out: &GetResponse" }));
+            var arguments = string.Join(", ", plan.PrimaryKey.Select(field => $"&{field.Name}").Concat(new[] { "&GetResponse", "&ErrorResponse", "&RestStatusCode" }));
+            return annotation + $"    Get({parameters}){Environment.NewLine}        => {procedure}({arguments});";
+        }
+
         if (includeBusinessComponentParameters && string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase))
-            return annotation + $"    Create(in: &CreateRequest, out: &CreateResponse){Environment.NewLine}        => {procedure}(&CreateRequest, &CreateResponse);";
+            return annotation + $"    [RestMethod(POST)]{Environment.NewLine}    Create(in: &CreateRequest, out: &CreateResponse{(exposeErrorResponse ? ", out: &ErrorResponse" : string.Empty)}){Environment.NewLine}        => {procedure}(&CreateRequest, &CreateResponse, &ErrorResponse, &RestStatusCode);";
         if (includeBusinessComponentParameters && string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase))
         {
-            var parameters = string.Join(", ", plan.PrimaryKey.Select(field => $"in: &{field.Name}").Concat(new[] { "in: &UpdateRequest", "out: &UpdateResponse" }));
-            var arguments = string.Join(", ", plan.PrimaryKey.Select(field => $"&{field.Name}").Concat(new[] { "&UpdateRequest", "&UpdateResponse" }));
+            var parameters = string.Join(", ", plan.PrimaryKey.Select(field => $"in: &{field.Name}").Concat(exposeErrorResponse ? new[] { "in: &UpdateRequest", "out: &UpdateResponse", "out: &ErrorResponse" } : new[] { "in: &UpdateRequest", "out: &UpdateResponse" }));
+            var arguments = string.Join(", ", plan.PrimaryKey.Select(field => $"&{field.Name}").Concat(new[] { "&UpdateRequest", "&UpdateResponse", "&ErrorResponse", "&RestStatusCode" }));
             return annotation + $"    Update({parameters}){Environment.NewLine}        => {procedure}({arguments});";
         }
 
@@ -562,10 +599,13 @@ internal static class ApiPlanListProcedureWriter
         if (includeBusinessComponentParameters)
         {
             variables.AddRange(plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}")));
+            variables.Add(new VariableSpec("GetResponse", plan.ResponseSdtName));
             variables.Add(new VariableSpec("CreateRequest", plan.CreateRequestSdtName));
             variables.Add(new VariableSpec("CreateResponse", plan.ResponseSdtName));
             variables.Add(new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName));
             variables.Add(new VariableSpec("UpdateResponse", plan.ResponseSdtName));
+            variables.Add(new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"));
+            variables.Add(new VariableSpec("RestStatusCode", "Numeric(3.0)"));
         }
 
         return CoalesceVariableSpecs(variables);
@@ -704,6 +744,11 @@ internal static class ApiPlanListProcedureWriter
     {
         api.Parent = transactionFolder;
         api.ServiceGroupSource.Source = source;
+        if (variables.Any(variable => string.Equals(variable.Name, "RestStatusCode", StringComparison.OrdinalIgnoreCase)))
+        {
+            api.Events.Source = ApiPlanBusinessComponentWriter.CreateB079ApiEvents();
+        }
+
         ReplaceVariables(model, api, variables);
         api.Save();
 

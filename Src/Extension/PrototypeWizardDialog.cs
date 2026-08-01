@@ -41,12 +41,12 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly CheckBox _enableBusinessComponentCheck = new() { AutoSize = true, Text = "Habilitar Business Component agora", Dock = DockStyle.Top };
     private readonly TextBox _summaryDecisionText = CreateReadOnlyTextBox();
     private readonly TextBox _summaryEndpointText = CreateReadOnlyTextBox();
-    private readonly CheckBox _generateSdtsCheck = new() { AutoSize = true, Text = "Confirmar criacao ou reencontro de SDTs B040-B046 ao concluir", Dock = DockStyle.Top };
-    private readonly CheckBox _generateProceduresCheck = new() { AutoSize = true, Text = "Confirmar criacao ou reencontro de Procedures B050-B053 ao concluir", Dock = DockStyle.Top };
-    private readonly CheckBox _generateApiObjectCheck = new() { AutoSize = true, Text = "Confirmar criacao ou reencontro de API Object B054 ao concluir", Dock = DockStyle.Top };
-    private readonly CheckBox _generateMetadataCheck = new() { AutoSize = true, Text = "Confirmar criacao ou reencontro de File JSON de metadata B060 ao concluir", Dock = DockStyle.Top };
-    private readonly CheckBox _applyBusinessComponentCheck = new() { AutoSize = true, Text = "Aplicar Create/Update via Business Component ao concluir", Dock = DockStyle.Top };
-    private readonly CheckBox _applyListCheck = new() { AutoSize = true, Text = "Completar List B070 ao concluir", Dock = DockStyle.Top };
+    private readonly CheckBox _generateSdtsCheck = new() { AutoSize = true, Text = "Confirmar: Criar ou validar estruturas de dados ao concluir", Dock = DockStyle.Top };
+    private readonly CheckBox _generateProceduresCheck = new() { AutoSize = true, Text = "Confirmar: Criar ou validar Procedures ao concluir", Dock = DockStyle.Top };
+    private readonly CheckBox _generateApiObjectCheck = new() { AutoSize = true, Text = "Confirmar: Criar ou validar API Object ao concluir", Dock = DockStyle.Top };
+    private readonly CheckBox _generateMetadataCheck = new() { AutoSize = true, Text = "Confirmar: Gravar metadata da API ao concluir", Dock = DockStyle.Top };
+    private readonly CheckBox _applyBusinessComponentCheck = new() { AutoSize = true, Text = "Completar Get/Create/Update REST ao concluir", Dock = DockStyle.Top };
+    private readonly CheckBox _applyListCheck = new() { AutoSize = true, Text = "Completar listagem ao concluir", Dock = DockStyle.Top };
     private readonly TextBox _sdtGenerationText = CreateReadOnlyTextBox();
     private readonly TextBox _procedureGenerationText = CreateReadOnlyTextBox();
     private readonly TextBox _apiObjectGenerationText = CreateReadOnlyTextBox();
@@ -500,7 +500,7 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Business Component preserva as regras da Transaction. A confirmação abaixo altera as Procedures de Create e Update já geradas; não cria novos objetos.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Business Component preserva as regras da Transaction. A confirmação abaixo completa Get, Create e Update nas Procedures já geradas e sincroniza o API Object; não cria novos objetos.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
         panel.Controls.Add(_enableBusinessComponentCheck, 0, 1);
         panel.Controls.Add(_applyBusinessComponentCheck, 0, 2);
         panel.Controls.Add(_businessComponentText, 0, 3);
@@ -541,7 +541,7 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise as Procedures planejadas. Esta etapa depende dos SDTs B040-B046 confirmados ou ja reencontraveis na KB ativa.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise as Procedures planejadas. Esta etapa depende das estruturas de dados ja confirmadas ou reencontraveis na KB ativa.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
         panel.Controls.Add(_generateProceduresCheck, 0, 1);
         panel.Controls.Add(CreateGroup("Procedures planejadas", _procedureGenerationText), 0, 2);
         tab.Controls.Add(panel);
@@ -561,7 +561,7 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise o API Object planejado. Esta etapa depende dos SDTs B040-B046 e das Procedures B050-B053 ja confirmados ou reencontraveis na KB ativa.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise o API Object planejado. Esta etapa depende das estruturas de dados e das Procedures ja confirmadas ou reencontraveis na KB ativa.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
         panel.Controls.Add(_generateApiObjectCheck, 0, 1);
         panel.Controls.Add(CreateGroup("API Object planejado", _apiObjectGenerationText), 0, 2);
         tab.Controls.Add(panel);
@@ -580,7 +580,7 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise o File JSON de metadata. B060 grava apenas metadata persistente inicial do ApiPlan e depende do API Object proprio ja confirmado ou reencontrado.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise o File JSON de metadata. A gravação depende do API Object próprio já confirmado ou reencontrado.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
         panel.Controls.Add(_generateMetadataCheck, 0, 1);
         panel.Controls.Add(CreateGroup("File de metadata planejado", _metadataGenerationText), 0, 2);
         tab.Controls.Add(panel);
@@ -600,7 +600,7 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise a materializacao inicial do List. B070 altera a Procedure List e sincroniza o API Object com parametros de pagina, filtros e ListResponse.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise a listagem da API. A conclusão atualiza a Procedure de listagem e sincroniza o API Object com parâmetros de página, filtros e retorno paginado.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
         panel.Controls.Add(_applyListCheck, 0, 1);
         panel.Controls.Add(CreateGroup("List planejado", _listGenerationText), 0, 2);
         tab.Controls.Add(panel);
@@ -1056,23 +1056,23 @@ internal sealed class PrototypeWizardDialog : Form
             $"Security Level: {review.SecurityLevel}{Environment.NewLine}" +
             $"Paginação: Default={review.DefaultPageSize}, Maximum={review.MaximumPageSize}{Environment.NewLine}" +
             $"Ordenação: {string.Join(", ", review.StaticOrder.Select(item => item.AttributeName + " " + item.Direction))}{Environment.NewLine}" +
-            $"B036 bloqueados visíveis: CreateRequest={createBlocked}, UpdateRequest={updateBlocked}, ListFilters={filterBlocked}{Environment.NewLine}" +
+            $"Campos bloqueados visíveis: CreateRequest={createBlocked}, UpdateRequest={updateBlocked}, ListFilters={filterBlocked}{Environment.NewLine}" +
             $"Business Component: IsBusinessComponent={businessComponent.IsBusinessComponent}, Status='{businessComponent.Status}', EnabledDuringWizard={businessComponent.EnabledDuringWizard}{Environment.NewLine}" +
-            $"Gerar SDTs B040-B046: {Selection.GenerateSdts}{Environment.NewLine}" +
-            $"Gerar Procedures B050-B053: {Selection.GenerateProcedures}{Environment.NewLine}" +
-            $"Gerar API Object B054: {Selection.GenerateApiObject}{Environment.NewLine}" +
-            $"Completar List B070: {Selection.ApplyList}{Environment.NewLine}" +
-            $"Gravar metadata B060: {Selection.GenerateMetadata}{Environment.NewLine}" +
-            $"Aplicar Create/Update via Business Component: {Selection.ApplyBusinessComponent}{Environment.NewLine}" +
+            $"Criar ou validar estruturas de dados: {Selection.GenerateSdts}{Environment.NewLine}" +
+            $"Criar ou validar Procedures: {Selection.GenerateProcedures}{Environment.NewLine}" +
+            $"Criar ou validar API Object: {Selection.GenerateApiObject}{Environment.NewLine}" +
+            $"Completar listagem: {Selection.ApplyList}{Environment.NewLine}" +
+            $"Gravar metadata da API: {Selection.GenerateMetadata}{Environment.NewLine}" +
+            $"Completar Get/Create/Update REST: {Selection.ApplyBusinessComponent}{Environment.NewLine}" +
             $"Estado da geracao: {_generationContext}";
         _summaryEndpointText.Text =
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
-            "B036 exibiu campos bloqueados com motivo no fluxo do wizard." + Environment.NewLine +
-            "B037 consolidou Required como presença do membro JSON, distinguindo de valor não vazio." + Environment.NewLine +
+            "Campos bloqueados ficam visíveis com motivo no fluxo do wizard." + Environment.NewLine +
+            "Required significa presença do membro JSON, distinguindo de valor não vazio." + Environment.NewLine +
             "ApiPlan sera montado em memoria ao concluir o wizard." + Environment.NewLine +
-            "SDTs, Procedures, API Object, List B070 e metadata so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK." + Environment.NewLine +
-            "A opção de Business Component altera somente Create e Update nas Procedures já geradas." + Environment.NewLine +
-            "B070 completa a primeira versao do List; B060 grava o File JSON de metadata inicial.";
+            "Estruturas de dados, Procedures, API Object, listagem e metadata so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK." + Environment.NewLine +
+            "A opção de Business Component completa Get/Create/Update e status HTTP nas Procedures já geradas." + Environment.NewLine +
+            "A listagem completa a primeira versão paginada do endpoint; a metadata grava o File JSON inicial.";
         _showingSummary = true;
         _tabs.SelectedIndex = _tabs.TabPages.Count - 1;
         RefreshCompletionCaption();
@@ -1211,13 +1211,13 @@ internal sealed class PrototypeWizardDialog : Form
         if (IsBusinessComponentReady())
         {
             _applyBusinessComponentCheck.Text = canApplyBusinessComponent
-                ? "Confirmar: Aplicar Create/Update via Business Component ao concluir"
+                ? "Confirmar: Completar Get/Create/Update REST ao concluir"
                 : "Bloqueado: confirme SDTs, Procedures e API Object";
         }
         else if (_enableBusinessComponentCheck.Checked)
         {
             _applyBusinessComponentCheck.Text = canApplyBusinessComponent
-                ? "Confirmar: Aplicar Create/Update via Business Component após habilitar"
+                ? "Confirmar: Completar Get/Create/Update REST após habilitar"
                 : "Bloqueado: confirme SDTs, Procedures e API Object antes de aplicar BC";
         }
         else
@@ -1236,7 +1236,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private void ApplyListControlState(ApiPlanGenerationStageState? apiState, bool apiObjectAvailable)
     {
-        _applyListCheck.Text = "Confirmar: Completar List B070 ao concluir";
+        _applyListCheck.Text = "Confirmar: Completar listagem ao concluir";
         _applyListCheck.Enabled = apiState is not null && !apiState.IsBlocked && apiObjectAvailable;
         if (!_applyListCheck.Enabled)
         {
@@ -1295,12 +1295,27 @@ internal sealed class PrototypeWizardDialog : Form
             return;
         }
 
-        checkBox.Text = $"Confirmar: {state.Action} {state.StageName} ao concluir";
+        checkBox.Text = $"Confirmar: {state.Action} {FormatGenerationStageName(state.StageName)} ao concluir";
         checkBox.Enabled = !state.IsBlocked && dependencyConfirmed;
         if (!checkBox.Enabled)
         {
             checkBox.Checked = false;
         }
+    }
+
+    private static string FormatGenerationStageName(string stageName)
+    {
+        if (string.Equals(stageName, "SDTs", StringComparison.Ordinal))
+        {
+            return "estruturas de dados";
+        }
+
+        if (string.Equals(stageName, "Metadata File", StringComparison.Ordinal))
+        {
+            return "metadata da API";
+        }
+
+        return stageName;
     }
 
     private static string FormatGenerationState(ApiPlanGenerationStageState? state, bool confirmed)
@@ -1408,7 +1423,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"Transaction: {_businessComponentSnapshot.TransactionName}{Environment.NewLine}" +
             $"IsBusinessComponent: {IsBusinessComponentReady()}{Environment.NewLine}" +
             $"Status: {effectiveStatus}{Environment.NewLine}{Environment.NewLine}" +
-            "Sem Business Component, a habilitação e a aplicação de Create/Update via Business Component ficam bloqueadas. O wizard pode continuar para etapas que não exigem habilitar essa propriedade. A habilitação exige confirmação explícita e altera a Transaction na KB; cancelar o wizard depois disso não reverte automaticamente a propriedade.";
+            "Sem Business Component, a habilitação e a aplicação REST de Get/Create/Update ficam bloqueadas. O wizard pode continuar para etapas que não exigem habilitar essa propriedade. A habilitação exige confirmação explícita e altera a Transaction na KB; cancelar o wizard depois disso não reverte automaticamente a propriedade.";
         _enableBusinessComponentCheck.Enabled = !_businessComponentSnapshot.IsBusinessComponent && !_businessComponentEnabledDuringWizard;
         _enableBusinessComponentCheck.Visible = !_businessComponentSnapshot.IsBusinessComponent;
         ApplyBusinessComponentControlState();

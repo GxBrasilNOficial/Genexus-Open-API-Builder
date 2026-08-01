@@ -40,6 +40,32 @@ public static class ApiPlanServiceSourceContract
         return Matches(source, apiName, transactionName, moduleTarget, services, primaryKeyNames, includeBusinessComponentParameters, listFilterNames, true);
     }
 
+    public static bool MatchesB079(
+        string source,
+        string apiName,
+        string transactionName,
+        string moduleTarget,
+        IEnumerable<string> services,
+        IEnumerable<string> primaryKeyNames,
+        IEnumerable<string> listFilterNames,
+        bool hasListContract)
+    {
+        return Matches(source, apiName, transactionName, moduleTarget, services, primaryKeyNames, true, listFilterNames, hasListContract, true, true);
+    }
+
+    public static bool MatchesB079InternalErrorOnly(
+        string source,
+        string apiName,
+        string transactionName,
+        string moduleTarget,
+        IEnumerable<string> services,
+        IEnumerable<string> primaryKeyNames,
+        IEnumerable<string> listFilterNames,
+        bool hasListContract)
+    {
+        return Matches(source, apiName, transactionName, moduleTarget, services, primaryKeyNames, true, listFilterNames, hasListContract, true, false);
+    }
+
     private static bool Matches(
         string source,
         string apiName,
@@ -50,6 +76,37 @@ public static class ApiPlanServiceSourceContract
         bool includeBusinessComponentParameters,
         IEnumerable<string> listFilterNames,
         bool hasListContract)
+    {
+        return Matches(source, apiName, transactionName, moduleTarget, services, primaryKeyNames, includeBusinessComponentParameters, listFilterNames, hasListContract, false);
+    }
+
+    private static bool Matches(
+        string source,
+        string apiName,
+        string transactionName,
+        string moduleTarget,
+        IEnumerable<string> services,
+        IEnumerable<string> primaryKeyNames,
+        bool includeBusinessComponentParameters,
+        IEnumerable<string> listFilterNames,
+        bool hasListContract,
+        bool hasRestRuntimeContract)
+    {
+        return Matches(source, apiName, transactionName, moduleTarget, services, primaryKeyNames, includeBusinessComponentParameters, listFilterNames, hasListContract, hasRestRuntimeContract, false);
+    }
+
+    private static bool Matches(
+        string source,
+        string apiName,
+        string transactionName,
+        string moduleTarget,
+        IEnumerable<string> services,
+        IEnumerable<string> primaryKeyNames,
+        bool includeBusinessComponentParameters,
+        IEnumerable<string> listFilterNames,
+        bool hasListContract,
+        bool hasRestRuntimeContract,
+        bool exposeErrorResponse)
     {
         if (string.IsNullOrWhiteSpace(source) ||
             string.IsNullOrWhiteSpace(apiName) ||
@@ -70,16 +127,23 @@ public static class ApiPlanServiceSourceContract
             return false;
         }
 
+        if (hasRestRuntimeContract &&
+            normalizedServices.Any(service => string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase)) &&
+            compactSource.IndexOf("[RestMethod(POST)]Create(", StringComparison.Ordinal) < 0)
+        {
+            return false;
+        }
+
         return normalizedServices.All(service =>
         {
-            var servicePrefix = ServiceSignature(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters, normalizedListFilterNames, hasListContract) + "=>";
+            var servicePrefix = ServiceSignature(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters, normalizedListFilterNames, hasListContract, hasRestRuntimeContract, exposeErrorResponse) + "=>";
             if (!TryReadProcedureCall(compactSource, servicePrefix, out var calledObject, out var calledArguments))
             {
                 return false;
             }
 
             return string.Equals(calledObject, ExpectedProcedureReference(moduleTarget, transactionName, service), StringComparison.Ordinal) &&
-                string.Equals(calledArguments, ProcedureArguments(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters, normalizedListFilterNames, hasListContract), StringComparison.Ordinal);
+                string.Equals(calledArguments, ProcedureArguments(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters, normalizedListFilterNames, hasListContract, hasRestRuntimeContract), StringComparison.Ordinal);
         });
     }
 
@@ -88,11 +152,18 @@ public static class ApiPlanServiceSourceContract
         IReadOnlyList<string> primaryKeyNames,
         bool includeBusinessComponentParameters,
         IReadOnlyList<string> listFilterNames,
-        bool hasListContract)
+        bool hasListContract,
+        bool hasRestRuntimeContract,
+        bool exposeErrorResponse)
     {
         if (hasListContract && string.Equals(service, "List", StringComparison.OrdinalIgnoreCase))
         {
             return "List(" + string.Join(",", new[] { "in:&ApiPage", "in:&ApiPageSize" }.Concat(listFilterNames.Select(name => "in:&" + name)).Concat(new[] { "out:&ListResponse" })) + ")";
+        }
+
+        if (hasRestRuntimeContract && string.Equals(service, "Get", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Get(" + string.Join(",", primaryKeyNames.Select(name => "in:&" + name).Concat(exposeErrorResponse ? new[] { "out:&GetResponse", "out:&ErrorResponse" } : new[] { "out:&GetResponse" })) + ")";
         }
 
         if (!includeBusinessComponentParameters || (!string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase) && !string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase)))
@@ -102,10 +173,15 @@ public static class ApiPlanServiceSourceContract
 
         if (string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase))
         {
+            if (hasRestRuntimeContract && exposeErrorResponse)
+            {
+                return "Create(in:&CreateRequest,out:&CreateResponse,out:&ErrorResponse)";
+            }
+
             return "Create(in:&CreateRequest,out:&CreateResponse)";
         }
 
-        return "Update(" + string.Join(",", primaryKeyNames.Select(name => "in:&" + name).Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse" })) + ")";
+        return "Update(" + string.Join(",", primaryKeyNames.Select(name => "in:&" + name).Concat(hasRestRuntimeContract && exposeErrorResponse ? new[] { "in:&UpdateRequest", "out:&UpdateResponse", "out:&ErrorResponse" } : new[] { "in:&UpdateRequest", "out:&UpdateResponse" })) + ")";
     }
 
     private static string ProcedureArguments(
@@ -113,11 +189,17 @@ public static class ApiPlanServiceSourceContract
         IReadOnlyList<string> primaryKeyNames,
         bool includeBusinessComponentParameters,
         IReadOnlyList<string> listFilterNames,
-        bool hasListContract)
+        bool hasListContract,
+        bool hasRestRuntimeContract)
     {
         if (hasListContract && string.Equals(service, "List", StringComparison.OrdinalIgnoreCase))
         {
             return string.Join(",", new[] { "&ApiPage", "&ApiPageSize" }.Concat(listFilterNames.Select(name => "&" + name)).Concat(new[] { "&ListResponse" }));
+        }
+
+        if (hasRestRuntimeContract && string.Equals(service, "Get", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Join(",", primaryKeyNames.Select(name => "&" + name).Concat(new[] { "&GetResponse", "&ErrorResponse", "&RestStatusCode" }));
         }
 
         if (!includeBusinessComponentParameters)
@@ -127,11 +209,21 @@ public static class ApiPlanServiceSourceContract
 
         if (string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase))
         {
+            if (hasRestRuntimeContract)
+            {
+                return "&CreateRequest,&CreateResponse,&ErrorResponse,&RestStatusCode";
+            }
+
             return "&CreateRequest,&CreateResponse";
         }
 
         if (string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase))
         {
+            if (hasRestRuntimeContract)
+            {
+                return string.Join(",", primaryKeyNames.Select(name => "&" + name).Concat(new[] { "&UpdateRequest", "&UpdateResponse", "&ErrorResponse", "&RestStatusCode" }));
+            }
+
             return string.Join(",", primaryKeyNames.Select(name => "&" + name).Concat(new[] { "&UpdateRequest", "&UpdateResponse" }));
         }
 
