@@ -41,11 +41,14 @@ Depois da ampliacao de servicos, seguranca e paginacao, a validacao mecanica foi
 
 No reteste com `Produto`, a preferencia `ApplyBusinessComponent=True` revelou um gating insuficiente: a Transaction estava com Business Component desabilitado e, ainda assim, a opcao tentou executar B055, bloqueando a metadata no mesmo fluxo. O wizard foi ajustado para desabilitar e desmarcar essa opcao quando `IsBusinessComponentReady()` for falso; a preferencia so volta a marcar a etapa quando a Transaction ja e BC ou quando o usuario habilita BC explicitamente no wizard.
 
+Novo reteste aba-a-aba com `Carga`, que tambem estava com Business Component desabilitado, revelou outro gap de navegacao: ao passar pela aba `Business Component` com `Proximo`, o wizard exigia habilitacao explicita mesmo com a aplicacao de BC desmarcada/bloqueada. O fluxo pelo `Resumo` nao acionava esse gate. A correcao remove dependencia de passagem sequencial por abas: a aba pode atualizar texto e preview, mas so tenta habilitar Business Component quando o usuario marcou explicitamente `Habilitar Business Component agora`; caso contrario, o wizard pode seguir para etapas que nao exigem BC.
+
 ## Cobertura automatizada pós-revisão
 
 A revisão externa de B068 aceitou o comportamento runtime, mas apontou dívida de teste automatizado. A cobertura adicionada após a validação funcional cobre:
 
 - `PrototypeWizardPreferencesCodec`: defaults conservadores, serialização/parsing do schema atual, normalização de `SecurityLevel`, validação de `DefaultPageSize <= MaximumPageSize`, fallback de campos opcionais e preservação de serviços, paginação e flags de geração;
+- `PrototypeWizardBusinessComponentNavigationPolicy`: passagem pela aba `Business Component` nao deve bloquear quando a Transaction nao e BC e a habilitacao explicita nao foi marcada; deve pedir confirmacao apenas quando a habilitacao explicita foi solicitada;
 - `ApiPlanWritePreflightScope`: seleção de etapas exigidas pelo preflight agregado, garantindo que `GenerateMetadata=False` não selecione `Metadata File`, enquanto `List`, `Business Component` e `Metadata` preservam dependências de SDTs, Procedures e API Object;
 - `ApiPlanListProcedureReencounterPolicy`: reencontro B070 aceitando Source próprio conhecido quando apenas os literais `&ApiPageSize = N` e `If &ApiPageSize > N` mudam, e mantendo bloqueio para Source externo, Rules, variáveis e contrato B070 de API Object divergentes.
 

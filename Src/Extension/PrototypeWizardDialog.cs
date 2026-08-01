@@ -878,7 +878,9 @@ internal sealed class PrototypeWizardDialog : Form
             RefreshGenerationPreview();
         }
 
-        if (_tabs.SelectedTab?.Text == "Business Component" && !EnsureBusinessComponentReady())
+        if (_tabs.SelectedTab?.Text == "Business Component" &&
+            PrototypeWizardBusinessComponentNavigationPolicy.ShouldRequestEnableOnNext(IsBusinessComponentReady(), _enableBusinessComponentCheck.Checked) &&
+            !EnsureBusinessComponentReady())
         {
             return;
         }
@@ -1344,7 +1346,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"Transaction: {_businessComponentSnapshot.TransactionName}{Environment.NewLine}" +
             $"IsBusinessComponent: {IsBusinessComponentReady()}{Environment.NewLine}" +
             $"Status: {effectiveStatus}{Environment.NewLine}{Environment.NewLine}" +
-            "Sem Business Component, a geração da API e a aplicação de Create/Update pelas regras da Transaction ficam bloqueadas. A habilitação exige confirmação explícita e altera a Transaction na KB; cancelar o wizard depois disso não reverte automaticamente a propriedade.";
+            "Sem Business Component, a habilitação e a aplicação de Create/Update via Business Component ficam bloqueadas. O wizard pode continuar para etapas que não exigem habilitar essa propriedade. A habilitação exige confirmação explícita e altera a Transaction na KB; cancelar o wizard depois disso não reverte automaticamente a propriedade.";
         _enableBusinessComponentCheck.Enabled = !_businessComponentSnapshot.IsBusinessComponent && !_businessComponentEnabledDuringWizard;
         _enableBusinessComponentCheck.Visible = !_businessComponentSnapshot.IsBusinessComponent;
         ApplyBusinessComponentControlState();
