@@ -66,6 +66,19 @@ public static class ApiPlanServiceSourceContract
         return Matches(source, apiName, transactionName, moduleTarget, services, primaryKeyNames, true, listFilterNames, hasListContract, true, false);
     }
 
+    public static bool MatchesPreviousB079RestMethodContract(
+        string source,
+        string apiName,
+        string transactionName,
+        string moduleTarget,
+        IEnumerable<string> services,
+        IEnumerable<string> primaryKeyNames,
+        IEnumerable<string> listFilterNames,
+        bool hasListContract)
+    {
+        return Matches(source, apiName, transactionName, moduleTarget, services, primaryKeyNames, true, listFilterNames, hasListContract, true, true, validateRestMethods: false);
+    }
+
     private static bool Matches(
         string source,
         string apiName,
@@ -106,7 +119,8 @@ public static class ApiPlanServiceSourceContract
         IEnumerable<string> listFilterNames,
         bool hasListContract,
         bool hasRestRuntimeContract,
-        bool exposeErrorResponse)
+        bool exposeErrorResponse,
+        bool validateRestMethods = true)
     {
         if (string.IsNullOrWhiteSpace(source) ||
             string.IsNullOrWhiteSpace(apiName) ||
@@ -128,8 +142,26 @@ public static class ApiPlanServiceSourceContract
         }
 
         if (hasRestRuntimeContract &&
+            validateRestMethods &&
             normalizedServices.Any(service => string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase)) &&
-            compactSource.IndexOf("[RestMethod(POST)]Create(", StringComparison.Ordinal) < 0)
+            compactSource.IndexOf("[RestMethod(POST)]", StringComparison.Ordinal) < 0)
+        {
+            return false;
+        }
+
+        if (hasRestRuntimeContract &&
+            validateRestMethods &&
+            normalizedServices.Any(service => string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase)) &&
+            compactSource.IndexOf("[RestMethod(PUT)]", StringComparison.Ordinal) < 0)
+        {
+            return false;
+        }
+
+        if (hasRestRuntimeContract &&
+            validateRestMethods &&
+            normalizedPrimaryKeyNames.Length > 0 &&
+            normalizedServices.Any(service => string.Equals(service, "Get", StringComparison.OrdinalIgnoreCase) || string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase)) &&
+            !normalizedPrimaryKeyNames.All(name => compactSource.IndexOf("{&" + name + "}", StringComparison.Ordinal) >= 0))
         {
             return false;
         }

@@ -76,7 +76,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Aba `Business Component` foi reposicionada depois de `SDTs`, `Procedures` e `API Object`, alinhando a navegação com as dependências de B055.
 - Após habilitar Business Component ao entrar direto no `Resumo`, o wizard recalcula as dependências antes de montar a seleção final, preservando `ApplyBusinessComponent=True` quando B055 estava marcado.
 - Cobertura automatizada da navegação B055 passou a simular refresh local sem dependências seguido de refresh completo, garantindo restauração da intenção pendente antes da seleção final.
-- B071-B073/B079 implementa a etapa REST de Get/Create/Update para regravar `proc<Transacao>_API_Get`, `proc<Transacao>_API_Create` e `proc<Transacao>_API_Update`, sincronizar o API Object com variáveis de `GetResponse`, `ErrorResponse` e `RestStatusCode`, expor `ErrorResponse` como saída pública dos três serviços, e usar Events do API Object para aplicar `&RestCode` em Get 200/404, Create 201/422 e Update 200/404/422; B055 próprio legado e a variante intermediária B079 com `ErrorItem` são reconhecidos como estados migráveis; a geração/reencontro foi validada na IDE em `NotaFiscal`; `Location` de Create permanece pendente de confirmação nativa simples.
+- B071-B073/B079 implementa a etapa REST de Get/Create/Update para regravar `proc<Transacao>_API_Get`, `proc<Transacao>_API_Create` e `proc<Transacao>_API_Update`, sincronizar o API Object com variáveis de `GetResponse`, `ErrorResponse` e `RestStatusCode`, expor `ErrorResponse` como saída pública dos três serviços, e usar Events do API Object para aplicar `&RestCode` em Get 200/404, Create 201/422 e Update 200/404/422; B055 próprio legado e variantes intermediárias B079 são reconhecidos como estados migráveis; a geração/reencontro foi validada na IDE em `NotaFiscal`; runtime HTTP foi validado em .NET Framework/SQL Server e .NET/PostgreSQL com List, Get, Create, Update, 400 e 404; `Location` de Create permanece pendente de confirmação nativa simples.
 
 ## Fixed
 
@@ -120,11 +120,12 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Cobertura automatizada pós-revisão B068 adicionada para serialização/parsing das preferências do wizard, escopo do preflight agregado por etapa e reencontro B070 quando somente literais de paginação mudam em Source próprio conhecido.
 - Correção B068 remove gate indevido ao passar pela aba `Business Component`: navegar aba-a-aba não exige habilitar BC quando a etapa de aplicação via BC está desmarcada/bloqueada.
 - Rotina pré-push passa a executar os testes unitários de preferências do wizard, escopo de preflight de escrita e política de reencontro B070.
-- Parser de Service Source passa a validar o contrato B079 com Get parametrizado, Create POST, `ErrorResponse` público, `RestStatusCode` interno e preservação do List B070 no mesmo API Object.
+- Parser de Service Source passa a validar o contrato B079 com Get parametrizado por `{&Chave}`, Create POST, Update PUT, `RestPath` explícito, `ErrorResponse` público, `RestStatusCode` interno e preservação do List B070 no mesmo API Object.
+- Create/Update B079 passam a executar `Commit` após `Save()` bem-sucedido via Business Component e a validar presença de membros JSON obrigatórios por estado Dirty do SDT, retornando 400 antes do `Save()` quando o membro obrigatório está ausente.
 
 ## Planned
 
-- Validar runtime HTTP de B071-B073/B079 no GeneXus 18 U15, cobrindo especificação/build do API Object e chamadas HTTP de Get, Create e Update com status/corpos esperados, incluindo a forma JSON quando há múltiplos `out`.
+- Confirmar suporte nativo simples para emitir `Location` no Create sem acoplamento frágil ao runtime gerado.
 
 ---
 

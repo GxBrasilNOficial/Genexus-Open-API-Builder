@@ -117,6 +117,15 @@ internal static class ApiPlanListProcedureWriter
                  plan.Services.Select(service => service.Name),
                  plan.PrimaryKey.Select(field => field.Name),
                  plan.ListFilters.SelectMany(FilterVariableNames),
+                 hasListContract: true) ||
+             ApiPlanServiceSourceContract.MatchesPreviousB079RestMethodContract(
+                 source,
+                 plan.ApiName,
+                 plan.TransactionName,
+                 plan.ModuleTarget,
+                 plan.Services.Select(service => service.Name),
+                 plan.PrimaryKey.Select(field => field.Name),
+                 plan.ListFilters.SelectMany(FilterVariableNames),
                  hasListContract: true));
     }
 
@@ -464,7 +473,7 @@ internal static class ApiPlanListProcedureWriter
     private static string ServiceSource(ApiPlan plan, string service, bool includeBusinessComponentParameters, bool exposeErrorResponse)
     {
         var procedure = ExpectedProcedureReference(plan, $"proc{plan.TransactionName}_API_{service}");
-        var annotation = DescriptionAnnotation(plan, service) + Environment.NewLine;
+        var annotation = ServiceAnnotations(plan, service);
         if (string.Equals(service, "List", StringComparison.OrdinalIgnoreCase))
         {
             var parameters = new List<string> { $"in: &{PageVariableName}", $"in: &{PageSizeVariableName}" };
@@ -484,7 +493,7 @@ internal static class ApiPlanListProcedureWriter
         }
 
         if (includeBusinessComponentParameters && string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase))
-            return annotation + $"    [RestMethod(POST)]{Environment.NewLine}    Create(in: &CreateRequest, out: &CreateResponse{(exposeErrorResponse ? ", out: &ErrorResponse" : string.Empty)}){Environment.NewLine}        => {procedure}(&CreateRequest, &CreateResponse, &ErrorResponse, &RestStatusCode);";
+            return annotation + $"    Create(in: &CreateRequest, out: &CreateResponse{(exposeErrorResponse ? ", out: &ErrorResponse" : string.Empty)}){Environment.NewLine}        => {procedure}(&CreateRequest, &CreateResponse, &ErrorResponse, &RestStatusCode);";
         if (includeBusinessComponentParameters && string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase))
         {
             var parameters = string.Join(", ", plan.PrimaryKey.Select(field => $"in: &{field.Name}").Concat(exposeErrorResponse ? new[] { "in: &UpdateRequest", "out: &UpdateResponse", "out: &ErrorResponse" } : new[] { "in: &UpdateRequest", "out: &UpdateResponse" }));
@@ -880,6 +889,36 @@ internal static class ApiPlanListProcedureWriter
     }
 
     private static string DescriptionAnnotation(ApiPlan plan, string service) => $"    [Description(\"{EscapeDescription(ResolveServiceDescription(plan, service))}\")]";
+
+    private static string ServiceAnnotations(ApiPlan plan, string service)
+    {
+        var servicePlan = ResolveService(plan, service);
+        var annotations = new List<string>
+        {
+            DescriptionAnnotation(plan, service),
+        };
+
+        if (!string.Equals(servicePlan.HttpMethod, "GET", StringComparison.OrdinalIgnoreCase))
+        {
+            annotations.Add($"    [RestMethod({servicePlan.HttpMethod.Trim().ToUpperInvariant()})]");
+        }
+
+        annotations.Add($"    [RestPath(\"{EscapeDescription(servicePlan.RestPath.Trim())}\")]");
+        return string.Join(Environment.NewLine, annotations) + Environment.NewLine;
+    }
+
+    private static ApiPlanService ResolveService(ApiPlan plan, string service)
+    {
+        var matches = plan.Services
+            .Where(item => string.Equals(item.Name, service, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            throw new InvalidOperationException($"B070 bloqueado: servico '{service}' nao foi reencontrado de forma unica no ApiPlan. Nenhuma alteracao foi feita.");
+        }
+
+        return matches[0];
+    }
 
     private static string ResolveServiceDescription(ApiPlan plan, string service)
     {

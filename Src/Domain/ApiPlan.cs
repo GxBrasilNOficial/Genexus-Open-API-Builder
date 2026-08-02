@@ -249,7 +249,7 @@ internal static class ApiPlanBuilder
             return restPath;
         }
 
-        return restPath + "/" + string.Join("/", primaryKey.Select(item => "{" + item.Name + "}"));
+        return restPath + "/" + string.Join("/", primaryKey.Select(item => "{&" + item.Name + "}"));
     }
 }
 

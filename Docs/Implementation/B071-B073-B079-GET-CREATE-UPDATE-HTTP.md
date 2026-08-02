@@ -96,12 +96,11 @@ Correções feitas durante a validação:
 
 A geração sem `ErrorItem` nested foi validada mecanicamente no repositório e reexecutada na IDE até gravar Procedures, API Object, List e metadata. O preenchimento de `Errors[]` permanece pendente de prova específica sobre a tipagem real de item de subestrutura SDT no SDK/GeneXus.
 
-## Validação Runtime Pendente
+## Validação Runtime HTTP
 
-Ainda falta validar no GeneXus 18 U15:
+Validação executada em 2026-08-02:
 
-- chamada HTTP de `Get` encontrado e inexistente;
-- chamada HTTP de `Create` com sucesso e erro de regra de negócio;
-- chamada HTTP de `Update` com sucesso, inexistente e erro de regra de negócio;
-- confirmação da forma JSON efetivamente emitida pelo API Object quando há múltiplos `out` em erros controlados;
-- decisão final sobre `Location` de Create após inspecionar suporte nativo simples.
+- .NET Framework/SQL Server: token OAuth, List 200, Get inexistente 404, Create 201, Get do criado 200, Update 200, Get atualizado 200, Update parcial sem membro obrigatório 400, Update em ID inexistente 404, List paginado e List filtrado por ID/número.
+- .NET/PostgreSQL: antes da recriação do banco, Create retornou 500 por erro físico do datastore (`relaçao "notafiscal" não existe`), reproduzido também pela tela da Transaction; após recriar o banco e recadastrar o usuário/cliente GAM, token OAuth v2.0 passou e a bateria List 200, Create 201, Get 200/404, Update 200/404, validação 400 e List filtrado passou.
+- A forma JSON com múltiplos `out` foi confirmada como envelope contendo `GetResponse`/`CreateResponse`/`UpdateResponse` e `ErrorResponse`.
+- `Location` de Create segue pendente de confirmação nativa simples no GeneXus/API Object.

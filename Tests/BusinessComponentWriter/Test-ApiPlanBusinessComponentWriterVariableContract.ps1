@@ -2,7 +2,9 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $writerPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanBusinessComponentWriter.cs'
+$apiPlanPath = Join-Path $PSScriptRoot '..\..\Src\Domain\ApiPlan.cs'
 $source = Get-Content -Path $writerPath -Raw
+$apiPlanSource = Get-Content -Path $apiPlanPath -Raw
 
 function Assert-Contains {
     param([string]$Text, [string]$Expected, [string]$Message)
@@ -19,9 +21,28 @@ function Assert-NotContains {
 }
 
 Assert-Contains $source 'new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse")' 'Create/Update devem declarar ErrorResponse como corpo publico de erro.'
+Assert-Contains $source '[RestMethod({method.ToUpperInvariant()})]' 'API Object deve projetar RestMethod planejado, incluindo PUT no Update.'
+Assert-Contains $source '[RestPath(\"{EscapeDescription(ResolveService(plan, service).RestPath.Trim())}\")]' 'API Object deve projetar RestPath planejado em cada servico REST.'
+Assert-Contains $apiPlanSource '"{&" + item.Name + "}"' 'ApiPlan deve gerar RestPath parametrizado com variavel GeneXus para o runtime casar path params.'
+Assert-Contains $source 'MatchesPreviousB079RestMethodContract' 'Preflight deve reconhecer a versao B079 anterior apenas como migravel quando faltar PUT/RestPath.'
 Assert-Contains $source '&ErrorResponse.Code = !\"validation_error\"' 'Procedure deve popular codigo de erro top-level para falha de regra de negocio.'
 Assert-Contains $source '&Messages = {bc}.GetMessages()' 'Procedure deve preservar mensagens do Business Component para diagnostico no Output.'
 Assert-Contains $source 'PreviousB079BusinessRuleFailureMessages' 'Preflight deve reconhecer a variante intermediaria com ErrorItem apenas para migracao.'
+Assert-Contains $source 'lines.Add("    Commit")' 'Create deve confirmar a gravacao do Business Component antes de responder 201.'
+Assert-Contains $source 'lines.Add("        Commit")' 'Update deve confirmar a gravacao do Business Component antes de responder 200.'
+Assert-Contains $source 'PreviousB079CreateContentWithoutCommit' 'Preflight deve migrar Procedure Create intermediaria gerada sem Commit.'
+Assert-Contains $source 'PreviousB079UpdateContentWithoutCommit' 'Preflight deve migrar Procedure Update intermediaria gerada sem Commit.'
+Assert-Contains $source 'RequiredMemberPresenceValidation("UpdateRequest"' 'Update deve validar presenca de membros JSON obrigatorios antes do Save.'
+Assert-Contains $source 'SdtDirtyMemberName(field.Name)' 'Validacao de obrigatorios deve consultar o nome Dirty gerado pelo SDT, nao apenas o nome JSON publico.'
+Assert-Contains $source '__goabSdt.IsDirty(__goabDirtyNames[__goabIndex])' 'Validacao de obrigatorios deve usar o estado Dirty do SDT para diferenciar ausencia de valor default.'
+Assert-Contains $source '&RestStatusCode = 400' 'Payload sem membro JSON obrigatorio deve retornar erro de requisicao antes do BC Save.'
+Assert-Contains $source 'new VariableSpec("RequestJsonHasRequiredMembers", "Boolean")' 'Procedures com obrigatorios devem declarar flag de validacao de presenca JSON.'
+Assert-Contains $source 'MatchesVariableSetAllowingRequiredMemberMigrationVariables' 'Preflight deve migrar Procedures intermediarias com variaveis antigas de validacao por HttpRequest.'
+Assert-Contains $source 'PreviousB079UpdateContentWithoutRequiredMemberValidation' 'Preflight deve migrar Update gerado antes da validacao de obrigatorios.'
+Assert-Contains $source 'PreviousB079UpdateContentWithNewtonsoftRequiredMemberValidation' 'Preflight deve migrar Update intermediario gerado com Newtonsoft antes da troca para Regex.'
+Assert-Contains $source 'PreviousB079UpdateContentWithWrappedRequiredMemberValidation' 'Preflight deve migrar Update intermediario que exigia wrapper UpdateRequest no corpo bruto.'
+Assert-Contains $source 'PreviousB079UpdateContentWithUnwrappedRequiredMemberValidation' 'Preflight deve migrar Update intermediario que validava obrigatorios por Regex sem wrapper no corpo bruto.'
+Assert-Contains $source 'PreviousB079UpdateContentWithOriginalMemberDirtyValidation' 'Preflight deve migrar Update intermediario que consultava Dirty com nome JSON publico em vez do nome interno do SDT.'
 
 $currentFailureStart = $source.IndexOf('private static IEnumerable<string> BusinessRuleFailureMessages', [StringComparison]::Ordinal)
 $previousFailureStart = $source.IndexOf('private static IEnumerable<string> PreviousB079BusinessRuleFailureMessages', [StringComparison]::Ordinal)
