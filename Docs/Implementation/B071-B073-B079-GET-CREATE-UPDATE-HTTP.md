@@ -80,8 +80,8 @@ Avanço validado manualmente em 2026-08-01 na Transaction `NotaFiscal`:
 - reexecução em modo `teste de reencontro` reaplicou B071-B073/B079, B070 e B060 sem bloquear;
 - B071-B073/B079 aplicou após migrar a variante intermediária com `ErrorItem` para a geração atual sem item nested;
 - B056 reaplicou descrições no API Object real durante B071-B073/B079;
-- B060 reencontrou `apiNotaFiscal_Metadata` com `Bytes=30370` e `Sha256='CBD7D75F3D8FE7031F9591CDAD03F72B934F809B9FA904CAF61FBA5269FF96BA'`;
-- B067 gravou integridade com `PlannedContractHash='028857EF0713350C3D01326262A034228006209F04FD852A5601A3C1AB890F14'`.
+- B060 reencontrou `apiNotaFiscal_Metadata` com `Bytes=30374` e `Sha256='45C8169419491D10E4C50833A12E3DE14A9E6156EE58BB4BE07223B77951E7B7'`;
+- B067 gravou integridade com `PlannedContractHash='6B2781C5A6E6970A03428858E286B1091E609E9B278ECB7428402AFBA3722536'`.
 - Build All especificou e gerou `apiNotaFiscal`, `procNotaFiscal_API_Create`, `procNotaFiscal_API_Get`, `procNotaFiscal_API_Update`, `procNotaFiscal_API_List`, os SDTs REST e a documentação REST, concluindo com sucesso; permaneceu apenas o warning ambiental conhecido de `FBiTextSharp.dll`.
 
 Correções feitas durante a validação:
