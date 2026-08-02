@@ -97,9 +97,33 @@ public static class ApiPlanMetadataIntegrity
         IEnumerable<string> compatibleServiceSourceExpectedValues,
         bool serviceSourceContractMatches)
     {
+        return HasCompatibleIntegrity(
+            metadata,
+            generatedDescriptionsHash,
+            new[] { plannedContractHash },
+            actualDescriptionsHash,
+            descriptionSentinel,
+            compatibleServiceSourceExpectedValues,
+            serviceSourceContractMatches);
+    }
+
+    public static bool HasCompatibleIntegrity(
+        JObject metadata,
+        string generatedDescriptionsHash,
+        IEnumerable<string> compatiblePlannedContractHashes,
+        string actualDescriptionsHash,
+        string descriptionSentinel,
+        IEnumerable<string> compatibleServiceSourceExpectedValues,
+        bool serviceSourceContractMatches)
+    {
         if (compatibleServiceSourceExpectedValues is null)
         {
             throw new ArgumentNullException(nameof(compatibleServiceSourceExpectedValues));
+        }
+
+        if (compatiblePlannedContractHashes is null)
+        {
+            throw new ArgumentNullException(nameof(compatiblePlannedContractHashes));
         }
 
         var integrity = metadata?["integrity"] as JObject;
@@ -108,14 +132,20 @@ public static class ApiPlanMetadataIntegrity
             return true;
         }
 
+        var plannedHashes = compatiblePlannedContractHashes
+            .Where(hash => !string.IsNullOrWhiteSpace(hash))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
         var expectedHashes = compatibleServiceSourceExpectedValues
             .Select(ComputeNormalizedTextSha256)
+            .Distinct(StringComparer.Ordinal)
             .ToArray();
+        var storedPlannedHash = integrity.SelectToken("plannedContract.hash")?.Value<string>() ?? string.Empty;
         var storedExpectedHash = integrity.SelectToken("apiObject.serviceSourceExpectedHash")?.Value<string>() ?? string.Empty;
 
         return HasString(integrity["version"], Version) &&
             HasString(integrity.SelectToken("generatedDescriptions.hash"), generatedDescriptionsHash) &&
-            HasString(integrity.SelectToken("plannedContract.hash"), plannedContractHash) &&
+            plannedHashes.Any(hash => string.Equals(hash, storedPlannedHash, StringComparison.Ordinal)) &&
             string.Equals(actualDescriptionsHash, generatedDescriptionsHash, StringComparison.Ordinal) &&
             HasString(integrity.SelectToken("apiObject.descriptionSentinel"), descriptionSentinel) &&
             expectedHashes.Any(hash => string.Equals(hash, storedExpectedHash, StringComparison.Ordinal)) &&

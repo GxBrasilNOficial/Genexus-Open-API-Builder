@@ -211,7 +211,7 @@ internal static class ApiPlanMetadataFileWriter
         return ApiPlanMetadataIntegrity.HasCompatibleIntegrity(
             metadata,
             ComputeServiceDescriptionsHash(apiPlan),
-            ComputePlannedContractHash(apiPlan),
+            ComputeCompatiblePlannedContractHashes(apiPlan),
             ComputeActualServiceDescriptionsHash(apiPlan, apiObject.ServiceGroupSource.Source),
             ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan),
             ComputeCompatibleExpectedServiceSources(apiPlan),
@@ -385,7 +385,7 @@ internal static class ApiPlanMetadataFileWriter
             }));
     }
 
-    private static JObject CreatePlannedContract(ApiPlan apiPlan)
+    private static JObject CreatePlannedContract(ApiPlan apiPlan, bool useLegacyPathParameterSyntax = false)
     {
         return new JObject
         {
@@ -393,7 +393,7 @@ internal static class ApiPlanMetadataFileWriter
             {
                 ["name"] = apiPlan.ApiName,
                 ["servicesBasePath"] = apiPlan.ServicesBasePath,
-                ["restPath"] = apiPlan.RestPath,
+                ["restPath"] = NormalizePlannedContractRestPath(apiPlan.RestPath, useLegacyPathParameterSyntax),
                 ["securityLevel"] = apiPlan.Security.SecurityLevel,
                 ["gamCondition"] = apiPlan.Security.GamCondition,
             },
@@ -401,7 +401,7 @@ internal static class ApiPlanMetadataFileWriter
             {
                 ["name"] = service.Name,
                 ["httpMethod"] = service.HttpMethod,
-                ["restPath"] = service.RestPath,
+                ["restPath"] = NormalizePlannedContractRestPath(service.RestPath, useLegacyPathParameterSyntax),
                 ["operationId"] = service.OperationId,
             })),
             ["fields"] = new JObject
@@ -588,7 +588,80 @@ internal static class ApiPlanMetadataFileWriter
             ApiPlanListProcedureWriter.CreateB070ServiceGroupSource(apiPlan, includeBusinessComponentParameters: false),
             ApiPlanListProcedureWriter.CreateB070ServiceGroupSource(apiPlan, includeBusinessComponentParameters: true),
             ApiPlanListProcedureWriter.CreateB070InternalErrorOnlyServiceGroupSource(apiPlan, includeBusinessComponentParameters: true),
+        }
+        .SelectMany(CreateCompatibleServiceSourceVariants)
+        .Distinct(StringComparer.Ordinal)
+        .ToArray();
+    }
+
+    private static IEnumerable<string> CreateCompatibleServiceSourceVariants(string source)
+    {
+        var legacyPath = NormalizeServiceSourceRestPath(source, useLegacyPathParameterSyntax: true);
+        var withoutPut = RemoveServiceSourceLine(source, "[RestMethod(PUT)]");
+        var withoutRestPath = RemoveServiceSourceRestPathAnnotations(source);
+        var legacyPathWithoutPut = RemoveServiceSourceLine(legacyPath, "[RestMethod(PUT)]");
+        var legacyPathWithoutRestPath = RemoveServiceSourceRestPathAnnotations(legacyPath);
+        var withoutPutOrRestPath = RemoveServiceSourceRestPathAnnotations(withoutPut);
+        var legacyPathWithoutPutOrRestPath = RemoveServiceSourceRestPathAnnotations(legacyPathWithoutPut);
+
+        return new[]
+        {
+            source,
+            legacyPath,
+            withoutPut,
+            withoutRestPath,
+            legacyPathWithoutPut,
+            legacyPathWithoutRestPath,
+            withoutPutOrRestPath,
+            legacyPathWithoutPutOrRestPath,
         };
+    }
+
+    private static string[] ComputeCompatiblePlannedContractHashes(ApiPlan apiPlan) =>
+        new[]
+        {
+            ComputePlannedContractHash(apiPlan),
+            ApiPlanMetadataIntegrity.ComputeJsonSha256(CreatePlannedContract(apiPlan, useLegacyPathParameterSyntax: true)),
+        }
+        .Distinct(StringComparer.Ordinal)
+        .ToArray();
+
+    private static string NormalizePlannedContractRestPath(string restPath, bool useLegacyPathParameterSyntax)
+    {
+        if (!useLegacyPathParameterSyntax || string.IsNullOrEmpty(restPath))
+        {
+            return restPath;
+        }
+
+        return restPath.Replace("{&", "{");
+    }
+
+    private static string NormalizeServiceSourceRestPath(string source, bool useLegacyPathParameterSyntax)
+    {
+        if (!useLegacyPathParameterSyntax || string.IsNullOrEmpty(source))
+        {
+            return source;
+        }
+
+        return source.Replace("{&", "{");
+    }
+
+    private static string RemoveServiceSourceLine(string source, string exactTrimmedLine)
+    {
+        return string.Join(
+            Environment.NewLine,
+            NormalizeForComparison(source)
+                .Split('\n')
+                .Where(line => !string.Equals(line.Trim(), exactTrimmedLine, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static string RemoveServiceSourceRestPathAnnotations(string source)
+    {
+        return string.Join(
+            Environment.NewLine,
+            NormalizeForComparison(source)
+                .Split('\n')
+                .Where(line => !line.TrimStart().StartsWith("[RestPath(", StringComparison.OrdinalIgnoreCase)));
     }
 
     private static bool IsActualB070WithBusinessComponent(ApiPlan apiPlan, API apiObject)

@@ -86,6 +86,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - tela de preferências do wizard passa a exibir `listagem` e `metadata da API` nos defaults de geração e remove rótulos internos do usuário final;
 - wizard remove IDs internos de backlog dos textos visíveis de confirmação, resumo e ajuda das abas, mantendo-os apenas nos logs técnicos;
 - integridade B067 passa a aceitar `[Description]` seguida de anotações intermediárias, como `[RestMethod(POST)]`, antes da assinatura do serviço;
+- integridade B067 passa a aceitar hash de contrato planejado de variante própria anterior com `RestPath` legado `{Chave}`, mantendo bloqueio para metadata externa ou contrato semântico divergente;
 - parser de contrato B079 passa a exigir `Create` anotado como `[RestMethod(POST)]`, evitando aceitar API Object com verbo padrão incorreto;
 - preflight de reexecução B071-B073/B079 passa a aceitar Sources próprios já gerados somente por equivalência canônica restrita, tolerando whitespace mas bloqueando código extra antes de sobrescrever;
 - contrato B079 passa a expor `ErrorResponse` como `out` público em `Get`, `Create` e `Update`, mantendo a variante anterior com erro apenas interno como estado migrável.

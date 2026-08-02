@@ -45,9 +45,11 @@ O API Object B079 é tratado como evolução conservadora do estado B055. O pref
 
 Após a primeira validação na IDE, o preflight de reexecução também passou a aceitar Sources B079 já gerados por equivalência canônica restrita. A comparação remove apenas whitespace para tolerar normalização textual inofensiva da IDE, mas bloqueia qualquer código manual extra antes de sobrescrever a Procedure.
 
-`ApplyList` reconhece esse estado e, quando precisa sincronizar List, preserva `Get`, `Create`, `Update`, a anotação `[RestMethod(POST)]` do `Create`, `ErrorResponse` como saída pública, `RestStatusCode` interno e Events.
+`ApplyList` reconhece esse estado e, quando precisa sincronizar List, preserva `Get`, `Create`, `Update`, as anotações REST explícitas de `Create`/`Update`, `RestPath` com parâmetros GeneXus no formato `{&Chave}`, `ErrorResponse` como saída pública, `RestStatusCode` interno e Events.
 
 A integridade B067 da metadata foi ajustada para reconhecer `[Description]` seguida de outras anotações, como `[RestMethod(POST)]`, antes da assinatura do serviço. Esse caso ocorre no `Create` B079 e não deve ser tratado como alteração manual de descrição.
+
+Após a correção de `RestPath` para a sintaxe GeneXus `{&Chave}`, B067 também passou a aceitar hashes de contrato planejado e de `ServiceGroupSource` esperado de variantes anteriores geradas pelo próprio wizard. Essa compatibilidade é restrita a contratos conhecidos e não libera metadata externa, ownership divergente, descrição alterada manualmente ou `ServiceGroupSource` que não seja reconhecido semanticamente pelo preflight atual.
 
 ## Validação Mecânica Local
 
@@ -88,6 +90,7 @@ Correções feitas durante a validação:
 - tela de preferências passou a exibir `listagem` e `metadata da API`;
 - textos visíveis do wizard deixaram de expor IDs internos de backlog;
 - parser de integridade B067 passou a aceitar `[RestMethod(POST)]` entre `[Description]` e o serviço;
+- integridade B067 passou a aceitar hashes de contrato planejado e de `ServiceGroupSource` esperado de variantes próprias anteriores com `RestPath` legado `{Chave}` ou anotações REST ainda incompletas, mantendo bloqueio para metadata externa ou contrato semântico divergente;
 - parser de contrato do `ServiceGroupSource` passou a rejeitar B079 quando `Create` não está anotado como `[RestMethod(POST)]`;
 - `ErrorResponse` passou a ser saída pública em `Get`, `Create` e `Update`, deixando de ser apenas argumento interno Procedure/API Object;
 - reexecução de Procedures B079 passou a usar equivalência canônica restrita do Source, bloqueando código extra.
