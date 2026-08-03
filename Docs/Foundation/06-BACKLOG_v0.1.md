@@ -211,7 +211,7 @@ Se B004 falhar sem alternativa oficial viável:
 | B073 | Gerar `Update` com `PUT` e resposta 200 completa | Alta |
 | B074 | Gerar paths e operationIds conforme convenção | Alta |
 | B075 | Validar ausência de endpoint `Delete` no MVP | Alta |
-| B076 | Recusar campo obrigatório não preenchido em `Create` e `Update` | Alta |
+| B076 | Distinguir filtro de `List` ausente de `false`, `0` e string vazia; recusar campo obrigatório não preenchido em `Create` e `Update` | Alta |
 | B077 | Retornar paginação com `totalCount` e `totalPages` confiáveis | Alta |
 | B078 | Validar `operationId` no padrão `apiNome.Serviço` | Alta |
 | B079 | Validar códigos HTTP, corpos de resposta e `Location` opcional de `Create` | Alta |
@@ -222,9 +222,13 @@ Se B004 falhar sem alternativa oficial viável:
 
 ### Nota de revisão sobre `B076`
 
-O enunciado original de `B076` era «Distinguir parâmetro ausente de `false`, `0` e string vazia». Ele foi revisto em 2026-08-03, no fechamento de `B071`-`B073`/`B079`, depois que quatro caminhos foram testados e descartados na IDE: comando `csharp` com `IsDirty`, que emite `spc0087` e foi recusado por decisão do projeto; `HttpRequest.ToString()` dentro da Procedure, onde o corpo bruto não chega; `&Sdt.IsDirty()` nativo, que não existe na linguagem; e `HttpRequest.ToString()` no evento `Before` do API Object, que devolveu `len=0` nos dois geradores porque o corpo já foi consumido pelo pipeline REST.
+O enunciado original de `B076` era «Distinguir parâmetro ausente de `false`, `0` e string vazia», tratado como um problema único. A implementação mostrou que ele se divide em dois casos com desfechos diferentes.
 
-Conclusão registrada: o GeneXus não expõe presença de membro JSON sem comando `csharp`. A geração passou a validar preenchimento, comparando cada campo obrigatório com o valor default do mesmo membro em instância vazia do próprio SDT de request. `Create` e `Update` respondem 400 quando o obrigatório chega ausente ou com o valor default do tipo — vazio, `false` ou `0`.
+**Filtros de `List`, na query string — resolvido conforme o enunciado original.** O SDT writer grava os membros nullable de `ListFilters` com a propriedade GeneXus `idJsonInclude=idJsonJsonNull`, correspondente a `Json Null Serialization = JSON null`. Sem ela, membro numérico não informado serializa como `0` e indicaria falsamente filtro aplicado. `B070`/`B077` validou o comportamento em runtime: sem filtro, `AppliedFilters.ContratoNumero=null`; com filtro, o valor informado.
+
+**Membros obrigatórios no corpo de `Create` e `Update` — inviável como enunciado.** Revisto em 2026-08-03, no fechamento de `B071`-`B073`/`B079`, depois que quatro caminhos foram testados e descartados na IDE: comando `csharp` com `IsDirty`, que emite `spc0087` e foi recusado por decisão do projeto; `HttpRequest.ToString()` dentro da Procedure, onde o corpo bruto não chega; `&Sdt.IsDirty()` nativo, que não existe na linguagem; e `HttpRequest.ToString()` no evento `Before` do API Object, que devolveu `len=0` nos dois geradores porque o corpo já foi consumido pelo pipeline REST.
+
+Conclusão registrada: o GeneXus não expõe presença de membro JSON no corpo de request sem comando `csharp`. A geração passou a validar preenchimento, comparando cada campo obrigatório com o valor default do mesmo membro em instância vazia do próprio SDT de request. `Create` e `Update` respondem 400 quando o obrigatório chega ausente ou com o valor default do tipo — vazio, `false` ou `0`.
 
 Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja igual ao default do tipo é recusado com 400. Os textos do wizard e as mensagens de Output de `B033` e `B037` foram corrigidos na mesma frente, porque ainda prometiam semântica de presença.
 
@@ -274,7 +278,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B072 | Existe `Create` funcional |
 | B073 | Existe `Update` funcional com HTTP 200 e Response completo |
 | B075 | Não existe endpoint `Delete` no MVP |
-| B076 | `Create` e `Update` respondem 400 quando campo obrigatório chega ausente ou com o valor default do tipo, conforme a nota de revisão da Fase 6 |
+| B076 | Filtros de `List` distinguem ausência de valores válidos `false`, `0` e string vazia; `Create` e `Update` respondem 400 quando campo obrigatório chega ausente ou com o valor default do tipo, conforme a nota de revisão da Fase 6 |
 | B077 | ListResponse retorna `items`, `pagination` e `appliedFilters` |
 | B078 | OperationIds seguem `apiCliente.List`, `apiCliente.Get`, `apiCliente.Create` e `apiCliente.Update` |
 | B079 | Códigos HTTP e corpos respeitam o contrato; `Location` é emitido em `Create` quando o runtime permitir controle seguro |
@@ -290,7 +294,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | 3. Delegação, propriedades e segurança do API Object | B004, B054, B056, B065, B074, B092 e B093 |
 | 4. Contrato refletido no YAML gerado | B047, B054 e B070–B079 |
 | 5. Create/Update via BC com chaves simples e compostas | B025, B052, B053, B055 e B071–B073 |
-| 6. Campo obrigatório não preenchido recusado com 400 | B037 e B076 |
+| 6. Filtro ausente distinto de vazio, `false` e zero; obrigatório não preenchido recusado com 400 | B037, B070 e B076 |
 | 7. Códigos HTTP, corpos e `Location` | B046, B052, B053, B072, B073 e B079 |
 | 8. List com filtros, períodos, paginação, totais e ordem determinística | B031, B043, B044, B050, B070 e B077 |
 | 9. Metadata persistente e reconhecimento seguro | B006, B060, B063, B065–B067, B085 e B086 |

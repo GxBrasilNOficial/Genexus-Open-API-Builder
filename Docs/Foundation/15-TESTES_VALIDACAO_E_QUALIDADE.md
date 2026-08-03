@@ -212,7 +212,7 @@ Validar progressivamente nas Sprints 1–7 e aprovar o conjunto antes do marco *
 3. objeto `API` delega às Procedures e persiste `RestMethod`, `RestPath`, `Description` e `SecurityLevel`
 4. YAML gerado pelo GeneXus reflete rotas, métodos, parâmetros, SDTs e nomes `_API_`
 5. `Create` e `Update` via BC funcionam com chave simples e composta, preservando regras e mensagens
-6. campo obrigatório não preenchido é recusado com 400, sem membros públicos `Specified`
+6. filtro de `List` ausente é distinguido de vazio, `false` e zero, e campo obrigatório não preenchido é recusado com 400, sem membros públicos `Specified`
 7. implementação controla códigos HTTP, corpo e `Location`, respeitando seu caráter opcional
 8. `List` funciona com filtros opcionais, períodos, paginação, totalização e ordenação determinística
 9. metadata em `File` sobrevive a fechar/reabrir a KB e reconhece objetos próprios
