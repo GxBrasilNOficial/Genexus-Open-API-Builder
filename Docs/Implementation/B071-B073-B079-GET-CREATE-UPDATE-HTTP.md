@@ -178,7 +178,4 @@ Riscos avaliados antes da mudança, medidos na máquina de desenvolvimento usada
 
 Durabilidade comprovada por medição: após a correção no `applicationHost.config` e um Build All completo no ambiente .NET Framework, a bateria de nove casos foi reexecutada e passou integralmente, com o `web.config` gerado sem nenhuma linha de `ExtensionlessUrlHandler`.
 
-Duas ressalvas registradas:
-
-- esse `web.config` é gerado pelo GeneXus e o Build All executa a etapa `Web config update`; falta confirmar se a alteração sobrevive a um rebuild. Se não sobreviver, o local durável é a configuração de verbos do handler pelo IIS Manager no site;
-- a evidência de 2026-08-02 registrada acima afirma `Update 200` e `Update parcial 400` no .NET Framework/SQL Server. Com o handler no default do IIS isso não se reproduz, porque nenhum `PUT` alcança a aplicação. Essa linha permanece preservada como registro histórico, mas **não deve ser tratada como validação confiável do `PUT` naquele ambiente**; a validação confiável é a de 2026-08-03, posterior à correção do handler.
+Ressalva registrada sobre a evidência anterior: a linha de 2026-08-02 registrada acima afirma `Update 200` e `Update parcial 400` no .NET Framework/SQL Server. Com o handler no default do IIS isso não se reproduz, porque nenhum `PUT` alcança a aplicação. Essa linha permanece preservada como registro histórico, mas **não deve ser tratada como validação confiável do `PUT` naquele ambiente**; a validação confiável é a de 2026-08-03, posterior à correção do handler.
