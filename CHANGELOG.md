@@ -123,6 +123,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Rotina pré-push passa a executar os testes unitários de preferências do wizard, escopo de preflight de escrita e política de reencontro B070.
 - Parser de Service Source passa a validar o contrato B079 com Get parametrizado por `{&Chave}`, Create POST, Update PUT, `RestPath` explícito, `ErrorResponse` público, `RestStatusCode` interno e preservação do List B070 no mesmo API Object.
 - Create/Update B079 passam a executar `Commit` após `Save()` bem-sucedido via Business Component e a validar membros obrigatórios comparando cada membro recebido com o valor default do mesmo membro em instância vazia do próprio SDT de request, sem comando C# embutido, retornando 400 antes do `Save()` quando o membro obrigatório está ausente ou vazio.
+- `README.md` passa a documentar o requisito de ambiente para publicar a API gerada em IIS com o gerador .NET Framework: `PUT` não é entregue à aplicação enquanto o handler `ExtensionlessUrlHandler-Integrated-4.0` mantiver os verbos default do IIS, e a correção durável é no nó do servidor pelo IIS Manager, não no `web.config` do aplicativo gerado.
 
 ## Planned
 

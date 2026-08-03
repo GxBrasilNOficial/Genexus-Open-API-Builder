@@ -52,6 +52,27 @@ Para retomar o trabalho em uma nova sessão, consulte o checkpoint operacional:
 
 ---
 
+# Requisito de Ambiente: PUT, DELETE e PATCH em IIS
+
+Aplica-se a quem publica a API gerada em **IIS**, com o gerador **.NET Framework**.
+
+O serviço `Update` é gerado como `PUT`. Por padrão, o IIS não entrega esse verbo à aplicação: o handler `ExtensionlessUrlHandler-Integrated-4.0`, responsável por URLs sem extensão, vem configurado com `verb="GET,HEAD,POST,DEBUG"`. Requisições `PUT` caem no handler de arquivo estático e o cliente recebe **404 com página HTML do IIS**, sem que nenhum código GeneXus execute. `GET` e `POST` funcionam normalmente, o que torna o sintoma confuso: `List`, `Get` e `Create` respondem, só o `Update` falha.
+
+A correção é de ambiente. No **IIS Manager executado como administrador**, selecione o **nó do servidor** — não o site nem a aplicação — e vá em `Mapeamentos de Manipulador` → `ExtensionlessUrlHandler-Integrated-4.0` → `Restrições da Solicitação…` → aba `Verbos` → `Um dos seguintes verbos`, acrescentando `PUT` à lista. Inclua `DELETE` e `PATCH` se a API expuser esses verbos. Reinicie o IIS em seguida.
+
+Dois pontos que economizam tempo:
+
+- **não** acrescente o handler ao `web.config` do aplicativo gerado. Funciona de imediato, mas o Build All executa a etapa `Web config update`, regenera a seção `<handlers>` e descarta o acréscimo;
+- aplicar a alteração pelo site ou pela aplicação no IIS Manager grava no mesmo `web.config` gerado, com o mesmo resultado. Por isso a orientação é o nó do servidor.
+
+Antes de liberar esses verbos, verifique se o WebDAV está instalado e com authoring habilitado no servidor: nesse cenário, liberar `PUT` pode expor gravação de arquivo. Considere também que a alteração no nó do servidor vale para todas as aplicações hospedadas nele, que deixam de contar com o filtro implícito do IIS para esses verbos.
+
+O diagnóstico completo, com as medições que isolaram a causa, está em [B071-B073/B079](Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md).
+
+O gerador **.NET** não apresenta esse comportamento.
+
+---
+
 # Atualização Manual da Extensão no GeneXus 18
 
 Quando uma nova DLL estiver pronta para teste:
