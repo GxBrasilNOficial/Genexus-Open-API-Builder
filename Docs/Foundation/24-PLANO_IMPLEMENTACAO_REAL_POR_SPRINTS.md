@@ -134,7 +134,7 @@ Os gates abaixo são comprovados progressivamente nas Sprints 1–7. A Sprint 1 
 3. objeto `API` delega às Procedures e persiste `RestMethod`, `RestPath`, `Description` e `SecurityLevel`
 4. YAML gerado pelo GeneXus reflete rotas, métodos, parâmetros, SDTs e nomes `_API_`
 5. `Create` e `Update` via BC funcionam com chave simples e composta, preservando regras e mensagens
-6. ausência JSON é distinguida de vazio, `false` e zero sem membros públicos `Specified`
+6. campo obrigatório não preenchido é recusado com 400, sem membros públicos `Specified`
 7. implementação controla códigos HTTP, corpo e `Location`, respeitando seu caráter opcional
 8. `List` funciona com filtros opcionais, períodos, paginação, totalização e ordenação determinística
 9. metadata em `File` sobrevive a fechar/reabrir a KB e reconhece objetos próprios
@@ -285,7 +285,7 @@ Completar o comportamento REST sobre os objetos já criados e aplicar explicitam
 - `B073`: completar Update com PUT, HTTP 200 e Response completo
 - `B074`: aplicar paths e operationIds convencionados
 - `B075`: comprovar ausência de endpoint Delete no MVP
-- `B076`: distinguir ausência JSON de vazio, `false` e zero sem campos públicos `Specified`
+- `B076`: recusar com 400 campo obrigatório que chegue ausente ou com o valor default do tipo, conforme a nota de revisão da Fase 6 no documento 06
 - `B077`: comprovar `totalCount`, `totalPages` e `appliedFilters`
 - `B078`: validar operationIds no padrão `apiNome.Serviço`
 - `B079`: validar códigos HTTP, corpos e `Location`
