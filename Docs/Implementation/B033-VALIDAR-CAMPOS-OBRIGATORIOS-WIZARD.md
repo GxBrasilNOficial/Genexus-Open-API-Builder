@@ -2,6 +2,8 @@
 
 Concluido no GeneXus 18 Upgrade 15 em 2026-07-21: a validacao prototipica de campos obrigatorios foi absorvida pelo wizard unico aberto por `Abrir Wizard (B030)`. B031, B032 e B033 deixam de exigir comandos independentes no menu e passam a ser paginas sequenciais do mesmo fluxo modal, mantendo decisoes apenas em memoria e sem escrita na KB.
 
+> **Revisado em B071-B073/B079 (2026-08-03):** a semantica de `Required` deixou de ser presenca do membro JSON e passou a ser preenchimento, porque o GeneXus nao expoe presenca de membro JSON sem comando `csharp`. `Create` e `Update` respondem `400` quando o obrigatorio chega ausente **ou** com o valor default do tipo. Os trechos de evidencia abaixo preservam o texto original da epoca. Ver [B071-B073/B079](B071-B073-B079-GET-CREATE-UPDATE-HTTP.md).
+
 ## Objetivo
 
 Implementar a validacao navegavel de obrigatoriedade de membros JSON a partir da `Transaction` selecionada e das escolhas de contrato, paths, seguranca, paginacao e ordenacao acumuladas no wizard unico.

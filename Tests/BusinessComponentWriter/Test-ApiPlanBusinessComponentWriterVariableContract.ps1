@@ -33,8 +33,13 @@ Assert-Contains $source 'lines.Add("        Commit")' 'Update deve confirmar a g
 Assert-Contains $source 'PreviousB079CreateContentWithoutCommit' 'Preflight deve migrar Procedure Create intermediaria gerada sem Commit.'
 Assert-Contains $source 'PreviousB079UpdateContentWithoutCommit' 'Preflight deve migrar Procedure Update intermediaria gerada sem Commit.'
 Assert-Contains $source 'RequiredMemberPresenceValidation("UpdateRequest"' 'Update deve validar presenca de membros JSON obrigatorios antes do Save.'
-Assert-Contains $source 'SdtDirtyMemberName(field.Name)' 'Validacao de obrigatorios deve consultar o nome Dirty gerado pelo SDT, nao apenas o nome JSON publico.'
-Assert-Contains $source '__goabSdt.IsDirty(__goabDirtyNames[__goabIndex])' 'Validacao de obrigatorios deve usar o estado Dirty do SDT para diferenciar ausencia de valor default.'
+Assert-Contains $source 'DefaultValueRequiredMemberValidation(requestName, requestVariable, requiredFields, spaces)' 'Validacao atual de obrigatorios deve comparar o membro recebido com o valor default do SDT.'
+Assert-Contains $source 'If {requestVariable}.{field.Name} = {emptyVariable}.{field.Name}' 'Validacao atual deve comparar cada obrigatorio contra instancia vazia do proprio SDT de request, sem ramificar por tipo.'
+Assert-Contains $source 'new VariableSpec(EmptyRequestVariableName(requestName), RequestSdtName(plan, requestName))' 'Procedures com obrigatorios devem declarar a instancia vazia do SDT de request usada na comparacao.'
+Assert-Contains $source 'absentInPreviousVariants' 'Preflight nao pode exigir a instancia vazia do SDT em Procedures geradas antes desta validacao.'
+Assert-Contains $source 'PreviousB079CreateContentWithNativeJsonValidation' 'Preflight deve migrar Create intermediario que tentava validar obrigatorios por HttpRequest e Properties.'
+Assert-Contains $source 'PreviousB079CreateContentWithSdtDirtyValidation' 'Preflight deve migrar Create intermediario que consultava Dirty com nome interno do SDT.'
+Assert-Contains $source 'PreviousB079SdtDirtyMemberPresenceValidation' 'Preflight deve preservar reconhecimento da versao intermediaria com comando csharp apenas para migracao.'
 Assert-Contains $source '&RestStatusCode = 400' 'Payload sem membro JSON obrigatorio deve retornar erro de requisicao antes do BC Save.'
 Assert-Contains $source 'new VariableSpec("RequestJsonHasRequiredMembers", "Boolean")' 'Procedures com obrigatorios devem declarar flag de validacao de presenca JSON.'
 Assert-Contains $source 'MatchesVariableSetAllowingRequiredMemberMigrationVariables' 'Preflight deve migrar Procedures intermediarias com variaveis antigas de validacao por HttpRequest.'
@@ -43,6 +48,17 @@ Assert-Contains $source 'PreviousB079UpdateContentWithNewtonsoftRequiredMemberVa
 Assert-Contains $source 'PreviousB079UpdateContentWithWrappedRequiredMemberValidation' 'Preflight deve migrar Update intermediario que exigia wrapper UpdateRequest no corpo bruto.'
 Assert-Contains $source 'PreviousB079UpdateContentWithUnwrappedRequiredMemberValidation' 'Preflight deve migrar Update intermediario que validava obrigatorios por Regex sem wrapper no corpo bruto.'
 Assert-Contains $source 'PreviousB079UpdateContentWithOriginalMemberDirtyValidation' 'Preflight deve migrar Update intermediario que consultava Dirty com nome JSON publico em vez do nome interno do SDT.'
+
+$currentPresenceStart = $source.IndexOf('private static IEnumerable<string> DefaultValueRequiredMemberValidation', [StringComparison]::Ordinal)
+$previousDirtyStart = $source.IndexOf('private static IEnumerable<string> PreviousB079SdtDirtyMemberPresenceValidation', [StringComparison]::Ordinal)
+if ($currentPresenceStart -lt 0 -or $previousDirtyStart -lt 0 -or $previousDirtyStart -le $currentPresenceStart) {
+    throw 'ASSERT_SECTION_FAILED: nao foi possivel isolar DefaultValueRequiredMemberValidation atual.'
+}
+
+$currentPresenceSource = $source.Substring($currentPresenceStart, $previousDirtyStart - $currentPresenceStart)
+Assert-NotContains $currentPresenceSource 'csharp ' 'Procedure gerada atualmente nao deve usar comando csharp para validar membros JSON obrigatorios.'
+Assert-NotContains $currentPresenceSource '.IsDirty(' 'Procedure gerada atualmente nao deve chamar IsDirty: o metodo nao existe no Source GeneXus.'
+Assert-NotContains $currentPresenceSource '&HttpRequest.ToString()' 'Procedure gerada atualmente nao deve tentar ler o corpo bruto: ele ja foi consumido pelo pipeline REST.'
 
 $currentFailureStart = $source.IndexOf('private static IEnumerable<string> BusinessRuleFailureMessages', [StringComparison]::Ordinal)
 $previousFailureStart = $source.IndexOf('private static IEnumerable<string> PreviousB079BusinessRuleFailureMessages', [StringComparison]::Ordinal)

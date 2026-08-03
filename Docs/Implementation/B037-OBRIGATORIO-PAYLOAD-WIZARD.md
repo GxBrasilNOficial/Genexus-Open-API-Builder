@@ -2,6 +2,8 @@
 
 Concluido no GeneXus 18 Upgrade 15 em 2026-07-23: o wizard unico aberto por `Abrir Wizard (B030)` consolidou a leitura de `Obrigatorio no payload` para `CreateRequest` e `UpdateRequest`, distinguindo presenca do membro JSON de valor nao vazio.
 
+> **Revisado em B071-B073/B079 (2026-08-03):** a semantica de `Required` deixou de ser presenca do membro JSON e passou a ser preenchimento. O GeneXus nao expoe presenca de membro JSON sem comando `csharp`, e o corpo bruto da requisicao ja foi consumido pelo pipeline REST antes de qualquer codigo GeneXus executar. `Create` e `Update` respondem `400` quando o obrigatorio chega ausente **ou** com o valor default do tipo. Os textos do wizard e as mensagens de Output foram atualizados; os trechos de evidencia abaixo preservam o texto original da epoca. Ver [B071-B073/B079](B071-B073-B079-GET-CREATE-UPDATE-HTTP.md).
+
 ## Objetivo
 
 Revisar e consolidar no wizard unico a decisao de obrigatoriedade tecnica no payload para `CreateRequest` e `UpdateRequest`, mantendo todas as escolhas apenas em memoria e sem criar `ApiPlan` ou objetos de API.

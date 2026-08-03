@@ -457,7 +457,7 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Required significa presença do membro no JSON; vazio, false e 0 continuam valores enviados e validados pelo BC.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0).", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
 
         var createGroup = new GroupBox
         {
@@ -1047,7 +1047,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"Serviços: {string.Join(", ", contract.SelectedServices)}{Environment.NewLine}" +
             $"CreateRequest: {contract.CreateFields.Count} campo(s), {createRequired} obrigatório(s) no payload{Environment.NewLine}" +
             $"UpdateRequest: {contract.UpdateFields.Count} campo(s), {updateRequired} obrigatório(s) no payload{Environment.NewLine}" +
-            $"Required: presença do membro JSON; não exige valor não vazio{Environment.NewLine}" +
+            $"Required: membro obrigatório no payload; recusado com 400 quando ausente ou vazio{Environment.NewLine}" +
             $"Response: {contract.ResponseFields.Count} campo(s){Environment.NewLine}" +
             $"ListFilters: {contract.ListFilters.Count} filtro(s){Environment.NewLine}" +
             $"ApiName: {review.ApiName}{Environment.NewLine}" +
@@ -1068,7 +1068,7 @@ internal sealed class PrototypeWizardDialog : Form
         _summaryEndpointText.Text =
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
             "Campos bloqueados ficam visíveis com motivo no fluxo do wizard." + Environment.NewLine +
-            "Required significa presença do membro JSON, distinguindo de valor não vazio." + Environment.NewLine +
+            "Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou vazio." + Environment.NewLine +
             "ApiPlan sera montado em memoria ao concluir o wizard." + Environment.NewLine +
             "Estruturas de dados, Procedures, API Object, listagem e metadata so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK." + Environment.NewLine +
             "A opção de Business Component completa Get/Create/Update e status HTTP nas Procedures já geradas." + Environment.NewLine +

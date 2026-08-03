@@ -390,6 +390,8 @@ internal static class ApiPlanBusinessComponentWriter
     private static bool IsManagedCreateSource(string source, ApiPlan plan)
     {
         return HasEquivalentGeneratedSource(source, CreateContent(plan)) ||
+            HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithNativeJsonValidation(plan)) ||
+            HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithSdtDirtyValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithOriginalMemberDirtyValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithUnwrappedRequiredMemberValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithWrappedRequiredMemberValidation(plan)) ||
@@ -402,6 +404,8 @@ internal static class ApiPlanBusinessComponentWriter
     private static bool IsManagedUpdateSource(string source, ApiPlan plan)
     {
         return HasEquivalentGeneratedSource(source, UpdateContent(plan)) ||
+            HasEquivalentGeneratedSource(source, PreviousB079UpdateContentWithNativeJsonValidation(plan)) ||
+            HasEquivalentGeneratedSource(source, PreviousB079UpdateContentWithSdtDirtyValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079UpdateContentWithOriginalMemberDirtyValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079UpdateContentWithUnwrappedRequiredMemberValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079UpdateContentWithWrappedRequiredMemberValidation(plan)) ||
@@ -603,11 +607,28 @@ internal static class ApiPlanBusinessComponentWriter
         {
             new VariableSpec("HttpRequest", "HttpRequest"),
             new VariableSpec("RequestBody", "LongVarChar"),
+            new VariableSpec("RequestProperties", "Properties"),
+            new VariableSpec("RequestPayloadJson", "LongVarChar"),
+            new VariableSpec("RequestPayloadProperties", "Properties"),
+            new VariableSpec("JsonProperty", "Property"),
+            new VariableSpec("RequiredMemberFound", "Boolean"),
             new VariableSpec("RequestJsonHasRequiredMembers", "Boolean"),
             new VariableSpec("MissingRequiredFields", "VarChar(1K)"),
         };
         var allowedVariables = baseVariables.Concat(optionalMigrationVariables).ToArray();
-        var baseNames = new HashSet<string>(baseVariables.Select(variable => variable.Name), StringComparer.OrdinalIgnoreCase);
+
+        // Procedures geradas antes da validacao por valor default nao possuem a instancia vazia do SDT de
+        // request, entao ela nao pode ser exigida para reconhecer o objeto como migravel.
+        var absentInPreviousVariants = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            EmptyRequestVariableName("CreateRequest"),
+            EmptyRequestVariableName("UpdateRequest"),
+        };
+        var baseNames = new HashSet<string>(
+            baseVariables
+                .Where(variable => !absentInPreviousVariants.Contains(variable.Name))
+                .Select(variable => variable.Name),
+            StringComparer.OrdinalIgnoreCase);
         var allowedNames = new HashSet<string>(allowedVariables.Select(variable => variable.Name), StringComparer.OrdinalIgnoreCase);
         return baseNames.All(name => currentVariables.Any(current => string.Equals(current, name, StringComparison.OrdinalIgnoreCase))) &&
             currentVariables.All(variable => allowedNames.Contains(variable)) &&
@@ -822,7 +843,7 @@ internal static class ApiPlanBusinessComponentWriter
 
     private static IEnumerable<string> RequiredMemberPresenceValidation(string requestName, string requestVariable, IReadOnlyList<ApiPlanField> requiredFields, int spaces)
     {
-        return SdtRequiredMemberPresenceValidation(requestVariable, requiredFields, spaces, useDirtyMemberNames: true);
+        return DefaultValueRequiredMemberValidation(requestName, requestVariable, requiredFields, spaces);
     }
 
     private static IEnumerable<string> PreviousB079OriginalMemberDirtyPresenceValidation(string requestVariable, IReadOnlyList<ApiPlanField> requiredFields, int spaces)
@@ -845,7 +866,97 @@ internal static class ApiPlanBusinessComponentWriter
         yield return $"{indent}EndIf";
     }
 
-    private static IEnumerable<string> SdtRequiredMemberPresenceValidation(string requestVariable, IReadOnlyList<ApiPlanField> requiredFields, int spaces, bool useDirtyMemberNames)
+    private static IEnumerable<string> NativeJsonRequiredMemberPresenceValidation(string requestName, IReadOnlyList<ApiPlanField> requiredFields, int spaces)
+    {
+        if (requiredFields.Count == 0)
+        {
+            yield break;
+        }
+
+        var indent = new string(' ', spaces);
+        yield return $"{indent}&RequestBody = &HttpRequest.ToString()";
+        yield return $"{indent}&RequestJsonHasRequiredMembers = False";
+        yield return $"{indent}&MissingRequiredFields = !\"\"";
+        yield return $"{indent}&RequestPayloadJson = !\"\"";
+        yield return $"{indent}&RequestProperties.FromJson(&RequestBody)";
+        yield return $"{indent}&RequestPayloadJson = &RequestProperties.Get(!\"{requestName}\")";
+        yield return $"{indent}If &RequestPayloadJson.IsEmpty()";
+        yield return $"{indent}    &RequestPayloadJson = &RequestBody";
+        yield return $"{indent}EndIf";
+        yield return $"{indent}&RequestPayloadProperties.FromJson(&RequestPayloadJson)";
+
+        foreach (var field in requiredFields)
+        {
+            yield return $"{indent}&RequiredMemberFound = False";
+            yield return $"{indent}For &JsonProperty in &RequestPayloadProperties";
+            yield return $"{indent}    If &JsonProperty.Key.Trim().ToLower() = !\"{field.Name.ToLowerInvariant()}\"";
+            yield return $"{indent}        &RequiredMemberFound = True";
+            yield return $"{indent}    EndIf";
+            yield return $"{indent}EndFor";
+            yield return $"{indent}If not &RequiredMemberFound";
+            yield return $"{indent}    &MissingRequiredFields = iif(&MissingRequiredFields.IsEmpty(), !\"{field.Name}\", &MissingRequiredFields + !\", {field.Name}\")";
+            yield return $"{indent}EndIf";
+        }
+
+        yield return $"{indent}&RequestJsonHasRequiredMembers = &MissingRequiredFields.IsEmpty()";
+        yield return $"{indent}If not &RequestJsonHasRequiredMembers";
+        yield return $"{indent}    &RestStatusCode = 400";
+        yield return $"{indent}    &ErrorResponse = new()";
+        yield return $"{indent}    &ErrorResponse.Code = !\"invalid_request\"";
+        yield return $"{indent}    &ErrorResponse.Message = Format(!\"Required JSON member(s) missing: %1.\", &MissingRequiredFields.Trim())";
+        yield return $"{indent}EndIf";
+    }
+
+    /// <summary>
+    /// Valida membros JSON obrigatorios comparando cada membro recebido com o valor default do mesmo membro
+    /// em uma instancia vazia do proprio SDT de request.
+    /// </summary>
+    /// <remarks>
+    /// O GeneXus nao expoe, sem comando csharp, a informacao de presenca de membro no JSON recebido:
+    /// o corpo bruto ja foi consumido pelo pipeline REST antes de qualquer codigo GeneXus executar,
+    /// tanto na Procedure quanto no evento Before do API Object, nos geradores .NET e .NET Framework.
+    /// Por isso a validacao passa a ser por preenchimento, e nao por presenca. A comparacao contra
+    /// instancia vazia dispensa ramificar por tipo de dado e vale para qualquer tipo de membro.
+    /// Limitacao assumida: membro obrigatorio cujo valor legitimo seja igual ao default do tipo
+    /// (por exemplo, numerico zero) e recusado com 400.
+    /// </remarks>
+    private static IEnumerable<string> DefaultValueRequiredMemberValidation(string requestName, string requestVariable, IReadOnlyList<ApiPlanField> requiredFields, int spaces)
+    {
+        if (requiredFields.Count == 0)
+        {
+            yield break;
+        }
+
+        var indent = new string(' ', spaces);
+        var emptyVariable = "&" + EmptyRequestVariableName(requestName);
+        yield return $"{indent}&RequestJsonHasRequiredMembers = True";
+        yield return $"{indent}&MissingRequiredFields = !\"\"";
+        yield return $"{indent}{emptyVariable} = new()";
+
+        foreach (var field in requiredFields)
+        {
+            yield return $"{indent}If {requestVariable}.{field.Name} = {emptyVariable}.{field.Name}";
+            yield return $"{indent}    &RequestJsonHasRequiredMembers = False";
+            yield return $"{indent}    &MissingRequiredFields = iif(&MissingRequiredFields.IsEmpty(), !\"{field.Name}\", &MissingRequiredFields + !\", {field.Name}\")";
+            yield return $"{indent}EndIf";
+        }
+
+        yield return $"{indent}If not &RequestJsonHasRequiredMembers";
+        yield return $"{indent}    &RestStatusCode = 400";
+        yield return $"{indent}    &ErrorResponse = new()";
+        yield return $"{indent}    &ErrorResponse.Code = !\"invalid_request\"";
+        yield return $"{indent}    &ErrorResponse.Message = Format(!\"Required JSON member(s) missing or empty: %1.\", &MissingRequiredFields.Trim())";
+        yield return $"{indent}EndIf";
+    }
+
+    private static string EmptyRequestVariableName(string requestName) => "Empty" + requestName;
+
+    private static string RequestSdtName(ApiPlan plan, string requestName) =>
+        string.Equals(requestName, "CreateRequest", StringComparison.OrdinalIgnoreCase)
+            ? plan.CreateRequestSdtName
+            : plan.UpdateRequestSdtName;
+
+    private static IEnumerable<string> PreviousB079SdtDirtyMemberPresenceValidation(string requestVariable, IReadOnlyList<ApiPlanField> requiredFields, int spaces, bool useDirtyMemberNames)
     {
         if (requiredFields.Count == 0)
         {
@@ -1140,6 +1251,74 @@ internal static class ApiPlanBusinessComponentWriter
         return string.Join(Environment.NewLine, lines);
     }
 
+    private static string PreviousB079CreateContentWithNativeJsonValidation(ApiPlan plan)
+    {
+        var bc = "&" + plan.TransactionName;
+        var requiredFields = RequiredFieldsFor(plan, "CreateRequest", plan.CreateRequestFields);
+        var guarded = requiredFields.Count > 0;
+        var bodyIndent = guarded ? "    " : string.Empty;
+        var successIndent = guarded ? 8 : 4;
+        var lines = new List<string> { "&RestStatusCode = 201" };
+        lines.AddRange(NativeJsonRequiredMemberPresenceValidation("CreateRequest", requiredFields, 0));
+        if (guarded)
+        {
+            lines.Add("If &RestStatusCode = 201");
+        }
+
+        lines.Add($"{bodyIndent}{bc} = new()");
+        lines.AddRange(plan.CreateRequestFields.Select(field => $"{bodyIndent}{bc}.{field.Name} = &CreateRequest.{field.Name}"));
+        lines.Add($"{bodyIndent}{bc}.Save()");
+        lines.Add($"{bodyIndent}If {bc}.Success()");
+        lines.Add($"{bodyIndent}    Commit");
+        lines.Add($"{bodyIndent}    {bc}.Load({LoadArguments(plan, bc)})");
+        lines.Add($"{bodyIndent}    &CreateResponse = new()");
+        lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", successIndent));
+        lines.Add($"{bodyIndent}    &RestStatusCode = 201");
+        lines.Add($"{bodyIndent}Else");
+        lines.AddRange(BusinessRuleFailureMessages(bc, successIndent));
+        lines.Add($"{bodyIndent}EndIf");
+        if (guarded)
+        {
+            lines.Add("EndIf");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string PreviousB079CreateContentWithSdtDirtyValidation(ApiPlan plan)
+    {
+        var bc = "&" + plan.TransactionName;
+        var requiredFields = RequiredFieldsFor(plan, "CreateRequest", plan.CreateRequestFields);
+        var guarded = requiredFields.Count > 0;
+        var bodyIndent = guarded ? "    " : string.Empty;
+        var successIndent = guarded ? 8 : 4;
+        var lines = new List<string> { "&RestStatusCode = 201" };
+        lines.AddRange(PreviousB079SdtDirtyMemberPresenceValidation("&CreateRequest", requiredFields, 0, useDirtyMemberNames: true));
+        if (guarded)
+        {
+            lines.Add("If &RestStatusCode = 201");
+        }
+
+        lines.Add($"{bodyIndent}{bc} = new()");
+        lines.AddRange(plan.CreateRequestFields.Select(field => $"{bodyIndent}{bc}.{field.Name} = &CreateRequest.{field.Name}"));
+        lines.Add($"{bodyIndent}{bc}.Save()");
+        lines.Add($"{bodyIndent}If {bc}.Success()");
+        lines.Add($"{bodyIndent}    Commit");
+        lines.Add($"{bodyIndent}    {bc}.Load({LoadArguments(plan, bc)})");
+        lines.Add($"{bodyIndent}    &CreateResponse = new()");
+        lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", successIndent));
+        lines.Add($"{bodyIndent}    &RestStatusCode = 201");
+        lines.Add($"{bodyIndent}Else");
+        lines.AddRange(BusinessRuleFailureMessages(bc, successIndent));
+        lines.Add($"{bodyIndent}EndIf");
+        if (guarded)
+        {
+            lines.Add("EndIf");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
     private static string LegacyUpdateContent(ApiPlan plan)
     {
         var bc = "&" + plan.TransactionName;
@@ -1380,6 +1559,86 @@ internal static class ApiPlanBusinessComponentWriter
         return string.Join(Environment.NewLine, lines);
     }
 
+    private static string PreviousB079UpdateContentWithNativeJsonValidation(ApiPlan plan)
+    {
+        var bc = "&" + plan.TransactionName;
+        var requiredFields = RequiredFieldsFor(plan, "UpdateRequest", plan.UpdateRequestFields);
+        var guarded = requiredFields.Count > 0;
+        var bodyIndent = guarded ? "    " : string.Empty;
+        var assignmentIndent = guarded ? 8 : 4;
+        var nestedIndent = guarded ? 12 : 8;
+        var failureIndent = guarded ? 8 : 4;
+        var lines = new List<string> { "&RestStatusCode = 200" };
+        lines.AddRange(NativeJsonRequiredMemberPresenceValidation("UpdateRequest", requiredFields, 0));
+        if (guarded)
+        {
+            lines.Add("If &RestStatusCode = 200");
+        }
+
+        lines.Add($"{bodyIndent}{bc}.Load({LoadArguments(plan, "&")})");
+        lines.Add($"{bodyIndent}If {bc}.Success()");
+        lines.AddRange(plan.UpdateRequestFields.Select(field => $"{new string(' ', assignmentIndent)}{bc}.{field.Name} = &UpdateRequest.{field.Name}"));
+        lines.Add($"{new string(' ', assignmentIndent)}{bc}.Save()");
+        lines.Add($"{new string(' ', assignmentIndent)}If {bc}.Success()");
+        lines.Add($"{new string(' ', nestedIndent)}Commit");
+        lines.Add($"{new string(' ', nestedIndent)}{bc}.Load({LoadArguments(plan, "&")})");
+        lines.Add($"{new string(' ', nestedIndent)}&UpdateResponse = new()");
+        lines.AddRange(ResponseAssignments(plan, bc, "&UpdateResponse", nestedIndent));
+        lines.Add($"{new string(' ', nestedIndent)}&RestStatusCode = 200");
+        lines.Add($"{new string(' ', assignmentIndent)}Else");
+        lines.AddRange(BusinessRuleFailureMessages(bc, nestedIndent));
+        lines.Add($"{new string(' ', assignmentIndent)}EndIf");
+        lines.Add($"{bodyIndent}Else");
+        lines.AddRange(NotFoundMessages(plan, failureIndent));
+        lines.Add($"{bodyIndent}EndIf");
+        if (guarded)
+        {
+            lines.Add("EndIf");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string PreviousB079UpdateContentWithSdtDirtyValidation(ApiPlan plan)
+    {
+        var bc = "&" + plan.TransactionName;
+        var requiredFields = RequiredFieldsFor(plan, "UpdateRequest", plan.UpdateRequestFields);
+        var guarded = requiredFields.Count > 0;
+        var bodyIndent = guarded ? "    " : string.Empty;
+        var assignmentIndent = guarded ? 8 : 4;
+        var nestedIndent = guarded ? 12 : 8;
+        var failureIndent = guarded ? 8 : 4;
+        var lines = new List<string> { "&RestStatusCode = 200" };
+        lines.AddRange(PreviousB079SdtDirtyMemberPresenceValidation("&UpdateRequest", requiredFields, 0, useDirtyMemberNames: true));
+        if (guarded)
+        {
+            lines.Add("If &RestStatusCode = 200");
+        }
+
+        lines.Add($"{bodyIndent}{bc}.Load({LoadArguments(plan, "&")})");
+        lines.Add($"{bodyIndent}If {bc}.Success()");
+        lines.AddRange(plan.UpdateRequestFields.Select(field => $"{new string(' ', assignmentIndent)}{bc}.{field.Name} = &UpdateRequest.{field.Name}"));
+        lines.Add($"{new string(' ', assignmentIndent)}{bc}.Save()");
+        lines.Add($"{new string(' ', assignmentIndent)}If {bc}.Success()");
+        lines.Add($"{new string(' ', nestedIndent)}Commit");
+        lines.Add($"{new string(' ', nestedIndent)}{bc}.Load({LoadArguments(plan, "&")})");
+        lines.Add($"{new string(' ', nestedIndent)}&UpdateResponse = new()");
+        lines.AddRange(ResponseAssignments(plan, bc, "&UpdateResponse", nestedIndent));
+        lines.Add($"{new string(' ', nestedIndent)}&RestStatusCode = 200");
+        lines.Add($"{new string(' ', assignmentIndent)}Else");
+        lines.AddRange(BusinessRuleFailureMessages(bc, nestedIndent));
+        lines.Add($"{new string(' ', assignmentIndent)}EndIf");
+        lines.Add($"{bodyIndent}Else");
+        lines.AddRange(NotFoundMessages(plan, failureIndent));
+        lines.Add($"{bodyIndent}EndIf");
+        if (guarded)
+        {
+            lines.Add("EndIf");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
     private static IEnumerable<string> LegacyFailureMessages(string bc, int spaces) => new[]
     {
         $"{new string(' ', spaces)}&Messages = {bc}.GetMessages()",
@@ -1512,6 +1771,7 @@ internal static class ApiPlanBusinessComponentWriter
         {
             new VariableSpec("RequestJsonHasRequiredMembers", "Boolean"),
             new VariableSpec("MissingRequiredFields", "VarChar(1K)"),
+            new VariableSpec(EmptyRequestVariableName(requestName), RequestSdtName(plan, requestName)),
         };
     }
 
