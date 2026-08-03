@@ -1047,7 +1047,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"Serviços: {string.Join(", ", contract.SelectedServices)}{Environment.NewLine}" +
             $"CreateRequest: {contract.CreateFields.Count} campo(s), {createRequired} obrigatório(s) no payload{Environment.NewLine}" +
             $"UpdateRequest: {contract.UpdateFields.Count} campo(s), {updateRequired} obrigatório(s) no payload{Environment.NewLine}" +
-            $"Required: membro obrigatório no payload; recusado com 400 quando ausente ou vazio{Environment.NewLine}" +
+            $"Required: obrigatório no payload; 400 quando ausente ou com o valor default do tipo (vazio, false ou 0){Environment.NewLine}" +
             $"Response: {contract.ResponseFields.Count} campo(s){Environment.NewLine}" +
             $"ListFilters: {contract.ListFilters.Count} filtro(s){Environment.NewLine}" +
             $"ApiName: {review.ApiName}{Environment.NewLine}" +
@@ -1068,7 +1068,7 @@ internal sealed class PrototypeWizardDialog : Form
         _summaryEndpointText.Text =
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
             "Campos bloqueados ficam visíveis com motivo no fluxo do wizard." + Environment.NewLine +
-            "Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou vazio." + Environment.NewLine +
+            "Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0)." + Environment.NewLine +
             "ApiPlan sera montado em memoria ao concluir o wizard." + Environment.NewLine +
             "Estruturas de dados, Procedures, API Object, listagem e metadata so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK." + Environment.NewLine +
             "A opção de Business Component completa Get/Create/Update e status HTTP nas Procedures já geradas." + Environment.NewLine +
@@ -1521,7 +1521,7 @@ internal sealed class PrototypeWizardDialog : Form
             .Select(name => CreateRequiredDecision(name))
             .ToArray();
         var update = selection.UpdateFields
-            .Select(name => new PrototypeWizardRequiredFieldDecision("UpdateRequest", name, true, "Update via PUT exige presença de todo membro selecionado."))
+            .Select(name => new PrototypeWizardRequiredFieldDecision("UpdateRequest", name, true, "Update via PUT exige todo membro selecionado preenchido; ausente ou com o valor default do tipo (vazio, false ou 0) devolve 400."))
             .ToArray();
         return create.Concat(update).ToArray();
     }
@@ -1536,7 +1536,7 @@ internal sealed class PrototypeWizardDialog : Form
         {
             return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, false, "Campo nullable pode ser omitido; valor vazio presente continua valor enviado e sujeito ao BC.");
         }
-        return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, true, "Campo selecionado sem nulabilidade conhecida deve estar presente no JSON; isso não exige valor não vazio.");
+        return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, true, "Campo selecionado sem nulabilidade conhecida deve chegar preenchido; ausente ou com o valor default do tipo (vazio, false ou 0) devolve 400.");
     }
     private static IReadOnlyList<string> GetCheckedValues(FlowLayoutPanel panel)
     {
