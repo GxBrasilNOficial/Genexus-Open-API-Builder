@@ -103,7 +103,7 @@ git fetch origin
 pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
 ```
 
-O JSON valida branch, divergência remota, whitespace, parse dos scripts, teste unitário do parser Service Source, restore, build e limpeza da working tree. Resultado mecânico não substitui a revisão semântica: quando `manualRequired` estiver preenchido, o push permanece bloqueado até revisar os itens e registrar gaps confirmados, flags descartados e áreas não cobertas.
+O JSON valida branch, divergência remota, whitespace, parse dos scripts, os testes unitários locais, restore, build e limpeza da working tree. Resultado mecânico não substitui a revisão semântica: quando `manualRequired` estiver preenchido, o push permanece bloqueado até revisar os itens e registrar gaps confirmados, flags descartados e áreas não cobertas.
 
 Quando o checker ou seu teste for alterado, execute também:
 

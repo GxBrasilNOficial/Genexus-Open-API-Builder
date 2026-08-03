@@ -39,6 +39,7 @@ Assert-True ($source -match 'Tests/WizardNavigation/Test-PrototypeWizardBusiness
 Assert-True ($source -match 'Tests/WritePreflight/Test-ApiPlanWritePreflightScope\.ps1') 'O checker deve executar o teste unitário do escopo de preflight.'
 Assert-True ($source -match 'Tests/BusinessComponentWriter/Test-ApiPlanBusinessComponentWriterVariableContract\.ps1') 'O checker deve executar o teste unitário do contrato de variáveis do writer Business Component.'
 Assert-True ($source -match 'Tests/ListProcedure/Test-ApiPlanListProcedureReencounterPolicy\.ps1') 'O checker deve executar o teste unitário do reencontro B070.'
+Assert-True ($source -match 'Tests/RequiredSemantics/Test-RequiredMemberSemanticsConsistency\.ps1') 'O checker deve executar o teste unitário da coerência semântica de Required.'
 
 $fixtures = @(
     @{ Text = 'error NU1004: The package lock file is inconsistent.'; Phase = 'restore'; Expected = 'lockFileInconsistent' },
@@ -62,6 +63,7 @@ try {
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\WritePreflight'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\BusinessComponentWriter'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ListProcedure'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\RequiredSemantics'))
     & git init --bare (Join-Path $tempRoot 'remote.git') | Out-Null
     Push-Location (Join-Path $tempRoot 'repo')
     try {
@@ -85,6 +87,7 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WritePreflight\Test-ApiPlanWritePreflightScope.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Write Preflight Scope'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\BusinessComponentWriter\Test-ApiPlanBusinessComponentWriterVariableContract.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Business Component Writer Variable Contract'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ListProcedure\Test-ApiPlanListProcedureReencounterPolicy.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture List Procedure Reencounter Policy'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\RequiredSemantics\Test-RequiredMemberSemanticsConsistency.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Required Member Semantics Consistency'`n", [System.Text.UTF8Encoding]::new($false))
         & git add .gitignore README.md Src scripts Tests
         & git commit -m 'Fixture do checker' | Out-Null
         & git remote add origin (Join-Path $tempRoot 'remote.git')
@@ -104,6 +107,7 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.writePreflightScope' }).status -eq 'passed') 'O teste unitário do escopo de preflight deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.businessComponentWriterVariableContract' }).status -eq 'passed') 'O teste unitário do contrato de variáveis do writer Business Component deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.listProcedureReencounterPolicy' }).status -eq 'passed') 'O teste unitário do reencontro B070 deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.requiredMemberSemantics' }).status -eq 'passed') 'O teste unitário da coerência semântica de Required deveria passar na fixture.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract.ps1' }).Count -eq 1) 'O comando do teste Service Source deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity.ps1' }).Count -eq 1) 'O comando do teste Metadata Integrity deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardPreferences/Test-PrototypeWizardPreferences.ps1' }).Count -eq 1) 'O comando do teste Wizard Preferences deve aparecer no JSON.'
