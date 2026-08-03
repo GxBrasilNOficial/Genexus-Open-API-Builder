@@ -38,6 +38,32 @@ A build comprovou o mecanismo moderno no repositório, não o carregamento da ex
 
 A emenda preserva o objetivo funcional — extensão dentro da IDE que gera objeto `API` nativo — e exige que o `B000` torne o pacote minimamente descobrível e carregável antes da instalação manual.
 
+## Emenda técnica — 2026-08-03
+
+### Experimento previsto que motivou a emenda
+
+Este registro exigia, em dois pontos, um experimento técnico antes da implementação: confirmar como distinguir, por recursos nativos do GeneXus, um membro ausente de um membro presente com valor vazio, `false` ou `0`. O experimento foi executado no fechamento de `B071`-`B073`/`B079` e o resultado obriga a separar dois casos que o registro tratava como um só.
+
+### Filtros de `List` — decisão preservada
+
+Nos filtros opcionais de `List`, a distinção foi obtida com recursos nativos e permanece exatamente como decidido. O SDT writer grava os membros nullable de `ListFilters` com a propriedade GeneXus `idJsonInclude=idJsonJsonNull`, correspondente a `Json Null Serialization = JSON null`. Sem ela, membro numérico não informado serializa como `0` e indicaria falsamente filtro aplicado. `B070`/`B077` comprovou o comportamento em runtime: sem filtro, `AppliedFilters` traz o membro nulo; com filtro, traz o valor informado.
+
+### Membros do corpo de `Create` e `Update` — decisão revista
+
+No corpo das requisições, a distinção não é obtenível sem comando `csharp`. Quatro caminhos foram testados e descartados na IDE: comando `csharp` com `IsDirty`, que emite `spc0087` e foi recusado por decisão do projeto; `HttpRequest.ToString()` dentro da Procedure, onde o corpo bruto não chega; `&Sdt.IsDirty()` nativo, que não existe na linguagem, confirmado por IntelliSense e documentação; e `HttpRequest.ToString()` no evento `Before` do API Object, que devolveu `len=0` nos dois geradores porque o corpo já foi consumido pelo pipeline REST.
+
+A decisão revista: `Required` passa a significar preenchimento, não presença do membro JSON. A geração compara cada campo obrigatório com o valor default do mesmo membro em instância vazia do próprio SDT de request, o que dispensa ramificar por tipo de dado. `Create` e `Update` respondem `400 Bad Request` quando o obrigatório chega ausente **ou** com o valor default do tipo — vazio, `false` ou `0`.
+
+Ficam revistos por esta emenda os trechos correspondentes de `sdtNomeDaTransacao_API_CreateRequest`, de `sdtNomeDaTransacao_API_UpdateRequest` e o gate técnico transversal 6.
+
+### Limitação assumida
+
+Campo obrigatório cujo valor legítimo seja igual ao default do tipo é recusado com `400`. A limitação foi aceita explicitamente em lugar de introduzir comando `csharp` na geração.
+
+### O que a emenda não altera
+
+Permanecem válidas a ausência de campos auxiliares públicos com sufixo `Specified` no contrato, a regra de que membro opcional ausente não é atribuído ao BC, e o tratamento de valores vazios, `false` e `0` como valores realmente enviados quando o membro é preenchido. Os documentos `Foundation` 06, 09, 15 e 24 foram atualizados na mesma data.
+
 ## Objetivo e limites do produto
 ### Decisões aceitas
 
@@ -500,23 +526,23 @@ sdtNomeDaTransacao_API_ListResponse
 - Conterá somente os atributos selecionados no wizard e atribuíveis ao BC antes de `Save()`.
 - Preservará a ordem da estrutura da Transaction; cada membro será baseado no atributo original e usará exatamente o nome do atributo no SDT, no JSON e no OpenAPI.
 - Não conterá envelope, metadados, subníveis nem campos exclusivos de resposta.
-- A propriedade `Required` representará que o membro deve estar presente no JSON; presença obrigatória não significará valor obrigatoriamente não vazio.
+- A propriedade `Required` representará que o membro deve estar presente no JSON; presença obrigatória não significará valor obrigatoriamente não vazio. **Revisto pela emenda técnica de 2026-08-03:** `Required` passou a significar preenchimento, e o membro obrigatório com valor default do tipo também é recusado.
 - Membro obrigatório ausente produzirá `400 Bad Request`.
 - Membro opcional ausente não será atribuído ao BC, preservando regras `Default` e preenchimentos automáticos.
-- Membro presente com valor vazio, `false` ou `0` será atribuído exatamente como recebido e validado pelas regras da Transaction aplicáveis via BC.
+- Membro presente com valor vazio, `false` ou `0` será atribuído exatamente como recebido e validado pelas regras da Transaction aplicáveis via BC. **Revisto pela emenda técnica de 2026-08-03:** isso vale para membros opcionais; membro obrigatório com valor default do tipo é recusado com `400` antes da atribuição.
 - A API não acrescentará campos auxiliares públicos, como `ProdutoAtivoSpecified`, para indicar a presença de outros membros.
-- Antes da implementação, um experimento técnico de validação deverá confirmar como distinguir, usando recursos nativos do GeneXus, um membro ausente de um membro presente com valor vazio, `false` ou `0`.
+- Antes da implementação, um experimento técnico de validação deverá confirmar como distinguir, usando recursos nativos do GeneXus, um membro ausente de um membro presente com valor vazio, `false` ou `0`. **Experimento concluído em 2026-08-03:** a distinção não é obtenível no corpo da requisição sem comando `csharp`; ver a emenda técnica da mesma data.
 
 ## `sdtNomeDaTransacao_API_UpdateRequest` — estrutura e presença
 
 - Representará a substituição completa, via `PUT`, dos campos atualizáveis selecionados.
 - Não conterá partes da chave primária, pois elas identificarão o registro no `RestPath`.
 - Conterá somente atributos selecionados e atribuíveis ao BC carregado antes de `Save()`, preservando ordem, tipos e nomes dos atributos.
-- Todos os membros selecionados terão `Required = True`; a ausência de qualquer um produzirá `400 Bad Request` antes de qualquer atribuição ao BC.
+- Todos os membros selecionados terão `Required = True`; a ausência de qualquer um produzirá `400 Bad Request` antes de qualquer atribuição ao BC. **Revisto pela emenda técnica de 2026-08-03:** o `400` passa a ocorrer também quando o membro chega com o valor default do tipo.
 - Valores vazios, `false` e `0` serão tratados como valores realmente enviados e submetidos às regras da Transaction aplicáveis via BC.
 - O fluxo carregará o BC pela chave simples ou composta, retornará `404` quando não existir, validará a presença integral do Request, atribuirá os valores, salvará via BC, recarregará e devolverá o `Response`.
 - Não haverá campos auxiliares públicos com sufixo `Specified`.
-- O mesmo experimento técnico de validação do `CreateRequest` deverá comprovar a distinção entre membro ausente e membro presente no GeneXus 18.
+- O mesmo experimento técnico de validação do `CreateRequest` deverá comprovar a distinção entre membro ausente e membro presente no GeneXus 18. **Experimento concluído em 2026-08-03:** ver a emenda técnica da mesma data.
 - Atualização parcial e `PATCH` não integrarão o MVP.
 
 ## Evidências locais consultadas
@@ -553,7 +579,7 @@ Os seguintes experimentos são gates transversais do MVP. Sua comprovação ser�
 3. O objeto `API` delega às Procedures e persiste corretamente `RestMethod`, `RestPath`, `Description` e `SecurityLevel`.
 4. O YAML gerado pelo GeneXus reflete corretamente rotas, métodos, parâmetros, SDTs e nomes com `_API_`.
 5. `Create` e `Update` via BC funcionam com chave simples e composta, preservando regras da Transaction e mensagens do BC.
-6. A implementação distingue membro JSON ausente de membro presente com vazio, `false` ou zero, sem campos públicos `Specified`.
+6. Nos filtros de `List`, a implementação distingue membro JSON ausente de membro presente com vazio, `false` ou zero; no corpo de `Create` e `Update`, o campo obrigatório não preenchido é recusado com `400`. Sem campos públicos `Specified`. Ver a emenda técnica de 2026-08-03.
 7. A implementação controla códigos HTTP, corpo da resposta e cabeçalho `Location`.
 8. `List` funciona com filtros opcionais, períodos, paginação, totalização e ordenação determinística.
 9. Metadados em objeto `File` sobrevivem ao fechamento e à reabertura da KB e permitem reconhecer objetos próprios com segurança.
