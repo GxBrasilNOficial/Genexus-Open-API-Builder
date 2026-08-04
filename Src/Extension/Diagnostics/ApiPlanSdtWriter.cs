@@ -131,7 +131,7 @@ internal static class ApiPlanSdtWriter
     {
         if (string.Equals(definition.Kind, "SharedErrorResponse", StringComparison.Ordinal))
         {
-            foreach (var member in definition.Members.Where(item => item.Name.IndexOf(".", StringComparison.Ordinal) >= 0 || !string.Equals(item.Name, "Errors", StringComparison.Ordinal)))
+            foreach (var member in definition.Members)
             {
                 ResolveDbType(member.DataType);
             }
@@ -230,11 +230,6 @@ internal static class ApiPlanSdtWriter
         {
             AddBuiltInMember(root, "Code", "VarChar", 64, 0);
             AddBuiltInMember(root, "Message", "VarChar", 256, 0);
-            var errors = root.AddLevel("Errors", true);
-            errors.CollectionItemName = "Error";
-            AddBuiltInMember(errors, "Code", "VarChar", 64, 0);
-            AddBuiltInMember(errors, "Message", "VarChar", 256, 0);
-            AddBuiltInMember(errors, "Field", "VarChar", 128, 0);
             return;
         }
 

@@ -14,6 +14,13 @@ internal static class ApiPlanBusinessComponentWriter
 {
     private const string ProcedureDescriptionPrefix = "Genexus Open API Builder B050-B053 Procedure";
 
+    /// <summary>
+    /// Propriedade publica 'Required' de variavel de parametro de servico. Aplicada apenas nas
+    /// variaveis de request do API Object: e a unica marcacao que o gerador de YAML honra,
+    /// emitindo 'requestBody: required: true'.
+    /// </summary>
+    internal const string ServiceRequiredPropertyId = "idVarServiceRequired";
+
     public static ApiPlanBusinessComponentWriteResult Apply(KBModel model, Transaction transaction, ApiPlan plan)
     {
         if (model is null) throw new ArgumentNullException(nameof(model));
@@ -558,8 +565,19 @@ internal static class ApiPlanBusinessComponentWriter
                 throw new InvalidOperationException($"B055 bloqueado: tipo da variavel de API '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
             }
 
+            ConfigureServiceRequired(item, variable);
             api.Variables.Variables.Add(item);
         }
+    }
+
+    private static void ConfigureServiceRequired(Variable variable, VariableSpec spec)
+    {
+        if (!spec.IsServiceRequired || !variable.ContainsPropertyDefinition(ServiceRequiredPropertyId))
+        {
+            return;
+        }
+
+        variable.SetPropertyValue(ServiceRequiredPropertyId, true);
     }
 
     private static bool HasExpectedVariables(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)
@@ -1779,9 +1797,9 @@ internal static class ApiPlanBusinessComponentWriter
         .Concat(new[]
         {
             new VariableSpec("GetResponse", plan.ResponseSdtName),
-            new VariableSpec("CreateRequest", plan.CreateRequestSdtName),
+            new VariableSpec("CreateRequest", plan.CreateRequestSdtName, isServiceRequired: true),
             new VariableSpec("CreateResponse", plan.ResponseSdtName),
-            new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName),
+            new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName, isServiceRequired: true),
             new VariableSpec("UpdateResponse", plan.ResponseSdtName),
             new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
             new VariableSpec("RestStatusCode", "Numeric(3.0)"),
@@ -1945,14 +1963,16 @@ internal static class ApiPlanBusinessComponentWriter
 
 internal sealed class VariableSpec
 {
-    public VariableSpec(string name, string dataType)
+    public VariableSpec(string name, string dataType, bool isServiceRequired = false)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
         DataType = dataType ?? throw new ArgumentNullException(nameof(dataType));
+        IsServiceRequired = isServiceRequired;
     }
 
     public string Name { get; }
     public string DataType { get; }
+    public bool IsServiceRequired { get; }
 }
 
 internal sealed class ApiPlanBusinessComponentWriteResult

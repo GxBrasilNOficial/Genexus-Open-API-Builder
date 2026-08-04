@@ -64,6 +64,33 @@ Campo obrigatório cujo valor legítimo seja igual ao default do tipo é recusad
 
 Permanecem válidas a ausência de campos auxiliares públicos com sufixo `Specified` no contrato, a regra de que membro opcional ausente não é atribuído ao BC, e o tratamento de valores vazios, `false` e `0` como valores realmente enviados quando o membro é preenchido. Os documentos `Foundation` 06, 09, 15 e 24 foram atualizados na mesma data.
 
+## Emenda técnica — 2026-08-03 — contrato OpenAPI publicado
+
+### Fato que motivou a emenda
+
+A conferência do YAML gerado pelo GeneXus, feita depois do fechamento de `B071`-`B073`/`B079`, mostrou divergências entre o contrato publicado e o comportamento real da API. Parte é corrigível por objetos e propriedades; parte é imposta pelo gerador do GeneXus, que produz o YAML a partir de templates da instalação e não expõe ponto de extensão para esses trechos.
+
+### `Errors[]` — decisão revista
+
+Este registro previa corpo de erro com `Errors[]` derivado das mensagens do BC, com `Code`, `Message` e `Field` por item. O preenchimento foi descartado em `B071`-`B073`/`B079`, depois que a IDE manteve a rejeição da validação da Procedure com `ErrorItem` de subestrutura SDT, e o erro público passou a ser top-level.
+
+A decisão revista retira `Errors[]` também da estrutura do SDT compartilhado `sdt_API_ErrorResponse`, que passa a conter apenas `Code` e `Message`. O motivo é que manter a subestrutura publicava no contrato um array que a geração nunca preenche, pior do que não oferecê-lo: o consumidor poderia construir tratamento de erro sobre um campo sempre ausente.
+
+Ficam revistos por esta emenda os trechos deste registro que descrevem `Errors[].Message`, `Errors[].Code` e `Errors[].Field`. Permanecem válidas as regras de `Code` principal, de idioma de `Message`, de não tradução das mensagens do BC e de decisão do cliente por `Code` e nunca por texto.
+
+### Limitações do gerador assumidas
+
+Duas decisões deste registro não são expressáveis no contrato publicado, por limitação do gerador do GeneXus, comprovada e não contornável por API pública do Extensibility SDK:
+
+- os códigos HTTP por operação — `201`, `400`, `409`, `422`, `500` — não são declarados no YAML de um objeto `API`, que sai sempre com `200` e `404`. O runtime continua devolvendo os códigos decididos aqui; apenas a documentação publicada não os anuncia;
+- a obrigatoriedade por campo não é declarada nos schemas de request, mesmo com a propriedade nativa correspondente gravada e persistida no item de SDT.
+
+A obrigatoriedade do corpo, essa sim, passou a ser declarada: `requestBody` sai com `required: true` em `Create` e `Update`.
+
+### O que a emenda não altera
+
+Permanecem válidas todas as decisões de status HTTP em runtime, a semântica de `Required` como preenchimento fixada na emenda anterior desta mesma data, e a regra de que a extensão não escreve o arquivo YAML diretamente. Evidência completa em `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md`; documentos `Foundation` 12, 15 e 27 atualizados na mesma data.
+
 ## Objetivo e limites do produto
 ### Decisões aceitas
 
@@ -414,6 +441,7 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 - `Errors[].Field` não exporá nomes de variáveis internas das Procedures.
 - A extensão não tentará descobrir o campo analisando o texto da mensagem do BC. O preenchimento ocorrerá somente quando a validação gerada já conhecer a entrada ou quando metadados nativos fornecerem uma relação inequívoca.
 - Regras gerais, regras envolvendo vários campos e mensagens sem associação confiável deixarão `Field` vazio.
+- Remissão: os itens acima que descrevem `Errors[]` foram revistos pela `Emenda técnica — 2026-08-03 — contrato OpenAPI publicado`. O corpo de erro entregue é top-level, com `Code` e `Message`, e `Errors[]` não existe no SDT gerado.
 - Não será acrescentado um membro separado como `Location` ao contrato de erro no MVP.
 - Erros controlados pelas Procedures e pelo objeto `API` usarão `sdt_API_ErrorResponse`.
 - Um spike deverá verificar se erros interceptados pelo GAM ou pelo runtime antes da Procedure podem preservar o mesmo corpo. A uniformidade nesses casos não será prometida antes dessa validação.

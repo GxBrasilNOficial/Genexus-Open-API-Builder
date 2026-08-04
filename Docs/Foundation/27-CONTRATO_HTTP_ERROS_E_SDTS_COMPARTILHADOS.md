@@ -81,6 +81,16 @@ Regras:
 - não há membro separado `Location` no contrato de erro do MVP
 - não criar `sdt_API_ErrorDetail` separado; `Errors` é subestrutura interna de `sdt_API_ErrorResponse`
 
+## Nota de revisão — 2026-08-03
+
+O enunciado acima permanece registrado como o contrato pretendido. A geração entregue **não** contém `Errors[]`.
+
+Em B071-B073/B079 a tentativa de preencher `Errors[]` por `ErrorItem` de subestrutura SDT foi descartada depois que a IDE manteve a rejeição da validação da Procedure. O erro público passou a ser top-level, com `Code` e `Message`, e as mensagens do Business Component ficaram no Output técnico. O SDT compartilhado, porém, preservou a subestrutura, que continuou aparecendo no contrato OpenAPI como array que nunca é preenchido.
+
+A frente registrada em `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md` removeu o nível `Errors` de `sdt_API_ErrorResponse`. O SDT gerado passa a conter apenas `Code` e `Message`, e o schema derivado `sdt_API_ErrorResponse.Errors_Error` deixa de existir no YAML.
+
+Continuam válidas as regras de `Code` principal, de idioma de `Message` e de não tradução das mensagens do BC. Ficam suspensas, até existir caminho viável de preenchimento, as regras específicas de `Errors[].Code`, `Errors[].Message` e `Errors[].Field`.
+
 ---
 
 # 4. sdt_API_Pagination
@@ -172,7 +182,7 @@ Quando falhas do BC produzirem mensagens:
 
 - o erro principal usa `Code = validation_error`
 - a mensagem principal é um resumo
-- `Errors[]` deriva das mensagens do BC conforme as regras deste documento
+- `Errors[]` deriva das mensagens do BC conforme as regras deste documento; ver a nota de revisão da seção 3, que registra a retirada de `Errors[]` da geração entregue
 
 Um spike deve verificar se erros interceptados pelo GAM ou pelo runtime antes da Procedure podem preservar o mesmo corpo. A uniformidade nesses casos não é prometida antes dessa validação.
 
@@ -183,7 +193,7 @@ Um spike deve verificar se erros interceptados pelo GAM ou pelo runtime antes da
 - erros usam `sdt_API_ErrorResponse`
 - paginação usa `sdt_API_Pagination`
 - `sdt_API_Pagination` contém `TotalPages`, não `hasNextPage`
-- `sdt_API_ErrorResponse` contém `Errors[].Code`, `Errors[].Message` e `Errors[].Field`
+- `sdt_API_ErrorResponse` contém `Errors[].Code`, `Errors[].Message` e `Errors[].Field` — critério suspenso pela nota de revisão da seção 3; a geração entregue expõe erro top-level com `Code` e `Message`
 - `Update` retorna 200 com Response completo
 - `Create` retorna 201
 - não há endpoint `Delete` no MVP

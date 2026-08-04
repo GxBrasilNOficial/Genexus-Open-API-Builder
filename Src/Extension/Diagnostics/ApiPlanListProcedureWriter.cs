@@ -609,9 +609,9 @@ internal static class ApiPlanListProcedureWriter
         {
             variables.AddRange(plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}")));
             variables.Add(new VariableSpec("GetResponse", plan.ResponseSdtName));
-            variables.Add(new VariableSpec("CreateRequest", plan.CreateRequestSdtName));
+            variables.Add(new VariableSpec("CreateRequest", plan.CreateRequestSdtName, isServiceRequired: true));
             variables.Add(new VariableSpec("CreateResponse", plan.ResponseSdtName));
-            variables.Add(new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName));
+            variables.Add(new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName, isServiceRequired: true));
             variables.Add(new VariableSpec("UpdateResponse", plan.ResponseSdtName));
             variables.Add(new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"));
             variables.Add(new VariableSpec("RestStatusCode", "Numeric(3.0)"));
@@ -796,8 +796,19 @@ internal static class ApiPlanListProcedureWriter
             var item = new Variable(variable.Name, api.Variables);
             if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
                 throw new InvalidOperationException($"B070 bloqueado: tipo da variavel de API '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
+            ConfigureServiceRequired(item, variable);
             api.Variables.Variables.Add(item);
         }
+    }
+
+    private static void ConfigureServiceRequired(Variable variable, VariableSpec spec)
+    {
+        if (!spec.IsServiceRequired || !variable.ContainsPropertyDefinition(ApiPlanBusinessComponentWriter.ServiceRequiredPropertyId))
+        {
+            return;
+        }
+
+        variable.SetPropertyValue(ApiPlanBusinessComponentWriter.ServiceRequiredPropertyId, true);
     }
 
     private static bool HasExpectedVariables(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)

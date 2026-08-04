@@ -184,6 +184,8 @@ Campos senha/token devem iniciar desmarcados com alerta.
 
 `sdt_API_ErrorResponse` deve conter `Code`, `Message` e `Errors[]` com `Code`, `Message` e `Field`.
 
+Critério revisto em 2026-08-03: `Errors[]` foi retirado do SDT gerado, porque a geração nunca chegou a preenchê-lo e ele aparecia no contrato público como array sempre vazio. O critério vigente é `sdt_API_ErrorResponse` conter `Code` e `Message`. Ver a nota de revisão da seção 3 do documento 27 e `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md`.
+
 `sdt_API_Pagination` deve conter `Page`, `PageSize`, `TotalCount` e `TotalPages`.
 
 [SDT-F13][QA-F15]

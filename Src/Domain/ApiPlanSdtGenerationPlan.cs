@@ -149,10 +149,6 @@ internal static class ApiPlanSdtGenerationPlanBuilder
             {
                 new ApiPlanSdtMember("Code", "VarChar", 64, 0, false, false, string.Empty, "SharedErrorResponse"),
                 new ApiPlanSdtMember("Message", "VarChar", 256, 0, false, false, string.Empty, "SharedErrorResponse"),
-                new ApiPlanSdtMember("Errors", "Error", 0, 0, true, true, "Error", "SharedErrorResponse"),
-                new ApiPlanSdtMember("Errors.Code", "VarChar", 64, 0, true, false, string.Empty, "SharedErrorResponse"),
-                new ApiPlanSdtMember("Errors.Message", "VarChar", 256, 0, true, false, string.Empty, "SharedErrorResponse"),
-                new ApiPlanSdtMember("Errors.Field", "VarChar", 128, 0, true, false, string.Empty, "SharedErrorResponse"),
             });
     }
 
