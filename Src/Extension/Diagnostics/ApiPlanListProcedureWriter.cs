@@ -118,6 +118,15 @@ internal static class ApiPlanListProcedureWriter
                  plan.PrimaryKey.Select(field => field.Name),
                  plan.ListFilters.SelectMany(FilterVariableNames),
                  hasListContract: true) ||
+             ApiPlanServiceSourceContract.MatchesPreviousB079SecurityLevelContract(
+                 source,
+                 plan.ApiName,
+                 plan.TransactionName,
+                 plan.ModuleTarget,
+                 plan.Services.Select(service => service.Name),
+                 plan.PrimaryKey.Select(field => field.Name),
+                 plan.ListFilters.SelectMany(FilterVariableNames),
+                 hasListContract: true) ||
              ApiPlanServiceSourceContract.MatchesPreviousB079RestMethodContract(
                  source,
                  plan.ApiName,

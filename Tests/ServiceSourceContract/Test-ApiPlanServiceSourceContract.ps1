@@ -111,4 +111,10 @@ $b079InternalErrorOnly = $b079.Replace(', out: &ErrorResponse)', ')')
 Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079($b079InternalErrorOnly, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B079 atual deve rejeitar ErrorResponse apenas interno no API Object.'
 Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079InternalErrorOnly($b079InternalErrorOnly, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B079 legado deve reconhecer ErrorResponse apenas interno para migracao conservadora.'
 
+$b079WithoutSecurityLevel = $b079 -replace '(?m)^\s*\[SecurityLevel\([^)]+\)\]\r?\n', ''
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079($b079WithoutSecurityLevel, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B079 atual deve exigir SecurityLevel explicito.'
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesPreviousB079SecurityLevelContract($b079WithoutSecurityLevel, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'MatchesPreviousB079SecurityLevelContract deve aceitar fonte B079 valido sem SecurityLevel.'
+$b079WithoutSecurityLevelOrPost = $b079WithoutSecurityLevel -replace '(?m)^\s*\[RestMethod\(POST\)\]\r?\n', ''
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesPreviousB079SecurityLevelContract($b079WithoutSecurityLevelOrPost, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'MatchesPreviousB079SecurityLevelContract deve rejeitar fontes sem RestMethod(POST).'
+
 Write-Output 'PASS: ApiPlanServiceSourceContract'

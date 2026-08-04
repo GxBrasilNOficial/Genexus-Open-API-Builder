@@ -66,6 +66,32 @@ public static class ApiPlanServiceSourceContract
         return Matches(source, apiName, transactionName, moduleTarget, services, primaryKeyNames, true, listFilterNames, hasListContract, true, false);
     }
 
+    public static bool MatchesPreviousB079SecurityLevelContract(
+        string source,
+        string apiName,
+        string transactionName,
+        string moduleTarget,
+        IEnumerable<string> services,
+        IEnumerable<string> primaryKeyNames,
+        IEnumerable<string> listFilterNames,
+        bool hasListContract)
+    {
+        return Matches(
+            source,
+            apiName,
+            transactionName,
+            moduleTarget,
+            services,
+            primaryKeyNames,
+            true,
+            listFilterNames,
+            hasListContract,
+            hasRestRuntimeContract: true,
+            exposeErrorResponse: true,
+            validateRestMethods: true,
+            validateSecurityLevel: false);
+    }
+
     public static bool MatchesPreviousB079RestMethodContract(
         string source,
         string apiName,
@@ -76,7 +102,20 @@ public static class ApiPlanServiceSourceContract
         IEnumerable<string> listFilterNames,
         bool hasListContract)
     {
-        return Matches(source, apiName, transactionName, moduleTarget, services, primaryKeyNames, true, listFilterNames, hasListContract, true, true, validateRestMethods: false);
+        return Matches(
+            source,
+            apiName,
+            transactionName,
+            moduleTarget,
+            services,
+            primaryKeyNames,
+            true,
+            listFilterNames,
+            hasListContract,
+            hasRestRuntimeContract: true,
+            exposeErrorResponse: true,
+            validateRestMethods: false,
+            validateSecurityLevel: false);
     }
 
     private static bool Matches(
@@ -120,7 +159,8 @@ public static class ApiPlanServiceSourceContract
         bool hasListContract,
         bool hasRestRuntimeContract,
         bool exposeErrorResponse,
-        bool validateRestMethods = true)
+        bool validateRestMethods = true,
+        bool validateSecurityLevel = true)
     {
         if (string.IsNullOrWhiteSpace(source) ||
             string.IsNullOrWhiteSpace(apiName) ||
@@ -158,7 +198,7 @@ public static class ApiPlanServiceSourceContract
         }
 
         if (hasRestRuntimeContract &&
-            validateRestMethods &&
+            validateSecurityLevel &&
             compactSource.IndexOf("[SecurityLevel(", StringComparison.Ordinal) < 0)
         {
             return false;

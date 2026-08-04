@@ -1,19 +1,19 @@
 # B093 — Aplicação Explícita do Security Level no API Object
 
-**Projeto:** Genexus Open API Builder  
-**Frente:** B093 — Aplicar o Security Level explicitamente em todos os serviços do API Object gerado (Sprint 6)  
-**Data:** 2026-08-03  
+**Projeto:** Genexus Open API Builder
+**Frente:** B093 — Aplicar o Security Level explicitamente em todos os serviços do API Object gerado (Sprint 6)
+**Data:** 2026-08-03
 
 ---
 
 ## 1. Contexto e Diagnóstico
 
 Antes desta frente, o wizard oferecia três níveis de segurança — `Authentication`, `Authorization` e `None`. O valor selecionado entrava no `ApiPlan`, era persistido na metadata (B065) e a condição GAM correspondente era resolvida no plano (B092):
-- `Authentication` ➔ `GAM_AUTHENTICATION_REQUIRED` (`RequiresGenerationConfirmation=False`)
-- `Authorization` ➔ `GAM_AUTHORIZATION_REQUIRED_PENDING_PERMISSIONS` (`RequiresGenerationConfirmation=True`)
-- `None` ➔ `NO_GAM_SECURITY_PUBLIC_API` (`RequiresGenerationConfirmation=True`)
+- `Authentication` -> `GAM_AUTHENTICATION_REQUIRED` (`RequiresGenerationConfirmation=False`)
+- `Authorization` -> `GAM_AUTHORIZATION_REQUIRED_PENDING_PERMISSIONS` (`RequiresGenerationConfirmation=True`)
+- `None` -> `NO_GAM_SECURITY_PUBLIC_API` (`RequiresGenerationConfirmation=True`)
 
-Porém, essa escolha não era emitida no objeto `API` gerado: nem `ApiPlanBusinessComponentWriter.cs` nem `ApiPlanListProcedureWriter.cs` aplicavam anotações `[SecurityLevel(...)]` nos serviços. Na ausência de anotação explícita, a IDE/gerador GeneXus herdava a configuração padrão da KB (`Authentication`), fazendo com que nos três casos a API gerada e o YAML OpenAPI saíssem idênticos.
+Porém, essa escolha não era emitida no objeto `API` gerado: nem `ApiPlanBusinessComponentWriter.cs` nem `ApiPlanListProcedureWriter.cs` aplicavam anotações `[SecurityLevel(...)]` nos serviços. Na ausência de anotação explícita, a IDE/gerador GeneXus herdava a configuração padrão da KB (`Authentication`), fazendo com que nos três casos a API gerada e o YAML OpenAPI saíssem com o mesmo comportamento.
 
 ---
 
@@ -23,22 +23,23 @@ Porém, essa escolha não era emitida no objeto `API` gerado: nem `ApiPlanBusine
    - Em `Src/Extension/Diagnostics/ApiPlanBusinessComponentWriter.cs`: a geração de anotações por serviço (`ServiceAnnotations`) passou a incluir `[SecurityLevel({plan.Security.SecurityLevel})]`.
    - Em `Src/Extension/Diagnostics/ApiPlanListProcedureWriter.cs`: a mesma inclusão foi feita na resincronização de `List`, garantindo que o writer de `List` não apague a marcação de segurança aplicada anteriormente.
 
-2. **Parser de Contrato (`ApiPlanServiceSourceContract.cs`):**
-   - Atualizado para exigir `[SecurityLevel(` na validação de contrato runtime quando `hasRestRuntimeContract` e `validateRestMethods` forem verdadeiros.
+2. **Parser de Contrato & Especificidade de Reencontro (`ApiPlanServiceSourceContract.cs`):**
+   - Atualizado para exigir `[SecurityLevel(` na validação de contrato runtime quando `hasRestRuntimeContract` e `validateSecurityLevel` forem verdadeiros.
+   - Criado o matcher `MatchesPreviousB079SecurityLevelContract` para aceitar objetos de API gerados na B079 (sem `[SecurityLevel]`), mantendo a validação estrita de `[RestMethod(POST)]`, `[RestMethod(PUT)]` e parâmetro de rota `{&Chave}`, sem forçar o uso do fallback frouxo `MatchesPreviousB079RestMethodContract`.
 
-3. **Integridade B067 e Compatibilidade Reencontro (`ApiPlanMetadataFileWriter.cs`):**
+3. **Integridade B067 e Compatibilidade de Reencontro (`ApiPlanMetadataFileWriter.cs`):**
    - Adicionado o utilitário `RemoveServiceSourceSecurityLevelAnnotations` para gerar variantes de fontes legadas em `CreateCompatibleServiceSourceVariants`, permitindo que objetos de API criados antes de B093 continuem sendo reencontrados de forma conservadora.
 
 4. **Testes Unitários e Trava Automatizada:**
    - `Tests/BusinessComponentWriter/Test-ApiPlanBusinessComponentWriterVariableContract.ps1`: valida a presença de `[SecurityLevel({plan.Security.SecurityLevel})]` em `ApiPlanBusinessComponentWriter.cs`.
    - `Tests/OpenApiContract/Test-ApiPlanOpenApiContractMarks.ps1`: valida a trava de emissão explícita de `[SecurityLevel(...)]` em ambos os writers (`Business Component` e `List`).
-   - `Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract.ps1`: atualizado com a anotação `[SecurityLevel(Authentication)]` no fixture de contrato `$b079`.
+   - `Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract.ps1`: atualizado com a anotação `[SecurityLevel(Authentication)]` no fixture `$b079` e com asserções estritas para `MatchesPreviousB079SecurityLevelContract`.
 
 ---
 
-## 3. Validação Mecânica
+## 3. Validação Mecânica & Prova do Gate por Mutação
 
-Os 9 testes unitários locais e o build Release da solução foram executados e aprovados com sucesso:
+Os 9 testes unitários locais e o build Release foram executados e aprovados com sucesso:
 - `tests.serviceSourceContract`: PASSED
 - `tests.metadataIntegrity`: PASSED
 - `tests.wizardPreferences`: PASSED
@@ -51,29 +52,143 @@ Os 9 testes unitários locais e o build Release da solução foram executados e 
 - `dotnet.restore`: PASSED
 - `dotnet.build`: PASSED (0 Erros, 0 Avisos)
 
+### Prova de Eficácia do Gate por Mutação
+A trava de `[SecurityLevel(...)]` em `Test-ApiPlanOpenApiContractMarks.ps1` foi submetida a teste por mutação:
+- A remoção temporária da linha `[SecurityLevel(...)]` em `ApiPlanBusinessComponentWriter.cs` causou a falha imediata da suíte (`ASSERT_CONTAINS_FAILED: Writer de Business Component deve aplicar SecurityLevel em cada servico do API Object`).
+- A restauração do código reestabeleceu a aprovação limpa (`PASS: ApiPlanOpenApiContractMarks`).
+
 ---
 
-## 4. Evidência da Validação Manual na IDE (GeneXus 18 Upgrade 15)
+## 4. Evidências do Runtime HTTP e Contrato OpenAPI (GeneXus 18 U15)
 
-A DLL foi instalada via `Install-ExtensionForGeneXus18.bat` e a regeração do objeto `apiNotaFiscal` foi testada nos três níveis de segurança:
+### A. Prova das Requisições HTTP em Runtime (Dois Ambientes)
 
-1. **Nível `Authorization`:**
-   - Wizard configurado com `SecurityLevel='Authorization'`, resolvendo `GAM_AUTHORIZATION_REQUIRED_PENDING_PERMISSIONS`.
-   - `Service Source` regerado com `[SecurityLevel(Authorization)]` nos 4 serviços (`List`, `Get`, `Create`, `Update`).
-   - `Build All` especificou, gerou C#, SDTs, documentação REST e acionou `GAM Permissions Creation`: `Generating Permission apiNotaFiscal-06e86b6b-8fbd-4d93-8a23-21bf07019c2b (1 of 1)`. `Success: Build All`.
+#### 1. Nível `SecurityLevel = Authentication`
 
-2. **Nível `None`:**
-   - Wizard configurado com `SecurityLevel='None'`, resolvendo `NO_GAM_SECURITY_PUBLIC_API`.
-   - `Service Source` regerado com `[SecurityLevel(None)]` nos 4 serviços.
-   - `Build All` especificou, gerou C#, SDTs e documentação REST OpenAPI sem exigir autenticação GAM nos endpoints. `Success: Build All`.
+##### A. Caminho Negativo (Requisição SEM Token)
+Disparada requisição `GET /apiNotaFiscal/notafiscal` sem o cabeçalho `Authorization`:
 
-3. **Nível `Authentication`:**
-   - Wizard configurado com `SecurityLevel='Authentication'`, resolvendo `GAM_AUTHENTICATION_REQUIRED`.
-   - `Service Source` regerado com `[SecurityLevel(Authentication)]` nos 4 serviços.
-   - Metadata B060 e integridade B067 reencontradas e regravadas com sucesso. `Success: Build All`.
+- **.NET Framework / SQL Server (`http://localhost/wsEducacaoSpTesteNETFrameworkSQLServer/apiNotaFiscal/notafiscal`):**
+  ```http
+  HTTP/1.1 401 Unauthorized
+  Content-Type: application/json; charset=utf-8
 
-4. **Validação nos Dois Geradores / Ambientes:**
-   - **Environment `.NET Framework` / SQL Server (`NETFrameworkSQLServer004`):** `Build All` especificou `apiNotaFiscal` e as Procedures, gerou o código C#, compilou a solução com `MSBuild.exe`, atualizou `web.config` e criou a permissão GAM com sucesso.
-   - **Environment `.NET` / PostgreSQL (`NETPostgreSQL155`):** `Build All` especificou `apiNotaFiscal` e as Procedures, gerou `apinotafiscal_services.cs`, compilou a solução com `dotnet publish`, atualizou `appsettings.json` e criou a permissão GAM com sucesso.
+  {"error":{"code":"0","message":"This service needs an Authorization Header"}}
+  ```
 
+- **.NET Core / PostgreSQL (`http://localhost/wsEducacaoSpTesteNETPostgreSQL/apiNotaFiscal/notafiscal`):**
+  ```http
+  HTTP/1.1 401 Unauthorized
+  Content-Type: application/json; charset=utf-8
 
+  {"error":{"code":"0","message":"This service needs an Authorization Header"}}
+  ```
+
+##### B. Caminho Positivo (Requisição COM Token OAuth GAM)
+Token OAuth 2.0 obtido via `POST /oauth/gam/v2.0/access_token` (`grant_type=password`, `scope=gam_user_data`, credenciais locais de `Temp/wsEducacaoSpTeste-local-test-environments.md`).
+
+Disparada requisição `GET /apiNotaFiscal/notafiscal` com cabeçalho `Authorization: Bearer <token>`:
+
+- **.NET Framework / SQL Server:**
+  ```http
+  HTTP/1.1 200 OK
+  Content-Type: application/json; charset=utf-8
+
+  {"Items":[{"NotaFiscalId":"1","NotaFiscalSerie":"CE","NotaFiscalNumero":"********"},{"NotaFiscalId":"4","NotaFiscalSerie":"CD","NotaFiscalNumero":"********"},{"NotaFiscalId":"5","NotaFiscalSerie":"RQ","NotaFiscalNumero":"********"},{"NotaFiscalId":"6","NotaFiscalSerie":"RF","NotaFiscalNumero":"********"},{"NotaFiscalId":"7","NotaFiscalSerie":"RH","NotaFiscalNumero":"********"},{"NotaFiscalId":"8","NotaFiscalSerie":"U09","NotaFiscalNumero":"5849"},{"NotaFiscalId":"9","NotaFiscalSerie":"L10","NotaFiscalNumero":"1726"},{"NotaFiscalId":"10","NotaFiscalSerie":"L10","NotaFiscalNumero":"1727"},{"NotaFiscalId":"11","NotaFiscalSerie":"L10","NotaFiscalNumero":"1728"},{"NotaFiscalId":"12","NotaFiscalSerie":"B2","NotaFiscalNumero":"7001"},{"NotaFiscalId":"13","NotaFiscalSerie":"S12","NotaFiscalNumero":"73078"},{"NotaFiscalId":"14","NotaFiscalSerie":"S60","NotaFiscalNumero":"21768"},{"NotaFiscalId":"15","NotaFiscalSerie":"S18","NotaFiscalNumero":"28595"},{"NotaFiscalId":"16","NotaFiscalSerie":"GOA","NotaFiscalNumero":"91001"},{"NotaFiscalId":"17","NotaFiscalSerie":"NON","NotaFiscalNumero":"9991"}],"Pagination":{"Page":"1","PageSize":"50","TotalCount":"15","TotalPages":"1"},"AppliedFilters":{"NotaFiscalId":null,"NotaFiscalNumero":null}}
+  ```
+
+- **.NET Core / PostgreSQL:**
+  ```http
+  HTTP/1.1 200 OK
+  Content-Type: application/json; charset=utf-8
+
+  {"Items":[{"NotaFiscalId":"1","NotaFiscalSerie":"1","NotaFiscalNumero":"123"},{"NotaFiscalId":"2","NotaFiscalSerie":"U60","NotaFiscalNumero":"920833"},{"NotaFiscalId":"3","NotaFiscalSerie":"T12","NotaFiscalNumero":"120101"},{"NotaFiscalId":"4","NotaFiscalSerie":"C3","NotaFiscalNumero":"7002"}],"Pagination":{"Page":"1","PageSize":"50","TotalCount":"4","TotalPages":"1"},"AppliedFilters":{"NotaFiscalId":null,"NotaFiscalNumero":null}}
+  ```
+
+**Comprovação:** Sob `Authentication`, a API rejeita requisições sem token com **HTTP 401** e responde com **HTTP 200 OK** contendo os dados paginados quando munida de Bearer Token válido.
+
+---
+
+#### 2. Nível `SecurityLevel = None`
+
+Com `SecurityLevel = None` aplicado no Wizard e compilado na KB, o motor C# (`apinotafiscal.cs`) emite `GAMSecurityLevel.SecurityNone` em todos os métodos, desativando a verificação de credenciais GAM:
+
+##### A. Requisição HTTP GET (List) Pública sem Token
+- **.NET Framework / SQL Server:** **`HTTP 200 OK`**
+  ```json
+  {"Items":[{"NotaFiscalId":"1","NotaFiscalSerie":"CE","NotaFiscalNumero":"********"},...],"Pagination":{"Page":"1","PageSize":"50","TotalCount":"14","TotalPages":"1"},"AppliedFilters":{"NotaFiscalId":null,"NotaFiscalNumero":null}}
+  ```
+- **.NET Core / PostgreSQL:** **`HTTP 200 OK`**
+  ```json
+  {"Items":[{"NotaFiscalId":"1","NotaFiscalSerie":"1","NotaFiscalNumero":"123"},...],"Pagination":{"Page":"1","PageSize":"50","TotalCount":"4","TotalPages":"1"},"AppliedFilters":{"NotaFiscalId":null,"NotaFiscalNumero":null}}
+  ```
+
+##### B. Requisição HTTP POST (Create) Pública sem Token
+- **Endpoint:** `POST http://localhost/wsEducacaoSpTesteNETFrameworkSQLServer/apiNotaFiscal/notafiscal`
+- **Body:** `{"CreateRequest":{"NotaFiscalSerie":"NON","NotaFiscalNumero":9991}}`
+- **Resposta:** **`HTTP 201 Created`**
+  ```json
+  {"CreateResponse":{"NotaFiscalId":"17","NotaFiscalSerie":"NON","NotaFiscalNumero":"9991"},"ErrorResponse":{"Code":"","Message":""}}
+  ```
+
+---
+
+### B. Prova do Código C# Compilado e Arquivos OpenAPI Gerados
+
+#### 1. Código C# Compilado Nativo (`apinotafiscal.cs`)
+
+- **Sob `SecurityLevel = Authentication`:**
+  ```csharp
+  protected override GAMSecurityLevel ApiIntegratedSecurityLevel( string permissionMethod )
+  {
+      if ( StringUtil.StrCmp(permissionMethod, "gxep_list") == 0 ) return GAMSecurityLevel.SecurityAuthentication ;
+      else if ( StringUtil.StrCmp(permissionMethod, "gxep_get") == 0 ) return GAMSecurityLevel.SecurityAuthentication ;
+      else if ( StringUtil.StrCmp(permissionMethod, "gxep_create") == 0 ) return GAMSecurityLevel.SecurityAuthentication ;
+      else if ( StringUtil.StrCmp(permissionMethod, "gxep_update") == 0 ) return GAMSecurityLevel.SecurityAuthentication ;
+      return GAMSecurityLevel.SecurityHigh ;
+  }
+  ```
+
+- **Sob `SecurityLevel = None`:**
+  ```csharp
+  protected override GAMSecurityLevel ApiIntegratedSecurityLevel( string permissionMethod )
+  {
+      if ( StringUtil.StrCmp(permissionMethod, "gxep_list") == 0 ) return GAMSecurityLevel.SecurityNone ;
+      else if ( StringUtil.StrCmp(permissionMethod, "gxep_get") == 0 ) return GAMSecurityLevel.SecurityNone ;
+      else if ( StringUtil.StrCmp(permissionMethod, "gxep_create") == 0 ) return GAMSecurityLevel.SecurityNone ;
+      else if ( StringUtil.StrCmp(permissionMethod, "gxep_update") == 0 ) return GAMSecurityLevel.SecurityNone ;
+      return GAMSecurityLevel.SecurityHigh ;
+  }
+  ```
+
+#### 2. Metadados Auditáveis do OpenAPI YAML em Disco
+
+- **Sob `SecurityLevel = None`:**
+  - **.NET Framework:** `C:\KBs\wsEducacaoSpTeste\NETFrameworkSQLServer004\web\apiNotaFiscal.yaml` (mtime 2026-08-04 06:42:49, `version: "20260804094249"`).
+  - **.NET Core:** `C:\KBs\wsEducacaoSpTeste\NETPostgreSQL155\web\apiNotaFiscal.yaml` (mtime 2026-08-04 06:44:47, `version: "20260804094447"`).
+
+- **Sob `SecurityLevel = Authentication`:**
+  - **.NET Framework:** `C:\KBs\wsEducacaoSpTeste\NETFrameworkSQLServer004\web\apiNotaFiscal.yaml` (mtime 2026-08-04 06:52:36, `version: "20260804095236"`).
+  - **.NET Core:** `C:\KBs\wsEducacaoSpTeste\NETPostgreSQL155\web\apiNotaFiscal.yaml` (mtime 2026-08-04 06:50:25, `version: "20260804095025"`).
+
+*Nota de Reconciliação:* O gerador nativo de documentação REST OpenAPI do GeneXus 18 U15 gera a seção `security: - oAuthGXGAM: []` quando a propriedade global da KB possui GAM ativado. Contudo, a aplicação efetiva da segurança em nível de endpoint HTTP é regida pelo trecho C# compilado (`ApiIntegratedSecurityLevel`), o qual alterna dinamicamente entre `SecurityNone` (acesso público direto) e `SecurityAuthentication` (bloqueio 401 / liberação 200 via Bearer Token).
+
+---
+
+## 5. Limitações
+
+- A anotação `[SecurityLevel(...)]` é aplicada no nível dos serviços do objeto `API`. O escopo de papéis/permissões granulares GAM por método continua sendo gerenciado via GAM Backoffice.
+- O gerador nativo OpenAPI do GeneXus não permite customizar o nome do esquema de segurança no YAML (`oAuthGXGAM`).
+
+---
+
+## 6. Alternativas Descartadas
+
+- **Herdar Security Level do Environment/Objeto sem anotação por serviço:** Descartada porque fazia o wizard ter escolhas na UI de `None` e `Authorization` sem efeito no objeto gerado.
+- **Usar o matcher de fallback `MatchesPreviousB079RestMethodContract` para migração B093:** Descartada por ser excessivamente permissiva (desativava também checagem de `RestMethod` e `{&Chave}`). Foi criado `MatchesPreviousB079SecurityLevelContract` específico.
+
+---
+
+## 7. Pendências Remanescentes
+
+- Resíduo condicional de `Location` no serviço `Create`, previsto no encerramento de B072/B079.

@@ -148,6 +148,15 @@ internal static class ApiPlanBusinessComponentWriter
                 plan.PrimaryKey.Select(field => field.Name),
                 Array.Empty<string>(),
                 hasListContract: false) ||
+            ApiPlanServiceSourceContract.MatchesPreviousB079SecurityLevelContract(
+                normalizedSource,
+                plan.ApiName,
+                plan.TransactionName,
+                plan.ModuleTarget,
+                plan.Services.Select(service => service.Name),
+                plan.PrimaryKey.Select(field => field.Name),
+                Array.Empty<string>(),
+                hasListContract: false) ||
             ApiPlanServiceSourceContract.MatchesPreviousB079RestMethodContract(
                 normalizedSource,
                 plan.ApiName,
