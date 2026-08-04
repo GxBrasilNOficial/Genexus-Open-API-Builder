@@ -80,4 +80,9 @@ Assert-Contains $apiObjectWriterSource 'return $"REST API for {apiPlan.Transacti
 Assert-NotContains $apiObjectWriterSource 'B054 API Object' 'Descricao publicada nao pode voltar a expor identificador interno de backlog.'
 Assert-NotContains $apiObjectWriterSource 'Procedures=B050-B053' 'Descricao publicada nao pode voltar a expor identificador interno de backlog.'
 
+# 4. Security Level explicitamente aplicado nos servicos do API Object.
+
+Assert-Contains $businessComponentWriterSource 'annotations.Add($"    [SecurityLevel({plan.Security.SecurityLevel})]");' 'Writer de Business Component deve aplicar SecurityLevel em cada servico do API Object.'
+Assert-Contains $listProcedureWriterSource 'annotations.Add($"    [SecurityLevel({plan.Security.SecurityLevel})]");' 'Writer de List deve aplicar SecurityLevel em cada servico do API Object.'
+
 Write-Output 'PASS: ApiPlanOpenApiContractMarks'

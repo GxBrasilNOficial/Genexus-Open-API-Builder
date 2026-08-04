@@ -80,17 +80,21 @@ $b079 = @'
 apiSimulationResult
 {
     [RestPath("/simulationresult")]
+    [SecurityLevel(Authentication)]
     List(in: &ApiPage, in: &ApiPageSize, in: &SimulationResultId, out: &ListResponse)
         => Entities.procSimulationResult_API_List(&ApiPage, &ApiPageSize, &SimulationResultId, &ListResponse);
     [RestPath("/simulationresult/{&SimulationResultId}")]
+    [SecurityLevel(Authentication)]
     Get(in: &SimulationResultId, out: &GetResponse, out: &ErrorResponse)
         => Entities.procSimulationResult_API_Get(&SimulationResultId, &GetResponse, &ErrorResponse, &RestStatusCode);
     [RestMethod(POST)]
     [RestPath("/simulationresult")]
+    [SecurityLevel(Authentication)]
     Create(in: &CreateRequest, out: &CreateResponse, out: &ErrorResponse)
         => Entities.procSimulationResult_API_Create(&CreateRequest, &CreateResponse, &ErrorResponse, &RestStatusCode);
     [RestMethod(PUT)]
     [RestPath("/simulationresult/{&SimulationResultId}")]
+    [SecurityLevel(Authentication)]
     Update(in: &SimulationResultId, in: &UpdateRequest, out: &UpdateResponse, out: &ErrorResponse)
         => Entities.procSimulationResult_API_Update(&SimulationResultId, &UpdateRequest, &UpdateResponse, &ErrorResponse, &RestStatusCode);
 }

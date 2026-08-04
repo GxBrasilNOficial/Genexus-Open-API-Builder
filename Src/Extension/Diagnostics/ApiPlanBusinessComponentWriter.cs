@@ -1916,6 +1916,7 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         annotations.Add($"    [RestPath(\"{EscapeDescription(ResolveService(plan, service).RestPath.Trim())}\")]");
+        annotations.Add($"    [SecurityLevel({plan.Security.SecurityLevel})]");
         return string.Join(Environment.NewLine, annotations) + Environment.NewLine;
     }
 

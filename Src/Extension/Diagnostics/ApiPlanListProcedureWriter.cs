@@ -915,6 +915,7 @@ internal static class ApiPlanListProcedureWriter
         }
 
         annotations.Add($"    [RestPath(\"{EscapeDescription(servicePlan.RestPath.Trim())}\")]");
+        annotations.Add($"    [SecurityLevel({plan.Security.SecurityLevel})]");
         return string.Join(Environment.NewLine, annotations) + Environment.NewLine;
     }
 

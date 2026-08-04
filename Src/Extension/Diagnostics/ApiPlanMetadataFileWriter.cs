@@ -604,16 +604,22 @@ internal static class ApiPlanMetadataFileWriter
         var withoutPutOrRestPath = RemoveServiceSourceRestPathAnnotations(withoutPut);
         var legacyPathWithoutPutOrRestPath = RemoveServiceSourceRestPathAnnotations(legacyPathWithoutPut);
 
+        var withoutSecurityLevel = RemoveServiceSourceSecurityLevelAnnotations(source);
+
         return new[]
         {
             source,
             legacyPath,
             withoutPut,
             withoutRestPath,
+            withoutSecurityLevel,
             legacyPathWithoutPut,
             legacyPathWithoutRestPath,
             withoutPutOrRestPath,
             legacyPathWithoutPutOrRestPath,
+            RemoveServiceSourceSecurityLevelAnnotations(legacyPath),
+            RemoveServiceSourceSecurityLevelAnnotations(withoutPut),
+            RemoveServiceSourceSecurityLevelAnnotations(withoutRestPath),
         };
     }
 
@@ -662,6 +668,15 @@ internal static class ApiPlanMetadataFileWriter
             NormalizeForComparison(source)
                 .Split('\n')
                 .Where(line => !line.TrimStart().StartsWith("[RestPath(", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static string RemoveServiceSourceSecurityLevelAnnotations(string source)
+    {
+        return string.Join(
+            Environment.NewLine,
+            NormalizeForComparison(source)
+                .Split('\n')
+                .Where(line => !line.TrimStart().StartsWith("[SecurityLevel(", StringComparison.OrdinalIgnoreCase)));
     }
 
     private static bool IsActualB070WithBusinessComponent(ApiPlan apiPlan, API apiObject)

@@ -23,6 +23,7 @@ function Assert-NotContains {
 Assert-Contains $source 'new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse")' 'Create/Update devem declarar ErrorResponse como corpo publico de erro.'
 Assert-Contains $source '[RestMethod({method.ToUpperInvariant()})]' 'API Object deve projetar RestMethod planejado, incluindo PUT no Update.'
 Assert-Contains $source '[RestPath(\"{EscapeDescription(ResolveService(plan, service).RestPath.Trim())}\")]' 'API Object deve projetar RestPath planejado em cada servico REST.'
+Assert-Contains $source '[SecurityLevel({plan.Security.SecurityLevel})]' 'API Object deve projetar SecurityLevel explicitamente em cada servico REST.'
 Assert-Contains $apiPlanSource '"{&" + item.Name + "}"' 'ApiPlan deve gerar RestPath parametrizado com variavel GeneXus para o runtime casar path params.'
 Assert-Contains $source 'MatchesPreviousB079RestMethodContract' 'Preflight deve reconhecer a versao B079 anterior apenas como migravel quando faltar PUT/RestPath.'
 Assert-Contains $source '&ErrorResponse.Code = !\"validation_error\"' 'Procedure deve popular codigo de erro top-level para falha de regra de negocio.'

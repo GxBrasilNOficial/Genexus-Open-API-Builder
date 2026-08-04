@@ -159,6 +159,13 @@ public static class ApiPlanServiceSourceContract
 
         if (hasRestRuntimeContract &&
             validateRestMethods &&
+            compactSource.IndexOf("[SecurityLevel(", StringComparison.Ordinal) < 0)
+        {
+            return false;
+        }
+
+        if (hasRestRuntimeContract &&
+            validateRestMethods &&
             normalizedPrimaryKeyNames.Length > 0 &&
             normalizedServices.Any(service => string.Equals(service, "Get", StringComparison.OrdinalIgnoreCase) || string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase)) &&
             !normalizedPrimaryKeyNames.All(name => compactSource.IndexOf("{&" + name + "}", StringComparison.Ordinal) >= 0))
