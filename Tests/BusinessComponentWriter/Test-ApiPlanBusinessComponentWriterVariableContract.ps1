@@ -22,7 +22,7 @@ function Assert-NotContains {
 
 Assert-Contains $source 'new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse")' 'Create/Update devem declarar ErrorResponse como corpo publico de erro.'
 Assert-Contains $source 'new VariableSpec("HttpResponse", "HttpResponse")' 'Create deve declarar a variavel HttpResponse para emissao de cabecalhos HTTP.'
-Assert-Contains $source '&HttpResponse.AddHeader(!"Location",' 'Create deve emitir o cabecalho Location apontando para o recurso recem-criado quando responder 201.'
+Assert-Contains $source '&HttpResponse.AddHeader(!\"Location\",' 'Create deve emitir o cabecalho Location apontando para o recurso recem-criado quando responder 201.'
 Assert-Contains $source 'PreviousB079CreateContentWithoutLocationHeader' 'Preflight deve migrar Procedure Create gerada antes da inclusao do cabecalho Location.'
 Assert-Contains $source '[RestMethod({method.ToUpperInvariant()})]' 'API Object deve projetar RestMethod planejado, incluindo PUT no Update.'
 Assert-Contains $source '[RestPath(\"{EscapeDescription(ResolveService(plan, service).RestPath.Trim())}\")]' 'API Object deve projetar RestPath planejado em cada servico REST.'

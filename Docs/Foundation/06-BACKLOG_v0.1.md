@@ -168,7 +168,7 @@ Se B004 falhar sem alternativa oficial viável:
 | B044 | Gerar `sdt<Nome>_API_ListResponse` com envelope | Alta |
 | B045 | Gerar/reencontrar SDTs compartilhados em `GxOpenAPI` | Alta |
 | B046 | Validar `sdt_API_ErrorResponse` e `sdt_API_Pagination` conforme documento 27 | Alta |
-| B047 | Validar nomes `_API_` no YAML e em ao menos um gerador de cliente OpenAPI | Alta |
+| B047 | Validar no YAML gerado rotas, métodos, SDTs, segurança, nomes `_API_` e gerador de cliente OpenAPI | Alta |
 
 ---
 

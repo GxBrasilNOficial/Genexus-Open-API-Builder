@@ -605,7 +605,7 @@ Os seguintes experimentos são gates transversais do MVP. Sua comprovação ser�
 1. A extensão carrega e funciona no GeneXus 18 U14 ou posterior, com validação inicial no U15.
 2. O SDK público permite criar, salvar, reabrir, alterar e excluir objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`.
 3. O objeto `API` delega às Procedures e persiste corretamente `RestMethod`, `RestPath`, `Description` e `SecurityLevel`.
-4. O YAML gerado pelo GeneXus reflete corretamente rotas, métodos, parâmetros, SDTs e nomes com `_API_`.
+4. O YAML gerado pelo GeneXus reflete corretamente rotas, métodos, parâmetros, SDTs e nomes com `_API_`. Ver a emenda técnica de 2026-08-04.
 5. `Create` e `Update` via BC funcionam com chave simples e composta, preservando regras da Transaction e mensagens do BC.
 6. Nos filtros de `List`, a implementação distingue membro JSON ausente de membro presente com vazio, `false` ou zero; no corpo de `Create` e `Update`, o campo obrigatório não preenchido é recusado com `400`. Sem campos públicos `Specified`. Ver a emenda técnica de 2026-08-03.
 7. A implementação controla códigos HTTP, corpo da resposta e cabeçalho `Location`.
@@ -628,3 +628,10 @@ Não bloquearão o MVP:
 - A auditoria e o alinhamento dos documentos `Foundation` foram concluídos.
 - A implementação está liberada para começar pela Sprint 0 — Preparação.
 - O estado operacional e a próxima ação executável são mantidos no [checkpoint do projeto](../STATUS_ATUAL_E_PROXIMO_PASSO.md).
+
+## Emenda técnica — 2026-08-04
+
+- **Gate 4 e Gate da Sprint 6**: Aprovados com ressalva em 2026-08-04 após validação nos geradores `.NET Framework / SQL Server` e `.NET / PostgreSQL`.
+- Os serviços `List`, `Get`, `Create` e `Update` estão operacionais, seguros e refletidos no YAML gerado pelo GeneXus com rotas, métodos, `operationId`s no padrão `apiNome.Serviço`, schemas `_API_` sem o nível `Errors` em `sdt_API_ErrorResponse` e bloco `security` com `oAuthGXGAM` ativado por serviço (B093).
+- A conformidade de identificadores `_API_` e `operationIds` para geradores de cliente OpenAPI foi validada empiricamente via `openapi-generator-cli 5.3.1` (geradores `typescript-fetch` e `csharp`) com 0 erros, gerando os métodos `apiNotaFiscalList`, `apiNotaFiscalGet`, `apiNotaFiscalCreate` e `apiNotaFiscalUpdate` e preservando as classes de modelo `_API_`, além de respaldada pelo teste automatizado `Tests/OpenApiContract/Test-OpenApiClientContractValidity.ps1`.
+- A ressalva documental limita-se às respostas HTTP declaradas no YAML nativo, mantidas restritas a 200/404 pelo gerador nativo do GeneXus (`Swagger.Yaml.stg`), enquanto em runtime o serviço `Create` responde HTTP 201 e falhas de autenticação/validação respondem 401/404/400.

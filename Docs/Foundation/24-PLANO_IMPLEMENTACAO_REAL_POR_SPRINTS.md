@@ -132,7 +132,7 @@ Os gates abaixo são comprovados progressivamente nas Sprints 1–7. A Sprint 1 
 1. extensão carregou no GeneXus 18 U15; a confirmação do limite inferior U14 permanece pendente
 2. SDK cria, salva, reabre, altera e exclui objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`
 3. objeto `API` delega às Procedures e persiste `RestMethod`, `RestPath`, `Description` e `SecurityLevel`
-4. YAML gerado pelo GeneXus reflete rotas, métodos, parâmetros, SDTs e nomes `_API_`
+4. YAML gerado pelo GeneXus reflete rotas, métodos, parâmetros, SDTs e nomes `_API_` (aprovado com ressalva das respostas HTTP declaradas 200/404 no YAML nativo)
 5. `Create` e `Update` via BC funcionam com chave simples e composta, preservando regras e mensagens
 6. filtro de `List` ausente é distinguido de vazio, `false` e zero, e campo obrigatório não preenchido é recusado com 400, sem membros públicos `Specified`
 7. implementação controla códigos HTTP, corpo e `Location`, respeitando seu caráter opcional
@@ -294,7 +294,7 @@ Completar o comportamento REST sobre os objetos já criados e aplicar explicitam
 
 ## Gate
 
-List, Get, Create e Update funcionais, seguros e refletidos corretamente no YAML gerado pelo GeneXus.
+Gate da Sprint 6 aprovado com ressalva em 2026-08-04: List, Get, Create e Update estão funcionais, seguros e refletidos corretamente no YAML gerado nos dois geradores (.NET Framework/SQL Server e .NET/PostgreSQL) com GAM OAuth2. Os elementos de contrato (rotas, métodos, operationIds no padrão `apiNome.Serviço`, SDTs sem o nível `Errors` e bloco `security` com `oAuthGXGAM` por serviço B093) estão validados com evidência registrada em `Docs/Implementation/2026-08-04-VALIDACAO-YAML-SPRINT6-EIXOS-SEGURANCA.md`. O cabeçalho `Location` no serviço `Create` é emitido nativamente via `HttpResponse.AddHeader(!"Location", ...)`. A ressalva limita-se às respostas HTTP declaradas no YAML nativo, mantidas restritas aos status 200 e 404 pelo template `Swagger.Yaml.stg` da instalação GeneXus, enquanto em runtime o serviço `Create` responde HTTP 201 e falhas respondem 401/404/400. A conformidade de identificadores `_API_` e `operationIds` para geradores de cliente OpenAPI está atestada pelo teste automatizado off-line `Test-OpenApiClientContractValidity.ps1`.
 
 [F12][F26][F27][SPR-F24]
 

@@ -227,7 +227,7 @@ Não gerar endpoint `Delete`.
 
 `Update` retorna 200 com Response completo. Contrato completo em `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md`.
 
-`Create` retorna 201. O cabeçalho `Location` é desejável, mas só será gerado se houver suporte nativo simples.
+`Create` retorna 201 e emite nativamente o cabeçalho `Location: /<entidade>/<id>` via `&HttpResponse.AddHeader(!"Location", ...)`.
 
 ## Nota de revisão — 2026-08-03
 

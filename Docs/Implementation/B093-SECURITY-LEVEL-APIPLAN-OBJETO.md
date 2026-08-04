@@ -191,4 +191,4 @@ Com `SecurityLevel = None` aplicado no Wizard e compilado na KB, o motor C# (`ap
 
 ## 7. Pendências Remanescentes
 
-- Resíduo condicional de `Location` no serviço `Create`, previsto no encerramento de B072/B079.
+- Nenhuma pendência remanescente. O resíduo condicional de `Location` no serviço `Create` foi concluído e validado nativamente via `&HttpResponse.AddHeader(!"Location", ...)` com resposta `HTTP 201 Created` e cabeçalho `Location` obtidos em ambos os geradores.

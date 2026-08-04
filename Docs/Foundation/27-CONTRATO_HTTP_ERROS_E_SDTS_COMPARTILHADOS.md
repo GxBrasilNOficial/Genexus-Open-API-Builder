@@ -135,7 +135,7 @@ Nomes externos em JSON/OpenAPI:
 
 Se não for possível distinguir com segurança conflito de regra de negócio, usar `422`, não presumir `409`.
 
-O cabeçalho `Location` no `Create` é desejável, mas não obrigatório no MVP. Ele só deve ser gerado se houver suporte nativo simples no GeneXus; não justifica DLL, `External Object` ou solução complexa.
+O cabeçalho `Location` no `Create` é gerado nativamente via `&HttpResponse.AddHeader(!"Location", ...)` com a URL relativa do recurso criado, sem exigir DLL externa ou `External Object`.
 
 ---
 

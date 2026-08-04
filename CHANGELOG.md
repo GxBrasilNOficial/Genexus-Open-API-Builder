@@ -12,6 +12,11 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Added
 
+- Tratamento do resíduo condicional do cabeçalho `Location` no serviço `Create` (B072/B079) para fecho integral da Sprint 6: o gerador de Procedure Business Component (`ApiPlanBusinessComponentWriter`) passou a emitir `&HttpResponse.AddHeader(!"Location", ...)` nativo e a declarar a variável `HttpResponse` (tipo `HttpResponse, GeneXus.Http`) ao retornar `201 Created`, montando a URL relativa do endpoint `Get` a partir do `RestPath` e da(s) chave(s) primária(s) simples ou composta(s).
+- Fechamento da Sprint 6 com validação das três frentes de encerramento:
+  - **Frente 1 (B047)**: Criado o teste automatizado off-line [`Tests/OpenApiContract/Test-OpenApiClientContractValidity.ps1`](file:///c:/Dev/Knowledge/Genexus-Open-API-Builder/Tests/OpenApiContract/Test-OpenApiClientContractValidity.ps1) para atestar a validade de identificadores `_API_` e `operationIds` para geradores de cliente OpenAPI, integrado à rotina pré-push `scripts/Invoke-PrePushMechanicalChecks.ps1`.
+  - **Frente 2**: Auditoria minuciosa do YAML nos geradores `.NET Framework / SQL Server` e `.NET / PostgreSQL` cobrindo os seis eixos exigidos (rotas, métodos, `operationId`s `apiNome.Serviço`, ausência de DELETE, schemas `_API_` congelados em B062, bloco `security` por serviço B093 e schemas de request/response sem `Errors`), com evidência registrada em [`Docs/Implementation/2026-08-04-VALIDACAO-YAML-SPRINT6-EIXOS-SEGURANCA.md`](file:///c:/Dev/Knowledge/Genexus-Open-API-Builder/Docs/Implementation/2026-08-04-VALIDACAO-YAML-SPRINT6-EIXOS-SEGURANCA.md).
+  - **Frente 3**: Declaração formal do Gate da Sprint 6 e Gate Técnico Transversal 4 como **Aprovados com Ressalva**, com alinhamento documental em `09`, `15`, `24` e emenda técnica datada de 2026-08-04 no registro primário de decisões `Docs/Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md`.
 - Estrutura inicial do repositório
 - Pasta Docs organizada
 - Foundation Docs 00 até 28
