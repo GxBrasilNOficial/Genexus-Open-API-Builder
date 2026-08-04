@@ -245,6 +245,15 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B084 | Bloquear overwrite silencioso | Alta |
 | B085 | Sincronizar com a Transaction usando metadata | Alta |
 | B086 | Remover API gerada por metadata, sem reverter BC | Média |
+| B087 | Ancorar posse na metadata e liberar a `Description` do API Object | Alta |
+
+### Nota operacional — B087, registrada em 2026-08-03
+
+A `Description` do API Object acumula dois papéis: é copiada pelo gerador para `info.description` do contrato OpenAPI, portanto documentação pública, e é a sentinela de posse comparada por igualdade exata antes de qualquer reescrita.
+
+Enquanto o texto era `Genexus Open API Builder B054 API Object - Transaction=... - Procedures=B050-B053`, a acumulação se protegia pela própria feiura: ninguém tentaria melhorar aquela string. Ao retirar o jargão interno do contrato público, a frente registrada em `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md` trocou o texto por uma frase de documentação legível — e, com isso, aumentou a chance de um usuário querer traduzi-la, encurtá-la ou personalizá-la. Qualquer edição faz a API deixar de ser reconhecida como própria e bloqueia a regeração.
+
+B087 separa os dois papéis: a posse passa a ser verificada apenas pela metadata de integridade B067, e a `Description` fica livre para edição humana. O item é anterior à Alpha, porque a Alpha expõe a ferramenta a usuários que não conhecem essa armadilha.
 
 ---
 
@@ -318,7 +327,7 @@ Os itens e intervalos abaixo formam a linha de corte exaustiva do MVP. Um item o
 - Fase 4: B050–B056
 - Fase 5: B060–B067
 - Fase 6: B070–B079
-- Fase 7: B080, B081 e B083–B086
+- Fase 7: B080, B081 e B083–B087
 - Fase 8: B090–B093
 
 `B082` fica fora da linha de corte: mostrar o tempo de execução é útil, mas não comprova contrato funcional, segurança nem ciclo de vida.

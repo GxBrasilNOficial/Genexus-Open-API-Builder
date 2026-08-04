@@ -67,7 +67,7 @@ A string continua acumulando dois papéis: documentação pública e sentinela d
 
 A troca foi feita **sem lista de sentinelas compatíveis**, por decisão explícita do usuário: as APIs existentes estavam todas em KB de teste e seriam regeradas. API gerada com a sentinela anterior deixa de ser reencontrada e precisa ser apagada e regerada.
 
-Separar os dois papéis - ancorar ownership apenas na metadata B067 e liberar a `Description` para edição - permanece como possibilidade de frente futura, não coberta aqui.
+Risco assumido e registrado: a mudança resolve o vazamento, mas piora o perfil de risco da acumulação de papéis. O texto anterior se protegia pela própria feiura - ninguém tentaria melhorar `B054 API Object - Transaction=...`. O novo é uma frase de documentação pública em inglês, que um usuário naturalmente pode querer traduzir ou personalizar, e qualquer edição faz a API deixar de ser reconhecida como própria. Por isso a separação dos dois papéis deixou de ser refinamento futuro e virou item de backlog anterior à Alpha, registrado como `B087` no documento 06 e na Sprint 7 do documento 24.
 
 ## Limitações caracterizadas
 
@@ -135,6 +135,8 @@ Executado localmente em 2026-08-03, a cada iteração de código:
 - `pwsh -NoProfile -File Tests\WizardPreferences\Test-PrototypeWizardPreferences.ps1`;
 - `pwsh -NoProfile -File Tests\WritePreflight\Test-ApiPlanWritePreflightScope.ps1`.
 
+No fechamento da frente foi acrescentado o gate `Tests\OpenApiContract\Test-ApiPlanOpenApiContractMarks.ps1`, registrado no checker pré-push. Ele trava as três marcações que sustentam o contrato: a propriedade `Required` nas variáveis de request do API Object em **ambos** os writers que as recriam, a ausência do nível `Errors` no SDT de erro, e o formato da descrição pública sem identificador interno. A eficácia do gate foi verificada por mutação: removendo a marcação do writer de `List` - a regressão que de fato ocorreu durante esta frente - o teste falha com a mensagem correspondente; restaurada a marcação, volta a passar. `Tests\PrePushChecker\Test-OpenApiBuilderPrePushChecks.ps1` foi atualizado com a fixture e a asserção do novo gate.
+
 ## Validação Funcional na IDE
 
 Executada no GeneXus 18 U15, na Transaction `NotaFiscal` da KB `wsEducacaoSpTeste`, environment `.NET`/PostgreSQL, com os objetos apagados e regerados pelo wizard a cada iteração e Build All concluído com sucesso.
@@ -151,7 +153,22 @@ O Build All regerou a documentação REST das demais APIs da KB sem erro relacio
 
 A sonda temporária `ServiceRequiredPropertyProbe` foi removida do código antes do fechamento, junto com sua chamada no fluxo do wizard.
 
+### Segundo gerador
+
+O environment `.NET Framework`/SQL Server foi rebuildado em seguida, sobre os mesmos objetos da KB. O YAML resultante é **idêntico** ao do `.NET`/PostgreSQL fora de `version`, `servers.url` e `tokenUrl`: mesma descrição pública, mesmo `requestBody: required: true` nos dois endpoints e zero ocorrências de `Errors` no arquivo, contra três antes do build. O contrato não diverge por gerador.
+
+### Prova HTTP do corpo de erro
+
+A forma do corpo de erro mudou - o membro `Errors` desaparece do JSON, inclusive como array vazio nas respostas de sucesso -, então a mudança foi confirmada por requisição real no environment `.NET Framework`/SQL Server, com token OAuth GAM v2.0:
+
+- `GET /notafiscal/999999` devolveu `404` com `ErrorResponse` contendo apenas `Code = "not_found"` e `Message`;
+- `POST /notafiscal` válido devolveu `201`;
+- `PUT /notafiscal/{id}` com obrigatórios vazios devolveu `400` com `Code = "invalid_request"` e a mensagem de membros obrigatórios não preenchidos, confirmando que a semântica de preenchimento sobreviveu à mudança do SDT compartilhado;
+- `PUT /notafiscal/999999` devolveu `404`;
+- `POST /notafiscal` duplicando número devolveu `422` com `Code = "validation_error"`.
+
+Nenhum dos cinco corpos contém `Errors`. O teste criou um registro na base local de teste.
+
 ## Pendências
 
-- validação em environment `.NET Framework`/SQL Server, ainda não repetida nesta frente;
-- validação HTTP de runtime, não repetida porque a frente não altera comportamento de execução, apenas contrato declarado e forma do SDT de erro.
+- nenhuma pendência de validação em aberto nesta frente.

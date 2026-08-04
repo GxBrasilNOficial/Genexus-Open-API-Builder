@@ -314,6 +314,7 @@ Fechar a operação na IDE, o ciclo de vida conservador e a comprovação integr
 - `B084`: bloquear overwrite silencioso e `_v2`
 - `B085`: sincronizar com a Transaction por comparação explícita de metadata
 - `B086`: remover por comando explícito, preservando Folder reutilizado e `GxOpenAPI`
+- `B087`: ancorar a posse apenas na metadata de integridade e liberar a `Description` do API Object para edição humana, conforme a nota operacional do documento 06
 - comprovar rerun consistente e cancelamento sem efeitos colaterais
 - executar a validação integrada final, inclusive dos gates de segurança B092/B093
 
