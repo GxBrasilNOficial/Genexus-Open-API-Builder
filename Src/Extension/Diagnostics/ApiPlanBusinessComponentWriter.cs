@@ -406,6 +406,7 @@ internal static class ApiPlanBusinessComponentWriter
     private static bool IsManagedCreateSource(string source, ApiPlan plan)
     {
         return HasEquivalentGeneratedSource(source, CreateContent(plan)) ||
+            HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithoutLocationHeader(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithNativeJsonValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithSdtDirtyValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithOriginalMemberDirtyValidation(plan)) ||
@@ -784,6 +785,7 @@ internal static class ApiPlanBusinessComponentWriter
         lines.Add($"{bodyIndent}    {bc}.Load({LoadArguments(plan, bc)})");
         lines.Add($"{bodyIndent}    &CreateResponse = new()");
         lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", successIndent));
+        lines.Add($"{bodyIndent}    &HttpResponse.AddHeader(!\"Location\", {CreateLocationUrlExpression(plan, bc)})");
         lines.Add($"{bodyIndent}    &RestStatusCode = 201");
         lines.Add($"{bodyIndent}Else");
         lines.AddRange(BusinessRuleFailureMessages(bc, successIndent));
@@ -794,6 +796,13 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string CreateLocationUrlExpression(ApiPlan plan, string bc)
+    {
+        var basePath = plan.RestPath.TrimEnd('/');
+        var keyParts = plan.PrimaryKey.Select(field => $"{bc}.{field.Name}.ToString().Trim()");
+        return $"!\"{basePath}/\" + " + string.Join(" + !\"/\" + ", keyParts);
     }
 
     private static string GetContent(ApiPlan plan)
@@ -1087,6 +1096,40 @@ internal static class ApiPlanBusinessComponentWriter
         lines.Add("Else");
         lines.AddRange(LegacyFailureMessages(bc, 4));
         lines.Add("EndIf");
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string PreviousB079CreateContentWithoutLocationHeader(ApiPlan plan)
+    {
+        var bc = "&" + plan.TransactionName;
+        var requiredFields = RequiredFieldsFor(plan, "CreateRequest", plan.CreateRequestFields);
+        var guarded = requiredFields.Count > 0;
+        var bodyIndent = guarded ? "    " : string.Empty;
+        var successIndent = guarded ? 8 : 4;
+        var lines = new List<string> { "&RestStatusCode = 201" };
+        lines.AddRange(RequiredMemberPresenceValidation("CreateRequest", "&CreateRequest", requiredFields, 0));
+        if (guarded)
+        {
+            lines.Add("If &RestStatusCode = 201");
+        }
+
+        lines.Add($"{bodyIndent}{bc} = new()");
+        lines.AddRange(plan.CreateRequestFields.Select(field => $"{bodyIndent}{bc}.{field.Name} = &CreateRequest.{field.Name}"));
+        lines.Add($"{bodyIndent}{bc}.Save()");
+        lines.Add($"{bodyIndent}If {bc}.Success()");
+        lines.Add($"{bodyIndent}    Commit");
+        lines.Add($"{bodyIndent}    {bc}.Load({LoadArguments(plan, bc)})");
+        lines.Add($"{bodyIndent}    &CreateResponse = new()");
+        lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", successIndent));
+        lines.Add($"{bodyIndent}    &RestStatusCode = 201");
+        lines.Add($"{bodyIndent}Else");
+        lines.AddRange(BusinessRuleFailureMessages(bc, successIndent));
+        lines.Add($"{bodyIndent}EndIf");
+        if (guarded)
+        {
+            lines.Add("EndIf");
+        }
+
         return string.Join(Environment.NewLine, lines);
     }
 
@@ -1725,6 +1768,7 @@ internal static class ApiPlanBusinessComponentWriter
         new VariableSpec("CreateRequest", plan.CreateRequestSdtName),
         new VariableSpec("CreateResponse", plan.ResponseSdtName),
         new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
+        new VariableSpec("HttpResponse", "HttpResponse"),
         new VariableSpec("RestStatusCode", "Numeric(3.0)"),
         new VariableSpec(plan.TransactionName, plan.TransactionName),
         new VariableSpec("Messages", "Messages, GeneXus.Common"),

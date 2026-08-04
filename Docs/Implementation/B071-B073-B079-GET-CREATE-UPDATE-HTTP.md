@@ -21,13 +21,13 @@ Status planejados:
 
 - `Get` encontrado: `200`;
 - `Get` inexistente: `404` com `ErrorResponse.Code = "not_found"`;
-- `Create` bem-sucedido: `201`;
+- `Create` bem-sucedido: `201` com cabeçalho `Location` apontando para a URL do recurso recém-criado (ex: `Location: /notafiscal/123` para chave simples ou `Location: /notafiscal/1/123` para chave composta);
 - `Create` rejeitado pelo Business Component: `422` com `ErrorResponse.Code = "validation_error"`;
 - `Update` encontrado e salvo: `200`;
 - `Update` inexistente: `404` com `ErrorResponse.Code = "not_found"`;
 - `Update` rejeitado pelo Business Component: `422` com `ErrorResponse.Code = "validation_error"`.
 
-`Location` de Create continua desejável, mas não foi implementado nesta mudança local porque ainda depende de confirmação de suporte nativo simples no GeneXus/API Object. O contrato documentado em Foundation 27 não justifica DLL, External Object ou solução complexa para esse cabeçalho.
+`Location` de `Create` foi implementado via suporte nativo do GeneXus 18 (`&HttpResponse.AddHeader(!"Location", ...)`), montando a URL relativa do endpoint `Get` do recurso a partir do `RestPath` e da(s) chave(s) primária(s) obtida(s) no Business Component após a gravação (`&bc.Save()`). A solução é 100% nativa GeneXus, sem exigir bloco C# nem `External Object`.
 
 ## Preflight e Reencontro
 
@@ -140,7 +140,7 @@ Validação executada em 2026-08-02:
 - .NET Framework/SQL Server: token OAuth, List 200, Get inexistente 404, Create 201, Get do criado 200, Update 200, Get atualizado 200, Update parcial sem membro obrigatório 400, Update em ID inexistente 404, List paginado e List filtrado por ID/número.
 - .NET/PostgreSQL: antes da recriação do banco, Create retornou 500 por erro físico do datastore (`relaçao "notafiscal" não existe`), reproduzido também pela tela da Transaction; após recriar o banco e recadastrar o usuário/cliente GAM, token OAuth v2.0 passou e a bateria List 200, Create 201, Get 200/404, Update 200/404, validação 400 e List filtrado passou.
 - A forma JSON com múltiplos `out` foi confirmada como envelope contendo `GetResponse`/`CreateResponse`/`UpdateResponse` e `ErrorResponse`.
-- `Location` de Create segue pendente de confirmação nativa simples no GeneXus/API Object.
+- `Location` de `Create` foi implementado com suporte nativo via `&HttpResponse.AddHeader(!"Location", ...)`.
 
 Revalidação executada em 2026-08-03 no .NET/PostgreSQL, após a troca para validação por valor default, com wizard reaplicado e Build All sem `spc0087`:
 
@@ -157,6 +157,17 @@ Revalidação executada em 2026-08-03 no .NET/PostgreSQL, após a troca para val
 | `List` filtrado | 200 | 200, `TotalCount=1` |
 
 A mesma bateria foi executada em 2026-08-03 no .NET Framework/SQL Server, com os nove casos aprovados: `Create` 201, `Get` 200, `Update` completo 200, `Update` sem membro obrigatório 400, `Update` com membro obrigatório vazio 400, `Update` e `Get` em ID inexistente 404, `Get` do atualizado 200 e `List` filtrado 200 com `TotalCount=1`. Essa execução exigiu antes a correção do verbo `PUT` no IIS descrita adiante, e foi repetida depois de um Build All completo para comprovar que a correção sobrevive ao rebuild.
+
+### Validação HTTP do Cabeçalho Location no serviço Create
+
+Validação de emissão em runtime executada em 2026-08-04 em ambos os ambientes com autenticação Bearer Token GAM:
+
+| Ambiente Gerado | Status HTTP | Cabeçalho `Location` Obtido | Corpo da Resposta |
+| --- | --- | --- | --- |
+| **.NET Framework / SQL Server** | `201 Created` | `Location: /notafiscal/19` | `{"CreateResponse":{"NotaFiscalId":"19","NotaFiscalSerie":"FW","NotaFiscalNumero":"9001"},"ErrorResponse":{"Code":"","Message":""}}` |
+| **.NET Core / PostgreSQL** | `201 Created` | `Location: /notafiscal/5` | `{"CreateResponse":{"NotaFiscalId":"5","NotaFiscalSerie":"NET","NotaFiscalNumero":"9002"},"ErrorResponse":{"Code":"","Message":""}}` |
+
+Evidência capturada por requisição HTTP real disparada contra as duas instalações geradas. A emissão do cabeçalho `Location` foi confirmada em ambos os geradores.
 
 #### Verbo PUT bloqueado pelo IIS no ambiente .NET Framework
 
