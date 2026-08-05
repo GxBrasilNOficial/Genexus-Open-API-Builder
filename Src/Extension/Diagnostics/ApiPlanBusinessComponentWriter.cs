@@ -406,6 +406,7 @@ internal static class ApiPlanBusinessComponentWriter
     private static bool IsManagedCreateSource(string source, ApiPlan plan)
     {
         return HasEquivalentGeneratedSource(source, CreateContent(plan)) ||
+            HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithGenericToStringLocationHeader(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithoutLocationHeader(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithNativeJsonValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithSdtDirtyValidation(plan)) ||
@@ -801,8 +802,30 @@ internal static class ApiPlanBusinessComponentWriter
     private static string CreateLocationUrlExpression(ApiPlan plan, string bc)
     {
         var basePath = plan.RestPath.TrimEnd('/');
-        var keyParts = plan.PrimaryKey.Select(field => $"{bc}.{field.Name}.ToString().Trim()");
+        var keyParts = plan.PrimaryKey.Select(field => PrimaryKeyLocationPartExpression(bc, field));
         return $"!\"{basePath}/\" + " + string.Join(" + !\"/\" + ", keyParts);
+    }
+
+    private static string PrimaryKeyLocationPartExpression(string bc, ApiPlanField field)
+    {
+        var member = $"{bc}.{field.Name}";
+        var dataType = field.DataType?.Trim() ?? string.Empty;
+        if (string.Equals(dataType, "Date", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "DateTime", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"PadL(Trim(Str({member}.Year())), 4, !\"0\") + !\"-\" + PadL(Trim(Str({member}.Month())), 2, !\"0\") + !\"-\" + PadL(Trim(Str({member}.Day())), 2, !\"0\")";
+        }
+
+        if (string.Equals(dataType, "VarChar", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "LongVarChar", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "Character", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "Char", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "String", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"EncodeUrl({member}.Trim())";
+        }
+
+        return $"{member}.ToString().Trim()";
     }
 
     private static string GetContent(ApiPlan plan)
@@ -1131,6 +1154,48 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string PreviousB079CreateContentWithGenericToStringLocationHeader(ApiPlan plan)
+    {
+        var bc = "&" + plan.TransactionName;
+        var requiredFields = RequiredFieldsFor(plan, "CreateRequest", plan.CreateRequestFields);
+        var guarded = requiredFields.Count > 0;
+        var bodyIndent = guarded ? "    " : string.Empty;
+        var successIndent = guarded ? 8 : 4;
+        var lines = new List<string> { "&RestStatusCode = 201" };
+        lines.AddRange(RequiredMemberPresenceValidation("CreateRequest", "&CreateRequest", requiredFields, 0));
+        if (guarded)
+        {
+            lines.Add("If &RestStatusCode = 201");
+        }
+
+        lines.Add($"{bodyIndent}{bc} = new()");
+        lines.AddRange(plan.CreateRequestFields.Select(field => $"{bodyIndent}{bc}.{field.Name} = &CreateRequest.{field.Name}"));
+        lines.Add($"{bodyIndent}{bc}.Save()");
+        lines.Add($"{bodyIndent}If {bc}.Success()");
+        lines.Add($"{bodyIndent}    Commit");
+        lines.Add($"{bodyIndent}    {bc}.Load({LoadArguments(plan, bc)})");
+        lines.Add($"{bodyIndent}    &CreateResponse = new()");
+        lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", successIndent));
+        lines.Add($"{bodyIndent}    &HttpResponse.AddHeader(!\"Location\", {PreviousB079GenericToStringCreateLocationUrlExpression(plan, bc)})");
+        lines.Add($"{bodyIndent}    &RestStatusCode = 201");
+        lines.Add($"{bodyIndent}Else");
+        lines.AddRange(BusinessRuleFailureMessages(bc, successIndent));
+        lines.Add($"{bodyIndent}EndIf");
+        if (guarded)
+        {
+            lines.Add("EndIf");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string PreviousB079GenericToStringCreateLocationUrlExpression(ApiPlan plan, string bc)
+    {
+        var basePath = plan.RestPath.TrimEnd('/');
+        var keyParts = plan.PrimaryKey.Select(field => $"{bc}.{field.Name}.ToString().Trim()");
+        return $"!\"{basePath}/\" + " + string.Join(" + !\"/\" + ", keyParts);
     }
 
     private static string PreviousB079CreateContent(ApiPlan plan)

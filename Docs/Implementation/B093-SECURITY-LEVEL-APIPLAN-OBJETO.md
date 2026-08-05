@@ -133,6 +133,35 @@ Com `SecurityLevel = None` aplicado no Wizard e compilado na KB, o motor C# (`ap
 
 ---
 
+#### 3. Nível `SecurityLevel = Authorization`
+
+Com `SecurityLevel = Authorization` aplicado no Wizard, o gerador GeneXus emite a permissão GAM `apiNotaFiscal-06e86b6b-8fbd-4d93-8a23-21bf07019c2b` durante a compilação do Build All e gera o motor C# (`apinotafiscal.cs`) retornando `GAMSecurityLevel.SecurityHigh` em todos os métodos com o prefixo de permissão `apinotafiscal_Services_<Servico>`.
+
+##### A. Caminho Negativo (Requisição SEM Token)
+Disparada requisição `GET /apiNotaFiscal/notafiscal` sem o cabeçalho `Authorization`:
+- **.NET Framework / SQL Server:** `HTTP 401 Unauthorized` (`{"error":{"code":"0","message":"This service needs an Authorization Header"}}`)
+- **.NET Core / PostgreSQL:** `HTTP 401 Unauthorized` (`{"error":{"code":"0","message":"This service needs an Authorization Header"}}`)
+
+##### B. Caminho Negativo (Requisição com Token Inválido / Expirado)
+Disparada requisição `GET /apiNotaFiscal/notafiscal` com `Authorization: Bearer invalid_token`:
+- **.NET Framework / SQL Server:** `HTTP 401 Unauthorized` (`{"error":{"code":"112","message":"Token não encontrado, faça login novamente."}}`)
+- **.NET Core / PostgreSQL:** `HTTP 401 Unauthorized` (`{"error":{"code":"112","message":"Token não encontrado, faça login novamente."}}`)
+
+##### C. Caminho Positivo (Requisição com Token OAuth GAM de Usuário Autorizado)
+Token OAuth 2.0 obtido via `POST /oauth/gam/v2.0/access_token` (`goab_api_teste`, credenciais locais de `Temp/wsEducacaoSpTeste-local-test-environments.md`):
+- **.NET Framework / SQL Server:** `HTTP 200 OK`
+  ```json
+  {"Items":[{"NotaFiscalId":"1","NotaFiscalSerie":"CE","NotaFiscalNumero":"********"},...],"Pagination":{"Page":"1","PageSize":"50","TotalCount":"17","TotalPages":"1"},"AppliedFilters":{"NotaFiscalId":null,"NotaFiscalNumero":null}}
+  ```
+- **.NET Core / PostgreSQL:** `HTTP 200 OK`
+  ```json
+  {"Items":[{"NotaFiscalId":"1","NotaFiscalSerie":"1","NotaFiscalNumero":"123"},...],"Pagination":{"Page":"1","PageSize":"50","TotalCount":"5","TotalPages":"1"},"AppliedFilters":{"NotaFiscalId":null,"NotaFiscalNumero":null}}
+  ```
+
+*Nota sobre a Validação Granular de Permissões GAM:* A validação de requisição com token de usuário ativo **sem a permissão de autorização concedida** exige a criação de um Role não-administrador no GAM Backoffice e desvinculação da permissão `apiNotaFiscal-06e86b6b-8fbd-4d93-8a23-21bf07019c2b`. Por envolver configuração manual na interface do GAM Backoffice, essa validação granular é registrada como limitação de ambiente de teste local a ser coberta antes da fase Alpha.
+
+---
+
 ### B. Prova do Código C# Compilado e Arquivos OpenAPI Gerados
 
 #### 1. Código C# Compilado Nativo (`apinotafiscal.cs`)
@@ -161,6 +190,18 @@ Com `SecurityLevel = None` aplicado no Wizard e compilado na KB, o motor C# (`ap
   }
   ```
 
+- **Sob `SecurityLevel = Authorization`:**
+  ```csharp
+  protected override GAMSecurityLevel ApiIntegratedSecurityLevel( string permissionMethod )
+  {
+      if ( StringUtil.StrCmp(permissionMethod, "gxep_list") == 0 ) return GAMSecurityLevel.SecurityHigh ;
+      else if ( StringUtil.StrCmp(permissionMethod, "gxep_get") == 0 ) return GAMSecurityLevel.SecurityHigh ;
+      else if ( StringUtil.StrCmp(permissionMethod, "gxep_create") == 0 ) return GAMSecurityLevel.SecurityHigh ;
+      else if ( StringUtil.StrCmp(permissionMethod, "gxep_update") == 0 ) return GAMSecurityLevel.SecurityHigh ;
+      return GAMSecurityLevel.SecurityHigh ;
+  }
+  ```
+
 #### 2. Metadados Auditáveis do OpenAPI YAML em Disco
 
 - **Sob `SecurityLevel = None`:**
@@ -171,7 +212,13 @@ Com `SecurityLevel = None` aplicado no Wizard e compilado na KB, o motor C# (`ap
   - **.NET Framework:** `C:\KBs\wsEducacaoSpTeste\NETFrameworkSQLServer004\web\apiNotaFiscal.yaml` (mtime 2026-08-04 06:52:36, `version: "20260804095236"`).
   - **.NET Core:** `C:\KBs\wsEducacaoSpTeste\NETPostgreSQL155\web\apiNotaFiscal.yaml` (mtime 2026-08-04 06:50:25, `version: "20260804095025"`).
 
-*Nota de Reconciliação:* O gerador nativo de documentação REST OpenAPI do GeneXus 18 U15 gera a seção `security: - oAuthGXGAM: []` quando a propriedade global da KB possui GAM ativado. Contudo, a aplicação efetiva da segurança em nível de endpoint HTTP é regida pelo trecho C# compilado (`ApiIntegratedSecurityLevel`), o qual alterna dinamicamente entre `SecurityNone` (acesso público direto) e `SecurityAuthentication` (bloqueio 401 / liberação 200 via Bearer Token).
+- **Sob `SecurityLevel = Authorization`:**
+  - **.NET Framework:** `C:\KBs\wsEducacaoSpTeste\NETFrameworkSQLServer004\web\apiNotaFiscal.yaml` (mtime 2026-08-04 23:00:27, `version: "20260805020027"`).
+  - **.NET Core:** `C:\KBs\wsEducacaoSpTeste\NETPostgreSQL155\web\apiNotaFiscal.yaml` (mtime 2026-08-04 23:01:03, `version: "20260805020103"`).
+
+*Nota de Auditabilidade e Sobrescrita:* Como a IDE GeneXus regera o arquivo físico `apiNotaFiscal.yaml` no diretório `web/` a cada `Build All`, os arquivos OpenAPI YAML gerados sob `SecurityLevel = None` foram sobrescritos pelas regerações subsequentes em `Authentication` e `Authorization`. A prova de auditoria do nível `None` baseia-se no código C# compilado (`ApiIntegratedSecurityLevel` emitindo `GAMSecurityLevel.SecurityNone`) e nas respostas HTTP 200/201 sem token registradas no momento da medição.
+
+*Nota de Reconciliação:* O gerador nativo de documentação REST OpenAPI do GeneXus 18 U15 gera a seção `security: - oAuthGXGAM: []` quando a propriedade global da KB possui GAM ativado. Contudo, a aplicação efetiva da segurança em nível de endpoint HTTP é regida pelo trecho C# compilado (`ApiIntegratedSecurityLevel`), o qual alterna dinamicamente entre `SecurityNone` (acesso público direto), `SecurityAuthentication` (bloqueio 401 / liberação 200 via Bearer Token) e `SecurityHigh` (autorização GAM).
 
 ---
 

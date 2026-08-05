@@ -169,6 +169,17 @@ Validação de emissão em runtime executada em 2026-08-04 em ambos os ambientes
 
 Evidência capturada por requisição HTTP real disparada contra as duas instalações geradas. A emissão do cabeçalho `Location` foi confirmada em ambos os geradores.
 
+#### Validação HTTP do Cabeçalho Location com Chave Primária Composta (Transaction `Teste`)
+
+Validação de emissão e navegabilidade direta em runtime executada em 2026-08-05 na Transaction `Teste` (chave composta `TesteId` + `TesteDate`), em ambos os ambientes com autenticação Bearer Token GAM, navegando diretamente o cabeçalho `Location` devolvido pelo `POST` sem nenhuma reescrita de URL:
+
+| Ambiente Gerado | Status POST | Cabeçalho `Location` Emitido | Status GET direto na URL do `Location` (`/apiTeste` + `Location`) | Corpo do `GET` Retornado |
+| --- | --- | --- | --- | --- |
+| **.NET Framework / SQL Server** | `201 Created` | `Location: /teste/2/2026-08-05` | `200 OK` | `{"GetResponse":{"TesteId":"2","TesteDate":"2026-08-05","TesteDesc":"Strict Location Test 1330"},"ErrorResponse":{"Code":"","Message":""}}` |
+| **.NET Core / PostgreSQL** | `201 Created` | `Location: /teste/2/2026-08-05` | `200 OK` | `{"GetResponse":{"TesteId":"2","TesteDate":"2026-08-05","TesteDesc":"Strict Location Test 1330"},"ErrorResponse":{"Code":"","Message":""}}` |
+
+*Observação Técnica de Navegabilidade:* Inicialmente, o gerador utilizava `ToString().Trim()` dos membros da chave primária (`CreateLocationUrlExpression`), o que formatava datas pelo padrão regional com barras (`05/08/26`) e fazia a requisição `GET` direta falhar com `404` por divisão de sub-caminhos na URL. O gerador `ApiPlanBusinessComponentWriter` foi corrigido para aplicar serialização ISO estrita (`PadL(Trim(Str(member.Year())), 4, "0") + "-" + PadL(Trim(Str(member.Month())), 2, "0") + "-" + PadL(Trim(Str(member.Day())), 2, "0")`) e `EncodeUrl` em campos texto. Com essa atualização, o cabeçalho `Location` emitido nativamente pelo `POST` passa a ser `/teste/2/2026-08-05`, cuja navegação `GET` direta devolve **`HTTP 200 OK`** com o recurso recém-criado em ambos os geradores.
+
 #### Verbo PUT bloqueado pelo IIS no ambiente .NET Framework
 
 A primeira execução da bateria no .NET Framework/SQL Server em 2026-08-03 devolveu `404` do IIS em **todos** os `PUT`, com página de erro apontando `Módulo=IIS Web Core`, `Notificação=MapRequestHandler`, `Manipulador=StaticFile` e caminho físico `...\Web\apiNotaFiscal\notafiscal\12`. Nenhum código GeneXus executava; `GET` e `POST` na mesma rota funcionavam normalmente.

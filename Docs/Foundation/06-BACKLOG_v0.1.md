@@ -246,6 +246,8 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B085 | Sincronizar com a Transaction usando metadata | Alta |
 | B086 | Remover API gerada por metadata, sem reverter BC | Média |
 | B087 | Ancorar posse na metadata e liberar a `Description` do API Object | Alta |
+| B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta |
+| B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta |
 
 ### Nota operacional — B087, registrada em 2026-08-03
 
@@ -254,6 +256,18 @@ A `Description` do API Object acumula dois papéis: é copiada pelo gerador para
 Enquanto o texto era `Genexus Open API Builder B054 API Object - Transaction=... - Procedures=B050-B053`, a acumulação se protegia pela própria feiura: ninguém tentaria melhorar aquela string. Ao retirar o jargão interno do contrato público, a frente registrada em `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md` trocou o texto por uma frase de documentação legível — e, com isso, aumentou a chance de um usuário querer traduzi-la, encurtá-la ou personalizá-la. Qualquer edição faz a API deixar de ser reconhecida como própria e bloqueia a regeração.
 
 B087 separa os dois papéis: a posse passa a ser verificada apenas pela metadata de integridade B067, e a `Description` fica livre para edição humana. O item é anterior à Alpha, porque a Alpha expõe a ferramenta a usuários que não conhecem essa armadilha.
+
+### Nota operacional — B088, registrada em 2026-08-04
+
+O gerador nativo de documentação REST OpenAPI do GeneXus (`Swagger.Yaml.stg`) gera um bloco estático declarando apenas códigos de resposta 200 e 404 por operação, sem refletir respostas como 201, 400 ou 422 devolvidas pelo pipeline REST em runtime. Adicionalmente, o gerador nativo não emite a lista `required:` nos schemas de request/response mesmo quando a propriedade `Required` está gravada e persistida nos itens de SDT/API Object.
+
+B088 é registrado como item de backlog anterior à Alpha para investigar extensibilidade do gerador de documentação REST ou inclusão de notas de compatibilidade para geradores de clientes a partir do YAML produzido.
+
+### Nota operacional — B089, registrada em 2026-08-04
+
+Quando um API Object opera sob `SecurityLevel = Authorization`, o GeneXus gera permissões granulares por serviço REST (ex: `apiNotaFiscal_Services_Get`, `apiNotaFiscal_Services_Create`, etc.). O GAM Backoffice nativo não expõe de forma simples a associação dessas permissões granulares a roles customizadas criadas manualmente na interface administrativa web do GAM, limitando o teste ao role de Administrador do GAM ou aos testes sem token (401).
+
+B089 é registrado como item de backlog pré-Alpha para construir utilitário ou scripts GAM API (Programmatic GAM API) capazes de associar automaticamente permissões granulares a papéis customizados e validar a recusa 403 Forbidden quando uma role específica não tem a permissão atribuída.
 
 ---
 
