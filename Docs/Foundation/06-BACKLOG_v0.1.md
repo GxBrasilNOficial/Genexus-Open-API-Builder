@@ -249,7 +249,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta |
 | B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta |
 
-### Nota operacional — B087, registrada em 2026-08-03
+### Nota operacional — B087, registrada em 2026-08-03 (atualizada em 2026-08-05)
 
 A `Description` do API Object acumula dois papéis: é copiada pelo gerador para `info.description` do contrato OpenAPI, portanto documentação pública, e é a sentinela de posse comparada por igualdade exata antes de qualquer reescrita.
 
@@ -257,17 +257,39 @@ Enquanto o texto era `Genexus Open API Builder B054 API Object - Transaction=...
 
 B087 separa os dois papéis: a posse passa a ser verificada apenas pela metadata de integridade B067, e a `Description` fica livre para edição humana. O item é anterior à Alpha, porque a Alpha expõe a ferramenta a usuários que não conhecem essa armadilha.
 
-### Nota operacional — B088, registrada em 2026-08-04
+**Pontos do código afetados pela sentinela de Description:**
+- `ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan)`
+- `ApiPlanGenerationStateReader.IsOwnedApiObject` e `IsCurrentB055ApiObject`
+- `ApiPlanBusinessComponentWriter.IsCurrentB055ApiObject` e `IsB054ApiObject`
+- `ApiPlanListProcedureWriter.IsCurrentB070ApiObject`
+- `ApiPlanMetadataFileWriter.cs` (`descriptionSentinel`)
+
+**Especificação do comportamento em B087 (Sprint 7):**
+- A verificação de posse do API Object consultará obrigatoriamente o File de metadata B060/B067 (`ownership.apiName` e `PlannedContractHash`);
+- Para preservar o reencontro conservador de APIs já geradas anteriormente sem metadata ou durante transição, o leitor aceitará fallback para a `Description` legível quando o File de metadata ainda não existir;
+- Uma vez associado à metadata, alterações manuais na `Description` do API Object na IDE GeneXus não causarão perda de posse nem bloquearão regerações.
+
+### Nota operacional — B088, registrada em 2026-08-04 (atualizada em 2026-08-05)
 
 O gerador nativo de documentação REST OpenAPI do GeneXus (`Swagger.Yaml.stg`) gera um bloco estático declarando apenas códigos de resposta 200 e 404 por operação, sem refletir respostas como 201, 400 ou 422 devolvidas pelo pipeline REST em runtime. Adicionalmente, o gerador nativo não emite a lista `required:` nos schemas de request/response mesmo quando a propriedade `Required` está gravada e persistida nos itens de SDT/API Object.
 
 B088 é registrado como item de backlog anterior à Alpha para investigar extensibilidade do gerador de documentação REST ou inclusão de notas de compatibilidade para geradores de clientes a partir do YAML produzido.
 
-### Nota operacional — B089, registrada em 2026-08-04
+**Critérios de aceite para conclusão de B088 na Sprint 7:**
+1. *Investigação de Extensibilidade*: mapear e provar se o mecanismo de extensibilidade da IDE/SDK permite substituir ou interceptar o template `Swagger.Yaml.stg` sem modificar a instalação central do GeneXus;
+2. *Ressalva e Compatibilidade*: caso a alteração do template nativo exija modificar `C:\Program Files (x86)\GeneXus` (o que é proibido), registrar formalmente a limitação intransponível em `Docs/Foundation/12-REGRAS_CRIACAO_API_OBJECTS.md` e `Docs/Foundation/27-CONTRATO_OPENAPI.md`, definindo as orientações de consumo para o `openapi-generator-cli`;
+3. *Definição de Concluído*: o item estará pronto com o relatório técnico de viabilidade e as ressalvas de compatibilidade incorporadas à documentação.
+
+### Nota operacional — B089, registrada em 2026-08-04 (atualizada em 2026-08-05)
 
 Quando um API Object opera sob `SecurityLevel = Authorization`, o GeneXus gera permissões granulares por serviço REST (ex: `apiNotaFiscal_Services_Get`, `apiNotaFiscal_Services_Create`, etc.). O GAM Backoffice nativo não expõe de forma simples a associação dessas permissões granulares a roles customizadas criadas manualmente na interface administrativa web do GAM, limitando o teste ao role de Administrador do GAM ou aos testes sem token (401).
 
 B089 é registrado como item de backlog pré-Alpha para construir utilitário ou scripts GAM API (Programmatic GAM API) capazes de associar automaticamente permissões granulares a papéis customizados e validar a recusa 403 Forbidden quando uma role específica não tem a permissão atribuída.
+
+**Critérios de aceite e requisitos de ambiente para B089 na Sprint 7:**
+1. *Ambiente e Automação*: dispor de ambiente de teste com GAM (`SecurityLevel = Authorization`) e criar Procedure/script GeneXus com Programmatic GAM API (`GAMRole`, `GAMPermission`) para criar a role `Role_GOAB_Test_Denied` atribuindo permissão de `Get` e negando `Create`;
+2. *Evidência HTTP 403*: executar requisições HTTP autenticadas com usuário vinculado a essa role restrita e comprovar retorno **403 Forbidden** no `POST` (Create) e **200 OK** no `GET`;
+3. *Definição de Concluído*: o item estará pronto quando a resposta 403 estiver capturada e documentada em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md`.
 
 ---
 
