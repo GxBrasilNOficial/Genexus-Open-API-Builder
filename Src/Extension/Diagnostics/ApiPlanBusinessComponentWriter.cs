@@ -764,7 +764,7 @@ internal static class ApiPlanBusinessComponentWriter
         return matches[0];
     }
 
-    internal static string CreateContent(ApiPlan plan)
+    private static string CreateContent(ApiPlan plan)
     {
         var bc = "&" + plan.TransactionName;
         var requiredFields = RequiredFieldsFor(plan, "CreateRequest", plan.CreateRequestFields);
@@ -828,7 +828,7 @@ internal static class ApiPlanBusinessComponentWriter
         return $"{member}.ToString().Trim()";
     }
 
-    internal static string GetContent(ApiPlan plan)
+    private static string GetContent(ApiPlan plan)
     {
         var bc = "&" + plan.TransactionName;
         var lines = new List<string>
@@ -846,7 +846,7 @@ internal static class ApiPlanBusinessComponentWriter
         return string.Join(Environment.NewLine, lines);
     }
 
-    internal static string UpdateContent(ApiPlan plan)
+    private static string UpdateContent(ApiPlan plan)
     {
         var bc = "&" + plan.TransactionName;
         var requiredFields = RequiredFieldsFor(plan, "UpdateRequest", plan.UpdateRequestFields);
@@ -1815,7 +1815,7 @@ internal static class ApiPlanBusinessComponentWriter
         yield return $"{indent}&ErrorResponse.Message = !\"{plan.TransactionName} was not found.\"";
     }
 
-    internal static IReadOnlyList<VariableSpec> GetVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
+    private static IReadOnlyList<VariableSpec> GetVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
         .Concat(new[]
         {
             new VariableSpec("GetResponse", plan.ResponseSdtName),
@@ -1825,7 +1825,7 @@ internal static class ApiPlanBusinessComponentWriter
         })
         .ToArray();
 
-    internal static IReadOnlyList<VariableSpec> CreateVariables(ApiPlan plan) => new[]
+    private static IReadOnlyList<VariableSpec> CreateVariables(ApiPlan plan) => new[]
     {
         new VariableSpec("CreateRequest", plan.CreateRequestSdtName),
         new VariableSpec("CreateResponse", plan.ResponseSdtName),
@@ -1854,7 +1854,7 @@ internal static class ApiPlanBusinessComponentWriter
         new VariableSpec("Messages", "Messages, GeneXus.Common"),
     };
 
-    internal static IReadOnlyList<VariableSpec> UpdateVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
+    private static IReadOnlyList<VariableSpec> UpdateVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
         .Concat(new[]
         {
             new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName),
@@ -1952,9 +1952,9 @@ internal static class ApiPlanBusinessComponentWriter
 
     private static string ApiVariables(ApiPlan plan) => string.Join(Environment.NewLine, ApiVariableSpecs(plan).Select(variable => $"{variable.Name} [ DataType = '{variable.DataType}' ]"));
 
-    internal static string GetRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "out:&GetResponse", "out:&ErrorResponse", "out:&RestStatusCode" }))});";
-    internal static string CreateRules() => "parm(in:&CreateRequest, out:&CreateResponse, out:&ErrorResponse, out:&RestStatusCode);";
-    internal static string UpdateRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse", "out:&ErrorResponse", "out:&RestStatusCode" }))});";
+    private static string GetRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "out:&GetResponse", "out:&ErrorResponse", "out:&RestStatusCode" }))});";
+    private static string CreateRules() => "parm(in:&CreateRequest, out:&CreateResponse, out:&ErrorResponse, out:&RestStatusCode);";
+    private static string UpdateRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse", "out:&ErrorResponse", "out:&RestStatusCode" }))});";
     private static string LegacyCreateRules() => "parm(in:&CreateRequest, out:&CreateResponse);";
     private static string LegacyUpdateRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse" }))});";
     private static string LoadArguments(ApiPlan plan, string prefix) => string.Join(", ", plan.PrimaryKey.Select(field => prefix == "&" ? $"&{field.Name}" : $"{prefix}.{field.Name}"));

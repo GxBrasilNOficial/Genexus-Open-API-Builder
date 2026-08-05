@@ -141,12 +141,25 @@ internal static class PrototypeWizardContractReader
     {
         try
         {
+            if (item?.Attribute == null)
+            {
+                return true;
+            }
+
+            // Tenta obter pela propriedade publica "Autonumber" do SDK do GeneXus.
+            // O fallback "idAUTONUMBER" e mantido por compatibilidade historica com descritores de metadados internos de versoes do SDK.
             var value = item.Attribute.GetPropertyValueString("Autonumber") ?? item.Attribute.GetPropertyValueString("idAUTONUMBER");
-            return string.Equals(value, "True", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "1", StringComparison.OrdinalIgnoreCase);
+            if (string.Equals(value, "False", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "0", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return true;
         }
         catch
         {
-            return false;
+            // Em caso de duvida ou excecao na leitura da propriedade, adota fallback conservador (bloqueia o campo no CreateRequest).
+            return true;
         }
     }
 

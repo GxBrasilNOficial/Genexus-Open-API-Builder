@@ -45,6 +45,7 @@ internal static class ApiPlanListProcedureWriter
         ValidateVariableSpecs(model, procedure, procedureVariables);
         ValidateVariableSpecs(model, api, apiVariables);
 
+        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan);
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
         SaveApi(model, api, transactionFolder, plan, apiSource, apiVariables);
         SaveProcedure(model, procedure, source, procedureVariables, rules);
@@ -211,7 +212,7 @@ internal static class ApiPlanListProcedureWriter
         }
     }
 
-    internal static string CreateListSource(ApiPlan plan)
+    private static string CreateListSource(ApiPlan plan)
     {
         return CreateListSource(plan, includeParameterCopy: true);
     }
@@ -446,7 +447,7 @@ internal static class ApiPlanListProcedureWriter
             : order.AttributeName;
     }
 
-    internal static string CreateListRules(ApiPlan plan)
+    private static string CreateListRules(ApiPlan plan)
     {
         var parameters = new List<string> { $"in:&{PageParameterName}", $"in:&{PageSizeParameterName}" };
         parameters.AddRange(plan.ListFilters.SelectMany(FilterVariableNames).Select(name => "in:&" + name));
@@ -512,7 +513,7 @@ internal static class ApiPlanListProcedureWriter
         return annotation + $"    {service}(){Environment.NewLine}        => {procedure}();";
     }
 
-    internal static IReadOnlyList<VariableSpec> ProcedureVariableSpecs(ApiPlan plan)
+    private static IReadOnlyList<VariableSpec> ProcedureVariableSpecs(ApiPlan plan)
     {
         var variables = new List<VariableSpec>
         {
@@ -776,7 +777,7 @@ internal static class ApiPlanListProcedureWriter
         }
     }
 
-    internal static void ReplaceVariables(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)
+    private static void ReplaceVariables(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)
     {
         foreach (var existing in procedure.Variables.Variables.Where(variable => !variable.IsStandard).ToArray())
         {
