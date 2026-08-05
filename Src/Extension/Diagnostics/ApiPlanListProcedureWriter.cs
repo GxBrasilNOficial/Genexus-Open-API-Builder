@@ -45,10 +45,9 @@ internal static class ApiPlanListProcedureWriter
         ValidateVariableSpecs(model, procedure, procedureVariables);
         ValidateVariableSpecs(model, api, apiVariables);
 
-        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan);
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
-        SaveProcedure(model, procedure, source, procedureVariables, rules);
         SaveApi(model, api, transactionFolder, plan, apiSource, apiVariables);
+        SaveProcedure(model, procedure, source, procedureVariables, rules);
 
         return new ApiPlanListProcedureWriteResult(
             procedure.Guid,
@@ -212,7 +211,7 @@ internal static class ApiPlanListProcedureWriter
         }
     }
 
-    private static string CreateListSource(ApiPlan plan)
+    internal static string CreateListSource(ApiPlan plan)
     {
         return CreateListSource(plan, includeParameterCopy: true);
     }
@@ -447,7 +446,7 @@ internal static class ApiPlanListProcedureWriter
             : order.AttributeName;
     }
 
-    private static string CreateListRules(ApiPlan plan)
+    internal static string CreateListRules(ApiPlan plan)
     {
         var parameters = new List<string> { $"in:&{PageParameterName}", $"in:&{PageSizeParameterName}" };
         parameters.AddRange(plan.ListFilters.SelectMany(FilterVariableNames).Select(name => "in:&" + name));
@@ -513,7 +512,7 @@ internal static class ApiPlanListProcedureWriter
         return annotation + $"    {service}(){Environment.NewLine}        => {procedure}();";
     }
 
-    private static IReadOnlyList<VariableSpec> ProcedureVariableSpecs(ApiPlan plan)
+    internal static IReadOnlyList<VariableSpec> ProcedureVariableSpecs(ApiPlan plan)
     {
         var variables = new List<VariableSpec>
         {
@@ -744,9 +743,9 @@ internal static class ApiPlanListProcedureWriter
 
     private static void SaveProcedure(KBModel model, Procedure procedure, string source, IReadOnlyList<VariableSpec> variables, string rules)
     {
-        procedure.ProcedurePart.Source = source;
-        procedure.Rules.Source = rules;
         ReplaceVariables(model, procedure, variables);
+        procedure.Rules.Source = rules;
+        procedure.ProcedurePart.Source = source;
         procedure.Save();
 
         var persisted = Procedure.Get(model, procedure.Guid);
@@ -777,7 +776,7 @@ internal static class ApiPlanListProcedureWriter
         }
     }
 
-    private static void ReplaceVariables(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)
+    internal static void ReplaceVariables(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)
     {
         foreach (var existing in procedure.Variables.Variables.Where(variable => !variable.IsStandard).ToArray())
         {
@@ -789,6 +788,7 @@ internal static class ApiPlanListProcedureWriter
             var item = new Variable(variable.Name, procedure.Variables);
             if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
                 throw new InvalidOperationException($"B070 bloqueado: tipo da variavel '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
+
             procedure.Variables.Variables.Add(item);
         }
     }
@@ -805,6 +805,7 @@ internal static class ApiPlanListProcedureWriter
             var item = new Variable(variable.Name, api.Variables);
             if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
                 throw new InvalidOperationException($"B070 bloqueado: tipo da variavel de API '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
+
             ConfigureServiceRequired(item, variable);
             api.Variables.Variables.Add(item);
         }

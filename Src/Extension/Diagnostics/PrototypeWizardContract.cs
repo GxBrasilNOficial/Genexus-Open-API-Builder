@@ -119,9 +119,9 @@ internal static class PrototypeWizardContractReader
             return "Desabilitado: formula nao atribuivel via BC";
         }
 
-        if (isPrimaryKey)
+        if (isPrimaryKey && IsAutonumber(item))
         {
-            return "Desabilitado no CreateRequest: chave primaria aguarda validacao publica de autonumeracao";
+            return "Desabilitado no CreateRequest: chave primaria autonumerada pelo BC";
         }
 
         if (isAudit)
@@ -135,6 +135,19 @@ internal static class PrototypeWizardContractReader
         }
 
         return string.Empty;
+    }
+
+    private static bool IsAutonumber(Artech.Genexus.Common.Parts.TransactionAttribute item)
+    {
+        try
+        {
+            var value = item.Attribute.GetPropertyValueString("Autonumber") ?? item.Attribute.GetPropertyValueString("idAUTONUMBER");
+            return string.Equals(value, "True", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "1", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static string DescribeUpdatePayloadDisabledReason(bool isPrimaryKey, string payloadDisabledReason)

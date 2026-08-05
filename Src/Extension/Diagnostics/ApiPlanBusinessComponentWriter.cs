@@ -61,11 +61,11 @@ internal static class ApiPlanBusinessComponentWriter
         ValidateApiVariableSpecs(model, api, apiVariables);
 
         ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan);
+        var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
+        SaveApi(model, api, transactionFolder, plan, apiSource, apiVariables);
         SaveProcedure(model, get, getContent, getVariables, getRules);
         SaveProcedure(model, create, createContent, createVariables, createRules);
         SaveProcedure(model, update, updateContent, updateVariables, updateRules);
-        var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
-        SaveApi(model, api, transactionFolder, plan, apiSource, apiVariables);
         return new ApiPlanBusinessComponentWriteResult(get.Guid, create.Guid, update.Guid, api.Guid, plan.PrimaryKey.Count, plan.CreateRequestFields.Count, plan.UpdateRequestFields.Count, plan.ResponseFields.Count);
     }
 
@@ -440,9 +440,9 @@ internal static class ApiPlanBusinessComponentWriter
 
     private static void SaveProcedure(KBModel model, Procedure procedure, string content, IReadOnlyList<VariableSpec> variables, string rules)
     {
-        procedure.ProcedurePart.Source = content;
-        procedure.Rules.Source = rules;
         ReplaceVariables(model, procedure, variables);
+        procedure.Rules.Source = rules;
+        procedure.ProcedurePart.Source = content;
         try
         {
             procedure.Save();
@@ -542,7 +542,7 @@ internal static class ApiPlanBusinessComponentWriter
         }
     }
 
-    private static void ReplaceVariables(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)
+    internal static void ReplaceVariables(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)
     {
         foreach (var existing in procedure.Variables.Variables.Where(variable => !variable.IsStandard).ToArray())
         {
@@ -764,7 +764,7 @@ internal static class ApiPlanBusinessComponentWriter
         return matches[0];
     }
 
-    private static string CreateContent(ApiPlan plan)
+    internal static string CreateContent(ApiPlan plan)
     {
         var bc = "&" + plan.TransactionName;
         var requiredFields = RequiredFieldsFor(plan, "CreateRequest", plan.CreateRequestFields);
@@ -813,7 +813,7 @@ internal static class ApiPlanBusinessComponentWriter
         if (string.Equals(dataType, "Date", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(dataType, "DateTime", StringComparison.OrdinalIgnoreCase))
         {
-            return $"PadL(Trim(Str({member}.Year())), 4, !\"0\") + !\"-\" + PadL(Trim(Str({member}.Month())), 2, !\"0\") + !\"-\" + PadL(Trim(Str({member}.Day())), 2, !\"0\")";
+            return $"PadL(Trim(Str(Year({member}))), 4, !\"0\") + !\"-\" + PadL(Trim(Str(Month({member}))), 2, !\"0\") + !\"-\" + PadL(Trim(Str(Day({member}))), 2, !\"0\")";
         }
 
         if (string.Equals(dataType, "VarChar", StringComparison.OrdinalIgnoreCase) ||
@@ -822,13 +822,13 @@ internal static class ApiPlanBusinessComponentWriter
             string.Equals(dataType, "Char", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(dataType, "String", StringComparison.OrdinalIgnoreCase))
         {
-            return $"EncodeUrl({member}.Trim())";
+            return $"URLEncode({member}.Trim())";
         }
 
         return $"{member}.ToString().Trim()";
     }
 
-    private static string GetContent(ApiPlan plan)
+    internal static string GetContent(ApiPlan plan)
     {
         var bc = "&" + plan.TransactionName;
         var lines = new List<string>
@@ -846,7 +846,7 @@ internal static class ApiPlanBusinessComponentWriter
         return string.Join(Environment.NewLine, lines);
     }
 
-    private static string UpdateContent(ApiPlan plan)
+    internal static string UpdateContent(ApiPlan plan)
     {
         var bc = "&" + plan.TransactionName;
         var requiredFields = RequiredFieldsFor(plan, "UpdateRequest", plan.UpdateRequestFields);
@@ -996,7 +996,11 @@ internal static class ApiPlanBusinessComponentWriter
         {
             yield return $"{indent}If {requestVariable}.{field.Name} = {emptyVariable}.{field.Name}";
             yield return $"{indent}    &RequestJsonHasRequiredMembers = False";
-            yield return $"{indent}    &MissingRequiredFields = iif(&MissingRequiredFields.IsEmpty(), !\"{field.Name}\", &MissingRequiredFields + !\", {field.Name}\")";
+            yield return $"{indent}    If &MissingRequiredFields.IsEmpty()";
+            yield return $"{indent}        &MissingRequiredFields = !\"{field.Name}\"";
+            yield return $"{indent}    Else";
+            yield return $"{indent}        &MissingRequiredFields = &MissingRequiredFields + !\", {field.Name}\"";
+            yield return $"{indent}    EndIf";
             yield return $"{indent}EndIf";
         }
 
@@ -1799,13 +1803,6 @@ internal static class ApiPlanBusinessComponentWriter
         yield return $"{indent}&ErrorResponse.Code = !\"validation_error\"";
         yield return $"{indent}&ErrorResponse.Message = !\"Business rules rejected the request.\"";
         yield return $"{indent}&Messages = {bc}.GetMessages()";
-        yield return $"{indent}For &Message in &Messages";
-        yield return $"{indent}    &ErrorItem = new()";
-        yield return $"{indent}    &ErrorItem.Code = !\"business_rule\"";
-        yield return $"{indent}    &ErrorItem.Message = &Message.Description";
-        yield return $"{indent}    &ErrorItem.Field = !\"\"";
-        yield return $"{indent}    &ErrorResponse.Errors.Add(&ErrorItem)";
-        yield return $"{indent}EndFor";
         yield return $"{indent}msg(Format(!\"Genexus Open API Builder B079 BC failure: %1\", &Messages.ToJson()), status)";
     }
 
@@ -1818,7 +1815,7 @@ internal static class ApiPlanBusinessComponentWriter
         yield return $"{indent}&ErrorResponse.Message = !\"{plan.TransactionName} was not found.\"";
     }
 
-    private static IReadOnlyList<VariableSpec> GetVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
+    internal static IReadOnlyList<VariableSpec> GetVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
         .Concat(new[]
         {
             new VariableSpec("GetResponse", plan.ResponseSdtName),
@@ -1828,7 +1825,7 @@ internal static class ApiPlanBusinessComponentWriter
         })
         .ToArray();
 
-    private static IReadOnlyList<VariableSpec> CreateVariables(ApiPlan plan) => new[]
+    internal static IReadOnlyList<VariableSpec> CreateVariables(ApiPlan plan) => new[]
     {
         new VariableSpec("CreateRequest", plan.CreateRequestSdtName),
         new VariableSpec("CreateResponse", plan.ResponseSdtName),
@@ -1852,14 +1849,12 @@ internal static class ApiPlanBusinessComponentWriter
         new VariableSpec("CreateRequest", plan.CreateRequestSdtName),
         new VariableSpec("CreateResponse", plan.ResponseSdtName),
         new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
-        new VariableSpec("ErrorItem", "sdt_API_ErrorResponse.Error"),
         new VariableSpec("RestStatusCode", "Numeric(3.0)"),
         new VariableSpec(plan.TransactionName, plan.TransactionName),
-        new VariableSpec("Message", "Messages.Message, GeneXus.Common"),
         new VariableSpec("Messages", "Messages, GeneXus.Common"),
     };
 
-    private static IReadOnlyList<VariableSpec> UpdateVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
+    internal static IReadOnlyList<VariableSpec> UpdateVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
         .Concat(new[]
         {
             new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName),
@@ -1957,9 +1952,9 @@ internal static class ApiPlanBusinessComponentWriter
 
     private static string ApiVariables(ApiPlan plan) => string.Join(Environment.NewLine, ApiVariableSpecs(plan).Select(variable => $"{variable.Name} [ DataType = '{variable.DataType}' ]"));
 
-    private static string GetRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "out:&GetResponse", "out:&ErrorResponse", "out:&RestStatusCode" }))});";
-    private static string CreateRules() => "parm(in:&CreateRequest, out:&CreateResponse, out:&ErrorResponse, out:&RestStatusCode);";
-    private static string UpdateRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse", "out:&ErrorResponse", "out:&RestStatusCode" }))});";
+    internal static string GetRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "out:&GetResponse", "out:&ErrorResponse", "out:&RestStatusCode" }))});";
+    internal static string CreateRules() => "parm(in:&CreateRequest, out:&CreateResponse, out:&ErrorResponse, out:&RestStatusCode);";
+    internal static string UpdateRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse", "out:&ErrorResponse", "out:&RestStatusCode" }))});";
     private static string LegacyCreateRules() => "parm(in:&CreateRequest, out:&CreateResponse);";
     private static string LegacyUpdateRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse" }))});";
     private static string LoadArguments(ApiPlan plan, string prefix) => string.Join(", ", plan.PrimaryKey.Select(field => prefix == "&" ? $"&{field.Name}" : $"{prefix}.{field.Name}"));
