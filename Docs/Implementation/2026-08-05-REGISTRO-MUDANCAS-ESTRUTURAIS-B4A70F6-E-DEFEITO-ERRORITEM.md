@@ -1,7 +1,7 @@
 # Registro de Mudanças Estruturais do Commit b4a70f6, Modelo de Dados e Defeito Histórico ErrorItem
 
-**Data de Registro:** 2026-08-05  
-**Autores:** Equipe de Desenvolvimento / Antigravity Agent  
+**Data de Registro:** 2026-08-05
+**Autores:** Equipe de Desenvolvimento / Antigravity Agent
 **Escopo:** Commits `ee09fa3`, `b4a70f6` e correções vigentes em `main`.
 
 ---
