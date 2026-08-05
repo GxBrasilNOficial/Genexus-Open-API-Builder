@@ -10,6 +10,16 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 # [Unreleased]
 
+## Fixed
+
+- Correções sobre os commits `ee09fa3` e `b4a70f6`:
+  - Restaurado o reencontro de SDTs `ApiPlanSdtWriter.CreateOrReencounter` no fluxo `ApplyList` (`ApiPlanListProcedureWriter.cs`) para suporte a reaplicação isolada.
+  - Invertido o fallback de autonumeração em `PrototypeWizardContract.cs` para bloqueio defensivo no `CreateRequest` em caso de erro ou incerteza.
+  - Revertida a visibilidade dos 13 métodos auxiliares de writers de `internal` de volta para `private`.
+  - Corrigida a afirmação sobre `URLEncode` no checkpoint operacional (`STATUS_ATUAL_E_PROXIMO_PASSO.md`) e registrada a matriz de teste com `TesteCodigo` em `CreateFields` e o achado de ambiente no IIS em `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`.
+  - Documentadas as alterações estruturais do commit `b4a70f6` e o defeito histórico do `ErrorItem` em `Docs/Implementation/2026-08-05-REGISTRO-MUDANCAS-ESTRUTURAIS-B4A70F6-E-DEFEITO-ERRORITEM.md`.
+  - Corrigida a referência do documento 27 no backlog `06-BACKLOG_v0.1.md`.
+
 ## Added
 
 - Fechamento dos gaps de evidência da Sprint 6 (Gaps 1, 2 e 3):

@@ -277,7 +277,7 @@ B088 é registrado como item de backlog anterior à Alpha para investigar extens
 
 **Critérios de aceite para conclusão de B088 na Sprint 7:**
 1. *Investigação de Extensibilidade*: mapear e provar se o mecanismo de extensibilidade da IDE/SDK permite substituir ou interceptar o template `Swagger.Yaml.stg` sem modificar a instalação central do GeneXus;
-2. *Ressalva e Compatibilidade*: caso a alteração do template nativo exija modificar `C:\Program Files (x86)\GeneXus` (o que é proibido), registrar formalmente a limitação intransponível em `Docs/Foundation/12-REGRAS_CRIACAO_API_OBJECTS.md` e `Docs/Foundation/27-CONTRATO_OPENAPI.md`, definindo as orientações de consumo para o `openapi-generator-cli`;
+2. *Ressalva e Compatibilidade*: caso a alteração do template nativo exija modificar `C:\Program Files (x86)\GeneXus` (o que é proibido), registrar formalmente a limitação intransponível em `Docs/Foundation/12-REGRAS_CRIACAO_API_OBJECTS.md` e `Docs/Foundation/27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md`, definindo as orientações de consumo para o `openapi-generator-cli`;
 3. *Definição de Concluído*: o item estará pronto com o relatório técnico de viabilidade e as ressalvas de compatibilidade incorporadas à documentação.
 
 ### Nota operacional — B089, registrada em 2026-08-04 (atualizada em 2026-08-05)

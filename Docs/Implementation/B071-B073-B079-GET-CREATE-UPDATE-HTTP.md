@@ -171,14 +171,24 @@ Evidência capturada por requisição HTTP real disparada contra as duas instala
 
 #### Validação HTTP do Cabeçalho Location com Chave Primária Composta (Transaction `Teste`)
 
-Validação de emissão e navegabilidade direta em runtime executada em 2026-08-05 na Transaction `Teste` (chave composta `TesteId` + `TesteDate`), em ambos os ambientes com autenticação Bearer Token GAM, navegando diretamente o cabeçalho `Location` devolvido pelo `POST` sem nenhuma reescrita de URL:
+Validação de emissão e navegabilidade direta em runtime executada em 2026-08-05 na Transaction `Teste` (chave composta `TesteId` + `TesteDate` + `TesteCodigo`), em ambos os ambientes com autenticação Bearer Token GAM, navegando diretamente o cabeçalho `Location` devolvido pelo `POST` sem nenhuma reescrita de URL:
 
-| Ambiente Gerado | Status POST | Cabeçalho `Location` Emitido | Status GET direto na URL do `Location` (`/apiTeste` + `Location`) | Corpo do `GET` Retornado |
-| --- | --- | --- | --- | --- |
-| **.NET Framework / SQL Server** | `201 Created` | `Location: /teste/2/2026-08-05` | `200 OK` | `{"GetResponse":{"TesteId":"2","TesteDate":"2026-08-05","TesteDesc":"Strict Location Test 1330"},"ErrorResponse":{"Code":"","Message":""}}` |
-| **.NET Core / PostgreSQL** | `201 Created` | `Location: /teste/2/2026-08-05` | `200 OK` | `{"GetResponse":{"TesteId":"2","TesteDate":"2026-08-05","TesteDesc":"Strict Location Test 1330"},"ErrorResponse":{"Code":"","Message":""}}` |
+##### Reorganização do Modelo de Dados da KB
+A Transaction de testes funcionais `Teste` teve seu modelo reorganizado para possuir chave primária composta de três partes: `TesteId` (Numeric 6.0), `TesteDate` (Date) e `TesteCodigo` (VarChar 20). Houve reestruturação física das tabelas e execução de Database Reorganization nos dois ambientes (.NET Framework em IIS e .NET Core / .NET Kestrel).
 
-*Observação Técnica de Navegabilidade:* Inicialmente, o gerador utilizava `ToString().Trim()` dos membros da chave primária (`CreateLocationUrlExpression`), o que formatava datas pelo padrão regional com barras (`05/08/26`) e fazia a requisição `GET` direta falhar com `404` por divisão de sub-caminhos na URL. O gerador `ApiPlanBusinessComponentWriter` foi corrigido para aplicar serialização ISO estrita (`PadL(Trim(Str(member.Year())), 4, "0") + "-" + PadL(Trim(Str(member.Month())), 2, "0") + "-" + PadL(Trim(Str(member.Day())), 2, "0")`) e `EncodeUrl` em campos texto. Com essa atualização, o cabeçalho `Location` emitido nativamente pelo `POST` passa a ser `/teste/2/2026-08-05`, cuja navegação `GET` direta devolve **`HTTP 200 OK`** com o recurso recém-criado em ambos os geradores.
+##### Medição de URLEncode na Chave de Texto (`TesteCodigo`)
+Para validar a codificação de chave de texto no `Location` header, `TesteCodigo` foi explicitamente selecionado em `CreateFields`. O comportamento do `URLEncode` foi medido em três cenários de valores:
+
+| Caso de Teste (`TesteCodigo`) | Ambiente Gerado | Status POST | Cabeçalho `Location` Emitido | Status GET Direto | Corpo Retornado no GET / Observações |
+| --- | --- | --- | --- | --- | --- |
+| **Com espaço** (`COD 01`) | **.NET Framework** | `201 Created` | `Location: /teste/6/2026-08-05/COD%2001` | `200 OK` | Recurso recuperado com sucesso. `URLEncode` converteu espaço em `%20`. |
+| **Com espaço** (`COD 01`) | **.NET Core** | `201 Created` | `Location: /teste/6/2026-08-05/COD%2001` | `200 OK` | Recurso recuperado com sucesso. Navegabilidade direta 200 OK. |
+| **Com acentuação** (`AÇÃO`) | **.NET Framework** | `201 Created` | `Location: /teste/6/2026-08-05/A%C3%87%C3%83O` | `200 OK` | Recurso recuperado com sucesso. `URLEncode` codificou caracteres UTF-8 em percent-encoding. |
+| **Com acentuação** (`AÇÃO`) | **.NET Core** | `201 Created` | `Location: /teste/6/2026-08-05/A%C3%87%C3%83O` | `200 OK` | Recurso recuperado com sucesso. Navegabilidade direta 200 OK. |
+| **Com barra** (`COD/01`) | **.NET Framework (IIS)** | `201 Created` | `Location: /teste/6/2026-08-05/COD%2F01` | `404 Not Found` (IIS) | **Achado de Ambiente (IIS):** Por padrão, o IIS rejeita sequências `%2F` em segmentos de caminho (`requestFiltering` bloqueia `allowDoubleEscaping=false`). O GET não atinge a aplicação GeneXus. Exige configuração de `allowDoubleEscaping="true"` no IIS. |
+| **Com barra** (`COD/01`) | **.NET Core (Kestrel)** | `201 Created` | `Location: /teste/6/2026-08-05/COD%2F01` | `200 OK` | Recurso recuperado com sucesso no Kestrel, que aceita `%2F` nos segmentos de rota REST. |
+
+*Observação Técnica de Navegabilidade:* A serialização ISO estrita para datas (`Year`, `Month`, `Day`) e `URLEncode` para campos de texto garantem URLs válidas no `Location` header. No ambiente IIS, o caso com barra (`%2F`) exige a liberação explícita de `allowDoubleEscaping` no módulo de `requestFiltering`, caso contrário o IIS rejeita a solicitação com `404` antes de entregar ao handler REST do GeneXus.
 
 #### Verbo PUT bloqueado pelo IIS no ambiente .NET Framework
 
