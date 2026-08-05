@@ -315,6 +315,8 @@ Fechar a operação na IDE, o ciclo de vida conservador e a comprovação integr
 - `B085`: sincronizar com a Transaction por comparação explícita de metadata
 - `B086`: remover por comando explícito, preservando Folder reutilizado e `GxOpenAPI`
 - `B087`: ancorar a posse apenas na metadata de integridade e liberar a `Description` do API Object para edição humana, conforme a nota operacional do documento 06
+- `B088`: reconciliar as restrições do template nativo `Swagger.Yaml.stg`, que declara apenas `200` e `404` por operação e não emite `required:` nos schemas, conforme a nota operacional do documento 06
+- `B089`: automatizar a validação de permissões granulares GAM por roles não-administradoras, comprovando a recusa `403` quando a permissão não está atribuída, conforme a nota operacional do documento 06
 - comprovar rerun consistente e cancelamento sem efeitos colaterais
 - executar a validação integrada final, inclusive dos gates de segurança B092/B093
 

@@ -341,7 +341,7 @@ Os itens e intervalos abaixo formam a linha de corte exaustiva do MVP. Um item o
 - Fase 4: B050–B056
 - Fase 5: B060–B067
 - Fase 6: B070–B079
-- Fase 7: B080, B081 e B083–B087
+- Fase 7: B080, B081 e B083–B089
 - Fase 8: B090–B093
 
 `B082` fica fora da linha de corte: mostrar o tempo de execução é útil, mas não comprova contrato funcional, segurança nem ciclo de vida.
@@ -359,7 +359,7 @@ Os itens e intervalos abaixo formam a linha de corte exaustiva do MVP. Um item o
 5. Fase 3 até `B046`, criando os SDTs antes de seus consumidores
 6. Fases 4 e 5 (`B050`–`B067`), criando Procedures, API Object e metadata
 7. `B047`, Fase 6 (`B070`–`B079`) e aplicação da segurança em `B093`
-8. Fase 7 (`B080`, `B081`, `B083`–`B086`) e comprovação integrada dos dez gates
+8. Fase 7 (`B080`, `B081`, `B083`–`B089`) e comprovação integrada dos dez gates
 
 `B047` é validado somente depois do API Object e dos serviços porque depende do YAML gerado pelo GeneXus; esse deslocamento de evidência não antecipa consumidores antes dos SDTs.
 
