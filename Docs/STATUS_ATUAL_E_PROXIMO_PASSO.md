@@ -81,19 +81,18 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Frente ativa
 
-**Correção do `Location` (path-encoding + recusa de barra)** — código, Build All e matriz HTTP pós-correção concluídos nos dois geradores. Pendente fechamento documental final (STATUS/CHANGELOG alinhados) e commit local se solicitado.
+**Sprint 7 — Conflitos e Reexecução**. As frentes pós-Sprint 6 (`Location`/`URLEncode` com path-encoding e recusa de barra, autonumeração no Passo 3 e PK opcional no Create no Passo 4) estão concluídas, com evidência HTTP nos dois geradores, fechamento documental e commits enviados ao remoto.
 
 ## Próxima ação única
 
-Fechar a frente com revisão pré-push e commit local (sem push), após alinhamento final de `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` e `CHANGELOG.md` à evidência HTTP capturada.
+Iniciar a Sprint 7 — Conflitos e Reexecução, validando a gestão conservadora de conflitos, reexecução segura e preflight de colisão externa (B063, B064, B067).
 
 ## Critério de conclusão e evidência esperada
 
-- matriz HTTP pós-correção capturada (`Temp/location-matrix-2026-08-06-pos-correcao.json`, mtime `2026-08-06 23:18:44`);
-- matriz pré-correção de espaço `COD+01` marcada como superada no documento de implementação;
-- `git fetch origin` e `pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson` com checks sem `failed` antes do commit;
-- revisão semântica do trio API/Procedure/`Location`;
-- commit local sem push, se solicitado.
+- validação da gestão conservadora de conflitos, reexecução segura e preflight de colisão externa (B063, B064, B067) em cenários de re-aplicação e colisão;
+- revisão semântica de contrato runtime confirmando integridade entre API Object, Procedures, SDTs e metadata;
+- rotina pré-push executada com checks sem `failed`;
+- relatório da revisão registrado na resposta final.
 
 ## Sequência operacional vigente
 
