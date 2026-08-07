@@ -12,6 +12,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Changed
 
+- B087 (2026-08-07): posse do API Object passa a ser resolvida pela metadata (`ownership` + integridade B067), com fallback na `Description` apenas quando o File ainda não existe. Reencontro deixa de sobrescrever a `Description`. Validado no U15 em `apiTeste` com Description humana preservada após Wizard. Description gerada padrão sem ponto terminal; forma legada com ponto aceita no fallback/integridade. Teste `Tests/ApiObjectOwnership/Test-ApiPlanApiObjectOwnership.ps1` integrado ao pré-push. Evidência: `Docs/Implementation/B087-POSSE-API-OBJECT-METADATA.md`.
+
 - Revisão documental da Sprint 7 (2026-08-07): o objetivo vigente deixa de ser “revalidar conflitos/reexecução” (já entregues nas Sprints 5–6) e passa a ser o ciclo de vida operacional na IDE — posse do API Object via metadata (`B087`), `Remover API gerada` (`B086`), `Sincronizar com a Transaction` (`B085`), relatório final (`B081`), UX mínima de conflitos e comprovação dos dez gates. `B088` (YAML nativo) e `B089` (403 GAM) ficam pré-Alpha separados. Documentos: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`, `Docs/Foundation/24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md`, `Docs/Foundation/06-BACKLOG_v0.1.md`.
 
 ## Fixed

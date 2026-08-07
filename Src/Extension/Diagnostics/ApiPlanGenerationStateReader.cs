@@ -150,8 +150,7 @@ internal static class ApiPlanGenerationStateReader
         }
 
         if (matches.Count == 1 &&
-            string.Equals(matches[0].Description, ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal) &&
-            ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, matches[0]))
+            ApiPlanApiObjectWriter.IsOwnedApiObject(designModel, apiPlan, matches[0]))
         {
             return new ApiPlanGenerationInspection(1, 1, 0, 0);
         }
@@ -202,7 +201,8 @@ internal static class ApiPlanGenerationStateReader
 
         var transaction = transactionMatches[0];
         var apiObject = apiMatches[0];
-        if (!string.Equals(apiObject.Description, ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal) || !ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject))
+        // B087: metadata compatível não exige Description do API Object igual à sentinela.
+        if (!ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject))
         {
             return false;
         }

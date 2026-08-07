@@ -79,22 +79,23 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Performance do wizard (mesmo dia): `ApiPlanGenerationStateReader` passou a um `GetAll` por tipo com índice por nome; preview de geração evita reentrância e só recalcula em abas de geração, com cache por fingerprint (aba Resumo força refresh). Testes em `Tests/WizardContract/`.
 - Correção de código do `Location` (mesmo dia): Create passou a `StrReplace(URLEncode(Trim(...)), !"+" , !"%20")` para espaço em path; recusa `/` em PK texto com `Rollback`+`400` antes do `Commit`; preflight migra a forma `URLEncode(Trim(...))` via `&LocationUrl`; teste de contrato com mutação OK. Validação HTTP pós-correção nos dois environments: espaço `COD%2001` com GET `200`; acento e simples sem regressão; barra `400 invalid_request` sem gravação. Evidência `Temp/location-matrix-2026-08-06-pos-correcao.json` e `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`.
 - Revisão documental da Sprint 7 em 2026-08-07: o plano original de “conflitos e reexecução” ficou defasado porque preflight de colisão, bloqueio sem `_v2`, reencontro conservador e integridade de metadata já foram entregues e evidenciados nas Sprints 5 e 6. O objetivo vigente da Sprint 7 passou a ser o ciclo de vida operacional na IDE (posse sem travar a `Description`, sincronizar, remover, relatório final, UX mínima de conflitos e comprovação dos dez gates). Limitações do YAML nativo (`Swagger.Yaml.stg`) e evidência HTTP 403 com role GAM customizada saíram do gate obrigatório desta sprint e ficam como frentes pré-Alpha separadas. Detalhe em `Docs/Foundation/24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md` e nota operacional no documento 06.
+- B087 implementado em código em 2026-08-07: `ApiPlanApiObjectOwnership` + `IsOwnedApiObject` reconhecem o API Object pela metadata (`ownership` + B067), com fallback na `Description` só sem File; reencontro não sobrescreve a Description. Teste off-line e build Release OK. Evidência: `Docs/Implementation/B087-POSSE-API-OBJECT-METADATA.md`.
+- B087 validado manualmente em 2026-08-07 na Transaction `Teste` (`apiTeste`): Description humana editada; Wizard em modo reencontro aprovou preflight, reencontrou SDTs/Procedures, sincronizou BC/List e metadata (`Reencountered`, Guid `73fcc50b-9653-43ae-8889-4931e0ab0c25`); a Description editada permaneceu após aplicar. A Description gerada padrão passou a omitir o ponto terminal; a forma legada com ponto continua no fallback/integridade.
 
 ## Frente ativa
 
-**Sprint 7 — Ciclo de vida operacional na IDE** (objetivo revisado em 2026-08-07). O núcleo de conflitos/reexecução já existe no wizard; o que falta para o marco **wizard funcional do MVP** é posse segura, remoção, sincronização, relatório pós-geração e fechamento dos gates.
+**Sprint 7 — Ciclo de vida operacional na IDE** (objetivo revisado em 2026-08-07). B087 fechado em código e validação manual U15.
 
 ## Próxima ação única
 
-Implementar a posse do API Object ancorada na metadata de integridade, liberando a `Description` para edição humana sem perder o reconhecimento de objeto próprio (B087), na ordem acordada da Sprint 7 revisada.
+Implementar o comando explícito `Remover API gerada` (B086): listar objetos próprios via metadata, confirmar impacto, remover só o que a extensão gerou, preservar Folder reutilizado e `GxOpenAPI`, sem reverter Business Component.
 
 ## Critério de conclusão e evidência esperada
 
-- posse do API Object deixa de depender da igualdade exata da `Description`; metadata (`ownership` + integridade) governa o reencontro, com fallback só quando o File ainda não existir;
-- em seguida, nesta sprint: comando `Remover API gerada`, comando `Sincronizar com a Transaction`, relatório final pós-aplicação, UX mínima de conflitos (nome/tipo/módulo/Folder) e alinhamento do Folder preexistente reutilizável;
-- comprovação integrada dos dez gates técnicos transversais e declaração do marco **wizard funcional do MVP concluído**;
-- B088 (YAML nativo) e B089 (403 GAM) documentados como pré-Alpha separados, sem bloquear o fechamento desta sprint;
-- revisão semântica de contrato runtime e rotina pré-push sem checks `failed` no fechamento.
+- comando registrado nas três camadas (Package, manifesto, Groups) e coberto por `Tools/Test-ExtensionCommandRegistration.ps1`;
+- preflight lista objetos a remover e exige confirmação antes do primeiro `Delete()`;
+- Folder reutilizado e SDTs compartilhados em `GxOpenAPI` permanecem;
+- evidência manual U15 + doc de implementação.
 
 ## Sequência operacional vigente
 
@@ -130,7 +131,7 @@ Implementar a posse do API Object ancorada na metadata de integridade, liberando
 - comprovação integrada final dos dez gates técnicos transversais (parcialmente já evidenciada nas Sprints 1–6; faltam remoção e sincronização no gate 10).
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
-- posse do API Object ainda amarrada à `Description` exata (B087 pendente): editar a descrição pública na IDE quebra o reconhecimento de objeto próprio.
+- B087 em código e validado no U15 (Description editável com metadata); próximo obrigatório da sprint: `Remover API gerada`.
 - comandos `Remover API gerada` e `Sincronizar com a Transaction` ainda ausentes no runtime.
 - Folder preexistente `NomeOpenApi` no módulo correto ainda é tratado como colisão no código, em desacordo com a decisão do MVP de reutilizar com aviso.
 

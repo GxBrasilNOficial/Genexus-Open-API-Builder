@@ -119,15 +119,9 @@ internal static class ApiPlanMetadataFileWriter
         }
 
         var apiObject = matches[0];
-        var expectedDescription = ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan);
-        if (!string.Equals(apiObject.Description, expectedDescription, StringComparison.Ordinal))
+        if (!ApiPlanApiObjectWriter.IsOwnedApiObject(designModel, apiPlan, apiObject))
         {
             throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: API Object externo ou incompativel chamado '{apiPlan.ApiName}'. Nenhuma alteracao foi feita.");
-        }
-
-        if (!ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject))
-        {
-            throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: o API Object '{apiPlan.ApiName}' possui fonte ou variaveis divergentes da geracao B054/B055. Nenhuma alteracao foi feita.");
         }
 
         return apiObject;
@@ -213,7 +207,7 @@ internal static class ApiPlanMetadataFileWriter
             ComputeServiceDescriptionsHash(apiPlan),
             ComputeCompatiblePlannedContractHashes(apiPlan),
             ComputeActualServiceDescriptionsHash(apiPlan, apiObject.ServiceGroupSource.Source),
-            ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan),
+            ApiPlanApiObjectWriter.CreateOwnedDescriptionCandidates(apiPlan),
             ComputeCompatibleExpectedServiceSources(apiPlan),
             ApiPlanBusinessComponentWriter.IsManagedApiObject(apiObject.Model, apiPlan, apiObject));
     }

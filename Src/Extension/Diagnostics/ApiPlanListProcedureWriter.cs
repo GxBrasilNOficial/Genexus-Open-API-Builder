@@ -150,7 +150,7 @@ internal static class ApiPlanListProcedureWriter
     private static API FindApi(KBModel model, ApiPlan plan)
     {
         var matches = API.GetAll(model).Where(item => string.Equals(item.Name, plan.ApiName, StringComparison.OrdinalIgnoreCase)).ToArray();
-        if (matches.Length != 1 || !string.Equals(matches.Single().Description, ApiPlanApiObjectWriter.CreateOwnedDescription(plan), StringComparison.Ordinal))
+        if (matches.Length != 1 || !ApiPlanApiObjectWriter.IsOwnedApiObject(model, plan, matches.Single()))
             throw new InvalidOperationException($"B070 bloqueado: API Object proprio '{plan.ApiName}' nao foi reencontrado com seguranca. Execute B054 antes. Nenhuma alteracao foi feita.");
         return matches.Single();
     }
