@@ -35,7 +35,7 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly NumericUpDown _defaultPageSize = CreateNumericInput();
     private readonly NumericUpDown _maximumPageSize = CreateNumericInput();
     private readonly ListBox _staticOrderList = new() { Dock = DockStyle.Fill, HorizontalScrollbar = true, IntegralHeight = false };
-    private readonly TextBox _createRequiredText = CreateReadOnlyTextBox();
+    private readonly FlowLayoutPanel _createRequiredList = CreateChoicePanel();
     private readonly TextBox _updateRequiredText = CreateReadOnlyTextBox();
     private readonly TextBox _businessComponentText = CreateReadOnlyTextBox();
     private readonly CheckBox _enableBusinessComponentCheck = new() { AutoSize = true, Text = "Habilitar Business Component agora", Dock = DockStyle.Top };
@@ -68,6 +68,9 @@ internal sealed class PrototypeWizardDialog : Form
     private bool _servicesBasePathEditedManually;
     private bool _businessComponentEnabledDuringWizard;
     private bool _suppressGenerationPreviewRefresh;
+    private bool _refreshGenerationPreviewRunning;
+    private ApiPlanGenerationState? _cachedGenerationState;
+    private string? _cachedGenerationFingerprint;
     private bool _applyBusinessComponentWhenReady;
     private string _generationContext = "Plano da Transaction ainda nao consultado na KB.";
 
@@ -457,15 +460,15 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0).", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(new Label { AutoSize = true, Text = "Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0). Chave primária não autonumerada inicia opcional no Create; marque aqui se quiser exigir o valor no payload.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
 
         var createGroup = new GroupBox
         {
             Dock = DockStyle.Fill,
-            Text = "CreateRequest - Obrigatório no payload",
+            Text = "CreateRequest - Obrigatório no payload (editável)",
             Padding = new Padding(8),
         };
-        createGroup.Controls.Add(_createRequiredText);
+        createGroup.Controls.Add(_createRequiredList);
 
         var updateGroup = new GroupBox
         {
@@ -751,7 +754,7 @@ internal sealed class PrototypeWizardDialog : Form
             _suppressGenerationPreviewRefresh = false;
         }
 
-        RefreshGenerationPreview();
+        RefreshGenerationPreview(forceRefresh: true);
     }
 
     private void ApplyServicePreference(string serviceName, bool preferredChecked)
@@ -889,10 +892,8 @@ internal sealed class PrototypeWizardDialog : Form
             RefreshRequiredText();
         }
 
-        if (_tabs.SelectedTab?.Text == "SDTs" || _tabs.SelectedTab?.Text == "Procedures" || _tabs.SelectedTab?.Text == "API Object" || _tabs.SelectedTab?.Text == "List" || _tabs.SelectedTab?.Text == "Metadata")
-        {
-            RefreshGenerationPreview();
-        }
+        // Preview de geracao: so na troca de aba (HandleSelectedTabChanged) ou ao montar o Resumo.
+        // Evita ReadGenerationState duplicado no Próximo entre abas SDTs..Metadata.
 
         if (_tabs.SelectedTab?.Text == "Business Component" &&
             !CompletePendingExplicitActions())
@@ -911,6 +912,9 @@ internal sealed class PrototypeWizardDialog : Form
             return;
         }
 
+        // Ultimo "Próximo" antes do Resumo (ex.: saindo de Metadata sem clicar na aba):
+        // força preview fresco — mesmo contrato do clique direto em Resumo.
+        RefreshGenerationPreview(forceRefresh: true);
         if (!CompletePendingExplicitActions() || !TryCreateSelection())
         {
             return;
@@ -921,9 +925,12 @@ internal sealed class PrototypeWizardDialog : Form
 
     private void HandleSelectedTabChanged()
     {
-        RefreshGenerationPreview();
-        if (_tabs.SelectedTab?.Text == "Resumo")
+        var tabName = _tabs.SelectedTab?.Text ?? "<null>";
+        if (string.Equals(tabName, "Resumo", StringComparison.Ordinal))
         {
+            // Clique direto (ou navegacao) em Resumo: sempre recalcula estado de geracao
+            // e monta o resumo com as selecoes atuais, sem exigir percorrer aba a aba.
+            RefreshGenerationPreview(forceRefresh: true);
             if (!_showingSummary && CompletePendingExplicitActions() && TryCreateSelection())
             {
                 ShowSummary();
@@ -931,6 +938,16 @@ internal sealed class PrototypeWizardDialog : Form
 
             RefreshCurrentTabLabel();
             return;
+        }
+
+        if (ShouldRefreshGenerationPreviewOnTab(tabName))
+        {
+            RefreshGenerationPreview(forceRefresh: false);
+        }
+
+        if (string.Equals(tabName, "Obrigatórios", StringComparison.Ordinal))
+        {
+            RefreshRequiredText();
         }
 
         if (_showingSummary)
@@ -945,6 +962,16 @@ internal sealed class PrototypeWizardDialog : Form
         RefreshCurrentTabLabel();
     }
 
+    private static bool ShouldRefreshGenerationPreviewOnTab(string tabName)
+    {
+        return string.Equals(tabName, "SDTs", StringComparison.Ordinal)
+            || string.Equals(tabName, "Procedures", StringComparison.Ordinal)
+            || string.Equals(tabName, "API Object", StringComparison.Ordinal)
+            || string.Equals(tabName, "Business Component", StringComparison.Ordinal)
+            || string.Equals(tabName, "List", StringComparison.Ordinal)
+            || string.Equals(tabName, "Metadata", StringComparison.Ordinal);
+    }
+
     private bool CompletePendingExplicitActions()
     {
         if (PrototypeWizardBusinessComponentNavigationPolicy.ShouldRequestEnableBeforeLeavingWizard(IsBusinessComponentReady(), _enableBusinessComponentCheck.Checked))
@@ -954,7 +981,7 @@ internal sealed class PrototypeWizardDialog : Form
                 return false;
             }
 
-            RefreshGenerationPreview();
+            RefreshGenerationPreview(forceRefresh: true);
         }
 
         return true;
@@ -1154,13 +1181,68 @@ internal sealed class PrototypeWizardDialog : Form
     {
         if (!_suppressGenerationPreviewRefresh)
         {
-            RefreshGenerationPreview();
+            RefreshGenerationPreview(forceRefresh: false);
         }
     }
 
-    private void RefreshGenerationPreview()
+    private void RefreshGenerationPreview(bool forceRefresh)
     {
-        var state = ReadGenerationState();
+        if (_refreshGenerationPreviewRunning)
+        {
+            return;
+        }
+
+        _refreshGenerationPreviewRunning = true;
+        try
+        {
+            var fingerprint = BuildGenerationPreviewFingerprint();
+            if (!forceRefresh &&
+                _cachedGenerationState is not null &&
+                string.Equals(_cachedGenerationFingerprint, fingerprint, StringComparison.Ordinal))
+            {
+                ApplyGenerationPreviewState(_cachedGenerationState);
+                return;
+            }
+
+            var state = ReadGenerationState();
+            _cachedGenerationState = state;
+            _cachedGenerationFingerprint = fingerprint;
+            ApplyGenerationPreviewState(state);
+        }
+        finally
+        {
+            _refreshGenerationPreviewRunning = false;
+        }
+    }
+
+    private string BuildGenerationPreviewFingerprint()
+    {
+        return string.Join(
+            "|",
+            string.Join(",", GetCheckedValues(_servicesList)),
+            string.Join(",", GetCheckedValues(_createFieldsList)),
+            string.Join(",", GetCheckedValues(_updateFieldsList)),
+            string.Join(",", GetCheckedValues(_responseFieldsList)),
+            string.Join(",", GetCheckedValues(_filtersList)),
+            string.Join(",", GetCheckedValues(_createRequiredList)),
+            _apiNameText.Text.Trim(),
+            _servicesBasePathText.Text.Trim(),
+            _restPathText.Text.Trim(),
+            GetSelectedSecurityLevel(),
+            _defaultPageSize.Value.ToString(),
+            _maximumPageSize.Value.ToString(),
+            _generateSdtsCheck.Checked ? "1" : "0",
+            _generateProceduresCheck.Checked ? "1" : "0",
+            _generateApiObjectCheck.Checked ? "1" : "0",
+            _generateMetadataCheck.Checked ? "1" : "0",
+            _applyListCheck.Checked ? "1" : "0",
+            _applyBusinessComponentCheck.Checked ? "1" : "0",
+            _enableBusinessComponentCheck.Checked ? "1" : "0",
+            IsBusinessComponentReady() ? "1" : "0");
+    }
+
+    private void ApplyGenerationPreviewState(ApiPlanGenerationState? state)
+    {
         _generationContext = FormatGenerationContext(state);
         RefreshCurrentTabLabel();
         var sdtState = state?.Sdts;
@@ -1507,37 +1589,134 @@ internal sealed class PrototypeWizardDialog : Form
             GetCheckedValues(_updateFieldsList),
             GetCheckedValues(_responseFieldsList),
             GetCheckedValues(_filtersList));
+
+        var previousRequired = new HashSet<string>(GetCheckedValues(_createRequiredList), StringComparer.OrdinalIgnoreCase);
+        var hadPreviousChoices = _createRequiredList.Controls.Count > 0;
+
+        _createRequiredList.SuspendLayout();
+        _createRequiredList.Controls.Clear();
+        foreach (var fieldName in selection.CreateFields)
+        {
+            var defaultRequired = DefaultCreateRequired(fieldName);
+            var selected = hadPreviousChoices
+                ? previousRequired.Contains(fieldName)
+                : defaultRequired;
+            AddChoice(
+                _createRequiredList,
+                new ChoiceItem(fieldName, true, FormatCreateRequiredChoiceLabel(fieldName, selected)),
+                selected);
+        }
+
+        foreach (var check in _createRequiredList.Controls.OfType<CheckBox>())
+        {
+            check.CheckedChanged += CreateRequiredCheckChanged;
+        }
+
+        _createRequiredList.ResumeLayout();
+
         var decisions = GetRequiredDecisions(selection);
-        _createRequiredText.Text = string.Join(Environment.NewLine, decisions
-            .Where(item => item.RequestName == "CreateRequest")
-            .Select(FormatRequiredDecision));
         _updateRequiredText.Text = string.Join(Environment.NewLine, decisions
             .Where(item => item.RequestName == "UpdateRequest")
             .Select(FormatRequiredDecision));
     }
+
+    private void CreateRequiredCheckChanged(object? sender, EventArgs e)
+    {
+        if (sender is not CheckBox check || check.Tag is not ChoiceItem item)
+        {
+            return;
+        }
+
+        check.Text = FormatCreateRequiredChoiceLabel(item.Value, check.Checked);
+        ResizeChoice(check, _createRequiredList);
+    }
+
+    private string FormatCreateRequiredChoiceLabel(string fieldName, bool isRequired)
+    {
+        var decision = BuildCreateRequiredDecision(fieldName, isRequired);
+        return $"{fieldName}: Required={decision.IsRequired} | {decision.Reason}";
+    }
+
     private IReadOnlyList<PrototypeWizardRequiredFieldDecision> GetRequiredDecisions(PrototypeWizardContractSelection selection)
     {
+        var requiredChecked = new HashSet<string>(GetCheckedValues(_createRequiredList), StringComparer.OrdinalIgnoreCase);
+        var createRequiredListInitialized = _createRequiredList.Controls.Count > 0;
         var create = selection.CreateFields
-            .Select(name => CreateRequiredDecision(name))
+            .Select(name =>
+            {
+                var isRequired = createRequiredListInitialized
+                    ? requiredChecked.Contains(name)
+                    : DefaultCreateRequired(name);
+                return BuildCreateRequiredDecision(name, isRequired);
+            })
             .ToArray();
         var update = selection.UpdateFields
             .Select(name => new PrototypeWizardRequiredFieldDecision("UpdateRequest", name, true, "Update via PUT exige todo membro selecionado preenchido; ausente ou com o valor default do tipo (vazio, false ou 0) devolve 400."))
             .ToArray();
         return create.Concat(update).ToArray();
     }
-    private PrototypeWizardRequiredFieldDecision CreateRequiredDecision(string fieldName)
+
+    private bool DefaultCreateRequired(string fieldName)
     {
         var attribute = _snapshot.Attributes.Single(item => string.Equals(item.Name, fieldName, StringComparison.Ordinal));
         if (attribute.IsSensitive)
         {
+            return false;
+        }
+
+        // Opcao 2 (2026-08-06): PK nao autonumerada entra no Create selecionada, porem opcional
+        // por padrao, para permitir rules/BC preencherem chave omitida ou com default do tipo.
+        if (attribute.IsPrimaryKey)
+        {
+            return false;
+        }
+
+        if (attribute.IsNullable)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private PrototypeWizardRequiredFieldDecision BuildCreateRequiredDecision(string fieldName, bool isRequired)
+    {
+        var attribute = _snapshot.Attributes.Single(item => string.Equals(item.Name, fieldName, StringComparison.Ordinal));
+        if (isRequired)
+        {
+            return new PrototypeWizardRequiredFieldDecision(
+                "CreateRequest",
+                fieldName,
+                true,
+                "Campo marcado como obrigatório no payload; ausente ou com o valor default do tipo (vazio, false ou 0) devolve 400.");
+        }
+
+        if (attribute.IsSensitive)
+        {
             return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, false, "Campo sensível selecionado permanece opcional no protótipo; se enviado, o valor é validado pelo BC.");
         }
+
+        if (attribute.IsPrimaryKey)
+        {
+            return new PrototypeWizardRequiredFieldDecision(
+                "CreateRequest",
+                fieldName,
+                false,
+                "Chave primária não autonumerada inicia opcional no CreateRequest; omitida ou com default do tipo fica a cargo do BC/rules. Marque para exigir no payload.");
+        }
+
         if (attribute.IsNullable)
         {
             return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, false, "Campo nullable pode ser omitido; valor vazio presente continua valor enviado e sujeito ao BC.");
         }
-        return new PrototypeWizardRequiredFieldDecision("CreateRequest", fieldName, true, "Campo selecionado sem nulabilidade conhecida deve chegar preenchido; ausente ou com o valor default do tipo (vazio, false ou 0) devolve 400.");
+
+        return new PrototypeWizardRequiredFieldDecision(
+            "CreateRequest",
+            fieldName,
+            false,
+            "Campo opcional no CreateRequest; omitido ou com default do tipo fica a cargo do BC/rules.");
     }
+
     private static IReadOnlyList<string> GetCheckedValues(FlowLayoutPanel panel)
     {
         return panel.Controls

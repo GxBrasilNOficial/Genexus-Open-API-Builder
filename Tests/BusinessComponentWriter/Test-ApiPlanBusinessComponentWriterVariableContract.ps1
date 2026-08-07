@@ -22,11 +22,26 @@ function Assert-NotContains {
 
 Assert-Contains $source 'new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse")' 'Create/Update devem declarar ErrorResponse como corpo publico de erro.'
 Assert-Contains $source 'new VariableSpec("HttpResponse", "HttpResponse")' 'Create deve declarar a variavel HttpResponse para emissao de cabecalhos HTTP.'
-Assert-Contains $source '&HttpResponse.AddHeader(!\"Location\",' 'Create deve emitir o cabecalho Location apontando para o recurso recem-criado quando responder 201.'
+Assert-Contains $source 'new VariableSpec("LocationUrl", "VarChar(1K)")' 'Create deve declarar LocationUrl para montar o cabecalho Location em etapas.'
+Assert-Contains $source '&HttpResponse.AddHeader(!\"Location\", &LocationUrl)' 'Create deve emitir Location a partir de LocationUrl ja montada.'
+Assert-Contains $source 'CreateLocationUrlAssignments' 'Create deve montar LocationUrl segmento a segmento antes do AddHeader.'
 Assert-Contains $source 'PrimaryKeyLocationPartExpression' 'CreateLocationUrlExpression deve delegar a formatacao da chave primaria a PrimaryKeyLocationPartExpression.'
 Assert-Contains $source 'PadL(Trim(Str(Year({member}))), 4, !\"0\")' 'Campos de data na chave primaria devem ser formatados no padrao ISO YYYY-MM-DD no Location header.'
-Assert-Contains $source 'URLEncode({member}.Trim())' 'Campos de texto na chave primaria devem ser codificados com URLEncode no Location header.'
+Assert-Contains $source 'URLEncode(Trim({member}))' 'Campos de texto na chave primaria devem usar URLEncode(Trim(...)), nao encadeamento .Trim().'
 Assert-Contains $source 'PreviousB079CreateContentWithoutLocationHeader' 'Preflight deve migrar Procedure Create gerada antes da inclusao do cabecalho Location.'
+Assert-Contains $source 'PreviousB079CreateContentWithMethodTrimUrlEncodeLocationHeader' 'Preflight deve migrar Create com Location inline e URLEncode({member}.Trim()).'
+Assert-Contains $source 'PreviousB079CreateContentWithInlineLocationHeader' 'Preflight deve migrar Create com Location inline em uma unica expressao.'
+
+$locationPartStart = $source.IndexOf('private static string PrimaryKeyLocationPartExpression', [StringComparison]::Ordinal)
+$previousLocationPartStart = $source.IndexOf('private static string PreviousB079PrimaryKeyLocationPartExpressionWithMethodTrim', [StringComparison]::Ordinal)
+if ($locationPartStart -lt 0 -or $previousLocationPartStart -lt 0 -or $previousLocationPartStart -le $locationPartStart) {
+    throw 'ASSERT_SECTION_FAILED: nao foi possivel isolar PrimaryKeyLocationPartExpression atual.'
+}
+
+$currentLocationPartSource = $source.Substring($locationPartStart, $previousLocationPartStart - $locationPartStart)
+Assert-Contains $currentLocationPartSource 'URLEncode(Trim({member}))' 'PrimaryKeyLocationPartExpression atual deve usar URLEncode(Trim(...)).'
+Assert-NotContains $currentLocationPartSource 'URLEncode({member}.Trim())' 'PrimaryKeyLocationPartExpression atual nao deve usar .Trim() encadeado.'
+
 Assert-Contains $source '[RestMethod({method.ToUpperInvariant()})]' 'API Object deve projetar RestMethod planejado, incluindo PUT no Update.'
 Assert-Contains $source '[RestPath(\"{EscapeDescription(ResolveService(plan, service).RestPath.Trim())}\")]' 'API Object deve projetar RestPath planejado em cada servico REST.'
 Assert-Contains $source '[SecurityLevel({plan.Security.SecurityLevel})]' 'API Object deve projetar SecurityLevel explicitamente em cada servico REST.'

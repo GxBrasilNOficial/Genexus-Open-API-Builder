@@ -12,11 +12,21 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Fixed
 
+- Passo 4 (opção 2, 2026-08-06): chave primária não autonumerada no CreateRequest inicia **opcional** (não required); a aba Obrigatorios do Create ficou editável para exigir o campo no payload quando desejado. Evita 400 quando rules/BC preenchem chave omitida ou com default do tipo. Smoke HTTP em `apiTeste` (dois environments): POST só com `TesteDesc` → `201`, `Location` navegável e GET `200` após rules `on BeforeInsert` na Transaction `Teste` (rules `if insert` não preencheram `TesteId`/`TesteCodigo` via BC).
+
+- Autonumeração no wizard (Passo 3, 2026-08-06): chave composta (`PrimaryKeyParts > 1`) deixa de bloquear campos no CreateRequest; PK simples continua lendo `Autonumber`/`idAUTONUMBER` com fallback conservador. Evidência em `Teste` vs `NotaFiscal`; sonda TEMP `AutonumberProbe` removida após a captura.
+
+- Performance do wizard (2026-08-06): `ReadGenerationState` passou a um `GetAll` por tipo com lookup por nome; preview evita reentrância, só recalcula em abas de geração e usa cache por fingerprint (Resumo força refresh). Testes em `Tests/WizardContract/`.
+
+- Recaptura 2026-08-06 do cabeçalho `Location` com chave composta e `URLEncode` na Transaction `Teste`:
+  - Gerador Create passou a montar `&LocationUrl` e a usar `URLEncode(Trim(...))` após `Validation of Procedure` rejeitar a forma anterior com `.Trim()` encadeado na gravação em 1 clique.
+  - Matriz HTTP real documentada em `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`: acento navegável; espaço emitido como `+` e não navegável no `Location`; `%2F` com `404` nos dois ambientes (com corpos distintos). A matriz anterior que afirmava `200` para espaço/`%20` e sucesso de `%2F` no Kestrel foi marcada como superada.
+  - Checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` alinhado à evidência capturada.
+
 - Correções sobre os commits `ee09fa3` e `b4a70f6`:
   - Restaurado o reencontro de SDTs `ApiPlanSdtWriter.CreateOrReencounter` no fluxo `ApplyList` (`ApiPlanListProcedureWriter.cs`) para suporte a reaplicação isolada.
   - Invertido o fallback de autonumeração em `PrototypeWizardContract.cs` para bloqueio defensivo no `CreateRequest` em caso de erro ou incerteza.
   - Revertida a visibilidade dos 13 métodos auxiliares de writers de `internal` de volta para `private`.
-  - Corrigida a afirmação sobre `URLEncode` no checkpoint operacional (`STATUS_ATUAL_E_PROXIMO_PASSO.md`) e registrada a matriz de teste com `TesteCodigo` em `CreateFields` e o achado de ambiente no IIS em `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`.
   - Documentadas as alterações estruturais do commit `b4a70f6` e o defeito histórico do `ErrorItem` em `Docs/Implementation/2026-08-05-REGISTRO-MUDANCAS-ESTRUTURAIS-B4A70F6-E-DEFEITO-ERRORITEM.md`.
   - Corrigida a referência do documento 27 no backlog `06-BACKLOG_v0.1.md`.
 

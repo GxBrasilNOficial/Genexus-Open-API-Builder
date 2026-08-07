@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Artech.Architecture.Common.Objects;
@@ -26,22 +27,24 @@ internal static class ApiPlanGenerationStateReader
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
+        // Uma varredura por tipo: GetAll repetido por objeto planejado era O(n*m) e dominava a abertura do wizard.
+        var index = KbObjectNameIndex.Create(designModel);
         var sdtPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
-        var folder = InspectFolder(designModel, apiPlan);
-        var sdts = InspectSdts(designModel, sdtPlan);
+        var folder = InspectFolder(index, apiPlan);
+        var sdts = InspectSdts(index, sdtPlan);
         var sdtState = CreateState("SDTs", sdts, folder);
 
-        var procedures = InspectProcedures(designModel, apiPlan);
+        var procedures = InspectProcedures(index, apiPlan);
         var procedureState = sdtState.IsBlocked
             ? ApiPlanGenerationStageState.Blocked("Procedures", "Bloqueado: o estado dos SDTs precisa ser resolvido antes.")
             : CreateState("Procedures", procedures, null);
 
-        var apiObject = InspectApiObject(designModel, apiPlan);
+        var apiObject = InspectApiObject(designModel, index, apiPlan);
         var apiState = sdtState.IsBlocked || procedureState.IsBlocked
             ? ApiPlanGenerationStageState.Blocked("API Object", "Bloqueado: o estado dos SDTs ou Procedures precisa ser resolvido antes.")
             : CreateState("API Object", apiObject, null);
 
-        var metadataFile = InspectMetadataFile(designModel, apiPlan);
+        var metadataFile = InspectMetadataFile(designModel, index, apiPlan);
         var metadataState = apiState.IsBlocked
             ? ApiPlanGenerationStageState.Blocked("Metadata File", "Bloqueado: o API Object precisa estar disponivel antes.")
             : CreateState("Metadata File", metadataFile, null);
@@ -71,17 +74,15 @@ internal static class ApiPlanGenerationStateReader
         return new ApiPlanGenerationStageState(stageName, action, detail, false);
     }
 
-    private static ApiPlanGenerationInspection InspectFolder(KBModel designModel, ApiPlan apiPlan)
+    private static ApiPlanGenerationInspection InspectFolder(KbObjectNameIndex index, ApiPlan apiPlan)
     {
-        var matches = Folder.GetAll(designModel)
-            .Where(folder => string.Equals(folder.Name, apiPlan.TransactionFolderName, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-        if (matches.Length == 0)
+        var matches = index.FindFolders(apiPlan.TransactionFolderName);
+        if (matches.Count == 0)
         {
             return new ApiPlanGenerationInspection(1, 0, 1, 0);
         }
 
-        if (matches.Length > 1 || !string.Equals(matches[0].Description, ApiPlanTransactionFolder.CreateOwnedDescription(apiPlan), StringComparison.Ordinal))
+        if (matches.Count > 1 || !string.Equals(matches[0].Description, ApiPlanTransactionFolder.CreateOwnedDescription(apiPlan), StringComparison.Ordinal))
         {
             return new ApiPlanGenerationInspection(1, 0, 0, 1);
         }
@@ -89,19 +90,19 @@ internal static class ApiPlanGenerationStateReader
         return new ApiPlanGenerationInspection(1, 1, 0, 0);
     }
 
-    private static ApiPlanGenerationInspection InspectSdts(KBModel designModel, ApiPlanSdtGenerationPlan generationPlan)
+    private static ApiPlanGenerationInspection InspectSdts(KbObjectNameIndex index, ApiPlanSdtGenerationPlan generationPlan)
     {
         var managed = 0;
         var missing = 0;
         var conflicts = 0;
         foreach (var definition in generationPlan.SharedSdts.Concat(generationPlan.OwnSdts))
         {
-            var matches = SDT.GetAll(designModel).Where(sdt => string.Equals(sdt.Name, definition.Name, StringComparison.OrdinalIgnoreCase)).ToArray();
-            if (matches.Length == 0)
+            var matches = index.FindSdts(definition.Name);
+            if (matches.Count == 0)
             {
                 missing++;
             }
-            else if (matches.Length == 1 && string.Equals(matches[0].Description, ApiPlanSdtWriter.CreateOwnedDescriptionFor(definition.BacklogId, definition.Kind), StringComparison.Ordinal))
+            else if (matches.Count == 1 && string.Equals(matches[0].Description, ApiPlanSdtWriter.CreateOwnedDescriptionFor(definition.BacklogId, definition.Kind), StringComparison.Ordinal))
             {
                 managed++;
             }
@@ -114,7 +115,7 @@ internal static class ApiPlanGenerationStateReader
         return new ApiPlanGenerationInspection(generationPlan.SharedSdts.Count + generationPlan.OwnSdts.Count, managed, missing, conflicts);
     }
 
-    private static ApiPlanGenerationInspection InspectProcedures(KBModel designModel, ApiPlan apiPlan)
+    private static ApiPlanGenerationInspection InspectProcedures(KbObjectNameIndex index, ApiPlan apiPlan)
     {
         var managed = 0;
         var missing = 0;
@@ -122,12 +123,12 @@ internal static class ApiPlanGenerationStateReader
         foreach (var service in apiPlan.Services)
         {
             var name = $"proc{apiPlan.TransactionName}_API_{service.Name}";
-            var matches = Procedure.GetAll(designModel).Where(procedure => string.Equals(procedure.Name, name, StringComparison.OrdinalIgnoreCase)).ToArray();
-            if (matches.Length == 0)
+            var matches = index.FindProcedures(name);
+            if (matches.Count == 0)
             {
                 missing++;
             }
-            else if (matches.Length == 1 && string.Equals(matches[0].Description, $"{ProcedureDescriptionPrefix} - {ResolveBacklogId(service.Name)} - {service.Name}", StringComparison.Ordinal))
+            else if (matches.Count == 1 && string.Equals(matches[0].Description, $"{ProcedureDescriptionPrefix} - {ResolveBacklogId(service.Name)} - {service.Name}", StringComparison.Ordinal))
             {
                 managed++;
             }
@@ -140,15 +141,15 @@ internal static class ApiPlanGenerationStateReader
         return new ApiPlanGenerationInspection(apiPlan.Services.Count, managed, missing, conflicts);
     }
 
-    private static ApiPlanGenerationInspection InspectApiObject(KBModel designModel, ApiPlan apiPlan)
+    private static ApiPlanGenerationInspection InspectApiObject(KBModel designModel, KbObjectNameIndex index, ApiPlan apiPlan)
     {
-        var matches = API.GetAll(designModel).Where(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase)).ToArray();
-        if (matches.Length == 0)
+        var matches = index.FindApis(apiPlan.ApiName);
+        if (matches.Count == 0)
         {
             return new ApiPlanGenerationInspection(1, 0, 1, 0);
         }
 
-        if (matches.Length == 1 &&
+        if (matches.Count == 1 &&
             string.Equals(matches[0].Description, ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal) &&
             ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, matches[0]))
         {
@@ -158,15 +159,15 @@ internal static class ApiPlanGenerationStateReader
         return new ApiPlanGenerationInspection(1, 0, 0, 1);
     }
 
-    private static ApiPlanGenerationInspection InspectMetadataFile(KBModel designModel, ApiPlan apiPlan)
+    private static ApiPlanGenerationInspection InspectMetadataFile(KBModel designModel, KbObjectNameIndex index, ApiPlan apiPlan)
     {
-        var matches = WikiFileKBObject.GetAll(designModel).Where(file => string.Equals(file.Name, apiPlan.MetadataFileName, StringComparison.OrdinalIgnoreCase)).ToArray();
-        if (matches.Length == 0)
+        var matches = index.FindFiles(apiPlan.MetadataFileName);
+        if (matches.Count == 0)
         {
             return new ApiPlanGenerationInspection(1, 0, 1, 0);
         }
 
-        if (matches.Length == 1 && string.Equals(matches[0].Description, ApiPlanMetadataFileWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal) && HasCompatibleMetadata(designModel, matches[0], apiPlan))
+        if (matches.Count == 1 && string.Equals(matches[0].Description, ApiPlanMetadataFileWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal) && HasCompatibleMetadata(designModel, index, matches[0], apiPlan))
         {
             return new ApiPlanGenerationInspection(1, 1, 0, 0);
         }
@@ -174,7 +175,7 @@ internal static class ApiPlanGenerationStateReader
         return new ApiPlanGenerationInspection(1, 0, 0, 1);
     }
 
-    private static bool HasCompatibleMetadata(KBModel designModel, WikiFileKBObject file, ApiPlan apiPlan)
+    private static bool HasCompatibleMetadata(KBModel designModel, KbObjectNameIndex index, WikiFileKBObject file, ApiPlan apiPlan)
     {
         var bytes = file.BlobPart?.Data?.GetBytes();
         if (bytes is null || bytes.Length == 0)
@@ -192,13 +193,9 @@ internal static class ApiPlanGenerationStateReader
             return false;
         }
 
-        var transactionMatches = Transaction.GetAll(designModel)
-            .Where(transaction => string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-        var apiMatches = API.GetAll(designModel)
-            .Where(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-        if (transactionMatches.Length != 1 || apiMatches.Length != 1)
+        var transactionMatches = index.FindTransactions(apiPlan.TransactionName);
+        var apiMatches = index.FindApis(apiPlan.ApiName);
+        if (transactionMatches.Count != 1 || apiMatches.Count != 1)
         {
             return false;
         }
@@ -230,6 +227,50 @@ internal static class ApiPlanGenerationStateReader
         if (string.Equals(serviceName, "Get", StringComparison.OrdinalIgnoreCase)) return "B051";
         if (string.Equals(serviceName, "Create", StringComparison.OrdinalIgnoreCase)) return "B052";
         return string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase) ? "B053" : "B050-B053";
+    }
+
+    private sealed class KbObjectNameIndex
+    {
+        private readonly ILookup<string, Folder> _folders;
+        private readonly ILookup<string, SDT> _sdts;
+        private readonly ILookup<string, Procedure> _procedures;
+        private readonly ILookup<string, API> _apis;
+        private readonly ILookup<string, WikiFileKBObject> _files;
+        private readonly ILookup<string, Transaction> _transactions;
+
+        private KbObjectNameIndex(
+            ILookup<string, Folder> folders,
+            ILookup<string, SDT> sdts,
+            ILookup<string, Procedure> procedures,
+            ILookup<string, API> apis,
+            ILookup<string, WikiFileKBObject> files,
+            ILookup<string, Transaction> transactions)
+        {
+            _folders = folders;
+            _sdts = sdts;
+            _procedures = procedures;
+            _apis = apis;
+            _files = files;
+            _transactions = transactions;
+        }
+
+        public static KbObjectNameIndex Create(KBModel designModel)
+        {
+            return new KbObjectNameIndex(
+                Folder.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase),
+                SDT.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase),
+                Procedure.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase),
+                API.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase),
+                WikiFileKBObject.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase),
+                Transaction.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase));
+        }
+
+        public IReadOnlyList<Folder> FindFolders(string name) => _folders[name].ToArray();
+        public IReadOnlyList<SDT> FindSdts(string name) => _sdts[name].ToArray();
+        public IReadOnlyList<Procedure> FindProcedures(string name) => _procedures[name].ToArray();
+        public IReadOnlyList<API> FindApis(string name) => _apis[name].ToArray();
+        public IReadOnlyList<WikiFileKBObject> FindFiles(string name) => _files[name].ToArray();
+        public IReadOnlyList<Transaction> FindTransactions(string name) => _transactions[name].ToArray();
     }
 }
 

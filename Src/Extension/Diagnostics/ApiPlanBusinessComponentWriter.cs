@@ -406,6 +406,8 @@ internal static class ApiPlanBusinessComponentWriter
     private static bool IsManagedCreateSource(string source, ApiPlan plan)
     {
         return HasEquivalentGeneratedSource(source, CreateContent(plan)) ||
+            HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithInlineLocationHeader(plan)) ||
+            HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithMethodTrimUrlEncodeLocationHeader(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithGenericToStringLocationHeader(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithoutLocationHeader(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithNativeJsonValidation(plan)) ||
@@ -494,8 +496,12 @@ internal static class ApiPlanBusinessComponentWriter
             .Where(line =>
                 line.IndexOf("ErrorResponse", StringComparison.Ordinal) >= 0 ||
                 line.IndexOf("Messages", StringComparison.Ordinal) >= 0 ||
-                line.IndexOf("RestStatusCode", StringComparison.Ordinal) >= 0)
-            .Take(30));
+                line.IndexOf("RestStatusCode", StringComparison.Ordinal) >= 0 ||
+                line.IndexOf("Location", StringComparison.Ordinal) >= 0 ||
+                line.IndexOf("URLEncode", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                line.IndexOf("Year(", StringComparison.Ordinal) >= 0 ||
+                line.IndexOf("LocationUrl", StringComparison.Ordinal) >= 0)
+            .Take(40));
     }
 
     private static void SaveApi(KBModel model, API api, Folder transactionFolder, ApiPlan plan, string source, IReadOnlyList<VariableSpec> variables)
@@ -635,6 +641,8 @@ internal static class ApiPlanBusinessComponentWriter
         var optionalMigrationVariables = new[]
         {
             new VariableSpec("HttpRequest", "HttpRequest"),
+            new VariableSpec("HttpResponse", "HttpResponse"),
+            new VariableSpec("LocationUrl", "VarChar(1K)"),
             new VariableSpec("RequestBody", "LongVarChar"),
             new VariableSpec("RequestProperties", "Properties"),
             new VariableSpec("RequestPayloadJson", "LongVarChar"),
@@ -648,7 +656,15 @@ internal static class ApiPlanBusinessComponentWriter
 
         // Procedures geradas antes da validacao por valor default nao possuem a instancia vazia do SDT de
         // request, entao ela nao pode ser exigida para reconhecer o objeto como migravel.
+        // LocationUrl e HttpResponse tambem entram como opcionais de migracao: variantes anteriores do
+        // Create com Location inline nao declaravam LocationUrl, e variantes pre-Location nao tinham HttpResponse.
         var absentInPreviousVariants = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            EmptyRequestVariableName("CreateRequest"),
+            EmptyRequestVariableName("UpdateRequest"),
+            "LocationUrl",
+        };
+        var optionalNameOnly = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             EmptyRequestVariableName("CreateRequest"),
             EmptyRequestVariableName("UpdateRequest"),
@@ -658,7 +674,9 @@ internal static class ApiPlanBusinessComponentWriter
                 .Where(variable => !absentInPreviousVariants.Contains(variable.Name))
                 .Select(variable => variable.Name),
             StringComparer.OrdinalIgnoreCase);
-        var allowedNames = new HashSet<string>(allowedVariables.Select(variable => variable.Name), StringComparer.OrdinalIgnoreCase);
+        var allowedNames = new HashSet<string>(
+            allowedVariables.Select(variable => variable.Name).Concat(optionalNameOnly),
+            StringComparer.OrdinalIgnoreCase);
         return baseNames.All(name => currentVariables.Any(current => string.Equals(current, name, StringComparison.OrdinalIgnoreCase))) &&
             currentVariables.All(variable => allowedNames.Contains(variable)) &&
             allowedVariables
@@ -786,7 +804,8 @@ internal static class ApiPlanBusinessComponentWriter
         lines.Add($"{bodyIndent}    {bc}.Load({LoadArguments(plan, bc)})");
         lines.Add($"{bodyIndent}    &CreateResponse = new()");
         lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", successIndent));
-        lines.Add($"{bodyIndent}    &HttpResponse.AddHeader(!\"Location\", {CreateLocationUrlExpression(plan, bc)})");
+        lines.AddRange(CreateLocationUrlAssignments(plan, bc, successIndent));
+        lines.Add($"{bodyIndent}    &HttpResponse.AddHeader(!\"Location\", &LocationUrl)");
         lines.Add($"{bodyIndent}    &RestStatusCode = 201");
         lines.Add($"{bodyIndent}Else");
         lines.AddRange(BusinessRuleFailureMessages(bc, successIndent));
@@ -797,6 +816,17 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private static IEnumerable<string> CreateLocationUrlAssignments(ApiPlan plan, string bc, int spaces)
+    {
+        var indent = new string(' ', spaces);
+        var basePath = plan.RestPath.TrimEnd('/');
+        yield return $"{indent}&LocationUrl = !\"{basePath}\"";
+        foreach (var field in plan.PrimaryKey)
+        {
+            yield return $"{indent}&LocationUrl = &LocationUrl + !\"/\" + {PrimaryKeyLocationPartExpression(bc, field)}";
+        }
     }
 
     private static string CreateLocationUrlExpression(ApiPlan plan, string bc)
@@ -822,10 +852,41 @@ internal static class ApiPlanBusinessComponentWriter
             string.Equals(dataType, "Char", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(dataType, "String", StringComparison.OrdinalIgnoreCase))
         {
+            // Forma funcao Trim(...): encadeamento {member}.Trim() como argumento de URLEncode
+            // foi rejeitado na validacao de Procedure Part com chave de texto.
+            return $"URLEncode(Trim({member}))";
+        }
+
+        return $"{member}.ToString().Trim()";
+    }
+
+    private static string PreviousB079PrimaryKeyLocationPartExpressionWithMethodTrim(string bc, ApiPlanField field)
+    {
+        var member = $"{bc}.{field.Name}";
+        var dataType = field.DataType?.Trim() ?? string.Empty;
+        if (string.Equals(dataType, "Date", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "DateTime", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"PadL(Trim(Str(Year({member}))), 4, !\"0\") + !\"-\" + PadL(Trim(Str(Month({member}))), 2, !\"0\") + !\"-\" + PadL(Trim(Str(Day({member}))), 2, !\"0\")";
+        }
+
+        if (string.Equals(dataType, "VarChar", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "LongVarChar", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "Character", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "Char", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "String", StringComparison.OrdinalIgnoreCase))
+        {
             return $"URLEncode({member}.Trim())";
         }
 
         return $"{member}.ToString().Trim()";
+    }
+
+    private static string PreviousB079CreateLocationUrlExpressionWithMethodTrim(ApiPlan plan, string bc)
+    {
+        var basePath = plan.RestPath.TrimEnd('/');
+        var keyParts = plan.PrimaryKey.Select(field => PreviousB079PrimaryKeyLocationPartExpressionWithMethodTrim(bc, field));
+        return $"!\"{basePath}/\" + " + string.Join(" + !\"/\" + ", keyParts);
     }
 
     private static string GetContent(ApiPlan plan)
@@ -1148,6 +1209,76 @@ internal static class ApiPlanBusinessComponentWriter
         lines.Add($"{bodyIndent}    {bc}.Load({LoadArguments(plan, bc)})");
         lines.Add($"{bodyIndent}    &CreateResponse = new()");
         lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", successIndent));
+        lines.Add($"{bodyIndent}    &RestStatusCode = 201");
+        lines.Add($"{bodyIndent}Else");
+        lines.AddRange(BusinessRuleFailureMessages(bc, successIndent));
+        lines.Add($"{bodyIndent}EndIf");
+        if (guarded)
+        {
+            lines.Add("EndIf");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string PreviousB079CreateContentWithInlineLocationHeader(ApiPlan plan)
+    {
+        var bc = "&" + plan.TransactionName;
+        var requiredFields = RequiredFieldsFor(plan, "CreateRequest", plan.CreateRequestFields);
+        var guarded = requiredFields.Count > 0;
+        var bodyIndent = guarded ? "    " : string.Empty;
+        var successIndent = guarded ? 8 : 4;
+        var lines = new List<string> { "&RestStatusCode = 201" };
+        lines.AddRange(RequiredMemberPresenceValidation("CreateRequest", "&CreateRequest", requiredFields, 0));
+        if (guarded)
+        {
+            lines.Add("If &RestStatusCode = 201");
+        }
+
+        lines.Add($"{bodyIndent}{bc} = new()");
+        lines.AddRange(plan.CreateRequestFields.Select(field => $"{bodyIndent}{bc}.{field.Name} = &CreateRequest.{field.Name}"));
+        lines.Add($"{bodyIndent}{bc}.Save()");
+        lines.Add($"{bodyIndent}If {bc}.Success()");
+        lines.Add($"{bodyIndent}    Commit");
+        lines.Add($"{bodyIndent}    {bc}.Load({LoadArguments(plan, bc)})");
+        lines.Add($"{bodyIndent}    &CreateResponse = new()");
+        lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", successIndent));
+        lines.Add($"{bodyIndent}    &HttpResponse.AddHeader(!\"Location\", {CreateLocationUrlExpression(plan, bc)})");
+        lines.Add($"{bodyIndent}    &RestStatusCode = 201");
+        lines.Add($"{bodyIndent}Else");
+        lines.AddRange(BusinessRuleFailureMessages(bc, successIndent));
+        lines.Add($"{bodyIndent}EndIf");
+        if (guarded)
+        {
+            lines.Add("EndIf");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string PreviousB079CreateContentWithMethodTrimUrlEncodeLocationHeader(ApiPlan plan)
+    {
+        var bc = "&" + plan.TransactionName;
+        var requiredFields = RequiredFieldsFor(plan, "CreateRequest", plan.CreateRequestFields);
+        var guarded = requiredFields.Count > 0;
+        var bodyIndent = guarded ? "    " : string.Empty;
+        var successIndent = guarded ? 8 : 4;
+        var lines = new List<string> { "&RestStatusCode = 201" };
+        lines.AddRange(RequiredMemberPresenceValidation("CreateRequest", "&CreateRequest", requiredFields, 0));
+        if (guarded)
+        {
+            lines.Add("If &RestStatusCode = 201");
+        }
+
+        lines.Add($"{bodyIndent}{bc} = new()");
+        lines.AddRange(plan.CreateRequestFields.Select(field => $"{bodyIndent}{bc}.{field.Name} = &CreateRequest.{field.Name}"));
+        lines.Add($"{bodyIndent}{bc}.Save()");
+        lines.Add($"{bodyIndent}If {bc}.Success()");
+        lines.Add($"{bodyIndent}    Commit");
+        lines.Add($"{bodyIndent}    {bc}.Load({LoadArguments(plan, bc)})");
+        lines.Add($"{bodyIndent}    &CreateResponse = new()");
+        lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", successIndent));
+        lines.Add($"{bodyIndent}    &HttpResponse.AddHeader(!\"Location\", {PreviousB079CreateLocationUrlExpressionWithMethodTrim(plan, bc)})");
         lines.Add($"{bodyIndent}    &RestStatusCode = 201");
         lines.Add($"{bodyIndent}Else");
         lines.AddRange(BusinessRuleFailureMessages(bc, successIndent));
@@ -1831,6 +1962,7 @@ internal static class ApiPlanBusinessComponentWriter
         new VariableSpec("CreateResponse", plan.ResponseSdtName),
         new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
         new VariableSpec("HttpResponse", "HttpResponse"),
+        new VariableSpec("LocationUrl", "VarChar(1K)"),
         new VariableSpec("RestStatusCode", "Numeric(3.0)"),
         new VariableSpec(plan.TransactionName, plan.TransactionName),
         new VariableSpec("Messages", "Messages, GeneXus.Common"),

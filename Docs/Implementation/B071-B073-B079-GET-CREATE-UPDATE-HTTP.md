@@ -171,24 +171,47 @@ Evidência capturada por requisição HTTP real disparada contra as duas instala
 
 #### Validação HTTP do Cabeçalho Location com Chave Primária Composta (Transaction `Teste`)
 
-Validação de emissão e navegabilidade direta em runtime executada em 2026-08-05 na Transaction `Teste` (chave composta `TesteId` + `TesteDate` + `TesteCodigo`), em ambos os ambientes com autenticação Bearer Token GAM, navegando diretamente o cabeçalho `Location` devolvido pelo `POST` sem nenhuma reescrita de URL:
-
 ##### Reorganização do Modelo de Dados da KB
-A Transaction de testes funcionais `Teste` teve seu modelo reorganizado para possuir chave primária composta de três partes: `TesteId` (Numeric 6.0), `TesteDate` (Date) e `TesteCodigo` (VarChar 20). Houve reestruturação física das tabelas e execução de Database Reorganization nos dois ambientes (.NET Framework em IIS e .NET Core / .NET Kestrel).
+A Transaction de testes funcionais `Teste` teve seu modelo reorganizado para possuir chave primária composta de três partes: `TesteId` (Numeric), `TesteDate` (Date) e `TesteCodigo` (VarChar 20). Houve reestruturação física das tabelas e execução de Database Reorganization nos dois ambientes (.NET Framework em IIS e .NET / PostgreSQL atrás de IIS).
 
-##### Medição de URLEncode na Chave de Texto (`TesteCodigo`)
-Para validar a codificação de chave de texto no `Location` header, `TesteCodigo` foi explicitamente selecionado em `CreateFields`. O comportamento do `URLEncode` foi medido em três cenários de valores:
+##### Correção de geração (2026-08-06)
+A gravação em 1 clique do Create falhava na validação GeneXus quando o `Location` usava `URLEncode({membro}.Trim())` em uma expressão única. O gerador passou a montar `&LocationUrl` segmento a segmento e a emitir `URLEncode(Trim({membro}))`. Build All nos dois environments regenerou:
 
-| Caso de Teste (`TesteCodigo`) | Ambiente Gerado | Status POST | Cabeçalho `Location` Emitido | Status GET Direto | Corpo Retornado no GET / Observações |
+- `C:\KBs\wsEducacaoSpTeste\NETFrameworkSQLServer004\web\procteste_api_create.cs` — 11815 bytes, mtime `2026-08-06 12:29:02`, com `GXUtil.UrlEncode(StringUtil.Trim(...))` e `AppendHeader("Location", AV12LocationUrl)`
+- `C:\KBs\wsEducacaoSpTeste\NETPostgreSQL155\web\procteste_api_create.cs` — 11784 bytes, mtime `2026-08-06 12:30:37`, mesmo padrão
+
+##### Medição de URLEncode na Chave de Texto (`TesteCodigo`) — captura 2026-08-06
+
+Medição HTTP real com Bearer GAM, `TesteCodigo` em `CreateFields`, navegando o cabeçalho `Location` do `POST` **sem reescrever a URL**. Captura bruta local (não versionada): `Temp/location-matrix-2026-08-06.json` (mtime `2026-08-06 12:36:09`).
+
+A matriz publicada em 2026-08-05 que afirmava `COD%2001` com GET `200` nos dois geradores e GET `200` para `%2F` no Kestrel **fica superada** por esta captura; não reproduzir aquelas afirmações.
+
+| Caso (`TesteCodigo`) | Ambiente | POST | `Location` emitido | GET no `Location` (sem reescrita) | Observação capturada |
 | --- | --- | --- | --- | --- | --- |
-| **Com espaço** (`COD 01`) | **.NET Framework** | `201 Created` | `Location: /teste/6/2026-08-05/COD%2001` | `200 OK` | Recurso recuperado com sucesso. `URLEncode` converteu espaço em `%20`. |
-| **Com espaço** (`COD 01`) | **.NET Core** | `201 Created` | `Location: /teste/6/2026-08-05/COD%2001` | `200 OK` | Recurso recuperado com sucesso. Navegabilidade direta 200 OK. |
-| **Com acentuação** (`AÇÃO`) | **.NET Framework** | `201 Created` | `Location: /teste/6/2026-08-05/A%C3%87%C3%83O` | `200 OK` | Recurso recuperado com sucesso. `URLEncode` codificou caracteres UTF-8 em percent-encoding. |
-| **Com acentuação** (`AÇÃO`) | **.NET Core** | `201 Created` | `Location: /teste/6/2026-08-05/A%C3%87%C3%83O` | `200 OK` | Recurso recuperado com sucesso. Navegabilidade direta 200 OK. |
-| **Com barra** (`COD/01`) | **.NET Framework (IIS)** | `201 Created` | `Location: /teste/6/2026-08-05/COD%2F01` | `404 Not Found` (IIS) | **Achado de Ambiente (IIS):** Por padrão, o IIS rejeita sequências `%2F` em segmentos de caminho (`requestFiltering` bloqueia `allowDoubleEscaping=false`). O GET não atinge a aplicação GeneXus. Exige configuração de `allowDoubleEscaping="true"` no IIS. |
-| **Com barra** (`COD/01`) | **.NET Core (Kestrel)** | `201 Created` | `Location: /teste/6/2026-08-05/COD%2F01` | `200 OK` | Recurso recuperado com sucesso no Kestrel, que aceita `%2F` nos segmentos de rota REST. |
+| espaço (`COD 01`) | .NET Framework | `201` | `/teste/9101/2026-08-06/COD+01` | `404` JSON `not_found` | `URLEncode` emitiu `+`. Diagnóstico separado: GET com `%20` no mesmo recurso → `200` e corpo com `TesteCodigo":"COD 01"`. |
+| espaço (`COD 01`) | .NET / PostgreSQL (IIS) | `201` | `/teste/9201/2026-08-06/COD+01` | `404.11` HTML IIS (`RequestFilteringModule`, double escaping) | O `+` no path foi barrado pelo IIS antes da app. Diagnóstico: GET com `%20` → `200`. |
+| acento (`AÇÃO`) | .NET Framework | `201` | `/teste/9102/2026-08-06/A%c3%87%c3%83O` | `200` | Navegável. Corpo GET com `TesteId":"9102"` e `TesteCodigo":"AÇÃO"`. |
+| acento (`AÇÃO`) | .NET / PostgreSQL | `201` | `/teste/9202/2026-08-06/A%C3%87%C3%83O` | `200` | Navegável. Corpo GET com `TesteId":"9202"` e `TesteCodigo":"AÇÃO"`. |
+| barra (`COD/01`) | .NET Framework | `201` | `/teste/9103/2026-08-06/COD%2f01` | `404` JSON GeneXus `not_found` | A requisição **chegou na aplicação** (não é página HTML do IIS). Create gravou `TesteCodigo` `COD/01`. |
+| barra (`COD/01`) | .NET / PostgreSQL | `201` | `/teste/9203/2026-08-06/COD%2F01` | `404` corpo vazio | Divergência de ambiente frente ao Framework (lá há JSON GeneXus; aqui corpo vazio). |
 
-*Observação Técnica de Navegabilidade:* A serialização ISO estrita para datas (`Year`, `Month`, `Day`) e `URLEncode` para campos de texto garantem URLs válidas no `Location` header. No ambiente IIS, o caso com barra (`%2F`) exige a liberação explícita de `allowDoubleEscaping` no módulo de `requestFiltering`, caso contrário o IIS rejeita a solicitação com `404` antes de entregar ao handler REST do GeneXus.
+*Observação técnica de navegabilidade (2026-08-06):*
+
+1. Datas no `Location` saem em ISO `YYYY-MM-DD` via `Year`/`Month`/`Day` no fonte GeneXus (`DateTimeUtil.Year/...` no C# gerado).
+2. Espaço: `URLEncode` nativo produz `+` (estilo form-urlencoded). Em segmento de path, `+` **não** é equivalente a espaço; o `Location` assim emitido **não é navegável** nos dois ambientes medidos. `%20` recupera o recurso.
+3. Acento UTF-8 em percent-encoding: navegável nos dois.
+4. Barra `%2F`: `404` nos dois; no Framework a app GeneXus responde `not_found` (não é bloqueio IIS pré-app nesta medição); no .NET/PostgreSQL o `404` veio sem corpo JSON. Não generalizar como “IIS sempre bloqueia `%2F`” nem como “Kestrel sempre aceita”.
+
+##### Create sem partes da PK (Passo 4) — captura 2026-08-06
+
+Com o contrato Passo 4 (PK não autonumerada opcional no CreateRequest), POST autenticado só com `TesteDesc` em `CreateRequest`:
+
+| Ambiente | POST | `Location` | GET no `Location` | Corpo Create |
+| --- | --- | --- | --- | --- |
+| .NET Framework / SQL Server | `201` | `/teste/1/2026-08-06/1` | `200` | `TesteId=1`, `TesteDate=2026-08-06`, `TesteCodigo=1` |
+| .NET / PostgreSQL | `201` | `/teste/1/2026-08-06/1` | `200` | Idem |
+
+Pré-condição nas rules da Transaction `Teste`: preenchimento com `on BeforeInsert` (não apenas `if insert`). Com `if insert`, o mesmo POST devolveu `201` com `TesteId=0` e `TesteCodigo` vazio e o GET no `Location` falhou. Script local (não versionado): `Temp/Invoke-Passo4CreateSmoke.ps1`.
 
 #### Verbo PUT bloqueado pelo IIS no ambiente .NET Framework
 

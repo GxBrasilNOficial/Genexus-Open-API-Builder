@@ -25,6 +25,7 @@ internal static class PrototypeWizardContractReader
         var primaryKeyNames = new HashSet<string>(
             root.PrimaryKey.Select(part => part.Name),
             StringComparer.OrdinalIgnoreCase);
+        var primaryKeyPartCount = primaryKeyNames.Count;
         var descriptionAttributeName = root.DescriptionAttribute?.Name;
 
         var services = ServiceNames
@@ -33,7 +34,13 @@ internal static class PrototypeWizardContractReader
 
         var classificationPolicy = PrototypeWizardFieldClassificationPolicy.CreateDefault();
         var attributes = root.Attributes
-            .Select((item, index) => CreateAttributeDecision(index + 1, item, primaryKeyNames, descriptionAttributeName, classificationPolicy))
+            .Select((item, index) => CreateAttributeDecision(
+                index + 1,
+                item,
+                primaryKeyNames,
+                primaryKeyPartCount,
+                descriptionAttributeName,
+                classificationPolicy))
             .ToArray();
 
         return new PrototypeWizardContractSnapshot(transaction.Name, moduleName, services, attributes, classificationPolicy.Configuration);
@@ -43,6 +50,7 @@ internal static class PrototypeWizardContractReader
         int order,
         Artech.Genexus.Common.Parts.TransactionAttribute item,
         ISet<string> primaryKeyNames,
+        int primaryKeyPartCount,
         string? descriptionAttributeName,
         PrototypeWizardFieldClassificationPolicy classificationPolicy)
     {
@@ -57,7 +65,13 @@ internal static class PrototypeWizardContractReader
         var isAudit = auditClassification.IsMatch;
         var isFormula = IsFormula(attribute);
         var isTechnicallyInadequate = IsTechnicallyInadequate(type) || item.IsImageAttribute;
-        var payloadDisabledReason = DescribePayloadDisabledReason(item, isPrimaryKey, isAudit, isFormula, isTechnicallyInadequate);
+        var payloadDisabledReason = DescribePayloadDisabledReason(
+            item,
+            isPrimaryKey,
+            primaryKeyPartCount,
+            isAudit,
+            isFormula,
+            isTechnicallyInadequate);
         var updatePayloadDisabledReason = DescribeUpdatePayloadDisabledReason(isPrimaryKey, payloadDisabledReason);
         var filter = ResolveFilter(type, isPrimaryKey, isDescription, isSensitive, isAudit, isTechnicallyInadequate);
         var isCreatePayloadCandidate = payloadDisabledReason.Length == 0;
@@ -100,6 +114,7 @@ internal static class PrototypeWizardContractReader
     private static string DescribePayloadDisabledReason(
         Artech.Genexus.Common.Parts.TransactionAttribute item,
         bool isPrimaryKey,
+        int primaryKeyPartCount,
         bool isAudit,
         bool isFormula,
         bool isTechnicallyInadequate)
@@ -119,7 +134,7 @@ internal static class PrototypeWizardContractReader
             return "Desabilitado: formula nao atribuivel via BC";
         }
 
-        if (isPrimaryKey && IsAutonumber(item))
+        if (isPrimaryKey && IsAutonumber(item, primaryKeyPartCount))
         {
             return "Desabilitado no CreateRequest: chave primaria autonumerada pelo BC";
         }
@@ -137,13 +152,23 @@ internal static class PrototypeWizardContractReader
         return string.Empty;
     }
 
-    private static bool IsAutonumber(Artech.Genexus.Common.Parts.TransactionAttribute item)
+    private static bool IsAutonumber(
+        Artech.Genexus.Common.Parts.TransactionAttribute item,
+        int primaryKeyPartCount)
     {
         try
         {
             if (item?.Attribute == null)
             {
                 return true;
+            }
+
+            // GeneXus: autonumeracao so existe em PK de um unico campo. Em chave composta,
+            // nenhuma parte pode ser autonumerada — a contagem decide sem consultar a propriedade.
+            // Evidencia 2026-08-06: Teste (PK=3, Autonumber='False') e NotaFiscal (PK=1, Autonumber='True').
+            if (primaryKeyPartCount > 1)
+            {
+                return false;
             }
 
             // Tenta obter pela propriedade publica "Autonumber" do SDK do GeneXus.
