@@ -27,20 +27,36 @@ Assert-Contains $source '&HttpResponse.AddHeader(!\"Location\", &LocationUrl)' '
 Assert-Contains $source 'CreateLocationUrlAssignments' 'Create deve montar LocationUrl segmento a segmento antes do AddHeader.'
 Assert-Contains $source 'PrimaryKeyLocationPartExpression' 'CreateLocationUrlExpression deve delegar a formatacao da chave primaria a PrimaryKeyLocationPartExpression.'
 Assert-Contains $source 'PadL(Trim(Str(Year({member}))), 4, !\"0\")' 'Campos de data na chave primaria devem ser formatados no padrao ISO YYYY-MM-DD no Location header.'
-Assert-Contains $source 'URLEncode(Trim({member}))' 'Campos de texto na chave primaria devem usar URLEncode(Trim(...)), nao encadeamento .Trim().'
+Assert-Contains $source 'URLEncode(Trim({member}))' 'Preflight deve preservar URLEncode(Trim(...)) como forma migravel anterior.'
+Assert-Contains $source 'StrReplace(URLEncode(Trim({member})), !\"+\" , !\"%20\")' 'Campos de texto na chave primaria devem emitir path-encoding com espaco como %20.'
+Assert-Contains $source 'PreviousB079CreateContentWithLocationUrlAndUrlEncodeTrim' 'Preflight deve migrar Create com LocationUrl e URLEncode(Trim(...)) sem StrReplace.'
 Assert-Contains $source 'PreviousB079CreateContentWithoutLocationHeader' 'Preflight deve migrar Procedure Create gerada antes da inclusao do cabecalho Location.'
 Assert-Contains $source 'PreviousB079CreateContentWithMethodTrimUrlEncodeLocationHeader' 'Preflight deve migrar Create com Location inline e URLEncode({member}.Trim()).'
 Assert-Contains $source 'PreviousB079CreateContentWithInlineLocationHeader' 'Preflight deve migrar Create com Location inline em uma unica expressao.'
+Assert-Contains $source 'StrSearch(Trim({bc}.{field.Name}), !\"/\") > 0' 'Create deve recusar chave de texto com barra antes do Commit.'
+Assert-Contains $source 'Primary key text value must not contain' 'Create deve explicar a recusa de barra na chave de texto.'
+Assert-Contains $source 'Rollback' 'Create deve desfazer o Save quando a chave de texto contem barra.'
 
 $locationPartStart = $source.IndexOf('private static string PrimaryKeyLocationPartExpression', [StringComparison]::Ordinal)
-$previousLocationPartStart = $source.IndexOf('private static string PreviousB079PrimaryKeyLocationPartExpressionWithMethodTrim', [StringComparison]::Ordinal)
+$previousLocationPartStart = $source.IndexOf('private static string PreviousB079PrimaryKeyLocationPartExpressionWithUrlEncodeTrim', [StringComparison]::Ordinal)
 if ($locationPartStart -lt 0 -or $previousLocationPartStart -lt 0 -or $previousLocationPartStart -le $locationPartStart) {
     throw 'ASSERT_SECTION_FAILED: nao foi possivel isolar PrimaryKeyLocationPartExpression atual.'
 }
 
 $currentLocationPartSource = $source.Substring($locationPartStart, $previousLocationPartStart - $locationPartStart)
-Assert-Contains $currentLocationPartSource 'URLEncode(Trim({member}))' 'PrimaryKeyLocationPartExpression atual deve usar URLEncode(Trim(...)).'
+Assert-Contains $currentLocationPartSource 'StrReplace(URLEncode(Trim({member})), !\"+\" , !\"%20\")' 'PrimaryKeyLocationPartExpression atual deve usar StrReplace sobre URLEncode(Trim(...)).'
+Assert-NotContains $currentLocationPartSource 'return $"URLEncode(Trim({member}))"' 'PrimaryKeyLocationPartExpression atual nao deve retornar URLEncode(Trim(...)) sem StrReplace.'
 Assert-NotContains $currentLocationPartSource 'URLEncode({member}.Trim())' 'PrimaryKeyLocationPartExpression atual nao deve usar .Trim() encadeado.'
+
+$previousUrlEncodeTrimStart = $previousLocationPartStart
+$previousMethodTrimStart = $source.IndexOf('private static string PreviousB079PrimaryKeyLocationPartExpressionWithMethodTrim', [StringComparison]::Ordinal)
+if ($previousMethodTrimStart -lt 0 -or $previousMethodTrimStart -le $previousUrlEncodeTrimStart) {
+    throw 'ASSERT_SECTION_FAILED: nao foi possivel isolar PreviousB079PrimaryKeyLocationPartExpressionWithUrlEncodeTrim.'
+}
+
+$previousUrlEncodeTrimSource = $source.Substring($previousUrlEncodeTrimStart, $previousMethodTrimStart - $previousUrlEncodeTrimStart)
+Assert-Contains $previousUrlEncodeTrimSource 'URLEncode(Trim({member}))' 'Variante migravel deve preservar URLEncode(Trim(...)).'
+Assert-NotContains $previousUrlEncodeTrimSource 'StrReplace(URLEncode' 'Variante migravel URLEncode(Trim) nao deve incluir StrReplace.'
 
 Assert-Contains $source '[RestMethod({method.ToUpperInvariant()})]' 'API Object deve projetar RestMethod planejado, incluindo PUT no Update.'
 Assert-Contains $source '[RestPath(\"{EscapeDescription(ResolveService(plan, service).RestPath.Trim())}\")]' 'API Object deve projetar RestPath planejado em cada servico REST.'

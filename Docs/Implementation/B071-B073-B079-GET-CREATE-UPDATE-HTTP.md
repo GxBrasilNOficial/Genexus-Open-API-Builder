@@ -202,6 +202,31 @@ A matriz publicada em 2026-08-05 que afirmava `COD%2001` com GET `200` nos dois 
 3. Acento UTF-8 em percent-encoding: navegável nos dois.
 4. Barra `%2F`: `404` nos dois; no Framework a app GeneXus responde `not_found` (não é bloqueio IIS pré-app nesta medição); no .NET/PostgreSQL o `404` veio sem corpo JSON. Não generalizar como “IIS sempre bloqueia `%2F`” nem como “Kestrel sempre aceita”.
 
+**Esta matriz de espaço (`COD+01` / GET `404`) fica superada** pela captura pós-correção abaixo (`Temp/location-matrix-2026-08-06-pos-correcao.json`).
+
+##### Correção de path-encoding e recusa de barra — captura HTTP 2026-08-06 (pós-correção)
+
+Após instalar a DLL com `StrReplace(URLEncode(Trim(...)), !"+" , !"%20")` e a guarda de `/` (`Rollback` + `400`), Build All nos dois environments regenerou `procteste_api_create.cs` com `StringUtil.StringReplace(GXUtil.UrlEncode(...), "+", "%20")`.
+
+Medição HTTP real com Bearer GAM, `TesteCodigo` em CreateFields, navegando o `Location` do POST **sem reescrever a URL**. Captura bruta local (não versionada): `Temp/location-matrix-2026-08-06-pos-correcao.json` (mtime `2026-08-06 23:18:44`).
+
+| Caso (`TesteCodigo`) | Ambiente | POST | `Location` emitido | GET no `Location` (sem reescrita) | Observação capturada |
+| --- | --- | --- | --- | --- | --- |
+| espaço (`COD 01`) | .NET Framework | `201` | `/teste/9311/2026-08-06/COD%2001` | `200` | `%20` no path; corpo GET com `TesteCodigo":"COD 01"`. |
+| espaço (`COD 01`) | .NET / PostgreSQL | `201` | `/teste/9411/2026-08-06/COD%2001` | `200` | Idem; sem `404.11` do IIS (não há `+`). |
+| acento (`AÇÃO`) | .NET Framework | `201` | `/teste/9312/2026-08-06/A%c3%87%c3%83O` | `200` | Sem regressão. |
+| acento (`AÇÃO`) | .NET / PostgreSQL | `201` | `/teste/9412/2026-08-06/A%C3%87%C3%83O` | `200` | Sem regressão. |
+| simples (`COD01`) | .NET Framework | `201` | `/teste/9313/2026-08-06/COD01` | `200` | Sem regressão. |
+| simples (`COD01`) | .NET / PostgreSQL | `201` | `/teste/9413/2026-08-06/COD01` | `200` | Sem regressão. |
+| barra (`COD/01`) | .NET Framework | `400` | (ausente) | n/a (recurso não gravado; GET de tentativa `9314` → `404 not_found`) | `ErrorResponse.Code=invalid_request`; mensagem sobre `/` no path Location. |
+| barra (`COD/01`) | .NET / PostgreSQL | `400` | (ausente) | n/a (GET de tentativa `9414` → `404` corpo vazio) | Mesmo `invalid_request`. |
+
+*Conclusão da correção:*
+
+1. Espaço no `Location` passa a `%20` e o GET no header navega com `200` nos dois geradores.
+2. Acento e valor simples sem regressão.
+3. Barra: Create recusa com `400` e `Rollback` (não grava; não emite `Location`). Limitação de endereçamento por path permanece para registros históricos que já tenham `/`.
+
 ##### Create sem partes da PK (Passo 4) — captura 2026-08-06
 
 Com o contrato Passo 4 (PK não autonumerada opcional no CreateRequest), POST autenticado só com `TesteDesc` em `CreateRequest`:

@@ -12,6 +12,12 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Fixed
 
+- Correção do `Location` para chave de texto (2026-08-06):
+  - Path-encoding: `StrReplace(URLEncode(Trim(...)), !"+" , !"%20")` para emitir espaço como `%20` em segmento de path (a forma `URLEncode` sozinha emitia `+` e o GET no `Location` falhava).
+  - Recusa de `/` em parte de PK texto no Create: após `Save` e antes do `Commit`, `Rollback` + `400 invalid_request` — `/` não é endereçável de forma confiável no path REST do MVP.
+  - Preflight migra a forma anterior `URLEncode(Trim(...))` via `&LocationUrl`; teste de contrato atualizado com verificação por mutação.
+  - Validação HTTP nos dois geradores: espaço `COD%2001` com GET `200`; acento e simples sem regressão; barra `400` sem gravação. Captura `Temp/location-matrix-2026-08-06-pos-correcao.json`; doc `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`.
+
 - Passo 4 (opção 2, 2026-08-06): chave primária não autonumerada no CreateRequest inicia **opcional** (não required); a aba Obrigatorios do Create ficou editável para exigir o campo no payload quando desejado. Evita 400 quando rules/BC preenchem chave omitida ou com default do tipo. Smoke HTTP em `apiTeste` (dois environments): POST só com `TesteDesc` → `201`, `Location` navegável e GET `200` após rules `on BeforeInsert` na Transaction `Teste` (rules `if insert` não preencheram `TesteId`/`TesteCodigo` via BC).
 
 - Autonumeração no wizard (Passo 3, 2026-08-06): chave composta (`PrimaryKeyParts > 1`) deixa de bloquear campos no CreateRequest; PK simples continua lendo `Autonumber`/`idAUTONUMBER` com fallback conservador. Evidência em `Teste` vs `NotaFiscal`; sonda TEMP `AutonumberProbe` removida após a captura.

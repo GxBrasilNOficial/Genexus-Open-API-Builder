@@ -77,22 +77,23 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Passo 4 (opção 2) em 2026-08-06: chave primária não autonumerada entra no CreateRequest selecionada e **opcional** por padrão; a aba Obrigatorios do Create passou a ser editável para o usuário marcar required quando quiser. Objetivo: permitir omitir/chave default e deixar rules/BC preencherem, sem 400 prematuro.
 - Smoke HTTP do Passo 4 fechado em 2026-08-06 na Transaction `Teste` (`apiTeste`), nos environments .NET Framework/SQL Server e .NET/PostgreSQL: POST com `{"CreateRequest":{"TesteDesc":"..."}}` (sem partes da PK) → `201`, `Location` navegável e GET `200`. Rules `if insert` **não** preencheram `TesteId`/`TesteCodigo` via BC; rules equivalentes com `on BeforeInsert` preencheram (`TesteId`/`TesteCodigo`/`TesteDate`). Evidência via `Temp/Invoke-Passo4CreateSmoke.ps1`.
 - Performance do wizard (mesmo dia): `ApiPlanGenerationStateReader` passou a um `GetAll` por tipo com índice por nome; preview de geração evita reentrância e só recalcula em abas de geração, com cache por fingerprint (aba Resumo força refresh). Testes em `Tests/WizardContract/`.
+- Correção de código do `Location` (mesmo dia): Create passou a `StrReplace(URLEncode(Trim(...)), !"+" , !"%20")` para espaço em path; recusa `/` em PK texto com `Rollback`+`400` antes do `Commit`; preflight migra a forma `URLEncode(Trim(...))` via `&LocationUrl`; teste de contrato com mutação OK. Validação HTTP pós-correção nos dois environments: espaço `COD%2001` com GET `200`; acento e simples sem regressão; barra `400 invalid_request` sem gravação. Evidência `Temp/location-matrix-2026-08-06-pos-correcao.json` e `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`.
 
 ## Frente ativa
 
-**Sprint 7 — Conflitos e Reexecução**. A frente pós-Sprint 6 de `Location`/`URLEncode`, autonumeração (Passo 3) e PK opcional no Create (Passo 4) está concluída com evidência HTTP e fechamento documental.
+**Correção do `Location` (path-encoding + recusa de barra)** — código, Build All e matriz HTTP pós-correção concluídos nos dois geradores. Pendente fechamento documental final (STATUS/CHANGELOG alinhados) e commit local se solicitado.
 
 ## Próxima ação única
 
-Iniciar a Sprint 7 — Conflitos e Reexecução, validando a gestão conservadora de conflitos, reexecução segura e preflight de colisão externa (B063, B064, B067).
+Fechar a frente com revisão pré-push e commit local (sem push), após alinhamento final de `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` e `CHANGELOG.md` à evidência HTTP capturada.
 
 ## Critério de conclusão e evidência esperada
 
-- `git fetch origin` e `pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson` executados com `pushReadiness: ready`;
-- validação da gestão conservadora de conflitos, reexecução segura e preflight de colisão externa (B063, B064, B067) em cenários de re-aplicação e colisão;
-- revisão semântica de contrato runtime confirmando integridade entre API Object, Procedures, SDTs e metadata;
-- commit local criado sem push;
-- relatório da revisão registrado na resposta final.
+- matriz HTTP pós-correção capturada (`Temp/location-matrix-2026-08-06-pos-correcao.json`, mtime `2026-08-06 23:18:44`);
+- matriz pré-correção de espaço `COD+01` marcada como superada no documento de implementação;
+- `git fetch origin` e `pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson` com checks sem `failed` antes do commit;
+- revisão semântica do trio API/Procedure/`Location`;
+- commit local sem push, se solicitado.
 
 ## Sequência operacional vigente
 

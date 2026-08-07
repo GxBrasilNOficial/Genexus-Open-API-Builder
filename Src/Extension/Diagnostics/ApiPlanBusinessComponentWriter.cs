@@ -406,6 +406,7 @@ internal static class ApiPlanBusinessComponentWriter
     private static bool IsManagedCreateSource(string source, ApiPlan plan)
     {
         return HasEquivalentGeneratedSource(source, CreateContent(plan)) ||
+            HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithLocationUrlAndUrlEncodeTrim(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithInlineLocationHeader(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithMethodTrimUrlEncodeLocationHeader(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithGenericToStringLocationHeader(plan)) ||
@@ -499,6 +500,8 @@ internal static class ApiPlanBusinessComponentWriter
                 line.IndexOf("RestStatusCode", StringComparison.Ordinal) >= 0 ||
                 line.IndexOf("Location", StringComparison.Ordinal) >= 0 ||
                 line.IndexOf("URLEncode", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                line.IndexOf("StrReplace", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                line.IndexOf("StrSearch", StringComparison.OrdinalIgnoreCase) >= 0 ||
                 line.IndexOf("Year(", StringComparison.Ordinal) >= 0 ||
                 line.IndexOf("LocationUrl", StringComparison.Ordinal) >= 0)
             .Take(40));
@@ -789,6 +792,8 @@ internal static class ApiPlanBusinessComponentWriter
         var guarded = requiredFields.Count > 0;
         var bodyIndent = guarded ? "    " : string.Empty;
         var successIndent = guarded ? 8 : 4;
+        var committedIndent = successIndent + 4;
+        var slashGuard = PrimaryKeySlashGuardCondition(bc, plan);
         var lines = new List<string> { "&RestStatusCode = 201" };
         lines.AddRange(RequiredMemberPresenceValidation("CreateRequest", "&CreateRequest", requiredFields, 0));
         if (guarded)
@@ -800,13 +805,35 @@ internal static class ApiPlanBusinessComponentWriter
         lines.AddRange(plan.CreateRequestFields.Select(field => $"{bodyIndent}{bc}.{field.Name} = &CreateRequest.{field.Name}"));
         lines.Add($"{bodyIndent}{bc}.Save()");
         lines.Add($"{bodyIndent}If {bc}.Success()");
-        lines.Add($"{bodyIndent}    Commit");
-        lines.Add($"{bodyIndent}    {bc}.Load({LoadArguments(plan, bc)})");
-        lines.Add($"{bodyIndent}    &CreateResponse = new()");
-        lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", successIndent));
-        lines.AddRange(CreateLocationUrlAssignments(plan, bc, successIndent));
-        lines.Add($"{bodyIndent}    &HttpResponse.AddHeader(!\"Location\", &LocationUrl)");
-        lines.Add($"{bodyIndent}    &RestStatusCode = 201");
+        if (!string.IsNullOrEmpty(slashGuard))
+        {
+            lines.Add($"{bodyIndent}    If {slashGuard}");
+            lines.Add($"{bodyIndent}        Rollback");
+            lines.Add($"{bodyIndent}        &RestStatusCode = 400");
+            lines.Add($"{bodyIndent}        &ErrorResponse = new()");
+            lines.Add($"{bodyIndent}        &ErrorResponse.Code = !\"invalid_request\"");
+            lines.Add($"{bodyIndent}        &ErrorResponse.Message = !\"Primary key text value must not contain '/' because it cannot be addressed in the REST path Location.\"");
+            lines.Add($"{bodyIndent}    Else");
+            lines.Add($"{bodyIndent}        Commit");
+            lines.Add($"{bodyIndent}        {bc}.Load({LoadArguments(plan, bc)})");
+            lines.Add($"{bodyIndent}        &CreateResponse = new()");
+            lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", committedIndent));
+            lines.AddRange(CreateLocationUrlAssignments(plan, bc, committedIndent));
+            lines.Add($"{bodyIndent}        &HttpResponse.AddHeader(!\"Location\", &LocationUrl)");
+            lines.Add($"{bodyIndent}        &RestStatusCode = 201");
+            lines.Add($"{bodyIndent}    EndIf");
+        }
+        else
+        {
+            lines.Add($"{bodyIndent}    Commit");
+            lines.Add($"{bodyIndent}    {bc}.Load({LoadArguments(plan, bc)})");
+            lines.Add($"{bodyIndent}    &CreateResponse = new()");
+            lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", successIndent));
+            lines.AddRange(CreateLocationUrlAssignments(plan, bc, successIndent));
+            lines.Add($"{bodyIndent}    &HttpResponse.AddHeader(!\"Location\", &LocationUrl)");
+            lines.Add($"{bodyIndent}    &RestStatusCode = 201");
+        }
+
         lines.Add($"{bodyIndent}Else");
         lines.AddRange(BusinessRuleFailureMessages(bc, successIndent));
         lines.Add($"{bodyIndent}EndIf");
@@ -831,8 +858,10 @@ internal static class ApiPlanBusinessComponentWriter
 
     private static string CreateLocationUrlExpression(ApiPlan plan, string bc)
     {
+        // Congelada na forma URLEncode(Trim(...)) sem StrReplace: usada apenas por
+        // PreviousB079CreateContentWithInlineLocationHeader para reconhecer Sources antigos.
         var basePath = plan.RestPath.TrimEnd('/');
-        var keyParts = plan.PrimaryKey.Select(field => PrimaryKeyLocationPartExpression(bc, field));
+        var keyParts = plan.PrimaryKey.Select(field => PreviousB079PrimaryKeyLocationPartExpressionWithUrlEncodeTrim(bc, field));
         return $"!\"{basePath}/\" + " + string.Join(" + !\"/\" + ", keyParts);
     }
 
@@ -846,18 +875,63 @@ internal static class ApiPlanBusinessComponentWriter
             return $"PadL(Trim(Str(Year({member}))), 4, !\"0\") + !\"-\" + PadL(Trim(Str(Month({member}))), 2, !\"0\") + !\"-\" + PadL(Trim(Str(Day({member}))), 2, !\"0\")";
         }
 
-        if (string.Equals(dataType, "VarChar", StringComparison.OrdinalIgnoreCase) ||
+        if (IsTextLocationKeyDataType(dataType))
+        {
+            // URLEncode nativo (GXUtil.UrlEncode) emite espaco como "+" (form-urlencoded).
+            // Em segmento de path, "+" e literal; StrReplace troca apenas esses "+" por "%20".
+            // "+" e "%" literais no valor original ja saem de URLEncode como "%2B" e "%25".
+            return $"StrReplace(URLEncode(Trim({member})), !\"+\" , !\"%20\")";
+        }
+
+        return $"{member}.ToString().Trim()";
+    }
+
+    private static bool IsTextLocationKeyDataType(string dataType)
+    {
+        return string.Equals(dataType, "VarChar", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(dataType, "LongVarChar", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(dataType, "Character", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(dataType, "Char", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(dataType, "String", StringComparison.OrdinalIgnoreCase))
+            string.Equals(dataType, "String", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string PrimaryKeySlashGuardCondition(string bc, ApiPlan plan)
+    {
+        var parts = plan.PrimaryKey
+            .Where(field => IsTextLocationKeyDataType(field.DataType?.Trim() ?? string.Empty))
+            .Select(field => $"StrSearch(Trim({bc}.{field.Name}), !\"/\") > 0")
+            .ToArray();
+        return parts.Length == 0 ? string.Empty : string.Join(" or ", parts);
+    }
+
+    private static string PreviousB079PrimaryKeyLocationPartExpressionWithUrlEncodeTrim(string bc, ApiPlanField field)
+    {
+        var member = $"{bc}.{field.Name}";
+        var dataType = field.DataType?.Trim() ?? string.Empty;
+        if (string.Equals(dataType, "Date", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(dataType, "DateTime", StringComparison.OrdinalIgnoreCase))
         {
-            // Forma funcao Trim(...): encadeamento {member}.Trim() como argumento de URLEncode
-            // foi rejeitado na validacao de Procedure Part com chave de texto.
+            return $"PadL(Trim(Str(Year({member}))), 4, !\"0\") + !\"-\" + PadL(Trim(Str(Month({member}))), 2, !\"0\") + !\"-\" + PadL(Trim(Str(Day({member}))), 2, !\"0\")";
+        }
+
+        if (IsTextLocationKeyDataType(dataType))
+        {
+            // Forma vigente ate a correcao de path-encoding: URLEncode(Trim(...)) sem StrReplace.
             return $"URLEncode(Trim({member}))";
         }
 
         return $"{member}.ToString().Trim()";
+    }
+
+    private static IEnumerable<string> PreviousB079CreateLocationUrlAssignmentsWithUrlEncodeTrim(ApiPlan plan, string bc, int spaces)
+    {
+        var indent = new string(' ', spaces);
+        var basePath = plan.RestPath.TrimEnd('/');
+        yield return $"{indent}&LocationUrl = !\"{basePath}\"";
+        foreach (var field in plan.PrimaryKey)
+        {
+            yield return $"{indent}&LocationUrl = &LocationUrl + !\"/\" + {PreviousB079PrimaryKeyLocationPartExpressionWithUrlEncodeTrim(bc, field)}";
+        }
     }
 
     private static string PreviousB079PrimaryKeyLocationPartExpressionWithMethodTrim(string bc, ApiPlanField field)
@@ -1184,6 +1258,44 @@ internal static class ApiPlanBusinessComponentWriter
         lines.Add("Else");
         lines.AddRange(LegacyFailureMessages(bc, 4));
         lines.Add("EndIf");
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string PreviousB079CreateContentWithLocationUrlAndUrlEncodeTrim(ApiPlan plan)
+    {
+        // Forma vigente imediatamente antes do StrReplace(+→%20) e da recusa de '/':
+        // LocationUrl segmento a segmento com URLEncode(Trim(...)), sem guarda de barra.
+        var bc = "&" + plan.TransactionName;
+        var requiredFields = RequiredFieldsFor(plan, "CreateRequest", plan.CreateRequestFields);
+        var guarded = requiredFields.Count > 0;
+        var bodyIndent = guarded ? "    " : string.Empty;
+        var successIndent = guarded ? 8 : 4;
+        var lines = new List<string> { "&RestStatusCode = 201" };
+        lines.AddRange(RequiredMemberPresenceValidation("CreateRequest", "&CreateRequest", requiredFields, 0));
+        if (guarded)
+        {
+            lines.Add("If &RestStatusCode = 201");
+        }
+
+        lines.Add($"{bodyIndent}{bc} = new()");
+        lines.AddRange(plan.CreateRequestFields.Select(field => $"{bodyIndent}{bc}.{field.Name} = &CreateRequest.{field.Name}"));
+        lines.Add($"{bodyIndent}{bc}.Save()");
+        lines.Add($"{bodyIndent}If {bc}.Success()");
+        lines.Add($"{bodyIndent}    Commit");
+        lines.Add($"{bodyIndent}    {bc}.Load({LoadArguments(plan, bc)})");
+        lines.Add($"{bodyIndent}    &CreateResponse = new()");
+        lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", successIndent));
+        lines.AddRange(PreviousB079CreateLocationUrlAssignmentsWithUrlEncodeTrim(plan, bc, successIndent));
+        lines.Add($"{bodyIndent}    &HttpResponse.AddHeader(!\"Location\", &LocationUrl)");
+        lines.Add($"{bodyIndent}    &RestStatusCode = 201");
+        lines.Add($"{bodyIndent}Else");
+        lines.AddRange(BusinessRuleFailureMessages(bc, successIndent));
+        lines.Add($"{bodyIndent}EndIf");
+        if (guarded)
+        {
+            lines.Add("EndIf");
+        }
+
         return string.Join(Environment.NewLine, lines);
     }
 
