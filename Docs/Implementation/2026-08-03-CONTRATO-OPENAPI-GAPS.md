@@ -67,7 +67,7 @@ A string continua acumulando dois papéis: documentação pública e sentinela d
 
 A troca foi feita **sem lista de sentinelas compatíveis**, por decisão explícita do usuário: as APIs existentes estavam todas em KB de teste e seriam regeradas. API gerada com a sentinela anterior deixa de ser reencontrada e precisa ser apagada e regerada.
 
-Risco assumido e registrado: a mudança resolve o vazamento, mas piora o perfil de risco da acumulação de papéis. O texto anterior se protegia pela própria feiura - ninguém tentaria melhorar `B054 API Object - Transaction=...`. O novo é uma frase de documentação pública em inglês, que um usuário naturalmente pode querer traduzir ou personalizar, e qualquer edição faz a API deixar de ser reconhecida como própria. Por isso a separação dos dois papéis deixou de ser refinamento futuro e virou item de backlog anterior à Alpha, registrado como `B087` no documento 06 e na Sprint 7 do documento 24.
+Risco assumido e registrado: a mudança resolve o vazamento, mas piora o perfil de risco da acumulação de papéis. O texto anterior se protegia pela própria feiura - ninguém tentaria melhorar `B054 API Object - Transaction=...`. O novo é uma frase de documentação pública em inglês, que um usuário naturalmente pode querer traduzir ou personalizar, e qualquer edição faz a API deixar de ser reconhecida como própria. Por isso a separação dos dois papéis deixou de ser refinamento futuro e virou item de backlog anterior à Alpha, registrado como `B087` no documento 06 e como primeira frente obrigatória da Sprint 7 revisada no documento 24.
 
 ## Limitações caracterizadas
 

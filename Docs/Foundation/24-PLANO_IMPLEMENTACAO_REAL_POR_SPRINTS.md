@@ -11,7 +11,7 @@
 **Idioma:** Português BR
 **Público principal:** maintainer principal + contribuidores técnicos + agentes de IA
 **Data:** Abril/2026
-**Última revisão:** Julho/2026
+**Última revisão:** Agosto/2026
 
 ---
 
@@ -300,29 +300,47 @@ Gate da Sprint 6 aprovado com ressalva em 2026-08-04: List, Get, Create e Update
 
 ---
 
-# 13. Sprint 7 — Conflitos e Reexecução
+# 13. Sprint 7 — Ciclo de vida operacional na IDE
 
 ## Objetivo
 
-Fechar a operação na IDE, o ciclo de vida conservador e a comprovação integrada dos dez gates.
+Fechar o ciclo de vida operacional do wizard na IDE e declarar o marco **wizard funcional do MVP concluído**, com os dez gates técnicos transversais comprovados.
 
-## Entregas
+## Revisão de escopo (2026-08-07)
 
-- `B080`: integrar menu/contexto na IDE
-- `B081`: exibir relatório final interno
-- `B083`: detectar conflito antes de salvar
-- `B084`: bloquear overwrite silencioso e `_v2`
-- `B085`: sincronizar com a Transaction por comparação explícita de metadata
-- `B086`: remover por comando explícito, preservando Folder reutilizado e `GxOpenAPI`
-- `B087`: ancorar a posse apenas na metadata de integridade e liberar a `Description` do API Object para edição humana, conforme a nota operacional do documento 06
-- `B088`: reconciliar as restrições do template nativo `Swagger.Yaml.stg`, que declara apenas `200` e `404` por operação e não emite `required:` nos schemas, conforme a nota operacional do documento 06
-- `B089`: automatizar a validação de permissões granulares GAM por roles não-administradoras, comprovando a recusa `403` quando a permissão não está atribuída, conforme a nota operacional do documento 06
-- comprovar rerun consistente e cancelamento sem efeitos colaterais
-- executar a validação integrada final, inclusive dos gates de segurança B092/B093
+O enunciado histórico “Conflitos e Reexecução” ficou defasado: preflight de colisão externa, bloqueio sem overwrite e sem `_v2`, reencontro conservador de objetos próprios e integridade de metadata já foram entregues e validados nas Sprints 5 e 6 (`B063`, `B064`, `B067` e fluxo do wizard). A entrada por menu/contexto (`B080`) também já existe em substância (`Wizard` + preferências).
+
+O que permanece obrigatório nesta sprint é o ciclo de vida que o usuário ainda não tem: posse segura, remoção, sincronização, relatório pós-geração e fechamento dos gates.
+
+## Já atendido antes desta sprint (não reabrir como frente principal)
+
+- `B080`: menu principal e contexto com `Wizard` (e preferências por KB)
+- `B083` / `B064`: detectar conflito / colisão antes do primeiro `Save()`
+- `B084`: bloquear overwrite silencioso e nunca criar `_v2`
+- reexecução Safe de objetos próprios reconhecidos
+- integridade de metadata (`B067`) bloqueando Service Source / descrições incompatíveis
+
+## Entregas obrigatórias restantes
+
+Ordem acordada de execução:
+
+1. `B087`: ancorar a posse do API Object na metadata de integridade e liberar a `Description` para edição humana
+2. `B086`: comando explícito `Remover API gerada` (preservar Folder reutilizado e `GxOpenAPI`; não reverter Business Component)
+3. `B085`: comando explícito `Sincronizar com a Transaction` com comparação/metadata e confirmação antes de gravar
+4. `B081`: relatório final pós-aplicação (criados / atualizados / bloqueados / avisos), sem depender só da Output técnica
+5. UX mínima de conflitos alinhada à decisão do MVP: para cada conflito, nome, tipo, módulo e Folder (`B083` residual de apresentação)
+6. alinhar Folder preexistente `NomeOpenApi` no módulo correto à decisão de reutilização com aviso (hoje o código ainda trata como colisão)
+7. comprovação integrada dos dez gates e declaração do marco **wizard funcional do MVP concluído**
+
+## Fora do gate obrigatório desta sprint (pré-Alpha separados)
+
+- `B088`: investigar/documentar limitações do template nativo `Swagger.Yaml.stg` (respostas declaradas só `200`/`404`; não emissão de `required:` nos schemas) — conclusão possível só com relatório de inviabilidade e notas de consumo
+- `B089`: evidência HTTP `403` com role GAM não-administradora via automação Programmatic GAM API
+- `B082`: tempo de execução no wizard (prioridade média; fora da linha de corte do MVP)
 
 ## Gate
 
-Sem overwrite indevido e com os dez gates técnicos transversais comprovados.
+Ciclo de vida conservador completo na IDE (posse, regeneração, sincronização e remoção sem overwrite indevido) e dez gates técnicos transversais comprovados.
 
 Ao concluir esta sprint, o projeto atinge o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para iniciar a Alpha da Sprint 8.
 

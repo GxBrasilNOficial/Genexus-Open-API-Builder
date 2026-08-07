@@ -238,16 +238,29 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 
 | ID | Item | Prioridade |
 |---|---|---|
-| B080 | Integrar menu/contexto IDE | Alta |
-| B081 | Exibir relatório final interno | Alta |
-| B082 | Mostrar tempo execução | Média |
-| B083 | Detectar conflito antes salvar | Alta |
-| B084 | Bloquear overwrite silencioso | Alta |
-| B085 | Sincronizar com a Transaction usando metadata | Alta |
-| B086 | Remover API gerada por metadata, sem reverter BC | Média |
-| B087 | Ancorar posse na metadata e liberar a `Description` do API Object | Alta |
-| B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta |
-| B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta |
+| B080 | Integrar menu/contexto IDE | Alta — atendido em substância (Wizard + preferências); residual cosmético de nome/rótulo |
+| B081 | Exibir relatório final interno | Alta — pendente (hoje só Resumo pré-aplicação + Output) |
+| B082 | Mostrar tempo execução | Média — fora da linha de corte do MVP |
+| B083 | Detectar conflito antes salvar | Alta — núcleo atendido no preflight; residual = UX por conflito (nome/tipo/módulo/Folder) |
+| B084 | Bloquear overwrite silencioso | Alta — atendido (sem `_v2`) |
+| B085 | Sincronizar com a Transaction usando metadata | Alta — pendente |
+| B086 | Remover API gerada por metadata, sem reverter BC | Alta — pendente (elevado na revisão 2026-08-07 por integrar o gate 10 e a decisão do MVP) |
+| B087 | Ancorar posse na metadata e liberar a `Description` do API Object | Alta — pendente; primeira frente da Sprint 7 revisada |
+| B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta — pré-Alpha separado; não gate da Sprint 7 |
+| B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta — pré-Alpha separado; não gate da Sprint 7 |
+
+### Nota operacional — revisão da Sprint 7 / Fase 7, registrada em 2026-08-07
+
+Após a Sprint 6, o pacote histórico “conflitos e reexecução” da Fase 7 ficou defasado: colisão, overwrite, `_v2` e integridade de metadata já foram entregues. A linha de corte obrigatória restante para o marco **wizard funcional do MVP** é:
+
+1. `B087` (posse sem travar `Description`)
+2. `B086` (`Remover API gerada`)
+3. `B085` (`Sincronizar com a Transaction`)
+4. `B081` (relatório final pós-aplicação)
+5. residual de apresentação de `B083` e alinhamento de Folder reutilizado à decisão do MVP
+6. comprovação integrada dos dez gates
+
+`B088` e `B089` permanecem anteriores à Alpha, mas **fora** do gate obrigatório da Sprint 7: o primeiro é investigação/documentação da limitação nativa do GeneXus; o segundo exige ambiente GAM e evidência `403` além do Authorization 401/200 já comprovado.
 
 ### Nota operacional — B087, registrada em 2026-08-03 (atualizada em 2026-08-05)
 
@@ -275,7 +288,7 @@ O gerador nativo de documentação REST OpenAPI do GeneXus (`Swagger.Yaml.stg`) 
 
 B088 é registrado como item de backlog anterior à Alpha para investigar extensibilidade do gerador de documentação REST ou inclusão de notas de compatibilidade para geradores de clientes a partir do YAML produzido.
 
-**Critérios de aceite para conclusão de B088 na Sprint 7:**
+**Critérios de aceite para conclusão de B088 (pré-Alpha separado; não gate da Sprint 7):**
 1. *Investigação de Extensibilidade*: mapear e provar se o mecanismo de extensibilidade da IDE/SDK permite substituir ou interceptar o template `Swagger.Yaml.stg` sem modificar a instalação central do GeneXus;
 2. *Ressalva e Compatibilidade*: caso a alteração do template nativo exija modificar `C:\Program Files (x86)\GeneXus` (o que é proibido), registrar formalmente a limitação intransponível em `Docs/Foundation/12-REGRAS_CRIACAO_API_OBJECTS.md` e `Docs/Foundation/27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md`, definindo as orientações de consumo para o `openapi-generator-cli`;
 3. *Definição de Concluído*: o item estará pronto com o relatório técnico de viabilidade e as ressalvas de compatibilidade incorporadas à documentação.
@@ -286,7 +299,7 @@ Quando um API Object opera sob `SecurityLevel = Authorization`, o GeneXus gera p
 
 B089 é registrado como item de backlog pré-Alpha para construir utilitário ou scripts GAM API (Programmatic GAM API) capazes de associar automaticamente permissões granulares a papéis customizados e validar a recusa 403 Forbidden quando uma role específica não tem a permissão atribuída.
 
-**Critérios de aceite e requisitos de ambiente para B089 na Sprint 7:**
+**Critérios de aceite e requisitos de ambiente para B089 (pré-Alpha separado; não gate da Sprint 7):**
 1. *Ambiente e Automação*: dispor de ambiente de teste com GAM (`SecurityLevel = Authorization`) e criar Procedure/script GeneXus com Programmatic GAM API (`GAMRole`, `GAMPermission`) para criar a role `Role_GOAB_Test_Denied` atribuindo permissão de `Get` e negando `Create`;
 2. *Evidência HTTP 403*: executar requisições HTTP autenticadas com usuário vinculado a essa role restrita e comprovar retorno **403 Forbidden** no `POST` (Create) e **200 OK** no `GET`;
 3. *Definição de Concluído*: o item estará pronto quando a resposta 403 estiver capturada e documentada em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md`.
@@ -363,10 +376,12 @@ Os itens e intervalos abaixo formam a linha de corte exaustiva do MVP. Um item o
 - Fase 4: B050–B056
 - Fase 5: B060–B067
 - Fase 6: B070–B079
-- Fase 7: B080, B081 e B083–B089
+- Fase 7: B080, B081 e B083–B087 (B088 e B089 saem do gate obrigatório da Sprint 7 e ficam pré-Alpha separados; ver nota de 2026-08-07)
 - Fase 8: B090–B093
 
 `B082` fica fora da linha de corte: mostrar o tempo de execução é útil, mas não comprova contrato funcional, segurança nem ciclo de vida.
+
+`B088` e `B089` permanecem anteriores à Alpha, mas não bloqueiam o marco **wizard funcional do MVP** da Sprint 7 revisada.
 
 [BG-F06]
 
@@ -381,7 +396,7 @@ Os itens e intervalos abaixo formam a linha de corte exaustiva do MVP. Um item o
 5. Fase 3 até `B046`, criando os SDTs antes de seus consumidores
 6. Fases 4 e 5 (`B050`–`B067`), criando Procedures, API Object e metadata
 7. `B047`, Fase 6 (`B070`–`B079`) e aplicação da segurança em `B093`
-8. Fase 7 (`B080`, `B081`, `B083`–`B089`) e comprovação integrada dos dez gates
+8. Fase 7 revisada (`B087`, `B086`, `B085`, `B081` e residual de `B083`/Folder reutilizado; `B080`/`B084` já atendidos em substância) e comprovação integrada dos dez gates; `B088`/`B089` em frentes pré-Alpha separadas
 
 `B047` é validado somente depois do API Object e dos serviços porque depende do YAML gerado pelo GeneXus; esse deslocamento de evidência não antecipa consumidores antes dos SDTs.
 

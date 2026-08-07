@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-08-06.
+2026-08-07.
 
 ## Último marco concluído
 
@@ -78,21 +78,23 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Smoke HTTP do Passo 4 fechado em 2026-08-06 na Transaction `Teste` (`apiTeste`), nos environments .NET Framework/SQL Server e .NET/PostgreSQL: POST com `{"CreateRequest":{"TesteDesc":"..."}}` (sem partes da PK) → `201`, `Location` navegável e GET `200`. Rules `if insert` **não** preencheram `TesteId`/`TesteCodigo` via BC; rules equivalentes com `on BeforeInsert` preencheram (`TesteId`/`TesteCodigo`/`TesteDate`). Evidência via `Temp/Invoke-Passo4CreateSmoke.ps1`.
 - Performance do wizard (mesmo dia): `ApiPlanGenerationStateReader` passou a um `GetAll` por tipo com índice por nome; preview de geração evita reentrância e só recalcula em abas de geração, com cache por fingerprint (aba Resumo força refresh). Testes em `Tests/WizardContract/`.
 - Correção de código do `Location` (mesmo dia): Create passou a `StrReplace(URLEncode(Trim(...)), !"+" , !"%20")` para espaço em path; recusa `/` em PK texto com `Rollback`+`400` antes do `Commit`; preflight migra a forma `URLEncode(Trim(...))` via `&LocationUrl`; teste de contrato com mutação OK. Validação HTTP pós-correção nos dois environments: espaço `COD%2001` com GET `200`; acento e simples sem regressão; barra `400 invalid_request` sem gravação. Evidência `Temp/location-matrix-2026-08-06-pos-correcao.json` e `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`.
+- Revisão documental da Sprint 7 em 2026-08-07: o plano original de “conflitos e reexecução” ficou defasado porque preflight de colisão, bloqueio sem `_v2`, reencontro conservador e integridade de metadata já foram entregues e evidenciados nas Sprints 5 e 6. O objetivo vigente da Sprint 7 passou a ser o ciclo de vida operacional na IDE (posse sem travar a `Description`, sincronizar, remover, relatório final, UX mínima de conflitos e comprovação dos dez gates). Limitações do YAML nativo (`Swagger.Yaml.stg`) e evidência HTTP 403 com role GAM customizada saíram do gate obrigatório desta sprint e ficam como frentes pré-Alpha separadas. Detalhe em `Docs/Foundation/24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md` e nota operacional no documento 06.
 
 ## Frente ativa
 
-**Sprint 7 — Conflitos e Reexecução**. As frentes pós-Sprint 6 (`Location`/`URLEncode` com path-encoding e recusa de barra, autonumeração no Passo 3 e PK opcional no Create no Passo 4) estão concluídas, com evidência HTTP nos dois geradores, fechamento documental e commits enviados ao remoto.
+**Sprint 7 — Ciclo de vida operacional na IDE** (objetivo revisado em 2026-08-07). O núcleo de conflitos/reexecução já existe no wizard; o que falta para o marco **wizard funcional do MVP** é posse segura, remoção, sincronização, relatório pós-geração e fechamento dos gates.
 
 ## Próxima ação única
 
-Iniciar a Sprint 7 — Conflitos e Reexecução, validando a gestão conservadora de conflitos, reexecução segura e preflight de colisão externa (B063, B064, B067).
+Implementar a posse do API Object ancorada na metadata de integridade, liberando a `Description` para edição humana sem perder o reconhecimento de objeto próprio (B087), na ordem acordada da Sprint 7 revisada.
 
 ## Critério de conclusão e evidência esperada
 
-- validação da gestão conservadora de conflitos, reexecução segura e preflight de colisão externa (B063, B064, B067) em cenários de re-aplicação e colisão;
-- revisão semântica de contrato runtime confirmando integridade entre API Object, Procedures, SDTs e metadata;
-- rotina pré-push executada com checks sem `failed`;
-- relatório da revisão registrado na resposta final.
+- posse do API Object deixa de depender da igualdade exata da `Description`; metadata (`ownership` + integridade) governa o reencontro, com fallback só quando o File ainda não existir;
+- em seguida, nesta sprint: comando `Remover API gerada`, comando `Sincronizar com a Transaction`, relatório final pós-aplicação, UX mínima de conflitos (nome/tipo/módulo/Folder) e alinhamento do Folder preexistente reutilizável;
+- comprovação integrada dos dez gates técnicos transversais e declaração do marco **wizard funcional do MVP concluído**;
+- B088 (YAML nativo) e B089 (403 GAM) documentados como pré-Alpha separados, sem bloquear o fechamento desta sprint;
+- revisão semântica de contrato runtime e rotina pré-push sem checks `failed` no fechamento.
 
 ## Sequência operacional vigente
 
@@ -118,15 +120,19 @@ Iniciar a Sprint 7 — Conflitos e Reexecução, validando a gestão conservador
 20. Sprint 6 validou runtime de B071-B073/B079: `Get`, `Create` e `Update` respondem com status HTTP e corpos coerentes no endpoint gerado, em .NET Framework/SQL Server e .NET/PostgreSQL após banco físico recriado.
 21. Sprint 6 fechou B071-B073/B079 com envio ao remoto e reconciliou B076 nos documentos 06, 09, 15 e 24, separando os dois casos do enunciado original: filtro de `List` ausente permanece distinguido de vazio, `false` e zero por `Json Null Serialization`, enquanto o corpo de `Create` e `Update` passou a ser validado por preenchimento, com a limitação assumida de recusar valor legítimo igual ao default do tipo.
 22. Sprint 6 aprovou B047, B074, B075 e B078 com validação empírica de geração de clientes OpenAPI via `openapi-generator-cli 5.3.1` (`typescript-fetch` e `csharp`) com Exit Code 0, e por conferência detalhada dos YAMLs atuais em 2026-08-04 nos dois geradores (.NET Framework/SQL Server e .NET/PostgreSQL), cobrindo os seis eixos exigidos — rotas, métodos, operationIds no padrão `apiNome.Serviço`, ausência de DELETE, nomes `_API_` congelados em B062, bloco `security` com `oAuthGXGAM` por operação (B093) e schemas de request/response sem o array `Errors` em `sdt_API_ErrorResponse`. A trava contra regressão de identificadores `_API_` e operationIds foi incorporada pelo teste automatizado off-line `Test-OpenApiClientContractValidity.ps1` em `Tests/OpenApiContract/`, integrado ao checker pré-push em `scripts/Invoke-PrePushMechanicalChecks.ps1`. Evidência registrada em `Docs/Implementation/2026-08-04-VALIDACAO-YAML-SPRINT6-EIXOS-SEGURANCA.md`.
-23. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7, antes da Alpha.
+23. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7 revisada, antes da Alpha.
+24. Em 2026-08-07 a Sprint 7 foi reenquadrada: preflight/colisão/integridade (B063/B064/B067) e entrada de menu (B080 em substância) já estão feitos; o escopo obrigatório restante é B087, B086, B085, B081, UX mínima de B083 e alinhamento de Folder reutilizado, mais a comprovação dos dez gates. B088 e B089 ficam pré-Alpha separados.
 
 ## Bloqueios e fatos ainda não validados
 
 - carregamento real do pacote em U14;
 - compatibilidade prática das APIs do SDK com U14;
-- comprovação progressiva dos gates técnicos transversais definidos nos documentos 09, 15 e 24.
+- comprovação integrada final dos dez gates técnicos transversais (parcialmente já evidenciada nas Sprints 1–6; faltam remoção e sincronização no gate 10).
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
+- posse do API Object ainda amarrada à `Description` exata (B087 pendente): editar a descrição pública na IDE quebra o reconhecimento de objeto próprio.
+- comandos `Remover API gerada` e `Sincronizar com a Transaction` ainda ausentes no runtime.
+- Folder preexistente `NomeOpenApi` no módulo correto ainda é tratado como colisão no código, em desacordo com a decisão do MVP de reutilizar com aviso.
 
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 
