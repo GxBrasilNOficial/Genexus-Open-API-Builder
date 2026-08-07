@@ -19,8 +19,8 @@ namespace GenexusOpenApiBuilder.Extension;
 /// <summary>
 /// Ponto de entrada da extensão. As sondas B001-B006 permanecem como
 /// evidências históricas e não são invocadas em runtime nem na abertura de KBs.
-/// O menu principal expõe a configuração de preferências por KB e B030 abre
-/// o wizard navegável com geração incremental.
+/// O menu principal expõe a configuração de preferências por KB, o wizard navegável
+/// e o comando Remover API gerada; o contexto da Transaction expõe Wizard e Remover API gerada.
 /// </summary>
 public sealed class Package : AbstractPackageUI
 {
@@ -32,6 +32,7 @@ public sealed class Package : AbstractPackageUI
 
         AddCommand(new CommandKey(Id, "Configurar Preferências do Wizard"), ExecuteConfigureWizardPreferences, QueryConfigureWizardPreferences);
         AddCommand(new CommandKey(Id, "Wizard"), ExecuteOpenWizardStepOne, QueryOpenWizardStepOne);
+        AddCommand(new CommandKey(Id, "Remover API gerada"), ExecuteRemoveGeneratedApi, QueryRemoveGeneratedApi);
     }
 
     private static bool QueryConfigureWizardPreferences(CommandData data, ref CommandStatus status)
@@ -623,6 +624,120 @@ public sealed class Package : AbstractPackageUI
             WriteOutput($"[Genexus Open API Builder][B070] Aplicacao do List bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{errorDetail}'");
             return false;
         }
+    }
+
+    private static bool QueryRemoveGeneratedApi(CommandData data, ref CommandStatus status)
+    {
+        status.Visible(true);
+        return true;
+    }
+
+    private static bool ExecuteRemoveGeneratedApi(CommandData data)
+    {
+        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
+        if (knowledgeBase is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B086] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
+            return true;
+        }
+
+        Transaction? transaction;
+        try
+        {
+            transaction = ResolveTransactionForCommand(data, knowledgeBase, "Remover API gerada");
+        }
+        catch (InvalidOperationException ex)
+        {
+            WriteOutput($"[Genexus Open API Builder][B086] {ex.Message}");
+            return true;
+        }
+
+        if (transaction is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B086] Nenhuma Transaction foi selecionada. Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        try
+        {
+            var plan = ApiPlanGeneratedApiRemover.Preview(knowledgeBase.DesignModel, transaction);
+            WriteOutput($"[Genexus Open API Builder][B086] Plano de remocao para Transaction='{transaction.Name}':{Environment.NewLine}{plan.BuildConfirmationSummary()}");
+
+            var confirmation = System.Windows.Forms.MessageBox.Show(
+                "Remover API gerada apaga somente objetos proprios identificados pela metadata." + Environment.NewLine + Environment.NewLine +
+                plan.BuildConfirmationSummary() + Environment.NewLine + Environment.NewLine +
+                "Confirma a exclusao?",
+                "Remover API gerada",
+                System.Windows.Forms.MessageBoxButtons.YesNo,
+                System.Windows.Forms.MessageBoxIcon.Warning,
+                System.Windows.Forms.MessageBoxDefaultButton.Button2);
+            if (confirmation != System.Windows.Forms.DialogResult.Yes)
+            {
+                WriteOutput($"[Genexus Open API Builder][B086] Remocao cancelada pelo usuario para Transaction='{transaction.Name}'. Nenhuma alteracao foi feita na KB.");
+                return true;
+            }
+
+            var result = ApiPlanGeneratedApiRemover.Remove(knowledgeBase.DesignModel, transaction);
+            WriteOutput($"[Genexus Open API Builder][B086] Remocao concluida: Transaction='{transaction.Name}', ApiName='{result.Plan.ApiName}', Deleted={result.DeletedItems.Count}, Items='{string.Join("; ", result.DeletedItems)}'. SDTs compartilhados e Business Component da Transaction nao foram alterados.");
+        }
+        catch (Exception ex)
+        {
+            var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
+            WriteOutput($"[Genexus Open API Builder][B086] Remocao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}'");
+        }
+
+        return true;
+    }
+
+    private static Transaction? ResolveTransactionForCommand(CommandData data, KnowledgeBase knowledgeBase, string commandLabel)
+    {
+        var transaction = TryResolveTransactionFromContext(data);
+        if (transaction is not null)
+        {
+            var transactionGuid = transaction.Guid;
+            transaction = Transaction.GetAll(knowledgeBase.DesignModel)
+                .SingleOrDefault(item => item.Guid == transactionGuid);
+            if (transaction is null)
+            {
+                throw new InvalidOperationException($"A Transaction do menu de contexto nao foi reencontrada na Knowledge Base ativa ({commandLabel}).");
+            }
+
+            return transaction;
+        }
+
+        if (!UIServices.IsSelectObjectDialogAvailable)
+        {
+            throw new InvalidOperationException($"O dialogo publico de selecao nao esta disponivel nesta IDE ({commandLabel}).");
+        }
+
+        var options = new SelectObjectOptions
+        {
+            MultipleSelection = false,
+            DialogTitle = $"Selecionar Transaction para {commandLabel}",
+            SupportCreateAction = false
+        };
+        options.ObjectTypes.Add(KBObjectDescriptor.Get<Transaction>());
+
+        var selectedObject = UIServices.SelectObjectDialog.SelectObject(options);
+        if (selectedObject is null)
+        {
+            return null;
+        }
+
+        if (selectedObject is not Transaction selectedTransaction)
+        {
+            throw new InvalidOperationException($"A selecao retornada nao e uma Transaction ({commandLabel}).");
+        }
+
+        var selectedGuid = selectedTransaction.Guid;
+        transaction = Transaction.GetAll(knowledgeBase.DesignModel)
+            .SingleOrDefault(item => item.Guid == selectedGuid);
+        if (transaction is null)
+        {
+            throw new InvalidOperationException($"A Transaction selecionada nao foi reencontrada na Knowledge Base ativa ({commandLabel}).");
+        }
+
+        return transaction;
     }
 
     private static bool QueryOpenWizardStepOne(CommandData data, ref CommandStatus status)

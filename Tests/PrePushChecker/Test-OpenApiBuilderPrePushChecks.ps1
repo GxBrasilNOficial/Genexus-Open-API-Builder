@@ -37,6 +37,7 @@ Assert-True ($source -match 'Tests/OpenApiContract/Test-OpenApiClientContractVal
 Assert-True ($source -match 'Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract\.ps1') 'O checker deve executar o teste unitário do parser Service Source.'
 Assert-True ($source -match 'Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity\.ps1') 'O checker deve executar o teste unitário da integridade B067.'
 Assert-True ($source -match 'Tests/ApiObjectOwnership/Test-ApiPlanApiObjectOwnership\.ps1') 'O checker deve executar o teste unitário da posse B087 do API Object.'
+Assert-True ($source -match 'Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPlan\.ps1') 'O checker deve executar o teste unitário do plano de remoção B086.'
 Assert-True ($source -match 'Tests/WizardPreferences/Test-PrototypeWizardPreferences\.ps1') 'O checker deve executar o teste unitário das preferências do wizard.'
 Assert-True ($source -match 'Tests/WizardNavigation/Test-PrototypeWizardBusinessComponentNavigationPolicy\.ps1') 'O checker deve executar o teste unitário da navegação do wizard.'
 Assert-True ($source -match 'Tests/WritePreflight/Test-ApiPlanWritePreflightScope\.ps1') 'O checker deve executar o teste unitário do escopo de preflight.'
@@ -62,6 +63,7 @@ try {
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ServiceSourceContract'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\MetadataIntegrity'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ApiObjectOwnership'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\GeneratedApiRemoval'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\WizardPreferences'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\WizardNavigation'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\WritePreflight'))
@@ -88,6 +90,7 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ServiceSourceContract\Test-ApiPlanServiceSourceContract.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Service Source contract'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\MetadataIntegrity\Test-ApiPlanMetadataIntegrity.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Metadata Integrity'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ApiObjectOwnership\Test-ApiPlanApiObjectOwnership.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Api Object Ownership'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GeneratedApiRemoval\Test-ApiPlanGeneratedApiRemovalPlan.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generated Api Removal Plan'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardPreferences\Test-PrototypeWizardPreferences.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Wizard Preferences'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardNavigation\Test-PrototypeWizardBusinessComponentNavigationPolicy.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Wizard Navigation'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WritePreflight\Test-ApiPlanWritePreflightScope.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Write Preflight Scope'`n", [System.Text.UTF8Encoding]::new($false))
@@ -111,6 +114,7 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.serviceSourceContract' }).status -eq 'passed') 'O teste unitário do parser Service Source deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.metadataIntegrity' }).status -eq 'passed') 'O teste unitário da integridade B067 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.apiObjectOwnership' }).status -eq 'passed') 'O teste unitário da posse B087 deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.generatedApiRemovalPlan' }).status -eq 'passed') 'O teste unitário do plano de remoção B086 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardPreferences' }).status -eq 'passed') 'O teste unitário das preferências do wizard deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardNavigation' }).status -eq 'passed') 'O teste unitário da navegação do wizard deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.writePreflightScope' }).status -eq 'passed') 'O teste unitário do escopo de preflight deveria passar na fixture.'
@@ -122,6 +126,7 @@ try {
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract.ps1' }).Count -eq 1) 'O comando do teste Service Source deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity.ps1' }).Count -eq 1) 'O comando do teste Metadata Integrity deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ApiObjectOwnership/Test-ApiPlanApiObjectOwnership.ps1' }).Count -eq 1) 'O comando do teste Api Object Ownership deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPlan.ps1' }).Count -eq 1) 'O comando do teste Generated Api Removal Plan deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardPreferences/Test-PrototypeWizardPreferences.ps1' }).Count -eq 1) 'O comando do teste Wizard Preferences deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardNavigation/Test-PrototypeWizardBusinessComponentNavigationPolicy.ps1' }).Count -eq 1) 'O comando do teste Wizard Navigation deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WritePreflight/Test-ApiPlanWritePreflightScope.ps1' }).Count -eq 1) 'O comando do teste Write Preflight Scope deve aparecer no JSON.'
