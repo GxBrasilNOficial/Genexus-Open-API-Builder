@@ -130,7 +130,7 @@ Implementar o relatório final pós-aplicação (B081): tela ou resumo estrutura
 
 - carregamento real do pacote em U14;
 - compatibilidade prática das APIs do SDK com U14;
-- comprovação integrada final dos dez gates técnicos transversais (parcialmente já evidenciada nas Sprints 1–6; falta sincronização validada no U15 no gate 10 — remoção B086 já validada).
+- comprovação integrada final dos dez gates técnicos transversais (parcialmente já evidenciada nas Sprints 1–6; no gate 10, sincronização B085 e remoção B086 já validados no U15 — falta a comprovação integrada final dos dez gates).
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
 - B087, B086 e B085 validados no U15; B081 (relatório final) ainda pendente.
