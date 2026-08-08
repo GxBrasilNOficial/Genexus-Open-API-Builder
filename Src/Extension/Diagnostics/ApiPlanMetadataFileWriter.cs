@@ -21,6 +21,15 @@ internal static class ApiPlanMetadataFileWriter
 
     public static ApiPlanMetadataFileWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
+        return CreateOrReencounter(designModel, transaction, apiPlan, allowIntentionalContractRefresh: false);
+    }
+
+    public static ApiPlanMetadataFileWriteResult CreateOrReencounter(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        bool allowIntentionalContractRefresh)
+    {
         if (designModel is null)
         {
             throw new ArgumentNullException(nameof(designModel));
@@ -41,8 +50,8 @@ internal static class ApiPlanMetadataFileWriter
             throw new InvalidOperationException("Gravacao de metadata B060 bloqueada: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
         }
 
-        var apiObject = PreflightApiObject(designModel, apiPlan);
-        var preflight = PreflightMetadataFile(designModel, transaction, apiPlan, apiObject);
+        var apiObject = PreflightApiObject(designModel, apiPlan, allowIntentionalContractRefresh);
+        var preflight = PreflightMetadataFile(designModel, transaction, apiPlan, apiObject, allowIntentionalContractRefresh);
         var json = CreateMetadataJson(transaction, apiPlan, apiObject);
         var bytes = Encoding.UTF8.GetBytes(json);
         var file = preflight.ExistingFile ?? new WikiFileKBObject(designModel);
@@ -102,7 +111,7 @@ internal static class ApiPlanMetadataFileWriter
         }
     }
 
-    private static API PreflightApiObject(KBModel designModel, ApiPlan apiPlan)
+    private static API PreflightApiObject(KBModel designModel, ApiPlan apiPlan, bool allowIntentionalContractRefresh)
     {
         var matches = API.GetAll(designModel)
             .Where(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase))
@@ -119,7 +128,10 @@ internal static class ApiPlanMetadataFileWriter
         }
 
         var apiObject = matches[0];
-        if (!ApiPlanApiObjectWriter.IsOwnedApiObject(designModel, apiPlan, apiObject))
+        var owned = allowIntentionalContractRefresh
+            ? ApiPlanApiObjectWriter.IsOwnedApiObjectForSync(designModel, apiPlan, apiObject)
+            : ApiPlanApiObjectWriter.IsOwnedApiObject(designModel, apiPlan, apiObject);
+        if (!owned)
         {
             throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: API Object externo ou incompativel chamado '{apiPlan.ApiName}'. Nenhuma alteracao foi feita.");
         }
@@ -127,7 +139,12 @@ internal static class ApiPlanMetadataFileWriter
         return apiObject;
     }
 
-    private static ApiPlanMetadataFilePreflightResult PreflightMetadataFile(KBModel designModel, Transaction transaction, ApiPlan apiPlan, API apiObject)
+    private static ApiPlanMetadataFilePreflightResult PreflightMetadataFile(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        API apiObject,
+        bool allowIntentionalContractRefresh)
     {
         var matches = WikiFileKBObject.GetAll(designModel)
             .Where(file => string.Equals(file.Name, apiPlan.MetadataFileName, StringComparison.OrdinalIgnoreCase))
@@ -154,11 +171,16 @@ internal static class ApiPlanMetadataFileWriter
             throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: ja existe File externo ou incompativel chamado '{apiPlan.MetadataFileName}'. Nenhuma alteracao foi feita.");
         }
 
-        ValidateExistingMetadata(file, transaction, apiPlan, apiObject);
+        ValidateExistingMetadata(file, transaction, apiPlan, apiObject, allowIntentionalContractRefresh);
         return new ApiPlanMetadataFilePreflightResult(file);
     }
 
-    private static void ValidateExistingMetadata(WikiFileKBObject file, Transaction transaction, ApiPlan apiPlan, API apiObject)
+    private static void ValidateExistingMetadata(
+        WikiFileKBObject file,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        API apiObject,
+        bool allowIntentionalContractRefresh)
     {
         var bytes = file.BlobPart?.Data?.GetBytes();
         if (bytes is null || bytes.Length == 0)
@@ -182,7 +204,10 @@ internal static class ApiPlanMetadataFileWriter
         RequireString(metadata.SelectToken("ownership.apiName"), apiPlan.ApiName, "ownership.apiName", apiPlan.MetadataFileName);
         RequireString(metadata.SelectToken("ownership.apiGuid"), apiObject.Guid.ToString(), "ownership.apiGuid", apiPlan.MetadataFileName);
         RequireString(metadata.SelectToken("ownership.metadataFileName"), apiPlan.MetadataFileName, "ownership.metadataFileName", apiPlan.MetadataFileName);
-        ValidateB067IntegrityIfPresent(metadata, apiPlan, apiObject);
+        if (!allowIntentionalContractRefresh)
+        {
+            ValidateB067IntegrityIfPresent(metadata, apiPlan, apiObject);
+        }
     }
 
     internal static bool HasCompatibleB067Integrity(JObject metadata, ApiPlan apiPlan, API apiObject)
@@ -222,6 +247,7 @@ internal static class ApiPlanMetadataFileWriter
 
     private static string CreateMetadataJson(Transaction transaction, ApiPlan apiPlan, API apiObject)
     {
+        var transactionStructure = BuildTransactionStructure(transaction);
         var metadata = new JObject
         {
             ["schemaVersion"] = SchemaVersion,
@@ -270,6 +296,7 @@ internal static class ApiPlanMetadataFileWriter
                 ["operationId"] = service.OperationId,
                 ["description"] = apiPlan.ServiceDescriptions.Single(description => string.Equals(description.ServiceName, service.Name, StringComparison.OrdinalIgnoreCase)).Description,
             })),
+            ["transactionStructure"] = ToFieldArray(transactionStructure),
             ["fields"] = new JObject
             {
                 ["primaryKey"] = ToFieldArray(apiPlan.PrimaryKey),
@@ -287,6 +314,7 @@ internal static class ApiPlanMetadataFileWriter
                 {
                     ["requestName"] = field.RequestName,
                     ["fieldName"] = field.FieldName,
+                    ["attributeGuid"] = ResolveRequiredAttributeGuid(apiPlan, field),
                     ["isRequired"] = field.IsRequired,
                     ["reason"] = field.Reason,
                 })),
@@ -300,6 +328,7 @@ internal static class ApiPlanMetadataFileWriter
             {
                 ["order"] = order.Order,
                 ["attributeName"] = order.AttributeName,
+                ["attributeGuid"] = ResolveOrderAttributeGuid(apiPlan, order.AttributeName, transactionStructure),
                 ["direction"] = order.Direction,
             })),
             ["security"] = new JObject
@@ -321,7 +350,7 @@ internal static class ApiPlanMetadataFileWriter
                     ["description"] = description.Description,
                 })),
             },
-            ["integrity"] = CreateB067IntegrityObject(apiPlan, apiObject),
+            ["integrity"] = CreateB067IntegrityObject(apiPlan, apiObject, transactionStructure),
             ["classification"] = CreateClassificationObject(apiPlan.FieldClassificationConfiguration),
             ["businessComponent"] = new JObject
             {
@@ -356,11 +385,11 @@ internal static class ApiPlanMetadataFileWriter
         return metadata.ToString(Formatting.Indented) + "\n";
     }
 
-    private static JObject CreateB067IntegrityObject(ApiPlan apiPlan, API apiObject)
+    private static JObject CreateB067IntegrityObject(ApiPlan apiPlan, API apiObject, IReadOnlyList<ApiPlanField>? transactionStructure = null)
     {
         return ApiPlanMetadataIntegrity.Create(
             CreateServiceDescriptionsContract(apiPlan),
-            CreatePlannedContract(apiPlan),
+            CreatePlannedContract(apiPlan, transactionStructure: transactionStructure),
             ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan),
             apiObject.Guid.ToString(),
             ResolveServiceSourceMode(apiPlan, apiObject),
@@ -379,7 +408,7 @@ internal static class ApiPlanMetadataFileWriter
             }));
     }
 
-    private static JObject CreatePlannedContract(ApiPlan apiPlan, bool useLegacyPathParameterSyntax = false)
+    private static JObject CreatePlannedContract(ApiPlan apiPlan, bool useLegacyPathParameterSyntax = false, IReadOnlyList<ApiPlanField>? transactionStructure = null)
     {
         return new JObject
         {
@@ -415,6 +444,7 @@ internal static class ApiPlanMetadataFileWriter
                 {
                     ["requestName"] = field.RequestName,
                     ["fieldName"] = field.FieldName,
+                    ["attributeGuid"] = ResolveRequiredAttributeGuid(apiPlan, field),
                     ["isRequired"] = field.IsRequired,
                     ["reason"] = field.Reason,
                 })),
@@ -428,6 +458,7 @@ internal static class ApiPlanMetadataFileWriter
             {
                 ["order"] = order.Order,
                 ["attributeName"] = order.AttributeName,
+                ["attributeGuid"] = ResolveOrderAttributeGuid(apiPlan, order.AttributeName, transactionStructure),
                 ["direction"] = order.Direction,
             })),
         };
@@ -467,6 +498,7 @@ internal static class ApiPlanMetadataFileWriter
         return new JObject
         {
             ["order"] = field.Order,
+            ["attributeGuid"] = field.AttributeGuid,
             ["name"] = field.Name,
             ["dataType"] = field.DataType,
             ["length"] = field.Length,
@@ -486,6 +518,65 @@ internal static class ApiPlanMetadataFileWriter
             ["isWritableByUpdate"] = field.IsWritableByUpdate,
             ["isFilterEligible"] = field.IsFilterEligible,
         };
+    }
+
+    private static IReadOnlyList<ApiPlanField> BuildTransactionStructure(Transaction transaction)
+    {
+        return PrototypeWizardContractReader.Read(transaction).Attributes
+            .OrderBy(item => item.Order)
+            .Select(item => new ApiPlanField(
+                item.Order,
+                item.AttributeGuid,
+                item.Name,
+                item.DataType,
+                item.Length,
+                item.Decimals,
+                item.IsPrimaryKey,
+                item.IsNullable,
+                item.IsSensitive,
+                item.IsAudit,
+                item.SensitiveClassificationSource,
+                item.SensitiveClassificationReason,
+                item.AuditClassificationSource,
+                item.AuditClassificationReason,
+                item.IsFormula,
+                item.IsInferred,
+                item.IsRedundant,
+                item.IsPayloadEligible,
+                item.IsUpdatePayloadEligible,
+                item.IsFilterEligible))
+            .ToArray();
+    }
+
+    private static string ResolveRequiredAttributeGuid(ApiPlan apiPlan, ApiPlanRequiredField field)
+    {
+        var source = string.Equals(field.RequestName, "UpdateRequest", StringComparison.OrdinalIgnoreCase)
+            ? apiPlan.UpdateRequestFields
+            : apiPlan.CreateRequestFields;
+        var match = source.FirstOrDefault(item => string.Equals(item.Name, field.FieldName, StringComparison.OrdinalIgnoreCase));
+        if (match is null)
+        {
+            throw new InvalidOperationException($"Campo required '{field.RequestName}.{field.FieldName}' nao foi encontrado no ApiPlan para gravar attributeGuid.");
+        }
+
+        return match.AttributeGuid;
+    }
+
+    private static string ResolveOrderAttributeGuid(ApiPlan apiPlan, string attributeName, IReadOnlyList<ApiPlanField>? transactionStructure = null)
+    {
+        var match = (transactionStructure ?? Array.Empty<ApiPlanField>())
+            .Concat(apiPlan.PrimaryKey)
+            .Concat(apiPlan.ResponseFields)
+            .Concat(apiPlan.CreateRequestFields)
+            .Concat(apiPlan.UpdateRequestFields)
+            .Concat(apiPlan.ListFilters.Select(filter => filter.Field))
+            .FirstOrDefault(item => string.Equals(item.Name, attributeName, StringComparison.OrdinalIgnoreCase));
+        if (match is null)
+        {
+            throw new InvalidOperationException($"Atributo de ordenacao '{attributeName}' nao foi encontrado no ApiPlan para gravar attributeGuid.");
+        }
+
+        return match.AttributeGuid;
     }
 
     private static JArray ToStringArray(IEnumerable<string> values)

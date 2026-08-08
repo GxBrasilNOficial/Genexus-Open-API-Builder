@@ -17,6 +17,15 @@ internal static class ApiPlanSdtWriter
 
     public static ApiPlanSdtWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
+        return CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames: null);
+    }
+
+    public static ApiPlanSdtWriteResult CreateOrReencounter(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        IReadOnlyCollection<string>? preserveSdtNames)
+    {
         if (designModel is null)
         {
             throw new ArgumentNullException(nameof(designModel));
@@ -37,6 +46,7 @@ internal static class ApiPlanSdtWriter
             throw new InvalidOperationException("Criacao de SDTs bloqueada: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
         }
 
+        var preserve = new HashSet<string>(preserveSdtNames ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
         var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var preflight = CreatePreflightResult(designModel, generationPlan);
         ApiPlanTransactionFolder.Preflight(designModel, apiPlan);
@@ -46,12 +56,12 @@ internal static class ApiPlanSdtWriter
 
         foreach (var sdt in generationPlan.SharedSdts)
         {
-            results.Add(CreateOrReencounterSdt(designModel, transaction, sharedFolder, sdt, preflight));
+            results.Add(CreateOrReencounterSdt(designModel, transaction, sharedFolder, sdt, preflight, preserve));
         }
 
         foreach (var sdt in generationPlan.OwnSdts)
         {
-            results.Add(CreateOrReencounterSdt(designModel, transaction, transactionFolder, sdt, preflight));
+            results.Add(CreateOrReencounterSdt(designModel, transaction, transactionFolder, sdt, preflight, preserve));
         }
 
         return new ApiPlanSdtWriteResult(
@@ -178,7 +188,13 @@ internal static class ApiPlanSdtWriter
         return folder;
     }
 
-    private static ApiPlanSdtWriteItemResult CreateOrReencounterSdt(KBModel designModel, Transaction transaction, Folder? targetFolder, ApiPlanSdtDefinition definition, ApiPlanSdtPreflightResult preflight)
+    private static ApiPlanSdtWriteItemResult CreateOrReencounterSdt(
+        KBModel designModel,
+        Transaction transaction,
+        Folder? targetFolder,
+        ApiPlanSdtDefinition definition,
+        ApiPlanSdtPreflightResult preflight,
+        ISet<string> preserveSdtNames)
     {
         if (preflight.ExistingSdtsByName.TryGetValue(definition.Name, out var existingSdt))
         {
@@ -187,7 +203,11 @@ internal static class ApiPlanSdtWriter
                 existingSdt.Parent = targetFolder;
             }
 
-            ConfigureSdt(designModel, existingSdt, definition);
+            if (!preserveSdtNames.Contains(definition.Name))
+            {
+                ConfigureSdt(designModel, existingSdt, definition);
+            }
+
             existingSdt.Save();
 
             return new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, ApiPlanSdtWriteStatus.Reencountered, existingSdt.Guid);

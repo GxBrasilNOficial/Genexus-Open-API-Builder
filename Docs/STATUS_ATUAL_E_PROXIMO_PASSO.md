@@ -82,21 +82,21 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - B087 implementado em código em 2026-08-07: `ApiPlanApiObjectOwnership` + `IsOwnedApiObject` reconhecem o API Object pela metadata (`ownership` + B067), com fallback na `Description` só sem File; reencontro não sobrescreve a Description. Teste off-line e build Release OK. Evidência: `Docs/Implementation/B087-POSSE-API-OBJECT-METADATA.md`.
 - B087 validado manualmente em 2026-08-07 na Transaction `Teste` (`apiTeste`): Description humana editada; Wizard em modo reencontro aprovou preflight, reencontrou SDTs/Procedures, sincronizou BC/List e metadata (`Reencountered`, Guid `73fcc50b-9653-43ae-8889-4931e0ab0c25`); a Description editada permaneceu após aplicar. A Description gerada padrão passou a omitir o ponto terminal; a forma legada com ponto continua no fallback/integridade.
 - B086 implementado em código em 2026-08-07 e validado no U15 em 2026-08-08: comando `Remover API gerada` (menu principal + contexto); cancelamento seguro; ordem API→Procedures→SDTs (ListResponse antes de Response)→metadata→Folder; Folder reutilizado preservado; Folder criado (`wasCreated=true`) removido com o conteúdo (`Deleted=12` em `Teste`, incluindo `Folder:TesteOpenApi`); SDTs `GxOpenAPI` e BC da Transaction preservados. Evidência: `Docs/Implementation/B086-REMOVER-API-GERADA.md`.
+- B085 implementado e validado no U15 em 2026-08-08 na Transaction `Teste`: comando `Sincronizar com a Transaction` (menu principal + contexto); metadata com `transactionStructure` e `attributeGuid`; diff por GUID (add, rename, sem diff); UI 2x2 com escolhas; cancelamento seguro; conflito Replace em SDT editado; Sync atualiza contrato B067 e Source B055/B070 de propósito. Checker de menu (4 comandos), build Release e teste `Tests/TransactionSync/Test-ApiPlanTransactionSyncComparer.ps1` OK. Evidência: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`.
 
 ## Frente ativa
 
-**Sprint 7 — Ciclo de vida operacional na IDE**. B087 e B086 fechados.
+**Sprint 7 — Ciclo de vida operacional na IDE**. B087, B086 e B085 fechados; próxima entrega B081.
 
 ## Próxima ação única
 
-Implementar o comando explícito `Sincronizar com a Transaction` (B085): comparar Transaction atual com a metadata, apresentar diferenças, exigir confirmação e gravar somente após preflight.
+Implementar o relatório final pós-aplicação (B081): tela ou resumo estruturado de criados / atualizados / bloqueados / avisos, sem depender só da Output técnica.
 
 ## Critério de conclusão e evidência esperada
 
-- comando registrado nas três camadas e coberto pelo checker de menu;
-- comparação legível (campos/serviços/contrato vs metadata) antes de qualquer `Save()`;
-- confirmação; escrita só de objetos próprios com preflight completo;
-- evidência manual U15 + doc de implementação.
+- Wizard e/ou Sync/Remover exibem relatório final legível após aplicar;
+- contagens e nomes de objetos batem com a Output e com a KB;
+- evidência U15 + docs; promover residual B083/Folder ou comprovação dos gates conforme o plano da Sprint 7.
 
 ## Sequência operacional vigente
 
@@ -124,18 +124,17 @@ Implementar o comando explícito `Sincronizar com a Transaction` (B085): compara
 22. Sprint 6 aprovou B047, B074, B075 e B078 com validação empírica de geração de clientes OpenAPI via `openapi-generator-cli 5.3.1` (`typescript-fetch` e `csharp`) com Exit Code 0, e por conferência detalhada dos YAMLs atuais em 2026-08-04 nos dois geradores (.NET Framework/SQL Server e .NET/PostgreSQL), cobrindo os seis eixos exigidos — rotas, métodos, operationIds no padrão `apiNome.Serviço`, ausência de DELETE, nomes `_API_` congelados em B062, bloco `security` com `oAuthGXGAM` por operação (B093) e schemas de request/response sem o array `Errors` em `sdt_API_ErrorResponse`. A trava contra regressão de identificadores `_API_` e operationIds foi incorporada pelo teste automatizado off-line `Test-OpenApiClientContractValidity.ps1` em `Tests/OpenApiContract/`, integrado ao checker pré-push em `scripts/Invoke-PrePushMechanicalChecks.ps1`. Evidência registrada em `Docs/Implementation/2026-08-04-VALIDACAO-YAML-SPRINT6-EIXOS-SEGURANCA.md`.
 23. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7 revisada, antes da Alpha.
 24. Em 2026-08-07 a Sprint 7 foi reenquadrada: preflight/colisão/integridade (B063/B064/B067) e entrada de menu (B080 em substância) já estão feitos; o escopo obrigatório restante é B087, B086, B085, B081, UX mínima de B083 e alinhamento de Folder reutilizado, mais a comprovação dos dez gates. B088 e B089 ficam pré-Alpha separados.
+25. Em 2026-08-08 B085 foi validado no U15 (`Teste`): Sync add/rename/sem diff/cancelar/Replace; próxima ação B081.
 
 ## Bloqueios e fatos ainda não validados
 
 - carregamento real do pacote em U14;
 - compatibilidade prática das APIs do SDK com U14;
-- comprovação integrada final dos dez gates técnicos transversais (parcialmente já evidenciada nas Sprints 1–6; falta sincronização no gate 10 — remoção B086 já validada).
+- comprovação integrada final dos dez gates técnicos transversais (parcialmente já evidenciada nas Sprints 1–6; falta sincronização validada no U15 no gate 10 — remoção B086 já validada).
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
-- B087 e B086 validados no U15; próximo obrigatório da sprint: `Sincronizar com a Transaction` (B085).
-- comando `Sincronizar com a Transaction` ainda ausente no runtime.
+- B087, B086 e B085 validados no U15; B081 (relatório final) ainda pendente.
 - Folder preexistente `NomeOpenApi` no módulo correto ainda é tratado como colisão no código, em desacordo com a decisão do MVP de reutilizar com aviso.
-
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 
 ## Documentos governantes

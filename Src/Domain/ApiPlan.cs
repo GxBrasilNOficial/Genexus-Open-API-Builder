@@ -147,6 +147,7 @@ internal static class ApiPlanBuilder
     {
         return new ApiPlanField(
             attribute.Order,
+            attribute.AttributeGuid,
             attribute.Name,
             attribute.DataType,
             attribute.Length,
@@ -628,9 +629,15 @@ internal sealed class ApiPlanFieldClassificationMetadataContract
 
 internal sealed class ApiPlanField
 {
-    public ApiPlanField(int order, string name, string dataType, int length, int decimals, bool isPrimaryKey, bool isNullable, bool isSensitive, bool isAuditField, string sensitiveClassificationSource, string sensitiveClassificationReason, string auditClassificationSource, string auditClassificationReason, bool isFormula, bool isInferred, bool isRedundant, bool isWritableByCreate, bool isWritableByUpdate, bool isFilterEligible)
+    public ApiPlanField(int order, string attributeGuid, string name, string dataType, int length, int decimals, bool isPrimaryKey, bool isNullable, bool isSensitive, bool isAuditField, string sensitiveClassificationSource, string sensitiveClassificationReason, string auditClassificationSource, string auditClassificationReason, bool isFormula, bool isInferred, bool isRedundant, bool isWritableByCreate, bool isWritableByUpdate, bool isFilterEligible)
     {
         Order = order;
+        if (string.IsNullOrWhiteSpace(attributeGuid))
+        {
+            throw new ArgumentException("Attribute GUID is required.", nameof(attributeGuid));
+        }
+
+        AttributeGuid = attributeGuid;
         Name = name ?? throw new ArgumentNullException(nameof(name));
         DataType = dataType ?? throw new ArgumentNullException(nameof(dataType));
         Length = length;
@@ -652,6 +659,8 @@ internal sealed class ApiPlanField
     }
 
     public int Order { get; }
+
+    public string AttributeGuid { get; }
 
     public string Name { get; }
 

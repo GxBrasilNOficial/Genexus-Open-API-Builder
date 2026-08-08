@@ -17,6 +17,16 @@ internal static class ApiPlanGenerationStateReader
 
     public static ApiPlanGenerationState Read(KBModel designModel, ApiPlan apiPlan)
     {
+        return Read(designModel, apiPlan, forSyncContractRefresh: false);
+    }
+
+    public static ApiPlanGenerationState ReadForSync(KBModel designModel, ApiPlan apiPlan)
+    {
+        return Read(designModel, apiPlan, forSyncContractRefresh: true);
+    }
+
+    private static ApiPlanGenerationState Read(KBModel designModel, ApiPlan apiPlan, bool forSyncContractRefresh)
+    {
         if (designModel is null)
         {
             throw new ArgumentNullException(nameof(designModel));
@@ -32,32 +42,32 @@ internal static class ApiPlanGenerationStateReader
         var sdtPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var folder = InspectFolder(index, apiPlan);
         var sdts = InspectSdts(index, sdtPlan);
-        var sdtState = CreateState("SDTs", sdts, folder);
+        var sdtState = CreateState("SDTs", sdts, folder, forSyncContractRefresh);
 
         var procedures = InspectProcedures(index, apiPlan);
         var procedureState = sdtState.IsBlocked
             ? ApiPlanGenerationStageState.Blocked("Procedures", "Bloqueado: o estado dos SDTs precisa ser resolvido antes.")
-            : CreateState("Procedures", procedures, null);
+            : CreateState("Procedures", procedures, null, forSyncContractRefresh);
 
-        var apiObject = InspectApiObject(designModel, index, apiPlan);
+        var apiObject = InspectApiObject(designModel, index, apiPlan, forSyncContractRefresh);
         var apiState = sdtState.IsBlocked || procedureState.IsBlocked
             ? ApiPlanGenerationStageState.Blocked("API Object", "Bloqueado: o estado dos SDTs ou Procedures precisa ser resolvido antes.")
-            : CreateState("API Object", apiObject, null);
+            : CreateState("API Object", apiObject, null, forSyncContractRefresh);
 
-        var metadataFile = InspectMetadataFile(designModel, index, apiPlan);
+        var metadataFile = InspectMetadataFile(designModel, index, apiPlan, forSyncContractRefresh);
         var metadataState = apiState.IsBlocked
             ? ApiPlanGenerationStageState.Blocked("Metadata File", "Bloqueado: o API Object precisa estar disponivel antes.")
-            : CreateState("Metadata File", metadataFile, null);
+            : CreateState("Metadata File", metadataFile, null, forSyncContractRefresh);
 
         return new ApiPlanGenerationState(sdtState, procedureState, apiState, metadataState);
     }
 
-    private static ApiPlanGenerationStageState CreateState(string stageName, ApiPlanGenerationInspection inspection, ApiPlanGenerationInspection? folder)
+    private static ApiPlanGenerationStageState CreateState(string stageName, ApiPlanGenerationInspection inspection, ApiPlanGenerationInspection? folder, bool forSyncContractRefresh)
     {
         var conflicts = inspection.Conflicts + (folder?.Conflicts ?? 0);
         if (conflicts > 0)
         {
-            var reason = string.Equals(stageName, "Metadata File", StringComparison.Ordinal)
+            var reason = string.Equals(stageName, "Metadata File", StringComparison.Ordinal) && !forSyncContractRefresh
                 ? "colisao(oes) externa(s), incompativel(is), ambigua(s) ou integridade B067 divergente"
                 : "colisao(oes) externa(s), incompativel(is) ou ambigua(s)";
             return ApiPlanGenerationStageState.Blocked(stageName, $"Bloqueado: {conflicts} {reason} detectada(s). Nenhuma escrita sera permitida.");
@@ -141,7 +151,7 @@ internal static class ApiPlanGenerationStateReader
         return new ApiPlanGenerationInspection(apiPlan.Services.Count, managed, missing, conflicts);
     }
 
-    private static ApiPlanGenerationInspection InspectApiObject(KBModel designModel, KbObjectNameIndex index, ApiPlan apiPlan)
+    private static ApiPlanGenerationInspection InspectApiObject(KBModel designModel, KbObjectNameIndex index, ApiPlan apiPlan, bool forSyncContractRefresh)
     {
         var matches = index.FindApis(apiPlan.ApiName);
         if (matches.Count == 0)
@@ -149,8 +159,11 @@ internal static class ApiPlanGenerationStateReader
             return new ApiPlanGenerationInspection(1, 0, 1, 0);
         }
 
-        if (matches.Count == 1 &&
-            ApiPlanApiObjectWriter.IsOwnedApiObject(designModel, apiPlan, matches[0]))
+        var owned = matches.Count == 1 &&
+            (forSyncContractRefresh
+                ? ApiPlanApiObjectWriter.IsOwnedApiObjectForSync(designModel, apiPlan, matches[0])
+                : ApiPlanApiObjectWriter.IsOwnedApiObject(designModel, apiPlan, matches[0]));
+        if (owned)
         {
             return new ApiPlanGenerationInspection(1, 1, 0, 0);
         }
@@ -158,7 +171,7 @@ internal static class ApiPlanGenerationStateReader
         return new ApiPlanGenerationInspection(1, 0, 0, 1);
     }
 
-    private static ApiPlanGenerationInspection InspectMetadataFile(KBModel designModel, KbObjectNameIndex index, ApiPlan apiPlan)
+    private static ApiPlanGenerationInspection InspectMetadataFile(KBModel designModel, KbObjectNameIndex index, ApiPlan apiPlan, bool forSyncContractRefresh)
     {
         var matches = index.FindFiles(apiPlan.MetadataFileName);
         if (matches.Count == 0)
@@ -166,7 +179,9 @@ internal static class ApiPlanGenerationStateReader
             return new ApiPlanGenerationInspection(1, 0, 1, 0);
         }
 
-        if (matches.Count == 1 && string.Equals(matches[0].Description, ApiPlanMetadataFileWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal) && HasCompatibleMetadata(designModel, index, matches[0], apiPlan))
+        if (matches.Count == 1 &&
+            string.Equals(matches[0].Description, ApiPlanMetadataFileWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal) &&
+            HasCompatibleMetadata(designModel, index, matches[0], apiPlan, forSyncContractRefresh))
         {
             return new ApiPlanGenerationInspection(1, 1, 0, 0);
         }
@@ -174,7 +189,7 @@ internal static class ApiPlanGenerationStateReader
         return new ApiPlanGenerationInspection(1, 0, 0, 1);
     }
 
-    private static bool HasCompatibleMetadata(KBModel designModel, KbObjectNameIndex index, WikiFileKBObject file, ApiPlan apiPlan)
+    private static bool HasCompatibleMetadata(KBModel designModel, KbObjectNameIndex index, WikiFileKBObject file, ApiPlan apiPlan, bool forSyncContractRefresh)
     {
         var bytes = file.BlobPart?.Data?.GetBytes();
         if (bytes is null || bytes.Length == 0)
@@ -201,19 +216,28 @@ internal static class ApiPlanGenerationStateReader
 
         var transaction = transactionMatches[0];
         var apiObject = apiMatches[0];
-        // B087: metadata compatível não exige Description do API Object igual à sentinela.
         if (!ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject))
         {
             return false;
         }
 
-        return HasString(metadata["schemaVersion"], ApiPlanMetadataFileWriter.SchemaVersion)
+        var ownershipOk = HasString(metadata["schemaVersion"], ApiPlanMetadataFileWriter.SchemaVersion)
             && HasString(metadata.SelectToken("ownership.transactionName"), apiPlan.TransactionName)
             && HasString(metadata.SelectToken("ownership.transactionGuid"), transaction.Guid.ToString())
             && HasString(metadata.SelectToken("ownership.apiName"), apiPlan.ApiName)
             && HasString(metadata.SelectToken("ownership.apiGuid"), apiObject.Guid.ToString())
-            && HasString(metadata.SelectToken("ownership.metadataFileName"), apiPlan.MetadataFileName)
-            && ApiPlanMetadataFileWriter.HasCompatibleB067Integrity(metadata, apiPlan, apiObject);
+            && HasString(metadata.SelectToken("ownership.metadataFileName"), apiPlan.MetadataFileName);
+        if (!ownershipOk)
+        {
+            return false;
+        }
+
+        if (forSyncContractRefresh)
+        {
+            return true;
+        }
+
+        return ApiPlanMetadataFileWriter.HasCompatibleB067Integrity(metadata, apiPlan, apiObject);
     }
 
     private static bool HasString(JToken? token, string expectedValue)

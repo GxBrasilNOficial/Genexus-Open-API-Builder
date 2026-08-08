@@ -101,6 +101,50 @@ internal static class ApiPlanApiObjectWriter
         return ApiPlanApiObjectOwnership.IsOwned(kind);
     }
 
+    /// <summary>
+    /// B085: posse para sincronização intencional — ownership da metadata + Service Source gerenciado,
+    /// sem exigir igualdade do plannedContract hash (o Sync atualiza o contrato de propósito).
+    /// </summary>
+    internal static bool IsOwnedApiObjectForSync(KBModel designModel, ApiPlan apiPlan, API apiObject)
+    {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (apiPlan is null)
+        {
+            throw new ArgumentNullException(nameof(apiPlan));
+        }
+
+        if (apiObject is null)
+        {
+            throw new ArgumentNullException(nameof(apiObject));
+        }
+
+        if (!ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject))
+        {
+            return false;
+        }
+
+        var metadataLookup = TryFindOwnedMetadataFile(designModel, apiPlan);
+        if (metadataLookup.Ambiguous || !metadataLookup.OwnedFilePresent)
+        {
+            return false;
+        }
+
+        if (!TryParseMetadata(metadataLookup.File!, out var metadata) || metadata is null)
+        {
+            return false;
+        }
+
+        return ApiPlanApiObjectOwnership.MatchesMetadataOwnership(
+            metadata,
+            ApiPlanMetadataFileWriter.SchemaVersion,
+            apiPlan.ApiName,
+            apiObject.Guid.ToString());
+    }
+
     internal static ApiPlanApiObjectOwnership.OwnershipKind ResolveOwnership(KBModel designModel, ApiPlan apiPlan, API apiObject)
     {
         var serviceSourceManaged = ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject);

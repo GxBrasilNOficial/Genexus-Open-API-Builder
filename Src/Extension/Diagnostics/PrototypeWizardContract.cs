@@ -81,6 +81,7 @@ internal static class PrototypeWizardContractReader
 
         return new PrototypeWizardAttributeDecision(
             order,
+            attribute.Guid.ToString(),
             name,
             type,
             attribute.Length,
@@ -559,6 +560,7 @@ internal sealed class PrototypeWizardAttributeDecision
 {
     public PrototypeWizardAttributeDecision(
         int order,
+        string attributeGuid,
         string name,
         string dataType,
         int length,
@@ -589,6 +591,12 @@ internal sealed class PrototypeWizardAttributeDecision
         string filterDisabledReason)
     {
         Order = order;
+        if (string.IsNullOrWhiteSpace(attributeGuid))
+        {
+            throw new ArgumentException("Attribute GUID is required.", nameof(attributeGuid));
+        }
+
+        AttributeGuid = attributeGuid;
         Name = name ?? throw new ArgumentNullException(nameof(name));
         DataType = dataType ?? throw new ArgumentNullException(nameof(dataType));
         Length = length;
@@ -620,6 +628,8 @@ internal sealed class PrototypeWizardAttributeDecision
     }
 
     public int Order { get; }
+
+    public string AttributeGuid { get; }
 
     public string Name { get; }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Artech.Architecture.Common.Descriptors;
 using Artech.Architecture.Common.Helpers;
@@ -19,8 +20,8 @@ namespace GenexusOpenApiBuilder.Extension;
 /// <summary>
 /// Ponto de entrada da extensão. As sondas B001-B006 permanecem como
 /// evidências históricas e não são invocadas em runtime nem na abertura de KBs.
-/// O menu principal expõe a configuração de preferências por KB, o wizard navegável
-/// e o comando Remover API gerada; o contexto da Transaction expõe Wizard e Remover API gerada.
+/// O menu principal expõe preferências, Wizard, Sincronizar com a Transaction e Remover API gerada (nesta ordem);
+/// o contexto da Transaction expõe Wizard, Sincronizar com a Transaction e Remover API gerada.
 /// </summary>
 public sealed class Package : AbstractPackageUI
 {
@@ -32,6 +33,7 @@ public sealed class Package : AbstractPackageUI
 
         AddCommand(new CommandKey(Id, "Configurar Preferências do Wizard"), ExecuteConfigureWizardPreferences, QueryConfigureWizardPreferences);
         AddCommand(new CommandKey(Id, "Wizard"), ExecuteOpenWizardStepOne, QueryOpenWizardStepOne);
+        AddCommand(new CommandKey(Id, "Sincronizar com a Transaction"), ExecuteSynchronizeWithTransaction, QuerySynchronizeWithTransaction);
         AddCommand(new CommandKey(Id, "Remover API gerada"), ExecuteRemoveGeneratedApi, QueryRemoveGeneratedApi);
     }
 
@@ -481,11 +483,18 @@ public sealed class Package : AbstractPackageUI
         return TryCreateSdts(designModel, transaction, apiPlan, triggerSource);
     }
 
-    private static bool TryCreateSdts(KBModel designModel, Transaction transaction, ApiPlan apiPlan, string triggerSource)
+    private static bool TryCreateSdts(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        string triggerSource,
+        IReadOnlyCollection<string>? preserveSdtNames = null)
     {
         try
         {
-            var result = ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan);
+            var result = preserveSdtNames is null
+                ? ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan)
+                : ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames);
             WriteOutput($"[Genexus Open API Builder][B040-B046] Escrita de SDTs concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedOwnSdts={result.PlannedOwnSdts}, PlannedSharedSdts={result.PlannedSharedSdts}, Created={result.CreatedSdts}, Reencountered={result.ReencounteredSdts}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhuma Procedure, API Object ou metadata persistente definitiva foi criada.");
             foreach (var item in result.Items)
             {
@@ -576,11 +585,20 @@ public sealed class Package : AbstractPackageUI
         }
     }
 
-    private static bool TryWriteMetadataFile(KBModel designModel, Transaction transaction, ApiPlan apiPlan, string triggerSource)
+    private static bool TryWriteMetadataFile(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        string triggerSource,
+        bool allowIntentionalContractRefresh = false)
     {
         try
         {
-            var result = ApiPlanMetadataFileWriter.CreateOrReencounter(designModel, transaction, apiPlan);
+            var result = ApiPlanMetadataFileWriter.CreateOrReencounter(
+                designModel,
+                transaction,
+                apiPlan,
+                allowIntentionalContractRefresh);
             WriteOutput($"[Genexus Open API Builder][B060] Metadata persistente inicial gravada: Transaction='{transaction.Name}', Trigger='{triggerSource}', File='{result.FileName}', Status='{result.Status}', Guid='{result.Guid}', SchemaVersion='{result.SchemaVersion}', Bytes={result.Bytes}, Sha256='{result.Sha256}'. A metadata registra o snapshot do ApiPlan e dos artefatos ja aplicados; seguranca definitiva permanece fora desta etapa.");
             WriteOutput($"[Genexus Open API Builder][B067] Metadata de integridade gravada: Transaction='{transaction.Name}', Trigger='{triggerSource}', File='{result.FileName}', IntegrityVersion='{result.IntegrityVersion}', PlannedContractHash='{result.PlannedContractHash}'. Reexecucoes com descricoes, ownership, Service Source ou contrato essencial divergente serao bloqueadas antes de qualquer Save().");
             return true;
@@ -593,11 +611,16 @@ public sealed class Package : AbstractPackageUI
         }
     }
 
-    private static bool TryApplyBusinessComponent(KBModel designModel, Transaction transaction, ApiPlan apiPlan, string triggerSource)
+    private static bool TryApplyBusinessComponent(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        string triggerSource,
+        bool allowIntentionalContractRefresh = false)
     {
         try
         {
-            var result = ApiPlanBusinessComponentWriter.Apply(designModel, transaction, apiPlan);
+            var result = ApiPlanBusinessComponentWriter.Apply(designModel, transaction, apiPlan, allowIntentionalContractRefresh);
             WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Get/Create/Update aplicados via Business Component e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', GetProcedureGuid='{result.GetProcedureGuid}', CreateProcedureGuid='{result.CreateProcedureGuid}', UpdateProcedureGuid='{result.UpdateProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', PrimaryKeyParts={result.PrimaryKeyParts}, CreateFields={result.CreateFields}, UpdateFields={result.UpdateFields}, ResponseFields={result.ResponseFields}. Status HTTP controlado por RestCode no API Object; ErrorResponse exposto como saida publica dos servicos; Location de Create emitido nativamente via HttpResponse.");
             WriteOutput($"[Genexus Open API Builder][B056] Descricoes reaplicadas no API Object real durante B071-B073/B079: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiObjectGuid='{result.ApiObjectGuid}', DescribedServices={apiPlan.ServiceDescriptions.Count}. Service Source preserva o contrato Procedure/API Object atual.");
             return true;
@@ -610,11 +633,16 @@ public sealed class Package : AbstractPackageUI
         }
     }
 
-    private static bool TryApplyList(KBModel designModel, Transaction transaction, ApiPlan apiPlan, string triggerSource)
+    private static bool TryApplyList(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        string triggerSource,
+        bool allowIntentionalContractRefresh = false)
     {
         try
         {
-            var result = ApiPlanListProcedureWriter.Apply(designModel, transaction, apiPlan);
+            var result = ApiPlanListProcedureWriter.Apply(designModel, transaction, apiPlan, allowIntentionalContractRefresh);
             WriteOutput($"[Genexus Open API Builder][B070] List aplicado e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', ListProcedureGuid='{result.ListProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', Filters={result.Filters}, OrderParts={result.OrderParts}, DefaultPageSize={result.DefaultPageSize}, MaximumPageSize={result.MaximumPageSize}. B076 e validacao runtime do List permanecem pendentes.");
             return true;
         }
@@ -624,6 +652,127 @@ public sealed class Package : AbstractPackageUI
             WriteOutput($"[Genexus Open API Builder][B070] Aplicacao do List bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{errorDetail}'");
             return false;
         }
+    }
+
+    private static bool QuerySynchronizeWithTransaction(CommandData data, ref CommandStatus status)
+    {
+        status.Visible(true);
+        return true;
+    }
+
+    private static bool ExecuteSynchronizeWithTransaction(CommandData data)
+    {
+        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
+        if (knowledgeBase is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B085] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
+            return true;
+        }
+
+        Transaction? transaction;
+        try
+        {
+            transaction = ResolveTransactionForCommand(data, knowledgeBase, "Sincronizar com a Transaction");
+        }
+        catch (InvalidOperationException ex)
+        {
+            WriteOutput($"[Genexus Open API Builder][B085] {ex.Message}");
+            return true;
+        }
+
+        if (transaction is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B085] Nenhuma Transaction foi selecionada. Nenhuma alteracao foi feita na KB.");
+            return true;
+        }
+
+        try
+        {
+            var preview = ApiPlanTransactionSyncOrchestrator.Preview(knowledgeBase.DesignModel, transaction);
+            WriteOutput($"[Genexus Open API Builder][B085] Diff para Transaction='{transaction.Name}':{Environment.NewLine}{preview.Diff.BuildSummary()}");
+            if (preview.SdtConflicts.Count > 0)
+            {
+                WriteOutput($"[Genexus Open API Builder][B085] Conflitos de SDT: {string.Join("; ", preview.SdtConflicts.Select(item => item.SdtName))}");
+            }
+
+            if (!preview.Diff.HasDifferences && preview.SdtConflicts.Count == 0)
+            {
+                WriteOutput($"[Genexus Open API Builder][B085] Nenhuma diferenca entre Transaction e metadata. Nenhuma alteracao foi feita na KB.");
+                return true;
+            }
+
+            using var dialog = new ApiPlanTransactionSyncDialog(preview);
+            var dialogResult = dialog.ShowDialog();
+            if (dialogResult != System.Windows.Forms.DialogResult.OK || dialog.Choices is null || dialog.Choices.Cancel)
+            {
+                WriteOutput($"[Genexus Open API Builder][B085] Sincronizacao cancelada pelo usuario para Transaction='{transaction.Name}'. Nenhuma alteracao foi feita na KB.");
+                return true;
+            }
+
+            var selection = ApiPlanTransactionSyncOrchestrator.BuildSelection(preview, dialog.Choices);
+            var preserveSdts = ApiPlanTransactionSyncOrchestrator.ResolvePreservedSdtNames(preview, dialog.Choices);
+            var apiPlan = ApiPlanBuilder.Build(transaction, selection);
+            ApiPlanWritePreflight.ValidateForSync(knowledgeBase.DesignModel, transaction, apiPlan);
+            WriteOutput($"[Genexus Open API Builder][B085] Preflight de sincronizacao aprovado. Aplicando para Transaction='{transaction.Name}', ApiName='{apiPlan.ApiName}'.");
+
+            if (!TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", preserveSdts))
+            {
+                return true;
+            }
+
+            if (!TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085"))
+            {
+                return true;
+            }
+
+            if (selection.GenerateApiObject && !selection.ApplyBusinessComponent)
+            {
+                if (!TryCreateApiObject(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085"))
+                {
+                    return true;
+                }
+            }
+            else if (selection.GenerateApiObject && selection.ApplyBusinessComponent)
+            {
+                if (!API.GetAll(knowledgeBase.DesignModel).Any(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    if (!TryCreateApiObject(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085"))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            if (selection.ApplyBusinessComponent)
+            {
+                if (!TryApplyBusinessComponent(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", allowIntentionalContractRefresh: true))
+                {
+                    return true;
+                }
+            }
+
+            if (selection.ApplyList)
+            {
+                if (!TryApplyList(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", allowIntentionalContractRefresh: true))
+                {
+                    return true;
+                }
+            }
+
+            if (selection.GenerateMetadata)
+            {
+                TryWriteMetadataFile(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", allowIntentionalContractRefresh: true);
+            }
+
+            WriteOutput($"[Genexus Open API Builder][B085] Sincronizacao concluida para Transaction='{transaction.Name}', ApiName='{apiPlan.ApiName}', PreservedSdts={preserveSdts.Count}.");
+        }
+        catch (Exception ex)
+        {
+            var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
+            WriteOutput($"[Genexus Open API Builder][B085] Sincronizacao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}'");
+        }
+
+        return true;
     }
 
     private static bool QueryRemoveGeneratedApi(CommandData data, ref CommandStatus status)

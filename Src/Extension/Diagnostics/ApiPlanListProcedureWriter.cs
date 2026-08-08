@@ -19,6 +19,15 @@ internal static class ApiPlanListProcedureWriter
 
     public static ApiPlanListProcedureWriteResult Apply(KBModel model, Transaction transaction, ApiPlan plan)
     {
+        return Apply(model, transaction, plan, allowIntentionalContractRefresh: false);
+    }
+
+    public static ApiPlanListProcedureWriteResult Apply(
+        KBModel model,
+        Transaction transaction,
+        ApiPlan plan,
+        bool allowIntentionalContractRefresh)
+    {
         if (model is null) throw new ArgumentNullException(nameof(model));
         if (transaction is null) throw new ArgumentNullException(nameof(transaction));
         if (plan is null) throw new ArgumentNullException(nameof(plan));
@@ -29,7 +38,7 @@ internal static class ApiPlanListProcedureWriter
 
         ApiPlanSdtWriter.Preflight(model, plan);
         var procedure = FindListProcedure(model, plan);
-        var api = FindApi(model, plan);
+        var api = FindApi(model, plan, allowIntentionalContractRefresh);
         var source = CreateListSource(plan);
         var rules = CreateListRules(plan);
         var procedureVariables = ProcedureVariableSpecs(plan);
@@ -40,8 +49,11 @@ internal static class ApiPlanListProcedureWriter
         var apiVariables = CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters));
 
         ValidateGeneratedVariableNames(procedureVariables.Concat(apiVariables));
-        EnsureProcedure(procedure, plan, source, rules, procedureVariables);
-        EnsureApi(model, api, plan);
+        EnsureProcedure(procedure, plan, source, rules, procedureVariables, allowIntentionalContractRefresh);
+        if (!allowIntentionalContractRefresh)
+        {
+            EnsureApi(model, api, plan);
+        }
         ValidateVariableSpecs(model, procedure, procedureVariables);
         ValidateVariableSpecs(model, api, apiVariables);
 
@@ -147,16 +159,33 @@ internal static class ApiPlanListProcedureWriter
         return matches.Single();
     }
 
-    private static API FindApi(KBModel model, ApiPlan plan)
+    private static API FindApi(KBModel model, ApiPlan plan, bool allowIntentionalContractRefresh = false)
     {
         var matches = API.GetAll(model).Where(item => string.Equals(item.Name, plan.ApiName, StringComparison.OrdinalIgnoreCase)).ToArray();
-        if (matches.Length != 1 || !ApiPlanApiObjectWriter.IsOwnedApiObject(model, plan, matches.Single()))
+        var owned = matches.Length == 1 &&
+            (allowIntentionalContractRefresh
+                ? ApiPlanApiObjectWriter.IsOwnedApiObjectForSync(model, plan, matches.Single())
+                : ApiPlanApiObjectWriter.IsOwnedApiObject(model, plan, matches.Single()));
+        if (!owned)
             throw new InvalidOperationException($"B070 bloqueado: API Object proprio '{plan.ApiName}' nao foi reencontrado com seguranca. Execute B054 antes. Nenhuma alteracao foi feita.");
         return matches.Single();
     }
 
-    private static void EnsureProcedure(Procedure procedure, ApiPlan plan, string source, string rules, IReadOnlyList<VariableSpec> variables)
+    private static void EnsureProcedure(
+        Procedure procedure,
+        ApiPlan plan,
+        string source,
+        string rules,
+        IReadOnlyList<VariableSpec> variables,
+        bool allowIntentionalContractRefresh = false)
     {
+        // Sync reconstrói Source/Rules/variáveis de propósito a partir do novo ApiPlan.
+        // Ownership já foi comprovada por FindListProcedure (nome + Description).
+        if (allowIntentionalContractRefresh)
+        {
+            return;
+        }
+
         var currentSource = NormalizeForComparison(procedure.ProcedurePart.Source);
         var skeleton = Skeleton();
         var legacySource = NormalizeForComparison(CreateLegacyListSource(plan));

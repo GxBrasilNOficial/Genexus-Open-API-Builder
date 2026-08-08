@@ -5,16 +5,19 @@
   <Commands>
     <CommandDefinition id="Configurar Preferências do Wizard" context="selection" />
     <CommandDefinition id="Wizard" context="selection" />
+    <CommandDefinition id="Sincronizar com a Transaction" context="selection" />
     <CommandDefinition id="Remover API gerada" context="selection" />
   </Commands>
   <Groups>
     <Group id="GenexusOpenApiBuilderMainMenuGroup">
       <Command refid="Configurar Preferências do Wizard" />
       <Command refid="Wizard" />
+      <Command refid="Sincronizar com a Transaction" />
       <Command refid="Remover API gerada" />
     </Group>
     <Group id="GenexusOpenApiBuilderContextMenuGroup">
       <Command refid="Wizard" />
+      <Command refid="Sincronizar com a Transaction" />
       <Command refid="Remover API gerada" />
     </Group>
     <Group refid="KBObjectGrp" package="98121D96-A7D8-468b-9310-B1F468F812AE">

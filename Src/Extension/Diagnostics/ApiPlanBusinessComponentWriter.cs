@@ -23,6 +23,15 @@ internal static class ApiPlanBusinessComponentWriter
 
     public static ApiPlanBusinessComponentWriteResult Apply(KBModel model, Transaction transaction, ApiPlan plan)
     {
+        return Apply(model, transaction, plan, allowIntentionalContractRefresh: false);
+    }
+
+    public static ApiPlanBusinessComponentWriteResult Apply(
+        KBModel model,
+        Transaction transaction,
+        ApiPlan plan,
+        bool allowIntentionalContractRefresh)
+    {
         if (model is null) throw new ArgumentNullException(nameof(model));
         if (transaction is null) throw new ArgumentNullException(nameof(transaction));
         if (plan is null) throw new ArgumentNullException(nameof(plan));
@@ -50,11 +59,18 @@ internal static class ApiPlanBusinessComponentWriter
         var get = FindProcedure(model, plan, "Get", "B051");
         var create = FindProcedure(model, plan, "Create", "B052");
         var update = FindProcedure(model, plan, "Update", "B053");
-        var api = FindApi(model, plan);
-        EnsureProcedure(get, plan, "B051", "Get", Skeleton("B051", "Get"), getContent, getVariables, getRules, IsManagedGetSource);
-        EnsureProcedure(create, plan, "B052", "Create", Skeleton("B052", "Create"), createContent, createVariables, createRules, IsManagedCreateSource, LegacyCreateContent(plan), LegacyCreateRules(), LegacyCreateVariables(plan), PreviousB079CreateVariables(plan));
-        EnsureProcedure(update, plan, "B053", "Update", Skeleton("B053", "Update"), updateContent, updateVariables, updateRules, IsManagedUpdateSource, LegacyUpdateContent(plan), LegacyUpdateRules(plan), LegacyUpdateVariables(plan), PreviousB079UpdateVariables(plan));
-        EnsureApi(api, plan);
+        var api = FindApi(model, plan, allowIntentionalContractRefresh);
+        EnsureProcedure(get, plan, "B051", "Get", Skeleton("B051", "Get"), getContent, getVariables, getRules, IsManagedGetSource, allowIntentionalContractRefresh: allowIntentionalContractRefresh);
+        EnsureProcedure(create, plan, "B052", "Create", Skeleton("B052", "Create"), createContent, createVariables, createRules, IsManagedCreateSource, LegacyCreateContent(plan), LegacyCreateRules(), LegacyCreateVariables(plan), PreviousB079CreateVariables(plan), allowIntentionalContractRefresh);
+        EnsureProcedure(update, plan, "B053", "Update", Skeleton("B053", "Update"), updateContent, updateVariables, updateRules, IsManagedUpdateSource, LegacyUpdateContent(plan), LegacyUpdateRules(plan), LegacyUpdateVariables(plan), PreviousB079UpdateVariables(plan), allowIntentionalContractRefresh);
+        if (!allowIntentionalContractRefresh)
+        {
+            EnsureApi(api, plan);
+        }
+        else if (!HasExpectedApiEvents(api))
+        {
+            throw new InvalidOperationException($"B071-B073/B079 bloqueado: API Object proprio '{api.Name}' possui Events divergentes da geracao REST runtime. Nenhuma alteracao foi feita.");
+        }
         ValidateProcedureVariableSpecs(model, get, getVariables);
         ValidateProcedureVariableSpecs(model, create, createVariables);
         ValidateProcedureVariableSpecs(model, update, updateVariables);
@@ -290,10 +306,14 @@ internal static class ApiPlanBusinessComponentWriter
         return $"{plan.ApiName}{Environment.NewLine}{{{Environment.NewLine}{string.Join(Environment.NewLine + Environment.NewLine, services)}{Environment.NewLine}}}";
     }
 
-    private static API FindApi(KBModel model, ApiPlan plan)
+    private static API FindApi(KBModel model, ApiPlan plan, bool allowIntentionalContractRefresh = false)
     {
         var matches = API.GetAll(model).Where(item => string.Equals(item.Name, plan.ApiName, StringComparison.OrdinalIgnoreCase)).ToArray();
-        if (matches.Length != 1 || !ApiPlanApiObjectWriter.IsOwnedApiObject(model, plan, matches.Single()))
+        var owned = matches.Length == 1 &&
+            (allowIntentionalContractRefresh
+                ? ApiPlanApiObjectWriter.IsOwnedApiObjectForSync(model, plan, matches.Single())
+                : ApiPlanApiObjectWriter.IsOwnedApiObject(model, plan, matches.Single()));
+        if (!owned)
             throw new InvalidOperationException($"B055 bloqueado: API Object proprio '{plan.ApiName}' nao foi reencontrado com seguranca. Execute B054 antes. Nenhuma alteracao foi feita.");
         return matches.Single();
     }
@@ -348,8 +368,16 @@ internal static class ApiPlanBusinessComponentWriter
         string? legacyContent = null,
         string? legacyRules = null,
         IReadOnlyList<VariableSpec>? legacyVariables = null,
-        IReadOnlyList<VariableSpec>? previousB079Variables = null)
+        IReadOnlyList<VariableSpec>? previousB079Variables = null,
+        bool allowIntentionalContractRefresh = false)
     {
+        // Sync reconstrói Source/Rules/variáveis de propósito a partir do novo ApiPlan.
+        // Ownership já foi comprovada por FindProcedure (nome + Description).
+        if (allowIntentionalContractRefresh)
+        {
+            return;
+        }
+
         var currentSource = NormalizeForComparison(procedure.ProcedurePart.Source);
         if (!string.IsNullOrWhiteSpace(currentSource) &&
             !string.Equals(currentSource, NormalizeForComparison(skeleton), StringComparison.Ordinal) &&

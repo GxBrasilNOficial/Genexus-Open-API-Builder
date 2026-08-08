@@ -64,6 +64,48 @@ internal static class ApiPlanWritePreflight
             ". Nenhum objeto planejado foi criado, alterado ou recebeu sufixo _v2.");
     }
 
+    /// <summary>
+    /// Preflight do B085: exige objetos próprios, mas permite divergência intencional do contrato planejado
+    /// (hash B067) porque a sincronização regrava metadata/API ao final.
+    /// </summary>
+    public static void ValidateForSync(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
+    {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (transaction is null)
+        {
+            throw new ArgumentNullException(nameof(transaction));
+        }
+
+        if (apiPlan is null)
+        {
+            throw new ArgumentNullException(nameof(apiPlan));
+        }
+
+        if (!string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("B085 bloqueado: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
+        }
+
+        var state = ApiPlanGenerationStateReader.ReadForSync(designModel, apiPlan);
+        var blocked = new[] { state.Sdts, state.Procedures, state.ApiObject, state.MetadataFile }
+            .Where(stage => stage.IsBlocked)
+            .Select(stage => stage.StageName)
+            .ToArray();
+        if (blocked.Length == 0)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            "B085 bloqueado antes do primeiro Save(): objetos proprios ausentes, externos ou ambiguos em " +
+            string.Join(", ", blocked) +
+            ". Nenhum objeto planejado foi criado ou alterado.");
+    }
+
     private static ApiPlanWritePreflightStageBlock ToStageBlock(ApiPlanWritePreflightStageKind stageKind, ApiPlanGenerationStageState stage)
     {
         return new ApiPlanWritePreflightStageBlock(stageKind, stage.StageName, stage.IsBlocked);
