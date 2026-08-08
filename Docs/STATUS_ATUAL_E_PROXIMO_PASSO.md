@@ -124,7 +124,7 @@ Implementar o relatório final pós-aplicação (B081): tela ou resumo estrutura
 22. Sprint 6 aprovou B047, B074, B075 e B078 com validação empírica de geração de clientes OpenAPI via `openapi-generator-cli 5.3.1` (`typescript-fetch` e `csharp`) com Exit Code 0, e por conferência detalhada dos YAMLs atuais em 2026-08-04 nos dois geradores (.NET Framework/SQL Server e .NET/PostgreSQL), cobrindo os seis eixos exigidos — rotas, métodos, operationIds no padrão `apiNome.Serviço`, ausência de DELETE, nomes `_API_` congelados em B062, bloco `security` com `oAuthGXGAM` por operação (B093) e schemas de request/response sem o array `Errors` em `sdt_API_ErrorResponse`. A trava contra regressão de identificadores `_API_` e operationIds foi incorporada pelo teste automatizado off-line `Test-OpenApiClientContractValidity.ps1` em `Tests/OpenApiContract/`, integrado ao checker pré-push em `scripts/Invoke-PrePushMechanicalChecks.ps1`. Evidência registrada em `Docs/Implementation/2026-08-04-VALIDACAO-YAML-SPRINT6-EIXOS-SEGURANCA.md`.
 23. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7 revisada, antes da Alpha.
 24. Em 2026-08-07 a Sprint 7 foi reenquadrada: preflight/colisão/integridade (B063/B064/B067) e entrada de menu (B080 em substância) já estão feitos; o escopo obrigatório restante é B087, B086, B085, B081, UX mínima de B083 e alinhamento de Folder reutilizado, mais a comprovação dos dez gates. B088 e B089 ficam pré-Alpha separados.
-25. Em 2026-08-08 B085 foi validado no U15 (`Teste`): Sync add/rename/sem diff/cancelar/Replace; próxima ação B081.
+25. Em 2026-08-08 B085 foi validado no U15 (`Teste`): Sync add/rename/sem diff/cancelar/Replace/Keep; próxima ação B081.
 
 ## Bloqueios e fatos ainda não validados
 
