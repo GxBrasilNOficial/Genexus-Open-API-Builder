@@ -12,7 +12,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Changed
 
-- B085 (2026-08-08): comando `Sincronizar com a Transaction` (menu principal e contexto); diff Transaction×metadata por `attributeGuid`; UI 2x2 de escolhas no delta; confirmação; gravação via writers/preflight sem reabrir o wizard. Metadata passa a persistir `transactionStructure` e `attributeGuid` nos campos. Preflight de Sync permite atualizar o contrato B067 e Source/Rules B055/B070 de propósito. Ordem do menu: Preferências → Wizard → Sincronizar → Remover API gerada. Validado no U15 em `Teste`: sem diff; add; rename por GUID; cancelar; conflito Replace. Teste `Tests/TransactionSync/Test-ApiPlanTransactionSyncComparer.ps1`. Manifesto alterado (`genexus /install` necessário). Evidência: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`.
+- B085 (2026-08-08): comando `Sincronizar com a Transaction` (menu principal e contexto); diff Transaction×metadata por `attributeGuid`; UI 2x2 de escolhas no delta; confirmação; gravação via writers/preflight sem reabrir o wizard. Metadata passa a persistir `transactionStructure` e `attributeGuid` nos campos. Preflight de Sync permite atualizar o contrato B067 e Source/Rules B055/B070 de propósito. Ordem do menu: Preferências → Wizard → Sincronizar → Remover API gerada. Validado no U15 em `Teste`: sem diff; add; rename por GUID; cancelar; conflito Replace; conflito Keep (`ManualKeep` preservado). Teste `Tests/TransactionSync/Test-ApiPlanTransactionSyncComparer.ps1`. Manifesto alterado (`genexus /install` necessário). Evidência: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`.
 
 - B086 (2026-08-07/08): comando `Remover API gerada` no menu principal e no contexto da Transaction; plano a partir da metadata; confirmação; exclusão conservadora. Ordem: API Object → Procedures → SDTs (ListResponse antes de Response) → metadata → Folder se `wasCreated`. Validado no U15 em `Teste`: cancelamento; Folder reutilizado preservado; Folder criado removido (`Deleted=12` incluindo `TesteOpenApi`); SDTs `GxOpenAPI` e BC preservados. Confirmação com Procedures/SDTs um por linha. Manifesto alterado. Teste `Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPlan.ps1`. Evidência: `Docs/Implementation/B086-REMOVER-API-GERADA.md`.
 
@@ -21,6 +21,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Revisão documental da Sprint 7 (2026-08-07): o objetivo vigente deixa de ser “revalidar conflitos/reexecução” (já entregues nas Sprints 5–6) e passa a ser o ciclo de vida operacional na IDE — posse do API Object via metadata (`B087`), `Remover API gerada` (`B086`), `Sincronizar com a Transaction` (`B085`), relatório final (`B081`), UX mínima de conflitos e comprovação dos dez gates. `B088` (YAML nativo) e `B089` (403 GAM) ficam pré-Alpha separados. Documentos: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`, `Docs/Foundation/24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md`, `Docs/Foundation/06-BACKLOG_v0.1.md`.
 
 ## Fixed
+
+- B085 Keep (2026-08-08): Sync passa `preserveSdts` também para writers BC (B055) e List (B070); antes o Keep só omitia `ConfigureSdt` na 1ª etapa e BC/List regravavam o SDT. Validado no U15 em `Teste` com membro `ManualKeep` preservado e `PreservedSdts=1`.
 
 - Correção do `Location` para chave de texto (2026-08-06):
   - Path-encoding: `StrReplace(URLEncode(Trim(...)), !"+" , !"%20")` para emitir espaço como `%20` em segmento de path (a forma `URLEncode` sozinha emitia `+` e o GET no `Location` falhava).

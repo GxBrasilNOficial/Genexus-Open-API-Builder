@@ -19,7 +19,7 @@ internal static class ApiPlanListProcedureWriter
 
     public static ApiPlanListProcedureWriteResult Apply(KBModel model, Transaction transaction, ApiPlan plan)
     {
-        return Apply(model, transaction, plan, allowIntentionalContractRefresh: false);
+        return Apply(model, transaction, plan, allowIntentionalContractRefresh: false, preserveSdtNames: null);
     }
 
     public static ApiPlanListProcedureWriteResult Apply(
@@ -27,6 +27,16 @@ internal static class ApiPlanListProcedureWriter
         Transaction transaction,
         ApiPlan plan,
         bool allowIntentionalContractRefresh)
+    {
+        return Apply(model, transaction, plan, allowIntentionalContractRefresh, preserveSdtNames: null);
+    }
+
+    public static ApiPlanListProcedureWriteResult Apply(
+        KBModel model,
+        Transaction transaction,
+        ApiPlan plan,
+        bool allowIntentionalContractRefresh,
+        IReadOnlyCollection<string>? preserveSdtNames)
     {
         if (model is null) throw new ArgumentNullException(nameof(model));
         if (transaction is null) throw new ArgumentNullException(nameof(transaction));
@@ -57,7 +67,7 @@ internal static class ApiPlanListProcedureWriter
         ValidateVariableSpecs(model, procedure, procedureVariables);
         ValidateVariableSpecs(model, api, apiVariables);
 
-        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan);
+        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan, preserveSdtNames);
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
         SaveApi(model, api, transactionFolder, plan, apiSource, apiVariables);
         SaveProcedure(model, procedure, source, procedureVariables, rules);

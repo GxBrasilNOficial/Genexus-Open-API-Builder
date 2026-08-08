@@ -616,11 +616,17 @@ public sealed class Package : AbstractPackageUI
         Transaction transaction,
         ApiPlan apiPlan,
         string triggerSource,
-        bool allowIntentionalContractRefresh = false)
+        bool allowIntentionalContractRefresh = false,
+        IReadOnlyCollection<string>? preserveSdtNames = null)
     {
         try
         {
-            var result = ApiPlanBusinessComponentWriter.Apply(designModel, transaction, apiPlan, allowIntentionalContractRefresh);
+            var result = ApiPlanBusinessComponentWriter.Apply(
+                designModel,
+                transaction,
+                apiPlan,
+                allowIntentionalContractRefresh,
+                preserveSdtNames);
             WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Get/Create/Update aplicados via Business Component e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', GetProcedureGuid='{result.GetProcedureGuid}', CreateProcedureGuid='{result.CreateProcedureGuid}', UpdateProcedureGuid='{result.UpdateProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', PrimaryKeyParts={result.PrimaryKeyParts}, CreateFields={result.CreateFields}, UpdateFields={result.UpdateFields}, ResponseFields={result.ResponseFields}. Status HTTP controlado por RestCode no API Object; ErrorResponse exposto como saida publica dos servicos; Location de Create emitido nativamente via HttpResponse.");
             WriteOutput($"[Genexus Open API Builder][B056] Descricoes reaplicadas no API Object real durante B071-B073/B079: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiObjectGuid='{result.ApiObjectGuid}', DescribedServices={apiPlan.ServiceDescriptions.Count}. Service Source preserva o contrato Procedure/API Object atual.");
             return true;
@@ -638,11 +644,17 @@ public sealed class Package : AbstractPackageUI
         Transaction transaction,
         ApiPlan apiPlan,
         string triggerSource,
-        bool allowIntentionalContractRefresh = false)
+        bool allowIntentionalContractRefresh = false,
+        IReadOnlyCollection<string>? preserveSdtNames = null)
     {
         try
         {
-            var result = ApiPlanListProcedureWriter.Apply(designModel, transaction, apiPlan, allowIntentionalContractRefresh);
+            var result = ApiPlanListProcedureWriter.Apply(
+                designModel,
+                transaction,
+                apiPlan,
+                allowIntentionalContractRefresh,
+                preserveSdtNames);
             WriteOutput($"[Genexus Open API Builder][B070] List aplicado e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', ListProcedureGuid='{result.ListProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', Filters={result.Filters}, OrderParts={result.OrderParts}, DefaultPageSize={result.DefaultPageSize}, MaximumPageSize={result.MaximumPageSize}. B076 e validacao runtime do List permanecem pendentes.");
             return true;
         }
@@ -745,7 +757,13 @@ public sealed class Package : AbstractPackageUI
 
             if (selection.ApplyBusinessComponent)
             {
-                if (!TryApplyBusinessComponent(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", allowIntentionalContractRefresh: true))
+                if (!TryApplyBusinessComponent(
+                    knowledgeBase.DesignModel,
+                    transaction,
+                    apiPlan,
+                    "SyncB085",
+                    allowIntentionalContractRefresh: true,
+                    preserveSdtNames: preserveSdts))
                 {
                     return true;
                 }
@@ -753,7 +771,13 @@ public sealed class Package : AbstractPackageUI
 
             if (selection.ApplyList)
             {
-                if (!TryApplyList(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", allowIntentionalContractRefresh: true))
+                if (!TryApplyList(
+                    knowledgeBase.DesignModel,
+                    transaction,
+                    apiPlan,
+                    "SyncB085",
+                    allowIntentionalContractRefresh: true,
+                    preserveSdtNames: preserveSdts))
                 {
                     return true;
                 }
