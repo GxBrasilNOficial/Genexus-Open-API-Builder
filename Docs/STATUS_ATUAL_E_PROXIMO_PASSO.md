@@ -87,17 +87,16 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Frente ativa
 
-**Sprint 7 — Ciclo de vida operacional na IDE**. B087, B086, B085 e B081 fechados; próxima entrega residual de UX de conflitos (B083) e alinhamento de Folder reutilizado.
+**Sprint 7 — Ciclo de vida operacional na IDE**. B087, B086, B085 e B081 fechados; próxima entrega = residual de UX de conflitos (B083). Em seguida: alinhamento de Folder reutilizado; depois comprovação dos dez gates.
 
 ## Próxima ação única
 
-Implementar a UX mínima residual de conflitos (B083): para cada conflito, exibir nome, tipo, módulo e Folder alinhados à decisão do MVP; em seguida (ou na mesma leva, se couber) alinhar Folder preexistente `NomeOpenApi` no módulo correto à reutilização com aviso.
+Implementar a UX mínima residual de conflitos (B083): para cada conflito, exibir nome, tipo, módulo e Folder alinhados à decisão do MVP.
 
 ## Critério de conclusão e evidência esperada
 
 - conflitos apresentados com nome/tipo/módulo/Folder antes de salvar;
-- Folder `NomeOpenApi` preexistente no módulo correto reutilizado com aviso (não tratado como colisão);
-- evidência U15 + docs; depois promover comprovação integrada dos dez gates.
+- evidência U15 + docs; em seguida promover o alinhamento de Folder `NomeOpenApi` preexistente (reutilizar com aviso) e, depois, a comprovação integrada dos dez gates.
 
 ## Sequência operacional vigente
 
@@ -126,7 +125,7 @@ Implementar a UX mínima residual de conflitos (B083): para cada conflito, exibi
 23. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7 revisada, antes da Alpha.
 24. Em 2026-08-07 a Sprint 7 foi reenquadrada: preflight/colisão/integridade (B063/B064/B067) e entrada de menu (B080 em substância) já estão feitos; o escopo obrigatório restante é B087, B086, B085, B081, UX mínima de B083 e alinhamento de Folder reutilizado, mais a comprovação dos dez gates. B088 e B089 ficam pré-Alpha separados.
 25. Em 2026-08-08 B085 foi validado no U15 (`Teste`): Sync add/rename/sem diff/cancelar/Replace/Keep.
-26. Em 2026-08-08 B081 foi validado no U15 (`Teste`): Wizard completo, Sync sem diff e com add, Remover com `Deleted=11`; próxima ação residual B083 + Folder reutilizado.
+26. Em 2026-08-08 B081 foi validado no U15 (`Teste`): Wizard completo, Sync sem diff e com add, Remover com `Deleted=11` (Folder reutilizado preservado); próxima ação única = residual B083 (Folder reutilizado fica na sequência).
 
 ## Bloqueios e fatos ainda não validados
 
