@@ -20,6 +20,8 @@ internal sealed class ApiPlanTransactionSyncDialog : Form
         ReadOnly = true,
         ScrollBars = ScrollBars.Vertical,
         Dock = DockStyle.Fill,
+        TabStop = false,
+        HideSelection = true,
     };
 
     public ApiPlanTransactionSyncDialog(ApiPlanTransactionSyncPreview preview)
@@ -35,9 +37,20 @@ internal sealed class ApiPlanTransactionSyncDialog : Form
         ShowInTaskbar = false;
         FormBorderStyle = FormBorderStyle.Sizable;
         BuildLayout();
+        Shown += (_, _) => ClearSummarySelection();
     }
 
     public ApiPlanTransactionSyncChoices? Choices { get; private set; }
+
+    private void ClearSummarySelection()
+    {
+        _summaryBox.SelectionStart = 0;
+        _summaryBox.SelectionLength = 0;
+        if (AcceptButton is Control accept)
+        {
+            accept.Focus();
+        }
+    }
 
     private void BuildLayout()
     {
@@ -166,6 +179,7 @@ internal sealed class ApiPlanTransactionSyncDialog : Form
         buttons.Controls.Add(cancel);
         buttons.Controls.Add(apply);
         root.Controls.Add(buttons, 0, 4);
+        ClearSummarySelection();
     }
 
     private void AddRoleList(TableLayoutPanel layout, int column, int row, string role, bool preferDefault)

@@ -239,7 +239,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | ID | Item | Prioridade |
 |---|---|---|
 | B080 | Integrar menu/contexto IDE | Alta — atendido em substância (Wizard + preferências); residual cosmético de nome/rótulo |
-| B081 | Exibir relatório final interno | Alta — pendente (hoje só Resumo pré-aplicação + Output) |
+| B081 | Exibir relatório final interno | Alta — concluído (código + validação U15 2026-08-08) |
 | B082 | Mostrar tempo execução | Média — fora da linha de corte do MVP |
 | B083 | Detectar conflito antes salvar | Alta — núcleo atendido no preflight; residual = UX por conflito (nome/tipo/módulo/Folder) |
 | B084 | Bloquear overwrite silencioso | Alta — atendido (sem `_v2`) |
@@ -256,8 +256,8 @@ Após a Sprint 6, o pacote histórico “conflitos e reexecução” da Fase 7 f
 1. `B087` (posse sem travar `Description`) — concluído
 2. `B086` (`Remover API gerada`) — concluído (U15 2026-08-08)
 3. `B085` (`Sincronizar com a Transaction`) — concluído (U15 2026-08-08)
-4. `B081` (relatório final pós-aplicação) — próxima ação
-5. residual de apresentação de `B083` e alinhamento de Folder reutilizado à decisão do MVP
+4. `B081` (relatório final pós-aplicação) — concluído (U15 2026-08-08)
+5. residual de apresentação de `B083` e alinhamento de Folder reutilizado à decisão do MVP — próxima ação
 6. comprovação integrada dos dez gates
 
 `B088` e `B089` permanecem anteriores à Alpha, mas **fora** do gate obrigatório da Sprint 7: o primeiro é investigação/documentação da limitação nativa do GeneXus; o segundo exige ambiente GAM e evidência `403` além do Authorization 401/200 já comprovado.
