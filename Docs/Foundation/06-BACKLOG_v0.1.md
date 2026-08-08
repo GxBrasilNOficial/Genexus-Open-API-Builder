@@ -244,7 +244,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B083 | Detectar conflito antes salvar | Alta — núcleo atendido no preflight; residual = UX por conflito (nome/tipo/módulo/Folder) |
 | B084 | Bloquear overwrite silencioso | Alta — atendido (sem `_v2`) |
 | B085 | Sincronizar com a Transaction usando metadata | Alta — pendente |
-| B086 | Remover API gerada por metadata, sem reverter BC | Alta — implementado em código (2026-08-07); pendente validação manual U15 |
+| B086 | Remover API gerada por metadata, sem reverter BC | Alta — concluído (código + validação U15 2026-08-08; Folder criado e reutilizado) |
 | B087 | Ancorar posse na metadata e liberar a `Description` do API Object | Alta — concluído (código + validação U15 2026-08-07) |
 | B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta — pré-Alpha separado; não gate da Sprint 7 |
 | B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta — pré-Alpha separado; não gate da Sprint 7 |
@@ -253,9 +253,9 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 
 Após a Sprint 6, o pacote histórico “conflitos e reexecução” da Fase 7 ficou defasado: colisão, overwrite, `_v2` e integridade de metadata já foram entregues. A linha de corte obrigatória restante para o marco **wizard funcional do MVP** é:
 
-1. `B087` (posse sem travar `Description`)
-2. `B086` (`Remover API gerada`)
-3. `B085` (`Sincronizar com a Transaction`)
+1. `B087` (posse sem travar `Description`) — concluído
+2. `B086` (`Remover API gerada`) — concluído (U15 2026-08-08)
+3. `B085` (`Sincronizar com a Transaction`) — próximo
 4. `B081` (relatório final pós-aplicação)
 5. residual de apresentação de `B083` e alinhamento de Folder reutilizado à decisão do MVP
 6. comprovação integrada dos dez gates

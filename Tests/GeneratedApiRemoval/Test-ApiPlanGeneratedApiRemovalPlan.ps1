@@ -63,9 +63,15 @@ $plan = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGeneratedApiRemovalP
 Assert-Equal 'apiTeste' $plan.ApiName 'ApiName do plano'
 Assert-Equal 4 $plan.ProcedureNames.Count 'Procedures no plano'
 Assert-Equal 5 $plan.OwnSdtNames.Count 'SDTs próprios no plano'
+Assert-Equal 'sdtTeste_API_ListResponse' $plan.OwnSdtNames[0] 'ListResponse deve ser o primeiro SDT a apagar'
+Assert-Equal 'sdtTeste_API_Response' $plan.OwnSdtNames[$plan.OwnSdtNames.Count - 1] 'Response deve ser o último SDT a apagar'
 Assert-Equal 2 $plan.SharedSdtNamesPreserved.Count 'SDTs compartilhados preservados'
 Assert-True $plan.FolderWasCreated 'Folder criado pela extensão'
-Assert-True ($plan.BuildConfirmationSummary() -match 'Business Component') 'Resumo menciona BC'
+$summary = $plan.BuildConfirmationSummary() -replace "`r`n", "`n"
+Assert-True ($summary -match 'Business Component') 'Resumo menciona BC'
+Assert-True ($summary -match '(?m)^  - procTeste_API_List$') 'Procedure List em linha própria'
+Assert-True ($summary -match '(?m)^  - procTeste_API_Get$') 'Procedure Get em linha própria'
+Assert-True ($summary -match '(?m)^Procedures \(4\):$') 'Cabeçalho de Procedures em linha própria'
 
 try {
     [void][GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGeneratedApiRemovalPlan]::FromMetadata($metadata, 'Outra', $txGuid)

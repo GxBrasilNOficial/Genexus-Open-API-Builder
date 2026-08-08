@@ -34,9 +34,13 @@ internal static class ApiPlanGeneratedApiRemover
         var metadata = ParseMetadata(metadataFile);
         var plan = ApiPlanGeneratedApiRemovalPlan.FromMetadata(metadata, transaction.Name, transaction.Guid.ToString());
 
+        // Ordem obrigatoria na IDE:
+        // 1) API Object (referencia Procedures)
+        // 2) Procedures (tipam SDTs)
+        // 3) SDTs proprios na ordem do plano (ListResponse antes de Response)
         var deleted = new List<string>();
-        DeleteProcedures(designModel, plan, deleted);
         DeleteApiObject(designModel, plan, deleted);
+        DeleteProcedures(designModel, plan, deleted);
         DeleteOwnSdts(designModel, plan, deleted);
         DeleteMetadataFile(designModel, metadataFile, deleted);
         MaybeDeleteFolder(designModel, plan, deleted);

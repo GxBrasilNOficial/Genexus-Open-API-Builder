@@ -12,7 +12,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Changed
 
-- B086 (2026-08-07): comando `Remover API gerada` no menu principal e no contexto da Transaction; plano a partir da metadata; confirmação; exclusão conservadora (Procedures/API/SDTs próprios/metadata; Folder só se criado e vazio). SDTs `GxOpenAPI` e Business Component preservados. Manifesto alterado. Teste `Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPlan.ps1`. Evidência: `Docs/Implementation/B086-REMOVER-API-GERADA.md`.
+- B086 (2026-08-07/08): comando `Remover API gerada` no menu principal e no contexto da Transaction; plano a partir da metadata; confirmação; exclusão conservadora. Ordem: API Object → Procedures → SDTs (ListResponse antes de Response) → metadata → Folder se `wasCreated`. Validado no U15 em `Teste`: cancelamento; Folder reutilizado preservado; Folder criado removido (`Deleted=12` incluindo `TesteOpenApi`); SDTs `GxOpenAPI` e BC preservados. Confirmação com Procedures/SDTs um por linha. Manifesto alterado. Teste `Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPlan.ps1`. Evidência: `Docs/Implementation/B086-REMOVER-API-GERADA.md`.
 
 - B087 (2026-08-07): posse do API Object passa a ser resolvida pela metadata (`ownership` + integridade B067), com fallback na `Description` apenas quando o File ainda não existe. Reencontro deixa de sobrescrever a `Description`. Validado no U15 em `apiTeste` com Description humana preservada após Wizard. Description gerada padrão sem ponto terminal; forma legada com ponto aceita no fallback/integridade. Teste `Tests/ApiObjectOwnership/Test-ApiPlanApiObjectOwnership.ps1` integrado ao pré-push. Evidência: `Docs/Implementation/B087-POSSE-API-OBJECT-METADATA.md`.
 

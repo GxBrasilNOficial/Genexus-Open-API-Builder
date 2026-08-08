@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-08-07.
+2026-08-08.
 
 ## Último marco concluído
 
@@ -81,22 +81,22 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Revisão documental da Sprint 7 em 2026-08-07: o plano original de “conflitos e reexecução” ficou defasado porque preflight de colisão, bloqueio sem `_v2`, reencontro conservador e integridade de metadata já foram entregues e evidenciados nas Sprints 5 e 6. O objetivo vigente da Sprint 7 passou a ser o ciclo de vida operacional na IDE (posse sem travar a `Description`, sincronizar, remover, relatório final, UX mínima de conflitos e comprovação dos dez gates). Limitações do YAML nativo (`Swagger.Yaml.stg`) e evidência HTTP 403 com role GAM customizada saíram do gate obrigatório desta sprint e ficam como frentes pré-Alpha separadas. Detalhe em `Docs/Foundation/24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md` e nota operacional no documento 06.
 - B087 implementado em código em 2026-08-07: `ApiPlanApiObjectOwnership` + `IsOwnedApiObject` reconhecem o API Object pela metadata (`ownership` + B067), com fallback na `Description` só sem File; reencontro não sobrescreve a Description. Teste off-line e build Release OK. Evidência: `Docs/Implementation/B087-POSSE-API-OBJECT-METADATA.md`.
 - B087 validado manualmente em 2026-08-07 na Transaction `Teste` (`apiTeste`): Description humana editada; Wizard em modo reencontro aprovou preflight, reencontrou SDTs/Procedures, sincronizou BC/List e metadata (`Reencountered`, Guid `73fcc50b-9653-43ae-8889-4931e0ab0c25`); a Description editada permaneceu após aplicar. A Description gerada padrão passou a omitir o ponto terminal; a forma legada com ponto continua no fallback/integridade.
-- B086 implementado em código em 2026-08-07: comando `Remover API gerada` (menu principal + contexto), plano a partir da metadata, confirmação e exclusão conservadora. Manifesto alterado (exige `genexus /install`). Evidência: `Docs/Implementation/B086-REMOVER-API-GERADA.md`. Validação manual U15 pendente.
+- B086 implementado em código em 2026-08-07 e validado no U15 em 2026-08-08: comando `Remover API gerada` (menu principal + contexto); cancelamento seguro; ordem API→Procedures→SDTs (ListResponse antes de Response)→metadata→Folder; Folder reutilizado preservado; Folder criado (`wasCreated=true`) removido com o conteúdo (`Deleted=12` em `Teste`, incluindo `Folder:TesteOpenApi`); SDTs `GxOpenAPI` e BC da Transaction preservados. Evidência: `Docs/Implementation/B086-REMOVER-API-GERADA.md`.
 
 ## Frente ativa
 
-**Sprint 7 — Ciclo de vida operacional na IDE**. B087 fechado; B086 em código aguardando validação manual.
+**Sprint 7 — Ciclo de vida operacional na IDE**. B087 e B086 fechados.
 
 ## Próxima ação única
 
-Validar manualmente o comando `Remover API gerada` (B086) no GeneXus 18 U15: instalar DLL + `genexus /install` (manifesto alterado), remover API de uma Transaction de teste e confirmar preservação de `GxOpenAPI` e Business Component.
+Implementar o comando explícito `Sincronizar com a Transaction` (B085): comparar Transaction atual com a metadata, apresentar diferenças, exigir confirmação e gravar somente após preflight.
 
 ## Critério de conclusão e evidência esperada
 
-- comando visível no menu principal e no contexto da Transaction;
-- confirmação lista objetos; após Yes, só objetos próprios somem;
-- Folder reutilizado / SDTs compartilhados / BC da Transaction intactos;
-- evidência em `Docs/Implementation/B086-REMOVER-API-GERADA.md` e Output.
+- comando registrado nas três camadas e coberto pelo checker de menu;
+- comparação legível (campos/serviços/contrato vs metadata) antes de qualquer `Save()`;
+- confirmação; escrita só de objetos próprios com preflight completo;
+- evidência manual U15 + doc de implementação.
 
 ## Sequência operacional vigente
 
@@ -129,10 +129,10 @@ Validar manualmente o comando `Remover API gerada` (B086) no GeneXus 18 U15: ins
 
 - carregamento real do pacote em U14;
 - compatibilidade prática das APIs do SDK com U14;
-- comprovação integrada final dos dez gates técnicos transversais (parcialmente já evidenciada nas Sprints 1–6; faltam remoção e sincronização no gate 10).
+- comprovação integrada final dos dez gates técnicos transversais (parcialmente já evidenciada nas Sprints 1–6; falta sincronização no gate 10 — remoção B086 já validada).
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
-- B087 em código e validado no U15 (Description editável com metadata); B086 em código (comando `Remover API gerada`) pendente de validação manual.
+- B087 e B086 validados no U15; próximo obrigatório da sprint: `Sincronizar com a Transaction` (B085).
 - comando `Sincronizar com a Transaction` ainda ausente no runtime.
 - Folder preexistente `NomeOpenApi` no módulo correto ainda é tratado como colisão no código, em desacordo com a decisão do MVP de reutilizar com aviso.
 

@@ -76,13 +76,14 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
 
         var procedures = ReadStringArray(metadata.SelectToken("objects.procedures"));
         var shared = ReadStringArray(metadata.SelectToken("objects.sdts.shared"));
+        // Ordem de exclusao: ListResponse tipa Items com Response; apagar Response antes falha na IDE.
         var ownSdts = new[]
             {
+                metadata.SelectToken("objects.sdts.listResponse")?.Value<string>(),
                 metadata.SelectToken("objects.sdts.createRequest")?.Value<string>(),
                 metadata.SelectToken("objects.sdts.updateRequest")?.Value<string>(),
-                metadata.SelectToken("objects.sdts.response")?.Value<string>(),
                 metadata.SelectToken("objects.sdts.listFilters")?.Value<string>(),
-                metadata.SelectToken("objects.sdts.listResponse")?.Value<string>(),
+                metadata.SelectToken("objects.sdts.response")?.Value<string>(),
             }
             .Where(name => !string.IsNullOrWhiteSpace(name))
             .Select(name => name!)
@@ -111,25 +112,50 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
 
     public string BuildConfirmationSummary()
     {
-        var folderLine = string.IsNullOrWhiteSpace(FolderName)
-            ? null
-            : FolderWasCreated
-                ? $"Folder: {FolderName} (criado pela extensão; apagar só se ficar vazio)"
-                : $"Folder: {FolderName} (reutilizado; nunca apagar)";
+        var builder = new System.Text.StringBuilder();
+        builder.Append("Transaction: ").AppendLine(TransactionName);
+        builder.Append("API Object: ").AppendLine(ApiName);
+        builder.Append("Metadata File: ").AppendLine(MetadataFileName);
+        builder.AppendLine();
+        builder.Append("Procedures (").Append(ProcedureNames.Count).AppendLine("):");
+        AppendIndentedItems(builder, ProcedureNames);
+        builder.AppendLine();
+        builder.Append("SDTs próprios (").Append(OwnSdtNames.Count).AppendLine("):");
+        AppendIndentedItems(builder, OwnSdtNames);
+        builder.AppendLine();
+        builder.Append("SDTs compartilhados preservados (").Append(SharedSdtNamesPreserved.Count).AppendLine("):");
+        AppendIndentedItems(builder, SharedSdtNamesPreserved);
 
-        var lines = new[]
+        if (!string.IsNullOrWhiteSpace(FolderName))
         {
-            $"Transaction: {TransactionName}",
-            $"API Object: {ApiName}",
-            $"Metadata File: {MetadataFileName}",
-            $"Procedures ({ProcedureNames.Count}): {string.Join(", ", ProcedureNames)}",
-            $"SDTs próprios ({OwnSdtNames.Count}): {string.Join(", ", OwnSdtNames)}",
-            $"SDTs compartilhados preservados ({SharedSdtNamesPreserved.Count}): {string.Join(", ", SharedSdtNamesPreserved)}",
-            folderLine,
-            "Business Component da Transaction: não será revertido.",
-        };
+            builder.AppendLine();
+            if (FolderWasCreated)
+            {
+                builder.Append("Folder: ").Append(FolderName).AppendLine(" (criado pela extensão; apagar só se ficar vazio)");
+            }
+            else
+            {
+                builder.Append("Folder: ").Append(FolderName).AppendLine(" (reutilizado; nunca apagar)");
+            }
+        }
 
-        return string.Join(Environment.NewLine, lines.Where(line => !string.IsNullOrWhiteSpace(line)));
+        builder.AppendLine();
+        builder.Append("Business Component da Transaction: não será revertido.");
+        return builder.ToString();
+    }
+
+    private static void AppendIndentedItems(System.Text.StringBuilder builder, IReadOnlyList<string> items)
+    {
+        if (items.Count == 0)
+        {
+            builder.AppendLine("  (nenhum)");
+            return;
+        }
+
+        foreach (var item in items)
+        {
+            builder.Append("  - ").AppendLine(item);
+        }
     }
 
     private static string RequirePresent(JToken? token, string path)

@@ -324,9 +324,9 @@ O que permanece obrigatório nesta sprint é o ciclo de vida que o usuário aind
 
 Ordem acordada de execução:
 
-1. `B087`: ancorar a posse do API Object na metadata de integridade e liberar a `Description` para edição humana
-2. `B086`: comando explícito `Remover API gerada` (preservar Folder reutilizado e `GxOpenAPI`; não reverter Business Component)
-3. `B085`: comando explícito `Sincronizar com a Transaction` com comparação/metadata e confirmação antes de gravar
+1. `B087`: ancorar a posse do API Object na metadata de integridade e liberar a `Description` para edição humana — **concluído** (U15 2026-08-07)
+2. `B086`: comando explícito `Remover API gerada` (preservar Folder reutilizado e `GxOpenAPI`; não reverter Business Component) — **concluído** (U15 2026-08-08)
+3. `B085`: comando explícito `Sincronizar com a Transaction` com comparação/metadata e confirmação antes de gravar — **próximo**
 4. `B081`: relatório final pós-aplicação (criados / atualizados / bloqueados / avisos), sem depender só da Output técnica
 5. UX mínima de conflitos alinhada à decisão do MVP: para cada conflito, nome, tipo, módulo e Folder (`B083` residual de apresentação)
 6. alinhar Folder preexistente `NomeOpenApi` no módulo correto à decisão de reutilização com aviso (hoje o código ainda trata como colisão)
