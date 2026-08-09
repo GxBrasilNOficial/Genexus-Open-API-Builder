@@ -356,7 +356,7 @@ B089 é registrado como item de backlog pré-Alpha para construir utilitário ou
 | 6. Filtro ausente distinto de vazio, `false` e zero; obrigatório não preenchido recusado com 400 | B037, B070 e B076 |
 | 7. Códigos HTTP, corpos e `Location` | B046, B052, B053, B072, B073 e B079 |
 | 8. List com filtros, períodos, paginação, totais e ordem determinística | B031, B043, B044, B050, B070 e B077 |
-| 9. Metadata persistente e reconhecimento seguro | B006, B060, B063, B065–B067, B085 e B086 |
+| 9. Metadata persistente e reconhecimento seguro | B006, B060, B063, B065–B067, B085–B087 |
 | 10. Colisão, regeneração e remoção conservadoras | B063, B064 e B083–B086 |
 
 Esses gates foram comprovados progressivamente nas Sprints 1–7 e estão aprovados no pacote integrado de 2026-08-09 (`Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`), com o marco **wizard funcional do MVP concluído**. U14 nesta máquina permanece residual não bloqueante. Frentes pré-Alpha (YAML nativo; depois 403 GAM) seguem uma de cada vez antes da Alpha.

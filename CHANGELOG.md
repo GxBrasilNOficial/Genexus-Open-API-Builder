@@ -12,6 +12,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Changed
 
+- Correção documental pós-Sprint 7 (2026-08-09): no gate 9 (metadata e reconhecimento seguro), a remissão de backlog passa a incluir `B087` junto de `B085`–`B086`, alinhando a matriz canônica do documento 06 §7.1 e a coluna de remissões do pacote `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md` à evidência de posse via metadata já citada.
+
 - Sprint 7 fechada (2026-08-09): comprovação integrada dos dez gates técnicos transversais e marco **wizard funcional do MVP concluído**, por consolidação do acervo U15 das Sprints 1–7 (sem bateria U15 nova e sem mudança de código). Upgrade 14 permanece residual não validado nesta máquina e não bloqueia o marco. Próximas frentes pré-Alpha, uma de cada vez: limitações do YAML OpenAPI nativo; depois evidência HTTP 403 com papel GAM não-administrador — antes da Alpha (Sprint 8). Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`. Checkpoint, backlog 06 e plano 24 alinhados.
 
 - B083 residual (2026-08-08): UX mínima de conflitos de colisão — para cada objeto conflitante, lista `Nome | Tipo | Modulo | Folder` no Wizard, preflight, Output e relatório quando a escrita é barrada por colisão. Núcleo de detecção/bloqueio sem overwrite/`_v2` já existia. File usa `Folder='(n/a)'`. Validado no U15 em `Teste` (colisão com SDT externo; após remoção, geração completa e Build All nos dois environments). Teste `Tests/CollisionUx/Test-ApiPlanCollisionConflict.ps1`. Manifesto inalterado (só DLL). Evidência: `Docs/Implementation/B083-UX-CONFLITOS-COLISAO.md`.
