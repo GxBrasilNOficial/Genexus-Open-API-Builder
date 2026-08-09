@@ -42,6 +42,24 @@ KB de teste, `Transaction='Teste'`, `Module='Root Module'`, Folder preexistente 
    }
    ```
 
+## Build All nos dois environments — 2026-08-09
+
+Após a reexecução, o `Build All` foi executado nos dois environments da KB `wsEducacaoSpTeste`:
+
+- `.NET Framework / SQL Server`: todas as etapas concluídas com sucesso, incluindo Specification, geração, SDTs, documentação REST, compilação e permissões GAM. O warning de cópia duplicada de `FBiTextSharp.dll` permaneceu ambiental e não bloqueante.
+- `.NET / PostgreSQL`: todas as etapas concluídas com sucesso, incluindo Specification, geração, SDTs, documentação REST, Protocol Buffer, compilação e permissões GAM. O aviso de workloads do .NET foi informativo e não bloqueante.
+
+Em ambos, `apiTeste`, as quatro Procedures e os sete SDTs foram especificados/gerados corretamente, e a documentação REST de `apiTeste` foi produzida.
+
+## Remoção pelo menu — 2026-08-09
+
+O comando **Remover API gerada** foi executado para a Transaction `Teste`.
+
+- A confirmação exibiu `Folder: TesteOpenApi (reutilizado; nunca apagar)` e informou que o Business Component não seria revertido.
+- O relatório final registrou `Outcome='Success'`, `Deleted=11`, `Blocked=0` e `Warnings=0`.
+- Foram removidos somente o API Object, quatro Procedures, cinco SDTs próprios e o File de metadata.
+- Os SDTs compartilhados, o Business Component e o Folder `TesteOpenApi` permaneceram na KB.
+
 Status: **concluído**.
 
 Próxima frente: comprovação integrada dos dez gates técnicos transversais. `B088` e `B089` permanecem fora do gate obrigatório, como frentes pré-Alpha.

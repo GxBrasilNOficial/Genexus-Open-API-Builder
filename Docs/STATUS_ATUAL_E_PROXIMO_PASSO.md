@@ -86,6 +86,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - B081 implementado e validado no U15 em 2026-08-08 na Transaction `Teste`: relatório final pós-aplicação (Wizard / Sync / Remover) com criados, atualizados, removidos, bloqueados e avisos; Output `[B081]` alinhada; Sync sem diff e com add; Remover `Deleted=11`; botão Abrir objeto principal no Wizard/Sync. Teste `Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport.ps1`. Evidência: `Docs/Implementation/B081-RELATORIO-FINAL-POS-APLICACAO.md`.
 - B083 residual (UX de colisão) implementado e validado no U15 em 2026-08-08 na Transaction `Teste`: lista `Nome | Tipo | Modulo | Folder` no Wizard (cabeçalho e aba SDTs) com SDT externo `sdtTeste_API_Response`; após apagar o conflitante, preflight aprovado, geração completa (`Created=11`) e Build All nos dois environments. Teste `Tests/CollisionUx/Test-ApiPlanCollisionConflict.ps1`. Evidência: `Docs/Implementation/B083-UX-CONFLITOS-COLISAO.md`.
 - Alinhamento de Folder reutilizado implementado e validado no U15 em 2026-08-09 na Transaction `Teste`: `TesteOpenApi` preexistente no `Root Module` foi reencontrado no contêiner correto com aviso explícito, sem colisão e sem alteração da `Description`; reexecução com `Created=0`, `Updated=13`, `Blocked=0`, `Warnings=2`; relatório final com rolagem vertical; metadata exportada confirmou `transactionFolder.wasCreated=false`. Evidência: `Docs/Implementation/2026-08-08-FOLDER-REUTILIZADO-COM-AVISO.md`.
+- Reteste U15 de 2026-08-09 fechou o ciclo: Build All concluído nos environments `.NET Framework / SQL Server` e `.NET / PostgreSQL`; `Remover API gerada` confirmou `Folder: TesteOpenApi (reutilizado; nunca apagar)`, removeu `Deleted=11`, sem bloqueios/avisos, e preservou o Folder, os SDTs compartilhados e o Business Component.
 
 ## Frente ativa
 
@@ -131,6 +132,7 @@ Comprovar de forma integrada os dez gates técnicos transversais e declarar o ma
 26. Em 2026-08-08 B081 foi validado no U15 (`Teste`): Wizard completo, Sync sem diff e com add, Remover com `Deleted=11` (Folder reutilizado preservado).
 27. Em 2026-08-08 residual B083 validado no U15 (`Teste`): UX de colisão com nome/tipo/módulo/Folder; após remoção do conflitante, geração e Build All OK.
 28. Em 2026-08-09 alinhamento de Folder reutilizado validado no U15 (`Teste`): `TesteOpenApi` preexistente no `Root Module` foi reutilizado com aviso; reexecução `Created=0`, `Updated=13`, `Blocked=0`, `Warnings=2`; relatório final rolável; metadata confirmou `wasCreated=false`. Próxima ação única = comprovação integrada dos dez gates.
+29. Em 2026-08-09 o Build All passou nos dois environments e o reteste B086 removeu somente os 11 objetos próprios; `TesteOpenApi` permaneceu na KB conforme `wasCreated=false`.
 
 ## Bloqueios e fatos ainda não validados
 

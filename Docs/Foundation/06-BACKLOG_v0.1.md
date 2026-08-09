@@ -239,12 +239,12 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | ID | Item | Prioridade |
 |---|---|---|
 | B080 | Integrar menu/contexto IDE | Alta — atendido em substância (Wizard + preferências); residual cosmético de nome/rótulo |
-| B081 | Exibir relatório final interno | Alta — concluído (código + validação U15 2026-08-08) |
+| B081 | Exibir relatório final interno | Alta — concluído (código + validação U15 2026-08-08/09) |
 | B082 | Mostrar tempo execução | Média — fora da linha de corte do MVP |
 | B083 | Detectar conflito antes salvar | Alta — concluído (núcleo no preflight; residual UX nome/tipo/módulo/Folder validado U15 2026-08-08) |
 | B084 | Bloquear overwrite silencioso | Alta — atendido (sem `_v2`) |
 | B085 | Sincronizar com a Transaction usando metadata | Alta — concluído (código + validação U15 2026-08-08) |
-| B086 | Remover API gerada por metadata, sem reverter BC | Alta — concluído (código + validação U15 2026-08-08; Folder criado e reutilizado) |
+| B086 | Remover API gerada por metadata, sem reverter BC | Alta — concluído (código + validação U15 2026-08-08/09; Folder criado e reutilizado) |
 | B087 | Ancorar posse na metadata e liberar a `Description` do API Object | Alta — concluído (código + validação U15 2026-08-07) |
 | B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta — pré-Alpha separado; não gate da Sprint 7 |
 | B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta — pré-Alpha separado; não gate da Sprint 7 |
