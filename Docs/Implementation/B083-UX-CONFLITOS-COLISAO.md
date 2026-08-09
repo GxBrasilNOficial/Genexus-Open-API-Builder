@@ -26,7 +26,7 @@ Residual de apresentação: para cada conflito de **colisão** (objeto com nome 
 
 Transaction `Teste`, KB `wsEducacaoSpTeste`.
 
-1. **Colisão**: SDT externo `sdtTeste_API_Response` (Description não própria). Wizard em estado `teste bloqueado (1 conflito(s))`; aba SDTs listou  
+1. **Colisão**: SDT externo `sdtTeste_API_Response` (Description não própria). Wizard em estado `teste bloqueado (1 conflito(s))`; aba SDTs listou
    `Nome='sdtTeste_API_Response' | Tipo='SDT' | Modulo='…' | Folder='(n/a)'` (ou `Modulo='General'` após mover o objeto). Checkbox de escrita desabilitado; sem `Save()`.
 2. **Desbloqueio**: após apagar o SDT externo, Wizard em `teste de complementacao`; etapas confirmáveis; preflight agregado aprovado.
 3. **Aplicação**: `Created=11`, `Updated=2`, `Blocked=0`, aviso de fallback inglês; metadata `apiTeste_Metadata` criada.

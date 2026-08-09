@@ -62,7 +62,7 @@ O comando **Remover API gerada** foi executado para a Transaction `Teste`.
 
 Status: **concluído**.
 
-Próxima frente: comprovação integrada dos dez gates técnicos transversais. `B088` e `B089` permanecem fora do gate obrigatório, como frentes pré-Alpha.
+A comprovação integrada dos dez gates e o marco do wizard funcional do MVP foram concluídos em seguida (2026-08-09). A próxima ação vigente fica no checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` (frentes pré-Alpha `B088`/`B089`, uma de cada vez).
 
 ## Validação negativa U15 — 2026-08-09
 
