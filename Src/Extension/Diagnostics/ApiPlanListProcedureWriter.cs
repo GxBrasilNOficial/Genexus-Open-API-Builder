@@ -36,7 +36,8 @@ internal static class ApiPlanListProcedureWriter
         Transaction transaction,
         ApiPlan plan,
         bool allowIntentionalContractRefresh,
-        IReadOnlyCollection<string>? preserveSdtNames)
+        IReadOnlyCollection<string>? preserveSdtNames,
+        System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite = null)
     {
         if (model is null) throw new ArgumentNullException(nameof(model));
         if (transaction is null) throw new ArgumentNullException(nameof(transaction));
@@ -67,7 +68,7 @@ internal static class ApiPlanListProcedureWriter
         ValidateVariableSpecs(model, procedure, procedureVariables);
         ValidateVariableSpecs(model, api, apiVariables);
 
-        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan, preserveSdtNames);
+        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan, preserveSdtNames, onSdtWrite);
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
         SaveApi(model, api, transactionFolder, plan, apiSource, apiVariables);
         SaveProcedure(model, procedure, source, procedureVariables, rules);

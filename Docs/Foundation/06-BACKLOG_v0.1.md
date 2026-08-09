@@ -239,7 +239,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | ID | Item | Prioridade |
 |---|---|---|
 | B080 | Integrar menu/contexto IDE | Alta — atendido em substância (Wizard + preferências); residual cosmético de nome/rótulo |
-| B081 | Exibir relatório final interno | Alta — concluído (código + validação U15 2026-08-08/09) |
+| B081 | Exibir relatório final interno | Alta — concluído (código + validação U15 2026-08-08/09; relatório lista efeitos colaterais e Folder criado) |
 | B082 | Mostrar tempo execução | Média — fora da linha de corte do MVP |
 | B083 | Detectar conflito antes salvar | Alta — concluído (núcleo no preflight; residual UX nome/tipo/módulo/Folder validado U15 2026-08-08) |
 | B084 | Bloquear overwrite silencioso | Alta — atendido (sem `_v2`) |
@@ -256,7 +256,7 @@ Após a Sprint 6, o pacote histórico “conflitos e reexecução” da Fase 7 f
 1. `B087` (posse sem travar `Description`) — concluído
 2. `B086` (`Remover API gerada`) — concluído (U15 2026-08-08)
 3. `B085` (`Sincronizar com a Transaction`) — concluído (U15 2026-08-08)
-4. `B081` (relatório final pós-aplicação) — concluído (U15 2026-08-08)
+4. `B081` (relatório final pós-aplicação) — concluído (U15 2026-08-08/09; criação reportada como `Created=12`, incluindo o Folder)
 5. residual de apresentação de `B083` — concluído (U15 2026-08-08)
 6. alinhamento de Folder reutilizado à decisão do MVP (reutilizar `NomeOpenApi` preexistente no módulo correto com aviso) — concluído (U15 2026-08-09)
 7. comprovação integrada dos dez gates — próxima ação

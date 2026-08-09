@@ -13,7 +13,7 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 internal static class ApiPlanSdtWriter
 {
     private const string OwnedDescriptionPrefix = "Genexus Open API Builder B040-B046 SDT";
-    private const string SharedFolderName = "GxOpenAPI";
+    internal const string SharedFolderName = "GxOpenAPI";
 
     public static ApiPlanSdtWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
@@ -24,7 +24,8 @@ internal static class ApiPlanSdtWriter
         KBModel designModel,
         Transaction transaction,
         ApiPlan apiPlan,
-        IReadOnlyCollection<string>? preserveSdtNames)
+        IReadOnlyCollection<string>? preserveSdtNames,
+        System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite = null)
     {
         if (designModel is null)
         {
@@ -50,18 +51,28 @@ internal static class ApiPlanSdtWriter
         var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var preflight = CreatePreflightResult(designModel, generationPlan);
         ApiPlanTransactionFolder.Preflight(designModel, transaction, apiPlan);
+        var sharedFolderWasCreated = preflight.SharedFolder is null;
         var sharedFolder = preflight.SharedFolder ?? CreateSharedFolder(designModel);
+        if (sharedFolderWasCreated)
+        {
+            apiPlan.SharedSdtFolderWasCreated = true;
+        }
+
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan);
         var results = new List<ApiPlanSdtWriteItemResult>();
 
         foreach (var sdt in generationPlan.SharedSdts)
         {
-            results.Add(CreateOrReencounterSdt(designModel, transaction, sharedFolder, sdt, preflight, preserve));
+            var result = CreateOrReencounterSdt(designModel, transaction, sharedFolder, sdt, preflight, preserve);
+            onSdtWrite?.Invoke(result);
+            results.Add(result);
         }
 
         foreach (var sdt in generationPlan.OwnSdts)
         {
-            results.Add(CreateOrReencounterSdt(designModel, transaction, transactionFolder, sdt, preflight, preserve));
+            var result = CreateOrReencounterSdt(designModel, transaction, transactionFolder, sdt, preflight, preserve);
+            onSdtWrite?.Invoke(result);
+            results.Add(result);
         }
 
         return new ApiPlanSdtWriteResult(

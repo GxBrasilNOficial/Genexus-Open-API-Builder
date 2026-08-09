@@ -327,7 +327,7 @@ Ordem acordada de execução:
 1. `B087`: ancorar a posse do API Object na metadata de integridade e liberar a `Description` para edição humana — **concluído** (U15 2026-08-07)
 2. `B086`: comando explícito `Remover API gerada` (preservar Folder reutilizado e `GxOpenAPI`; não reverter Business Component) — **concluído** (U15 2026-08-08/09)
 3. `B085`: comando explícito `Sincronizar com a Transaction` com comparação/metadata e confirmação antes de gravar — **concluído** (U15 2026-08-08)
-4. `B081`: relatório final pós-aplicação (criados / atualizados / bloqueados / avisos), sem depender só da Output técnica — **concluído** (U15 2026-08-08/09)
+4. `B081`: relatório final pós-aplicação (criados / atualizados / bloqueados / avisos), sem depender só da Output técnica, incluindo efeitos colaterais do plano — **concluído** (U15 2026-08-08/09; criação com `Created=12` incluindo o Folder)
 5. UX mínima de conflitos alinhada à decisão do MVP: para cada conflito, nome, tipo, módulo e Folder (`B083` residual de apresentação) — **concluído** (U15 2026-08-08)
 6. alinhar Folder preexistente `NomeOpenApi` no módulo correto à decisão de reutilização com aviso — **concluído** (U15 2026-08-09; evidência `Docs/Implementation/2026-08-08-FOLDER-REUTILIZADO-COM-AVISO.md`)
 7. comprovação integrada dos dez gates e declaração do marco **wizard funcional do MVP concluído** — **próxima ação**

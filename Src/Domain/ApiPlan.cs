@@ -392,6 +392,8 @@ internal sealed class ApiPlan
 
     public bool TransactionFolderWasCreated { get; internal set; }
 
+    public bool SharedSdtFolderWasCreated { get; internal set; }
+
     public string SecurityLevel { get; }
 
     public ApiPlanSecurity Security { get; }

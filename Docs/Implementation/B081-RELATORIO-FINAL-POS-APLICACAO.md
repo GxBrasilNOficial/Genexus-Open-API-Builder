@@ -17,7 +17,8 @@ Após Wizard, Sync ou Remover, exibir relatório estruturado (criados / atualiza
 - `Src/Extension/Diagnostics/ApiPlanApplicationFinalReport.cs`
 - `Src/Extension/ApiPlanApplicationFinalReportDialog.cs`
 - Integração em `Package.cs` (Wizard, Sync incluindo no-op, Remover)
-- Teste: `Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport.ps1` (pré-push)
+- O relatório inclui efeitos colaterais do plano: Folder da Transaction criado pela extensão, Folder compartilhado `GxOpenAPI` criado pela extensão, Transaction atualizada pelo Business Component e SDTs escritos pelos writers internos.
+- Testes: `Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport.ps1` e `Tests/OpenApiContract/Test-ApiPlanOpenApiContractMarks.ps1` (pré-push)
 - Manifesto **não** alterado (só DLL)
 
 ## Validação manual U15 (2026-08-08)
@@ -35,3 +36,5 @@ Status: **concluído**.
 ## Correção pós-validação — 2026-08-09
 
 Na reexecução do Wizard para a Transaction `Teste`, o relatório final retornou `Created=0`, `Updated=13`, `Blocked=0` e `Warnings=2`, incluindo o aviso de Folder reutilizado. A janela passou a exibir a barra de rolagem vertical e a última linha do aviso ficou acessível ao rolar até o fim; o Output confirmou o texto completo. A correção está em `ApiPlanApplicationFinalReportDialog.cs` e foi coberta pelo teste `Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport.ps1`.
+
+Após remover o Folder específico e recriar a API, o Wizard retornou `Created=12`, `Updated=2`, `Removed=(nenhum)`, `Blocked=(nenhum)` e `Warnings=1`. O relatório passou a listar explicitamente `[Folder] TesteOpenApi — criado pela extensão; apagar só se ficar vazio`, além dos cinco SDTs próprios, quatro Procedures, API Object e metadata. A confirmação de remoção também identificou o Folder como criado pela extensão, mantendo a regra B086 de removê-lo somente quando `wasCreated=true`.

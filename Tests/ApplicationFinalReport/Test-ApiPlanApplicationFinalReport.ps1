@@ -30,20 +30,22 @@ $collector.AddFromWriteStatus('SDT', 'sdtContrato_API_Response', 'Created', 'Own
 $collector.AddFromWriteStatus('SDT', 'sdt_API_ErrorResponse', 'Reencountered', 'SharedErrorResponse')
 $collector.AddFromWriteStatus('Procedure', 'procContrato_API_List', 'Created', 'List')
 $collector.AddFromWriteStatus('API Object', 'apiContrato', 'Created')
+$collector.AddCreated('Folder', 'ContratoOpenApi', 'criado pela extensão; apagar só se ficar vazio')
 $collector.SetMainObject('apiContrato', [guid]'11111111-1111-1111-1111-111111111111')
 $collector.AddWarning('Descricoes de servico usaram fallback em ingles.')
 
 $report = $collector.Build([timespan]::FromMilliseconds(1250))
 Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalOutcome]::SuccessWithWarnings) $report.Outcome 'Com avisos o outcome deve ser SuccessWithWarnings.'
 Assert-Equal 'API gerada com avisos.' $report.Headline 'Headline parcial do Wizard.'
-# Created: Response SDT, Procedure List, API Object = 3; Updated: ErrorResponse = 1
-Assert-Equal 3 $report.CreatedCount 'Criados: Response, List Procedure, API Object.'
+# Created: Response SDT, Procedure List, API Object e Folder = 4; Updated: ErrorResponse = 1
+Assert-Equal 4 $report.CreatedCount 'Criados: Response, List Procedure, API Object e Folder.'
 Assert-Equal 1 $report.UpdatedCount 'Atualizados: ErrorResponse reencontrado.'
 Assert-Equal 0 $report.BlockedCount 'Sem bloqueios.'
 Assert-Equal 1 $report.WarningCount 'Um aviso.'
 Assert-True ($report.BuildOutputSummary() -match "\[B081\] Relatorio final") 'Output summary deve citar B081.'
-Assert-True ($report.BuildReadableBody() -match 'Criados \(3\)') 'Corpo legivel lista criados.'
+Assert-True ($report.BuildReadableBody() -match 'Criados \(4\)') 'Corpo legivel lista criados.'
 Assert-True ($report.BuildReadableBody() -match 'Atualizados \(1\)') 'Corpo legivel lista atualizados.'
+Assert-True ($report.BuildReadableBody() -match '\[Folder\] ContratoOpenApi') 'Corpo legivel lista Folder criado.'
 
 $long = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalReportCollector]::new('Wizard', 'Teste', 'apiTeste')
 $long.AddWarning('Descricoes de servico usaram fallback em ingles (Idioma principal da KB ainda nao validado por API publica; fallback tecnico em ingles registrado no ApiPlan.).')
@@ -75,5 +77,17 @@ $dialogSource = Get-Content -Raw -LiteralPath $dialogPath
 Assert-True ($dialogSource -match 'EnsureBodyScrollBars') 'Dialogo B081 deve recalcular a rolagem apos o layout.'
 Assert-True ($dialogSource -match 'GetPositionFromCharIndex') 'Dialogo B081 deve medir a ultima linha visual do corpo.'
 Assert-True ($dialogSource -match 'ScrollBars\.Vertical') 'Dialogo B081 deve habilitar rolagem vertical quando o corpo exceder a area.'
+
+$packageSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Package.cs')
+$apiPlanSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Domain\ApiPlan.cs')
+$sdtWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanSdtWriter.cs')
+$businessComponentWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanBusinessComponentWriter.cs')
+$listWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanListProcedureWriter.cs')
+Assert-True ($packageSource -match 'AppendPlanSideEffects\(collector, apiPlan\)') 'B081 deve anexar efeitos de Folder e Transaction ao relatorio final.'
+Assert-True ($packageSource -match 'onSdtWrite: item => AppendSdtWriteItemToReport') 'B081 deve receber SDTs escritos internamente por B055/B070.'
+Assert-True ($apiPlanSource -match 'SharedSdtFolderWasCreated') 'ApiPlan deve transportar a criacao do Folder compartilhado.'
+Assert-True ($sdtWriterSource -match 'SharedSdtFolderWasCreated = true') 'Writer de SDT deve marcar o Folder compartilhado criado.'
+Assert-True ($businessComponentWriterSource -match 'onSdtWrite') 'Writer de Business Component deve propagar SDTs escritos.'
+Assert-True ($listWriterSource -match 'onSdtWrite') 'Writer de List deve propagar SDTs escritos.'
 
 Write-Host 'Test-ApiPlanApplicationFinalReport.ps1 OK'

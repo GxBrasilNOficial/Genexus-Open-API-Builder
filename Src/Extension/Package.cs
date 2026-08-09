@@ -494,14 +494,14 @@ public sealed class Package : AbstractPackageUI
     {
         try
         {
+            Action<ApiPlanSdtWriteItemResult> onSdtWrite = item => AppendSdtWriteItemToReport(report, item);
             var result = preserveSdtNames is null
-                ? ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan)
-                : ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames);
+                ? ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames: null, onSdtWrite: onSdtWrite)
+                : ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames, onSdtWrite: onSdtWrite);
             WriteOutput($"[Genexus Open API Builder][B040-B046] Escrita de SDTs concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedOwnSdts={result.PlannedOwnSdts}, PlannedSharedSdts={result.PlannedSharedSdts}, Created={result.CreatedSdts}, Reencountered={result.ReencounteredSdts}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhuma Procedure, API Object ou metadata persistente definitiva foi criada.");
             foreach (var item in result.Items)
             {
                 WriteOutput($"[Genexus Open API Builder][B040-B046] SDT {item.Status}: Backlog='{item.BacklogId}', Kind='{item.Kind}', Name='{item.Name}', Scope='{item.Scope}', Guid='{item.Guid}'.");
-                report?.AddFromWriteStatus("SDT", item.Name, item.Status, item.Kind);
             }
 
             return true;
@@ -650,7 +650,8 @@ public sealed class Package : AbstractPackageUI
                 transaction,
                 apiPlan,
                 allowIntentionalContractRefresh,
-                preserveSdtNames);
+                preserveSdtNames,
+                onSdtWrite: item => AppendSdtWriteItemToReport(report, item));
             WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Get/Create/Update aplicados via Business Component e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', GetProcedureGuid='{result.GetProcedureGuid}', CreateProcedureGuid='{result.CreateProcedureGuid}', UpdateProcedureGuid='{result.UpdateProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', PrimaryKeyParts={result.PrimaryKeyParts}, CreateFields={result.CreateFields}, UpdateFields={result.UpdateFields}, ResponseFields={result.ResponseFields}. Status HTTP controlado por RestCode no API Object; ErrorResponse exposto como saida publica dos servicos; Location de Create emitido nativamente via HttpResponse.");
             WriteOutput($"[Genexus Open API Builder][B056] Descricoes reaplicadas no API Object real durante B071-B073/B079: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiObjectGuid='{result.ApiObjectGuid}', DescribedServices={apiPlan.ServiceDescriptions.Count}. Service Source preserva o contrato Procedure/API Object atual.");
             foreach (var procedureName in apiPlan.ProcedureNames.Where(name =>
@@ -691,7 +692,8 @@ public sealed class Package : AbstractPackageUI
                 transaction,
                 apiPlan,
                 allowIntentionalContractRefresh,
-                preserveSdtNames);
+                preserveSdtNames,
+                onSdtWrite: item => AppendSdtWriteItemToReport(report, item));
             WriteOutput($"[Genexus Open API Builder][B070] List aplicado e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', ListProcedureGuid='{result.ListProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', Filters={result.Filters}, OrderParts={result.OrderParts}, DefaultPageSize={result.DefaultPageSize}, MaximumPageSize={result.MaximumPageSize}. B076 e validacao runtime do List permanecem pendentes.");
             var listProcedure = apiPlan.ProcedureNames.FirstOrDefault(name =>
                 name.EndsWith("_API_List", StringComparison.OrdinalIgnoreCase));
@@ -803,7 +805,7 @@ public sealed class Package : AbstractPackageUI
                 }
 
                 stopwatch.Stop();
-                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 return true;
             }
 
@@ -812,14 +814,14 @@ public sealed class Package : AbstractPackageUI
             if (!TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", preserveSdts, report))
             {
                 stopwatch.Stop();
-                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 return true;
             }
 
             if (!TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", report))
             {
                 stopwatch.Stop();
-                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 return true;
             }
 
@@ -828,7 +830,7 @@ public sealed class Package : AbstractPackageUI
                 if (!TryCreateApiObject(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", report))
                 {
                     stopwatch.Stop();
-                    ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+                    ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                     return true;
                 }
             }
@@ -839,7 +841,7 @@ public sealed class Package : AbstractPackageUI
                     if (!TryCreateApiObject(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", report))
                     {
                         stopwatch.Stop();
-                        ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+                        ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                         return true;
                     }
                 }
@@ -857,7 +859,7 @@ public sealed class Package : AbstractPackageUI
                     report: report))
                 {
                     stopwatch.Stop();
-                    ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+                    ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                     return true;
                 }
             }
@@ -874,7 +876,7 @@ public sealed class Package : AbstractPackageUI
                     report: report))
                 {
                     stopwatch.Stop();
-                    ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+                    ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                     return true;
                 }
             }
@@ -892,7 +894,7 @@ public sealed class Package : AbstractPackageUI
 
             WriteOutput($"[Genexus Open API Builder][B085] Sincronizacao concluida para Transaction='{transaction.Name}', ApiName='{apiPlan.ApiName}', PreservedSdts={preserveSdts.Count}.");
             stopwatch.Stop();
-            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
         }
         catch (Exception ex)
         {
@@ -1269,7 +1271,7 @@ public sealed class Package : AbstractPackageUI
             }
 
             stopwatch.Stop();
-            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
             return true;
         }
 
@@ -1313,7 +1315,7 @@ public sealed class Package : AbstractPackageUI
             }
 
             stopwatch.Stop();
-            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
             return true;
         }
 
@@ -1350,7 +1352,7 @@ public sealed class Package : AbstractPackageUI
             }
 
             stopwatch.Stop();
-            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
             return true;
         }
 
@@ -1393,7 +1395,7 @@ public sealed class Package : AbstractPackageUI
             }
 
             stopwatch.Stop();
-            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
             return true;
         }
 
@@ -1416,7 +1418,7 @@ public sealed class Package : AbstractPackageUI
             }
 
             stopwatch.Stop();
-            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
             return true;
         }
 
@@ -1439,7 +1441,7 @@ public sealed class Package : AbstractPackageUI
             }
 
             stopwatch.Stop();
-            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
             return true;
         }
 
@@ -1449,7 +1451,7 @@ public sealed class Package : AbstractPackageUI
         }
 
         stopwatch.Stop();
-        ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+        ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
         return true;
     }
 
@@ -1780,6 +1782,47 @@ public sealed class Package : AbstractPackageUI
         }
     }
 
+    private static void AppendSdtWriteItemToReport(
+        ApiPlanApplicationFinalReportCollector? report,
+        ApiPlanSdtWriteItemResult item)
+    {
+        report?.AddFromWriteStatus("SDT", item.Name, item.Status, item.Kind);
+    }
+
+    private static void AppendPlanSideEffects(
+        ApiPlanApplicationFinalReportCollector report,
+        ApiPlan? apiPlan)
+    {
+        if (apiPlan is null)
+        {
+            return;
+        }
+
+        if (apiPlan.TransactionFolderWasCreated)
+        {
+            report.AddCreated(
+                "Folder",
+                apiPlan.TransactionFolderName,
+                "criado pela extensão; apagar só se ficar vazio");
+        }
+
+        if (apiPlan.SharedSdtFolderWasCreated)
+        {
+            report.AddCreated(
+                "Folder",
+                ApiPlanSdtWriter.SharedFolderName,
+                "criado pela extensão como contêiner compartilhado de SDTs; preservado pela remoção de uma API");
+        }
+
+        if (apiPlan.BusinessComponent.EnabledDuringWizard)
+        {
+            report.AddUpdated(
+                "Transaction",
+                apiPlan.TransactionName,
+                "Business Component habilitado durante o Wizard");
+        }
+    }
+
     private static void AppendTransactionFolderWarning(
         ApiPlanApplicationFinalReportCollector report,
         ApiPlanGenerationState generationState)
@@ -1794,8 +1837,10 @@ public sealed class Package : AbstractPackageUI
     private static void ShowFinalReport(
         ApiPlanApplicationFinalReportCollector collector,
         TimeSpan elapsed,
-        KBModel? designModel)
+        KBModel? designModel,
+        ApiPlan? apiPlan = null)
     {
+        AppendPlanSideEffects(collector, apiPlan);
         TryResolveMainObjectFromKb(collector, designModel);
         var report = collector.Build(elapsed);
         WriteOutput(report.BuildOutputSummary());
