@@ -85,7 +85,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - B085 implementado e validado no U15 em 2026-08-08 na Transaction `Teste`: comando `Sincronizar com a Transaction` (menu principal + contexto); metadata com `transactionStructure` e `attributeGuid`; diff por GUID (add, rename, sem diff); UI 2x2 com escolhas; cancelamento seguro; conflitos Replace e Keep em SDT editado (`ManualKeep` preservado com `PreservedSdts=1`); Sync atualiza contrato B067 e Source B055/B070 de propósito. Checker de menu (4 comandos), build Release e teste `Tests/TransactionSync/Test-ApiPlanTransactionSyncComparer.ps1` OK. Evidência: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`.
 - B081 implementado e validado no U15 em 2026-08-08/09 na Transaction `Teste`: relatório final pós-aplicação (Wizard / Sync / Remover) com criados, atualizados, removidos, bloqueados e avisos; efeitos colaterais do plano (Folder criado, Transaction atualizada pelo Business Component e SDTs escritos pelos writers) também listados; Output `[B081]` alinhada; Sync sem diff e com add; Remover `Deleted=11`; botão Abrir objeto principal no Wizard/Sync. Criação posterior reportou `Created=12`, incluindo `TesteOpenApi`; reuso reportou `Created=0`, `Updated=13`, `Warnings=2`. Teste `Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport.ps1`. Evidência: `Docs/Implementation/B081-RELATORIO-FINAL-POS-APLICACAO.md`.
 - B083 residual (UX de colisão) implementado e validado no U15 em 2026-08-08 na Transaction `Teste`: lista `Nome | Tipo | Modulo | Folder` no Wizard (cabeçalho e aba SDTs) com SDT externo `sdtTeste_API_Response`; após apagar o conflitante, preflight aprovado, geração completa (`Created=11`) e Build All nos dois environments. Teste `Tests/CollisionUx/Test-ApiPlanCollisionConflict.ps1`. Evidência: `Docs/Implementation/B083-UX-CONFLITOS-COLISAO.md`.
-- Alinhamento de Folder reutilizado implementado e validado no U15 em 2026-08-09 na Transaction `Teste`: `TesteOpenApi` preexistente no `Root Module` foi reencontrado no contêiner correto com aviso explícito, sem colisão e sem alteração da `Description`; reexecução com `Created=0`, `Updated=13`, `Blocked=0`, `Warnings=2`; relatório final com rolagem vertical; metadata exportada confirmou `transactionFolder.wasCreated=false`. Evidência: `Docs/Implementation/2026-08-08-FOLDER-REUTILIZADO-COM-AVISO.md`.
+- Alinhamento de Folder reutilizado implementado e validado no U15 em 2026-08-09 na Transaction `Teste`: `TesteOpenApi` preexistente no `Root Module` foi reencontrado no contêiner correto com aviso explícito, sem colisão e sem alteração da `Description`; reexecução com `Created=0`, `Updated=13`, `Blocked=0`, `Warnings=2`; contêiner incorreto, duplicidade e sentinela alheia bloquearam antes de qualquer escrita; relatório final com rolagem vertical; metadata exportada confirmou `transactionFolder.wasCreated=false`. Evidência: `Docs/Implementation/2026-08-08-FOLDER-REUTILIZADO-COM-AVISO.md`.
 - Reteste U15 de 2026-08-09 fechou o ciclo: Build All concluído nos environments `.NET Framework / SQL Server` e `.NET / PostgreSQL`; `Remover API gerada` confirmou `Folder: TesteOpenApi (reutilizado; nunca apagar)`, removeu `Deleted=11`, sem bloqueios/avisos, e preservou o Folder, os SDTs compartilhados e o Business Component.
 
 ## Frente ativa
@@ -96,11 +96,16 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 Comprovar de forma integrada os dez gates técnicos transversais e declarar o marco **wizard funcional do MVP concluído**.
 
-## Critério de conclusão e evidência esperada
+## Evidência da frente encerrada
 
-- Folder `NomeDaTransacaoOpenApi` preexistente no módulo correto reutilizado com aviso explícito (sem tratar como colisão);
-- metadata continua distinguindo Folder criado de reutilizado; remoção não apaga Folder reutilizado;
-- evidência U15 + docs concluída; próxima frente é a comprovação integrada dos dez gates.
+- Folder `NomeDaTransacaoOpenApi` preexistente no módulo correto foi reutilizado com aviso explícito, sem tratá-lo como colisão e sem alterar sua Description;
+- metadata continua distinguindo Folder criado de reutilizado, e a remoção não apaga Folder reutilizado;
+- a validação U15 cobriu reuso com Description humana, contêiner incorreto, duplicidade/ambiguidade e sentinela de outra Transaction; os três cenários negativos bloquearam antes de qualquer escrita.
+
+## Critério de conclusão da próxima ação
+
+- comprovar de forma integrada os dez gates técnicos transversais;
+- declarar, com evidência consolidada em código, testes e U15, o marco **wizard funcional do MVP concluído**.
 
 ## Sequência operacional vigente
 
@@ -134,6 +139,7 @@ Comprovar de forma integrada os dez gates técnicos transversais e declarar o ma
 28. Em 2026-08-09 alinhamento de Folder reutilizado validado no U15 (`Teste`): `TesteOpenApi` preexistente no `Root Module` foi reutilizado com aviso; reexecução `Created=0`, `Updated=13`, `Blocked=0`, `Warnings=2`; relatório final rolável; metadata confirmou `wasCreated=false`. Próxima ação única = comprovação integrada dos dez gates.
 29. Em 2026-08-09 o Build All passou nos dois environments e o reteste B086 removeu somente os 11 objetos próprios; `TesteOpenApi` permaneceu na KB conforme `wasCreated=false`.
 30. Em 2026-08-09 a correção de B081 foi validada no U15 após recriar a API com o Folder criado pela extensão: o relatório passou a listar `Created=12`, incluindo `[Folder] TesteOpenApi — criado pela extensão; apagar só se ficar vazio`.
+31. Em 2026-08-09 os cenários negativos U15 comprovaram bloqueio para contêiner incorreto (`General`), duplicidade entre `Root Module` e `General` e sentinela de outra Transaction; nenhum deles habilitou escrita. Após a limpeza, a restauração final com Description humana reutilizou o Folder e reportou `Created=11`, `Updated=2`, `Blocked=0`, `Warnings=2`, preservando `wasCreated=false`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -164,7 +170,7 @@ Ao promover uma frente concluída para a próxima ação, atualizar em conjunto:
 
 - a seção `Último marco concluído`, registrando a frente encerrada e sua evidência mínima;
 - a seção `Próxima ação única`;
-- a seção `Critério de conclusão e evidência esperada`;
+- as seções `Evidência da frente encerrada` e `Critério de conclusão da próxima ação`;
 - a seção `Sequência operacional vigente`.
 
 Divergência entre essas seções é gap documental confirmado na revisão pré-push.

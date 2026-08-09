@@ -87,7 +87,7 @@ internal sealed class PrototypeWizardDialog : Form
         Text = "Genexus Open API Builder - Wizard";
         StartPosition = FormStartPosition.CenterParent;
         Width = 1200;
-        Height = 800;
+        Height = 912;
         MinimumSize = new Size(900, 640);
         ShowIcon = false;
         ShowInTaskbar = false;

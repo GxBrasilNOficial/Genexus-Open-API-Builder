@@ -63,3 +63,14 @@ O comando **Remover API gerada** foi executado para a Transaction `Teste`.
 Status: **concluído**.
 
 Próxima frente: comprovação integrada dos dez gates técnicos transversais. `B088` e `B089` permanecem fora do gate obrigatório, como frentes pré-Alpha.
+
+## Validação negativa U15 — 2026-08-09
+
+Os cenários abaixo foram executados na KB de teste para comprovar o bloqueio conservador antes de qualquer escrita:
+
+1. **Contêiner incorreto:** após remover a API, foi mantido somente `General\TesteOpenApi` para a `Transaction='Teste'` do `Root Module`. O Wizard exibiu um conflito com `Modulo='General'`, permaneceu bloqueado e o Output confirmou `GenerateSdts=False`, `GenerateProcedures=False`, `GenerateApiObject=False`, `GenerateMetadata=False` e `Nenhuma escrita foi solicitada`.
+2. **Ambiguidade/duplicidade:** durante a preparação do cenário anterior, coexistiram `Root Module\TesteOpenApi` e `General\TesteOpenApi`. O Wizard exibiu dois conflitos e bloqueou sem escrita, comprovando a trava por mais de uma ocorrência do mesmo nome.
+3. **Sentinela alheia:** com único Folder em `Root Module\TesteOpenApi` e Description `Genexus Open API Builder Transaction API folder - Transaction=Outra`, o Wizard exibiu um conflito, bloqueou e manteve todas as confirmações de escrita desmarcadas; a Description permaneceu intacta.
+4. **Reuso com Description humana:** após a limpeza dos cenários negativos, foi recriado apenas o Folder `Root Module\TesteOpenApi` com Description `Folder mantido manualmente para teste U15`. O Wizard reutilizou o Folder com aviso, gerou a API com `Created=11`, `Updated=2`, `Blocked=0` e `Warnings=2`, e a metadata final confirmou `wasCreated=false`.
+
+Os cenários negativos comprovaram módulo/contêiner incorreto, ocorrência ambígua e sentinela de outra Transaction; o caminho positivo comprovou preservação de Description humana, reuso e ausência de escrita parcial nos bloqueios.

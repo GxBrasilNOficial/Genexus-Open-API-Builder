@@ -77,6 +77,10 @@ $dialogSource = Get-Content -Raw -LiteralPath $dialogPath
 Assert-True ($dialogSource -match 'EnsureBodyScrollBars') 'Dialogo B081 deve recalcular a rolagem apos o layout.'
 Assert-True ($dialogSource -match 'GetPositionFromCharIndex') 'Dialogo B081 deve medir a ultima linha visual do corpo.'
 Assert-True ($dialogSource -match 'ScrollBars\.Vertical') 'Dialogo B081 deve habilitar rolagem vertical quando o corpo exceder a area.'
+Assert-True ($dialogSource -match 'Math\.Ceiling\(\(estimatedBodyHeight \+ chromeHeight\) \* 1\.10\)') 'Dialogo B081 deve ampliar a altura preferida em 10%.'
+Assert-True ($dialogSource -match 'baseWidth \* 1\.20') 'Dialogo B081 deve ampliar a largura preferida em 20%.'
+Assert-True ($dialogSource -match 'working\.Height - 60') 'Dialogo B081 deve limitar a altura a area util da tela.'
+Assert-True ($dialogSource -match 'working\.Width - 80') 'Dialogo B081 deve limitar a largura a area util da tela.'
 
 $packageSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Package.cs')
 $apiPlanSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Domain\ApiPlan.cs')

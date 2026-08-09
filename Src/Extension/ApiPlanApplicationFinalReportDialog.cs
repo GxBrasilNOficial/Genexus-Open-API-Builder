@@ -81,8 +81,10 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
         var lineHeight = Math.Max(16, TextRenderer.MeasureText("Ag", _bodyBox.Font).Height + 1);
         var estimatedBodyHeight = (lineCount * lineHeight) + 40;
         var chromeHeight = 150;
-        var preferredHeight = estimatedBodyHeight + chromeHeight;
-        var preferredWidth = lineCount <= 18 ? 760 : 920;
+        // Amplia a area de leitura, sem ultrapassar os limites da area util abaixo.
+        var preferredHeight = (int)Math.Ceiling((estimatedBodyHeight + chromeHeight) * 1.10);
+        var baseWidth = lineCount <= 18 ? 760 : 920;
+        var preferredWidth = (int)Math.Ceiling(baseWidth * 1.20);
 
         var maxHeight = Math.Max(MinimumSize.Height, working.Height - 60);
         preferredHeight = Math.Min(Math.Max(preferredHeight, MinimumSize.Height), maxHeight);
