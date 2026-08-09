@@ -84,19 +84,21 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - B086 implementado em código em 2026-08-07 e validado no U15 em 2026-08-08: comando `Remover API gerada` (menu principal + contexto); cancelamento seguro; ordem API→Procedures→SDTs (ListResponse antes de Response)→metadata→Folder; Folder reutilizado preservado; Folder criado (`wasCreated=true`) removido com o conteúdo (`Deleted=12` em `Teste`, incluindo `Folder:TesteOpenApi`); SDTs `GxOpenAPI` e BC da Transaction preservados. Evidência: `Docs/Implementation/B086-REMOVER-API-GERADA.md`.
 - B085 implementado e validado no U15 em 2026-08-08 na Transaction `Teste`: comando `Sincronizar com a Transaction` (menu principal + contexto); metadata com `transactionStructure` e `attributeGuid`; diff por GUID (add, rename, sem diff); UI 2x2 com escolhas; cancelamento seguro; conflitos Replace e Keep em SDT editado (`ManualKeep` preservado com `PreservedSdts=1`); Sync atualiza contrato B067 e Source B055/B070 de propósito. Checker de menu (4 comandos), build Release e teste `Tests/TransactionSync/Test-ApiPlanTransactionSyncComparer.ps1` OK. Evidência: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`.
 - B081 implementado e validado no U15 em 2026-08-08 na Transaction `Teste`: relatório final pós-aplicação (Wizard / Sync / Remover) com criados, atualizados, removidos, bloqueados e avisos; Output `[B081]` alinhada; Sync sem diff e com add; Remover `Deleted=11`; botão Abrir objeto principal no Wizard/Sync. Teste `Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport.ps1`. Evidência: `Docs/Implementation/B081-RELATORIO-FINAL-POS-APLICACAO.md`.
+- B083 residual (UX de colisão) implementado e validado no U15 em 2026-08-08 na Transaction `Teste`: lista `Nome | Tipo | Modulo | Folder` no Wizard (cabeçalho e aba SDTs) com SDT externo `sdtTeste_API_Response`; após apagar o conflitante, preflight aprovado, geração completa (`Created=11`) e Build All nos dois environments. Teste `Tests/CollisionUx/Test-ApiPlanCollisionConflict.ps1`. Evidência: `Docs/Implementation/B083-UX-CONFLITOS-COLISAO.md`.
 
 ## Frente ativa
 
-**Sprint 7 — Ciclo de vida operacional na IDE**. B087, B086, B085 e B081 fechados; próxima entrega = residual de UX de conflitos (B083). Em seguida: alinhamento de Folder reutilizado; depois comprovação dos dez gates.
+**Sprint 7 — Ciclo de vida operacional na IDE**. B087, B086, B085, B081 e residual B083 fechados; próxima entrega = alinhamento de Folder reutilizado; depois comprovação dos dez gates.
 
 ## Próxima ação única
 
-Implementar a UX mínima residual de conflitos (B083): para cada conflito, exibir nome, tipo, módulo e Folder alinhados à decisão do MVP.
+Alinhar Folder preexistente `NomeOpenApi` no módulo correto à decisão do MVP: reutilizar com aviso (hoje o código ainda trata como colisão).
 
 ## Critério de conclusão e evidência esperada
 
-- conflitos apresentados com nome/tipo/módulo/Folder antes de salvar;
-- evidência U15 + docs; em seguida promover o alinhamento de Folder `NomeOpenApi` preexistente (reutilizar com aviso) e, depois, a comprovação integrada dos dez gates.
+- Folder `NomeDaTransacaoOpenApi` preexistente no módulo correto reutilizado com aviso explícito (sem tratar como colisão);
+- metadata continua distinguindo Folder criado de reutilizado; remoção não apaga Folder reutilizado;
+- evidência U15 + docs; em seguida a comprovação integrada dos dez gates.
 
 ## Sequência operacional vigente
 
@@ -125,7 +127,8 @@ Implementar a UX mínima residual de conflitos (B083): para cada conflito, exibi
 23. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7 revisada, antes da Alpha.
 24. Em 2026-08-07 a Sprint 7 foi reenquadrada: preflight/colisão/integridade (B063/B064/B067) e entrada de menu (B080 em substância) já estão feitos; o escopo obrigatório restante é B087, B086, B085, B081, UX mínima de B083 e alinhamento de Folder reutilizado, mais a comprovação dos dez gates. B088 e B089 ficam pré-Alpha separados.
 25. Em 2026-08-08 B085 foi validado no U15 (`Teste`): Sync add/rename/sem diff/cancelar/Replace/Keep.
-26. Em 2026-08-08 B081 foi validado no U15 (`Teste`): Wizard completo, Sync sem diff e com add, Remover com `Deleted=11` (Folder reutilizado preservado); próxima ação única = residual B083 (Folder reutilizado fica na sequência).
+26. Em 2026-08-08 B081 foi validado no U15 (`Teste`): Wizard completo, Sync sem diff e com add, Remover com `Deleted=11` (Folder reutilizado preservado).
+27. Em 2026-08-08 residual B083 validado no U15 (`Teste`): UX de colisão com nome/tipo/módulo/Folder; após remoção do conflitante, geração e Build All OK; próxima ação única = alinhamento de Folder reutilizado.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -134,7 +137,7 @@ Implementar a UX mínima residual de conflitos (B083): para cada conflito, exibi
 - comprovação integrada final dos dez gates técnicos transversais (parcialmente já evidenciada nas Sprints 1–6; no gate 10, sincronização B085 e remoção B086 já validados no U15 — falta a comprovação integrada final dos dez gates).
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
-- B087, B086, B085 e B081 validados no U15; residual B083 (UX de conflitos) e alinhamento de Folder reutilizado ainda pendentes.
+- B087, B086, B085, B081 e residual B083 validados no U15; alinhamento de Folder reutilizado ainda pendente.
 - Folder preexistente `NomeOpenApi` no módulo correto ainda é tratado como colisão no código, em desacordo com a decisão do MVP de reutilizar com aviso.
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 

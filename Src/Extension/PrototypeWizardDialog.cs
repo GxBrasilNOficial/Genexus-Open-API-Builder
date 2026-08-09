@@ -1352,7 +1352,10 @@ internal sealed class PrototypeWizardDialog : Form
         var stages = new[] { state.Sdts, state.Procedures, state.ApiObject, state.MetadataFile };
         if (stages.Any(stage => stage.IsBlocked))
         {
-            return "Estado: teste bloqueado";
+            var conflictCount = stages.SelectMany(stage => stage.CollisionConflicts).Count();
+            return conflictCount > 0
+                ? $"Estado: teste bloqueado ({conflictCount} conflito(s))"
+                : "Estado: teste bloqueado";
         }
 
         if (stages.All(stage => string.Equals(stage.Action, "Reencontrar e validar", StringComparison.Ordinal)))

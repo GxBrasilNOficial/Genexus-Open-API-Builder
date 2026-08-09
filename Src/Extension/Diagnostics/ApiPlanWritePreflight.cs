@@ -58,10 +58,12 @@ internal static class ApiPlanWritePreflight
             return;
         }
 
-        throw new InvalidOperationException(
-            "B063/B064/B067 bloqueado antes do primeiro Save(): foram detectadas colisao(oes) externa(s), incompativel(is), ambigua(s) ou metadata de integridade divergente em " +
-            string.Join(", ", blockedStages) +
-            ". Nenhum objeto planejado foi criado, alterado ou recebeu sufixo _v2.");
+        var collisions = state.CollectCollisionConflicts(requireSdts, requireProcedures, requireApiObject, requireMetadataFile);
+        throw new InvalidOperationException(BuildBlockedMessage(
+            "B063/B064/B067 bloqueado antes do primeiro Save(): foram detectadas colisao(oes) externa(s), incompativel(is), ambigua(s) ou metadata de integridade divergente em ",
+            blockedStages,
+            collisions,
+            ". Nenhum objeto planejado foi criado, alterado ou recebeu sufixo _v2."));
     }
 
     /// <summary>
@@ -100,10 +102,27 @@ internal static class ApiPlanWritePreflight
             return;
         }
 
-        throw new InvalidOperationException(
-            "B085 bloqueado antes do primeiro Save(): objetos proprios ausentes, externos ou ambiguos em " +
-            string.Join(", ", blocked) +
-            ". Nenhum objeto planejado foi criado ou alterado.");
+        var collisions = state.CollectCollisionConflicts();
+        throw new InvalidOperationException(BuildBlockedMessage(
+            "B085 bloqueado antes do primeiro Save(): objetos proprios ausentes, externos ou ambiguos em ",
+            blocked,
+            collisions,
+            ". Nenhum objeto planejado foi criado ou alterado."));
+    }
+
+    private static string BuildBlockedMessage(
+        string prefix,
+        IReadOnlyList<string> blockedStages,
+        IReadOnlyList<ApiPlanCollisionConflict> collisions,
+        string suffix)
+    {
+        var message = prefix + string.Join(", ", blockedStages);
+        if (collisions.Count > 0)
+        {
+            message += ". " + ApiPlanCollisionConflict.FormatList(collisions);
+        }
+
+        return message + suffix;
     }
 
     private static ApiPlanWritePreflightStageBlock ToStageBlock(ApiPlanWritePreflightStageKind stageKind, ApiPlanGenerationStageState stage)

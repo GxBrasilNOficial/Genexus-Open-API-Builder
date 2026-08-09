@@ -241,7 +241,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B080 | Integrar menu/contexto IDE | Alta — atendido em substância (Wizard + preferências); residual cosmético de nome/rótulo |
 | B081 | Exibir relatório final interno | Alta — concluído (código + validação U15 2026-08-08) |
 | B082 | Mostrar tempo execução | Média — fora da linha de corte do MVP |
-| B083 | Detectar conflito antes salvar | Alta — núcleo atendido no preflight; residual = UX por conflito (nome/tipo/módulo/Folder) |
+| B083 | Detectar conflito antes salvar | Alta — concluído (núcleo no preflight; residual UX nome/tipo/módulo/Folder validado U15 2026-08-08) |
 | B084 | Bloquear overwrite silencioso | Alta — atendido (sem `_v2`) |
 | B085 | Sincronizar com a Transaction usando metadata | Alta — concluído (código + validação U15 2026-08-08) |
 | B086 | Remover API gerada por metadata, sem reverter BC | Alta — concluído (código + validação U15 2026-08-08; Folder criado e reutilizado) |
@@ -257,8 +257,8 @@ Após a Sprint 6, o pacote histórico “conflitos e reexecução” da Fase 7 f
 2. `B086` (`Remover API gerada`) — concluído (U15 2026-08-08)
 3. `B085` (`Sincronizar com a Transaction`) — concluído (U15 2026-08-08)
 4. `B081` (relatório final pós-aplicação) — concluído (U15 2026-08-08)
-5. residual de apresentação de `B083` — próxima ação
-6. alinhamento de Folder reutilizado à decisão do MVP (reutilizar `NomeOpenApi` preexistente no módulo correto com aviso)
+5. residual de apresentação de `B083` — concluído (U15 2026-08-08)
+6. alinhamento de Folder reutilizado à decisão do MVP (reutilizar `NomeOpenApi` preexistente no módulo correto com aviso) — próxima ação
 7. comprovação integrada dos dez gates
 
 `B088` e `B089` permanecem anteriores à Alpha, mas **fora** do gate obrigatório da Sprint 7: o primeiro é investigação/documentação da limitação nativa do GeneXus; o segundo exige ambiente GAM e evidência `403` além do Authorization 401/200 já comprovado.
@@ -397,7 +397,7 @@ Os itens e intervalos abaixo formam a linha de corte exaustiva do MVP. Um item o
 5. Fase 3 até `B046`, criando os SDTs antes de seus consumidores
 6. Fases 4 e 5 (`B050`–`B067`), criando Procedures, API Object e metadata
 7. `B047`, Fase 6 (`B070`–`B079`) e aplicação da segurança em `B093`
-8. Fase 7 revisada (`B087`, `B086`, `B085`, `B081`, residual `B083`, depois Folder reutilizado; `B080`/`B084` já atendidos em substância) e comprovação integrada dos dez gates; `B088`/`B089` em frentes pré-Alpha separadas
+8. Fase 7 revisada (`B087`, `B086`, `B085`, `B081`, residual `B083` concluídos; depois Folder reutilizado; `B080`/`B084` já atendidos em substância) e comprovação integrada dos dez gates; `B088`/`B089` em frentes pré-Alpha separadas
 
 `B047` é validado somente depois do API Object e dos serviços porque depende do YAML gerado pelo GeneXus; esse deslocamento de evidência não antecipa consumidores antes dos SDTs.
 

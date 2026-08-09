@@ -65,12 +65,21 @@ internal static class ApiPlanGenerationStateReader
     private static ApiPlanGenerationStageState CreateState(string stageName, ApiPlanGenerationInspection inspection, ApiPlanGenerationInspection? folder, bool forSyncContractRefresh)
     {
         var conflicts = inspection.Conflicts + (folder?.Conflicts ?? 0);
+        var collisionConflicts = ApiPlanCollisionConflict.Merge(
+            inspection.CollisionConflicts,
+            folder?.CollisionConflicts ?? Array.Empty<ApiPlanCollisionConflict>());
         if (conflicts > 0)
         {
             var reason = string.Equals(stageName, "Metadata File", StringComparison.Ordinal) && !forSyncContractRefresh
                 ? "colisao(oes) externa(s), incompativel(is), ambigua(s) ou integridade B067 divergente"
                 : "colisao(oes) externa(s), incompativel(is) ou ambigua(s)";
-            return ApiPlanGenerationStageState.Blocked(stageName, $"Bloqueado: {conflicts} {reason} detectada(s). Nenhuma escrita sera permitida.");
+            var detail = $"Bloqueado: {conflicts} {reason} detectada(s). Nenhuma escrita sera permitida.";
+            if (collisionConflicts.Count > 0)
+            {
+                detail += Environment.NewLine + ApiPlanCollisionConflict.FormatList(collisionConflicts);
+            }
+
+            return ApiPlanGenerationStageState.Blocked(stageName, detail, collisionConflicts);
         }
 
         var missing = inspection.Missing + (folder?.Missing ?? 0);
@@ -80,8 +89,8 @@ internal static class ApiPlanGenerationStateReader
             : managed == 0
                 ? "Criar"
                 : "Completar";
-        var detail = $"{action}: gerenciados={managed}, ausentes={missing}, planejados={inspection.Planned + (folder?.Planned ?? 0)}. A confirmacao continua obrigatoria antes de qualquer escrita.";
-        return new ApiPlanGenerationStageState(stageName, action, detail, false);
+        var detailOk = $"{action}: gerenciados={managed}, ausentes={missing}, planejados={inspection.Planned + (folder?.Planned ?? 0)}. A confirmacao continua obrigatoria antes de qualquer escrita.";
+        return new ApiPlanGenerationStageState(stageName, action, detailOk, false);
     }
 
     private static ApiPlanGenerationInspection InspectFolder(KbObjectNameIndex index, ApiPlan apiPlan)
@@ -94,7 +103,7 @@ internal static class ApiPlanGenerationStateReader
 
         if (matches.Count > 1 || !string.Equals(matches[0].Description, ApiPlanTransactionFolder.CreateOwnedDescription(apiPlan), StringComparison.Ordinal))
         {
-            return new ApiPlanGenerationInspection(1, 0, 0, 1);
+            return new ApiPlanGenerationInspection(1, 0, 0, matches.Count, matches.Select(item => ToCollision(item, "Folder", folderApplicable: true)).ToArray());
         }
 
         return new ApiPlanGenerationInspection(1, 1, 0, 0);
@@ -105,6 +114,7 @@ internal static class ApiPlanGenerationStateReader
         var managed = 0;
         var missing = 0;
         var conflicts = 0;
+        var collisionConflicts = new List<ApiPlanCollisionConflict>();
         foreach (var definition in generationPlan.SharedSdts.Concat(generationPlan.OwnSdts))
         {
             var matches = index.FindSdts(definition.Name);
@@ -118,11 +128,12 @@ internal static class ApiPlanGenerationStateReader
             }
             else
             {
-                conflicts++;
+                conflicts += matches.Count;
+                collisionConflicts.AddRange(matches.Select(item => ToCollision(item, "SDT", folderApplicable: true)));
             }
         }
 
-        return new ApiPlanGenerationInspection(generationPlan.SharedSdts.Count + generationPlan.OwnSdts.Count, managed, missing, conflicts);
+        return new ApiPlanGenerationInspection(generationPlan.SharedSdts.Count + generationPlan.OwnSdts.Count, managed, missing, conflicts, collisionConflicts);
     }
 
     private static ApiPlanGenerationInspection InspectProcedures(KbObjectNameIndex index, ApiPlan apiPlan)
@@ -130,6 +141,7 @@ internal static class ApiPlanGenerationStateReader
         var managed = 0;
         var missing = 0;
         var conflicts = 0;
+        var collisionConflicts = new List<ApiPlanCollisionConflict>();
         foreach (var service in apiPlan.Services)
         {
             var name = $"proc{apiPlan.TransactionName}_API_{service.Name}";
@@ -144,11 +156,12 @@ internal static class ApiPlanGenerationStateReader
             }
             else
             {
-                conflicts++;
+                conflicts += matches.Count;
+                collisionConflicts.AddRange(matches.Select(item => ToCollision(item, "Procedure", folderApplicable: true)));
             }
         }
 
-        return new ApiPlanGenerationInspection(apiPlan.Services.Count, managed, missing, conflicts);
+        return new ApiPlanGenerationInspection(apiPlan.Services.Count, managed, missing, conflicts, collisionConflicts);
     }
 
     private static ApiPlanGenerationInspection InspectApiObject(KBModel designModel, KbObjectNameIndex index, ApiPlan apiPlan, bool forSyncContractRefresh)
@@ -168,7 +181,7 @@ internal static class ApiPlanGenerationStateReader
             return new ApiPlanGenerationInspection(1, 1, 0, 0);
         }
 
-        return new ApiPlanGenerationInspection(1, 0, 0, 1);
+        return new ApiPlanGenerationInspection(1, 0, 0, matches.Count, matches.Select(item => ToCollision(item, "API Object", folderApplicable: true)).ToArray());
     }
 
     private static ApiPlanGenerationInspection InspectMetadataFile(KBModel designModel, KbObjectNameIndex index, ApiPlan apiPlan, bool forSyncContractRefresh)
@@ -186,7 +199,38 @@ internal static class ApiPlanGenerationStateReader
             return new ApiPlanGenerationInspection(1, 1, 0, 0);
         }
 
-        return new ApiPlanGenerationInspection(1, 0, 0, 1);
+        // Integridade B067 / ownership divergente em File proprio: bloqueia sem lista de colisão externa.
+        if (matches.Count == 1 &&
+            string.Equals(matches[0].Description, ApiPlanMetadataFileWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal))
+        {
+            return new ApiPlanGenerationInspection(1, 0, 0, 1);
+        }
+
+        return new ApiPlanGenerationInspection(1, 0, 0, matches.Count, matches.Select(item => ToCollision(item, "File", folderApplicable: false)).ToArray());
+    }
+
+    private static ApiPlanCollisionConflict ToCollision(KBObject kbObject, string objectType, bool folderApplicable)
+    {
+        var moduleName = kbObject.Module?.Name;
+        string folderName;
+        if (!folderApplicable)
+        {
+            folderName = ApiPlanCollisionConflict.NotApplicable;
+        }
+        else if (kbObject is Folder)
+        {
+            folderName = kbObject.Name;
+        }
+        else if (kbObject.Parent is Folder parentFolder)
+        {
+            folderName = parentFolder.Name;
+        }
+        else
+        {
+            folderName = ApiPlanCollisionConflict.NotApplicable;
+        }
+
+        return new ApiPlanCollisionConflict(kbObject.Name, objectType, moduleName ?? ApiPlanCollisionConflict.NotApplicable, folderName);
     }
 
     private static bool HasCompatibleMetadata(KBModel designModel, KbObjectNameIndex index, WikiFileKBObject file, ApiPlan apiPlan, bool forSyncContractRefresh)
@@ -312,41 +356,91 @@ internal sealed class ApiPlanGenerationState
     public ApiPlanGenerationStageState Procedures { get; }
     public ApiPlanGenerationStageState ApiObject { get; }
     public ApiPlanGenerationStageState MetadataFile { get; }
+
+    public IReadOnlyList<ApiPlanCollisionConflict> CollectCollisionConflicts(
+        bool includeSdts = true,
+        bool includeProcedures = true,
+        bool includeApiObject = true,
+        bool includeMetadataFile = true)
+    {
+        var stages = new List<ApiPlanGenerationStageState>();
+        if (includeSdts)
+        {
+            stages.Add(Sdts);
+        }
+
+        if (includeProcedures)
+        {
+            stages.Add(Procedures);
+        }
+
+        if (includeApiObject)
+        {
+            stages.Add(ApiObject);
+        }
+
+        if (includeMetadataFile)
+        {
+            stages.Add(MetadataFile);
+        }
+
+        return stages
+            .Where(stage => stage.IsBlocked)
+            .SelectMany(stage => stage.CollisionConflicts)
+            .ToArray();
+    }
 }
 
 internal sealed class ApiPlanGenerationStageState
 {
-    public ApiPlanGenerationStageState(string stageName, string action, string detail, bool isBlocked)
+    public ApiPlanGenerationStageState(
+        string stageName,
+        string action,
+        string detail,
+        bool isBlocked,
+        IReadOnlyList<ApiPlanCollisionConflict>? collisionConflicts = null)
     {
         StageName = stageName;
         Action = action;
         Detail = detail;
         IsBlocked = isBlocked;
+        CollisionConflicts = collisionConflicts ?? Array.Empty<ApiPlanCollisionConflict>();
     }
 
     public string StageName { get; }
     public string Action { get; }
     public string Detail { get; }
     public bool IsBlocked { get; }
+    public IReadOnlyList<ApiPlanCollisionConflict> CollisionConflicts { get; }
 
-    public static ApiPlanGenerationStageState Blocked(string stageName, string detail)
+    public static ApiPlanGenerationStageState Blocked(
+        string stageName,
+        string detail,
+        IReadOnlyList<ApiPlanCollisionConflict>? collisionConflicts = null)
     {
-        return new ApiPlanGenerationStageState(stageName, "Bloqueado", detail, true);
+        return new ApiPlanGenerationStageState(stageName, "Bloqueado", detail, true, collisionConflicts);
     }
 }
 
 internal sealed class ApiPlanGenerationInspection
 {
-    public ApiPlanGenerationInspection(int planned, int managed, int missing, int conflicts)
+    public ApiPlanGenerationInspection(
+        int planned,
+        int managed,
+        int missing,
+        int conflicts,
+        IReadOnlyList<ApiPlanCollisionConflict>? collisionConflicts = null)
     {
         Planned = planned;
         Managed = managed;
         Missing = missing;
         Conflicts = conflicts;
+        CollisionConflicts = collisionConflicts ?? Array.Empty<ApiPlanCollisionConflict>();
     }
 
     public int Planned { get; }
     public int Managed { get; }
     public int Missing { get; }
     public int Conflicts { get; }
+    public IReadOnlyList<ApiPlanCollisionConflict> CollisionConflicts { get; }
 }

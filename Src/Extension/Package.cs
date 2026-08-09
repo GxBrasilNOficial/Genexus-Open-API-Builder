@@ -794,7 +794,13 @@ public sealed class Package : AbstractPackageUI
             {
                 var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
                 WriteOutput($"[Genexus Open API Builder][B085] Sincronizacao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}'");
-                report.AddBlocked("Preflight", "Sync", errorDetail);
+                var syncState = ApiPlanGenerationStateReader.ReadForSync(knowledgeBase.DesignModel, apiPlan);
+                AppendCollisionConflictsToReport(report, syncState.CollectCollisionConflicts());
+                if (!report.HasInterrupted)
+                {
+                    report.AddBlocked("Preflight", "Sync", errorDetail);
+                }
+
                 stopwatch.Stop();
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
                 return true;
@@ -1208,7 +1214,15 @@ public sealed class Package : AbstractPackageUI
             .ToArray();
         if (blockedGenerationStages.Length > 0)
         {
-            WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Estado bloqueado detectado no wizard antes de confirmar escrita: Transaction='{transaction.Name}', BlockedStages='{string.Join(",", blockedGenerationStages.Select(stage => stage.StageName))}', Details='{string.Join(" | ", blockedGenerationStages.Select(stage => stage.Detail))}'. Nenhum Save foi solicitado.");
+            var collisions = generationState.CollectCollisionConflicts(
+                preflightScope.RequireSdts,
+                preflightScope.RequireProcedures,
+                preflightScope.RequireApiObject,
+                preflightScope.RequireMetadataFile);
+            var collisionText = collisions.Count == 0
+                ? string.Empty
+                : Environment.NewLine + ApiPlanCollisionConflict.FormatList(collisions);
+            WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Estado bloqueado detectado no wizard antes de confirmar escrita: Transaction='{transaction.Name}', BlockedStages='{string.Join(",", blockedGenerationStages.Select(stage => stage.StageName))}', Details='{string.Join(" | ", blockedGenerationStages.Select(stage => stage.Detail))}'{collisionText}. Nenhum Save foi solicitado.");
         }
         if (!selection.GenerateSdts && !selection.GenerateProcedures && !selection.GenerateApiObject && !selection.GenerateMetadata && !selection.ApplyList && !selection.ApplyBusinessComponent)
         {
@@ -1225,6 +1239,14 @@ public sealed class Package : AbstractPackageUI
             report.AddWarning($"Etapa '{stage.StageName}' bloqueada na KB: {stage.Detail}");
         }
 
+        AppendCollisionConflictsToReport(
+            report,
+            generationState.CollectCollisionConflicts(
+                preflightScope.RequireSdts,
+                preflightScope.RequireProcedures,
+                preflightScope.RequireApiObject,
+                preflightScope.RequireMetadataFile));
+
         try
         {
             ApiPlanWritePreflight.Validate(
@@ -1239,7 +1261,11 @@ public sealed class Package : AbstractPackageUI
         catch (Exception ex)
         {
             WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Preflight agregado bloqueou o wizard antes do primeiro Save(): Transaction='{transaction.Name}', Error='{ex.Message}'");
-            report.AddBlocked("Preflight", "B063/B064/B067", ex.Message);
+            if (!report.HasInterrupted)
+            {
+                report.AddBlocked("Preflight", "B063/B064/B067", ex.Message);
+            }
+
             stopwatch.Stop();
             ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
             return true;
@@ -1715,6 +1741,19 @@ public sealed class Package : AbstractPackageUI
     private static Transaction? TryResolveTransactionFromContext(CommandData data)
     {
         return KBObjectSelectionHelper.TryGetOnlyOneKBObjectFrom(data.Context) as Transaction;
+    }
+
+    private static void AppendCollisionConflictsToReport(
+        ApiPlanApplicationFinalReportCollector report,
+        IReadOnlyList<ApiPlanCollisionConflict> collisions)
+    {
+        foreach (var conflict in collisions)
+        {
+            report.AddBlocked(
+                conflict.ObjectType,
+                conflict.Name,
+                $"Modulo='{conflict.ModuleName}' | Folder='{conflict.FolderName}'");
+        }
     }
 
     private static void AppendPlanWarnings(ApiPlanApplicationFinalReportCollector report, ApiPlan apiPlan)
