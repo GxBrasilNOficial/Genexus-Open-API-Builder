@@ -149,7 +149,7 @@ Investigar e documentar as limitações do YAML OpenAPI gerado nativamente pelo 
 
 - carregamento real do pacote em U14 (residual não bloqueante do marco; decisão do mantenedor em 2026-08-09);
 - compatibilidade prática das APIs do SDK com U14;
-- atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação.
+- atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação. Em `Remover API gerada` (B086), ambiguidade e posse de API/Procedures/SDTs próprios passam a ser validadas antes do primeiro `Delete()` (`ValidateRemovalTargets` em Preview e Remove); permanece residual a falha IDE/SDK no meio da sequência de exclusões já iniciada.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
 - limitações do YAML OpenAPI nativo do GeneXus (frente pré-Alpha atual);
 - evidência HTTP 403 com papel GAM não-administrador (frente pré-Alpha seguinte).

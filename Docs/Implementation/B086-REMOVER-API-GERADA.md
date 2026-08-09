@@ -9,8 +9,8 @@ Comando explícito que remove somente objetos próprios identificados pela metad
 1. Resolve a Transaction pelo menu de contexto ou seletor nativo.
 2. Lê o File `api<Transaction>_Metadata` próprio.
 3. Monta o plano a partir de `ownership` + `objects` (Procedures, SDTs próprios, API Object, Folder).
-4. Mostra resumo e exige confirmação Yes/No (default No).
-5. Apaga nesta ordem: API Object → Procedures → SDTs próprios (ListResponse antes de Response) → Metadata File → Folder (só se `wasCreated=true` e ficar vazio). A IDE bloqueia exclusão quando ainda há referência; por isso o dependente sai antes do referenciado.
+4. Mostra resumo e exige confirmação Yes/No (default No). Antes do Yes/No e de novo imediatamente antes do primeiro `Delete()`, o preflight `ValidateRemovalTargets` confere ambiguidade e posse do API Object, de cada Procedure e de cada SDT próprio listados na metadata. Ausência de um alvo é aceita (idempotente); ambiguidade ou objeto não próprio bloqueiam com **nenhuma alteração feita**.
+5. Apaga nesta ordem: API Object → Procedures → SDTs próprios (ListResponse antes de Response) → Metadata File → Folder (só se `wasCreated=true` e ficar vazio). A IDE bloqueia exclusão quando ainda há referência; por isso o dependente sai antes do referenciado. As checagens de posse/ambiguidade se repetem em cada etapa como defesa; se o estado da KB mudar após o preflight, a remoção interrompe sem novas exclusões (residual de falha IDE/SDK no meio da sequência permanece).
 6. Confirmação lista Procedures e SDTs **um por linha** (com seções separadas).
 7. Folder: `wasCreated=false` → texto “reutilizado; nunca apagar”; `wasCreated=true` → “criado pela extensão; apagar só se ficar vazio”.
 
@@ -41,3 +41,9 @@ Na Transaction `Teste`, após a geração e o reencontro com `transactionFolder.
 - O Folder `TesteOpenApi` permaneceu na KB, assim como os dois SDTs compartilhados e o Business Component.
 
 Status: **concluído**.
+
+## Correção — preflight antes do primeiro Delete (2026-08-09)
+
+Gap da revisão pré-push: ambiguidade/posse de Procedure e SDT eram avaliadas só dentro dos métodos de exclusão, depois do API Object já poder ter sido removido, o que permitia remoção parcial em cenário divergente.
+
+Correção em `ApiPlanGeneratedApiRemover`: `ValidateRemovalTargets` roda em `Preview` (antes da confirmação) e no início de `Remove` (antes de qualquer `Delete`). Manifesto inalterado (só DLL). Pendente reteste manual no U15: caminho feliz inalterado; bloqueio com Procedure ou SDT ambíguo/não próprio **antes** de qualquer exclusão.

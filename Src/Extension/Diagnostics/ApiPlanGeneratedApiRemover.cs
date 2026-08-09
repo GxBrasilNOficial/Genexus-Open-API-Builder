@@ -33,6 +33,7 @@ internal static class ApiPlanGeneratedApiRemover
         var metadataFile = FindOwnedMetadataFile(designModel, metadataFileName, transaction.Name);
         var metadata = ParseMetadata(metadataFile);
         var plan = ApiPlanGeneratedApiRemovalPlan.FromMetadata(metadata, transaction.Name, transaction.Guid.ToString());
+        ValidateRemovalTargets(designModel, plan);
 
         // Ordem obrigatoria na IDE:
         // 1) API Object (referencia Procedures)
@@ -63,7 +64,37 @@ internal static class ApiPlanGeneratedApiRemover
         var metadataFileName = $"api{transaction.Name}_Metadata";
         var metadataFile = FindOwnedMetadataFile(designModel, metadataFileName, transaction.Name);
         var metadata = ParseMetadata(metadataFile);
-        return ApiPlanGeneratedApiRemovalPlan.FromMetadata(metadata, transaction.Name, transaction.Guid.ToString());
+        var plan = ApiPlanGeneratedApiRemovalPlan.FromMetadata(metadata, transaction.Name, transaction.Guid.ToString());
+        ValidateRemovalTargets(designModel, plan);
+        return plan;
+    }
+
+    /// <summary>
+    /// Valida ambiguidade e posse de API Object, Procedures e SDTs proprios antes de qualquer Delete().
+    /// Ausencia de um alvo listado e aceita (remocao idempotente); ambiguidade ou objeto nao proprio bloqueiam.
+    /// </summary>
+    internal static void ValidateRemovalTargets(KBModel designModel, ApiPlanGeneratedApiRemovalPlan plan)
+    {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (plan is null)
+        {
+            throw new ArgumentNullException(nameof(plan));
+        }
+
+        ValidateApiObjectTarget(designModel, plan, beforeAnyDelete: true);
+        foreach (var name in plan.ProcedureNames)
+        {
+            ValidateProcedureTarget(designModel, name, beforeAnyDelete: true);
+        }
+
+        foreach (var name in plan.OwnSdtNames)
+        {
+            ValidateOwnSdtTarget(designModel, plan, name, beforeAnyDelete: true);
+        }
     }
 
     private static WikiFileKBObject FindOwnedMetadataFile(KBModel designModel, string metadataFileName, string transactionName)
@@ -111,10 +142,113 @@ internal static class ApiPlanGeneratedApiRemover
         }
     }
 
+    private static void ValidateApiObjectTarget(KBModel designModel, ApiPlanGeneratedApiRemovalPlan plan, bool beforeAnyDelete)
+    {
+        var matches = API.GetAll(designModel)
+            .Where(item => string.Equals(item.Name, plan.ApiName, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (matches.Length == 0)
+        {
+            return;
+        }
+
+        if (matches.Length > 1)
+        {
+            throw new InvalidOperationException(BuildBlockedMessage(
+                $"API Object ambiguo '{plan.ApiName}'",
+                beforeAnyDelete));
+        }
+
+        var api = matches[0];
+        if (!Guid.TryParse(plan.ApiGuid, out var ownershipGuid) || api.Guid != ownershipGuid)
+        {
+            throw new InvalidOperationException(BuildBlockedMessage(
+                $"API Object '{plan.ApiName}' nao corresponde ao Guid da metadata",
+                beforeAnyDelete));
+        }
+    }
+
+    private static void ValidateProcedureTarget(KBModel designModel, string name, bool beforeAnyDelete)
+    {
+        var matches = Procedure.GetAll(designModel)
+            .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (matches.Length == 0)
+        {
+            return;
+        }
+
+        if (matches.Length > 1)
+        {
+            throw new InvalidOperationException(BuildBlockedMessage(
+                $"Procedure ambigua '{name}'",
+                beforeAnyDelete));
+        }
+
+        var procedure = matches[0];
+        if (procedure.Description is null ||
+            !procedure.Description.StartsWith(ProcedureDescriptionPrefix, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(BuildBlockedMessage(
+                $"Procedure '{name}' nao e propria da extensao",
+                beforeAnyDelete));
+        }
+    }
+
+    private static void ValidateOwnSdtTarget(
+        KBModel designModel,
+        ApiPlanGeneratedApiRemovalPlan plan,
+        string name,
+        bool beforeAnyDelete)
+    {
+        if (plan.SharedSdtNamesPreserved.Contains(name, StringComparer.Ordinal))
+        {
+            throw new InvalidOperationException(BuildBlockedMessage(
+                $"tentativa de apagar SDT compartilhado '{name}'",
+                beforeAnyDelete));
+        }
+
+        var matches = SDT.GetAll(designModel)
+            .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (matches.Length == 0)
+        {
+            return;
+        }
+
+        if (matches.Length > 1)
+        {
+            throw new InvalidOperationException(BuildBlockedMessage(
+                $"SDT ambiguo '{name}'",
+                beforeAnyDelete));
+        }
+
+        var sdt = matches[0];
+        if (sdt.Description is null ||
+            !sdt.Description.StartsWith(SdtDescriptionPrefix, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(BuildBlockedMessage(
+                $"SDT '{name}' nao e proprio da extensao",
+                beforeAnyDelete));
+        }
+    }
+
+    private static string BuildBlockedMessage(string reason, bool beforeAnyDelete)
+    {
+        if (beforeAnyDelete)
+        {
+            return $"Remocao bloqueada: {reason}. Nenhuma alteracao foi feita.";
+        }
+
+        return $"Remocao bloqueada: {reason}. O estado da KB mudou apos o preflight; interrompendo para evitar mais exclusoes.";
+    }
+
     private static void DeleteProcedures(KBModel designModel, ApiPlanGeneratedApiRemovalPlan plan, List<string> deleted)
     {
         foreach (var name in plan.ProcedureNames)
         {
+            ValidateProcedureTarget(designModel, name, beforeAnyDelete: false);
+
             var matches = Procedure.GetAll(designModel)
                 .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
                 .ToArray();
@@ -123,18 +257,7 @@ internal static class ApiPlanGeneratedApiRemover
                 continue;
             }
 
-            if (matches.Length > 1)
-            {
-                throw new InvalidOperationException($"Remocao bloqueada: Procedure ambigua '{name}'. Nenhuma alteracao adicional sera feita apos o ponto de falha.");
-            }
-
             var procedure = matches[0];
-            if (procedure.Description is null ||
-                !procedure.Description.StartsWith(ProcedureDescriptionPrefix, StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException($"Remocao bloqueada: Procedure '{name}' nao e propria da extensao. Nenhuma alteracao adicional sera feita apos o ponto de falha.");
-            }
-
             var guid = procedure.Guid;
             procedure.Delete();
             if (Procedure.GetAll(designModel).Any(item => item.Guid == guid))
@@ -148,6 +271,8 @@ internal static class ApiPlanGeneratedApiRemover
 
     private static void DeleteApiObject(KBModel designModel, ApiPlanGeneratedApiRemovalPlan plan, List<string> deleted)
     {
+        ValidateApiObjectTarget(designModel, plan, beforeAnyDelete: false);
+
         var matches = API.GetAll(designModel)
             .Where(item => string.Equals(item.Name, plan.ApiName, StringComparison.OrdinalIgnoreCase))
             .ToArray();
@@ -156,17 +281,7 @@ internal static class ApiPlanGeneratedApiRemover
             return;
         }
 
-        if (matches.Length > 1)
-        {
-            throw new InvalidOperationException($"Remocao bloqueada: API Object ambiguo '{plan.ApiName}'.");
-        }
-
         var api = matches[0];
-        if (!Guid.TryParse(plan.ApiGuid, out var ownershipGuid) || api.Guid != ownershipGuid)
-        {
-            throw new InvalidOperationException($"Remocao bloqueada: API Object '{plan.ApiName}' nao corresponde ao Guid da metadata.");
-        }
-
         var guid = api.Guid;
         api.Delete();
         if (API.GetAll(designModel).Any(item => item.Guid == guid))
@@ -181,10 +296,7 @@ internal static class ApiPlanGeneratedApiRemover
     {
         foreach (var name in plan.OwnSdtNames)
         {
-            if (plan.SharedSdtNamesPreserved.Contains(name, StringComparer.Ordinal))
-            {
-                throw new InvalidOperationException($"Remocao bloqueada: tentativa de apagar SDT compartilhado '{name}'.");
-            }
+            ValidateOwnSdtTarget(designModel, plan, name, beforeAnyDelete: false);
 
             var matches = SDT.GetAll(designModel)
                 .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
@@ -194,18 +306,7 @@ internal static class ApiPlanGeneratedApiRemover
                 continue;
             }
 
-            if (matches.Length > 1)
-            {
-                throw new InvalidOperationException($"Remocao bloqueada: SDT ambiguo '{name}'.");
-            }
-
             var sdt = matches[0];
-            if (sdt.Description is null ||
-                !sdt.Description.StartsWith(SdtDescriptionPrefix, StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException($"Remocao bloqueada: SDT '{name}' nao e proprio da extensao.");
-            }
-
             var guid = sdt.Guid;
             sdt.Delete();
             if (SDT.GetAll(designModel).Any(item => item.Guid == guid))

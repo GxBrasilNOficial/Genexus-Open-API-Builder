@@ -32,6 +32,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Fixed
 
+- B086 preflight de remoção (2026-08-09): `ValidateRemovalTargets` confere ambiguidade e posse de API Object, Procedures e SDTs próprios em `Preview` e no início de `Remove`, antes de qualquer `Delete()`. Evita remoção parcial quando um alvo divergente só seria detectado após o API Object já ter sido apagado. Manifesto inalterado (só DLL). Evidência: `Docs/Implementation/B086-REMOVER-API-GERADA.md`.
+
 - B085 Keep (2026-08-08): Sync passa `preserveSdts` também para writers BC (B055) e List (B070); antes o Keep só omitia `ConfigureSdt` na 1ª etapa e BC/List regravavam o SDT. Validado no U15 em `Teste` com membro `ManualKeep` preservado e `PreservedSdts=1`.
 
 - Correção do `Location` para chave de texto (2026-08-06):
