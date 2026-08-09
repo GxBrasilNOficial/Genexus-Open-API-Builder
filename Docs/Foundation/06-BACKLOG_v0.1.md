@@ -246,12 +246,12 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B085 | Sincronizar com a Transaction usando metadata | Alta — concluído (código + validação U15 2026-08-08) |
 | B086 | Remover API gerada por metadata, sem reverter BC | Alta — concluído (código + validação U15 2026-08-08/09; Folder criado e reutilizado) |
 | B087 | Ancorar posse na metadata e liberar a `Description` do API Object | Alta — concluído (código + validação U15 2026-08-07) |
-| B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta — pré-Alpha separado; não gate da Sprint 7 |
-| B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta — pré-Alpha separado; não gate da Sprint 7 |
+| B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta — pré-Alpha separado; próxima ação (após Sprint 7) |
+| B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta — pré-Alpha separado; frente seguinte após B088 |
 
-### Nota operacional — revisão da Sprint 7 / Fase 7, registrada em 2026-08-07
+### Nota operacional — revisão da Sprint 7 / Fase 7, registrada em 2026-08-07 (fechada em 2026-08-09)
 
-Após a Sprint 6, o pacote histórico “conflitos e reexecução” da Fase 7 ficou defasado: colisão, overwrite, `_v2` e integridade de metadata já foram entregues. A linha de corte obrigatória restante para o marco **wizard funcional do MVP** é:
+Após a Sprint 6, o pacote histórico “conflitos e reexecução” da Fase 7 ficou defasado: colisão, overwrite, `_v2` e integridade de metadata já foram entregues. A linha de corte obrigatória do marco **wizard funcional do MVP** foi concluída:
 
 1. `B087` (posse sem travar `Description`) — concluído
 2. `B086` (`Remover API gerada`) — concluído (U15 2026-08-08)
@@ -259,9 +259,9 @@ Após a Sprint 6, o pacote histórico “conflitos e reexecução” da Fase 7 f
 4. `B081` (relatório final pós-aplicação) — concluído (U15 2026-08-08/09; criação reportada como `Created=12`, incluindo o Folder)
 5. residual de apresentação de `B083` — concluído (U15 2026-08-08)
 6. alinhamento de Folder reutilizado à decisão do MVP (reutilizar `NomeOpenApi` preexistente no módulo correto com aviso) — concluído (U15 2026-08-09; caminho feliz e bloqueios para contêiner incorreto, duplicidade e sentinela alheia)
-7. comprovação integrada dos dez gates — próxima ação
+7. comprovação integrada dos dez gates — concluído (2026-08-09; `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`); marco **wizard funcional do MVP concluído**; U14 residual não bloqueante
 
-`B088` e `B089` permanecem anteriores à Alpha, mas **fora** do gate obrigatório da Sprint 7: o primeiro é investigação/documentação da limitação nativa do GeneXus; o segundo exige ambiente GAM e evidência `403` além do Authorization 401/200 já comprovado.
+`B088` e `B089` permanecem anteriores à Alpha, **fora** do gate obrigatório da Sprint 7 já fechada, e devem ser tratados **uma frente de cada vez**: primeiro investigação/documentação da limitação nativa do YAML GeneXus; depois evidência `403` com papel GAM não-administrador além do Authorization 401/200 já comprovado.
 
 ### Nota operacional — B087, registrada em 2026-08-03 (atualizada em 2026-08-05)
 
@@ -359,7 +359,7 @@ B089 é registrado como item de backlog pré-Alpha para construir utilitário ou
 | 9. Metadata persistente e reconhecimento seguro | B006, B060, B063, B065–B067, B085 e B086 |
 | 10. Colisão, regeneração e remoção conservadoras | B063, B064 e B083–B086 |
 
-Esses gates são comprovados progressivamente. Todos devem estar aprovados antes do marco **wizard funcional do MVP concluído**, ao fim da Sprint 7, e antes da Alpha.
+Esses gates foram comprovados progressivamente nas Sprints 1–7 e estão aprovados no pacote integrado de 2026-08-09 (`Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`), com o marco **wizard funcional do MVP concluído**. U14 nesta máquina permanece residual não bloqueante. Frentes pré-Alpha (YAML nativo; depois 403 GAM) seguem uma de cada vez antes da Alpha.
 
 [BG-F06]
 
@@ -397,7 +397,7 @@ Os itens e intervalos abaixo formam a linha de corte exaustiva do MVP. Um item o
 5. Fase 3 até `B046`, criando os SDTs antes de seus consumidores
 6. Fases 4 e 5 (`B050`–`B067`), criando Procedures, API Object e metadata
 7. `B047`, Fase 6 (`B070`–`B079`) e aplicação da segurança em `B093`
-8. Fase 7 revisada (`B087`, `B086`, `B085`, `B081`, residual `B083` e Folder reutilizado concluídos; `B080`/`B084` já atendidos em substância) e comprovação integrada dos dez gates; `B088`/`B089` em frentes pré-Alpha separadas
+8. Fase 7 revisada concluída (`B087`, `B086`, `B085`, `B081`, residual `B083`, Folder reutilizado e comprovação integrada dos dez gates; marco wizard funcional do MVP); `B088`/`B089` em frentes pré-Alpha separadas, uma de cada vez, antes da Alpha
 
 `B047` é validado somente depois do API Object e dos serviços porque depende do YAML gerado pelo GeneXus; esse deslocamento de evidência não antecipa consumidores antes dos SDTs.
 

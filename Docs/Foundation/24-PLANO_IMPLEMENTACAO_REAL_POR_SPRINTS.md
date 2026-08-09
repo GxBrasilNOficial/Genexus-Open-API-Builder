@@ -320,7 +320,7 @@ O que permanece obrigatório nesta sprint é o ciclo de vida que o usuário aind
 - reexecução Safe de objetos próprios reconhecidos
 - integridade de metadata (`B067`) bloqueando Service Source / descrições incompatíveis
 
-## Entregas obrigatórias restantes
+## Entregas obrigatórias (todas concluídas em 2026-08-09)
 
 Ordem acordada de execução:
 
@@ -330,19 +330,19 @@ Ordem acordada de execução:
 4. `B081`: relatório final pós-aplicação (criados / atualizados / bloqueados / avisos), sem depender só da Output técnica, incluindo efeitos colaterais do plano — **concluído** (U15 2026-08-08/09; criação com `Created=12` incluindo o Folder; Wizard `1200x912` e relatório adaptativo)
 5. UX mínima de conflitos alinhada à decisão do MVP: para cada conflito, nome, tipo, módulo e Folder (`B083` residual de apresentação) — **concluído** (U15 2026-08-08)
 6. alinhar Folder preexistente `NomeOpenApi` no módulo correto à decisão de reutilização com aviso — **concluído** (U15 2026-08-09; caminho feliz e bloqueios para contêiner incorreto, duplicidade e sentinela alheia; evidência `Docs/Implementation/2026-08-08-FOLDER-REUTILIZADO-COM-AVISO.md`)
-7. comprovação integrada dos dez gates e declaração do marco **wizard funcional do MVP concluído** — **próxima ação**
+7. comprovação integrada dos dez gates e declaração do marco **wizard funcional do MVP concluído** — **concluído** (2026-08-09; evidência `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`; U14 residual não bloqueante)
 
 ## Fora do gate obrigatório desta sprint (pré-Alpha separados)
 
-- `B088`: investigar/documentar limitações do template nativo `Swagger.Yaml.stg` (respostas declaradas só `200`/`404`; não emissão de `required:` nos schemas) — conclusão possível só com relatório de inviabilidade e notas de consumo
-- `B089`: evidência HTTP `403` com role GAM não-administradora via automação Programmatic GAM API
+- `B088`: investigar/documentar limitações do template nativo `Swagger.Yaml.stg` (respostas declaradas só `200`/`404`; não emissão de `required:` nos schemas) — **próxima ação** (uma frente de cada vez, antes da Alpha)
+- `B089`: evidência HTTP `403` com role GAM não-administradora via automação Programmatic GAM API — frente seguinte, após `B088`
 - `B082`: tempo de execução no wizard (prioridade média; fora da linha de corte do MVP)
 
 ## Gate
 
 Ciclo de vida conservador completo na IDE (posse, regeneração, sincronização e remoção sem overwrite indevido) e dez gates técnicos transversais comprovados.
 
-Ao concluir esta sprint, o projeto atinge o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para iniciar a Alpha da Sprint 8.
+**Sprint 7 concluída em 2026-08-09.** O projeto atingiu o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para a Alpha da Sprint 8; antes da Alpha, as frentes pré-Alpha `B088` e `B089` seguem uma de cada vez.
 
 [F14][F28][SPR-F24]
 

@@ -87,25 +87,28 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - B083 residual (UX de colisão) implementado e validado no U15 em 2026-08-08 na Transaction `Teste`: lista `Nome | Tipo | Modulo | Folder` no Wizard (cabeçalho e aba SDTs) com SDT externo `sdtTeste_API_Response`; após apagar o conflitante, preflight aprovado, geração completa (`Created=11`) e Build All nos dois environments. Teste `Tests/CollisionUx/Test-ApiPlanCollisionConflict.ps1`. Evidência: `Docs/Implementation/B083-UX-CONFLITOS-COLISAO.md`.
 - Alinhamento de Folder reutilizado implementado e validado no U15 em 2026-08-09 na Transaction `Teste`: `TesteOpenApi` preexistente no `Root Module` foi reencontrado no contêiner correto com aviso explícito, sem colisão e sem alteração da `Description`; reexecução com `Created=0`, `Updated=13`, `Blocked=0`, `Warnings=2`; contêiner incorreto, duplicidade e sentinela alheia bloquearam antes de qualquer escrita; relatório final com rolagem vertical; metadata exportada confirmou `transactionFolder.wasCreated=false`. Evidência: `Docs/Implementation/2026-08-08-FOLDER-REUTILIZADO-COM-AVISO.md`.
 - Reteste U15 de 2026-08-09 fechou o ciclo: Build All concluído nos environments `.NET Framework / SQL Server` e `.NET / PostgreSQL`; `Remover API gerada` confirmou `Folder: TesteOpenApi (reutilizado; nunca apagar)`, removeu `Deleted=11`, sem bloqueios/avisos, e preservou o Folder, os SDTs compartilhados e o Business Component.
+- Sprint 7 fechada em 2026-08-09: comprovação integrada dos dez gates técnicos transversais e marco **wizard funcional do MVP concluído**, por consolidação do acervo U15 das Sprints 1–7, sem bateria U15 nova e sem mudança de código. Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`. Upgrade 14 permanece residual não validado nesta máquina e não bloqueia o marco.
 
 ## Frente ativa
 
-**Sprint 7 — Ciclo de vida operacional na IDE**. B087, B086, B085, B081, residual B083 e alinhamento de Folder reutilizado fechados; próxima entrega = comprovação integrada dos dez gates.
+Frentes pré-Alpha, uma de cada vez, antes da Alpha da Sprint 8. Sprint 7 e o marco **wizard funcional do MVP** estão concluídos.
 
 ## Próxima ação única
 
-Comprovar de forma integrada os dez gates técnicos transversais e declarar o marco **wizard funcional do MVP concluído**.
+Investigar e documentar as limitações do YAML OpenAPI gerado nativamente pelo GeneXus (respostas declaradas incompletas no template nativo e possível ausência de `required:` nos schemas), com coleta de dados e testes quando necessário — primeira frente pré-Alpha; a evidência HTTP 403 com papel GAM não-administrador fica para a frente seguinte.
 
 ## Evidência da frente encerrada
 
-- Folder `NomeDaTransacaoOpenApi` preexistente no módulo correto foi reutilizado com aviso explícito, sem tratá-lo como colisão e sem alterar sua Description;
-- metadata continua distinguindo Folder criado de reutilizado, e a remoção não apaga Folder reutilizado;
-- a validação U15 cobriu reuso com Description humana, contêiner incorreto, duplicidade/ambiguidade e sentinela de outra Transaction; os três cenários negativos bloquearam antes de qualquer escrita.
+- matriz dos dez gates preenchida com status aprovado (ou aprovado com ressalva já conhecida) e remissões ao acervo Implementation/U15;
+- U14 nesta máquina registrado como residual não bloqueante, por decisão explícita do mantenedor em 2026-08-09;
+- gaps residuais conhecidos (atomicidade multiobjeto, reexecução CreateRequired, YAML nativo, 403 GAM) documentados sem reabrir frentes da Sprint 7;
+- pacote em `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`.
 
 ## Critério de conclusão da próxima ação
 
-- comprovar de forma integrada os dez gates técnicos transversais;
-- declarar, com evidência consolidada em código, testes e U15, o marco **wizard funcional do MVP concluído**.
+- relatório de investigação do YAML nativo com evidência (dados coletados / testes / inviabilidade documentada, conforme o caso);
+- não misturar nessa frente a evidência HTTP 403 com papel GAM comum;
+- manter B088/B089 como pré-Alpha separados, sem contradizer o marco do wizard já concluído.
 
 ## Sequência operacional vigente
 
@@ -131,7 +134,7 @@ Comprovar de forma integrada os dez gates técnicos transversais e declarar o ma
 20. Sprint 6 validou runtime de B071-B073/B079: `Get`, `Create` e `Update` respondem com status HTTP e corpos coerentes no endpoint gerado, em .NET Framework/SQL Server e .NET/PostgreSQL após banco físico recriado.
 21. Sprint 6 fechou B071-B073/B079 com envio ao remoto e reconciliou B076 nos documentos 06, 09, 15 e 24, separando os dois casos do enunciado original: filtro de `List` ausente permanece distinguido de vazio, `false` e zero por `Json Null Serialization`, enquanto o corpo de `Create` e `Update` passou a ser validado por preenchimento, com a limitação assumida de recusar valor legítimo igual ao default do tipo.
 22. Sprint 6 aprovou B047, B074, B075 e B078 com validação empírica de geração de clientes OpenAPI via `openapi-generator-cli 5.3.1` (`typescript-fetch` e `csharp`) com Exit Code 0, e por conferência detalhada dos YAMLs atuais em 2026-08-04 nos dois geradores (.NET Framework/SQL Server e .NET/PostgreSQL), cobrindo os seis eixos exigidos — rotas, métodos, operationIds no padrão `apiNome.Serviço`, ausência de DELETE, nomes `_API_` congelados em B062, bloco `security` com `oAuthGXGAM` por operação (B093) e schemas de request/response sem o array `Errors` em `sdt_API_ErrorResponse`. A trava contra regressão de identificadores `_API_` e operationIds foi incorporada pelo teste automatizado off-line `Test-OpenApiClientContractValidity.ps1` em `Tests/OpenApiContract/`, integrado ao checker pré-push em `scripts/Invoke-PrePushMechanicalChecks.ps1`. Evidência registrada em `Docs/Implementation/2026-08-04-VALIDACAO-YAML-SPRINT6-EIXOS-SEGURANCA.md`.
-23. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7 revisada, antes da Alpha.
+23. O marco **wizard funcional do MVP concluído** foi atingido ao final da Sprint 7 revisada, em 2026-08-09, antes da Alpha.
 24. Em 2026-08-07 a Sprint 7 foi reenquadrada: preflight/colisão/integridade (B063/B064/B067) e entrada de menu (B080 em substância) já estão feitos; o escopo obrigatório restante passou a ser B087, B086, B085, B081, UX mínima de B083 e alinhamento de Folder reutilizado, mais a comprovação dos dez gates. B088 e B089 ficam pré-Alpha separados.
 25. Em 2026-08-08 B085 foi validado no U15 (`Teste`): Sync add/rename/sem diff/cancelar/Replace/Keep.
 26. Em 2026-08-08 B081 foi validado no U15 (`Teste`): Wizard completo, Sync sem diff e com add, Remover com `Deleted=11` (Folder reutilizado preservado).
@@ -140,15 +143,16 @@ Comprovar de forma integrada os dez gates técnicos transversais e declarar o ma
 29. Em 2026-08-09 o Build All passou nos dois environments e o reteste B086 removeu somente os 11 objetos próprios; `TesteOpenApi` permaneceu na KB conforme `wasCreated=false`.
 30. Em 2026-08-09 a correção de B081 foi validada no U15 após recriar a API com o Folder criado pela extensão: o relatório passou a listar `Created=12`, incluindo `[Folder] TesteOpenApi — criado pela extensão; apagar só se ficar vazio`.
 31. Em 2026-08-09 os cenários negativos U15 comprovaram bloqueio para contêiner incorreto (`General`), duplicidade entre `Root Module` e `General` e sentinela de outra Transaction; nenhum deles habilitou escrita. Após a limpeza, a restauração final com Description humana reutilizou o Folder e reportou `Created=11`, `Updated=2`, `Blocked=0`, `Warnings=2`, preservando `wasCreated=false`.
+32. Em 2026-08-09 a Sprint 7 foi fechada com a comprovação integrada dos dez gates e a declaração do marco **wizard funcional do MVP concluído**. Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`. Próxima ação = frentes pré-Alpha uma de cada vez (YAML nativo; depois 403 GAM), antes da Alpha da Sprint 8.
 
 ## Bloqueios e fatos ainda não validados
 
-- carregamento real do pacote em U14;
+- carregamento real do pacote em U14 (residual não bloqueante do marco; decisão do mantenedor em 2026-08-09);
 - compatibilidade prática das APIs do SDK com U14;
-- comprovação integrada final dos dez gates técnicos transversais (parcialmente já evidenciada nas Sprints 1–6; no gate 10, sincronização B085 e remoção B086 já validados no U15 — falta a comprovação integrada final dos dez gates).
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
-- B087, B086, B085, B081, residual B083 e alinhamento de Folder reutilizado validados no U15; falta a comprovação integrada final dos dez gates.
+- limitações do YAML OpenAPI nativo do GeneXus (frente pré-Alpha atual);
+- evidência HTTP 403 com papel GAM não-administrador (frente pré-Alpha seguinte).
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 
 ## Documentos governantes
@@ -157,10 +161,11 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [09 — Integração com o SDK](Foundation/09-INTEGRACAO_GeneXus_Extensibility_SDK.md)
 - [15 — Testes e qualidade](Foundation/15-TESTES_VALIDACAO_E_QUALIDADE.md)
 - [24 — Plano por sprints](Foundation/24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md)
+- [Comprovação dos dez gates — Sprint 7](Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md)
 
 ## Marcos ainda não iniciados
 
-- Alpha público.
+- Alpha público (Sprint 8), após as frentes pré-Alpha (YAML nativo e 403 GAM), uma de cada vez.
 
 ## Protocolo de atualização
 

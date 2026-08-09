@@ -42,9 +42,9 @@ A partir de uma Transaction, o projeto busca gerar:
 
 # Estado Atual
 
-A consolidação documental posterior à entrevista funcional do MVP foi concluída.
+O marco **wizard funcional do MVP** foi concluído em 2026-08-09, com a comprovação integrada dos dez gates no GeneXus 18 U15. A validação prática no U14 permanece residual e não bloqueia o marco.
 
-A base de build mínima e o carregamento da extensão foram validados no GeneXus 18 U15 pelo mecanismo oficial disponível a partir do U14. Permanece pendente somente a validação prática no U14.
+Antes da Alpha pública, restam frentes pré-Alpha (limitações do YAML OpenAPI nativo; depois evidência HTTP 403 com papel GAM comum), uma de cada vez.
 
 Para retomar o trabalho em uma nova sessão, consulte o checkpoint operacional:
 
