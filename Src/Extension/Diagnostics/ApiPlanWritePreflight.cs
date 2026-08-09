@@ -43,7 +43,7 @@ internal static class ApiPlanWritePreflight
             throw new InvalidOperationException("B063/B064 bloqueado: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
         }
 
-        var state = ApiPlanGenerationStateReader.Read(designModel, apiPlan);
+        var state = ApiPlanGenerationStateReader.Read(designModel, transaction, apiPlan);
         var scope = ApiPlanWritePreflightScope.FromRequirements(requireSdts, requireProcedures, requireApiObject, requireMetadataFile);
         var blockedStages = scope.SelectBlockedStageNames(new[]
         {
@@ -92,7 +92,7 @@ internal static class ApiPlanWritePreflight
             throw new InvalidOperationException("B085 bloqueado: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
         }
 
-        var state = ApiPlanGenerationStateReader.ReadForSync(designModel, apiPlan);
+        var state = ApiPlanGenerationStateReader.ReadForSync(designModel, transaction, apiPlan);
         var blocked = new[] { state.Sdts, state.Procedures, state.ApiObject, state.MetadataFile }
             .Where(stage => stage.IsBlocked)
             .Select(stage => stage.StageName)

@@ -53,7 +53,7 @@ internal static class ApiPlanBusinessComponentWriter
             throw new InvalidOperationException("B071-B073/B079 bloqueado: o ApiPlan precisa conter Get, Create e Update. Nenhuma alteracao foi feita.");
 
         EnsureSdts(model, plan);
-        ApiPlanTransactionFolder.Preflight(model, plan);
+        ApiPlanTransactionFolder.Preflight(model, transaction, plan);
         var getContent = GetContent(plan);
         var getRules = GetRules(plan);
         var getVariables = CoalesceVariableSpecs(GetVariables(plan), "B071-B073/B079");

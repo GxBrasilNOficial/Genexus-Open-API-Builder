@@ -781,6 +781,8 @@ public sealed class Package : AbstractPackageUI
             var report = new ApiPlanApplicationFinalReportCollector("Sincronizar", transaction.Name, apiPlan.ApiName);
             var stopwatch = Stopwatch.StartNew();
             AppendPlanWarnings(report, apiPlan);
+            var syncState = ApiPlanGenerationStateReader.ReadForSync(knowledgeBase.DesignModel, transaction, apiPlan);
+            AppendTransactionFolderWarning(report, syncState);
             foreach (var preserved in preserveSdts.OrderBy(name => name, StringComparer.OrdinalIgnoreCase))
             {
                 report.AddWarning($"SDT preservado (Keep): {preserved}.");
@@ -794,7 +796,6 @@ public sealed class Package : AbstractPackageUI
             {
                 var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
                 WriteOutput($"[Genexus Open API Builder][B085] Sincronizacao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}'");
-                var syncState = ApiPlanGenerationStateReader.ReadForSync(knowledgeBase.DesignModel, apiPlan);
                 AppendCollisionConflictsToReport(report, syncState.CollectCollisionConflicts());
                 if (!report.HasInterrupted)
                 {
@@ -1193,7 +1194,7 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B056] Descricoes no ApiPlan: Resolved={serviceDescriptionsResolvedCount}/{apiPlan.ServiceDescriptions.Count}, Language='{apiPlan.ServiceDescriptionLanguage}', LanguageSource='{apiPlan.ServiceDescriptionLanguageSource}', FallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, FallbackReason='{apiPlan.ServiceDescriptionFallbackReason}'. Sem aplicar [Description] em objeto API real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B092] Seguranca no ApiPlan: SecurityLevel='{apiPlan.Security.SecurityLevel}', GamCondition='{apiPlan.Security.GamCondition}', RequiresGenerationConfirmation={apiPlan.Security.RequiresGenerationConfirmation}. Sem aplicar seguranca em objetos reais.");
         WriteOutput($"[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria. GenerateSdts={selection.GenerateSdts}, GenerateProcedures={selection.GenerateProcedures}, GenerateApiObject={selection.GenerateApiObject}, GenerateMetadata={selection.GenerateMetadata}, ApplyList={selection.ApplyList}, ApplyBusinessComponent={selection.ApplyBusinessComponent}; escritas confirmadas no wizard exigem preflight completo antes de qualquer Save().");
-        var generationState = ApiPlanGenerationStateReader.Read(knowledgeBase.DesignModel, apiPlan);
+        var generationState = ApiPlanGenerationStateReader.Read(knowledgeBase.DesignModel, transaction, apiPlan);
         var preflightScope = ApiPlanWritePreflightScope.FromSelection(
             selection.GenerateSdts,
             selection.GenerateProcedures,
@@ -1233,6 +1234,7 @@ public sealed class Package : AbstractPackageUI
         var report = new ApiPlanApplicationFinalReportCollector("Wizard", transaction.Name, apiPlan.ApiName);
         var stopwatch = Stopwatch.StartNew();
         AppendPlanWarnings(report, apiPlan);
+        AppendTransactionFolderWarning(report, generationState);
         foreach (var stage in new[] { generationState.Sdts, generationState.Procedures, generationState.ApiObject, generationState.MetadataFile }
             .Where(stage => stage.IsBlocked))
         {
@@ -1775,6 +1777,17 @@ public sealed class Package : AbstractPackageUI
         if (sensitive.Length > 0)
         {
             report.AddWarning($"Campos sensiveis no plano: {string.Join(", ", sensitive)}.");
+        }
+    }
+
+    private static void AppendTransactionFolderWarning(
+        ApiPlanApplicationFinalReportCollector report,
+        ApiPlanGenerationState generationState)
+    {
+        var warning = generationState.TransactionFolderWarning;
+        if (!string.IsNullOrWhiteSpace(warning))
+        {
+            report.AddWarning(warning!);
         }
     }
 

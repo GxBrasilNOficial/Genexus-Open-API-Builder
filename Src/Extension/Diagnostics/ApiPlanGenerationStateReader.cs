@@ -15,21 +15,26 @@ internal static class ApiPlanGenerationStateReader
 {
     private const string ProcedureDescriptionPrefix = "Genexus Open API Builder B050-B053 Procedure";
 
-    public static ApiPlanGenerationState Read(KBModel designModel, ApiPlan apiPlan)
+    public static ApiPlanGenerationState Read(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
-        return Read(designModel, apiPlan, forSyncContractRefresh: false);
+        return Read(designModel, transaction, apiPlan, forSyncContractRefresh: false);
     }
 
-    public static ApiPlanGenerationState ReadForSync(KBModel designModel, ApiPlan apiPlan)
+    public static ApiPlanGenerationState ReadForSync(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
-        return Read(designModel, apiPlan, forSyncContractRefresh: true);
+        return Read(designModel, transaction, apiPlan, forSyncContractRefresh: true);
     }
 
-    private static ApiPlanGenerationState Read(KBModel designModel, ApiPlan apiPlan, bool forSyncContractRefresh)
+    private static ApiPlanGenerationState Read(KBModel designModel, Transaction transaction, ApiPlan apiPlan, bool forSyncContractRefresh)
     {
         if (designModel is null)
         {
             throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (transaction is null)
+        {
+            throw new ArgumentNullException(nameof(transaction));
         }
 
         if (apiPlan is null)
@@ -40,7 +45,7 @@ internal static class ApiPlanGenerationStateReader
         // Uma varredura por tipo: GetAll repetido por objeto planejado era O(n*m) e dominava a abertura do wizard.
         var index = KbObjectNameIndex.Create(designModel);
         var sdtPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
-        var folder = InspectFolder(index, apiPlan);
+        var folder = InspectFolder(index, transaction, apiPlan);
         var sdts = InspectSdts(index, sdtPlan);
         var sdtState = CreateState("SDTs", sdts, folder, forSyncContractRefresh);
 
@@ -59,7 +64,7 @@ internal static class ApiPlanGenerationStateReader
             ? ApiPlanGenerationStageState.Blocked("Metadata File", "Bloqueado: o API Object precisa estar disponivel antes.")
             : CreateState("Metadata File", metadataFile, null, forSyncContractRefresh);
 
-        return new ApiPlanGenerationState(sdtState, procedureState, apiState, metadataState);
+        return new ApiPlanGenerationState(sdtState, procedureState, apiState, metadataState, folder.Warning);
     }
 
     private static ApiPlanGenerationStageState CreateState(string stageName, ApiPlanGenerationInspection inspection, ApiPlanGenerationInspection? folder, bool forSyncContractRefresh)
@@ -90,10 +95,16 @@ internal static class ApiPlanGenerationStateReader
                 ? "Criar"
                 : "Completar";
         var detailOk = $"{action}: gerenciados={managed}, ausentes={missing}, planejados={inspection.Planned + (folder?.Planned ?? 0)}. A confirmacao continua obrigatoria antes de qualquer escrita.";
+        var folderWarning = folder?.Warning;
+        if (!string.IsNullOrWhiteSpace(folderWarning))
+        {
+            detailOk += " " + folderWarning;
+        }
+
         return new ApiPlanGenerationStageState(stageName, action, detailOk, false);
     }
 
-    private static ApiPlanGenerationInspection InspectFolder(KbObjectNameIndex index, ApiPlan apiPlan)
+    private static ApiPlanGenerationInspection InspectFolder(KbObjectNameIndex index, Transaction transaction, ApiPlan apiPlan)
     {
         var matches = index.FindFolders(apiPlan.TransactionFolderName);
         if (matches.Count == 0)
@@ -101,12 +112,12 @@ internal static class ApiPlanGenerationStateReader
             return new ApiPlanGenerationInspection(1, 0, 1, 0);
         }
 
-        if (matches.Count > 1 || !string.Equals(matches[0].Description, ApiPlanTransactionFolder.CreateOwnedDescription(apiPlan), StringComparison.Ordinal))
+        if (matches.Count > 1 || !ApiPlanTransactionFolder.IsReusable(matches[0], transaction, apiPlan))
         {
             return new ApiPlanGenerationInspection(1, 0, 0, matches.Count, matches.Select(item => ToCollision(item, "Folder", folderApplicable: true)).ToArray());
         }
 
-        return new ApiPlanGenerationInspection(1, 1, 0, 0);
+        return new ApiPlanGenerationInspection(1, 1, 0, 0, warning: ApiPlanTransactionFolder.CreateReuseWarning(apiPlan));
     }
 
     private static ApiPlanGenerationInspection InspectSdts(KbObjectNameIndex index, ApiPlanSdtGenerationPlan generationPlan)
@@ -344,18 +355,25 @@ internal static class ApiPlanGenerationStateReader
 
 internal sealed class ApiPlanGenerationState
 {
-    public ApiPlanGenerationState(ApiPlanGenerationStageState sdts, ApiPlanGenerationStageState procedures, ApiPlanGenerationStageState apiObject, ApiPlanGenerationStageState metadataFile)
+    public ApiPlanGenerationState(
+        ApiPlanGenerationStageState sdts,
+        ApiPlanGenerationStageState procedures,
+        ApiPlanGenerationStageState apiObject,
+        ApiPlanGenerationStageState metadataFile,
+        string? transactionFolderWarning = null)
     {
         Sdts = sdts;
         Procedures = procedures;
         ApiObject = apiObject;
         MetadataFile = metadataFile;
+        TransactionFolderWarning = transactionFolderWarning;
     }
 
     public ApiPlanGenerationStageState Sdts { get; }
     public ApiPlanGenerationStageState Procedures { get; }
     public ApiPlanGenerationStageState ApiObject { get; }
     public ApiPlanGenerationStageState MetadataFile { get; }
+    public string? TransactionFolderWarning { get; }
 
     public IReadOnlyList<ApiPlanCollisionConflict> CollectCollisionConflicts(
         bool includeSdts = true,
@@ -429,13 +447,15 @@ internal sealed class ApiPlanGenerationInspection
         int managed,
         int missing,
         int conflicts,
-        IReadOnlyList<ApiPlanCollisionConflict>? collisionConflicts = null)
+        IReadOnlyList<ApiPlanCollisionConflict>? collisionConflicts = null,
+        string? warning = null)
     {
         Planned = planned;
         Managed = managed;
         Missing = missing;
         Conflicts = conflicts;
         CollisionConflicts = collisionConflicts ?? Array.Empty<ApiPlanCollisionConflict>();
+        Warning = warning;
     }
 
     public int Planned { get; }
@@ -443,4 +463,5 @@ internal sealed class ApiPlanGenerationInspection
     public int Missing { get; }
     public int Conflicts { get; }
     public IReadOnlyList<ApiPlanCollisionConflict> CollisionConflicts { get; }
+    public string? Warning { get; }
 }

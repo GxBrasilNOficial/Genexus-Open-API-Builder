@@ -46,7 +46,7 @@ internal static class ApiPlanListProcedureWriter
         if (!HasService(plan, "List"))
             throw new InvalidOperationException("B070 bloqueado: o ApiPlan precisa conter List. Nenhuma alteracao foi feita.");
 
-        ApiPlanSdtWriter.Preflight(model, plan);
+        ApiPlanSdtWriter.Preflight(model, transaction, plan);
         var procedure = FindListProcedure(model, plan);
         var api = FindApi(model, plan, allowIntentionalContractRefresh);
         var source = CreateListSource(plan);

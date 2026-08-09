@@ -11,7 +11,7 @@ Residual de apresentação: para cada conflito de **colisão** (objeto com nome 
 3. File de metadata: `Folder='(n/a)'` (File não vive em Folder). Objeto sem Parent Folder: também `(n/a)`.
 4. Ambiguidade: uma linha por ocorrência.
 5. A lista aparece no Wizard (abas de geração / detalhe de etapa e cabeçalho com contagem), na mensagem de preflight, na Output e no relatório final quando o Sync ou o Wizard são barrados por colisão.
-6. Fora do residual: Keep/Replace de SDT editado no Sync; divergência de integridade B067 em File próprio; reuso de Folder `NomeOpenApi` preexistente (próxima frente).
+6. Fora do residual: Keep/Replace de SDT editado no Sync; divergência de integridade B067 em File próprio; reuso de Folder `NomeOpenApi` preexistente, tratado na evidência `Docs/Implementation/2026-08-08-FOLDER-REUTILIZADO-COM-AVISO.md`.
 
 ## Código / testes
 

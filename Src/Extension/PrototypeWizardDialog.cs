@@ -1451,7 +1451,7 @@ internal sealed class PrototypeWizardDialog : Form
                 false,
                 false,
                 false);
-            return ApiPlanGenerationStateReader.Read(_designModel, ApiPlanBuilder.Build(_transaction, selection));
+            return ApiPlanGenerationStateReader.Read(_designModel, _transaction, ApiPlanBuilder.Build(_transaction, selection));
         }
         catch
         {

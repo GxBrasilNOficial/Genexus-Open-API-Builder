@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-08-08.
+2026-08-09.
 
 ## Último marco concluído
 
@@ -85,20 +85,21 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - B085 implementado e validado no U15 em 2026-08-08 na Transaction `Teste`: comando `Sincronizar com a Transaction` (menu principal + contexto); metadata com `transactionStructure` e `attributeGuid`; diff por GUID (add, rename, sem diff); UI 2x2 com escolhas; cancelamento seguro; conflitos Replace e Keep em SDT editado (`ManualKeep` preservado com `PreservedSdts=1`); Sync atualiza contrato B067 e Source B055/B070 de propósito. Checker de menu (4 comandos), build Release e teste `Tests/TransactionSync/Test-ApiPlanTransactionSyncComparer.ps1` OK. Evidência: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`.
 - B081 implementado e validado no U15 em 2026-08-08 na Transaction `Teste`: relatório final pós-aplicação (Wizard / Sync / Remover) com criados, atualizados, removidos, bloqueados e avisos; Output `[B081]` alinhada; Sync sem diff e com add; Remover `Deleted=11`; botão Abrir objeto principal no Wizard/Sync. Teste `Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport.ps1`. Evidência: `Docs/Implementation/B081-RELATORIO-FINAL-POS-APLICACAO.md`.
 - B083 residual (UX de colisão) implementado e validado no U15 em 2026-08-08 na Transaction `Teste`: lista `Nome | Tipo | Modulo | Folder` no Wizard (cabeçalho e aba SDTs) com SDT externo `sdtTeste_API_Response`; após apagar o conflitante, preflight aprovado, geração completa (`Created=11`) e Build All nos dois environments. Teste `Tests/CollisionUx/Test-ApiPlanCollisionConflict.ps1`. Evidência: `Docs/Implementation/B083-UX-CONFLITOS-COLISAO.md`.
+- Alinhamento de Folder reutilizado implementado e validado no U15 em 2026-08-09 na Transaction `Teste`: `TesteOpenApi` preexistente no `Root Module` foi reencontrado no contêiner correto com aviso explícito, sem colisão e sem alteração da `Description`; reexecução com `Created=0`, `Updated=13`, `Blocked=0`, `Warnings=2`; relatório final com rolagem vertical; metadata exportada confirmou `transactionFolder.wasCreated=false`. Evidência: `Docs/Implementation/2026-08-08-FOLDER-REUTILIZADO-COM-AVISO.md`.
 
 ## Frente ativa
 
-**Sprint 7 — Ciclo de vida operacional na IDE**. B087, B086, B085, B081 e residual B083 fechados; próxima entrega = alinhamento de Folder reutilizado; depois comprovação dos dez gates.
+**Sprint 7 — Ciclo de vida operacional na IDE**. B087, B086, B085, B081, residual B083 e alinhamento de Folder reutilizado fechados; próxima entrega = comprovação integrada dos dez gates.
 
 ## Próxima ação única
 
-Alinhar Folder preexistente `NomeOpenApi` no módulo correto à decisão do MVP: reutilizar com aviso (hoje o código ainda trata como colisão).
+Comprovar de forma integrada os dez gates técnicos transversais e declarar o marco **wizard funcional do MVP concluído**.
 
 ## Critério de conclusão e evidência esperada
 
 - Folder `NomeDaTransacaoOpenApi` preexistente no módulo correto reutilizado com aviso explícito (sem tratar como colisão);
 - metadata continua distinguindo Folder criado de reutilizado; remoção não apaga Folder reutilizado;
-- evidência U15 + docs; em seguida a comprovação integrada dos dez gates.
+- evidência U15 + docs concluída; próxima frente é a comprovação integrada dos dez gates.
 
 ## Sequência operacional vigente
 
@@ -125,10 +126,11 @@ Alinhar Folder preexistente `NomeOpenApi` no módulo correto à decisão do MVP:
 21. Sprint 6 fechou B071-B073/B079 com envio ao remoto e reconciliou B076 nos documentos 06, 09, 15 e 24, separando os dois casos do enunciado original: filtro de `List` ausente permanece distinguido de vazio, `false` e zero por `Json Null Serialization`, enquanto o corpo de `Create` e `Update` passou a ser validado por preenchimento, com a limitação assumida de recusar valor legítimo igual ao default do tipo.
 22. Sprint 6 aprovou B047, B074, B075 e B078 com validação empírica de geração de clientes OpenAPI via `openapi-generator-cli 5.3.1` (`typescript-fetch` e `csharp`) com Exit Code 0, e por conferência detalhada dos YAMLs atuais em 2026-08-04 nos dois geradores (.NET Framework/SQL Server e .NET/PostgreSQL), cobrindo os seis eixos exigidos — rotas, métodos, operationIds no padrão `apiNome.Serviço`, ausência de DELETE, nomes `_API_` congelados em B062, bloco `security` com `oAuthGXGAM` por operação (B093) e schemas de request/response sem o array `Errors` em `sdt_API_ErrorResponse`. A trava contra regressão de identificadores `_API_` e operationIds foi incorporada pelo teste automatizado off-line `Test-OpenApiClientContractValidity.ps1` em `Tests/OpenApiContract/`, integrado ao checker pré-push em `scripts/Invoke-PrePushMechanicalChecks.ps1`. Evidência registrada em `Docs/Implementation/2026-08-04-VALIDACAO-YAML-SPRINT6-EIXOS-SEGURANCA.md`.
 23. O marco **wizard funcional do MVP concluído** ocorre ao final da Sprint 7 revisada, antes da Alpha.
-24. Em 2026-08-07 a Sprint 7 foi reenquadrada: preflight/colisão/integridade (B063/B064/B067) e entrada de menu (B080 em substância) já estão feitos; o escopo obrigatório restante é B087, B086, B085, B081, UX mínima de B083 e alinhamento de Folder reutilizado, mais a comprovação dos dez gates. B088 e B089 ficam pré-Alpha separados.
+24. Em 2026-08-07 a Sprint 7 foi reenquadrada: preflight/colisão/integridade (B063/B064/B067) e entrada de menu (B080 em substância) já estão feitos; o escopo obrigatório restante passou a ser B087, B086, B085, B081, UX mínima de B083 e alinhamento de Folder reutilizado, mais a comprovação dos dez gates. B088 e B089 ficam pré-Alpha separados.
 25. Em 2026-08-08 B085 foi validado no U15 (`Teste`): Sync add/rename/sem diff/cancelar/Replace/Keep.
 26. Em 2026-08-08 B081 foi validado no U15 (`Teste`): Wizard completo, Sync sem diff e com add, Remover com `Deleted=11` (Folder reutilizado preservado).
-27. Em 2026-08-08 residual B083 validado no U15 (`Teste`): UX de colisão com nome/tipo/módulo/Folder; após remoção do conflitante, geração e Build All OK; próxima ação única = alinhamento de Folder reutilizado.
+27. Em 2026-08-08 residual B083 validado no U15 (`Teste`): UX de colisão com nome/tipo/módulo/Folder; após remoção do conflitante, geração e Build All OK.
+28. Em 2026-08-09 alinhamento de Folder reutilizado validado no U15 (`Teste`): `TesteOpenApi` preexistente no `Root Module` foi reutilizado com aviso; reexecução `Created=0`, `Updated=13`, `Blocked=0`, `Warnings=2`; relatório final rolável; metadata confirmou `wasCreated=false`. Próxima ação única = comprovação integrada dos dez gates.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -137,8 +139,7 @@ Alinhar Folder preexistente `NomeOpenApi` no módulo correto à decisão do MVP:
 - comprovação integrada final dos dez gates técnicos transversais (parcialmente já evidenciada nas Sprints 1–6; no gate 10, sincronização B085 e remoção B086 já validados no U15 — falta a comprovação integrada final dos dez gates).
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
-- B087, B086, B085, B081 e residual B083 validados no U15; alinhamento de Folder reutilizado ainda pendente.
-- Folder preexistente `NomeOpenApi` no módulo correto ainda é tratado como colisão no código, em desacordo com a decisão do MVP de reutilizar com aviso.
+- B087, B086, B085, B081, residual B083 e alinhamento de Folder reutilizado validados no U15; falta a comprovação integrada final dos dez gates.
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 
 ## Documentos governantes

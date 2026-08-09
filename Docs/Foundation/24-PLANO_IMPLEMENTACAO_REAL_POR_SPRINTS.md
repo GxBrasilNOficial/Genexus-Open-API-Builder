@@ -329,8 +329,8 @@ Ordem acordada de execução:
 3. `B085`: comando explícito `Sincronizar com a Transaction` com comparação/metadata e confirmação antes de gravar — **concluído** (U15 2026-08-08)
 4. `B081`: relatório final pós-aplicação (criados / atualizados / bloqueados / avisos), sem depender só da Output técnica — **concluído** (U15 2026-08-08)
 5. UX mínima de conflitos alinhada à decisão do MVP: para cada conflito, nome, tipo, módulo e Folder (`B083` residual de apresentação) — **concluído** (U15 2026-08-08)
-6. alinhar Folder preexistente `NomeOpenApi` no módulo correto à decisão de reutilização com aviso (hoje o código ainda trata como colisão) — **próxima ação**
-7. comprovação integrada dos dez gates e declaração do marco **wizard funcional do MVP concluído**
+6. alinhar Folder preexistente `NomeOpenApi` no módulo correto à decisão de reutilização com aviso — **concluído** (U15 2026-08-09; evidência `Docs/Implementation/2026-08-08-FOLDER-REUTILIZADO-COM-AVISO.md`)
+7. comprovação integrada dos dez gates e declaração do marco **wizard funcional do MVP concluído** — **próxima ação**
 
 ## Fora do gate obrigatório desta sprint (pré-Alpha separados)
 

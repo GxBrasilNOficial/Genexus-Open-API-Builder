@@ -10,7 +10,7 @@ Após Wizard, Sync ou Remover, exibir relatório estruturado (criados / atualiza
 2. Abre diálogo `ApiPlanApplicationFinalReportDialog` com headline, corpo legível, tempo e botão **Abrir objeto principal** quando houver API Object (exceto Remover).
 3. Espelha o mesmo resumo na Output com prefixo `[B081]`.
 4. Headlines: sucesso / com avisos / interrompida; Sync sem diff → `Nenhuma sincronizacao necessaria.`; Remover sucesso → `API removida com sucesso.`
-5. UX: wrap de linhas longas; altura ajustada ao conteúdo; sem seleção azul ao abrir.
+5. UX: wrap de linhas longas; altura ajustada ao conteúdo; rolagem vertical recalculada após o layout e ao redimensionar; sem seleção azul ao abrir.
 
 ## Código / testes
 
@@ -31,3 +31,7 @@ Transaction `Teste`, KB de teste.
 5. **Remover sem metadata** (corrida anterior): `Remocao interrompida` com bloqueio explícito — esperado.
 
 Status: **concluído**.
+
+## Correção pós-validação — 2026-08-09
+
+Na reexecução do Wizard para a Transaction `Teste`, o relatório final retornou `Created=0`, `Updated=13`, `Blocked=0` e `Warnings=2`, incluindo o aviso de Folder reutilizado. A janela passou a exibir a barra de rolagem vertical e a última linha do aviso ficou acessível ao rolar até o fim; o Output confirmou o texto completo. A correção está em `ApiPlanApplicationFinalReportDialog.cs` e foi coberta pelo teste `Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport.ps1`.

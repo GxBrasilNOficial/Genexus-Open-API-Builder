@@ -41,7 +41,12 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
         MinimumSize = new Size(560, 420);
         BuildLayout();
         SizeToReportContent();
-        Shown += (_, _) => ClearBodySelection();
+        Shown += (_, _) =>
+        {
+            EnsureBodyScrollBars();
+            ClearBodySelection();
+        };
+        Resize += (_, _) => EnsureBodyScrollBars();
     }
 
     private void ClearBodySelection()
@@ -52,6 +57,21 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
         {
             accept.Focus();
         }
+    }
+
+    private void EnsureBodyScrollBars()
+    {
+        if (!IsHandleCreated || _bodyBox.TextLength == 0 || _bodyBox.ClientSize.Height <= 0)
+        {
+            return;
+        }
+
+        var lastCharPosition = _bodyBox.GetPositionFromCharIndex(_bodyBox.TextLength - 1);
+        var lineHeight = Math.Max(16, TextRenderer.MeasureText("Ag", _bodyBox.Font).Height + 1);
+        var contentBottom = lastCharPosition.Y + lineHeight + 4;
+        _bodyBox.ScrollBars = contentBottom > _bodyBox.ClientSize.Height
+            ? ScrollBars.Vertical
+            : ScrollBars.None;
     }
 
     private void SizeToReportContent()

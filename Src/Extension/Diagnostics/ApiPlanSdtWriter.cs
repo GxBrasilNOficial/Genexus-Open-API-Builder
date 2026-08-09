@@ -49,7 +49,7 @@ internal static class ApiPlanSdtWriter
         var preserve = new HashSet<string>(preserveSdtNames ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
         var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var preflight = CreatePreflightResult(designModel, generationPlan);
-        ApiPlanTransactionFolder.Preflight(designModel, apiPlan);
+        ApiPlanTransactionFolder.Preflight(designModel, transaction, apiPlan);
         var sharedFolder = preflight.SharedFolder ?? CreateSharedFolder(designModel);
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan);
         var results = new List<ApiPlanSdtWriteItemResult>();
@@ -79,7 +79,7 @@ internal static class ApiPlanSdtWriter
         return $"{OwnedDescriptionPrefix} - {backlogId} - {kind}";
     }
 
-    internal static void Preflight(KBModel designModel, ApiPlan apiPlan)
+    internal static void Preflight(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
         if (designModel is null)
         {
@@ -92,7 +92,7 @@ internal static class ApiPlanSdtWriter
         }
 
         CreatePreflightResult(designModel, ApiPlanSdtGenerationPlanBuilder.Create(apiPlan));
-        ApiPlanTransactionFolder.Preflight(designModel, apiPlan);
+        ApiPlanTransactionFolder.Preflight(designModel, transaction, apiPlan);
     }
 
     private static ApiPlanSdtPreflightResult CreatePreflightResult(KBModel designModel, ApiPlanSdtGenerationPlan generationPlan)

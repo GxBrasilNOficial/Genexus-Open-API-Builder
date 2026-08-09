@@ -2,6 +2,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $helperPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanApplicationFinalReport.cs'
+$dialogPath = Join-Path $PSScriptRoot '..\..\Src\Extension\ApiPlanApplicationFinalReportDialog.cs'
 $runtimeAssemblies = @([System.AppContext]::GetData('TRUSTED_PLATFORM_ASSEMBLIES') -split [System.IO.Path]::PathSeparator |
     Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 if ($runtimeAssemblies.Count -eq 0) {
@@ -69,5 +70,10 @@ Assert-Equal 5 $removeReport.DeletedCount 'Cinco removidos reais.'
 Assert-Equal 1 $removeReport.WarningCount 'Aviso do Folder preservado.'
 Assert-Equal 'API Object' $removeReport.Deleted[0].ObjectKind 'API: mapeia para API Object.'
 Assert-True ($removeReport.BuildReadableBody($false) -notmatch '(?m)^API removida') 'Corpo sem headline nao repete o titulo.'
+
+$dialogSource = Get-Content -Raw -LiteralPath $dialogPath
+Assert-True ($dialogSource -match 'EnsureBodyScrollBars') 'Dialogo B081 deve recalcular a rolagem apos o layout.'
+Assert-True ($dialogSource -match 'GetPositionFromCharIndex') 'Dialogo B081 deve medir a ultima linha visual do corpo.'
+Assert-True ($dialogSource -match 'ScrollBars\.Vertical') 'Dialogo B081 deve habilitar rolagem vertical quando o corpo exceder a area.'
 
 Write-Host 'Test-ApiPlanApplicationFinalReport.ps1 OK'
