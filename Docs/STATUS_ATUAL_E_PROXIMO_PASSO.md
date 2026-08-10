@@ -89,28 +89,26 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Reteste U15 de 2026-08-09 fechou o ciclo: Build All concluído nos environments `.NET Framework / SQL Server` e `.NET / PostgreSQL`; `Remover API gerada` confirmou `Folder: TesteOpenApi (reutilizado; nunca apagar)`, removeu `Deleted=11`, sem bloqueios/avisos, e preservou o Folder, os SDTs compartilhados e o Business Component.
 - Sprint 7 fechada em 2026-08-09: comprovação integrada dos dez gates técnicos transversais e marco **wizard funcional do MVP concluído**, por consolidação do acervo U15 das Sprints 1–7, sem bateria U15 nova e sem mudança de código. Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`. Upgrade 14 permanece residual não validado nesta máquina e não bloqueia o marco.
 - `B088` concluído em 2026-08-10: investigação read-only do gerador nativo OpenAPI (`Swagger.Yaml.stg` / `TypeDefinitions.Yaml.stg` / `Artech.Packages.RestServiceDL.Generator`) comprovou que não há substituição ou interceptação dos templates sem alterar a instalação GeneXus. Limitação intransponível documentada; ressalvas e orientação de consumo incorporadas aos documentos 12 e 27. Sem mudança de código da extensão. Evidência: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
+- `B089` concluído em 2026-08-10: evidência HTTP **403** com papel GAM não-administrador sob `SecurityLevel = Authorization` em `apiNotaFiscal` — role `Role_GOAB_Test_Denied`, Get Permitir / Create não atribuído, usuário `goab_role_denied`; GET **200** e POST Create **403** (`code` 139) nos environments .NET Framework/SQL Server e .NET/PostgreSQL. Setup via GAM Backoffice (telas nativas). Documentado em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D. Sem mudança de código da extensão.
 
 ## Frente ativa
 
-Frentes pré-Alpha, uma de cada vez, antes da Alpha da Sprint 8. Sprint 7 e o marco **wizard funcional do MVP** estão concluídos. `B088` (YAML nativo) está concluído.
+Alpha da Sprint 8. Sprint 7, o marco **wizard funcional do MVP**, `B088` e `B089` estão concluídos. Frentes pré-Alpha encerradas.
 
 ## Próxima ação única
 
-Evidência HTTP **403** com papel GAM não-administrador (Programmatic GAM API), documentada em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` — frente pré-Alpha `B089`, após o fechamento de `B088`.
+Iniciar a **Alpha pública (Sprint 8)** conforme o plano em `Docs/Foundation/24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md`, sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Evidência da frente encerrada
 
-- relatório B088 com inviabilidade de override do template sem tocar na instalação;
-- SHA256 idêntico de `Swagger.Yaml.stg` em GeneXus18 / Up14 / Up14HotFix; `procedure_responses` literal `200`/`404`;
-- documentos 12 e 27 atualizados com ressalva intransponível e orientação a `openapi-generator-cli` / leitores do YAML;
-- pacote em `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
+- setup GAM Backoffice: role `Role_GOAB_Test_Denied`, `apinotafiscal_Services_Get` = Permitir, Create não atribuído, usuário `goab_role_denied` (repositórios GAM distintos por environment);
+- HTTP Framework/SQL e .NET/PostgreSQL: GET **200**, POST Create **403** (`code` 139, mensagem de acesso negado); controle POST com `goab_api_teste` **201**;
+- documentação em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D.
 
 ## Critério de conclusão da próxima ação
 
-- ambiente com `SecurityLevel = Authorization` e automação Programmatic GAM API para role restrita;
-- evidência HTTP autenticada: `403` no Create negado e `200` no Get permitido;
-- documentação em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md`;
-- não reabrir B088 nem contradizer o marco do wizard já concluído.
+- abrir e conduzir a Alpha da Sprint 8 pelos critérios do plano 24 e do backlog vigentes;
+- não reabrir B088/B089 nem contradizer o marco do wizard já concluído.
 
 ## Sequência operacional vigente
 
@@ -148,7 +146,8 @@ Evidência HTTP **403** com papel GAM não-administrador (Programmatic GAM API),
 32. Em 2026-08-09 a Sprint 7 foi fechada com a comprovação integrada dos dez gates e a declaração do marco **wizard funcional do MVP concluído**. Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`. Próxima ação = frentes pré-Alpha uma de cada vez (YAML nativo; depois 403 GAM), antes da Alpha da Sprint 8.
 33. Em 2026-08-09 as Descriptions de produto sem IDs de backlog foram validadas no U15 (`Teste`): Wizard após limpeza total gerou `Created=12` (incluindo Folder) e as Properties confirmaram `{Nome} - by Genexus Open API Builder`. Evidência: `Docs/Implementation/2026-08-09-DESCRIPTIONS-PRODUTO-SEM-BACKLOG.md`.
 34. Em 2026-08-09 o ciclo pós-Descriptions fechou no U15: Remover com posse canônica (`Deleted=12`), Sync/Remover sem metadata bloqueando, Wizard restaurando, Sync sem diff e cancelamento do Remover. Evidência ampliada no mesmo documento de Descriptions e em `Docs/Implementation/B086-REMOVER-API-GERADA.md`.
-35. Em 2026-08-10 `B088` fechou a investigação do YAML nativo: override de `Swagger.Yaml.stg` inviável sem alterar a instalação; ressalvas nos documentos 12 e 27; próxima ação = `B089` (403 GAM). Evidência: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
+35. Em 2026-08-10 `B088` fechou a investigação do YAML nativo: override de `Swagger.Yaml.stg` inviável sem alterar a instalação; ressalvas nos documentos 12 e 27; naquele momento a próxima ação passou a `B089` (403 GAM). Evidência: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
+36. Em 2026-08-10 `B089` fechou a evidência HTTP 403 com role GAM restrita em `apiNotaFiscal` (Get 200 / Create 403) nos dois environments; frentes pré-Alpha encerradas; próxima ação = Alpha / Sprint 8. Evidência: `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -156,8 +155,7 @@ Evidência HTTP **403** com papel GAM não-administrador (Programmatic GAM API),
 - compatibilidade prática das APIs do SDK com U14;
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação. Em `Remover API gerada` (B086), ambiguidade e posse de API/Procedures/SDTs próprios passam a ser validadas antes do primeiro `Delete()` (`ValidateRemovalTargets` em Preview e Remove); permanece residual a falha IDE/SDK no meio da sequência de exclusões já iniciada.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
-- limitações do YAML OpenAPI nativo do GeneXus (documentadas em B088; intransponíveis sem patch na instalação — não bloqueiam o MVP);
-- evidência HTTP 403 com papel GAM não-administrador (frente pré-Alpha atual `B089`).
+- limitações do YAML OpenAPI nativo do GeneXus (documentadas em B088; intransponíveis sem patch na instalação — não bloqueiam o MVP).
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 
 ## Documentos governantes
@@ -169,10 +167,11 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [Comprovação dos dez gates — Sprint 7](Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md)
 - [Descriptions de produto sem IDs de backlog](Implementation/2026-08-09-DESCRIPTIONS-PRODUTO-SEM-BACKLOG.md)
 - [B088 — Limitações do YAML nativo](Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md)
+- [B093 — Security Level / evidência B089 403](Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md)
 
 ## Marcos ainda não iniciados
 
-- Alpha público (Sprint 8), após a frente pré-Alpha restante `B089` (403 GAM).
+- Alpha público (Sprint 8).
 
 ## Protocolo de atualização
 

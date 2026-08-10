@@ -335,14 +335,14 @@ Ordem acordada de execução:
 ## Fora do gate obrigatório desta sprint (pré-Alpha separados)
 
 - `B088`: investigar/documentar limitações do template nativo `Swagger.Yaml.stg` (respostas declaradas só `200`/`404`; não emissão de `required:` nos schemas) — **concluído** (2026-08-10; limitação intransponível; evidência `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`)
-- `B089`: evidência HTTP `403` com role GAM não-administradora via automação Programmatic GAM API — **próxima ação** (após `B088`)
+- `B089`: evidência HTTP `403` com role GAM não-administradora — **concluído** (2026-08-10; GAM Backoffice + HTTP Get 200 / Create 403 nos dois environments; evidência `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D)
 - `B082`: tempo de execução no wizard (prioridade média; fora da linha de corte do MVP)
 
 ## Gate
 
 Ciclo de vida conservador completo na IDE (posse, regeneração, sincronização e remoção sem overwrite indevido) e dez gates técnicos transversais comprovados.
 
-**Sprint 7 concluída em 2026-08-09.** O projeto atingiu o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para a Alpha da Sprint 8; antes da Alpha, `B088` foi fechado em 2026-08-10 e resta a frente pré-Alpha `B089`.
+**Sprint 7 concluída em 2026-08-09.** O projeto atingiu o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para a Alpha da Sprint 8. Em 2026-08-10, `B088` e `B089` fecharam as frentes pré-Alpha; a próxima ação canônica é a Alpha da Sprint 8.
 
 [F14][F28][SPR-F24]
 

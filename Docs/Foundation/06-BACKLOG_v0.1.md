@@ -247,7 +247,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B086 | Remover API gerada por metadata, sem reverter BC | Alta — concluído (código + validação U15 2026-08-08/09; Folder criado e reutilizado) |
 | B087 | Ancorar posse na metadata e liberar a `Description` do API Object | Alta — concluído (código + validação U15 2026-08-07) |
 | B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta — pré-Alpha separado; concluído (2026-08-10; limitação intransponível documentada) |
-| B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta — pré-Alpha separado; próxima ação (após B088) |
+| B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta — pré-Alpha separado; concluído (2026-08-10; GAM Backoffice + HTTP Get 200 / Create 403) |
 
 ### Nota operacional — revisão da Sprint 7 / Fase 7, registrada em 2026-08-07 (fechada em 2026-08-09)
 
@@ -261,7 +261,7 @@ Após a Sprint 6, o pacote histórico “conflitos e reexecução” da Fase 7 f
 6. alinhamento de Folder reutilizado à decisão do MVP (reutilizar `NomeOpenApi` preexistente no módulo correto com aviso) — concluído (U15 2026-08-09; caminho feliz e bloqueios para contêiner incorreto, duplicidade e sentinela alheia)
 7. comprovação integrada dos dez gates — concluído (2026-08-09; `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`); marco **wizard funcional do MVP concluído**; U14 residual não bloqueante
 
-`B088` e `B089` permanecem anteriores à Alpha, **fora** do gate obrigatório da Sprint 7 já fechada, e devem ser tratados **uma frente de cada vez**: primeiro investigação/documentação da limitação nativa do YAML GeneXus; depois evidência `403` com papel GAM não-administrador além do Authorization 401/200 já comprovado. Em 2026-08-10, `B088` foi concluído com inviabilidade de override sem alterar a instalação; a próxima frente pré-Alpha vigente é `B089`.
+`B088` e `B089` ficaram **fora** do gate obrigatório da Sprint 7 e foram tratados **uma frente de cada vez** antes da Alpha. Em 2026-08-10, `B088` e `B089` foram concluídos; a próxima ação canônica é a Alpha da Sprint 8.
 
 ### Nota operacional — B087, registrada em 2026-08-03 (atualizada em 2026-08-05)
 
@@ -296,16 +296,18 @@ B088 investigou extensibilidade do gerador de documentação REST e a inclusão 
 
 **Fechamento 2026-08-10:** os três critérios foram atendidos. Override inviável sem alterar a instalação; relatório em `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`; ressalvas e orientação de consumo nos documentos 12 e 27. Sem mudança de código da extensão.
 
-### Nota operacional — B089, registrada em 2026-08-04 (atualizada em 2026-08-05)
+### Nota operacional — B089, registrada em 2026-08-04 (atualizada em 2026-08-10)
 
-Quando um API Object opera sob `SecurityLevel = Authorization`, o GeneXus gera permissões granulares por serviço REST (ex: `apiNotaFiscal_Services_Get`, `apiNotaFiscal_Services_Create`, etc.). O GAM Backoffice nativo não expõe de forma simples a associação dessas permissões granulares a roles customizadas criadas manualmente na interface administrativa web do GAM, limitando o teste ao role de Administrador do GAM ou aos testes sem token (401).
+Quando um API Object opera sob `SecurityLevel = Authorization`, o GeneXus gera permissões granulares por serviço REST (ex: `apinotafiscal_Services_Get`, `apinotafiscal_Services_Create`, etc.). O teste granular exige role não-administradora com Get permitido e Create não atribuído.
 
-B089 é registrado como item de backlog pré-Alpha para construir utilitário ou scripts GAM API (Programmatic GAM API) capazes de associar automaticamente permissões granulares a papéis customizados e validar a recusa 403 Forbidden quando uma role específica não tem a permissão atribuída.
+B089 foi registrado como item de backlog pré-Alpha para evidenciar HTTP **403 Forbidden** quando a role autenticada não tem a permissão do serviço. O enunciado original privilegiava Programmatic GAM API; o fechamento usou as telas nativas do GAM Backoffice, suficientes para o aceite.
 
 **Critérios de aceite e requisitos de ambiente para B089 (pré-Alpha separado; não gate da Sprint 7):**
-1. *Ambiente e Automação*: dispor de ambiente de teste com GAM (`SecurityLevel = Authorization`) e criar Procedure/script GeneXus com Programmatic GAM API (`GAMRole`, `GAMPermission`) para criar a role `Role_GOAB_Test_Denied` atribuindo permissão de `Get` e negando `Create`;
+1. *Ambiente*: dispor de ambiente de teste com GAM (`SecurityLevel = Authorization`) e configurar role `Role_GOAB_Test_Denied` com Get permitido e Create não atribuído (Backoffice ou Programmatic GAM API);
 2. *Evidência HTTP 403*: executar requisições HTTP autenticadas com usuário vinculado a essa role restrita e comprovar retorno **403 Forbidden** no `POST` (Create) e **200 OK** no `GET`;
 3. *Definição de Concluído*: o item estará pronto quando a resposta 403 estiver capturada e documentada em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md`.
+
+**Fechamento 2026-08-10:** os três critérios foram atendidos via GAM Backoffice (role `Role_GOAB_Test_Denied`, usuário `goab_role_denied`) nos environments .NET Framework/SQL Server e .NET/PostgreSQL: GET **200**, POST Create **403** (`code` 139); evidência em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D. Sem mudança de código da extensão. Programmatic GAM API não foi obrigatória.
 
 ---
 
@@ -361,7 +363,7 @@ B089 é registrado como item de backlog pré-Alpha para construir utilitário ou
 | 9. Metadata persistente e reconhecimento seguro | B006, B060, B063, B065–B067, B085–B087 |
 | 10. Colisão, regeneração e remoção conservadoras | B063, B064 e B083–B086 |
 
-Esses gates foram comprovados progressivamente nas Sprints 1–7 e estão aprovados no pacote integrado de 2026-08-09 (`Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`), com o marco **wizard funcional do MVP concluído**. U14 nesta máquina permanece residual não bloqueante. Frentes pré-Alpha (YAML nativo; depois 403 GAM) seguem uma de cada vez antes da Alpha.
+Esses gates foram comprovados progressivamente nas Sprints 1–7 e estão aprovados no pacote integrado de 2026-08-09 (`Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`), com o marco **wizard funcional do MVP concluído**. U14 nesta máquina permanece residual não bloqueante. Em 2026-08-10, `B088` e `B089` fecharam as frentes pré-Alpha; a próxima ação canônica é a Alpha da Sprint 8.
 
 [BG-F06]
 
@@ -384,7 +386,7 @@ Os itens e intervalos abaixo formam a linha de corte exaustiva do MVP. Um item o
 
 `B082` fica fora da linha de corte: mostrar o tempo de execução é útil, mas não comprova contrato funcional, segurança nem ciclo de vida.
 
-`B088` e `B089` permanecem anteriores à Alpha, mas não bloqueiam o marco **wizard funcional do MVP** da Sprint 7 revisada.
+`B088` e `B089` foram concluídos em 2026-08-10 e não bloqueiam o marco **wizard funcional do MVP** da Sprint 7 revisada.
 
 [BG-F06]
 
@@ -399,7 +401,7 @@ Os itens e intervalos abaixo formam a linha de corte exaustiva do MVP. Um item o
 5. Fase 3 até `B046`, criando os SDTs antes de seus consumidores
 6. Fases 4 e 5 (`B050`–`B067`), criando Procedures, API Object e metadata
 7. `B047`, Fase 6 (`B070`–`B079`) e aplicação da segurança em `B093`
-8. Fase 7 revisada concluída (`B087`, `B086`, `B085`, `B081`, residual `B083`, Folder reutilizado e comprovação integrada dos dez gates; marco wizard funcional do MVP); `B088`/`B089` em frentes pré-Alpha separadas, uma de cada vez, antes da Alpha
+8. Fase 7 revisada concluída (`B087`, `B086`, `B085`, `B081`, residual `B083`, Folder reutilizado e comprovação integrada dos dez gates; marco wizard funcional do MVP); `B088`/`B089` concluídos em 2026-08-10; próxima ação = Alpha da Sprint 8
 
 `B047` é validado somente depois do API Object e dos serviços porque depende do YAML gerado pelo GeneXus; esse deslocamento de evidência não antecipa consumidores antes dos SDTs.
 

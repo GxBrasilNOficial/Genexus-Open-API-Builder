@@ -40,8 +40,8 @@ Se algum gate falhasse sem alternativa nativa segura, o marco **não** seria dec
 ## Ressalvas e gaps residuais (não bloqueiam o marco)
 
 1. **Upgrade 14 nesta máquina:** não testado; baseline de produto continua U14+, evidência prática desta instalação é U15.
-2. **YAML nativo incompleto:** respostas declaradas no OpenAPI gerado pelo GeneXus ficam restritas a 200/404 no template nativo; lista `required:` de schemas pode não ser emitida. Runtime HTTP está correto. Frente pré-Alpha separada (investigação do template nativo), fora deste marco.
-3. **HTTP 403 com papel GAM comum:** Authorization já comprovado (401 sem token / 200 com token). Falta evidência de 403 por falta de permissão em role não-administradora. Frente pré-Alpha separada, fora deste marco.
+2. **YAML nativo incompleto:** respostas declaradas no OpenAPI gerado pelo GeneXus ficam restritas a 200/404 no template nativo; lista `required:` de schemas pode não ser emitida. Runtime HTTP está correto. Frente pré-Alpha `B088` (fora deste marco); **fechada em 2026-08-10** — ver `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
+3. **HTTP 403 com papel GAM comum:** Authorization já comprovado (401 sem token / 200 com token). Frente pré-Alpha `B089` (fora deste marco); **fechada em 2026-08-10** com Get 200 / Create 403 — ver `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D.
 4. **Atomicidade / rollback multiobjeto:** preflight valida o trio afetado antes do primeiro `Save()` planejado; falha interna da IDE/SDK no meio de uma sequência pode exigir reparação manual. Já listado no STATUS.
 5. **Reexecução CreateRequired em Procedure Create já própria:** preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual conhecido, fora do escopo desta sessão.
 
@@ -49,7 +49,7 @@ Se algum gate falhasse sem alternativa nativa segura, o marco **não** seria dec
 
 - implementação de feature nova;
 - Alpha pública (Sprint 8);
-- as duas investigações pré-Alpha acima (uma de cada vez, após este fechamento);
+- as duas investigações pré-Alpha acima (tratadas depois deste fechamento; ambas concluídas em 2026-08-10);
 - reinstalação da DLL (sem mudança de código nesta frente).
 
 ## Critério de conclusão
@@ -57,7 +57,7 @@ Se algum gate falhasse sem alternativa nativa segura, o marco **não** seria dec
 - matriz dos dez gates preenchida com status e evidências;
 - nenhum gap bloqueante sem alternativa nativa segura;
 - marco **wizard funcional do MVP concluído** declarado no checkpoint e no plano por sprints;
-- Sprint 7 encerrada; na data do fechamento, a próxima ação era a primeira frente pré-Alpha (limitações do YAML nativo / `B088`), depois a evidência 403 GAM (`B089`), antes da Alpha. Em 2026-08-10 `B088` foi concluído; a próxima ação vigente passa a ser `B089` (ver checkpoint).
+- Sprint 7 encerrada; na data do fechamento, a próxima ação era a primeira frente pré-Alpha (limitações do YAML nativo / `B088`), depois a evidência 403 GAM (`B089`), antes da Alpha. Em 2026-08-10 `B088` e `B089` foram concluídos; a próxima ação vigente é a Alpha da Sprint 8 (ver checkpoint).
 
 ## Remissões
 

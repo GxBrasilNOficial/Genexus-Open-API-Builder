@@ -158,7 +158,28 @@ Token OAuth 2.0 obtido via `POST /oauth/gam/v2.0/access_token` (`goab_api_teste`
   {"Items":[{"NotaFiscalId":"1","NotaFiscalSerie":"1","NotaFiscalNumero":"123"},...],"Pagination":{"Page":"1","PageSize":"50","TotalCount":"5","TotalPages":"1"},"AppliedFilters":{"NotaFiscalId":null,"NotaFiscalNumero":null}}
   ```
 
-*Nota sobre a Validação Granular de Permissões GAM:* A validação de requisição com token de usuário ativo **sem a permissão de autorização concedida** exige a criação de um Role não-administrador no GAM Backoffice e desvinculação da permissão `apiNotaFiscal-06e86b6b-8fbd-4d93-8a23-21bf07019c2b`. Por envolver configuração manual na interface do GAM Backoffice, essa validação granular é registrada como limitação de ambiente de teste local a ser coberta antes da fase Alpha.
+##### D. B089 — Caminho Negativo Granular (Token de Role Restrita: Get 200 / Create 403)
+
+Evidência pré-Alpha fechada em **2026-08-10** nos dois environments locais da KB `wsEducacaoSpTeste`, sob `SecurityLevel = Authorization` e API `apiNotaFiscal`.
+
+**Setup no GAM Backoffice** (telas nativas; Procedure Programmatic GAM API dispensada porque o Backoffice bastou):
+
+1. Papel `Role_GOAB_Test_Denied` (sem Administrator).
+2. Permissão `apinotafiscal_Services_Get` atribuída ao papel com opção **Permitir**.
+3. Permissão `apinotafiscal_Services_Create` **não** atribuída (acesso padrão Restrito).
+4. Usuário `goab_role_denied` (credenciais e Client IDs somente em `Temp/wsEducacaoSpTeste-local-test-environments.md`, fora do git) vinculado **somente** a `Role_GOAB_Test_Denied` como papel principal.
+5. Cada environment tem repositório GAM próprio: o cadastro foi repetido em Framework/SQL Server e em .NET/PostgreSQL.
+
+**Token OAuth 2.0** via `POST /oauth/gam/v2.0/access_token` (`grant_type=password`, `scope=gam_user_data`, usuário `goab_role_denied`).
+
+**Medições HTTP** em `.../apiNotaFiscal/notafiscal`:
+
+| Environment | GET `.../notafiscal/1` | POST Create (body `CreateRequest`) | Controle POST com `goab_api_teste` |
+|---|---|---|---|
+| .NET Framework / SQL Server | **HTTP 200** com `GetResponse` | **HTTP 403** `{"error":{"code":"139","message":"Não autorizado: acesso negado."}}` | **HTTP 201** |
+| .NET / PostgreSQL | **HTTP 200** com `GetResponse` | **HTTP 403** `{"error":{"code":"139","message":"Não autorizado: acesso negado."}}` | **HTTP 201** |
+
+**Comprovação:** sob Authorization, usuário autenticado com role restrita obtém **200** no Get permitido e **403 Forbidden** no Create negado, nos dois geradores. O GAP 1 (401 sem token / 200 com token autorizado) permanece válido; B089 completa a evidência granular.
 
 ---
 
@@ -224,7 +245,7 @@ Token OAuth 2.0 obtido via `POST /oauth/gam/v2.0/access_token` (`goab_api_teste`
 
 ## 5. Limitações
 
-- A anotação `[SecurityLevel(...)]` é aplicada no nível dos serviços do objeto `API`. O escopo de papéis/permissões granulares GAM por método continua sendo gerenciado via GAM Backoffice.
+- A anotação `[SecurityLevel(...)]` é aplicada no nível dos serviços do objeto `API`. O escopo de papéis/permissões granulares GAM por método continua sendo gerenciado via GAM Backoffice (evidência B089 em §4.A.3.D com role `Role_GOAB_Test_Denied`).
 - O gerador nativo OpenAPI do GeneXus não permite customizar o nome do esquema de segurança no YAML (`oAuthGXGAM`).
 
 ---
