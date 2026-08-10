@@ -195,7 +195,7 @@ internal static class ApiPlanApiObjectWriter
         }
 
         var file = matches[0];
-        if (!ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(file.Description, apiPlan.MetadataFileName))
+        if (!ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(file.Description, apiPlan.MetadataFileName, apiPlan.TransactionName))
         {
             return (false, false, null);
         }

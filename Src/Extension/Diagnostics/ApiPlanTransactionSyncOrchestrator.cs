@@ -433,14 +433,7 @@ internal static class ApiPlanTransactionSyncOrchestrator
         }
 
         var file = matches[0];
-        if (ApiPlanOwnedObjectDescription.IsCanonical(file.Description, metadataFileName))
-        {
-            return file;
-        }
-
-        if (file.Description is not null
-            && file.Description.StartsWith("Genexus Open API Builder B060 Metadata File", StringComparison.Ordinal)
-            && file.Description.IndexOf($"Transaction={transactionName}", StringComparison.Ordinal) >= 0)
+        if (ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(file.Description, metadataFileName, transactionName))
         {
             return file;
         }

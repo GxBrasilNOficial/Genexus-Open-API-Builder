@@ -20,7 +20,7 @@ Preserva: Transaction, Business Component, Folder reutilizado, SDTs `sdt_API_*` 
 
 - `ApiPlanGeneratedApiRemovalPlan` / `ApiPlanGeneratedApiRemover`
 - Comando `Remover API gerada` em `Package.cs`, `GenexusOpenApiBuilder.package` (menu principal e contexto)
-- Teste: `Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPlan.ps1`
+- Testes: `Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPlan.ps1` e `Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPreflight.ps1`
 
 ## Validação manual U15 (2026-08-08)
 
@@ -54,6 +54,10 @@ Transaction `Teste`, Folder reutilizado.
 
 1. **Caminho feliz:** após regeneração, `Remover API gerada` concluiu `Deleted=11`, `Blocked=0`, `Outcome='Success'`; Folder `TesteOpenApi` permaneceu; metadata removida de Files; SDTs `GxOpenAPI` e BC preservados.
 2. **Bloqueio por posse antes de qualquer Delete:** Description de `procTeste_API_List` alterada para texto humano; comando bloqueou em Preview com `Remocao bloqueada: Procedure 'procTeste_API_List' nao e propria da extensao. Nenhuma alteracao foi feita.`; relatório `Outcome='Interrupted'`, `Deleted=0`, `Blocked=1`, `DurationMs=0`; API/metadata/demais objetos próprios intactos.
+
+### Regressão automatizada de ownership e pré-voo
+
+O teste `Tests/OwnershipDescriptions/Test-ApiPlanOwnedObjectDescription.ps1` confirma que as sentinelas legadas de Procedure, SDT e metadata só são aceitas quando backlog, serviço/tipo, API e Transaction correspondem ao objeto reencontrado. O teste `Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPreflight.ps1` confirma que `Preview` e `Remove` chamam `ValidateRemovalTargets` antes do primeiro `Delete()` e mantêm as validações de ambiguidade e posse para API Object, Procedures e SDTs próprios.
 
 ### Smoke com Descriptions canônicas (2026-08-09)
 

@@ -165,7 +165,7 @@ internal static class ApiPlanMetadataFileWriter
             throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: o File '{apiPlan.MetadataFileName}' foi reencontrado com caixa divergente. Nenhuma alteracao foi feita.");
         }
 
-        if (!ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(file.Description, apiPlan.MetadataFileName))
+        if (!ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(file.Description, apiPlan.MetadataFileName, apiPlan.TransactionName))
         {
             throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: ja existe File externo ou incompativel chamado '{apiPlan.MetadataFileName}'. Nenhuma alteracao foi feita.");
         }

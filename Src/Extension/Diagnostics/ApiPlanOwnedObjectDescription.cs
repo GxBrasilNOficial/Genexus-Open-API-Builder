@@ -35,17 +35,117 @@ public static class ApiPlanOwnedObjectDescription
     public static bool IsCanonical(string? description, string objectName) =>
         string.Equals(description, Create(objectName), StringComparison.Ordinal);
 
-    public static bool IsOwnedProcedure(string? description, string procedureName) =>
-        IsCanonical(description, procedureName)
-        || StartsWithLegacy(description, LegacyProcedurePrefix);
+    public static bool IsOwnedProcedure(string? description, string procedureName)
+    {
+        if (IsCanonical(description, procedureName))
+        {
+            return true;
+        }
 
-    public static bool IsOwnedSdt(string? description, string sdtName) =>
-        IsCanonical(description, sdtName)
-        || StartsWithLegacy(description, LegacySdtPrefix);
+        return TryCreateLegacyProcedureDescription(procedureName, out var expected)
+            && string.Equals(description, expected, StringComparison.Ordinal);
+    }
+
+    public static bool IsOwnedSdt(string? description, string sdtName)
+    {
+        if (IsCanonical(description, sdtName))
+        {
+            return true;
+        }
+
+        return TryCreateLegacySdtDescription(sdtName, out var expected)
+            && string.Equals(description, expected, StringComparison.Ordinal);
+    }
 
     public static bool IsOwnedMetadataFile(string? description, string metadataFileName) =>
-        IsCanonical(description, metadataFileName)
-        || StartsWithLegacy(description, LegacyMetadataPrefix);
+        IsCanonical(description, metadataFileName);
+
+    public static bool IsOwnedMetadataFile(string? description, string metadataFileName, string transactionName) =>
+        IsOwnedMetadataFile(description, metadataFileName)
+        || TryCreateLegacyMetadataDescription(transactionName, metadataFileName, out var expected)
+            && string.Equals(description, expected, StringComparison.Ordinal);
+
+    public static string CreateLegacyProcedureDescription(string procedureName)
+    {
+        var serviceName = GetApiServiceName(procedureName, "proc");
+        return $"{LegacyProcedurePrefix} - {ResolveProcedureBacklogId(serviceName)} - {serviceName}";
+    }
+
+    public static string CreateLegacySdtDescription(string sdtName)
+    {
+        if (string.Equals(sdtName, "sdt_API_ErrorResponse", StringComparison.Ordinal))
+        {
+            return $"{LegacySdtPrefix} - B045/B046 - SharedErrorResponse";
+        }
+
+        if (string.Equals(sdtName, "sdt_API_Pagination", StringComparison.Ordinal))
+        {
+            return $"{LegacySdtPrefix} - B045/B046 - SharedPagination";
+        }
+
+        var kind = GetApiServiceName(sdtName, "sdt");
+        return $"{LegacySdtPrefix} - {ResolveSdtBacklogId(kind)} - {kind}";
+    }
+
+    public static string CreateLegacyMetadataDescription(string transactionName, string apiName)
+    {
+        if (string.IsNullOrWhiteSpace(transactionName))
+        {
+            throw new ArgumentException("Transaction name is required.", nameof(transactionName));
+        }
+
+        if (string.IsNullOrWhiteSpace(apiName))
+        {
+            throw new ArgumentException("API name is required.", nameof(apiName));
+        }
+
+        return $"{LegacyMetadataPrefix} - Transaction={transactionName} - Api={apiName}";
+    }
+
+    private static bool TryCreateLegacyProcedureDescription(string procedureName, out string expected)
+    {
+        try
+        {
+            expected = CreateLegacyProcedureDescription(procedureName);
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            expected = string.Empty;
+            return false;
+        }
+    }
+
+    private static bool TryCreateLegacySdtDescription(string sdtName, out string expected)
+    {
+        try
+        {
+            expected = CreateLegacySdtDescription(sdtName);
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            expected = string.Empty;
+            return false;
+        }
+    }
+
+    private static bool TryCreateLegacyMetadataDescription(
+        string transactionName,
+        string metadataFileName,
+        out string expected)
+    {
+        try
+        {
+            expected = CreateLegacyMetadataDescription(transactionName, GetApiNameFromMetadataFileName(metadataFileName));
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            expected = string.Empty;
+            return false;
+        }
+    }
 
     public static bool IsOwnedSharedFolder(string? description) =>
         IsCanonical(description, "GxOpenAPI")
@@ -118,6 +218,58 @@ public static class ApiPlanOwnedObjectDescription
         }
         .Distinct(StringComparer.Ordinal)
         .ToArray();
+    }
+
+    private static string GetApiServiceName(string objectName, string expectedPrefix)
+    {
+        if (string.IsNullOrWhiteSpace(objectName))
+        {
+            throw new ArgumentException("Object name is required.", nameof(objectName));
+        }
+
+        if (!objectName.StartsWith(expectedPrefix, StringComparison.Ordinal))
+        {
+            throw new ArgumentException($"Object name must start with '{expectedPrefix}'.", nameof(objectName));
+        }
+
+        const string marker = "_API_";
+        var markerIndex = objectName.LastIndexOf(marker, StringComparison.Ordinal);
+        if (markerIndex < expectedPrefix.Length || markerIndex + marker.Length >= objectName.Length)
+        {
+            throw new ArgumentException($"Object name must contain a service marker '{marker}'.", nameof(objectName));
+        }
+
+        return objectName.Substring(markerIndex + marker.Length);
+    }
+
+    private static string GetApiNameFromMetadataFileName(string metadataFileName)
+    {
+        const string suffix = "_Metadata";
+        if (string.IsNullOrWhiteSpace(metadataFileName)
+            || !metadataFileName.EndsWith(suffix, StringComparison.Ordinal)
+            || metadataFileName.Length == suffix.Length)
+        {
+            throw new ArgumentException("Metadata file name must end with '_Metadata'.", nameof(metadataFileName));
+        }
+
+        return metadataFileName.Substring(0, metadataFileName.Length - suffix.Length);
+    }
+
+    private static string ResolveProcedureBacklogId(string serviceName)
+    {
+        if (string.Equals(serviceName, "List", StringComparison.OrdinalIgnoreCase)) return "B050";
+        if (string.Equals(serviceName, "Get", StringComparison.OrdinalIgnoreCase)) return "B051";
+        if (string.Equals(serviceName, "Create", StringComparison.OrdinalIgnoreCase)) return "B052";
+        return string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase) ? "B053" : "B050-B053";
+    }
+
+    private static string ResolveSdtBacklogId(string kind)
+    {
+        if (string.Equals(kind, "CreateRequest", StringComparison.OrdinalIgnoreCase)) return "B040";
+        if (string.Equals(kind, "UpdateRequest", StringComparison.OrdinalIgnoreCase)) return "B041";
+        if (string.Equals(kind, "Response", StringComparison.OrdinalIgnoreCase)) return "B042";
+        if (string.Equals(kind, "ListFilters", StringComparison.OrdinalIgnoreCase)) return "B043";
+        return string.Equals(kind, "ListResponse", StringComparison.OrdinalIgnoreCase) ? "B044" : "B040-B046";
     }
 
     private static bool StartsWithLegacy(string? description, string prefix) =>

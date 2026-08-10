@@ -202,7 +202,7 @@ internal static class ApiPlanGenerationStateReader
         }
 
         if (matches.Count == 1 &&
-            ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(matches[0].Description, apiPlan.MetadataFileName) &&
+            ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(matches[0].Description, apiPlan.MetadataFileName, apiPlan.TransactionName) &&
             HasCompatibleMetadata(designModel, index, matches[0], apiPlan, forSyncContractRefresh))
         {
             return new ApiPlanGenerationInspection(1, 1, 0, 0);
@@ -210,7 +210,7 @@ internal static class ApiPlanGenerationStateReader
 
         // Integridade B067 / ownership divergente em File proprio: bloqueia sem lista de colisão externa.
         if (matches.Count == 1 &&
-            ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(matches[0].Description, apiPlan.MetadataFileName))
+            ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(matches[0].Description, apiPlan.MetadataFileName, apiPlan.TransactionName))
         {
             return new ApiPlanGenerationInspection(1, 0, 0, 1);
         }
