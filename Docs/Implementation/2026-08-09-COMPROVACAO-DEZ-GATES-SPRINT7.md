@@ -57,7 +57,7 @@ Se algum gate falhasse sem alternativa nativa segura, o marco **não** seria dec
 - matriz dos dez gates preenchida com status e evidências;
 - nenhum gap bloqueante sem alternativa nativa segura;
 - marco **wizard funcional do MVP concluído** declarado no checkpoint e no plano por sprints;
-- Sprint 7 encerrada; próxima ação = primeira frente pré-Alpha (limitações do YAML nativo), depois a evidência 403 GAM, antes da Alpha.
+- Sprint 7 encerrada; na data do fechamento, a próxima ação era a primeira frente pré-Alpha (limitações do YAML nativo / `B088`), depois a evidência 403 GAM (`B089`), antes da Alpha. Em 2026-08-10 `B088` foi concluído; a próxima ação vigente passa a ser `B089` (ver checkpoint).
 
 ## Remissões
 

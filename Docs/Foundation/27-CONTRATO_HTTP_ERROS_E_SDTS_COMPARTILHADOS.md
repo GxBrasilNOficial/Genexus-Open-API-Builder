@@ -137,6 +137,19 @@ Se não for possível distinguir com segurança conflito de regra de negócio, u
 
 O cabeçalho `Location` no `Create` é gerado nativamente via `&HttpResponse.AddHeader(!"Location", ...)` com a URL relativa do recurso criado, sem exigir DLL externa ou `External Object`.
 
+## Nota de revisão — B088 (2026-08-10)
+
+A tabela desta seção descreve o **runtime HTTP** do MVP. O YAML OpenAPI gerado nativamente pelo GeneXus para API Object **não** declara esse conjunto: o template `Packages/RestDLTemplates/Swagger.Yaml.stg` emite tipicamente só `200` e `404` por operação. O bloco `required:` dos schemas também não é emitido a partir da propriedade `Required` em item de SDT (`TypeDefinitions.Yaml.stg`).
+
+`B088` comprovou que não há extensão segura dessa documentação sem alterar a instalação GeneXus. Relatório: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`. Remissão complementar no documento 12.
+
+Orientação de consumo:
+
+- confiar nesta tabela e no Source/Events gerados (`&RestStatusCode` / `&RestCode`), não no bloco `responses:` do YAML, para saber quais status o MVP pode devolver;
+- `openapi-generator-cli` permanece útil para rotas, métodos, `operationId`, security e schemas básicos; o mapa de status do cliente gerado fica incompleto frente ao runtime;
+- agentes de IA que leiam o YAML devem ser avisados da limitação e cruzar Procedures/Events (ou C# pós-Build) e este contrato; `401`/`403` do GAM e falhas de infra podem não aparecer no Source da Procedure;
+- não usar `Description` do API Object como substituto da lista estruturada de status.
+
 ---
 
 # 6. Operações MVP

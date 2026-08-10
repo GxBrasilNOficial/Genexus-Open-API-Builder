@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-08-09.
+2026-08-10.
 
 ## Último marco concluído
 
@@ -88,27 +88,29 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Alinhamento de Folder reutilizado implementado e validado no U15 em 2026-08-09 na Transaction `Teste`: `TesteOpenApi` preexistente no `Root Module` foi reencontrado no contêiner correto com aviso explícito, sem colisão e sem alteração da `Description`; reexecução com `Created=0`, `Updated=13`, `Blocked=0`, `Warnings=2`; contêiner incorreto, duplicidade e sentinela alheia bloquearam antes de qualquer escrita; relatório final com rolagem vertical; metadata exportada confirmou `transactionFolder.wasCreated=false`. Evidência: `Docs/Implementation/2026-08-08-FOLDER-REUTILIZADO-COM-AVISO.md`.
 - Reteste U15 de 2026-08-09 fechou o ciclo: Build All concluído nos environments `.NET Framework / SQL Server` e `.NET / PostgreSQL`; `Remover API gerada` confirmou `Folder: TesteOpenApi (reutilizado; nunca apagar)`, removeu `Deleted=11`, sem bloqueios/avisos, e preservou o Folder, os SDTs compartilhados e o Business Component.
 - Sprint 7 fechada em 2026-08-09: comprovação integrada dos dez gates técnicos transversais e marco **wizard funcional do MVP concluído**, por consolidação do acervo U15 das Sprints 1–7, sem bateria U15 nova e sem mudança de código. Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`. Upgrade 14 permanece residual não validado nesta máquina e não bloqueia o marco.
+- `B088` concluído em 2026-08-10: investigação read-only do gerador nativo OpenAPI (`Swagger.Yaml.stg` / `TypeDefinitions.Yaml.stg` / `Artech.Packages.RestServiceDL.Generator`) comprovou que não há substituição ou interceptação dos templates sem alterar a instalação GeneXus. Limitação intransponível documentada; ressalvas e orientação de consumo incorporadas aos documentos 12 e 27. Sem mudança de código da extensão. Evidência: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
 
 ## Frente ativa
 
-Frentes pré-Alpha, uma de cada vez, antes da Alpha da Sprint 8. Sprint 7 e o marco **wizard funcional do MVP** estão concluídos.
+Frentes pré-Alpha, uma de cada vez, antes da Alpha da Sprint 8. Sprint 7 e o marco **wizard funcional do MVP** estão concluídos. `B088` (YAML nativo) está concluído.
 
 ## Próxima ação única
 
-Investigar e documentar as limitações do YAML OpenAPI gerado nativamente pelo GeneXus (respostas declaradas incompletas no template nativo e possível ausência de `required:` nos schemas), com coleta de dados e testes quando necessário — primeira frente pré-Alpha; a evidência HTTP 403 com papel GAM não-administrador fica para a frente seguinte.
+Evidência HTTP **403** com papel GAM não-administrador (Programmatic GAM API), documentada em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` — frente pré-Alpha `B089`, após o fechamento de `B088`.
 
 ## Evidência da frente encerrada
 
-- matriz dos dez gates preenchida com status aprovado (ou aprovado com ressalva já conhecida) e remissões ao acervo Implementation/U15;
-- U14 nesta máquina registrado como residual não bloqueante, por decisão explícita do mantenedor em 2026-08-09;
-- gaps residuais conhecidos (atomicidade multiobjeto, reexecução CreateRequired, YAML nativo, 403 GAM) documentados sem reabrir frentes da Sprint 7;
-- pacote em `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`.
+- relatório B088 com inviabilidade de override do template sem tocar na instalação;
+- SHA256 idêntico de `Swagger.Yaml.stg` em GeneXus18 / Up14 / Up14HotFix; `procedure_responses` literal `200`/`404`;
+- documentos 12 e 27 atualizados com ressalva intransponível e orientação a `openapi-generator-cli` / leitores do YAML;
+- pacote em `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
 
 ## Critério de conclusão da próxima ação
 
-- relatório de investigação do YAML nativo com evidência (dados coletados / testes / inviabilidade documentada, conforme o caso);
-- não misturar nessa frente a evidência HTTP 403 com papel GAM comum;
-- manter B088/B089 como pré-Alpha separados, sem contradizer o marco do wizard já concluído.
+- ambiente com `SecurityLevel = Authorization` e automação Programmatic GAM API para role restrita;
+- evidência HTTP autenticada: `403` no Create negado e `200` no Get permitido;
+- documentação em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md`;
+- não reabrir B088 nem contradizer o marco do wizard já concluído.
 
 ## Sequência operacional vigente
 
@@ -146,6 +148,7 @@ Investigar e documentar as limitações do YAML OpenAPI gerado nativamente pelo 
 32. Em 2026-08-09 a Sprint 7 foi fechada com a comprovação integrada dos dez gates e a declaração do marco **wizard funcional do MVP concluído**. Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`. Próxima ação = frentes pré-Alpha uma de cada vez (YAML nativo; depois 403 GAM), antes da Alpha da Sprint 8.
 33. Em 2026-08-09 as Descriptions de produto sem IDs de backlog foram validadas no U15 (`Teste`): Wizard após limpeza total gerou `Created=12` (incluindo Folder) e as Properties confirmaram `{Nome} - by Genexus Open API Builder`. Evidência: `Docs/Implementation/2026-08-09-DESCRIPTIONS-PRODUTO-SEM-BACKLOG.md`.
 34. Em 2026-08-09 o ciclo pós-Descriptions fechou no U15: Remover com posse canônica (`Deleted=12`), Sync/Remover sem metadata bloqueando, Wizard restaurando, Sync sem diff e cancelamento do Remover. Evidência ampliada no mesmo documento de Descriptions e em `Docs/Implementation/B086-REMOVER-API-GERADA.md`.
+35. Em 2026-08-10 `B088` fechou a investigação do YAML nativo: override de `Swagger.Yaml.stg` inviável sem alterar a instalação; ressalvas nos documentos 12 e 27; próxima ação = `B089` (403 GAM). Evidência: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -153,8 +156,8 @@ Investigar e documentar as limitações do YAML OpenAPI gerado nativamente pelo 
 - compatibilidade prática das APIs do SDK com U14;
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação. Em `Remover API gerada` (B086), ambiguidade e posse de API/Procedures/SDTs próprios passam a ser validadas antes do primeiro `Delete()` (`ValidateRemovalTargets` em Preview e Remove); permanece residual a falha IDE/SDK no meio da sequência de exclusões já iniciada.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
-- limitações do YAML OpenAPI nativo do GeneXus (frente pré-Alpha atual);
-- evidência HTTP 403 com papel GAM não-administrador (frente pré-Alpha seguinte).
+- limitações do YAML OpenAPI nativo do GeneXus (documentadas em B088; intransponíveis sem patch na instalação — não bloqueiam o MVP);
+- evidência HTTP 403 com papel GAM não-administrador (frente pré-Alpha atual `B089`).
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 
 ## Documentos governantes
@@ -165,10 +168,11 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [24 — Plano por sprints](Foundation/24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md)
 - [Comprovação dos dez gates — Sprint 7](Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md)
 - [Descriptions de produto sem IDs de backlog](Implementation/2026-08-09-DESCRIPTIONS-PRODUTO-SEM-BACKLOG.md)
+- [B088 — Limitações do YAML nativo](Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md)
 
 ## Marcos ainda não iniciados
 
-- Alpha público (Sprint 8), após as frentes pré-Alpha (YAML nativo e 403 GAM), uma de cada vez.
+- Alpha público (Sprint 8), após a frente pré-Alpha restante `B089` (403 GAM).
 
 ## Protocolo de atualização
 

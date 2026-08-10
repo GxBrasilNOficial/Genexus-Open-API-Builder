@@ -12,6 +12,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Changed
 
+- `B088` concluído (2026-08-10): investigação read-only do gerador OpenAPI nativo (`Swagger.Yaml.stg` / `TypeDefinitions.Yaml.stg` / `Artech.Packages.RestServiceDL.Generator`) comprovou inviabilidade de substituir ou interceptar os templates sem alterar a instalação GeneXus. Limitação intransponível documentada; ressalvas e orientação de consumo (`openapi-generator-cli`, leitores/agentes do YAML cruzando Source/Events) incorporadas aos documentos 12 e 27. Sem mudança de código da extensão. Evidência: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`. Próxima frente pré-Alpha: `B089` (403 GAM).
+
 - Correção documental pós-Sprint 7 (2026-08-09): no gate 9 (metadata e reconhecimento seguro), a remissão de backlog passa a incluir `B087` junto de `B085`–`B086`, alinhando a matriz canônica do documento 06 §7.1 e a coluna de remissões do pacote `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md` à evidência de posse via metadata já citada.
 
 - Sprint 7 fechada (2026-08-09): comprovação integrada dos dez gates técnicos transversais e marco **wizard funcional do MVP concluído**, por consolidação do acervo U15 das Sprints 1–7 (sem bateria U15 nova e sem mudança de código). Upgrade 14 permanece residual não validado nesta máquina e não bloqueia o marco. Próximas frentes pré-Alpha, uma de cada vez: limitações do YAML OpenAPI nativo; depois evidência HTTP 403 com papel GAM não-administrador — antes da Alpha (Sprint 8). Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`. Checkpoint, backlog 06 e plano 24 alinhados.

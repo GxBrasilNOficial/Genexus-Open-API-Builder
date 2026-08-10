@@ -246,8 +246,8 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B085 | Sincronizar com a Transaction usando metadata | Alta — concluído (código + validação U15 2026-08-08) |
 | B086 | Remover API gerada por metadata, sem reverter BC | Alta — concluído (código + validação U15 2026-08-08/09; Folder criado e reutilizado) |
 | B087 | Ancorar posse na metadata e liberar a `Description` do API Object | Alta — concluído (código + validação U15 2026-08-07) |
-| B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta — pré-Alpha separado; próxima ação (após Sprint 7) |
-| B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta — pré-Alpha separado; frente seguinte após B088 |
+| B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta — pré-Alpha separado; concluído (2026-08-10; limitação intransponível documentada) |
+| B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta — pré-Alpha separado; próxima ação (após B088) |
 
 ### Nota operacional — revisão da Sprint 7 / Fase 7, registrada em 2026-08-07 (fechada em 2026-08-09)
 
@@ -261,7 +261,7 @@ Após a Sprint 6, o pacote histórico “conflitos e reexecução” da Fase 7 f
 6. alinhamento de Folder reutilizado à decisão do MVP (reutilizar `NomeOpenApi` preexistente no módulo correto com aviso) — concluído (U15 2026-08-09; caminho feliz e bloqueios para contêiner incorreto, duplicidade e sentinela alheia)
 7. comprovação integrada dos dez gates — concluído (2026-08-09; `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`); marco **wizard funcional do MVP concluído**; U14 residual não bloqueante
 
-`B088` e `B089` permanecem anteriores à Alpha, **fora** do gate obrigatório da Sprint 7 já fechada, e devem ser tratados **uma frente de cada vez**: primeiro investigação/documentação da limitação nativa do YAML GeneXus; depois evidência `403` com papel GAM não-administrador além do Authorization 401/200 já comprovado.
+`B088` e `B089` permanecem anteriores à Alpha, **fora** do gate obrigatório da Sprint 7 já fechada, e devem ser tratados **uma frente de cada vez**: primeiro investigação/documentação da limitação nativa do YAML GeneXus; depois evidência `403` com papel GAM não-administrador além do Authorization 401/200 já comprovado. Em 2026-08-10, `B088` foi concluído com inviabilidade de override sem alterar a instalação; a próxima frente pré-Alpha vigente é `B089`.
 
 ### Nota operacional — B087, registrada em 2026-08-03 (atualizada em 2026-08-05)
 
@@ -283,16 +283,18 @@ B087 separa os dois papéis: a posse passa a ser verificada apenas pela metadata
 - Para preservar o reencontro conservador de APIs já geradas anteriormente sem metadata ou durante transição, o leitor aceitará fallback para a `Description` legível quando o File de metadata ainda não existir;
 - Uma vez associado à metadata, alterações manuais na `Description` do API Object na IDE GeneXus não causarão perda de posse nem bloquearão regerações.
 
-### Nota operacional — B088, registrada em 2026-08-04 (atualizada em 2026-08-05)
+### Nota operacional — B088, registrada em 2026-08-04 (atualizada em 2026-08-10)
 
 O gerador nativo de documentação REST OpenAPI do GeneXus (`Swagger.Yaml.stg`) gera um bloco estático declarando apenas códigos de resposta 200 e 404 por operação, sem refletir respostas como 201, 400 ou 422 devolvidas pelo pipeline REST em runtime. Adicionalmente, o gerador nativo não emite a lista `required:` nos schemas de request/response mesmo quando a propriedade `Required` está gravada e persistida nos itens de SDT/API Object.
 
-B088 é registrado como item de backlog anterior à Alpha para investigar extensibilidade do gerador de documentação REST ou inclusão de notas de compatibilidade para geradores de clientes a partir do YAML produzido.
+B088 investigou extensibilidade do gerador de documentação REST e a inclusão de notas de compatibilidade para geradores de clientes a partir do YAML produzido.
 
 **Critérios de aceite para conclusão de B088 (pré-Alpha separado; não gate da Sprint 7):**
 1. *Investigação de Extensibilidade*: mapear e provar se o mecanismo de extensibilidade da IDE/SDK permite substituir ou interceptar o template `Swagger.Yaml.stg` sem modificar a instalação central do GeneXus;
 2. *Ressalva e Compatibilidade*: caso a alteração do template nativo exija modificar `C:\Program Files (x86)\GeneXus` (o que é proibido), registrar formalmente a limitação intransponível em `Docs/Foundation/12-REGRAS_CRIACAO_API_OBJECTS.md` e `Docs/Foundation/27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md`, definindo as orientações de consumo para o `openapi-generator-cli`;
 3. *Definição de Concluído*: o item estará pronto com o relatório técnico de viabilidade e as ressalvas de compatibilidade incorporadas à documentação.
+
+**Fechamento 2026-08-10:** os três critérios foram atendidos. Override inviável sem alterar a instalação; relatório em `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`; ressalvas e orientação de consumo nos documentos 12 e 27. Sem mudança de código da extensão.
 
 ### Nota operacional — B089, registrada em 2026-08-04 (atualizada em 2026-08-05)
 

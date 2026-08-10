@@ -44,7 +44,7 @@ A partir de uma Transaction, o projeto busca gerar:
 
 O marco **wizard funcional do MVP** foi concluído em 2026-08-09, com a comprovação integrada dos dez gates no GeneXus 18 U15. A validação prática no U14 permanece residual e não bloqueia o marco.
 
-Antes da Alpha pública, restam frentes pré-Alpha (limitações do YAML OpenAPI nativo; depois evidência HTTP 403 com papel GAM comum), uma de cada vez.
+Antes da Alpha pública, resta a frente pré-Alpha `B089` (evidência HTTP 403 com papel GAM comum). A frente `B088` (limitações do YAML OpenAPI nativo) foi concluída em 2026-08-10.
 
 Para retomar o trabalho em uma nova sessão, consulte o checkpoint operacional:
 

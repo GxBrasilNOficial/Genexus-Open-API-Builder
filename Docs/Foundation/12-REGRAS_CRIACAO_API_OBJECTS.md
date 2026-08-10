@@ -187,7 +187,7 @@ As variáveis `&CreateRequest` e `&UpdateRequest` do objeto `API` recebem a prop
 
 A marcação precisa ser aplicada por todo writer que recrie as variáveis do objeto `API`, inclusive o de `List`, que as reescreve em etapa posterior.
 
-A mesma propriedade em item de SDT não produz efeito no contrato: ela é gravada e persistida, mas o gerador não a usa para emitir o bloco `required:` dos schemas. Por isso a geração não a aplica em item de SDT. Evidência em `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md`.
+A mesma propriedade em item de SDT não produz efeito no contrato: ela é gravada e persistida, mas o gerador não a usa para emitir o bloco `required:` dos schemas. Por isso a geração não a aplica em item de SDT. Evidência em `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md`. `B088` (2026-08-10) confirmou que essa lacuna do template `TypeDefinitions.Yaml.stg` também é intransponível sem alterar a instalação; ver `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
 
 Onde o contrato declara obrigatoriedade, vale a ressalva de semântica registrada na nota de revisão de B076 e na `Emenda técnica — 2026-08-03` do registro de decisões: OpenAPI afirma presença de membro, enquanto o runtime valida preenchimento.
 
@@ -234,6 +234,19 @@ A tabela acima descreve os códigos que o runtime devolve, e continua correta ne
 O contrato OpenAPI gerado pelo GeneXus **não** declara esses códigos. Cada operação de API Object sai com `200` e `404` apenas. O bloco de respostas é literal no template `Packages/RestDLTemplates/Swagger.Yaml.stg` da instalação, sem propriedade, anotação ou ponto de extensão que a extensão possa usar. Códigos adicionais aparecem somente no REST automático de Business Component e no endpoint de upload `gxobject`, que não são o caminho desta ferramenta.
 
 Consequência assumida: um cliente gerado a partir do contrato pode tratar o `201` de Create como resposta inesperada. Evidência e alternativas descartadas em `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md`.
+
+## Nota de revisão — B088 (2026-08-10)
+
+`B088` fechou a investigação de extensibilidade: o gerador `Artech.Packages.RestServiceDL.Generator` carrega `Swagger.Yaml.stg` / `TypeDefinitions.Yaml.stg` apenas de `Packages\RestDLTemplates` via `PathHelper.PackagesPath`. Não há override por KB, Extensibility SDK ou pacote desta extensão sem alterar a instalação GeneXus (proibido).
+
+A limitação é **intransponível** neste produto. O MVP permanece útil com runtime HTTP conforme a tabela acima e YAML nativo incompleto na lista de `responses:` e no `required:` dos schemas.
+
+Orientação de consumo:
+
+- usar este documento e o documento 27 como contrato de status HTTP do MVP;
+- para `openapi-generator-cli`, esperar clientes tipados sobretudo em torno de `200`/`404`, tratando `201`/`400`/`422` etc. como respostas reais fora do mapa declarado (evidência Sprint 6 em `Docs/Implementation/2026-08-04-VALIDACAO-YAML-SPRINT6-EIXOS-SEGURANCA.md`);
+- agentes ou leitores do YAML devem cruzar Source das Procedures (`&RestStatusCode`) e Events do API Object (`&RestCode = &RestStatusCode`), não a `Description` do objeto;
+- relatório: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
 
 [HP-F12]
 
