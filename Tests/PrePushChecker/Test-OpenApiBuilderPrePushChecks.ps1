@@ -49,6 +49,9 @@ Assert-True ($source -match 'Tests/WritePreflight/Test-ApiPlanWritePreflightScop
 Assert-True ($source -match 'Tests/BusinessComponentWriter/Test-ApiPlanBusinessComponentWriterVariableContract\.ps1') 'O checker deve executar o teste unitário do contrato de variáveis do writer Business Component.'
 Assert-True ($source -match 'Tests/ListProcedure/Test-ApiPlanListProcedureReencounterPolicy\.ps1') 'O checker deve executar o teste unitário do reencontro B070.'
 Assert-True ($source -match 'Tests/RequiredSemantics/Test-RequiredMemberSemanticsConsistency\.ps1') 'O checker deve executar o teste unitário da coerência semântica de Required.'
+Assert-True ($source -match 'Tests/WizardContract/Test-PrototypeWizardAutonumberCompositeKey\.ps1') 'O checker deve executar o teste unitário de autonumeração e chave composta.'
+Assert-True ($source -match 'Tests/WizardContract/Test-ApiPlanGenerationStateReaderGetAllIndex\.ps1') 'O checker deve executar o teste unitário do leitor de estado de geração.'
+Assert-True ($source -match 'Tests/WizardContract/Test-PrototypeWizardCreateRequiredPrimaryKeyOptional\.ps1') 'O checker deve executar o teste unitário do contrato de wizard CreateRequired.'
 
 $fixtures = @(
     @{ Text = 'error NU1004: The package lock file is inconsistent.'; Phase = 'restore'; Expected = 'lockFileInconsistent' },
@@ -81,6 +84,7 @@ try {
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ListProcedure'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\RequiredSemantics'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\OpenApiContract'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\WizardContract'))
     & git init --bare (Join-Path $tempRoot 'remote.git') | Out-Null
     Push-Location (Join-Path $tempRoot 'repo')
     try {
@@ -115,6 +119,9 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\RequiredSemantics\Test-RequiredMemberSemanticsConsistency.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Required Member Semantics Consistency'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\OpenApiContract\Test-ApiPlanOpenApiContractMarks.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture OpenApi Contract Marks'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\OpenApiContract\Test-OpenApiClientContractValidity.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture OpenApi Client Contract Validity'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-PrototypeWizardAutonumberCompositeKey.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Autonumber Composite Key'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-ApiPlanGenerationStateReaderGetAllIndex.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generation State Reader GetAll Index'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-PrototypeWizardCreateRequiredPrimaryKeyOptional.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Create Required Primary Key Optional'`n", [System.Text.UTF8Encoding]::new($false))
         & git add .gitignore README.md Src scripts Tests
         & git commit -m 'Fixture do checker' | Out-Null
         & git remote add origin (Join-Path $tempRoot 'remote.git')
@@ -145,6 +152,9 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.requiredMemberSemantics' }).status -eq 'passed') 'O teste unitário da coerência semântica de Required deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.openApiContractMarks' }).status -eq 'passed') 'O teste unitário das marcações do contrato OpenAPI deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.openApiClientContractValidity' }).status -eq 'passed') 'O teste unitário da validade do contrato de cliente OpenAPI deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractAutonumberCompositeKey' }).status -eq 'passed') 'O teste unitário de autonumeração e chave composta deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractGenerationStateReader' }).status -eq 'passed') 'O teste unitário do leitor de estado de geração deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractCreateRequired' }).status -eq 'passed') 'O teste unitário do contrato de wizard CreateRequired deveria passar na fixture.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract.ps1' }).Count -eq 1) 'O comando do teste Service Source deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity.ps1' }).Count -eq 1) 'O comando do teste Metadata Integrity deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ApiObjectOwnership/Test-ApiPlanApiObjectOwnership.ps1' }).Count -eq 1) 'O comando do teste Api Object Ownership deve aparecer no JSON.'
@@ -161,6 +171,9 @@ try {
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/BusinessComponentWriter/Test-ApiPlanBusinessComponentWriterVariableContract.ps1' }).Count -eq 1) 'O comando do teste Business Component Writer Variable Contract deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/OpenApiContract/Test-ApiPlanOpenApiContractMarks.ps1' }).Count -eq 1) 'O comando do teste OpenApi Contract Marks deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/OpenApiContract/Test-OpenApiClientContractValidity.ps1' }).Count -eq 1) 'O comando do teste OpenApi Client Contract Validity deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-PrototypeWizardAutonumberCompositeKey.ps1' }).Count -eq 1) 'O comando do teste Autonumber Composite Key deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-ApiPlanGenerationStateReaderGetAllIndex.ps1' }).Count -eq 1) 'O comando do teste Generation State Reader GetAll Index deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-PrototypeWizardCreateRequiredPrimaryKeyOptional.ps1' }).Count -eq 1) 'O comando do teste Create Required Primary Key Optional deve aparecer no JSON.'
         Assert-True (@($result.warnings).Count -eq 0) 'O checker não deve registrar "0 Aviso(s)" como warning.'
 
         $fetchJson = & pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson -Fetch
