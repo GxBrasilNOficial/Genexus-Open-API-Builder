@@ -342,7 +342,7 @@ Ordem acordada de execução:
 
 Ciclo de vida conservador completo na IDE (posse, regeneração, sincronização e remoção sem overwrite indevido) e dez gates técnicos transversais comprovados.
 
-**Sprint 7 concluída em 2026-08-09.** O projeto atingiu o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para a Alpha da Sprint 8. Em 2026-08-10, `B088` e `B089` fecharam as frentes pré-Alpha; a próxima ação canônica é a Alpha da Sprint 8.
+**Sprint 7 concluída em 2026-08-09.** O projeto atingiu o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para a Alpha da Sprint 8. Em 2026-08-10, `B088` e `B089` fecharam as frentes pré-Alpha. Em seguida o pacote documental `0.1.0-alpha.1` foi preparado; a próxima ação canônica é o gate da Sprint 8 (usuário externo).
 
 [F14][F28][SPR-F24]
 
@@ -375,6 +375,8 @@ Primeira versão aberta utilizável.
 ## Gate
 
 Usuário externo testa.
+
+**Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10:** README público, [Docs/Public/INSTALL.md](../Public/INSTALL.md), [Docs/Public/DEMO.md](../Public/DEMO.md), [Docs/Releases/0.1.0-alpha.1.md](../Releases/0.1.0-alpha.1.md), corte no CHANGELOG e versão do pacote alinhada. Capturas em `Docs/Images/` entram quando disponíveis. Tag local `v0.1.0-alpha.1` após o commit da frente; push/GitHub Release só com pedido explícito. Próxima responsabilidade operacional: colocar a Alpha na mão de usuário externo (gate desta sprint); Sprint 9 absorve correções a partir do feedback.
 
 [F18][SPR-F24]
 

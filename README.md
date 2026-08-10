@@ -1,36 +1,18 @@
-# README.md
-
 # Genexus Open API Builder
 
-Ferramenta open source para acelerar a geração de APIs REST baseadas em **Transactions GeneXus**.
+Ferramenta open source para acelerar a geração de APIs REST a partir de **Transactions GeneXus**.
 
-Transforma tarefas repetitivas em automação útil, previsível e rastreável.
+Alpha pública: **`0.1.0-alpha.1`**
 
----
-
-# Objetivo
-
-Reduzir o tempo necessário para criar estruturas iniciais de APIs REST no ecossistema GeneXus.
-
-Em vez de criar tudo manualmente, o projeto gera uma base pronta para evolução.
+Menos repetição. Mais entrega. Mais valor para a comunidade GeneXus.
 
 ---
 
-# O Que Gera
+## O que resolve
 
-A partir de uma Transaction, o projeto busca gerar:
+Reduz o tempo para montar a estrutura inicial de uma API REST no ecossistema GeneXus: em vez de criar manualmente API Object, Procedures, SDTs e metadata, o wizard gera uma base previsível, editável e rastreável.
 
-- API principal
-- Procedures de apoio
-- SDTs próprios de Create, Update, Response, filtros e lista
-- SDTs compartilhados de erro e paginação
-- serviços `List`, `Get`, `Create` e `Update`
-- naming consistente
-- metadata persistente para regeneração conservadora
-
----
-
-# Público-Alvo
+## Para quem
 
 - Software houses GeneXus
 - Times corporativos internos
@@ -38,166 +20,104 @@ A partir de uma Transaction, o projeto busca gerar:
 - Comunidade técnica
 - Estudantes
 
----
+## O que gera
 
-# Estado Atual
+A partir de uma Transaction:
 
-O marco **wizard funcional do MVP** foi concluído em 2026-08-09, com a comprovação integrada dos dez gates no GeneXus 18 U15. A validação prática no U14 permanece residual e não bloqueia o marco.
+- API Object principal (`List`, `Get`, `Create`, `Update`)
+- Procedures de apoio
+- SDTs próprios (Create, Update, Response, filtros, lista)
+- SDTs compartilhados de erro e paginação
+- Naming consistente
+- Metadata persistente para regeneração conservadora
+- Ciclo de vida na IDE: Wizard, Sincronizar com a Transaction, Remover API gerada
 
-As frentes pré-Alpha `B088` (YAML nativo) e `B089` (evidência HTTP 403 com papel GAM comum) foram concluídas em 2026-08-10. A próxima ação canônica é a Alpha pública (Sprint 8).
+## Status atual
 
-Para retomar o trabalho em uma nova sessão, consulte o checkpoint operacional:
+| Item | Estado |
+|------|--------|
+| Wizard funcional do MVP | Concluído (GeneXus 18 U15) |
+| Ciclo de vida (posse, sync, remoção, relatório) | Concluído |
+| Alpha pública `0.1.0-alpha.1` | Pacote desta release |
+| Upgrade 14 | Residual; não bloqueia a Alpha |
 
-[Estado atual e próximo passo](Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md)
+### Limitações honestas
 
----
+- Sem serviço `DELETE` no MVP
+- YAML OpenAPI nativo do GeneXus tem restrições (documentadas); a extensão não substitui os templates da instalação
+- Classificação de campos sensíveis/auditoria ainda usa política default
+- Obrigatoriedade em Create/Update valida **preenchimento** (não presença JSON pura), com a limitação conhecida de valores iguais ao default do tipo
 
-# Requisito de Ambiente: PUT, DELETE e PATCH em IIS
+## Começar em minutos
+
+1. [Instalar a extensão](Docs/Public/INSTALL.md)
+2. [Seguir a demo rápida](Docs/Public/DEMO.md)
+3. Ler as [notas da Alpha](Docs/Releases/0.1.0-alpha.1.md)
+
+## Capturas
+
+Slots em `Docs/Images/` (incluídos quando as capturas forem adicionadas ao repositório):
+
+- `alpha-menu.png` — menu Genexus Open API Builder
+- `alpha-wizard.png` — Wizard
+- `alpha-folder.png` — Folder `<Transaction>OpenApi`
+- `alpha-preferences.png` — Preferências do Wizard
+
+Enquanto as imagens não estiverem versionadas, o roteiro em [DEMO.md](Docs/Public/DEMO.md) permanece textual.
+
+## Requisito de ambiente: PUT, DELETE e PATCH em IIS
 
 Aplica-se a quem publica a API gerada em **IIS**, com o gerador **.NET Framework**.
 
-O serviço `Update` é gerado como `PUT`. Por padrão, o IIS não entrega esse verbo à aplicação: o handler `ExtensionlessUrlHandler-Integrated-4.0`, responsável por URLs sem extensão, vem configurado com `verb="GET,HEAD,POST,DEBUG"`. Requisições `PUT` caem no handler de arquivo estático e o cliente recebe **404 com página HTML do IIS**, sem que nenhum código GeneXus execute. `GET` e `POST` funcionam normalmente, o que torna o sintoma confuso: `List`, `Get` e `Create` respondem, só o `Update` falha.
+O serviço `Update` é gerado como `PUT`. Por padrão, o IIS não entrega esse verbo à aplicação: o handler `ExtensionlessUrlHandler-Integrated-4.0` vem com `verb="GET,HEAD,POST,DEBUG"`. O cliente recebe **404 HTML do IIS**; `List`, `Get` e `Create` podem funcionar normalmente.
 
-A correção é de ambiente. No **IIS Manager executado como administrador**, selecione o **nó do servidor** — não o site nem a aplicação — e vá em `Mapeamentos de Manipulador` → `ExtensionlessUrlHandler-Integrated-4.0` → `Restrições da Solicitação…` → aba `Verbos` → `Um dos seguintes verbos`, acrescentando `PUT` à lista. Inclua `DELETE` e `PATCH` se a API expuser esses verbos. Reinicie o IIS em seguida.
+Correção durável: no **IIS Manager como administrador**, nó do **servidor** → Mapeamentos de Manipulador → `ExtensionlessUrlHandler-Integrated-4.0` → Restrições da Solicitação → Verbos → acrescente `PUT` (e `DELETE`/`PATCH` se necessário) → reinicie o IIS.
 
-Dois pontos que economizam tempo:
+Não acrescente o handler só no `web.config` do app gerado: o Build All regenera essa seção. Cuidado com WebDAV habilitado no servidor.
 
-- **não** acrescente o handler ao `web.config` do aplicativo gerado. Funciona de imediato, mas o Build All executa a etapa `Web config update`, regenera a seção `<handlers>` e descarta o acréscimo;
-- aplicar a alteração pelo site ou pela aplicação no IIS Manager grava no mesmo `web.config` gerado, com o mesmo resultado. Por isso a orientação é o nó do servidor.
+O gerador **.NET** não apresenta esse comportamento. Diagnóstico completo: [B071-B073/B079](Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md).
 
-Antes de liberar esses verbos, verifique se o WebDAV está instalado e com authoring habilitado no servidor: nesse cenário, liberar `PUT` pode expor gravação de arquivo. Considere também que a alteração no nó do servidor vale para todas as aplicações hospedadas nele, que deixam de contar com o filtro implícito do IIS para esses verbos.
+## Atualização da extensão
 
-O diagnóstico completo, com as medições que isolaram a causa, está em [B071-B073/B079](Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md).
+Quando houver nova DLL:
 
-O gerador **.NET** não apresenta esse comportamento.
+1. Feche a IDE GeneXus
+2. Execute [`Install-ExtensionForGeneXus18.bat`](Install-ExtensionForGeneXus18.bat) como administrador
+3. Se o manifesto/registro mudou desde o último `genexus /install`, execute [`Register-ExtensionForGeneXus18.bat`](Register-ExtensionForGeneXus18.bat) e rode `genexus /install`
+4. Reabra a IDE
 
----
+Detalhes: [Docs/Public/INSTALL.md](Docs/Public/INSTALL.md).
 
-# Atualização Manual da Extensão no GeneXus 18
+## Roadmap resumido
 
-Quando uma nova DLL estiver pronta para teste:
+| Etapa | Foco |
+|-------|------|
+| Alpha (agora) | Primeira versão aberta utilizável |
+| Sprint 9 | Correções reais com feedback externo |
+| Sprint 10 / Beta | Fluxo principal estável e releases previsíveis |
 
-1. feche completamente a IDE GeneXus;
-2. execute [`Install-ExtensionForGeneXus18.bat`](Install-ExtensionForGeneXus18.bat) na raiz do repositório usando **Executar como administrador**;
-3. se houve alteração desde o último `genexus /install` bem-sucedido em `Src/Extension/GenexusOpenApiBuilder.package`, na identidade do pacote ou no registro de comandos, execute [`Register-ExtensionForGeneXus18.bat`](Register-ExtensionForGeneXus18.bat) normalmente, sem Administrador; no prompt aberto, digite `genexus /install`, confira a varredura e depois digite `exit`;
-4. abra novamente a IDE e siga o roteiro de teste da frente ativa.
+## Documentação
 
-O primeiro arquivo delega a cópia, o backup e a validação de hash ao script interno `Tools/Copy-ExtensionForGeneXus18.ps1`. Esse script não registra a extensão. O segundo `.bat` e `genexus /install` são condicionais: atualizam o registro e o manifesto carregados pela IDE, mas não são necessários quando somente a DLL foi alterada desde o último registro bem-sucedido.
+| Documento | Conteúdo |
+|-----------|----------|
+| [INSTALL](Docs/Public/INSTALL.md) | Instalação |
+| [DEMO](Docs/Public/DEMO.md) | Roteiro curto |
+| [CHANGELOG](CHANGELOG.md) | Histórico de mudanças |
+| [0.1.0-alpha.1](Docs/Releases/0.1.0-alpha.1.md) | Notas desta Alpha |
+| [Decisões do MVP](Docs/Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md) | Fonte primária funcional |
+| [Foundation](Docs/Foundation/00-MASTER_INDEX_DO_PROJETO.md) | Contratos e planejamento |
+| [Checkpoint operacional](Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md) | Estado interno do projeto |
 
-Para conferir posteriormente, somente por leitura, se a DLL instalada coincide com a build:
+## Como contribuir
 
-```powershell
-pwsh -NoProfile -File Tools/Test-InstalledExtension.ps1
-```
+Bugs, melhorias, documentação, testes e feedback de uso real são bem-vindos.
 
-O agente não executa os instaladores nem altera diretamente a pasta de instalação do GeneXus. O histórico técnico detalhado está em [B000 — Carregamento na IDE](Docs/Implementation/B000-CARREGAMENTO-IDE.md).
+Leia [CONTRIBUTING.md](CONTRIBUTING.md). Licença: [MIT](LICENSE).
 
----
+## Estrutura do repositório
 
-# Validação Pré-Push
-
-Antes de enviar commits, atualize a referência remota e execute o checker mecânico pelo nome canônico:
-
-```powershell
-git fetch origin
-pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
-```
-
-O JSON valida branch, divergência remota, whitespace, parse dos scripts, os testes unitários locais, restore, build e limpeza da working tree. Resultado mecânico não substitui a revisão semântica: quando `manualRequired` estiver preenchido, o push permanece bloqueado até revisar os itens e registrar gaps confirmados, flags descartados e áreas não cobertas.
-
-Quando o checker ou seu teste for alterado, execute também:
-
-```powershell
-pwsh -NoProfile -File Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1
-```
-
----
-
-# Fonte Primária das Decisões do MVP
-
-O registro consolidado da entrevista funcional de julho de 2026 é a fonte primária das decisões do MVP:
-
-[Registro de decisões funcionais do MVP — 2026-07-14](Docs/Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md)
-
-Esse registro preserva as decisões funcionais consolidadas. Os documentos em `Docs/Foundation` materializam os contratos organizados por assunto; mudanças posteriores devem atualizar explicitamente as fontes afetadas.
-
----
-
-# Estrutura do Repositório
-
-- Docs
-- Src
-- Tests
-- Samples
-- Tools
-- Temp
-
----
-
-# Documentação Base
-
-A fundação estratégica do projeto está em:
-
-Docs/Foundation/
-
-Evidências reproduzíveis da implementação prática ficam em:
-
-Docs/Implementation/
-
----
-
-# Filosofia
-
-- Open Source real
-- Valor prático
-- Simplicidade inicial
-- Código rastreável
-- Evolução pública
-- Sem hype vazio
-
----
-
-# Como Contribuir
-
-Contribuições são bem-vindas:
-
-- bugs
-- melhorias
-- documentação
-- testes
-- ideias úteis
-- Pull Requests
-
-Leia também:
-
-CONTRIBUTING.md
-
----
-
-# Roadmap Resumido
-
-## Fase 1
-
-MVP funcional.
-
-## Fase 2
-
-Produto confiável.
-
-## Fase 3
-
-Expansão técnica.
-
----
-
-# Mensagem Oficial
-
-Menos repetição.
-Mais entrega.
-Mais valor para a comunidade GeneXus.
-
----
-
-# Status
-
-Fundação documental concluída. A próxima ação vigente está no [checkpoint operacional](Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md).
+- `Docs` — documentação pública, foundation e evidências
+- `Src` — extensão e domínio
+- `Tests` — testes locais
+- `Tools` — instalação e checkers
+- `Samples` — espaço para exemplos futuros

@@ -12,13 +12,37 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Changed
 
-- `B089` concluído (2026-08-10): evidência HTTP **403 Forbidden** com papel GAM não-administrador sob `SecurityLevel = Authorization` em `apiNotaFiscal`. Setup via GAM Backoffice (role `Role_GOAB_Test_Denied`, Get Permitir, Create não atribuído, usuário `goab_role_denied`); GET **200** e POST Create **403** (`code` 139) nos environments .NET Framework/SQL Server e .NET/PostgreSQL; controle POST com usuário autorizado **201**. Documentado em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D. Sem mudança de código da extensão. Frentes pré-Alpha encerradas; próxima ação canônica: Alpha / Sprint 8.
+## Fixed
+
+## Added
+
+---
+
+# [0.1.0-alpha.1] - 2026-08-10
+
+Primeira Alpha pública do Genexus Open API Builder (Sprint 8).
+
+## Added
+
+- Pacote público da Alpha: README orientado a visitante, [guia de instalação](Docs/Public/INSTALL.md), [demo rápida](Docs/Public/DEMO.md) e [notas de release](Docs/Releases/0.1.0-alpha.1.md).
+- Versão do pacote da extensão alinhada a `0.1.0-alpha.1`.
+
+## Summary
+
+- Marco **wizard funcional do MVP** concluído (2026-08-09), com comprovação integrada dos dez gates no GeneXus 18 U15.
+- Ciclo de vida na IDE: Wizard, preferências por KB, sincronização com a Transaction, remoção conservadora, relatório final e UX mínima de colisão.
+- Serviços `List`, `Get`, `Create` e `Update` com metadata persistente, posse via metadata e regeneração conservadora.
+- Frentes pré-Alpha documentadas: limitações do YAML nativo (`B088`) e evidência HTTP 403 com role GAM restrita (`B089`).
+
+## Changed
+
+- `B089` concluído (2026-08-10): evidência HTTP **403 Forbidden** com papel GAM não-administrador sob `SecurityLevel = Authorization` em `apiNotaFiscal`. Setup via GAM Backoffice (role `Role_GOAB_Test_Denied`, Get Permitir, Create não atribuído, usuário `goab_role_denied`); GET **200** e POST Create **403** (`code` 139) nos environments .NET Framework/SQL Server e .NET/PostgreSQL; controle POST com usuário autorizado **201**. Documentado em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D. Sem mudança de código da extensão.
 
 - `B088` concluído (2026-08-10): investigação read-only do gerador OpenAPI nativo (`Swagger.Yaml.stg` / `TypeDefinitions.Yaml.stg` / `Artech.Packages.RestServiceDL.Generator`) comprovou inviabilidade de substituir ou interceptar os templates sem alterar a instalação GeneXus. Limitação intransponível documentada; ressalvas e orientação de consumo (`openapi-generator-cli`, leitores/agentes do YAML cruzando Source/Events) incorporadas aos documentos 12 e 27. Sem mudança de código da extensão. Evidência: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
 
 - Correção documental pós-Sprint 7 (2026-08-09): no gate 9 (metadata e reconhecimento seguro), a remissão de backlog passa a incluir `B087` junto de `B085`–`B086`, alinhando a matriz canônica do documento 06 §7.1 e a coluna de remissões do pacote `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md` à evidência de posse via metadata já citada.
 
-- Sprint 7 fechada (2026-08-09): comprovação integrada dos dez gates técnicos transversais e marco **wizard funcional do MVP concluído**, por consolidação do acervo U15 das Sprints 1–7 (sem bateria U15 nova e sem mudança de código). Upgrade 14 permanece residual não validado nesta máquina e não bloqueia o marco. Próximas frentes pré-Alpha, uma de cada vez: limitações do YAML OpenAPI nativo; depois evidência HTTP 403 com papel GAM não-administrador — antes da Alpha (Sprint 8). Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`. Checkpoint, backlog 06 e plano 24 alinhados.
+- Sprint 7 fechada (2026-08-09): comprovação integrada dos dez gates técnicos transversais e marco **wizard funcional do MVP concluído**, por consolidação do acervo U15 das Sprints 1–7 (sem bateria U15 nova e sem mudança de código). Upgrade 14 permanece residual não validado nesta máquina e não bloqueia o marco. Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`.
 
 - B083 residual (2026-08-08): UX mínima de conflitos de colisão — para cada objeto conflitante, lista `Nome | Tipo | Modulo | Folder` no Wizard, preflight, Output e relatório quando a escrita é barrada por colisão. Núcleo de detecção/bloqueio sem overwrite/`_v2` já existia. File usa `Folder='(n/a)'`. Validado no U15 em `Teste` (colisão com SDT externo; após remoção, geração completa e Build All nos dois environments). Teste `Tests/CollisionUx/Test-ApiPlanCollisionConflict.ps1`. Manifesto inalterado (só DLL). Evidência: `Docs/Implementation/B083-UX-CONFLITOS-COLISAO.md`.
 

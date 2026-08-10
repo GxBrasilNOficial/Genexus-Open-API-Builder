@@ -90,25 +90,26 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Sprint 7 fechada em 2026-08-09: comprovação integrada dos dez gates técnicos transversais e marco **wizard funcional do MVP concluído**, por consolidação do acervo U15 das Sprints 1–7, sem bateria U15 nova e sem mudança de código. Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`. Upgrade 14 permanece residual não validado nesta máquina e não bloqueia o marco.
 - `B088` concluído em 2026-08-10: investigação read-only do gerador nativo OpenAPI (`Swagger.Yaml.stg` / `TypeDefinitions.Yaml.stg` / `Artech.Packages.RestServiceDL.Generator`) comprovou que não há substituição ou interceptação dos templates sem alterar a instalação GeneXus. Limitação intransponível documentada; ressalvas e orientação de consumo incorporadas aos documentos 12 e 27. Sem mudança de código da extensão. Evidência: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
 - `B089` concluído em 2026-08-10: evidência HTTP **403** com papel GAM não-administrador sob `SecurityLevel = Authorization` em `apiNotaFiscal` — role `Role_GOAB_Test_Denied`, Get Permitir / Create não atribuído, usuário `goab_role_denied`; GET **200** e POST Create **403** (`code` 139) nos environments .NET Framework/SQL Server e .NET/PostgreSQL. Setup via GAM Backoffice (telas nativas). Documentado em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D. Sem mudança de código da extensão.
+- Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10: README público, `Docs/Public/INSTALL.md`, `Docs/Public/DEMO.md`, `Docs/Releases/0.1.0-alpha.1.md`, corte no CHANGELOG e versão do csproj.
 
 ## Frente ativa
 
-Alpha da Sprint 8. Sprint 7, o marco **wizard funcional do MVP**, `B088` e `B089` estão concluídos. Frentes pré-Alpha encerradas.
+Pacote documental da Alpha `0.1.0-alpha.1` (Sprint 8). Sprint 7, wizard MVP, `B088` e `B089` concluídos.
 
 ## Próxima ação única
 
-Iniciar a **Alpha pública (Sprint 8)** conforme o plano em `Docs/Foundation/24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md`, sem reabrir B088/B089 nem contradizer o marco do wizard.
+Colocar a Alpha na mão de **usuário externo** (gate da Sprint 8): divulgação controlada e coleta de feedback. Sem reabrir B088/B089 nem contradizer o marco do wizard. Push da tag/`GitHub Release` só com pedido explícito após o commit local com tag `v0.1.0-alpha.1`.
 
 ## Evidência da frente encerrada
 
-- setup GAM Backoffice: role `Role_GOAB_Test_Denied`, `apinotafiscal_Services_Get` = Permitir, Create não atribuído, usuário `goab_role_denied` (repositórios GAM distintos por environment);
-- HTTP Framework/SQL e .NET/PostgreSQL: GET **200**, POST Create **403** (`code` 139, mensagem de acesso negado); controle POST com `goab_api_teste` **201**;
-- documentação em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D.
+- pacote público: README, `Docs/Public/INSTALL.md`, `Docs/Public/DEMO.md`, `Docs/Releases/0.1.0-alpha.1.md`;
+- CHANGELOG com seção `[0.1.0-alpha.1]`; versão do csproj `0.1.0-alpha.1`;
+- plano 24 atualizado na seção Sprint 8.
 
 ## Critério de conclusão da próxima ação
 
-- abrir e conduzir a Alpha da Sprint 8 pelos critérios do plano 24 e do backlog vigentes;
-- não reabrir B088/B089 nem contradizer o marco do wizard já concluído.
+- ao menos um usuário externo instalou/testou seguindo INSTALL + DEMO, ou feedback equivalente registrado;
+- issues/feedback priorizados alimentam a Sprint 9 sem reabrir B088/B089.
 
 ## Sequência operacional vigente
 
@@ -148,6 +149,7 @@ Iniciar a **Alpha pública (Sprint 8)** conforme o plano em `Docs/Foundation/24-
 34. Em 2026-08-09 o ciclo pós-Descriptions fechou no U15: Remover com posse canônica (`Deleted=12`), Sync/Remover sem metadata bloqueando, Wizard restaurando, Sync sem diff e cancelamento do Remover. Evidência ampliada no mesmo documento de Descriptions e em `Docs/Implementation/B086-REMOVER-API-GERADA.md`.
 35. Em 2026-08-10 `B088` fechou a investigação do YAML nativo: override de `Swagger.Yaml.stg` inviável sem alterar a instalação; ressalvas nos documentos 12 e 27; naquele momento a próxima ação passou a `B089` (403 GAM). Evidência: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
 36. Em 2026-08-10 `B089` fechou a evidência HTTP 403 com role GAM restrita em `apiNotaFiscal` (Get 200 / Create 403) nos dois environments; frentes pré-Alpha encerradas; próxima ação = Alpha / Sprint 8. Evidência: `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D.
+37. Em 2026-08-10 o pacote documental da Alpha `0.1.0-alpha.1` foi preparado (README, INSTALL, DEMO, notas de release, CHANGELOG, versão no csproj, plano 24). Próxima ação = usuário externo / divulgação controlada (gate Sprint 8); tag local no commit da frente.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -168,10 +170,14 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [Descriptions de produto sem IDs de backlog](Implementation/2026-08-09-DESCRIPTIONS-PRODUTO-SEM-BACKLOG.md)
 - [B088 — Limitações do YAML nativo](Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md)
 - [B093 — Security Level / evidência B089 403](Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md)
+- [INSTALL — Alpha](Public/INSTALL.md)
+- [DEMO — Alpha](Public/DEMO.md)
+- [Release 0.1.0-alpha.1](Releases/0.1.0-alpha.1.md)
 
 ## Marcos ainda não iniciados
 
-- Alpha público (Sprint 8).
+- Gate da Sprint 8 com usuário externo (após pacote `0.1.0-alpha.1`);
+- Sprint 9 — correções reais a partir do feedback.
 
 ## Protocolo de atualização
 
