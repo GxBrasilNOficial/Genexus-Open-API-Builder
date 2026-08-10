@@ -51,7 +51,7 @@ Cada inclusão, alteração ou remoção de comando do menu de contexto deve man
 pwsh -NoProfile -File Tools/Test-ExtensionCommandRegistration.ps1
 ```
 
-- O menu principal deve manter somente comandos operacionais vigentes. O placeholder histórico `Futura Primeira Opção` foi removido quando o menu passou a ter `Configurar Preferências do Wizard` e `Wizard` como comandos permanentes; no menu de contexto da Transaction, expor apenas `Wizard`.
+- O menu principal deve manter somente comandos operacionais vigentes. O placeholder histórico `Futura Primeira Opção` foi removido quando o menu passou a ter `Configurar Preferências do Wizard` e `Wizard` como comandos permanentes; no menu de contexto da Transaction, expor `Wizard`, `Sincronizar com a Transaction` e `Remover API gerada`.
 - No fechamento de uma sonda, remover seus comandos das três camadas e executar novamente o teste.
 
 ## Escrita na janela Output da IDE
