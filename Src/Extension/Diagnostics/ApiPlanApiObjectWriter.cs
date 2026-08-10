@@ -102,8 +102,10 @@ internal static class ApiPlanApiObjectWriter
     }
 
     /// <summary>
-    /// B085: posse para sincronização intencional — ownership da metadata + Service Source gerenciado,
-    /// sem exigir igualdade do plannedContract hash (o Sync atualiza o contrato de propósito).
+    /// B085: posse para sincronização intencional — apenas ownership da metadata
+    /// (schema + apiName + apiGuid). Não exige IsManagedApiObject contra o ApiPlan novo:
+    /// o Sync regrava Service Source/variáveis de propósito e o Source atual pode divergir
+    /// do plano reconstruído (campos novos, ordem de filtros, etc.).
     /// </summary>
     internal static bool IsOwnedApiObjectForSync(KBModel designModel, ApiPlan apiPlan, API apiObject)
     {
@@ -120,11 +122,6 @@ internal static class ApiPlanApiObjectWriter
         if (apiObject is null)
         {
             throw new ArgumentNullException(nameof(apiObject));
-        }
-
-        if (!ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject))
-        {
-            return false;
         }
 
         var metadataLookup = TryFindOwnedMetadataFile(designModel, apiPlan);

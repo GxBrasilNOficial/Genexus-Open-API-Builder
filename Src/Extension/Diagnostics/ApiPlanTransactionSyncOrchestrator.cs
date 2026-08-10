@@ -233,13 +233,16 @@ internal static class ApiPlanTransactionSyncOrchestrator
         ApiPlanTransactionSyncPreview preview,
         bool listFiltersMode = false)
     {
-        var selectedGuids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // Lista ordenada: preserva a ordem da metadata e anexa campos novos no fim.
+        // HashSet só para membership — ordem de filtros afeta a assinatura do Service Source.
+        var selectedGuids = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (listFiltersMode)
         {
             foreach (var token in (JArray?)metadata.SelectToken(path) ?? new JArray())
             {
                 var guid = token.SelectToken("field.attributeGuid")?.Value<string>();
-                if (!string.IsNullOrWhiteSpace(guid))
+                if (!string.IsNullOrWhiteSpace(guid) && seen.Add(guid!))
                 {
                     selectedGuids.Add(guid!);
                 }
@@ -250,7 +253,7 @@ internal static class ApiPlanTransactionSyncOrchestrator
             foreach (var token in (JArray?)metadata.SelectToken(path) ?? new JArray())
             {
                 var guid = token["attributeGuid"]?.Value<string>();
-                if (!string.IsNullOrWhiteSpace(guid))
+                if (!string.IsNullOrWhiteSpace(guid) && seen.Add(guid!))
                 {
                     selectedGuids.Add(guid!);
                 }
@@ -259,7 +262,12 @@ internal static class ApiPlanTransactionSyncOrchestrator
 
         foreach (var change in preview.Diff.Removed)
         {
-            selectedGuids.Remove(change.AttributeGuid);
+            if (!seen.Remove(change.AttributeGuid))
+            {
+                continue;
+            }
+
+            selectedGuids.RemoveAll(guid => string.Equals(guid, change.AttributeGuid, StringComparison.OrdinalIgnoreCase));
         }
 
         foreach (var added in preview.Diff.Added)
@@ -291,14 +299,16 @@ internal static class ApiPlanTransactionSyncOrchestrator
                 continue;
             }
 
-            selectedGuids.Add(added.AttributeGuid);
+            if (seen.Add(added.AttributeGuid))
+            {
+                selectedGuids.Add(added.AttributeGuid);
+            }
         }
 
         return selectedGuids
             .Select(guid => attributesByGuid.TryGetValue(guid, out var attribute) ? attribute.Name : null)
             .Where(name => !string.IsNullOrWhiteSpace(name))
             .Cast<string>()
-            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 

@@ -269,10 +269,6 @@ internal static class ApiPlanGenerationStateReader
 
         var transaction = transactionMatches[0];
         var apiObject = apiMatches[0];
-        if (!ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject))
-        {
-            return false;
-        }
 
         var ownershipOk = HasString(metadata["schemaVersion"], ApiPlanMetadataFileWriter.SchemaVersion)
             && HasString(metadata.SelectToken("ownership.transactionName"), apiPlan.TransactionName)
@@ -285,9 +281,15 @@ internal static class ApiPlanGenerationStateReader
             return false;
         }
 
+        // Sync: ownership basta — o Source atual pode divergir do ApiPlan reconstruído.
         if (forSyncContractRefresh)
         {
             return true;
+        }
+
+        if (!ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject))
+        {
+            return false;
         }
 
         return ApiPlanMetadataFileWriter.HasCompatibleB067Integrity(metadata, apiPlan, apiObject);
