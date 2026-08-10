@@ -144,6 +144,7 @@ Investigar e documentar as limitações do YAML OpenAPI gerado nativamente pelo 
 30. Em 2026-08-09 a correção de B081 foi validada no U15 após recriar a API com o Folder criado pela extensão: o relatório passou a listar `Created=12`, incluindo `[Folder] TesteOpenApi — criado pela extensão; apagar só se ficar vazio`.
 31. Em 2026-08-09 os cenários negativos U15 comprovaram bloqueio para contêiner incorreto (`General`), duplicidade entre `Root Module` e `General` e sentinela de outra Transaction; nenhum deles habilitou escrita. Após a limpeza, a restauração final com Description humana reutilizou o Folder e reportou `Created=11`, `Updated=2`, `Blocked=0`, `Warnings=2`, preservando `wasCreated=false`.
 32. Em 2026-08-09 a Sprint 7 foi fechada com a comprovação integrada dos dez gates e a declaração do marco **wizard funcional do MVP concluído**. Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`. Próxima ação = frentes pré-Alpha uma de cada vez (YAML nativo; depois 403 GAM), antes da Alpha da Sprint 8.
+33. Em 2026-08-09 as Descriptions de produto sem IDs de backlog foram validadas no U15 (`Teste`): Wizard após limpeza total gerou `Created=12` (incluindo Folder) e as Properties confirmaram `{Nome} - by Genexus Open API Builder`. Evidência: `Docs/Implementation/2026-08-09-DESCRIPTIONS-PRODUTO-SEM-BACKLOG.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -162,6 +163,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [15 — Testes e qualidade](Foundation/15-TESTES_VALIDACAO_E_QUALIDADE.md)
 - [24 — Plano por sprints](Foundation/24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md)
 - [Comprovação dos dez gates — Sprint 7](Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md)
+- [Descriptions de produto sem IDs de backlog](Implementation/2026-08-09-DESCRIPTIONS-PRODUTO-SEM-BACKLOG.md)
 
 ## Marcos ainda não iniciados
 
