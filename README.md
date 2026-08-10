@@ -56,14 +56,23 @@ A partir de uma Transaction:
 
 ## Capturas
 
-Slots em `Docs/Images/` (incluídos quando as capturas forem adicionadas ao repositório):
+Visão rápida. Galeria completa do Wizard (todas as abas): [Docs/Public/DEMO.md](Docs/Public/DEMO.md).
 
-- `alpha-menu.png` — menu Genexus Open API Builder
-- `alpha-wizard.png` — Wizard
-- `alpha-folder.png` — Folder `<Transaction>OpenApi`
-- `alpha-preferences.png` — Preferências do Wizard
+![Menu Genexus Open API Builder](Docs/Images/alpha-menu.png)
 
-Enquanto as imagens não estiverem versionadas, o roteiro em [DEMO.md](Docs/Public/DEMO.md) permanece textual.
+![Preferências do Wizard](Docs/Images/alpha-preferences.png)
+
+![Menu de contexto](Docs/Images/alpha-context-menu.png)
+
+![Wizard — Resumo](Docs/Images/alpha-wizard-resumo.png)
+
+![Folder gerado](Docs/Images/alpha-folder.png)
+
+![Sincronizar com a Transaction](Docs/Images/alpha-sync.png)
+
+![Remover API gerada](Docs/Images/alpha-remover.png)
+
+![Relatório final](Docs/Images/alpha-relatorio-final.png)
 
 ## Requisito de ambiente: PUT, DELETE e PATCH em IIS
 

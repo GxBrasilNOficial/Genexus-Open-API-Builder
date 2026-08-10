@@ -25,6 +25,7 @@ Primeira Alpha pública do Genexus Open API Builder (Sprint 8).
 ## Added
 
 - Pacote público da Alpha: README orientado a visitante, [guia de instalação](Docs/Public/INSTALL.md), [demo rápida](Docs/Public/DEMO.md) e [notas de release](Docs/Releases/0.1.0-alpha.1.md).
+- Galeria visual em `Docs/Images/` (Wizard completo, Preferências, Sync, Remover, metadata File, Folder e relatório de sucesso).
 - Versão do pacote da extensão alinhada a `0.1.0-alpha.1`.
 
 ## Summary
