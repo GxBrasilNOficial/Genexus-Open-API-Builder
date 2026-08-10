@@ -41,4 +41,15 @@ Transaction `Teste`. Antes do Wizard, a API anterior (incluindo Folder) foi remo
 2. Wizard concluiu com `Created=12` (5 SDTs próprios, 4 Procedures, API Object, metadata, Folder `TesteOpenApi`), `Updated=2` (SDTs compartilhados), `Blocked=0`, `Warnings=1` (fallback inglês).
 3. Descriptions conferidas na IDE em cada objeto criado: formato canônico sem IDs de backlog.
 
+### Ciclo Remover / Sync com formato canônico (mesma data)
+
+Após a conferência das Descriptions:
+
+1. **Remover (caminho feliz):** `Deleted=12`, `Blocked=0`, `Outcome='Success'`, incluindo Folder `TesteOpenApi` (`wasCreated=true`); SDTs compartilhados e BC preservados.
+2. **Remover sem metadata:** bloqueio `File de metadata 'apiTeste_Metadata' nao foi encontrado`, `Deleted=0`, `DurationMs=0`.
+3. **Sync sem metadata:** mesmo bloqueio de File ausente, sem escrita.
+4. **Wizard de restauração:** `Created=12`, `Updated=2`, `Warnings=1` (fallback inglês); Folder criado de novo.
+5. **Sync sem diff:** `Outcome='SuccessWithWarnings'`, aviso “Nenhuma diferenca entre Transaction e metadata”, sem escrita.
+6. **Remover cancelado:** plano exibido; confirmação Não; KB intacta.
+
 Status: **concluído**.

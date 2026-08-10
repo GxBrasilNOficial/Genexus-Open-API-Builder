@@ -145,6 +145,7 @@ Investigar e documentar as limitações do YAML OpenAPI gerado nativamente pelo 
 31. Em 2026-08-09 os cenários negativos U15 comprovaram bloqueio para contêiner incorreto (`General`), duplicidade entre `Root Module` e `General` e sentinela de outra Transaction; nenhum deles habilitou escrita. Após a limpeza, a restauração final com Description humana reutilizou o Folder e reportou `Created=11`, `Updated=2`, `Blocked=0`, `Warnings=2`, preservando `wasCreated=false`.
 32. Em 2026-08-09 a Sprint 7 foi fechada com a comprovação integrada dos dez gates e a declaração do marco **wizard funcional do MVP concluído**. Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`. Próxima ação = frentes pré-Alpha uma de cada vez (YAML nativo; depois 403 GAM), antes da Alpha da Sprint 8.
 33. Em 2026-08-09 as Descriptions de produto sem IDs de backlog foram validadas no U15 (`Teste`): Wizard após limpeza total gerou `Created=12` (incluindo Folder) e as Properties confirmaram `{Nome} - by Genexus Open API Builder`. Evidência: `Docs/Implementation/2026-08-09-DESCRIPTIONS-PRODUTO-SEM-BACKLOG.md`.
+34. Em 2026-08-09 o ciclo pós-Descriptions fechou no U15: Remover com posse canônica (`Deleted=12`), Sync/Remover sem metadata bloqueando, Wizard restaurando, Sync sem diff e cancelamento do Remover. Evidência ampliada no mesmo documento de Descriptions e em `Docs/Implementation/B086-REMOVER-API-GERADA.md`.
 
 ## Bloqueios e fatos ainda não validados
 

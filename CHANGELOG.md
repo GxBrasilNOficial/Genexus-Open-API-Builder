@@ -32,7 +32,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Fixed
 
-- Descriptions de produto sem IDs de backlog (2026-08-09): objetos gerados passam a usar `{Nome} - by Genexus Open API Builder` (Procedures, SDTs, API Object, metadata, Folders criados, preferências). Sentinelas legadas com `B0xx` / prosa `REST API for …` continuam reconhecidas no reencontro, Sync e Remover. Validado no U15 em `Teste` (Wizard `Created=12` com Folder criado; Descriptions conferidas na IDE). Manifesto inalterado (só DLL). Evidência: `Docs/Implementation/2026-08-09-DESCRIPTIONS-PRODUTO-SEM-BACKLOG.md`.
+- Descriptions de produto sem IDs de backlog (2026-08-09): objetos gerados passam a usar `{Nome} - by Genexus Open API Builder` (Procedures, SDTs, API Object, metadata, Folders criados, preferências). Sentinelas legadas com `B0xx` / prosa `REST API for …` continuam reconhecidas no reencontro, Sync e Remover. Validado no U15 em `Teste`: Descriptions na IDE; Remover `Deleted=12` com posse canônica; Sync/Remover sem metadata bloqueiam; Wizard restaura `Created=12`; Sync sem diff; cancelamento do Remover. Manifesto inalterado (só DLL). Evidência: `Docs/Implementation/2026-08-09-DESCRIPTIONS-PRODUTO-SEM-BACKLOG.md`.
 
 - B086 preflight de remoção (2026-08-09): `ValidateRemovalTargets` confere ambiguidade e posse de API Object, Procedures e SDTs próprios em `Preview` e no início de `Remove`, antes de qualquer `Delete()`. Evita remoção parcial quando um alvo divergente só seria detectado após o API Object já ter sido apagado. Manifesto inalterado (só DLL). Evidência: `Docs/Implementation/B086-REMOVER-API-GERADA.md`.
 

@@ -54,3 +54,11 @@ Transaction `Teste`, Folder reutilizado.
 
 1. **Caminho feliz:** após regeneração, `Remover API gerada` concluiu `Deleted=11`, `Blocked=0`, `Outcome='Success'`; Folder `TesteOpenApi` permaneceu; metadata removida de Files; SDTs `GxOpenAPI` e BC preservados.
 2. **Bloqueio por posse antes de qualquer Delete:** Description de `procTeste_API_List` alterada para texto humano; comando bloqueou em Preview com `Remocao bloqueada: Procedure 'procTeste_API_List' nao e propria da extensao. Nenhuma alteracao foi feita.`; relatório `Outcome='Interrupted'`, `Deleted=0`, `Blocked=1`, `DurationMs=0`; API/metadata/demais objetos próprios intactos.
+
+### Smoke com Descriptions canônicas (2026-08-09)
+
+Após a troca para `{Nome} - by Genexus Open API Builder` (evidência `2026-08-09-DESCRIPTIONS-PRODUTO-SEM-BACKLOG.md`):
+
+1. **Remover com posse canônica:** `Deleted=12` (API, 4 Procedures, 5 SDTs, metadata, Folder criado), `Blocked=0`.
+2. **Sem metadata:** bloqueio sem escrita (`Deleted=0`).
+3. **Cancelamento:** plano montado; usuário recusou; nenhuma alteração.
