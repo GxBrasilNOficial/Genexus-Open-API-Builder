@@ -14,6 +14,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Fixed
 
+- Sync B085: posse do API Object no preflight deixa de exigir `IsManagedApiObject` contra o ApiPlan reconstruído; ownership na metadata (`schemaVersion` + `apiName` + `apiGuid`) basta. Corrige bloqueio falso ao adicionar campos. A seleção de campos no Sync preserva a ordem da metadata e anexa adds no fim (dedupe por GUID). Validado no U15 em `NotaFiscal`/`NotaFiscalObs3` (`Updated=13`, `Blocked=0`).
+
 ## Added
 
 ---

@@ -233,83 +233,30 @@ internal static class ApiPlanTransactionSyncOrchestrator
         ApiPlanTransactionSyncPreview preview,
         bool listFiltersMode = false)
     {
-        // Lista ordenada: preserva a ordem da metadata e anexa campos novos no fim.
-        // HashSet só para membership — ordem de filtros afeta a assinatura do Service Source.
-        var selectedGuids = new List<string>();
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (listFiltersMode)
-        {
-            foreach (var token in (JArray?)metadata.SelectToken(path) ?? new JArray())
-            {
-                var guid = token.SelectToken("field.attributeGuid")?.Value<string>();
-                if (!string.IsNullOrWhiteSpace(guid) && seen.Add(guid!))
-                {
-                    selectedGuids.Add(guid!);
-                }
-            }
-        }
-        else
-        {
-            foreach (var token in (JArray?)metadata.SelectToken(path) ?? new JArray())
-            {
-                var guid = token["attributeGuid"]?.Value<string>();
-                if (!string.IsNullOrWhiteSpace(guid) && seen.Add(guid!))
-                {
-                    selectedGuids.Add(guid!);
-                }
-            }
-        }
-
-        foreach (var change in preview.Diff.Removed)
-        {
-            if (!seen.Remove(change.AttributeGuid))
-            {
-                continue;
-            }
-
-            selectedGuids.RemoveAll(guid => string.Equals(guid, change.AttributeGuid, StringComparison.OrdinalIgnoreCase));
-        }
-
-        foreach (var added in preview.Diff.Added)
-        {
-            if (!choices.IncludeAddedByRole.TryGetValue(role, out var includes)
-                || !includes.Contains(added.AttributeGuid))
-            {
-                continue;
-            }
-
-            var current = added.Current;
-            if (current is null)
-            {
-                continue;
-            }
-
-            if (string.Equals(role, "CreateRequest", StringComparison.Ordinal) && !current.IsWritableByCreate)
-            {
-                continue;
-            }
-
-            if (string.Equals(role, "UpdateRequest", StringComparison.Ordinal) && !current.IsWritableByUpdate)
-            {
-                continue;
-            }
-
-            if (string.Equals(role, "ListFilters", StringComparison.Ordinal) && !current.IsFilterEligible)
-            {
-                continue;
-            }
-
-            if (seen.Add(added.AttributeGuid))
-            {
-                selectedGuids.Add(added.AttributeGuid);
-            }
-        }
-
-        return selectedGuids
-            .Select(guid => attributesByGuid.TryGetValue(guid, out var attribute) ? attribute.Name : null)
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .Cast<string>()
+        var names = attributesByGuid
+            .Select(pair => new ApiPlanTransactionSyncFieldName(pair.Key, pair.Value.Name))
             .ToArray();
+        var removedGuids = preview.Diff.Removed.Select(item => item.AttributeGuid).ToArray();
+        choices.IncludeAddedByRole.TryGetValue(role, out var includeAdded);
+        var includeAddedArray = includeAdded?.ToArray() ?? Array.Empty<string>();
+        var addedCandidates = preview.Diff.Added
+            .Where(item => item.Current is not null)
+            .Select(item => new ApiPlanTransactionSyncAddedFieldCandidate(
+                item.AttributeGuid,
+                item.Current!.IsWritableByCreate,
+                item.Current.IsWritableByUpdate,
+                item.Current.IsFilterEligible))
+            .ToArray();
+
+        return ApiPlanTransactionSyncFieldSelection.ResolveOrderedFieldNames(
+            metadata,
+            path,
+            listFiltersMode,
+            names,
+            removedGuids,
+            role,
+            includeAddedArray,
+            addedCandidates);
     }
 
     private static IReadOnlyList<ApiPlanTransactionSyncSdtConflict> DetectSdtConflicts(KBModel designModel, JObject metadata)

@@ -128,4 +128,21 @@ $wrongGuid = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwners
     $fallbacks)
 Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership+OwnershipKind]::NotOwned) $wrongGuid 'apiGuid divergente não é própria.'
 
+# Contrato B085 Sync: posse = MatchesMetadataOwnership apenas.
+# O Wizard (Resolve) ainda exige integrityCompatible + serviceSourceManaged;
+# o Sync intencionalmente não — o Source atual pode divergir do ApiPlan reconstruído.
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership]::MatchesMetadataOwnership($metadata, $schema, $apiName, $apiGuid)) 'Sync: ownership.apiName/apiGuid bastam para reconhecer API própria.'
+$wizardWouldBlock = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership]::Resolve(
+    $true,
+    $metadata,
+    $schema,
+    $apiName,
+    $apiGuid,
+    $false,
+    $false,
+    $editedDescription,
+    $fallbacks)
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership+OwnershipKind]::NotOwned) $wizardWouldBlock 'Wizard ainda bloqueia com integridade/Source divergentes; Sync não usa Resolve.'
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership]::MatchesMetadataOwnership($metadata, $schema, $apiName, $apiGuid)) 'Mesmo cenário: MatchesMetadataOwnership permanece true — gate do Sync.'
+
 Write-Output 'PASS: ApiPlanApiObjectOwnership'

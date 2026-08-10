@@ -41,6 +41,7 @@ Assert-True ($source -match 'Tests/OwnershipDescriptions/Test-ApiPlanOwnedObject
 Assert-True ($source -match 'Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPlan\.ps1') 'O checker deve executar o teste unitário do plano de remoção B086.'
 Assert-True ($source -match 'Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPreflight\.ps1') 'O checker deve executar o teste unitário do preflight B086 antes do primeiro Delete.'
 Assert-True ($source -match 'Tests/TransactionSync/Test-ApiPlanTransactionSyncComparer\.ps1') 'O checker deve executar o teste unitário do diff B085 de sincronização.'
+Assert-True ($source -match 'Tests/TransactionSync/Test-ApiPlanTransactionSyncFieldSelection\.ps1') 'O checker deve executar o teste unitário da seleção ordenada de campos B085.'
 Assert-True ($source -match 'Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport\.ps1') 'O checker deve executar o teste unitário do relatório final B081.'
 Assert-True ($source -match 'Tests/CollisionUx/Test-ApiPlanCollisionConflict\.ps1') 'O checker deve executar o teste unitário da UX residual B083 de conflitos.'
 Assert-True ($source -match 'Tests/WizardPreferences/Test-PrototypeWizardPreferences\.ps1') 'O checker deve executar o teste unitário das preferências do wizard.'
@@ -108,6 +109,7 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GeneratedApiRemoval\Test-ApiPlanGeneratedApiRemovalPlan.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generated Api Removal Plan'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GeneratedApiRemoval\Test-ApiPlanGeneratedApiRemovalPreflight.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generated Api Removal Preflight'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\TransactionSync\Test-ApiPlanTransactionSyncComparer.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Transaction Sync Comparer'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\TransactionSync\Test-ApiPlanTransactionSyncFieldSelection.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Transaction Sync Field Selection'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ApplicationFinalReport\Test-ApiPlanApplicationFinalReport.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Application Final Report'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\CollisionUx\Test-ApiPlanCollisionConflict.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Collision Ux'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\TransactionFolder\Test-ApiPlanTransactionFolderReusePolicy.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Transaction Folder Reuse'`n", [System.Text.UTF8Encoding]::new($false))
@@ -141,6 +143,7 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.generatedApiRemovalPlan' }).status -eq 'passed') 'O teste unitário do plano de remoção B086 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.generatedApiRemovalPreflight' }).status -eq 'passed') 'O teste unitário do preflight B086 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.transactionSyncComparer' }).status -eq 'passed') 'O teste unitário do diff B085 de sincronização deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.transactionSyncFieldSelection' }).status -eq 'passed') 'O teste unitário da seleção ordenada de campos B085 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.applicationFinalReport' }).status -eq 'passed') 'O teste unitário do relatório final B081 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.collisionUx' }).status -eq 'passed') 'O teste unitário da UX residual B083 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.transactionFolderReuse' }).status -eq 'passed') 'O teste unitário do reuso de Folder deveria passar na fixture.'
@@ -162,6 +165,7 @@ try {
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPlan.ps1' }).Count -eq 1) 'O comando do teste Generated Api Removal Plan deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPreflight.ps1' }).Count -eq 1) 'O comando do teste Generated Api Removal Preflight deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/TransactionSync/Test-ApiPlanTransactionSyncComparer.ps1' }).Count -eq 1) 'O comando do teste Transaction Sync Comparer deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/TransactionSync/Test-ApiPlanTransactionSyncFieldSelection.ps1' }).Count -eq 1) 'O comando do teste Transaction Sync Field Selection deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport.ps1' }).Count -eq 1) 'O comando do teste Application Final Report deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/CollisionUx/Test-ApiPlanCollisionConflict.ps1' }).Count -eq 1) 'O comando do teste Collision Ux deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/TransactionFolder/Test-ApiPlanTransactionFolderReusePolicy.ps1' }).Count -eq 1) 'O comando do teste Transaction Folder Reuse deve aparecer no JSON.'

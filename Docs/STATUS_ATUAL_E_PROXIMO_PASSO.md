@@ -91,6 +91,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B088` concluído em 2026-08-10: investigação read-only do gerador nativo OpenAPI (`Swagger.Yaml.stg` / `TypeDefinitions.Yaml.stg` / `Artech.Packages.RestServiceDL.Generator`) comprovou que não há substituição ou interceptação dos templates sem alterar a instalação GeneXus. Limitação intransponível documentada; ressalvas e orientação de consumo incorporadas aos documentos 12 e 27. Sem mudança de código da extensão. Evidência: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
 - `B089` concluído em 2026-08-10: evidência HTTP **403** com papel GAM não-administrador sob `SecurityLevel = Authorization` em `apiNotaFiscal` — role `Role_GOAB_Test_Denied`, Get Permitir / Create não atribuído, usuário `goab_role_denied`; GET **200** e POST Create **403** (`code` 139) nos environments .NET Framework/SQL Server e .NET/PostgreSQL. Setup via GAM Backoffice (telas nativas). Documentado em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D. Sem mudança de código da extensão.
 - Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10: README público, `Docs/Public/INSTALL.md`, `Docs/Public/DEMO.md`, `Docs/Releases/0.1.0-alpha.1.md`, corte no CHANGELOG e versão do csproj.
+- Correção B085 (2026-08-10): Sync não exige mais `IsManagedApiObject` contra o ApiPlan reconstruído — posse por metadata; seleção de campos com ordem estável. Validado no U15 em `NotaFiscal` com `+ NotaFiscalObs3`: preflight OK, `Updated=13`, `Blocked=0`.
 
 ## Frente ativa
 
