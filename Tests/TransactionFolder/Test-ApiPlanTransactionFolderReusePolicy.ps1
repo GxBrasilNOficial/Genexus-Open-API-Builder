@@ -52,8 +52,11 @@ if ($preflightStart -lt 0 -or $policyStart -lt 0) {
 
 $preflightBlock = $folderSource.Substring($preflightStart, $policyStart - $preflightStart)
 Assert-Contains $preflightBlock 'if (!IsReusable(folder, transaction, apiPlan))' 'Preflight deve bloquear Folder externo, incompatível ou fora do contenedor.'
-Assert-Contains $folderSource 'description.StartsWith(OwnedDescriptionPrefix, StringComparison.Ordinal)' 'Description com sentinela deve ser classificada como posse da extensao.'
-Assert-Contains $folderSource '!string.Equals(description, CreateOwnedDescription(apiPlan), StringComparison.Ordinal)' 'Sentinela de outra Transaction deve continuar bloqueando.'
+Assert-Contains $folderSource 'ApiPlanOwnedObjectDescription.IsReusableTransactionFolderDescription' 'Description deve usar a politica canônica/legada de posse do Folder.'
+$ownedDescriptionPath = Join-Path $repositoryRoot 'Src\Extension\Diagnostics\ApiPlanOwnedObjectDescription.cs'
+$ownedDescriptionSource = [IO.File]::ReadAllText($ownedDescriptionPath)
+Assert-Contains $ownedDescriptionSource 'CreateLegacyTransactionFolderDescription' 'Sentinela legada de outra Transaction deve continuar bloqueando via politica compartilhada.'
+Assert-Contains $ownedDescriptionSource 'LegacyTransactionFolderPrefix' 'Politica de Folder deve reconhecer prefixo legado da extensão.'
 Assert-Contains $folderSource 'transaction.Parent' 'A decisao deve considerar o Parent efetivo da Transaction.'
 Assert-Contains $folderSource 'folder.Parent' 'A decisao deve comparar o Parent efetivo do Folder.'
 Assert-Contains $folderSource 'transaction.Module' 'A decisao deve considerar o Module da Transaction.'

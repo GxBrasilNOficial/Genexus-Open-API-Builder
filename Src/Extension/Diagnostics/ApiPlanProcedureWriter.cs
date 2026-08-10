@@ -10,8 +10,6 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanProcedureWriter
 {
-    private const string OwnedDescriptionPrefix = "Genexus Open API Builder B050-B053 Procedure";
-
     public static ApiPlanProcedureWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
         if (designModel is null)
@@ -75,9 +73,8 @@ internal static class ApiPlanProcedureWriter
                 throw new InvalidOperationException($"Criacao de Procedures bloqueada: foram encontrados {matches.Length} SDTs chamados '{definition.Name}'. Nenhuma alteracao foi feita.");
             }
 
-            var expectedDescription = ApiPlanSdtWriter.CreateOwnedDescriptionFor(definition.BacklogId, definition.Kind);
             var sdt = matches[0];
-            if (!string.Equals(sdt.Description, expectedDescription, StringComparison.Ordinal))
+            if (!ApiPlanOwnedObjectDescription.IsOwnedSdt(sdt.Description, definition.Name))
             {
                 throw new InvalidOperationException($"Criacao de Procedures bloqueada: SDT requerido externo ou incompativel chamado '{definition.Name}'. Execute B040-B046 para reencontrar SDTs proprios antes. Nenhuma alteracao foi feita.");
             }
@@ -133,11 +130,10 @@ internal static class ApiPlanProcedureWriter
                 throw new InvalidOperationException($"Criacao de Procedure bloqueada: foram encontradas {existing.Length} Procedures chamadas '{definition.Name}'. Nenhuma alteracao foi feita.");
             }
 
-            var description = CreateOwnedDescription(definition);
             if (existing.Length == 1)
             {
                 var existingProcedure = existing[0];
-                if (!string.Equals(existingProcedure.Description, description, StringComparison.Ordinal))
+                if (!ApiPlanOwnedObjectDescription.IsOwnedProcedure(existingProcedure.Description, definition.Name))
                 {
                     throw new InvalidOperationException($"Criacao de Procedure bloqueada: ja existe Procedure externa ou incompativel chamada '{definition.Name}'. Nenhuma alteracao foi feita.");
                 }
@@ -161,7 +157,7 @@ internal static class ApiPlanProcedureWriter
         var procedure = new Procedure(designModel)
         {
             Name = definition.Name,
-            Description = CreateOwnedDescription(definition),
+            Description = ApiPlanOwnedObjectDescription.Create(definition.Name),
         };
 
         procedure.Parent = transactionFolder;
@@ -173,16 +169,11 @@ internal static class ApiPlanProcedureWriter
         return new ApiPlanProcedureWriteItemResult(definition.BacklogId, definition.ServiceName, definition.Name, ApiPlanProcedureWriteStatus.Created, persisted.Guid);
     }
 
-    private static string CreateOwnedDescription(ApiPlanProcedureDefinition definition)
-    {
-        return $"{OwnedDescriptionPrefix} - {definition.BacklogId} - {definition.ServiceName}";
-    }
-
     private static void ConfigureProcedure(Procedure procedure, ApiPlanProcedureDefinition definition)
     {
         procedure.ProcedurePart.Source =
-            $"// Genexus Open API Builder {definition.BacklogId}: Procedure skeleton for {definition.ServiceName}. REST behavior remains pending Sprint 6." + Environment.NewLine +
-            $"msg(!\"Genexus Open API Builder {definition.BacklogId} {definition.ServiceName} skeleton. REST behavior pending Sprint 6.\", status)";
+            $"// Genexus Open API Builder: Procedure skeleton for {definition.ServiceName}." + Environment.NewLine +
+            $"msg(!\"Genexus Open API Builder {definition.ServiceName} skeleton.\", status)";
         procedure.Rules.Source = string.Empty;
     }
 }

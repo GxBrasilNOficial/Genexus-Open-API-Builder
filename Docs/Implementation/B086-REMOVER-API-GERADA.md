@@ -46,4 +46,11 @@ Status: **concluído**.
 
 Gap da revisão pré-push: ambiguidade/posse de Procedure e SDT eram avaliadas só dentro dos métodos de exclusão, depois do API Object já poder ter sido removido, o que permitia remoção parcial em cenário divergente.
 
-Correção em `ApiPlanGeneratedApiRemover`: `ValidateRemovalTargets` roda em `Preview` (antes da confirmação) e no início de `Remove` (antes de qualquer `Delete`). Manifesto inalterado (só DLL). Pendente reteste manual no U15: caminho feliz inalterado; bloqueio com Procedure ou SDT ambíguo/não próprio **antes** de qualquer exclusão.
+Correção em `ApiPlanGeneratedApiRemover`: `ValidateRemovalTargets` roda em `Preview` (antes da confirmação) e no início de `Remove` (antes de qualquer `Delete`). Manifesto inalterado (só DLL).
+
+### Reteste manual U15 (2026-08-09)
+
+Transaction `Teste`, Folder reutilizado.
+
+1. **Caminho feliz:** após regeneração, `Remover API gerada` concluiu `Deleted=11`, `Blocked=0`, `Outcome='Success'`; Folder `TesteOpenApi` permaneceu; metadata removida de Files; SDTs `GxOpenAPI` e BC preservados.
+2. **Bloqueio por posse antes de qualquer Delete:** Description de `procTeste_API_List` alterada para texto humano; comando bloqueou em Preview com `Remocao bloqueada: Procedure 'procTeste_API_List' nao e propria da extensao. Nenhuma alteracao foi feita.`; relatório `Outcome='Interrupted'`, `Deleted=0`, `Blocked=1`, `DurationMs=0`; API/metadata/demais objetos próprios intactos.

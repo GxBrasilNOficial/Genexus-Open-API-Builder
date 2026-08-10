@@ -12,7 +12,6 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanSdtWriter
 {
-    private const string OwnedDescriptionPrefix = "Genexus Open API Builder B040-B046 SDT";
     internal const string SharedFolderName = "GxOpenAPI";
 
     public static ApiPlanSdtWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
@@ -85,10 +84,8 @@ internal static class ApiPlanSdtWriter
             results);
     }
 
-    internal static string CreateOwnedDescriptionFor(string backlogId, string kind)
-    {
-        return $"{OwnedDescriptionPrefix} - {backlogId} - {kind}";
-    }
+    internal static string CreateOwnedDescriptionFor(string objectName) =>
+        ApiPlanOwnedObjectDescription.Create(objectName);
 
     internal static void Preflight(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
@@ -132,11 +129,10 @@ internal static class ApiPlanSdtWriter
                 throw new InvalidOperationException($"Criacao de SDT bloqueada: foram encontrados {existing.Length} SDTs chamados '{definition.Name}'. Nenhuma alteracao foi feita.");
             }
 
-            var description = CreateOwnedDescription(definition);
             if (existing.Length == 1)
             {
                 var existingSdt = existing[0];
-                if (!string.Equals(existingSdt.Description, description, StringComparison.Ordinal))
+                if (!ApiPlanOwnedObjectDescription.IsOwnedSdt(existingSdt.Description, definition.Name))
                 {
                     throw new InvalidOperationException($"Criacao de SDT bloqueada: ja existe SDT externo ou incompativel chamado '{definition.Name}'. Nenhuma alteracao foi feita.");
                 }
@@ -186,14 +182,14 @@ internal static class ApiPlanSdtWriter
     {
         return SDT.GetAll(designModel)
             .Any(sdt => string.Equals(sdt.Name, name, StringComparison.OrdinalIgnoreCase) &&
-                        (sdt.Description ?? string.Empty).StartsWith(OwnedDescriptionPrefix, StringComparison.Ordinal));
+                        ApiPlanOwnedObjectDescription.IsOwnedSdt(sdt.Description, name));
     }
 
     private static Folder CreateSharedFolder(KBModel designModel)
     {
         var folder = new Folder(designModel, SharedFolderName)
         {
-            Description = "Genexus Open API Builder shared SDTs folder",
+            Description = ApiPlanOwnedObjectDescription.Create(SharedFolderName),
         };
         folder.Save();
         return folder;
@@ -227,7 +223,7 @@ internal static class ApiPlanSdtWriter
         var sdt = new SDT(designModel)
         {
             Name = definition.Name,
-            Description = CreateOwnedDescription(definition),
+            Description = ApiPlanOwnedObjectDescription.Create(definition.Name),
         };
 
         if (targetFolder is not null)
@@ -244,11 +240,6 @@ internal static class ApiPlanSdtWriter
 
         var persisted = SDT.Get(designModel, sdt.Guid);
         return new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, ApiPlanSdtWriteStatus.Created, persisted.Guid);
-    }
-
-    private static string CreateOwnedDescription(ApiPlanSdtDefinition definition)
-    {
-        return CreateOwnedDescriptionFor(definition.BacklogId, definition.Kind);
     }
 
     private static void ConfigureSdt(KBModel designModel, SDT sdt, ApiPlanSdtDefinition definition)

@@ -17,7 +17,6 @@ internal static class ApiPlanMetadataFileWriter
 {
     internal const string SchemaVersion = "GOAB_API_METADATA_B060_V1";
     internal const string B067IntegrityVersion = ApiPlanMetadataIntegrity.Version;
-    private const string OwnedDescriptionPrefix = "Genexus Open API Builder B060 Metadata File";
 
     public static ApiPlanMetadataFileWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
@@ -100,7 +99,7 @@ internal static class ApiPlanMetadataFileWriter
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
-        return $"{OwnedDescriptionPrefix} - Transaction={apiPlan.TransactionName} - Api={apiPlan.ApiName}";
+        return ApiPlanOwnedObjectDescription.Create(apiPlan.MetadataFileName);
     }
 
     private static void AlignWithTransactionModule(WikiFileKBObject file, Transaction transaction)
@@ -166,7 +165,7 @@ internal static class ApiPlanMetadataFileWriter
             throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: o File '{apiPlan.MetadataFileName}' foi reencontrado com caixa divergente. Nenhuma alteracao foi feita.");
         }
 
-        if (!string.Equals(file.Description, CreateOwnedDescription(apiPlan), StringComparison.Ordinal))
+        if (!ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(file.Description, apiPlan.MetadataFileName))
         {
             throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: ja existe File externo ou incompativel chamado '{apiPlan.MetadataFileName}'. Nenhuma alteracao foi feita.");
         }

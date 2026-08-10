@@ -13,8 +13,6 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanGenerationStateReader
 {
-    private const string ProcedureDescriptionPrefix = "Genexus Open API Builder B050-B053 Procedure";
-
     public static ApiPlanGenerationState Read(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
         return Read(designModel, transaction, apiPlan, forSyncContractRefresh: false);
@@ -133,7 +131,7 @@ internal static class ApiPlanGenerationStateReader
             {
                 missing++;
             }
-            else if (matches.Count == 1 && string.Equals(matches[0].Description, ApiPlanSdtWriter.CreateOwnedDescriptionFor(definition.BacklogId, definition.Kind), StringComparison.Ordinal))
+            else if (matches.Count == 1 && ApiPlanOwnedObjectDescription.IsOwnedSdt(matches[0].Description, definition.Name))
             {
                 managed++;
             }
@@ -161,7 +159,7 @@ internal static class ApiPlanGenerationStateReader
             {
                 missing++;
             }
-            else if (matches.Count == 1 && string.Equals(matches[0].Description, $"{ProcedureDescriptionPrefix} - {ResolveBacklogId(service.Name)} - {service.Name}", StringComparison.Ordinal))
+            else if (matches.Count == 1 && ApiPlanOwnedObjectDescription.IsOwnedProcedure(matches[0].Description, name))
             {
                 managed++;
             }
@@ -204,7 +202,7 @@ internal static class ApiPlanGenerationStateReader
         }
 
         if (matches.Count == 1 &&
-            string.Equals(matches[0].Description, ApiPlanMetadataFileWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal) &&
+            ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(matches[0].Description, apiPlan.MetadataFileName) &&
             HasCompatibleMetadata(designModel, index, matches[0], apiPlan, forSyncContractRefresh))
         {
             return new ApiPlanGenerationInspection(1, 1, 0, 0);
@@ -212,7 +210,7 @@ internal static class ApiPlanGenerationStateReader
 
         // Integridade B067 / ownership divergente em File proprio: bloqueia sem lista de colisão externa.
         if (matches.Count == 1 &&
-            string.Equals(matches[0].Description, ApiPlanMetadataFileWriter.CreateOwnedDescription(apiPlan), StringComparison.Ordinal))
+            ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(matches[0].Description, apiPlan.MetadataFileName))
         {
             return new ApiPlanGenerationInspection(1, 0, 0, 1);
         }

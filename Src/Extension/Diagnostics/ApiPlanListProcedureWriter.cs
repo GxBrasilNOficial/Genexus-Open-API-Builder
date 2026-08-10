@@ -11,7 +11,6 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanListProcedureWriter
 {
-    private const string ProcedureDescriptionPrefix = "Genexus Open API Builder B050-B053 Procedure";
     private const string PageVariableName = "ApiPage";
     private const string PageSizeVariableName = "ApiPageSize";
     private const string PageParameterName = "pApiPage";
@@ -165,7 +164,7 @@ internal static class ApiPlanListProcedureWriter
     {
         var name = $"proc{plan.TransactionName}_API_List";
         var matches = Procedure.GetAll(model).Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase)).ToArray();
-        if (matches.Length != 1 || !string.Equals(matches.Single().Description, $"{ProcedureDescriptionPrefix} - B050 - List", StringComparison.Ordinal))
+        if (matches.Length != 1 || !ApiPlanOwnedObjectDescription.IsOwnedProcedure(matches.Single().Description, name))
             throw new InvalidOperationException($"B070 bloqueado: Procedure propria '{name}' nao foi reencontrada com seguranca. Execute B050-B053 antes. Nenhuma alteracao foi feita.");
         return matches.Single();
     }
@@ -199,6 +198,7 @@ internal static class ApiPlanListProcedureWriter
 
         var currentSource = NormalizeForComparison(procedure.ProcedurePart.Source);
         var skeleton = Skeleton();
+        var legacySkeleton = LegacySkeleton();
         var legacySource = NormalizeForComparison(CreateLegacyListSource(plan));
         var previousB070Source = NormalizeForComparison(CreatePreviousB070ListSource(plan));
         var previousB077Source = NormalizeForComparison(CreatePreviousB077ListSource(plan));
@@ -211,6 +211,7 @@ internal static class ApiPlanListProcedureWriter
             new[]
             {
                 skeleton,
+                legacySkeleton,
                 invalidB077Source,
                 manualB077Source,
                 previousConditionalB077Source,
@@ -1000,7 +1001,9 @@ internal static class ApiPlanListProcedureWriter
     private static string NormalizeForComparison(string? value) => (value ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n").Trim();
 
     private static bool HasService(ApiPlan plan, string name) => plan.Services.Any(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
-    private static string Skeleton() => "// Genexus Open API Builder B050: Procedure skeleton for List. REST behavior remains pending Sprint 6." + Environment.NewLine + "msg(!\"Genexus Open API Builder B050 List skeleton. REST behavior pending Sprint 6.\", status)";
+    private static string Skeleton() => "// Genexus Open API Builder: Procedure skeleton for List." + Environment.NewLine + "msg(!\"Genexus Open API Builder List skeleton.\", status)";
+
+    private static string LegacySkeleton() => "// Genexus Open API Builder B050: Procedure skeleton for List. REST behavior remains pending Sprint 6." + Environment.NewLine + "msg(!\"Genexus Open API Builder B050 List skeleton. REST behavior pending Sprint 6.\", status)";
 }
 
 internal sealed class ApiPlanListProcedureWriteResult

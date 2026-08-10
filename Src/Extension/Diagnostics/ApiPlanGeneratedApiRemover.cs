@@ -14,9 +14,6 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanGeneratedApiRemover
 {
-    private const string ProcedureDescriptionPrefix = "Genexus Open API Builder B050-B053 Procedure";
-    private const string SdtDescriptionPrefix = "Genexus Open API Builder";
-
     public static ApiPlanGeneratedApiRemovalResult Remove(KBModel designModel, Transaction transaction)
     {
         if (designModel is null)
@@ -114,14 +111,19 @@ internal static class ApiPlanGeneratedApiRemover
         }
 
         var file = matches[0];
-        if (file.Description is null ||
-            !file.Description.StartsWith("Genexus Open API Builder B060 Metadata File", StringComparison.Ordinal) ||
-            file.Description.IndexOf($"Transaction={transactionName}", StringComparison.Ordinal) < 0)
+        if (ApiPlanOwnedObjectDescription.IsCanonical(file.Description, metadataFileName))
         {
-            throw new InvalidOperationException($"Remocao bloqueada: File '{metadataFileName}' nao e metadata propria da extensao. Nenhuma alteracao foi feita.");
+            return file;
         }
 
-        return file;
+        if (file.Description is not null
+            && file.Description.StartsWith("Genexus Open API Builder B060 Metadata File", StringComparison.Ordinal)
+            && file.Description.IndexOf($"Transaction={transactionName}", StringComparison.Ordinal) >= 0)
+        {
+            return file;
+        }
+
+        throw new InvalidOperationException($"Remocao bloqueada: File '{metadataFileName}' nao e metadata propria da extensao. Nenhuma alteracao foi feita.");
     }
 
     private static JObject ParseMetadata(WikiFileKBObject file)
@@ -186,8 +188,7 @@ internal static class ApiPlanGeneratedApiRemover
         }
 
         var procedure = matches[0];
-        if (procedure.Description is null ||
-            !procedure.Description.StartsWith(ProcedureDescriptionPrefix, StringComparison.Ordinal))
+        if (!ApiPlanOwnedObjectDescription.IsOwnedProcedure(procedure.Description, name))
         {
             throw new InvalidOperationException(BuildBlockedMessage(
                 $"Procedure '{name}' nao e propria da extensao",
@@ -224,8 +225,7 @@ internal static class ApiPlanGeneratedApiRemover
         }
 
         var sdt = matches[0];
-        if (sdt.Description is null ||
-            !sdt.Description.StartsWith(SdtDescriptionPrefix, StringComparison.Ordinal))
+        if (!ApiPlanOwnedObjectDescription.IsOwnedSdt(sdt.Description, name))
         {
             throw new InvalidOperationException(BuildBlockedMessage(
                 $"SDT '{name}' nao e proprio da extensao",
@@ -347,8 +347,10 @@ internal static class ApiPlanGeneratedApiRemover
         }
 
         var folder = matches[0];
-        var expectedDescription = $"Genexus Open API Builder Transaction API folder - Transaction={plan.TransactionName}";
-        if (!string.Equals(folder.Description, expectedDescription, StringComparison.Ordinal))
+        var expectedDescription = ApiPlanOwnedObjectDescription.CreateTransactionFolderDescription(plan.FolderName!);
+        var legacyDescription = ApiPlanOwnedObjectDescription.CreateLegacyTransactionFolderDescription(plan.TransactionName);
+        if (!string.Equals(folder.Description, expectedDescription, StringComparison.Ordinal)
+            && !string.Equals(folder.Description, legacyDescription, StringComparison.Ordinal))
         {
             return;
         }

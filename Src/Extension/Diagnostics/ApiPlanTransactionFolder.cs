@@ -8,8 +8,6 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanTransactionFolder
 {
-    private const string OwnedDescriptionPrefix = "Genexus Open API Builder Transaction API folder";
-
     public static Folder CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
         if (designModel is null)
@@ -35,7 +33,7 @@ internal static class ApiPlanTransactionFolder
 
         var folder = new Folder(designModel, apiPlan.TransactionFolderName)
         {
-            Description = CreateOwnedDescription(apiPlan),
+            Description = ApiPlanOwnedObjectDescription.CreateTransactionFolderDescription(apiPlan.TransactionFolderName),
         };
 
         AlignWithTransactionContainer(folder, transaction);
@@ -66,7 +64,7 @@ internal static class ApiPlanTransactionFolder
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
-        return $"{OwnedDescriptionPrefix} - Transaction={apiPlan.TransactionName}";
+        return ApiPlanOwnedObjectDescription.CreateTransactionFolderDescription(apiPlan.TransactionFolderName);
     }
 
     public static Folder? Preflight(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
@@ -132,13 +130,10 @@ internal static class ApiPlanTransactionFolder
         }
 
         var description = folder.Description ?? string.Empty;
-        if (description.StartsWith(OwnedDescriptionPrefix, StringComparison.Ordinal)
-            && !string.Equals(description, CreateOwnedDescription(apiPlan), StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        return true;
+        return ApiPlanOwnedObjectDescription.IsReusableTransactionFolderDescription(
+            description,
+            apiPlan.TransactionFolderName,
+            apiPlan.TransactionName);
     }
 
     internal static string CreateReuseWarning(ApiPlan apiPlan)

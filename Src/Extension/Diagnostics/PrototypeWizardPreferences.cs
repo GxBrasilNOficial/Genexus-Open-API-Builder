@@ -13,7 +13,8 @@ internal sealed class PrototypeWizardPreferences
     public const string SchemaVersion = PrototypeWizardPreferencesCodec.SchemaVersion;
     public const string FileName = PrototypeWizardPreferencesCodec.FileName;
     public const string ExternalFileName = FileName + ".json";
-    public const string OwnedDescription = "Genexus Open API Builder Wizard Preferences";
+    public const string OwnedDescriptionCanonical = "GxOpenApiBuilder_Settings - by Genexus Open API Builder";
+    public const string OwnedDescription = OwnedDescriptionCanonical;
     public const string SecurityLevelAuthentication = PrototypeWizardPreferencesCodec.SecurityLevelAuthentication;
     public const string SecurityLevelAuthorization = PrototypeWizardPreferencesCodec.SecurityLevelAuthorization;
     public const string SecurityLevelNone = PrototypeWizardPreferencesCodec.SecurityLevelNone;
@@ -182,7 +183,7 @@ internal static class PrototypeWizardPreferencesStore
 
         var file = matches[0];
         if (!string.Equals(file.Name, PrototypeWizardPreferences.FileName, StringComparison.Ordinal)
-            || !string.Equals(file.Description, PrototypeWizardPreferences.OwnedDescription, StringComparison.Ordinal))
+            || !ApiPlanOwnedObjectDescription.IsOwnedPreferencesFile(file.Description))
         {
             return LoadDefaultWithWarning($"File '{PrototypeWizardPreferences.FileName}' externo ou incompativel encontrado. Defaults conservadores em memoria aplicados.");
         }
@@ -228,7 +229,7 @@ internal static class PrototypeWizardPreferencesStore
         var existingFile = matches.SingleOrDefault();
         if (existingFile is not null
             && (!string.Equals(existingFile.Name, PrototypeWizardPreferences.FileName, StringComparison.Ordinal)
-                || !string.Equals(existingFile.Description, PrototypeWizardPreferences.OwnedDescription, StringComparison.Ordinal)))
+                || !ApiPlanOwnedObjectDescription.IsOwnedPreferencesFile(existingFile.Description)))
         {
             throw new InvalidOperationException($"Gravacao de preferencias bloqueada: ja existe File externo ou incompativel chamado '{PrototypeWizardPreferences.FileName}'. Nenhuma alteracao foi feita.");
         }

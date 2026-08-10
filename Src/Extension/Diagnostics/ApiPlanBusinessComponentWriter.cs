@@ -12,8 +12,6 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanBusinessComponentWriter
 {
-    private const string ProcedureDescriptionPrefix = "Genexus Open API Builder B050-B053 Procedure";
-
     /// <summary>
     /// Propriedade publica 'Required' de variavel de parametro de servico. Aplicada apenas nas
     /// variaveis de request do API Object: e a unica marcacao que o gerador de YAML honra,
@@ -333,7 +331,7 @@ internal static class ApiPlanBusinessComponentWriter
     {
         var name = $"proc{plan.TransactionName}_API_{service}";
         var matches = Procedure.GetAll(model).Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase)).ToArray();
-        if (matches.Length != 1 || !string.Equals(matches.Single().Description, $"{ProcedureDescriptionPrefix} - {backlog} - {service}", StringComparison.Ordinal))
+        if (matches.Length != 1 || !ApiPlanOwnedObjectDescription.IsOwnedProcedure(matches.Single().Description, name))
             throw new InvalidOperationException($"B055 bloqueado: Procedure propria '{name}' nao foi reencontrada com seguranca. Execute B050-B053 antes. Nenhuma alteracao foi feita.");
         return matches.Single();
     }
@@ -344,7 +342,7 @@ internal static class ApiPlanBusinessComponentWriter
         foreach (var definition in definitions.SharedSdts.Concat(definitions.OwnSdts))
         {
             var matches = SDT.GetAll(model).Where(item => string.Equals(item.Name, definition.Name, StringComparison.OrdinalIgnoreCase)).ToArray();
-            if (matches.Length != 1 || !string.Equals(matches.Single().Description, ApiPlanSdtWriter.CreateOwnedDescriptionFor(definition.BacklogId, definition.Kind), StringComparison.Ordinal))
+            if (matches.Length != 1 || !ApiPlanOwnedObjectDescription.IsOwnedSdt(matches.Single().Description, definition.Name))
                 throw new InvalidOperationException($"B055 bloqueado: SDT proprio requerido '{definition.Name}' nao foi reencontrado com seguranca. Nenhuma alteracao foi feita.");
         }
     }
@@ -390,8 +388,10 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         var currentSource = NormalizeForComparison(procedure.ProcedurePart.Source);
+        var legacySkeleton = LegacySkeleton(backlog, service);
         if (!string.IsNullOrWhiteSpace(currentSource) &&
             !string.Equals(currentSource, NormalizeForComparison(skeleton), StringComparison.Ordinal) &&
+            !string.Equals(currentSource, NormalizeForComparison(legacySkeleton), StringComparison.Ordinal) &&
             !string.Equals(currentSource, NormalizeForComparison(content), StringComparison.Ordinal) &&
             (isManagedCurrentSource is null || !isManagedCurrentSource(currentSource, plan)) &&
             (string.IsNullOrWhiteSpace(legacyContent) || !string.Equals(currentSource, NormalizeForComparison(legacyContent), StringComparison.Ordinal)))
@@ -413,7 +413,8 @@ internal static class ApiPlanBusinessComponentWriter
             .ToArray();
         if (currentVariables.Length == 0)
         {
-            if (IsPreB055ProcedureSkeleton(currentSource, currentRules, skeleton))
+            if (IsPreB055ProcedureSkeleton(currentSource, currentRules, skeleton)
+                || IsPreB055ProcedureSkeleton(currentSource, currentRules, legacySkeleton))
             {
                 return;
             }
@@ -2074,7 +2075,7 @@ internal static class ApiPlanBusinessComponentWriter
         yield return $"{indent}&ErrorResponse.Code = !\"validation_error\"";
         yield return $"{indent}&ErrorResponse.Message = !\"Business rules rejected the request.\"";
         yield return $"{indent}&Messages = {bc}.GetMessages()";
-        yield return $"{indent}msg(Format(!\"Genexus Open API Builder B079 BC failure: %1\", &Messages.ToJson()), status)";
+        yield return $"{indent}msg(Format(!\"Genexus Open API Builder BC failure: %1\", &Messages.ToJson()), status)";
     }
 
     private static IEnumerable<string> PreviousB079BusinessRuleFailureMessages(string bc, int spaces)
@@ -2242,7 +2243,13 @@ internal static class ApiPlanBusinessComponentWriter
     private static string LegacyUpdateRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse" }))});";
     private static string LoadArguments(ApiPlan plan, string prefix) => string.Join(", ", plan.PrimaryKey.Select(field => prefix == "&" ? $"&{field.Name}" : $"{prefix}.{field.Name}"));
     private static bool HasService(ApiPlan plan, string name) => plan.Services.Any(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
-    private static string Skeleton(string backlog, string service) => $"// Genexus Open API Builder {backlog}: Procedure skeleton for {service}. REST behavior remains pending Sprint 6." + Environment.NewLine + $"msg(!\"Genexus Open API Builder {backlog} {service} skeleton. REST behavior pending Sprint 6.\", status)";
+    private static string Skeleton(string backlog, string service) =>
+        $"// Genexus Open API Builder: Procedure skeleton for {service}." + Environment.NewLine +
+        $"msg(!\"Genexus Open API Builder {service} skeleton.\", status)";
+
+    private static string LegacySkeleton(string backlog, string service) =>
+        $"// Genexus Open API Builder {backlog}: Procedure skeleton for {service}. REST behavior remains pending Sprint 6." + Environment.NewLine +
+        $"msg(!\"Genexus Open API Builder {backlog} {service} skeleton. REST behavior pending Sprint 6.\", status)";
     private static string ServiceSource(ApiPlan plan, string service, bool includeBusinessComponentParameters, bool includeDescriptions, bool exposeErrorResponse)
     {
         var procedure = ExpectedProcedureReference(plan, $"proc{plan.TransactionName}_API_{service}");

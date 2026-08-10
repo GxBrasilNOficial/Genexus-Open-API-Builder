@@ -16,8 +16,6 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanTransactionSyncOrchestrator
 {
-    private const string SdtDescriptionPrefix = "Genexus Open API Builder B040-B046 SDT";
-
     public static ApiPlanTransactionSyncPreview Preview(KBModel designModel, Transaction transaction)
     {
         if (designModel is null)
@@ -325,8 +323,9 @@ internal static class ApiPlanTransactionSyncOrchestrator
             return;
         }
 
+        var ownedSdtName = sdtName!;
         var matches = SDT.GetAll(designModel)
-            .Where(item => string.Equals(item.Name, sdtName, StringComparison.OrdinalIgnoreCase))
+            .Where(item => string.Equals(item.Name, ownedSdtName, StringComparison.OrdinalIgnoreCase))
             .ToArray();
         if (matches.Length != 1)
         {
@@ -334,7 +333,7 @@ internal static class ApiPlanTransactionSyncOrchestrator
         }
 
         var sdt = matches[0];
-        if (sdt.Description is null || !sdt.Description.StartsWith(SdtDescriptionPrefix, StringComparison.Ordinal))
+        if (!ApiPlanOwnedObjectDescription.IsOwnedSdt(sdt.Description, ownedSdtName))
         {
             return;
         }
@@ -434,14 +433,19 @@ internal static class ApiPlanTransactionSyncOrchestrator
         }
 
         var file = matches[0];
-        if (file.Description is null ||
-            !file.Description.StartsWith("Genexus Open API Builder B060 Metadata File", StringComparison.Ordinal) ||
-            file.Description.IndexOf($"Transaction={transactionName}", StringComparison.Ordinal) < 0)
+        if (ApiPlanOwnedObjectDescription.IsCanonical(file.Description, metadataFileName))
         {
-            throw new InvalidOperationException($"Sincronizacao bloqueada: File '{metadataFileName}' nao e metadata propria da extensao. Nenhuma alteracao foi feita.");
+            return file;
         }
 
-        return file;
+        if (file.Description is not null
+            && file.Description.StartsWith("Genexus Open API Builder B060 Metadata File", StringComparison.Ordinal)
+            && file.Description.IndexOf($"Transaction={transactionName}", StringComparison.Ordinal) >= 0)
+        {
+            return file;
+        }
+
+        throw new InvalidOperationException($"Sincronizacao bloqueada: File '{metadataFileName}' nao e metadata propria da extensao. Nenhuma alteracao foi feita.");
     }
 
     private static JObject ParseMetadata(WikiFileKBObject file)
