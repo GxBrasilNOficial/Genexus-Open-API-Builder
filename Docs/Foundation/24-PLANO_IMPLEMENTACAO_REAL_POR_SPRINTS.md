@@ -376,7 +376,7 @@ Primeira versão aberta utilizável.
 
 Usuário externo testa.
 
-**Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10:** README público, [Docs/Public/INSTALL.md](../Public/INSTALL.md), [Docs/Public/DEMO.md](../Public/DEMO.md), [Docs/Releases/0.1.0-alpha.1.md](../Releases/0.1.0-alpha.1.md), corte no CHANGELOG e versão do pacote alinhada. Capturas em `Docs/Images/` entram quando disponíveis. Tag local `v0.1.0-alpha.1` após o commit da frente; push/GitHub Release só com pedido explícito. Próxima responsabilidade operacional: colocar a Alpha na mão de usuário externo (gate desta sprint); Sprint 9 absorve correções a partir do feedback.
+**Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10:** README público, [Docs/Public/INSTALL.md](../Public/INSTALL.md), [Docs/Public/DEMO.md](../Public/DEMO.md), [Docs/Releases/0.1.0-alpha.1.md](../Releases/0.1.0-alpha.1.md), corte no CHANGELOG, versão do pacote alinhada e galeria em [Docs/Images/](../Images/). Tag local `v0.1.0-alpha.1` criada; push/GitHub Release só com pedido explícito. Próxima responsabilidade operacional: colocar a Alpha na mão de usuário externo (gate desta sprint); Sprint 9 absorve correções a partir do feedback.
 
 [F18][SPR-F24]
 

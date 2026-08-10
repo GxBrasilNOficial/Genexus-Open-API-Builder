@@ -6,10 +6,10 @@ Use sempre uma **KB de teste**, com backup. Não execute na KB de produção.
 
 ## O que você verá
 
-1. Entrada pelo menu da IDE  
-2. Percurso completo do Wizard  
-3. Folder `<Transaction>OpenApi` com os objetos gerados  
-4. Relatório final após aplicar  
+1. Entrada pelo menu da IDE
+2. Percurso completo do Wizard
+3. Folder `<Transaction>OpenApi` com os objetos gerados
+4. Relatório final após aplicar
 
 ---
 
@@ -175,10 +175,10 @@ Confirmação com o plano: objetos próprios a apagar, SDTs compartilhados e Fol
 
 ## Limitações honestas da Alpha
 
-- Sem serviço `DELETE` no MVP  
-- YAML OpenAPI nativo do GeneXus tem restrições documentadas  
-- Classificação de campos sensíveis/auditoria ainda usa política default  
-- Validação prática principal no Upgrade 15  
+- Sem serviço `DELETE` no MVP
+- YAML OpenAPI nativo do GeneXus tem restrições documentadas
+- Classificação de campos sensíveis/auditoria ainda usa política default
+- Validação prática principal no Upgrade 15
 
 Detalhes: [notas 0.1.0-alpha.1](../Releases/0.1.0-alpha.1.md).
 
