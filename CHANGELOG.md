@@ -38,6 +38,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 - Ownership legado e pré-voo B086 (2026-08-09): Procedures e SDTs só reconhecem a combinação legada exata de backlog + serviço/tipo; metadata também exige `Transaction` e `Api` compatíveis. O B086 ganhou regressão automatizada para confirmar o preflight de API Object, Procedures e SDTs antes do primeiro `Delete()`. Testes `Tests/OwnershipDescriptions/Test-ApiPlanOwnedObjectDescription.ps1` e `Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPreflight.ps1`. Manifesto inalterado (só DLL).
 
+- Cobertura mecânica dos testes de ownership e B086 (2026-08-09): os dois testes acima passaram a ser executados pelo `scripts/Invoke-PrePushMechanicalChecks.ps1`, com fixtures, status e comandos verificados pelo teste do próprio checker. Isso evita que a cobertura fique restrita à execução manual.
+
 - B085 Keep (2026-08-08): Sync passa `preserveSdts` também para writers BC (B055) e List (B070); antes o Keep só omitia `ConfigureSdt` na 1ª etapa e BC/List regravavam o SDT. Validado no U15 em `Teste` com membro `ManualKeep` preservado e `PreservedSdts=1`.
 
 - Correção do `Location` para chave de texto (2026-08-06):
