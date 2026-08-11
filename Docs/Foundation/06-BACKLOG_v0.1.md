@@ -262,7 +262,7 @@ Após a Sprint 6, o pacote histórico “conflitos e reexecução” da Fase 7 f
 6. alinhamento de Folder reutilizado à decisão do MVP (reutilizar `NomeOpenApi` preexistente no módulo correto com aviso) — concluído (U15 2026-08-09; caminho feliz e bloqueios para contêiner incorreto, duplicidade e sentinela alheia)
 7. comprovação integrada dos dez gates — concluído (2026-08-09; `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`); marco **wizard funcional do MVP concluído**; U14 residual não bloqueante
 
-`B088` e `B089` ficaram **fora** do gate obrigatório da Sprint 7 e foram tratados **uma frente de cada vez** antes da Alpha. Em 2026-08-10, `B088` e `B089` foram concluídos e o pacote documental da Alpha `0.1.0-alpha.1` foi preparado. Em 2026-08-11 a documentação pública foi alinhada ao `B094`; a próxima ação canônica é a publicação (Release com a DLL), pré-requisito do gate da Sprint 8 (usuário externo). Ver checkpoint.
+`B088` e `B089` ficaram **fora** do gate obrigatório da Sprint 7 e foram tratados **uma frente de cada vez** antes da Alpha. Em 2026-08-10, `B088` e `B089` foram concluídos e o pacote documental da Alpha `0.1.0-alpha.1` foi preparado. Em 2026-08-11 a documentação pública foi alinhada ao `B094` e a Alpha foi publicada; a próxima ação canônica é o gate da Sprint 8 (usuário externo). Ver checkpoint.
 
 ### Nota operacional — B087, registrada em 2026-08-03 (atualizada em 2026-08-05)
 
@@ -370,7 +370,7 @@ B094 investigou, no GeneXus 18 U15, qual artefato distribuir e se um usuário ex
 | 9. Metadata persistente e reconhecimento seguro | B006, B060, B063, B065–B067, B085–B087 |
 | 10. Colisão, regeneração e remoção conservadoras | B063, B064 e B083–B086 |
 
-Esses gates foram comprovados progressivamente nas Sprints 1–7 e estão aprovados no pacote integrado de 2026-08-09 (`Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`), com o marco **wizard funcional do MVP concluído**. U14 nesta máquina permanece residual não bloqueante. Em 2026-08-10, `B088` e `B089` fecharam as frentes pré-Alpha e o pacote documental `0.1.0-alpha.1` foi preparado; em 2026-08-11 a documentação pública foi alinhada ao `B094`. A próxima ação canônica é a publicação (Release com a DLL), depois o gate da Sprint 8 (usuário externo). Ver checkpoint.
+Esses gates foram comprovados progressivamente nas Sprints 1–7 e estão aprovados no pacote integrado de 2026-08-09 (`Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`), com o marco **wizard funcional do MVP concluído**. U14 nesta máquina permanece residual não bloqueante. Em 2026-08-10, `B088` e `B089` fecharam as frentes pré-Alpha e o pacote documental `0.1.0-alpha.1` foi preparado; em 2026-08-11 a documentação pública foi alinhada ao `B094` e a Alpha foi publicada. A próxima ação canônica é o gate da Sprint 8 (usuário externo). Ver checkpoint.
 
 [BG-F06]
 
@@ -408,7 +408,7 @@ Os itens e intervalos abaixo formam a linha de corte exaustiva do MVP. Um item o
 5. Fase 3 até `B046`, criando os SDTs antes de seus consumidores
 6. Fases 4 e 5 (`B050`–`B067`), criando Procedures, API Object e metadata
 7. `B047`, Fase 6 (`B070`–`B079`) e aplicação da segurança em `B093`
-8. Fase 7 revisada concluída (`B087`, `B086`, `B085`, `B081`, residual `B083`, Folder reutilizado e comprovação integrada dos dez gates; marco wizard funcional do MVP); `B088`/`B089` concluídos em 2026-08-10; pacote Alpha `0.1.0-alpha.1` preparado; documentação pública alinhada ao `B094` em 2026-08-11; próxima ação = publicação (Release com DLL), depois gate Sprint 8 (usuário externo)
+8. Fase 7 revisada concluída (`B087`, `B086`, `B085`, `B081`, residual `B083`, Folder reutilizado e comprovação integrada dos dez gates; marco wizard funcional do MVP); `B088`/`B089` concluídos em 2026-08-10; pacote Alpha `0.1.0-alpha.1` preparado; documentação pública alinhada ao `B094` e Alpha publicada em 2026-08-11; próxima ação = gate Sprint 8 (usuário externo)
 
 `B047` é validado somente depois do API Object e dos serviços porque depende do YAML gerado pelo GeneXus; esse deslocamento de evidência não antecipa consumidores antes dos SDTs.
 
