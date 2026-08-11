@@ -2,7 +2,62 @@
 
 Guia para instalar a extensão no **GeneXus 18**. Validação principal no **Upgrade 15**. O Upgrade 14 permanece residual e não bloqueia o uso da Alpha.
 
-## Pré-requisitos
+Há dois caminhos:
+
+1. **Usuário final** — só a DLL (sem clonar este repositório).
+2. **Desenvolvedor / mantenedor** — clone, build e instaladores `.bat` deste repositório.
+
+---
+
+## Caminho do usuário final (só a DLL)
+
+Fonte factual: evidência [B094](../Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md) no GeneXus 18 U15.
+
+### Pré-requisitos
+
+- GeneXus 18 instalado (caminho típico: `C:\Program Files (x86)\GeneXus`)
+- A DLL `GenexusOpenApiBuilder.Extension.dll` da versão desejada (build Release `net471`)
+
+### De onde vem a DLL
+
+Obtenha o anexo `GenexusOpenApiBuilder.Extension.dll` no **GitHub Release** da versão (por exemplo a Alpha `0.1.0-alpha.1`). O arquivo `.nupkg` **não** é aceito pelo diálogo Add > Local (o botão OK fica desabilitado).
+
+### Instalação
+
+1. Feche **completamente** a IDE GeneXus.
+2. Abra o **Extensions Manager** e use **Add > Local** apontando para a DLL Release.
+3. Confirme a instalação. A extensão deve aparecer na lista (nome/fabricante/versão), porém **desmarcada**.
+4. **Não** tente ativar só marcando o checkbox na UI: a marcação **não persiste** entre reinícios. Quem registra a extensão é o passo seguinte.
+5. Na pasta de instalação do GeneXus (tipicamente `C:\Program Files (x86)\GeneXus\GeneXus18`), execute:
+
+```bat
+genexus /install
+```
+
+6. Reabra a IDE e confira a verificação abaixo.
+
+### Atritos e o que ainda não foi comprovado
+
+- Pode aparecer **UAC** no `genexus /install`. A escrita em `C:\Program Files (x86)\GeneXus\...\Packages` também exige permissão adequada. Instalação **sem elevação alguma** não foi comprovada.
+- Comportamento no Upgrade 14 não foi validado nesta evidência.
+- Add > Local em máquina **nunca** usada com esta extensão não foi refeito fora do cenário B094.
+
+### Verificação (usuário final)
+
+Na IDE, o menu **Genexus Open API Builder** deve aparecer antes de **Help**, com:
+
+- Configurar Preferências do Wizard
+- Wizard
+- Sincronizar com a Transaction
+- Remover API gerada
+
+No menu de contexto de uma Transaction, o submenu deve expor Wizard, Sincronizar e Remover.
+
+---
+
+## Caminho do desenvolvedor / mantenedor (repositório clonado)
+
+### Pré-requisitos
 
 - GeneXus 18 instalado (caminho típico: `C:\Program Files (x86)\GeneXus`)
 - PowerShell 7 (`pwsh`) disponível no PATH
@@ -17,7 +72,7 @@ Na raiz do repositório:
 dotnet build Src\GenexusOpenApiBuilder.sln --configuration Release
 ```
 
-## Instalação da DLL
+### Instalação da DLL
 
 1. Feche **completamente** a IDE GeneXus.
 2. Na raiz do repositório, execute `Install-ExtensionForGeneXus18.bat` com **Executar como administrador**.
@@ -25,7 +80,7 @@ dotnet build Src\GenexusOpenApiBuilder.sln --configuration Release
 
 O instalador copia a DLL, faz backup da anterior e confere se a instalação coincide com a build atual (`Tools/Test-InstalledExtension.ps1`).
 
-## Registro na IDE (quando necessário)
+### Registro na IDE (quando necessário)
 
 Execute `Register-ExtensionForGeneXus18.bat` **somente** se, desde o último `genexus /install` bem-sucedido, houve alteração em:
 
@@ -41,7 +96,7 @@ Passos:
 
 Se apenas a DLL mudou, o passo de registro não é necessário.
 
-## Verificação
+### Verificação (desenvolvedor / mantenedor)
 
 Com a IDE fechada ou aberta, por leitura:
 
@@ -57,6 +112,8 @@ Na IDE, o menu **Genexus Open API Builder** deve aparecer antes de **Help**, com
 - Remover API gerada
 
 No menu de contexto de uma Transaction, o submenu deve expor Wizard, Sincronizar e Remover.
+
+---
 
 ## Publicação em IIS (.NET Framework)
 

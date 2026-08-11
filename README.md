@@ -90,6 +90,17 @@ O gerador **.NET** não apresenta esse comportamento. Diagnóstico completo: [B0
 
 Quando houver nova DLL:
 
+**Usuário final** (instalou só com a DLL do Release):
+
+1. Feche a IDE GeneXus
+2. No Extensions Manager, use **Add > Local** com a nova `GenexusOpenApiBuilder.Extension.dll`
+3. Execute `genexus /install` na pasta de instalação do GeneXus
+4. Reabra a IDE
+
+Logo após o Add > Local a extensão pode aparecer **desmarcada**; marcar só na UI não persiste — o registro estável vem do `genexus /install`.
+
+**Desenvolvedor / mantenedor** (repositório clonado):
+
 1. Feche a IDE GeneXus
 2. Execute [`Install-ExtensionForGeneXus18.bat`](Install-ExtensionForGeneXus18.bat) como administrador
 3. Se o manifesto/registro mudou desde o último `genexus /install`, execute [`Register-ExtensionForGeneXus18.bat`](Register-ExtensionForGeneXus18.bat) e rode `genexus /install`

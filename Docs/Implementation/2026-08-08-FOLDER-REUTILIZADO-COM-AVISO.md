@@ -62,7 +62,7 @@ O comando **Remover API gerada** foi executado para a Transaction `Teste`.
 
 Status: **concluído**.
 
-A comprovação integrada dos dez gates e o marco do wizard funcional do MVP foram concluídos em seguida (2026-08-09). Em 2026-08-10 `B088` e `B089` fecharam as frentes pré-Alpha e o pacote documental da Alpha foi preparado; a próxima ação vigente fica no checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` (gate Sprint 8 / usuário externo).
+A comprovação integrada dos dez gates e o marco do wizard funcional do MVP foram concluídos em seguida (2026-08-09). Em 2026-08-10 `B088` e `B089` fecharam as frentes pré-Alpha e o pacote documental da Alpha foi preparado; a próxima ação vigente fica no checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
 
 ## Validação negativa U15 — 2026-08-09
 

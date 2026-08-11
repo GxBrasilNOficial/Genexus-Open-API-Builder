@@ -342,7 +342,7 @@ Ordem acordada de execução:
 
 Ciclo de vida conservador completo na IDE (posse, regeneração, sincronização e remoção sem overwrite indevido) e dez gates técnicos transversais comprovados.
 
-**Sprint 7 concluída em 2026-08-09.** O projeto atingiu o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para a Alpha da Sprint 8. Em 2026-08-10, `B088` e `B089` fecharam as frentes pré-Alpha. Em seguida o pacote documental `0.1.0-alpha.1` foi preparado; a próxima ação canônica é o gate da Sprint 8 (usuário externo).
+**Sprint 7 concluída em 2026-08-09.** O projeto atingiu o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para a Alpha da Sprint 8. Em 2026-08-10, `B088` e `B089` fecharam as frentes pré-Alpha. Em seguida o pacote documental `0.1.0-alpha.1` foi preparado; em 2026-08-11 a documentação pública foi alinhada ao `B094`. A próxima ação canônica é a publicação (Release com a DLL), pré-requisito do gate da Sprint 8 (usuário externo). Ver checkpoint.
 
 [F14][F28][SPR-F24]
 
@@ -376,7 +376,7 @@ Primeira versão aberta utilizável.
 
 Usuário externo testa.
 
-**Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10:** README público, [Docs/Public/INSTALL.md](../Public/INSTALL.md), [Docs/Public/DEMO.md](../Public/DEMO.md), [Docs/Releases/0.1.0-alpha.1.md](../Releases/0.1.0-alpha.1.md), corte no CHANGELOG, versão do pacote alinhada e galeria em [Docs/Images/](../Images/). Tag local `v0.1.0-alpha.1` criada; push/GitHub Release só com pedido explícito. Próxima responsabilidade operacional: colocar a Alpha na mão de usuário externo (gate desta sprint); Sprint 9 absorve correções a partir do feedback.
+**Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10:** README público, [Docs/Public/INSTALL.md](../Public/INSTALL.md), [Docs/Public/DEMO.md](../Public/DEMO.md), [Docs/Releases/0.1.0-alpha.1.md](../Releases/0.1.0-alpha.1.md), corte no CHANGELOG, versão do pacote alinhada e galeria em [Docs/Images/](../Images/). Em 2026-08-11 o INSTALL/README/notas de release foram alinhados à evidência `B094` (instalação só com a DLL). Tag local `v0.1.0-alpha.1` criada; push/GitHub Release só com pedido explícito. Próxima responsabilidade operacional: publicar o Release pre-release com a DLL anexada; em seguida o gate desta sprint (usuário externo). Sprint 9 absorve correções a partir do feedback.
 
 [F18][SPR-F24]
 

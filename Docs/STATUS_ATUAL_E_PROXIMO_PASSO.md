@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-08-10.
+2026-08-11.
 
 ## Último marco concluído
 
@@ -93,25 +93,30 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10: README público, `Docs/Public/INSTALL.md`, `Docs/Public/DEMO.md`, `Docs/Releases/0.1.0-alpha.1.md`, corte no CHANGELOG e versão do csproj.
 - Correção B085 (2026-08-10): Sync não exige mais `IsManagedApiObject` contra o ApiPlan reconstruído — posse por metadata; seleção de campos com ordem estável. Validado no U15 em `NotaFiscal` com `+ NotaFiscalObs3`: preflight OK, `Updated=13`, `Blocked=0`.
 - `B094` concluído em 2026-08-10 e corrigido em 2026-08-11: evidência de instalação sem clonar/`Install-*.bat` (Add > Local + `genexus /install`) ativando marcada + menus no U15, ainda com elevação (UAC); captura confiável em cmd elevado mostrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Sem mudança de código da extensão. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`. Documentação pública não alterada nesta frente.
+- Documentação pública alinhada ao `B094` em 2026-08-11: `Docs/Public/INSTALL.md` com caminho do usuário final (DLL) e do mantenedor; `README.md` com atualização pelos dois caminhos; `Docs/Releases/0.1.0-alpha.1.md` corrige o que não entra; `CHANGELOG.md` registra a mudança sob `[0.1.0-alpha.1]`. Sem mudança de código da extensão.
 
 ## Frente ativa
 
-Pacote documental da Alpha `0.1.0-alpha.1` (Sprint 8). Sprint 7, wizard MVP, `B088`, `B089` e evidência `B094` concluídos.
+Documentação pública da Alpha alinhada ao `B094` (Sprint 8). Próximo pré-requisito do gate: publicação do Release com a DLL anexada.
 
 ## Próxima ação única
 
-Colocar a Alpha na mão de **usuário externo** (gate da Sprint 8): divulgação controlada e coleta de feedback. Sem reabrir B088/B089 nem contradizer o marco do wizard. Push da tag/`GitHub Release` só com pedido explícito após o commit local com tag `v0.1.0-alpha.1`.
+Publicar a Alpha `0.1.0-alpha.1`: push dos commits pendentes, reposicionamento da tag local `v0.1.0-alpha.1` para o commit final publicado, e GitHub Release marcado como **pre-release** com a DLL Release anexada. Tudo isso **somente** com pedido explícito do usuário na conversa corrente. Sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Evidência da frente encerrada
 
-- pacote público: README, `Docs/Public/INSTALL.md`, `Docs/Public/DEMO.md`, `Docs/Releases/0.1.0-alpha.1.md`;
-- CHANGELOG com seção `[0.1.0-alpha.1]`; versão do csproj `0.1.0-alpha.1`;
-- plano 24 atualizado na seção Sprint 8.
+- `Docs/Public/INSTALL.md` distingue instalação só com a DLL (Add > Local + `genexus /install`) do fluxo de mantenedor (`.bat`);
+- `README.md` descreve atualização pelos dois caminhos;
+- `Docs/Releases/0.1.0-alpha.1.md` deixa de negar o pacote instalável fora do repositório e lista o que ainda não entra;
+- `CHANGELOG.md` com entrada sob `[0.1.0-alpha.1]` → Changed;
+- backlog 06, plano 24 e comprovação dos dez gates alinhados à ordem publicação → gate;
+- fonte factual: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`.
 
 ## Critério de conclusão da próxima ação
 
-- ao menos um usuário externo instalou/testou seguindo INSTALL + DEMO, ou feedback equivalente registrado;
-- issues/feedback priorizados alimentam a Sprint 9 sem reabrir B088/B089.
+- tag `v0.1.0-alpha.1` publicada apontando para o commit divulgado;
+- GitHub Release **pre-release** no ar com a DLL `GenexusOpenApiBuilder.Extension.dll` anexada;
+- `Docs/Public/INSTALL.md` descrevendo o caminho de instalação a partir desse anexo.
 
 ## Sequência operacional vigente
 
@@ -153,6 +158,7 @@ Colocar a Alpha na mão de **usuário externo** (gate da Sprint 8): divulgação
 36. Em 2026-08-10 `B089` fechou a evidência HTTP 403 com role GAM restrita em `apiNotaFiscal` (Get 200 / Create 403) nos dois environments; frentes pré-Alpha encerradas; próxima ação = Alpha / Sprint 8. Evidência: `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D.
 37. Em 2026-08-10 o pacote documental da Alpha `0.1.0-alpha.1` foi preparado (README, INSTALL, DEMO, notas de release, CHANGELOG, versão no csproj, plano 24). Próxima ação = usuário externo / divulgação controlada (gate Sprint 8); tag local no commit da frente.
 38. Em 2026-08-10/11 `B094` fechou a evidência de instalação externa no U15 e corrigiu o argumento falso “só Scanning / sem added”: Add > Local + `/install` ativou; log elevado registrou `added`. Caminho sem elevação alguma e docs públicos permanecem fora desta frente. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`.
+39. Em 2026-08-11 a documentação pública foi alinhada ao `B094` (INSTALL com dois caminhos, README de atualização, notas de release e CHANGELOG). Ordem vigente: doc pública → publicação (Release com DLL) → gate de usuário externo → Sprint 9.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -180,7 +186,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Gate da Sprint 8 com usuário externo (após pacote `0.1.0-alpha.1`);
+- Gate da Sprint 8 com usuário externo (depois da publicação do Release com a DLL anexada; INSTALL + DEMO);
 - Sprint 9 — correções reais a partir do feedback.
 
 ## Protocolo de atualização

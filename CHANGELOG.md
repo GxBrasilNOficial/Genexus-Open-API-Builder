@@ -37,6 +37,8 @@ Primeira Alpha pública do Genexus Open API Builder (Sprint 8).
 
 ## Changed
 
+- Documentação pública alinhada à evidência `B094` (2026-08-11): [INSTALL](Docs/Public/INSTALL.md) passa a distinguir instalação do usuário final (DLL via Add > Local + `genexus /install`, sem clonar) do fluxo de mantenedor (`.bat`); README descreve atualização pelos dois caminhos; notas da Alpha deixam de negar o pacote instalável fora do repositório e listam o que ainda não entra (elevação, canal Web, desinstalação). Checkpoint, backlog 06, plano 24 e comprovação dos dez gates alinhados à ordem publicação → gate de usuário externo. Sem mudança de código da extensão.
+
 - `B094` (2026-08-10; correção 2026-08-11): evidência de instalação por usuário externo sem clonar o repositório — Add > Local + `genexus /install` ativou marcada + menus no GeneXus 18 U15, ainda com elevação (UAC). Correção do argumento falso “só Scanning / sem `added`” (captura incompleta); em cmd já elevado o log registrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Premissa “`/install` elevado pode não varrer” refutada. Sem mudança de código da extensão. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`. Documentação pública não alterada nesta frente.
 
 - Nota de revisão em `B000` (2026-08-11): `Docs/Implementation/B000-CARREGAMENTO-IDE.md` afirmava, em dois pontos, que `genexus /install` elevado não varria os pacotes no U15. A premissa foi refutada pelo `B094`; a observação original vinha de captura incompleta da saída. O texto de época é preservado e a nota registra a refutação. O contrato operacional do repositório não muda: `Register-ExtensionForGeneXus18.bat` continua recusando execução elevada. Sem mudança de código da extensão.
