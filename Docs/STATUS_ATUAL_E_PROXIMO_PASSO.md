@@ -94,6 +94,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Correção B085 (2026-08-10): Sync não exige mais `IsManagedApiObject` contra o ApiPlan reconstruído — posse por metadata; seleção de campos com ordem estável. Validado no U15 em `NotaFiscal` com `+ NotaFiscalObs3`: preflight OK, `Updated=13`, `Blocked=0`.
 - `B094` concluído em 2026-08-10 e corrigido em 2026-08-11: evidência de instalação sem clonar/`Install-*.bat` (Add > Local + `genexus /install`) ativando marcada + menus no U15, ainda com elevação (UAC); captura confiável em cmd elevado mostrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Sem mudança de código da extensão. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`. Documentação pública não alterada nesta frente.
 - Documentação pública alinhada ao `B094` em 2026-08-11: `Docs/Public/INSTALL.md` com caminho do usuário final (DLL) e do mantenedor; `README.md` com atualização pelos dois caminhos; `Docs/Releases/0.1.0-alpha.1.md` corrige o que não entra; `CHANGELOG.md` registra a mudança sob `[0.1.0-alpha.1]`. Sem mudança de código da extensão. Correção imediata na mesma data: ordem de instalação do usuário final alinhada ao B094 (Add > Local com IDE aberta); atualização só com Add > Local marcada como não comprovada (falha observada com DLL já em `Packages`).
+- Em 2026-08-11 o INSTALL publicado do usuário final foi ancorado ao redo do mantenedor (B094 §6: limpeza + Add > Local + `/install` + menus). Não há gap de “ninguém executou a sequência”; o gate restante continua sendo usuário externo.
 
 ## Frente ativa
 
@@ -111,6 +112,7 @@ A tag `v0.1.0-alpha.1` está publicada e **não deve ser movida**: correção po
 - anexo `GenexusOpenApiBuilder.Extension.dll` (555.520 bytes) conferido após download com SHA-256 `3A5FD008B9B4D971D03DC10E50BF6C7D97813824FC5D6417498F4FDEC63D63EF`, idêntico à build local e ao registrado no `B094`;
 - links do corpo do Release fixados na tag e verificados contra o conteúdo publicado;
 - `Docs/Public/INSTALL.md` distingue instalação só com a DLL (Add > Local com IDE aberta + fechar + `genexus /install`) do fluxo de mantenedor (`.bat`);
+- sequência INSTALL do usuário final validada pelo mantenedor em 2026-08-11 (B094 §6); gap remanescente = usuário externo;
 - atualização só com Add > Local sobre DLL já em `Packages` declarada **não comprovada** (falha B094); caminho estável de atualização = mantenedor;
 - `README.md` alinhado a essa honestidade;
 - `Docs/Releases/0.1.0-alpha.1.md` lista o que ainda não entra (incluindo atualização só com Add > Local);
@@ -165,6 +167,7 @@ A tag `v0.1.0-alpha.1` está publicada e **não deve ser movida**: correção po
 38. Em 2026-08-10/11 `B094` fechou a evidência de instalação externa no U15 e corrigiu o argumento falso “só Scanning / sem added”: Add > Local + `/install` ativou; log elevado registrou `added`. Caminho sem elevação alguma e docs públicos permanecem fora desta frente. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`.
 39. Em 2026-08-11 a documentação pública foi alinhada ao `B094` (INSTALL com dois caminhos, README de atualização, notas de release e CHANGELOG). Ordem vigente: doc pública → publicação (Release com DLL) → gate de usuário externo → Sprint 9.
 40. Em 2026-08-11 a Alpha `0.1.0-alpha.1` foi publicada: `main` enviada ao remoto, tag `v0.1.0-alpha.1` reposicionada para `e0b2b7e` e publicada, e GitHub Release **pre-release** criado com a DLL anexada e verificada por SHA-256 após download. A tag publicada não deve ser movida; correção posterior exige `0.1.0-alpha.2`. Próxima ação = gate da Sprint 8 (usuário externo).
+41. Em 2026-08-11 higiene pública pós-Alpha: `LICENSE` sem `# LICENSE` (detector MIT); INSTALL/checkpoint ancoram a sequência do usuário final ao redo B094 §6; tópicos GitHub `genexus`, `openapi`, `rest-api`, `genexus-extension`. Próxima ação permanece gate de usuário externo.
 
 ## Bloqueios e fatos ainda não validados
 

@@ -40,6 +40,10 @@ genexus /install
 
 **Não comprovada** como guia operacional. No B094, Add > Local com a DLL **já presente** em `Packages` falhou com `Error installing extension`. A reinstalação limpa só funcionou depois de apagar `Packages\GenexusOpenApiBuilder.Extension.dll` (escrita em Program Files; tipicamente exige elevação), rodar `genexus /install` até a extensão sumir da lista e repetir o fluxo de instalação acima. Não inventamos um atalho: o caminho comprovado de atualização de DLL continua sendo o do mantenedor (`Install-ExtensionForGeneXus18.bat`).
 
+### Validação da sequência publicada
+
+Em 2026-08-11 o mantenedor reexecutou limpeza real (apagar a DLL em `Packages` + `genexus /install` até sumir da lista), Add > Local, fechar a IDE, `genexus /install` e verificação de menus no GeneXus 18 U15. A ordem deste guia segue essa evidência ([B094 §6](../Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md)). O que ainda falta para o gate da Sprint 8 é o mesmo fluxo por **usuário externo**, não um reensaio do mantenedor.
+
 ### Atritos e o que ainda não foi comprovado
 
 - Pode aparecer **UAC** no `genexus /install`. A escrita em `C:\Program Files (x86)\GeneXus\...\Packages` também exige permissão adequada. Instalação **sem elevação alguma** não foi comprovada.
