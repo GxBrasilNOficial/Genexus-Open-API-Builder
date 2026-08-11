@@ -1,0 +1,39 @@
+name: Sugestão
+description: Propor melhoria ou funcionalidade a partir de um problema real de uso.
+title: "[Sugestão]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema real
+      description: Qual dor ou atrito isso resolve?
+    validations:
+      required: true
+  - type: textarea
+    id: who
+    attributes:
+      label: Quem precisa disso
+      description: Perfil de usuário ou cenário.
+    validations:
+      required: true
+  - type: textarea
+    id: gain
+    attributes:
+      label: Ganho esperado
+    validations:
+      required: true
+  - type: textarea
+    id: alternative
+    attributes:
+      label: Alternativa atual
+      description: Como contorna hoje, se contorna.
+    validations:
+      required: false
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impacto percebido
+      description: Opcional — prioridade relativa ou efeito no fluxo.
+    validations:
+      required: false

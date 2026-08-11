@@ -1,0 +1,64 @@
+name: Bug ou problema de uso
+description: Relatar falha na instalação, no wizard, no build ou na chamada HTTP.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Antes de abrir, confira [INSTALL](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/blob/main/Docs/Public/INSTALL.md) e [DEMO](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/blob/main/Docs/Public/DEMO.md).
+  - type: input
+    id: genexus-version
+    attributes:
+      label: Versão do GeneXus e Upgrade
+      description: Exemplo — 18 U15
+      placeholder: 18 U15
+    validations:
+      required: true
+  - type: dropdown
+    id: generator
+    attributes:
+      label: Gerador usado
+      options:
+        - .NET
+        - .NET Framework
+        - Não sei
+    validations:
+      required: true
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: Como instalou
+      options:
+        - DLL do Release (Add > Local)
+        - Instaladores .bat do repositório
+        - Não sei / outro
+    validations:
+      required: true
+  - type: dropdown
+    id: stuck-step
+    attributes:
+      label: Em que passo travou
+      options:
+        - Instalação / ativação da extensão
+        - Wizard
+        - Build
+        - Chamada HTTP
+        - Outro
+    validations:
+      required: true
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: O que esperava e o que aconteceu
+      description: Descreva o comportamento esperado e o comportamento atual.
+      placeholder: Esperava… / Aconteceu…
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Output da IDE, mensagens de erro ou prints
+      description: Opcional, mas ajuda muito.
+    validations:
+      required: false

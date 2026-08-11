@@ -46,6 +46,19 @@ Ao abrir issue, tente incluir:
 - comportamento atual
 - prints/logs se possível
 
+Prefira o formulário **Bug ou problema de uso** em New issue.
+
+---
+
+# Feedback fora do GitHub (mantenedor)
+
+Quando o relato chegar por grupo, mensagem direta ou outro canal fora do GitHub:
+
+1. Abra a issue no lugar da pessoa.
+2. Cole o texto original em bloco de citação, sem reescrever.
+3. Registre canal e data de origem; nome ou handle só se a pessoa autorizar.
+4. Aplique o label `feedback-externo` (e `instalacao` / `alpha-0.1.0` quando couber).
+
 ---
 
 # Sugerindo Funcionalidades
@@ -61,6 +74,8 @@ Explique:
 Melhor que apenas:
 
 "seria legal ter..."
+
+Prefira o formulário **Sugestão** em New issue.
 
 ---
 
