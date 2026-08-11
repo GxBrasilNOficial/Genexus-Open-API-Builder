@@ -42,7 +42,7 @@ genexus /install
 
 ### Validação da sequência publicada
 
-Em 2026-08-11 o mantenedor reexecutou limpeza real (apagar a DLL em `Packages` + `genexus /install` até sumir da lista), Add > Local, fechar a IDE, `genexus /install` e verificação de menus no GeneXus 18 U15. A ordem deste guia segue essa evidência ([B094 §6](../Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md)). O que ainda falta para o gate da Sprint 8 é o mesmo fluxo por **usuário externo**, não um reensaio do mantenedor.
+Em 2026-08-11 o mantenedor reexecutou limpeza real (apagar a DLL em `Packages` + `genexus /install` até sumir da lista), Add > Local, fechar a IDE, `genexus /install` e verificação de menus no GeneXus 18 U15. A ordem deste guia segue essa evidência ([B094 §6](../Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md)). Esta sequência ainda não foi executada por outra pessoa além do mantenedor.
 
 ### Atritos e o que ainda não foi comprovado
 
