@@ -2,7 +2,9 @@
 
 ## Estado
 
-Concluído em 2026-08-10 no GeneXus 18 Upgrade 15 (`18.0.15.188745`): comprovação ponta a ponta, com o mantenedor na IDE, de que **não existe caminho estável** para um usuário externo instalar a extensão Alpha `0.1.0-alpha.1` **somente** via Extensions Manager (Add > Local) e `genexus /install` sem elevação, deixando a extensão marcada e com menus. O caminho que ativa menus continua sendo o dos instaladores do repositório: cópia elevada da DLL para `Packages` + registro sem elevação.
+Concluído em 2026-08-10 no GeneXus 18 Upgrade 15 (`18.0.15.188745`), com **correção de evidência em 2026-08-11**: a captura incompleta do `/install` no primeiro fechamento levou a um argumento decisivo errado (“só `Scanning`, sem `added`”). Com captura confiável e redo do cenário Add > Local, o pacote **é** reconhecido (`Package '...' added`) e Add > Local + `genexus /install` **ativou** a extensão (marcada + menus) nesta máquina — ainda com atrito de elevação (UAC no `/install` a partir de cmd normal em Program Files; escrita em `Packages` via Add > Local).
+
+Caminho **sem elevação alguma** continua **não** comprovado. O fluxo dos instaladores do repositório (cópia elevada da DLL + `/install`) permanece caminho estável de mantenedor.
 
 Esta evidência **não** reescreve `README.md`, `Docs/Public/INSTALL.md`, `Docs/Public/DEMO.md` nem `Docs/Releases/`. A atualização da documentação pública é frente separada.
 
@@ -30,7 +32,12 @@ Fonte: [HowTo: Install GX extensions](https://docs.genexus.com/en/wiki?7623,HowT
 
 A wiki descreve instalação manual como: colocar as `.dll` em `Packages` e executar `genexus /install` (varre `Packages` e registra; não abre a IDE). **Não exige administrador** para `/install`.
 
-No U15 local, isso alinha com `Register-ExtensionForGeneXus18.bat`, que **recusa** execução elevada, e com a evidência histórica do B000 de que `/install` elevado pode não varrer pacotes. O atrito de administrador, quando existe, está na **escrita em** `C:\Program Files (x86)\GeneXus\...\Packages`, não no comando `/install` em si.
+No U15 local, `Register-ExtensionForGeneXus18.bat` **recusa** execução elevada (contrato do wrapper do repositório). A premissa histórica do B000 de que “`/install` elevado pode não varrer pacotes” ficou **refutada** em 2026-08-11: em cmd já elevado, `/install` varreu `Packages`, emitiu `Package '...' added` para esta extensão e também publicou/instalou módulos NuGet em `.gxmodules`. O atrito de elevação observado nesta máquina inclui:
+
+1. escrita em `C:\Program Files (x86)\GeneXus\...\Packages` (Add > Local / cópia manual);
+2. UAC ao iniciar `genexus /install` a partir de cmd **normal** na pasta de instalação (janela elevada `GeneXus.com` separada).
+
+Não se afirma que a ativação “só funciona se o cmd do `/install` já estiver elevado”: no redo Add > Local a ativação veio do fluxo com UAC a partir de cmd normal. O cmd já elevado serviu para captura confiável do log.
 
 ## Sequência executada e observações
 
@@ -69,57 +76,84 @@ Ambiente: Windows 11; GeneXus 18 U15; extensão Alpha `0.1.0-alpha.1`; fabricant
 - Em mais de uma tentativa, o reinício pedido **travou**; foi necessário encerrar pelo Gerenciador de Tarefas.
 - Após reabertura (fechamento forçado ou fechamento normal após responder Não ao reinício), a extensão **seguiu desmarcada**. A marcação **não persiste**.
 
-### 6. `genexus /install` após Add > Local (DLL já em Packages)
+### 6. `genexus /install` após Add > Local — correção de evidência (2026-08-11)
 
-- Varredura sem elevação.
-- Trecho decisivo:
+A versão de 2026-08-10 deste passo registrou apenas `Scanning package 'GenexusOpenApiBuilder.Extension.dll'` sem `added`, e concluiu que o pacote não era reconhecido. Essa observação veio de captura incompleta: em cmd normal, `genexus /install` abre janela própria que roda e fecha sem pausa; o documento não registrava o método de captura.
+
+#### 6.A Redo do cenário Add > Local (cmd normal + redirect)
+
+1. Estado limpo: DLL apagada de `Packages`, `/install`, extensão sumiu da lista.
+2. Add > Local com a DLL Release → listada e **desmarcada**.
+3. GeneXus fechado (sem órfãos).
+4. Em cmd **normal**, na pasta GeneXus18:
+
+```bat
+genexus /install > C:\Temp\gxinstall.log 2>&1
+```
+
+5. Apareceu autorização de elevação (UAC). O trabalho real ocorreu em janela elevada `GeneXus.com` (Publishing/Installing module / `nuget.exe` para vários módulos em `.gxmodules`).
+6. `C:\Temp\gxinstall.log` ficou **0 KB**. `findstr /i "GenexusOpenApiBuilder" C:\Temp\gxinstall.log` não retornou linhas: o redirect no processo pai **não captura** a saída do processo elevado filho.
+7. Reabertura da IDE: extensão **marcada**; menu `Genexus Open API Builder` visível.
+
+Conclusão deste momento: no cenário Add > Local + `/install` (com UAC), a extensão **ativou**. O log redirecionado neste modo **não** é evidência do texto `added`/`Scanning`.
+
+#### 6.B Captura confiável (cmd já elevado)
+
+Com a DLL já em `Packages`, em cmd **Administrador** (sem segundo UAC):
+
+```bat
+cd /d "C:\Program Files (x86)\GeneXus\GeneXus18"
+genexus /install > C:\Temp\gxinstall-elevated.log 2>&1
+findstr /i "GenexusOpenApiBuilder" C:\Temp\gxinstall-elevated.log
+```
+
+Trecho literal:
 
 ```text
 Scanning package 'GenexusOpenApiBuilder.Extension.dll'
-Scanning package 'K2B.Packages.Editors.UI.dll'
-Package 'K2B.Packages.Editors.UI.dll' added
+Package 'GenexusOpenApiBuilder.Extension.dll' added
 ```
 
-- Pacotes válidos emitem `Package '...' added` (ou `Package Attribute not found`). A DLL desta extensão foi **apenas escaneada**, sem `added`.
-- Reabertura da IDE: continua **desmarcada**.
-- Teste residual: marcar de novo após esse `/install` → Apply → reinício → **travou de novo** → reabertura ainda **desmarcada**.
+O pacote **é** reconhecido e adicionado. A falha de método do passo 6 original (e do redirect em cmd normal) explica o argumento errado de 2026-08-10; não um “não-reconhecimento” do pacote.
 
 ### 7. Controle positivo — fluxo dos `.bat` do repositório
 
 1. `Install-ExtensionForGeneXus18.bat` como Administrador (só após matar processos GeneXus órfãos deixados pelos hangs).
-2. `genexus /install` sem Administrador.
+2. `genexus /install` sem Administrador (contrato do `Register-ExtensionForGeneXus18.bat`).
 3. Reabertura: extensão **marcada**; menu principal `Genexus Open API Builder` antes de Help com os quatro comandos (`Configurar Preferências do Wizard`, `Wizard`, `Sincronizar com a Transaction`, `Remover API gerada`); submenu no contexto da Transaction com os três comandos aplicáveis.
 
 ## Resultado
 
-**Não existe, nesta máquina/U15, caminho comprovado de usuário externo que ative a extensão (marcada + menus) sem escrita administrativa em `Packages` via o instalador controlado (ou equivalente manual elevado).**
-
-Em letras claras:
+Nesta máquina/U15:
 
 1. Distribuir a **DLL** (o `.nupkg` não entra no Add > Local).
-2. Add > Local com a DLL **pode copiar** o arquivo e listar a extensão, mas deixa **desmarcada**.
-3. Marcar na UI **não estabiliza** a ativação (e o reinício pedido pode hangar, deixando processos `GeneXus` vivos).
-4. `genexus /install` **não exige** administrador e **é necessário** no fluxo oficial/wiki, porém após Add > Local **não emitiu** `Package 'GenexusOpenApiBuilder.Extension.dll' added` e **não** produziu ativação.
-5. O caminho comprovado que funciona: **cópia elevada** da DLL para `Packages` (`Install-ExtensionForGeneXus18.bat`) + **`genexus /install` sem elevação**.
+2. Add > Local com a DLL **copia** o arquivo e lista a extensão, mas deixa **desmarcada**.
+3. Marcar na UI **não estabiliza** a ativação (e o reinício pedido pode hangar, deixando processos `GeneXus` vivos). Observação **não** contestada.
+4. Após Add > Local, `genexus /install` **reconhece** o pacote (`Package 'GenexusOpenApiBuilder.Extension.dll' added`, captura elevada) e, no redo com UAC a partir de cmd normal, **ativou** marcada + menus. O argumento de 2026-08-10 (“só Scanning, sem `added`, sem ativação”) estava **errado**.
+5. Existe caminho **sem clonar o repositório e sem `Install-*.bat`** que chegou a marcada + menus: Add > Local + `genexus /install`. Esse caminho **não** comprovou instalação **sem elevação** (UAC no `/install`; escrita em `Packages`).
+6. O fluxo dos `.bat` (cópia elevada + `/install` conforme wrappers) permanece caminho estável de mantenedor.
 
 ## Fricções observadas
 
 - Extensions Manager sem desinstalação; limpeza exige apagar a DLL de `Packages`.
-- Hang recorrente em “Restart now?” após Apply de marcação no fluxo Add > Local.
+- Hang recorrente em “Restart now?” após Apply de marcação no fluxo Add > Local. Hipótese plausível (não causa única comprovada): o `/install` / reinício coincide com trabalho pesado de publicação e instalação de módulos NuGet em `.gxmodules`, observado na janela elevada.
 - Processos GeneXus órfãos bloqueiam o instalador (“GeneXus aberto”).
 - Diálogo Add > Local com erro genérico `Error installing extension` quando a extensão/DLL já existem.
 - Coluna Description do Extensions Manager pode permanecer vazia (limitação já conhecida no B000); não bloqueia identificação por Nome/Fabricante/Versão.
+- Redirect `> arquivo 2>&1` a partir de cmd normal **falha** quando há UAC e janela filha elevada: log fica vazio.
 
 ## O que ficou sem comprovação
 
 - Comportamento idêntico em GeneXus 18 U14.
-- Add > Local em máquina **nunca** usada com esta extensão, por um usuário sem nenhuma permissão elevada (aqui a limpeza e o controle positivo usaram escrita em Program Files).
-- Se algum dia o `/install` passar a emitir `Package '...GenexusOpenApiBuilder.Extension.dll' added` após Add > Local e isso ativar a marcação.
+- Add > Local em máquina **nunca** usada com esta extensão, por um usuário sem nenhuma permissão elevada.
+- Se Add > Local eleva internamente a cópia para `Packages` (mecanismo exato não instrumentado).
+- Causa da não-persistência da marcação **somente** pela UI (hipótese não comprovada: permissão de escrita no registro/estado da IDE — não inventar como fato).
+- Causa única dos hangs em “Restart now?” (trabalho de módulos NuGet é hipótese, não prova).
 - Publicação/consumo do `.nupkg` por canal Web do Extensions Manager (fora do escopo Local).
 
 ## Critério de conclusão
 
 - Artefato necessário identificado por inspeção de build/script e por teste na IDE — atendido.
 - Sequência do usuário final tentada e observada passo a passo — atendida.
-- Resposta objetiva sobre existência de caminho sem administrador para ativação completa — atendida: **não comprovado; o caminho estável exige cópia elevada + `/install` sem elevação**.
+- Resposta objetiva sobre caminho sem clonar/`Install-*.bat` — atendida com correção 2026-08-11: **comprovado** Add > Local + `/install` ativando nesta máquina, **ainda com elevação**; caminho **sem elevação alguma** não comprovado.
 - Documentação pública não alterada nesta frente — atendido.

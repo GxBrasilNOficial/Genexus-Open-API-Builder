@@ -248,6 +248,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B087 | Ancorar posse na metadata e liberar a `Description` do API Object | Alta — concluído (código + validação U15 2026-08-07) |
 | B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta — pré-Alpha separado; concluído (2026-08-10; limitação intransponível documentada) |
 | B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta — pré-Alpha separado; concluído (2026-08-10; GAM Backoffice + HTTP Get 200 / Create 403) |
+| B094 | Comprovar instalação por usuário externo sem clonar o repositório / sem `.bat` de administrador | Alta — Sprint 8 / evidência; concluído (2026-08-10; correção de captura 2026-08-11) |
 
 ### Nota operacional — revisão da Sprint 7 / Fase 7, registrada em 2026-08-07 (fechada em 2026-08-09)
 
@@ -308,6 +309,12 @@ B089 foi registrado como item de backlog pré-Alpha para evidenciar HTTP **403 F
 3. *Definição de Concluído*: o item estará pronto quando a resposta 403 estiver capturada e documentada em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md`.
 
 **Fechamento 2026-08-10:** os três critérios foram atendidos via GAM Backoffice (role `Role_GOAB_Test_Denied`, usuário `goab_role_denied`) nos environments .NET Framework/SQL Server e .NET/PostgreSQL: GET **200**, POST Create **403** (`code` 139); evidência em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D. Sem mudança de código da extensão. Programmatic GAM API não foi obrigatória.
+
+### Nota operacional — B094, registrada em 2026-08-10 (atualizada em 2026-08-11)
+
+B094 investigou, no GeneXus 18 U15, qual artefato distribuir e se um usuário externo consegue instalar a extensão Alpha sem clonar o repositório e sem os `.bat` elevados do mantenedor. Evidência em `Docs/Implementation/B094-INSTALACAO-USUARIO-EXTERNO-SEM-ADMIN.md`. Sem mudança de código da extensão. Documentação pública (`README`, `INSTALL`, `DEMO`, `Releases`) permanece frente separada.
+
+**Fechamento e correção:** em 2026-08-10 o relatório inicial errou o argumento decisivo por captura incompleta do `/install`. Em 2026-08-11, redo Add > Local + `/install` ativou marcada + menus (com UAC); captura em cmd já elevado registrou literalmente `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Caminho sem elevação alguma continua não comprovado; observações de extensão desmarcada após Add > Local e marcação só na UI que não persiste permanecem válidas.
 
 ---
 

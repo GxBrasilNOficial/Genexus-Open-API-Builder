@@ -12,6 +12,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Changed
 
+- `B094` (2026-08-10; correção 2026-08-11): evidência de instalação por usuário externo sem clonar o repositório — Add > Local + `genexus /install` ativou marcada + menus no GeneXus 18 U15, ainda com elevação (UAC). Correção do argumento falso “só Scanning / sem `added`” (captura incompleta); em cmd já elevado o log registrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Premissa “`/install` elevado pode não varrer” refutada. Sem mudança de código da extensão. Evidência: `Docs/Implementation/B094-INSTALACAO-USUARIO-EXTERNO-SEM-ADMIN.md`. Documentação pública não alterada nesta frente.
+
 ## Fixed
 
 - Sync B085: posse do API Object no preflight deixa de exigir `IsManagedApiObject` contra o ApiPlan reconstruído; ownership na metadata (`schemaVersion` + `apiName` + `apiGuid`) basta. Corrige bloqueio falso ao adicionar campos. A seleção de campos no Sync preserva a ordem da metadata e anexa adds no fim (dedupe por GUID). Validado no U15 em `NotaFiscal`/`NotaFiscalObs3` (`Updated=13`, `Blocked=0`).
