@@ -18,7 +18,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ---
 
-# [0.1.0-alpha.1] - 2026-08-10
+# [0.1.0-alpha.1] - 2026-08-11
 
 Primeira Alpha pública do Genexus Open API Builder (Sprint 8).
 
