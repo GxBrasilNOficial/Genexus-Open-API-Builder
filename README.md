@@ -92,14 +92,9 @@ Quando houver nova DLL:
 
 **Usuário final** (instalou só com a DLL do Release):
 
-1. Feche a IDE GeneXus
-2. No Extensions Manager, use **Add > Local** com a nova `GenexusOpenApiBuilder.Extension.dll`
-3. Execute `genexus /install` na pasta de instalação do GeneXus
-4. Reabra a IDE
+Atualização só com **Add > Local** **não está comprovada**. No B094, com a DLL já presente em `Packages`, o Add > Local falhou com `Error installing extension`; a reinstalação limpa exigiu apagar essa DLL (Program Files; tipicamente com elevação) e repetir o fluxo de instalação. Detalhes e o que foi observado: [Docs/Public/INSTALL.md](Docs/Public/INSTALL.md#atualização-usuário-final).
 
-Logo após o Add > Local a extensão pode aparecer **desmarcada**; marcar só na UI não persiste — o registro estável vem do `genexus /install`.
-
-**Desenvolvedor / mantenedor** (repositório clonado):
+**Desenvolvedor / mantenedor** (repositório clonado) — caminho comprovado:
 
 1. Feche a IDE GeneXus
 2. Execute [`Install-ExtensionForGeneXus18.bat`](Install-ExtensionForGeneXus18.bat) como administrador

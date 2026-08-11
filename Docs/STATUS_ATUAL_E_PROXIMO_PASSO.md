@@ -93,7 +93,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10: README público, `Docs/Public/INSTALL.md`, `Docs/Public/DEMO.md`, `Docs/Releases/0.1.0-alpha.1.md`, corte no CHANGELOG e versão do csproj.
 - Correção B085 (2026-08-10): Sync não exige mais `IsManagedApiObject` contra o ApiPlan reconstruído — posse por metadata; seleção de campos com ordem estável. Validado no U15 em `NotaFiscal` com `+ NotaFiscalObs3`: preflight OK, `Updated=13`, `Blocked=0`.
 - `B094` concluído em 2026-08-10 e corrigido em 2026-08-11: evidência de instalação sem clonar/`Install-*.bat` (Add > Local + `genexus /install`) ativando marcada + menus no U15, ainda com elevação (UAC); captura confiável em cmd elevado mostrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Sem mudança de código da extensão. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`. Documentação pública não alterada nesta frente.
-- Documentação pública alinhada ao `B094` em 2026-08-11: `Docs/Public/INSTALL.md` com caminho do usuário final (DLL) e do mantenedor; `README.md` com atualização pelos dois caminhos; `Docs/Releases/0.1.0-alpha.1.md` corrige o que não entra; `CHANGELOG.md` registra a mudança sob `[0.1.0-alpha.1]`. Sem mudança de código da extensão.
+- Documentação pública alinhada ao `B094` em 2026-08-11: `Docs/Public/INSTALL.md` com caminho do usuário final (DLL) e do mantenedor; `README.md` com atualização pelos dois caminhos; `Docs/Releases/0.1.0-alpha.1.md` corrige o que não entra; `CHANGELOG.md` registra a mudança sob `[0.1.0-alpha.1]`. Sem mudança de código da extensão. Correção imediata na mesma data: ordem de instalação do usuário final alinhada ao B094 (Add > Local com IDE aberta); atualização só com Add > Local marcada como não comprovada (falha observada com DLL já em `Packages`).
 
 ## Frente ativa
 
@@ -105,10 +105,11 @@ Publicar a Alpha `0.1.0-alpha.1`: push dos commits pendentes, reposicionamento d
 
 ## Evidência da frente encerrada
 
-- `Docs/Public/INSTALL.md` distingue instalação só com a DLL (Add > Local + `genexus /install`) do fluxo de mantenedor (`.bat`);
-- `README.md` descreve atualização pelos dois caminhos;
-- `Docs/Releases/0.1.0-alpha.1.md` deixa de negar o pacote instalável fora do repositório e lista o que ainda não entra;
-- `CHANGELOG.md` com entrada sob `[0.1.0-alpha.1]` → Changed;
+- `Docs/Public/INSTALL.md` distingue instalação só com a DLL (Add > Local com IDE aberta + fechar + `genexus /install`) do fluxo de mantenedor (`.bat`);
+- atualização só com Add > Local sobre DLL já em `Packages` declarada **não comprovada** (falha B094); caminho estável de atualização = mantenedor;
+- `README.md` alinhado a essa honestidade;
+- `Docs/Releases/0.1.0-alpha.1.md` lista o que ainda não entra (incluindo atualização só com Add > Local);
+- `CHANGELOG.md` com entradas sob `[0.1.0-alpha.1]` → Changed;
 - backlog 06, plano 24 e comprovação dos dez gates alinhados à ordem publicação → gate;
 - fonte factual: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`.
 

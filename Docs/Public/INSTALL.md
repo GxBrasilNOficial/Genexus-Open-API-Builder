@@ -24,10 +24,10 @@ Obtenha o anexo `GenexusOpenApiBuilder.Extension.dll` no **GitHub Release** da v
 
 ### Instalação
 
-1. Feche **completamente** a IDE GeneXus.
-2. Abra o **Extensions Manager** e use **Add > Local** apontando para a DLL Release.
-3. Confirme a instalação. A extensão deve aparecer na lista (nome/fabricante/versão), porém **desmarcada**.
-4. **Não** tente ativar só marcando o checkbox na UI: a marcação **não persiste** entre reinícios. Quem registra a extensão é o passo seguinte.
+1. Com a IDE GeneXus **aberta**, use o **Extensions Manager** → **Add > Local** apontando para a DLL Release.
+2. Confirme a instalação. A extensão deve aparecer na lista (nome/fabricante/versão), porém **desmarcada**.
+3. **Não** tente ativar só marcando o checkbox na UI: a marcação **não persiste** entre reinícios. Quem registra a extensão é o `genexus /install`.
+4. Feche **completamente** a IDE GeneXus.
 5. Na pasta de instalação do GeneXus (tipicamente `C:\Program Files (x86)\GeneXus\GeneXus18`), execute:
 
 ```bat
@@ -36,11 +36,16 @@ genexus /install
 
 6. Reabra a IDE e confira a verificação abaixo.
 
+### Atualização (usuário final)
+
+**Não comprovada** como guia operacional. No B094, Add > Local com a DLL **já presente** em `Packages` falhou com `Error installing extension`. A reinstalação limpa só funcionou depois de apagar `Packages\GenexusOpenApiBuilder.Extension.dll` (escrita em Program Files; tipicamente exige elevação), rodar `genexus /install` até a extensão sumir da lista e repetir o fluxo de instalação acima. Não inventamos um atalho: o caminho comprovado de atualização de DLL continua sendo o do mantenedor (`Install-ExtensionForGeneXus18.bat`).
+
 ### Atritos e o que ainda não foi comprovado
 
 - Pode aparecer **UAC** no `genexus /install`. A escrita em `C:\Program Files (x86)\GeneXus\...\Packages` também exige permissão adequada. Instalação **sem elevação alguma** não foi comprovada.
 - Comportamento no Upgrade 14 não foi validado nesta evidência.
 - Add > Local em máquina **nunca** usada com esta extensão não foi refeito fora do cenário B094.
+- Atualização só com Add > Local sobre DLL já instalada **não** está comprovada (única observação: falha; ver seção acima).
 
 ### Verificação (usuário final)
 
