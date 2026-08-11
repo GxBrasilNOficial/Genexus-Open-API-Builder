@@ -1,0 +1,17 @@
+name: Dúvida / outro
+description: Pergunta rápida ou relato curto sem formulário longo.
+title: "[Dúvida]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use este formulário para uma mensagem curta. Se for falha reproduzível de instalação, wizard, build ou HTTP, prefira **Bug ou problema de uso**.
+  - type: textarea
+    id: message
+    attributes:
+      label: Sua mensagem
+      description: Pode ser só algumas linhas. Detalhes podem vir depois na conversa da issue.
+      placeholder: Ex.: instalei e o menu não apareceu — o que faço?
+    validations:
+      required: true

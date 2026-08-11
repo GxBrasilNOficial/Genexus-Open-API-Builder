@@ -12,6 +12,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Changed
 
+- Ajuste dos Issue Forms (2026-08-11): formulário **Dúvida / outro** com um campo livre, para não perder contato curto na Alpha; blank issues continuam desabilitadas. Sem mudança de código da extensão.
 - Preparação para feedback da Alpha (2026-08-11): Issue Forms em `.github/ISSUE_TEMPLATE/` (bug e sugestão; blank issues desabilitadas), labels `feedback-externo`, `instalacao` e `alpha-0.1.0`, e convenção no `CONTRIBUTING.md` para registrar no GitHub relatos que chegam por grupo ou mensagem direta. A próxima ação continua sendo o gate de usuário externo; sem mudança de código da extensão nem da documentação da Alpha publicada.
 - Pós-publicação (2026-08-11): notas de release e checkpoint deixam de descrever a publicação como pendente. A Alpha `0.1.0-alpha.1` está publicada — tag `v0.1.0-alpha.1` no remoto apontando para `e0b2b7e` e GitHub Release pre-release com a DLL anexada (SHA-256 conferido após download). A tag publicada não deve ser movida; correção posterior exige `0.1.0-alpha.2`. Próxima ação = gate da Sprint 8 (usuário externo).
 - Higiene pública pós-Alpha (2026-08-11): `LICENSE` sem cabeçalho `# LICENSE` (para o GitHub reconhecer MIT); `Docs/Public/INSTALL.md` e checkpoint registram que a sequência do usuário final foi reexecutada pelo mantenedor no mesmo dia (B094 §6); tópicos do repositório no GitHub (`genexus`, `openapi`, `rest-api`, `genexus-extension`). Sem mudança de código da extensão.

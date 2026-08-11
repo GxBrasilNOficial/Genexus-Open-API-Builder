@@ -95,7 +95,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B094` concluído em 2026-08-10 e corrigido em 2026-08-11: evidência de instalação sem clonar/`Install-*.bat` (Add > Local + `genexus /install`) ativando marcada + menus no U15, ainda com elevação (UAC); captura confiável em cmd elevado mostrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Sem mudança de código da extensão. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`. Documentação pública não alterada nesta frente.
 - Documentação pública alinhada ao `B094` em 2026-08-11: `Docs/Public/INSTALL.md` com caminho do usuário final (DLL) e do mantenedor; `README.md` com atualização pelos dois caminhos; `Docs/Releases/0.1.0-alpha.1.md` corrige o que não entra; `CHANGELOG.md` registra a mudança sob `[0.1.0-alpha.1]`. Sem mudança de código da extensão. Correção imediata na mesma data: ordem de instalação do usuário final alinhada ao B094 (Add > Local com IDE aberta); atualização só com Add > Local marcada como não comprovada (falha observada com DLL já em `Packages`).
 - Em 2026-08-11 o INSTALL publicado do usuário final foi ancorado ao redo do mantenedor (B094 §6: limpeza + Add > Local + `/install` + menus). Não há gap de “ninguém executou a sequência”; o gate restante continua sendo usuário externo.
-- Preparação para receber feedback da Alpha (2026-08-11): Issue Forms (bug/sugestão; blank issues desabilitadas), labels `feedback-externo` / `instalacao` / `alpha-0.1.0`, e convenção no `CONTRIBUTING.md` para o mantenedor abrir issue a partir de relatos fora do GitHub. Não altera o gate de usuário externo.
+- Preparação para receber feedback da Alpha (2026-08-11): Issue Forms (bug/sugestão/**Dúvida / outro**; blank issues desabilitadas), labels `feedback-externo` / `instalacao` / `alpha-0.1.0`, e convenção no `CONTRIBUTING.md` para o mantenedor abrir issue a partir de relatos fora do GitHub. Não altera o gate de usuário externo.
 
 ## Frente ativa
 
@@ -169,7 +169,7 @@ A tag `v0.1.0-alpha.1` está publicada e **não deve ser movida**: correção po
 39. Em 2026-08-11 a documentação pública foi alinhada ao `B094` (INSTALL com dois caminhos, README de atualização, notas de release e CHANGELOG). Ordem vigente: doc pública → publicação (Release com DLL) → gate de usuário externo → Sprint 9.
 40. Em 2026-08-11 a Alpha `0.1.0-alpha.1` foi publicada: `main` enviada ao remoto, tag `v0.1.0-alpha.1` reposicionada para `e0b2b7e` e publicada, e GitHub Release **pre-release** criado com a DLL anexada e verificada por SHA-256 após download. A tag publicada não deve ser movida; correção posterior exige `0.1.0-alpha.2`. Próxima ação = gate da Sprint 8 (usuário externo).
 41. Em 2026-08-11 higiene pública pós-Alpha: `LICENSE` sem `# LICENSE` (detector MIT); INSTALL/checkpoint ancoram a sequência do usuário final ao redo B094 §6; tópicos GitHub `genexus`, `openapi`, `rest-api`, `genexus-extension`. Próxima ação permanece gate de usuário externo.
-42. Em 2026-08-11 preparação da fila de feedback: Issue Forms, labels próprios e convenção de registro de relatos externos no `CONTRIBUTING.md`. Próxima ação permanece gate de usuário externo.
+42. Em 2026-08-11 preparação da fila de feedback: Issue Forms (bug, sugestão e **Dúvida / outro** com campo livre), labels próprios e convenção de registro de relatos externos no `CONTRIBUTING.md`. Próxima ação permanece gate de usuário externo.
 
 ## Bloqueios e fatos ainda não validados
 

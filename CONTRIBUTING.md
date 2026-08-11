@@ -77,6 +77,8 @@ Melhor que apenas:
 
 Prefira o formulário **Sugestão** em New issue.
 
+Para pergunta rápida ou relato curto sem os campos do bug, use **Dúvida / outro**.
+
 ---
 
 # Pull Requests
@@ -145,7 +147,7 @@ Ataques pessoais não.
 
 # Dúvidas
 
-Use Issues ou Discussions quando disponíveis.
+Use Issues (formulário **Dúvida / outro** para mensagem curta) ou Discussions quando disponíveis.
 
 ---
 
