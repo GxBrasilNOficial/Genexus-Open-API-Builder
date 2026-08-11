@@ -61,6 +61,19 @@ O placeholder não operacional **Futura Primeira Opção** foi necessário enqua
 
 O caminho legado que tentava executar `genexus /install` dentro do PowerShell elevado foi removido. Ele podia não capturar a saída e, no U15 local, não realizava a varredura efetiva dos pacotes. O registro permanece exclusivamente no segundo `.bat`, sem Administrador.
 
+## Nota de revisão — B094 (2026-08-11)
+
+Duas afirmações deste documento sobre `genexus /install` elevado foram **refutadas** pelo `B094`, no mesmo GeneXus 18 U15:
+
+- em `Diagnóstico reproduzível`: "a chamada elevada de `genexus /install` termina sem varrer os pacotes";
+- em `Contrato operacional do menu contextual`: "no U15 local, não realizava a varredura efetiva dos pacotes".
+
+Em cmd já elevado, `genexus /install` varreu `Packages` e registrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. A observação original veio de **captura incompleta da saída**, não de ausência de varredura: redirecionar `> arquivo 2>&1` a partir de cmd normal produz log vazio, porque o trabalho real ocorre em processo elevado filho.
+
+O texto original dos dois parágrafos é preservado como registro da observação de época. O contrato operacional vigente do repositório não muda: `Register-ExtensionForGeneXus18.bat` continua recusando execução elevada.
+
+Evidência: [B094 — Instalação apenas com a DLL (sem clonar)](B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md).
+
 ## Próxima tarefa técnica
 
 B000–B006 estão concluídos no U15. B020 também foi concluído posteriormente no U15; a próxima frente canônica vigente deve ser consultada no checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. A coluna Description vazia é uma limitação conhecida do Extensions Manager no U15 e não bloqueia o B000.
