@@ -12,7 +12,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Changed
 
-- `B094` (2026-08-10; correção 2026-08-11): evidência de instalação por usuário externo sem clonar o repositório — Add > Local + `genexus /install` ativou marcada + menus no GeneXus 18 U15, ainda com elevação (UAC). Correção do argumento falso “só Scanning / sem `added`” (captura incompleta); em cmd já elevado o log registrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Premissa “`/install` elevado pode não varrer” refutada. Sem mudança de código da extensão. Evidência: `Docs/Implementation/B094-INSTALACAO-USUARIO-EXTERNO-SEM-ADMIN.md`. Documentação pública não alterada nesta frente.
+- `B094` (2026-08-10; correção 2026-08-11): evidência de instalação por usuário externo sem clonar o repositório — Add > Local + `genexus /install` ativou marcada + menus no GeneXus 18 U15, ainda com elevação (UAC). Correção do argumento falso “só Scanning / sem `added`” (captura incompleta); em cmd já elevado o log registrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Premissa “`/install` elevado pode não varrer” refutada. Sem mudança de código da extensão. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`. Documentação pública não alterada nesta frente.
 
 ## Fixed
 

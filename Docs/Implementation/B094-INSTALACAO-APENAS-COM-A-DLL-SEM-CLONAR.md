@@ -1,4 +1,4 @@
-# B094 — Instalação por usuário externo sem administrador
+# B094 — Instalação apenas com a DLL (sem clonar o repositório)
 
 ## Estado
 

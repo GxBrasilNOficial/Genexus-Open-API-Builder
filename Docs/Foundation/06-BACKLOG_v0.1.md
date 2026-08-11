@@ -312,7 +312,7 @@ B089 foi registrado como item de backlog pré-Alpha para evidenciar HTTP **403 F
 
 ### Nota operacional — B094, registrada em 2026-08-10 (atualizada em 2026-08-11)
 
-B094 investigou, no GeneXus 18 U15, qual artefato distribuir e se um usuário externo consegue instalar a extensão Alpha sem clonar o repositório e sem os `.bat` elevados do mantenedor. Evidência em `Docs/Implementation/B094-INSTALACAO-USUARIO-EXTERNO-SEM-ADMIN.md`. Sem mudança de código da extensão. Documentação pública (`README`, `INSTALL`, `DEMO`, `Releases`) permanece frente separada.
+B094 investigou, no GeneXus 18 U15, qual artefato distribuir e se um usuário externo consegue instalar a extensão Alpha sem clonar o repositório e sem os `.bat` elevados do mantenedor. Evidência em `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`. Sem mudança de código da extensão. Documentação pública (`README`, `INSTALL`, `DEMO`, `Releases`) permanece frente separada.
 
 **Fechamento e correção:** em 2026-08-10 o relatório inicial errou o argumento decisivo por captura incompleta do `/install`. Em 2026-08-11, redo Add > Local + `/install` ativou marcada + menus (com UAC); captura em cmd já elevado registrou literalmente `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Caminho sem elevação alguma continua não comprovado; observações de extensão desmarcada após Add > Local e marcação só na UI que não persiste permanecem válidas.
 

@@ -92,7 +92,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B089` concluído em 2026-08-10: evidência HTTP **403** com papel GAM não-administrador sob `SecurityLevel = Authorization` em `apiNotaFiscal` — role `Role_GOAB_Test_Denied`, Get Permitir / Create não atribuído, usuário `goab_role_denied`; GET **200** e POST Create **403** (`code` 139) nos environments .NET Framework/SQL Server e .NET/PostgreSQL. Setup via GAM Backoffice (telas nativas). Documentado em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D. Sem mudança de código da extensão.
 - Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10: README público, `Docs/Public/INSTALL.md`, `Docs/Public/DEMO.md`, `Docs/Releases/0.1.0-alpha.1.md`, corte no CHANGELOG e versão do csproj.
 - Correção B085 (2026-08-10): Sync não exige mais `IsManagedApiObject` contra o ApiPlan reconstruído — posse por metadata; seleção de campos com ordem estável. Validado no U15 em `NotaFiscal` com `+ NotaFiscalObs3`: preflight OK, `Updated=13`, `Blocked=0`.
-- `B094` concluído em 2026-08-10 e corrigido em 2026-08-11: evidência de instalação sem clonar/`Install-*.bat` (Add > Local + `genexus /install`) ativando marcada + menus no U15, ainda com elevação (UAC); captura confiável em cmd elevado mostrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Sem mudança de código da extensão. Evidência: `Docs/Implementation/B094-INSTALACAO-USUARIO-EXTERNO-SEM-ADMIN.md`. Documentação pública não alterada nesta frente.
+- `B094` concluído em 2026-08-10 e corrigido em 2026-08-11: evidência de instalação sem clonar/`Install-*.bat` (Add > Local + `genexus /install`) ativando marcada + menus no U15, ainda com elevação (UAC); captura confiável em cmd elevado mostrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Sem mudança de código da extensão. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`. Documentação pública não alterada nesta frente.
 
 ## Frente ativa
 
@@ -152,7 +152,7 @@ Colocar a Alpha na mão de **usuário externo** (gate da Sprint 8): divulgação
 35. Em 2026-08-10 `B088` fechou a investigação do YAML nativo: override de `Swagger.Yaml.stg` inviável sem alterar a instalação; ressalvas nos documentos 12 e 27; naquele momento a próxima ação passou a `B089` (403 GAM). Evidência: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
 36. Em 2026-08-10 `B089` fechou a evidência HTTP 403 com role GAM restrita em `apiNotaFiscal` (Get 200 / Create 403) nos dois environments; frentes pré-Alpha encerradas; próxima ação = Alpha / Sprint 8. Evidência: `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D.
 37. Em 2026-08-10 o pacote documental da Alpha `0.1.0-alpha.1` foi preparado (README, INSTALL, DEMO, notas de release, CHANGELOG, versão no csproj, plano 24). Próxima ação = usuário externo / divulgação controlada (gate Sprint 8); tag local no commit da frente.
-38. Em 2026-08-10/`11` `B094` fechou a evidência de instalação externa no U15 e corrigiu o argumento falso “só Scanning / sem added”: Add > Local + `/install` ativou; log elevado registrou `added`. Caminho sem elevação alguma e docs públicos permanecem fora desta frente. Evidência: `Docs/Implementation/B094-INSTALACAO-USUARIO-EXTERNO-SEM-ADMIN.md`.
+38. Em 2026-08-10/11 `B094` fechou a evidência de instalação externa no U15 e corrigiu o argumento falso “só Scanning / sem added”: Add > Local + `/install` ativou; log elevado registrou `added`. Caminho sem elevação alguma e docs públicos permanecem fora desta frente. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -173,7 +173,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [Descriptions de produto sem IDs de backlog](Implementation/2026-08-09-DESCRIPTIONS-PRODUTO-SEM-BACKLOG.md)
 - [B088 — Limitações do YAML nativo](Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md)
 - [B093 — Security Level / evidência B089 403](Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md)
-- [B094 — Instalação usuário externo / sem admin](Implementation/B094-INSTALACAO-USUARIO-EXTERNO-SEM-ADMIN.md)
+- [B094 — Instalação apenas com a DLL (sem clonar)](Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
 - [Release 0.1.0-alpha.1](Releases/0.1.0-alpha.1.md)
