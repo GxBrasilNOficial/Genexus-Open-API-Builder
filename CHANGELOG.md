@@ -12,11 +12,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Changed
 
-- `B094` (2026-08-10; correção 2026-08-11): evidência de instalação por usuário externo sem clonar o repositório — Add > Local + `genexus /install` ativou marcada + menus no GeneXus 18 U15, ainda com elevação (UAC). Correção do argumento falso “só Scanning / sem `added`” (captura incompleta); em cmd já elevado o log registrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Premissa “`/install` elevado pode não varrer” refutada. Sem mudança de código da extensão. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`. Documentação pública não alterada nesta frente.
-
 ## Fixed
-
-- Sync B085: posse do API Object no preflight deixa de exigir `IsManagedApiObject` contra o ApiPlan reconstruído; ownership na metadata (`schemaVersion` + `apiName` + `apiGuid`) basta. Corrige bloqueio falso ao adicionar campos. A seleção de campos no Sync preserva a ordem da metadata e anexa adds no fim (dedupe por GUID). Validado no U15 em `NotaFiscal`/`NotaFiscalObs3` (`Updated=13`, `Blocked=0`).
 
 ## Added
 
@@ -41,6 +37,10 @@ Primeira Alpha pública do Genexus Open API Builder (Sprint 8).
 
 ## Changed
 
+- `B094` (2026-08-10; correção 2026-08-11): evidência de instalação por usuário externo sem clonar o repositório — Add > Local + `genexus /install` ativou marcada + menus no GeneXus 18 U15, ainda com elevação (UAC). Correção do argumento falso “só Scanning / sem `added`” (captura incompleta); em cmd já elevado o log registrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Premissa “`/install` elevado pode não varrer” refutada. Sem mudança de código da extensão. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`. Documentação pública não alterada nesta frente.
+
+- Nota de revisão em `B000` (2026-08-11): `Docs/Implementation/B000-CARREGAMENTO-IDE.md` afirmava, em dois pontos, que `genexus /install` elevado não varria os pacotes no U15. A premissa foi refutada pelo `B094`; a observação original vinha de captura incompleta da saída. O texto de época é preservado e a nota registra a refutação. O contrato operacional do repositório não muda: `Register-ExtensionForGeneXus18.bat` continua recusando execução elevada. Sem mudança de código da extensão.
+
 - `B089` concluído (2026-08-10): evidência HTTP **403 Forbidden** com papel GAM não-administrador sob `SecurityLevel = Authorization` em `apiNotaFiscal`. Setup via GAM Backoffice (role `Role_GOAB_Test_Denied`, Get Permitir, Create não atribuído, usuário `goab_role_denied`); GET **200** e POST Create **403** (`code` 139) nos environments .NET Framework/SQL Server e .NET/PostgreSQL; controle POST com usuário autorizado **201**. Documentado em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D. Sem mudança de código da extensão.
 
 - `B088` concluído (2026-08-10): investigação read-only do gerador OpenAPI nativo (`Swagger.Yaml.stg` / `TypeDefinitions.Yaml.stg` / `Artech.Packages.RestServiceDL.Generator`) comprovou inviabilidade de substituir ou interceptar os templates sem alterar a instalação GeneXus. Limitação intransponível documentada; ressalvas e orientação de consumo (`openapi-generator-cli`, leitores/agentes do YAML cruzando Source/Events) incorporadas aos documentos 12 e 27. Sem mudança de código da extensão. Evidência: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
@@ -64,6 +64,8 @@ Primeira Alpha pública do Genexus Open API Builder (Sprint 8).
 - Revisão documental da Sprint 7 (2026-08-07): o objetivo vigente deixa de ser “revalidar conflitos/reexecução” (já entregues nas Sprints 5–6) e passa a ser o ciclo de vida operacional na IDE — posse do API Object via metadata (`B087`), `Remover API gerada` (`B086`), `Sincronizar com a Transaction` (`B085`), relatório final (`B081`), UX mínima de conflitos e comprovação dos dez gates. `B088` (YAML nativo) e `B089` (403 GAM) ficam pré-Alpha separados. Documentos: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`, `Docs/Foundation/24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md`, `Docs/Foundation/06-BACKLOG_v0.1.md`.
 
 ## Fixed
+
+- Sync B085 (2026-08-10): posse do API Object no preflight deixa de exigir `IsManagedApiObject` contra o ApiPlan reconstruído; ownership na metadata (`schemaVersion` + `apiName` + `apiGuid`) basta. Corrige bloqueio falso ao adicionar campos. A seleção de campos no Sync preserva a ordem da metadata e anexa adds no fim (dedupe por GUID). Validado no U15 em `NotaFiscal`/`NotaFiscalObs3` (`Updated=13`, `Blocked=0`).
 
 - Descriptions de produto sem IDs de backlog (2026-08-09): objetos gerados passam a usar `{Nome} - by Genexus Open API Builder` (Procedures, SDTs, API Object, metadata, Folders criados, preferências). Sentinelas legadas com `B0xx` / prosa `REST API for …` continuam reconhecidas no reencontro, Sync e Remover, desde que a descrição inteira seja compatível com o serviço, tipo, API e Transaction esperados. Divergências deixam de herdar posse por prefixo. Validado no U15 em `Teste`: Descriptions na IDE; Remover `Deleted=12` com posse canônica; Sync/Remover sem metadata bloqueiam; Wizard restaura `Created=12`; Sync sem diff; cancelamento do Remover. Manifesto inalterado (só DLL). Evidência: `Docs/Implementation/2026-08-09-DESCRIPTIONS-PRODUTO-SEM-BACKLOG.md`.
 
