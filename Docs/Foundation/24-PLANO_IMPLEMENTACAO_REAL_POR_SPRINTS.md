@@ -376,7 +376,7 @@ Primeira versão aberta utilizável.
 
 Usuário externo testa.
 
-**Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10:** README público, [Docs/Public/INSTALL.md](../Public/INSTALL.md), [Docs/Public/DEMO.md](../Public/DEMO.md), [Docs/Releases/0.1.0-alpha.1.md](../Releases/0.1.0-alpha.1.md), corte no CHANGELOG, versão do pacote alinhada e galeria em [Docs/Images/](../Images/). Em 2026-08-11 o INSTALL/README/notas de release foram alinhados à evidência `B094` (instalação só com a DLL). Tag local `v0.1.0-alpha.1` criada; push/GitHub Release só com pedido explícito. Próxima responsabilidade operacional: publicar o Release pre-release com a DLL anexada; em seguida o gate desta sprint (usuário externo). Sprint 9 absorve correções a partir do feedback.
+**Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10:** README público, [Docs/Public/INSTALL.md](../Public/INSTALL.md), [Docs/Public/DEMO.md](../Public/DEMO.md), [Docs/Releases/0.1.0-alpha.1.md](../Releases/0.1.0-alpha.1.md), corte no CHANGELOG, versão do pacote alinhada e galeria em [Docs/Images/](../Images/). Em 2026-08-11 o INSTALL/README/notas de release foram alinhados à evidência `B094` (instalação só com a DLL). Em 2026-08-11 a Alpha foi publicada: tag `v0.1.0-alpha.1` no remoto e GitHub Release **pre-release** com a DLL anexada. Próxima responsabilidade operacional: o gate desta sprint (usuário externo). Sprint 9 absorve correções a partir do feedback.
 
 [F18][SPR-F24]
 
