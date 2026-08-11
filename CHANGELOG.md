@@ -12,6 +12,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Changed
 
+- Pós-publicação (2026-08-11): notas de release e checkpoint deixam de descrever a publicação como pendente. A Alpha `0.1.0-alpha.1` está publicada — tag `v0.1.0-alpha.1` no remoto apontando para `e0b2b7e` e GitHub Release pre-release com a DLL anexada (SHA-256 conferido após download). A tag publicada não deve ser movida; correção posterior exige `0.1.0-alpha.2`. Próxima ação = gate da Sprint 8 (usuário externo).
+
 ## Fixed
 
 ## Added

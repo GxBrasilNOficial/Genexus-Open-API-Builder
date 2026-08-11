@@ -97,14 +97,19 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Frente ativa
 
-Documentação pública da Alpha alinhada ao `B094` (Sprint 8). Próximo pré-requisito do gate: publicação do Release com a DLL anexada.
+Gate da Sprint 8: Alpha `0.1.0-alpha.1` publicada em 2026-08-11; falta o uso por usuário externo e a coleta de feedback.
 
 ## Próxima ação única
 
-Publicar a Alpha `0.1.0-alpha.1`: push dos commits pendentes, reposicionamento da tag local `v0.1.0-alpha.1` para o commit final publicado, e GitHub Release marcado como **pre-release** com a DLL Release anexada. Tudo isso **somente** com pedido explícito do usuário na conversa corrente. Sem reabrir B088/B089 nem contradizer o marco do wizard.
+Colocar a Alpha na mão de **usuário externo**: divulgação controlada a partir do Release publicado e coleta de feedback por issues. Sem reabrir B088/B089 nem contradizer o marco do wizard.
+
+A tag `v0.1.0-alpha.1` está publicada e **não deve ser movida**: correção posterior exige `0.1.0-alpha.2`.
 
 ## Evidência da frente encerrada
 
+- Alpha publicada em 2026-08-11: tag `v0.1.0-alpha.1` no remoto apontando para `e0b2b7e` e GitHub Release **pre-release** em `https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.1`;
+- anexo `GenexusOpenApiBuilder.Extension.dll` (555.520 bytes) conferido após download com SHA-256 `3A5FD008B9B4D971D03DC10E50BF6C7D97813824FC5D6417498F4FDEC63D63EF`, idêntico à build local e ao registrado no `B094`;
+- links do corpo do Release fixados na tag e verificados contra o conteúdo publicado;
 - `Docs/Public/INSTALL.md` distingue instalação só com a DLL (Add > Local com IDE aberta + fechar + `genexus /install`) do fluxo de mantenedor (`.bat`);
 - atualização só com Add > Local sobre DLL já em `Packages` declarada **não comprovada** (falha B094); caminho estável de atualização = mantenedor;
 - `README.md` alinhado a essa honestidade;
@@ -115,9 +120,8 @@ Publicar a Alpha `0.1.0-alpha.1`: push dos commits pendentes, reposicionamento d
 
 ## Critério de conclusão da próxima ação
 
-- tag `v0.1.0-alpha.1` publicada apontando para o commit divulgado;
-- GitHub Release **pre-release** no ar com a DLL `GenexusOpenApiBuilder.Extension.dll` anexada;
-- `Docs/Public/INSTALL.md` descrevendo o caminho de instalação a partir desse anexo.
+- ao menos um usuário externo instalou/testou seguindo INSTALL + DEMO a partir do anexo do Release, ou feedback equivalente registrado;
+- issues/feedback priorizados alimentam a Sprint 9 sem reabrir B088/B089.
 
 ## Sequência operacional vigente
 
@@ -160,6 +164,7 @@ Publicar a Alpha `0.1.0-alpha.1`: push dos commits pendentes, reposicionamento d
 37. Em 2026-08-10 o pacote documental da Alpha `0.1.0-alpha.1` foi preparado (README, INSTALL, DEMO, notas de release, CHANGELOG, versão no csproj, plano 24). Próxima ação = usuário externo / divulgação controlada (gate Sprint 8); tag local no commit da frente.
 38. Em 2026-08-10/11 `B094` fechou a evidência de instalação externa no U15 e corrigiu o argumento falso “só Scanning / sem added”: Add > Local + `/install` ativou; log elevado registrou `added`. Caminho sem elevação alguma e docs públicos permanecem fora desta frente. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`.
 39. Em 2026-08-11 a documentação pública foi alinhada ao `B094` (INSTALL com dois caminhos, README de atualização, notas de release e CHANGELOG). Ordem vigente: doc pública → publicação (Release com DLL) → gate de usuário externo → Sprint 9.
+40. Em 2026-08-11 a Alpha `0.1.0-alpha.1` foi publicada: `main` enviada ao remoto, tag `v0.1.0-alpha.1` reposicionada para `e0b2b7e` e publicada, e GitHub Release **pre-release** criado com a DLL anexada e verificada por SHA-256 após download. A tag publicada não deve ser movida; correção posterior exige `0.1.0-alpha.2`. Próxima ação = gate da Sprint 8 (usuário externo).
 
 ## Bloqueios e fatos ainda não validados
 
@@ -187,8 +192,9 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Gate da Sprint 8 com usuário externo (depois da publicação do Release com a DLL anexada; INSTALL + DEMO);
 - Sprint 9 — correções reais a partir do feedback.
+
+O gate da Sprint 8 com usuário externo deixou de ser marco não iniciado em 2026-08-11: com a Alpha publicada, ele é a frente ativa.
 
 ## Protocolo de atualização
 

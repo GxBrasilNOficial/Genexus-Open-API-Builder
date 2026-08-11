@@ -2,7 +2,7 @@
 
 Ferramenta open source para acelerar a geração de APIs REST a partir de **Transactions GeneXus**.
 
-Alpha pública: **`0.1.0-alpha.1`**
+Alpha pública: **[`0.1.0-alpha.1`](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.1)** — baixe a DLL no Release.
 
 Menos repetição. Mais entrega. Mais valor para a comunidade GeneXus.
 
