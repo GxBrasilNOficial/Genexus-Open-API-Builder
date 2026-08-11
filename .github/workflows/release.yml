@@ -1,0 +1,191 @@
+# .github/workflows/release.yml
+#
+# Workflow de Release — Genexus Open API Builder
+#
+# Ativado pelo push de uma tag no formato v* (ex: v0.2.0, v1.0.0-beta.1)
+# O numero da tag se torna a versao da DLL e do GitHub Release.
+#
+# Pre-requisitos no repositorio:
+#   - Secret GENEXUS_NUGET_TOKEN -> PAT com permissao de leitura no feed
+#     Azure Artifacts da GeneXus (pkgs.dev.azure.com/genexuslabs/...)
+#     Se o feed for anonimo/publico, remova as referencias a esse secret.
+#
+# Artefatos gerados:
+#   GenexusOpenApiBuilder.Extension.dll  (Release, net471)
+#   GenexusOpenApiBuilder.Extension-<versao>.zip
+#     DLL + Install-ExtensionForGeneXus18.bat + Register-ExtensionForGeneXus18.bat
+#     + Tools/ + CHANGELOG.md + README.md
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  SOLUTION_PATH: Src/GenexusOpenApiBuilder.sln
+  PROJECT_PATH: Src/Extension/GenexusOpenApiBuilder.Extension.csproj
+  BUILD_CONFIGURATION: Release
+  TARGET_FRAMEWORK: net471
+  OUTPUT_DIR: Src/Extension/bin/Release/net471
+  NUGET_CONFIG: nuget.config
+
+jobs:
+  build:
+    name: Build & Package
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extrair versao da tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag.TrimStart('v')
+          Write-Output "tag=$tag"                                               | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Output "version=$version"                                       | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Output "zip_name=GenexusOpenApiBuilder.Extension-$version.zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Versao extraida: $version"
+
+      - name: Configurar .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - name: Autenticar no feed NuGet da GeneXus
+        if: ${{ env.GENEXUS_NUGET_TOKEN != '' }}
+        shell: pwsh
+        env:
+          GENEXUS_NUGET_TOKEN: ${{ secrets.GENEXUS_NUGET_TOKEN }}
+        run: |
+          dotnet nuget update source genexus-build-sdk `
+            --configfile "${{ env.NUGET_CONFIG }}" `
+            --username "github-actions" `
+            --password "$env:GENEXUS_NUGET_TOKEN" `
+            --store-password-in-clear-text
+          Write-Host "Feed NuGet configurado."
+
+      - name: Restaurar dependencias NuGet
+        shell: pwsh
+        run: |
+          dotnet restore "${{ env.SOLUTION_PATH }}" `
+            --configfile "${{ env.NUGET_CONFIG }}" `
+            --locked-mode
+          Write-Host "Restauracao concluida."
+
+      - name: Build Release
+        shell: pwsh
+        run: |
+          $version     = "${{ steps.version.outputs.version }}"
+          $semver      = ($version -replace '-.*$', '')
+          $parts       = $semver.Split('.')
+          while ($parts.Count -lt 4) { $parts += '0' }
+          $assemblyVer = ($parts[0..3] -join '.')
+          Write-Host "Versao da release   : $version"
+          Write-Host "AssemblyVersion     : $assemblyVer"
+          dotnet build "${{ env.PROJECT_PATH }}" `
+            --configuration "${{ env.BUILD_CONFIGURATION }}" `
+            --no-restore `
+            -p:Version=$version `
+            -p:AssemblyVersion=$assemblyVer `
+            -p:FileVersion=$assemblyVer `
+            -p:InformationalVersion=$version `
+            --verbosity minimal
+          Write-Host "Build concluido."
+
+      - name: Verificar DLL gerada
+        shell: pwsh
+        run: |
+          $dll = "${{ env.OUTPUT_DIR }}\GenexusOpenApiBuilder.Extension.dll"
+          if (-not (Test-Path $dll)) { throw "DLL nao encontrada: $dll" }
+          $info = Get-Item $dll
+          Write-Host "DLL: $($info.FullName) ($($info.Length) bytes)"
+          $fv = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($info.FullName)
+          Write-Host "FileVersion: $($fv.FileVersion)"
+          Write-Host "ProductVersion: $($fv.ProductVersion)"
+
+      - name: Executar checagens mecanicas
+        shell: pwsh
+        run: |
+          $script = "scripts/Invoke-PrePushMechanicalChecks.ps1"
+          if (Test-Path $script) {
+            Write-Host "Executando $script ..."
+            pwsh -NoProfile -File $script
+            if ($LASTEXITCODE -ne 0) { throw "Checagens mecanicas falharam. Abortando release." }
+            Write-Host "Checagens mecanicas concluidas."
+          } else {
+            Write-Warning "Script '$script' nao encontrado. Pulando."
+          }
+
+      - name: Criar pacote ZIP da release
+        shell: pwsh
+        run: |
+          $version  = "${{ steps.version.outputs.version }}"
+          $zipName  = "${{ steps.version.outputs.zip_name }}"
+          $stageDir = "release-staging"
+          New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
+          Copy-Item "${{ env.OUTPUT_DIR }}\GenexusOpenApiBuilder.Extension.dll" "$stageDir\" -Force
+          Copy-Item "Install-ExtensionForGeneXus18.bat"  "$stageDir\" -Force
+          Copy-Item "Register-ExtensionForGeneXus18.bat" "$stageDir\" -Force
+          New-Item -ItemType Directory -Path "$stageDir\Tools" -Force | Out-Null
+          Copy-Item "Tools\Copy-ExtensionForGeneXus18.ps1" "$stageDir\Tools\" -Force
+          Copy-Item "Tools\Test-InstalledExtension.ps1"    "$stageDir\Tools\" -Force
+          if (Test-Path "CHANGELOG.md") { Copy-Item "CHANGELOG.md" "$stageDir\" -Force }
+          if (Test-Path "README.md")    { Copy-Item "README.md"    "$stageDir\" -Force }
+          Compress-Archive -Path "$stageDir\*" -DestinationPath $zipName -Force
+          $zipInfo = Get-Item $zipName
+          Write-Host "ZIP: $zipName ($($zipInfo.Length) bytes)"
+
+      - name: Upload artefatos de build (Actions Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-${{ steps.version.outputs.version }}
+          path: |
+            ${{ env.OUTPUT_DIR }}/GenexusOpenApiBuilder.Extension.dll
+            ${{ steps.version.outputs.zip_name }}
+          retention-days: 30
+
+      - name: Extrair notas da release do CHANGELOG
+        id: changelog
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          if (Test-Path "CHANGELOG.md") {
+            $changelog = Get-Content "CHANGELOG.md" -Raw
+            $escaped   = [regex]::Escape($version)
+            $pattern   = "(?ms)#\s*\[$escaped\][^\n]*\n(.+?)(?=\n#\s*\[|\z)"
+            $match     = [regex]::Match($changelog, $pattern)
+            if ($match.Success) {
+              $notes = $match.Groups[1].Value.Trim()
+              Write-Host "Notas extraidas do CHANGELOG para [$version]."
+            } else {
+              $notes = "Release $version do Genexus Open API Builder.`n`nConsulte [CHANGELOG.md](CHANGELOG.md) para detalhes."
+              Write-Warning "Bloco [$version] nao encontrado no CHANGELOG."
+            }
+          } else {
+            $notes = "Release $version do Genexus Open API Builder."
+          }
+          $notes | Out-File -FilePath "release_notes.md" -Encoding utf8
+
+      - name: Criar GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name:   ${{ github.ref_name }}
+          name:       "Genexus Open API Builder ${{ steps.version.outputs.version }}"
+          body_path:  release_notes.md
+          draft:      false
+          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+          files: |
+            ${{ env.OUTPUT_DIR }}/GenexusOpenApiBuilder.Extension.dll
+            ${{ steps.version.outputs.zip_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
