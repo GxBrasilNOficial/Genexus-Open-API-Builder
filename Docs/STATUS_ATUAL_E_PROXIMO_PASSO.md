@@ -99,6 +99,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Trava pré-push dos YAML / Issue Forms (2026-08-11): após o formulário **Dúvida / outro** sumir do seletor por YAML inválido (`placeholder` com `Ex.:` sem aspas; corrigido em `66509e6`), o gate ganhou `tests.issueForms` (lint estrutural + parse `python3`/`pyyaml`, sem pular ambiente incompleto). Não altera o gate de usuário externo.
 - Em 2026-08-12, investigação de canais de distribuição (paralela ao gate): GitHub Packages / `.nupkg` não instalam na IDE; Marketplace / Add > Web inutilizáveis nesta máquina pós-migração; limpeza da DLL + `genexus /install` confirmada; ZIP (DLL na raiz): Install from file **falhou**; Add > Local + `/install` **ok** (menus). Caminho canônico permanece DLL. Workflow `.github/workflows/publish-github-packages.yml` preparado para publicar o assembly no feed NuGet da org a partir da DLL do Release (sem valor para a IDE). Evidência: `Docs/Implementation/2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md`. Não altera a próxima ação única.
 - Em 2026-08-12 o gate da Sprint 8 fechou com usuário externo (Igor C. Menin): DLL do Release `0.1.0-alpha.1`, GeneXus 18 U14 (`18.0.187820`), instalação por cópia em `Packages` + `genexus /install`, menus + geração na KB `KbTesteGx18U14`. Feedback registrado em [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1). Residual U14 de carregamento/uso prático fechado. Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
+- Em 2026-08-12 segundo usuário externo (Miguel) confirmou uso bem-sucedido da Alpha `0.1.0-alpha.1` no GeneXus 18 U15 (DLL em `Packages` + `genexus /install`). Feedback em [#3](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/3). Não reabre o gate Sprint 8; reforça adoção U15. Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md`.
 
 ## Frente ativa
 
@@ -106,7 +107,7 @@ Sprint 9 — correções e melhorias a partir do feedback da Alpha.
 
 ## Próxima ação única
 
-Priorizar o feedback da Alpha (começando pela issue [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1) e novos relatos) e aplicar correções/docs/onboarding da Sprint 9. Sem mover a tag `v0.1.0-alpha.1`; correção de produto exige `0.1.0-alpha.2` ou superior.
+Priorizar o feedback da Alpha (issues [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1), [#3](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/3) e novos relatos) e aplicar correções/docs/onboarding da Sprint 9. Sem mover a tag `v0.1.0-alpha.1`; correção de produto exige `0.1.0-alpha.2` ou superior.
 
 ## Evidência da frente encerrada
 
@@ -171,6 +172,7 @@ Priorizar o feedback da Alpha (começando pela issue [#1](https://github.com/GxB
 43. Em 2026-08-11 trava pré-push `tests.issueForms` contra YAML inválido / schema de Issue Form (lição do formulário Dúvida ausente no seletor). Próxima ação permanece gate de usuário externo.
 44. Em 2026-08-12 canais extras de instalação documentados: evidência negativa (GitHub Packages, Marketplace Web, `.nupkg`, Install from file com ZIP só-DLL); ZIP via Add > Local + `/install` comprovado sem promoção como caminho oficial. Naquele momento a próxima ação ainda era o gate de usuário externo. Evidência: `Docs/Implementation/2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md`.
 45. Em 2026-08-12 o gate da Sprint 8 fechou com evidência de usuário externo em U14 (Igor C. Menin; issue #1; DLL `0.1.0-alpha.1`). Próxima ação = Sprint 9 (priorizar feedback). Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
+46. Em 2026-08-12 segundo usuário externo (Miguel) confirmou a Alpha no U15 (issue #3; mesma variante `Packages` + `/install`). Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -193,6 +195,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [B094 — Instalação apenas com a DLL (sem clonar)](Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md)
 - [2026-08-12 — Canais de distribuição (Marketplace / ZIP / GitHub Packages)](Implementation/2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md)
 - [2026-08-12 — Evidência usuário externo U14 / gate Sprint 8](Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md)
+- [2026-08-12 — Evidência usuário externo U15 / reforço Alpha](Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
 - [Release 0.1.0-alpha.1](Releases/0.1.0-alpha.1.md)
