@@ -149,7 +149,17 @@ Nesta máquina/U15:
 - Se Add > Local eleva internamente a cópia para `Packages` (mecanismo exato não instrumentado).
 - Causa da não-persistência da marcação **somente** pela UI (hipótese não comprovada: permissão de escrita no registro/estado da IDE — não inventar como fato).
 - Causa única dos hangs em “Restart now?” (trabalho de módulos NuGet é hipótese, não prova).
-- Publicação/consumo do `.nupkg` por canal Web do Extensions Manager (fora do escopo Local).
+
+## Nota de revisão — canais adicionais (2026-08-12)
+
+O item aberto “Publicação/consumo do `.nupkg` por canal Web do Extensions Manager” ficou **fechado com evidência negativa**:
+
+- não há canal do Extensions Manager que consuma `.nupkg`;
+- GitHub Packages não instala a extensão na IDE;
+- o canal Web depende do Marketplace/RSS, inutilizável nesta máquina após a migração observada;
+- Add > Local aceita `*.dll` | `*.zip`; Install from file (Start Page) aceita só `.zip` — instalação via ZIP ainda **não** comprovada.
+
+Evidência: [2026-08-12 — Canais de distribuição](2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md).
 
 ## Critério de conclusão
 

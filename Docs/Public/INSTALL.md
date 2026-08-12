@@ -50,6 +50,9 @@ Em 2026-08-11 o mantenedor reexecutou limpeza real (apagar a DLL em `Packages` +
 - Comportamento no Upgrade 14 não foi validado nesta evidência.
 - Add > Local em máquina **nunca** usada com esta extensão não foi refeito fora do cenário B094.
 - Atualização só com Add > Local sobre DLL já instalada **não** está comprovada (única observação: falha; ver seção acima).
+- **Marketplace / Add > Web** não são usáveis nesta máquina no estado observado em 2026-08-12 (feed/RSS quebrado pós-migração; 403 / erro de leitura). Não há guia operacional por esse canal.
+- **GitHub Packages** (e o `.nupkg` da build) **não** instalam a extensão na IDE. Continuar usando o anexo **DLL** do GitHub Release.
+- Instalação via **ZIP** (Install from file ou Add > Local com `.zip`) está sob investigação e **ainda não** é caminho oficial — ver [evidência 2026-08-12](../Implementation/2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md).
 
 ### Verificação (usuário final)
 
