@@ -12,6 +12,6 @@ body:
     attributes:
       label: Sua mensagem
       description: Pode ser só algumas linhas. Detalhes podem vir depois na conversa da issue.
-      placeholder: Ex.: instalei e o menu não apareceu — o que faço?
+      placeholder: "Ex.: instalei e o menu não apareceu — o que faço?"
     validations:
       required: true
