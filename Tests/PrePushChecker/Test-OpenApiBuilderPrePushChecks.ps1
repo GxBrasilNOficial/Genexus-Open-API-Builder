@@ -53,6 +53,7 @@ Assert-True ($source -match 'Tests/RequiredSemantics/Test-RequiredMemberSemantic
 Assert-True ($source -match 'Tests/WizardContract/Test-PrototypeWizardAutonumberCompositeKey\.ps1') 'O checker deve executar o teste unitário de autonumeração e chave composta.'
 Assert-True ($source -match 'Tests/WizardContract/Test-ApiPlanGenerationStateReaderGetAllIndex\.ps1') 'O checker deve executar o teste unitário do leitor de estado de geração.'
 Assert-True ($source -match 'Tests/WizardContract/Test-PrototypeWizardCreateRequiredPrimaryKeyOptional\.ps1') 'O checker deve executar o teste unitário do contrato de wizard CreateRequired.'
+Assert-True ($source -match 'Tests/IssueForms/Test-GitHubIssueFormsYaml\.ps1') 'O checker deve executar o teste unitário dos YAML / Issue Forms.'
 
 $fixtures = @(
     @{ Text = 'error NU1004: The package lock file is inconsistent.'; Phase = 'restore'; Expected = 'lockFileInconsistent' },
@@ -86,6 +87,7 @@ try {
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\RequiredSemantics'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\OpenApiContract'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\WizardContract'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\IssueForms'))
     & git init --bare (Join-Path $tempRoot 'remote.git') | Out-Null
     Push-Location (Join-Path $tempRoot 'repo')
     try {
