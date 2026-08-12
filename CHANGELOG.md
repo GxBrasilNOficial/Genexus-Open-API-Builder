@@ -19,6 +19,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Fixed
 
+- Workflow GitHub Packages (2026-08-12): `publish-github-packages.yml` passa a `windows-latest` porque `nuget.exe` no `ubuntu-latest` (24.04) depende de Mono, ausente na imagem — risco de `mono: not found` antes do primeiro run. Sem mudança de código da extensão.
 - Issue Form **Dúvida / outro** (2026-08-11): o `placeholder` continha `Ex.:` sem aspas, e o segundo dois-pontos quebrava o YAML (`mapping values are not allowed here`). O GitHub não exibe formulário inválido e não emite aviso: o formulário simplesmente não aparecia no seletor, enquanto bug e sugestão apareciam. Valor entre aspas; os quatro arquivos de `.github/ISSUE_TEMPLATE/` revalidados por parse YAML.
 
 ## Added

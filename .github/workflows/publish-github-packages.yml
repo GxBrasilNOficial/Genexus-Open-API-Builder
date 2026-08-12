@@ -4,6 +4,9 @@
 # Gatilhos:
 # - release published (o Release deve anexar GenexusOpenApiBuilder.Extension.dll)
 # - workflow_dispatch com a tag do Release (backfill / reexecucao)
+#
+# Runner Windows: nuget.exe e .NET Framework; em ubuntu-latest (24.04) o Mono
+# nao vem mais na imagem e nuget pack falha com "mono: not found".
 
 name: Publish NuGet to GitHub Packages
 
@@ -23,7 +26,7 @@ permissions:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
