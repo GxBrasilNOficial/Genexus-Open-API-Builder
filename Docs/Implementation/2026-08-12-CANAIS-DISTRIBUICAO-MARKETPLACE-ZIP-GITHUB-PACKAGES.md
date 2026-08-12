@@ -34,8 +34,7 @@ Caminho local (gitignored via `Temp/*` e `*.zip`):
 
 - Conteúdo: somente `GenexusOpenApiBuilder.Extension.dll` na raiz.
 - Fonte: `Src\Extension\bin\Release\net471\...`
-- SHA-256 da DLL (idêntico a B094 / Alpha `0.1.0-alpha.1`):  
-  `3A5FD008B9B4D971D03DC10E50BF6C7D97813824FC5D6417498F4FDEC63D63EF`
+- SHA-256 da DLL (idêntico a B094 / Alpha `0.1.0-alpha.1`): `3A5FD008B9B4D971D03DC10E50BF6C7D97813824FC5D6417498F4FDEC63D63EF`
 
 ## Testes A e B (2026-08-12)
 

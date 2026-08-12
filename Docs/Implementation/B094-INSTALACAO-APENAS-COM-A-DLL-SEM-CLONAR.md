@@ -157,7 +157,7 @@ O item aberto “Publicação/consumo do `.nupkg` por canal Web do Extensions Ma
 - não há canal do Extensions Manager que consuma `.nupkg`;
 - GitHub Packages não instala a extensão na IDE;
 - o canal Web depende do Marketplace/RSS, inutilizável nesta máquina após a migração observada;
-- Add > Local aceita `*.dll` | `*.zip`; Install from file (Start Page) aceita só `.zip` — instalação via ZIP ainda **não** comprovada.
+- Add > Local aceita `*.dll` | `*.zip`; Install from file (Start Page) aceita só `.zip`. Com ZIP só-DLL: Install from file **falhou**; Add > Local + `genexus /install` **ok** (menus). ZIP não é caminho oficial público; a DLL do Release permanece canônica — ver evidência abaixo.
 
 Evidência: [2026-08-12 — Canais de distribuição](2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md).
 
