@@ -233,7 +233,8 @@ try {
         [ordered]@{ Name = 'tests.listProcedureReencounterPolicy'; RelativePath = 'Tests\ListProcedure\Test-ApiPlanListProcedureReencounterPolicy.ps1'; Command = 'pwsh -NoProfile -File Tests/ListProcedure/Test-ApiPlanListProcedureReencounterPolicy.ps1'; Passed = 'Teste unitário do reencontro B070 de List concluído.'; Failed = 'Teste unitário do reencontro B070 de List falhou.'; Missing = 'Teste unitário do reencontro B070 de List não encontrado.' },
         [ordered]@{ Name = 'tests.requiredMemberSemantics'; RelativePath = 'Tests\RequiredSemantics\Test-RequiredMemberSemanticsConsistency.ps1'; Command = 'pwsh -NoProfile -File Tests/RequiredSemantics/Test-RequiredMemberSemanticsConsistency.ps1'; Passed = 'Teste unitário da coerência semântica de Required concluído.'; Failed = 'Teste unitário da coerência semântica de Required falhou.'; Missing = 'Teste unitário da coerência semântica de Required não encontrado.' },
         [ordered]@{ Name = 'tests.openApiContractMarks'; RelativePath = 'Tests\OpenApiContract\Test-ApiPlanOpenApiContractMarks.ps1'; Command = 'pwsh -NoProfile -File Tests/OpenApiContract/Test-ApiPlanOpenApiContractMarks.ps1'; Passed = 'Teste unitário das marcações do contrato OpenAPI concluído.'; Failed = 'Teste unitário das marcações do contrato OpenAPI falhou.'; Missing = 'Teste unitário das marcações do contrato OpenAPI não encontrado.' },
-        [ordered]@{ Name = 'tests.openApiClientContractValidity'; RelativePath = 'Tests\OpenApiContract\Test-OpenApiClientContractValidity.ps1'; Command = 'pwsh -NoProfile -File Tests/OpenApiContract/Test-OpenApiClientContractValidity.ps1'; Passed = 'Teste unitário da validade do contrato de cliente OpenAPI concluído.'; Failed = 'Teste unitário da validade do contrato de cliente OpenAPI falhou.'; Missing = 'Teste unitário da validade do contrato de cliente OpenAPI não encontrado.' }
+        [ordered]@{ Name = 'tests.openApiClientContractValidity'; RelativePath = 'Tests\OpenApiContract\Test-OpenApiClientContractValidity.ps1'; Command = 'pwsh -NoProfile -File Tests/OpenApiContract/Test-OpenApiClientContractValidity.ps1'; Passed = 'Teste unitário da validade do contrato de cliente OpenAPI concluído.'; Failed = 'Teste unitário da validade do contrato de cliente OpenAPI falhou.'; Missing = 'Teste unitário da validade do contrato de cliente OpenAPI não encontrado.' },
+        [ordered]@{ Name = 'tests.issueForms'; RelativePath = 'Tests\IssueForms\Test-GitHubIssueFormsYaml.ps1'; Command = 'pwsh -NoProfile -File Tests/IssueForms/Test-GitHubIssueFormsYaml.ps1'; Passed = 'Teste unitário dos YAML / Issue Forms do GitHub concluído.'; Failed = 'Teste unitário dos YAML / Issue Forms do GitHub falhou.'; Missing = 'Teste unitário dos YAML / Issue Forms do GitHub não encontrado.'; EnvironmentBlocked = 'Ambiente sem python3/pyyaml para parse real dos YAML / Issue Forms.' }
     )) {
         $testPath = Join-Path $repositoryRoot $unitTest.RelativePath
         if (Test-Path -LiteralPath $testPath -PathType Leaf) {
@@ -241,6 +242,11 @@ try {
             $testOutput = ConvertTo-SanitizedText ($testResult.StdOut + $testResult.StdErr)
             $commands.Add([ordered]@{ command = $unitTest.Command; exitCode = $testResult.ExitCode; output = $testOutput })
             if ($testResult.ExitCode -eq 0) { $checks.Add((New-Check $unitTest.Name 'passed' $unitTest.Passed $testOutput)) }
+            elseif ($testResult.ExitCode -eq 2) {
+                $environmentBlocked = $true
+                $blockedSummary = if ($unitTest.Contains('EnvironmentBlocked')) { $unitTest.EnvironmentBlocked } else { "Ambiente incompleto para o check $($unitTest.Name)." }
+                $checks.Add((New-Check $unitTest.Name 'environmentBlocked' $blockedSummary $testOutput))
+            }
             else { $failed = $true; $checks.Add((New-Check $unitTest.Name 'failed' $unitTest.Failed $testOutput)) }
         }
         else {

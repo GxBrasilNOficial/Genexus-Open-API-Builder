@@ -79,6 +79,8 @@ Prefira o formulário **Sugestão** em New issue.
 
 Para pergunta rápida ou relato curto sem os campos do bug, use **Dúvida / outro**.
 
+Ao alterar arquivos em `.github/ISSUE_TEMPLATE/`, abra uma vez o seletor **New issue** no navegador depois do push. O teste `tests.issueForms` reduz o risco de YAML inválido; quem decide se o formulário aparece é o GitHub (formulário quebrado some sem aviso).
+
 ---
 
 # Pull Requests
