@@ -2,12 +2,12 @@
 
 ## Objetivo
 
-Registrar, antes de qualquer promoção pública, o que a sessão de 2026-08-12 comprovou sobre **canais de instalação da extensão** no GeneXus 18 U15, além do caminho já canônico do [B094](B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md) (DLL + Add > Local + `genexus /install`).
+Registrar o que a sessão de 2026-08-12 comprovou sobre **canais de instalação da extensão** no GeneXus 18 U15, além do caminho já canônico do [B094](B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md) (DLL + Add > Local + `genexus /install`).
 
 ## Escopo
 
-- Inclui: GitHub Packages / `.nupkg`; filtros reais de Add > Local e Install from file; estado do Marketplace pós-migração; limpeza pós-remoção da DLL; preparação do artefato ZIP de teste.
-- Exclui: mudança de código da extensão; instalação bem-sucedida via ZIP (Testes A/B ainda pendentes); alteração de `C:\Program Files (x86)\GeneXus` pelo agente.
+- Inclui: GitHub Packages / `.nupkg`; filtros reais de Add > Local e Install from file; estado do Marketplace pós-migração; limpeza pós-remoção da DLL; artefato ZIP de teste; Testes A e B na IDE.
+- Exclui: mudança de código da extensão; alteração de `C:\Program Files (x86)\GeneXus` pelo agente; promoção do ZIP como caminho oficial em README/Release (ainda não).
 
 ## Conclusões fechadas nesta data
 
@@ -23,10 +23,10 @@ Registrar, antes de qualquer promoção pública, o que a sessão de 2026-08-12 
    - Start Page → Marketplace → Extensions / Patterns / External Tools / External Objects → **403 CloudFront**;
    - User Controls → “There are no products to display”;
    - Extensions Manager → Add → **Web** → erro na leitura do feed.
-5. **Install from file** (Start Page) aceita Browse só **`.zip`**, com categorias Extension / User Control / Pattern.
-6. **Add > Local** aceita **`*.dll` ou `*.zip`**.
+5. **Install from file** (Start Page) aceita Browse só **`.zip`**, com categorias Extension / User Control / Pattern — mas **falhou** com o ZIP só com DLL (Teste A).
+6. **Add > Local** aceita **`*.dll` ou `*.zip`**. Com o mesmo ZIP + `genexus /install`, a instalação **funcionou** (Teste B).
 
-## Artefato ZIP de teste (ainda não comprovado na IDE)
+## Artefato ZIP de teste
 
 Caminho local (gitignored via `Temp/*` e `*.zip`):
 
@@ -37,16 +37,32 @@ Caminho local (gitignored via `Temp/*` e `*.zip`):
 - SHA-256 da DLL (idêntico a B094 / Alpha `0.1.0-alpha.1`):  
   `3A5FD008B9B4D971D03DC10E50BF6C7D97813824FC5D6417498F4FDEC63D63EF`
 
-### Roteiro pendente
+## Testes A e B (2026-08-12)
 
-| Teste | Sequência | Critério |
-| --- | --- | --- |
-| A | Start Page → Install from file → ZIP → Category **Extension** → Install | Lista / marcada / menus; se desmarcada, `genexus /install` |
-| B | Extensions Manager → Add → Local → mesmo ZIP | Mesmo critério; limpar entre A e B se A instalar |
+Ambiente pré-teste: limpeza confirmada (seção seguinte) — sem OpenApiBuilder no catálogo / Packages.
 
-Enquanto A/B não passarem, **não** promover ZIP como caminho oficial em README/Release/CHANGELOG.
+### Teste A — Install from file (Start Page) — **falhou**
 
-## Limpeza da instalação (2026-08-12)
+1. Start Page → Install from file → Browse → ZIP acima → Category **Extension** → Install.
+2. Resultado: diálogo **Error installing extension**; sem detalhe adicional.
+3. Extensions Manager: lista sem Genexus Open API Builder.
+4. `Packages\`: sem `GenexusOpenApiBuilder.Extension.dll`.
+
+Conclusão A: este formato de ZIP (só a DLL na raiz) **não** é aceito pelo Install from file nesta máquina/versão.
+
+### Teste B — Add > Local + ZIP — **ok** (com `/install`)
+
+1. Tools → Extensions Manager → Add → Local → mesmo ZIP → OK.
+2. Extensão **listada**, checkbox **desmarcado**.
+3. DLL presente em `C:\Program Files (x86)\GeneXus\GeneXus18\Packages\GenexusOpenApiBuilder.Extension.dll`.
+4. Fechar IDE → `genexus /install` (cmd Administrador):
+   - `Package 'C:\Program Files (x86)\GeneXus\GeneXus18\Packages\GenexusOpenApiBuilder.Extension.dll' added`
+   - demais mensagens habituais (`Package Attribute not found`, NuGet modules).
+5. Reabrir IDE: extensão **marcada**; menus principal (4) e contexto Transaction (3) ok.
+
+Conclusão B: ZIP via **Add > Local** + fechar IDE + **`genexus /install`** é equivalente ao caminho DLL do B094 nesta evidência.
+
+## Limpeza da instalação (pré-teste ZIP)
 
 1. Remoção manual de `C:\Program Files (x86)\GeneXus\GeneXus18\Packages\GenexusOpenApiBuilder.Extension.dll`.
 2. Reabertura da IDE **sem** `/install` prévio → extensão sumiu do Extensions Manager; log `GXLogging.log` às **07:20:49** com `FileNotFoundException` ao tentar carregar a DLL ausente.
@@ -65,13 +81,14 @@ Ambiente GeneXus ficou limpo para o teste do ZIP.
 ## Relação com B094 e INSTALL
 
 - Caminho canônico do usuário final permanece: **DLL** do GitHub Release → Add > Local → fechar IDE → `genexus /install` — ver [INSTALL.md](../Public/INSTALL.md) e B094.
-- O item aberto do B094 sobre “Publicação/consumo do `.nupkg` por canal Web” fica **fechado com evidência negativa** nesta data (remissão neste documento).
+- ZIP pelo **mesmo** fluxo Add > Local + `/install` **também funciona** nesta evidência; Install from file **não**.
+- Ainda **não** promover ZIP como anexo oficial de Release/README até decisão explícita (DLL sozinha basta e já está documentada).
+- O item aberto do B094 sobre “Publicação/consumo do `.nupkg` por canal Web” fica **fechado com evidência negativa** nesta data.
 - Marketplace / Add > Web / GitHub Packages **não** entram como guia operacional enquanto o feed/Marketplace permanecer nesse estado.
 
 ## O que ainda falta
 
-- Executar e registrar resultado dos Testes A e B (ZIP).
-- Decidir se, com ZIP comprovado, anexar ZIP ao Release além da DLL (só após evidência).
+- Decisão de produto: anexar ZIP ao GitHub Release além da DLL (opcional; não bloqueia gate Sprint 8).
 - U14 e máquina “nunca usada com a extensão” continuam fora deste relatório (já no B094).
 
 ## Relacionados
