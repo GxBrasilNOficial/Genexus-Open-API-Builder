@@ -103,6 +103,7 @@ coverage/
 # ----------------------
 packages/
 *.nupkg
+packaging/github-packages/_stage/
 
 # ----------------------
 # Node (future UI helpers)
