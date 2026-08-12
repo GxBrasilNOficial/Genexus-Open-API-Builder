@@ -13,9 +13,12 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 ## Added
 
 - Evidência do gate Sprint 8 (2026-08-12): usuário externo Igor C. Menin com GeneXus 18 U14 (`18.0.187820`), DLL do Release `0.1.0-alpha.1`, instalação por cópia em `Packages` + `genexus /install`, menus e geração confirmados; feedback em issue #1; captura em `Docs/Images/alpha-u14-igor-menin.png`. Residual U14 de carregamento/uso prático fechado. Sem mudança de código da extensão. Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
+- Workflow GitHub Actions (2026-08-12): `.github/workflows/publish-github-packages.yml` + `packaging/github-packages/GenexusOpenApiBuilder.Extension.nuspec` publicam `GenexusOpenApiBuilder.Extension` no GitHub Packages (NuGet) a partir da DLL do Release (`release: published` ou `workflow_dispatch`). Não altera instalação na IDE nem o guia da DLL. Sem mudança de código da extensão.
+- Trava pré-push dos YAML / Issue Forms (2026-08-11): teste `Tests/IssueForms/Test-GitHubIssueFormsYaml.ps1` no check `tests.issueForms`, com lint estrutural offline e parse real via `python3`+`pyyaml` (ausência de ambiente → `environmentBlocked`, sem pular em silêncio). `.gitattributes` passa a forçar LF em `*.yml`/`*.yaml`. Sem mudança de código da extensão.
 
 ## Changed
 
+- Alinhamento documental pós-gate Sprint 8 (2026-08-12): `B000-CARREGAMENTO-IDE.md` deixa de listar validação U14 comunitária como pendência e registra o fechamento por usuário externo (issue #1); `CHANGELOG` Unreleased unifica as seções `## Added` duplicadas. Sem mudança de código da extensão.
 - Ajuste dos Issue Forms (2026-08-11): formulário **Dúvida / outro** com um campo livre, para não perder contato curto na Alpha; blank issues continuam desabilitadas. Sem mudança de código da extensão.
 - Preparação para feedback da Alpha (2026-08-11): Issue Forms em `.github/ISSUE_TEMPLATE/` (bug e sugestão; blank issues desabilitadas), labels `feedback-externo`, `instalacao` e `alpha-0.1.0`, e convenção no `CONTRIBUTING.md` para registrar no GitHub relatos que chegam por grupo ou mensagem direta. A próxima ação continua sendo o gate de usuário externo; sem mudança de código da extensão nem da documentação da Alpha publicada.
 - Pós-publicação (2026-08-11): notas de release e checkpoint deixam de descrever a publicação como pendente. A Alpha `0.1.0-alpha.1` está publicada — tag `v0.1.0-alpha.1` no remoto apontando para `e0b2b7e` e GitHub Release pre-release com a DLL anexada (SHA-256 conferido após download). A tag publicada não deve ser movida; correção posterior exige `0.1.0-alpha.2`. Próxima ação = gate da Sprint 8 (usuário externo).
@@ -26,11 +29,6 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Readme do pacote NuGet (2026-08-12): `packaging/github-packages/README.md` embutido no `.nuspec`/workflow de GitHub Packages, deixando claro que o feed não instala na IDE. O aviso “missing a readme” some na próxima publicação de versão. Sem mudança de código da extensão.
 - Workflow GitHub Packages (2026-08-12): `publish-github-packages.yml` passa a `windows-latest` porque `nuget.exe` no `ubuntu-latest` (24.04) depende de Mono, ausente na imagem — risco de `mono: not found` antes do primeiro run. Sem mudança de código da extensão.
 - Issue Form **Dúvida / outro** (2026-08-11): o `placeholder` continha `Ex.:` sem aspas, e o segundo dois-pontos quebrava o YAML (`mapping values are not allowed here`). O GitHub não exibe formulário inválido e não emite aviso: o formulário simplesmente não aparecia no seletor, enquanto bug e sugestão apareciam. Valor entre aspas; os quatro arquivos de `.github/ISSUE_TEMPLATE/` revalidados por parse YAML.
-
-## Added
-
-- Workflow GitHub Actions (2026-08-12): `.github/workflows/publish-github-packages.yml` + `packaging/github-packages/GenexusOpenApiBuilder.Extension.nuspec` publicam `GenexusOpenApiBuilder.Extension` no GitHub Packages (NuGet) a partir da DLL do Release (`release: published` ou `workflow_dispatch`). Não altera instalação na IDE nem o guia da DLL. Sem mudança de código da extensão.
-- Trava pré-push dos YAML / Issue Forms (2026-08-11): teste `Tests/IssueForms/Test-GitHubIssueFormsYaml.ps1` no check `tests.issueForms`, com lint estrutural offline e parse real via `python3`+`pyyaml` (ausência de ambiente → `environmentBlocked`, sem pular em silêncio). `.gitattributes` passa a forçar LF em `*.yml`/`*.yaml`. Sem mudança de código da extensão.
 
 ---
 

@@ -74,6 +74,10 @@ O texto original dos dois parágrafos é preservado como registro da observaçã
 
 Evidência: [B094 — Instalação apenas com a DLL (sem clonar)](B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md).
 
+## Nota de revisão — U14 por usuário externo (2026-08-12)
+
+O critério que pedia “validação posterior no U14 por colegas da comunidade, sem data definida e sem bloquear o MVP” ficou **fechado com evidência externa**: usuário Igor C. Menin, DLL do Release `0.1.0-alpha.1`, GeneXus 18 U14 (`18.0.187820`), cópia em `Packages` + `genexus /install`, menus e geração na KB `KbTesteGx18U14`. Fecha o residual de carregamento/uso prático em U14 citado pelo gate 1 da comprovação Sprint 7; a bateria completa de validação permanece no U15 do mantenedor. Evidência: [2026-08-12 — usuário externo U14](2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md); issue [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1).
+
 ## Próxima tarefa técnica
 
 B000–B006 estão concluídos no U15. B020 também foi concluído posteriormente no U15; a próxima frente canônica vigente deve ser consultada no checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. A coluna Description vazia é uma limitação conhecida do Extensions Manager no U15 e não bloqueia o B000.
@@ -84,7 +88,7 @@ B000–B006 estão concluídos no U15. B020 também foi concluído posteriorment
 - manifesto, ponto de entrada ou equivalentes mínimos criados somente conforme esse contrato;
 - pacote recompilado e conteúdo inspecionado;
 - pacote instalado manualmente pelo usuário no U15 local como primeira validação;
-- validação posterior no U14 por colegas da comunidade, sem data definida e sem bloquear o MVP;
+- validação no U14 por usuário externo fechada em 2026-08-12 (carregamento + geração; Alpha `0.1.0-alpha.1`; issue #1); a bateria completa permanece no U15 do mantenedor;
 - extensão mínima marcada e carregada sem erro na IDE;
 - log e instruções reproduzíveis registrados;
 - nenhuma Knowledge Base aberta, criada ou alterada durante o teste.
