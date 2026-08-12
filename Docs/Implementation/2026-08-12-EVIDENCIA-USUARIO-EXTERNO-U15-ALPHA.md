@@ -29,7 +29,7 @@ Segundo usuário externo confirmou que a Alpha `0.1.0-alpha.1` funcionou bem no 
 ## Instalação observada
 
 1. Baixou o repositório para a máquina.
-2. Executou `Install-ExtensionForGeneXus18.bat` (copia a DLL do build local para `Packages`; exige elevação típica).
+2. Executou `Install-ExtensionForGeneXus18.bat` (copia a DLL do build local para `Packages`; o guia exige **Executar como administrador**, conforme [INSTALL §Instalação da DLL](../Public/INSTALL.md)).
 3. Executou `genexus /install`.
 
 **Nota:** este é o fluxo documentado para mantenedor em [INSTALL.md](../Public/INSTALL.md), não o caminho do usuário final (DLL do Release + Add > Local). Não confundir com a variante Packages + `/install` do relato U14 (Igor / issue #1), que usou a DLL do Release sem o `.bat`.
