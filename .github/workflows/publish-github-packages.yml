@@ -90,6 +90,7 @@ jobs:
           STAGE="packaging/github-packages/_stage"
           mkdir -p "${STAGE}/lib/net471" out
           cp release-assets/GenexusOpenApiBuilder.Extension.dll "${STAGE}/lib/net471/"
+          cp packaging/github-packages/README.md "${STAGE}/"
           sed "s/__VERSION__/${VERSION}/g" \
             packaging/github-packages/GenexusOpenApiBuilder.Extension.nuspec \
             > "${STAGE}/GenexusOpenApiBuilder.Extension.nuspec"

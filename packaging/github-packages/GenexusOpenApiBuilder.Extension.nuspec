@@ -9,11 +9,13 @@
     <projectUrl>https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder</projectUrl>
     <repository type="git" url="https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder.git" />
     <tags>genexus openapi extension</tags>
+    <readme>README.md</readme>
     <dependencies>
       <group targetFramework=".NETFramework4.7.1" />
     </dependencies>
   </metadata>
   <files>
+    <file src="README.md" target="README.md" />
     <file src="lib/net471/GenexusOpenApiBuilder.Extension.dll" target="lib/net471" />
   </files>
 </package>
