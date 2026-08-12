@@ -1,7 +1,9 @@
 # Evidência — usuário externo na Alpha `0.1.0-alpha.1` (GeneXus 18 U14)
 
-**Data:** 2026-08-12  
-**Gate:** Sprint 8 (usuário externo)  
+**Data:** 2026-08-12
+
+**Gate:** Sprint 8 (usuário externo)
+
 **Issue:** [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1)
 
 ## Resumo
