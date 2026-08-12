@@ -84,11 +84,13 @@ Ambiente GeneXus ficou limpo para o teste do ZIP.
 - ZIP pelo **mesmo** fluxo Add > Local + `/install` **também funciona** nesta evidência; Install from file **não**.
 - Ainda **não** promover ZIP como anexo oficial de Release/README até decisão explícita (DLL sozinha basta e já está documentada).
 - O item aberto do B094 sobre “Publicação/consumo do `.nupkg` por canal Web” fica **fechado com evidência negativa** nesta data.
-- Marketplace / Add > Web / GitHub Packages **não** entram como guia operacional enquanto o feed/Marketplace permanecer nesse estado.
+- Marketplace / Add > Web **não** entram como guia operacional enquanto o feed/Marketplace permanecer nesse estado.
+- **GitHub Packages (NuGet)** pode receber o `.nupkg` automaticamente via Actions (`.github/workflows/publish-github-packages.yml`): empacota a DLL anexada ao Release e faz push para `nuget.pkg.github.com/GxBrasilNOficial`. Continua **sem** valor para Extensions Manager / instalação na IDE.
 
 ## O que ainda falta
 
 - Decisão de produto: anexar ZIP ao GitHub Release além da DLL (opcional; não bloqueia gate Sprint 8).
+- Primeira publicação no Packages da org (rodar o workflow na tag `v0.1.0-alpha.1` ou no próximo Release).
 - U14 e máquina “nunca usada com a extensão” continuam fora deste relatório (já no B094).
 
 ## Relacionados

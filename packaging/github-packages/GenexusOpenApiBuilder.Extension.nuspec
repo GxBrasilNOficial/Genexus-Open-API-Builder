@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>GenexusOpenApiBuilder.Extension</id>
+    <version>__VERSION__</version>
+    <authors>Genexus Open API Builder contributors</authors>
+    <owners>GxBrasilNOficial</owners>
+    <description>Assembly da extensao Genexus Open API Builder (artefato NuGet). Nao instala pela IDE — use a DLL do GitHub Release e Docs/Public/INSTALL.md.</description>
+    <projectUrl>https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder</projectUrl>
+    <repository type="git" url="https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder.git" />
+    <tags>genexus openapi extension</tags>
+    <dependencies>
+      <group targetFramework=".NETFramework4.7.1" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="lib/net471/GenexusOpenApiBuilder.Extension.dll" target="lib/net471" />
+  </files>
+</package>

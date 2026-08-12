@@ -1,0 +1,109 @@
+# Publica GenexusOpenApiBuilder.Extension no GitHub Packages (NuGet).
+# Nao e instalador da IDE: o caminho canonico continua sendo a DLL do Release + INSTALL.md.
+#
+# Gatilhos:
+# - release published (o Release deve anexar GenexusOpenApiBuilder.Extension.dll)
+# - workflow_dispatch com a tag do Release (backfill / reexecucao)
+
+name: Publish NuGet to GitHub Packages
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag do Release (ex.: v0.1.0-alpha.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolver tag e versao NuGet
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${{ github.event.release.tag_name }}"
+          fi
+          if [ -z "${TAG}" ]; then
+            echo "Tag vazia." >&2
+            exit 1
+          fi
+          if [[ "${TAG}" == v* ]]; then
+            VERSION="${TAG#v}"
+          else
+            VERSION="${TAG}"
+          fi
+          if [ -z "${VERSION}" ]; then
+            echo "Versao NuGet vazia a partir da tag '${TAG}'." >&2
+            exit 1
+          fi
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "Tag=${TAG} Version=${VERSION}"
+
+      - name: Baixar DLL do Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          gh release download "${{ steps.meta.outputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --pattern "GenexusOpenApiBuilder.Extension.dll" \
+            --dir release-assets
+          test -f release-assets/GenexusOpenApiBuilder.Extension.dll
+          ls -la release-assets
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Setup NuGet CLI
+        uses: nuget/setup-nuget@v2
+        with:
+          nuget-version: "6.x"
+
+      - name: Empacotar .nupkg a partir da DLL
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.meta.outputs.version }}"
+          STAGE="packaging/github-packages/_stage"
+          mkdir -p "${STAGE}/lib/net471" out
+          cp release-assets/GenexusOpenApiBuilder.Extension.dll "${STAGE}/lib/net471/"
+          sed "s/__VERSION__/${VERSION}/g" \
+            packaging/github-packages/GenexusOpenApiBuilder.Extension.nuspec \
+            > "${STAGE}/GenexusOpenApiBuilder.Extension.nuspec"
+          nuget pack "${STAGE}/GenexusOpenApiBuilder.Extension.nuspec" \
+            -OutputDirectory out \
+            -NonInteractive
+          ls -la out
+
+      - name: Publicar no GitHub Packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          OWNER="${{ github.repository_owner }}"
+          SOURCE="https://nuget.pkg.github.com/${OWNER}/index.json"
+          NUPKG=$(ls out/GenexusOpenApiBuilder.Extension.*.nupkg | head -n 1)
+          echo "Push ${NUPKG} -> ${SOURCE}"
+          dotnet nuget push "${NUPKG}" \
+            --source "${SOURCE}" \
+            --api-key "${{ secrets.GITHUB_TOKEN }}" \
+            --skip-duplicate

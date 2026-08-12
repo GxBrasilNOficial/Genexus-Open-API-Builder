@@ -51,7 +51,7 @@ Em 2026-08-11 o mantenedor reexecutou limpeza real (apagar a DLL em `Packages` +
 - Add > Local em máquina **nunca** usada com esta extensão não foi refeito fora do cenário B094.
 - Atualização só com Add > Local sobre DLL já instalada **não** está comprovada (única observação: falha; ver seção acima).
 - **Marketplace / Add > Web** não são usáveis nesta máquina no estado observado em 2026-08-12 (feed/RSS quebrado pós-migração; 403 / erro de leitura). Não há guia operacional por esse canal.
-- **GitHub Packages** (e o `.nupkg` da build) **não** instalam a extensão na IDE. Continuar usando o anexo **DLL** do GitHub Release.
+- **GitHub Packages** (e o `.nupkg`) **não** instalam a extensão na IDE. Continuar usando o anexo **DLL** do GitHub Release. O workflow `.github/workflows/publish-github-packages.yml` pode republicar o assembly no feed NuGet da org a cada Release (ou via `workflow_dispatch`); isso é artefato técnico, não caminho de instalação.
 - **ZIP:** Add > Local com `.zip` (DLL na raiz) + fechar IDE + `genexus /install` **funcionou** nesta máquina (equivalente à DLL). **Install from file** (Start Page) com o mesmo ZIP **falhou** (`Error installing extension`). O guia oficial permanece a **DLL** do Release; ZIP não é promovido como anexo obrigatório — ver [evidência 2026-08-12](../Implementation/2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md).
 
 ### Verificação (usuário final)

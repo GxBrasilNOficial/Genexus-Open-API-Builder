@@ -23,6 +23,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Added
 
+- Workflow GitHub Actions (2026-08-12): `.github/workflows/publish-github-packages.yml` + `packaging/github-packages/GenexusOpenApiBuilder.Extension.nuspec` publicam `GenexusOpenApiBuilder.Extension` no GitHub Packages (NuGet) a partir da DLL do Release (`release: published` ou `workflow_dispatch`). Não altera instalação na IDE nem o guia da DLL. Sem mudança de código da extensão.
 - Trava pré-push dos YAML / Issue Forms (2026-08-11): teste `Tests/IssueForms/Test-GitHubIssueFormsYaml.ps1` no check `tests.issueForms`, com lint estrutural offline e parse real via `python3`+`pyyaml` (ausência de ambiente → `environmentBlocked`, sem pular em silêncio). `.gitattributes` passa a forçar LF em `*.yml`/`*.yaml`. Sem mudança de código da extensão.
 
 ---
