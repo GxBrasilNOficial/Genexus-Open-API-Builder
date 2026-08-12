@@ -10,6 +10,10 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 # [Unreleased]
 
+## Added
+
+- Evidência do gate Sprint 8 (2026-08-12): usuário externo Igor C. Menin com GeneXus 18 U14 (`18.0.187820`), DLL do Release `0.1.0-alpha.1`, instalação por cópia em `Packages` + `genexus /install`, menus e geração confirmados; feedback em issue #1; captura em `Docs/Images/alpha-u14-igor-menin.png`. Residual U14 de carregamento/uso prático fechado. Sem mudança de código da extensão. Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
+
 ## Changed
 
 - Ajuste dos Issue Forms (2026-08-11): formulário **Dúvida / outro** com um campo livre, para não perder contato curto na Alpha; blank issues continuam desabilitadas. Sem mudança de código da extensão.

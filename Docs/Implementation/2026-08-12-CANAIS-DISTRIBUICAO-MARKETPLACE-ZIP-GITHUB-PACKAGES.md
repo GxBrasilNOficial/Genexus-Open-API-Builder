@@ -88,9 +88,9 @@ Ambiente GeneXus ficou limpo para o teste do ZIP.
 
 ## O que ainda falta
 
-- Decisão de produto: anexar ZIP ao GitHub Release além da DLL (opcional; não bloqueia gate Sprint 8).
+- Decisão de produto: anexar ZIP ao GitHub Release além da DLL (opcional; não bloqueava o gate Sprint 8 na data deste relatório).
 - Primeira publicação no Packages da org (rodar o workflow na tag `v0.1.0-alpha.1` ou no próximo Release).
-- U14 e máquina “nunca usada com a extensão” continuam fora deste relatório (já no B094).
+- U14 e máquina “nunca usada com a extensão” ficaram fora deste relatório na data (B094). Em 2026-08-12 o residual U14 de carregamento/uso prático fechou por evidência de usuário externo — ver `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
 
 ## Relacionados
 

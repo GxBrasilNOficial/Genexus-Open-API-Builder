@@ -29,6 +29,8 @@ GeneXus 18 U13 e anteriores não foram declarados incompatíveis. Eles podem, em
 
 A existência do mecanismo moderno desde U14 não equivale a compatibilidade prática do produto com U14. O carregamento real continua pendente tanto em U14 quanto no U15 local. O mantenedor pode rever o baseline se preferir aceitar a manutenção do caminho legado ou se os testes práticos refutarem a hipótese U14+.
 
+**Nota de revisão (2026-08-12):** o parágrafo acima descreve o estado na data do B010. O carregamento no U15 foi comprovado pelo `B000`; o limite inferior U14 foi confirmado por usuário externo na Alpha (`Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`).
+
 ## Contrato de build versionado
 
 - `nuget.config` fixa as fontes `genexus-build-sdk` oficial e `nuget.org`, sem herdar fontes da máquina;

@@ -66,7 +66,7 @@ No MVP:
 6. validar criação e persistência de Procedures, SDTs, Folder e File
 7. tratar YAML nativo como saída de validação/regressão, não como fonte primária da geração
 
-A partir de GeneXus 18 U14, a preparação `B010` usa o feed NuGet e os MSBuild SDKs oficiais (`GeneXus.Package.UI.Sdk` e dependências) em vez do instalador legado. O `B000` posterior comprovou no U15 o manifesto, o ponto de entrada e o mecanismo de instalação local; a validação prática do limite inferior U14 continua pendente. A configuração versionada não pode depender de caminhos da instalação do GeneXus.
+A partir de GeneXus 18 U14, a preparação `B010` usa o feed NuGet e os MSBuild SDKs oficiais (`GeneXus.Package.UI.Sdk` e dependências) em vez do instalador legado. O `B000` posterior comprovou no U15 o manifesto, o ponto de entrada e o mecanismo de instalação local; o limite inferior U14 foi confirmado em 2026-08-12 por usuário externo na Alpha (carregamento + geração). A configuração versionada não pode depender de caminhos da instalação do GeneXus.
 
 [SDK-F09]
 
@@ -75,7 +75,7 @@ A partir de GeneXus 18 U14, a preparação `B010` usa o feed NuGet e os MSBuild 
 - **Fato oficial:** U14+ usa feed NuGet e MSBuild SDKs; isso substitui o instalador legado como método de build.
 - **Fato de build:** o projeto mínimo restaurou e compilou em `net471`, gerando um `.nupkg` sem depender de DLLs da instalação.
 - **Decisão de produto:** o MVP mira U14+ para manter uma única cadeia moderna; U15 é o primeiro ambiente de validação disponível.
-- **Evidência B000:** a DLL Release com manifesto e classe de entrada foi descoberta, registrada e carregada pelo U15 local; essa prova não confirma ainda o limite inferior U14.
+- **Evidência B000:** a DLL Release com manifesto e classe de entrada foi descoberta, registrada e carregada pelo U15 local; o limite inferior U14 foi confirmado depois (2026-08-12) por usuário externo na Alpha.
 - **Evidência B004:** o ciclo de vida de um API Object oficial foi validado no U15, com criação, alteração, releitura após reinstalação e exclusão confirmada por GUID.
 - **Evidência B006:** metadata JSON em File preservou GUID, nome, descrição, bytes UTF-8 e SHA-256 após fechar e reabrir a KB de teste; o objeto temporário foi excluído ao final.
 - **Evidência B020:** a detecção manual da KB ativa foi consolidada no fluxo somente leitura do protótipo navegável, conforme `Docs/Implementation/B020-DETECCAO-KB-ATIVA-PROTOTIPO.md`; a próxima responsabilidade operacional vigente fica no checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.

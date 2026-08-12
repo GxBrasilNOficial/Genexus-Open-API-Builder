@@ -39,7 +39,7 @@ A partir de uma Transaction:
 | Wizard funcional do MVP | Concluído (GeneXus 18 U15) |
 | Ciclo de vida (posse, sync, remoção, relatório) | Concluído |
 | Alpha pública `0.1.0-alpha.1` | Pacote desta release |
-| Upgrade 14 | Residual; não bloqueia a Alpha |
+| Upgrade 14 | Confirmado por usuário externo (Alpha `0.1.0-alpha.1`; carregamento + geração) |
 
 ### Limitações honestas
 

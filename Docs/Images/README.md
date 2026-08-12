@@ -31,3 +31,4 @@ Roteiro completo com todas as imagens: [Docs/Public/DEMO.md](../Public/DEMO.md).
 | `alpha-folder.png` | Folder `<Transaction>OpenApi` |
 | `alpha-sync.png` | Sincronizar com a Transaction |
 | `alpha-remover.png` | Remover API gerada |
+| `alpha-u14-igor-menin.png` | Evidência externa U14 (About + `TesteOpenApi`; gate Sprint 8) |

@@ -12,7 +12,7 @@ Empacotar, gate a gate, a evidência já existente (Implementation, testes mecâ
 
 ## Decisões de fechamento (mantenedor, 2026-08-09)
 
-- Carregamento real no Upgrade 14 permanece **não validado nesta máquina** e **não bloqueia** o marco; quem usar U14 assume o risco até haver evidência própria.
+- Carregamento real no Upgrade 14 permanece **não validado nesta máquina do mantenedor** e **não bloqueava** o marco na data do fechamento; em 2026-08-12 usuário externo confirmou carregamento + geração em U14 com a Alpha (issue #1; evidência `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`).
 - Antes da Alpha (Sprint 8), investigar em frentes separadas e **uma de cada vez**: (1) limitações do YAML OpenAPI gerado nativamente pelo GeneXus; (2) evidência HTTP 403 com papel GAM não-administrador.
 - Confiança no acervo U15 já registrado: não houve revalidação integrada só para carimbar este pacote.
 
@@ -26,7 +26,7 @@ Se algum gate falhasse sem alternativa nativa segura, o marco **não** seria dec
 
 | Gate | Status | Evidências principais | Remissões de backlog |
 |---|---|---|---|
-| 1. Carregamento no GeneXus 18 U14+ (U15 como validação inicial) | **Aprovado no U15**; U14 = residual documentado | `B000-CARREGAMENTO-IDE.md`; checkpoint STATUS (U15 marcado/carregado; U14 pendente e não bloqueante) | B000 |
+| 1. Carregamento no GeneXus 18 U14+ (U15 como validação inicial) | **Aprovado no U15**; U14 confirmado depois (2026-08-12) por usuário externo | `B000-CARREGAMENTO-IDE.md`; evidência U14 externa `2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md` | B000 |
 | 2. Ciclo de vida dos objetos nativos pelo SDK | **Aprovado** | `B003-CRIACAO-FOLDER-TESTE.md`; `B004-CICLO-DE-VIDA-API-OBJECT.md`; `B005-CICLO-DE-VIDA-PROCEDURE-SDT-FOLDER-FILE.md` | B003–B005 |
 | 3. Delegação, propriedades e segurança do API Object | **Aprovado** (403 granular fora deste marco) | B004; B054 no STATUS; `B056-DESCRICOES-SERVICO-APIPLAN.md`; B065 em STATUS/Sprint 5; `B092-CONDICAO-GAM-APIPLAN.md`; `B093-SECURITY-LEVEL-APIPLAN-OBJETO.md`; Authorization 401/200 em fechamento Sprint 6 | B004, B054, B056, B065, B074, B092, B093 |
 | 4. Contrato refletido no YAML gerado | **Aprovado com ressalva** | `2026-08-04-VALIDACAO-YAML-SPRINT6-EIXOS-SEGURANCA.md`; `2026-08-03-CONTRATO-OPENAPI-GAPS.md`; emenda 2026-08-04 no registro de decisões; testes `Tests/OpenApiContract/` | B047, B054, B070–B079 |
@@ -39,7 +39,7 @@ Se algum gate falhasse sem alternativa nativa segura, o marco **não** seria dec
 
 ## Ressalvas e gaps residuais (não bloqueiam o marco)
 
-1. **Upgrade 14 nesta máquina:** não testado; baseline de produto continua U14+, evidência prática desta instalação é U15.
+1. **Upgrade 14 nesta máquina do mantenedor:** não testado na data do fechamento; baseline de produto continua U14+, evidência prática completa desta instalação é U15. Em 2026-08-12, usuário externo confirmou carregamento + geração em U14.
 2. **YAML nativo incompleto:** respostas declaradas no OpenAPI gerado pelo GeneXus ficam restritas a 200/404 no template nativo; lista `required:` de schemas pode não ser emitida. Runtime HTTP está correto. Frente pré-Alpha `B088` (fora deste marco); **fechada em 2026-08-10** — ver `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
 3. **HTTP 403 com papel GAM comum:** Authorization já comprovado (401 sem token / 200 com token). Frente pré-Alpha `B089` (fora deste marco); **fechada em 2026-08-10** com Get 200 / Create 403 — ver `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D.
 4. **Atomicidade / rollback multiobjeto:** preflight valida o trio afetado antes do primeiro `Save()` planejado; falha interna da IDE/SDK no meio de uma sequência pode exigir reparação manual. Já listado no STATUS.
@@ -57,7 +57,7 @@ Se algum gate falhasse sem alternativa nativa segura, o marco **não** seria dec
 - matriz dos dez gates preenchida com status e evidências;
 - nenhum gap bloqueante sem alternativa nativa segura;
 - marco **wizard funcional do MVP concluído** declarado no checkpoint e no plano por sprints;
-- Sprint 7 encerrada; na data do fechamento, a próxima ação era a primeira frente pré-Alpha (limitações do YAML nativo / `B088`), depois a evidência 403 GAM (`B089`), antes da Alpha. Em 2026-08-10 `B088` e `B089` foram concluídos e o pacote documental da Alpha `0.1.0-alpha.1` foi preparado; em 2026-08-11 a documentação pública foi alinhada ao `B094` e a Alpha foi publicada. A próxima ação vigente fica no checkpoint (gate da Sprint 8 com usuário externo).
+- Sprint 7 encerrada; na data do fechamento, a próxima ação era a primeira frente pré-Alpha (limitações do YAML nativo / `B088`), depois a evidência 403 GAM (`B089`), antes da Alpha. Em 2026-08-10 `B088` e `B089` foram concluídos e o pacote documental da Alpha `0.1.0-alpha.1` foi preparado; em 2026-08-11 a documentação pública foi alinhada ao `B094` e a Alpha foi publicada; em 2026-08-12 o gate da Sprint 8 fechou com usuário externo em U14. A próxima ação vigente fica no checkpoint (Sprint 9).
 
 ## Remissões
 

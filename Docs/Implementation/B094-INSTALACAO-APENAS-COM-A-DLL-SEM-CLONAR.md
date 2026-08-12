@@ -144,11 +144,14 @@ Nesta máquina/U15:
 
 ## O que ficou sem comprovação
 
-- Comportamento idêntico em GeneXus 18 U14.
 - Add > Local em máquina **nunca** usada com esta extensão, por um usuário sem nenhuma permissão elevada.
 - Se Add > Local eleva internamente a cópia para `Packages` (mecanismo exato não instrumentado).
 - Causa da não-persistência da marcação **somente** pela UI (hipótese não comprovada: permissão de escrita no registro/estado da IDE — não inventar como fato).
 - Causa única dos hangs em “Restart now?” (trabalho de módulos NuGet é hipótese, não prova).
+
+## Nota de revisão — U14 por usuário externo (2026-08-12)
+
+O item “comportamento idêntico em GeneXus 18 U14” ficou **fechado com evidência externa**: usuário Igor C. Menin, DLL do Release `0.1.0-alpha.1`, cópia em `Packages` + `genexus /install`, menus e geração na KB `KbTesteGx18U14`. Não substitui o caminho Add > Local documentado neste B094. Evidência: [2026-08-12 — usuário externo U14](2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md); issue [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1).
 
 ## Nota de revisão — canais adicionais (2026-08-12)
 

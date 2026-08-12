@@ -95,7 +95,7 @@ Executar a Fase 0 do backlog (`B010`–`B012`) e deixar o terreno técnico repro
 
 ## Saída esperada
 
-Solution mínima reproduzível, construída pelo mecanismo oficial disponível a partir do GeneXus 18 U14 e usada no spike. O build usa feed NuGet e MSBuild SDKs oficiais registrados por `B010`; o `B000` posterior validou carregamento e compatibilidade prática inicial no U15 local. A validação do limite inferior no U14 continua dependendo de colegas da comunidade, sem data definida e sem bloquear o MVP.
+Solution mínima reproduzível, construída pelo mecanismo oficial disponível a partir do GeneXus 18 U14 e usada no spike. O build usa feed NuGet e MSBuild SDKs oficiais registrados por `B010`; o `B000` posterior validou carregamento e compatibilidade prática inicial no U15 local. O limite inferior U14 foi confirmado em 2026-08-12 por usuário externo na Alpha (carregamento + geração).
 
 [SPR-F24]
 
@@ -119,7 +119,7 @@ Executar o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
 
 ## Gate
 
-Gate aprovado no U15: o pacote inicial comprovou carregamento, leitura e ciclo de vida dos objetos necessários, incluindo persistência de metadata em File. A validação do limite inferior U14 continua pendente e não bloqueia o MVP.
+Gate aprovado no U15: o pacote inicial comprovou carregamento, leitura e ciclo de vida dos objetos necessários, incluindo persistência de metadata em File. O limite inferior U14 foi confirmado depois (2026-08-12) por usuário externo na Alpha — carregamento + geração; ver checkpoint.
 
 [F09][SPR-F24]
 
@@ -129,7 +129,7 @@ Gate aprovado no U15: o pacote inicial comprovou carregamento, leitura e ciclo d
 
 Os gates abaixo são comprovados progressivamente nas Sprints 1–7. A Sprint 1 inicia essa comprovação com `B000`–`B006`; ela não precisa concluir antecipadamente capacidades que dependem do engine e dos contratos posteriores:
 
-1. extensão carregou no GeneXus 18 U15; a confirmação do limite inferior U14 permanece pendente
+1. extensão carregou no GeneXus 18 U15; o limite inferior U14 foi confirmado depois (2026-08-12) por usuário externo na Alpha
 2. SDK cria, salva, reabre, altera e exclui objetos nativos `API`, `Procedure`, `SDT`, `Folder` e `File`
 3. objeto `API` delega às Procedures e persiste `RestMethod`, `RestPath`, `Description` e `SecurityLevel`
 4. YAML gerado pelo GeneXus reflete rotas, métodos, parâmetros, SDTs e nomes `_API_` (aprovado com ressalva das respostas HTTP declaradas 200/404 no YAML nativo)
@@ -330,7 +330,7 @@ Ordem acordada de execução:
 4. `B081`: relatório final pós-aplicação (criados / atualizados / bloqueados / avisos), sem depender só da Output técnica, incluindo efeitos colaterais do plano — **concluído** (U15 2026-08-08/09; criação com `Created=12` incluindo o Folder; Wizard `1200x912` e relatório adaptativo)
 5. UX mínima de conflitos alinhada à decisão do MVP: para cada conflito, nome, tipo, módulo e Folder (`B083` residual de apresentação) — **concluído** (U15 2026-08-08)
 6. alinhar Folder preexistente `NomeOpenApi` no módulo correto à decisão de reutilização com aviso — **concluído** (U15 2026-08-09; caminho feliz e bloqueios para contêiner incorreto, duplicidade e sentinela alheia; evidência `Docs/Implementation/2026-08-08-FOLDER-REUTILIZADO-COM-AVISO.md`)
-7. comprovação integrada dos dez gates e declaração do marco **wizard funcional do MVP concluído** — **concluído** (2026-08-09; evidência `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`; U14 residual não bloqueante)
+7. comprovação integrada dos dez gates e declaração do marco **wizard funcional do MVP concluído** — **concluído** (2026-08-09; evidência `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`; U14 residual na data do fechamento, confirmado depois em 2026-08-12)
 
 ## Fora do gate obrigatório desta sprint (pré-Alpha separados)
 
@@ -342,7 +342,7 @@ Ordem acordada de execução:
 
 Ciclo de vida conservador completo na IDE (posse, regeneração, sincronização e remoção sem overwrite indevido) e dez gates técnicos transversais comprovados.
 
-**Sprint 7 concluída em 2026-08-09.** O projeto atingiu o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para a Alpha da Sprint 8. Em 2026-08-10, `B088` e `B089` fecharam as frentes pré-Alpha. Em seguida o pacote documental `0.1.0-alpha.1` foi preparado; em 2026-08-11 a documentação pública foi alinhada ao `B094` e a Alpha foi publicada. A próxima ação canônica é o gate da Sprint 8 (usuário externo). Ver checkpoint.
+**Sprint 7 concluída em 2026-08-09.** O projeto atingiu o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para a Alpha da Sprint 8. Em 2026-08-10, `B088` e `B089` fecharam as frentes pré-Alpha. Em seguida o pacote documental `0.1.0-alpha.1` foi preparado; em 2026-08-11 a documentação pública foi alinhada ao `B094` e a Alpha foi publicada. Em 2026-08-12 o gate da Sprint 8 fechou com usuário externo em U14 (issue #1). A próxima ação canônica é a Sprint 9. Ver checkpoint.
 
 [F14][F28][SPR-F24]
 
@@ -376,7 +376,7 @@ Primeira versão aberta utilizável.
 
 Usuário externo testa.
 
-**Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10:** README público, [Docs/Public/INSTALL.md](../Public/INSTALL.md), [Docs/Public/DEMO.md](../Public/DEMO.md), [Docs/Releases/0.1.0-alpha.1.md](../Releases/0.1.0-alpha.1.md), corte no CHANGELOG, versão do pacote alinhada e galeria em [Docs/Images/](../Images/). Em 2026-08-11 o INSTALL/README/notas de release foram alinhados à evidência `B094` (instalação só com a DLL). Em 2026-08-11 a Alpha foi publicada: tag `v0.1.0-alpha.1` no remoto e GitHub Release **pre-release** com a DLL anexada. Próxima responsabilidade operacional: o gate desta sprint (usuário externo). Sprint 9 absorve correções a partir do feedback.
+**Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10:** README público, [Docs/Public/INSTALL.md](../Public/INSTALL.md), [Docs/Public/DEMO.md](../Public/DEMO.md), [Docs/Releases/0.1.0-alpha.1.md](../Releases/0.1.0-alpha.1.md), corte no CHANGELOG, versão do pacote alinhada e galeria em [Docs/Images/](../Images/). Em 2026-08-11 o INSTALL/README/notas de release foram alinhados à evidência `B094` (instalação só com a DLL). Em 2026-08-11 a Alpha foi publicada: tag `v0.1.0-alpha.1` no remoto e GitHub Release **pre-release** com a DLL anexada. Em 2026-08-12 o gate desta sprint fechou com usuário externo em GeneXus 18 U14 (Igor C. Menin; issue [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1); evidência [2026-08-12](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md)). Sprint 9 absorve correções a partir do feedback.
 
 [F18][SPR-F24]
 

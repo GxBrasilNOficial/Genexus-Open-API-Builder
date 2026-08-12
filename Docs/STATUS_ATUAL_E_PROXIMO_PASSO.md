@@ -87,46 +87,42 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - B083 residual (UX de colisão) implementado e validado no U15 em 2026-08-08 na Transaction `Teste`: lista `Nome | Tipo | Modulo | Folder` no Wizard (cabeçalho e aba SDTs) com SDT externo `sdtTeste_API_Response`; após apagar o conflitante, preflight aprovado, geração completa (`Created=11`) e Build All nos dois environments. Teste `Tests/CollisionUx/Test-ApiPlanCollisionConflict.ps1`. Evidência: `Docs/Implementation/B083-UX-CONFLITOS-COLISAO.md`.
 - Alinhamento de Folder reutilizado implementado e validado no U15 em 2026-08-09 na Transaction `Teste`: `TesteOpenApi` preexistente no `Root Module` foi reencontrado no contêiner correto com aviso explícito, sem colisão e sem alteração da `Description`; reexecução com `Created=0`, `Updated=13`, `Blocked=0`, `Warnings=2`; contêiner incorreto, duplicidade e sentinela alheia bloquearam antes de qualquer escrita; relatório final com rolagem vertical; metadata exportada confirmou `transactionFolder.wasCreated=false`. Evidência: `Docs/Implementation/2026-08-08-FOLDER-REUTILIZADO-COM-AVISO.md`.
 - Reteste U15 de 2026-08-09 fechou o ciclo: Build All concluído nos environments `.NET Framework / SQL Server` e `.NET / PostgreSQL`; `Remover API gerada` confirmou `Folder: TesteOpenApi (reutilizado; nunca apagar)`, removeu `Deleted=11`, sem bloqueios/avisos, e preservou o Folder, os SDTs compartilhados e o Business Component.
-- Sprint 7 fechada em 2026-08-09: comprovação integrada dos dez gates técnicos transversais e marco **wizard funcional do MVP concluído**, por consolidação do acervo U15 das Sprints 1–7, sem bateria U15 nova e sem mudança de código. Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`. Upgrade 14 permanece residual não validado nesta máquina e não bloqueia o marco.
+- Sprint 7 fechada em 2026-08-09: comprovação integrada dos dez gates técnicos transversais e marco **wizard funcional do MVP concluído**, por consolidação do acervo U15 das Sprints 1–7, sem bateria U15 nova e sem mudança de código. Evidência: `Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`. Upgrade 14, residual na data do fechamento, foi confirmado depois (2026-08-12) por usuário externo na Alpha.
 - `B088` concluído em 2026-08-10: investigação read-only do gerador nativo OpenAPI (`Swagger.Yaml.stg` / `TypeDefinitions.Yaml.stg` / `Artech.Packages.RestServiceDL.Generator`) comprovou que não há substituição ou interceptação dos templates sem alterar a instalação GeneXus. Limitação intransponível documentada; ressalvas e orientação de consumo incorporadas aos documentos 12 e 27. Sem mudança de código da extensão. Evidência: `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`.
 - `B089` concluído em 2026-08-10: evidência HTTP **403** com papel GAM não-administrador sob `SecurityLevel = Authorization` em `apiNotaFiscal` — role `Role_GOAB_Test_Denied`, Get Permitir / Create não atribuído, usuário `goab_role_denied`; GET **200** e POST Create **403** (`code` 139) nos environments .NET Framework/SQL Server e .NET/PostgreSQL. Setup via GAM Backoffice (telas nativas). Documentado em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D. Sem mudança de código da extensão.
 - Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10: README público, `Docs/Public/INSTALL.md`, `Docs/Public/DEMO.md`, `Docs/Releases/0.1.0-alpha.1.md`, corte no CHANGELOG e versão do csproj.
 - Correção B085 (2026-08-10): Sync não exige mais `IsManagedApiObject` contra o ApiPlan reconstruído — posse por metadata; seleção de campos com ordem estável. Validado no U15 em `NotaFiscal` com `+ NotaFiscalObs3`: preflight OK, `Updated=13`, `Blocked=0`.
 - `B094` concluído em 2026-08-10 e corrigido em 2026-08-11: evidência de instalação sem clonar/`Install-*.bat` (Add > Local + `genexus /install`) ativando marcada + menus no U15, ainda com elevação (UAC); captura confiável em cmd elevado mostrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Sem mudança de código da extensão. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`. Documentação pública não alterada nesta frente.
 - Documentação pública alinhada ao `B094` em 2026-08-11: `Docs/Public/INSTALL.md` com caminho do usuário final (DLL) e do mantenedor; `README.md` com atualização pelos dois caminhos; `Docs/Releases/0.1.0-alpha.1.md` corrige o que não entra; `CHANGELOG.md` registra a mudança sob `[0.1.0-alpha.1]`. Sem mudança de código da extensão. Correção imediata na mesma data: ordem de instalação do usuário final alinhada ao B094 (Add > Local com IDE aberta); atualização só com Add > Local marcada como não comprovada (falha observada com DLL já em `Packages`).
-- Em 2026-08-11 o INSTALL publicado do usuário final foi ancorado ao redo do mantenedor (B094 §6: limpeza + Add > Local + `/install` + menus). Não há gap de “ninguém executou a sequência”; o gate restante continua sendo usuário externo.
+- Em 2026-08-11 o INSTALL publicado do usuário final foi ancorado ao redo do mantenedor (B094 §6: limpeza + Add > Local + `/install` + menus). Não havia gap de “ninguém executou a sequência”; naquele momento o gate restante continuava sendo usuário externo.
 - Preparação para receber feedback da Alpha (2026-08-11): Issue Forms (bug/sugestão/**Dúvida / outro**; blank issues desabilitadas), labels `feedback-externo` / `instalacao` / `alpha-0.1.0`, e convenção no `CONTRIBUTING.md` para o mantenedor abrir issue a partir de relatos fora do GitHub. Não altera o gate de usuário externo.
 - Trava pré-push dos YAML / Issue Forms (2026-08-11): após o formulário **Dúvida / outro** sumir do seletor por YAML inválido (`placeholder` com `Ex.:` sem aspas; corrigido em `66509e6`), o gate ganhou `tests.issueForms` (lint estrutural + parse `python3`/`pyyaml`, sem pular ambiente incompleto). Não altera o gate de usuário externo.
 - Em 2026-08-12, investigação de canais de distribuição (paralela ao gate): GitHub Packages / `.nupkg` não instalam na IDE; Marketplace / Add > Web inutilizáveis nesta máquina pós-migração; limpeza da DLL + `genexus /install` confirmada; ZIP (DLL na raiz): Install from file **falhou**; Add > Local + `/install` **ok** (menus). Caminho canônico permanece DLL. Workflow `.github/workflows/publish-github-packages.yml` preparado para publicar o assembly no feed NuGet da org a partir da DLL do Release (sem valor para a IDE). Evidência: `Docs/Implementation/2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md`. Não altera a próxima ação única.
+- Em 2026-08-12 o gate da Sprint 8 fechou com usuário externo (Igor C. Menin): DLL do Release `0.1.0-alpha.1`, GeneXus 18 U14 (`18.0.187820`), instalação por cópia em `Packages` + `genexus /install`, menus + geração na KB `KbTesteGx18U14`. Feedback registrado em [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1). Residual U14 de carregamento/uso prático fechado. Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
 
 ## Frente ativa
 
-Gate da Sprint 8: Alpha `0.1.0-alpha.1` publicada em 2026-08-11; falta o uso por usuário externo e a coleta de feedback.
+Sprint 9 — correções e melhorias a partir do feedback da Alpha.
 
 ## Próxima ação única
 
-Colocar a Alpha na mão de **usuário externo**: divulgação controlada a partir do Release publicado e coleta de feedback por issues. Sem reabrir B088/B089 nem contradizer o marco do wizard.
-
-A tag `v0.1.0-alpha.1` está publicada e **não deve ser movida**: correção posterior exige `0.1.0-alpha.2`.
+Priorizar o feedback da Alpha (começando pela issue [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1) e novos relatos) e aplicar correções/docs/onboarding da Sprint 9. Sem mover a tag `v0.1.0-alpha.1`; correção de produto exige `0.1.0-alpha.2` ou superior.
 
 ## Evidência da frente encerrada
 
-- Alpha publicada em 2026-08-11: tag `v0.1.0-alpha.1` no remoto apontando para `e0b2b7e` e GitHub Release **pre-release** em `https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.1`;
-- anexo `GenexusOpenApiBuilder.Extension.dll` (555.520 bytes) conferido após download com SHA-256 `3A5FD008B9B4D971D03DC10E50BF6C7D97813824FC5D6417498F4FDEC63D63EF`, idêntico à build local e ao registrado no `B094`;
-- links do corpo do Release fixados na tag e verificados contra o conteúdo publicado;
-- `Docs/Public/INSTALL.md` distingue instalação só com a DLL (Add > Local com IDE aberta + fechar + `genexus /install`) do fluxo de mantenedor (`.bat`);
-- sequência INSTALL do usuário final validada pelo mantenedor em 2026-08-11 (B094 §6); gap remanescente = usuário externo;
-- atualização só com Add > Local sobre DLL já em `Packages` declarada **não comprovada** (falha B094); caminho estável de atualização = mantenedor;
-- `README.md` alinhado a essa honestidade;
-- `Docs/Releases/0.1.0-alpha.1.md` lista o que ainda não entra (incluindo atualização só com Add > Local);
-- `CHANGELOG.md` com entradas sob `[0.1.0-alpha.1]` → Changed;
-- backlog 06, plano 24 e comprovação dos dez gates alinhados à ordem publicação → gate;
-- fonte factual: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`.
+- Gate Sprint 8 fechado em 2026-08-12 com usuário externo Igor C. Menin;
+- DLL do Release `0.1.0-alpha.1`; GeneXus 18 Upgrade 14 (`18.0.187820 U14`);
+- instalação observada: cópia da DLL em `Packages` + `genexus /install` (variante do INSTALL; Add > Local não foi o caminho usado por esse usuário);
+- captura: menu Genexus Open API Builder + Folder `TesteOpenApi` / `apiTeste` / Procedures e SDTs na KB `KbTesteGx18U14` (Transaction `Teste`);
+- feedback registrado pelo mantenedor em [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1);
+- imagem arquivada em `Docs/Images/alpha-u14-igor-menin.png`;
+- residual U14 (carregamento + uso prático do SDK) fechado por esta evidência; U15 do mantenedor permanece a bateria completa de validação;
+- fonte factual: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
 
 ## Critério de conclusão da próxima ação
 
-- ao menos um usuário externo instalou/testou seguindo INSTALL + DEMO a partir do anexo do Release, ou feedback equivalente registrado;
-- issues/feedback priorizados alimentam a Sprint 9 sem reabrir B088/B089.
+- feedback da Alpha priorizado (issues) e ao menos o primeiro ciclo de correções/docs da Sprint 9 aplicado ou explicitamente descartado com justificativa;
+- sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
 
@@ -173,12 +169,12 @@ A tag `v0.1.0-alpha.1` está publicada e **não deve ser movida**: correção po
 41. Em 2026-08-11 higiene pública pós-Alpha: `LICENSE` sem `# LICENSE` (detector MIT); INSTALL/checkpoint ancoram a sequência do usuário final ao redo B094 §6; tópicos GitHub `genexus`, `openapi`, `rest-api`, `genexus-extension`. Próxima ação permanece gate de usuário externo.
 42. Em 2026-08-11 preparação da fila de feedback: Issue Forms (bug, sugestão e **Dúvida / outro** com campo livre), labels próprios e convenção de registro de relatos externos no `CONTRIBUTING.md`. Próxima ação permanece gate de usuário externo.
 43. Em 2026-08-11 trava pré-push `tests.issueForms` contra YAML inválido / schema de Issue Form (lição do formulário Dúvida ausente no seletor). Próxima ação permanece gate de usuário externo.
-44. Em 2026-08-12 canais extras de instalação documentados: evidência negativa (GitHub Packages, Marketplace Web, `.nupkg`, Install from file com ZIP só-DLL); ZIP via Add > Local + `/install` comprovado sem promoção como caminho oficial. Próxima ação permanece gate de usuário externo. Evidência: `Docs/Implementation/2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md`.
+44. Em 2026-08-12 canais extras de instalação documentados: evidência negativa (GitHub Packages, Marketplace Web, `.nupkg`, Install from file com ZIP só-DLL); ZIP via Add > Local + `/install` comprovado sem promoção como caminho oficial. Naquele momento a próxima ação ainda era o gate de usuário externo. Evidência: `Docs/Implementation/2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md`.
+45. Em 2026-08-12 o gate da Sprint 8 fechou com evidência de usuário externo em U14 (Igor C. Menin; issue #1; DLL `0.1.0-alpha.1`). Próxima ação = Sprint 9 (priorizar feedback). Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
 
 ## Bloqueios e fatos ainda não validados
 
-- carregamento real do pacote em U14 (residual não bloqueante do marco; decisão do mantenedor em 2026-08-09);
-- compatibilidade prática das APIs do SDK com U14;
+- Add > Local por usuário externo em máquina nunca usada com a extensão (o relato U14 usou cópia em `Packages` + `/install`); instalação sem elevação alguma continua sem comprovação.
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação. Em `Remover API gerada` (B086), ambiguidade e posse de API/Procedures/SDTs próprios passam a ser validadas antes do primeiro `Delete()` (`ValidateRemovalTargets` em Preview e Remove); permanece residual a falha IDE/SDK no meio da sequência de exclusões já iniciada.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
 - limitações do YAML OpenAPI nativo do GeneXus (documentadas em B088; intransponíveis sem patch na instalação — não bloqueiam o MVP).
@@ -196,15 +192,16 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [B093 — Security Level / evidência B089 403](Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md)
 - [B094 — Instalação apenas com a DLL (sem clonar)](Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md)
 - [2026-08-12 — Canais de distribuição (Marketplace / ZIP / GitHub Packages)](Implementation/2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md)
+- [2026-08-12 — Evidência usuário externo U14 / gate Sprint 8](Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
 - [Release 0.1.0-alpha.1](Releases/0.1.0-alpha.1.md)
 
 ## Marcos ainda não iniciados
 
-- Sprint 9 — correções reais a partir do feedback.
+- Sprint 10 — Beta estável.
 
-O gate da Sprint 8 com usuário externo deixou de ser marco não iniciado em 2026-08-11: com a Alpha publicada, ele é a frente ativa.
+A Sprint 9 deixou de ser marco não iniciado em 2026-08-12: com o gate da Sprint 8 fechado (issue #1 + evidência U14), ela é a frente ativa.
 
 ## Protocolo de atualização
 
