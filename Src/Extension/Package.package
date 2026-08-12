@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Package xmlns="http://schemas.genexus.com/addin/v1.0"
+			id="40049e2b-f350-4828-98df-89df5111956e"
+			name="GenexusOpenApiBuilder">
+  <Commands>
+    <CommandDefinition id="Configurar Preferências do Wizard" />
+    <CommandDefinition id="Wizard" context="selection" />
+    <CommandDefinition id="Sincronizar com a Transaction" context="selection" />
+    <CommandDefinition id="Remover API gerada" context="selection" />
+  </Commands>
+
+  <Groups>
+    <Group id="OpenApiGroup">
+      <Command refid="Configurar Preferências do Wizard" />
+      <Command refid="Wizard" />
+      <Command refid="Sincronizar com a Transaction" />
+      <Command refid="Remover API gerada" />
+    </Group>
+    <Group id="OpenApiContextMenu">
+      <Popup name="Genexus Open API Builder">
+        <Group refid="OpenApiGroup" />
+      </Popup>
+    </Group>
+
+    <Group refid="KBObjectGrp" package="98121D96-A7D8-468b-9310-B1F468F812AE">
+      <Group refid="OpenApiContextMenu"/>
+    </Group>
+  </Groups>
+
+  <Menus>
+    <Menu type="menubar">
+      <Popup name="Genexus Open API Builder" insertBefore="Help">
+        <Group refid="OpenApiGroup" />
+      </Popup>
+    </Menu>
+  </Menus>
+</Package>

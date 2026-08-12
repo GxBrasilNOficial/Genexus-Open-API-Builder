@@ -1,0 +1,61 @@
+<Project>
+  <PropertyGroup>
+    <GX18U13Path Condition="'$(GX18U13Path)' == ''">C:\GeneXus\Gx18\U13</GX18U13Path>
+    <DefineConstants>$(DefineConstants);GX18U13</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetGX)' == 'GX18U13'">
+    <Reference Include="Artech.Architecture.BL.Framework">
+      <HintPath>$(GX18U13Path)\Artech.Architecture.BL.Framework.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Artech.Architecture.Common">
+      <HintPath>$(GX18U13Path)\Artech.Architecture.Common.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Artech.Architecture.Interfaces">
+      <HintPath>$(GX18U13Path)\Artech.Architecture.Interfaces.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Artech.Architecture.UI.Framework">
+      <HintPath>$(GX18U13Path)\Artech.Architecture.UI.Framework.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Artech.Common">
+      <HintPath>$(GX18U13Path)\Artech.Common.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Artech.Common.Controls">
+      <HintPath>$(GX18U13Path)\Artech.Common.Controls.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Artech.Common.Framework">
+      <HintPath>$(GX18U13Path)\Artech.Common.Framework.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Artech.Common.Helpers">
+      <HintPath>$(GX18U13Path)\Artech.Common.Helpers.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Artech.Common.Properties">
+      <HintPath>$(GX18U13Path)\Artech.Common.Properties.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Artech.FrameworkDE">
+      <HintPath>$(GX18U13Path)\Artech.FrameworkDE.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Artech.Genexus.Common">
+      <HintPath>$(GX18U13Path)\Artech.Genexus.Common.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Artech.Udm.Framework">
+      <HintPath>$(GX18U13Path)\Artech.Udm.Framework.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(GX18U13Path)\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

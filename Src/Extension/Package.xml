@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.artech.com/Framework/Package" Name="GenexusOpenApiBuilder.Extension">
+  <Commands>
+    <CommandId>Configurar Preferências do Wizard</CommandId>
+    <CommandId>Wizard</CommandId>
+    <CommandId>Sincronizar com a Transaction</CommandId>
+    <CommandId>Remover API gerada</CommandId>
+  </Commands>
+
+  <Menus>
+    <Menu Id="GenexusOpenApiBuilderMenu" Name="Genexus Open API Builder" Text="Genexus Open API Builder">
+      <Item CommandId="Configurar Preferências do Wizard" />
+      <Item CommandId="Wizard" />
+      <Item CommandId="Sincronizar com a Transaction" />
+      <Item CommandId="Remover API gerada" />
+    </Menu>
+  </Menus>
+
+  <MenuRef Location="ToolsMenu">
+    <Item MenuId="GenexusOpenApiBuilderMenu" />
+  </MenuRef>
+
+  <MenuRef Location="KBObjectContextMenu">
+    <Item MenuId="GenexusOpenApiBuilderMenu" />
+  </MenuRef>
+</Package>

@@ -15,6 +15,9 @@ using GenexusOpenApiBuilder.Extension.Diagnostics;
 using GenexusOpenApiBuilder.Extension.Domain;
 
 [assembly: Package(typeof(GenexusOpenApiBuilder.Extension.Package))]
+#if GX18U13
+[assembly: PackageCompatibility(Version = 143920)]
+#endif
 
 namespace GenexusOpenApiBuilder.Extension;
 
@@ -24,9 +27,22 @@ namespace GenexusOpenApiBuilder.Extension;
 /// O menu principal expõe preferências, Wizard, Sincronizar com a Transaction e Remover API gerada (nesta ordem);
 /// o contexto da Transaction expõe Wizard, Sincronizar com a Transaction e Remover API gerada.
 /// </summary>
+[System.Runtime.InteropServices.Guid("40049e2b-f350-4828-98df-89df5111956e")]
 public sealed class Package : AbstractPackageUI
 {
+    public static readonly Guid PackageGuid = new Guid("40049e2b-f350-4828-98df-89df5111956e");
     public override string Name => "Genexus Open API Builder";
+
+    public override Artech.Packages.Definition.Package GetPackageDeclarations()
+    {
+        using var stream = typeof(Package).Assembly.GetManifestResourceStream("Package.package");
+        if (stream != null)
+        {
+            var serializer = new System.Xml.Serialization.XmlSerializer(typeof(Artech.Packages.Definition.Package));
+            return (Artech.Packages.Definition.Package)serializer.Deserialize(stream);
+        }
+        return base.GetPackageDeclarations();
+    }
 
     public override void Initialize(IGxServiceProvider services)
     {

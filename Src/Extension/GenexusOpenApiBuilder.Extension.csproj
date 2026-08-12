@@ -1,5 +1,8 @@
-<Project Sdk="GeneXus.Package.UI.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="Directory.Build.U13.props" />
+
   <PropertyGroup>
+    <TargetFramework>net471</TargetFramework>
     <OutputType>Library</OutputType>
     <PackageId>GenexusOpenApiBuilder.Extension</PackageId>
     <Version>0.1.0-alpha.1</Version>
@@ -19,11 +22,34 @@
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <EnableSourceLink>false</EnableSourceLink>
   </PropertyGroup>
+
+  <!-- Quando NAO estiver compilando para U13, usa os pacotes SDK do GeneXus (U14+) -->
+  <ItemGroup Condition="'$(TargetGX)' != 'GX18U13'">
+    <PackageReference Include="Artech.Architecture.BL.Framework.Sdk" Version="$(GeneXusPackageReferenceVersion)" />
+    <PackageReference Include="Artech.Architecture.Common.Sdk" Version="$(GeneXusPackageReferenceVersion)" />
+    <PackageReference Include="Artech.Architecture.Interfaces.Sdk" Version="$(GeneXusPackageReferenceVersion)" />
+    <PackageReference Include="Artech.Architecture.UI.Framework.Sdk" Version="$(GeneXusPackageReferenceVersion)" />
+    <PackageReference Include="Artech.Common.Controls.Sdk" Version="$(GeneXusPackageReferenceVersion)" />
+    <PackageReference Include="Artech.Common.Framework.Sdk" Version="$(GeneXusPackageReferenceVersion)" />
+    <PackageReference Include="Artech.Common.Properties.Sdk" Version="$(GeneXusPackageReferenceVersion)" />
+    <PackageReference Include="Artech.Common.Sdk" Version="$(GeneXusPackageReferenceVersion)" />
+    <PackageReference Include="Artech.FrameworkDE.Sdk" Version="$(GeneXusPackageReferenceVersion)" />
+    <PackageReference Include="Artech.Genexus.Common.Sdk" Version="$(GeneXusPackageReferenceVersion)" />
+    <PackageReference Include="Artech.Udm.Framework.Sdk" Version="$(GeneXusPackageReferenceVersion)" />
+  </ItemGroup>
+
   <ItemGroup>
     <Compile Include="..\Domain\**\*.cs" LinkBase="Domain" />
   </ItemGroup>
+
   <ItemGroup>
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Package.package">
+      <LogicalName>Package.package</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>
