@@ -44,12 +44,14 @@ genexus /install
 
 Em 2026-08-11 o mantenedor reexecutou limpeza real (apagar a DLL em `Packages` + `genexus /install` até sumir da lista), Add > Local, fechar a IDE, `genexus /install` e verificação de menus no GeneXus 18 U15. A ordem deste guia segue essa evidência ([B094 §6](../Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md)).
 
-Em 2026-08-12 um usuário externo (Igor C. Menin) instalou a DLL do Release `0.1.0-alpha.1` no GeneXus 18 U14 copiando-a para `Packages` e executando `genexus /install`, com menus e geração confirmados. No mesmo dia, outro usuário externo (Miguel) confirmou uso bem-sucedido no GeneXus 18 U15 com a mesma variante. Essa cópia manual é **variante observada**, não o caminho oficial deste guia. Evidências: [U14](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md) (issue [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1)); [U15](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md) (issue [#3](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/3)).
+Em 2026-08-12 um usuário externo (Igor C. Menin) instalou a DLL do Release `0.1.0-alpha.1` no GeneXus 18 U14 copiando-a para `Packages` e executando `genexus /install`, com menus e geração confirmados. Essa cópia manual é **variante observada**, não o caminho oficial deste guia. Evidência: [U14](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md) (issue [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1)).
+
+No mesmo dia, outro usuário externo (Miguel) confirmou uso bem-sucedido no GeneXus 18 U15 pelo **caminho de mantenedor**: repositório baixado, DLL do build local e `Install-ExtensionForGeneXus18.bat` antes de `genexus /install` — não a variante Packages/Release do parágrafo acima. Evidência: [U15](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md) (issue [#3](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/3)).
 
 ### Atritos e o que ainda não foi comprovado
 
 - Pode aparecer **UAC** no `genexus /install`. A escrita em `C:\Program Files (x86)\GeneXus\...\Packages` também exige permissão adequada. Instalação **sem elevação alguma** não foi comprovada.
-- Add > Local por usuário externo em máquina **nunca** usada com esta extensão ainda não foi observado (os relatos externos usaram cópia em `Packages`).
+- Add > Local por usuário externo em máquina **nunca** usada com esta extensão ainda não foi observado (Igor usou cópia em `Packages` da DLL do Release; Miguel usou o `.bat` de mantenedor com build local).
 - Atualização só com Add > Local sobre DLL já instalada **não** está comprovada (única observação: falha; ver seção acima).
 - **Marketplace / Add > Web** não são usáveis nesta máquina no estado observado em 2026-08-12 (feed/RSS quebrado pós-migração; 403 / erro de leitura). Não há guia operacional por esse canal.
 - **GitHub Packages** (e o `.nupkg`) **não** instalam a extensão na IDE. Continuar usando o anexo **DLL** do GitHub Release. O workflow `.github/workflows/publish-github-packages.yml` pode republicar o assembly no feed NuGet da org a cada Release (ou via `workflow_dispatch`); isso é artefato técnico, não caminho de instalação.
