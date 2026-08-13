@@ -1,10 +1,12 @@
 @echo off
 setlocal EnableExtensions
 
-set "GENEXUS_DIRECTORY=C:\Program Files (x86)\GeneXus\GeneXus18"
+set "GENEXUS_DIRECTORY=%~1"
+if "%GENEXUS_DIRECTORY%"=="" set "GENEXUS_DIRECTORY=C:\Program Files (x86)\GeneXus\GeneXus18"
 
 if exist "%GENEXUS_DIRECTORY%\GeneXus.exe" goto geneXusFound
 echo ERRO: GeneXus.exe nao encontrado em %GENEXUS_DIRECTORY%
+echo Informe o diretorio correto como primeiro argumento do .bat.
 pause
 exit /b 1
 

@@ -19,14 +19,14 @@ Sempre que uma nova DLL precisar ser instalada para teste no GeneXus 18, o agent
 Para atualização apenas de DLL, sem alteração em `Src/Extension/GenexusOpenApiBuilder.package`, na identidade do pacote ou no registro da extensão:
 
 1. fechar completamente a IDE GeneXus;
-2. executar `Install-ExtensionForGeneXus18.bat`, na raiz do repositório, usando **Executar como administrador**;
+2. executar `Install-ExtensionForGeneXus18.bat`, na raiz do repositório, usando **Executar como administrador**; quando a IDE estiver fora do diretório padrão, passar o diretório como primeiro argumento (por exemplo, `Install-ExtensionForGeneXus18.bat "C:\Program Files (x86)\GeneXus\GeneXus18up15"`);
 3. abrir novamente a IDE e executar a validação funcional indicada para a frente.
 
 O instalador já executa `Tools/Test-InstalledExtension.ps1` ao final e falha quando a DLL instalada não corresponde à build atual.
 
 Quando houver, desde o ultimo `genexus /install` bem-sucedido, alteracao em `Src/Extension/GenexusOpenApiBuilder.package`, na identidade do pacote ou no registro da extensao, acrescentar entre os passos 2 e 3:
 
-1. executar `Register-ExtensionForGeneXus18.bat` normalmente, sem Administrador;
+1. executar `Register-ExtensionForGeneXus18.bat` normalmente, sem Administrador, passando o mesmo diretório quando ele não for o padrão;
 2. no prompt aberto pelo segundo arquivo, digitar `genexus /install`, conferir a varredura e depois digitar `exit`.
 
 - `Install-ExtensionForGeneXus18.bat` é sempre o caminho operacional primário para instalar a nova DLL; `Register-ExtensionForGeneXus18.bat` é condicional à atualização de manifesto/registro.

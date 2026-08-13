@@ -100,15 +100,15 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Em 2026-08-12, investigação de canais de distribuição (paralela ao gate): GitHub Packages / `.nupkg` não instalam na IDE; Marketplace / Add > Web inutilizáveis nesta máquina pós-migração; limpeza da DLL + `genexus /install` confirmada; ZIP (DLL na raiz): Install from file **falhou**; Add > Local + `/install` **ok** (menus). Caminho canônico permanece DLL. Workflow `.github/workflows/publish-github-packages.yml` preparado para publicar o assembly no feed NuGet da org a partir da DLL do Release (sem valor para a IDE). Evidência: `Docs/Implementation/2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md`. Não altera a próxima ação única.
 - Em 2026-08-12 o gate da Sprint 8 fechou com usuário externo (Igor C. Menin): DLL do Release `0.1.0-alpha.1`, GeneXus 18 U14 (`18.0.187820`), instalação por cópia em `Packages` + `genexus /install`, menus + geração na KB `KbTesteGx18U14`. Feedback registrado em [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1). Residual U14 de carregamento/uso prático fechado. Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
 - Em 2026-08-12 segundo usuário externo (Miguel) confirmou uso bem-sucedido da Alpha `0.1.0-alpha.1` no GeneXus 18 U15 pelo caminho de mantenedor: repositório baixado, DLL do **build local**, `Install-ExtensionForGeneXus18.bat` e depois `genexus /install`. Feedback em [#3](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/3). Não reabre o gate Sprint 8; reforça adoção U15 (não é evidência da variante Packages/Release). Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md`.
-- Em 2026-08-12 foi iniciada, em paralelo explícito à Sprint 9, a Fase 1 do suporte `Gx18u13` (D43): Exp-ParidadeEmpacote mediu o nome lógico do recurso `.package`, Exp-RefsNomes produziu o rascunho local de referências e a sonda Exp-Compat foi compilada com o SDK canônico. A validação no U13 e a coleta dos arquivos U13 continuam pendentes. Evidência: `Docs/Implementation/2026-08-12-EXP-F1-SUPORTE-GX18U13.md`.
+- Em 2026-08-12 foi iniciada, em paralelo explícito à Sprint 9, a Fase 1 do suporte `Gx18u13` (D43): Exp-ParidadeEmpacote mediu o nome lógico do recurso `.package`, Exp-RefsNomes produziu a lista de referências e a sonda Exp-Compat foi compilada com o SDK canônico. Depois, a instalação local U13 permitiu corroborar `N=143920`, copiar as referências pinadas para a área ignorada e iniciar a Fase 2. Evidências: `Docs/Implementation/2026-08-12-EXP-F1-SUPORTE-GX18U13.md` e `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
 
 ## Frente ativa
 
-Fase 1 do suporte paralelo `Gx18u13` — experimentos de empacotamento, referências e compatibilidade, em paralelo explícito à Sprint 9 (feedback da Alpha).
+Fase 2 do suporte paralelo `Gx18u13` — satélite MSBuild compilável contra as referências U13 locais, em paralelo explícito à Sprint 9 (feedback da Alpha).
 
 ## Próxima ação única
 
-Entregar a sonda Exp-Compat ao Igor e obter, no GeneXus 18 U13, o texto de carga e o número `N` de `PackageCompatibility`; manter a Sprint 9 em paralelo, sem mover a tag `v0.1.0-alpha.1`. A Fase 2 só começa após `N` e a lista de nomes de referências estarem registrados.
+Instalar manualmente a DLL de build `artifacts/gx18u13/bin/Release/net471/GenexusOpenApiBuilder.Extension.dll` na instalação local GeneXus 18 U13 e registrar carga, menus e eventual erro de compatibilidade; manter o asset renomeado `artifacts/gx18u13/GenexusOpenApiBuilder.Extension-gx18u13.dll` reservado para Release e a Sprint 9 em paralelo, sem mover a tag `v0.1.0-alpha.1`.
 
 ## Evidência da frente encerrada
 
@@ -128,11 +128,13 @@ Entregar a sonda Exp-Compat ao Igor e obter, no GeneXus 18 U13, o texto de carga
 - `Exp-Compat`: sonda mínima compilada em `Temp/Exp-Compat/bin/Release/net471/GenexusOpenApiBuilder.ExpCompat.dll`, sem uso de `Src/Lib/Gx18u13`.
 - Inventário offline da DLL canônica implementado em `Tools/Test-ExtensionAssemblyInventory.ps1`, com teste `Tests/ExtensionAssemblyInventory/Test-ExtensionAssemblyInventory.ps1`; a lista de `AssemblyRef` diretas foi conferida e passou sem acesso à IDE, KB, instalação ou rede.
 - A sonda Exp-Compat também passou pelo inventário parametrizado: manifesto, classe-base, `PackageCompatibility=143920`, recurso e hash foram conferidos localmente. O roteiro de entrega ao Igor está na evidência da Fase 1.
-- Validação externa U13 ainda pendente; o checkpoint não trata a sonda como evidência de carga até o retorno do Igor.
+- `N=143920` foi corroborado por `C:\ProgramData\GeneXus\GeneXus\18\packages.143920.xml`; os arquivos U13 pinados foram copiados apenas para a área local ignorada.
+- Fase 2 compilou `Src/GenexusOpenApiBuilder.Gx18u13.sln` em Release; o asset passou pelo inventário offline com `PackageCompatibility=143920`, manifesto, recurso, referências e `GxLine=Gx18u13`. Evidência: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
+- Carga funcional U13 ainda pendente; o checkpoint não trata o build offline como evidência de menus, Wizard ou Build All.
 
 ## Critério de conclusão da próxima ação
 
-- sonda Exp-Compat executada no U13 pelo Igor, com `PackageCompatibility=N` observado/corroborado e evidência de carga registrada;
+- DLL de build do satélite instalada na IDE U13 local, com carga e menus registrados; depois, Wizard e Build All de uma Transaction de amostra;
 - feedback da Alpha priorizado (issues) e ao menos o primeiro ciclo de correções/docs da Sprint 9 aplicado ou explicitamente descartado com justificativa;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
@@ -184,7 +186,8 @@ Entregar a sonda Exp-Compat ao Igor e obter, no GeneXus 18 U13, o texto de carga
 44. Em 2026-08-12 canais extras de instalação documentados: evidência negativa (GitHub Packages, Marketplace Web, `.nupkg`, Install from file com ZIP só-DLL); ZIP via Add > Local + `/install` comprovado sem promoção como caminho oficial. Naquele momento a próxima ação ainda era o gate de usuário externo. Evidência: `Docs/Implementation/2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md`.
 45. Em 2026-08-12 o gate da Sprint 8 fechou com evidência de usuário externo em U14 (Igor C. Menin; issue #1; DLL `0.1.0-alpha.1`). Próxima ação = Sprint 9 (priorizar feedback). Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
 46. Em 2026-08-12 segundo usuário externo (Miguel) confirmou a Alpha no U15 (issue #3; caminho de mantenedor: repo + build local + `Install-ExtensionForGeneXus18.bat` + `/install`; registro inicial que igualava à variante Packages do Igor foi corrigido). Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md`.
-47. Em 2026-08-12 a Fase 1 do suporte paralelo `Gx18u13` foi iniciada: paridade de empacotamento medida, nomes de referências derivados localmente e sonda Exp-Compat compilada. A próxima ação é o teste da sonda no U13; a Sprint 9 permanece explicitamente paralela.
+47. Em 2026-08-12 a Fase 1 do suporte paralelo `Gx18u13` foi iniciada: paridade de empacotamento medida, nomes de referências derivados localmente e sonda Exp-Compat compilada. Naquele ponto, a próxima ação era o teste da sonda no U13; a Sprint 9 permanecia explicitamente paralela.
+48. Em 2026-08-12 a instalação local do U13 corroborou `N=143920` e permitiu iniciar a Fase 2: referências locais pinadas, solution satélite, isolamento de artefatos e build Release com inventário offline aprovado. Próxima ação = carga manual da DLL de build na IDE U13; a Sprint 9 permanece explicitamente paralela. Evidência: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
 
 ## Bloqueios e fatos ainda não validados
 

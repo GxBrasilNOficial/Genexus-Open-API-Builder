@@ -4,4 +4,13 @@
     <GeneXusSdkTargetFrameworks>net471</GeneXusSdkTargetFrameworks>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'GenexusOpenApiBuilder.Extension.Gx18u13'">
+    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+    <Gx18u13ArtifactsRoot>$(MSBuildThisFileDirectory)artifacts\gx18u13\</Gx18u13ArtifactsRoot>
+    <NuGetLockFilePath>$(Gx18u13ArtifactsRoot)obj\packages.lock.json</NuGetLockFilePath>
+    <BaseOutputPath>$(Gx18u13ArtifactsRoot)bin\</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(Gx18u13ArtifactsRoot)obj\</BaseIntermediateOutputPath>
+    <OutputPath>$(BaseOutputPath)$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
 </Project>

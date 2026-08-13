@@ -1,6 +1,9 @@
 @echo off
 setlocal EnableExtensions
 
+set "GENEXUS_DIRECTORY=%~1"
+if "%GENEXUS_DIRECTORY%"=="" set "GENEXUS_DIRECTORY=C:\Program Files (x86)\GeneXus\GeneXus18"
+
 set "SCRIPT=%~dp0Tools\Copy-ExtensionForGeneXus18.ps1"
 set "VERIFY_SCRIPT=%~dp0Tools\Test-InstalledExtension.ps1"
 
@@ -16,16 +19,24 @@ if not exist "%VERIFY_SCRIPT%" (
     exit /b 1
 )
 
+if not exist "%GENEXUS_DIRECTORY%\GeneXus.exe" (
+    echo ERRO: GeneXus.exe nao encontrado em %GENEXUS_DIRECTORY%
+    echo Informe o diretorio correto como primeiro argumento do .bat.
+    pause
+    exit /b 1
+)
+
 echo Este arquivo deve ser iniciado manualmente como Administrador.
 echo Feche completamente a IDE GeneXus antes de continuar.
+echo Diretorio GeneXus: %GENEXUS_DIRECTORY%
 echo.
 echo Aguarde. Copiando a extensao...
-pwsh.exe -NoProfile -File "%SCRIPT%" -Apply
+pwsh.exe -NoProfile -File "%SCRIPT%" -Apply -GeneXusDirectory "%GENEXUS_DIRECTORY%"
 set "EXITCODE=%ERRORLEVEL%"
 if not "%EXITCODE%"=="0" goto report
 
 echo Validando se a DLL instalada corresponde a build atual...
-pwsh.exe -NoProfile -File "%VERIFY_SCRIPT%"
+pwsh.exe -NoProfile -File "%VERIFY_SCRIPT%" -InstalledDll "%GENEXUS_DIRECTORY%\Packages\GenexusOpenApiBuilder.Extension.dll"
 set "EXITCODE=%ERRORLEVEL%"
 
 :report

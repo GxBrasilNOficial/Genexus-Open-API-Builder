@@ -1,0 +1,6 @@
+<Project>
+  <ItemGroup>
+    <Compile Include="**\*.cs" Exclude="bin\**;obj\**" LinkBase="Extension" />
+    <Compile Include="..\Domain\**\*.cs" LinkBase="Domain" />
+  </ItemGroup>
+</Project>

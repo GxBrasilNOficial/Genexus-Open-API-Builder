@@ -98,7 +98,7 @@ Atualização só com **Add > Local** **não está comprovada**. No B094, com a 
 **Desenvolvedor / mantenedor** (repositório clonado) — caminho comprovado:
 
 1. Feche a IDE GeneXus
-2. Execute [`Install-ExtensionForGeneXus18.bat`](Install-ExtensionForGeneXus18.bat) como administrador
+2. Execute [`Install-ExtensionForGeneXus18.bat`](Install-ExtensionForGeneXus18.bat) como administrador; se a IDE estiver em outro diretório, passe-o como primeiro argumento
 3. Se o manifesto/registro mudou desde o último `genexus /install`, execute [`Register-ExtensionForGeneXus18.bat`](Register-ExtensionForGeneXus18.bat) e rode `genexus /install`
 4. Reabra a IDE
 

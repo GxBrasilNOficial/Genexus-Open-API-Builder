@@ -135,3 +135,7 @@ venv/
 !Tests/
 !Samples/
 !Tools/
+
+# GeneXus 18 U13 satellite (local installation artifacts)
+Src/Lib/Gx18u13/
+artifacts/gx18u13/

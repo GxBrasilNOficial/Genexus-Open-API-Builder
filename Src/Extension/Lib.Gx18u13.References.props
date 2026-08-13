@@ -1,0 +1,48 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    Referências diretas pinadas para o satélite U13. Os arquivos físicos
+    correspondentes ficam em Src/Lib/Gx18u13 e são ignorados pelo git.
+    System.Drawing e System.Windows.Forms continuam sendo referências do
+    framework, sem cópia de DLL da instalação.
+  -->
+  <ItemGroup>
+    <Reference Include="Artech.Architecture.Common">
+      <HintPath>..\Lib\Gx18u13\Artech.Architecture.Common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Artech.Architecture.UI.Framework">
+      <HintPath>..\Lib\Gx18u13\Artech.Architecture.UI.Framework.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Artech.Common.Framework">
+      <HintPath>..\Lib\Gx18u13\Artech.Common.Framework.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Artech.Common.Helpers">
+      <HintPath>..\Lib\Gx18u13\Artech.Common.Helpers.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Artech.Common.Properties">
+      <HintPath>..\Lib\Gx18u13\Artech.Common.Properties.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Artech.Common">
+      <HintPath>..\Lib\Gx18u13\Artech.Common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Artech.Genexus.Common">
+      <HintPath>..\Lib\Gx18u13\Artech.Genexus.Common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Artech.Udm.Framework">
+      <HintPath>..\Lib\Gx18u13\Artech.Udm.Framework.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\Lib\Gx18u13\Newtonsoft.Json.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+</Project>

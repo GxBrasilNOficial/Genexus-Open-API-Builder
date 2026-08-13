@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="Version.Shared.props" />
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net471</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+    <PackageId>GenexusOpenApiBuilder.Extension</PackageId>
+    <Authors>Genexus Open API Builder contributors</Authors>
+    <Company>GxBrasilNOficial</Company>
+    <Description>Genexus Open API Builder - Alpha</Description>
+    <AssemblyTitle>Genexus Open API Builder - Alpha</AssemblyTitle>
+    <Product>Genexus Open API Builder - Alpha</Product>
+    <AssemblyName>GenexusOpenApiBuilder.Extension</AssemblyName>
+    <RootNamespace>GenexusOpenApiBuilder.Extension</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <EnableSourceLink>false</EnableSourceLink>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Gx18u13AssetDirectory>$(MSBuildProjectDirectory)\..\..\artifacts\gx18u13\</Gx18u13AssetDirectory>
+    <Gx18u13AssetPath>$(Gx18u13AssetDirectory)GenexusOpenApiBuilder.Extension-gx18u13.dll</Gx18u13AssetPath>
+  </PropertyGroup>
+
+  <Import Project="Compile.Shared.props" />
+  <Import Project="Lib.Gx18u13.References.props" />
+
+  <ItemGroup>
+    <Compile Include="Line.Gx18u13\**\*.cs" LinkBase="Line.Gx18u13" />
+    <EmbeddedResource Include="GenexusOpenApiBuilder.package">
+      <LogicalName>GenexusOpenApiBuilder.Extension.GenexusOpenApiBuilder.package</LogicalName>
+    </EmbeddedResource>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>GxLine</_Parameter1>
+      <_Parameter2>Gx18u13</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="Artech.Architecture.Common.Packages.PackageCompatibility">
+      <Version>143920</Version>
+      <Version_TypeName>System.Int32</Version_TypeName>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <Target Name="PrepareGx18u13Asset" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <MakeDir Directories="$(Gx18u13AssetDirectory)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(Gx18u13AssetPath)" />
+  </Target>
+</Project>

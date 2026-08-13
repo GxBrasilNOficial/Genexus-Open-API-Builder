@@ -128,11 +128,15 @@ Quando for oportuno, entregar a DLL `Temp\Exp-Compat\bin\Release\net471\GenexusO
 
 Não é necessário testar Wizard, menu, geração ou Build All nesta etapa: a sonda não contém comandos de produto. Também não é necessário executar o teste agora; o roteiro pode aguardar o horário adequado.
 
-## Pendência externa e próxima ação
+## Transição para a Fase 2 e próxima ação
 
-O artefato ainda não foi enviado por este agente a nenhum canal externo. A próxima ação é o mantenedor disponibilizar a DLL acima ao Igor e registrar, na instalação GeneXus 18 U13, uma destas evidências:
+A instalação local do GeneXus 18 U13 eliminou a dependência operacional do contribuidor para a coleta do SDK:
 
-1. a sonda carrega com `143920`, ou
-2. o log informa `expecting version 'N'`, com o texto completo e o arquivo `packages.*.xml` correspondente.
+- executável: `C:\Program Files (x86)\GeneXus\GeneXus18up13\GeneXus.exe`, versão `18.0.13.186676`;
+- catálogo: `C:\ProgramData\GeneXus\GeneXus\18\packages.143920.xml`;
+- catálogo com 54 pacotes instalados e somente `CompatibilityVersion=143920`;
+- os oito assemblies Artech e `Newtonsoft.Json` da lista pinada foram copiados para `Src/Lib/Gx18u13/` local, fora do git.
 
-Somente depois desse retorno `N` poderá ser usado como `PackageCompatibility` do satélite. A sonda não autoriza a Fase 2 nem prova carga, menu, Wizard ou Build All no U13.
+Com `N=143920` corroborado e a lista de nomes fechada, a Fase 2 foi iniciada. O satélite compila em `Src/GenexusOpenApiBuilder.Gx18u13.sln` e sua evidência está em [2026-08-12-FASE2-SATELITE-GX18U13.md](2026-08-12-FASE2-SATELITE-GX18U13.md).
+
+A próxima ação é instalar manualmente a DLL de build `artifacts/gx18u13/bin/Release/net471/GenexusOpenApiBuilder.Extension.dll` na instalação U13 e confirmar carga da extensão. O asset renomeado `artifacts/gx18u13/GenexusOpenApiBuilder.Extension-gx18u13.dll` fica reservado para o pacote de Release. Esse teste ainda não foi executado por este agente porque alteraria a instalação protegida do GeneXus. Até a confirmação na IDE, permanecem abertos menu, Wizard e Build All no U13.

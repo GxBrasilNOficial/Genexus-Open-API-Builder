@@ -93,6 +93,12 @@ dotnet build Src\GenexusOpenApiBuilder.sln --configuration Release
 2. Na raiz do repositório, execute `Install-ExtensionForGeneXus18.bat` com **Executar como administrador**.
 3. Confira a mensagem de cópia e a validação de hash ao final.
 
+Se a instalação não estiver em `C:\Program Files (x86)\GeneXus\GeneXus18`, informe o caminho como primeiro argumento. Exemplo para uma instalação U15 renomeada:
+
+```bat
+Install-ExtensionForGeneXus18.bat "C:\Program Files (x86)\GeneXus\GeneXus18up15"
+```
+
 O instalador copia a DLL, faz backup da anterior e confere se a instalação coincide com a build atual (`Tools/Test-InstalledExtension.ps1`).
 
 ### Registro na IDE (quando necessário)
@@ -105,7 +111,7 @@ Execute `Register-ExtensionForGeneXus18.bat` **somente** se, desde o último `ge
 
 Passos:
 
-1. Execute `Register-ExtensionForGeneXus18.bat` normalmente (sem Administrador).
+1. Execute `Register-ExtensionForGeneXus18.bat` normalmente (sem Administrador), passando o mesmo caminho se a instalação não estiver no diretório padrão.
 2. No prompt aberto, digite `genexus /install`, confira a varredura e digite `exit`.
 3. Abra a IDE.
 

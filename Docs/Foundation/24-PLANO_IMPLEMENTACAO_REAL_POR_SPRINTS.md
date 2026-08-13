@@ -342,7 +342,7 @@ Ordem acordada de execução:
 
 Ciclo de vida conservador completo na IDE (posse, regeneração, sincronização e remoção sem overwrite indevido) e dez gates técnicos transversais comprovados.
 
-**Sprint 7 concluída em 2026-08-09.** O projeto atingiu o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para a Alpha da Sprint 8. Em 2026-08-10, `B088` e `B089` fecharam as frentes pré-Alpha. Em seguida o pacote documental `0.1.0-alpha.1` foi preparado; em 2026-08-11 a documentação pública foi alinhada ao `B094` e a Alpha foi publicada. Em 2026-08-12 o gate da Sprint 8 fechou com usuário externo em U14 (issue #1). A Sprint 9 permanece em paralelo à Fase 1 do suporte `Gx18u13`; a próxima ação operacional está no checkpoint.
+**Sprint 7 concluída em 2026-08-09.** O projeto atingiu o marco **wizard funcional do MVP concluído**. Esse marco é pré-condição para a Alpha da Sprint 8. Em 2026-08-10, `B088` e `B089` fecharam as frentes pré-Alpha. Em seguida o pacote documental `0.1.0-alpha.1` foi preparado; em 2026-08-11 a documentação pública foi alinhada ao `B094` e a Alpha foi publicada. Em 2026-08-12 o gate da Sprint 8 fechou com usuário externo em U14 (issue #1). A Sprint 9 permanece em paralelo à Fase 2 do suporte `Gx18u13`; a próxima ação operacional está no checkpoint.
 
 [F14][F28][SPR-F24]
 
