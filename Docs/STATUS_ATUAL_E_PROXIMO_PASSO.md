@@ -138,7 +138,7 @@ Como regressão opcional, com a janela U13 fechada, instalar a DLL canônica na 
 - DLL satélite instalada manualmente no U13 sem alterar a instalação por este agente;
 - wizard reexecutado na `Employee`, com `NoAccept` visível e desabilitado em Requests e ausente dos dois requests gerados;
 - `Build All` concluído com Create e Update sem `spc0018` causado por `EmployeeAddedDate`;
-- feedback da Alpha priorizado (issues) e ao menos o primeiro ciclo de correções/docs da Sprint 9 aplicado ou explicitamente descartado com justificativa;
+- Sprint 9 permanece fora do escopo desta frente e não é requisito para seu fechamento;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
