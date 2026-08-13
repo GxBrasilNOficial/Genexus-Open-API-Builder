@@ -53,6 +53,10 @@ Assert-True ($source -match 'Tests/RequiredSemantics/Test-RequiredMemberSemantic
 Assert-True ($source -match 'Tests/WizardContract/Test-PrototypeWizardAutonumberCompositeKey\.ps1') 'O checker deve executar o teste unitário de autonumeração e chave composta.'
 Assert-True ($source -match 'Tests/WizardContract/Test-ApiPlanGenerationStateReaderGetAllIndex\.ps1') 'O checker deve executar o teste unitário do leitor de estado de geração.'
 Assert-True ($source -match 'Tests/WizardContract/Test-PrototypeWizardCreateRequiredPrimaryKeyOptional\.ps1') 'O checker deve executar o teste unitário do contrato de wizard CreateRequired.'
+Assert-True ($source -match 'Tests/WizardContract/Test-PrototypeWizardNoAcceptRuleReader\.ps1') 'O checker deve executar o teste unitário da leitura de regras NoAccept.'
+Assert-True ($source -match 'Tests/WizardContract/Test-NoAcceptRequestEligibilityContract\.ps1') 'O checker deve executar o teste unitário da elegibilidade de requests NoAccept.'
+Assert-True ($source -match 'Tests/ExtensionAssemblyInventory/Test-ExtensionAssemblyInventory\.ps1') 'O checker deve executar o teste unitário do inventário offline da assembly.'
+Assert-True ($source -match 'Tests/Installation/Test-InstallExtensionBatPathHandling\.ps1') 'O checker deve executar o teste unitário do tratamento de caminhos dos BATs.'
 Assert-True ($source -match 'Tests/IssueForms/Test-GitHubIssueFormsYaml\.ps1') 'O checker deve executar o teste unitário dos YAML / Issue Forms.'
 
 $fixtures = @(
@@ -87,6 +91,8 @@ try {
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\RequiredSemantics'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\OpenApiContract'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\WizardContract'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ExtensionAssemblyInventory'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\Installation'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\IssueForms'))
     & git init --bare (Join-Path $tempRoot 'remote.git') | Out-Null
     Push-Location (Join-Path $tempRoot 'repo')
@@ -126,6 +132,10 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-PrototypeWizardAutonumberCompositeKey.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Autonumber Composite Key'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-ApiPlanGenerationStateReaderGetAllIndex.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generation State Reader GetAll Index'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-PrototypeWizardCreateRequiredPrimaryKeyOptional.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Create Required Primary Key Optional'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-PrototypeWizardNoAcceptRuleReader.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture NoAccept Rule Reader'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-NoAcceptRequestEligibilityContract.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture NoAccept Request Eligibility'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ExtensionAssemblyInventory\Test-ExtensionAssemblyInventory.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Extension Assembly Inventory'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\Installation\Test-InstallExtensionBatPathHandling.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Installation BAT Path Handling'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\IssueForms\Test-GitHubIssueFormsYaml.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Issue Forms Yaml'`n", [System.Text.UTF8Encoding]::new($false))
         & git add .gitignore README.md Src scripts Tests
         & git commit -m 'Fixture do checker' | Out-Null
@@ -161,6 +171,10 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractAutonumberCompositeKey' }).status -eq 'passed') 'O teste unitário de autonumeração e chave composta deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractGenerationStateReader' }).status -eq 'passed') 'O teste unitário do leitor de estado de geração deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractCreateRequired' }).status -eq 'passed') 'O teste unitário do contrato de wizard CreateRequired deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractNoAcceptRuleReader' }).status -eq 'passed') 'O teste unitário da leitura de regras NoAccept deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractNoAcceptRequestEligibility' }).status -eq 'passed') 'O teste unitário da elegibilidade de requests NoAccept deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.extensionAssemblyInventory' }).status -eq 'passed') 'O teste unitário do inventário offline da assembly deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.installationBatPathHandling' }).status -eq 'passed') 'O teste unitário do tratamento de caminhos dos BATs deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.issueForms' }).status -eq 'passed') 'O teste unitário dos YAML / Issue Forms deveria passar na fixture.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract.ps1' }).Count -eq 1) 'O comando do teste Service Source deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity.ps1' }).Count -eq 1) 'O comando do teste Metadata Integrity deve aparecer no JSON.'
@@ -182,6 +196,10 @@ try {
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-PrototypeWizardAutonumberCompositeKey.ps1' }).Count -eq 1) 'O comando do teste Autonumber Composite Key deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-ApiPlanGenerationStateReaderGetAllIndex.ps1' }).Count -eq 1) 'O comando do teste Generation State Reader GetAll Index deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-PrototypeWizardCreateRequiredPrimaryKeyOptional.ps1' }).Count -eq 1) 'O comando do teste Create Required Primary Key Optional deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-PrototypeWizardNoAcceptRuleReader.ps1' }).Count -eq 1) 'O comando do teste NoAccept Rule Reader deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-NoAcceptRequestEligibilityContract.ps1' }).Count -eq 1) 'O comando do teste NoAccept Request Eligibility deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ExtensionAssemblyInventory/Test-ExtensionAssemblyInventory.ps1' }).Count -eq 1) 'O comando do teste Extension Assembly Inventory deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/Installation/Test-InstallExtensionBatPathHandling.ps1' }).Count -eq 1) 'O comando do teste Installation BAT Path Handling deve aparecer no JSON.'
         Assert-True (@($result.warnings).Count -eq 0) 'O checker não deve registrar "0 Aviso(s)" como warning.'
 
         $fetchJson = & pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson -Fetch

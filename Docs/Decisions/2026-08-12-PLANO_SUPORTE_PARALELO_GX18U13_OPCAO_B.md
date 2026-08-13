@@ -13,6 +13,8 @@ Este documento **não** autoriza merge do PR [#2](https://github.com/GxBrasilNOf
 
 **Checkpoint operacional:** `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` ainda aponta Sprint 9 (feedback Alpha) como próxima ação única. Este plano **não** substitui esse checkpoint até a execução ser iniciada (D43).
 
+**Nota de vigência:** as declarações acima de baseline e checkpoint são um snapshot da situação em 2026-08-12, antes do início da execução deste plano. Após D43, o estado corrente e a próxima ação são governados por [`Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`](../STATUS_ATUAL_E_PROXIMO_PASSO.md); este documento permanece como plano técnico e registro das decisões de isolamento e Release da Opção B.
+
 ---
 
 ## 1. Objetivo
