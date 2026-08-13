@@ -100,14 +100,15 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Em 2026-08-12, investigação de canais de distribuição (paralela ao gate): GitHub Packages / `.nupkg` não instalam na IDE; Marketplace / Add > Web inutilizáveis nesta máquina pós-migração; limpeza da DLL + `genexus /install` confirmada; ZIP (DLL na raiz): Install from file **falhou**; Add > Local + `/install` **ok** (menus). Caminho canônico permanece DLL. Workflow `.github/workflows/publish-github-packages.yml` preparado para publicar o assembly no feed NuGet da org a partir da DLL do Release (sem valor para a IDE). Evidência: `Docs/Implementation/2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md`. Não altera a próxima ação única.
 - Em 2026-08-12 o gate da Sprint 8 fechou com usuário externo (Igor C. Menin): DLL do Release `0.1.0-alpha.1`, GeneXus 18 U14 (`18.0.187820`), instalação por cópia em `Packages` + `genexus /install`, menus + geração na KB `KbTesteGx18U14`. Feedback registrado em [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1). Residual U14 de carregamento/uso prático fechado. Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
 - Em 2026-08-12 segundo usuário externo (Miguel) confirmou uso bem-sucedido da Alpha `0.1.0-alpha.1` no GeneXus 18 U15 pelo caminho de mantenedor: repositório baixado, DLL do **build local**, `Install-ExtensionForGeneXus18.bat` e depois `genexus /install`. Feedback em [#3](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/3). Não reabre o gate Sprint 8; reforça adoção U15 (não é evidência da variante Packages/Release). Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md`.
+- Em 2026-08-12 foi iniciada, em paralelo explícito à Sprint 9, a Fase 1 do suporte `Gx18u13` (D43): Exp-ParidadeEmpacote mediu o nome lógico do recurso `.package`, Exp-RefsNomes produziu o rascunho local de referências e a sonda Exp-Compat foi compilada com o SDK canônico. A validação no U13 e a coleta dos arquivos U13 continuam pendentes. Evidência: `Docs/Implementation/2026-08-12-EXP-F1-SUPORTE-GX18U13.md`.
 
 ## Frente ativa
 
-Sprint 9 — correções e melhorias a partir do feedback da Alpha.
+Fase 1 do suporte paralelo `Gx18u13` — experimentos de empacotamento, referências e compatibilidade, em paralelo explícito à Sprint 9 (feedback da Alpha).
 
 ## Próxima ação única
 
-Priorizar o feedback da Alpha (issues [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1), [#3](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/3) e novos relatos) e aplicar correções/docs/onboarding da Sprint 9. Sem mover a tag `v0.1.0-alpha.1`; correção de produto exige `0.1.0-alpha.2` ou superior.
+Entregar a sonda Exp-Compat ao Igor e obter, no GeneXus 18 U13, o texto de carga e o número `N` de `PackageCompatibility`; manter a Sprint 9 em paralelo, sem mover a tag `v0.1.0-alpha.1`. A Fase 2 só começa após `N` e a lista de nomes de referências estarem registrados.
 
 ## Evidência da frente encerrada
 
@@ -120,8 +121,17 @@ Priorizar o feedback da Alpha (issues [#1](https://github.com/GxBrasilNOficial/G
 - residual U14 (carregamento + uso prático do SDK) fechado por esta evidência; U15 do mantenedor permanece a bateria completa de validação;
 - fonte factual: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
 
+## Evidência da frente ativa iniciada
+
+- `Exp-ParidadeEmpacote`: recurso lógico canônico medido como `GenexusOpenApiBuilder.Extension.GenexusOpenApiBuilder.package`; manifesto `id=7be72bf4-8884-40dc-955d-ed9d31b69b74`.
+- `Exp-RefsNomes`: rascunho local produzido em `Temp/Exp-RefsNomes/Lib.Gx18u13.References.props`; nenhum arquivo U13 foi copiado para o repositório.
+- `Exp-Compat`: sonda mínima compilada em `Temp/Exp-Compat/bin/Release/net471/GenexusOpenApiBuilder.ExpCompat.dll`, sem uso de `Src/Lib/Gx18u13`.
+- Inventário offline da DLL canônica implementado em `Tools/Test-ExtensionAssemblyInventory.ps1`, com teste `Tests/ExtensionAssemblyInventory/Test-ExtensionAssemblyInventory.ps1`; a lista de `AssemblyRef` diretas foi conferida e passou sem acesso à IDE, KB, instalação ou rede.
+- Validação externa U13 ainda pendente; o checkpoint não trata a sonda como evidência de carga até o retorno do Igor.
+
 ## Critério de conclusão da próxima ação
 
+- sonda Exp-Compat executada no U13 pelo Igor, com `PackageCompatibility=N` observado/corroborado e evidência de carga registrada;
 - feedback da Alpha priorizado (issues) e ao menos o primeiro ciclo de correções/docs da Sprint 9 aplicado ou explicitamente descartado com justificativa;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
@@ -173,6 +183,7 @@ Priorizar o feedback da Alpha (issues [#1](https://github.com/GxBrasilNOficial/G
 44. Em 2026-08-12 canais extras de instalação documentados: evidência negativa (GitHub Packages, Marketplace Web, `.nupkg`, Install from file com ZIP só-DLL); ZIP via Add > Local + `/install` comprovado sem promoção como caminho oficial. Naquele momento a próxima ação ainda era o gate de usuário externo. Evidência: `Docs/Implementation/2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md`.
 45. Em 2026-08-12 o gate da Sprint 8 fechou com evidência de usuário externo em U14 (Igor C. Menin; issue #1; DLL `0.1.0-alpha.1`). Próxima ação = Sprint 9 (priorizar feedback). Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
 46. Em 2026-08-12 segundo usuário externo (Miguel) confirmou a Alpha no U15 (issue #3; caminho de mantenedor: repo + build local + `Install-ExtensionForGeneXus18.bat` + `/install`; registro inicial que igualava à variante Packages do Igor foi corrigido). Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md`.
+47. Em 2026-08-12 a Fase 1 do suporte paralelo `Gx18u13` foi iniciada: paridade de empacotamento medida, nomes de referências derivados localmente e sonda Exp-Compat compilada. A próxima ação é o teste da sonda no U13; a Sprint 9 permanece explicitamente paralela.
 
 ## Bloqueios e fatos ainda não validados
 

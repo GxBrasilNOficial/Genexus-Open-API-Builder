@@ -57,7 +57,7 @@ Se algum gate falhasse sem alternativa nativa segura, o marco **não** seria dec
 - matriz dos dez gates preenchida com status e evidências;
 - nenhum gap bloqueante sem alternativa nativa segura;
 - marco **wizard funcional do MVP concluído** declarado no checkpoint e no plano por sprints;
-- Sprint 7 encerrada; na data do fechamento, a próxima ação era a primeira frente pré-Alpha (limitações do YAML nativo / `B088`), depois a evidência 403 GAM (`B089`), antes da Alpha. Em 2026-08-10 `B088` e `B089` foram concluídos e o pacote documental da Alpha `0.1.0-alpha.1` foi preparado; em 2026-08-11 a documentação pública foi alinhada ao `B094` e a Alpha foi publicada; em 2026-08-12 o gate da Sprint 8 fechou com usuário externo em U14. A próxima ação vigente fica no checkpoint (Sprint 9).
+- Sprint 7 encerrada; na data do fechamento, a próxima ação era a primeira frente pré-Alpha (limitações do YAML nativo / `B088`), depois a evidência 403 GAM (`B089`), antes da Alpha. Em 2026-08-10 `B088` e `B089` foram concluídos e o pacote documental da Alpha `0.1.0-alpha.1` foi preparado; em 2026-08-11 a documentação pública foi alinhada ao `B094` e a Alpha foi publicada; em 2026-08-12 o gate da Sprint 8 fechou com usuário externo em U14. A próxima ação vigente fica no checkpoint atualizado, que registra a Fase 1 do suporte `Gx18u13` em paralelo à Sprint 9.
 
 ## Remissões
 
