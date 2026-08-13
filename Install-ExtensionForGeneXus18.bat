@@ -19,12 +19,13 @@ if not exist "%VERIFY_SCRIPT%" (
     exit /b 1
 )
 
-if not exist "%GENEXUS_DIRECTORY%\GeneXus.exe" (
-    echo ERRO: GeneXus.exe nao encontrado em %GENEXUS_DIRECTORY%
-    echo Informe o diretorio correto como primeiro argumento do .bat.
-    pause
-    exit /b 1
-)
+if exist "%GENEXUS_DIRECTORY%\GeneXus.exe" goto geneXusFound
+echo ERRO: GeneXus.exe nao encontrado em %GENEXUS_DIRECTORY%
+echo Informe o diretorio correto como primeiro argumento do .bat.
+pause
+exit /b 1
+
+:geneXusFound
 
 echo Este arquivo deve ser iniciado manualmente como Administrador.
 echo Feche completamente a IDE GeneXus antes de continuar.

@@ -191,7 +191,7 @@ Padrões:
 
 - partes não autonumeradas da chave, atributos armazenados atribuíveis, chaves estrangeiras armazenadas e campos com regra `Default` vêm marcados
 - nullable e opcionais continuam elegíveis e marcados
-- chave autonumerada, fórmula, inferido da tabela estendida, redundante automático, subnível e não atribuível via BC ficam desabilitados
+- chave autonumerada, fórmula, inferido da tabela estendida, redundante automático, subnível, `NoAccept` e não atribuível via BC ficam desabilitados
 - tipos `Image`, `Video`, `Audio`, `Blob` e `BlobFile` ficam desabilitados no MVP
 - campos sensíveis elegíveis ficam desmarcados com alerta
 - auditoria operacional fica desabilitada
@@ -220,7 +220,7 @@ Regras:
 - partes da chave aparecem desabilitadas no wizard
 - contém somente atributos selecionados e atribuíveis ao BC carregado
 - campos ordinários graváveis vêm selecionados por padrão
-- auditoria, fórmulas, inferidos, redundantes, subníveis e não atribuíveis ficam desabilitados
+- auditoria, fórmulas, inferidos, redundantes, subníveis, `NoAccept` e não atribuíveis ficam desabilitados
 - tipos `Image`, `Video`, `Audio`, `Blob` e `BlobFile` ficam desabilitados no MVP
 - campos sensíveis elegíveis ficam desmarcados com alerta
 - todos os membros selecionados têm `Required = True`

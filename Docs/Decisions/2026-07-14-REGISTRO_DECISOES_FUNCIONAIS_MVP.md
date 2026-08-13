@@ -377,6 +377,8 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 - A extensão avisará quando um campo parecer necessário para regras aplicáveis via BC, mas a validação definitiva permanecerá responsabilidade do próprio BC.
 - Campos reconhecidos como auditoria serão exibidos, mas permanecerão desabilitados no `CreateRequest` e no `UpdateRequest`.
 
+**Emenda técnica de 2026-08-12 — `NoAccept`:** atributos cobertos por uma regra `NoAccept` continuam visíveis na aba `Requests`, mas ficam desabilitados no `CreateRequest` e no `UpdateRequest`, porque a geração de assignments para o BC causa `spc0018` por propriedade somente leitura. Eles permanecem candidatos a `Response`, `ListResponse` e `ListFilters`. A evidência A/B e a implementação estão em `Docs/Implementation/2026-08-12-NOACCEPT-READONLY-BUSINESS-COMPONENT.md`.
+
 ## CreateRequest — presença dos membros no JSON
 
 - A obrigatoriedade de presença será definida separadamente da seleção do membro para o `sdtNomeDaTransacao_API_CreateRequest`.
@@ -396,6 +398,8 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 - Campos de auditoria operacional, fórmulas, atributos inferidos da tabela estendida, redundantes mantidos automaticamente, atributos de subnível e atributos inequivocamente não atribuíveis via BC serão exibidos desabilitados e com justificativa.
 - Tipos `Image`, `Video`, `Audio`, `Blob` e `BlobFile` ficarão desabilitados no MVP.
 - O padrão será atualizar todos os campos ordinários graváveis selecionados, preservando a identidade do registro, a auditoria e os valores controlados pelo sistema.
+
+**Emenda técnica de 2026-08-12 — `NoAccept`:** a regra transversal acima também se aplica ao `UpdateRequest`; o atributo permanece fora do corpo e dos assignments de Update, embora continue disponível nos contratos de saída.
 
 ## UpdateRequest — presença dos membros no JSON
 

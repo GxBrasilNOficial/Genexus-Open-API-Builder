@@ -221,6 +221,11 @@ internal sealed class PrototypeWizardContractDialog : Form
             markers.Add("Formula");
         }
 
+        if (attribute.IsNoAccept)
+        {
+            markers.Add("NoAccept");
+        }
+
         if (attribute.IsAudit)
         {
             markers.Add("Auditoria");

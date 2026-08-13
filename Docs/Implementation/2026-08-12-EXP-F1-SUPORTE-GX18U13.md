@@ -8,7 +8,7 @@
 
 A Fase 1 foi iniciada em isolamento, em paralelo explícito à Sprint 9. O projeto de produto não foi alterado, nenhum arquivo foi copiado da instalação U15 e nenhum artefato foi instalado na IDE.
 
-O nome lógico do manifesto canônico foi medido, o rascunho de nomes de referências foi produzido e uma DLL-sonda mínima foi compilada com o SDK canônico. A parte que depende do GeneXus 18 U13 continua pendente e foi preparada para o contribuidor Igor.
+O nome lógico do manifesto canônico foi medido, o rascunho de nomes de referências foi produzido e uma DLL-sonda mínima foi compilada com o SDK canônico. A parte que dependia do GeneXus 18 U13 foi retomada localmente após a instalação dessa versão, com a Fase 2 registrada no documento do satélite.
 
 ## Exp-ParidadeEmpacote
 
@@ -139,4 +139,4 @@ A instalação local do GeneXus 18 U13 eliminou a dependência operacional do co
 
 Com `N=143920` corroborado e a lista de nomes fechada, a Fase 2 foi iniciada. O satélite compila em `Src/GenexusOpenApiBuilder.Gx18u13.sln` e sua evidência está em [2026-08-12-FASE2-SATELITE-GX18U13.md](2026-08-12-FASE2-SATELITE-GX18U13.md).
 
-A próxima ação é instalar manualmente a DLL de build `artifacts/gx18u13/bin/Release/net471/GenexusOpenApiBuilder.Extension.dll` na instalação U13 e confirmar carga da extensão. O asset renomeado `artifacts/gx18u13/GenexusOpenApiBuilder.Extension-gx18u13.dll` fica reservado para o pacote de Release. Esse teste ainda não foi executado por este agente porque alteraria a instalação protegida do GeneXus. Até a confirmação na IDE, permanecem abertos menu, Wizard e Build All no U13.
+A instalação manual da DLL de build `artifacts/gx18u13/bin/Release/net471/GenexusOpenApiBuilder.Extension.dll` confirmou carga no U13, os menus principal e de contexto e o smoke do Wizard na Transaction `Employee`. O relatório terminou com `SuccessWithWarnings`, `Created=15`, `Updated=1`, `Blocked=0` e um aviso de fallback das descrições para inglês por falta de validação da língua da KB pela API pública. O asset renomeado `artifacts/gx18u13/GenexusOpenApiBuilder.Extension-gx18u13.dll` fica reservado para o pacote de Release. Permanece aberto somente o `Build All` no U13.

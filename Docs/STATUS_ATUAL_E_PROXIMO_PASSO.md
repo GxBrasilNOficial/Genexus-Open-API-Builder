@@ -101,14 +101,15 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Em 2026-08-12 o gate da Sprint 8 fechou com usuário externo (Igor C. Menin): DLL do Release `0.1.0-alpha.1`, GeneXus 18 U14 (`18.0.187820`), instalação por cópia em `Packages` + `genexus /install`, menus + geração na KB `KbTesteGx18U14`. Feedback registrado em [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1). Residual U14 de carregamento/uso prático fechado. Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
 - Em 2026-08-12 segundo usuário externo (Miguel) confirmou uso bem-sucedido da Alpha `0.1.0-alpha.1` no GeneXus 18 U15 pelo caminho de mantenedor: repositório baixado, DLL do **build local**, `Install-ExtensionForGeneXus18.bat` e depois `genexus /install`. Feedback em [#3](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/3). Não reabre o gate Sprint 8; reforça adoção U15 (não é evidência da variante Packages/Release). Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md`.
 - Em 2026-08-12 foi iniciada, em paralelo explícito à Sprint 9, a Fase 1 do suporte `Gx18u13` (D43): Exp-ParidadeEmpacote mediu o nome lógico do recurso `.package`, Exp-RefsNomes produziu a lista de referências e a sonda Exp-Compat foi compilada com o SDK canônico. Depois, a instalação local U13 permitiu corroborar `N=143920`, copiar as referências pinadas para a área ignorada e iniciar a Fase 2. Evidências: `Docs/Implementation/2026-08-12-EXP-F1-SUPORTE-GX18U13.md` e `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
+- Em 2026-08-12/13 o `Build All` da Transaction `Employee` passou no U13, com apenas os avisos conhecidos `pmm0003` e de fallback de descrições. O build focado das Procedures e a recriação posterior da API confirmaram por A/B que `NoAccept(EmployeeAddedDate)` causa `spc0018` quando o gerador tenta atribuir o campo no BC; a correção agora desabilita esse atributo em `CreateRequest` e `UpdateRequest`, preservando `Response`, `ListResponse` e `ListFilters`. Evidência: `Docs/Implementation/2026-08-12-NOACCEPT-READONLY-BUSINESS-COMPONENT.md`.
 
 ## Frente ativa
 
-Fase 2 do suporte paralelo `Gx18u13` — satélite MSBuild compilável contra as referências U13 locais, em paralelo explícito à Sprint 9 (feedback da Alpha).
+Correção de contrato `NoAccept` no suporte paralelo `Gx18u13` — código implementado, compilado e validado manualmente no U13; regressão U15 opcional, em paralelo explícito à Sprint 9.
 
 ## Próxima ação única
 
-Instalar manualmente a DLL de build `artifacts/gx18u13/bin/Release/net471/GenexusOpenApiBuilder.Extension.dll` na instalação local GeneXus 18 U13 e registrar carga, menus e eventual erro de compatibilidade; manter o asset renomeado `artifacts/gx18u13/GenexusOpenApiBuilder.Extension-gx18u13.dll` reservado para Release e a Sprint 9 em paralelo, sem mover a tag `v0.1.0-alpha.1`.
+Como regressão opcional, com a janela U13 fechada, instalar a DLL canônica na U15 e repetir o wizard/build da `Employee`, confirmando o mesmo contrato de `NoAccept`. A validação U13 já está concluída; manter o asset `artifacts/gx18u13/GenexusOpenApiBuilder.Extension-gx18u13.dll` reservado para Release, a Sprint 9 em paralelo e a tag `v0.1.0-alpha.1` imóvel.
 
 ## Evidência da frente encerrada
 
@@ -130,11 +131,13 @@ Instalar manualmente a DLL de build `artifacts/gx18u13/bin/Release/net471/Genexu
 - A sonda Exp-Compat também passou pelo inventário parametrizado: manifesto, classe-base, `PackageCompatibility=143920`, recurso e hash foram conferidos localmente. O roteiro de entrega ao Igor está na evidência da Fase 1.
 - `N=143920` foi corroborado por `C:\ProgramData\GeneXus\GeneXus\18\packages.143920.xml`; os arquivos U13 pinados foram copiados apenas para a área local ignorada.
 - Fase 2 compilou `Src/GenexusOpenApiBuilder.Gx18u13.sln` em Release; o asset passou pelo inventário offline com `PackageCompatibility=143920`, manifesto, recurso, referências e `GxLine=Gx18u13`. Evidência: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
-- Carga funcional U13 ainda pendente; o checkpoint não trata o build offline como evidência de menus, Wizard ou Build All.
+- Carga funcional U13 confirmada pelo `genexus /install`, Extensions Manager marcado, menus principal e de contexto e Wizard executado na Transaction `Employee`; relatório `SuccessWithWarnings`, com `Created=15`, `Updated=1`, `Blocked=0` e um aviso de fallback de descrições para inglês. O `Build All` também passou; os builds focados das Procedures registraram a evidência A/B de `NoAccept` e motivaram a correção atual.
 
 ## Critério de conclusão da próxima ação
 
-- DLL de build do satélite instalada na IDE U13 local, com carga e menus registrados; depois, Wizard e Build All de uma Transaction de amostra;
+- DLL satélite instalada manualmente no U13 sem alterar a instalação por este agente;
+- wizard reexecutado na `Employee`, com `NoAccept` visível e desabilitado em Requests e ausente dos dois requests gerados;
+- `Build All` concluído com Create e Update sem `spc0018` causado por `EmployeeAddedDate`;
 - feedback da Alpha priorizado (issues) e ao menos o primeiro ciclo de correções/docs da Sprint 9 aplicado ou explicitamente descartado com justificativa;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
@@ -188,6 +191,8 @@ Instalar manualmente a DLL de build `artifacts/gx18u13/bin/Release/net471/Genexu
 46. Em 2026-08-12 segundo usuário externo (Miguel) confirmou a Alpha no U15 (issue #3; caminho de mantenedor: repo + build local + `Install-ExtensionForGeneXus18.bat` + `/install`; registro inicial que igualava à variante Packages do Igor foi corrigido). Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md`.
 47. Em 2026-08-12 a Fase 1 do suporte paralelo `Gx18u13` foi iniciada: paridade de empacotamento medida, nomes de referências derivados localmente e sonda Exp-Compat compilada. Naquele ponto, a próxima ação era o teste da sonda no U13; a Sprint 9 permanecia explicitamente paralela.
 48. Em 2026-08-12 a instalação local do U13 corroborou `N=143920` e permitiu iniciar a Fase 2: referências locais pinadas, solution satélite, isolamento de artefatos e build Release com inventário offline aprovado. Próxima ação = carga manual da DLL de build na IDE U13; a Sprint 9 permanece explicitamente paralela. Evidência: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
+49. Em 2026-08-12 a carga manual da DLL satélite foi confirmada no U13: `genexus /install` adicionou o pacote, o Extensions Manager mostrou a extensão marcada e o menu principal exibiu os quatro comandos. Na sequência, o menu de contexto, o Wizard e o `Build All` foram confirmados na Transaction `Employee`; builds focados demonstraram por A/B que `NoAccept(EmployeeAddedDate)` causava `spc0018` nas Procedures Create/Update. Próxima ação = instalar a DLL corrigida e repetir a validação focada; a Sprint 9 permanece explicitamente paralela. Evidências: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md` e `Docs/Implementation/2026-08-12-NOACCEPT-READONLY-BUSINESS-COMPONENT.md`.
+50. Em 2026-08-13 a DLL satélite foi instalada por `Install-ExtensionForGx18u13.bat`, B086 removeu 12 objetos próprios da API anterior, o Wizard recriou `apiEmployee` com `Created=12`, `Updated=2`, `Blocked=0` e o `Build All` especificou/compilou Create, Update, Get, List e `apiEmployee` sem `spc0018`. A validação U13 do contrato `NoAccept` foi concluída; regressão U15 é opcional. Evidências: `Docs/Implementation/2026-08-12-NOACCEPT-READONLY-BUSINESS-COMPONENT.md` e `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
 
 ## Bloqueios e fatos ainda não validados
 

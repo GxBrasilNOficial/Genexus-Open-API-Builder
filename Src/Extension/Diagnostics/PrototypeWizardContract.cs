@@ -22,6 +22,7 @@ internal static class PrototypeWizardContractReader
 
         var moduleName = transaction.Module?.Name ?? "<sem modulo>";
         var root = transaction.Structure.Root;
+        var noAcceptAttributeNames = ReadNoAcceptAttributeNames(transaction);
         var primaryKeyNames = new HashSet<string>(
             root.PrimaryKey.Select(part => part.Name),
             StringComparer.OrdinalIgnoreCase);
@@ -40,6 +41,7 @@ internal static class PrototypeWizardContractReader
                 primaryKeyNames,
                 primaryKeyPartCount,
                 descriptionAttributeName,
+                noAcceptAttributeNames,
                 classificationPolicy))
             .ToArray();
 
@@ -52,6 +54,7 @@ internal static class PrototypeWizardContractReader
         ISet<string> primaryKeyNames,
         int primaryKeyPartCount,
         string? descriptionAttributeName,
+        ISet<string> noAcceptAttributeNames,
         PrototypeWizardFieldClassificationPolicy classificationPolicy)
     {
         var attribute = item.Attribute;
@@ -64,6 +67,7 @@ internal static class PrototypeWizardContractReader
         var isSensitive = sensitiveClassification.IsMatch;
         var isAudit = auditClassification.IsMatch;
         var isFormula = IsFormula(attribute);
+        var isNoAccept = noAcceptAttributeNames.Contains(name);
         var isTechnicallyInadequate = IsTechnicallyInadequate(type) || item.IsImageAttribute;
         var payloadDisabledReason = DescribePayloadDisabledReason(
             item,
@@ -71,6 +75,7 @@ internal static class PrototypeWizardContractReader
             primaryKeyPartCount,
             isAudit,
             isFormula,
+            isNoAccept,
             isTechnicallyInadequate);
         var updatePayloadDisabledReason = DescribeUpdatePayloadDisabledReason(isPrimaryKey, payloadDisabledReason);
         var filter = ResolveFilter(type, isPrimaryKey, isDescription, isSensitive, isAudit, isTechnicallyInadequate);
@@ -95,6 +100,7 @@ internal static class PrototypeWizardContractReader
             isSensitive,
             isFormula,
             isAudit,
+            isNoAccept,
             sensitiveClassification.Source,
             sensitiveClassification.Reason,
             payloadDisabledReason,
@@ -118,6 +124,7 @@ internal static class PrototypeWizardContractReader
         int primaryKeyPartCount,
         bool isAudit,
         bool isFormula,
+        bool isNoAccept,
         bool isTechnicallyInadequate)
     {
         if (item.IsInferred)
@@ -133,6 +140,11 @@ internal static class PrototypeWizardContractReader
         if (isFormula)
         {
             return "Desabilitado: formula nao atribuivel via BC";
+        }
+
+        if (isNoAccept)
+        {
+            return "Desabilitado em request: regra NoAccept torna o atributo somente leitura via BC";
         }
 
         if (isPrimaryKey && IsAutonumber(item, primaryKeyPartCount))
@@ -151,6 +163,13 @@ internal static class PrototypeWizardContractReader
         }
 
         return string.Empty;
+    }
+
+    private static ISet<string> ReadNoAcceptAttributeNames(Transaction transaction)
+    {
+        return new HashSet<string>(
+            PrototypeWizardNoAcceptRuleReader.ReadAttributeNames(transaction.Rules?.Source ?? string.Empty),
+            StringComparer.OrdinalIgnoreCase);
     }
 
     private static bool IsAutonumber(
@@ -574,6 +593,7 @@ internal sealed class PrototypeWizardAttributeDecision
         bool isSensitive,
         bool isFormula,
         bool isAudit,
+        bool isNoAccept,
         string sensitiveClassificationSource,
         string sensitiveClassificationReason,
         string payloadDisabledReason,
@@ -610,6 +630,7 @@ internal sealed class PrototypeWizardAttributeDecision
         IsSensitive = isSensitive;
         IsFormula = isFormula;
         IsAudit = isAudit;
+        IsNoAccept = isNoAccept;
         SensitiveClassificationSource = sensitiveClassificationSource ?? throw new ArgumentNullException(nameof(sensitiveClassificationSource));
         SensitiveClassificationReason = sensitiveClassificationReason ?? throw new ArgumentNullException(nameof(sensitiveClassificationReason));
         PayloadDisabledReason = payloadDisabledReason ?? throw new ArgumentNullException(nameof(payloadDisabledReason));
@@ -656,6 +677,8 @@ internal sealed class PrototypeWizardAttributeDecision
     public bool IsFormula { get; }
 
     public bool IsAudit { get; }
+
+    public bool IsNoAccept { get; }
 
     public string SensitiveClassificationSource { get; }
 

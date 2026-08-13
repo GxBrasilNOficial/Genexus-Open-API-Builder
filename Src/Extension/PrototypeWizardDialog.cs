@@ -832,6 +832,11 @@ internal sealed class PrototypeWizardDialog : Form
             markers.Add("Fórmula");
         }
 
+        if (attribute.IsNoAccept)
+        {
+            markers.Add("NoAccept");
+        }
+
         if (attribute.IsAudit)
         {
             markers.Add("Auditoria");

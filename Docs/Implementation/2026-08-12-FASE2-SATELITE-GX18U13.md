@@ -76,12 +76,36 @@ Também passaram:
 - `Tools/Test-ExtensionCommandRegistration.ps1` com `Status=OK` e quatro comandos;
 - `git check-ignore -v` para as duas áreas locais do satélite.
 
-## Pendência funcional
+## Carga funcional U13 — confirmada com ressalva
 
-O binário ainda não foi colocado na instalação U13 por este agente. A validação seguinte deve usar a DLL de build `artifacts/gx18u13/bin/Release/net471/GenexusOpenApiBuilder.Extension.dll`, com a IDE fechada e o procedimento manual de instalação da extensão. O arquivo renomeado `artifacts/gx18u13/GenexusOpenApiBuilder.Extension-gx18u13.dll` permanece reservado para o pacote de Release. Registrar:
+A evidência recebida nesta sessão confirma a primeira carga manual do satélite na instalação `C:\Program Files (x86)\GeneXus\GeneXus18up13`:
 
-1. se a extensão carrega sem erro de compatibilidade;
-2. se o menu principal e o menu de contexto aparecem;
-3. em etapa posterior, o smoke do Wizard e o Build All de uma Transaction.
+- o `genexus /install` registrou `Scanning package 'GenexusOpenApiBuilder.Extension.dll'` e `Package 'GenexusOpenApiBuilder.Extension.dll' added`;
+- o Extensions Manager exibiu `Genexus Open API Builder` marcado na lista de extensões;
+- o menu principal `Genexus Open API Builder` apareceu com `Configurar Preferências do Wizard`, `Wizard`, `Sincronizar com a Transaction` e `Remover API gerada`.
+- o menu de contexto da Transaction `Employee` exibiu o submenu `Genexus Open API Builder` com `Wizard`, `Sincronizar com a Transaction` e `Remover API gerada`;
+- o Wizard foi executado na Transaction `Employee`, criou 15 objetos, atualizou 1, não bloqueou nenhum item e terminou com `Outcome='SuccessWithWarnings'`;
+- o único aviso foi o fallback das descrições de serviço para inglês, porque a língua da KB ainda não foi validada pela API pública.
 
-Até essa execução, a evidência fecha o build e a consistência offline, mas não declara carga funcional U13.
+Essa evidência confirma a carga da extensão, os menus principal e de contexto e a geração pelo Wizard no U13. O aviso de idioma é não bloqueante e está registrado para não ser confundido com falha.
+
+## Build funcional U13 — concluído com descoberta de contrato
+
+O usuário executou `Build All` na Transaction `Employee` e o resultado foi sucesso: pattern generation, especificação de `WWEmployee`, `Employee` e `Employee_BC`, geração .NET Framework, compilação do DeveloperMenu e atualização do web config. Permaneceu somente o aviso conhecido `pmm0003` sobre atualização do módulo built-in `GeneXus` para `4.13.43`.
+
+O Build All da Transaction não era suficiente para validar as Procedures da API, então foram executados builds focados. O resultado A/B foi determinante:
+
+- removendo temporariamente somente `noaccept(EmployeeAddedDate);`, com `default(EmployeeAddedDate, &Today);` preservado, `procEmployee_API_Create` e `procEmployee_API_Update` passaram por especificação, geração e compilação;
+- restaurando `noaccept(EmployeeAddedDate);`, as duas Procedures falharam com `spc0018`, informando que `EmployeeAddedDate` era read-only e não podia ser atribuído;
+- a evidência detalhada e a correção implementada estão em `Docs/Implementation/2026-08-12-NOACCEPT-READONLY-BUSINESS-COMPONENT.md`.
+
+O resultado confirma que o problema não deve ser ignorado nem tratado como particularidade do campo `Date`: a causa é a tentativa de atribuir via BC um atributo marcado `NoAccept`.
+
+## Validação funcional U13 — concluída
+
+1. a DLL satélite foi instalada e validada por hash com `Install-ExtensionForGx18u13.bat`;
+2. B086 removeu os 12 objetos próprios da API anterior, preservando SDTs compartilhados e Business Component;
+3. o wizard recriou a API com `Created=12`, `Updated=2`, `Blocked=0` e um único aviso de fallback de idioma;
+4. o `Build All` especificou e compilou Create, Update, Get, List e `apiEmployee`, gerou SDTs e documentação REST e terminou com sucesso; não houve `spc0018`.
+
+Regressão opcional: repetir a mesma validação no U15 com a DLL canônica quando a janela U13 estiver fechada.

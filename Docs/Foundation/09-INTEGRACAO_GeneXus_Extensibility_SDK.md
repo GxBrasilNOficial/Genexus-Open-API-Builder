@@ -11,7 +11,7 @@
 **Idioma:** Português BR
 **Público principal:** Agentes de IA + mantenedores humanos
 **Data:** Abril/2026
-**Última revisão:** Julho/2026
+**Última revisão:** Agosto/2026
 
 ---
 
@@ -299,6 +299,52 @@ O MVP não cria novo objeto versionado nem sufixos automáticos para resolver co
 | Context IDs limitados | Alto |
 | Save API restrita | Alto |
 | Tipo REST ideal indisponível | Médio |
+
+## 16.1 Inventário dos instaladores GeneXus 18
+
+Foi extraída a versão do `GeneXus.exe` dos instaladores GeneXus 18 disponíveis localmente usando SFX 7-Zip, sem executar o setup e sem instalar ou alterar qualquer versão do GeneXus. A tabela é um inventário de versões para orientar futuras portas da extensão; não é, sozinha, evidência de compatibilidade do produto ou do Extensibility SDK.
+
+| Upgrade | FileVersion | ProductVersion |
+|---------|-------------|----------------|
+| U0 | `18.0.0.35399` | `18.0.0.166471` |
+| U1 | `18.0.1.36838` | `18.0.1.167910` |
+| U2 | `18.0.2.38467` | `18.0.2.169539` |
+| U3 | `18.0.3.41029` | `18.0.3.172101` |
+| U4 | `18.0.4.42578` | `18.0.4.173650` |
+| U5 | `18.0.5.44509` | `18.0.5.175581` |
+| U6 | `18.0.6.46862` | `18.0.6.177934` |
+| U7 | `18.0.7.48055` | `18.0.7.179127` |
+| U8 | `18.0.8.49527` | `18.0.8.180599` |
+| U9 | `18.0.9.51026` | `18.0.9.182098` |
+| U10 | `18.0.10.53188` | `18.0.10.184260` |
+| U11 | `18.0.11.54344` | `18.0.11.185416+76329aa02b7f66b5b3684cf9f01395929b64f4f4` |
+| U12 | `18.0.12.55001` | `18.0.12.186073+14950c6efae4e10975801ef72c767b5f5ba40f54` |
+| U13 | `18.0.13.55604` | `18.0.13.186676+5dc04eebf2a605c230b805bf473f07c0a18b7444` |
+| U14 | `18.0.14.56722` | `18.0.14.187794+1a9b6893388882269611c6e81ad6856708285e40` |
+| U15 | `18.0.15.57673` | `18.0.15.188745+5b2216d446f916f7c0deae363fefd29ea087b8c3` |
+
+O material coletado cobre U0 a U15, inclusive a U7. A U13 hotfix foi deliberadamente excluída desta matriz para manter o inventário no nível das versões principais de Upgrade. A confirmação de suporte deve continuar sendo registrada separadamente por build, carga da extensão, execução do Wizard e `Build All` em cada versão alvo.
+
+## 16.2 Inventário dos instaladores GeneXus 17
+
+A mesma extração SFX 7-Zip, somente `GeneXus.exe` e sem executar o setup, foi aplicada aos instaladores GeneXus 17 disponíveis localmente. A série oficial do GeneXus 17 vai de U0 a U11; a U11 foi o último upgrade antes do GeneXus 18.
+
+| Upgrade | FileVersion | ProductVersion |
+|---------|-------------|----------------|
+| U0 | `17.0.0.14999` | `17.0.0.146071` |
+| U1 | `17.0.1.16323` | `17.0.1.147395` |
+| U2 | `17.0.2.17303` | `17.0.2.148375` |
+| U3 | `17.0.3.18710` | `17.0.3.149782` |
+| U4 | `17.0.4.20534` | `17.0.4.151606` |
+| U5 | `17.0.5.21853` | `17.0.5.152925` |
+| U6 | `17.0.6.23902` | `17.0.6.154974` |
+| U7 | `17.0.7.25474` | `17.0.7.156546` |
+| U8 | `17.0.8.26951` | `17.0.8.158023` |
+| U9 | `17.0.9.28668` | `17.0.9.159740` |
+| U10 | `17.0.10.30344` | `17.0.10.161416` |
+| U11 | `17.0.11.32605` | `17.0.11.163677` |
+
+O material coletado cobre U0 a U11, inclusive a U2. Esta tabela também não é, sozinha, evidência de compatibilidade do produto ou do Extensibility SDK.
 
 [HP-F09]
 

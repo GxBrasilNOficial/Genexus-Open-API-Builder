@@ -248,7 +248,7 @@ internal static class ApiPlanTransactionSyncOrchestrator
                 item.Current.IsFilterEligible))
             .ToArray();
 
-        return ApiPlanTransactionSyncFieldSelection.ResolveOrderedFieldNames(
+        var resolved = ApiPlanTransactionSyncFieldSelection.ResolveOrderedFieldNames(
             metadata,
             path,
             listFiltersMode,
@@ -257,6 +257,24 @@ internal static class ApiPlanTransactionSyncOrchestrator
             role,
             includeAddedArray,
             addedCandidates);
+
+        if (string.Equals(role, "CreateRequest", StringComparison.Ordinal))
+        {
+            return resolved
+                .Where(name => attributesByGuid.Values.Any(attribute =>
+                    string.Equals(attribute.Name, name, StringComparison.OrdinalIgnoreCase) && attribute.IsPayloadEligible))
+                .ToArray();
+        }
+
+        if (string.Equals(role, "UpdateRequest", StringComparison.Ordinal))
+        {
+            return resolved
+                .Where(name => attributesByGuid.Values.Any(attribute =>
+                    string.Equals(attribute.Name, name, StringComparison.OrdinalIgnoreCase) && attribute.IsUpdatePayloadEligible))
+                .ToArray();
+        }
+
+        return resolved;
     }
 
     private static IReadOnlyList<ApiPlanTransactionSyncSdtConflict> DetectSdtConflicts(KBModel designModel, JObject metadata)

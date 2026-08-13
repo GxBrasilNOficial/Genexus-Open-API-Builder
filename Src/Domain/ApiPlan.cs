@@ -50,11 +50,14 @@ internal static class ApiPlanBuilder
             .OrderBy(item => item.Order)
             .Select(CreateField)
             .ToArray();
-        var createFields = CreateSelectedFields(contract.CreateFields, attributesByName);
-        var updateFields = CreateSelectedFields(contract.UpdateFields, attributesByName);
+        var createFields = CreateSelectedFields(contract.CreateFields, attributesByName, "CreateRequest");
+        var updateFields = CreateSelectedFields(contract.UpdateFields, attributesByName, "UpdateRequest");
         var responseFields = CreateSelectedFields(contract.ResponseFields, attributesByName);
         var filters = CreateFilters(contract.ListFilters, attributesByName);
+        var createFieldNames = new HashSet<string>(createFields.Select(item => item.Name), StringComparer.OrdinalIgnoreCase);
+        var updateFieldNames = new HashSet<string>(updateFields.Select(item => item.Name), StringComparer.OrdinalIgnoreCase);
         var requiredFields = selection.RequiredFields
+            .Where(item => IsSelectedRequestField(item, createFieldNames, updateFieldNames))
             .Select(item => new ApiPlanRequiredField(item.RequestName, item.FieldName, item.IsRequired, item.Reason))
             .ToArray();
         var services = CreateServices(contract.SelectedServices, review.ApiName, review.RestPath, primaryKey);
@@ -107,11 +110,29 @@ internal static class ApiPlanBuilder
 
     private static IReadOnlyList<ApiPlanField> CreateSelectedFields(
         IEnumerable<string> names,
-        IReadOnlyDictionary<string, PrototypeWizardAttributeDecision> attributesByName)
+        IReadOnlyDictionary<string, PrototypeWizardAttributeDecision> attributesByName,
+        string? requestName = null)
     {
         return names
             .Select(name => CreateField(GetAttribute(attributesByName, name)))
+            .Where(field => requestName switch
+            {
+                "CreateRequest" => field.IsWritableByCreate,
+                "UpdateRequest" => field.IsWritableByUpdate,
+                _ => true,
+            })
             .ToArray();
+    }
+
+    private static bool IsSelectedRequestField(
+        PrototypeWizardRequiredFieldDecision field,
+        ISet<string> createFieldNames,
+        ISet<string> updateFieldNames)
+    {
+        var selectedNames = string.Equals(field.RequestName, "UpdateRequest", StringComparison.OrdinalIgnoreCase)
+            ? updateFieldNames
+            : createFieldNames;
+        return selectedNames.Contains(field.FieldName);
     }
 
     private static IReadOnlyList<ApiPlanFilter> CreateFilters(
