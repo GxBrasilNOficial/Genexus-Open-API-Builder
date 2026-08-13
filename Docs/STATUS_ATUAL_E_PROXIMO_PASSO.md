@@ -127,6 +127,7 @@ Entregar a sonda Exp-Compat ao Igor e obter, no GeneXus 18 U13, o texto de carga
 - `Exp-RefsNomes`: rascunho local produzido em `Temp/Exp-RefsNomes/Lib.Gx18u13.References.props`; nenhum arquivo U13 foi copiado para o repositório.
 - `Exp-Compat`: sonda mínima compilada em `Temp/Exp-Compat/bin/Release/net471/GenexusOpenApiBuilder.ExpCompat.dll`, sem uso de `Src/Lib/Gx18u13`.
 - Inventário offline da DLL canônica implementado em `Tools/Test-ExtensionAssemblyInventory.ps1`, com teste `Tests/ExtensionAssemblyInventory/Test-ExtensionAssemblyInventory.ps1`; a lista de `AssemblyRef` diretas foi conferida e passou sem acesso à IDE, KB, instalação ou rede.
+- A sonda Exp-Compat também passou pelo inventário parametrizado: manifesto, classe-base, `PackageCompatibility=143920`, recurso e hash foram conferidos localmente. O roteiro de entrega ao Igor está na evidência da Fase 1.
 - Validação externa U13 ainda pendente; o checkpoint não trata a sonda como evidência de carga até o retorno do Igor.
 
 ## Critério de conclusão da próxima ação

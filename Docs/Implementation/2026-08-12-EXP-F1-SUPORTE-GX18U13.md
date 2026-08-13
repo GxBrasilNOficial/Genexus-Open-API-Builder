@@ -101,6 +101,33 @@ Resultado:
 
 O build emitiu seis avisos `NU1900` porque os índices de vulnerabilidade de `pkgs.dev.azure.com` e `api.nuget.org` não estavam acessíveis. Não houve erro de restauração ou compilação.
 
+### Validação offline da sonda
+
+O mesmo inventário foi executado contra a sonda, parametrizando o nome do recurso, o tipo de entrada e o manifesto específicos dela:
+
+```powershell
+pwsh -NoProfile -File Tools\Test-ExtensionAssemblyInventory.ps1 `
+  -DllPath Temp\Exp-Compat\bin\Release\net471\GenexusOpenApiBuilder.ExpCompat.dll `
+  -ExpectedManifestResource GenexusOpenApiBuilder.ExpCompat.ExpCompat.package `
+  -ExpectedEntryType GenexusOpenApiBuilder.ExpCompat.Package `
+  -ExpectedEntryBaseType Artech.Architecture.UI.Framework.Packages.AbstractPackageUI `
+  -ExpectedPackageCompatibility 143920 `
+  -AsJson
+```
+
+Resultado: `Status=OK`, SHA-256 `4B029AC30EC3D2BF8C02CF4A8574BE8F7457A6787DDA5F4EBE0F591CDD793F23`, um recurso `.package`, manifesto `d147d99d-2dd5-4d8e-bb4d-68b1a61b01e5` e somente as referências esperadas para a sonda (`Artech.Architecture.Common`, `Artech.Architecture.UI.Framework` e `mscorlib`). Isso comprova que o artefato está internamente consistente antes do teste externo; não comprova que o U13 o aceite.
+
+## Roteiro de entrega ao Igor
+
+Quando for oportuno, entregar a DLL `Temp\Exp-Compat\bin\Release\net471\GenexusOpenApiBuilder.ExpCompat.dll` e pedir somente este registro:
+
+1. No GeneXus 18 U13, usar `Add > Local` ou copiar a DLL para a pasta `Packages` da instalação e executar `genexus /install`.
+2. Registrar qual caminho foi usado e se houve elevação.
+3. Capturar se a sonda foi carregada; se não, copiar a mensagem completa, especialmente qualquer trecho `expecting version 'N'`.
+4. Registrar o nome do arquivo `packages.*.xml` existente na instalação U13.
+
+Não é necessário testar Wizard, menu, geração ou Build All nesta etapa: a sonda não contém comandos de produto. Também não é necessário executar o teste agora; o roteiro pode aguardar o horário adequado.
+
 ## Pendência externa e próxima ação
 
 O artefato ainda não foi enviado por este agente a nenhum canal externo. A próxima ação é o mantenedor disponibilizar a DLL acima ao Igor e registrar, na instalação GeneXus 18 U13, uma destas evidências:
