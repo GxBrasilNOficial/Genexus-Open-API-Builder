@@ -31,6 +31,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Fixed
 
+- Eco dos instaladores (2026-08-13): `Install-ExtensionForGeneXus18.bat` e `Install-ExtensionForGx18u13.bat` passam a orientar `Register-ExtensionForGeneXus18.bat` com `"%GENEXUS_DIRECTORY%"`, o mesmo diretório da cópia, em vez de “normalmente”. Evita `genexus /install` na IDE canônica depois de instalar a DLL satélite U13. Teste: `Tests/Installation/Test-InstallExtensionBatPathHandling.ps1`.
 - Readme do pacote NuGet (2026-08-12): `packaging/github-packages/README.md` embutido no `.nuspec`/workflow de GitHub Packages, deixando claro que o feed não instala na IDE. O aviso “missing a readme” some na próxima publicação de versão. Sem mudança de código da extensão.
 - Instalador satélite U13 (2026-08-12): `Install-ExtensionForGx18u13.bat` copia e valida explicitamente `artifacts/gx18u13/bin/Release/net471/GenexusOpenApiBuilder.Extension.dll`, evitando instalar por engano a DLL canônica na IDE U13. Teste: `Tests/Installation/Test-InstallExtensionBatPathHandling.ps1`.
 - BAT de instalação com caminho `Program Files (x86)` (2026-08-12): a validação de `GeneXus.exe` deixou de abrir um bloco `if` dependente de parênteses depois da expansão de `%GENEXUS_DIRECTORY%`; isso evitava o erro `\GeneXus\GeneXus18 foi inesperado neste momento.` em caminhos com `(x86)`. Teste: `Tests/Installation/Test-InstallExtensionBatPathHandling.ps1`.

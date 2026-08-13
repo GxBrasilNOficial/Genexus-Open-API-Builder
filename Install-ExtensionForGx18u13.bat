@@ -55,6 +55,9 @@ if not "%EXITCODE%"=="0" (
 ) else (
     echo A copia e a validacao da extensao satelite terminaram sem erro de processo.
 )
-echo O registro da extensao nao foi executado. Se o manifesto ainda nao estiver registrado nesta IDE, use Register-ExtensionForGeneXus18.bat normalmente e depois genexus /install.
+echo O registro da extensao nao foi executado.
+echo Se o manifesto, a identidade do pacote ou o registro de comandos mudou desde o ultimo genexus /install bem-sucedido nesta IDE, execute:
+echo   Register-ExtensionForGeneXus18.bat "%GENEXUS_DIRECTORY%"
+echo no cmd normal (sem Administrador) e, no prompt aberto, digite genexus /install e depois exit.
 pause
 exit /b %EXITCODE%

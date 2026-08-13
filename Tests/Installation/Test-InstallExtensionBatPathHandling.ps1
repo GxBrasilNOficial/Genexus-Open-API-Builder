@@ -47,5 +47,9 @@ Assert-Contains $u13InstallBat 'artifacts\gx18u13\bin\Release\net471\GenexusOpen
 Assert-Contains $u13InstallBat '-BuildDll "%BUILD_DLL%" -GeneXusDirectory "%GENEXUS_DIRECTORY%"' 'Install U13 deve copiar usando explicitamente a DLL satélite e o diretório escolhido.'
 Assert-Contains $u13InstallBat '-BuildDll "%BUILD_DLL%" -InstalledDll' 'Install U13 deve validar o hash contra a mesma DLL satélite usada na cópia.'
 Assert-Contains $u13InstallBat 'if exist "%GENEXUS_DIRECTORY%\GeneXus.exe" goto geneXusFound' 'Install U13 deve validar caminhos com (x86) sem bloco parentizado.'
+Assert-Contains $installBat 'Register-ExtensionForGeneXus18.bat "%GENEXUS_DIRECTORY%"' 'Install canônico deve orientar o Register com o mesmo diretório da cópia.'
+Assert-Contains $u13InstallBat 'Register-ExtensionForGeneXus18.bat "%GENEXUS_DIRECTORY%"' 'Install U13 deve orientar o Register com o mesmo diretório da cópia satélite.'
+Assert-NotContains $installBat 'Register-ExtensionForGeneXus18.bat normalmente' 'Install canônico não pode omitir o diretório no eco do Register.'
+Assert-NotContains $u13InstallBat 'Register-ExtensionForGeneXus18.bat normalmente' 'Install U13 não pode omitir o diretório no eco do Register.'
 
 Write-Output 'PASS: InstallExtensionBatPathHandling'
