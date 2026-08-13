@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-08-12.
+2026-08-13.
 
 ## Último marco concluído
 
@@ -105,11 +105,11 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Frente ativa
 
-Correção de contrato `NoAccept` no suporte paralelo `Gx18u13` — código implementado, compilado e validado manualmente no U13 e no U15; validação HTTP permanece como próximo recorte, em paralelo explícito à Sprint 9.
+Validação integrada do suporte paralelo `Gx18u13` — o contrato `NoAccept` foi implementado, compilado e validado manualmente no U13 e no U15, e a API `NotaFiscal` recriada no U15 foi validada por HTTP autenticado nos dois environments. A Sprint 9 permanece explicitamente paralela.
 
 ## Próxima ação única
 
-Executar a validação HTTP da API `Employee`, se houver environment disponível; caso contrário, registrar explicitamente essa cobertura como não executada. As validações U13 e U15 do contrato `NoAccept` já estão concluídas; manter o asset `artifacts/gx18u13/GenexusOpenApiBuilder.Extension-gx18u13.dll` reservado para Release, a Sprint 9 em paralelo e a tag `v0.1.0-alpha.1` imóvel.
+Executar a rotina pré-push sobre a frente já commitada e revisar semanticamente o intervalo pendente contra `origin/main`, sem fazer push automaticamente. As validações U13 e U15 do contrato `NoAccept` e a bateria HTTP autenticada da `apiNotaFiscal` já estão concluídas; manter o asset `artifacts/gx18u13/GenexusOpenApiBuilder.Extension-gx18u13.dll` reservado para Release, a Sprint 9 em paralelo e a tag `v0.1.0-alpha.1` imóvel.
 
 ## Evidência da frente encerrada
 
@@ -139,6 +139,8 @@ Executar a validação HTTP da API `Employee`, se houver environment disponível
 - wizard reexecutado na `Employee`, com `NoAccept` visível e desabilitado em Requests e ausente dos dois requests gerados;
 - `Build All` concluído com Create e Update sem `spc0018` causado por `EmployeeAddedDate`;
 - compatibilidade U15 confirmada após remoção e recriação da API, com Wizard e `Build All` concluídos sem `spc0018`;
+- `apiNotaFiscal` removida e recriada pelo B086, com `SecurityLevel='Authorization'`, Wizard sem bloqueios e `Build All` concluído nos dois environments;
+- bateria HTTP autenticada da `apiNotaFiscal` concluída nos dois environments, cobrindo OAuth `200`, ausência de token `401`, List/Get/Create/Update, `Location`, filtro, `404` de recurso inexistente e `400` de request inválido;
 - Sprint 9 permanece fora do escopo desta frente e não é requisito para seu fechamento;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
@@ -194,7 +196,7 @@ Executar a validação HTTP da API `Employee`, se houver environment disponível
 48. Em 2026-08-12 a instalação local do U13 corroborou `N=143920` e permitiu iniciar a Fase 2: referências locais pinadas, solution satélite, isolamento de artefatos e build Release com inventário offline aprovado. Próxima ação = carga manual da DLL de build na IDE U13; a Sprint 9 permanece explicitamente paralela. Evidência: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
 49. Em 2026-08-12 a carga manual da DLL satélite foi confirmada no U13: `genexus /install` adicionou o pacote, o Extensions Manager mostrou a extensão marcada e o menu principal exibiu os quatro comandos. Na sequência, o menu de contexto, o Wizard e o `Build All` foram confirmados na Transaction `Employee`; builds focados demonstraram por A/B que `NoAccept(EmployeeAddedDate)` causava `spc0018` nas Procedures Create/Update. Próxima ação = instalar a DLL corrigida e repetir a validação focada; a Sprint 9 permanece explicitamente paralela. Evidências: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md` e `Docs/Implementation/2026-08-12-NOACCEPT-READONLY-BUSINESS-COMPONENT.md`.
 50. Em 2026-08-13 a DLL satélite foi instalada por `Install-ExtensionForGx18u13.bat`, B086 removeu 12 objetos próprios da API anterior, o Wizard recriou `apiEmployee` com `Created=12`, `Updated=2`, `Blocked=0` e o `Build All` especificou/compilou Create, Update, Get, List e `apiEmployee` sem `spc0018`. A validação U13 do contrato `NoAccept` foi concluída. Evidências: `Docs/Implementation/2026-08-12-NOACCEPT-READONLY-BUSINESS-COMPONENT.md` e `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
-51. Em 2026-08-13 a DLL canônica foi reinstalada no U15, B086 removeu 12 objetos próprios, o Wizard recriou a API com `Create=5`, `Update=5`, `Response=9`, `ListFilters=2`, `Created=12`, `Updated=2`, `Blocked=0` e campos bloqueados `CreateRequest=4`/`UpdateRequest=4`; o `Build All` U15 terminou com sucesso e sem `spc0018`. A compatibilidade U13/U15 do contrato `NoAccept` foi confirmada; a validação HTTP permanece como próximo recorte. Evidência: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
+51. Em 2026-08-13 a DLL canônica foi reinstalada no U15, B086 removeu 12 objetos próprios, o Wizard recriou a API com `Create=5`, `Update=5`, `Response=9`, `ListFilters=2`, `Created=12`, `Updated=2`, `Blocked=0` e campos bloqueados `CreateRequest=4`/`UpdateRequest=4`; o `Build All` U15 terminou com sucesso e sem `spc0018`. Naquele ponto, a compatibilidade U13/U15 do contrato `NoAccept` estava confirmada e a validação HTTP era o próximo recorte; essa bateria foi concluída posteriormente na revalidação de `apiNotaFiscal`. Evidência: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
 
 ## Bloqueios e fatos ainda não validados
 

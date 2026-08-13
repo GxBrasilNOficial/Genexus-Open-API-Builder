@@ -261,3 +261,28 @@ Riscos avaliados antes da mudança, medidos na máquina de desenvolvimento usada
 Durabilidade comprovada por medição: após a correção no `applicationHost.config` e um Build All completo no ambiente .NET Framework, a bateria de nove casos foi reexecutada e passou integralmente, com o `web.config` gerado sem nenhuma linha de `ExtensionlessUrlHandler`.
 
 Ressalva registrada sobre a evidência anterior: a linha de 2026-08-02 registrada acima afirma `Update 200` e `Update parcial 400` no .NET Framework/SQL Server. Com o handler no default do IIS isso não se reproduz, porque nenhum `PUT` alcança a aplicação. Essa linha permanece preservada como registro histórico, mas **não deve ser tratada como validação confiável do `PUT` naquele ambiente**; a validação confiável é a de 2026-08-03, posterior à correção do handler.
+
+##### Revalidação após remoção e recriação da API `NotaFiscal` — captura 2026-08-13
+
+Para validar o contrato atualmente gerado pela extensão, o comando B086 removeu da Transaction `NotaFiscal` os 11 objetos próprios de `apiNotaFiscal` (API Object, quatro Procedures, cinco SDTs próprios e metadata); o Folder `NotaFiscalOpenApi` preexistente foi preservado. O Wizard recriou a API com `SecurityLevel='Authorization'`, `Create=6`, `Update=6`, `Response=7`, `ListFilters=7`, `CreateRequired=0`, `UpdateRequired=6`, `Created=11`, `Updated=2`, `Blocked=0` e os dois avisos esperados de fallback de descrições em inglês e reuso do Folder.
+
+O `Build All` foi executado nos dois environments e terminou com `Success: Build All`, gerando `apiNotaFiscal`, as quatro Procedures, os SDTs REST, a documentação REST, a compilação do DeveloperMenu e as permissões GAM. Os logs também continham warnings preexistentes de outros objetos da KB, sem erro de especificação ou geração da API.
+
+A bateria foi executada com OAuth GAM usando o arquivo local ignorado `Temp/wsEducacaoSpTeste-local-test-environments.md`; os valores de credencial não fazem parte desta evidência versionada.
+
+| Caso | .NET Framework / SQL Server | .NET / PostgreSQL |
+| --- | --- | --- |
+| Token OAuth | `200` | `200` |
+| List sem token | `401` | `401` |
+| List autenticado | `200` | `200` |
+| Get de registro existente | `200` | `200` |
+| Create | `201`, `Location=/notafiscal/21` | `201`, `Location=/notafiscal/8` |
+| Get do registro criado | `200` | `200` |
+| Update do registro criado | `200` | `200` |
+| Get após Update | `200` | `200` |
+| List filtrado pelo ID criado | `200`, `TotalCount=1` | `200`, `TotalCount=1` |
+| Get inexistente | `404`, `not_found` | `404`, `not_found` |
+| Update inválido | `400`, `invalid_request` | `400`, `invalid_request` |
+| Update inexistente | `404`, `not_found` | `404`, `not_found` |
+
+Os registros de teste `21` e `8` permanecem nas respectivas bases: a API atual não possui serviço DELETE e nenhuma limpeza direta no banco foi executada. Esta captura fecha a validação runtime HTTP do contrato recriado; a bateria específica do `NoAccept(EmployeeAddedDate)` permanece coberta separadamente pelos builds U13/U15.
