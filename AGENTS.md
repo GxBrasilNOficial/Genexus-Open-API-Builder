@@ -16,20 +16,28 @@
 
 Sempre que uma nova DLL precisar ser instalada para teste no GeneXus 18, o agente deve primeiro distinguir atualização de código de atualização de manifesto/registro.
 
-Para atualização apenas de DLL, sem alteração em `Src/Extension/GenexusOpenApiBuilder.package`, na identidade do pacote ou no registro da extensão:
+Para atualização apenas da DLL canônica U14+, sem alteração em `Src/Extension/GenexusOpenApiBuilder.package`, na identidade do pacote ou no registro da extensão:
 
 1. fechar completamente a IDE GeneXus;
 2. executar `Install-ExtensionForGeneXus18.bat`, na raiz do repositório, usando **Executar como administrador**; quando a IDE estiver fora do diretório padrão, passar o diretório como primeiro argumento (por exemplo, `Install-ExtensionForGeneXus18.bat "C:\Program Files (x86)\GeneXus\GeneXus18up15"`);
 3. abrir novamente a IDE e executar a validação funcional indicada para a frente.
 
-O instalador já executa `Tools/Test-InstalledExtension.ps1` ao final e falha quando a DLL instalada não corresponde à build atual.
+O instalador canônico já executa `Tools/Test-InstalledExtension.ps1` ao final e falha quando a DLL instalada não corresponde à build atual.
+
+Para atualização da DLL satélite U13, usar um fluxo separado:
+
+1. fechar completamente a IDE GeneXus;
+2. executar `Install-ExtensionForGx18u13.bat`, na raiz do repositório, usando **Executar como administrador** e passando o diretório da instalação U13 como primeiro argumento (por exemplo, `Install-ExtensionForGx18u13.bat "C:\Program Files (x86)\GeneXus\GeneXus18up13"`);
+3. abrir novamente a IDE e executar a validação funcional indicada para a frente.
+
+Esse BAT usa exclusivamente `artifacts/gx18u13/bin/Release/net471/GenexusOpenApiBuilder.Extension.dll` e valida o hash da mesma DLL instalada. Ele não registra o manifesto.
 
 Quando houver, desde o ultimo `genexus /install` bem-sucedido, alteracao em `Src/Extension/GenexusOpenApiBuilder.package`, na identidade do pacote ou no registro da extensao, acrescentar entre os passos 2 e 3:
 
-1. executar `Register-ExtensionForGeneXus18.bat` normalmente, sem Administrador, passando o mesmo diretório quando ele não for o padrão;
+1. executar `Register-ExtensionForGeneXus18.bat` normalmente, sem Administrador, passando o mesmo diretório quando ele não for o padrão; isso vale também após uma instalação satélite U13. Não existe um `Register-ExtensionForGx18u13.bat` separado no repositório;
 2. no prompt aberto pelo segundo arquivo, digitar `genexus /install`, conferir a varredura e depois digitar `exit`.
 
-- `Install-ExtensionForGeneXus18.bat` é sempre o caminho operacional primário para instalar a nova DLL; `Register-ExtensionForGeneXus18.bat` é condicional à atualização de manifesto/registro.
+- `Install-ExtensionForGeneXus18.bat` é o caminho operacional primário para a DLL canônica U14+; `Install-ExtensionForGx18u13.bat` é o caminho primário exclusivo da DLL satélite U13. `Register-ExtensionForGeneXus18.bat` é condicional à atualização de manifesto/registro para ambas as linhas e recebe o mesmo diretório da instalação testada.
 - O agente não executa esses arquivos nem altera `C:\Program Files (x86)\GeneXus`; apenas orienta a execução manual.
 - Não substituir a instalação por uma chamada direta a `Tools/Copy-ExtensionForGeneXus18.ps1`. O `.ps1` é implementação interna exclusiva da etapa de cópia e validação; ele não registra a extensão.
 - Ao avisar que chegou a hora de atualizar e testar, declarar explicitamente se o manifesto/registro mudou e solicitar `genexus /install` somente nesse caso.
