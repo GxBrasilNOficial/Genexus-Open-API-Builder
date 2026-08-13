@@ -2,7 +2,7 @@
 
 ## Status
 
-Implementação concluída no código da extensão; build local concluído nas soluções canônica e satélite U13; validação manual concluída no GeneXus 18 U13 com a DLL satélite.
+Implementação concluída no código da extensão; build local concluído nas soluções canônica e satélite U13; validação manual concluída no GeneXus 18 U13 e compatibilidade confirmada no GeneXus 18 U15.
 
 ## Descoberta confirmada por experimento A/B
 
@@ -64,7 +64,7 @@ Assim, “desabilitado em Requests” descreve a escolha de entrada da API, não
 - A sincronização reaplica a mesma proteção sobre campos vindos de metadata anterior, evitando que um request antigo reintroduza um campo `NoAccept`.
 - O writer de Business Component continua consumindo somente os campos dos requests já filtrados; portanto, não precisa de uma exceção paralela nem de assignment condicional.
 
-O reconhecimento foi escrito contra a fonte de Rules, e não contra uma propriedade específica de uma instalação. A decisão de produto é tratada como válida para as versões GeneXus 18 suportadas; a confirmação manual em U13 foi concluída e a regressão em U15 permanece opcional.
+O reconhecimento foi escrito contra a fonte de Rules, e não contra uma propriedade específica de uma instalação. A decisão de produto é tratada como válida para as versões GeneXus 18 suportadas; a confirmação manual foi concluída em U13 e a compatibilidade foi confirmada novamente em U15.
 
 ## Limite deliberado
 
@@ -78,6 +78,6 @@ O leitor reconhece a forma direta `NoAccept(NomeDoAtributo)`, inclusive quando a
 - `dotnet build Src/GenexusOpenApiBuilder.Gx18u13.sln -c Release --no-restore`: passou sem erros; permanece apenas o aviso conhecido `MSB3277` de unificação de `mscorlib` nas referências pinadas da U13.
 - Nenhum arquivo da instalação protegida em `C:\Program Files (x86)\GeneXus` foi alterado.
 
-## Próxima validação opcional
+## Escopo ainda não coberto
 
-Como regressão adicional, repetir a mesma validação na instalação U15 quando a janela U13 estiver fechada. O `Build All` U13 já cobriu as Procedures Create e Update; `Build With This Only` fica opcional para capturar uma evidência ainda mais isolada. Como a mudança é somente de código e não altera manifesto ou registro, não há necessidade de `genexus /install` adicional por causa desta alteração de DLL.
+A validação de compatibilidade U15 foi concluída depois da remoção e recriação da API. O `Build With This Only` fica opcional para capturar uma evidência ainda mais isolada. A validação HTTP da API gerada permanece separada desta frente; como a mudança é somente de código e não altera manifesto ou registro, não houve necessidade de `genexus /install` adicional por causa da correção da DLL.

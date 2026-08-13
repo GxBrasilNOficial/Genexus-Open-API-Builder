@@ -101,11 +101,11 @@ O Build All da Transaction não era suficiente para validar as Procedures da API
 
 O resultado confirma que o problema não deve ser ignorado nem tratado como particularidade do campo `Date`: a causa é a tentativa de atribuir via BC um atributo marcado `NoAccept`.
 
-## Validação funcional U13 — concluída
+## Validação funcional U13 e compatibilidade U15 — concluídas
 
 1. a DLL satélite foi instalada e validada por hash com `Install-ExtensionForGx18u13.bat`;
 2. B086 removeu os 12 objetos próprios da API anterior, preservando SDTs compartilhados e Business Component;
 3. o wizard recriou a API com `Created=12`, `Updated=2`, `Blocked=0` e um único aviso de fallback de idioma;
 4. o `Build All` especificou e compilou Create, Update, Get, List e `apiEmployee`, gerou SDTs e documentação REST e terminou com sucesso; não houve `spc0018`.
 
-Regressão opcional: repetir a mesma validação no U15 com a DLL canônica quando a janela U13 estiver fechada.
+Na sequência, a instalação canônica U15 foi restaurada, a DLL foi instalada e validada por hash, e B086 removeu novamente os 12 objetos próprios antes de uma nova execução do Wizard. No U15, o Wizard registrou `Create=5`, `Update=5`, `Response=9`, `ListFilters=2`, `CreateRequest=4`, `UpdateRequest=4`, `ListFilters=0`, `Created=12`, `Updated=2`, `Blocked=0` e um aviso de fallback de descrições. O `Build All` U15 especificou e compilou as quatro Procedures, `apiEmployee`, os SDTs e a documentação REST, terminando com `Success: Build All` e sem `spc0018`. A compatibilidade da correção `NoAccept` entre U13 e U15 está confirmada; a validação HTTP da API permanece separada.
