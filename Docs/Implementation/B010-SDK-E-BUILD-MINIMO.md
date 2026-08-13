@@ -31,6 +31,8 @@ A existência do mecanismo moderno desde U14 não equivale a compatibilidade pr�
 
 **Nota de revisão (2026-08-12):** o parágrafo acima descreve o estado na data do B010. O carregamento no U15 foi comprovado pelo `B000`; o limite inferior U14 foi confirmado por usuário externo na Alpha (`Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`).
 
+**Nota de revisão (2026-08-13):** a exclusão de U13 no parágrafo histórico permanece válida para o baseline canônico U14+ via feed NuGet e MSBuild SDKs. Em paralelo, a Opção B / Fase 2 entregou a cadeia satélite `Gx18u13` (solution, projeto, referências pinadas, instalador e inventário offline), compilada em Release e validada manualmente no GeneXus 18 U13. Essa linha não substitui o baseline canônico; evidencia o custo de manutenção que o B010 deliberadamente adiou. Evidências: `Docs/Decisions/2026-08-12-PLANO_SUPORTE_PARALELO_GX18U13_OPCAO_B.md` e `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
+
 ## Contrato de build versionado
 
 - `nuget.config` fixa as fontes `genexus-build-sdk` oficial e `nuget.org`, sem herdar fontes da máquina;

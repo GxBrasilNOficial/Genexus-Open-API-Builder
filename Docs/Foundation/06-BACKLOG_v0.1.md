@@ -370,7 +370,7 @@ B094 investigou, no GeneXus 18 U15, qual artefato distribuir e se um usuário ex
 | 9. Metadata persistente e reconhecimento seguro | B006, B060, B063, B065–B067, B085–B087 |
 | 10. Colisão, regeneração e remoção conservadoras | B063, B064 e B083–B086 |
 
- Esses gates foram comprovados progressivamente nas Sprints 1–7 e estão aprovados no pacote integrado de 2026-08-09 (`Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`), com o marco **wizard funcional do MVP concluído**. U14 nesta máquina do mantenedor permanece sem bateria completa; em 2026-08-12 usuário externo confirmou carregamento + geração em U14 (issue #1). Em 2026-08-10, `B088` e `B089` fecharam as frentes pré-Alpha e o pacote documental `0.1.0-alpha.1` foi preparado; em 2026-08-11 a documentação pública foi alinhada ao `B094` e a Alpha foi publicada; em 2026-08-12 o gate da Sprint 8 fechou. A Sprint 9 permanece em paralelo à Fase 2 do suporte `Gx18u13`; a próxima ação operacional está no checkpoint.
+Esses gates foram comprovados progressivamente nas Sprints 1–7 e estão aprovados no pacote integrado de 2026-08-09 (`Docs/Implementation/2026-08-09-COMPROVACAO-DEZ-GATES-SPRINT7.md`), com o marco **wizard funcional do MVP concluído**. U14 nesta máquina do mantenedor permanece sem bateria completa; em 2026-08-12 usuário externo confirmou carregamento + geração em U14 (issue #1). Em 2026-08-10, `B088` e `B089` fecharam as frentes pré-Alpha e o pacote documental `0.1.0-alpha.1` foi preparado; em 2026-08-11 a documentação pública foi alinhada ao `B094` e a Alpha foi publicada; em 2026-08-12 o gate da Sprint 8 fechou. A Sprint 9 permanece em paralelo à Fase 2 do suporte `Gx18u13`; a próxima ação operacional está no checkpoint.
 
 [BG-F06]
 
