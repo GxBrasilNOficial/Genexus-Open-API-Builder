@@ -103,9 +103,9 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Em 2026-08-12 foi iniciada, em paralelo explícito à Sprint 9, a Fase 1 do suporte `Gx18u13` (D43): Exp-ParidadeEmpacote mediu o nome lógico do recurso `.package`, Exp-RefsNomes produziu a lista de referências e a sonda Exp-Compat foi compilada com o SDK canônico. Depois, a instalação local U13 permitiu corroborar `N=143920`, copiar as referências pinadas para a área ignorada e iniciar a Fase 2. Evidências: `Docs/Implementation/2026-08-12-EXP-F1-SUPORTE-GX18U13.md` e `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
 - Em 2026-08-12/13 o `Build All` da Transaction `Employee` passou no U13, com apenas os avisos conhecidos `pmm0003` e de fallback de descrições. O build focado das Procedures e a recriação posterior da API confirmaram por A/B que `NoAccept(EmployeeAddedDate)` causa `spc0018` quando o gerador tenta atribuir o campo no BC; a correção agora desabilita esse atributo em `CreateRequest` e `UpdateRequest`, preservando `Response`, `ListResponse` e `ListFilters`. Em seguida, a API foi removida e recriada no U15 com os mesmos números de contrato e o `Build All` U15 passou sem `spc0018`, confirmando a compatibilidade. Evidência: `Docs/Implementation/2026-08-12-NOACCEPT-READONLY-BUSINESS-COMPONENT.md`.
 
-## Frente ativa
+## Frente atual
 
-Validação integrada do suporte paralelo `Gx18u13` — o contrato `NoAccept` foi implementado, compilado e validado manualmente no U13 e no U15, e a API `NotaFiscal` recriada no U15 foi validada por HTTP autenticado nos dois environments. A Sprint 9 permanece explicitamente paralela.
+Revisão pré-push da frente de suporte paralelo `Gx18u13`. A implementação, a validação manual U13/U15 do contrato `NoAccept` e a validação HTTP autenticada da API `NotaFiscal` foram concluídas. A Sprint 9 permanece explicitamente paralela e fora deste fechamento.
 
 ## Próxima ação única
 
@@ -122,7 +122,7 @@ Executar a rotina pré-push sobre a frente já commitada e revisar semanticament
 - residual U14 (carregamento + uso prático do SDK) fechado por esta evidência; U15 do mantenedor permanece a bateria completa de validação;
 - fonte factual: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
 
-## Evidência da frente ativa iniciada
+## Evidência da frente U13 iniciada
 
 - `Exp-ParidadeEmpacote`: recurso lógico canônico medido como `GenexusOpenApiBuilder.Extension.GenexusOpenApiBuilder.package`; manifesto `id=7be72bf4-8884-40dc-955d-ed9d31b69b74`.
 - `Exp-RefsNomes`: rascunho local produzido em `Temp/Exp-RefsNomes/Lib.Gx18u13.References.props`; nenhum arquivo U13 foi copiado para o repositório.
@@ -133,14 +133,13 @@ Executar a rotina pré-push sobre a frente já commitada e revisar semanticament
 - Fase 2 compilou `Src/GenexusOpenApiBuilder.Gx18u13.sln` em Release; o asset passou pelo inventário offline com `PackageCompatibility=143920`, manifesto, recurso, referências e `GxLine=Gx18u13`. Evidência: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
 - Carga funcional U13 confirmada pelo `genexus /install`, Extensions Manager marcado, menus principal e de contexto e Wizard executado na Transaction `Employee`; relatório `SuccessWithWarnings`, com `Created=15`, `Updated=1`, `Blocked=0` e um aviso de fallback de descrições para inglês. O `Build All` também passou; os builds focados das Procedures registraram a evidência A/B de `NoAccept` e motivaram a correção atual.
 
-## Critério de conclusão da próxima ação
+## Critério de conclusão da revisão pré-push
 
-- DLL satélite instalada manualmente no U13 sem alterar a instalação por este agente;
-- wizard reexecutado na `Employee`, com `NoAccept` visível e desabilitado em Requests e ausente dos dois requests gerados;
-- `Build All` concluído com Create e Update sem `spc0018` causado por `EmployeeAddedDate`;
-- compatibilidade U15 confirmada após remoção e recriação da API, com Wizard e `Build All` concluídos sem `spc0018`;
-- `apiNotaFiscal` removida e recriada pelo B086, com `SecurityLevel='Authorization'`, Wizard sem bloqueios e `Build All` concluído nos dois environments;
-- bateria HTTP autenticada da `apiNotaFiscal` concluída nos dois environments, cobrindo OAuth `200`, ausência de token `401`, List/Get/Create/Update, `Location`, filtro, `404` de recurso inexistente e `400` de request inválido;
+- frente U13 já commitada, em `main`, com working tree limpa;
+- `origin/main` atualizada, sem commits remotos à frente da frente local;
+- checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
+- revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
+- nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
 - Sprint 9 permanece fora do escopo desta frente e não é requisito para seu fechamento;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
@@ -226,9 +225,8 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
+- Sprint 9 — priorização do feedback da Alpha; permanece paralela e não é iniciada como parte deste fechamento U13.
 - Sprint 10 — Beta estável.
-
-A Sprint 9 deixou de ser marco não iniciado em 2026-08-12: com o gate da Sprint 8 fechado (issue #1 + evidência U14), ela é a frente ativa.
 
 ## Protocolo de atualização
 
@@ -238,7 +236,7 @@ Ao promover uma frente concluída para a próxima ação, atualizar em conjunto:
 
 - a seção `Último marco concluído`, registrando a frente encerrada e sua evidência mínima;
 - a seção `Próxima ação única`;
-- as seções `Evidência da frente encerrada` e `Critério de conclusão da próxima ação`;
+- as seções `Evidência da frente encerrada` e `Critério de conclusão da revisão pré-push`;
 - a seção `Sequência operacional vigente`.
 
 Divergência entre essas seções é gap documental confirmado na revisão pré-push.

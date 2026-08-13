@@ -209,6 +209,26 @@ try {
         Assert-True ($fetchResult.remoteFetchStatus -eq 'succeeded') 'O fetch local da fixture deveria concluir.'
         Assert-True ($fetchResult.remoteReadiness -eq 'confirmed') 'Com fetch bem-sucedido, a referência remota deve ser confirmed.'
 
+        [System.IO.File]::AppendAllText((Join-Path $PWD 'README.md'), "referência histórica B000`n", [System.Text.UTF8Encoding]::new($false))
+        & git add README.md
+        & git commit -m 'Fixture com referência histórica' | Out-Null
+        $historicalJson = & pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
+        $historicalExit = $LASTEXITCODE
+        $historicalResult = $historicalJson | ConvertFrom-Json
+        Assert-True ($historicalExit -eq 0) 'Uma referência histórica B000 não deve exigir revisão manual sem frente vigente.'
+        Assert-True (@($historicalResult.manualRequired).Count -eq 0) 'Referências históricas não devem alimentar manualRequired.'
+
+        [System.IO.Directory]::CreateDirectory((Join-Path $PWD 'Docs')) | Out-Null
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Docs\STATUS_ATUAL_E_PROXIMO_PASSO.md'), "## Próxima ação única`n`nExecutar B006.`n`n## Histórico`n`nB000 concluído.`n", [System.Text.UTF8Encoding]::new($false))
+        & git add Docs\STATUS_ATUAL_E_PROXIMO_PASSO.md
+        & git commit -m 'Fixture com frente vigente' | Out-Null
+        $activeJson = & pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
+        $activeExit = $LASTEXITCODE
+        $activeResult = $activeJson | ConvertFrom-Json
+        Assert-True ($activeExit -eq 3) 'Uma frente B006 explicitamente vigente deve exigir revisão manual.'
+        Assert-True ('manualRequired' -in @($activeResult.incompleteReasons)) 'A frente vigente deve bloquear por manualRequired.'
+        Assert-True (@($activeResult.manualRequired | Where-Object { $_.path -eq 'Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md' }).Count -eq 1) 'O checkpoint da frente vigente deve aparecer em manualRequired.'
+
         [System.IO.File]::AppendAllText((Join-Path $PWD 'README.md'), 'alteração preexistente' + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
         $dirtyJson = & pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
         $dirtyExit = $LASTEXITCODE

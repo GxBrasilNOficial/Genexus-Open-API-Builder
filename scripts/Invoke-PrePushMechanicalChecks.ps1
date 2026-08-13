@@ -115,8 +115,8 @@ function Get-ManualRequirements {
     $paths = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--name-only', '-z', 'origin/main..HEAD') -WorkingDirectory $WorkingDirectory
     $worktreePaths = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--name-only', '-z') -WorkingDirectory $WorkingDirectory
     if ($patch.ExitCode -ne 0 -or $worktreePatch.ExitCode -ne 0 -or $paths.ExitCode -ne 0 -or $worktreePaths.ExitCode -ne 0) { return @() }
-    $frontPattern = 'B000|B001|B002|B003|B004|B005|B006'
-    if (-not [string]::IsNullOrWhiteSpace($CurrentFront)) { $frontPattern = "$frontPattern|$([regex]::Escape($CurrentFront))" }
+    if ([string]::IsNullOrWhiteSpace($CurrentFront)) { return @() }
+    $frontPattern = [regex]::Escape($CurrentFront)
     if (($patch.StdOut + $worktreePatch.StdOut) -notmatch "(?i)\b($frontPattern)\b") { return @() }
     $allPaths = @(
         (@($paths.StdOut -split [string][char]0) + @($worktreePaths.StdOut -split [string][char]0)) |
@@ -129,7 +129,7 @@ function Get-ManualRequirements {
         if ($isRelevant) {
             $requirements.Add([ordered]@{
                 path = $path
-                reason = 'O patch menciona um spike B000–B006 ou a frente vigente.'
+                reason = 'O patch menciona a frente vigente explicitamente declarada na próxima ação.'
                 requiredHumanCheck = 'Confirmar os gates de encerramento e a coerência documental aplicáveis ao escopo alterado.'
             })
         }
@@ -291,8 +291,12 @@ finally {
 $currentFront = $null
 $checkpoint = Join-Path $repositoryRoot 'Docs\STATUS_ATUAL_E_PROXIMO_PASSO.md'
 if (Test-Path -LiteralPath $checkpoint -PathType Leaf) {
-    $front = [regex]::Match((Get-Content -LiteralPath $checkpoint -Raw), '(?s)## Próxima ação única.*?\b(B00[0-6])\b')
-    if ($front.Success) { $currentFront = $front.Groups[1].Value }
+    $checkpointText = Get-Content -LiteralPath $checkpoint -Raw
+    $nextAction = [regex]::Match($checkpointText, '(?ms)^## Próxima ação única\s*(?<content>.*?)(?=^## |\z)')
+    if ($nextAction.Success) {
+        $front = [regex]::Match($nextAction.Groups['content'].Value, '\b(B00[0-6])\b')
+        if ($front.Success) { $currentFront = $front.Value }
+    }
 }
 $manualRequired = @(Get-ManualRequirements -WorkingDirectory $repositoryRoot -CurrentFront $currentFront)
 $incompleteReasons = [System.Collections.Generic.List[string]]::new()
