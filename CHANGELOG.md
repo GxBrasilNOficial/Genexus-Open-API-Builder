@@ -8,9 +8,34 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ---
 
-# [Unreleased]
+# [0.1.0-alpha.2] - 2026-08-13
+
+Release focada na liberação pública da linha GeneXus 18 Upgrade 13, mantendo o asset canônico U14+.
 
 ## Added
+
+- DLL pública `GenexusOpenApiBuilder.Extension-gx18u13.dll` para GeneXus 18 Upgrade 13, com `GxLine=Gx18u13` e `PackageCompatibility=143920` validados no asset de Release.
+- Notas de Release e guia de instalação com a distinção explícita entre a DLL canônica U14+ e a DLL satélite U13.
+
+## Fixed
+
+- Regras `NoAccept` deixam de gerar atribuições inválidas nos requests `Create` e `Update`, preservando a leitura em `Response`, `ListResponse` e filtros.
+
+## Validated
+
+- Linha U13: carga, menus, Wizard, recriação da API e `Build All` sem `spc0018`.
+- Linha U14+: build Release e contrato `NoAccept` revalidados no U15, além da bateria HTTP autenticada da `apiNotaFiscal`.
+
+## Assets
+
+- `GenexusOpenApiBuilder.Extension.dll` — GeneXus 18 U14, U15 e posteriores U14+.
+- `GenexusOpenApiBuilder.Extension-gx18u13.dll` — GeneXus 18 U13.
+
+---
+
+## Histórico detalhado da 0.1.0-alpha.2
+
+### Added
 
 - Suporte paralelo Gx18u13 avançado (2026-08-12): instalação local corroborou `N=143920`, o satélite compilou em Release com inventário offline aprovado e a carga foi confirmada no U13 por `genexus /install`, Extensions Manager marcado, menus principal e de contexto e Wizard executado na Transaction `Employee`. O Wizard terminou com `SuccessWithWarnings`, `Created=15`, `Updated=1`, `Blocked=0` e um aviso de fallback de descrições para inglês. O `Build All` da Transaction passou; o build focado das Procedures revelou e motivou a correção de `NoAccept`. Sem alterar a instalação protegida do GeneXus. Evidência: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
 - Evidência de segundo usuário externo (2026-08-12): Miguel confirmou a Alpha `0.1.0-alpha.1` no GeneXus 18 U15 pelo caminho de mantenedor (repositório + build local + `Install-ExtensionForGeneXus18.bat` + `genexus /install`); feedback em issue #3. Não reabre o gate Sprint 8. Registro inicial que igualava à variante Packages/Release foi corrigido. Linha `Upgrade 15` na tabela de status do `README.md` reflete esse uso externo. Sem mudança de código da extensão. Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md`.
@@ -19,7 +44,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Trava pré-push dos YAML / Issue Forms (2026-08-11): teste `Tests/IssueForms/Test-GitHubIssueFormsYaml.ps1` no check `tests.issueForms`, com lint estrutural offline e parse real via `python3`+`pyyaml` (ausência de ambiente → `environmentBlocked`, sem pular em silêncio). `.gitattributes` passa a forçar LF em `*.yml`/`*.yaml`. Sem mudança de código da extensão.
 - Revalidação HTTP da `apiNotaFiscal` (2026-08-13): após remoção B086 e recriação pelo Wizard, os dois environments concluíram `Build All`; a bateria autenticada passou com OAuth `200`, ausência de token `401`, List/Get/Create/Update, `Location`, filtro, `404` de recurso inexistente e `400` de request inválido. Evidência: `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`.
 
-## Changed
+### Changed
 
 - Alinhamento documental pós-pré-push U13 (2026-08-13): nota de revisão em `B010-SDK-E-BUILD-MINIMO.md` e emenda no registro de decisões funcionais do MVP esclarecem que o satélite `Gx18u13` é cadeia paralela sem alterar o baseline canônico U14+; higiene de espaço espúrio no documento 06. Sem mudança de código da extensão.
 - Wrappers de instalação (2026-08-12): `Install-ExtensionForGeneXus18.bat` e `Register-ExtensionForGeneXus18.bat` aceitam o diretório da instalação GeneXus como primeiro argumento, mantendo o padrão anterior quando omitido. Isso permite separar instalações U15 e U13 sem gravar caminhos locais no repositório.
@@ -30,7 +55,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Pós-publicação (2026-08-11): notas de release e checkpoint deixam de descrever a publicação como pendente. A Alpha `0.1.0-alpha.1` está publicada — tag `v0.1.0-alpha.1` no remoto apontando para `e0b2b7e` e GitHub Release pre-release com a DLL anexada (SHA-256 conferido após download). A tag publicada não deve ser movida; correção posterior exige `0.1.0-alpha.2`. Próxima ação = gate da Sprint 8 (usuário externo).
 - Higiene pública pós-Alpha (2026-08-11): `LICENSE` sem cabeçalho `# LICENSE` (para o GitHub reconhecer MIT); `Docs/Public/INSTALL.md` e checkpoint registram que a sequência do usuário final foi reexecutada pelo mantenedor no mesmo dia (B094 §6); tópicos do repositório no GitHub (`genexus`, `openapi`, `rest-api`, `genexus-extension`). Sem mudança de código da extensão.
 
-## Fixed
+### Fixed
 
 - Eco dos instaladores (2026-08-13): `Install-ExtensionForGeneXus18.bat` e `Install-ExtensionForGx18u13.bat` passam a orientar `Register-ExtensionForGeneXus18.bat` com `"%GENEXUS_DIRECTORY%"`, o mesmo diretório da cópia, em vez de “normalmente”. Evita `genexus /install` na IDE canônica depois de instalar a DLL satélite U13. Teste: `Tests/Installation/Test-InstallExtensionBatPathHandling.ps1`.
 - Readme do pacote NuGet (2026-08-12): `packaging/github-packages/README.md` embutido no `.nuspec`/workflow de GitHub Packages, deixando claro que o feed não instala na IDE. O aviso “missing a readme” some na próxima publicação de versão. Sem mudança de código da extensão.

@@ -1,6 +1,6 @@
 # Instalação — Genexus Open API Builder
 
-Guia para instalar a extensão no **GeneXus 18**. Validação principal (bateria completa) no **Upgrade 15**. O Upgrade 14 foi confirmado por usuário externo com a Alpha `0.1.0-alpha.1` (carregamento + geração); ver [evidência 2026-08-12](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md).
+Guia para instalar a extensão no **GeneXus 18**. A Alpha `0.1.0-alpha.2` publica duas DLLs: uma para a linha U14+ e outra para o Upgrade 13. A validação principal da linha canônica foi feita no **Upgrade 15**; o Upgrade 14 foi confirmado por usuário externo com a Alpha `0.1.0-alpha.1` (carregamento + geração), ver [evidência 2026-08-12](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md).
 
 Há dois caminhos:
 
@@ -16,11 +16,22 @@ Fonte factual: evidência [B094](../Implementation/B094-INSTALACAO-APENAS-COM-A-
 ### Pré-requisitos
 
 - GeneXus 18 instalado (caminho típico: `C:\Program Files (x86)\GeneXus`)
-- A DLL `GenexusOpenApiBuilder.Extension.dll` da versão desejada (build Release `net471`)
+- A DLL correta da versão desejada (build Release `net471`), conforme a tabela abaixo
+
+### Escolha da DLL
+
+No GitHub Release `0.1.0-alpha.2`, baixe somente um dos arquivos:
+
+| Arquivo | Use quando | Não use quando |
+|---|---|---|
+| `GenexusOpenApiBuilder.Extension.dll` | A IDE é GeneXus 18 U14, U15 ou posterior U14+ | A IDE é GeneXus 18 U13 |
+| `GenexusOpenApiBuilder.Extension-gx18u13.dll` | A IDE é GeneXus 18 U13 | A IDE é GeneXus 18 U14+ |
+
+O nome com `-gx18u13` é o nome público do asset para distinguir as linhas. Não instale as duas DLLs na mesma IDE e não use uma DLL de uma linha em outra.
 
 ### De onde vem a DLL
 
-Obtenha o anexo `GenexusOpenApiBuilder.Extension.dll` no **GitHub Release** da versão (por exemplo a Alpha `0.1.0-alpha.1`). O arquivo `.nupkg` **não** é aceito pelo diálogo Add > Local (o botão OK fica desabilitado).
+Obtenha no **GitHub Release** o arquivo indicado na tabela acima. O arquivo `.nupkg` **não** é aceito pelo diálogo Add > Local (o botão OK fica desabilitado).
 
 ### Instalação
 
@@ -45,6 +56,8 @@ genexus /install
 Em 2026-08-11 o mantenedor reexecutou limpeza real (apagar a DLL em `Packages` + `genexus /install` até sumir da lista), Add > Local, fechar a IDE, `genexus /install` e verificação de menus no GeneXus 18 U15. A ordem deste guia segue essa evidência ([B094 §6](../Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md)).
 
 Em 2026-08-12 um usuário externo (Igor C. Menin) instalou a DLL do Release `0.1.0-alpha.1` no GeneXus 18 U14 copiando-a para `Packages` e executando `genexus /install`, com menus e geração confirmados. Essa cópia manual é **variante observada**, não o caminho oficial deste guia. Evidência: [U14](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md) (issue [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1)).
+
+Para a linha U13, a DLL `GenexusOpenApiBuilder.Extension-gx18u13.dll` é o asset público específico do GeneXus 18 Upgrade 13. A compatibilidade foi validada pelo carregamento, menus, Wizard e `Build All` no U13; siga a mesma sequência de **Add > Local** e `genexus /install`, apontando para esse arquivo, sem misturá-lo com a DLL U14+.
 
 No mesmo dia, outro usuário externo (Miguel) confirmou uso bem-sucedido no GeneXus 18 U15 pelo **caminho de mantenedor**: repositório baixado, DLL do build local e `Install-ExtensionForGeneXus18.bat` antes de `genexus /install` — não a variante Packages/Release do parágrafo acima. Evidência: [U15](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md) (issue [#3](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/3)).
 
@@ -148,5 +161,7 @@ Siga o roteiro curto em [DEMO.md](DEMO.md).
 
 ## Notas da Alpha
 
-- Notas de release: [0.1.0-alpha.1](../Releases/0.1.0-alpha.1.md)
+- Notas de release: [0.1.0-alpha.2](../Releases/0.1.0-alpha.2.md)
+- Español: [notas 0.1.0-alpha.2](../Releases/0.1.0-alpha.2.es.md)
+- English: [release notes 0.1.0-alpha.2](../Releases/0.1.0-alpha.2.en.md)
 - Changelog: [CHANGELOG.md](../../CHANGELOG.md)
