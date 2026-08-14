@@ -1,3 +1,5 @@
+[Português-BR](README.md) · [Español](README.es.md) · [English](README.en.md)
+
 # Genexus Open API Builder
 
 Ferramenta open source para acelerar a geração de APIs REST a partir de **Transactions GeneXus**.
