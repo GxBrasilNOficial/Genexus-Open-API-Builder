@@ -32,11 +32,27 @@ O mantenedor aprovou U14+ como baseline de compatibilidade do MVP, mantendo U15 
 
 U13 e anteriores não foram considerados tecnicamente impossíveis. Eles podem exigir o Platform SDK legado, mas incluí-los significaria manter, documentar e testar uma segunda cadeia de build e empacotamento. Esse custo não foi aceito para o MVP. O baseline U14+ é, portanto, decisão de escopo reversível pelo mantenedor, não afirmação de incompatibilidade de U13.
 
+**Emenda técnica de 2026-08-13 — satélite `Gx18u13`:** o parágrafo acima permanece válido para o baseline canônico do MVP (U14+). A Opção B / Fase 2 entregou uma segunda cadeia satélite paralela, sem promover U13 a baseline nem anular a decisão de 2026-07-16; ver `Emenda técnica — 2026-08-13` abaixo.
+
 ### Limite da evidência
 
 A build comprovou o mecanismo moderno no repositório, não o carregamento da extensão em U14 ou U15. Assim, “U14+” significa alvo de produto e de teste pendente; suporte prático só poderá ser anunciado após o `B000`. A diferença U15 relativa a chamadas de `API Object` a partir de eventos Angular está fora do escopo do MVP e não determina o baseline.
 
 A emenda preserva o objetivo funcional — extensão dentro da IDE que gera objeto `API` nativo — e exige que o `B000` torne o pacote minimamente descobrível e carregável antes da instalação manual.
+
+## Emenda técnica — 2026-08-13
+
+### Fato que motivou a emenda
+
+A Frente de suporte paralelo `Gx18u13` (D43, Opção B) entregou solution, projeto, referências pinadas, instalador satélite e inventário offline; a DLL foi compilada em Release e validada manualmente no GeneXus 18 U13. Isso materializa a segunda cadeia de build e empacotamento que a emenda de 2026-07-16 descrevia como custo não aceito *no baseline do MVP*.
+
+### Decisão de produto e manutenção
+
+O baseline canônico do MVP permanece U14+ via feed NuGet e MSBuild SDKs. A linha `Gx18u13` é suporte paralelo de manutenção, não revisão do baseline nem anúncio de U13 como alvo oficial do produto. O custo da segunda cadeia foi aceito nesse recorte paralelo; a decisão de escopo de 2026-07-16 continua reversível e não foi revertida.
+
+### O que a emenda não altera
+
+Permanecem válidos o mecanismo moderno como caminho canônico, U15 como ambiente principal do mantenedor e a distinção entre existência técnica de uma extensão em U13 e inclusão de U13 no baseline do MVP. Evidências: `Docs/Decisions/2026-08-12-PLANO_SUPORTE_PARALELO_GX18U13_OPCAO_B.md`, `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md` e a nota de revisão de 2026-08-13 em `Docs/Implementation/B010-SDK-E-BUILD-MINIMO.md`.
 
 ## Emenda técnica — 2026-08-03
 

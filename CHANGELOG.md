@@ -21,6 +21,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## Changed
 
+- Alinhamento documental pós-pré-push U13 (2026-08-13): nota de revisão em `B010-SDK-E-BUILD-MINIMO.md` e emenda no registro de decisões funcionais do MVP esclarecem que o satélite `Gx18u13` é cadeia paralela sem alterar o baseline canônico U14+; higiene de espaço espúrio no documento 06. Sem mudança de código da extensão.
 - Wrappers de instalação (2026-08-12): `Install-ExtensionForGeneXus18.bat` e `Register-ExtensionForGeneXus18.bat` aceitam o diretório da instalação GeneXus como primeiro argumento, mantendo o padrão anterior quando omitido. Isso permite separar instalações U15 e U13 sem gravar caminhos locais no repositório.
 - Cobertura mecânica adicional do pré-push (2026-08-13): `scripts/Invoke-PrePushMechanicalChecks.ps1` passou a executar os testes de leitura e elegibilidade de `NoAccept`, inventário offline da assembly e tratamento de caminhos dos BATs; a presença e o resultado desses quatro comandos também são verificados por `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`. O plano v12 registra explicitamente seu estado como snapshot pré-execução.
 - Alinhamento documental pós-gate Sprint 8 (2026-08-12): `B000-CARREGAMENTO-IDE.md` deixa de listar validação U14 comunitária como pendência e registra o fechamento por usuário externo (issue #1); `CHANGELOG` Unreleased unifica as seções `## Added` duplicadas. Sem mudança de código da extensão.
