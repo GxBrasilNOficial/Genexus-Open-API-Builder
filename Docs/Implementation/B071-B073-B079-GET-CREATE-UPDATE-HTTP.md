@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Completar a primeira versão runtime de `Get`, `Create` e `Update` sobre os objetos já gerados por B040-B046, B050-B053, B054, B055 e B070, preservando o trio API Object/Procedure/SDT e preparando uma única validação manual na IDE.
+Completar a primeira versão runtime de `Get`, `Create` e `Update`, além de alinhar o contrato HTTP de `List`, sobre os objetos já gerados por B040-B046, B050-B053, B054, B055 e B070, preservando o trio API Object/Procedure/SDT e preparando uma única validação manual na IDE.
 
 ## Implementação Local
 
@@ -11,9 +11,10 @@ A etapa acionada no wizard como conclusão REST de Get/Create/Update passa a:
 - regravar `proc<Transacao>_API_Get` com chave simples ou composta, `GetResponse`, `ErrorResponse` e `RestStatusCode`;
 - regravar `proc<Transacao>_API_Create` via Business Component com `CreateResponse`, `ErrorResponse` e `RestStatusCode`;
 - regravar `proc<Transacao>_API_Update` via Business Component com chave simples ou composta, `UpdateResponse`, `ErrorResponse` e `RestStatusCode`;
-- sincronizar o API Object com `Get(in:&PK..., out:&GetResponse, out:&ErrorResponse)`, `Create(in:&CreateRequest, out:&CreateResponse, out:&ErrorResponse)` e `Update(in:&PK..., in:&UpdateRequest, out:&UpdateResponse, out:&ErrorResponse)`;
+- regravar `proc<Transacao>_API_List` com `ErrorResponse` e `RestStatusCode` para falhas de paginação e filtros, preservando paginação, filtros, ordenação e resposta paginada;
+- sincronizar o API Object com `List(in:&ApiPage, in:&ApiPageSize, ..., out:&ListResponse, out:&ErrorResponse)`, `Get(in:&PK..., out:&GetResponse, out:&ErrorResponse)`, `Create(in:&CreateRequest, out:&CreateResponse, out:&ErrorResponse)` e `Update(in:&PK..., in:&UpdateRequest, out:&UpdateResponse, out:&ErrorResponse)`;
 - expor `ErrorResponse` como saída pública dos serviços e manter `RestStatusCode` como variável interna do API Object usada na chamada às Procedures;
-- gravar Events no API Object para aplicar `&RestCode = &RestStatusCode` nos eventos `Get.After`, `Create.After` e `Update.After`;
+- gravar Events no API Object para aplicar `&RestCode = &RestStatusCode` nos eventos `List.After`, `Get.After`, `Create.After` e `Update.After`;
 - validar membros obrigatórios em `Create` e `Update` comparando cada membro recebido com o valor default do mesmo membro em uma instância vazia do próprio SDT de request, sem comando C# embutido;
 - preservar o contrato B070 quando `List` for aplicado no mesmo fluxo, mantendo todos os serviços no mesmo `ServiceGroupSource`.
 
@@ -46,7 +47,7 @@ O API Object B079 é tratado como evolução conservadora do estado B055. O pref
 
 Após a primeira validação na IDE, o preflight de reexecução também passou a aceitar Sources B079 já gerados por equivalência canônica restrita. A comparação remove apenas whitespace para tolerar normalização textual inofensiva da IDE, mas bloqueia qualquer código manual extra antes de sobrescrever a Procedure.
 
-`ApplyList` reconhece esse estado e, quando precisa sincronizar List, preserva `Get`, `Create`, `Update`, as anotações REST explícitas de `Create`/`Update`, `RestPath` com parâmetros GeneXus no formato `{&Chave}`, `ErrorResponse` como saída pública, `RestStatusCode` interno e Events.
+`ApplyList` reconhece esse estado e, quando precisa sincronizar List, preserva `Get`, `Create`, `Update`, as anotações REST explícitas de `Create`/`Update`, `RestPath` com parâmetros GeneXus no formato `{&Chave}`, `ErrorResponse` como saída pública, `RestStatusCode` interno e Events. A `List` atual também usa `ErrorResponse`/`RestStatusCode` para validações de paginação e filtros, sem `msg()`; o contrato histórico sem essas saídas continua aceito somente para migração.
 
 A integridade B067 da metadata foi ajustada para reconhecer `[Description]` seguida de outras anotações, como `[RestMethod(POST)]`, antes da assinatura do serviço. Esse caso ocorre no `Create` B079 e não deve ser tratado como alteração manual de descrição.
 
@@ -93,9 +94,9 @@ Correções feitas durante a validação:
 - parser de integridade B067 passou a aceitar `[RestMethod(POST)]` entre `[Description]` e o serviço;
 - integridade B067 passou a aceitar hashes de contrato planejado e de `ServiceGroupSource` esperado de variantes próprias anteriores com `RestPath` legado `{Chave}` ou anotações REST ainda incompletas, mantendo bloqueio para metadata externa ou contrato semântico divergente;
 - parser de contrato do `ServiceGroupSource` passou a rejeitar B079 quando `Create` não está anotado como `[RestMethod(POST)]`;
-- `ErrorResponse` passou a ser saída pública em `Get`, `Create` e `Update`, deixando de ser apenas argumento interno Procedure/API Object;
+- `ErrorResponse` passou a ser saída pública em `List`, `Get`, `Create` e `Update`, deixando de ser apenas argumento interno Procedure/API Object;
 - reexecução de Procedures B079 passou a usar equivalência canônica restrita do Source, bloqueando código extra.
-- a geração atual deixou de preencher `ErrorResponse.Errors[]` por `ErrorItem` nested, depois que a IDE rejeitou a validação da Procedure com item de subestrutura SDT; `ErrorResponse.Code` e `ErrorResponse.Message` continuam compondo o corpo de erro público e `&Messages.ToJson()` continua registrado no Output técnico.
+- a geração atual deixou de preencher `ErrorResponse.Errors[]` por `ErrorItem` nested, depois que a IDE rejeitou a validação da Procedure com item de subestrutura SDT; `ErrorResponse.Code` e `ErrorResponse.Message` continuam compondo o corpo de erro público, sem usar `msg()` para transportar mensagens do Business Component.
 - o estado intermediário com `ErrorItem` tipado como `sdt_API_ErrorResponse.Error`, `sdt_API_ErrorResponse.Errors`, `sdt_API_ErrorResponse.ErrorsItem` ou `sdt:sdt_API_ErrorResponse.Errors` é aceito apenas como migração conservadora para regravar a Procedure para o contrato top-level atual.
 - o estado intermediário que validava presença de membros obrigatórios por `csharp`/`IsDirty` do SDT é aceito apenas como migração conservadora; a tentativa intermediária com `HttpRequest.ToString()` + `Properties` também é aceita apenas para reencontro, pois o body bruto não ficou disponível dentro da Procedure chamada pelo API Object.
 

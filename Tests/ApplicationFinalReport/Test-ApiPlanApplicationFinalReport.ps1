@@ -42,7 +42,7 @@ Assert-Equal 4 $report.CreatedCount 'Criados: Response, List Procedure, API Obje
 Assert-Equal 1 $report.UpdatedCount 'Atualizados: ErrorResponse reencontrado.'
 Assert-Equal 0 $report.BlockedCount 'Sem bloqueios.'
 Assert-Equal 1 $report.WarningCount 'Um aviso.'
-Assert-True ($report.BuildOutputSummary() -match "\[B081\] Relatorio final") 'Output summary deve citar B081.'
+Assert-True ($report.BuildOutputSummary() -match "\[B081\] Relatório final") 'Output summary deve citar B081.'
 Assert-True ($report.BuildReadableBody() -match 'Criados \(4\)') 'Corpo legivel lista criados.'
 Assert-True ($report.BuildReadableBody() -match 'Atualizados \(1\)') 'Corpo legivel lista atualizados.'
 Assert-True ($report.BuildReadableBody() -match '\[Folder\] ContratoOpenApi') 'Corpo legivel lista Folder criado.'
@@ -79,8 +79,13 @@ Assert-True ($dialogSource -match 'GetPositionFromCharIndex') 'Dialogo B081 deve
 Assert-True ($dialogSource -match 'ScrollBars\.Vertical') 'Dialogo B081 deve habilitar rolagem vertical quando o corpo exceder a area.'
 Assert-True ($dialogSource -match 'Math\.Ceiling\(\(estimatedBodyHeight \+ chromeHeight\) \* 1\.10\)') 'Dialogo B081 deve ampliar a altura preferida em 10%.'
 Assert-True ($dialogSource -match 'baseWidth \* 1\.20') 'Dialogo B081 deve ampliar a largura preferida em 20%.'
-Assert-True ($dialogSource -match 'working\.Height - 60') 'Dialogo B081 deve limitar a altura a area util da tela.'
-Assert-True ($dialogSource -match 'working\.Width - 80') 'Dialogo B081 deve limitar a largura a area util da tela.'
+Assert-True ($dialogSource -match 'StartPosition = FormStartPosition\.Manual') 'Dialogo B081 deve posicionar-se manualmente para respeitar o monitor atual.'
+Assert-True ($dialogSource -match 'Screen\.FromPoint\(Cursor\.Position\)\.WorkingArea') 'Dialogo B081 deve usar o monitor onde a acao foi iniciada antes de criar o handle.'
+Assert-True ($dialogSource -match 'MaximumSize = new Size\(maxWidth, maxHeight\)') 'Dialogo B081 deve limitar o tamanho maximo a area util da tela.'
+Assert-True ($dialogSource -match 'working\.Height - 32') 'Dialogo B081 deve reservar margem vertical na area util.'
+Assert-True ($dialogSource -match 'working\.Width - 32') 'Dialogo B081 deve reservar margem horizontal na area util.'
+Assert-True ($dialogSource -match 'FitToCurrentWorkingArea\(\)') 'Dialogo B081 deve recalcular os limites depois de criar o handle.'
+Assert-True ($dialogSource -match 'CenterInWorkingArea\(working\)') 'Dialogo B081 deve manter os botoes dentro da area util do monitor.'
 
 $packageSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Package.cs')
 $apiPlanSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Domain\ApiPlan.cs')
@@ -88,6 +93,7 @@ $sdtWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..
 $businessComponentWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanBusinessComponentWriter.cs')
 $listWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanListProcedureWriter.cs')
 Assert-True ($packageSource -match 'AppendPlanSideEffects\(collector, apiPlan\)') 'B081 deve anexar efeitos de Folder e Transaction ao relatorio final.'
+Assert-True ($packageSource -match 'conflict\.DiagnosticDetails') 'B081 deve preservar o diagnóstico detalhado de colisões no Output.'
 Assert-True ($packageSource -match 'onSdtWrite: item => AppendSdtWriteItemToReport') 'B081 deve receber SDTs escritos internamente por B055/B070.'
 Assert-True ($apiPlanSource -match 'SharedSdtFolderWasCreated') 'ApiPlan deve transportar a criacao do Folder compartilhado.'
 Assert-True ($sdtWriterSource -match 'SharedSdtFolderWasCreated = true') 'Writer de SDT deve marcar o Folder compartilhado criado.'

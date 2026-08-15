@@ -85,7 +85,7 @@ Regras:
 
 O enunciado acima permanece registrado como o contrato pretendido. A geração entregue **não** contém `Errors[]`.
 
-Em B071-B073/B079 a tentativa de preencher `Errors[]` por `ErrorItem` de subestrutura SDT foi descartada depois que a IDE manteve a rejeição da validação da Procedure. O erro público passou a ser top-level, com `Code` e `Message`, e as mensagens do Business Component ficaram no Output técnico. O SDT compartilhado, porém, preservou a subestrutura, que continuou aparecendo no contrato OpenAPI como array que nunca é preenchido.
+Em B071-B073/B079 a tentativa de preencher `Errors[]` por `ErrorItem` de subestrutura SDT foi descartada depois que a IDE manteve a rejeição da validação da Procedure. O erro público passou a ser top-level, com `Code` e `Message`; a geração atual não usa `msg()` como transporte para mensagens do Business Component. O SDT compartilhado, porém, preservou a subestrutura, que continuou aparecendo no contrato OpenAPI como array que nunca é preenchido.
 
 A frente registrada em `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md` removeu o nível `Errors` de `sdt_API_ErrorResponse`. O SDT gerado passa a conter apenas `Code` e `Message`, e o schema derivado `sdt_API_ErrorResponse.Errors_Error` deixa de existir no YAML.
 
@@ -145,7 +145,7 @@ A tabela desta seção descreve o **runtime HTTP** do MVP. O YAML OpenAPI gerado
 
 Orientação de consumo:
 
-- confiar nesta tabela e no Source/Events gerados (`&RestStatusCode` / `&RestCode`), não no bloco `responses:` do YAML, para saber quais status o MVP pode devolver;
+- confiar nesta tabela e no Source/Events gerados (`&RestStatusCode` / `&RestCode`), inclusive `List`, não no bloco `responses:` do YAML, para saber quais status o MVP pode devolver;
 - `openapi-generator-cli` permanece útil para rotas, métodos, `operationId`, security e schemas básicos; o mapa de status do cliente gerado fica incompleto frente ao runtime;
 - agentes de IA que leiam o YAML devem ser avisados da limitação e cruzar Procedures/Events (ou C# pós-Build) e este contrato; `401`/`403` do GAM e falhas de infra podem não aparecer no Source da Procedure;
 - não usar `Description` do API Object como substituto da lista estruturada de status.

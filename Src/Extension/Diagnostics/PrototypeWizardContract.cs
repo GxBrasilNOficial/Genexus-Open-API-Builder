@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Artech.Architecture.Common.Objects;
 using Artech.Genexus.Common.Objects;
 
 namespace GenexusOpenApiBuilder.Extension.Diagnostics;
@@ -14,6 +15,23 @@ internal static class PrototypeWizardContractReader
     private static readonly string[] ServiceNames = { "List", "Get", "Create", "Update" };
 
     public static PrototypeWizardContractSnapshot Read(Transaction transaction)
+    {
+        return Read(transaction, new PrototypeWizardExistingApiContract(false, Array.Empty<PrototypeWizardExistingFilter>()));
+    }
+
+    public static PrototypeWizardContractSnapshot Read(KBModel designModel, Transaction transaction)
+    {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        return Read(transaction, PrototypeWizardExistingApiContractReader.Read(designModel, transaction));
+    }
+
+    private static PrototypeWizardContractSnapshot Read(
+        Transaction transaction,
+        PrototypeWizardExistingApiContract existingApiContract)
     {
         if (transaction is null)
         {
@@ -30,7 +48,11 @@ internal static class PrototypeWizardContractReader
         var descriptionAttributeName = root.DescriptionAttribute?.Name;
 
         var services = ServiceNames
-            .Select(name => new PrototypeWizardServiceDecision(name, true))
+            .Select(name => new PrototypeWizardServiceDecision(
+                name,
+                existingApiContract.TryGetServiceSelection(name, out var existingSelected)
+                    ? existingSelected
+                    : true))
             .ToArray();
 
         var classificationPolicy = PrototypeWizardFieldClassificationPolicy.CreateDefault();
@@ -42,10 +64,17 @@ internal static class PrototypeWizardContractReader
                 primaryKeyPartCount,
                 descriptionAttributeName,
                 noAcceptAttributeNames,
-                classificationPolicy))
+                classificationPolicy,
+                existingApiContract))
             .ToArray();
 
-        return new PrototypeWizardContractSnapshot(transaction.Name, moduleName, services, attributes, classificationPolicy.Configuration);
+        return new PrototypeWizardContractSnapshot(
+            transaction.Name,
+            moduleName,
+            services,
+            attributes,
+            classificationPolicy.Configuration,
+            existingApiContract);
     }
 
     private static PrototypeWizardAttributeDecision CreateAttributeDecision(
@@ -55,7 +84,8 @@ internal static class PrototypeWizardContractReader
         int primaryKeyPartCount,
         string? descriptionAttributeName,
         ISet<string> noAcceptAttributeNames,
-        PrototypeWizardFieldClassificationPolicy classificationPolicy)
+        PrototypeWizardFieldClassificationPolicy classificationPolicy,
+        PrototypeWizardExistingApiContract existingApiContract)
     {
         var attribute = item.Attribute;
         var name = item.Name;
@@ -81,8 +111,34 @@ internal static class PrototypeWizardContractReader
         var filter = ResolveFilter(type, isPrimaryKey, isDescription, isSensitive, isAudit, isTechnicallyInadequate);
         var isCreatePayloadCandidate = payloadDisabledReason.Length == 0;
         var isUpdatePayloadCandidate = updatePayloadDisabledReason.Length == 0;
-        var defaultCreateSelected = isCreatePayloadCandidate && !isSensitive;
-        var defaultUpdateSelected = isUpdatePayloadCandidate && !isSensitive;
+        var defaultCreateSelected = ResolveExistingFieldSelection(
+            existingApiContract,
+            "CreateRequest",
+            name,
+            isCreatePayloadCandidate && !isSensitive);
+        var defaultUpdateSelected = ResolveExistingFieldSelection(
+            existingApiContract,
+            "UpdateRequest",
+            name,
+            isUpdatePayloadCandidate && !isSensitive);
+        var defaultResponseSelected = ResolveExistingFieldSelection(
+            existingApiContract,
+            "Response",
+            name,
+            !isSensitive);
+        var existingFilter = existingApiContract.TryGetFilter(name, out var savedFilter)
+            ? savedFilter
+            : null;
+        var defaultFilterSelected = existingFilter is not null
+            ? true
+            : existingApiContract.FiltersAvailable ? false : filter.DefaultSelected;
+        var filterOperator = existingFilter?.FilterOperator;
+        if (string.IsNullOrWhiteSpace(filterOperator))
+        {
+            filterOperator = filter.Operator;
+        }
+        var usesPeriod = existingFilter?.UsesPeriod ?? filter.UsesPeriod;
+        var usesRange = existingFilter?.UsesRange ?? filter.UsesRange;
 
         return new PrototypeWizardAttributeDecision(
             order,
@@ -109,13 +165,24 @@ internal static class PrototypeWizardContractReader
             auditClassification.Reason,
             defaultCreateSelected,
             defaultUpdateSelected,
-            !isSensitive,
+            defaultResponseSelected,
             filter.IsEligible,
-            filter.DefaultSelected,
-            filter.Operator,
-            filter.UsesPeriod,
-            filter.UsesRange,
+            defaultFilterSelected,
+            filterOperator!,
+            usesPeriod,
+            usesRange,
             filter.DisabledReason);
+    }
+
+    private static bool ResolveExistingFieldSelection(
+        PrototypeWizardExistingApiContract existingApiContract,
+        string requestName,
+        string fieldName,
+        bool fallback)
+    {
+        return existingApiContract.TryGetFieldSelection(requestName, fieldName, out var selected)
+            ? selected
+            : existingApiContract.IsFieldSelectionAvailable(requestName) ? false : fallback;
     }
 
     private static string DescribePayloadDisabledReason(
@@ -542,13 +609,15 @@ internal sealed class PrototypeWizardContractSnapshot
         string moduleName,
         IReadOnlyList<PrototypeWizardServiceDecision> services,
         IReadOnlyList<PrototypeWizardAttributeDecision> attributes,
-        PrototypeWizardFieldClassificationConfiguration fieldClassificationConfiguration)
+        PrototypeWizardFieldClassificationConfiguration fieldClassificationConfiguration,
+        PrototypeWizardExistingApiContract existingApiContract)
     {
         TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
         ModuleName = moduleName ?? throw new ArgumentNullException(nameof(moduleName));
         Services = services ?? throw new ArgumentNullException(nameof(services));
         Attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
         FieldClassificationConfiguration = fieldClassificationConfiguration ?? throw new ArgumentNullException(nameof(fieldClassificationConfiguration));
+        ExistingApiContract = existingApiContract ?? throw new ArgumentNullException(nameof(existingApiContract));
     }
 
     public string TransactionName { get; }
@@ -560,6 +629,8 @@ internal sealed class PrototypeWizardContractSnapshot
     public IReadOnlyList<PrototypeWizardAttributeDecision> Attributes { get; }
 
     public PrototypeWizardFieldClassificationConfiguration FieldClassificationConfiguration { get; }
+
+    public PrototypeWizardExistingApiContract ExistingApiContract { get; }
 }
 
 internal sealed class PrototypeWizardServiceDecision

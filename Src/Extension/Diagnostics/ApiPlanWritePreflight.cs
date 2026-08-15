@@ -67,10 +67,48 @@ internal static class ApiPlanWritePreflight
     }
 
     /// <summary>
-    /// Preflight do B085: exige objetos próprios, mas permite divergência intencional do contrato planejado
-    /// (hash B067) porque a sincronização regrava metadata/API ao final.
+    /// Preflight do B085: exige objetos proprios e baseline intacto, mas
+    /// permite divergencia intencional do contrato planejado.
     /// </summary>
     public static void ValidateForSync(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
+    {
+        ValidateForIntentionalChange(designModel, transaction, apiPlan, true, true, true, true, "B085");
+    }
+
+    public static void ValidateForIntentionalChange(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
+    {
+        ValidateForIntentionalChange(designModel, transaction, apiPlan, true, true, true, true);
+    }
+
+    public static void ValidateForIntentionalChange(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        bool requireSdts,
+        bool requireProcedures,
+        bool requireApiObject,
+        bool requireMetadataFile)
+    {
+        ValidateForIntentionalChange(
+            designModel,
+            transaction,
+            apiPlan,
+            requireSdts,
+            requireProcedures,
+            requireApiObject,
+            requireMetadataFile,
+            "B063/B064/B067");
+    }
+
+    private static void ValidateForIntentionalChange(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        bool requireSdts,
+        bool requireProcedures,
+        bool requireApiObject,
+        bool requireMetadataFile,
+        string operationCode)
     {
         if (designModel is null)
         {
@@ -89,22 +127,26 @@ internal static class ApiPlanWritePreflight
 
         if (!string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.Ordinal))
         {
-            throw new InvalidOperationException("B085 bloqueado: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
+            throw new InvalidOperationException($"{operationCode} bloqueado: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
         }
 
-        var state = ApiPlanGenerationStateReader.ReadForSync(designModel, transaction, apiPlan);
-        var blocked = new[] { state.Sdts, state.Procedures, state.ApiObject, state.MetadataFile }
-            .Where(stage => stage.IsBlocked)
-            .Select(stage => stage.StageName)
-            .ToArray();
+        var state = ApiPlanGenerationStateReader.ReadForIntentionalChange(designModel, transaction, apiPlan);
+        var scope = ApiPlanWritePreflightScope.FromRequirements(requireSdts, requireProcedures, requireApiObject, requireMetadataFile);
+        var blocked = scope.SelectBlockedStageNames(new[]
+            {
+                ToStageBlock(ApiPlanWritePreflightStageKind.Sdts, state.Sdts),
+                ToStageBlock(ApiPlanWritePreflightStageKind.Procedures, state.Procedures),
+                ToStageBlock(ApiPlanWritePreflightStageKind.ApiObject, state.ApiObject),
+                ToStageBlock(ApiPlanWritePreflightStageKind.MetadataFile, state.MetadataFile),
+            });
         if (blocked.Length == 0)
         {
             return;
         }
 
-        var collisions = state.CollectCollisionConflicts();
+        var collisions = state.CollectCollisionConflicts(requireSdts, requireProcedures, requireApiObject, requireMetadataFile);
         throw new InvalidOperationException(BuildBlockedMessage(
-            "B085 bloqueado antes do primeiro Save(): objetos proprios ausentes, externos ou ambiguos em ",
+            $"{operationCode} bloqueado antes do primeiro Save(): baseline da extensao ou objetos proprios ausentes, externos ou ambiguos em ",
             blocked,
             collisions,
             ". Nenhum objeto planejado foi criado ou alterado."));

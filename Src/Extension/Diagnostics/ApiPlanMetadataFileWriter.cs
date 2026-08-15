@@ -229,11 +229,61 @@ internal static class ApiPlanMetadataFileWriter
         return ApiPlanMetadataIntegrity.HasCompatibleIntegrity(
             metadata,
             ComputeServiceDescriptionsHash(apiPlan),
-            ComputeCompatiblePlannedContractHashes(apiPlan),
+            ComputeCompatiblePlannedContractHashes(metadata, apiPlan),
             ComputeActualServiceDescriptionsHash(apiPlan, apiObject.ServiceGroupSource.Source),
             ApiPlanApiObjectWriter.CreateOwnedDescriptionCandidates(apiPlan),
             ComputeCompatibleExpectedServiceSources(apiPlan),
             ApiPlanBusinessComponentWriter.IsManagedApiObject(apiObject.Model, apiPlan, apiObject));
+    }
+
+    /// <summary>
+    /// Confere se a metadata e o API Object ainda correspondem ao ultimo
+    /// estado gravado pela extensao. Nao usa o ApiPlan novo: uma mudanca feita
+    /// pelo Wizard ou pelo Sincronizar deve poder produzir um novo contrato.
+    /// </summary>
+    internal static bool HasCompatibleGeneratedBaseline(JObject metadata, API apiObject)
+    {
+        if (metadata is null)
+        {
+            throw new ArgumentNullException(nameof(metadata));
+        }
+
+        if (apiObject is null)
+        {
+            throw new ArgumentNullException(nameof(apiObject));
+        }
+
+        if (!HasCompatibleMetadataFingerprint(metadata))
+        {
+            return false;
+        }
+
+        var integrity = metadata["integrity"] as JObject;
+        if (integrity is null)
+        {
+            return true;
+        }
+
+        var serviceNames = ((JArray?)integrity.SelectToken("generatedDescriptions.services"))
+            ?.Select(item => item["serviceName"]?.Value<string>() ?? string.Empty)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToArray();
+        if (serviceNames is null || serviceNames.Length == 0)
+        {
+            return false;
+        }
+
+        var actualDescriptionsHash = ApiPlanMetadataIntegrity.ComputeJsonSha256(
+            ApiPlanMetadataIntegrity.CreateServiceDescriptionsContractFromSource(
+                apiObject.ServiceGroupSource.Source,
+                serviceNames));
+        var actualSourceHash = ApiPlanMetadataIntegrity.ComputeNormalizedTextSha256(apiObject.ServiceGroupSource.Source);
+        return ApiPlanMetadataIntegrity.HasCompatibleGeneratedBaseline(
+            metadata,
+            actualDescriptionsHash,
+            actualSourceHash,
+            apiObject.Description,
+            apiObject.Guid.ToString());
     }
 
     private static void ValidateB067IntegrityIfPresent(JObject metadata, ApiPlan apiPlan, API apiObject)
@@ -242,6 +292,30 @@ internal static class ApiPlanMetadataFileWriter
         {
             throw new InvalidOperationException($"Gravacao de metadata B067 bloqueada: File proprio '{apiPlan.MetadataFileName}' indica alteracao manual posterior em descricoes, ownership ou contrato essencial. Nenhuma alteracao foi feita.");
         }
+    }
+
+    private static bool HasCompatibleMetadataFingerprint(JObject metadata)
+    {
+        var fingerprint = metadata["fingerprint"] as JObject;
+        if (fingerprint is null)
+        {
+            return true;
+        }
+
+        var algorithm = fingerprint["algorithm"]?.Value<string>();
+        var scope = fingerprint["scope"]?.Value<string>();
+        var expected = fingerprint["value"]?.Value<string>();
+        if (!string.Equals(algorithm, "SHA-256", StringComparison.Ordinal) ||
+            !string.Equals(scope, "metadataWithoutFingerprint", StringComparison.Ordinal) ||
+            string.IsNullOrWhiteSpace(expected))
+        {
+            return false;
+        }
+
+        var snapshot = (JObject)metadata.DeepClone();
+        snapshot.Remove("fingerprint");
+        var actual = ComputeSha256(Encoding.UTF8.GetBytes(snapshot.ToString(Formatting.None)));
+        return string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string CreateMetadataJson(Transaction transaction, ApiPlan apiPlan, API apiObject)
@@ -388,7 +462,7 @@ internal static class ApiPlanMetadataFileWriter
     {
         return ApiPlanMetadataIntegrity.Create(
             CreateServiceDescriptionsContract(apiPlan),
-            CreatePlannedContract(apiPlan, transactionStructure: transactionStructure),
+            CreatePlannedContract(apiPlan, transactionStructure: transactionStructure, includePagination: false),
             ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan),
             apiObject.Guid.ToString(),
             ResolveServiceSourceMode(apiPlan, apiObject),
@@ -407,9 +481,13 @@ internal static class ApiPlanMetadataFileWriter
             }));
     }
 
-    private static JObject CreatePlannedContract(ApiPlan apiPlan, bool useLegacyPathParameterSyntax = false, IReadOnlyList<ApiPlanField>? transactionStructure = null)
+    private static JObject CreatePlannedContract(
+        ApiPlan apiPlan,
+        bool useLegacyPathParameterSyntax = false,
+        IReadOnlyList<ApiPlanField>? transactionStructure = null,
+        bool includePagination = true)
     {
-        return new JObject
+        var contract = new JObject
         {
             ["api"] = new JObject
             {
@@ -448,11 +526,6 @@ internal static class ApiPlanMetadataFileWriter
                     ["reason"] = field.Reason,
                 })),
             },
-            ["pagination"] = new JObject
-            {
-                ["defaultPageSize"] = apiPlan.DefaultPageSize,
-                ["maximumPageSize"] = apiPlan.MaximumPageSize,
-            },
             ["order"] = new JArray(apiPlan.StaticOrder.Select(order => new JObject
             {
                 ["order"] = order.Order,
@@ -461,6 +534,17 @@ internal static class ApiPlanMetadataFileWriter
                 ["direction"] = order.Direction,
             })),
         };
+
+        if (includePagination)
+        {
+            contract["pagination"] = new JObject
+            {
+                ["defaultPageSize"] = apiPlan.DefaultPageSize,
+                ["maximumPageSize"] = apiPlan.MaximumPageSize,
+            };
+        }
+
+        return contract;
     }
 
     private static JObject CreateClassificationObject(ApiPlanFieldClassificationConfiguration configuration)
@@ -635,7 +719,7 @@ internal static class ApiPlanMetadataFileWriter
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
-        return ApiPlanMetadataIntegrity.ComputeJsonSha256(CreatePlannedContract(apiPlan));
+        return ApiPlanMetadataIntegrity.ComputeJsonSha256(CreatePlannedContract(apiPlan, includePagination: false));
     }
 
     private static string ComputeServiceDescriptionsHash(ApiPlan apiPlan)
@@ -707,14 +791,39 @@ internal static class ApiPlanMetadataFileWriter
         };
     }
 
-    private static string[] ComputeCompatiblePlannedContractHashes(ApiPlan apiPlan) =>
-        new[]
+    private static string[] ComputeCompatiblePlannedContractHashes(JObject metadata, ApiPlan apiPlan)
+    {
+        var hashes = new List<string>
         {
             ComputePlannedContractHash(apiPlan),
+            ApiPlanMetadataIntegrity.ComputeJsonSha256(CreatePlannedContract(apiPlan, useLegacyPathParameterSyntax: true, includePagination: false)),
+            // Metadata B067 generated before pagination became mutable included
+            // the page limits in the essential-contract hash. Keep both legacy
+            // variants accepted so existing APIs can be reencountered safely.
+            ApiPlanMetadataIntegrity.ComputeJsonSha256(CreatePlannedContract(apiPlan)),
             ApiPlanMetadataIntegrity.ComputeJsonSha256(CreatePlannedContract(apiPlan, useLegacyPathParameterSyntax: true)),
+        };
+
+        var storedContract = metadata.SelectToken("integrity.plannedContract.contract") as JObject;
+        if (storedContract is not null)
+        {
+            var storedContractWithoutPagination = (JObject)storedContract.DeepClone();
+            storedContractWithoutPagination.Remove("pagination");
+            var currentContractWithoutPagination = CreatePlannedContract(apiPlan, includePagination: false);
+            var currentLegacyContractWithoutPagination = CreatePlannedContract(apiPlan, useLegacyPathParameterSyntax: true, includePagination: false);
+            if (JToken.DeepEquals(storedContractWithoutPagination, currentContractWithoutPagination) ||
+                JToken.DeepEquals(storedContractWithoutPagination, currentLegacyContractWithoutPagination))
+            {
+                // The stored legacy hash is accepted only when removing
+                // pagination leaves the current essential contract unchanged.
+                hashes.Add(ApiPlanMetadataIntegrity.ComputeJsonSha256(storedContract));
+            }
         }
-        .Distinct(StringComparer.Ordinal)
-        .ToArray();
+
+        return hashes
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+    }
 
     private static string NormalizePlannedContractRestPath(string restPath, bool useLegacyPathParameterSyntax)
     {

@@ -172,8 +172,7 @@ internal static class ApiPlanProcedureWriter
     private static void ConfigureProcedure(Procedure procedure, ApiPlanProcedureDefinition definition)
     {
         procedure.ProcedurePart.Source =
-            $"// Genexus Open API Builder: Procedure skeleton for {definition.ServiceName}." + Environment.NewLine +
-            $"msg(!\"Genexus Open API Builder {definition.ServiceName} skeleton.\", status)";
+            $"// Genexus Open API Builder: Procedure skeleton for {definition.ServiceName}.";
         procedure.Rules.Source = string.Empty;
     }
 }

@@ -15,6 +15,15 @@ internal static class ApiPlanApiObjectWriter
 {
     public static ApiPlanApiObjectWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
+        return CreateOrReencounter(designModel, transaction, apiPlan, allowIntentionalContractRefresh: false);
+    }
+
+    public static ApiPlanApiObjectWriteResult CreateOrReencounter(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        bool allowIntentionalContractRefresh)
+    {
         if (designModel is null)
         {
             throw new ArgumentNullException(nameof(designModel));
@@ -37,7 +46,7 @@ internal static class ApiPlanApiObjectWriter
 
         var reencounteredSdts = PreflightRequiredSdts(designModel, apiPlan);
         var reencounteredProcedures = PreflightRequiredProcedures(designModel, apiPlan);
-        var preflight = PreflightApiObject(designModel, apiPlan);
+        var preflight = PreflightApiObject(designModel, apiPlan, allowIntentionalContractRefresh);
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan);
         var result = CreateOrReencounterApiObject(designModel, transactionFolder, apiPlan, preflight);
 
@@ -102,7 +111,7 @@ internal static class ApiPlanApiObjectWriter
     }
 
     /// <summary>
-    /// B085: posse para sincronização intencional — apenas ownership da metadata
+    /// B085/B034: posse para uma regravacao intencional — apenas ownership da metadata
     /// (schema + apiName + apiGuid). Não exige IsManagedApiObject contra o ApiPlan novo:
     /// o Sync regrava Service Source/variáveis de propósito e o Source atual pode divergir
     /// do plano reconstruído (campos novos, ordem de filtros, etc.).
@@ -124,7 +133,7 @@ internal static class ApiPlanApiObjectWriter
             throw new ArgumentNullException(nameof(apiObject));
         }
 
-        var metadataLookup = TryFindOwnedMetadataFile(designModel, apiPlan);
+        var metadataLookup = FindMetadataFile(designModel, apiPlan);
         if (metadataLookup.Ambiguous || !metadataLookup.OwnedFilePresent)
         {
             return false;
@@ -142,40 +151,98 @@ internal static class ApiPlanApiObjectWriter
             apiObject.Guid.ToString());
     }
 
-    internal static ApiPlanApiObjectOwnership.OwnershipKind ResolveOwnership(KBModel designModel, ApiPlan apiPlan, API apiObject)
+    /// <summary>
+    /// Preflight do Wizard/Sincronizar: a posse continua sendo confirmada
+    /// pela metadata, mas o contrato desejado pode ser diferente do ultimo
+    /// contrato gerado. A protecao contra edicao direta e feita pelo estado
+    /// do baseline antes do primeiro Save().
+    /// </summary>
+    internal static bool IsOwnedApiObjectForIntentionalChange(KBModel designModel, ApiPlan apiPlan, API apiObject)
     {
-        var serviceSourceManaged = ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject);
-        var metadataLookup = TryFindOwnedMetadataFile(designModel, apiPlan);
-        if (metadataLookup.Ambiguous)
+        if (!IsOwnedApiObjectForSync(designModel, apiPlan, apiObject))
         {
-            return ApiPlanApiObjectOwnership.OwnershipKind.NotOwned;
+            return false;
         }
 
-        JObject? metadata = null;
-        var integrityCompatible = false;
-        if (metadataLookup.OwnedFilePresent)
+        var metadataLookup = FindMetadataFile(designModel, apiPlan);
+        if (!metadataLookup.FilePresent)
         {
-            if (!TryParseMetadata(metadataLookup.File!, out metadata) || metadata is null)
-            {
-                return ApiPlanApiObjectOwnership.OwnershipKind.NotOwned;
-            }
-
-            integrityCompatible = ApiPlanMetadataFileWriter.HasCompatibleB067Integrity(metadata, apiPlan, apiObject);
+            // Antes da primeira metadata persistida, preserva o fallback
+            // historico pela Description e pelo contrato gerenciado atual.
+            return IsOwnedApiObject(designModel, apiPlan, apiObject);
         }
 
-        return ApiPlanApiObjectOwnership.Resolve(
-            metadataLookup.OwnedFilePresent,
-            metadata,
-            ApiPlanMetadataFileWriter.SchemaVersion,
-            apiPlan.ApiName,
-            apiObject.Guid.ToString(),
-            integrityCompatible,
-            serviceSourceManaged,
-            apiObject.Description,
-            CreateOwnedDescriptionCandidates(apiPlan));
+        return metadataLookup.File is not null &&
+            TryParseMetadata(metadataLookup.File, out var metadata) &&
+            metadata is not null &&
+            ApiPlanMetadataFileWriter.HasCompatibleGeneratedBaseline(metadata, apiObject);
     }
 
-    private static (bool OwnedFilePresent, bool Ambiguous, WikiFileKBObject? File) TryFindOwnedMetadataFile(KBModel designModel, ApiPlan apiPlan)
+    internal static ApiPlanApiObjectOwnership.OwnershipKind ResolveOwnership(KBModel designModel, ApiPlan apiPlan, API apiObject)
+    {
+        return DiagnoseOwnership(designModel, apiPlan, apiObject).OwnershipKind;
+    }
+
+    internal static ApiPlanApiObjectOwnership.Diagnostic DiagnoseOwnership(KBModel designModel, ApiPlan apiPlan, API apiObject)
+    {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (apiPlan is null)
+        {
+            throw new ArgumentNullException(nameof(apiPlan));
+        }
+
+        if (apiObject is null)
+        {
+            throw new ArgumentNullException(nameof(apiObject));
+        }
+
+        var serviceSourceManaged = ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject);
+        var metadataLookup = FindMetadataFile(designModel, apiPlan);
+        JObject? metadata = null;
+        var metadataParsed = false;
+        var metadataOwnershipMatches = false;
+        var integrityCompatible = false;
+        string? metadataApiGuid = null;
+
+        if (metadataLookup.File is not null && TryParseMetadata(metadataLookup.File, out metadata) && metadata is not null)
+        {
+            metadataParsed = true;
+            metadataApiGuid = metadata.SelectToken("ownership.apiGuid")?.Value<string>();
+            if (metadataLookup.OwnedFilePresent)
+            {
+                metadataOwnershipMatches = ApiPlanApiObjectOwnership.MatchesMetadataOwnership(
+                    metadata,
+                    ApiPlanMetadataFileWriter.SchemaVersion,
+                    apiPlan.ApiName,
+                    apiObject.Guid.ToString());
+                if (metadataOwnershipMatches)
+                {
+                    integrityCompatible = ApiPlanMetadataFileWriter.HasCompatibleB067Integrity(metadata, apiPlan, apiObject);
+                }
+            }
+        }
+
+        var descriptionFallbackMatches = CreateOwnedDescriptionCandidates(apiPlan)
+            .Any(expected => string.Equals(apiObject.Description, expected, StringComparison.Ordinal));
+
+        return ApiPlanApiObjectOwnership.Diagnose(
+            metadataLookup.FilePresent,
+            metadataLookup.DescriptionOwned,
+            metadataLookup.Ambiguous,
+            metadataParsed,
+            metadataOwnershipMatches,
+            integrityCompatible,
+            serviceSourceManaged,
+            descriptionFallbackMatches,
+            apiObject.Guid.ToString(),
+            metadataApiGuid);
+    }
+
+    private static MetadataLookupResult FindMetadataFile(KBModel designModel, ApiPlan apiPlan)
     {
         var matches = WikiFileKBObject.GetAll(designModel)
             .Where(file => string.Equals(file.Name, apiPlan.MetadataFileName, StringComparison.OrdinalIgnoreCase))
@@ -183,21 +250,44 @@ internal static class ApiPlanApiObjectWriter
 
         if (matches.Length > 1)
         {
-            return (false, true, null);
+            return new MetadataLookupResult(true, true, false, false, null);
         }
 
         if (matches.Length == 0)
         {
-            return (false, false, null);
+            return new MetadataLookupResult(false, false, false, false, null);
         }
 
         var file = matches[0];
-        if (!ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(file.Description, apiPlan.MetadataFileName, apiPlan.TransactionName))
+        var descriptionOwned = ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(file.Description, apiPlan.MetadataFileName, apiPlan.TransactionName);
+        return new MetadataLookupResult(true, false, descriptionOwned, descriptionOwned, file);
+    }
+
+    private sealed class MetadataLookupResult
+    {
+        public MetadataLookupResult(
+            bool filePresent,
+            bool ambiguous,
+            bool descriptionOwned,
+            bool ownedFilePresent,
+            WikiFileKBObject? file)
         {
-            return (false, false, null);
+            FilePresent = filePresent;
+            Ambiguous = ambiguous;
+            DescriptionOwned = descriptionOwned;
+            OwnedFilePresent = ownedFilePresent;
+            File = file;
         }
 
-        return (true, false, file);
+        public bool FilePresent { get; }
+
+        public bool Ambiguous { get; }
+
+        public bool DescriptionOwned { get; }
+
+        public bool OwnedFilePresent { get; }
+
+        public WikiFileKBObject? File { get; }
     }
 
     private static bool TryParseMetadata(WikiFileKBObject file, out JObject? metadata)
@@ -316,7 +406,10 @@ internal static class ApiPlanApiObjectWriter
         return "B050-B053";
     }
 
-    private static ApiPlanApiObjectPreflightResult PreflightApiObject(KBModel designModel, ApiPlan apiPlan)
+    private static ApiPlanApiObjectPreflightResult PreflightApiObject(
+        KBModel designModel,
+        ApiPlan apiPlan,
+        bool allowIntentionalContractRefresh)
     {
         var existing = API.GetAll(designModel)
             .Where(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase))
@@ -333,7 +426,10 @@ internal static class ApiPlanApiObjectWriter
         }
 
         var apiObject = existing[0];
-        if (!IsOwnedApiObject(designModel, apiPlan, apiObject))
+        var owned = allowIntentionalContractRefresh
+            ? IsOwnedApiObjectForSync(designModel, apiPlan, apiObject)
+            : IsOwnedApiObject(designModel, apiPlan, apiObject);
+        if (!owned)
         {
             throw new InvalidOperationException($"Criacao de API Object bloqueada: ja existe API Object externo ou incompativel chamado '{apiPlan.ApiName}'. Nenhuma alteracao foi feita.");
         }

@@ -9,6 +9,7 @@ namespace GenexusOpenApiBuilder.Extension;
 
 internal sealed class PrototypeWizardContractDialog : Form
 {
+    private readonly ExtensionTexts _texts;
     private readonly PrototypeWizardContractSnapshot _snapshot;
     private readonly CheckedListBox _servicesList = CreateCheckedListBox();
     private readonly CheckedListBox _createFieldsList = CreateCheckedListBox();
@@ -28,11 +29,12 @@ internal sealed class PrototypeWizardContractDialog : Form
     private Button? _nextButton;
     private bool _showingSummary;
 
-    public PrototypeWizardContractDialog(PrototypeWizardContractSnapshot snapshot)
+    public PrototypeWizardContractDialog(PrototypeWizardContractSnapshot snapshot, ExtensionTexts texts)
     {
         _snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
+        _texts = texts ?? throw new ArgumentNullException(nameof(texts));
 
-        Text = "Genexus Open API Builder - Wizard B031";
+        Text = _texts.WizardContractTitle;
         StartPosition = FormStartPosition.CenterParent;
         Width = 940;
         Height = 640;
@@ -66,16 +68,16 @@ internal sealed class PrototypeWizardContractDialog : Form
             AutoSize = true,
             Dock = DockStyle.Fill,
             Font = new Font(Font, FontStyle.Bold),
-            Text = $"Passo 2 - Configurar contrato: Transaction '{_snapshot.TransactionName}' | Module '{_snapshot.ModuleName}'",
+            Text = $"{_texts.Translate("Passo 2 - Configurar contrato")}: Transaction '{_snapshot.TransactionName}' | Module '{_snapshot.ModuleName}'",
             Padding = new Padding(0, 0, 0, 8),
         };
         root.Controls.Add(header, 0, 0);
 
-        _tabs.TabPages.Add(CreateListTab("Servicos", _servicesList, "Servicos REST do MVP. Todos iniciam habilitados."));
+        _tabs.TabPages.Add(CreateListTab(_texts.Translate("Servicos"), _servicesList, _texts.Translate("Servicos REST do MVP. Todos iniciam habilitados.")));
         _tabs.TabPages.Add(CreateRequestTab());
-        _tabs.TabPages.Add(CreateListTab("Response", _responseFieldsList, "Campos devolvidos no response principal."));
-        _tabs.TabPages.Add(CreateListTab("Filtros List", _filtersList, "Filtros candidatos para o servico List."));
-        _tabs.TabPages.Add(CreateListTab("Resumo B032", _summaryText, "Resumo das decisoes acumuladas. B032 ainda nao executa nada na KB."));
+        _tabs.TabPages.Add(CreateListTab(_texts.Translate("Response"), _responseFieldsList, _texts.Translate("Campos devolvidos no response principal.")));
+        _tabs.TabPages.Add(CreateListTab(_texts.Translate("Filtros List"), _filtersList, _texts.Translate("Filtros candidatos para o servico List.")));
+        _tabs.TabPages.Add(CreateListTab(_texts.Translate("Resumo B032"), _summaryText, _texts.Translate("Resumo das decisoes acumuladas. B032 ainda nao executa nada na KB.")));
         root.Controls.Add(_tabs, 0, 1);
 
         var buttons = new FlowLayoutPanel
@@ -86,12 +88,12 @@ internal sealed class PrototypeWizardContractDialog : Form
             Padding = new Padding(0, 10, 0, 0),
         };
 
-        var next = CreateButton("Proximo");
+        var next = CreateButton(_texts.Next);
         _nextButton = next;
         next.Click += (_, _) => AcceptSelection();
-        var cancel = CreateButton("Cancelar");
+        var cancel = CreateButton(_texts.Cancel);
         cancel.Click += (_, _) => CancelWizard();
-        var back = CreateButton("Voltar");
+        var back = CreateButton(_texts.Back);
         back.Click += (_, _) => GoBack();
 
         buttons.Controls.Add(next);
@@ -145,15 +147,28 @@ internal sealed class PrototypeWizardContractDialog : Form
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = description, Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(description), 0, 0);
         panel.Controls.Add(list, 0, 1);
         tab.Controls.Add(panel);
         return tab;
     }
 
+    private static Label CreateWrappingLabel(string text, int minimumHeight = 32)
+    {
+        return new Label
+        {
+            AutoSize = false,
+            Dock = DockStyle.Fill,
+            MinimumSize = new Size(0, minimumHeight),
+            Text = text,
+            TextAlign = ContentAlignment.TopLeft,
+            Padding = new Padding(0, 0, 0, 8),
+        };
+    }
+
     private TabPage CreateRequestTab()
     {
-        var tab = new TabPage("Requests");
+        var tab = new TabPage(_texts.Translate("Requests"));
         var split = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -163,8 +178,8 @@ internal sealed class PrototypeWizardContractDialog : Form
         };
         split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        split.Controls.Add(CreateGroup("CreateRequest", _createFieldsList), 0, 0);
-        split.Controls.Add(CreateGroup("UpdateRequest", _updateFieldsList), 1, 0);
+        split.Controls.Add(CreateGroup(_texts.Translate("CreateRequest"), _createFieldsList), 0, 0);
+        split.Controls.Add(CreateGroup(_texts.Translate("UpdateRequest"), _updateFieldsList), 1, 0);
         tab.Controls.Add(split);
         return tab;
     }
@@ -198,7 +213,7 @@ internal sealed class PrototypeWizardContractDialog : Form
         }
     }
 
-    private static string FormatAttribute(PrototypeWizardAttributeDecision attribute)
+    private string FormatAttribute(PrototypeWizardAttributeDecision attribute)
     {
         var markers = new List<string>();
         if (attribute.IsPrimaryKey)
@@ -208,17 +223,17 @@ internal sealed class PrototypeWizardContractDialog : Form
 
         if (attribute.IsDescription)
         {
-            markers.Add("Description");
+            markers.Add(_texts.Translate("Description"));
         }
 
         if (attribute.IsSensitive)
         {
-            markers.Add("Sensivel");
+            markers.Add(_texts.Translate("Sensivel"));
         }
 
         if (attribute.IsFormula)
         {
-            markers.Add("Formula");
+            markers.Add(_texts.Translate("Formula"));
         }
 
         if (attribute.IsNoAccept)
@@ -228,14 +243,14 @@ internal sealed class PrototypeWizardContractDialog : Form
 
         if (attribute.IsAudit)
         {
-            markers.Add("Auditoria");
+            markers.Add(_texts.Translate("Auditoria"));
         }
 
         var suffix = markers.Count == 0 ? string.Empty : " [" + string.Join(", ", markers) + "]";
         return $"{attribute.Name} ({attribute.DataType}, {attribute.Length}.{attribute.Decimals}){suffix}";
     }
 
-    private static string FormatFilter(PrototypeWizardAttributeDecision attribute)
+    private string FormatFilter(PrototypeWizardAttributeDecision attribute)
     {
         var baseText = FormatAttribute(attribute);
         if (!attribute.IsFilterEligible)
@@ -246,12 +261,12 @@ internal sealed class PrototypeWizardContractDialog : Form
         var options = new List<string> { attribute.FilterOperator };
         if (attribute.UsesPeriod)
         {
-            options.Add("Periodo");
+            options.Add(_texts.Translate("Periodo"));
         }
 
         if (attribute.UsesRange)
         {
-            options.Add("Intervalo");
+            options.Add(_texts.Translate("Intervalo"));
         }
 
         return baseText + " -> " + string.Join(" / ", options);
@@ -280,7 +295,7 @@ internal sealed class PrototypeWizardContractDialog : Form
         var selectedServices = GetCheckedValues(_servicesList);
         if (selectedServices.Count == 0)
         {
-            MessageBox.Show(this, "Selecione ao menos um servico.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, _texts.Translate("Selecione ao menos um servico."), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
@@ -315,7 +330,7 @@ internal sealed class PrototypeWizardContractDialog : Form
         _tabs.SelectedIndex = _tabs.TabPages.Count - 1;
         if (_nextButton is not null)
         {
-            _nextButton.Text = "Fechar";
+            _nextButton.Text = _texts.Close;
         }
     }
 
@@ -327,7 +342,7 @@ internal sealed class PrototypeWizardContractDialog : Form
             _tabs.SelectedIndex = _tabs.TabPages.Count - 2;
             if (_nextButton is not null)
             {
-                _nextButton.Text = "Proximo";
+                _nextButton.Text = _texts.Next;
             }
 
             return;

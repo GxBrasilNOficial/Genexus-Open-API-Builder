@@ -4,21 +4,37 @@
          name="Genexus Open API Builder">
   <Commands>
     <CommandDefinition id="Configurar Preferências do Wizard" context="selection" />
+    <CommandDefinition id="Configurar preferencias del Wizard" context="selection" />
+    <CommandDefinition id="Configure Wizard Preferences" context="selection" />
     <CommandDefinition id="Wizard" context="selection" />
     <CommandDefinition id="Sincronizar com a Transaction" context="selection" />
+    <CommandDefinition id="Sincronizar con la Transaction" context="selection" />
+    <CommandDefinition id="Synchronize with the Transaction" context="selection" />
     <CommandDefinition id="Remover API gerada" context="selection" />
+    <CommandDefinition id="Eliminar API generada" context="selection" />
+    <CommandDefinition id="Remove generated API" context="selection" />
   </Commands>
   <Groups>
     <Group id="GenexusOpenApiBuilderMainMenuGroup">
       <Command refid="Configurar Preferências do Wizard" />
+      <Command refid="Configurar preferencias del Wizard" />
+      <Command refid="Configure Wizard Preferences" />
       <Command refid="Wizard" />
       <Command refid="Sincronizar com a Transaction" />
+      <Command refid="Sincronizar con la Transaction" />
+      <Command refid="Synchronize with the Transaction" />
       <Command refid="Remover API gerada" />
+      <Command refid="Eliminar API generada" />
+      <Command refid="Remove generated API" />
     </Group>
     <Group id="GenexusOpenApiBuilderContextMenuGroup">
       <Command refid="Wizard" />
       <Command refid="Sincronizar com a Transaction" />
+      <Command refid="Sincronizar con la Transaction" />
+      <Command refid="Synchronize with the Transaction" />
       <Command refid="Remover API gerada" />
+      <Command refid="Eliminar API generada" />
+      <Command refid="Remove generated API" />
     </Group>
     <Group refid="KBObjectGrp" package="98121D96-A7D8-468b-9310-B1F468F812AE">
       <Popup id="GenexusOpenApiBuilderPopup" name="Genexus Open API Builder">

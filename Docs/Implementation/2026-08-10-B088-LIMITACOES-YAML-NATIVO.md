@@ -60,7 +60,7 @@ A extensão deste repositório (`Package.cs` / `GenexusOpenApiBuilder.package`) 
 
 ## Orientação de consumo
 
-1. Tratar a tabela de status do documento 27 e o Source/Events gerados (`&RestStatusCode` nas Procedures; `&RestCode = &RestStatusCode` em `Get.After` / `Create.After` / `Update.After`) como fonte dos códigos HTTP do MVP — não o bloco `responses:` do YAML nativo.
+1. Tratar a tabela de status do documento 27 e o Source/Events gerados (`&RestStatusCode` nas Procedures; `&RestCode = &RestStatusCode` em `List.After` / `Get.After` / `Create.After` / `Update.After`) como fonte dos códigos HTTP do MVP — não o bloco `responses:` do YAML nativo.
 2. `openapi-generator-cli` (evidência Sprint 6 com 5.3.1, `typescript-fetch` e `csharp`) continua útil para rotas, métodos, `operationId`, security e schemas básicos; o cliente gerado pode tratar `201`/`400`/`422` como respostas fora do mapa declarado.
 3. Agentes de IA que leiam só o YAML devem ser avisados dessa limitação e, para completar o quadro de status, cruzar Source das Procedures / Events do API Object (ou o C# gerado pós-Build) e o contrato HTTP do projeto. Códigos do GAM/pipeline (`401`/`403`, falhas de infra) podem não aparecer no Source da Procedure.
 4. Não usar `Description` do API Object nem descriptions de serviço como substituto estruturado da lista de status.

@@ -39,9 +39,22 @@ $fileConflict = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanCollisionCon
     [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanCollisionConflict]::NotApplicable)
 Assert-True ($fileConflict.FormatLine() -match "Folder='\(n/a\)'") 'File deve usar Folder (n/a).'
 
+$diagnosticConflict = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanCollisionConflict]::new(
+    'apiContrato',
+    'API Object',
+    'Root Module',
+    'ContratoOpenApi',
+    'O GUID atual do API Object diverge do GUID registrado na metadata.',
+    '22222222-2222-2222-2222-222222222222',
+    '11111111-1111-1111-1111-111111111111',
+    "Causa principal: O GUID atual do API Object diverge do GUID registrado na metadata.`nAPI Object GUID atual: '22222222-2222-2222-2222-222222222222'")
+Assert-True ($diagnosticConflict.FormatLine() -match "Causa='O GUID atual do API Object diverge do GUID registrado na metadata\.'") 'Linha de conflito deve expor a causa.'
+Assert-True ($diagnosticConflict.FormatLine() -match "ApiObjectGuid='22222222-2222-2222-2222-222222222222'") 'Linha de conflito deve expor o GUID atual.'
+Assert-True ($diagnosticConflict.FormatDiagnosticDetails() -match 'API Object GUID atual') 'Conflito deve expor detalhes diagnósticos.'
+
 $listItems = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanCollisionConflict[]]@(
     $single,
-    [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanCollisionConflict]::new('apiContrato', 'API Object', 'Root Module', 'ContratoOpenApi')
+    $diagnosticConflict
 )
 $list = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanCollisionConflict]::FormatList($listItems)
 Assert-True ($list.StartsWith('Conflitos (2):')) 'Cabecalho da lista deve citar a quantidade.'

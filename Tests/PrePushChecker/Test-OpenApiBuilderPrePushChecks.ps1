@@ -57,6 +57,8 @@ Assert-True ($source -match 'Tests/WizardContract/Test-PrototypeWizardNoAcceptRu
 Assert-True ($source -match 'Tests/WizardContract/Test-NoAcceptRequestEligibilityContract\.ps1') 'O checker deve executar o teste unitário da elegibilidade de requests NoAccept.'
 Assert-True ($source -match 'Tests/ExtensionAssemblyInventory/Test-ExtensionAssemblyInventory\.ps1') 'O checker deve executar o teste unitário do inventário offline da assembly.'
 Assert-True ($source -match 'Tests/Installation/Test-InstallExtensionBatPathHandling\.ps1') 'O checker deve executar o teste unitário do tratamento de caminhos dos BATs.'
+Assert-True ($source -match 'Tests/Localization/Test-ExtensionLanguage\.ps1') 'O checker deve executar o teste unitário da resolução do idioma da extensão.'
+Assert-True ($source -match 'Tests/Localization/Test-ExtensionOutputLocalization\.ps1') 'O checker deve executar o teste unitário da localização do Output da extensão.'
 Assert-True ($source -match 'Tests/IssueForms/Test-GitHubIssueFormsYaml\.ps1') 'O checker deve executar o teste unitário dos YAML / Issue Forms.'
 
 $fixtures = @(
@@ -93,6 +95,7 @@ try {
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\WizardContract'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ExtensionAssemblyInventory'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\Installation'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\Localization'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\IssueForms'))
     & git init --bare (Join-Path $tempRoot 'remote.git') | Out-Null
     Push-Location (Join-Path $tempRoot 'repo')
@@ -136,6 +139,8 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-NoAcceptRequestEligibilityContract.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture NoAccept Request Eligibility'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ExtensionAssemblyInventory\Test-ExtensionAssemblyInventory.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Extension Assembly Inventory'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\Installation\Test-InstallExtensionBatPathHandling.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Installation BAT Path Handling'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\Localization\Test-ExtensionLanguage.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Extension Language'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\Localization\Test-ExtensionOutputLocalization.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Extension Output Localization'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\IssueForms\Test-GitHubIssueFormsYaml.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Issue Forms Yaml'`n", [System.Text.UTF8Encoding]::new($false))
         & git add .gitignore README.md Src scripts Tests
         & git commit -m 'Fixture do checker' | Out-Null
@@ -175,6 +180,8 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractNoAcceptRequestEligibility' }).status -eq 'passed') 'O teste unitário da elegibilidade de requests NoAccept deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.extensionAssemblyInventory' }).status -eq 'passed') 'O teste unitário do inventário offline da assembly deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.installationBatPathHandling' }).status -eq 'passed') 'O teste unitário do tratamento de caminhos dos BATs deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.extensionLanguage' }).status -eq 'passed') 'O teste unitário da resolução do idioma da extensão deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.extensionOutputLocalization' }).status -eq 'passed') 'O teste unitário da localização do Output da extensão deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.issueForms' }).status -eq 'passed') 'O teste unitário dos YAML / Issue Forms deveria passar na fixture.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract.ps1' }).Count -eq 1) 'O comando do teste Service Source deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity.ps1' }).Count -eq 1) 'O comando do teste Metadata Integrity deve aparecer no JSON.'

@@ -76,7 +76,7 @@ internal static class ApiPlanBusinessComponentWriter
         {
             EnsureApi(api, plan);
         }
-        else if (!HasExpectedApiEvents(api))
+        else if (!HasManagedApiEvents(api, plan))
         {
             throw new InvalidOperationException($"B071-B073/B079 bloqueado: API Object proprio '{api.Name}' possui Events divergentes da geracao REST runtime. Nenhuma alteracao foi feita.");
         }
@@ -102,19 +102,19 @@ internal static class ApiPlanBusinessComponentWriter
         return ApiPlanListProcedureWriter.IsB070ApiObject(model, plan, api)
             || IsB054ServiceGroupSource(plan, source)
             || (HasNoNonStandardVariables(api) && IsSemanticallyB054ServiceGroupSource(plan, source))
-            || (IsB055ServiceGroupSource(plan, source) && HasManagedB055ApiVariables(model, plan, api) && HasExpectedApiEvents(api));
+            || (IsB055ServiceGroupSource(plan, source) && HasManagedB055ApiVariables(model, plan, api) && HasManagedApiEvents(api, plan));
     }
 
     internal static bool IsB055ApiObject(KBModel model, ApiPlan plan, API api) =>
         api is not null && IsB055ServiceGroupSource(plan, NormalizeForComparison(api.ServiceGroupSource.Source)) &&
         HasManagedB055ApiVariables(model, plan, api) &&
-        HasExpectedApiEvents(api);
+        HasManagedApiEvents(api, plan);
 
     internal static bool IsCurrentB055ApiObject(KBModel model, ApiPlan plan, API api) =>
         api is not null &&
         ((string.Equals(NormalizeForComparison(api.ServiceGroupSource.Source), NormalizeForComparison(CreateB055ServiceGroupSource(plan)), StringComparison.Ordinal) &&
           HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan), "B071-B073/B079")) &&
-          HasExpectedApiEvents(api)) ||
+          HasExpectedApiEvents(api, plan)) ||
          (IsSemanticallyB055ServiceGroupSource(plan, NormalizeForComparison(api.ServiceGroupSource.Source)) &&
           HasExpectedVariables(model, api, CoalesceVariableSpecs(LegacyApiVariableSpecs(plan), "B055 legacy")) &&
           string.IsNullOrWhiteSpace(api.Events.Source)));
@@ -354,7 +354,7 @@ internal static class ApiPlanBusinessComponentWriter
             throw new InvalidOperationException($"B055 bloqueado: API Object proprio '{api.Name}' possui fonte ou variaveis divergentes da geracao B054/B055. Nenhuma alteracao foi feita.");
         }
 
-        if (!HasExpectedApiEvents(api))
+        if (!HasManagedApiEvents(api, plan))
         {
             throw new InvalidOperationException($"B071-B073/B079 bloqueado: API Object proprio '{api.Name}' possui Events divergentes da geracao REST runtime. Nenhuma alteracao foi feita.");
         }
@@ -389,9 +389,11 @@ internal static class ApiPlanBusinessComponentWriter
 
         var currentSource = NormalizeForComparison(procedure.ProcedurePart.Source);
         var legacySkeleton = LegacySkeleton(backlog, service);
+        var previousGeneratedSkeleton = PreviousGeneratedSkeleton(service);
         if (!string.IsNullOrWhiteSpace(currentSource) &&
             !string.Equals(currentSource, NormalizeForComparison(skeleton), StringComparison.Ordinal) &&
             !string.Equals(currentSource, NormalizeForComparison(legacySkeleton), StringComparison.Ordinal) &&
+            !string.Equals(currentSource, NormalizeForComparison(previousGeneratedSkeleton), StringComparison.Ordinal) &&
             !string.Equals(currentSource, NormalizeForComparison(content), StringComparison.Ordinal) &&
             (isManagedCurrentSource is null || !isManagedCurrentSource(currentSource, plan)) &&
             (string.IsNullOrWhiteSpace(legacyContent) || !string.Equals(currentSource, NormalizeForComparison(legacyContent), StringComparison.Ordinal)))
@@ -414,6 +416,7 @@ internal static class ApiPlanBusinessComponentWriter
         if (currentVariables.Length == 0)
         {
             if (IsPreB055ProcedureSkeleton(currentSource, currentRules, skeleton)
+                || IsPreB055ProcedureSkeleton(currentSource, currentRules, previousGeneratedSkeleton)
                 || IsPreB055ProcedureSkeleton(currentSource, currentRules, legacySkeleton))
             {
                 return;
@@ -446,6 +449,7 @@ internal static class ApiPlanBusinessComponentWriter
     private static bool IsManagedCreateSource(string source, ApiPlan plan)
     {
         return HasEquivalentGeneratedSource(source, CreateContent(plan)) ||
+            HasEquivalentGeneratedSource(source, CreateContentWithoutFieldLimitValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithLocationUrlAndUrlEncodeTrim(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithInlineLocationHeader(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithMethodTrimUrlEncodeLocationHeader(plan)) ||
@@ -465,6 +469,7 @@ internal static class ApiPlanBusinessComponentWriter
     private static bool IsManagedUpdateSource(string source, ApiPlan plan)
     {
         return HasEquivalentGeneratedSource(source, UpdateContent(plan)) ||
+            HasEquivalentGeneratedSource(source, UpdateContentWithoutFieldLimitValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079UpdateContentWithNativeJsonValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079UpdateContentWithSdtDirtyValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079UpdateContentWithOriginalMemberDirtyValidation(plan)) ||
@@ -551,7 +556,7 @@ internal static class ApiPlanBusinessComponentWriter
     {
         api.Parent = transactionFolder;
         api.ServiceGroupSource.Source = source;
-        api.Events.Source = CreateB079ApiEvents();
+        api.Events.Source = CreateB079ApiEventsForPlan(plan);
         ReplaceVariables(model, api, variables);
         api.Save();
 
@@ -561,7 +566,7 @@ internal static class ApiPlanBusinessComponentWriter
             throw new InvalidOperationException($"B055 bloqueado: o API Object '{api.Name}' foi salvo, mas o Service Source persistido nao corresponde ao contrato API/Procedure planejado. Nenhuma outra alteracao sera feita.");
         }
 
-        if (!HasExpectedVariables(model, persisted, variables) || !HasExpectedApiEvents(persisted))
+        if (!HasExpectedVariables(model, persisted, variables) || !HasExpectedApiEvents(persisted, plan))
         {
             throw new InvalidOperationException($"B055 bloqueado: o API Object '{api.Name}' foi salvo, mas eventos ou variaveis persistidas nao correspondem ao contrato API/Procedure planejado. Nenhuma outra alteracao sera feita.");
         }
@@ -825,17 +830,27 @@ internal static class ApiPlanBusinessComponentWriter
         return matches[0];
     }
 
-    private static string CreateContent(ApiPlan plan)
+    private static string CreateContent(ApiPlan plan) => CreateContent(plan, includeFieldLimitValidation: true);
+
+    private static string CreateContentWithoutFieldLimitValidation(ApiPlan plan) => CreateContent(plan, includeFieldLimitValidation: false);
+
+    private static string CreateContent(ApiPlan plan, bool includeFieldLimitValidation)
     {
         var bc = "&" + plan.TransactionName;
         var requiredFields = RequiredFieldsFor(plan, "CreateRequest", plan.CreateRequestFields);
-        var guarded = requiredFields.Count > 0;
+        var hasFieldLimitValidation = includeFieldLimitValidation && HasFieldLimitValidation(plan.CreateRequestFields);
+        var guarded = requiredFields.Count > 0 || hasFieldLimitValidation;
         var bodyIndent = guarded ? "    " : string.Empty;
         var successIndent = guarded ? 8 : 4;
         var committedIndent = successIndent + 4;
         var slashGuard = PrimaryKeySlashGuardCondition(bc, plan);
         var lines = new List<string> { "&RestStatusCode = 201" };
         lines.AddRange(RequiredMemberPresenceValidation("CreateRequest", "&CreateRequest", requiredFields, 0));
+        if (includeFieldLimitValidation)
+        {
+            lines.AddRange(FieldLimitValidation("&CreateRequest", plan.CreateRequestFields, 0));
+        }
+
         if (guarded)
         {
             lines.Add("If &RestStatusCode = 201");
@@ -875,7 +890,7 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         lines.Add($"{bodyIndent}Else");
-        lines.AddRange(BusinessRuleFailureMessages(bc, successIndent));
+        lines.AddRange(CurrentBusinessRuleFailureMessages(successIndent));
         lines.Add($"{bodyIndent}EndIf");
         if (guarded)
         {
@@ -1021,17 +1036,27 @@ internal static class ApiPlanBusinessComponentWriter
         return string.Join(Environment.NewLine, lines);
     }
 
-    private static string UpdateContent(ApiPlan plan)
+    private static string UpdateContent(ApiPlan plan) => UpdateContent(plan, includeFieldLimitValidation: true);
+
+    private static string UpdateContentWithoutFieldLimitValidation(ApiPlan plan) => UpdateContent(plan, includeFieldLimitValidation: false);
+
+    private static string UpdateContent(ApiPlan plan, bool includeFieldLimitValidation)
     {
         var bc = "&" + plan.TransactionName;
         var requiredFields = RequiredFieldsFor(plan, "UpdateRequest", plan.UpdateRequestFields);
-        var guarded = requiredFields.Count > 0;
+        var hasFieldLimitValidation = includeFieldLimitValidation && HasFieldLimitValidation(plan.UpdateRequestFields);
+        var guarded = requiredFields.Count > 0 || hasFieldLimitValidation;
         var bodyIndent = guarded ? "    " : string.Empty;
         var assignmentIndent = guarded ? 8 : 4;
         var nestedIndent = guarded ? 12 : 8;
         var failureIndent = guarded ? 8 : 4;
         var lines = new List<string> { "&RestStatusCode = 200" };
         lines.AddRange(RequiredMemberPresenceValidation("UpdateRequest", "&UpdateRequest", requiredFields, 0));
+        if (includeFieldLimitValidation)
+        {
+            lines.AddRange(FieldLimitValidation("&UpdateRequest", plan.UpdateRequestFields, 0));
+        }
+
         if (guarded)
         {
             lines.Add("If &RestStatusCode = 200");
@@ -1048,7 +1073,7 @@ internal static class ApiPlanBusinessComponentWriter
         lines.AddRange(ResponseAssignments(plan, bc, "&UpdateResponse", nestedIndent));
         lines.Add($"{new string(' ', nestedIndent)}&RestStatusCode = 200");
         lines.Add($"{new string(' ', assignmentIndent)}Else");
-        lines.AddRange(BusinessRuleFailureMessages(bc, nestedIndent));
+        lines.AddRange(CurrentBusinessRuleFailureMessages(nestedIndent));
         lines.Add($"{new string(' ', assignmentIndent)}EndIf");
         lines.Add($"{bodyIndent}Else");
         lines.AddRange(NotFoundMessages(plan, failureIndent));
@@ -1063,6 +1088,75 @@ internal static class ApiPlanBusinessComponentWriter
 
     private static IEnumerable<string> ResponseAssignments(ApiPlan plan, string bc, string response, int spaces) =>
         plan.ResponseFields.Select(field => $"{new string(' ', spaces)}{response}.{field.Name} = {bc}.{field.Name}");
+
+    private static bool HasFieldLimitValidation(IReadOnlyList<ApiPlanField> fields)
+    {
+        foreach (var field in fields)
+        {
+            if (TryGetFieldLimitCondition("&Request", field, out _))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static IEnumerable<string> FieldLimitValidation(string requestVariable, IReadOnlyList<ApiPlanField> fields, int spaces)
+    {
+        var indent = new string(' ', spaces);
+        foreach (var field in fields)
+        {
+            if (!TryGetFieldLimitCondition(requestVariable, field, out var condition))
+            {
+                continue;
+            }
+
+            yield return $"{indent}If {condition}";
+            yield return $"{indent}    &RestStatusCode = 400";
+            yield return $"{indent}    &ErrorResponse = new()";
+            yield return $"{indent}    &ErrorResponse.Code = !\"attribute_limit_exceeded\"";
+            yield return $"{indent}    &ErrorResponse.Message = Format(!\"Value of field %1 exceeds the limit defined by its attribute.\", !\"{field.Name}\")";
+            yield return $"{indent}EndIf";
+        }
+    }
+
+    private static bool TryGetFieldLimitCondition(string requestVariable, ApiPlanField field, out string condition)
+    {
+        var member = $"{requestVariable}.{field.Name}";
+        if (IsNumericDataType(field.DataType) && field.Length > 0 && field.Decimals >= 0 && field.Decimals <= field.Length)
+        {
+            condition = $"{member} > {NumericMaximumLiteral(field.Length, field.Decimals)}";
+            return true;
+        }
+
+        if (IsTextDataType(field.DataType) && field.Length > 0)
+        {
+            condition = $"Len({member}) > {field.Length}";
+            return true;
+        }
+
+        condition = string.Empty;
+        return false;
+    }
+
+    private static bool IsNumericDataType(string dataType) =>
+        dataType.StartsWith("Numeric", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsTextDataType(string dataType) =>
+        string.Equals(dataType, "Character", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(dataType, "Char", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(dataType, "VarChar", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(dataType, "LongVarChar", StringComparison.OrdinalIgnoreCase);
+
+    private static string NumericMaximumLiteral(int length, int decimals)
+    {
+        var integerDigits = length - decimals;
+        var integerPart = integerDigits > 0 ? new string('9', integerDigits) : "0";
+        return decimals == 0
+            ? integerPart
+            : integerPart + "." + new string('9', decimals);
+    }
 
     private static IReadOnlyList<ApiPlanField> RequiredFieldsFor(ApiPlan plan, string requestName, IReadOnlyList<ApiPlanField> candidateFields)
     {
@@ -2067,6 +2161,15 @@ internal static class ApiPlanBusinessComponentWriter
         $"{new string(' ', spaces)}msg(Format(!\"Genexus Open API Builder B055 BC failure: %1\", &Messages.ToJson()), status)",
     };
 
+    private static IEnumerable<string> CurrentBusinessRuleFailureMessages(int spaces)
+    {
+        var indent = new string(' ', spaces);
+        yield return $"{indent}&RestStatusCode = 422";
+        yield return $"{indent}&ErrorResponse = new()";
+        yield return $"{indent}&ErrorResponse.Code = !\"validation_error\"";
+        yield return $"{indent}&ErrorResponse.Message = !\"Business rules rejected the request.\"";
+    }
+
     private static IEnumerable<string> BusinessRuleFailureMessages(string bc, int spaces)
     {
         var indent = new string(' ', spaces);
@@ -2117,7 +2220,6 @@ internal static class ApiPlanBusinessComponentWriter
         new VariableSpec("LocationUrl", "VarChar(1K)"),
         new VariableSpec("RestStatusCode", "Numeric(3.0)"),
         new VariableSpec(plan.TransactionName, plan.TransactionName),
-        new VariableSpec("Messages", "Messages, GeneXus.Common"),
     }.Concat(RequiredMemberPresenceVariables(plan, "CreateRequest", plan.CreateRequestFields)).ToArray();
 
     private static IReadOnlyList<VariableSpec> LegacyCreateVariables(ApiPlan plan) => new[]
@@ -2146,7 +2248,6 @@ internal static class ApiPlanBusinessComponentWriter
             new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
             new VariableSpec("RestStatusCode", "Numeric(3.0)"),
             new VariableSpec(plan.TransactionName, plan.TransactionName),
-            new VariableSpec("Messages", "Messages, GeneXus.Common"),
         })
         .Concat(RequiredMemberPresenceVariables(plan, "UpdateRequest", plan.UpdateRequestFields))
         .ToArray();
@@ -2244,6 +2345,9 @@ internal static class ApiPlanBusinessComponentWriter
     private static string LoadArguments(ApiPlan plan, string prefix) => string.Join(", ", plan.PrimaryKey.Select(field => prefix == "&" ? $"&{field.Name}" : $"{prefix}.{field.Name}"));
     private static bool HasService(ApiPlan plan, string name) => plan.Services.Any(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
     private static string Skeleton(string backlog, string service) =>
+        $"// Genexus Open API Builder: Procedure skeleton for {service}.";
+
+    private static string PreviousGeneratedSkeleton(string service) =>
         $"// Genexus Open API Builder: Procedure skeleton for {service}." + Environment.NewLine +
         $"msg(!\"Genexus Open API Builder {service} skeleton.\", status)";
 
@@ -2274,6 +2378,63 @@ internal static class ApiPlanBusinessComponentWriter
 
     internal static string CreateB079ApiEvents()
     {
+        return CreateApiEvents(includeList: true, includeGet: true, includeCreate: true, includeUpdate: true);
+    }
+
+    internal static string CreateB079ApiEventsForPlan(ApiPlan plan)
+    {
+        if (plan is null)
+        {
+            throw new ArgumentNullException(nameof(plan));
+        }
+
+        return CreateApiEvents(
+            plan.Services.Any(service => string.Equals(service.Name, "List", StringComparison.OrdinalIgnoreCase)),
+            plan.Services.Any(service => string.Equals(service.Name, "Get", StringComparison.OrdinalIgnoreCase)),
+            plan.Services.Any(service => string.Equals(service.Name, "Create", StringComparison.OrdinalIgnoreCase)),
+            plan.Services.Any(service => string.Equals(service.Name, "Update", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static string CreateApiEvents(bool includeList, bool includeGet, bool includeCreate, bool includeUpdate)
+    {
+        var events = new List<string>();
+        if (includeList)
+        {
+            AddStatusEvent(events, "List");
+        }
+
+        if (includeGet)
+        {
+            AddStatusEvent(events, "Get");
+        }
+
+        if (includeCreate)
+        {
+            AddStatusEvent(events, "Create");
+        }
+
+        if (includeUpdate)
+        {
+            AddStatusEvent(events, "Update");
+        }
+
+        return string.Join(Environment.NewLine, events);
+    }
+
+    private static void AddStatusEvent(List<string> events, string service)
+    {
+        if (events.Count > 0)
+        {
+            events.Add(string.Empty);
+        }
+
+        events.Add($"Event {service}.After");
+        events.Add("    &RestCode = &RestStatusCode");
+        events.Add("EndEvent");
+    }
+
+    internal static string CreatePreviousB079ApiEvents()
+    {
         return string.Join(Environment.NewLine, new[]
         {
             "Event Get.After",
@@ -2290,15 +2451,27 @@ internal static class ApiPlanBusinessComponentWriter
         });
     }
 
-    internal static bool HasExpectedApiEvents(API api)
+    internal static bool HasExpectedApiEvents(API api, ApiPlan? plan = null)
     {
         if (api is null)
         {
             return false;
         }
 
+        var expected = plan is null ? CreateB079ApiEvents() : CreateB079ApiEventsForPlan(plan);
         return string.IsNullOrWhiteSpace(api.Events.Source) ||
-            string.Equals(NormalizeForComparison(api.Events.Source), NormalizeForComparison(CreateB079ApiEvents()), StringComparison.Ordinal);
+            string.Equals(NormalizeForComparison(api.Events.Source), NormalizeForComparison(expected), StringComparison.Ordinal);
+    }
+
+    internal static bool HasManagedApiEvents(API api, ApiPlan? plan = null)
+    {
+        if (api is null)
+        {
+            return false;
+        }
+
+        return HasExpectedApiEvents(api, plan) ||
+            string.Equals(NormalizeForComparison(api.Events.Source), NormalizeForComparison(CreatePreviousB079ApiEvents()), StringComparison.Ordinal);
     }
 
     private static string ServiceAnnotations(ApiPlan plan, string service, bool includeDescriptions, bool includeRestMethod)

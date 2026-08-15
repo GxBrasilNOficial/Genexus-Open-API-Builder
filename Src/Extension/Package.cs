@@ -32,15 +32,36 @@ public sealed class Package : AbstractPackageUI
     {
         base.Initialize(services);
 
-        AddCommand(new CommandKey(Id, "Configurar Preferências do Wizard"), ExecuteConfigureWizardPreferences, QueryConfigureWizardPreferences);
+        AddCommand(new CommandKey(Id, "Configurar Preferências do Wizard"), ExecuteConfigureWizardPreferences, QueryConfigureWizardPreferencesPortuguese);
+        AddCommand(new CommandKey(Id, "Configurar preferencias del Wizard"), ExecuteConfigureWizardPreferences, QueryConfigureWizardPreferencesSpanish);
+        AddCommand(new CommandKey(Id, "Configure Wizard Preferences"), ExecuteConfigureWizardPreferences, QueryConfigureWizardPreferencesEnglish);
         AddCommand(new CommandKey(Id, "Wizard"), ExecuteOpenWizardStepOne, QueryOpenWizardStepOne);
-        AddCommand(new CommandKey(Id, "Sincronizar com a Transaction"), ExecuteSynchronizeWithTransaction, QuerySynchronizeWithTransaction);
-        AddCommand(new CommandKey(Id, "Remover API gerada"), ExecuteRemoveGeneratedApi, QueryRemoveGeneratedApi);
+        AddCommand(new CommandKey(Id, "Sincronizar com a Transaction"), ExecuteSynchronizeWithTransaction, QuerySynchronizeWithTransactionPortuguese);
+        AddCommand(new CommandKey(Id, "Sincronizar con la Transaction"), ExecuteSynchronizeWithTransaction, QuerySynchronizeWithTransactionSpanish);
+        AddCommand(new CommandKey(Id, "Synchronize with the Transaction"), ExecuteSynchronizeWithTransaction, QuerySynchronizeWithTransactionEnglish);
+        AddCommand(new CommandKey(Id, "Remover API gerada"), ExecuteRemoveGeneratedApi, QueryRemoveGeneratedApiPortuguese);
+        AddCommand(new CommandKey(Id, "Eliminar API generada"), ExecuteRemoveGeneratedApi, QueryRemoveGeneratedApiSpanish);
+        AddCommand(new CommandKey(Id, "Remove generated API"), ExecuteRemoveGeneratedApi, QueryRemoveGeneratedApiEnglish);
     }
 
-    private static bool QueryConfigureWizardPreferences(CommandData data, ref CommandStatus status)
+    private static bool QueryConfigureWizardPreferencesPortuguese(CommandData data, ref CommandStatus status)
     {
-        status.Visible(true);
+        return QueryLocalizedCommand(data, ref status, ExtensionLanguage.PortugueseBrazil);
+    }
+
+    private static bool QueryConfigureWizardPreferencesSpanish(CommandData data, ref CommandStatus status)
+    {
+        return QueryLocalizedCommand(data, ref status, ExtensionLanguage.Spanish);
+    }
+
+    private static bool QueryConfigureWizardPreferencesEnglish(CommandData data, ref CommandStatus status)
+    {
+        return QueryLocalizedCommand(data, ref status, ExtensionLanguage.English);
+    }
+
+    private static bool QueryLocalizedCommand(CommandData data, ref CommandStatus status, ExtensionLanguage language)
+    {
+        status.Visible(ExtensionLocalization.IsCurrentKnowledgeBase(language));
         return true;
     }
 
@@ -53,8 +74,9 @@ public sealed class Package : AbstractPackageUI
             return true;
         }
 
+        var texts = ExtensionLocalization.For(knowledgeBase);
         var loadResult = PrototypeWizardPreferencesStore.Load(knowledgeBase.DesignModel);
-        using var dialog = new PrototypeWizardPreferencesDialog(loadResult.Preferences, loadResult.Status);
+        using var dialog = new PrototypeWizardPreferencesDialog(loadResult.Preferences, loadResult.Status, texts);
         var result = dialog.ShowDialog();
         if (result != System.Windows.Forms.DialogResult.OK || dialog.Preferences is null)
         {
@@ -579,11 +601,16 @@ public sealed class Package : AbstractPackageUI
         Transaction transaction,
         ApiPlan apiPlan,
         string triggerSource,
-        ApiPlanApplicationFinalReportCollector? report = null)
+        ApiPlanApplicationFinalReportCollector? report = null,
+        bool allowIntentionalContractRefresh = false)
     {
         try
         {
-            var result = ApiPlanApiObjectWriter.CreateOrReencounter(designModel, transaction, apiPlan);
+            var result = ApiPlanApiObjectWriter.CreateOrReencounter(
+                designModel,
+                transaction,
+                apiPlan,
+                allowIntentionalContractRefresh);
             WriteOutput($"[Genexus Open API Builder][B054] Escrita de API Object concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiName='{result.ApiName}', Status='{result.Status}', ReencounteredSdts={result.ReencounteredSdts}, ReencounteredProcedures={result.ReencounteredProcedures}, PlannedServices={result.PlannedServices}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhum REST completo, seguranca definitiva ou metadata persistente definitiva foi criado.");
             foreach (var procedure in result.Procedures)
             {
@@ -621,7 +648,10 @@ public sealed class Package : AbstractPackageUI
                 apiPlan,
                 allowIntentionalContractRefresh);
             WriteOutput($"[Genexus Open API Builder][B060] Metadata persistente inicial gravada: Transaction='{transaction.Name}', Trigger='{triggerSource}', File='{result.FileName}', Status='{result.Status}', Guid='{result.Guid}', SchemaVersion='{result.SchemaVersion}', Bytes={result.Bytes}, Sha256='{result.Sha256}'. A metadata registra o snapshot do ApiPlan e dos artefatos ja aplicados; seguranca definitiva permanece fora desta etapa.");
-            WriteOutput($"[Genexus Open API Builder][B067] Metadata de integridade gravada: Transaction='{transaction.Name}', Trigger='{triggerSource}', File='{result.FileName}', IntegrityVersion='{result.IntegrityVersion}', PlannedContractHash='{result.PlannedContractHash}'. Reexecucoes com descricoes, ownership, Service Source ou contrato essencial divergente serao bloqueadas antes de qualquer Save().");
+            var baselineMessage = allowIntentionalContractRefresh
+                ? "Alteracoes deliberadas pelo Wizard/Sincronizar atualizam esse baseline; alteracoes diretas nos objetos continuam bloqueadas antes de qualquer Save()."
+                : "Reexecucoes com descricoes, ownership, Service Source ou baseline divergente serao bloqueadas antes de qualquer Save().";
+            WriteOutput($"[Genexus Open API Builder][B067] Metadata de integridade gravada: Transaction='{transaction.Name}', Trigger='{triggerSource}', File='{result.FileName}', IntegrityVersion='{result.IntegrityVersion}', PlannedContractHash='{result.PlannedContractHash}'. {baselineMessage}");
             report?.AddFromWriteStatus("File", result.FileName, result.Status, $"Bytes={result.Bytes}");
             return true;
         }
@@ -716,10 +746,34 @@ public sealed class Package : AbstractPackageUI
         }
     }
 
-    private static bool QuerySynchronizeWithTransaction(CommandData data, ref CommandStatus status)
+    private static bool QuerySynchronizeWithTransactionPortuguese(CommandData data, ref CommandStatus status)
     {
-        status.Visible(true);
-        return true;
+        return QueryLocalizedCommand(data, ref status, ExtensionLanguage.PortugueseBrazil);
+    }
+
+    private static bool QuerySynchronizeWithTransactionSpanish(CommandData data, ref CommandStatus status)
+    {
+        return QueryLocalizedCommand(data, ref status, ExtensionLanguage.Spanish);
+    }
+
+    private static bool QuerySynchronizeWithTransactionEnglish(CommandData data, ref CommandStatus status)
+    {
+        return QueryLocalizedCommand(data, ref status, ExtensionLanguage.English);
+    }
+
+    private static bool QueryRemoveGeneratedApiPortuguese(CommandData data, ref CommandStatus status)
+    {
+        return QueryLocalizedCommand(data, ref status, ExtensionLanguage.PortugueseBrazil);
+    }
+
+    private static bool QueryRemoveGeneratedApiSpanish(CommandData data, ref CommandStatus status)
+    {
+        return QueryLocalizedCommand(data, ref status, ExtensionLanguage.Spanish);
+    }
+
+    private static bool QueryRemoveGeneratedApiEnglish(CommandData data, ref CommandStatus status)
+    {
+        return QueryLocalizedCommand(data, ref status, ExtensionLanguage.English);
     }
 
     private static bool ExecuteSynchronizeWithTransaction(CommandData data)
@@ -731,10 +785,11 @@ public sealed class Package : AbstractPackageUI
             return true;
         }
 
+        var texts = ExtensionLocalization.For(knowledgeBase);
         Transaction? transaction;
         try
         {
-            transaction = ResolveTransactionForCommand(data, knowledgeBase, "Sincronizar com a Transaction");
+            transaction = ResolveTransactionForCommand(data, knowledgeBase, texts.SynchronizeWithTransaction);
         }
         catch (InvalidOperationException ex)
         {
@@ -769,7 +824,7 @@ public sealed class Package : AbstractPackageUI
                 return true;
             }
 
-            using var dialog = new ApiPlanTransactionSyncDialog(preview);
+            using var dialog = new ApiPlanTransactionSyncDialog(preview, texts);
             var dialogResult = dialog.ShowDialog();
             if (dialogResult != System.Windows.Forms.DialogResult.OK || dialog.Choices is null || dialog.Choices.Cancel)
             {
@@ -827,7 +882,13 @@ public sealed class Package : AbstractPackageUI
 
             if (selection.GenerateApiObject && !selection.ApplyBusinessComponent)
             {
-                if (!TryCreateApiObject(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", report))
+                if (!TryCreateApiObject(
+                    knowledgeBase.DesignModel,
+                    transaction,
+                    apiPlan,
+                    "SyncB085",
+                    report,
+                    allowIntentionalContractRefresh: true))
                 {
                     stopwatch.Stop();
                     ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
@@ -838,7 +899,13 @@ public sealed class Package : AbstractPackageUI
             {
                 if (!API.GetAll(knowledgeBase.DesignModel).Any(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase)))
                 {
-                    if (!TryCreateApiObject(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", report))
+                    if (!TryCreateApiObject(
+                        knowledgeBase.DesignModel,
+                        transaction,
+                        apiPlan,
+                        "SyncB085",
+                        report,
+                        allowIntentionalContractRefresh: true))
                     {
                         stopwatch.Stop();
                         ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
@@ -908,12 +975,6 @@ public sealed class Package : AbstractPackageUI
         return true;
     }
 
-    private static bool QueryRemoveGeneratedApi(CommandData data, ref CommandStatus status)
-    {
-        status.Visible(true);
-        return true;
-    }
-
     private static bool ExecuteRemoveGeneratedApi(CommandData data)
     {
         var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
@@ -923,10 +984,11 @@ public sealed class Package : AbstractPackageUI
             return true;
         }
 
+        var texts = ExtensionLocalization.For(knowledgeBase);
         Transaction? transaction;
         try
         {
-            transaction = ResolveTransactionForCommand(data, knowledgeBase, "Remover API gerada");
+            transaction = ResolveTransactionForCommand(data, knowledgeBase, texts.RemoveGeneratedApi);
         }
         catch (InvalidOperationException ex)
         {
@@ -944,12 +1006,13 @@ public sealed class Package : AbstractPackageUI
         {
             var plan = ApiPlanGeneratedApiRemover.Preview(knowledgeBase.DesignModel, transaction);
             WriteOutput($"[Genexus Open API Builder][B086] Plano de remocao para Transaction='{transaction.Name}':{Environment.NewLine}{plan.BuildConfirmationSummary()}");
+            var localizedRemovalSummary = ExtensionOutputLocalization.Translate(plan.BuildConfirmationSummary(), texts.Language);
 
             var confirmation = System.Windows.Forms.MessageBox.Show(
-                "Remover API gerada apaga somente objetos proprios identificados pela metadata." + Environment.NewLine + Environment.NewLine +
-                plan.BuildConfirmationSummary() + Environment.NewLine + Environment.NewLine +
-                "Confirma a exclusao?",
-                "Remover API gerada",
+                texts.RemovalConfirmationIntro + Environment.NewLine + Environment.NewLine +
+                localizedRemovalSummary + Environment.NewLine + Environment.NewLine +
+                texts.ConfirmDeletion,
+                texts.RemoveGeneratedApi,
                 System.Windows.Forms.MessageBoxButtons.YesNo,
                 System.Windows.Forms.MessageBoxIcon.Warning,
                 System.Windows.Forms.MessageBoxDefaultButton.Button2);
@@ -1046,6 +1109,7 @@ public sealed class Package : AbstractPackageUI
             return true;
         }
 
+        var texts = ExtensionLocalization.For(knowledgeBase);
         PrototypeTransactionSelectionState.ClearIfKnowledgeBaseChanged(knowledgeBase);
 
         var transaction = TryResolveTransactionFromContext(data);
@@ -1076,7 +1140,7 @@ public sealed class Package : AbstractPackageUI
             var options = new SelectObjectOptions
             {
                 MultipleSelection = false,
-                DialogTitle = "Selecionar Transaction para o wizard (B030)",
+                DialogTitle = $"Selecionar Transaction para o {texts.Wizard} (B030)",
                 SupportCreateAction = false
             };
             options.ObjectTypes.Add(KBObjectDescriptor.Get<Transaction>());
@@ -1121,7 +1185,7 @@ public sealed class Package : AbstractPackageUI
         var preferencesLoadResult = PrototypeWizardPreferencesStore.Load(knowledgeBase.DesignModel);
         WriteOutput($"[Genexus Open API Builder][Prefs] {preferencesLoadResult.Status}");
 
-        var snapshot = PrototypeWizardContractReader.Read(transaction);
+        var snapshot = PrototypeWizardContractReader.Read(knowledgeBase.DesignModel, transaction);
         var businessComponentSnapshot = PrototypeBusinessComponentReader.Read(transaction);
         using var dialog = new PrototypeWizardDialog(
             knowledgeBase.DesignModel,
@@ -1130,7 +1194,8 @@ public sealed class Package : AbstractPackageUI
             businessComponentSnapshot,
             preferencesLoadResult.Preferences,
             () => EnableBusinessComponentForWizard(transaction),
-            WriteOutput);
+            WriteOutput,
+            texts);
         var result = dialog.ShowDialog();
         var businessComponentExitStatus = dialog.BusinessComponentEnabledDuringWizard
             ? "Business Component foi habilitado por confirmacao explicita antes da saida; essa alteracao foi gravada na KB e nao foi revertida automaticamente."
@@ -1165,7 +1230,7 @@ public sealed class Package : AbstractPackageUI
         var filterBlockedCount = snapshot.Attributes.Count(item => !item.IsFilterEligible);
         var classifiedSensitiveCount = snapshot.Attributes.Count(item => item.IsSensitive);
         var classifiedAuditCount = snapshot.Attributes.Count(item => item.IsAudit);
-        var apiPlan = ApiPlanBuilder.Build(transaction, selection);
+        var apiPlan = ApiPlanBuilder.Build(knowledgeBase.DesignModel, transaction, selection);
         var sdtGenerationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var classificationConfiguration = apiPlan.FieldClassificationConfiguration;
         var classificationMetadataContract = classificationConfiguration.MetadataContract;
@@ -1196,7 +1261,7 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B056] Descricoes no ApiPlan: Resolved={serviceDescriptionsResolvedCount}/{apiPlan.ServiceDescriptions.Count}, Language='{apiPlan.ServiceDescriptionLanguage}', LanguageSource='{apiPlan.ServiceDescriptionLanguageSource}', FallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, FallbackReason='{apiPlan.ServiceDescriptionFallbackReason}'. Sem aplicar [Description] em objeto API real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B092] Seguranca no ApiPlan: SecurityLevel='{apiPlan.Security.SecurityLevel}', GamCondition='{apiPlan.Security.GamCondition}', RequiresGenerationConfirmation={apiPlan.Security.RequiresGenerationConfirmation}. Sem aplicar seguranca em objetos reais.");
         WriteOutput($"[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria. GenerateSdts={selection.GenerateSdts}, GenerateProcedures={selection.GenerateProcedures}, GenerateApiObject={selection.GenerateApiObject}, GenerateMetadata={selection.GenerateMetadata}, ApplyList={selection.ApplyList}, ApplyBusinessComponent={selection.ApplyBusinessComponent}; escritas confirmadas no wizard exigem preflight completo antes de qualquer Save().");
-        var generationState = ApiPlanGenerationStateReader.Read(knowledgeBase.DesignModel, transaction, apiPlan);
+        var generationState = ApiPlanGenerationStateReader.ReadForIntentionalChange(knowledgeBase.DesignModel, transaction, apiPlan);
         var preflightScope = ApiPlanWritePreflightScope.FromSelection(
             selection.GenerateSdts,
             selection.GenerateProcedures,
@@ -1253,7 +1318,7 @@ public sealed class Package : AbstractPackageUI
 
         try
         {
-            ApiPlanWritePreflight.Validate(
+            ApiPlanWritePreflight.ValidateForIntentionalChange(
                 knowledgeBase.DesignModel,
                 transaction,
                 apiPlan,
@@ -1359,7 +1424,13 @@ public sealed class Package : AbstractPackageUI
         var apiObjectReady = true;
         if (selection.GenerateApiObject && !selection.ApplyBusinessComponent)
         {
-            apiObjectReady = TryCreateApiObject(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard", report);
+            apiObjectReady = TryCreateApiObject(
+                knowledgeBase.DesignModel,
+                transaction,
+                apiPlan,
+                "Wizard",
+                report,
+                allowIntentionalContractRefresh: true);
         }
         else if (selection.GenerateApiObject && selection.ApplyBusinessComponent)
         {
@@ -1369,7 +1440,13 @@ public sealed class Package : AbstractPackageUI
             }
             else
             {
-                apiObjectReady = TryCreateApiObject(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard", report);
+                apiObjectReady = TryCreateApiObject(
+                    knowledgeBase.DesignModel,
+                    transaction,
+                    apiPlan,
+                    "Wizard",
+                    report,
+                    allowIntentionalContractRefresh: true);
             }
         }
         else if (selection.ApplyBusinessComponent)
@@ -1407,6 +1484,7 @@ public sealed class Package : AbstractPackageUI
                 transaction,
                 apiPlan,
                 "Wizard",
+                allowIntentionalContractRefresh: true,
                 report: report);
         }
 
@@ -1430,6 +1508,7 @@ public sealed class Package : AbstractPackageUI
                 transaction,
                 apiPlan,
                 "Wizard",
+                allowIntentionalContractRefresh: true,
                 report: report);
         }
 
@@ -1447,7 +1526,13 @@ public sealed class Package : AbstractPackageUI
 
         if (selection.GenerateMetadata)
         {
-            TryWriteMetadataFile(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard", report: report);
+            TryWriteMetadataFile(
+                knowledgeBase.DesignModel,
+                transaction,
+                apiPlan,
+                "Wizard",
+                allowIntentionalContractRefresh: true,
+                report: report);
         }
 
         stopwatch.Stop();
@@ -1493,7 +1578,7 @@ public sealed class Package : AbstractPackageUI
         }
 
         var snapshot = PrototypeWizardContractReader.Read(transaction);
-        using var dialog = new PrototypeWizardContractDialog(snapshot);
+        using var dialog = new PrototypeWizardContractDialog(snapshot, ExtensionLocalization.For(knowledgeBase));
         var result = dialog.ShowDialog();
 
         if (result == System.Windows.Forms.DialogResult.Retry)
@@ -1623,7 +1708,7 @@ public sealed class Package : AbstractPackageUI
             }
 
             var snapshot = PrototypeWizardReviewReader.Read(transaction, contractSelection);
-            using var dialog = new PrototypeWizardReviewDialog(snapshot);
+            using var dialog = new PrototypeWizardReviewDialog(snapshot, ExtensionLocalization.For(knowledgeBase));
             var result = dialog.ShowDialog();
 
             if (result == System.Windows.Forms.DialogResult.Retry)
@@ -1678,7 +1763,9 @@ public sealed class Package : AbstractPackageUI
     private static bool RunContractDialogForB032(Transaction transaction)
     {
         var snapshot = PrototypeWizardContractReader.Read(transaction);
-        using var dialog = new PrototypeWizardContractDialog(snapshot);
+        using var dialog = new PrototypeWizardContractDialog(
+            snapshot,
+            ExtensionLocalization.For(UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null));
         var result = dialog.ShowDialog();
 
         if (result == System.Windows.Forms.DialogResult.Retry)
@@ -1753,10 +1840,16 @@ public sealed class Package : AbstractPackageUI
     {
         foreach (var conflict in collisions)
         {
+            var detail = $"Modulo='{conflict.ModuleName}' | Folder='{conflict.FolderName}'";
+            if (!string.IsNullOrWhiteSpace(conflict.DiagnosticDetails))
+            {
+                detail += Environment.NewLine + conflict.DiagnosticDetails;
+            }
+
             report.AddBlocked(
                 conflict.ObjectType,
                 conflict.Name,
-                $"Modulo='{conflict.ModuleName}' | Folder='{conflict.FolderName}'");
+                detail);
         }
     }
 
@@ -1869,7 +1962,8 @@ public sealed class Package : AbstractPackageUI
             WriteOutput($"[Genexus Open API Builder][B081] Aviso: {warning}");
         }
 
-        using var dialog = new ApiPlanApplicationFinalReportDialog(report, designModel);
+        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
+        using var dialog = new ApiPlanApplicationFinalReportDialog(report, designModel, ExtensionLocalization.For(knowledgeBase));
         dialog.ShowDialog();
     }
 
@@ -1905,7 +1999,9 @@ public sealed class Package : AbstractPackageUI
         }
 
         var outputId = outputWithDefault.DefaultOutputId;
-        output.AddLine(outputId, message);
+        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
+        var language = ExtensionLocalization.Resolve(knowledgeBase);
+        output.AddLine(outputId, ExtensionOutputLocalization.Translate(message, language));
         output.Show(outputId);
     }
 

@@ -171,6 +171,44 @@ public static class ApiPlanMetadataIntegrity
             serviceSourceContractMatches;
     }
 
+    /// <summary>
+    /// Valida o estado que a extensao gravou na ultima execucao, sem comparar
+    /// o contrato atual desejado. Essa e a porta de seguranca usada antes de
+    /// uma alteracao deliberada pelo Wizard ou pelo Sincronizar.
+    /// </summary>
+    public static bool HasCompatibleGeneratedBaseline(
+        JObject metadata,
+        string actualServiceDescriptionsHash,
+        string actualServiceSourceHash,
+        string actualApiDescription,
+        string actualApiObjectGuid)
+    {
+        if (metadata is null)
+        {
+            throw new ArgumentNullException(nameof(metadata));
+        }
+
+        var integrity = metadata["integrity"] as JObject;
+        if (integrity is null)
+        {
+            // Metadata anterior ao B067 nao possui baseline suficiente para
+            // distinguir uma edicao manual. O primeiro upgrade continua
+            // permitido; a proxima gravacao passa a persistir o baseline.
+            return true;
+        }
+
+        var storedDescriptionSentinel = integrity.SelectToken("apiObject.descriptionSentinel")?.Value<string>() ?? string.Empty;
+        var storedApiGuid = integrity.SelectToken("apiObject.guid")?.Value<string>() ?? string.Empty;
+        var storedSourceHash = integrity.SelectToken("apiObject.serviceSourceCurrentHash")?.Value<string>() ?? string.Empty;
+        var storedDescriptionsHash = integrity.SelectToken("generatedDescriptions.hash")?.Value<string>() ?? string.Empty;
+
+        return HasString(integrity["version"], Version) &&
+            string.Equals(actualServiceDescriptionsHash, storedDescriptionsHash, StringComparison.Ordinal) &&
+            string.Equals(actualApiDescription, storedDescriptionSentinel, StringComparison.Ordinal) &&
+            string.Equals(actualApiObjectGuid, storedApiGuid, StringComparison.Ordinal) &&
+            string.Equals(actualServiceSourceHash, storedSourceHash, StringComparison.Ordinal);
+    }
+
     public static JArray CreateServiceDescriptionsContractFromSource(string source, IEnumerable<string> serviceNames)
     {
         if (serviceNames is null)

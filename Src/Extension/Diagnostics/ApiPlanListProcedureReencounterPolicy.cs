@@ -30,12 +30,13 @@ public static class ApiPlanListProcedureReencounterPolicy
         return false;
     }
 
-    public static bool IsRulesAllowed(string? currentRules, string expectedRules, string legacyRules)
+    public static bool IsRulesAllowed(string? currentRules, string expectedRules, string legacyRules, IEnumerable<string>? knownPreviousRules = null)
     {
         var current = NormalizeForComparison(currentRules);
         return string.IsNullOrWhiteSpace(current) ||
             string.Equals(current, NormalizeForComparison(expectedRules), StringComparison.Ordinal) ||
-            string.Equals(current, NormalizeForComparison(legacyRules), StringComparison.Ordinal);
+            string.Equals(current, NormalizeForComparison(legacyRules), StringComparison.Ordinal) ||
+            (knownPreviousRules ?? Array.Empty<string>()).Any(rule => string.Equals(current, NormalizeForComparison(rule), StringComparison.Ordinal));
     }
 
     public static bool AreVariablesAllowed(bool hasCurrentCustomVariables, params bool[] knownVariableContractsMatch)

@@ -2,6 +2,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $helperPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanMetadataIntegrity.cs'
+$metadataWriterPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanMetadataFileWriter.cs'
+$metadataWriterSource = Get-Content -Raw -LiteralPath $metadataWriterPath
 $newtonsoftPath = Get-ChildItem -Path (Join-Path $env:USERPROFILE '.nuget\packages\newtonsoft.json') -Filter Newtonsoft.Json.dll -Recurse |
     Where-Object { $_.FullName -match '\\lib\\netstandard2\.0\\Newtonsoft\.Json\.dll$' } |
     Sort-Object FullName -Descending |
@@ -88,6 +90,12 @@ $plannedContractHash = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetad
 $actualDescriptionsHash = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ComputeJsonSha256([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::CreateServiceDescriptionsContractFromSource($currentSource, $serviceNames))
 
 Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($metadata, $descriptionsHash, $plannedContractHash, $actualDescriptionsHash, $descriptionSentinel, $expectedSource, $true)) 'B067 deve aceitar metadata de integridade compatível.'
+
+$currentSourceHash = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ComputeNormalizedTextSha256($currentSource)
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleGeneratedBaseline($metadata, $actualDescriptionsHash, $currentSourceHash, $descriptionSentinel, '11111111-1111-1111-1111-111111111111')) 'O baseline deve aceitar o estado que a extensao gravou.'
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleGeneratedBaseline($metadata, $actualDescriptionsHash, ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ComputeNormalizedTextSha256($currentSource + "`n// edicao manual")), $descriptionSentinel, '11111111-1111-1111-1111-111111111111')) 'O baseline deve rejeitar Source editado diretamente.'
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleGeneratedBaseline($metadata, $actualDescriptionsHash, $currentSourceHash, 'Descricao manual', '11111111-1111-1111-1111-111111111111')) 'O baseline deve rejeitar Description editada diretamente.'
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleGeneratedBaseline($metadata, $actualDescriptionsHash, $currentSourceHash, $descriptionSentinel, '22222222-2222-2222-2222-222222222222')) 'O baseline deve rejeitar GUID divergente.'
 
 $formattedSource = @'
 apiTransaction2
@@ -191,5 +199,21 @@ Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegr
 
 $legacyMetadata = [Newtonsoft.Json.Linq.JObject]::new()
 Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($legacyMetadata, $descriptionsHash, $plannedContractHash, $actualDescriptionsHash, $descriptionSentinel, $expectedSource, $false)) 'Metadata legada sem bloco integrity deve continuar aceita para primeiro upgrade conservador.'
+
+if ($metadataWriterSource.IndexOf('CreatePlannedContract(apiPlan, transactionStructure: transactionStructure, includePagination: false)', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: O hash B067 deve excluir a paginação do contrato essencial.'
+}
+if ($metadataWriterSource.IndexOf('CreatePlannedContract(apiPlan, includePagination: false)', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: O hash planejado atual deve excluir a paginação.'
+}
+if ($metadataWriterSource.IndexOf('CreatePlannedContract(apiPlan, useLegacyPathParameterSyntax: true)', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: Metadata legada com paginação deve permanecer compatível.'
+}
+if ($metadataWriterSource.IndexOf('storedContractWithoutPagination.Remove("pagination")', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: O reencounter deve comparar metadata legada sem considerar a paginação.'
+}
+if ($metadataWriterSource.IndexOf('HasCompatibleGeneratedBaseline', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: O writer deve possuir uma validacao de baseline independente do plano desejado.'
+}
 
 Write-Output 'PASS: ApiPlanMetadataIntegrity'

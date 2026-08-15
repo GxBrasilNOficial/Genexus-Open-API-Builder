@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Artech.Architecture.Common.Objects;
 using Artech.Genexus.Common.Objects;
 using GenexusOpenApiBuilder.Extension.Diagnostics;
 
@@ -19,6 +20,24 @@ internal static class ApiPlanBuilder
     };
 
     public static ApiPlan Build(Transaction transaction, PrototypeWizardFlowSelection selection)
+    {
+        return BuildInternal(transaction, selection, null);
+    }
+
+    public static ApiPlan Build(KBModel designModel, Transaction transaction, PrototypeWizardFlowSelection selection)
+    {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        return BuildInternal(transaction, selection, PrototypeWizardExistingApiContractReader.Read(designModel, transaction));
+    }
+
+    private static ApiPlan BuildInternal(
+        Transaction transaction,
+        PrototypeWizardFlowSelection selection,
+        PrototypeWizardExistingApiContract? existingApiContract)
     {
         if (transaction is null)
         {
@@ -60,7 +79,15 @@ internal static class ApiPlanBuilder
             .Where(item => IsSelectedRequestField(item, createFieldNames, updateFieldNames))
             .Select(item => new ApiPlanRequiredField(item.RequestName, item.FieldName, item.IsRequired, item.Reason))
             .ToArray();
-        var services = CreateServices(contract.SelectedServices, review.ApiName, review.RestPath, primaryKey);
+        var preserveExistingServiceContract = existingApiContract is not null &&
+            string.Equals(review.ApiName, existingApiContract.ApiName, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(review.RestPath, existingApiContract.RestPath, StringComparison.Ordinal);
+        var services = CreateServices(
+            contract.SelectedServices,
+            review.ApiName,
+            review.RestPath,
+            primaryKey,
+            preserveExistingServiceContract ? existingApiContract : null);
         var security = ApiPlanSecurity.CreateResolved(review.SecurityLevel);
         var names = ApiPlanNames.Create(transaction.Name, contract.SelectedServices);
 
@@ -86,7 +113,7 @@ internal static class ApiPlanBuilder
             review.DefaultPageSize,
             review.MaximumPageSize,
             review.StaticOrder.Select(item => new ApiPlanStaticOrder(item.Order, item.AttributeName, item.Direction)).ToArray(),
-            CreateServiceDescriptions(services, ResolveServiceDescriptionSubject(transaction)),
+            CreateServiceDescriptions(services, ResolveServiceDescriptionSubject(transaction), existingApiContract),
             ApiPlan.ServiceDescriptionLanguageEnglish,
             ApiPlan.ServiceDescriptionLanguageSourcePendingKbLanguageApi,
             true,
@@ -193,10 +220,17 @@ internal static class ApiPlanBuilder
         IReadOnlyList<string> selectedServices,
         string apiName,
         string restPath,
-        IReadOnlyList<ApiPlanField> primaryKey)
+        IReadOnlyList<ApiPlanField> primaryKey,
+        PrototypeWizardExistingApiContract? existingApiContract)
     {
         return selectedServices
-            .Select(service => CreateService(service, apiName, restPath, primaryKey))
+            .Select(service => existingApiContract is not null && existingApiContract.TryGetService(service, out var existingService)
+                ? new ApiPlanService(
+                    existingService.Name,
+                    existingService.HttpMethod,
+                    existingService.RestPath ?? CreateService(service, apiName, restPath, primaryKey).RestPath,
+                    existingService.OperationId ?? apiName + "." + existingService.Name)
+                : CreateService(service, apiName, restPath, primaryKey))
             .ToArray();
     }
 
@@ -226,10 +260,17 @@ internal static class ApiPlanBuilder
         return new ApiPlanService(serviceName, string.Empty, restPath, apiName + "." + serviceName);
     }
 
-    private static IReadOnlyList<ApiPlanServiceDescription> CreateServiceDescriptions(IEnumerable<ApiPlanService> services, string transactionDescriptionSubject)
+    private static IReadOnlyList<ApiPlanServiceDescription> CreateServiceDescriptions(
+        IEnumerable<ApiPlanService> services,
+        string transactionDescriptionSubject,
+        PrototypeWizardExistingApiContract? existingApiContract)
     {
         return services
-            .Select(service => new ApiPlanServiceDescription(service.Name, CreateServiceDescription(service.Name, transactionDescriptionSubject)))
+            .Select(service => new ApiPlanServiceDescription(
+                service.Name,
+                existingApiContract is not null && existingApiContract.ServiceDescriptions.TryGetValue(service.Name, out var description)
+                    ? description
+                    : CreateServiceDescription(service.Name, transactionDescriptionSubject)))
             .ToArray();
     }
 

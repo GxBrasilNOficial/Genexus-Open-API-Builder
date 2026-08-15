@@ -7,12 +7,13 @@ namespace GenexusOpenApiBuilder.Extension;
 
 internal sealed class PrototypeWizardPreferencesDialog : Form
 {
-    private readonly CheckBox _generateSdtsCheck = CreateCheckBox("Marcar SDTs por padrao");
-    private readonly CheckBox _generateProceduresCheck = CreateCheckBox("Marcar Procedures por padrao");
-    private readonly CheckBox _generateApiObjectCheck = CreateCheckBox("Marcar API Object por padrao");
-    private readonly CheckBox _generateMetadataCheck = CreateCheckBox("Marcar metadata da API por padrao");
-    private readonly CheckBox _applyListCheck = CreateCheckBox("Marcar listagem por padrao");
-    private readonly CheckBox _applyBusinessComponentCheck = CreateCheckBox("Marcar Get/Create/Update REST por padrao");
+    private readonly ExtensionTexts _texts;
+    private readonly CheckBox _generateSdtsCheck = CreateCheckBox(string.Empty);
+    private readonly CheckBox _generateProceduresCheck = CreateCheckBox(string.Empty);
+    private readonly CheckBox _generateApiObjectCheck = CreateCheckBox(string.Empty);
+    private readonly CheckBox _generateMetadataCheck = CreateCheckBox(string.Empty);
+    private readonly CheckBox _applyListCheck = CreateCheckBox(string.Empty);
+    private readonly CheckBox _applyBusinessComponentCheck = CreateCheckBox(string.Empty);
     private readonly CheckBox _listServiceCheck = CreateCheckBox("List");
     private readonly CheckBox _getServiceCheck = CreateCheckBox("Get");
     private readonly CheckBox _createServiceCheck = CreateCheckBox("Create");
@@ -21,14 +22,15 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
     private readonly NumericUpDown _defaultPageSizeInput = CreateNumericInput();
     private readonly NumericUpDown _maximumPageSizeInput = CreateNumericInput();
 
-    public PrototypeWizardPreferencesDialog(PrototypeWizardPreferences preferences, string status)
+    public PrototypeWizardPreferencesDialog(PrototypeWizardPreferences preferences, string status, ExtensionTexts texts)
     {
         if (preferences is null)
         {
             throw new ArgumentNullException(nameof(preferences));
         }
 
-        Text = "Genexus Open API Builder - Preferencias do Wizard";
+        _texts = texts ?? throw new ArgumentNullException(nameof(texts));
+        Text = _texts.PreferencesDialogTitle;
         StartPosition = FormStartPosition.CenterParent;
         AutoScaleMode = AutoScaleMode.Font;
         Width = 860;
@@ -38,6 +40,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         ShowInTaskbar = false;
         FormBorderStyle = FormBorderStyle.Sizable;
 
+        ApplyLocalizedText();
         BuildLayout(status ?? string.Empty);
         LoadPreferences(preferences);
     }
@@ -67,7 +70,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             Dock = DockStyle.Fill,
             Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold),
             MinimumSize = new Size(0, 28),
-            Text = "Preferencias gerais do wizard na KB ativa",
+            Text = _texts.Translate("Preferencias gerais do wizard na KB ativa"),
             Padding = new Padding(0, 0, 0, 8),
         }, 0, 0);
 
@@ -83,7 +86,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
 
         var optionsGroup = new GroupBox
         {
-            Text = "Defaults de geracao",
+            Text = _texts.Translate("Defaults de geracao"),
             Dock = DockStyle.Fill,
             Padding = new Padding(12),
         };
@@ -114,7 +117,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
 
         var servicesGroup = new GroupBox
         {
-            Text = "Servicos marcados por padrao",
+            Text = _texts.Translate("Servicos marcados por padrao"),
             Dock = DockStyle.Fill,
             Padding = new Padding(12),
         };
@@ -134,7 +137,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
 
         var executionGroup = new GroupBox
         {
-            Text = "Seguranca e paginacao",
+            Text = _texts.Translate("Seguranca e paginacao"),
             Dock = DockStyle.Fill,
             Padding = new Padding(12),
         };
@@ -152,9 +155,9 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         };
         execution.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
         execution.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        AddField(execution, 0, "Security Level", _securityLevelCombo);
-        AddField(execution, 1, "Default Page Size", _defaultPageSizeInput);
-        AddField(execution, 2, "Maximum Page Size", _maximumPageSizeInput);
+        AddField(execution, 0, _texts.Translate("Security Level"), _securityLevelCombo);
+        AddField(execution, 1, _texts.Translate("Default Page Size"), _defaultPageSizeInput);
+        AddField(execution, 2, _texts.Translate("Maximum Page Size"), _maximumPageSizeInput);
         executionGroup.Controls.Add(execution);
         root.Controls.Add(executionGroup, 0, 4);
 
@@ -172,9 +175,9 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             Location = new Point(0, 10),
         };
 
-        var save = CreateButton("Salvar");
+        var save = CreateButton(_texts.Save);
         save.Click += (_, _) => SaveAndClose();
-        var cancel = CreateButton("Cancelar");
+        var cancel = CreateButton(_texts.Cancel);
         cancel.Click += (_, _) => CancelAndClose();
 
         buttons.Controls.Add(save);
@@ -211,13 +214,13 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
     {
         if (!_listServiceCheck.Checked && !_getServiceCheck.Checked && !_createServiceCheck.Checked && !_updateServiceCheck.Checked)
         {
-            MessageBox.Show(this, "Marque ao menos um servico padrao.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, _texts.Translate("Marque ao menos um servico padrao."), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
         if (_defaultPageSizeInput.Value > _maximumPageSizeInput.Value)
         {
-            MessageBox.Show(this, "Default Page Size deve ser menor ou igual a Maximum Page Size.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, _texts.Translate("Default Page Size deve ser menor ou igual a Maximum Page Size."), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
@@ -247,6 +250,16 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         Preferences = null;
         DialogResult = DialogResult.Cancel;
         Close();
+    }
+
+    private void ApplyLocalizedText()
+    {
+        _generateSdtsCheck.Text = _texts.Translate("Marcar SDTs por padrao");
+        _generateProceduresCheck.Text = _texts.Translate("Marcar Procedures por padrao");
+        _generateApiObjectCheck.Text = _texts.Translate("Marcar API Object por padrao");
+        _generateMetadataCheck.Text = _texts.Translate("Marcar metadata da API por padrao");
+        _applyListCheck.Text = _texts.Translate("Marcar listagem por padrao");
+        _applyBusinessComponentCheck.Text = _texts.Translate("Marcar Get/Create/Update REST por padrao");
     }
 
     private static CheckBox CreateCheckBox(string text)

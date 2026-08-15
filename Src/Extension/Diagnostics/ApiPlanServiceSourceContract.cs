@@ -40,6 +40,33 @@ public static class ApiPlanServiceSourceContract
         return Matches(source, apiName, transactionName, moduleTarget, services, primaryKeyNames, includeBusinessComponentParameters, listFilterNames, true);
     }
 
+    public static bool MatchesCurrentB070(
+        string source,
+        string apiName,
+        string transactionName,
+        string moduleTarget,
+        IEnumerable<string> services,
+        IEnumerable<string> primaryKeyNames,
+        IEnumerable<string> listFilterNames,
+        bool includeBusinessComponentParameters)
+    {
+        return Matches(
+            source,
+            apiName,
+            transactionName,
+            moduleTarget,
+            services,
+            primaryKeyNames,
+            includeBusinessComponentParameters,
+            listFilterNames,
+            hasListContract: true,
+            hasRestRuntimeContract: true,
+            exposeErrorResponse: true,
+            validateRestMethods: true,
+            validateSecurityLevel: true,
+            includeListErrorResponse: true);
+    }
+
     public static bool MatchesB079(
         string source,
         string apiName,
@@ -160,7 +187,8 @@ public static class ApiPlanServiceSourceContract
         bool hasRestRuntimeContract,
         bool exposeErrorResponse,
         bool validateRestMethods = true,
-        bool validateSecurityLevel = true)
+        bool validateSecurityLevel = true,
+        bool includeListErrorResponse = false)
     {
         if (string.IsNullOrWhiteSpace(source) ||
             string.IsNullOrWhiteSpace(apiName) ||
@@ -215,14 +243,14 @@ public static class ApiPlanServiceSourceContract
 
         return normalizedServices.All(service =>
         {
-            var servicePrefix = ServiceSignature(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters, normalizedListFilterNames, hasListContract, hasRestRuntimeContract, exposeErrorResponse) + "=>";
+            var servicePrefix = ServiceSignature(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters, normalizedListFilterNames, hasListContract, hasRestRuntimeContract, exposeErrorResponse, includeListErrorResponse) + "=>";
             if (!TryReadProcedureCall(compactSource, servicePrefix, out var calledObject, out var calledArguments))
             {
                 return false;
             }
 
             return string.Equals(calledObject, ExpectedProcedureReference(moduleTarget, transactionName, service), StringComparison.Ordinal) &&
-                string.Equals(calledArguments, ProcedureArguments(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters, normalizedListFilterNames, hasListContract, hasRestRuntimeContract), StringComparison.Ordinal);
+                string.Equals(calledArguments, ProcedureArguments(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters, normalizedListFilterNames, hasListContract, hasRestRuntimeContract, includeListErrorResponse), StringComparison.Ordinal);
         });
     }
 
@@ -233,11 +261,15 @@ public static class ApiPlanServiceSourceContract
         IReadOnlyList<string> listFilterNames,
         bool hasListContract,
         bool hasRestRuntimeContract,
-        bool exposeErrorResponse)
+        bool exposeErrorResponse,
+        bool includeListErrorResponse)
     {
         if (hasListContract && string.Equals(service, "List", StringComparison.OrdinalIgnoreCase))
         {
-            return "List(" + string.Join(",", new[] { "in:&ApiPage", "in:&ApiPageSize" }.Concat(listFilterNames.Select(name => "in:&" + name)).Concat(new[] { "out:&ListResponse" })) + ")";
+            var outputs = includeListErrorResponse
+                ? new[] { "out:&ListResponse", "out:&ErrorResponse" }
+                : new[] { "out:&ListResponse" };
+            return "List(" + string.Join(",", new[] { "in:&ApiPage", "in:&ApiPageSize" }.Concat(listFilterNames.Select(name => "in:&" + name)).Concat(outputs)) + ")";
         }
 
         if (hasRestRuntimeContract && string.Equals(service, "Get", StringComparison.OrdinalIgnoreCase))
@@ -269,11 +301,15 @@ public static class ApiPlanServiceSourceContract
         bool includeBusinessComponentParameters,
         IReadOnlyList<string> listFilterNames,
         bool hasListContract,
-        bool hasRestRuntimeContract)
+        bool hasRestRuntimeContract,
+        bool includeListErrorResponse)
     {
         if (hasListContract && string.Equals(service, "List", StringComparison.OrdinalIgnoreCase))
         {
-            return string.Join(",", new[] { "&ApiPage", "&ApiPageSize" }.Concat(listFilterNames.Select(name => "&" + name)).Concat(new[] { "&ListResponse" }));
+            var outputs = includeListErrorResponse
+                ? new[] { "&ListResponse", "&ErrorResponse", "&RestStatusCode" }
+                : new[] { "&ListResponse" };
+            return string.Join(",", new[] { "&ApiPage", "&ApiPageSize" }.Concat(listFilterNames.Select(name => "&" + name)).Concat(outputs));
         }
 
         if (hasRestRuntimeContract && string.Equals(service, "Get", StringComparison.OrdinalIgnoreCase))

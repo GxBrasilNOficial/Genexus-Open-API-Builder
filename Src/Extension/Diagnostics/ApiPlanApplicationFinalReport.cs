@@ -80,10 +80,10 @@ public sealed class ApiPlanApplicationFinalReport
     public string BuildOutputSummary()
     {
         var builder = new StringBuilder();
-        builder.Append("[Genexus Open API Builder][B081] Relatorio final: ");
-        builder.Append($"Operation='{Operation}', Transaction='{TransactionName}', ApiName='{ApiName ?? string.Empty}', ");
-        builder.Append($"Outcome='{Outcome}', Created={CreatedCount}, Updated={UpdatedCount}, Deleted={DeletedCount}, ");
-        builder.Append($"Blocked={BlockedCount}, Warnings={WarningCount}, DurationMs={(int)Elapsed.TotalMilliseconds}, Headline='{Headline}'.");
+        builder.Append("[Genexus Open API Builder][B081] Relatório final: ");
+        builder.Append($"Operação='{Operation}', Transaction='{TransactionName}', ApiName='{ApiName ?? string.Empty}', ");
+        builder.Append($"Resultado='{Outcome}', Criados={CreatedCount}, Atualizados={UpdatedCount}, Removidos={DeletedCount}, ");
+        builder.Append($"Bloqueados={BlockedCount}, Avisos={WarningCount}, DuraçãoMs={(int)Elapsed.TotalMilliseconds}, Título='{Headline}'.");
         return builder.ToString();
     }
 

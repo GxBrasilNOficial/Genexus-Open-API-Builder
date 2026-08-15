@@ -9,6 +9,7 @@ namespace GenexusOpenApiBuilder.Extension;
 
 internal sealed class PrototypeWizardReviewDialog : Form
 {
+    private readonly ExtensionTexts _texts;
     private readonly PrototypeWizardReviewSnapshot _snapshot;
     private readonly TextBox _apiNameText = CreateSingleLineTextBox();
     private readonly TextBox _servicesBasePathText = CreateSingleLineTextBox();
@@ -26,11 +27,12 @@ internal sealed class PrototypeWizardReviewDialog : Form
     private bool _loadingSnapshot;
     private bool _servicesBasePathEditedManually;
 
-    public PrototypeWizardReviewDialog(PrototypeWizardReviewSnapshot snapshot)
+    public PrototypeWizardReviewDialog(PrototypeWizardReviewSnapshot snapshot, ExtensionTexts texts)
     {
         _snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
+        _texts = texts ?? throw new ArgumentNullException(nameof(texts));
 
-        Text = "Genexus Open API Builder - Wizard B032";
+        Text = _texts.WizardReviewTitle;
         StartPosition = FormStartPosition.CenterParent;
         Width = 940;
         Height = 640;
@@ -65,7 +67,7 @@ internal sealed class PrototypeWizardReviewDialog : Form
             AutoSize = true,
             Dock = DockStyle.Fill,
             Font = new Font(Font, FontStyle.Bold),
-            Text = $"Passo 3 - Revisar paths e seguranca: Transaction '{_snapshot.TransactionName}' | Module '{_snapshot.ModuleName}'",
+            Text = $"{_texts.Translate("Passo 3 - Revisar paths e seguranca")}: Transaction '{_snapshot.TransactionName}' | Module '{_snapshot.ModuleName}'",
             Padding = new Padding(0, 0, 0, 8),
         };
         root.Controls.Add(header, 0, 0);
@@ -85,12 +87,12 @@ internal sealed class PrototypeWizardReviewDialog : Form
             Padding = new Padding(0, 10, 0, 0),
         };
 
-        var next = CreateButton("Proximo");
+        var next = CreateButton(_texts.Next);
         _nextButton = next;
         next.Click += (_, _) => AcceptSelection();
-        var cancel = CreateButton("Cancelar");
+        var cancel = CreateButton(_texts.Cancel);
         cancel.Click += (_, _) => CancelWizard();
-        var back = CreateButton("Voltar");
+        var back = CreateButton(_texts.Back);
         back.Click += (_, _) => GoBack();
 
         buttons.Controls.Add(next);
@@ -104,7 +106,7 @@ internal sealed class PrototypeWizardReviewDialog : Form
 
     private TabPage CreatePathsTab()
     {
-        var tab = new TabPage("Paths");
+        var tab = new TabPage(_texts.Translate("Paths"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -125,19 +127,19 @@ internal sealed class PrototypeWizardReviewDialog : Form
         };
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        AddField(fields, 0, "Nome API", _apiNameText);
-        AddField(fields, 1, "Services base path", _servicesBasePathText);
+        AddField(fields, 0, _texts.Translate("Nome API"), _apiNameText);
+        AddField(fields, 1, _texts.Translate("Services base path"), _servicesBasePathText);
         AddField(fields, 2, "RestPath", _restPathText);
 
         panel.Controls.Add(fields, 0, 0);
-        panel.Controls.Add(CreateGroup("Paths dos servicos", _endpointsText), 0, 1);
+        panel.Controls.Add(CreateGroup(_texts.Translate("Paths dos servicos"), _endpointsText), 0, 1);
         tab.Controls.Add(panel);
         return tab;
     }
 
     private TabPage CreateSecurityTab()
     {
-        var tab = new TabPage("Seguranca");
+        var tab = new TabPage(_texts.Translate("Seguranca"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -148,16 +150,16 @@ internal sealed class PrototypeWizardReviewDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Security Level unico aplicado aos servicos gerados no MVP.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Security Level unico aplicado aos servicos gerados no MVP.")), 0, 0);
         panel.Controls.Add(_securityLevelCombo, 0, 1);
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Authentication inicia selecionado por seguranca. None permanece apenas como decisao prototipica nesta etapa.", Padding = new Padding(0, 12, 0, 0) }, 0, 2);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Authentication inicia selecionado por seguranca. None permanece apenas como decisao prototipica nesta etapa."), 44, 12, 0), 0, 2);
         tab.Controls.Add(panel);
         return tab;
     }
 
     private TabPage CreatePaginationTab()
     {
-        var tab = new TabPage("Paginacao");
+        var tab = new TabPage(_texts.Translate("Paginacao"));
         var fields = new TableLayoutPanel
         {
             Dock = DockStyle.Top,
@@ -168,15 +170,15 @@ internal sealed class PrototypeWizardReviewDialog : Form
         };
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        AddField(fields, 0, "Default Page Size", _defaultPageSize);
-        AddField(fields, 1, "Maximum Page Size", _maximumPageSize);
+        AddField(fields, 0, _texts.Translate("Default Page Size"), _defaultPageSize);
+        AddField(fields, 1, _texts.Translate("Maximum Page Size"), _maximumPageSize);
         tab.Controls.Add(fields);
         return tab;
     }
 
     private TabPage CreateOrderTab()
     {
-        var tab = new TabPage("Ordenacao");
+        var tab = new TabPage(_texts.Translate("Ordenacao"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -186,7 +188,7 @@ internal sealed class PrototypeWizardReviewDialog : Form
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Ordenacao estatica inicial. A chave primaria completa e acrescentada como desempate ascendente.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Ordenacao estatica inicial. A chave primaria completa e acrescentada como desempate ascendente.")), 0, 0);
         panel.Controls.Add(_staticOrderList, 0, 1);
         tab.Controls.Add(panel);
         return tab;
@@ -194,7 +196,7 @@ internal sealed class PrototypeWizardReviewDialog : Form
 
     private TabPage CreateSummaryTab()
     {
-        var tab = new TabPage("Resumo B033");
+        var tab = new TabPage(_texts.Translate("Resumo B033"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -204,7 +206,7 @@ internal sealed class PrototypeWizardReviewDialog : Form
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Resumo das decisoes acumuladas. B033 ainda nao executa nada na KB.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Resumo das decisoes acumuladas. B033 ainda nao executa nada na KB.")), 0, 0);
         panel.Controls.Add(_summaryText, 0, 1);
         tab.Controls.Add(panel);
         return tab;
@@ -278,6 +280,19 @@ internal sealed class PrototypeWizardReviewDialog : Form
         };
     }
 
+    private static Label CreateWrappingLabel(string text, int minimumHeight = 32, int topPadding = 0, int bottomPadding = 8)
+    {
+        return new Label
+        {
+            AutoSize = false,
+            Dock = DockStyle.Fill,
+            MinimumSize = new Size(0, minimumHeight),
+            Text = text,
+            TextAlign = ContentAlignment.TopLeft,
+            Padding = new Padding(0, topPadding, 0, bottomPadding),
+        };
+    }
+
     private static NumericUpDown CreateNumericInput()
     {
         return new NumericUpDown
@@ -317,7 +332,7 @@ internal sealed class PrototypeWizardReviewDialog : Form
 
         if (_tabs.SelectedIndex < _tabs.TabPages.Count - 2)
         {
-            if (_tabs.SelectedTab?.Text == "Paths")
+            if (_tabs.SelectedTab?.Text == _texts.Translate("Paths"))
             {
                 RefreshEndpointsText();
             }
@@ -341,19 +356,19 @@ internal sealed class PrototypeWizardReviewDialog : Form
         var restPath = _restPathText.Text.Trim();
         if (apiName.Length == 0 || servicesBasePath.Length == 0 || restPath.Length == 0)
         {
-            MessageBox.Show(this, "Informe Nome API, Services base path e RestPath.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, _texts.Translate("Informe Nome API, Services base path e RestPath."), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return false;
         }
 
         if (!restPath.StartsWith("/", StringComparison.Ordinal))
         {
-            MessageBox.Show(this, "RestPath deve iniciar com '/'.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, _texts.Translate("RestPath deve iniciar com '/'."), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return false;
         }
 
         if (_defaultPageSize.Value > _maximumPageSize.Value)
         {
-            MessageBox.Show(this, "Default Page Size deve ser menor ou igual a Maximum Page Size.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, _texts.Translate("Default Page Size deve ser menor ou igual a Maximum Page Size."), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return false;
         }
 
@@ -391,7 +406,7 @@ internal sealed class PrototypeWizardReviewDialog : Form
         _tabs.SelectedIndex = _tabs.TabPages.Count - 1;
         if (_nextButton is not null)
         {
-            _nextButton.Text = "Fechar";
+            _nextButton.Text = _texts.Close;
         }
     }
 
@@ -403,7 +418,7 @@ internal sealed class PrototypeWizardReviewDialog : Form
             _tabs.SelectedIndex = _tabs.TabPages.Count - 2;
             if (_nextButton is not null)
             {
-                _nextButton.Text = "Proximo";
+                _nextButton.Text = _texts.Next;
             }
 
             return;

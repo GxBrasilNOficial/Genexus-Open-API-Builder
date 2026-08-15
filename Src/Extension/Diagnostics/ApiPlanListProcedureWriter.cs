@@ -89,10 +89,12 @@ internal static class ApiPlanListProcedureWriter
         }
 
         return (IsB070ServiceGroupSource(plan, api.ServiceGroupSource.Source, includeBusinessComponentParameters: false) &&
-                HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: false))))
+                (HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: false))) ||
+                 HasExpectedVariables(model, api, CoalesceVariableSpecs(PreviousB070ApiVariableSpecs(plan, includeBusinessComponentParameters: false)))))
             || (IsB070ServiceGroupSource(plan, api.ServiceGroupSource.Source, includeBusinessComponentParameters: true) &&
-                HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: true))) &&
-                ApiPlanBusinessComponentWriter.HasExpectedApiEvents(api));
+                (HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: true))) ||
+                 HasExpectedVariables(model, api, CoalesceVariableSpecs(PreviousB070ApiVariableSpecs(plan, includeBusinessComponentParameters: true)))) &&
+                ApiPlanBusinessComponentWriter.HasManagedApiEvents(api, plan));
     }
 
     private static bool IsB070ApiObjectWithBusinessComponentParameters(KBModel model, ApiPlan plan, API api)
@@ -112,6 +114,15 @@ internal static class ApiPlanListProcedureWriter
                 NormalizeForComparison(source),
                 NormalizeForComparison(CreateB070ServiceGroupSource(plan, includeBusinessComponentParameters)),
                 StringComparison.Ordinal) ||
+            ApiPlanServiceSourceContract.MatchesCurrentB070(
+                source,
+                plan.ApiName,
+                plan.TransactionName,
+                plan.ModuleTarget,
+                plan.Services.Select(service => service.Name),
+                plan.PrimaryKey.Select(field => field.Name),
+                plan.ListFilters.SelectMany(FilterVariableNames),
+                includeBusinessComponentParameters) ||
             ApiPlanServiceSourceContract.MatchesB070(
                 source,
                 plan.ApiName,
@@ -198,6 +209,7 @@ internal static class ApiPlanListProcedureWriter
 
         var currentSource = NormalizeForComparison(procedure.ProcedurePart.Source);
         var skeleton = Skeleton();
+        var previousGeneratedSkeleton = PreviousGeneratedSkeleton();
         var legacySkeleton = LegacySkeleton();
         var legacySource = NormalizeForComparison(CreateLegacyListSource(plan));
         var previousB070Source = NormalizeForComparison(CreatePreviousB070ListSource(plan));
@@ -211,6 +223,7 @@ internal static class ApiPlanListProcedureWriter
             new[]
             {
                 skeleton,
+                previousGeneratedSkeleton,
                 legacySkeleton,
                 invalidB077Source,
                 manualB077Source,
@@ -225,7 +238,8 @@ internal static class ApiPlanListProcedureWriter
 
         var currentRules = NormalizeForComparison(procedure.Rules.Source);
         var legacyRules = NormalizeForComparison(CreateLegacyListRules(plan));
-        if (!ApiPlanListProcedureReencounterPolicy.IsRulesAllowed(currentRules, rules, legacyRules))
+        var previousB070Rules = NormalizeForComparison(CreatePreviousB070ListRules(plan));
+        if (!ApiPlanListProcedureReencounterPolicy.IsRulesAllowed(currentRules, rules, legacyRules, new[] { previousB070Rules }))
         {
             throw new InvalidOperationException($"B070 bloqueado: Procedure propria '{procedure.Name}' possui Rules divergentes da geracao B070. Nenhuma alteracao foi feita.");
         }
@@ -255,42 +269,37 @@ internal static class ApiPlanListProcedureWriter
 
     private static string CreateListSource(ApiPlan plan)
     {
-        return CreateListSource(plan, includeParameterCopy: true);
+        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: true, useAppliedFiltersVariable: true, attachAppliedFiltersImmediately: true, assignAppliedFiltersThroughResponse: false, trackAppliedFilters: false, useExplicitErrors: true);
     }
 
     private static string CreateLegacyListSource(ApiPlan plan)
     {
-        return CreateListSource(plan, includeParameterCopy: false, initializeAppliedFilters: false);
+        return CreateListSource(plan, includeParameterCopy: false, initializeAppliedFilters: false, useExplicitErrors: false);
     }
 
     private static string CreatePreviousB070ListSource(ApiPlan plan)
     {
-        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: false);
+        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: false, useExplicitErrors: false);
     }
 
     private static string CreateInvalidB077ListSource(ApiPlan plan)
     {
-        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: true, useAppliedFiltersVariable: false, assignAppliedFiltersThroughResponse: true, trackAppliedFilters: false);
+        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: true, useAppliedFiltersVariable: false, assignAppliedFiltersThroughResponse: true, trackAppliedFilters: false, useExplicitErrors: false);
     }
 
     private static string CreatePreviousB077ListSource(ApiPlan plan)
     {
-        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: true, useAppliedFiltersVariable: true, attachAppliedFiltersImmediately: true, assignAppliedFiltersThroughResponse: true, trackAppliedFilters: false);
+        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: true, useAppliedFiltersVariable: true, attachAppliedFiltersImmediately: true, assignAppliedFiltersThroughResponse: true, trackAppliedFilters: false, useExplicitErrors: false);
     }
 
     private static string CreatePreviousConditionalB077ListSource(ApiPlan plan)
     {
-        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: true, useAppliedFiltersVariable: true, assignAppliedFiltersThroughResponse: false, trackAppliedFilters: true);
+        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: true, useAppliedFiltersVariable: true, assignAppliedFiltersThroughResponse: false, trackAppliedFilters: true, useExplicitErrors: false);
     }
 
     private static string CreateManualB077ListSource(ApiPlan plan)
     {
-        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: true, useAppliedFiltersVariable: true, assignAppliedFiltersThroughResponse: false, trackAppliedFilters: true, commentConditionalAppliedFiltersAttachment: true);
-    }
-
-    private static string CreateListSource(ApiPlan plan, bool includeParameterCopy)
-    {
-        return CreateListSource(plan, includeParameterCopy, initializeAppliedFilters: true, useAppliedFiltersVariable: true, attachAppliedFiltersImmediately: true, assignAppliedFiltersThroughResponse: false, trackAppliedFilters: false);
+        return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: true, useAppliedFiltersVariable: true, assignAppliedFiltersThroughResponse: false, trackAppliedFilters: true, commentConditionalAppliedFiltersAttachment: true, useExplicitErrors: false);
     }
 
     private static string CreateListSource(
@@ -301,12 +310,16 @@ internal static class ApiPlanListProcedureWriter
         bool attachAppliedFiltersImmediately = false,
         bool assignAppliedFiltersThroughResponse = false,
         bool trackAppliedFilters = true,
-        bool commentConditionalAppliedFiltersAttachment = false)
+        bool commentConditionalAppliedFiltersAttachment = false,
+        bool useExplicitErrors = false)
     {
-        var lines = new List<string>
+        var lines = new List<string>();
+        if (useExplicitErrors)
         {
-            "&ListResponse = new()",
-        };
+            lines.Add("&RestStatusCode = 200");
+        }
+
+        lines.Add("&ListResponse = new()");
         if (initializeAppliedFilters)
         {
             if (useAppliedFiltersVariable)
@@ -342,21 +355,22 @@ internal static class ApiPlanListProcedureWriter
             $"If &{PageSizeVariableName}.IsEmpty()",
             $"    &{PageSizeVariableName} = {plan.DefaultPageSize}",
             "EndIf",
-            $"If &{PageVariableName} < 1",
-            "    msg(!\"invalid_request: page must be greater than or equal to 1\", status)",
-            "    return",
-            "EndIf",
-            $"If &{PageSizeVariableName} < 1",
-            "    msg(!\"invalid_request: pageSize must be greater than or equal to 1\", status)",
-            "    return",
-            "EndIf",
-            $"If &{PageSizeVariableName} > {plan.MaximumPageSize}",
-            "    msg(!\"invalid_request: pageSize exceeds the configured maximum\", status)",
-            "    return",
-            "EndIf",
         });
 
-        lines.AddRange(ValidateRanges(plan));
+        lines.AddRange(InvalidRequestCondition(
+            $"If &{PageVariableName} < 1",
+            useExplicitErrors,
+            "page must be greater than or equal to 1"));
+        lines.AddRange(InvalidRequestCondition(
+            $"If &{PageSizeVariableName} < 1",
+            useExplicitErrors,
+            "pageSize must be greater than or equal to 1"));
+        lines.AddRange(InvalidRequestCondition(
+            $"If &{PageSizeVariableName} > {plan.MaximumPageSize}",
+            useExplicitErrors,
+            "pageSize exceeds the configured maximum"));
+
+        lines.AddRange(ValidateRanges(plan, useExplicitErrors));
         lines.Add($"&FirstRecord = ((&{PageVariableName} - 1) * &{PageSizeVariableName}) + 1");
         lines.Add($"&LastRecord = &{PageVariableName} * &{PageSizeVariableName}");
         lines.Add("&TotalCount = 0");
@@ -394,17 +408,47 @@ internal static class ApiPlanListProcedureWriter
         return string.Join(Environment.NewLine, lines);
     }
 
-    private static IEnumerable<string> ValidateRanges(ApiPlan plan)
+    private static IEnumerable<string> ValidateRanges(ApiPlan plan, bool useExplicitErrors)
     {
         foreach (var filter in plan.ListFilters.Where(item => item.UsesRange || item.UsesPeriod))
         {
             var first = FilterVariableName(filter, filter.UsesPeriod ? "From" : "Min");
             var second = FilterVariableName(filter, filter.UsesPeriod ? "To" : "Max");
             yield return $"If not &{first}.IsEmpty() and not &{second}.IsEmpty() and &{first} > &{second}";
-            yield return "    msg(!\"invalid_request: filter minimum is greater than maximum\", status)";
+            if (useExplicitErrors)
+            {
+                yield return "    &RestStatusCode = 400";
+                yield return "    &ErrorResponse = new()";
+                yield return "    &ErrorResponse.Code = !\"invalid_request\"";
+                yield return "    &ErrorResponse.Message = !\"filter minimum is greater than maximum\"";
+            }
+            else
+            {
+                yield return "    msg(!\"invalid_request: filter minimum is greater than maximum\", status)";
+            }
+
             yield return "    return";
             yield return "EndIf";
         }
+    }
+
+    private static IEnumerable<string> InvalidRequestCondition(string condition, bool useExplicitErrors, string message)
+    {
+        yield return condition;
+        if (useExplicitErrors)
+        {
+            yield return "    &RestStatusCode = 400";
+            yield return "    &ErrorResponse = new()";
+            yield return "    &ErrorResponse.Code = !\"invalid_request\"";
+            yield return $"    &ErrorResponse.Message = !\"{message}\"";
+        }
+        else
+        {
+            yield return $"    msg(!\"invalid_request: {message}\", status)";
+        }
+
+        yield return "    return";
+        yield return "EndIf";
     }
 
     private static IEnumerable<string> AssignAppliedFilters(ApiPlan plan, bool assignThroughResponse, bool trackAppliedFilters)
@@ -492,13 +536,21 @@ internal static class ApiPlanListProcedureWriter
     {
         var parameters = new List<string> { $"in:&{PageParameterName}", $"in:&{PageSizeParameterName}" };
         parameters.AddRange(plan.ListFilters.SelectMany(FilterVariableNames).Select(name => "in:&" + name));
-        parameters.Add("out:&ListResponse");
+        parameters.AddRange(new[] { "out:&ListResponse", "out:&ErrorResponse", "out:&RestStatusCode" });
         return "parm(" + string.Join(", ", parameters) + ");";
     }
 
     private static string CreateLegacyListRules(ApiPlan plan)
     {
         var parameters = new List<string> { $"in:&{PageVariableName}", $"in:&{PageSizeVariableName}" };
+        parameters.AddRange(plan.ListFilters.SelectMany(FilterVariableNames).Select(name => "in:&" + name));
+        parameters.Add("out:&ListResponse");
+        return "parm(" + string.Join(", ", parameters) + ");";
+    }
+
+    private static string CreatePreviousB070ListRules(ApiPlan plan)
+    {
+        var parameters = new List<string> { $"in:&{PageParameterName}", $"in:&{PageSizeParameterName}" };
         parameters.AddRange(plan.ListFilters.SelectMany(FilterVariableNames).Select(name => "in:&" + name));
         parameters.Add("out:&ListResponse");
         return "parm(" + string.Join(", ", parameters) + ");";
@@ -529,9 +581,19 @@ internal static class ApiPlanListProcedureWriter
             var parameters = new List<string> { $"in: &{PageVariableName}", $"in: &{PageSizeVariableName}" };
             parameters.AddRange(plan.ListFilters.SelectMany(FilterVariableNames).Select(name => "in: &" + name));
             parameters.Add("out: &ListResponse");
+            if (exposeErrorResponse)
+            {
+                parameters.Add("out: &ErrorResponse");
+            }
+
             var arguments = new List<string> { $"&{PageVariableName}", $"&{PageSizeVariableName}" };
             arguments.AddRange(plan.ListFilters.SelectMany(FilterVariableNames).Select(name => "&" + name));
             arguments.Add("&ListResponse");
+            if (exposeErrorResponse)
+            {
+                arguments.AddRange(new[] { "&ErrorResponse", "&RestStatusCode" });
+            }
+
             return annotation + $"    List({string.Join(", ", parameters)}){Environment.NewLine}        => {procedure}({string.Join(", ", arguments)});";
         }
 
@@ -563,6 +625,8 @@ internal static class ApiPlanListProcedureWriter
             new(PageVariableName, "Numeric(9.0)"),
             new(PageSizeVariableName, "Numeric(9.0)"),
             new("ListResponse", plan.ListResponseSdtName),
+            new("ErrorResponse", "sdt_API_ErrorResponse"),
+            new("RestStatusCode", "Numeric(3.0)"),
             new("AppliedFilters", plan.ListFiltersSdtName),
             new("Item", plan.ResponseSdtName),
             new("FirstRecord", "Numeric(18.0)"),
@@ -647,6 +711,32 @@ internal static class ApiPlanListProcedureWriter
     }
 
     private static IReadOnlyList<VariableSpec> ApiVariableSpecs(ApiPlan plan, bool includeBusinessComponentParameters)
+    {
+        var variables = new List<VariableSpec>
+        {
+            new(PageVariableName, "Numeric(9.0)"),
+            new(PageSizeVariableName, "Numeric(9.0)"),
+            new("ListResponse", plan.ListResponseSdtName),
+            new("ErrorResponse", "sdt_API_ErrorResponse"),
+            new("RestStatusCode", "Numeric(3.0)"),
+        };
+        variables.AddRange(plan.ListFilters.SelectMany(FilterVariableSpecs));
+        if (includeBusinessComponentParameters)
+        {
+            variables.AddRange(plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}")));
+            variables.Add(new VariableSpec("GetResponse", plan.ResponseSdtName));
+            variables.Add(new VariableSpec("CreateRequest", plan.CreateRequestSdtName, isServiceRequired: true));
+            variables.Add(new VariableSpec("CreateResponse", plan.ResponseSdtName));
+            variables.Add(new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName, isServiceRequired: true));
+            variables.Add(new VariableSpec("UpdateResponse", plan.ResponseSdtName));
+            variables.Add(new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"));
+            variables.Add(new VariableSpec("RestStatusCode", "Numeric(3.0)"));
+        }
+
+        return CoalesceVariableSpecs(variables);
+    }
+
+    private static IReadOnlyList<VariableSpec> PreviousB070ApiVariableSpecs(ApiPlan plan, bool includeBusinessComponentParameters)
     {
         var variables = new List<VariableSpec>
         {
@@ -805,7 +895,7 @@ internal static class ApiPlanListProcedureWriter
         api.ServiceGroupSource.Source = source;
         if (variables.Any(variable => string.Equals(variable.Name, "RestStatusCode", StringComparison.OrdinalIgnoreCase)))
         {
-            api.Events.Source = ApiPlanBusinessComponentWriter.CreateB079ApiEvents();
+            api.Events.Source = ApiPlanBusinessComponentWriter.CreateB079ApiEventsForPlan(plan);
         }
 
         ReplaceVariables(model, api, variables);
@@ -1001,7 +1091,9 @@ internal static class ApiPlanListProcedureWriter
     private static string NormalizeForComparison(string? value) => (value ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n").Trim();
 
     private static bool HasService(ApiPlan plan, string name) => plan.Services.Any(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
-    private static string Skeleton() => "// Genexus Open API Builder: Procedure skeleton for List." + Environment.NewLine + "msg(!\"Genexus Open API Builder List skeleton.\", status)";
+    private static string Skeleton() => "// Genexus Open API Builder: Procedure skeleton for List.";
+
+    private static string PreviousGeneratedSkeleton() => "// Genexus Open API Builder: Procedure skeleton for List." + Environment.NewLine + "msg(!\"Genexus Open API Builder List skeleton.\", status)";
 
     private static string LegacySkeleton() => "// Genexus Open API Builder B050: Procedure skeleton for List. REST behavior remains pending Sprint 6." + Environment.NewLine + "msg(!\"Genexus Open API Builder B050 List skeleton. REST behavior pending Sprint 6.\", status)";
 }

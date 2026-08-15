@@ -20,6 +20,11 @@ internal static class ApiPlanGenerationStateReader
 
     public static ApiPlanGenerationState ReadForSync(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
+        return ReadForIntentionalChange(designModel, transaction, apiPlan);
+    }
+
+    public static ApiPlanGenerationState ReadForIntentionalChange(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
+    {
         return Read(designModel, transaction, apiPlan, forSyncContractRefresh: true);
     }
 
@@ -181,16 +186,39 @@ internal static class ApiPlanGenerationStateReader
             return new ApiPlanGenerationInspection(1, 0, 1, 0);
         }
 
-        var owned = matches.Count == 1 &&
-            (forSyncContractRefresh
-                ? ApiPlanApiObjectWriter.IsOwnedApiObjectForSync(designModel, apiPlan, matches[0])
-                : ApiPlanApiObjectWriter.IsOwnedApiObject(designModel, apiPlan, matches[0]));
+        ApiPlanApiObjectOwnership.Diagnostic? ownershipDiagnostic = null;
+        var owned = false;
+        if (matches.Count == 1)
+        {
+            if (forSyncContractRefresh)
+            {
+                owned = ApiPlanApiObjectWriter.IsOwnedApiObjectForIntentionalChange(designModel, apiPlan, matches[0]);
+            }
+            else
+            {
+                ownershipDiagnostic = ApiPlanApiObjectWriter.DiagnoseOwnership(designModel, apiPlan, matches[0]);
+                owned = ownershipDiagnostic.IsOwned;
+            }
+        }
+
         if (owned)
         {
             return new ApiPlanGenerationInspection(1, 1, 0, 0);
         }
 
-        return new ApiPlanGenerationInspection(1, 0, 0, matches.Count, matches.Select(item => ToCollision(item, "API Object", folderApplicable: true)).ToArray());
+        return new ApiPlanGenerationInspection(
+            1,
+            0,
+            0,
+            matches.Count,
+            matches.Select(item => ToCollision(
+                item,
+                "API Object",
+                folderApplicable: true,
+                diagnosticReason: ownershipDiagnostic?.ReasonText,
+                apiObjectGuid: ownershipDiagnostic?.ActualApiGuid,
+                metadataApiGuid: ownershipDiagnostic?.MetadataApiGuid,
+                diagnosticDetails: ownershipDiagnostic?.FormatDetails())).ToArray());
     }
 
     private static ApiPlanGenerationInspection InspectMetadataFile(KBModel designModel, KbObjectNameIndex index, ApiPlan apiPlan, bool forSyncContractRefresh)
@@ -208,7 +236,7 @@ internal static class ApiPlanGenerationStateReader
             return new ApiPlanGenerationInspection(1, 1, 0, 0);
         }
 
-        // Integridade B067 / ownership divergente em File proprio: bloqueia sem lista de colisão externa.
+        // Baseline B067 / ownership divergente em File proprio: bloqueia sem lista de colisao externa.
         if (matches.Count == 1 &&
             ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(matches[0].Description, apiPlan.MetadataFileName, apiPlan.TransactionName))
         {
@@ -218,7 +246,14 @@ internal static class ApiPlanGenerationStateReader
         return new ApiPlanGenerationInspection(1, 0, 0, matches.Count, matches.Select(item => ToCollision(item, "File", folderApplicable: false)).ToArray());
     }
 
-    private static ApiPlanCollisionConflict ToCollision(KBObject kbObject, string objectType, bool folderApplicable)
+    private static ApiPlanCollisionConflict ToCollision(
+        KBObject kbObject,
+        string objectType,
+        bool folderApplicable,
+        string? diagnosticReason = null,
+        string? apiObjectGuid = null,
+        string? metadataApiGuid = null,
+        string? diagnosticDetails = null)
     {
         var moduleName = kbObject.Module?.Name;
         string folderName;
@@ -239,7 +274,15 @@ internal static class ApiPlanGenerationStateReader
             folderName = ApiPlanCollisionConflict.NotApplicable;
         }
 
-        return new ApiPlanCollisionConflict(kbObject.Name, objectType, moduleName ?? ApiPlanCollisionConflict.NotApplicable, folderName);
+        return new ApiPlanCollisionConflict(
+            kbObject.Name,
+            objectType,
+            moduleName ?? ApiPlanCollisionConflict.NotApplicable,
+            folderName,
+            diagnosticReason,
+            apiObjectGuid,
+            metadataApiGuid,
+            diagnosticDetails);
     }
 
     private static bool HasCompatibleMetadata(KBModel designModel, KbObjectNameIndex index, WikiFileKBObject file, ApiPlan apiPlan, bool forSyncContractRefresh)
@@ -281,10 +324,11 @@ internal static class ApiPlanGenerationStateReader
             return false;
         }
 
-        // Sync: ownership basta — o Source atual pode divergir do ApiPlan reconstruído.
+        // Wizard/Sync: o contrato desejado pode divergir, mas o estado atual
+        // ainda precisa corresponder ao ultimo baseline gravado pela extensao.
         if (forSyncContractRefresh)
         {
-            return true;
+            return ApiPlanMetadataFileWriter.HasCompatibleGeneratedBaseline(metadata, apiObject);
         }
 
         if (!ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject))

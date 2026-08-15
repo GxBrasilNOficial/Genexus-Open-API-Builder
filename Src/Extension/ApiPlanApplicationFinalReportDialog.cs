@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using Artech.Architecture.Common.Objects;
 using Artech.Architecture.UI.Framework.Services;
 using GenexusOpenApiBuilder.Extension.Diagnostics;
+using GenexusOpenApiBuilder.Extension.Domain;
 
 namespace GenexusOpenApiBuilder.Extension;
 
@@ -16,6 +17,7 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
 {
     private readonly ApiPlanApplicationFinalReport _report;
     private readonly KBModel? _designModel;
+    private readonly ExtensionTexts _texts;
     private readonly TextBox _bodyBox = new()
     {
         Multiline = true,
@@ -28,12 +30,16 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
         HideSelection = true,
     };
 
-    public ApiPlanApplicationFinalReportDialog(ApiPlanApplicationFinalReport report, KBModel? designModel = null)
+    public ApiPlanApplicationFinalReportDialog(ApiPlanApplicationFinalReport report, KBModel? designModel, ExtensionTexts texts)
     {
         _report = report ?? throw new ArgumentNullException(nameof(report));
         _designModel = designModel;
-        Text = "Genexus Open API Builder - Relatorio final";
-        StartPosition = FormStartPosition.CenterParent;
+        _texts = texts ?? throw new ArgumentNullException(nameof(texts));
+        Text = _texts.FinalReportTitle;
+        // O relatorio e aberto sem owner pelo fluxo da extensao. Centralizar
+        // manualmente na area util do monitor atual evita herdar um monitor
+        // com resolucao diferente do monitor onde o usuario iniciou a acao.
+        StartPosition = FormStartPosition.Manual;
         AutoScaleMode = AutoScaleMode.Font;
         ShowIcon = false;
         ShowInTaskbar = false;
@@ -43,6 +49,7 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
         SizeToReportContent();
         Shown += (_, _) =>
         {
+            FitToCurrentWorkingArea();
             EnsureBodyScrollBars();
             ClearBodySelection();
         };
@@ -76,7 +83,7 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
 
     private void SizeToReportContent()
     {
-        var working = Screen.FromControl(this).WorkingArea;
+        var working = GetTargetWorkingArea();
         var lineCount = Math.Max(1, _bodyBox.Lines.Length);
         var lineHeight = Math.Max(16, TextRenderer.MeasureText("Ag", _bodyBox.Font).Height + 1);
         var estimatedBodyHeight = (lineCount * lineHeight) + 40;
@@ -86,17 +93,53 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
         var baseWidth = lineCount <= 18 ? 760 : 920;
         var preferredWidth = (int)Math.Ceiling(baseWidth * 1.20);
 
-        var maxHeight = Math.Max(MinimumSize.Height, working.Height - 60);
-        preferredHeight = Math.Min(Math.Max(preferredHeight, MinimumSize.Height), maxHeight);
-        preferredWidth = Math.Min(Math.Max(preferredWidth, MinimumSize.Width), Math.Max(MinimumSize.Width, working.Width - 80));
+        var maxHeight = Math.Max(260, working.Height - 32);
+        var maxWidth = Math.Max(360, working.Width - 32);
+        var minimumHeight = Math.Min(420, maxHeight);
+        var minimumWidth = Math.Min(560, maxWidth);
+        MinimumSize = new Size(minimumWidth, minimumHeight);
+        MaximumSize = new Size(maxWidth, maxHeight);
 
-        Width = preferredWidth;
-        Height = preferredHeight;
+        preferredHeight = Math.Min(Math.Max(preferredHeight, minimumHeight), maxHeight);
+        preferredWidth = Math.Min(Math.Max(preferredWidth, minimumWidth), maxWidth);
+
+        Size = new Size(preferredWidth, preferredHeight);
+        CenterInWorkingArea(working);
 
         var bodyAvailable = Math.Max(120, Height - chromeHeight);
         _bodyBox.ScrollBars = estimatedBodyHeight > bodyAvailable + 8
             ? ScrollBars.Vertical
             : ScrollBars.None;
+    }
+
+    private void FitToCurrentWorkingArea()
+    {
+        var working = GetTargetWorkingArea();
+        var maxHeight = Math.Max(260, working.Height - 32);
+        var maxWidth = Math.Max(360, working.Width - 32);
+        var minimumHeight = Math.Min(420, maxHeight);
+        var minimumWidth = Math.Min(560, maxWidth);
+
+        MinimumSize = new Size(minimumWidth, minimumHeight);
+        MaximumSize = new Size(maxWidth, maxHeight);
+        Size = new Size(
+            Math.Min(Math.Max(Width, minimumWidth), maxWidth),
+            Math.Min(Math.Max(Height, minimumHeight), maxHeight));
+        CenterInWorkingArea(working);
+    }
+
+    private Rectangle GetTargetWorkingArea()
+    {
+        return IsHandleCreated
+            ? Screen.FromHandle(Handle).WorkingArea
+            : Screen.FromPoint(Cursor.Position).WorkingArea;
+    }
+
+    private void CenterInWorkingArea(Rectangle working)
+    {
+        Location = new Point(
+            working.Left + Math.Max(0, (working.Width - Width) / 2),
+            working.Top + Math.Max(0, (working.Height - Height) / 2));
     }
 
     private void BuildLayout()
@@ -118,12 +161,14 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
             AutoSize = true,
             Dock = DockStyle.Fill,
             Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold),
-            Text = _report.Headline,
+            Text = ExtensionOutputLocalization.Translate(_report.Headline, _texts.Language),
             Padding = new Padding(0, 0, 0, 8),
         };
         root.Controls.Add(headline, 0, 0);
 
-        _bodyBox.Text = _report.BuildReadableBody(includeHeadline: false);
+        _bodyBox.Text = ExtensionOutputLocalization.Translate(
+            _report.BuildReadableBody(includeHeadline: false),
+            _texts.Language);
         root.Controls.Add(_bodyBox, 0, 1);
 
         var buttons = new FlowLayoutPanel
@@ -137,7 +182,7 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
 
         var closeButton = new Button
         {
-            Text = "Fechar",
+            Text = _texts.Close,
             DialogResult = DialogResult.OK,
             AutoSize = true,
             Padding = new Padding(12, 4, 12, 4),
@@ -150,7 +195,7 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
         {
             var openButton = new Button
             {
-                Text = "Abrir objeto principal",
+                Text = _texts.OpenMainObject,
                 AutoSize = true,
                 Padding = new Padding(12, 4, 12, 4),
             };

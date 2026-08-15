@@ -13,6 +13,7 @@ namespace GenexusOpenApiBuilder.Extension;
 
 internal sealed class PrototypeWizardDialog : Form
 {
+    private readonly ExtensionTexts _texts;
     private readonly KBModel _designModel;
     private readonly Transaction _transaction;
     private readonly PrototypeWizardContractSnapshot _snapshot;
@@ -74,8 +75,9 @@ internal sealed class PrototypeWizardDialog : Form
     private bool _applyBusinessComponentWhenReady;
     private string _generationContext = "Plano da Transaction ainda nao consultado na KB.";
 
-    public PrototypeWizardDialog(KBModel designModel, Transaction transaction, PrototypeWizardContractSnapshot snapshot, PrototypeBusinessComponentSnapshot businessComponentSnapshot, PrototypeWizardPreferences preferences, Func<bool> enableBusinessComponent, Action<string> writeBusinessComponentOutput)
+    public PrototypeWizardDialog(KBModel designModel, Transaction transaction, PrototypeWizardContractSnapshot snapshot, PrototypeBusinessComponentSnapshot businessComponentSnapshot, PrototypeWizardPreferences preferences, Func<bool> enableBusinessComponent, Action<string> writeBusinessComponentOutput, ExtensionTexts texts)
     {
+        _texts = texts ?? throw new ArgumentNullException(nameof(texts));
         _designModel = designModel ?? throw new ArgumentNullException(nameof(designModel));
         _transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
         _snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
@@ -84,7 +86,7 @@ internal sealed class PrototypeWizardDialog : Form
         _enableBusinessComponent = enableBusinessComponent ?? throw new ArgumentNullException(nameof(enableBusinessComponent));
         _writeBusinessComponentOutput = writeBusinessComponentOutput ?? throw new ArgumentNullException(nameof(writeBusinessComponentOutput));
 
-        Text = "Genexus Open API Builder - Wizard";
+        Text = _texts.WizardTitle;
         StartPosition = FormStartPosition.CenterParent;
         Width = 1200;
         Height = 912;
@@ -93,6 +95,8 @@ internal sealed class PrototypeWizardDialog : Form
         ShowInTaskbar = false;
         FormBorderStyle = FormBorderStyle.Sizable;
 
+        ApplyLocalizedText();
+        _generationContext = _texts.Translate("Plano da Transaction ainda nao consultado na KB.");
         BuildLayout();
         WirePathSynchronization();
         LoadSnapshot();
@@ -103,6 +107,20 @@ internal sealed class PrototypeWizardDialog : Form
     public PrototypeWizardFlowSelection? Selection { get; private set; }
 
     public bool BusinessComponentEnabledDuringWizard => _businessComponentEnabledDuringWizard;
+
+    private void ApplyLocalizedText()
+    {
+        _securityAuthenticationRadio.Text = _texts.Translate("Authentication");
+        _securityAuthorizationRadio.Text = _texts.Translate("Authorization");
+        _securityNoneRadio.Text = _texts.Translate("None");
+        _enableBusinessComponentCheck.Text = _texts.Translate("Habilitar Business Component agora");
+        _generateSdtsCheck.Text = _texts.Translate("Confirmar: Criar ou validar estruturas de dados ao concluir");
+        _generateProceduresCheck.Text = _texts.Translate("Confirmar: Criar ou validar Procedures ao concluir");
+        _generateApiObjectCheck.Text = _texts.Translate("Confirmar: Criar ou validar API Object ao concluir");
+        _generateMetadataCheck.Text = _texts.Translate("Confirmar: Gravar metadata da API ao concluir");
+        _applyBusinessComponentCheck.Text = _texts.Translate("Completar Get/Create/Update REST ao concluir");
+        _applyListCheck.Text = _texts.Translate("Completar listagem ao concluir");
+    }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
@@ -131,10 +149,11 @@ internal sealed class PrototypeWizardDialog : Form
 
         root.Controls.Add(_headerLabel, 0, 0);
 
-        _tabs.TabPages.Add(CreateListTab("Serviços", _servicesList, "Serviços REST do MVP. Todos iniciam habilitados."));
+        _tabs.TabPages.Add(CreateListTab(_texts.Translate("Serviços"), _servicesList, _texts.Translate("Serviços REST do MVP. Todos iniciam habilitados.")));
         _tabs.TabPages.Add(CreateRequestTab());
-        _tabs.TabPages.Add(CreateListTab("Response", _responseFieldsList, "Campos devolvidos no response principal."));
+        _tabs.TabPages.Add(CreateListTab(_texts.Translate("Response"), _responseFieldsList, _texts.Translate("Campos devolvidos no response principal.")));
         _tabs.TabPages.Add(CreateFilterTab());
+        _tabs.TabPages.Add(CreateListGenerationTab());
         _tabs.TabPages.Add(CreatePathsTab());
         _tabs.TabPages.Add(CreateSecurityTab());
         _tabs.TabPages.Add(CreatePaginationTab());
@@ -144,7 +163,6 @@ internal sealed class PrototypeWizardDialog : Form
         _tabs.TabPages.Add(CreateProcedureGenerationTab());
         _tabs.TabPages.Add(CreateApiObjectGenerationTab());
         _tabs.TabPages.Add(CreateBusinessComponentTab());
-        _tabs.TabPages.Add(CreateListGenerationTab());
         _tabs.TabPages.Add(CreateMetadataGenerationTab());
         _tabs.TabPages.Add(CreateSummaryTab());
         _tabs.SelectedIndexChanged += (_, _) => HandleSelectedTabChanged();
@@ -159,12 +177,12 @@ internal sealed class PrototypeWizardDialog : Form
             Padding = new Padding(0, 10, 0, 0),
         };
 
-        var next = CreateButton("Próximo");
+        var next = CreateButton(_texts.Next);
         _nextButton = next;
         next.Click += (_, _) => AcceptSelection();
-        var cancel = CreateButton("Cancelar");
+        var cancel = CreateButton(_texts.Cancel);
         cancel.Click += (_, _) => CancelWizard();
-        var back = CreateButton("Voltar");
+        var back = CreateButton(_texts.Back);
         back.Click += (_, _) => GoBack();
 
         buttons.Controls.Add(next);
@@ -190,8 +208,8 @@ internal sealed class PrototypeWizardDialog : Form
         }
 
         var tabName = selectedPage?.Text;
-        var currentTab = string.IsNullOrWhiteSpace(tabName) ? "<nenhuma>" : tabName;
-        _headerLabel.Text = $"Wizard: Module '{_snapshot.ModuleName}' | Transaction '{_snapshot.TransactionName}' | {_generationContext} | Aba atual: {currentTab}";
+        var currentTab = string.IsNullOrWhiteSpace(tabName) ? _texts.Translate("<nenhuma>") : tabName;
+        _headerLabel.Text = $"{_texts.Translate("Wizard")}: Module '{_snapshot.ModuleName}' | Transaction '{_snapshot.TransactionName}' | {_generationContext} | {_texts.Translate("Aba atual")}: {currentTab}";
     }
     private static Button CreateButton(string text)
     {
@@ -274,6 +292,19 @@ internal sealed class PrototypeWizardDialog : Form
         };
     }
 
+    private static Label CreateWrappingLabel(string text, int minimumHeight = 32, int topPadding = 0, int bottomPadding = 8)
+    {
+        return new Label
+        {
+            AutoSize = false,
+            Dock = DockStyle.Fill,
+            MinimumSize = new Size(0, minimumHeight),
+            Text = text,
+            TextAlign = ContentAlignment.TopLeft,
+            Padding = new Padding(0, topPadding, 0, bottomPadding),
+        };
+    }
+
     private static NumericUpDown CreateNumericInput()
     {
         return new NumericUpDown
@@ -297,7 +328,7 @@ internal sealed class PrototypeWizardDialog : Form
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = description, Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(description), 0, 0);
         panel.Controls.Add(list, 0, 1);
         tab.Controls.Add(panel);
         return tab;
@@ -305,7 +336,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private TabPage CreateRequestTab()
     {
-        var tab = new TabPage("Requests");
+        var tab = new TabPage(_texts.Translate("Requests"));
         var split = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -315,15 +346,15 @@ internal sealed class PrototypeWizardDialog : Form
         };
         split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        split.Controls.Add(CreateGroup("CreateRequest", _createFieldsList), 0, 0);
-        split.Controls.Add(CreateGroup("UpdateRequest", _updateFieldsList), 1, 0);
+        split.Controls.Add(CreateGroup(_texts.Translate("CreateRequest"), _createFieldsList), 0, 0);
+        split.Controls.Add(CreateGroup(_texts.Translate("UpdateRequest"), _updateFieldsList), 1, 0);
         tab.Controls.Add(split);
         return tab;
     }
 
     private TabPage CreateFilterTab()
     {
-        var tab = new TabPage("Filtros List");
+        var tab = new TabPage(_texts.Translate("Filtros List"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -333,7 +364,7 @@ internal sealed class PrototypeWizardDialog : Form
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Filtros candidatos para o serviço List.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Filtros candidatos para o serviço List.")), 0, 0);
         panel.Controls.Add(_filtersList, 0, 1);
         tab.Controls.Add(panel);
         return tab;
@@ -341,7 +372,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private TabPage CreatePathsTab()
     {
-        var tab = new TabPage("Paths");
+        var tab = new TabPage(_texts.Translate("Paths"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -362,19 +393,19 @@ internal sealed class PrototypeWizardDialog : Form
         };
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        AddField(fields, 0, "Nome API", _apiNameText);
-        AddField(fields, 1, "Services base path", _servicesBasePathText);
+        AddField(fields, 0, _texts.Translate("Nome API"), _apiNameText);
+        AddField(fields, 1, _texts.Translate("Services base path"), _servicesBasePathText);
         AddField(fields, 2, "RestPath", _restPathText);
 
         panel.Controls.Add(fields, 0, 0);
-        panel.Controls.Add(CreateGroup("Paths dos serviços", _endpointsText), 0, 1);
+        panel.Controls.Add(CreateGroup(_texts.Translate("Paths dos serviços"), _endpointsText), 0, 1);
         tab.Controls.Add(panel);
         return tab;
     }
 
     private TabPage CreateSecurityTab()
     {
-        var tab = new TabPage("Segurança");
+        var tab = new TabPage(_texts.Translate("Segurança"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -397,22 +428,20 @@ internal sealed class PrototypeWizardDialog : Form
         options.Controls.Add(_securityAuthorizationRadio);
         options.Controls.Add(_securityNoneRadio);
 
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Security Level único aplicado aos serviços gerados no MVP.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Security Level único aplicado aos serviços gerados no MVP.")), 0, 0);
         panel.Controls.Add(options, 0, 1);
-        panel.Controls.Add(new Label
-        {
-            AutoSize = false,
-            Dock = DockStyle.Fill,
-            Text = "Authentication inicia selecionado por segurança. Authorization exige permissões GAM coerentes. None deixa a API pública e exigirá confirmação antes da geração.",
-            Padding = new Padding(0, 12, 0, 0),
-        }, 0, 2);
+        panel.Controls.Add(CreateWrappingLabel(
+            _texts.Translate("Authentication inicia selecionado por segurança. Authorization exige permissões GAM coerentes. None deixa a API pública e exigirá confirmação antes da geração."),
+            44,
+            12,
+            0), 0, 2);
         tab.Controls.Add(panel);
         return tab;
     }
 
     private TabPage CreatePaginationTab()
     {
-        var tab = new TabPage("Paginação");
+        var tab = new TabPage(_texts.Translate("Paginação"));
         var fields = new TableLayoutPanel
         {
             Dock = DockStyle.Top,
@@ -423,15 +452,15 @@ internal sealed class PrototypeWizardDialog : Form
         };
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
-        AddField(fields, 0, "Default Page Size", _defaultPageSize);
-        AddField(fields, 1, "Maximum Page Size", _maximumPageSize);
+        AddField(fields, 0, _texts.Translate("Default Page Size"), _defaultPageSize);
+        AddField(fields, 1, _texts.Translate("Maximum Page Size"), _maximumPageSize);
         tab.Controls.Add(fields);
         return tab;
     }
 
     private TabPage CreateOrderTab()
     {
-        var tab = new TabPage("Ordenação");
+        var tab = new TabPage(_texts.Translate("Ordenação"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -441,7 +470,7 @@ internal sealed class PrototypeWizardDialog : Form
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Ordenação estática inicial. A chave primária completa é acrescentada como desempate ascendente.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Ordenação estática inicial. A chave primária completa é acrescentada como desempate ascendente.")), 0, 0);
         panel.Controls.Add(_staticOrderList, 0, 1);
         tab.Controls.Add(panel);
         return tab;
@@ -449,7 +478,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private TabPage CreateRequiredTab()
     {
-        var tab = new TabPage("Obrigatórios");
+        var tab = new TabPage(_texts.Translate("Obrigatórios"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -460,12 +489,12 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0). Chave primária não autonumerada inicia opcional no Create; marque aqui se quiser exigir o valor no payload.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0). Chave primária não autonumerada inicia opcional no Create; marque aqui se quiser exigir o valor no payload."), 64), 0, 0);
 
         var createGroup = new GroupBox
         {
             Dock = DockStyle.Fill,
-            Text = "CreateRequest - Obrigatório no payload (editável)",
+            Text = _texts.Translate("CreateRequest - Obrigatório no payload (editável)"),
             Padding = new Padding(8),
         };
         createGroup.Controls.Add(_createRequiredList);
@@ -473,7 +502,7 @@ internal sealed class PrototypeWizardDialog : Form
         var updateGroup = new GroupBox
         {
             Dock = DockStyle.Fill,
-            Text = "UpdateRequest - Obrigatório no payload",
+            Text = _texts.Translate("UpdateRequest - Obrigatório no payload"),
             Padding = new Padding(8),
         };
         updateGroup.Controls.Add(_updateRequiredText);
@@ -491,7 +520,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private TabPage CreateBusinessComponentTab()
     {
-        var tab = new TabPage("Business Component");
+        var tab = new TabPage(_texts.Translate("Business Component"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -503,7 +532,7 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Business Component preserva as regras da Transaction. A confirmação abaixo completa Get, Create e Update nas Procedures já geradas e sincroniza o API Object; não cria novos objetos.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Business Component preserva as regras da Transaction. A confirmação abaixo completa Get, Create e Update nas Procedures já geradas e sincroniza o API Object; não cria novos objetos."), 52), 0, 0);
         panel.Controls.Add(_enableBusinessComponentCheck, 0, 1);
         panel.Controls.Add(_applyBusinessComponentCheck, 0, 2);
         panel.Controls.Add(_businessComponentText, 0, 3);
@@ -513,7 +542,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private TabPage CreateSdtGenerationTab()
     {
-        var tab = new TabPage("SDTs");
+        var tab = new TabPage(_texts.Translate("SDTs"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -524,16 +553,16 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise os SDTs planejados. A escrita so sera executada ao concluir o wizard se esta confirmacao estiver marcada e o preflight tecnico estiver OK.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Revise os SDTs planejados. A escrita so sera executada ao concluir o wizard se esta confirmacao estiver marcada e o preflight tecnico estiver OK."), 44), 0, 0);
         panel.Controls.Add(_generateSdtsCheck, 0, 1);
-        panel.Controls.Add(CreateGroup("SDTs planejados", _sdtGenerationText), 0, 2);
+        panel.Controls.Add(CreateGroup(_texts.Translate("SDTs planejados"), _sdtGenerationText), 0, 2);
         tab.Controls.Add(panel);
         return tab;
     }
 
     private TabPage CreateProcedureGenerationTab()
     {
-        var tab = new TabPage("Procedures");
+        var tab = new TabPage(_texts.Translate("Procedures"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -544,16 +573,16 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise as Procedures planejadas. Esta etapa depende das estruturas de dados ja confirmadas ou reencontraveis na KB ativa.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Revise as Procedures planejadas. Esta etapa depende das estruturas de dados ja confirmadas ou reencontraveis na KB ativa."), 44), 0, 0);
         panel.Controls.Add(_generateProceduresCheck, 0, 1);
-        panel.Controls.Add(CreateGroup("Procedures planejadas", _procedureGenerationText), 0, 2);
+        panel.Controls.Add(CreateGroup(_texts.Translate("Procedures planejadas"), _procedureGenerationText), 0, 2);
         tab.Controls.Add(panel);
         return tab;
     }
 
     private TabPage CreateApiObjectGenerationTab()
     {
-        var tab = new TabPage("API Object");
+        var tab = new TabPage(_texts.Translate("API Object"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -564,15 +593,15 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise o API Object planejado. Esta etapa depende das estruturas de dados e das Procedures ja confirmadas ou reencontraveis na KB ativa.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Revise o API Object planejado. Esta etapa depende das estruturas de dados e das Procedures ja confirmadas ou reencontraveis na KB ativa."), 44), 0, 0);
         panel.Controls.Add(_generateApiObjectCheck, 0, 1);
-        panel.Controls.Add(CreateGroup("API Object planejado", _apiObjectGenerationText), 0, 2);
+        panel.Controls.Add(CreateGroup(_texts.Translate("API Object planejado"), _apiObjectGenerationText), 0, 2);
         tab.Controls.Add(panel);
         return tab;
     }
     private TabPage CreateMetadataGenerationTab()
     {
-        var tab = new TabPage("Metadata");
+        var tab = new TabPage(_texts.Translate("Metadata"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -583,16 +612,16 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise o File JSON de metadata. A gravação depende do API Object próprio já confirmado ou reencontrado.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Revise o File JSON de metadata. A gravação depende do API Object próprio já confirmado ou reencontrado."), 44), 0, 0);
         panel.Controls.Add(_generateMetadataCheck, 0, 1);
-        panel.Controls.Add(CreateGroup("File de metadata planejado", _metadataGenerationText), 0, 2);
+        panel.Controls.Add(CreateGroup(_texts.Translate("File de metadata planejado"), _metadataGenerationText), 0, 2);
         tab.Controls.Add(panel);
         return tab;
     }
 
     private TabPage CreateListGenerationTab()
     {
-        var tab = new TabPage("List");
+        var tab = new TabPage(_texts.Translate("List"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -603,16 +632,16 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Revise a listagem da API. A conclusão atualiza a Procedure de listagem e sincroniza o API Object com parâmetros de página, filtros e retorno paginado.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Revise a listagem da API. A conclusão atualiza a Procedure de listagem e sincroniza o API Object com parâmetros de página, filtros e retorno paginado."), 44), 0, 0);
         panel.Controls.Add(_applyListCheck, 0, 1);
-        panel.Controls.Add(CreateGroup("List planejado", _listGenerationText), 0, 2);
+        panel.Controls.Add(CreateGroup(_texts.Translate("List planejado"), _listGenerationText), 0, 2);
         tab.Controls.Add(panel);
         return tab;
     }
 
     private TabPage CreateSummaryTab()
     {
-        var tab = new TabPage("Resumo");
+        var tab = new TabPage(_texts.Translate("Resumo"));
         var panel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -622,7 +651,7 @@ internal sealed class PrototypeWizardDialog : Form
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(new Label { AutoSize = true, Text = "Resumo das decisões acumuladas para montagem do ApiPlan em memória.", Padding = new Padding(0, 0, 0, 8) }, 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Resumo das decisões acumuladas para montagem do ApiPlan em memória.")), 0, 0);
 
         var split = new TableLayoutPanel
         {
@@ -632,8 +661,8 @@ internal sealed class PrototypeWizardDialog : Form
         };
         split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        split.Controls.Add(CreateGroup("Decisões", _summaryDecisionText), 0, 0);
-        split.Controls.Add(CreateGroup("Endpoints e garantias", _summaryEndpointText), 1, 0);
+        split.Controls.Add(CreateGroup(_texts.Translate("Decisões"), _summaryDecisionText), 0, 0);
+        split.Controls.Add(CreateGroup(_texts.Translate("Endpoints e garantias"), _summaryEndpointText), 1, 0);
 
         panel.Controls.Add(split, 0, 1);
         tab.Controls.Add(panel);
@@ -675,15 +704,21 @@ internal sealed class PrototypeWizardDialog : Form
         }
 
         _loadingSnapshot = true;
-        var apiName = "api" + _snapshot.TransactionName;
+        var existingApi = _snapshot.ExistingApiContract;
+        var apiName = existingApi.ApiName ?? "api" + _snapshot.TransactionName;
+        var servicesBasePath = existingApi.ServicesBasePath ?? apiName;
         _apiNameText.Text = apiName;
-        _servicesBasePathText.Text = apiName;
-        _restPathText.Text = "/" + ToKebabCase(_snapshot.TransactionName);
-        _servicesBasePathEditedManually = false;
+        _servicesBasePathText.Text = servicesBasePath;
+        _restPathText.Text = existingApi.RestPath ?? "/" + ToKebabCase(_snapshot.TransactionName);
+        _servicesBasePathEditedManually = !string.Equals(apiName, servicesBasePath, StringComparison.Ordinal);
         _loadingSnapshot = false;
 
-        _defaultPageSize.Value = 50;
-        _maximumPageSize.Value = 200;
+        _defaultPageSize.Value = ClampNumeric(_defaultPageSize, existingApi.DefaultPageSize ?? 50);
+        _maximumPageSize.Value = ClampNumeric(_maximumPageSize, existingApi.MaximumPageSize ?? 200);
+        if (!string.IsNullOrWhiteSpace(existingApi.SecurityLevel))
+        {
+            ApplySecurityPreference(existingApi.SecurityLevel ?? "Authentication");
+        }
 
         foreach (var item in GetStaticOrder())
         {
@@ -732,13 +767,16 @@ internal sealed class PrototypeWizardDialog : Form
         _suppressGenerationPreviewRefresh = true;
         try
         {
-            ApplyServicePreference("List", _preferences.ListServiceByDefault);
-            ApplyServicePreference("Get", _preferences.GetServiceByDefault);
-            ApplyServicePreference("Create", _preferences.CreateServiceByDefault);
-            ApplyServicePreference("Update", _preferences.UpdateServiceByDefault);
-            ApplySecurityPreference(_preferences.SecurityLevelByDefault);
-            _defaultPageSize.Value = ClampNumeric(_defaultPageSize, _preferences.DefaultPageSizeByDefault);
-            _maximumPageSize.Value = ClampNumeric(_maximumPageSize, _preferences.MaximumPageSizeByDefault);
+            if (!_snapshot.ExistingApiContract.HasExistingApi)
+            {
+                ApplyServicePreference("List", _preferences.ListServiceByDefault);
+                ApplyServicePreference("Get", _preferences.GetServiceByDefault);
+                ApplyServicePreference("Create", _preferences.CreateServiceByDefault);
+                ApplyServicePreference("Update", _preferences.UpdateServiceByDefault);
+                ApplySecurityPreference(_preferences.SecurityLevelByDefault);
+                _defaultPageSize.Value = ClampNumeric(_defaultPageSize, _preferences.DefaultPageSizeByDefault);
+                _maximumPageSize.Value = ClampNumeric(_maximumPageSize, _preferences.MaximumPageSizeByDefault);
+            }
             RefreshEndpointsText();
             RefreshRequiredText();
             ApplyPreference(_generateSdtsCheck, _preferences.GenerateSdtsByDefault);
@@ -809,7 +847,7 @@ internal sealed class PrototypeWizardDialog : Form
         };
     }
 
-    private static string FormatAttribute(PrototypeWizardAttributeDecision attribute)
+    private string FormatAttribute(PrototypeWizardAttributeDecision attribute)
     {
         var markers = new List<string>();
         if (attribute.IsPrimaryKey)
@@ -819,17 +857,17 @@ internal sealed class PrototypeWizardDialog : Form
 
         if (attribute.IsDescription)
         {
-            markers.Add("Description");
+            markers.Add(_texts.Translate("Description"));
         }
 
         if (attribute.IsSensitive)
         {
-            markers.Add("Sensível");
+            markers.Add(_texts.Translate("Sensível"));
         }
 
         if (attribute.IsFormula)
         {
-            markers.Add("Fórmula");
+            markers.Add(_texts.Translate("Fórmula"));
         }
 
         if (attribute.IsNoAccept)
@@ -839,14 +877,14 @@ internal sealed class PrototypeWizardDialog : Form
 
         if (attribute.IsAudit)
         {
-            markers.Add("Auditoria");
+            markers.Add(_texts.Translate("Auditoria"));
         }
 
         var suffix = markers.Count == 0 ? string.Empty : " [" + string.Join(", ", markers) + "]";
         return $"{attribute.Name} ({attribute.DataType}, {attribute.Length}.{attribute.Decimals}){suffix}";
     }
 
-    private static string FormatFilter(PrototypeWizardAttributeDecision attribute)
+    private string FormatFilter(PrototypeWizardAttributeDecision attribute)
     {
         var baseText = FormatAttribute(attribute);
         if (!attribute.IsFilterEligible)
@@ -857,12 +895,12 @@ internal sealed class PrototypeWizardDialog : Form
         var options = new List<string> { attribute.FilterOperator };
         if (attribute.UsesPeriod)
         {
-            options.Add("Período");
+            options.Add(_texts.Translate("Período"));
         }
 
         if (attribute.UsesRange)
         {
-            options.Add("Intervalo");
+            options.Add(_texts.Translate("Intervalo"));
         }
 
         return baseText + " -> " + string.Join(" / ", options);
@@ -887,12 +925,12 @@ internal sealed class PrototypeWizardDialog : Form
             return;
         }
 
-        if (_tabs.SelectedTab?.Text == "Paths")
+        if (_tabs.SelectedTab?.Text == _texts.Translate("Paths"))
         {
             RefreshEndpointsText();
         }
 
-        if (_tabs.SelectedTab?.Text == "Obrigatórios")
+        if (_tabs.SelectedTab?.Text == _texts.Translate("Obrigatórios"))
         {
             RefreshRequiredText();
         }
@@ -900,7 +938,7 @@ internal sealed class PrototypeWizardDialog : Form
         // Preview de geracao: so na troca de aba (HandleSelectedTabChanged) ou ao montar o Resumo.
         // Evita ReadGenerationState duplicado no Próximo entre abas SDTs..Metadata.
 
-        if (_tabs.SelectedTab?.Text == "Business Component" &&
+        if (_tabs.SelectedTab?.Text == _texts.Translate("Business Component") &&
             !CompletePendingExplicitActions())
         {
             return;
@@ -909,7 +947,7 @@ internal sealed class PrototypeWizardDialog : Form
         if (_tabs.SelectedIndex < _tabs.TabPages.Count - 2)
         {
             _tabs.SelectedIndex++;
-            if (_tabs.SelectedTab?.Text == "Obrigatórios")
+            if (_tabs.SelectedTab?.Text == _texts.Translate("Obrigatórios"))
             {
                 RefreshRequiredText();
             }
@@ -931,7 +969,7 @@ internal sealed class PrototypeWizardDialog : Form
     private void HandleSelectedTabChanged()
     {
         var tabName = _tabs.SelectedTab?.Text ?? "<null>";
-        if (string.Equals(tabName, "Resumo", StringComparison.Ordinal))
+        if (string.Equals(tabName, _texts.Translate("Resumo"), StringComparison.Ordinal))
         {
             // Clique direto (ou navegacao) em Resumo: sempre recalcula estado de geracao
             // e monta o resumo com as selecoes atuais, sem exigir percorrer aba a aba.
@@ -950,7 +988,7 @@ internal sealed class PrototypeWizardDialog : Form
             RefreshGenerationPreview(forceRefresh: false);
         }
 
-        if (string.Equals(tabName, "Obrigatórios", StringComparison.Ordinal))
+        if (string.Equals(tabName, _texts.Translate("Obrigatórios"), StringComparison.Ordinal))
         {
             RefreshRequiredText();
         }
@@ -960,21 +998,21 @@ internal sealed class PrototypeWizardDialog : Form
             _showingSummary = false;
             if (_nextButton is not null)
             {
-                _nextButton.Text = "Próximo";
+                _nextButton.Text = _texts.Next;
             }
         }
 
         RefreshCurrentTabLabel();
     }
 
-    private static bool ShouldRefreshGenerationPreviewOnTab(string tabName)
+    private bool ShouldRefreshGenerationPreviewOnTab(string tabName)
     {
-        return string.Equals(tabName, "SDTs", StringComparison.Ordinal)
-            || string.Equals(tabName, "Procedures", StringComparison.Ordinal)
-            || string.Equals(tabName, "API Object", StringComparison.Ordinal)
-            || string.Equals(tabName, "Business Component", StringComparison.Ordinal)
-            || string.Equals(tabName, "List", StringComparison.Ordinal)
-            || string.Equals(tabName, "Metadata", StringComparison.Ordinal);
+        return string.Equals(tabName, _texts.Translate("SDTs"), StringComparison.Ordinal)
+            || string.Equals(tabName, _texts.Translate("Procedures"), StringComparison.Ordinal)
+            || string.Equals(tabName, _texts.Translate("API Object"), StringComparison.Ordinal)
+            || string.Equals(tabName, _texts.Translate("Business Component"), StringComparison.Ordinal)
+            || string.Equals(tabName, _texts.Translate("List"), StringComparison.Ordinal)
+            || string.Equals(tabName, _texts.Translate("Metadata"), StringComparison.Ordinal);
     }
 
     private bool CompletePendingExplicitActions()
@@ -1006,7 +1044,7 @@ internal sealed class PrototypeWizardDialog : Form
         var selectedServices = GetCheckedValues(_servicesList);
         if (selectedServices.Count == 0)
         {
-            MessageBox.Show(this, "Selecione ao menos um serviço.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, _texts.Translate("Selecione ao menos um serviço."), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return false;
         }
 
@@ -1015,19 +1053,19 @@ internal sealed class PrototypeWizardDialog : Form
         var restPath = _restPathText.Text.Trim();
         if (apiName.Length == 0 || servicesBasePath.Length == 0 || restPath.Length == 0)
         {
-            MessageBox.Show(this, "Informe Nome API, Services base path e RestPath.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, _texts.Translate("Informe Nome API, Services base path e RestPath."), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return false;
         }
 
         if (!restPath.StartsWith("/", StringComparison.Ordinal))
         {
-            MessageBox.Show(this, "RestPath deve iniciar com '/'.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, _texts.Translate("RestPath deve iniciar com '/'."), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return false;
         }
 
         if (_defaultPageSize.Value > _maximumPageSize.Value)
         {
-            MessageBox.Show(this, "Default Page Size deve ser menor ou igual a Maximum Page Size.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, _texts.Translate("Default Page Size deve ser menor ou igual a Maximum Page Size."), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return false;
         }
 
@@ -1117,8 +1155,8 @@ internal sealed class PrototypeWizardDialog : Form
         }
 
         _nextButton.Text = _generateSdtsCheck.Checked || _generateProceduresCheck.Checked || _generateApiObjectCheck.Checked || _generateMetadataCheck.Checked || _applyListCheck.Checked || _applyBusinessComponentCheck.Checked
-            ? "Concluir e aplicar"
-            : "Concluir Teste";
+            ? _texts.CompleteAndApply
+            : _texts.CompleteTest;
     }
     private void GoBack()
     {
@@ -1128,7 +1166,7 @@ internal sealed class PrototypeWizardDialog : Form
             _tabs.SelectedIndex = _tabs.TabPages.Count - 2;
             if (_nextButton is not null)
             {
-                _nextButton.Text = "Próximo";
+                _nextButton.Text = _texts.Next;
             }
             return;
         }
@@ -1298,18 +1336,18 @@ internal sealed class PrototypeWizardDialog : Form
         if (IsBusinessComponentReady())
         {
             _applyBusinessComponentCheck.Text = canApplyBusinessComponent
-                ? "Confirmar: Completar Get/Create/Update REST ao concluir"
-                : "Bloqueado: confirme SDTs, Procedures e API Object";
+                ? _texts.Translate("Confirmar: Completar Get/Create/Update REST ao concluir")
+                : _texts.Translate("Bloqueado: confirme SDTs, Procedures e API Object");
         }
         else if (_enableBusinessComponentCheck.Checked)
         {
             _applyBusinessComponentCheck.Text = canApplyBusinessComponent
-                ? "Confirmar: Completar Get/Create/Update REST após habilitar"
-                : "Bloqueado: confirme SDTs, Procedures e API Object antes de aplicar BC";
+                ? _texts.Translate("Confirmar: Completar Get/Create/Update REST após habilitar")
+                : _texts.Translate("Bloqueado: confirme SDTs, Procedures e API Object antes de aplicar BC");
         }
         else
         {
-            _applyBusinessComponentCheck.Text = "Bloqueado: Business Component desabilitado";
+            _applyBusinessComponentCheck.Text = _texts.Translate("Bloqueado: Business Component desabilitado");
         }
 
         _applyBusinessComponentCheck.Enabled = canApplyBusinessComponent;
@@ -1323,7 +1361,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private void ApplyListControlState(ApiPlanGenerationStageState? apiState, bool apiObjectAvailable)
     {
-        _applyListCheck.Text = "Confirmar: Completar listagem ao concluir";
+        _applyListCheck.Text = _texts.Translate("Confirmar: Completar listagem ao concluir");
         _applyListCheck.Enabled = apiState is not null && !apiState.IsBlocked && apiObjectAvailable;
         if (!_applyListCheck.Enabled)
         {
@@ -1336,22 +1374,22 @@ internal sealed class PrototypeWizardDialog : Form
         return confirmed || string.Equals(state?.Action, "Reencontrar e validar", StringComparison.Ordinal);
     }
 
-    private static string FormatDependencyState(ApiPlanGenerationStageState? state, bool confirmed)
+    private string FormatDependencyState(ApiPlanGenerationStageState? state, bool confirmed)
     {
         if (confirmed)
         {
-            return "confirmada nesta execucao";
+            return _texts.Translate("confirmada nesta execucao");
         }
 
         return string.Equals(state?.Action, "Reencontrar e validar", StringComparison.Ordinal)
-            ? "ja reencontrada na KB ativa"
-            : "nao confirmada";
+            ? _texts.Translate("ja reencontrada na KB ativa")
+            : _texts.Translate("nao confirmada");
     }
-    private static string FormatGenerationContext(ApiPlanGenerationState? state)
+    private string FormatGenerationContext(ApiPlanGenerationState? state)
     {
         if (state is null)
         {
-            return "Estado: plano em memoria";
+            return _texts.Translate("Estado: plano em memoria");
         }
 
         var stages = new[] { state.Sdts, state.Procedures, state.ApiObject, state.MetadataFile };
@@ -1359,33 +1397,33 @@ internal sealed class PrototypeWizardDialog : Form
         {
             var conflictCount = stages.SelectMany(stage => stage.CollisionConflicts).Count();
             return conflictCount > 0
-                ? $"Estado: teste bloqueado ({conflictCount} conflito(s))"
-                : "Estado: teste bloqueado";
+                ? $"{_texts.Translate("Estado: teste bloqueado")} ({conflictCount} {_texts.Translate("conflito(s)")})"
+                : _texts.Translate("Estado: teste bloqueado");
         }
 
         if (stages.All(stage => string.Equals(stage.Action, "Reencontrar e validar", StringComparison.Ordinal)))
         {
-            return "Estado: teste de reencontro";
+            return _texts.Translate("Estado: teste de reencontro");
         }
 
         if (stages.All(stage => string.Equals(stage.Action, "Criar", StringComparison.Ordinal)))
         {
-            return "Estado: teste de criacao";
+            return _texts.Translate("Estado: teste de criacao");
         }
 
-        return "Estado: teste de complementacao";
+        return _texts.Translate("Estado: teste de complementacao");
     }
     private void ApplyGenerationControlState(CheckBox checkBox, ApiPlanGenerationStageState? state, bool dependencyConfirmed)
     {
         if (state is null)
         {
-            checkBox.Text = "Estado atual indisponivel";
+            checkBox.Text = _texts.Translate("Estado atual indisponivel");
             checkBox.Enabled = false;
             checkBox.Checked = false;
             return;
         }
 
-        checkBox.Text = $"Confirmar: {state.Action} {FormatGenerationStageName(state.StageName)} ao concluir";
+        checkBox.Text = $"{_texts.Translate("Confirmar")}: {state.Action} {FormatGenerationStageName(state.StageName)} {_texts.Translate("ao concluir")}";
         checkBox.Enabled = !state.IsBlocked && dependencyConfirmed;
         if (!checkBox.Enabled)
         {
@@ -1393,29 +1431,30 @@ internal sealed class PrototypeWizardDialog : Form
         }
     }
 
-    private static string FormatGenerationStageName(string stageName)
+    private string FormatGenerationStageName(string stageName)
     {
         if (string.Equals(stageName, "SDTs", StringComparison.Ordinal))
         {
-            return "estruturas de dados";
+            return _texts.Translate("estruturas de dados");
         }
 
         if (string.Equals(stageName, "Metadata File", StringComparison.Ordinal))
         {
-            return "metadata da API";
+            return _texts.Translate("metadata da API");
         }
 
         return stageName;
     }
 
-    private static string FormatGenerationState(ApiPlanGenerationStageState? state, bool confirmed)
+    private string FormatGenerationState(ApiPlanGenerationStageState? state, bool confirmed)
     {
         if (state is null)
         {
-            return "Estado atual da KB indisponivel. Ajuste os campos obrigatorios do contrato para consultar a geracao.";
+            return _texts.Translate("Estado atual da KB indisponivel. Ajuste os campos obrigatorios do contrato para consultar a geracao.");
         }
 
-        return $"Estado atual da KB: {state.Action}{Environment.NewLine}{state.Detail}{Environment.NewLine}{Environment.NewLine}Confirmado para escrita: {confirmed}";
+        var localizedDetail = ExtensionOutputLocalization.Translate(state.Detail, _texts.Language);
+        return $"{_texts.Translate("Estado atual da KB")}: {state.Action}{Environment.NewLine}{localizedDetail}{Environment.NewLine}{Environment.NewLine}{_texts.Translate("Confirmado para escrita")}: {confirmed}";
     }
 
     private ApiPlanGenerationState? ReadGenerationState()
@@ -1456,7 +1495,7 @@ internal sealed class PrototypeWizardDialog : Form
                 false,
                 false,
                 false);
-            return ApiPlanGenerationStateReader.Read(_designModel, _transaction, ApiPlanBuilder.Build(_transaction, selection));
+            return ApiPlanGenerationStateReader.ReadForIntentionalChange(_designModel, _transaction, ApiPlanBuilder.Build(_designModel, _transaction, selection));
         }
         catch
         {
@@ -1498,6 +1537,13 @@ internal sealed class PrototypeWizardDialog : Form
     }
     private IReadOnlyList<PrototypeWizardStaticOrderPart> GetStaticOrder()
     {
+        if (_snapshot.ExistingApiContract.StaticOrder.Count > 0)
+        {
+            return _snapshot.ExistingApiContract.StaticOrder
+                .Select(item => new PrototypeWizardStaticOrderPart(item.Order, item.AttributeName, item.Direction))
+                .ToArray();
+        }
+
         return _snapshot.Attributes
             .Where(attribute => attribute.IsPrimaryKey)
             .OrderBy(attribute => attribute.Order)
@@ -1529,7 +1575,7 @@ internal sealed class PrototypeWizardDialog : Form
         if (!_enableBusinessComponentCheck.Checked)
         {
             _writeBusinessComponentOutput($"[Genexus Open API Builder][B035] Transaction='{_businessComponentSnapshot.TransactionName}' bloqueada: Business Component desabilitado e habilitacao explicita nao confirmada. Nenhum ApiPlan foi criado e nenhuma alteracao foi feita na KB.");
-            MessageBox.Show(this, "Business Component está desabilitado. Marque a habilitação explícita para continuar ou cancele o wizard.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, _texts.Translate("Business Component está desabilitado. Marque a habilitação explícita para continuar ou cancele o wizard."), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             RefreshBusinessComponentText();
             return false;
         }
@@ -1554,7 +1600,7 @@ internal sealed class PrototypeWizardDialog : Form
             if (!_enableBusinessComponent())
             {
                 _writeBusinessComponentOutput($"[Genexus Open API Builder][B035] Falha ao confirmar Business Component habilitado para Transaction='{_businessComponentSnapshot.TransactionName}' apos gravacao.");
-                MessageBox.Show(this, "Não foi possível confirmar Business Component habilitado após a gravação.", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, _texts.Translate("Não foi possível confirmar Business Component habilitado após a gravação."), Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 RefreshBusinessComponentText();
                 return false;
             }
@@ -1562,7 +1608,7 @@ internal sealed class PrototypeWizardDialog : Form
         catch (Exception ex)
         {
             _writeBusinessComponentOutput($"[Genexus Open API Builder][B035] Falha ao habilitar Business Component para Transaction='{_businessComponentSnapshot.TransactionName}': {ex.Message}");
-            MessageBox.Show(this, "Falha ao habilitar Business Component: " + ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, _texts.Translate("Falha ao habilitar Business Component: ") + ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
             RefreshBusinessComponentText();
             return false;
         }
@@ -1666,6 +1712,11 @@ internal sealed class PrototypeWizardDialog : Form
 
     private bool DefaultCreateRequired(string fieldName)
     {
+        if (_snapshot.ExistingApiContract.TryGetCreateRequired(fieldName, out var existingRequired))
+        {
+            return existingRequired;
+        }
+
         var attribute = _snapshot.Attributes.Single(item => string.Equals(item.Name, fieldName, StringComparison.Ordinal));
         if (attribute.IsSensitive)
         {

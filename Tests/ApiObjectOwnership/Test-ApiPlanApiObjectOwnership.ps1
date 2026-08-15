@@ -145,4 +145,59 @@ $wizardWouldBlock = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjec
     $fallbacks)
 Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership+OwnershipKind]::NotOwned) $wizardWouldBlock 'Wizard ainda bloqueia com integridade/Source divergentes; Sync não usa Resolve.'
 
+$diagnosisOwned = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership]::Diagnose(
+    $true,
+    $true,
+    $false,
+    $true,
+    $true,
+    $true,
+    $true,
+    $true,
+    $apiGuid,
+    $apiGuid)
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership+DiagnosticReason]::OwnedByMetadata) $diagnosisOwned.Reason 'Diagnóstico deve reconhecer metadata compatível.'
+Assert-True $diagnosisOwned.IsOwned 'Diagnóstico compatível deve marcar posse.'
+
+$diagnosisGuid = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership]::Diagnose(
+    $true,
+    $true,
+    $false,
+    $true,
+    $false,
+    $false,
+    $true,
+    $true,
+    '22222222-2222-2222-2222-222222222222',
+    $apiGuid)
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership+DiagnosticReason]::MetadataGuidMismatch) $diagnosisGuid.Reason 'Diagnóstico deve separar GUID divergente de integridade genérica.'
+Assert-True ($diagnosisGuid.FormatDetails() -match 'API Object GUID atual') 'Diagnóstico deve mostrar o GUID atual.'
+Assert-True ($diagnosisGuid.FormatDetails() -match 'GUID da metadata') 'Diagnóstico deve mostrar o GUID da metadata.'
+
+$diagnosisIntegrity = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership]::Diagnose(
+    $true,
+    $true,
+    $false,
+    $true,
+    $true,
+    $false,
+    $true,
+    $true,
+    $apiGuid,
+    $apiGuid)
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership+DiagnosticReason]::MetadataIntegrityMismatch) $diagnosisIntegrity.Reason 'Diagnóstico deve separar integridade B067 divergente.'
+
+$diagnosisContract = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership]::Diagnose(
+    $true,
+    $true,
+    $false,
+    $true,
+    $true,
+    $false,
+    $false,
+    $true,
+    $apiGuid,
+    $apiGuid)
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership+DiagnosticReason]::ServiceContractMismatch) $diagnosisContract.Reason 'Diagnóstico deve identificar contrato gerenciado divergente.'
+
 Write-Output 'PASS: ApiPlanApiObjectOwnership'

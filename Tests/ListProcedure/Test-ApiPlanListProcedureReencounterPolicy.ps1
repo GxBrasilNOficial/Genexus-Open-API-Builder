@@ -20,6 +20,7 @@ function Assert-False {
 }
 
 $expectedSource = @'
+&RestStatusCode = 200
 &ListResponse = new()
 &AppliedFilters = new()
 &ListResponse.AppliedFilters = &AppliedFilters
@@ -32,15 +33,24 @@ If &ApiPageSize.IsEmpty()
     &ApiPageSize = 40
 EndIf
 If &ApiPage < 1
-    msg(!"invalid_request: page must be greater than or equal to 1", status)
+    &RestStatusCode = 400
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"invalid_request"
+    &ErrorResponse.Message = !"page must be greater than or equal to 1"
     return
 EndIf
 If &ApiPageSize < 1
-    msg(!"invalid_request: pageSize must be greater than or equal to 1", status)
+    &RestStatusCode = 400
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"invalid_request"
+    &ErrorResponse.Message = !"pageSize must be greater than or equal to 1"
     return
 EndIf
 If &ApiPageSize > 100
-    msg(!"invalid_request: pageSize exceeds the configured maximum", status)
+    &RestStatusCode = 400
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"invalid_request"
+    &ErrorResponse.Message = !"pageSize exceeds the configured maximum"
     return
 EndIf
 &FirstRecord = ((&ApiPage - 1) * &ApiPageSize) + 1
@@ -49,7 +59,7 @@ EndIf
 $sameOwnSourceWithNewPagination = $expectedSource.Replace('&ApiPageSize = 40', '&ApiPageSize = 50').Replace('If &ApiPageSize > 100', 'If &ApiPageSize > 200')
 Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanListProcedureReencounterPolicy]::IsSourceAllowed($sameOwnSourceWithNewPagination, $expectedSource, [string[]]@())) 'B070 deve aceitar Source próprio conhecido quando só literais de paginação mudam.'
 
-$externalSource = $sameOwnSourceWithNewPagination.Replace('msg(!"invalid_request: pageSize exceeds the configured maximum", status)', 'msg(!"custom message", status)')
+$externalSource = $sameOwnSourceWithNewPagination.Replace('&ErrorResponse.Message = !"pageSize exceeds the configured maximum"', '&ErrorResponse.Message = !"custom message"')
 Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanListProcedureReencounterPolicy]::IsSourceAllowed($externalSource, $expectedSource, [string[]]@())) 'B070 deve recusar Source externo com divergência fora dos literais de paginação.'
 
 $knownPreviousSource = $expectedSource.Replace('&ListResponse.AppliedFilters = &AppliedFilters', '//&ListResponse.AppliedFilters = &AppliedFilters')
@@ -57,12 +67,16 @@ $currentPreviousWithNewPagination = $knownPreviousSource.Replace('&ApiPageSize =
 Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanListProcedureReencounterPolicy]::IsSourceAllowed($currentPreviousWithNewPagination, $expectedSource, [string[]]@($knownPreviousSource))) 'B070 deve aceitar fonte própria anterior conhecida quando apenas a paginação mudou.'
 
 $expectedRules = @'
-parm(in:&pApiPage, in:&pApiPageSize, out:&ListResponse);
+parm(in:&pApiPage, in:&pApiPageSize, out:&ListResponse, out:&ErrorResponse, out:&RestStatusCode);
 '@
 $legacyRules = @'
 parm(out:&ListResponse);
 '@
+$previousB070Rules = @'
+parm(in:&pApiPage, in:&pApiPageSize, out:&ListResponse);
+'@
 Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanListProcedureReencounterPolicy]::IsRulesAllowed($expectedRules, $expectedRules, $legacyRules)) 'Rules esperadas devem ser aceitas.'
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanListProcedureReencounterPolicy]::IsRulesAllowed($previousB070Rules, $expectedRules, $legacyRules, [string[]]@($previousB070Rules))) 'Rules B070 anteriores sem ErrorResponse/RestStatusCode devem ser migraveis.'
 Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanListProcedureReencounterPolicy]::IsRulesAllowed('parm(in:&Unexpected, out:&ListResponse);', $expectedRules, $legacyRules)) 'Rules divergentes devem continuar bloqueadas.'
 
 Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanListProcedureReencounterPolicy]::AreVariablesAllowed($true, $false, $true)) 'Variáveis devem ser aceitas quando algum contrato próprio conhecido casa.'

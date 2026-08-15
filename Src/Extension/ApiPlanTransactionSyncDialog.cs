@@ -6,12 +6,14 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using GenexusOpenApiBuilder.Extension.Diagnostics;
+using GenexusOpenApiBuilder.Extension.Domain;
 
 namespace GenexusOpenApiBuilder.Extension;
 
 internal sealed class ApiPlanTransactionSyncDialog : Form
 {
     private readonly ApiPlanTransactionSyncPreview _preview;
+    private readonly ExtensionTexts _texts;
     private readonly Dictionary<string, CheckedListBox> _addedLists = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ComboBox> _sdtCombos = new(StringComparer.OrdinalIgnoreCase);
     private readonly TextBox _summaryBox = new()
@@ -24,10 +26,11 @@ internal sealed class ApiPlanTransactionSyncDialog : Form
         HideSelection = true,
     };
 
-    public ApiPlanTransactionSyncDialog(ApiPlanTransactionSyncPreview preview)
+    public ApiPlanTransactionSyncDialog(ApiPlanTransactionSyncPreview preview, ExtensionTexts texts)
     {
         _preview = preview ?? throw new ArgumentNullException(nameof(preview));
-        Text = "Genexus Open API Builder - Sincronizar com a Transaction";
+        _texts = texts ?? throw new ArgumentNullException(nameof(texts));
+        Text = _texts.SynchronizeDialogTitle;
         StartPosition = FormStartPosition.CenterParent;
         AutoScaleMode = AutoScaleMode.Font;
         Width = 920;
@@ -73,22 +76,22 @@ internal sealed class ApiPlanTransactionSyncDialog : Form
             AutoSize = true,
             Dock = DockStyle.Fill,
             Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold),
-            Text = $"Sincronizar API com a Transaction '{_preview.TransactionName}'",
+            Text = $"{_texts.Translate("Sincronizar API com a Transaction")} '{_preview.TransactionName}'",
             Padding = new Padding(0, 0, 0, 8),
         }, 0, 0);
 
-        _summaryBox.Text = _preview.Diff.BuildSummary();
+        _summaryBox.Text = ExtensionOutputLocalization.Translate(_preview.Diff.BuildSummary(), _texts.Language);
         if (_preview.Diff.Removed.Count > 0 || _preview.Diff.Modified.Any(item => item.Details.Any(detail => detail.StartsWith("tipo ", StringComparison.Ordinal))))
         {
             _summaryBox.Text += Environment.NewLine + Environment.NewLine
-                + "Avisos: remocoes e mudancas de tipo podem quebrar clientes; novo campo obrigatorio via BC pode quebrar Create.";
+                + _texts.Translate("Avisos: remocoes e mudancas de tipo podem quebrar clientes; novo campo obrigatorio via BC pode quebrar Create.");
         }
 
         root.Controls.Add(_summaryBox, 0, 1);
 
         var addedGroup = new GroupBox
         {
-            Text = "Campos adicionados — marque onde incluir",
+            Text = _texts.Translate("Campos adicionados — marque onde incluir"),
             Dock = DockStyle.Fill,
             Padding = new Padding(8),
         };
@@ -111,7 +114,7 @@ internal sealed class ApiPlanTransactionSyncDialog : Form
 
         var conflictGroup = new GroupBox
         {
-            Text = "Conflitos de SDT editado manualmente",
+            Text = _texts.Translate("Conflitos de SDT editado manualmente"),
             Dock = DockStyle.Fill,
             Padding = new Padding(8),
         };
@@ -129,7 +132,7 @@ internal sealed class ApiPlanTransactionSyncDialog : Form
             conflictLayout.Controls.Add(new Label
             {
                 AutoSize = true,
-                Text = "Nenhum conflito de SDT detectado.",
+                Text = _texts.Translate("Nenhum conflito de SDT detectado."),
             }, 0, 0);
         }
         else
@@ -171,8 +174,8 @@ internal sealed class ApiPlanTransactionSyncDialog : Form
             AutoSize = true,
             Padding = new Padding(0, 8, 0, 0),
         };
-        var cancel = new Button { Text = "Cancelar", DialogResult = DialogResult.Cancel, AutoSize = true };
-        var apply = new Button { Text = "Aplicar sincronizacao", AutoSize = true };
+        var cancel = new Button { Text = _texts.Cancel, DialogResult = DialogResult.Cancel, AutoSize = true };
+        var apply = new Button { Text = _texts.ApplySynchronization, AutoSize = true };
         apply.Click += (_, _) => SaveAndClose();
         AcceptButton = apply;
         CancelButton = cancel;
@@ -196,7 +199,7 @@ internal sealed class ApiPlanTransactionSyncDialog : Form
         cell.Controls.Add(new Label
         {
             AutoSize = true,
-            Text = role,
+            Text = _texts.Translate(role),
             Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold),
             Padding = new Padding(0, 0, 0, 4),
         }, 0, 0);
