@@ -55,6 +55,7 @@ Assert-True ($source -match 'Tests/WizardContract/Test-ApiPlanGenerationStateRea
 Assert-True ($source -match 'Tests/WizardContract/Test-PrototypeWizardCreateRequiredPrimaryKeyOptional\.ps1') 'O checker deve executar o teste unitário do contrato de wizard CreateRequired.'
 Assert-True ($source -match 'Tests/WizardContract/Test-PrototypeWizardNoAcceptRuleReader\.ps1') 'O checker deve executar o teste unitário da leitura de regras NoAccept.'
 Assert-True ($source -match 'Tests/WizardContract/Test-NoAcceptRequestEligibilityContract\.ps1') 'O checker deve executar o teste unitário da elegibilidade de requests NoAccept.'
+Assert-True ($source -match 'Tests/WizardContract/Test-PrototypeWizardExistingApiFilters\.ps1') 'O checker deve executar o teste unitário dos filtros e restauração de API existente do wizard.'
 Assert-True ($source -match 'Tests/ExtensionAssemblyInventory/Test-ExtensionAssemblyInventory\.ps1') 'O checker deve executar o teste unitário do inventário offline da assembly.'
 Assert-True ($source -match 'Tests/Installation/Test-InstallExtensionBatPathHandling\.ps1') 'O checker deve executar o teste unitário do tratamento de caminhos dos BATs.'
 Assert-True ($source -match 'Tests/Localization/Test-ExtensionLanguage\.ps1') 'O checker deve executar o teste unitário da resolução do idioma da extensão.'
@@ -137,6 +138,7 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-PrototypeWizardCreateRequiredPrimaryKeyOptional.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Create Required Primary Key Optional'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-PrototypeWizardNoAcceptRuleReader.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture NoAccept Rule Reader'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-NoAcceptRequestEligibilityContract.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture NoAccept Request Eligibility'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-PrototypeWizardExistingApiFilters.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Prototype Wizard Existing Api Filters'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ExtensionAssemblyInventory\Test-ExtensionAssemblyInventory.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Extension Assembly Inventory'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\Installation\Test-InstallExtensionBatPathHandling.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Installation BAT Path Handling'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\Localization\Test-ExtensionLanguage.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Extension Language'`n", [System.Text.UTF8Encoding]::new($false))
@@ -178,6 +180,7 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractCreateRequired' }).status -eq 'passed') 'O teste unitário do contrato de wizard CreateRequired deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractNoAcceptRuleReader' }).status -eq 'passed') 'O teste unitário da leitura de regras NoAccept deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractNoAcceptRequestEligibility' }).status -eq 'passed') 'O teste unitário da elegibilidade de requests NoAccept deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractExistingApiFilters' }).status -eq 'passed') 'O teste unitário dos filtros e restauração de API existente do wizard deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.extensionAssemblyInventory' }).status -eq 'passed') 'O teste unitário do inventário offline da assembly deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.installationBatPathHandling' }).status -eq 'passed') 'O teste unitário do tratamento de caminhos dos BATs deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.extensionLanguage' }).status -eq 'passed') 'O teste unitário da resolução do idioma da extensão deveria passar na fixture.'
@@ -205,6 +208,7 @@ try {
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-PrototypeWizardCreateRequiredPrimaryKeyOptional.ps1' }).Count -eq 1) 'O comando do teste Create Required Primary Key Optional deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-PrototypeWizardNoAcceptRuleReader.ps1' }).Count -eq 1) 'O comando do teste NoAccept Rule Reader deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-NoAcceptRequestEligibilityContract.ps1' }).Count -eq 1) 'O comando do teste NoAccept Request Eligibility deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-PrototypeWizardExistingApiFilters.ps1' }).Count -eq 1) 'O comando do teste Prototype Wizard Existing Api Filters deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ExtensionAssemblyInventory/Test-ExtensionAssemblyInventory.ps1' }).Count -eq 1) 'O comando do teste Extension Assembly Inventory deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/Installation/Test-InstallExtensionBatPathHandling.ps1' }).Count -eq 1) 'O comando do teste Installation BAT Path Handling deve aparecer no JSON.'
         Assert-True (@($result.warnings).Count -eq 0) 'O checker não deve registrar "0 Aviso(s)" como warning.'

@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-08-13.
+2026-08-15.
 
 ## Último marco concluído
 
@@ -198,6 +198,7 @@ Executar a rotina pré-push sobre a frente já commitada e revisar semanticament
 49. Em 2026-08-12 a carga manual da DLL satélite foi confirmada no U13: `genexus /install` adicionou o pacote, o Extensions Manager mostrou a extensão marcada e o menu principal exibiu os quatro comandos. Na sequência, o menu de contexto, o Wizard e o `Build All` foram confirmados na Transaction `Employee`; builds focados demonstraram por A/B que `NoAccept(EmployeeAddedDate)` causava `spc0018` nas Procedures Create/Update. Próxima ação = instalar a DLL corrigida e repetir a validação focada; a Sprint 9 permanece explicitamente paralela. Evidências: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md` e `Docs/Implementation/2026-08-12-NOACCEPT-READONLY-BUSINESS-COMPONENT.md`.
 50. Em 2026-08-13 a DLL satélite foi instalada por `Install-ExtensionForGx18u13.bat`, B086 removeu 12 objetos próprios da API anterior, o Wizard recriou `apiEmployee` com `Created=12`, `Updated=2`, `Blocked=0` e o `Build All` especificou/compilou Create, Update, Get, List e `apiEmployee` sem `spc0018`. A validação U13 do contrato `NoAccept` foi concluída. Evidências: `Docs/Implementation/2026-08-12-NOACCEPT-READONLY-BUSINESS-COMPONENT.md` e `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
 51. Em 2026-08-13 a DLL canônica foi reinstalada no U15, B086 removeu 12 objetos próprios, o Wizard recriou a API com `Create=5`, `Update=5`, `Response=9`, `ListFilters=2`, `Created=12`, `Updated=2`, `Blocked=0` e campos bloqueados `CreateRequest=4`/`UpdateRequest=4`; o `Build All` U15 terminou com sucesso e sem `spc0018`. Naquele ponto, a compatibilidade U13/U15 do contrato `NoAccept` estava confirmada e a validação HTTP era o próximo recorte; essa bateria foi concluída posteriormente na revalidação de `apiNotaFiscal`. Evidência: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
+52. Em 2026-08-15 foram consolidadas a localização trilíngue da extensão (pt-BR, es, en) com `ExtensionLocalization`, `ExtensionLanguage` e `ExtensionOutputLocalization`, cobrindo comandos do manifesto, diálogos do Wizard/Sync/Preferências/Relatório e mensagens na janela Output; a restauração de filtros e seleções de APIs existentes no Wizard (`PrototypeWizardExistingApiContractReader`); o diagnóstico de ownership (`DiagnoseOwnership`) e suporte a refresh deliberado de contrato (`allowIntentionalContractRefresh`); e o alinhamento de erros HTTP em `List` com `ErrorResponse`, `RestStatusCode=400` e eliminação de `msg()`. Testes unitários integrados ao gate pré-push mecânico. Evidência: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -221,6 +222,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [2026-08-12 — Canais de distribuição (Marketplace / ZIP / GitHub Packages)](Implementation/2026-08-12-CANAIS-DISTRIBUICAO-MARKETPLACE-ZIP-GITHUB-PACKAGES.md)
 - [2026-08-12 — Evidência usuário externo U14 / gate Sprint 8](Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md)
 - [2026-08-12 — Evidência usuário externo U15 / reforço Alpha](Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md)
+- [2026-08-15 — Localização trilíngue e filtros existentes](Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
 - [Release 0.1.0-alpha.1](Releases/0.1.0-alpha.1.md)

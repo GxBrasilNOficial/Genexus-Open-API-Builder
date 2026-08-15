@@ -8,6 +8,21 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- Localização trilíngue da extensão (2026-08-15): detecção e resolução de idioma da IDE GeneXus (`ExtensionLanguage`), catálogo centralizado de strings (`ExtensionLocalization`), localização de mensagens na janela Output (`ExtensionOutputLocalization`), comandos de menu traduzidos em português, espanhol e inglês no manifesto (`GenexusOpenApiBuilder.package`) e em `Package.cs`, e tradução de todas as janelas do Wizard, Sincronização, Preferências e Relatório Final. Testes unitários em `Tests/Localization/Test-ExtensionLanguage.ps1` e `Tests/Localization/Test-ExtensionOutputLocalization.ps1`.
+- Leitura e restauração de filtros e seleções de APIs existentes no Wizard (2026-08-15): leitor `PrototypeWizardExistingApiContractReader` restaura serviços selecionados, campos de request/response, filtros e required a partir do API Object, da metadata persistente ou de SDTs próprios, evitando redefinir filtros deliberados ao reabrir o Wizard. Teste unitário em `Tests/WizardContract/Test-PrototypeWizardExistingApiFilters.ps1`.
+- Diagnóstico refinado de ownership e refresh deliberado de contrato (2026-08-15): `ApiPlanApiObjectOwnership.DiagnoseOwnership` e suporte a `allowIntentionalContractRefresh` no preflight e nos writers, permitindo que alterações intencionais confirmadas pelo usuário no Wizard atualizem o contrato sem bloqueio indevido de integridade.
+
+### Changed
+
+- Contrato HTTP de erro de `List` (2026-08-15): alinhado com `Create` e `Update`, utilizando `ErrorResponse`, `RestStatusCode=400` em erros de validação e remoção do uso de `msg()`. Sources legados com `msg()` permanecem reconhecidos como migráveis.
+- Cobertura mecânica do pré-push (2026-08-15): `scripts/Invoke-PrePushMechanicalChecks.ps1` e `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1` passaram a cobrir os testes de localização (`Test-ExtensionLanguage.ps1`, `Test-ExtensionOutputLocalization.ps1`) e restauração de filtros de API existente (`Test-PrototypeWizardExistingApiFilters.ps1`).
+
+---
+
 # [0.1.0-alpha.2] - 2026-08-13
 
 Release focada na liberação pública da linha GeneXus 18 Upgrade 13, mantendo o asset canônico U14+.
