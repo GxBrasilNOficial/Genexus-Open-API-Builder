@@ -13,7 +13,7 @@ Este documento registra a implementação de quatro frentes complementares:
 ## 1. Localização Trilíngue da Extensão
 
 ### Componentes de Localização
-- `Src/Domain/ExtensionLanguage.cs`: enum `ExtensionLanguage` (`Portuguese`, `Spanish`, `English`) com resolução de idioma a partir do `CultureInfo.CurrentUICulture` ou configuração da IDE GeneXus.
+- `Src/Domain/ExtensionLanguage.cs`: enum `ExtensionLanguage` (`PortugueseBrazil`, `Spanish`, `English`). A resolução usa o idioma da KB (`ReadLanguageValues(knowledgeBase)` / `Language.Get` em `ExtensionLocalization.Resolve`); sem KB aberta, o fallback é `English`. Não usa `CultureInfo.CurrentUICulture` nem o idioma da IDE.
 - `Src/Extension/ExtensionLocalization.cs`: catálogo central de strings com traduções completas para português, espanhol e inglês abrangendo:
   - Nomes de comandos de menu e categorias;
   - Títulos, rótulos, descrições e botões de todos os diálogos (`PrototypeWizardDialog`, `PrototypeWizardPreferencesDialog`, `ApiPlanTransactionSyncDialog`, `ApiPlanApplicationFinalReportDialog`, `PrototypeWizardContractDialog`, `PrototypeWizardReviewDialog`);
@@ -21,7 +21,9 @@ Este documento registra a implementação de quatro frentes complementares:
 - `Src/Domain/ExtensionOutputLocalization.cs`: catálogo de mensagens formatadas para a janela Output da IDE GeneXus nos três idiomas suportados.
 
 ### Registro de Comandos no Manifesto
-Para que os menus da IDE GeneXus exibam comandos localizados conforme a preferência de idioma da extensão, `Src/Extension/GenexusOpenApiBuilder.package` e `Src/Extension/Package.cs` registram as definições de comando (`CommandDefinition`) correspondentes em conformidade com o checker `Tools/Test-ExtensionCommandRegistration.ps1`.
+Para que os menus da IDE GeneXus exibam comandos localizados conforme o idioma resolvido da KB, `Src/Extension/GenexusOpenApiBuilder.package` e `Src/Extension/Package.cs` registram as definições de comando (`CommandDefinition`) correspondentes em conformidade com o checker `Tools/Test-ExtensionCommandRegistration.ps1`.
+
+Esta frente alterou o manifesto (novos `CommandDefinition` em espanhol e inglês). A próxima instalação de teste na IDE exige `Register-ExtensionForGeneXus18.bat` e `genexus /install` no mesmo diretório da instalação; `Install-ExtensionForGeneXus18.bat` sozinho copia a DLL, mas não registra os comandos novos.
 
 ---
 
