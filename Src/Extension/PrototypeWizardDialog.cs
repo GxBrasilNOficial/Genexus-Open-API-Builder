@@ -1229,7 +1229,7 @@ internal sealed class PrototypeWizardDialog : Form
             }
             else
             {
-                lines.Add(service + " <não definido> " + restPath);
+                lines.Add(service + " " + _texts.Translate("<não definido>") + " " + restPath);
             }
         }
         return string.Join(Environment.NewLine, lines);
@@ -1610,7 +1610,9 @@ internal sealed class PrototypeWizardDialog : Form
 
         var confirmation = MessageBox.Show(
             this,
-            $"Habilitar Business Component altera a Transaction '{_businessComponentSnapshot.TransactionName}' na KB. A alteração não será revertida automaticamente ao cancelar o wizard ou remover a extensão. Deseja habilitar agora?",
+            string.Format(
+                _texts.Translate("Habilitar Business Component altera a Transaction '{0}' na KB. A alteração não será revertida automaticamente ao cancelar o wizard ou remover a extensão. Deseja habilitar agora?"),
+                _businessComponentSnapshot.TransactionName),
             Text,
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Warning,

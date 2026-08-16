@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using Artech.Architecture.Common.Objects;
@@ -18,6 +19,7 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
     private readonly ApiPlanApplicationFinalReport _report;
     private readonly KBModel? _designModel;
     private readonly ExtensionTexts _texts;
+    private readonly IWin32Window? _owner;
     private readonly TextBox _bodyBox = new()
     {
         Multiline = true,
@@ -30,15 +32,15 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
         HideSelection = true,
     };
 
-    public ApiPlanApplicationFinalReportDialog(ApiPlanApplicationFinalReport report, KBModel? designModel, ExtensionTexts texts)
+    public ApiPlanApplicationFinalReportDialog(ApiPlanApplicationFinalReport report, KBModel? designModel, ExtensionTexts texts, IWin32Window? owner = null)
     {
         _report = report ?? throw new ArgumentNullException(nameof(report));
         _designModel = designModel;
         _texts = texts ?? throw new ArgumentNullException(nameof(texts));
+        _owner = owner;
         Text = _texts.FinalReportTitle;
-        // O relatorio e aberto sem owner pelo fluxo da extensao. Centralizar
-        // manualmente na area util do monitor atual evita herdar um monitor
-        // com resolucao diferente do monitor onde o usuario iniciou a acao.
+        // O owner e a janela ativa do GeneXus. O relatorio deve permanecer no
+        // monitor da IDE, mesmo quando o cursor estiver em outro monitor.
         StartPosition = FormStartPosition.Manual;
         AutoScaleMode = AutoScaleMode.Font;
         ShowIcon = false;
@@ -130,9 +132,23 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
 
     private Rectangle GetTargetWorkingArea()
     {
-        return IsHandleCreated
-            ? Screen.FromHandle(Handle).WorkingArea
-            : Screen.FromPoint(Cursor.Position).WorkingArea;
+        if (_owner is not null && _owner.Handle != IntPtr.Zero)
+        {
+            return Screen.FromHandle(_owner.Handle).WorkingArea;
+        }
+
+        if (IsHandleCreated)
+        {
+            return Screen.FromHandle(Handle).WorkingArea;
+        }
+
+        var processMainWindowHandle = Process.GetCurrentProcess().MainWindowHandle;
+        if (processMainWindowHandle != IntPtr.Zero)
+        {
+            return Screen.FromHandle(processMainWindowHandle).WorkingArea;
+        }
+
+        return Screen.PrimaryScreen?.WorkingArea ?? Screen.AllScreens[0].WorkingArea;
     }
 
     private void CenterInWorkingArea(Rectangle working)
@@ -230,7 +246,9 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
             {
                 MessageBox.Show(
                     this,
-                    $"Objeto principal '{_report.MainObjectName}' nao foi encontrado na KB.",
+                    string.Format(
+                        _texts.Translate("Objeto principal '{0}' não foi encontrado na KB."),
+                        _report.MainObjectName),
                     Text,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
@@ -243,7 +261,9 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
         {
             MessageBox.Show(
                 this,
-                "Nao foi possivel abrir o objeto principal: " + ex.Message,
+                string.Format(
+                    _texts.Translate("Não foi possível abrir o objeto principal: {0}"),
+                    ex.Message),
                 Text,
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);

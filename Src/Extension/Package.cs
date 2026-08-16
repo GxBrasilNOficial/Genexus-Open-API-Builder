@@ -1963,8 +1963,23 @@ public sealed class Package : AbstractPackageUI
         }
 
         var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
-        using var dialog = new ApiPlanApplicationFinalReportDialog(report, designModel, ExtensionLocalization.For(knowledgeBase));
-        dialog.ShowDialog();
+        var owner = System.Windows.Forms.Form.ActiveForm
+            ?? System.Windows.Forms.Application.OpenForms
+                .Cast<System.Windows.Forms.Form>()
+                .FirstOrDefault(form => form.Visible && form.IsHandleCreated);
+        using var dialog = new ApiPlanApplicationFinalReportDialog(
+            report,
+            designModel,
+            ExtensionLocalization.For(knowledgeBase),
+            owner);
+        if (owner is null)
+        {
+            dialog.ShowDialog();
+        }
+        else
+        {
+            dialog.ShowDialog(owner);
+        }
     }
 
     private static void TryResolveMainObjectFromKb(ApiPlanApplicationFinalReportCollector collector, KBModel? designModel)

@@ -5,6 +5,9 @@ $ErrorActionPreference = 'Stop'
 
 $languagePath = Join-Path $PSScriptRoot '..\..\Src\Domain\ExtensionLanguage.cs'
 $uiTermsPath = Join-Path $PSScriptRoot '..\..\Src\Domain\ExtensionUiTerms.cs'
+$localizationPath = Join-Path $PSScriptRoot '..\..\Src\Extension\ExtensionLocalization.cs'
+$wizardPath = Join-Path $PSScriptRoot '..\..\Src\Extension\PrototypeWizardDialog.cs'
+$finalReportPath = Join-Path $PSScriptRoot '..\..\Src\Extension\ApiPlanApplicationFinalReportDialog.cs'
 $runtimeAssemblies = @([System.AppContext]::GetData('TRUSTED_PLATFORM_ASSEMBLIES') -split [System.IO.Path]::PathSeparator |
     Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 
@@ -14,6 +17,13 @@ function Assert-Equal {
     param($Expected, $Actual, [string]$Message)
     if ($Expected -ne $Actual) {
         throw "ASSERT_EQUAL_FAILED: $Message Expected='$Expected' Actual='$Actual'"
+    }
+}
+
+function Assert-Contains {
+    param([string]$Content, [string]$Expected, [string]$Message)
+    if (-not $Content.Contains($Expected, [System.StringComparison]::Ordinal)) {
+        throw "ASSERT_CONTAINS_FAILED: $Message Expected='$Expected'"
     }
 }
 
@@ -46,5 +56,18 @@ Assert-Equal 'Nível de segurança' ($uiTerms::PortugueseChrome('Security Level'
 Assert-Equal 'Tamanho padrão da página' ($uiTerms::PortugueseChrome('Default Page Size')) 'PT-BR deve traduzir o tamanho padrão da página.'
 Assert-Equal 'Tamanho máximo da página' ($uiTerms::PortugueseChrome('Maximum Page Size')) 'PT-BR deve traduzir o tamanho máximo da página.'
 Assert-Equal 'Segurança e paginação' ($uiTerms::PortugueseChrome('Seguranca e paginacao')) 'PT-BR deve acentuação no grupo de segurança.'
+
+$localization = Get-Content -LiteralPath $localizationPath -Raw
+$wizard = Get-Content -LiteralPath $wizardPath -Raw
+$finalReport = Get-Content -LiteralPath $finalReportPath -Raw
+Assert-Contains $localization "Habilitar Business Component altera a Transaction '{0}' na KB." 'O catálogo deve conter a confirmação localizada do Business Component.'
+Assert-Contains $localization 'Enabling Business Component changes the Transaction' 'O catálogo deve conter a confirmação em inglês do Business Component.'
+Assert-Contains $localization 'Habilitar Business Component cambia la Transaction' 'O catálogo deve conter a confirmação em espanhol do Business Component.'
+Assert-Contains $localization '"<não definido>" => "<undefined>"' 'O fallback de path deve ter tradução em inglês.'
+Assert-Contains $localization '"<não definido>" => "<no definido>"' 'O fallback de path deve ter tradução em espanhol.'
+Assert-Contains $wizard '_texts.Translate("Habilitar Business Component altera a Transaction ''{0}'' na KB.' 'A confirmação B035 deve passar pelo catálogo.'
+Assert-Contains $wizard '_texts.Translate("<não definido>")' 'O fallback de path deve passar pelo catálogo.'
+Assert-Contains $finalReport '_texts.Translate("Objeto principal ''{0}'' não foi encontrado na KB.")' 'O erro de objeto ausente deve passar pelo catálogo.'
+Assert-Contains $finalReport '_texts.Translate("Não foi possível abrir o objeto principal: {0}")' 'O erro de abertura deve passar pelo catálogo.'
 
 Write-Output 'PASS: ExtensionLanguage'
