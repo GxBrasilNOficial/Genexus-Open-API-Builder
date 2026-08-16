@@ -153,7 +153,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             ColumnCount = 2,
             RowCount = 3,
         };
-        execution.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
+        execution.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 260));
         execution.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         AddField(execution, 0, _texts.Translate("Security Level"), _securityLevelCombo);
         AddField(execution, 1, _texts.Translate("Default Page Size"), _defaultPageSizeInput);

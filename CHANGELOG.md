@@ -20,6 +20,12 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 - Contrato HTTP de erro de `List` (2026-08-15): alinhado com `Create` e `Update`, utilizando `ErrorResponse`, `RestStatusCode=400` em erros de validação e remoção do uso de `msg()`. Sources legados com `msg()` permanecem reconhecidos como migráveis.
 - Cobertura mecânica do pré-push (2026-08-15): `scripts/Invoke-PrePushMechanicalChecks.ps1` e `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1` passaram a cobrir os testes de localização (`Test-ExtensionLanguage.ps1`, `Test-ExtensionOutputLocalization.ps1`) e restauração de filtros de API existente (`Test-PrototypeWizardExistingApiFilters.ps1`).
+- Chrome da UI em português (2026-08-15): rótulos de segurança e paginação das preferências e do Wizard passam a português com acentos; `CreateRequest`, `UpdateRequest`, `Response` e `ListFilters` exibem gloss entre parênteses em pt-BR e espanhol (`ExtensionUiTerms.RoleLabel`) e permanecem só em inglês na UI inglesa. Verbos REST e tokens `Authentication`/`Authorization`/`None` continuam em inglês.
+- Localização residual em espanhol (2026-08-15): motivos de campo bloqueado, operador `Contem`, status de geração, resumo do Wizard e frases da Output que ainda saíam em português passam pelo catálogo; a coluna de rótulos das preferências foi alargada para não cortar “Tamanho máximo da página”.
+
+### Fixed
+
+- Relatório final e confirmação em espanhol (2026-08-15): o título “Ningúna sincronizacao necessaria” vinha de `Nenhum` substituir o prefixo de `Nenhuma`; avisos longos quebrados a 96 colunas perdiam o restante da frase no diálogo; o parágrafo curto de Required no Resumen e o leftover `a atualizacao do API Object` no B054 ficavam em português; o MessageBox de eliminação usava Sim/Não do Windows. A tradução agora ocorre antes da quebra de linha, o catálogo cobre as frases faltantes e a confirmação B086 usa botões Sí/No da extensão, com altura ajustada ao texto (como o MessageBox anterior).
 
 ---
 

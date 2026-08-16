@@ -199,7 +199,7 @@ internal sealed class ApiPlanTransactionSyncDialog : Form
         cell.Controls.Add(new Label
         {
             AutoSize = true,
-            Text = _texts.Translate(role),
+            Text = _texts.RoleLabel(role),
             Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold),
             Padding = new Padding(0, 0, 0, 4),
         }, 0, 0);

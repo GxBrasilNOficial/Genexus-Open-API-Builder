@@ -107,11 +107,11 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Frente atual
 
-Revisão pré-push da frente de suporte paralelo `Gx18u13`. A implementação, a validação manual U13/U15 do contrato `NoAccept` e a validação HTTP autenticada da API `NotaFiscal` foram concluídas. A Sprint 9 permanece explicitamente paralela e fora deste fechamento.
+Teste manual da localização residual em **inglês** (espanhol encerrado em 2026-08-15). A Sprint 9 e o fechamento U13 permanecem paralelos e fora desta ação.
 
 ## Próxima ação única
 
-Executar a rotina pré-push sobre a frente já commitada e revisar semanticamente o intervalo pendente contra `origin/main`, sem fazer push automaticamente. As validações U13 e U15 do contrato `NoAccept` e a bateria HTTP autenticada da `apiNotaFiscal` já estão concluídas; manter o asset `artifacts/gx18u13/GenexusOpenApiBuilder.Extension-gx18u13.dll` reservado para Release, a Sprint 9 em paralelo e a tag `v0.1.0-alpha.1` imóvel.
+Validar a localização em **inglês** na KB de teste (`wsEducacaoSpTeste`): Kb Language = English, mesmos pontos que quebraram em espanhol (Wizard/Resumen, informe, sync com/sem diff, Output B054, diálogo Eliminar). O teste espanhol desta frente está encerrado. Evidência da sessão: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §5.
 
 ## Evidência da frente encerrada
 
@@ -199,6 +199,7 @@ Executar a rotina pré-push sobre a frente já commitada e revisar semanticament
 50. Em 2026-08-13 a DLL satélite foi instalada por `Install-ExtensionForGx18u13.bat`, B086 removeu 12 objetos próprios da API anterior, o Wizard recriou `apiEmployee` com `Created=12`, `Updated=2`, `Blocked=0` e o `Build All` especificou/compilou Create, Update, Get, List e `apiEmployee` sem `spc0018`. A validação U13 do contrato `NoAccept` foi concluída. Evidências: `Docs/Implementation/2026-08-12-NOACCEPT-READONLY-BUSINESS-COMPONENT.md` e `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
 51. Em 2026-08-13 a DLL canônica foi reinstalada no U15, B086 removeu 12 objetos próprios, o Wizard recriou a API com `Create=5`, `Update=5`, `Response=9`, `ListFilters=2`, `Created=12`, `Updated=2`, `Blocked=0` e campos bloqueados `CreateRequest=4`/`UpdateRequest=4`; o `Build All` U15 terminou com sucesso e sem `spc0018`. Naquele ponto, a compatibilidade U13/U15 do contrato `NoAccept` estava confirmada e a validação HTTP era o próximo recorte; essa bateria foi concluída posteriormente na revalidação de `apiNotaFiscal`. Evidência: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
 52. Em 2026-08-15 foram consolidadas a localização trilíngue da extensão (pt-BR, es, en) com `ExtensionLocalization`, `ExtensionLanguage` e `ExtensionOutputLocalization`, cobrindo comandos do manifesto, diálogos do Wizard/Sync/Preferências/Relatório e mensagens na janela Output; a restauração de filtros e seleções de APIs existentes no Wizard (`PrototypeWizardExistingApiContractReader`); o diagnóstico de ownership (`DiagnoseOwnership`) e suporte a refresh deliberado de contrato (`allowIntentionalContractRefresh`); e o alinhamento de erros HTTP em `List` com `ErrorResponse`, `RestStatusCode=400` e eliminação de `msg()`. Testes unitários integrados ao gate pré-push mecânico. Evidência: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md`.
+53. Em 2026-08-15 o teste manual **espanhol** da localização residual foi encerrado na KB `wsEducacaoSpTeste` / Transaction `NotaFiscal` (Wizard, informes, sync, Output B054, Eliminar com diálogo próprio em duas colunas). Correções de catálogo (`Nenhuma`/`Nenhum`, wrap do informe, Required curto, leftover B054) e `ExtensionConfirmDialog` entram neste commit. Próxima ação = teste manual **inglês**. Detalhe: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §5.
 
 ## Bloqueios e fatos ainda não validados
 

@@ -14,6 +14,7 @@ Este documento registra a implementação de quatro frentes complementares:
 
 ### Componentes de Localização
 - `Src/Domain/ExtensionLanguage.cs`: enum `ExtensionLanguage` (`PortugueseBrazil`, `Spanish`, `English`). A resolução usa o idioma da KB (`ReadLanguageValues(knowledgeBase)` / `Language.Get` em `ExtensionLocalization.Resolve`); sem KB aberta, o fallback é `English`. Não usa `CultureInfo.CurrentUICulture` nem o idioma da IDE.
+- `Src/Domain/ExtensionUiTerms.cs`: rótulos de chrome em português (segurança, paginação, acentos das preferências) e `RoleLabel` para `CreateRequest`, `UpdateRequest`, `Response` e `ListFilters` no formato `Termo (gloss)` em pt-BR/es; em inglês o termo canônico permanece sozinho.
 - `Src/Extension/ExtensionLocalization.cs`: catálogo central de strings com traduções completas para português, espanhol e inglês abrangendo:
   - Nomes de comandos de menu e categorias;
   - Títulos, rótulos, descrições e botões de todos os diálogos (`PrototypeWizardDialog`, `PrototypeWizardPreferencesDialog`, `ApiPlanTransactionSyncDialog`, `ApiPlanApplicationFinalReportDialog`, `PrototypeWizardContractDialog`, `PrototypeWizardReviewDialog`);
@@ -63,3 +64,58 @@ Ao reabrir o Wizard para uma Transaction que já possui API gerada, a interface 
 - `Tests/Localization/Test-ExtensionOutputLocalization.ps1`: valida a formatação de mensagens nos 3 idiomas.
 - `Tests/WizardContract/Test-PrototypeWizardExistingApiFilters.ps1`: valida o contrato do reader de APIs existentes.
 - Integrados ao gate pré-push `scripts/Invoke-PrePushMechanicalChecks.ps1` e verificados por `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`.
+
+---
+
+## 5. Checkpoint operacional 2026-08-15 (teste espanhol encerrado; inglês pendente)
+
+Anotação de sessão para sobreviver à janela de contexto. O teste espanhol desta leva residual está encerrado; o teste inglês permanece pendente. Não houve push neste ponto.
+
+### Recorte de produto (UI)
+
+- Chrome de segurança/paginação só em pt/es, com acentos (`ExtensionUiTerms.PortugueseChrome`).
+- Quatro papéis: `CreateRequest (criação|creación)`, `UpdateRequest (atualização|actualización)`, `Response (resposta|respuesta)`, `ListFilters (filtros)` em pt/es; inglês sem parêntese.
+- Permanecem em inglês: `List`/`Get`/`Create`/`Update`, `Transaction`, SDT, Procedure, API Object, Wizard, Business Component, tokens persistidos `Authentication`/`Authorization`/`None`.
+- Resolução de idioma = **Kb Language** (`ExtensionLanguageResolver` / `Language.Get`). Sem KB: `English`. Não usa `CurrentUICulture`. Enum: `PortugueseBrazil`, `Spanish`, `English`. Português de Portugal cai em inglês.
+
+### Teste espanhol (encerrado)
+
+KB: `wsEducacaoSpTeste`. Transaction principal: `NotaFiscal`. Também houve eliminação em `Teste` (Folder criado pela extensão).
+
+Como ligar o idioma: Customization → Localization marcar o idioma **e** Properties **Kb Language** = o mesmo. Só habilitar não troca a UI da extensão.
+
+O que passou em espanhol (prints + Output):
+
+- Wizard (16 abas no código, nesta ordem): Serviços, Solicitudes, Response, Filtros de List, List, Rutas, Seguridad, Paginación, Ordenación, Obligatorios, SDTs, Procedures, API Object, Business Component, Metadatos, Resumen. Gloss `CreateRequest (creación)` etc. Motivos de bloqueio e operador `Contiene` traduzidos na UI.
+- Resumen: parágrafo curto de Required em espanhol (havia chave só da variante longa).
+- Informe Wizard: avisos B056 e Folder **completos** em espanhol no diálogo (antes a quebra a 96 colunas partia a frase). Botão `Abrir el objeto principal`.
+- Output B054: leftover `a atualizacao do API Object` passou a `la actualización del API Object será absorbida...`.
+- Sync sem diff: título `Ninguna sincronización necesaria.` (bug `Nenhum` prefixo de `Nenhuma` → `Ningúna sincronizacao necessaria.`).
+- Sync com campo (`NotaFiscalObs6`): diálogo `Aplicar sincronización`, papéis com gloss, cancelamento sem gravar.
+- Eliminar: `Sí`/`No` da extensão (não Sim/Não do Windows); pergunta `¿Confirma la eliminación?` visível; duas colunas (Procedures | SDTs); identificação numa linha; Folder/BC embaixo.
+
+Aviso B056 *descripciones… fallback en inglés (idioma de la KB aún no validado por API pública)* é `PendingKbLanguageApiValidation`, **não** falha de catálogo de UI. Descrições de serviço no ApiPlan continuam em inglês até existir API pública de idioma da KB.
+
+### Bugs encontrados e correções (DLL atual)
+
+Arquivos centrais: `ExtensionOutputLocalization.cs`, `ExtensionLocalization.cs`, `ApiPlanApplicationFinalReport.cs` / `Dialog`, `Package.cs`, `ExtensionConfirmDialog.cs` (novo), testes em `Tests/Localization/`.
+
+1. Replace curto `"Nenhum"` comia `"Nenhuma"` → headline `Ningúna…`. Frase completa da sync + `Nenhuma` antes de `Nenhum`.
+2. Informe: `Translate` no corpo já quebrado a 96 colunas; avisos longos (Folder, B056) ficavam mistos. Traduzir **antes** de wrap.
+3. Required curto do Resumen sem chave no `switch` ES/EN.
+4. B054: após `tambem foi confirmado` restava `a atualizacao…` minúscula.
+5. MessageBox Yes/No do SO em português. `ExtensionConfirmDialog` com Sí/No (es), Sim/Não (pt), Yes/No (en).
+6. Layout do diálogo de eliminar: altura inflada, corte da última linha, MessageBox nativo substituído. Estado **aceito** pelo usuário: largura ~1040 px, duas colunas, fonte `SystemFonts.MessageBoxFont` (nesta máquina **Segoe UI 9 pt**, linha 16 px), empacote por `AutoSize` dos rótulos, janela um pouco acima do centro. Não reabrir layout salvo pedido novo.
+
+Manifesto **não** mudou nestas correções residuais. Atualizar DLL: fechar IDE, `Install-ExtensionForGeneXus18.bat` como administrador. **Sem** `genexus /install` só por idioma ou por estas correções de chrome. `/install` continua necessário se, desde o último `/install` bem-sucedido, o `.package` / IDs de menu tiverem mudado (frente inicial de localização).
+
+### O que ainda não foi testado
+
+- Teste **inglês** não começou. Troca: Localization marcar English + **Kb Language = English**; reabrir KB/IDE. DLL atual basta.
+- Roteiro inglês (mesmos pontos que quebraram em es): menus/Wizard/Resumen; informe (Folder e B056 inteiros); sync sem diff `No synchronization is necessary.`; sync com campo `Apply synchronization`; Output B054 `the API Object update will be handled by the Business Component preflight`; eliminar `Yes`/`No`, `Confirm deletion?`, duas colunas sem corte.
+- pt-BR desta leva de correções residuais não foi revalidado na IDE após o diálogo largo (só es).
+
+### Abas do Wizard (referência)
+
+Ordem em `PrototypeWizardDialog.cs` (~152–167): Serviços, Requests, Response, Filtros List, List (geração), Paths, Segurança, Paginação, Ordenação, Obrigatórios, SDTs, Procedures, API Object, Business Component, Metadata, Resumo.
+

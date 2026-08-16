@@ -151,7 +151,7 @@ internal sealed class PrototypeWizardDialog : Form
 
         _tabs.TabPages.Add(CreateListTab(_texts.Translate("Serviços"), _servicesList, _texts.Translate("Serviços REST do MVP. Todos iniciam habilitados.")));
         _tabs.TabPages.Add(CreateRequestTab());
-        _tabs.TabPages.Add(CreateListTab(_texts.Translate("Response"), _responseFieldsList, _texts.Translate("Campos devolvidos no response principal.")));
+        _tabs.TabPages.Add(CreateListTab(_texts.RoleLabel("Response"), _responseFieldsList, _texts.Translate("Campos devolvidos no response principal.")));
         _tabs.TabPages.Add(CreateFilterTab());
         _tabs.TabPages.Add(CreateListGenerationTab());
         _tabs.TabPages.Add(CreatePathsTab());
@@ -346,8 +346,8 @@ internal sealed class PrototypeWizardDialog : Form
         };
         split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        split.Controls.Add(CreateGroup(_texts.Translate("CreateRequest"), _createFieldsList), 0, 0);
-        split.Controls.Add(CreateGroup(_texts.Translate("UpdateRequest"), _updateFieldsList), 1, 0);
+        split.Controls.Add(CreateGroup(_texts.RoleLabel("CreateRequest"), _createFieldsList), 0, 0);
+        split.Controls.Add(CreateGroup(_texts.RoleLabel("UpdateRequest"), _updateFieldsList), 1, 0);
         tab.Controls.Add(split);
         return tab;
     }
@@ -494,7 +494,7 @@ internal sealed class PrototypeWizardDialog : Form
         var createGroup = new GroupBox
         {
             Dock = DockStyle.Fill,
-            Text = _texts.Translate("CreateRequest - Obrigatório no payload (editável)"),
+            Text = $"{_texts.RoleLabel("CreateRequest")} - {_texts.Translate("Obrigatório no payload (editável)")}",
             Padding = new Padding(8),
         };
         createGroup.Controls.Add(_createRequiredList);
@@ -502,7 +502,7 @@ internal sealed class PrototypeWizardDialog : Form
         var updateGroup = new GroupBox
         {
             Dock = DockStyle.Fill,
-            Text = _texts.Translate("UpdateRequest - Obrigatório no payload"),
+            Text = $"{_texts.RoleLabel("UpdateRequest")} - {_texts.Translate("Obrigatório no payload")}",
             Padding = new Padding(8),
         };
         updateGroup.Controls.Add(_updateRequiredText);
@@ -697,10 +697,10 @@ internal sealed class PrototypeWizardDialog : Form
         foreach (var attribute in _snapshot.Attributes)
         {
             var label = FormatAttribute(attribute);
-            AddChoice(_createFieldsList, new ChoiceItem(attribute.Name, attribute.IsPayloadEligible, label, attribute.PayloadDisabledReason), attribute.DefaultCreateSelected);
-            AddChoice(_updateFieldsList, new ChoiceItem(attribute.Name, attribute.IsUpdatePayloadEligible, label, attribute.UpdatePayloadDisabledReason), attribute.DefaultUpdateSelected);
+            AddChoice(_createFieldsList, new ChoiceItem(attribute.Name, attribute.IsPayloadEligible, label, _texts.Translate(attribute.PayloadDisabledReason), _texts.Translate("Bloqueado - Motivo: ")), attribute.DefaultCreateSelected);
+            AddChoice(_updateFieldsList, new ChoiceItem(attribute.Name, attribute.IsUpdatePayloadEligible, label, _texts.Translate(attribute.UpdatePayloadDisabledReason), _texts.Translate("Bloqueado - Motivo: ")), attribute.DefaultUpdateSelected);
             AddChoice(_responseFieldsList, new ChoiceItem(attribute.Name, true, label), attribute.DefaultResponseSelected);
-            AddChoice(_filtersList, new ChoiceItem(attribute.Name, attribute.IsFilterEligible, FormatFilter(attribute), attribute.FilterDisabledReason), attribute.DefaultFilterSelected);
+            AddChoice(_filtersList, new ChoiceItem(attribute.Name, attribute.IsFilterEligible, FormatFilter(attribute), _texts.Translate(attribute.FilterDisabledReason), _texts.Translate("Bloqueado - Motivo: ")), attribute.DefaultFilterSelected);
         }
 
         _loadingSnapshot = true;
@@ -892,7 +892,7 @@ internal sealed class PrototypeWizardDialog : Form
             return baseText;
         }
 
-        var options = new List<string> { attribute.FilterOperator };
+        var options = new List<string> { _texts.Translate(attribute.FilterOperator) };
         if (attribute.UsesPeriod)
         {
             options.Add(_texts.Translate("Período"));
@@ -1114,35 +1114,35 @@ internal sealed class PrototypeWizardDialog : Form
         var filterBlocked = CountBlocked(_filtersList);
         _summaryDecisionText.Text =
             $"Transaction: {contract.TransactionName}{Environment.NewLine}" +
-            $"Serviços: {string.Join(", ", contract.SelectedServices)}{Environment.NewLine}" +
-            $"CreateRequest: {contract.CreateFields.Count} campo(s), {createRequired} obrigatório(s) no payload{Environment.NewLine}" +
-            $"UpdateRequest: {contract.UpdateFields.Count} campo(s), {updateRequired} obrigatório(s) no payload{Environment.NewLine}" +
-            $"Required: obrigatório no payload; 400 quando ausente ou com o valor default do tipo (vazio, false ou 0){Environment.NewLine}" +
-            $"Response: {contract.ResponseFields.Count} campo(s){Environment.NewLine}" +
-            $"ListFilters: {contract.ListFilters.Count} filtro(s){Environment.NewLine}" +
+            $"{_texts.Translate("Serviços")}: {string.Join(", ", contract.SelectedServices)}{Environment.NewLine}" +
+            $"{_texts.RoleLabel("CreateRequest")}: {contract.CreateFields.Count} {_texts.Translate("campo(s)")}, {createRequired} {_texts.Translate("obrigatório(s) no payload")}{Environment.NewLine}" +
+            $"{_texts.RoleLabel("UpdateRequest")}: {contract.UpdateFields.Count} {_texts.Translate("campo(s)")}, {updateRequired} {_texts.Translate("obrigatório(s) no payload")}{Environment.NewLine}" +
+            $"Required: {_texts.Translate("obrigatório no payload; 400 quando ausente ou com o valor default do tipo (vazio, false ou 0)")}{Environment.NewLine}" +
+            $"{_texts.RoleLabel("Response")}: {contract.ResponseFields.Count} {_texts.Translate("campo(s)")}{Environment.NewLine}" +
+            $"{_texts.RoleLabel("ListFilters")}: {contract.ListFilters.Count} {_texts.Translate("filtro(s)")}{Environment.NewLine}" +
             $"ApiName: {review.ApiName}{Environment.NewLine}" +
             $"Services base path: {review.ServicesBasePath}{Environment.NewLine}" +
             $"RestPath: {review.RestPath}{Environment.NewLine}" +
-            $"Security Level: {review.SecurityLevel}{Environment.NewLine}" +
-            $"Paginação: Default={review.DefaultPageSize}, Maximum={review.MaximumPageSize}{Environment.NewLine}" +
-            $"Ordenação: {string.Join(", ", review.StaticOrder.Select(item => item.AttributeName + " " + item.Direction))}{Environment.NewLine}" +
-            $"Campos bloqueados visíveis: CreateRequest={createBlocked}, UpdateRequest={updateBlocked}, ListFilters={filterBlocked}{Environment.NewLine}" +
-            $"Business Component: IsBusinessComponent={businessComponent.IsBusinessComponent}, Status='{businessComponent.Status}', EnabledDuringWizard={businessComponent.EnabledDuringWizard}{Environment.NewLine}" +
-            $"Criar ou validar estruturas de dados: {Selection.GenerateSdts}{Environment.NewLine}" +
-            $"Criar ou validar Procedures: {Selection.GenerateProcedures}{Environment.NewLine}" +
-            $"Criar ou validar API Object: {Selection.GenerateApiObject}{Environment.NewLine}" +
-            $"Completar listagem: {Selection.ApplyList}{Environment.NewLine}" +
-            $"Gravar metadata da API: {Selection.GenerateMetadata}{Environment.NewLine}" +
-            $"Completar Get/Create/Update REST: {Selection.ApplyBusinessComponent}{Environment.NewLine}" +
-            $"Estado da geracao: {_generationContext}";
+            $"{_texts.Translate("Security Level")}: {review.SecurityLevel}{Environment.NewLine}" +
+            $"{_texts.Translate("Paginação")}: Default={review.DefaultPageSize}, Maximum={review.MaximumPageSize}{Environment.NewLine}" +
+            $"{_texts.Translate("Ordenação")}: {string.Join(", ", review.StaticOrder.Select(item => item.AttributeName + " " + item.Direction))}{Environment.NewLine}" +
+            $"{_texts.Translate("Campos bloqueados visíveis")}: CreateRequest={createBlocked}, UpdateRequest={updateBlocked}, ListFilters={filterBlocked}{Environment.NewLine}" +
+            $"Business Component: IsBusinessComponent={businessComponent.IsBusinessComponent}, Status='{_texts.Translate(businessComponent.Status)}', EnabledDuringWizard={businessComponent.EnabledDuringWizard}{Environment.NewLine}" +
+            $"{_texts.Translate("Criar ou validar estruturas de dados")}: {Selection.GenerateSdts}{Environment.NewLine}" +
+            $"{_texts.Translate("Criar ou validar Procedures")}: {Selection.GenerateProcedures}{Environment.NewLine}" +
+            $"{_texts.Translate("Criar ou validar API Object")}: {Selection.GenerateApiObject}{Environment.NewLine}" +
+            $"{_texts.Translate("Completar listagem")}: {Selection.ApplyList}{Environment.NewLine}" +
+            $"{_texts.Translate("Gravar metadata da API")}: {Selection.GenerateMetadata}{Environment.NewLine}" +
+            $"{_texts.Translate("Completar Get/Create/Update REST")}: {Selection.ApplyBusinessComponent}{Environment.NewLine}" +
+            $"{_texts.Translate("Estado da geracao")}: {_generationContext}";
         _summaryEndpointText.Text =
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
-            "Campos bloqueados ficam visíveis com motivo no fluxo do wizard." + Environment.NewLine +
-            "Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0)." + Environment.NewLine +
-            "ApiPlan sera montado em memoria ao concluir o wizard." + Environment.NewLine +
-            "Estruturas de dados, Procedures, API Object, listagem e metadata so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK." + Environment.NewLine +
-            "A opção de Business Component completa Get/Create/Update e status HTTP nas Procedures já geradas." + Environment.NewLine +
-            "A listagem completa a primeira versão paginada do endpoint; a metadata grava o File JSON inicial.";
+            _texts.Translate("Campos bloqueados ficam visíveis com motivo no fluxo do wizard.") + Environment.NewLine +
+            _texts.Translate("Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0).") + Environment.NewLine +
+            _texts.Translate("ApiPlan sera montado em memoria ao concluir o wizard.") + Environment.NewLine +
+            _texts.Translate("Estruturas de dados, Procedures, API Object, listagem e metadata so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK.") + Environment.NewLine +
+            _texts.Translate("A opção de Business Component completa Get/Create/Update e status HTTP nas Procedures já geradas.") + Environment.NewLine +
+            _texts.Translate("A listagem completa a primeira versão paginada do endpoint; a metadata grava o File JSON inicial.");
         _showingSummary = true;
         _tabs.SelectedIndex = _tabs.TabPages.Count - 1;
         RefreshCompletionCaption();
@@ -1312,7 +1312,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"Dependencia Procedures: {FormatDependencyState(procedureState, _generateProceduresCheck.Checked)}";
         _listGenerationText.Text = FormatGenerationState(apiState, _applyListCheck.Checked) + Environment.NewLine + Environment.NewLine +
             $"Dependencia API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked || businessComponentConfirmed)}" + Environment.NewLine +
-            $"Filtros planejados: {GetCheckedValues(_filtersList).Count}; Paginacao Default={_defaultPageSize.Value}, Maximum={_maximumPageSize.Value}.";
+            $"{_texts.Translate("Filtros planejados")}: {GetCheckedValues(_filtersList).Count}; {_texts.Translate("Paginacao")} Default={_defaultPageSize.Value}, Maximum={_maximumPageSize.Value}.";
         _metadataGenerationText.Text = FormatGenerationState(metadataState, _generateMetadataCheck.Checked) + Environment.NewLine + Environment.NewLine +
             $"Dependencia List/API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked || businessComponentConfirmed || _applyListCheck.Checked)}";
     }
@@ -1423,7 +1423,7 @@ internal sealed class PrototypeWizardDialog : Form
             return;
         }
 
-        checkBox.Text = $"{_texts.Translate("Confirmar")}: {state.Action} {FormatGenerationStageName(state.StageName)} {_texts.Translate("ao concluir")}";
+        checkBox.Text = $"{_texts.Translate("Confirmar")}: {_texts.Translate(state.Action)} {FormatGenerationStageName(state.StageName)} {_texts.Translate("ao concluir")}";
         checkBox.Enabled = !state.IsBlocked && dependencyConfirmed;
         if (!checkBox.Enabled)
         {
@@ -1454,7 +1454,7 @@ internal sealed class PrototypeWizardDialog : Form
         }
 
         var localizedDetail = ExtensionOutputLocalization.Translate(state.Detail, _texts.Language);
-        return $"{_texts.Translate("Estado atual da KB")}: {state.Action}{Environment.NewLine}{localizedDetail}{Environment.NewLine}{Environment.NewLine}{_texts.Translate("Confirmado para escrita")}: {confirmed}";
+        return $"{_texts.Translate("Estado atual da KB")}: {_texts.Translate(state.Action)}{Environment.NewLine}{localizedDetail}{Environment.NewLine}{Environment.NewLine}{_texts.Translate("Confirmado para escrita")}: {confirmed}";
     }
 
     private ApiPlanGenerationState? ReadGenerationState()
@@ -1553,13 +1553,13 @@ internal sealed class PrototypeWizardDialog : Form
     private void RefreshBusinessComponentText()
     {
         var effectiveStatus = IsBusinessComponentReady()
-            ? "Apta via Business Component"
-            : _businessComponentSnapshot.Status;
+            ? _texts.Translate("Apta via Business Component")
+            : _texts.Translate(_businessComponentSnapshot.Status);
         _businessComponentText.Text =
             $"Transaction: {_businessComponentSnapshot.TransactionName}{Environment.NewLine}" +
             $"IsBusinessComponent: {IsBusinessComponentReady()}{Environment.NewLine}" +
             $"Status: {effectiveStatus}{Environment.NewLine}{Environment.NewLine}" +
-            "Sem Business Component, a habilitação e a aplicação REST de Get/Create/Update ficam bloqueadas. O wizard pode continuar para etapas que não exigem habilitar essa propriedade. A habilitação exige confirmação explícita e altera a Transaction na KB; cancelar o wizard depois disso não reverte automaticamente a propriedade.";
+            _texts.Translate("Sem Business Component, a habilitação e a aplicação REST de Get/Create/Update ficam bloqueadas. O wizard pode continuar para etapas que não exigem habilitar essa propriedade. A habilitação exige confirmação explícita e altera a Transaction na KB; cancelar o wizard depois disso não reverte automaticamente a propriedade.");
         _enableBusinessComponentCheck.Enabled = !_businessComponentSnapshot.IsBusinessComponent && !_businessComponentEnabledDuringWizard;
         _enableBusinessComponentCheck.Visible = !_businessComponentSnapshot.IsBusinessComponent;
         ApplyBusinessComponentControlState();
@@ -1688,7 +1688,7 @@ internal sealed class PrototypeWizardDialog : Form
     private string FormatCreateRequiredChoiceLabel(string fieldName, bool isRequired)
     {
         var decision = BuildCreateRequiredDecision(fieldName, isRequired);
-        return $"{fieldName}: Required={decision.IsRequired} | {decision.Reason}";
+        return $"{fieldName}: Required={decision.IsRequired} | {_texts.Translate(decision.Reason)}";
     }
 
     private IReadOnlyList<PrototypeWizardRequiredFieldDecision> GetRequiredDecisions(PrototypeWizardContractSelection selection)
@@ -1820,12 +1820,13 @@ internal sealed class PrototypeWizardDialog : Form
 
     private sealed class ChoiceItem
     {
-        public ChoiceItem(string value, bool enabled, string label, string? disabledReason = null)
+        public ChoiceItem(string value, bool enabled, string label, string? disabledReason = null, string blockedPrefix = "Bloqueado - Motivo: ")
         {
             Value = value;
             Enabled = enabled;
             Label = label;
             DisabledReason = disabledReason;
+            BlockedPrefix = blockedPrefix;
         }
 
         public string Value { get; }
@@ -1836,6 +1837,8 @@ internal sealed class PrototypeWizardDialog : Form
 
         public string? DisabledReason { get; }
 
+        public string BlockedPrefix { get; }
+
         public override string ToString()
         {
             if (Enabled || string.IsNullOrWhiteSpace(DisabledReason))
@@ -1843,7 +1846,7 @@ internal sealed class PrototypeWizardDialog : Form
                 return Label;
             }
 
-            return Label + " [Bloqueado - Motivo: " + DisabledReason + "]";
+            return Label + " [" + BlockedPrefix + DisabledReason + "]";
         }
     }
 }

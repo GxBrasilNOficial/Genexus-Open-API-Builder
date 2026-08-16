@@ -75,7 +75,7 @@ internal sealed class PrototypeWizardContractDialog : Form
 
         _tabs.TabPages.Add(CreateListTab(_texts.Translate("Servicos"), _servicesList, _texts.Translate("Servicos REST do MVP. Todos iniciam habilitados.")));
         _tabs.TabPages.Add(CreateRequestTab());
-        _tabs.TabPages.Add(CreateListTab(_texts.Translate("Response"), _responseFieldsList, _texts.Translate("Campos devolvidos no response principal.")));
+        _tabs.TabPages.Add(CreateListTab(_texts.RoleLabel("Response"), _responseFieldsList, _texts.Translate("Campos devolvidos no response principal.")));
         _tabs.TabPages.Add(CreateListTab(_texts.Translate("Filtros List"), _filtersList, _texts.Translate("Filtros candidatos para o servico List.")));
         _tabs.TabPages.Add(CreateListTab(_texts.Translate("Resumo B032"), _summaryText, _texts.Translate("Resumo das decisoes acumuladas. B032 ainda nao executa nada na KB.")));
         root.Controls.Add(_tabs, 0, 1);
@@ -178,8 +178,8 @@ internal sealed class PrototypeWizardContractDialog : Form
         };
         split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        split.Controls.Add(CreateGroup(_texts.Translate("CreateRequest"), _createFieldsList), 0, 0);
-        split.Controls.Add(CreateGroup(_texts.Translate("UpdateRequest"), _updateFieldsList), 1, 0);
+        split.Controls.Add(CreateGroup(_texts.RoleLabel("CreateRequest"), _createFieldsList), 0, 0);
+        split.Controls.Add(CreateGroup(_texts.RoleLabel("UpdateRequest"), _updateFieldsList), 1, 0);
         tab.Controls.Add(split);
         return tab;
     }
@@ -206,10 +206,10 @@ internal sealed class PrototypeWizardContractDialog : Form
         foreach (var attribute in _snapshot.Attributes)
         {
             var label = FormatAttribute(attribute);
-            AddChoice(_createFieldsList, new ChoiceItem(attribute.Name, attribute.IsPayloadEligible, label, attribute.PayloadDisabledReason), attribute.DefaultCreateSelected);
-            AddChoice(_updateFieldsList, new ChoiceItem(attribute.Name, attribute.IsUpdatePayloadEligible, label, attribute.UpdatePayloadDisabledReason), attribute.DefaultUpdateSelected);
+            AddChoice(_createFieldsList, new ChoiceItem(attribute.Name, attribute.IsPayloadEligible, label, _texts.Translate(attribute.PayloadDisabledReason)), attribute.DefaultCreateSelected);
+            AddChoice(_updateFieldsList, new ChoiceItem(attribute.Name, attribute.IsUpdatePayloadEligible, label, _texts.Translate(attribute.UpdatePayloadDisabledReason)), attribute.DefaultUpdateSelected);
             AddChoice(_responseFieldsList, new ChoiceItem(attribute.Name, true, label), attribute.DefaultResponseSelected);
-            AddChoice(_filtersList, new ChoiceItem(attribute.Name, attribute.IsFilterEligible, FormatFilter(attribute), attribute.FilterDisabledReason), attribute.DefaultFilterSelected);
+            AddChoice(_filtersList, new ChoiceItem(attribute.Name, attribute.IsFilterEligible, FormatFilter(attribute), _texts.Translate(attribute.FilterDisabledReason)), attribute.DefaultFilterSelected);
         }
     }
 
@@ -258,7 +258,7 @@ internal sealed class PrototypeWizardContractDialog : Form
             return baseText;
         }
 
-        var options = new List<string> { attribute.FilterOperator };
+        var options = new List<string> { _texts.Translate(attribute.FilterOperator) };
         if (attribute.UsesPeriod)
         {
             options.Add(_texts.Translate("Periodo"));

@@ -166,9 +166,9 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
         };
         root.Controls.Add(headline, 0, 0);
 
-        _bodyBox.Text = ExtensionOutputLocalization.Translate(
-            _report.BuildReadableBody(includeHeadline: false),
-            _texts.Language);
+        _bodyBox.Text = _report.BuildReadableBody(
+            includeHeadline: false,
+            localize: message => ExtensionOutputLocalization.Translate(message, _texts.Language));
         root.Controls.Add(_bodyBox, 0, 1);
 
         var buttons = new FlowLayoutPanel

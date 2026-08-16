@@ -68,4 +68,28 @@ $baselineEnglish = $translate.Invoke($null, [object[]] @($baselineMessage, $engl
 Assert-True ($baselineEnglish.Contains('Intentional Wizard/Synchronize changes update this baseline')) 'Inglês deve explicar a diferença entre mudança intencional e edição direta.'
 Assert-True (-not $baselineEnglish.Contains('Alteracoes deliberadas')) 'Inglês não deve manter o aviso de baseline em português.'
 
+$generationDetail = "Reencontrar e validar: gerenciados=8, ausentes=0, planejados=8. A confirmacao continua obrigatoria antes de qualquer escrita. Folder preexistente 'NotaFiscalOpenApi' no contenedor correto sera reutilizado; a Description existente sera preservada e o Folder nunca sera removido pela remocao desta API."
+$generationSpanish = $translate.Invoke($null, [object[]] @($generationDetail, $spanish))
+Assert-True ($generationSpanish.Contains('Reencontrar y validar')) 'Espanhol deve traduzir a ação de reencontro.'
+Assert-True ($generationSpanish.Contains('planificados=8')) 'Espanhol deve traduzir planejados.'
+Assert-True ($generationSpanish.Contains('La confirmación sigue siendo obligatoria')) 'Espanhol deve traduzir a confirmação obrigatória.'
+Assert-True ($generationSpanish.Contains('Carpeta preexistente')) 'Espanhol deve traduzir o aviso de Folder reutilizado.'
+Assert-True (-not $generationSpanish.Contains('planejados=')) 'Espanhol não deve manter planejados.'
+
+$prefsLoaded = "Preferencias do wizard carregadas da KB ativa: File='GxOpenApiBuilder_Settings'."
+$prefsSpanish = $translate.Invoke($null, [object[]] @($prefsLoaded, $spanish))
+Assert-True ($prefsSpanish.Contains('Preferencias del wizard cargadas de la KB activa:')) 'Espanhol deve traduzir o carregamento das preferências.'
+
+$syncHeadline = 'Nenhuma sincronizacao necessaria.'
+$syncHeadlineSpanish = $translate.Invoke($null, [object[]] @($syncHeadline, $spanish))
+Assert-True ($syncHeadlineSpanish -eq 'Ninguna sincronización necesaria.') 'Espanhol deve traduzir o título de sincronização sem diferença.'
+Assert-True (-not $syncHeadlineSpanish.Contains('Ningúna')) 'Espanhol não deve corromper Nenhuma via replace de Nenhum.'
+Assert-True (-not $syncHeadlineSpanish.Contains('sincronizacao')) 'Espanhol não deve manter sincronizacao em português.'
+
+$apiObjectExists = "API Object ja existe para Transaction='NotaFiscal'. Como B071-B073/B079 tambem foi confirmado, a atualizacao do API Object sera absorvida pelo preflight de Business Component."
+$apiObjectExistsSpanish = $translate.Invoke($null, [object[]] @($apiObjectExists, $spanish))
+Assert-True ($apiObjectExistsSpanish.Contains('ya existe para')) 'Espanhol deve traduzir ja existe para.'
+Assert-True ($apiObjectExistsSpanish.Contains('la actualización del API Object será absorbida')) 'Espanhol deve traduzir a atualização residual em minúsculas.'
+Assert-True (-not $apiObjectExistsSpanish.Contains('atualizacao')) 'Espanhol não deve manter atualizacao em português.'
+
 Write-Output 'PASS: ExtensionOutputLocalization'

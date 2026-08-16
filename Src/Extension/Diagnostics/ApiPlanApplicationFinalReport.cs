@@ -87,38 +87,40 @@ public sealed class ApiPlanApplicationFinalReport
         return builder.ToString();
     }
 
-    public string BuildReadableBody(bool includeHeadline = true)
+    public string BuildReadableBody(bool includeHeadline = true, Func<string, string>? localize = null)
     {
+        string Localize(string value) => localize is null ? value : localize(value);
+
         var builder = new StringBuilder();
         if (includeHeadline)
         {
-            builder.AppendLine(Headline);
+            builder.AppendLine(Localize(Headline));
             builder.AppendLine();
         }
 
-        builder.AppendLine($"Operação: {Operation}");
+        builder.AppendLine(Localize($"Operação: {Operation}"));
         builder.AppendLine($"Transaction: {TransactionName}");
         if (!string.IsNullOrWhiteSpace(ApiName))
         {
             builder.AppendLine($"API: {ApiName}");
         }
 
-        builder.AppendLine($"Tempo: {FormatElapsed(Elapsed)}");
+        builder.AppendLine(Localize($"Tempo: {FormatElapsed(Elapsed)}"));
         builder.AppendLine();
-        AppendSection(builder, "Criados", Created);
-        AppendSection(builder, "Atualizados", Updated);
-        AppendSection(builder, "Removidos", Deleted);
-        AppendSection(builder, "Bloqueados", Blocked);
+        AppendSection(builder, "Criados", Created, Localize);
+        AppendSection(builder, "Atualizados", Updated, Localize);
+        AppendSection(builder, "Removidos", Deleted, Localize);
+        AppendSection(builder, "Bloqueados", Blocked, Localize);
         if (Warnings.Count == 0)
         {
-            builder.AppendLine("Avisos: (nenhum)");
+            builder.AppendLine(Localize("Avisos: (nenhum)"));
         }
         else
         {
-            builder.AppendLine($"Avisos ({Warnings.Count}):");
+            builder.AppendLine(Localize($"Avisos ({Warnings.Count}):"));
             foreach (var warning in Warnings)
             {
-                foreach (var line in WrapText("  - " + warning, 96))
+                foreach (var line in WrapText("  - " + Localize(warning), 96))
                 {
                     builder.AppendLine(line);
                 }
@@ -128,20 +130,24 @@ public sealed class ApiPlanApplicationFinalReport
         return builder.ToString().TrimEnd();
     }
 
-    private static void AppendSection(StringBuilder builder, string title, IReadOnlyList<ApiPlanApplicationFinalReportItem> items)
+    private static void AppendSection(
+        StringBuilder builder,
+        string title,
+        IReadOnlyList<ApiPlanApplicationFinalReportItem> items,
+        Func<string, string> localize)
     {
         if (items.Count == 0)
         {
-            builder.AppendLine($"{title}: (nenhum)");
+            builder.AppendLine(localize($"{title}: (nenhum)"));
             builder.AppendLine();
             return;
         }
 
-        builder.AppendLine($"{title} ({items.Count}):");
+        builder.AppendLine(localize($"{title} ({items.Count}):"));
         foreach (var item in items)
         {
             var detail = string.IsNullOrWhiteSpace(item.Detail) ? string.Empty : $" — {item.Detail}";
-            foreach (var line in WrapText($"  - [{item.ObjectKind}] {item.Name}{detail}", 96))
+            foreach (var line in WrapText(localize($"  - [{item.ObjectKind}] {item.Name}{detail}"), 96))
             {
                 builder.AppendLine(line);
             }

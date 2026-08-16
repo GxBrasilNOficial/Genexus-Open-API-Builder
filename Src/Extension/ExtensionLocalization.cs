@@ -126,8 +126,22 @@ internal sealed class ExtensionTexts
     public string OpenMainObject => Language switch
     {
         ExtensionLanguage.PortugueseBrazil => "Abrir objeto principal",
-        ExtensionLanguage.Spanish => "Abrir objeto principal",
+        ExtensionLanguage.Spanish => "Abrir el objeto principal",
         _ => "Open main object",
+    };
+
+    public string Yes => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Sim",
+        ExtensionLanguage.Spanish => "Sí",
+        _ => "Yes",
+    };
+
+    public string No => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Não",
+        ExtensionLanguage.Spanish => "No",
+        _ => "No",
     };
 
     public string RemovalConfirmationIntro => Language switch
@@ -144,11 +158,21 @@ internal sealed class ExtensionTexts
         _ => "Confirm deletion?",
     };
 
+    public string RoleLabel(string role)
+    {
+        return ExtensionUiTerms.RoleLabel(Language, role);
+    }
+
     public string Translate(string source)
     {
-        if (Language == ExtensionLanguage.PortugueseBrazil || string.IsNullOrEmpty(source))
+        if (string.IsNullOrEmpty(source))
         {
             return source;
+        }
+
+        if (Language == ExtensionLanguage.PortugueseBrazil)
+        {
+            return ExtensionUiTerms.PortugueseChrome(source);
         }
 
         return Language == ExtensionLanguage.Spanish
@@ -190,6 +214,8 @@ internal sealed class ExtensionTexts
                 "Paths dos serviços" => "Rutas de los servicios",
                 "CreateRequest - Obrigatório no payload (editável)" => "CreateRequest - Obligatorio en el payload (editable)",
                 "UpdateRequest - Obrigatório no payload" => "UpdateRequest - Obligatorio en el payload",
+                "Obrigatório no payload (editável)" => "Obligatorio en el payload (editable)",
+                "Obrigatório no payload" => "Obligatorio en el payload",
                 "Revise os SDTs planejados. A escrita so sera executada ao concluir o wizard se esta confirmacao estiver marcada e o preflight tecnico estiver OK." => "Revise los SDTs planificados. La escritura solo se ejecutará al finalizar el wizard si esta confirmación está marcada y el preflight técnico está correcto.",
                 "Revise as Procedures planejadas. Esta etapa depende das estruturas de dados ja confirmadas ou reencontraveis na KB ativa." => "Revise las Procedures planificadas. Esta etapa depende de las estructuras de datos ya confirmadas o recuperables en la KB activa.",
                 "Revise o API Object planejado. Esta etapa depende das estruturas de dados e das Procedures ja confirmadas ou reencontraveis na KB ativa." => "Revise el API Object planificado. Esta etapa depende de las estructuras de datos y las Procedures ya confirmadas o recuperables en la KB activa.",
@@ -269,6 +295,7 @@ internal sealed class ExtensionTexts
                 "Ordenacao estatica inicial. A chave primaria completa e acrescentada como desempate ascendente." => "Ordenación estática inicial. La clave primaria completa se añade como desempate ascendente.",
                 "Ordenação estática inicial. A chave primária completa é acrescentada como desempate ascendente." => "Ordenación estática inicial. La clave primaria completa se añade como desempate ascendente.",
                 "Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0). Chave primária não autonumerada inicia opcional no Create; marque aqui se quiser exigir o valor no payload." => "Required marca el miembro obligatorio en el payload: Create/Update responden 400 cuando llega ausente o con el valor predeterminado del tipo (vacío, false o 0). La clave primaria no autonumerada comienza opcional en Create; márquela aquí si desea exigir el valor en el payload.",
+                "Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0)." => "Required marca el miembro obligatorio en el payload: Create/Update responden 400 cuando llega ausente o con el valor predeterminado del tipo (vacío, false o 0).",
                 "Business Component preserva as regras da Transaction. A confirmação abaixo completa Get, Create e Update nas Procedures já geradas e sincroniza o API Object; não cria novos objetos." => "Business Component conserva las reglas de la Transaction. La confirmación completa Get, Create y Update en las Procedures ya generadas y sincroniza el API Object; no crea objetos nuevos.",
                 "SDTs planejados" => "SDTs planificados",
                 "Procedures planejadas" => "Procedures planificadas",
@@ -286,6 +313,47 @@ internal sealed class ExtensionTexts
                 "Período" => "Período",
                 "Sensível" => "Sensible",
                 "Fórmula" => "Fórmula",
+                "Reencontrar e validar" => "Reencontrar y validar",
+                "Criar" => "Crear",
+                "Completar" => "Completar",
+                "Contem" => "Contiene",
+                "Igual" => "Igual",
+                "ComecaCom" => "Empieza con",
+                "Começa com" => "Empieza con",
+                "Bloqueado - Motivo: " => "Bloqueado - Motivo: ",
+                "Desabilitado em request: regra NoAccept torna o atributo somente leitura via BC" => "Deshabilitado en request: la regla NoAccept deja el atributo de solo lectura vía BC",
+                "Desabilitado no CreateRequest: chave primaria autonumerada pelo BC" => "Deshabilitado en CreateRequest: clave primaria autonumerada por el BC",
+                "Desabilitado em request: auditoria operacional" => "Deshabilitado en request: auditoría operacional",
+                "Desabilitado no UpdateRequest: chave primaria fica no RestPath" => "Deshabilitado en UpdateRequest: la clave primaria queda en el RestPath",
+                "Desabilitado: atributo redundante" => "Deshabilitado: atributo redundante",
+                "Desabilitado: formula nao atribuivel via BC" => "Deshabilitado: fórmula no asignable vía BC",
+                "Desabilitado: tipo tecnico inadequado" => "Deshabilitado: tipo técnico inadecuado",
+                "campo(s)" => "campo(s)",
+                "filtro(s)" => "filtro(s)",
+                "obrigatório(s) no payload" => "obligatorio(s) en el payload",
+                "obrigatório no payload; 400 quando ausente ou com o valor default do tipo (vazio, false ou 0)" => "obligatorio en el payload; 400 cuando falta o tiene el valor predeterminado del tipo (vacío, false o 0)",
+                "Campos bloqueados visíveis" => "Campos bloqueados visibles",
+                "Criar ou validar estruturas de dados" => "Crear o validar estructuras de datos",
+                "Criar ou validar Procedures" => "Crear o validar Procedures",
+                "Criar ou validar API Object" => "Crear o validar API Object",
+                "Completar listagem" => "Completar el listado",
+                "Gravar metadata da API" => "Guardar metadatos de la API",
+                "Completar Get/Create/Update REST" => "Completar Get/Create/Update REST",
+                "Estado da geracao" => "Estado de la generación",
+                "Campos bloqueados ficam visíveis com motivo no fluxo do wizard." => "Los campos bloqueados quedan visibles con motivo en el flujo del wizard.",
+                "ApiPlan sera montado em memoria ao concluir o wizard." => "El ApiPlan se montará en memoria al finalizar el wizard.",
+                "Estruturas de dados, Procedures, API Object, listagem e metadata so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK." => "Las estructuras de datos, Procedures, API Object, listado y metadatos solo se escribirán si las pestañas respectivas están confirmadas y el preflight técnico está correcto.",
+                "A opção de Business Component completa Get/Create/Update e status HTTP nas Procedures já geradas." => "La opción de Business Component completa Get/Create/Update y el estado HTTP en las Procedures ya generadas.",
+                "A listagem completa a primeira versão paginada do endpoint; a metadata grava o File JSON inicial." => "El listado completa la primera versión paginada del endpoint; los metadatos graban el File JSON inicial.",
+                "Apta via Business Component" => "Apta mediante Business Component",
+                "Sem Business Component, a habilitação e a aplicação REST de Get/Create/Update ficam bloqueadas. O wizard pode continuar para etapas que não exigem habilitar essa propriedade. A habilitação exige confirmação explícita e altera a Transaction na KB; cancelar o wizard depois disso não reverte automaticamente a propriedade." => "Sin Business Component, la habilitación y la aplicación REST de Get/Create/Update quedan bloqueadas. El wizard puede continuar en etapas que no exigen habilitar esa propiedad. La habilitación exige confirmación explícita y altera la Transaction en la KB; cancelar el wizard después no revierte automáticamente la propiedad.",
+                "Filtros planejados" => "Filtros planificados",
+                "Campo marcado como obrigatório no payload; ausente ou com o valor default do tipo (vazio, false ou 0) devolve 400." => "Campo marcado como obligatorio en el payload; ausente o con el valor predeterminado del tipo (vacío, false o 0) devuelve 400.",
+                "Campo sensível selecionado permanece opcional no protótipo; se enviado, o valor é validado pelo BC." => "El campo sensible seleccionado permanece opcional en el prototipo; si se envía, el valor lo valida el BC.",
+                "Chave primária não autonumerada inicia opcional no CreateRequest; omitida ou com default do tipo fica a cargo do BC/rules. Marque para exigir no payload." => "La clave primaria no autonumerada comienza opcional en CreateRequest; omitida o con el valor predeterminado del tipo queda a cargo del BC/rules. Márquela para exigirla en el payload.",
+                "Campo nullable pode ser omitido; valor vazio presente continua valor enviado e sujeito ao BC." => "El campo nullable puede omitirse; un valor vacío presente sigue siendo valor enviado y sujeto al BC.",
+                "Campo opcional no CreateRequest; omitido ou com default do tipo fica a cargo do BC/rules." => "Campo opcional en CreateRequest; omitido o con el valor predeterminado del tipo queda a cargo del BC/rules.",
+                "Update via PUT exige todo membro selecionado preenchido; ausente ou com o valor default do tipo (vazio, false ou 0) devolve 400." => "Update vía PUT exige todo miembro seleccionado completado; ausente o con el valor predeterminado del tipo (vacío, false o 0) devuelve 400.",
                 _ => source,
             }
             : source switch
@@ -325,6 +393,8 @@ internal sealed class ExtensionTexts
                 "Paths dos serviços" => "Service paths",
                 "CreateRequest - Obrigatório no payload (editável)" => "CreateRequest - Required in payload (editable)",
                 "UpdateRequest - Obrigatório no payload" => "UpdateRequest - Required in payload",
+                "Obrigatório no payload (editável)" => "Required in payload (editable)",
+                "Obrigatório no payload" => "Required in payload",
                 "Revise os SDTs planejados. A escrita so sera executada ao concluir o wizard se esta confirmacao estiver marcada e o preflight tecnico estiver OK." => "Review the planned SDTs. Writing occurs on wizard completion only when this confirmation is selected and the technical preflight is successful.",
                 "Revise as Procedures planejadas. Esta etapa depende das estruturas de dados ja confirmadas ou reencontraveis na KB ativa." => "Review the planned Procedures. This step depends on data structures already confirmed or recoverable in the active KB.",
                 "Revise o API Object planejado. Esta etapa depende das estruturas de dados e das Procedures ja confirmadas ou reencontraveis na KB ativa." => "Review the planned API Object. This step depends on data structures and Procedures already confirmed or recoverable in the active KB.",
@@ -405,6 +475,7 @@ internal sealed class ExtensionTexts
                 "Ordenacao estatica inicial. A chave primaria completa e acrescentada como desempate ascendente." => "Initial static ordering. The complete primary key is added as an ascending tiebreaker.",
                 "Ordenação estática inicial. A chave primária completa é acrescentada como desempate ascendente." => "Initial static ordering. The complete primary key is added as an ascending tiebreaker.",
                 "Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0). Chave primária não autonumerada inicia opcional no Create; marque aqui se quiser exigir o valor no payload." => "Required marks a member as mandatory in the payload: Create/Update return 400 when it is absent or has the type default value (empty, false, or 0). A non-autonumbered primary key starts optional in Create; select it here to require it in the payload.",
+                "Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0)." => "Required marks a member as mandatory in the payload: Create/Update return 400 when it is absent or has the type default value (empty, false, or 0).",
                 "Business Component preserva as regras da Transaction. A confirmação abaixo completa Get, Create e Update nas Procedures já geradas e sincroniza o API Object; não cria novos objetos." => "Business Component preserves the Transaction rules. The confirmation completes Get, Create, and Update in the generated Procedures and synchronizes the API Object; it does not create new objects.",
                 "SDTs planejados" => "Planned SDTs",
                 "Procedures planejadas" => "Planned Procedures",
@@ -422,6 +493,47 @@ internal sealed class ExtensionTexts
                 "Período" => "Period",
                 "Sensível" => "Sensitive",
                 "Fórmula" => "Formula",
+                "Reencontrar e validar" => "Re-encounter and validate",
+                "Criar" => "Create",
+                "Completar" => "Complete",
+                "Contem" => "Contains",
+                "Igual" => "Equals",
+                "ComecaCom" => "Starts with",
+                "Começa com" => "Starts with",
+                "Bloqueado - Motivo: " => "Blocked - Reason: ",
+                "Desabilitado em request: regra NoAccept torna o atributo somente leitura via BC" => "Disabled in request: NoAccept rule makes the attribute read-only via BC",
+                "Desabilitado no CreateRequest: chave primaria autonumerada pelo BC" => "Disabled in CreateRequest: primary key autonumbered by the BC",
+                "Desabilitado em request: auditoria operacional" => "Disabled in request: operational audit",
+                "Desabilitado no UpdateRequest: chave primaria fica no RestPath" => "Disabled in UpdateRequest: primary key stays in the RestPath",
+                "Desabilitado: atributo redundante" => "Disabled: redundant attribute",
+                "Desabilitado: formula nao atribuivel via BC" => "Disabled: formula not assignable via BC",
+                "Desabilitado: tipo tecnico inadequado" => "Disabled: inadequate technical type",
+                "campo(s)" => "field(s)",
+                "filtro(s)" => "filter(s)",
+                "obrigatório(s) no payload" => "required in payload",
+                "obrigatório no payload; 400 quando ausente ou com o valor default do tipo (vazio, false ou 0)" => "required in payload; 400 when missing or set to the type default (empty, false, or 0)",
+                "Campos bloqueados visíveis" => "Blocked fields visible",
+                "Criar ou validar estruturas de dados" => "Create or validate data structures",
+                "Criar ou validar Procedures" => "Create or validate Procedures",
+                "Criar ou validar API Object" => "Create or validate API Object",
+                "Completar listagem" => "Complete listing",
+                "Gravar metadata da API" => "Save API metadata",
+                "Completar Get/Create/Update REST" => "Complete Get/Create/Update REST",
+                "Estado da geracao" => "Generation state",
+                "Campos bloqueados ficam visíveis com motivo no fluxo do wizard." => "Blocked fields remain visible with a reason in the wizard flow.",
+                "ApiPlan sera montado em memoria ao concluir o wizard." => "The ApiPlan will be built in memory when the wizard finishes.",
+                "Estruturas de dados, Procedures, API Object, listagem e metadata so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK." => "Data structures, Procedures, API Object, listing, and metadata are written only if the respective tabs are confirmed and the technical preflight succeeds.",
+                "A opção de Business Component completa Get/Create/Update e status HTTP nas Procedures já geradas." => "The Business Component option completes Get/Create/Update and HTTP status in the already generated Procedures.",
+                "A listagem completa a primeira versão paginada do endpoint; a metadata grava o File JSON inicial." => "Listing completes the first paginated version of the endpoint; metadata writes the initial JSON File.",
+                "Apta via Business Component" => "Ready via Business Component",
+                "Sem Business Component, a habilitação e a aplicação REST de Get/Create/Update ficam bloqueadas. O wizard pode continuar para etapas que não exigem habilitar essa propriedade. A habilitação exige confirmação explícita e altera a Transaction na KB; cancelar o wizard depois disso não reverte automaticamente a propriedade." => "Without Business Component, enabling and applying Get/Create/Update REST remain blocked. The wizard can continue with stages that do not require enabling that property. Enabling requires explicit confirmation and changes the Transaction in the KB; canceling the wizard afterwards does not automatically revert the property.",
+                "Filtros planejados" => "Planned filters",
+                "Campo marcado como obrigatório no payload; ausente ou com o valor default do tipo (vazio, false ou 0) devolve 400." => "Field marked as required in the payload; missing or set to the type default (empty, false, or 0) returns 400.",
+                "Campo sensível selecionado permanece opcional no protótipo; se enviado, o valor é validado pelo BC." => "The selected sensitive field remains optional in the prototype; if sent, the value is validated by the BC.",
+                "Chave primária não autonumerada inicia opcional no CreateRequest; omitida ou com default do tipo fica a cargo do BC/rules. Marque para exigir no payload." => "A non-autonumbered primary key starts optional in CreateRequest; omitted or with the type default is left to the BC/rules. Select it to require it in the payload.",
+                "Campo nullable pode ser omitido; valor vazio presente continua valor enviado e sujeito ao BC." => "A nullable field may be omitted; an empty value that is present remains a sent value and is subject to the BC.",
+                "Campo opcional no CreateRequest; omitido ou com default do tipo fica a cargo do BC/rules." => "Optional field in CreateRequest; omitted or with the type default is left to the BC/rules.",
+                "Update via PUT exige todo membro selecionado preenchido; ausente ou com o valor default do tipo (vazio, false ou 0) devolve 400." => "Update via PUT requires every selected member to be filled; missing or set to the type default (empty, false, or 0) returns 400.",
                 _ => source,
             };
     }
