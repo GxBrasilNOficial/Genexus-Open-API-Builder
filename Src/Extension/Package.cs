@@ -1198,6 +1198,8 @@ public sealed class Package : AbstractPackageUI
             ? "Business Component foi habilitado por confirmacao explicita antes da saida; essa alteracao foi gravada na KB e nao foi revertida automaticamente."
             : "Nenhuma alteracao foi feita na KB.";
 
+        // O wizard único não emite mais Retry: a primeira aba oculta Voltar.
+        // O ramo permanece para um DialogResult residual e para os diálogos B031/B032.
         if (result == System.Windows.Forms.DialogResult.Retry)
         {
             ClearPrototypeWizardMemory(clearTransaction: true);

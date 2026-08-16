@@ -64,6 +64,7 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly TabControl _tabs = new() { Dock = DockStyle.Fill, Multiline = true };
 
     private Button? _nextButton;
+    private Button? _backButton;
     private bool _showingSummary;
     private bool _loadingSnapshot;
     private bool _servicesBasePathEditedManually;
@@ -184,12 +185,14 @@ internal sealed class PrototypeWizardDialog : Form
         var cancel = CreateButton(_texts.Cancel);
         cancel.Click += (_, _) => CancelWizard();
         var back = CreateButton(_texts.Back);
+        _backButton = back;
         back.Click += (_, _) => GoBack();
 
         buttons.Controls.Add(next);
         buttons.Controls.Add(cancel);
         buttons.Controls.Add(back);
         root.Controls.Add(buttons, 0, 2);
+        RefreshBackButton();
 
         AcceptButton = next;
         CancelButton = cancel;
@@ -211,6 +214,17 @@ internal sealed class PrototypeWizardDialog : Form
         var tabName = selectedPage?.Text;
         var currentTab = string.IsNullOrWhiteSpace(tabName) ? _texts.Translate("<nenhuma>") : tabName;
         _headerLabel.Text = $"{_texts.Translate("Wizard")}: Module '{_snapshot.ModuleName}' | Transaction '{_snapshot.TransactionName}' | {_generationContext} | {_texts.Translate("Aba atual")}: {currentTab}";
+        RefreshBackButton();
+    }
+
+    private void RefreshBackButton()
+    {
+        if (_backButton is null)
+        {
+            return;
+        }
+
+        _backButton.Visible = _tabs.SelectedIndex > 0;
     }
     private static Button CreateButton(string text)
     {
@@ -1169,16 +1183,16 @@ internal sealed class PrototypeWizardDialog : Form
             {
                 _nextButton.Text = _texts.Next;
             }
+
             return;
         }
-        if (_tabs.SelectedIndex > 0)
+
+        if (_tabs.SelectedIndex <= 0)
         {
-            _tabs.SelectedIndex--;
             return;
         }
-        Selection = null;
-        DialogResult = DialogResult.Retry;
-        Close();
+
+        _tabs.SelectedIndex--;
     }
     private void CancelWizard()
     {

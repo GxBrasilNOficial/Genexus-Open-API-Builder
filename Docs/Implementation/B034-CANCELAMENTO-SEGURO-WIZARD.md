@@ -12,7 +12,7 @@ Implementar e validar o comportamento de cancelamento seguro do prototipo navega
 
 - o fechamento implicito da janela do wizard unico, incluindo `X` e Alt+F4, passa a ser tratado como cancelamento;
 - o cancelamento pelo botao `Cancelar` e pela tecla Esc descarta a selecao consolidada do wizard;
-- `Voltar` no inicio do wizard descarta a `Transaction` selecionada e as decisoes em memoria;
+- `Voltar` no inicio do wizard descarta a `Transaction` selecionada e as decisoes em memoria (evidencia 2026-07-22). Nota posterior 2026-08-16: na primeira aba do wizard unico o botao `Voltar` fica oculto; a saida sem concluir nessa tela e `Cancelar`, Esc ou fechar a janela. `Voltar` so aparece a partir da segunda aba e retrocede uma pagina, sem abortar o fluxo;
 - cancelar o seletor nativo de `Transaction` tambem limpa estado anterior do wizard;
 - falhas de resolucao de `Transaction`, ausencia de dialogo publico de selecao ou ausencia de modulo limpam o estado anterior do wizard;
 - o estado unificado `PrototypeWizardFlowSessionState` e sempre limpo nas saidas de cancelamento;

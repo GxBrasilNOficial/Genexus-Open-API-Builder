@@ -27,6 +27,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 - Relatório final e confirmação em espanhol (2026-08-15): o título “Ningúna sincronizacao necessaria” vinha de `Nenhum` substituir o prefixo de `Nenhuma`; avisos longos quebrados a 96 colunas perdiam o restante da frase no diálogo; o parágrafo curto de Required no Resumen e o leftover `a atualizacao do API Object` no B054 ficavam em português; o MessageBox de eliminação usava Sim/Não do Windows. A tradução agora ocorre antes da quebra de linha, o catálogo cobre as frases faltantes e a confirmação B086 usa botões Sí/No da extensão, com altura ajustada ao texto (como o MessageBox anterior).
 - Fingerprint da metadata B060 (2026-08-16): a relitura do File passava `generatedAtUtc` por `JObject.Parse`, que converte ISO-8601 em `DateTime` e, ao compactar de novo, corta zeros fracionários (`ToString("O")` vs formato ISO do Newtonsoft). O parse da metadata passou a `DateParseHandling.None`; a conferência SHA-256 permanece.
+- Output de aborto do Wizard (2026-08-16): Voltar/Cancelar/fechar no wizard único e nos passos B031/B032, mais a saída de Business Component, passam pelo catálogo em espanhol e inglês.
+- Primeira aba do Wizard (2026-08-16): o botão Voltar/Back/Atrás fica oculto; não fecha mais o diálogo. A saída sem concluir nessa tela continua sendo Cancelar, Esc ou fechar a janela.
 
 ---
 

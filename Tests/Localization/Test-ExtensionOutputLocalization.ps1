@@ -145,4 +145,53 @@ Assert-True ($b087FingerprintEnglish.Contains("FingerprintStored='AAA'")) 'Ingl�
 Assert-True ($b087FingerprintEnglish.Contains("FingerprintActual='BBB'")) 'Inglês deve traduzir FingerprintRecalculado=.'
 Assert-True ($b087FingerprintEnglish.Contains('IntegrityPresent=True')) 'Inglês deve traduzir IntegrityPresente=.'
 
+$voltar = "[B034] Voltar acionado no início do wizard único. Transaction='NotaFiscal' e decisões em memoria foram descartadas; nenhum ApiPlan foi criado. Nenhuma alteracao foi feita na KB."
+$voltarEnglish = $translate.Invoke($null, [object[]] @($voltar, $english))
+$voltarSpanish = $translate.Invoke($null, [object[]] @($voltar, $spanish))
+Assert-True ($voltarEnglish.Contains('Back was used at the start of the single wizard.')) 'Inglês deve traduzir Voltar acionado no início.'
+Assert-True ($voltarEnglish.Contains('and in-memory decisions were discarded;')) 'Inglês deve traduzir decisões em memoria descartadas.'
+Assert-True ($voltarEnglish.Contains('no ApiPlan was created.')) 'Inglês deve traduzir nenhum ApiPlan foi criado.'
+Assert-True ($voltarEnglish.Contains('No changes were made to the KB.')) 'Inglês deve traduzir Nenhuma alteracao foi feita na KB.'
+Assert-True (-not $voltarEnglish.Contains('Voltar acionado')) 'Inglês não deve manter Voltar acionado.'
+Assert-True (-not $voltarEnglish.Contains('nenhum ApiPlan')) 'Inglês não deve manter nenhum ApiPlan.'
+Assert-True ($voltarSpanish.Contains('Se activó Atrás al inicio del asistente único.')) 'Espanhol deve traduzir Voltar acionado no início.'
+Assert-True ($voltarSpanish.Contains('no se creó ningún ApiPlan.')) 'Espanhol deve traduzir nenhum ApiPlan foi criado.'
+Assert-True (-not $voltarSpanish.Contains('Voltar acionado')) 'Espanhol não deve manter Voltar acionado.'
+
+$abortoSelecao = "[B034] A Transaction do menu de contexto não foi reencontrada na Knowledge Base ativa. Estado anterior do wizard descartado; nenhuma escolha foi persistida."
+$abortoSelecaoEnglish = $translate.Invoke($null, [object[]] @($abortoSelecao, $english))
+$abortoSelecaoSpanish = $translate.Invoke($null, [object[]] @($abortoSelecao, $spanish))
+Assert-True ($abortoSelecaoEnglish.Contains('The context-menu Transaction was not found again in the active Knowledge Base.')) 'Inglês deve traduzir Transaction do menu de contexto.'
+Assert-True ($abortoSelecaoEnglish.Contains('no selection was persisted.')) 'Inglês deve traduzir nenhuma escolha minúscula.'
+Assert-True (-not $abortoSelecaoEnglish.Contains('não foi reencontrada')) 'Inglês não deve manter não foi reencontrada.'
+Assert-True ($abortoSelecaoSpanish.Contains('La Transaction del menú contextual no fue reencontrada en la Knowledge Base activa.')) 'Espanhol deve traduzir Transaction do menu de contexto.'
+Assert-True (-not $abortoSelecaoSpanish.Contains('não foi reencontrada')) 'Espanhol não deve manter não foi reencontrada.'
+
+$cancelar = "[B034] Wizard único cancelado ou fechado para Transaction='NotaFiscal'. Transaction e decisões em memoria descartadas; nenhum ApiPlan foi criado. Business Component foi habilitado por confirmacao explicita antes da saida; essa alteracao foi gravada na KB e nao foi revertida automaticamente."
+$cancelarEnglish = $translate.Invoke($null, [object[]] @($cancelar, $english))
+Assert-True ($cancelarEnglish.Contains('Single wizard canceled or closed for')) 'Inglês deve traduzir Wizard único cancelado ou fechado.'
+Assert-True ($cancelarEnglish.Contains('Business Component was enabled by explicit confirmation before exit;')) 'Inglês deve traduzir habilitação explícita na saída.'
+Assert-True (-not $cancelarEnglish.Contains('Wizard único')) 'Inglês não deve manter Wizard único.'
+
+$passo2 = "[B031] Voltar acionado no Passo 2. Transaction='NotaFiscal' permaneceu selecionada em memoria; nenhuma escolha de contrato foi persistida."
+$passo2English = $translate.Invoke($null, [object[]] @($passo2, $english))
+Assert-True ($passo2English.Contains('Back was used on Step 2.')) 'Inglês deve traduzir Voltar no Passo 2.'
+Assert-True ($passo2English.Contains('remained selected in memory;')) 'Inglês deve traduzir permaneceu selecionada.'
+Assert-True ($passo2English.Contains('no contract selection was persisted.')) 'Inglês deve traduzir escolha de contrato.'
+
+$passo2Cancel = "[B031] Wizard cancelado no Passo 2 para Transaction='NotaFiscal'. Escolhas em memoria descartadas; nenhuma alteracao foi feita na KB."
+$passo2CancelEnglish = $translate.Invoke($null, [object[]] @($passo2Cancel, $english))
+$passo2CancelSpanish = $translate.Invoke($null, [object[]] @($passo2Cancel, $spanish))
+Assert-True ($passo2CancelEnglish.Contains('Wizard canceled on Step 2 for')) 'Inglês deve traduzir Wizard cancelado no Passo 2.'
+Assert-True ($passo2CancelEnglish.Contains('In-memory selections discarded;')) 'Inglês deve traduzir Escolhas em memoria descartadas.'
+Assert-True ($passo2CancelEnglish.Contains('no changes were made to the KB.')) 'Inglês deve traduzir nenhuma alteracao minúscula.'
+Assert-True (-not $passo2CancelEnglish.Contains('nenhuma alteracao')) 'Inglês não deve manter nenhuma alteracao.'
+Assert-True ($passo2CancelSpanish.Contains('Wizard cancelado en el Paso 2 para')) 'Espanhol deve traduzir Wizard cancelado no Passo 2.'
+Assert-True ($passo2CancelSpanish.Contains('no se realizaron cambios en la KB.')) 'Espanhol deve traduzir nenhuma alteracao minúscula.'
+
+$b035 = "[B035] Transaction='NotaFiscal' bloqueada: Business Component desabilitado e habilitacao explicita nao confirmada. Nenhum ApiPlan foi criado e nenhuma alteracao foi feita na KB."
+$b035English = $translate.Invoke($null, [object[]] @($b035, $english))
+Assert-True ($b035English.Contains('blocked: Business Component disabled and explicit enablement not confirmed.')) 'Inglês deve traduzir B035 bloqueada.'
+Assert-True ($b035English.Contains('No ApiPlan was created and no changes were made to the KB.')) 'Inglês deve traduzir Nenhum ApiPlan foi criado e nenhuma alteracao.'
+
 Write-Output 'PASS: ExtensionOutputLocalization'
