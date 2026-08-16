@@ -178,6 +178,183 @@ internal static class ApiPlanApiObjectWriter
             ApiPlanMetadataFileWriter.HasCompatibleGeneratedBaseline(metadata, apiObject);
     }
 
+    internal static ApiPlanIntentionalChangeOwnershipDiagnosis DiagnoseIntentionalChangeOwnership(
+        KBModel designModel,
+        ApiPlan apiPlan,
+        IReadOnlyList<API> matches)
+    {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (apiPlan is null)
+        {
+            throw new ArgumentNullException(nameof(apiPlan));
+        }
+
+        matches ??= Array.Empty<API>();
+        var matchCount = matches.Count;
+        if (matchCount == 0)
+        {
+            return ApiPlanIntentionalChangeOwnershipDiagnosis.NotOwned("ApiObjectMissing", matchCount);
+        }
+
+        if (matchCount != 1)
+        {
+            return ApiPlanIntentionalChangeOwnershipDiagnosis.NotOwned("ApiObjectAmbiguous", matchCount);
+        }
+
+        var apiObject = matches[0];
+        var metadataLookup = FindMetadataFile(designModel, apiPlan);
+        if (metadataLookup.Ambiguous)
+        {
+            return ApiPlanIntentionalChangeOwnershipDiagnosis.NotOwned(
+                "MetadataAmbiguous",
+                matchCount,
+                apiObject.Guid.ToString());
+        }
+
+        if (!metadataLookup.FilePresent)
+        {
+            return ApiPlanIntentionalChangeOwnershipDiagnosis.NotOwned(
+                "MetadataMissing",
+                matchCount,
+                apiObject.Guid.ToString());
+        }
+
+        if (!metadataLookup.OwnedFilePresent)
+        {
+            return ApiPlanIntentionalChangeOwnershipDiagnosis.NotOwned(
+                "MetadataDescriptionNotOwned",
+                matchCount,
+                apiObject.Guid.ToString(),
+                metadataPresent: true,
+                metadataDescriptionOwned: false);
+        }
+
+        if (!TryParseMetadata(metadataLookup.File!, out var metadata) || metadata is null)
+        {
+            return ApiPlanIntentionalChangeOwnershipDiagnosis.NotOwned(
+                "MetadataUnreadable",
+                matchCount,
+                apiObject.Guid.ToString(),
+                metadataPresent: true,
+                metadataDescriptionOwned: true,
+                metadataParseOk: false);
+        }
+
+        var storedApiName = metadata.SelectToken("ownership.apiName")?.Value<string>() ?? string.Empty;
+        var storedApiGuid = metadata.SelectToken("ownership.apiGuid")?.Value<string>() ?? string.Empty;
+        var storedSchema = metadata["schemaVersion"]?.Value<string>() ?? string.Empty;
+        var ownershipOk = ApiPlanApiObjectOwnership.MatchesMetadataOwnership(
+            metadata,
+            ApiPlanMetadataFileWriter.SchemaVersion,
+            apiPlan.ApiName,
+            apiObject.Guid.ToString());
+        if (!ownershipOk)
+        {
+            return ApiPlanIntentionalChangeOwnershipDiagnosis.NotOwned(
+                "OwnershipSchemaApiNameOrGuidMismatch",
+                matchCount,
+                apiObject.Guid.ToString(),
+                storedApiGuid,
+                metadataPresent: true,
+                metadataDescriptionOwned: true,
+                metadataParseOk: true,
+                ownershipOk: false,
+                storedSchema: storedSchema,
+                storedApiName: storedApiName,
+                expectedApiName: apiPlan.ApiName);
+        }
+
+        var fingerprint = ApiPlanMetadataIntegrity.DiagnoseMetadataFingerprint(metadata);
+        var integrity = metadata["integrity"] as JObject;
+        var integrityPresent = integrity is not null;
+        var serviceNames = ((JArray?)integrity?.SelectToken("generatedDescriptions.services"))
+            ?.Select(item => item["serviceName"]?.Value<string>() ?? string.Empty)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToArray();
+        GeneratedBaselineDiagnosis? baseline = null;
+        if (serviceNames is not null && serviceNames.Length > 0)
+        {
+            var source = apiObject.ServiceGroupSource?.Source ?? string.Empty;
+            baseline = ApiPlanMetadataIntegrity.DiagnoseGeneratedBaseline(
+                metadata,
+                ApiPlanMetadataIntegrity.ComputeJsonSha256(
+                    ApiPlanMetadataIntegrity.CreateServiceDescriptionsContractFromSource(source, serviceNames)),
+                ApiPlanMetadataIntegrity.ComputeNormalizedTextSha256(source),
+                apiObject.Description ?? string.Empty,
+                apiObject.Guid.ToString());
+        }
+
+        if (!fingerprint.IsCompatible)
+        {
+            return ApiPlanIntentionalChangeOwnershipDiagnosis.FromInspectedMetadata(
+                isOwned: false,
+                failingClause: "MetadataFingerprintMismatch",
+                matchCount,
+                apiObject.Guid.ToString(),
+                storedApiGuid,
+                storedSchema,
+                storedApiName,
+                apiPlan.ApiName,
+                fingerprint,
+                integrityPresent,
+                baseline);
+        }
+
+        if (!integrityPresent)
+        {
+            return ApiPlanIntentionalChangeOwnershipDiagnosis.FromInspectedMetadata(
+                isOwned: true,
+                failingClause: "None",
+                matchCount,
+                apiObject.Guid.ToString(),
+                storedApiGuid,
+                storedSchema,
+                storedApiName,
+                apiPlan.ApiName,
+                fingerprint,
+                integrityPresent: false,
+                baseline: null);
+        }
+
+        if (serviceNames is null || serviceNames.Length == 0)
+        {
+            return ApiPlanIntentionalChangeOwnershipDiagnosis.FromInspectedMetadata(
+                isOwned: false,
+                failingClause: "IntegrityServiceNamesMissing",
+                matchCount,
+                apiObject.Guid.ToString(),
+                storedApiGuid,
+                storedSchema,
+                storedApiName,
+                apiPlan.ApiName,
+                fingerprint,
+                integrityPresent: true,
+                baseline: null);
+        }
+
+        if (baseline is null)
+        {
+            throw new InvalidOperationException("Diagnostico de posse do API Object: baseline B067 ausente apos validar integrity e nomes de servico.");
+        }
+
+        return ApiPlanIntentionalChangeOwnershipDiagnosis.FromInspectedMetadata(
+            isOwned: baseline.IsCompatible,
+            failingClause: baseline.IsCompatible ? "None" : baseline.FailingClause,
+            matchCount,
+            baseline.ActualGuid,
+            baseline.StoredGuid,
+            storedSchema,
+            storedApiName,
+            apiPlan.ApiName,
+            fingerprint,
+            integrityPresent: baseline.IntegrityPresent,
+            baseline);
+    }
+
     internal static ApiPlanApiObjectOwnership.OwnershipKind ResolveOwnership(KBModel designModel, ApiPlan apiPlan, API apiObject)
     {
         return DiagnoseOwnership(designModel, apiPlan, apiObject).OwnershipKind;
@@ -301,7 +478,7 @@ internal static class ApiPlanApiObjectWriter
 
         try
         {
-            metadata = JObject.Parse(Encoding.UTF8.GetString(bytes));
+            metadata = ApiPlanMetadataIntegrity.ParseMetadataBytes(bytes);
             return true;
         }
         catch (JsonException)
@@ -470,6 +647,317 @@ internal static class ApiPlanApiObjectWriter
 
         var persisted = API.Get(designModel, apiObject.Guid);
         return new ApiPlanApiObjectWriteCoreResult(ApiPlanApiObjectWriteStatus.Created, persisted.Guid);
+    }
+}
+
+internal sealed class ApiPlanIntentionalChangeOwnershipDiagnosis
+{
+    public ApiPlanIntentionalChangeOwnershipDiagnosis(
+        bool isOwned,
+        string failingClause,
+        int matchCount,
+        string actualApiGuid = "",
+        string? metadataApiGuid = null,
+        bool metadataPresent = false,
+        bool metadataDescriptionOwned = false,
+        bool metadataParseOk = false,
+        bool ownershipOk = false,
+        bool fingerprintOk = false,
+        bool integrityPresent = false,
+        bool versionOk = false,
+        bool guidOk = false,
+        bool descriptionOk = false,
+        bool serviceSourceHashOk = false,
+        bool serviceDescriptionsHashOk = false,
+        string storedSchema = "",
+        string storedApiName = "",
+        string expectedApiName = "",
+        string storedDescription = "",
+        string actualDescription = "",
+        string storedSourceHash = "",
+        string actualSourceHash = "",
+        string storedDescriptionsHash = "",
+        string actualDescriptionsHash = "",
+        bool fingerprintPresent = false,
+        bool fingerprintAlgorithmOk = false,
+        bool fingerprintScopeOk = false,
+        bool fingerprintValuePresent = false,
+        bool fingerprintHashMatch = false,
+        string fingerprintAlgorithm = "",
+        string fingerprintScope = "",
+        string fingerprintStored = "",
+        string fingerprintActual = "",
+        int fingerprintSnapshotLength = 0,
+        string fingerprintDetail = "")
+    {
+        IsOwned = isOwned;
+        FailingClause = failingClause ?? "None";
+        MatchCount = matchCount;
+        ActualApiGuid = actualApiGuid ?? string.Empty;
+        MetadataApiGuid = metadataApiGuid;
+        MetadataPresent = metadataPresent;
+        MetadataDescriptionOwned = metadataDescriptionOwned;
+        MetadataParseOk = metadataParseOk;
+        OwnershipOk = ownershipOk;
+        FingerprintOk = fingerprintOk;
+        IntegrityPresent = integrityPresent;
+        VersionOk = versionOk;
+        GuidOk = guidOk;
+        DescriptionOk = descriptionOk;
+        ServiceSourceHashOk = serviceSourceHashOk;
+        ServiceDescriptionsHashOk = serviceDescriptionsHashOk;
+        StoredSchema = storedSchema ?? string.Empty;
+        StoredApiName = storedApiName ?? string.Empty;
+        ExpectedApiName = expectedApiName ?? string.Empty;
+        StoredDescription = storedDescription ?? string.Empty;
+        ActualDescription = actualDescription ?? string.Empty;
+        StoredSourceHash = storedSourceHash ?? string.Empty;
+        ActualSourceHash = actualSourceHash ?? string.Empty;
+        StoredDescriptionsHash = storedDescriptionsHash ?? string.Empty;
+        ActualDescriptionsHash = actualDescriptionsHash ?? string.Empty;
+        FingerprintPresent = fingerprintPresent;
+        FingerprintAlgorithmOk = fingerprintAlgorithmOk;
+        FingerprintScopeOk = fingerprintScopeOk;
+        FingerprintValuePresent = fingerprintValuePresent;
+        FingerprintHashMatch = fingerprintHashMatch;
+        FingerprintAlgorithm = fingerprintAlgorithm ?? string.Empty;
+        FingerprintScope = fingerprintScope ?? string.Empty;
+        FingerprintStored = fingerprintStored ?? string.Empty;
+        FingerprintActual = fingerprintActual ?? string.Empty;
+        FingerprintSnapshotLength = fingerprintSnapshotLength;
+        FingerprintDetail = fingerprintDetail ?? string.Empty;
+    }
+
+    public bool IsOwned { get; }
+
+    public string FailingClause { get; }
+
+    public int MatchCount { get; }
+
+    public string ActualApiGuid { get; }
+
+    public string? MetadataApiGuid { get; }
+
+    public bool MetadataPresent { get; }
+
+    public bool MetadataDescriptionOwned { get; }
+
+    public bool MetadataParseOk { get; }
+
+    public bool OwnershipOk { get; }
+
+    public bool FingerprintOk { get; }
+
+    public bool IntegrityPresent { get; }
+
+    public bool VersionOk { get; }
+
+    public bool GuidOk { get; }
+
+    public bool DescriptionOk { get; }
+
+    public bool ServiceSourceHashOk { get; }
+
+    public bool ServiceDescriptionsHashOk { get; }
+
+    public string StoredSchema { get; }
+
+    public string StoredApiName { get; }
+
+    public string ExpectedApiName { get; }
+
+    public string StoredDescription { get; }
+
+    public string ActualDescription { get; }
+
+    public string StoredSourceHash { get; }
+
+    public string ActualSourceHash { get; }
+
+    public string StoredDescriptionsHash { get; }
+
+    public string ActualDescriptionsHash { get; }
+
+    public bool FingerprintPresent { get; }
+
+    public bool FingerprintAlgorithmOk { get; }
+
+    public bool FingerprintScopeOk { get; }
+
+    public bool FingerprintValuePresent { get; }
+
+    public bool FingerprintHashMatch { get; }
+
+    public string FingerprintAlgorithm { get; }
+
+    public string FingerprintScope { get; }
+
+    public string FingerprintStored { get; }
+
+    public string FingerprintActual { get; }
+
+    public int FingerprintSnapshotLength { get; }
+
+    public string FingerprintDetail { get; }
+
+    public static ApiPlanIntentionalChangeOwnershipDiagnosis FromInspectedMetadata(
+        bool isOwned,
+        string failingClause,
+        int matchCount,
+        string actualApiGuid,
+        string? metadataApiGuid,
+        string storedSchema,
+        string storedApiName,
+        string expectedApiName,
+        MetadataFingerprintDiagnosis fingerprint,
+        bool integrityPresent,
+        GeneratedBaselineDiagnosis? baseline)
+    {
+        if (fingerprint is null)
+        {
+            throw new ArgumentNullException(nameof(fingerprint));
+        }
+
+        return new ApiPlanIntentionalChangeOwnershipDiagnosis(
+            isOwned,
+            failingClause,
+            matchCount,
+            actualApiGuid,
+            metadataApiGuid,
+            metadataPresent: true,
+            metadataDescriptionOwned: true,
+            metadataParseOk: true,
+            ownershipOk: true,
+            fingerprintOk: fingerprint.IsCompatible,
+            integrityPresent: integrityPresent,
+            versionOk: baseline?.VersionOk ?? false,
+            guidOk: baseline?.GuidOk ?? false,
+            descriptionOk: baseline?.DescriptionOk ?? false,
+            serviceSourceHashOk: baseline?.ServiceSourceHashOk ?? false,
+            serviceDescriptionsHashOk: baseline?.ServiceDescriptionsHashOk ?? false,
+            storedSchema: storedSchema,
+            storedApiName: storedApiName,
+            expectedApiName: expectedApiName,
+            storedDescription: baseline?.StoredDescription ?? string.Empty,
+            actualDescription: baseline?.ActualDescription ?? string.Empty,
+            storedSourceHash: baseline?.StoredSourceHash ?? string.Empty,
+            actualSourceHash: baseline?.ActualSourceHash ?? string.Empty,
+            storedDescriptionsHash: baseline?.StoredDescriptionsHash ?? string.Empty,
+            actualDescriptionsHash: baseline?.ActualDescriptionsHash ?? string.Empty,
+            fingerprintPresent: fingerprint.FingerprintPresent,
+            fingerprintAlgorithmOk: fingerprint.AlgorithmOk,
+            fingerprintScopeOk: fingerprint.ScopeOk,
+            fingerprintValuePresent: fingerprint.ValuePresent,
+            fingerprintHashMatch: fingerprint.HashMatch,
+            fingerprintAlgorithm: fingerprint.Algorithm,
+            fingerprintScope: fingerprint.Scope,
+            fingerprintStored: fingerprint.StoredValue,
+            fingerprintActual: fingerprint.ActualValue,
+            fingerprintSnapshotLength: fingerprint.SnapshotLength,
+            fingerprintDetail: fingerprint.FailingClause);
+    }
+
+    public static ApiPlanIntentionalChangeOwnershipDiagnosis NotOwned(
+        string failingClause,
+        int matchCount,
+        string actualApiGuid = "",
+        string? metadataApiGuid = null,
+        bool metadataPresent = false,
+        bool metadataDescriptionOwned = false,
+        bool metadataParseOk = false,
+        bool ownershipOk = false,
+        bool fingerprintOk = false,
+        bool integrityPresent = false,
+        string storedSchema = "",
+        string storedApiName = "",
+        string expectedApiName = "")
+    {
+        return new ApiPlanIntentionalChangeOwnershipDiagnosis(
+            isOwned: false,
+            failingClause: failingClause,
+            matchCount: matchCount,
+            actualApiGuid: actualApiGuid,
+            metadataApiGuid: metadataApiGuid,
+            metadataPresent: metadataPresent,
+            metadataDescriptionOwned: metadataDescriptionOwned,
+            metadataParseOk: metadataParseOk,
+            ownershipOk: ownershipOk,
+            fingerprintOk: fingerprintOk,
+            integrityPresent: integrityPresent,
+            storedSchema: storedSchema,
+            storedApiName: storedApiName,
+            expectedApiName: expectedApiName);
+    }
+
+    public static ApiPlanIntentionalChangeOwnershipDiagnosis Owned(
+        int matchCount,
+        string actualApiGuid,
+        string metadataApiGuid,
+        string storedSchema,
+        string storedApiName,
+        string expectedApiName)
+    {
+        return new ApiPlanIntentionalChangeOwnershipDiagnosis(
+            isOwned: true,
+            failingClause: "None",
+            matchCount: matchCount,
+            actualApiGuid: actualApiGuid,
+            metadataApiGuid: metadataApiGuid,
+            metadataPresent: true,
+            metadataDescriptionOwned: true,
+            metadataParseOk: true,
+            ownershipOk: true,
+            fingerprintOk: true,
+            integrityPresent: false,
+            versionOk: true,
+            guidOk: true,
+            descriptionOk: true,
+            serviceSourceHashOk: true,
+            serviceDescriptionsHashOk: true,
+            storedSchema: storedSchema,
+            storedApiName: storedApiName,
+            expectedApiName: expectedApiName);
+    }
+
+    public string FormatDetails()
+    {
+        return string.Join(
+            Environment.NewLine,
+            $"ClausulaQueFalhou='{FailingClause}'",
+            $"ApiObjectCount={MatchCount}",
+            $"MetadataPresente={MetadataPresent}",
+            $"MetadataDescriptionPropria={MetadataDescriptionOwned}",
+            $"MetadataParseOk={MetadataParseOk}",
+            $"OwnershipSchemaApiNameGuid={OwnershipOk}",
+            $"FingerprintOk={FingerprintOk}",
+            $"FingerprintPresente={FingerprintPresent}",
+            $"FingerprintAlgoritmoOk={FingerprintAlgorithmOk}",
+            $"FingerprintEscopoOk={FingerprintScopeOk}",
+            $"FingerprintValorPresente={FingerprintValuePresent}",
+            $"FingerprintHashOk={FingerprintHashMatch}",
+            $"FingerprintDetalhe='{FingerprintDetail}'",
+            $"FingerprintAlgoritmo='{FingerprintAlgorithm}'",
+            $"FingerprintEscopo='{FingerprintScope}'",
+            $"FingerprintGravado='{FingerprintStored}'",
+            $"FingerprintRecalculado='{FingerprintActual}'",
+            $"FingerprintSnapshotLength={FingerprintSnapshotLength}",
+            $"IntegrityPresente={IntegrityPresent}",
+            $"BaselineVersionOk={VersionOk}",
+            $"BaselineGuidOk={GuidOk}",
+            $"BaselineDescriptionOk={DescriptionOk}",
+            $"BaselineServiceSourceHashOk={ServiceSourceHashOk}",
+            $"BaselineServiceDescriptionsHashOk={ServiceDescriptionsHashOk}",
+            $"ApiObjectGuid='{ActualApiGuid}'",
+            $"MetadataApiGuid='{MetadataApiGuid ?? string.Empty}'",
+            $"SchemaGravado='{StoredSchema}'",
+            $"ApiNameGravado='{StoredApiName}'",
+            $"ApiNameEsperado='{ExpectedApiName}'",
+            $"DescriptionAtual='{ActualDescription}'",
+            $"DescriptionSentinel='{StoredDescription}'",
+            $"ServiceSourceHashAtual='{ActualSourceHash}'",
+            $"ServiceSourceHashGravado='{StoredSourceHash}'",
+            $"DescriptionsHashAtual='{ActualDescriptionsHash}'",
+            $"DescriptionsHashGravado='{StoredDescriptionsHash}'");
     }
 }
 

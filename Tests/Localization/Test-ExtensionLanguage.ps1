@@ -29,6 +29,7 @@ Assert-Equal $spanish $resolver::Resolve('Español', 'es-ES', '2') 'Espanhol dev
 Assert-Equal $spanish $resolver::Resolve($null, $null, 'es') 'Tag bruta espanhola deve usar espanhol.'
 Assert-Equal $english $resolver::Resolve('Portuguese (Portugal)', 'pt-PT', '3') 'Português de Portugal deve cair no inglês.'
 Assert-Equal $english $resolver::Resolve('Français', 'fr-FR', '4') 'Outros idiomas devem cair no inglês.'
+Assert-Equal $english $resolver::Resolve('Italiano', 'it-IT', '5') 'Italiano deve cair no inglês.'
 
 $uiTerms = [GenexusOpenApiBuilder.Extension.Domain.ExtensionUiTerms]
 Assert-Equal 'CreateRequest (criação)' ($uiTerms::RoleLabel($ptBr, 'CreateRequest')) 'PT-BR deve glossar CreateRequest.'

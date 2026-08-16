@@ -72,6 +72,7 @@ internal sealed class PrototypeWizardDialog : Form
     private bool _refreshGenerationPreviewRunning;
     private ApiPlanGenerationState? _cachedGenerationState;
     private string? _cachedGenerationFingerprint;
+    private bool _apiObjectOwnershipDiagnosticWritten;
     private bool _applyBusinessComponentWhenReady;
     private string _generationContext = "Plano da Transaction ainda nao consultado na KB.";
 
@@ -513,9 +514,9 @@ internal sealed class PrototypeWizardDialog : Form
         return tab;
     }
 
-    private static string FormatRequiredDecision(PrototypeWizardRequiredFieldDecision item)
+    private string FormatRequiredDecision(PrototypeWizardRequiredFieldDecision item)
     {
-        return $"{item.FieldName}: Required={item.IsRequired} | {item.Reason}";
+        return $"{item.FieldName}: Required={item.IsRequired} | {_texts.Translate(item.Reason)}";
     }
 
     private TabPage CreateBusinessComponentTab()
@@ -1244,6 +1245,7 @@ internal sealed class PrototypeWizardDialog : Form
                 string.Equals(_cachedGenerationFingerprint, fingerprint, StringComparison.Ordinal))
             {
                 ApplyGenerationPreviewState(_cachedGenerationState);
+                WriteApiObjectOwnershipDiagnosticOnce(_cachedGenerationState);
                 return;
             }
 
@@ -1251,6 +1253,7 @@ internal sealed class PrototypeWizardDialog : Form
             _cachedGenerationState = state;
             _cachedGenerationFingerprint = fingerprint;
             ApplyGenerationPreviewState(state);
+            WriteApiObjectOwnershipDiagnosticOnce(state);
         }
         finally
         {
@@ -1307,14 +1310,14 @@ internal sealed class PrototypeWizardDialog : Form
 
         _sdtGenerationText.Text = FormatGenerationState(sdtState, _generateSdtsCheck.Checked);
         _procedureGenerationText.Text = FormatGenerationState(procedureState, _generateProceduresCheck.Checked) + Environment.NewLine + Environment.NewLine +
-            $"Dependencia SDTs: {FormatDependencyState(sdtState, _generateSdtsCheck.Checked)}";
+            $"{_texts.Translate("Dependencia")} SDTs: {FormatDependencyState(sdtState, _generateSdtsCheck.Checked)}";
         _apiObjectGenerationText.Text = FormatGenerationState(apiState, _generateApiObjectCheck.Checked) + Environment.NewLine + Environment.NewLine +
-            $"Dependencia Procedures: {FormatDependencyState(procedureState, _generateProceduresCheck.Checked)}";
+            $"{_texts.Translate("Dependencia")} Procedures: {FormatDependencyState(procedureState, _generateProceduresCheck.Checked)}";
         _listGenerationText.Text = FormatGenerationState(apiState, _applyListCheck.Checked) + Environment.NewLine + Environment.NewLine +
-            $"Dependencia API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked || businessComponentConfirmed)}" + Environment.NewLine +
+            $"{_texts.Translate("Dependencia")} API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked || businessComponentConfirmed)}" + Environment.NewLine +
             $"{_texts.Translate("Filtros planejados")}: {GetCheckedValues(_filtersList).Count}; {_texts.Translate("Paginacao")} Default={_defaultPageSize.Value}, Maximum={_maximumPageSize.Value}.";
         _metadataGenerationText.Text = FormatGenerationState(metadataState, _generateMetadataCheck.Checked) + Environment.NewLine + Environment.NewLine +
-            $"Dependencia List/API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked || businessComponentConfirmed || _applyListCheck.Checked)}";
+            $"{_texts.Translate("Dependencia")} List/API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked || businessComponentConfirmed || _applyListCheck.Checked)}";
     }
 
     private void ApplyBusinessComponentControlState(bool sdtsAvailable, bool proceduresAvailable, bool apiObjectAvailable)
@@ -1455,6 +1458,17 @@ internal sealed class PrototypeWizardDialog : Form
 
         var localizedDetail = ExtensionOutputLocalization.Translate(state.Detail, _texts.Language);
         return $"{_texts.Translate("Estado atual da KB")}: {_texts.Translate(state.Action)}{Environment.NewLine}{localizedDetail}{Environment.NewLine}{Environment.NewLine}{_texts.Translate("Confirmado para escrita")}: {confirmed}";
+    }
+
+    private void WriteApiObjectOwnershipDiagnosticOnce(ApiPlanGenerationState? state)
+    {
+        if (_apiObjectOwnershipDiagnosticWritten || state is null || !state.ApiObject.IsBlocked)
+        {
+            return;
+        }
+
+        _apiObjectOwnershipDiagnosticWritten = true;
+        Package.WriteApiObjectBaselineDiagnostic(_writeBusinessComponentOutput, state);
     }
 
     private ApiPlanGenerationState? ReadGenerationState()

@@ -67,9 +67,9 @@ Ao reabrir o Wizard para uma Transaction que já possui API gerada, a interface 
 
 ---
 
-## 5. Checkpoint operacional 2026-08-15 (teste espanhol encerrado; inglês pendente)
+## 5. Checkpoint operacional 2026-08-15 (teste espanhol encerrado)
 
-Anotação de sessão para sobreviver à janela de contexto. O teste espanhol desta leva residual está encerrado; o teste inglês permanece pendente. Não houve push neste ponto.
+Anotação de sessão. O teste espanhol desta leva residual está encerrado. O teste inglês/italiano e o fingerprint B060 estão no §6.
 
 ### Recorte de produto (UI)
 
@@ -109,13 +109,33 @@ Arquivos centrais: `ExtensionOutputLocalization.cs`, `ExtensionLocalization.cs`,
 
 Manifesto **não** mudou nestas correções residuais. Atualizar DLL: fechar IDE, `Install-ExtensionForGeneXus18.bat` como administrador. **Sem** `genexus /install` só por idioma ou por estas correções de chrome. `/install` continua necessário se, desde o último `/install` bem-sucedido, o `.package` / IDs de menu tiverem mudado (frente inicial de localização).
 
-### O que ainda não foi testado
+### O que ainda não foi testado (na data do §5)
 
-- Teste **inglês** não começou. Troca: Localization marcar English + **Kb Language = English**; reabrir KB/IDE. DLL atual basta.
-- Roteiro inglês (mesmos pontos que quebraram em es): menus/Wizard/Resumen; informe (Folder e B056 inteiros); sync sem diff `No synchronization is necessary.`; sync com campo `Apply synchronization`; Output B054 `the API Object update will be handled by the Business Component preflight`; eliminar `Yes`/`No`, `Confirm deletion?`, duas colunas sem corte.
+- Na data deste checkpoint o teste **inglês** ainda não tinha começado. Encerrado no §6.
 - pt-BR desta leva de correções residuais não foi revalidado na IDE após o diálogo largo (só es).
 
 ### Abas do Wizard (referência)
 
 Ordem em `PrototypeWizardDialog.cs` (~152–167): Serviços, Requests, Response, Filtros List, List (geração), Paths, Segurança, Paginação, Ordenação, Obrigatórios, SDTs, Procedures, API Object, Business Component, Metadata, Resumo.
+
+---
+
+## 6. Inglês/italiano, diagnóstico B087 e fingerprint B060 (2026-08-15/16)
+
+KB `wsEducacaoSpTeste`, Transaction `NotaFiscal`. Kb Language italiano resolve para `English` (não há `Italian` no enum). Manifesto inalterado; só `Install-ExtensionForGeneXus18.bat`.
+
+### Localização
+
+Chrome, informe, preferências, sync e Eliminar saíram em inglês. Leftovers corrigidos no catálogo/UI: `ausentes=`/`Dependencia`, motivo do UpdateRequest, `em memoria` (B031), `ApiPlan cobre`, prefixo `foi confirmado` (B054), `durante B071`, colisão (`Nenhuma escrita sera permitida` não pode passar por replace de `Nenhuma`). B056 *Service descriptions used an English fallback* permanece esperado (`PendingKbLanguageApiValidation`).
+
+### Bloqueio falso do API Object
+
+Após o primeiro apply italiano (13 updates, inclusive API + metadata), o Wizard seguinte bloqueava `apiNotaFiscal` com `GenerateApiObject=False` e `Cause='MetadataFingerprintMismatch'`. SDTs/Procedures reencontravam. O diagnóstico B087 na Output mostrou ownership, schema, GUIDs e **todo o baseline B067** compatíveis; só o SHA-256 do JSON compacto divergia (`FingerprintStored` ≠ `FingerprintActual`).
+
+Causa: a gravação hasheia `generatedAtUtc` como string `DateTime.UtcNow.ToString("O")` (sete dígitos fracionários). A leitura usava `JObject.Parse`, que converte ISO-8601 em `DateTime`; o compacto do Newtonsoft corta zeros à direita. A conferência do fingerprint permanece; o parse da metadata passou a `ApiPlanMetadataIntegrity.ParseMetadataJson` / `ParseMetadataBytes` com `DateParseHandling.None`.
+
+### Reteste U15 (2026-08-16)
+
+`GenerateSdts/Procedures/ApiObject/Metadata/ApplyList/ApplyBusinessComponent=True`; preflight agregado aprovado; `Updated=13`, `Blocked=0`; `apiNotaFiscal` Guid `ee78dcc0-8dc6-480d-90e0-cf0ced1c83e9`; File `apiNotaFiscal_Metadata` `Status='Reencountered'`, `Bytes=78480`. Avisos restantes: fallback inglês das descrições e Folder `NotaFiscalOpenApi` reutilizado.
+
 

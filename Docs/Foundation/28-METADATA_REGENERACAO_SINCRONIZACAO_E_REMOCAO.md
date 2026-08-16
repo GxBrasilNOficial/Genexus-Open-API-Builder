@@ -90,7 +90,7 @@ Na reexecução, o gerador deve:
 - localizar metadata
 - validar schema
 - conferir se objetos esperados existem
-- comparar fingerprint
+- comparar fingerprint do JSON persistido (relido sem converter ISO-8601 em `DateTime`)
 - classificar divergências
 
 Metadata ausente, corrompida ou incompatível deve bloquear atualização automática.

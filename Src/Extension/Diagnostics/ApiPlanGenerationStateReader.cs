@@ -187,18 +187,17 @@ internal static class ApiPlanGenerationStateReader
         }
 
         ApiPlanApiObjectOwnership.Diagnostic? ownershipDiagnostic = null;
+        ApiPlanIntentionalChangeOwnershipDiagnosis? intentionalDiagnosis = null;
         var owned = false;
-        if (matches.Count == 1)
+        if (forSyncContractRefresh)
         {
-            if (forSyncContractRefresh)
-            {
-                owned = ApiPlanApiObjectWriter.IsOwnedApiObjectForIntentionalChange(designModel, apiPlan, matches[0]);
-            }
-            else
-            {
-                ownershipDiagnostic = ApiPlanApiObjectWriter.DiagnoseOwnership(designModel, apiPlan, matches[0]);
-                owned = ownershipDiagnostic.IsOwned;
-            }
+            intentionalDiagnosis = ApiPlanApiObjectWriter.DiagnoseIntentionalChangeOwnership(designModel, apiPlan, matches);
+            owned = intentionalDiagnosis.IsOwned;
+        }
+        else if (matches.Count == 1)
+        {
+            ownershipDiagnostic = ApiPlanApiObjectWriter.DiagnoseOwnership(designModel, apiPlan, matches[0]);
+            owned = ownershipDiagnostic.IsOwned;
         }
 
         if (owned)
@@ -215,10 +214,10 @@ internal static class ApiPlanGenerationStateReader
                 item,
                 "API Object",
                 folderApplicable: true,
-                diagnosticReason: ownershipDiagnostic?.ReasonText,
-                apiObjectGuid: ownershipDiagnostic?.ActualApiGuid,
-                metadataApiGuid: ownershipDiagnostic?.MetadataApiGuid,
-                diagnosticDetails: ownershipDiagnostic?.FormatDetails())).ToArray());
+                diagnosticReason: intentionalDiagnosis?.FailingClause ?? ownershipDiagnostic?.ReasonText,
+                apiObjectGuid: intentionalDiagnosis?.ActualApiGuid ?? ownershipDiagnostic?.ActualApiGuid,
+                metadataApiGuid: intentionalDiagnosis?.MetadataApiGuid ?? ownershipDiagnostic?.MetadataApiGuid,
+                diagnosticDetails: intentionalDiagnosis?.FormatDetails() ?? ownershipDiagnostic?.FormatDetails())).ToArray());
     }
 
     private static ApiPlanGenerationInspection InspectMetadataFile(KBModel designModel, KbObjectNameIndex index, ApiPlan apiPlan, bool forSyncContractRefresh)
@@ -296,7 +295,7 @@ internal static class ApiPlanGenerationStateReader
         JObject metadata;
         try
         {
-            metadata = JObject.Parse(Encoding.UTF8.GetString(bytes));
+            metadata = ApiPlanMetadataIntegrity.ParseMetadataBytes(bytes);
         }
         catch (JsonException)
         {

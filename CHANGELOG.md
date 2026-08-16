@@ -14,7 +14,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 - Localização trilíngue da extensão (2026-08-15): detecção e resolução pelo idioma da KB (`ExtensionLanguage`, com fallback `English` sem KB aberta), catálogo centralizado de strings (`ExtensionLocalization`), localização de mensagens na janela Output (`ExtensionOutputLocalization`), comandos de menu traduzidos em português, espanhol e inglês no manifesto (`GenexusOpenApiBuilder.package`) e em `Package.cs`, e tradução de todas as janelas do Wizard, Sincronização, Preferências e Relatório Final. Testes unitários em `Tests/Localization/Test-ExtensionLanguage.ps1` e `Tests/Localization/Test-ExtensionOutputLocalization.ps1`.
 - Leitura e restauração de filtros e seleções de APIs existentes no Wizard (2026-08-15): leitor `PrototypeWizardExistingApiContractReader` restaura serviços selecionados, campos de request/response, filtros e required a partir do API Object, da metadata persistente ou de SDTs próprios, evitando redefinir filtros deliberados ao reabrir o Wizard. Teste unitário em `Tests/WizardContract/Test-PrototypeWizardExistingApiFilters.ps1`.
-- Diagnóstico refinado de ownership e refresh deliberado de contrato (2026-08-15): `ApiPlanApiObjectOwnership.DiagnoseOwnership` e suporte a `allowIntentionalContractRefresh` no preflight e nos writers, permitindo que alterações intencionais confirmadas pelo usuário no Wizard atualizem o contrato sem bloqueio indevido de integridade.
+- Diagnóstico B087 na Output (2026-08-15): quando o Wizard bloqueia o API Object no baseline de alteração intencional, a janela Output imprime `ClausulaQueFalhou`, o detalhe do fingerprint (`FingerprintDetalhe`, hashes gravado/recalculado, algorithm/scope, tamanho do snapshot) e `IntegrityPresente` lido do JSON mesmo quando o fingerprint falha, sem alterar a regra de posse.
 
 ### Changed
 
@@ -26,6 +26,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 ### Fixed
 
 - Relatório final e confirmação em espanhol (2026-08-15): o título “Ningúna sincronizacao necessaria” vinha de `Nenhum` substituir o prefixo de `Nenhuma`; avisos longos quebrados a 96 colunas perdiam o restante da frase no diálogo; o parágrafo curto de Required no Resumen e o leftover `a atualizacao do API Object` no B054 ficavam em português; o MessageBox de eliminação usava Sim/Não do Windows. A tradução agora ocorre antes da quebra de linha, o catálogo cobre as frases faltantes e a confirmação B086 usa botões Sí/No da extensão, com altura ajustada ao texto (como o MessageBox anterior).
+- Fingerprint da metadata B060 (2026-08-16): a relitura do File passava `generatedAtUtc` por `JObject.Parse`, que converte ISO-8601 em `DateTime` e, ao compactar de novo, corta zeros fracionários (`ToString("O")` vs formato ISO do Newtonsoft). O parse da metadata passou a `DateParseHandling.None`; a conferência SHA-256 permanece.
 
 ---
 

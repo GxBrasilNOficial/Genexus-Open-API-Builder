@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -202,11 +203,72 @@ public static class ApiPlanMetadataIntegrity
         var storedSourceHash = integrity.SelectToken("apiObject.serviceSourceCurrentHash")?.Value<string>() ?? string.Empty;
         var storedDescriptionsHash = integrity.SelectToken("generatedDescriptions.hash")?.Value<string>() ?? string.Empty;
 
-        return HasString(integrity["version"], Version) &&
-            string.Equals(actualServiceDescriptionsHash, storedDescriptionsHash, StringComparison.Ordinal) &&
-            string.Equals(actualApiDescription, storedDescriptionSentinel, StringComparison.Ordinal) &&
-            string.Equals(actualApiObjectGuid, storedApiGuid, StringComparison.Ordinal) &&
-            string.Equals(actualServiceSourceHash, storedSourceHash, StringComparison.Ordinal);
+        return DiagnoseGeneratedBaseline(
+            metadata,
+            actualServiceDescriptionsHash,
+            actualServiceSourceHash,
+            actualApiDescription,
+            actualApiObjectGuid).IsCompatible;
+    }
+
+    public static GeneratedBaselineDiagnosis DiagnoseGeneratedBaseline(
+        JObject metadata,
+        string actualServiceDescriptionsHash,
+        string actualServiceSourceHash,
+        string actualApiDescription,
+        string actualApiObjectGuid)
+    {
+        if (metadata is null)
+        {
+            throw new ArgumentNullException(nameof(metadata));
+        }
+
+        var integrity = metadata["integrity"] as JObject;
+        if (integrity is null)
+        {
+            return GeneratedBaselineDiagnosis.IntegrityAbsentAccepted(
+                actualApiObjectGuid ?? string.Empty,
+                actualApiDescription ?? string.Empty,
+                actualServiceSourceHash ?? string.Empty,
+                actualServiceDescriptionsHash ?? string.Empty);
+        }
+
+        var storedDescriptionSentinel = integrity.SelectToken("apiObject.descriptionSentinel")?.Value<string>() ?? string.Empty;
+        var storedApiGuid = integrity.SelectToken("apiObject.guid")?.Value<string>() ?? string.Empty;
+        var storedSourceHash = integrity.SelectToken("apiObject.serviceSourceCurrentHash")?.Value<string>() ?? string.Empty;
+        var storedDescriptionsHash = integrity.SelectToken("generatedDescriptions.hash")?.Value<string>() ?? string.Empty;
+        var versionOk = HasString(integrity["version"], Version);
+        var guidOk = string.Equals(actualApiObjectGuid ?? string.Empty, storedApiGuid, StringComparison.Ordinal);
+        var descriptionOk = string.Equals(actualApiDescription ?? string.Empty, storedDescriptionSentinel, StringComparison.Ordinal);
+        var sourceHashOk = string.Equals(actualServiceSourceHash ?? string.Empty, storedSourceHash, StringComparison.Ordinal);
+        var descriptionsHashOk = string.Equals(actualServiceDescriptionsHash ?? string.Empty, storedDescriptionsHash, StringComparison.Ordinal);
+        var failingClause = !versionOk
+            ? "BaselineVersionMismatch"
+            : !guidOk
+                ? "BaselineGuidMismatch"
+                : !descriptionOk
+                    ? "BaselineDescriptionMismatch"
+                    : !sourceHashOk
+                        ? "BaselineServiceSourceHashMismatch"
+                        : !descriptionsHashOk
+                            ? "BaselineServiceDescriptionsHashMismatch"
+                            : "None";
+        return new GeneratedBaselineDiagnosis(
+            integrityPresent: true,
+            versionOk,
+            guidOk,
+            descriptionOk,
+            sourceHashOk,
+            descriptionsHashOk,
+            storedApiGuid,
+            actualApiObjectGuid ?? string.Empty,
+            storedDescriptionSentinel,
+            actualApiDescription ?? string.Empty,
+            storedSourceHash,
+            actualServiceSourceHash ?? string.Empty,
+            storedDescriptionsHash,
+            actualServiceDescriptionsHash ?? string.Empty,
+            failingClause);
     }
 
     public static JArray CreateServiceDescriptionsContractFromSource(string source, IEnumerable<string> serviceNames)
@@ -223,6 +285,83 @@ public static class ApiPlanMetadataIntegrity
                 ["serviceName"] = serviceName,
                 ["description"] = ReadDescription(source, serviceName),
             }));
+    }
+
+    public static MetadataFingerprintDiagnosis DiagnoseMetadataFingerprint(JObject metadata)
+    {
+        if (metadata is null)
+        {
+            throw new ArgumentNullException(nameof(metadata));
+        }
+
+        var fingerprint = metadata["fingerprint"] as JObject;
+        if (fingerprint is null)
+        {
+            return MetadataFingerprintDiagnosis.AbsentAccepted();
+        }
+
+        var algorithm = fingerprint["algorithm"]?.Value<string>() ?? string.Empty;
+        var scope = fingerprint["scope"]?.Value<string>() ?? string.Empty;
+        var storedValue = fingerprint["value"]?.Value<string>() ?? string.Empty;
+        var algorithmOk = string.Equals(algorithm, "SHA-256", StringComparison.Ordinal);
+        var scopeOk = string.Equals(scope, "metadataWithoutFingerprint", StringComparison.Ordinal);
+        var valuePresent = !string.IsNullOrWhiteSpace(storedValue);
+        var snapshot = (JObject)metadata.DeepClone();
+        snapshot.Remove("fingerprint");
+        var snapshotJson = snapshot.ToString(Formatting.None);
+        var actualValue = ComputeSha256(Encoding.UTF8.GetBytes(snapshotJson));
+        var hashMatch = valuePresent &&
+            string.Equals(actualValue, storedValue, StringComparison.OrdinalIgnoreCase);
+        var failingClause = !algorithmOk
+            ? "FingerprintAlgorithmMismatch"
+            : !scopeOk
+                ? "FingerprintScopeMismatch"
+                : !valuePresent
+                    ? "FingerprintValueMissing"
+                    : !hashMatch
+                        ? "FingerprintHashMismatch"
+                        : "None";
+        return new MetadataFingerprintDiagnosis(
+            fingerprintPresent: true,
+            algorithmOk,
+            scopeOk,
+            valuePresent,
+            hashMatch,
+            algorithm,
+            scope,
+            storedValue,
+            actualValue,
+            snapshotJson.Length,
+            failingClause);
+    }
+
+    public static JObject ParseMetadataBytes(byte[] bytes)
+    {
+        if (bytes is null)
+        {
+            throw new ArgumentNullException(nameof(bytes));
+        }
+
+        return ParseMetadataJson(Encoding.UTF8.GetString(bytes));
+    }
+
+    public static JObject ParseMetadataJson(string json)
+    {
+        if (json is null)
+        {
+            throw new ArgumentNullException(nameof(json));
+        }
+
+        if (json.Length > 0 && json[0] == '\uFEFF')
+        {
+            json = json.Substring(1);
+        }
+
+        using (var reader = new JsonTextReader(new StringReader(json)))
+        {
+            reader.DateParseHandling = DateParseHandling.None;
+            return JObject.Load(reader);
+        }
     }
 
     public static string ComputeJsonSha256(JToken token)
@@ -281,5 +420,171 @@ public static class ApiPlanMetadataIntegrity
         {
             return BitConverter.ToString(algorithm.ComputeHash(bytes)).Replace("-", string.Empty);
         }
+    }
+}
+
+public sealed class GeneratedBaselineDiagnosis
+{
+    public GeneratedBaselineDiagnosis(
+        bool integrityPresent,
+        bool versionOk,
+        bool guidOk,
+        bool descriptionOk,
+        bool serviceSourceHashOk,
+        bool serviceDescriptionsHashOk,
+        string storedGuid,
+        string actualGuid,
+        string storedDescription,
+        string actualDescription,
+        string storedSourceHash,
+        string actualSourceHash,
+        string storedDescriptionsHash,
+        string actualDescriptionsHash,
+        string failingClause)
+    {
+        IntegrityPresent = integrityPresent;
+        VersionOk = versionOk;
+        GuidOk = guidOk;
+        DescriptionOk = descriptionOk;
+        ServiceSourceHashOk = serviceSourceHashOk;
+        ServiceDescriptionsHashOk = serviceDescriptionsHashOk;
+        StoredGuid = storedGuid ?? string.Empty;
+        ActualGuid = actualGuid ?? string.Empty;
+        StoredDescription = storedDescription ?? string.Empty;
+        ActualDescription = actualDescription ?? string.Empty;
+        StoredSourceHash = storedSourceHash ?? string.Empty;
+        ActualSourceHash = actualSourceHash ?? string.Empty;
+        StoredDescriptionsHash = storedDescriptionsHash ?? string.Empty;
+        ActualDescriptionsHash = actualDescriptionsHash ?? string.Empty;
+        FailingClause = failingClause ?? "None";
+    }
+
+    public bool IntegrityPresent { get; }
+
+    public bool VersionOk { get; }
+
+    public bool GuidOk { get; }
+
+    public bool DescriptionOk { get; }
+
+    public bool ServiceSourceHashOk { get; }
+
+    public bool ServiceDescriptionsHashOk { get; }
+
+    public string StoredGuid { get; }
+
+    public string ActualGuid { get; }
+
+    public string StoredDescription { get; }
+
+    public string ActualDescription { get; }
+
+    public string StoredSourceHash { get; }
+
+    public string ActualSourceHash { get; }
+
+    public string StoredDescriptionsHash { get; }
+
+    public string ActualDescriptionsHash { get; }
+
+    public string FailingClause { get; }
+
+    public bool IsCompatible =>
+        !IntegrityPresent
+        || (VersionOk && GuidOk && DescriptionOk && ServiceSourceHashOk && ServiceDescriptionsHashOk);
+
+    public static GeneratedBaselineDiagnosis IntegrityAbsentAccepted(
+        string actualGuid,
+        string actualDescription,
+        string actualSourceHash,
+        string actualDescriptionsHash)
+    {
+        return new GeneratedBaselineDiagnosis(
+            integrityPresent: false,
+            versionOk: true,
+            guidOk: true,
+            descriptionOk: true,
+            serviceSourceHashOk: true,
+            serviceDescriptionsHashOk: true,
+            storedGuid: string.Empty,
+            actualGuid: actualGuid,
+            storedDescription: string.Empty,
+            actualDescription: actualDescription,
+            storedSourceHash: string.Empty,
+            actualSourceHash: actualSourceHash,
+            storedDescriptionsHash: string.Empty,
+            actualDescriptionsHash: actualDescriptionsHash,
+            failingClause: "None");
+    }
+}
+
+public sealed class MetadataFingerprintDiagnosis
+{
+    public MetadataFingerprintDiagnosis(
+        bool fingerprintPresent,
+        bool algorithmOk,
+        bool scopeOk,
+        bool valuePresent,
+        bool hashMatch,
+        string algorithm,
+        string scope,
+        string storedValue,
+        string actualValue,
+        int snapshotLength,
+        string failingClause)
+    {
+        FingerprintPresent = fingerprintPresent;
+        AlgorithmOk = algorithmOk;
+        ScopeOk = scopeOk;
+        ValuePresent = valuePresent;
+        HashMatch = hashMatch;
+        Algorithm = algorithm ?? string.Empty;
+        Scope = scope ?? string.Empty;
+        StoredValue = storedValue ?? string.Empty;
+        ActualValue = actualValue ?? string.Empty;
+        SnapshotLength = snapshotLength;
+        FailingClause = failingClause ?? "None";
+    }
+
+    public bool FingerprintPresent { get; }
+
+    public bool AlgorithmOk { get; }
+
+    public bool ScopeOk { get; }
+
+    public bool ValuePresent { get; }
+
+    public bool HashMatch { get; }
+
+    public string Algorithm { get; }
+
+    public string Scope { get; }
+
+    public string StoredValue { get; }
+
+    public string ActualValue { get; }
+
+    public int SnapshotLength { get; }
+
+    public string FailingClause { get; }
+
+    public bool IsCompatible =>
+        !FingerprintPresent
+        || (AlgorithmOk && ScopeOk && ValuePresent && HashMatch);
+
+    public static MetadataFingerprintDiagnosis AbsentAccepted()
+    {
+        return new MetadataFingerprintDiagnosis(
+            fingerprintPresent: false,
+            algorithmOk: true,
+            scopeOk: true,
+            valuePresent: true,
+            hashMatch: true,
+            algorithm: string.Empty,
+            scope: string.Empty,
+            storedValue: string.Empty,
+            actualValue: string.Empty,
+            snapshotLength: 0,
+            failingClause: "None");
     }
 }

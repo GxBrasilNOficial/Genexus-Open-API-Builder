@@ -426,7 +426,7 @@ internal static class ApiPlanTransactionSyncOrchestrator
 
         try
         {
-            return JObject.Parse(Encoding.UTF8.GetString(bytes));
+            return ApiPlanMetadataIntegrity.ParseMetadataBytes(bytes);
         }
         catch (JsonException ex)
         {

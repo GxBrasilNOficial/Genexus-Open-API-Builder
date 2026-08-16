@@ -249,7 +249,7 @@ internal static class PrototypeWizardExistingApiContractReader
                 return ExistingApiMetadata.Empty;
             }
 
-            var document = JObject.Parse(Encoding.UTF8.GetString(bytes));
+            var document = ApiPlanMetadataIntegrity.ParseMetadataBytes(bytes);
             return new ExistingApiMetadata(
                 document,
                 ReadServiceNames(document),

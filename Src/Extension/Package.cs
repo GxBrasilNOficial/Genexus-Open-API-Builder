@@ -1259,6 +1259,7 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B092] Seguranca no ApiPlan: SecurityLevel='{apiPlan.Security.SecurityLevel}', GamCondition='{apiPlan.Security.GamCondition}', RequiresGenerationConfirmation={apiPlan.Security.RequiresGenerationConfirmation}. Sem aplicar seguranca em objetos reais.");
         WriteOutput($"[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria. GenerateSdts={selection.GenerateSdts}, GenerateProcedures={selection.GenerateProcedures}, GenerateApiObject={selection.GenerateApiObject}, GenerateMetadata={selection.GenerateMetadata}, ApplyList={selection.ApplyList}, ApplyBusinessComponent={selection.ApplyBusinessComponent}; escritas confirmadas no wizard exigem preflight completo antes de qualquer Save().");
         var generationState = ApiPlanGenerationStateReader.ReadForIntentionalChange(knowledgeBase.DesignModel, transaction, apiPlan);
+        WriteApiObjectBaselineDiagnostic(generationState);
         var preflightScope = ApiPlanWritePreflightScope.FromSelection(
             selection.GenerateSdts,
             selection.GenerateProcedures,
@@ -1979,6 +1980,49 @@ public sealed class Package : AbstractPackageUI
         if (apiObject is not null)
         {
             collector.SetMainObject(apiObject.Name, apiObject.Guid);
+        }
+    }
+
+    internal static void WriteApiObjectBaselineDiagnostic(ApiPlanGenerationState generationState)
+    {
+        WriteApiObjectBaselineDiagnostic(WriteOutput, generationState);
+    }
+
+    internal static void WriteApiObjectBaselineDiagnostic(Action<string> write, ApiPlanGenerationState generationState)
+    {
+        if (write is null)
+        {
+            throw new ArgumentNullException(nameof(write));
+        }
+
+        if (generationState is null || !generationState.ApiObject.IsBlocked)
+        {
+            return;
+        }
+
+        var conflicts = generationState.ApiObject.CollisionConflicts;
+        if (conflicts.Count == 0)
+        {
+            write($"[Genexus Open API Builder][B087] Diagnostico de posse do API Object: etapa bloqueada sem lista de conflito. Detail='{generationState.ApiObject.Detail}'.");
+            return;
+        }
+
+        foreach (var conflict in conflicts)
+        {
+            write($"[Genexus Open API Builder][B087] Diagnostico de posse do API Object (baseline de alteracao intencional): Causa='{conflict.DiagnosticReason}' | Name='{conflict.Name}' | Tipo='{conflict.ObjectType}' | Modulo='{conflict.ModuleName}' | Folder='{conflict.FolderName}'.");
+            var details = conflict.FormatDiagnosticDetails();
+            if (string.IsNullOrWhiteSpace(details))
+            {
+                continue;
+            }
+
+            foreach (var line in details.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None))
+            {
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    write($"[Genexus Open API Builder][B087] {line}");
+                }
+            }
         }
     }
 

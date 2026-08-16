@@ -76,6 +76,11 @@ Assert-True ($generationSpanish.Contains('La confirmación sigue siendo obligato
 Assert-True ($generationSpanish.Contains('Carpeta preexistente')) 'Espanhol deve traduzir o aviso de Folder reutilizado.'
 Assert-True (-not $generationSpanish.Contains('planejados=')) 'Espanhol não deve manter planejados.'
 
+$generationEnglish = $translate.Invoke($null, [object[]] @($generationDetail, $english))
+Assert-True ($generationEnglish.Contains('missing=0')) 'Inglês deve traduzir ausentes=.'
+Assert-True (-not $generationEnglish.Contains('ausentes=')) 'Inglês não deve manter ausentes=.'
+Assert-True ($generationEnglish.Contains('planned=8')) 'Inglês deve traduzir planejados.'
+
 $prefsLoaded = "Preferencias do wizard carregadas da KB ativa: File='GxOpenApiBuilder_Settings'."
 $prefsSpanish = $translate.Invoke($null, [object[]] @($prefsLoaded, $spanish))
 Assert-True ($prefsSpanish.Contains('Preferencias del wizard cargadas de la KB activa:')) 'Espanhol deve traduzir o carregamento das preferências.'
@@ -91,5 +96,53 @@ $apiObjectExistsSpanish = $translate.Invoke($null, [object[]] @($apiObjectExists
 Assert-True ($apiObjectExistsSpanish.Contains('ya existe para')) 'Espanhol deve traduzir ja existe para.'
 Assert-True ($apiObjectExistsSpanish.Contains('la actualización del API Object será absorbida')) 'Espanhol deve traduzir a atualização residual em minúsculas.'
 Assert-True (-not $apiObjectExistsSpanish.Contains('atualizacao')) 'Espanhol não deve manter atualizacao em português.'
+
+$apiObjectExistsEnglish = $translate.Invoke($null, [object[]] @($apiObjectExists, $english))
+Assert-True ($apiObjectExistsEnglish.Contains('As B071-B073/B079 was also confirmed')) 'Inglês deve traduzir Como B071... tambem foi confirmado como frase completa.'
+Assert-True (-not $apiObjectExistsEnglish.Contains('tambem')) 'Inglês não deve deixar tambem após foi confirmado.'
+Assert-True (-not $apiObjectExistsEnglish.Contains('Como B071')) 'Inglês não deve manter Como em português.'
+
+$b031 = "[B031] Contrato de API da Transacao='NotaFiscal' em memoria: Services='List'."
+$b031English = $translate.Invoke($null, [object[]] @($b031, $english))
+Assert-True ($b031English.Contains("Transaction API contract='NotaFiscal' in memory:")) 'Inglês deve traduzir o residual em memoria do B031.'
+Assert-True (-not $b031English.Contains('em memoria')) 'Inglês não deve manter em memoria no B031.'
+
+$b038 = "[B038] ApiPlan cobre: PrimaryKey=1."
+$b038English = $translate.Invoke($null, [object[]] @($b038, $english))
+Assert-True ($b038English.Contains('ApiPlan covers:')) 'Inglês deve traduzir ApiPlan cobre.'
+
+$b056 = "[B056] Descricoes reaplicadas no API Object real durante B071-B073/B079: Transaction='NotaFiscal'."
+$b056English = $translate.Invoke($null, [object[]] @($b056, $english))
+Assert-True ($b056English.Contains('Descriptions reapplied to the real API Object during B071-B073/B079:')) 'Inglês deve traduzir durante B071.'
+Assert-True (-not $b056English.Contains('durante B071')) 'Inglês não deve manter durante em português.'
+
+$collisionSource = "Bloqueado: 1 colisao(oes) externa(s), incompativel(is) ou ambigua(s) detectada(s). Nenhuma escrita sera permitida.`nConflitos (1):`n  - Nome='apiNotaFiscal' | Tipo='API Object' | Modulo='Root Module' | Folder='NotaFiscalOpenApi'"
+$collisionEnglish = $translate.Invoke($null, [object[]] @($collisionSource, $english))
+Assert-True ($collisionEnglish.Contains('external, incompatible, or ambiguous collision(s)')) 'Inglês deve traduzir o motivo da colisão.'
+Assert-True ($collisionEnglish.Contains('No writing will be allowed.')) 'Inglês deve traduzir Nenhuma escrita sera permitida como frase completa.'
+Assert-True (-not $collisionEnglish.Contains('No escrita')) 'Inglês não deve corromper Nenhuma escrita via replace de Nenhuma.'
+Assert-True ($collisionEnglish.Contains('Conflicts (1):')) 'Inglês deve traduzir Conflitos.'
+Assert-True ($collisionEnglish.Contains("Name='apiNotaFiscal'")) 'Inglês deve traduzir Nome=.'
+Assert-True ($collisionEnglish.Contains("Type='API Object'")) 'Inglês deve traduzir Tipo=.'
+Assert-True ($collisionEnglish.Contains("Module='Root Module'")) 'Inglês deve traduzir Modulo=.'
+
+$etapa = "Etapa 'API Object' bloqueada na KB: Bloqueado: o API Object precisa estar disponivel antes."
+$etapaEnglish = $translate.Invoke($null, [object[]] @($etapa, $english))
+Assert-True ($etapaEnglish.Contains("Stage 'API Object' blocked in the KB:")) 'Inglês deve traduzir Etapa bloqueada.'
+Assert-True ($etapaEnglish.Contains('the API Object must be available first.')) 'Inglês deve traduzir precisa estar disponivel.'
+
+$b087 = "[B087] Diagnostico de posse do API Object (baseline de alteracao intencional): Causa='BaselineDescriptionMismatch'. ClausulaQueFalhou='BaselineDescriptionMismatch' DescriptionAtual='manual' DescriptionSentinel='apiNotaFiscal - by Genexus Open API Builder'"
+$b087English = $translate.Invoke($null, [object[]] @($b087, $english))
+Assert-True ($b087English.Contains('API Object ownership diagnostic (intentional-change baseline):')) 'Inglês deve traduzir o cabeçalho B087.'
+Assert-True ($b087English.Contains("FailingClause='BaselineDescriptionMismatch'")) 'Inglês deve traduzir ClausulaQueFalhou=.'
+Assert-True ($b087English.Contains("CurrentDescription='manual'")) 'Inglês deve traduzir DescriptionAtual=.'
+Assert-True ($b087English.Contains("DescriptionSentinel='apiNotaFiscal - by Genexus Open API Builder'")) 'Inglês deve manter DescriptionSentinel=.'
+
+$b087Fingerprint = "[B087] FingerprintDetalhe='FingerprintHashMismatch' FingerprintGravado='AAA' FingerprintRecalculado='BBB' IntegrityPresente=True"
+$b087FingerprintEnglish = $translate.Invoke($null, [object[]] @($b087Fingerprint, $english))
+Assert-True ($b087FingerprintEnglish.Contains("FingerprintDetail='FingerprintHashMismatch'")) 'Inglês deve traduzir FingerprintDetalhe=.'
+Assert-True ($b087FingerprintEnglish.Contains("FingerprintStored='AAA'")) 'Inglês deve traduzir FingerprintGravado=.'
+Assert-True ($b087FingerprintEnglish.Contains("FingerprintActual='BBB'")) 'Inglês deve traduzir FingerprintRecalculado=.'
+Assert-True ($b087FingerprintEnglish.Contains('IntegrityPresent=True')) 'Inglês deve traduzir IntegrityPresente=.'
 
 Write-Output 'PASS: ExtensionOutputLocalization'

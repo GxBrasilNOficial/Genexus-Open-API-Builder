@@ -190,7 +190,7 @@ internal static class ApiPlanMetadataFileWriter
         JObject metadata;
         try
         {
-            metadata = JObject.Parse(Encoding.UTF8.GetString(bytes));
+            metadata = ApiPlanMetadataIntegrity.ParseMetadataBytes(bytes);
         }
         catch (JsonException ex)
         {
@@ -294,28 +294,9 @@ internal static class ApiPlanMetadataFileWriter
         }
     }
 
-    private static bool HasCompatibleMetadataFingerprint(JObject metadata)
+    internal static bool HasCompatibleMetadataFingerprint(JObject metadata)
     {
-        var fingerprint = metadata["fingerprint"] as JObject;
-        if (fingerprint is null)
-        {
-            return true;
-        }
-
-        var algorithm = fingerprint["algorithm"]?.Value<string>();
-        var scope = fingerprint["scope"]?.Value<string>();
-        var expected = fingerprint["value"]?.Value<string>();
-        if (!string.Equals(algorithm, "SHA-256", StringComparison.Ordinal) ||
-            !string.Equals(scope, "metadataWithoutFingerprint", StringComparison.Ordinal) ||
-            string.IsNullOrWhiteSpace(expected))
-        {
-            return false;
-        }
-
-        var snapshot = (JObject)metadata.DeepClone();
-        snapshot.Remove("fingerprint");
-        var actual = ComputeSha256(Encoding.UTF8.GetBytes(snapshot.ToString(Formatting.None)));
-        return string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase);
+        return ApiPlanMetadataIntegrity.DiagnoseMetadataFingerprint(metadata).IsCompatible;
     }
 
     private static string CreateMetadataJson(Transaction transaction, ApiPlan apiPlan, API apiObject)

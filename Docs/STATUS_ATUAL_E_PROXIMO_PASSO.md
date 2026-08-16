@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-08-15.
+2026-08-16.
 
 ## Último marco concluído
 
@@ -104,14 +104,15 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Em 2026-08-12 segundo usuário externo (Miguel) confirmou uso bem-sucedido da Alpha `0.1.0-alpha.1` no GeneXus 18 U15 pelo caminho de mantenedor: repositório baixado, DLL do **build local**, `Install-ExtensionForGeneXus18.bat` e depois `genexus /install`. Feedback em [#3](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/3). Não reabre o gate Sprint 8; reforça adoção U15 (não é evidência da variante Packages/Release). Evidência: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md`.
 - Em 2026-08-12 foi iniciada, em paralelo explícito à Sprint 9, a Fase 1 do suporte `Gx18u13` (D43): Exp-ParidadeEmpacote mediu o nome lógico do recurso `.package`, Exp-RefsNomes produziu a lista de referências e a sonda Exp-Compat foi compilada com o SDK canônico. Depois, a instalação local U13 permitiu corroborar `N=143920`, copiar as referências pinadas para a área ignorada e iniciar a Fase 2. Evidências: `Docs/Implementation/2026-08-12-EXP-F1-SUPORTE-GX18U13.md` e `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
 - Em 2026-08-12/13 o `Build All` da Transaction `Employee` passou no U13, com apenas os avisos conhecidos `pmm0003` e de fallback de descrições. O build focado das Procedures e a recriação posterior da API confirmaram por A/B que `NoAccept(EmployeeAddedDate)` causa `spc0018` quando o gerador tenta atribuir o campo no BC; a correção agora desabilita esse atributo em `CreateRequest` e `UpdateRequest`, preservando `Response`, `ListResponse` e `ListFilters`. Em seguida, a API foi removida e recriada no U15 com os mesmos números de contrato e o `Build All` U15 passou sem `spc0018`, confirmando a compatibilidade. Evidência: `Docs/Implementation/2026-08-12-NOACCEPT-READONLY-BUSINESS-COMPONENT.md`.
+- Em 2026-08-16 a localização residual em inglês (KB italiana com fallback `English`) e o reencontro do API Object após falso positivo do fingerprint B060 foram validados no U15 em `NotaFiscal`: `Updated=13`, `Blocked=0`, metadata `Reencountered`. Evidência: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §6.
 
 ## Frente atual
 
-Teste manual da localização residual em **inglês** (espanhol encerrado em 2026-08-15). A Sprint 9 e o fechamento U13 permanecem paralelos e fora desta ação.
+Sprint 9 — priorização do feedback da Alpha. A localização residual (espanhol, inglês e fallback italiano) e o falso positivo do fingerprint B060 estão encerrados.
 
 ## Próxima ação única
 
-Validar a localização em **inglês** na KB de teste (`wsEducacaoSpTeste`): Kb Language = English, mesmos pontos que quebraram em espanhol (Wizard/Resumen, informe, sync com/sem diff, Output B054, diálogo Eliminar). O teste espanhol desta frente está encerrado. Evidência da sessão: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §5.
+Iniciar a Sprint 9 priorizando o feedback da Alpha já registrado (issues GitHub e relatos do mantenedor). A localização residual e a relitura estável do fingerprint B060 não são mais a ação operacional vigente. Evidência da sessão: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §6.
 
 ## Evidência da frente encerrada
 
@@ -200,6 +201,7 @@ Validar a localização em **inglês** na KB de teste (`wsEducacaoSpTeste`): Kb 
 51. Em 2026-08-13 a DLL canônica foi reinstalada no U15, B086 removeu 12 objetos próprios, o Wizard recriou a API com `Create=5`, `Update=5`, `Response=9`, `ListFilters=2`, `Created=12`, `Updated=2`, `Blocked=0` e campos bloqueados `CreateRequest=4`/`UpdateRequest=4`; o `Build All` U15 terminou com sucesso e sem `spc0018`. Naquele ponto, a compatibilidade U13/U15 do contrato `NoAccept` estava confirmada e a validação HTTP era o próximo recorte; essa bateria foi concluída posteriormente na revalidação de `apiNotaFiscal`. Evidência: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
 52. Em 2026-08-15 foram consolidadas a localização trilíngue da extensão (pt-BR, es, en) com `ExtensionLocalization`, `ExtensionLanguage` e `ExtensionOutputLocalization`, cobrindo comandos do manifesto, diálogos do Wizard/Sync/Preferências/Relatório e mensagens na janela Output; a restauração de filtros e seleções de APIs existentes no Wizard (`PrototypeWizardExistingApiContractReader`); o diagnóstico de ownership (`DiagnoseOwnership`) e suporte a refresh deliberado de contrato (`allowIntentionalContractRefresh`); e o alinhamento de erros HTTP em `List` com `ErrorResponse`, `RestStatusCode=400` e eliminação de `msg()`. Testes unitários integrados ao gate pré-push mecânico. Evidência: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md`.
 53. Em 2026-08-15 o teste manual **espanhol** da localização residual foi encerrado na KB `wsEducacaoSpTeste` / Transaction `NotaFiscal` (Wizard, informes, sync, Output B054, Eliminar com diálogo próprio em duas colunas). Correções de catálogo (`Nenhuma`/`Nenhum`, wrap do informe, Required curto, leftover B054) e `ExtensionConfirmDialog` entram neste commit. Próxima ação = teste manual **inglês**. Detalhe: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §5.
+54. Em 2026-08-15/16 o teste inglês usou Kb Language italiano (fallback `English`) em `NotaFiscal`. Leftovers de UI/Output foram corrigidos; o Wizard seguinte bloqueou `apiNotaFiscal` com `MetadataFingerprintMismatch` apesar do B067 íntegro. Causa: `JObject.Parse` convertia `generatedAtUtc` (`ToString("O")`) em `DateTime` e o compacto do Newtonsoft cortava zeros fracionários. Parse da metadata passou a `DateParseHandling.None`; a conferência SHA-256 permanece. Reteste: `GenerateApiObject=True`, `GenerateMetadata=True`, `Updated=13`, `Blocked=0`, File `Reencountered`. Próxima ação = Sprint 9 (priorizar feedback). Detalhe: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §6.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -230,7 +232,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 9 — priorização do feedback da Alpha; permanece paralela e não é iniciada como parte deste fechamento U13.
+- Sprint 9 — priorização do feedback da Alpha; passa a ser a próxima ação operacional após o fechamento da localização residual e do fingerprint B060.
 - Sprint 10 — Beta estável.
 
 ## Protocolo de atualização

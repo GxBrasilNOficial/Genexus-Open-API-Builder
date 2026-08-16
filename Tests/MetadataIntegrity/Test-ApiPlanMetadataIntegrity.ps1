@@ -97,6 +97,22 @@ Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegr
 Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleGeneratedBaseline($metadata, $actualDescriptionsHash, $currentSourceHash, 'Descricao manual', '11111111-1111-1111-1111-111111111111')) 'O baseline deve rejeitar Description editada diretamente.'
 Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleGeneratedBaseline($metadata, $actualDescriptionsHash, $currentSourceHash, $descriptionSentinel, '22222222-2222-2222-2222-222222222222')) 'O baseline deve rejeitar GUID divergente.'
 
+$compatibleBaseline = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::DiagnoseGeneratedBaseline($metadata, $actualDescriptionsHash, $currentSourceHash, $descriptionSentinel, '11111111-1111-1111-1111-111111111111')
+Assert-True $compatibleBaseline.IsCompatible 'DiagnoseGeneratedBaseline deve aceitar o estado gravado.'
+Assert-True ($compatibleBaseline.FailingClause -eq 'None') 'DiagnoseGeneratedBaseline compatível deve reportar FailingClause=None.'
+
+$sourceMismatch = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::DiagnoseGeneratedBaseline($metadata, $actualDescriptionsHash, ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ComputeNormalizedTextSha256($currentSource + "`n// edicao manual")), $descriptionSentinel, '11111111-1111-1111-1111-111111111111')
+Assert-False $sourceMismatch.IsCompatible 'DiagnoseGeneratedBaseline deve rejeitar Source editado.'
+Assert-True ($sourceMismatch.FailingClause -eq 'BaselineServiceSourceHashMismatch') 'DiagnoseGeneratedBaseline deve identificar hash do Service Source.'
+
+$descriptionMismatch = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::DiagnoseGeneratedBaseline($metadata, $actualDescriptionsHash, $currentSourceHash, 'Descricao manual', '11111111-1111-1111-1111-111111111111')
+Assert-False $descriptionMismatch.IsCompatible 'DiagnoseGeneratedBaseline deve rejeitar Description editada.'
+Assert-True ($descriptionMismatch.FailingClause -eq 'BaselineDescriptionMismatch') 'DiagnoseGeneratedBaseline deve identificar Description.'
+
+$guidMismatch = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::DiagnoseGeneratedBaseline($metadata, $actualDescriptionsHash, $currentSourceHash, $descriptionSentinel, '22222222-2222-2222-2222-222222222222')
+Assert-False $guidMismatch.IsCompatible 'DiagnoseGeneratedBaseline deve rejeitar GUID divergente.'
+Assert-True ($guidMismatch.FailingClause -eq 'BaselineGuidMismatch') 'DiagnoseGeneratedBaseline deve identificar GUID.'
+
 $formattedSource = @'
 apiTransaction2
 {
@@ -199,6 +215,54 @@ Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegr
 
 $legacyMetadata = [Newtonsoft.Json.Linq.JObject]::new()
 Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::HasCompatibleIntegrity($legacyMetadata, $descriptionsHash, $plannedContractHash, $actualDescriptionsHash, $descriptionSentinel, $expectedSource, $false)) 'Metadata legada sem bloco integrity deve continuar aceita para primeiro upgrade conservador.'
+$legacyBaseline = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::DiagnoseGeneratedBaseline($legacyMetadata, $actualDescriptionsHash, $currentSourceHash, $descriptionSentinel, '11111111-1111-1111-1111-111111111111')
+Assert-True $legacyBaseline.IsCompatible 'DiagnoseGeneratedBaseline deve aceitar metadata sem integrity.'
+Assert-True ($legacyBaseline.FailingClause -eq 'None') 'Metadata sem integrity deve reportar FailingClause=None.'
+
+$fingerprintMetadata = [Newtonsoft.Json.Linq.JObject]::Parse('{"schemaVersion":"GOAB_API_METADATA_B060_V1","generatedAtUtc":"2026-08-15T00:00:00.0000000Z"}')
+$snapshotHash = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ComputeJsonSha256($fingerprintMetadata)
+$compatibleFingerprint = [Newtonsoft.Json.Linq.JObject]::Parse($fingerprintMetadata.ToString([Newtonsoft.Json.Formatting]::None))
+$fingerprintBlock = [Newtonsoft.Json.Linq.JObject]::new()
+$fingerprintBlock.Add('algorithm', [Newtonsoft.Json.Linq.JValue]::new('SHA-256'))
+$fingerprintBlock.Add('scope', [Newtonsoft.Json.Linq.JValue]::new('metadataWithoutFingerprint'))
+$fingerprintBlock.Add('value', [Newtonsoft.Json.Linq.JValue]::new($snapshotHash))
+$compatibleFingerprint.Add('fingerprint', $fingerprintBlock)
+$fingerprintOk = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::DiagnoseMetadataFingerprint($compatibleFingerprint)
+Assert-True $fingerprintOk.IsCompatible 'Fingerprint compatível deve ser aceito.'
+Assert-True ($fingerprintOk.FailingClause -eq 'None') 'Fingerprint compatível deve reportar FailingClause=None.'
+Assert-True ($fingerprintOk.StoredValue -eq $snapshotHash) 'Fingerprint compatível deve preservar o hash gravado.'
+Assert-True ($fingerprintOk.ActualValue -eq $snapshotHash) 'Fingerprint compatível deve recalcular o mesmo hash.'
+
+$brokenFingerprint = [Newtonsoft.Json.Linq.JObject]::Parse($compatibleFingerprint.ToString([Newtonsoft.Json.Formatting]::None))
+$brokenFingerprint.Property('generatedAtUtc').Value = [Newtonsoft.Json.Linq.JValue]::new('2026-08-16T00:00:00.0000000Z')
+$fingerprintMismatch = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::DiagnoseMetadataFingerprint($brokenFingerprint)
+Assert-False $fingerprintMismatch.IsCompatible 'Fingerprint deve rejeitar snapshot alterado.'
+Assert-True ($fingerprintMismatch.FailingClause -eq 'FingerprintHashMismatch') 'Fingerprint deve identificar hash divergente.'
+Assert-True ($fingerprintMismatch.StoredValue -eq $snapshotHash) 'Fingerprint divergente deve preservar o hash gravado.'
+Assert-True ($fingerprintMismatch.ActualValue -ne $snapshotHash) 'Fingerprint divergente deve expor o hash recalculado.'
+
+$absentFingerprint = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::DiagnoseMetadataFingerprint($fingerprintMetadata)
+Assert-True $absentFingerprint.IsCompatible 'Metadata sem fingerprint deve continuar aceita.'
+
+$writeTimestamp = '2026-08-15T22:00:00.1230000Z'
+$writeMetadata = [Newtonsoft.Json.Linq.JObject]::new()
+$writeMetadata.Add('schemaVersion', [Newtonsoft.Json.Linq.JValue]::new('GOAB_API_METADATA_B060_V1'))
+$writeMetadata.Add('generatedAtUtc', [Newtonsoft.Json.Linq.JValue]::new($writeTimestamp))
+$writeHash = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ComputeJsonSha256($writeMetadata)
+$writeFingerprint = [Newtonsoft.Json.Linq.JObject]::new()
+$writeFingerprint.Add('algorithm', [Newtonsoft.Json.Linq.JValue]::new('SHA-256'))
+$writeFingerprint.Add('scope', [Newtonsoft.Json.Linq.JValue]::new('metadataWithoutFingerprint'))
+$writeFingerprint.Add('value', [Newtonsoft.Json.Linq.JValue]::new($writeHash))
+$writeMetadata.Add('fingerprint', $writeFingerprint)
+$persistedJson = $writeMetadata.ToString([Newtonsoft.Json.Formatting]::Indented) + "`n"
+$defaultParsed = [Newtonsoft.Json.Linq.JObject]::Parse($persistedJson)
+$defaultFingerprint = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::DiagnoseMetadataFingerprint($defaultParsed)
+Assert-False $defaultFingerprint.IsCompatible 'JObject.Parse padrao deve quebrar o fingerprint quando generatedAtUtc tem zeros a direita.'
+$stableParsed = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::ParseMetadataJson($persistedJson)
+Assert-True ($stableParsed['generatedAtUtc'].Type.ToString() -eq 'String') 'ParseMetadataJson deve preservar generatedAtUtc como string.'
+$stableFingerprint = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataIntegrity]::DiagnoseMetadataFingerprint($stableParsed)
+Assert-True $stableFingerprint.IsCompatible 'ParseMetadataJson deve preservar o fingerprint com generatedAtUtc ToString(O).'
+Assert-True ($stableFingerprint.ActualValue -eq $writeHash) 'O hash relido com DateParseHandling.None deve coincidir com o gravado.'
 
 if ($metadataWriterSource.IndexOf('CreatePlannedContract(apiPlan, transactionStructure: transactionStructure, includePagination: false)', [StringComparison]::Ordinal) -lt 0) {
     throw 'ASSERT_FAILED: O hash B067 deve excluir a paginação do contrato essencial.'
@@ -214,6 +278,9 @@ if ($metadataWriterSource.IndexOf('storedContractWithoutPagination.Remove("pagin
 }
 if ($metadataWriterSource.IndexOf('HasCompatibleGeneratedBaseline', [StringComparison]::Ordinal) -lt 0) {
     throw 'ASSERT_FAILED: O writer deve possuir uma validacao de baseline independente do plano desejado.'
+}
+if ($metadataWriterSource.IndexOf('ParseMetadataBytes', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: O writer deve reler a metadata sem converter generatedAtUtc em DateTime.'
 }
 
 Write-Output 'PASS: ApiPlanMetadataIntegrity'

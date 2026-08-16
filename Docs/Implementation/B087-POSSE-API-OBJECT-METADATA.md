@@ -36,3 +36,13 @@ Transaction `Teste` / `apiTeste` (já com metadata):
 4. Output: preflight B063/B064/B067 aprovado; 7 SDTs e 4 Procedures `Reencountered`; B071-B073/B079 e B070 sincronizaram `ApiObjectGuid='a522cbdf-b889-4075-842f-2b9b196b3239'`; metadata `Status='Reencountered'`, `Guid='73fcc50b-9653-43ae-8889-4931e0ab0c25'`, B067 gravou `PlannedContractHash='1CBFA4DA0F0D05354451BF3C7D7333B6414193EB75381AD90F59969A79B8019D'`.
 5. Após o Wizard, a Description humana editada **permaneceu** (não foi restaurada à frase padrão).
 6. Build All não foi exigido para este critério de posse.
+
+## Diagnóstico na Output (2026-08-15/16)
+
+Quando o Wizard bloqueia o API Object no baseline de alteração intencional, a Output `[B087]` lista `ClausulaQueFalhou`, GUIDs, hashes B067 e o detalhe do fingerprint (`FingerprintStored` / `FingerprintActual` / `FingerprintDetail`). Não altera a regra de posse; só torna a cláusula visível.
+
+O reencontro intencional também exige o fingerprint SHA-256 do JSON persistido (`metadataWithoutFingerprint`). Esse hash deve ser recalculado sobre o mesmo texto gravado: a relitura usa `DateParseHandling.None`, porque `JObject.Parse` convertia `generatedAtUtc` (`ToString("O")`) em `DateTime` e o compacto do Newtonsoft cortava zeros fracionários, gerando falso `MetadataFingerprintMismatch` com B067 íntegro.
+
+## Validação manual U15 (2026-08-16)
+
+Transaction `NotaFiscal` / `apiNotaFiscal` (KB `wsEducacaoSpTeste`, fallback inglês): após o parse estável, o Wizard reencontrou API Object e metadata (`Updated=13`, `Blocked=0`, File `Reencountered`). Evidência de sessão: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §6.
