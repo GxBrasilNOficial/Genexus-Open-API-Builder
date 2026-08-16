@@ -22,6 +22,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Cobertura mecânica do pré-push (2026-08-15): `scripts/Invoke-PrePushMechanicalChecks.ps1` e `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1` passaram a cobrir os testes de localização (`Test-ExtensionLanguage.ps1`, `Test-ExtensionOutputLocalization.ps1`) e restauração de filtros de API existente (`Test-PrototypeWizardExistingApiFilters.ps1`).
 - Chrome da UI em português (2026-08-15): rótulos de segurança e paginação das preferências e do Wizard passam a português com acentos; `CreateRequest`, `UpdateRequest`, `Response` e `ListFilters` exibem gloss entre parênteses em pt-BR e espanhol (`ExtensionUiTerms.RoleLabel`) e permanecem só em inglês na UI inglesa. Verbos REST e tokens `Authentication`/`Authorization`/`None` continuam em inglês.
 - Localização residual em espanhol (2026-08-15): motivos de campo bloqueado, operador `Contem`, status de geração, resumo do Wizard e frases da Output que ainda saíam em português passam pelo catálogo; a coluna de rótulos das preferências foi alargada para não cortar “Tamanho máximo da página”.
+- Checkpoint e plano por sprints (2026-08-16): `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`, `Docs/Foundation/24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md` e `Docs/Foundation/06-BACKLOG_v0.1.md` deixam de tratar localização residual, fingerprint B060, aborto na primeira aba e `Build All` pós-reencontro como pré-condição aberta; a próxima ação única passa a ser a Sprint 9.
 
 ### Fixed
 

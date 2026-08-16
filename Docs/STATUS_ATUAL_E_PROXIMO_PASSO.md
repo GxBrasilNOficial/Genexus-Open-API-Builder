@@ -118,14 +118,11 @@ Iniciar a Sprint 9 priorizando o feedback da Alpha já registrado (issues GitHub
 
 ## Evidência da frente encerrada
 
-- Gate Sprint 8 fechado em 2026-08-12 com usuário externo Igor C. Menin;
-- DLL do Release `0.1.0-alpha.1`; GeneXus 18 Upgrade 14 (`18.0.187820 U14`);
-- instalação observada: cópia da DLL em `Packages` + `genexus /install` (variante do INSTALL; Add > Local não foi o caminho usado por esse usuário);
-- captura: menu Genexus Open API Builder + Folder `TesteOpenApi` / `apiTeste` / Procedures e SDTs na KB `KbTesteGx18U14` (Transaction `Teste`);
-- feedback registrado pelo mantenedor em [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1);
-- imagem arquivada em `Docs/Images/alpha-u14-igor-menin.png`;
-- residual U14 (carregamento + uso prático do SDK) fechado por esta evidência; U15 do mantenedor permanece a bateria completa de validação;
-- fonte factual: `Docs/Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md`.
+- Localização trilíngue (pt-BR, es, en), restauração de filtros de API existente, diagnóstico B087 na Output e contrato de erro de `List` com `ErrorResponse`/`RestStatusCode`, registrados em `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md`.
+- Teste manual residual em espanhol e inglês (fallback `English` com KB italiana) na Transaction `NotaFiscal`; falso positivo do fingerprint B060 corrigido com `DateParseHandling.None`; reencontro `Updated=13`, `Blocked=0`, metadata `Reencountered`.
+- Primeira aba do wizard único sem Voltar; aborto B034 validado em inglês, espanhol e português; `Build All` pós-reencontro de `apiNotaFiscal` nos environments `.NET`/PostgreSQL e `.NET Framework`/SQL Server, sem `spc0018`.
+- Leftovers B035/`<não definido>`/MessageBoxes do relatório e owner/monitor do B081 registrados no catálogo e no código; cobertura mecânica apenas. Multi-monitor e B035 em es/en continuam em `Bloqueios e fatos ainda não validados`.
+- Gate Sprint 8 (U14) e Fase 2 U13 permanecem evidência histórica nas seções seguintes e na sequência operacional; não são a frente que esta promoção encerra.
 
 ## Evidência da frente U13 iniciada
 
@@ -140,12 +137,12 @@ Iniciar a Sprint 9 priorizando o feedback da Alpha já registrado (issues GitHub
 
 ## Critério de conclusão da revisão pré-push
 
-- frente U13 já commitada, em `main`, com working tree limpa;
+- alinhamento documental da promoção à Sprint 9 já commitado, em `main`, com working tree limpa;
 - `origin/main` atualizada, sem commits remotos à frente da frente local;
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- Sprint 9 permanece fora do escopo desta frente e não é requisito para seu fechamento;
+- a próxima ação única é iniciar a Sprint 9; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
@@ -206,6 +203,7 @@ Iniciar a Sprint 9 priorizando o feedback da Alpha já registrado (issues GitHub
 54. Em 2026-08-15/16 o teste inglês usou Kb Language italiano (fallback `English`) em `NotaFiscal`. Leftovers de UI/Output foram corrigidos; o Wizard seguinte bloqueou `apiNotaFiscal` com `MetadataFingerprintMismatch` apesar do B067 íntegro. Causa: `JObject.Parse` convertia `generatedAtUtc` (`ToString("O")`) em `DateTime` e o compacto do Newtonsoft cortava zeros fracionários. Parse da metadata passou a `DateParseHandling.None`; a conferência SHA-256 permanece. Reteste: `GenerateApiObject=True`, `GenerateMetadata=True`, `Updated=13`, `Blocked=0`, File `Reencountered`. Próxima ação = Sprint 9 (priorizar feedback). Detalhe: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §6.
 55. Em 2026-08-16 a primeira aba do wizard único deixou de exibir Voltar; Cancelar/fechar foi validado em inglês, espanhol e português; o apply em pt-BR reencontrou `apiNotaFiscal` (`Updated=13`, `Blocked=0`, Guid `ee78dcc0-…`); o `Build All` passou em `NETPostgreSQL155` e `NETFrameworkSQLServer004`, gerando Procedures/API/SDTs e a permissão GAM `apiNotaFiscal-ee78dcc0-…`, sem `spc0018`. Próxima ação = Sprint 9. Detalhe: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §7.
 56. Em 2026-08-16 leftovers B035/`<não definido>`/MessageBoxes do relatório e o owner/monitor do B081 foram registrados no catálogo e no código (`ResolveFinalReportOwner`, sem `OpenForms`). Testes mecânicos passaram; não há evidência U15 de multi-monitor nem de B035 em es/en. Próxima ação = Sprint 9. Detalhe: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §8.
+57. Em 2026-08-16 a revisão pré-push alinhou o checkpoint (`Evidência da frente encerrada`, `Critério de conclusão da revisão pré-push`, `Marcos ainda não iniciados`) e os documentos 06 e 24 à promoção já vigente: localização residual, fingerprint B060, aborto na primeira aba e `Build All` pós-reencontro encerrados; próxima ação única = Sprint 9.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -237,7 +235,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 9 — priorização do feedback da Alpha; passa a ser a próxima ação operacional após o fechamento da localização residual e do fingerprint B060.
+- Sprint 9 — priorização do feedback da Alpha (próxima ação única neste checkpoint).
 - Sprint 10 — Beta estável.
 
 ## Protocolo de atualização
