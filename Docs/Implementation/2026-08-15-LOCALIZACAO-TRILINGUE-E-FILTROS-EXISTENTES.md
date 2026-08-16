@@ -138,4 +138,27 @@ Causa: a gravação hasheia `generatedAtUtc` como string `DateTime.UtcNow.ToStri
 
 `GenerateSdts/Procedures/ApiObject/Metadata/ApplyList/ApplyBusinessComponent=True`; preflight agregado aprovado; `Updated=13`, `Blocked=0`; `apiNotaFiscal` Guid `ee78dcc0-8dc6-480d-90e0-cf0ced1c83e9`; File `apiNotaFiscal_Metadata` `Status='Reencountered'`, `Bytes=78480`. Avisos restantes: fallback inglês das descrições e Folder `NotaFiscalOpenApi` reutilizado.
 
+---
+
+## 7. Aborto na primeira aba, round-trip de idioma e Build All (2026-08-16)
+
+KB `wsEducacaoSpTeste`, Transaction `NotaFiscal`, GeneXus 18 U15. Manifesto inalterado nesta leva; só reinstalação da DLL.
+
+### UX e Output
+
+- Na primeira aba do wizard único o botão Voltar/Back/Atrás fica oculto. Sair sem concluir é Cancelar, Esc ou fechar a janela. A partir da segunda aba (e no Resumo) o Voltar reaparece e só retrocede página.
+- Cancelar/fechar em inglês e espanhol usa B034 `Single wizard canceled or closed` / `Asistente único cancelado o cerrado`, sem leftover da frase antiga de Voltar no início.
+- Round-trip: inglês, espanhol, depois português com GeneXus fechado e reaberto. Menus, Wizard, sync sem diferença, diálogo B086 (Sim/Não) e apply em pt-BR permaneceram no catálogo certo.
+- Apply em português após o round-trip: `Updated=13`, `Blocked=0`, API Guid `ee78dcc0-8dc6-480d-90e0-cf0ced1c83e9`, File `Reencountered` (`Bytes=78480`). B054 absorveu a atualização do API Object no preflight de Business Component. Avisos: B056 (`PendingKbLanguageApiValidation`) e Folder `NotaFiscalOpenApi` reutilizado.
+
+### Build All nos dois environments
+
+Depois do apply, `Build All` concluiu com `Success` em:
+
+- `.NET` / PostgreSQL (`NETPostgreSQL155`): reorg da tabela `NotaFiscal` (8 registros); especificação e geração de `procNotaFiscal_API_List/Get/Create/Update`, `apiNotaFiscal` (`apinotafiscal.cs`, `_services.cs`, `_client_rest.cs`, `apinotafiscal.grp.json`); geração dos 7 SDTs da API; documentação REST de `apiNotaFiscal`; permissão GAM `apiNotaFiscal-ee78dcc0-8dc6-480d-90e0-cf0ced1c83e9` (1 de 14).
+- `.NET Framework` / SQL Server (`NETFrameworkSQLServer004`): o mesmo conjunto de objetos da API, reorg da tabela `NotaFiscal` (19 registros) e a mesma permissão GAM.
+
+Não houve `spc0018` nas Procedures da API. Os avisos restantes são da KB de teste (`spc0053`/`spc0024`/`src0306` em objetos GuiaPed/WorkWith; `FBiTextSharp.dll` no environment Framework) e não do contrato gerado pelo Wizard.
+
+A reorganização de `NotaFiscal` veio do pattern Work With for Web / impacto de tabela, não de criação de objeto da API.
 
