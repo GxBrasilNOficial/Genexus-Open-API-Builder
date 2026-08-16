@@ -19,7 +19,8 @@ Assert-Contains $source 'if (attribute.IsPrimaryKey)' 'DefaultCreateRequired dev
 Assert-Contains $source 'DefaultCreateRequired' 'Heuristica DefaultCreateRequired deve existir.'
 Assert-Contains $source '_createRequiredList' 'Aba Obrigatorios Create deve ser editavel via lista de checkboxes.'
 Assert-Contains $source 'Chave primária não autonumerada inicia opcional' 'Motivo de PK opcional no Create deve existir.'
-Assert-Contains $source 'CreateRequest - Obrigatório no payload (editável)' 'Rotulo da aba deve indicar Create required editavel.'
+Assert-Contains $source 'RoleLabel("CreateRequest")' 'Rotulo CreateRequest da aba Obrigatorios deve usar RoleLabel.'
+Assert-Contains $source 'Obrigatório no payload (editável)' 'Rotulo da aba deve indicar Create required editavel.'
 Assert-Contains $source 'Height = 912;' 'Wizard principal deve iniciar com altura de 912 pixels.'
 
 # Garante que o default de PK e false (return false apos IsPrimaryKey no DefaultCreateRequired).

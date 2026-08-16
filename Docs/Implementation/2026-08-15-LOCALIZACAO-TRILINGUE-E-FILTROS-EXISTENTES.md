@@ -161,4 +161,3 @@ Depois do apply, `Build All` concluiu com `Success` em:
 Não houve `spc0018` nas Procedures da API. Os avisos restantes são da KB de teste (`spc0053`/`spc0024`/`src0306` em objetos GuiaPed/WorkWith; `FBiTextSharp.dll` no environment Framework) e não do contrato gerado pelo Wizard.
 
 A reorganização de `NotaFiscal` veio do pattern Work With for Web / impacto de tabela, não de criação de objeto da API.
-
