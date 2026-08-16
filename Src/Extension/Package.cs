@@ -1963,10 +1963,7 @@ public sealed class Package : AbstractPackageUI
         }
 
         var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
-        var owner = System.Windows.Forms.Form.ActiveForm
-            ?? System.Windows.Forms.Application.OpenForms
-                .Cast<System.Windows.Forms.Form>()
-                .FirstOrDefault(form => form.Visible && form.IsHandleCreated);
+        var owner = ResolveFinalReportOwner();
         using var dialog = new ApiPlanApplicationFinalReportDialog(
             report,
             designModel,
@@ -2041,6 +2038,32 @@ public sealed class Package : AbstractPackageUI
                 }
             }
         }
+    }
+
+    private static System.Windows.Forms.IWin32Window? ResolveFinalReportOwner()
+    {
+        if (System.Windows.Forms.Form.ActiveForm is { } activeForm)
+        {
+            return activeForm;
+        }
+
+        var mainWindowHandle = Process.GetCurrentProcess().MainWindowHandle;
+        if (mainWindowHandle != IntPtr.Zero)
+        {
+            return new NativeWindowHandle(mainWindowHandle);
+        }
+
+        return null;
+    }
+
+    private sealed class NativeWindowHandle : System.Windows.Forms.IWin32Window
+    {
+        public NativeWindowHandle(IntPtr handle)
+        {
+            Handle = handle;
+        }
+
+        public IntPtr Handle { get; }
     }
 
     private static void WriteOutput(string message)

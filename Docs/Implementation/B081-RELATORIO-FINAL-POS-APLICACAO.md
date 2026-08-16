@@ -45,3 +45,9 @@ Após os cenários negativos de Folder e a limpeza da KB, a API foi recriada man
 
 - O Wizard principal passou a iniciar com `1200x912`, com `MinimumSize=900x640`.
 - O diálogo do relatório calcula a altura preferencial com acréscimo de 10% e a largura com acréscimo de 20%, preservando limites relativos à área útil da tela (`WorkingArea - 60` na altura e `WorkingArea - 80` na largura) e a rolagem vertical para textos longos.
+
+## Monitor e owner — 2026-08-16
+
+O relatório deixa de escolher o monitor pela posição do cursor. `Package.ShowFinalReport` resolve o owner com `Form.ActiveForm` e, se nulo, com `Process.MainWindowHandle`; o diálogo abre com `ShowDialog(owner)` quando há owner e calcula `WorkingArea` a partir do handle dessa janela (depois handle próprio, depois janela principal do processo, depois tela primária).
+
+A cobertura desta mudança é mecânica (`Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport.ps1`). Não há evidência U15 de multi-monitor.

@@ -29,6 +29,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Fingerprint da metadata B060 (2026-08-16): a relitura do File passava `generatedAtUtc` por `JObject.Parse`, que converte ISO-8601 em `DateTime` e, ao compactar de novo, corta zeros fracionários (`ToString("O")` vs formato ISO do Newtonsoft). O parse da metadata passou a `DateParseHandling.None`; a conferência SHA-256 permanece.
 - Output de aborto do Wizard (2026-08-16): Voltar/Cancelar/fechar no wizard único e nos passos B031/B032, mais a saída de Business Component, passam pelo catálogo em espanhol e inglês.
 - Primeira aba do Wizard (2026-08-16): o botão Voltar/Back/Atrás fica oculto; não fecha mais o diálogo. A saída sem concluir nessa tela continua sendo Cancelar, Esc ou fechar a janela.
+- Leftovers de localização (2026-08-16): a confirmação B035 de habilitar Business Component, o fallback `<não definido>` no resumo de path e os MessageBoxes do relatório final (objeto principal ausente ou falha ao abrir) passam pelo catálogo em espanhol e inglês. Teste `Tests/Localization/Test-ExtensionLanguage.ps1`.
+- Monitor do relatório final B081 (2026-08-16): o diálogo deixa de usar a posição do cursor; abre como modal da janela owner da IDE (`Form.ActiveForm`, com fallback em `Process.MainWindowHandle`) e centraliza na área útil desse monitor. Teste `Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport.ps1`. Validação manual U15 em multi-monitor ainda pendente.
 
 ---
 
