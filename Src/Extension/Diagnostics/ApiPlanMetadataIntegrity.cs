@@ -198,11 +198,6 @@ public static class ApiPlanMetadataIntegrity
             return true;
         }
 
-        var storedDescriptionSentinel = integrity.SelectToken("apiObject.descriptionSentinel")?.Value<string>() ?? string.Empty;
-        var storedApiGuid = integrity.SelectToken("apiObject.guid")?.Value<string>() ?? string.Empty;
-        var storedSourceHash = integrity.SelectToken("apiObject.serviceSourceCurrentHash")?.Value<string>() ?? string.Empty;
-        var storedDescriptionsHash = integrity.SelectToken("generatedDescriptions.hash")?.Value<string>() ?? string.Empty;
-
         return DiagnoseGeneratedBaseline(
             metadata,
             actualServiceDescriptionsHash,

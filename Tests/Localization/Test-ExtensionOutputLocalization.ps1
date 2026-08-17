@@ -194,4 +194,18 @@ $b035English = $translate.Invoke($null, [object[]] @($b035, $english))
 Assert-True ($b035English.Contains('blocked: Business Component disabled and explicit enablement not confirmed.')) 'Inglês deve traduzir B035 bloqueada.'
 Assert-True ($b035English.Contains('No ApiPlan was created and no changes were made to the KB.')) 'Inglês deve traduzir Nenhum ApiPlan foi criado e nenhuma alteracao.'
 
+$exceptionMsg = "Criacao de API Object bloqueada: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita."
+$exceptionSpanish = $translate.Invoke($null, [object[]] @($exceptionMsg, $spanish))
+$exceptionEnglish = $translate.Invoke($null, [object[]] @($exceptionMsg, $english))
+Assert-True ($exceptionSpanish.Contains('No se realizaron cambios.')) 'Espanhol deve traduzir Nenhuma alteracao foi feita.'
+Assert-True (-not $exceptionSpanish.Contains('Ningúna')) 'Espanhol não deve corromper Nenhuma alteracao foi feita.'
+Assert-True ($exceptionEnglish.Contains('No changes were made.')) 'Inglês deve traduzir Nenhuma alteracao foi feita.'
+Assert-True (-not $exceptionEnglish.Contains('Noa')) 'Inglês não deve corromper Nenhuma alteracao foi feita.'
+
+$otherMsg = "B055 bloqueado: a Procedure 'procTeste' foi salva, mas o Source persistido nao corresponde ao conteudo Business Component planejado. Nenhuma outra alteracao sera feita."
+$otherSpanish = $translate.Invoke($null, [object[]] @($otherMsg, $spanish))
+$otherEnglish = $translate.Invoke($null, [object[]] @($otherMsg, $english))
+Assert-True ($otherSpanish.Contains('No se realizarán otros cambios.')) 'Espanhol deve traduzir Nenhuma outra alteracao sera feita.'
+Assert-True ($otherEnglish.Contains('No other changes will be made.')) 'Inglês deve traduzir Nenhuma outra alteracao sera feita.'
+
 Write-Output 'PASS: ExtensionOutputLocalization'
