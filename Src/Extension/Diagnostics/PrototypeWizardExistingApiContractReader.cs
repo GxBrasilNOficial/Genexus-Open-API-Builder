@@ -37,6 +37,10 @@ internal static class PrototypeWizardExistingApiContractReader
         @"\[(?<name>Description|RestPath|SecurityLevel|RestMethod)\s*\(\s*(?:""(?<value>[^""]*)""|(?<bare>[^)]*))\s*\)\]",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
+    private static readonly Regex GeneratedProcedureCallPattern = new(
+        @"\bproc(?<transaction>[A-Za-z_][A-Za-z0-9_]*)_API_(?:List|Get|Create|Update)\s*\(",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
     public static PrototypeWizardExistingApiContract Read(KBModel designModel, Transaction transaction)
     {
         if (designModel is null)
@@ -53,10 +57,7 @@ internal static class PrototypeWizardExistingApiContractReader
             transaction.Structure.Root.Attributes.Select(item => item.Name),
             StringComparer.OrdinalIgnoreCase);
         var metadata = ReadMetadata(designModel, transaction);
-        var apiMatches = API.GetAll(designModel)
-            .Where(item => string.Equals(item.Name, "api" + transaction.Name, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-        var api = apiMatches.Length == 1 ? apiMatches[0] : null;
+        var api = ResolveApiObject(designModel, transaction, metadata);
         var source = api is null
             ? ExistingApiSource.Empty
             : ReadApiSource(api.ServiceGroupSource.Source ?? string.Empty, api.Name, attributeNames, metadata.Filters);
@@ -116,6 +117,72 @@ internal static class PrototypeWizardExistingApiContractReader
             staticOrder,
             serviceDescriptions,
             source.DuplicateServiceNames);
+    }
+
+    private static API? ResolveApiObject(
+        KBModel designModel,
+        Transaction transaction,
+        ExistingApiMetadata metadata)
+    {
+        var allApis = API.GetAll(designModel).ToArray();
+        var metadataApiName = ReadString(metadata.Document, "api.name")
+            ?? ReadString(metadata.Document, "ownership.apiName");
+        if (!string.IsNullOrWhiteSpace(metadataApiName))
+        {
+            var metadataMatches = allApis
+                .Where(item => string.Equals(item.Name, metadataApiName, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            return metadataMatches.Length == 1 ? metadataMatches[0] : null;
+        }
+
+        var conventionalName = "api" + transaction.Name;
+        var conventionalMatches = allApis
+            .Where(item => string.Equals(item.Name, conventionalName, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (conventionalMatches.Length > 1)
+        {
+            return null;
+        }
+
+        // Sem metadata (por exemplo, geração interrompida antes de B060), um nome
+        // customizado só é aceito quando há duas provas: Description própria da
+        // extensão e chamada a Procedure gerada para esta Transaction. Ambiguidade
+        // mantém o reencontro bloqueado, sem escolher um API Object arbitrariamente.
+        var ownedMatches = allApis
+            .Where(item => IsOwnedApiCandidateForTransaction(item, transaction.Name))
+            .ToArray();
+        var candidates = conventionalMatches
+            .Concat(ownedMatches)
+            .GroupBy(item => item.Guid)
+            .Select(group => group.First())
+            .ToArray();
+        return candidates.Length == 1 ? candidates[0] : null;
+    }
+
+    private static bool IsOwnedApiCandidateForTransaction(API api, string transactionName)
+    {
+        var descriptionOwned =
+            ApiPlanOwnedObjectDescription.IsCanonical(api.Description, api.Name)
+            || string.Equals(
+                api.Description,
+                ApiPlanOwnedObjectDescription.CreateLegacyApiObjectDescription(transactionName),
+                StringComparison.Ordinal)
+            || string.Equals(
+                api.Description,
+                ApiPlanOwnedObjectDescription.CreateLegacyApiObjectDescription(transactionName, withTrailingPeriod: true),
+                StringComparison.Ordinal);
+        if (!descriptionOwned)
+        {
+            return false;
+        }
+
+        var source = api.ServiceGroupSource?.Source ?? string.Empty;
+        return GeneratedProcedureCallPattern.Matches(source)
+            .Cast<Match>()
+            .Any(match => string.Equals(
+                match.Groups["transaction"].Value,
+                transactionName,
+                StringComparison.OrdinalIgnoreCase));
     }
 
     private static ExistingApiSource ReadApiSource(

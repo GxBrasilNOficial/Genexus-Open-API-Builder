@@ -38,6 +38,28 @@ Assert-Contains $serviceBlockPattern '(?<![\w.])' 'A regex de declaração de se
 
 $serviceBlock = [regex]::new($serviceBlockPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
 
+$procedurePatternMatch = [regex]::Match($readerText, 'GeneratedProcedureCallPattern = new\(\s*@"(?<pattern>[^"]*)"')
+Assert-True ($procedurePatternMatch.Success) 'O teste deve localizar a regex de vínculo entre API customizada e Transaction.'
+$generatedProcedureCall = [regex]::new(
+    $procedurePatternMatch.Groups['pattern'].Value,
+    [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+
+$customApiSource = @'
+apiFiscalPublica
+{
+    List(in: &ApiPage, out: &ListResponse)
+        => procNotaFiscal_API_List(&ApiPage, &ListResponse);
+}
+'@
+$customApiCalls = @($generatedProcedureCall.Matches($customApiSource))
+Assert-True ($customApiCalls.Count -eq 1) 'O Source de API customizada deve revelar a Procedure gerada vinculada à Transaction.'
+Assert-True ($customApiCalls[0].Groups['transaction'].Value -eq 'NotaFiscal') 'A regex deve extrair NotaFiscal da Procedure gerada.'
+
+$otherTransactionSource = 'Get(in: &Id, out: &Response) => procCliente_API_Get(&Id, &Response);'
+$otherTransactionCalls = @($generatedProcedureCall.Matches($otherTransactionSource))
+Assert-True ($otherTransactionCalls.Count -eq 1) 'A regex deve reconhecer a Procedure de outra Transaction para permitir rejeitá-la por nome.'
+Assert-True ($otherTransactionCalls[0].Groups['transaction'].Value -eq 'Cliente') 'A regex não deve atribuir Procedure de Cliente à NotaFiscal.'
+
 # Service Source equivalente ao gerado para uma API parcial com apenas List e Get.
 $partialSource = @'
     [Description("Lista NotaFiscal")]
