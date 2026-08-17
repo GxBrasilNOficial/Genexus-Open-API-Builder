@@ -152,6 +152,42 @@ internal static class ApiPlanApiObjectWriter
     }
 
     /// <summary>
+    /// B070/B060 confirmados no Wizard: a posse vem da metadata quando o File existe.
+    /// Na primeira geracao o File ainda nao foi gravado — o List roda antes do B060 —,
+    /// entao a posse cai no fallback historico pela Description e pelo contrato gerenciado.
+    /// </summary>
+    internal static bool IsOwnedApiObjectForIntentionalWrite(KBModel designModel, ApiPlan apiPlan, API apiObject)
+    {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (apiPlan is null)
+        {
+            throw new ArgumentNullException(nameof(apiPlan));
+        }
+
+        if (apiObject is null)
+        {
+            throw new ArgumentNullException(nameof(apiObject));
+        }
+
+        var metadataLookup = FindMetadataFile(designModel, apiPlan);
+        switch (ApiPlanApiObjectOwnership.ResolveIntentionalWriteOwnership(
+            metadataLookup.Ambiguous,
+            metadataLookup.FilePresent))
+        {
+            case ApiPlanApiObjectOwnership.IntentionalWriteOwnership.DescriptionFallback:
+                return IsOwnedApiObject(designModel, apiPlan, apiObject);
+            case ApiPlanApiObjectOwnership.IntentionalWriteOwnership.MetadataOwnership:
+                return IsOwnedApiObjectForSync(designModel, apiPlan, apiObject);
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
     /// Preflight do Wizard/Sincronizar: a posse continua sendo confirmada
     /// pela metadata, mas o contrato desejado pode ser diferente do ultimo
     /// contrato gerado. A protecao contra edicao direta e feita pelo estado
@@ -159,7 +195,7 @@ internal static class ApiPlanApiObjectWriter
     /// </summary>
     internal static bool IsOwnedApiObjectForIntentionalChange(KBModel designModel, ApiPlan apiPlan, API apiObject)
     {
-        if (!IsOwnedApiObjectForSync(designModel, apiPlan, apiObject))
+        if (!IsOwnedApiObjectForIntentionalWrite(designModel, apiPlan, apiObject))
         {
             return false;
         }
@@ -167,9 +203,9 @@ internal static class ApiPlanApiObjectWriter
         var metadataLookup = FindMetadataFile(designModel, apiPlan);
         if (!metadataLookup.FilePresent)
         {
-            // Antes da primeira metadata persistida, preserva o fallback
-            // historico pela Description e pelo contrato gerenciado atual.
-            return IsOwnedApiObject(designModel, apiPlan, apiObject);
+            // Antes da primeira metadata persistida nao existe baseline gravado
+            // para comparar; a posse ja foi confirmada pelo fallback historico.
+            return true;
         }
 
         return metadataLookup.File is not null &&
@@ -604,7 +640,7 @@ internal static class ApiPlanApiObjectWriter
 
         var apiObject = existing[0];
         var owned = allowIntentionalContractRefresh
-            ? IsOwnedApiObjectForSync(designModel, apiPlan, apiObject)
+            ? IsOwnedApiObjectForIntentionalWrite(designModel, apiPlan, apiObject)
             : IsOwnedApiObject(designModel, apiPlan, apiObject);
         if (!owned)
         {

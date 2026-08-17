@@ -185,7 +185,7 @@ internal static class ApiPlanListProcedureWriter
         var matches = API.GetAll(model).Where(item => string.Equals(item.Name, plan.ApiName, StringComparison.OrdinalIgnoreCase)).ToArray();
         var owned = matches.Length == 1 &&
             (allowIntentionalContractRefresh
-                ? ApiPlanApiObjectWriter.IsOwnedApiObjectForSync(model, plan, matches.Single())
+                ? ApiPlanApiObjectWriter.IsOwnedApiObjectForIntentionalWrite(model, plan, matches.Single())
                 : ApiPlanApiObjectWriter.IsOwnedApiObject(model, plan, matches.Single()));
         if (!owned)
             throw new InvalidOperationException($"B070 bloqueado: API Object proprio '{plan.ApiName}' nao foi reencontrado com seguranca. Execute B054 antes. Nenhuma alteracao foi feita.");

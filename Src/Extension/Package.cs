@@ -1183,6 +1183,12 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][Prefs] {preferencesLoadResult.Status}");
 
         var snapshot = PrototypeWizardContractReader.Read(knowledgeBase.DesignModel, transaction);
+        var duplicateServices = snapshot.ExistingApiContract.DuplicateServiceNames;
+        if (duplicateServices.Count > 0)
+        {
+            WriteOutput($"[Genexus Open API Builder][B034] Service Source do API Object declara servico duplicado: ApiName='{snapshot.ExistingApiContract.ApiName ?? "api" + transaction.Name}', Servicos='{string.Join(", ", duplicateServices)}'. O wizard usou a primeira declaracao de cada servico e nenhuma alteracao foi feita na KB; revise o API Object na IDE.");
+        }
+
         var businessComponentSnapshot = PrototypeBusinessComponentReader.Read(transaction);
         using var dialog = new PrototypeWizardDialog(
             knowledgeBase.DesignModel,

@@ -200,4 +200,26 @@ $diagnosisContract = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObje
     $apiGuid)
 Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership+DiagnosticReason]::ServiceContractMismatch) $diagnosisContract.Reason 'Diagnóstico deve identificar contrato gerenciado divergente.'
 
+# Escrita intencional (Wizard/Sync): B070 e B060 rodam antes da primeira metadata,
+# então sem File a posse precisa cair no fallback da Description.
+$firstGeneration = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership]::ResolveIntentionalWriteOwnership($false, $false)
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership+IntentionalWriteOwnership]::DescriptionFallback) $firstGeneration 'Sem File de metadata, a escrita intencional usa o fallback da Description.'
+
+$withMetadata = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership]::ResolveIntentionalWriteOwnership($false, $true)
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership+IntentionalWriteOwnership]::MetadataOwnership) $withMetadata 'Com File de metadata, a posse volta a ser exclusivamente da metadata.'
+
+$ambiguousMetadata = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership]::ResolveIntentionalWriteOwnership($true, $true)
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership+IntentionalWriteOwnership]::Blocked) $ambiguousMetadata 'Metadata ambígua bloqueia a escrita intencional, sem fallback.'
+
+$writerPaths = @(
+    @{ Path = '..\..\Src\Extension\Diagnostics\ApiPlanListProcedureWriter.cs'; Message = 'B070 deve usar a posse de escrita intencional.' },
+    @{ Path = '..\..\Src\Extension\Diagnostics\ApiPlanBusinessComponentWriter.cs'; Message = 'B055 deve usar a posse de escrita intencional.' },
+    @{ Path = '..\..\Src\Extension\Diagnostics\ApiPlanMetadataFileWriter.cs'; Message = 'B060 deve usar a posse de escrita intencional.' },
+    @{ Path = '..\..\Src\Extension\Diagnostics\ApiPlanApiObjectWriter.cs'; Message = 'B054 deve usar a posse de escrita intencional.' }
+)
+foreach ($writer in $writerPaths) {
+    $writerText = [IO.File]::ReadAllText((Join-Path $PSScriptRoot $writer.Path))
+    Assert-True ($writerText.Contains('IsOwnedApiObjectForIntentionalWrite')) $writer.Message
+}
+
 Write-Output 'PASS: ApiPlanApiObjectOwnership'

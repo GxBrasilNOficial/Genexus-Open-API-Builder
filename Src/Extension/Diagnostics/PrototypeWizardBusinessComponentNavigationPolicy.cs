@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 public static class PrototypeWizardBusinessComponentNavigationPolicy
@@ -7,14 +10,35 @@ public static class PrototypeWizardBusinessComponentNavigationPolicy
         return !isBusinessComponentReady && enableBusinessComponentRequested;
     }
 
+    public static bool HasGetCreateUpdateServices(IEnumerable<string> selectedServices)
+    {
+        if (selectedServices is null)
+        {
+            return false;
+        }
+
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in selectedServices)
+        {
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                names.Add(name);
+            }
+        }
+
+        return names.Contains("Get") && names.Contains("Create") && names.Contains("Update");
+    }
+
     public static bool ShouldAllowApplyBusinessComponent(
         bool isBusinessComponentReady,
         bool enableBusinessComponentRequested,
         bool sdtsAvailable,
         bool proceduresAvailable,
-        bool apiObjectAvailable)
+        bool apiObjectAvailable,
+        bool hasGetCreateUpdateServices)
     {
-        return (isBusinessComponentReady || enableBusinessComponentRequested) &&
+        return hasGetCreateUpdateServices &&
+            (isBusinessComponentReady || enableBusinessComponentRequested) &&
             sdtsAvailable &&
             proceduresAvailable &&
             apiObjectAvailable;
@@ -31,6 +55,7 @@ public static class PrototypeWizardBusinessComponentNavigationPolicy
         bool sdtsAvailable,
         bool proceduresAvailable,
         bool apiObjectAvailable,
+        bool hasGetCreateUpdateServices,
         bool currentApplySelection,
         bool pendingApplySelection)
     {
@@ -40,7 +65,8 @@ public static class PrototypeWizardBusinessComponentNavigationPolicy
                 enableBusinessComponentRequested,
                 sdtsAvailable,
                 proceduresAvailable,
-                apiObjectAvailable),
+                apiObjectAvailable,
+                hasGetCreateUpdateServices),
             currentApplySelection,
             pendingApplySelection);
     }

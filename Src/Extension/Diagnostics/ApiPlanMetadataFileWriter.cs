@@ -128,7 +128,7 @@ internal static class ApiPlanMetadataFileWriter
 
         var apiObject = matches[0];
         var owned = allowIntentionalContractRefresh
-            ? ApiPlanApiObjectWriter.IsOwnedApiObjectForSync(designModel, apiPlan, apiObject)
+            ? ApiPlanApiObjectWriter.IsOwnedApiObjectForIntentionalWrite(designModel, apiPlan, apiObject)
             : ApiPlanApiObjectWriter.IsOwnedApiObject(designModel, apiPlan, apiObject);
         if (!owned)
         {

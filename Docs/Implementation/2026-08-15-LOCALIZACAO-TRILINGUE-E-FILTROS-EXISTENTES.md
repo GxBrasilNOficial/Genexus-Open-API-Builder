@@ -35,7 +35,11 @@ Ao reabrir o Wizard para uma Transaction que já possui API gerada, a interface 
 
 ### Solução (`PrototypeWizardExistingApiContractReader.cs`)
 - Inspeciona o `API Object` existente e o arquivo de metadata (`api<Transaction>_Metadata`);
-- Restaura os serviços selecionados (`List`, `Get`, `Create`, `Update`);
+- Restaura os serviços selecionados (`List`, `Get`, `Create`, `Update`). Com `ServicesAvailable=true`, serviço ausente do contrato persistido permanece desmarcado; o fallback `true` vale só quando não há contrato de serviços;
+- Correção 2026-08-17: `ResolveExistingServiceSelection` deixa de tratar ausência no dicionário como “marcar todos”, o mesmo padrão de `FiltersAvailable` / campos de request;
+- Correção 2026-08-17: `ReadOwnedSdtFields` itera `SDTStructure.Root.Items` com `foreach (SDTItem …)` — o cast genérico para `IEnumerable<SDTItem>` falhava ao abrir o Wizard sem metadata;
+- Correção 2026-08-17: a etapa “Completar Get/Create/Update REST” exige `Get`+`Create`+`Update` selecionados; sem isso o checkbox fica bloqueado e a geração de List/metadata não é interrompida;
+- Correção 2026-08-17: o parser de Service Source âncora só declarações (`(?<![\w.])List|Get|Create|Update(`), ignora chamadas `proc…_API_List(` e `Modulo.List(`, deduplica nomes repetidos e emite diagnóstico no Output quando a duplicidade é real. Teste `Tests/WizardContract/Test-PrototypeWizardServiceSourceParsing.ps1`;
 - Restaura a seleção e ordem dos campos em `CreateRequest`, `UpdateRequest`, `Response` e `ListFilters`;
 - Preserva a marcação de campos obrigatórios (`Required`) e parâmetros de paginação e ordenação;
 - Se a metadata não estiver disponível, utiliza os SDTs próprios existentes como fallback.
@@ -46,6 +50,7 @@ Ao reabrir o Wizard para uma Transaction que já possui API gerada, a interface 
 
 - `ApiPlanApiObjectOwnership.cs`: adiciona método `DiagnoseOwnership` para auditoria e diagnóstico do estado de posse do API Object e objetos relacionados.
 - `allowIntentionalContractRefresh`: o preflight de escrita (`ApiPlanWritePreflight.cs`) e os writers (`ApiPlanApiObjectWriter`, `ApiPlanBusinessComponentWriter`, `ApiPlanListProcedureWriter`, `ApiPlanMetadataFileWriter`) aceitam flag indicando alteração deliberada de contrato quando confirmada pelo usuário no Wizard ou Sync, permitindo atualizar o hash de integridade B067 sem falso bloqueio de colisão.
+- Correção 2026-08-17: nesse modo a posse do API Object era confirmada só pela metadata, que o B060 grava **depois** do B070. Na primeira geração o API Object criado pelo B054 era recusado e a geração terminava interrompida. `ApiPlanApiObjectOwnership.ResolveIntentionalWriteOwnership` resolve o modo por ausência/presença do File: sem File vale o fallback por Description e contrato gerenciado; com File a posse é exclusivamente da metadata; metadata ambígua bloqueia sem fallback. `IsOwnedApiObjectForIntentionalWrite` aplica essa decisão em B054, B055, B070 e B060.
 
 ---
 
@@ -63,6 +68,7 @@ Ao reabrir o Wizard para uma Transaction que já possui API gerada, a interface 
 - `Tests/Localization/Test-ExtensionLanguage.ps1`: valida a resolução determinística de idioma.
 - `Tests/Localization/Test-ExtensionOutputLocalization.ps1`: valida a formatação de mensagens nos 3 idiomas.
 - `Tests/WizardContract/Test-PrototypeWizardExistingApiFilters.ps1`: valida o contrato do reader de APIs existentes.
+- `Tests/WizardContract/Test-PrototypeWizardServiceSourceParsing.ps1`: valida que o parser reconhece só declarações de serviço e tolera duplicidade.
 - Integrados ao gate pré-push `scripts/Invoke-PrePushMechanicalChecks.ps1` e verificados por `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`.
 
 ---

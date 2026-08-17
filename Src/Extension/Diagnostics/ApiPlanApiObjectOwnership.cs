@@ -20,6 +20,13 @@ public static class ApiPlanApiObjectOwnership
         OwnedByDescriptionFallback = 2,
     }
 
+    public enum IntentionalWriteOwnership
+    {
+        Blocked = 0,
+        DescriptionFallback = 1,
+        MetadataOwnership = 2,
+    }
+
     public enum DiagnosticReason
     {
         OwnedByMetadata = 0,
@@ -374,6 +381,25 @@ public static class ApiPlanApiObjectOwnership
             descriptionFallbackMatches,
             actualApiGuid,
             metadataApiGuid);
+
+    /// <summary>
+    /// B054 → B070 → B060: na primeira geração a metadata só é gravada depois do List,
+    /// então a escrita intencional precisa aceitar a posse pela Description enquanto o File
+    /// não existir. Com File presente, a posse volta a ser exclusivamente da metadata.
+    /// </summary>
+    public static IntentionalWriteOwnership ResolveIntentionalWriteOwnership(
+        bool metadataAmbiguous,
+        bool metadataFilePresent)
+    {
+        if (metadataAmbiguous)
+        {
+            return IntentionalWriteOwnership.Blocked;
+        }
+
+        return metadataFilePresent
+            ? IntentionalWriteOwnership.MetadataOwnership
+            : IntentionalWriteOwnership.DescriptionFallback;
+    }
 
     public static bool IsOwned(OwnershipKind kind) =>
         kind == OwnershipKind.OwnedByMetadata || kind == OwnershipKind.OwnedByDescriptionFallback;

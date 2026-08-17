@@ -208,4 +208,13 @@ $otherEnglish = $translate.Invoke($null, [object[]] @($otherMsg, $english))
 Assert-True ($otherSpanish.Contains('No se realizarán otros cambios.')) 'Espanhol deve traduzir Nenhuma outra alteracao sera feita.'
 Assert-True ($otherEnglish.Contains('No other changes will be made.')) 'Inglês deve traduzir Nenhuma outra alteracao sera feita.'
 
+$duplicateService = "[Genexus Open API Builder][B034] Service Source do API Object declara servico duplicado: ApiName='apiNotaFiscal', Servicos='List, Get'. O wizard usou a primeira declaracao de cada servico e nenhuma alteracao foi feita na KB; revise o API Object na IDE."
+$duplicateSpanish = $translate.Invoke($null, [object[]] @($duplicateService, $spanish))
+$duplicateEnglish = $translate.Invoke($null, [object[]] @($duplicateService, $english))
+Assert-True ($duplicateSpanish.Contains('El Service Source del API Object declara un servicio duplicado:')) 'Espanhol deve traduzir o diagnóstico de serviço duplicado.'
+Assert-True ($duplicateSpanish.Contains("Servicios='List, Get'")) 'Espanhol deve traduzir Servicos=.'
+Assert-True ($duplicateEnglish.Contains('The API Object Service Source declares a duplicated service:')) 'Inglês deve traduzir o diagnóstico de serviço duplicado.'
+Assert-True ($duplicateEnglish.Contains('review the API Object in the IDE.')) 'Inglês deve traduzir a orientação de revisão do API Object.'
+Assert-True (-not $duplicateEnglish.Contains('declara servico duplicado')) 'Inglês não deve manter o diagnóstico de duplicidade em português.'
+
 Write-Output 'PASS: ExtensionOutputLocalization'

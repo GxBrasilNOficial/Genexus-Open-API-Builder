@@ -103,6 +103,7 @@ internal sealed class PrototypeWizardDialog : Form
         WirePathSynchronization();
         LoadSnapshot();
         WireGenerationConfirmation();
+        WireServiceSelectionRefresh();
         ApplyWizardPreferences();
     }
 
@@ -777,6 +778,18 @@ internal sealed class PrototypeWizardDialog : Form
         };
     }
 
+    private void WireServiceSelectionRefresh()
+    {
+        foreach (var check in _servicesList.Controls.OfType<CheckBox>())
+        {
+            check.CheckedChanged += (_, _) =>
+            {
+                RefreshEndpointsText();
+                RefreshGenerationPreviewUnlessSuppressed();
+            };
+        }
+    }
+
     private void ApplyWizardPreferences()
     {
         _suppressGenerationPreviewRefresh = true;
@@ -1336,12 +1349,15 @@ internal sealed class PrototypeWizardDialog : Form
 
     private void ApplyBusinessComponentControlState(bool sdtsAvailable, bool proceduresAvailable, bool apiObjectAvailable)
     {
+        var hasGetCreateUpdateServices = PrototypeWizardBusinessComponentNavigationPolicy.HasGetCreateUpdateServices(
+            GetCheckedValues(_servicesList));
         var shouldApplyWhenAllowed = PrototypeWizardBusinessComponentNavigationPolicy.ResolveApplyBusinessComponentAfterGenerationRefresh(
             IsBusinessComponentReady(),
             _enableBusinessComponentCheck.Checked,
             sdtsAvailable,
             proceduresAvailable,
             apiObjectAvailable,
+            hasGetCreateUpdateServices,
             _applyBusinessComponentCheck.Checked,
             _applyBusinessComponentWhenReady);
         var canApplyBusinessComponent = PrototypeWizardBusinessComponentNavigationPolicy.ShouldAllowApplyBusinessComponent(
@@ -1349,8 +1365,13 @@ internal sealed class PrototypeWizardDialog : Form
             _enableBusinessComponentCheck.Checked,
             sdtsAvailable,
             proceduresAvailable,
-            apiObjectAvailable);
-        if (IsBusinessComponentReady())
+            apiObjectAvailable,
+            hasGetCreateUpdateServices);
+        if (!hasGetCreateUpdateServices)
+        {
+            _applyBusinessComponentCheck.Text = _texts.Translate("Bloqueado: marque Get, Create e Update nos Serviços");
+        }
+        else if (IsBusinessComponentReady())
         {
             _applyBusinessComponentCheck.Text = canApplyBusinessComponent
                 ? _texts.Translate("Confirmar: Completar Get/Create/Update REST ao concluir")

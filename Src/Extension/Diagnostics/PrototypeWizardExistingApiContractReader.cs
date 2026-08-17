@@ -23,8 +23,10 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// </summary>
 internal static class PrototypeWizardExistingApiContractReader
 {
+    // O lookbehind exclui o sufixo das chamadas geradas (procX_API_List(...), Modulo.List(...)),
+    // que antes era lido como uma segunda declaração do mesmo serviço.
     private static readonly Regex ServiceBlockPattern = new(
-        @"(?<annotations>(?:\s*\[[^\r\n]*\]\s*)*)(?<service>List|Get|Create|Update)\s*\((?<parameters>[^)]*)\)",
+        @"(?<annotations>(?:\s*\[[^\r\n]*\]\s*)*)(?<![\w.])(?<service>List|Get|Create|Update)\s*\((?<parameters>[^)]*)\)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     private static readonly Regex InputParameterPattern = new(
@@ -91,7 +93,8 @@ internal static class PrototypeWizardExistingApiContractReader
             ? metadata.ServiceDescriptions.Values
             : source.Services
                 .Where(item => !string.IsNullOrWhiteSpace(item.Description))
-                .ToDictionary(item => item.Name, item => item.Description!, StringComparer.OrdinalIgnoreCase);
+                .GroupBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First().Description!, StringComparer.OrdinalIgnoreCase);
 
         var hasExistingApi = api is not null || metadata.IsAvailable;
         return new PrototypeWizardExistingApiContract(
@@ -111,7 +114,8 @@ internal static class PrototypeWizardExistingApiContractReader
             defaultPageSize,
             maximumPageSize,
             staticOrder,
-            serviceDescriptions);
+            serviceDescriptions,
+            source.DuplicateServiceNames);
     }
 
     private static ExistingApiSource ReadApiSource(
@@ -122,12 +126,25 @@ internal static class PrototypeWizardExistingApiContractReader
     {
         var services = new List<PrototypeWizardExistingService>();
         var filters = new List<PrototypeWizardExistingFilter>();
+        var declaredServiceNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var duplicateServiceNames = new List<string>();
+        var filterNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         string? listRestPath = null;
         string? securityLevel = null;
 
         foreach (Match match in ServiceBlockPattern.Matches(source))
         {
             var serviceName = match.Groups["service"].Value;
+            if (!declaredServiceNames.Add(serviceName))
+            {
+                if (!duplicateServiceNames.Contains(serviceName, StringComparer.OrdinalIgnoreCase))
+                {
+                    duplicateServiceNames.Add(serviceName);
+                }
+
+                continue;
+            }
+
             var annotations = ReadAnnotations(match.Groups["annotations"].Value);
             var restPath = annotations.TryGetValue("RestPath", out var resolvedRestPath) ? resolvedRestPath : null;
             var description = annotations.TryGetValue("Description", out var resolvedDescription) ? resolvedDescription : null;
@@ -148,7 +165,13 @@ internal static class PrototypeWizardExistingApiContractReader
             {
                 listRestPath = restPath;
                 securityLevel ??= resolvedSecurity;
-                filters.AddRange(ReadApiFilters(match.Groups["parameters"].Value, attributeNames, metadataFilters));
+                foreach (var filter in ReadApiFilters(match.Groups["parameters"].Value, attributeNames, metadataFilters))
+                {
+                    if (filterNames.Add(filter.Name))
+                    {
+                        filters.Add(filter);
+                    }
+                }
             }
 
             securityLevel ??= resolvedSecurity;
@@ -157,9 +180,10 @@ internal static class PrototypeWizardExistingApiContractReader
         return new ExistingApiSource(
             services,
             filters,
-            filters.Count > 0 || ServiceBlockPattern.Matches(source).Cast<Match>().Any(match => string.Equals(match.Groups["service"].Value, "List", StringComparison.OrdinalIgnoreCase)),
+            filters.Count > 0 || declaredServiceNames.Contains("List"),
             listRestPath,
-            securityLevel);
+            securityLevel,
+            duplicateServiceNames);
     }
 
     private static Dictionary<string, string> ReadAnnotations(string annotations)
@@ -220,10 +244,17 @@ internal static class PrototypeWizardExistingApiContractReader
             return PrototypeWizardExistingFieldSelection.Unavailable;
         }
 
-        var names = ((IEnumerable<SDTItem>)matches[0].SDTStructure.Root.Items)
-            .Select(item => item.Name)
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .ToArray();
+        // StructureItemCollection não implementa IEnumerable<SDTItem>; o cast genérico falha em runtime.
+        // O padrão validado em ApiPlanTransactionSyncOrchestrator é foreach (SDTItem item in Items).
+        var names = new List<string>();
+        foreach (SDTItem item in matches[0].SDTStructure.Root.Items)
+        {
+            if (!string.IsNullOrWhiteSpace(item.Name))
+            {
+                names.Add(item.Name);
+            }
+        }
+
         return new PrototypeWizardExistingFieldSelection(true, names);
     }
 
@@ -399,7 +430,8 @@ internal static class PrototypeWizardExistingApiContractReader
                 Description = item["description"]?.Value<string>(),
             })
             .Where(item => !string.IsNullOrWhiteSpace(item.Name) && item.Description is not null)
-            .ToDictionary(item => item.Name!, item => item.Description!, StringComparer.OrdinalIgnoreCase);
+            .GroupBy(item => item.Name!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First().Description!, StringComparer.OrdinalIgnoreCase);
         return new ExistingApiMetadataServiceDescriptions(true, values);
     }
 
@@ -421,9 +453,15 @@ internal static class PrototypeWizardExistingApiContractReader
                 OperationId = item["operationId"]?.Value<string>(),
             })
             .Where(item => !string.IsNullOrWhiteSpace(item.Name))
+            .GroupBy(item => item.Name!, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
-                item => item.Name!,
-                item => new PrototypeWizardExistingService(item.Name!, item.HttpMethod ?? "GET", item.RestPath, item.OperationId, item.Description),
+                group => group.Key,
+                group => new PrototypeWizardExistingService(
+                    group.Key,
+                    group.First().HttpMethod ?? "GET",
+                    group.First().RestPath,
+                    group.First().OperationId,
+                    group.First().Description),
                 StringComparer.OrdinalIgnoreCase);
         return new ExistingApiMetadataServiceSelection(true, values.Keys, values);
     }
@@ -442,21 +480,31 @@ internal static class PrototypeWizardExistingApiContractReader
 
     private sealed class ExistingApiSource
     {
-        public static ExistingApiSource Empty { get; } = new(Array.Empty<PrototypeWizardExistingService>(), Array.Empty<PrototypeWizardExistingFilter>(), false, null, null);
+        public static ExistingApiSource Empty { get; } = new(
+            Array.Empty<PrototypeWizardExistingService>(),
+            Array.Empty<PrototypeWizardExistingFilter>(),
+            false,
+            null,
+            null,
+            Array.Empty<string>());
 
         public ExistingApiSource(
             IReadOnlyList<PrototypeWizardExistingService> services,
             IReadOnlyList<PrototypeWizardExistingFilter> filters,
             bool filtersAvailable,
             string? listRestPath,
-            string? securityLevel)
+            string? securityLevel,
+            IReadOnlyList<string> duplicateServiceNames)
         {
             Services = services;
             Filters = filters;
             FiltersAvailable = filtersAvailable;
             ListRestPath = listRestPath;
             SecurityLevel = securityLevel;
+            DuplicateServiceNames = duplicateServiceNames;
         }
+
+        public IReadOnlyList<string> DuplicateServiceNames { get; }
 
         public IReadOnlyList<PrototypeWizardExistingService> Services { get; }
         public bool ServicesAvailable => Services.Count > 0;
@@ -543,7 +591,8 @@ internal sealed class PrototypeWizardExistingApiContract
             null,
             null,
             Array.Empty<PrototypeWizardExistingStaticOrder>(),
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase))
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+            Array.Empty<string>())
     {
     }
 
@@ -564,19 +613,31 @@ internal sealed class PrototypeWizardExistingApiContract
         int? defaultPageSize,
         int? maximumPageSize,
         IReadOnlyList<PrototypeWizardExistingStaticOrder> staticOrder,
-        IReadOnlyDictionary<string, string> serviceDescriptions)
+        IReadOnlyDictionary<string, string> serviceDescriptions,
+        IReadOnlyList<string> duplicateServiceNames)
     {
         HasExistingApi = hasExistingApi;
-        _services = services.ToDictionary(item => item.Name, item => true, StringComparer.OrdinalIgnoreCase);
-        Services = services.ToArray();
+        // A primeira declaração de cada nome vence: contrato de origem malformado não pode
+        // derrubar a abertura do wizard com ArgumentException de chave duplicada.
+        var distinctServices = (services ?? Array.Empty<PrototypeWizardExistingService>())
+            .Where(item => item is not null && !string.IsNullOrWhiteSpace(item.Name))
+            .GroupBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .ToArray();
+        _services = distinctServices.ToDictionary(item => item.Name, item => true, StringComparer.OrdinalIgnoreCase);
+        Services = distinctServices;
         ServicesAvailable = servicesAvailable;
+        DuplicateServiceNames = duplicateServiceNames ?? Array.Empty<string>();
         _fieldSelections = new Dictionary<string, PrototypeWizardExistingFieldSelection>(StringComparer.OrdinalIgnoreCase)
         {
             ["CreateRequest"] = createFields,
             ["UpdateRequest"] = updateFields,
             ["Response"] = responseFields,
         };
-        _filters = filters.ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase);
+        _filters = (filters ?? Array.Empty<PrototypeWizardExistingFilter>())
+            .Where(item => item is not null && !string.IsNullOrWhiteSpace(item.Name))
+            .GroupBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
         FiltersAvailable = filtersAvailable;
         _createRequiredFields = createRequiredFields;
         ApiName = apiName;
@@ -601,6 +662,7 @@ internal sealed class PrototypeWizardExistingApiContract
     public int? MaximumPageSize { get; }
     public IReadOnlyList<PrototypeWizardExistingStaticOrder> StaticOrder { get; }
     public IReadOnlyDictionary<string, string> ServiceDescriptions { get; }
+    public IReadOnlyList<string> DuplicateServiceNames { get; }
 
     public bool TryGetServiceSelection(string name, out bool selected)
     {

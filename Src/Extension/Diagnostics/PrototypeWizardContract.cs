@@ -50,9 +50,7 @@ internal static class PrototypeWizardContractReader
         var services = ServiceNames
             .Select(name => new PrototypeWizardServiceDecision(
                 name,
-                existingApiContract.TryGetServiceSelection(name, out var existingSelected)
-                    ? existingSelected
-                    : true))
+                ResolveExistingServiceSelection(existingApiContract, name)))
             .ToArray();
 
         var classificationPolicy = PrototypeWizardFieldClassificationPolicy.CreateDefault();
@@ -172,6 +170,15 @@ internal static class PrototypeWizardContractReader
             usesPeriod,
             usesRange,
             filter.DisabledReason);
+    }
+
+    private static bool ResolveExistingServiceSelection(
+        PrototypeWizardExistingApiContract existingApiContract,
+        string serviceName)
+    {
+        return existingApiContract.TryGetServiceSelection(serviceName, out var selected)
+            ? selected
+            : existingApiContract.ServicesAvailable ? false : true;
     }
 
     private static bool ResolveExistingFieldSelection(
