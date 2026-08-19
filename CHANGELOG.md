@@ -10,6 +10,47 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
+---
+
+# [0.1.0-alpha.3] - 2026-08-18
+
+Release focada na localização trilíngue da extensão (português, espanhol e inglês), robustez na reabertura e restauração do Wizard, e padronização do contrato de erro.
+
+## Added
+
+- Localização trilíngue completa da extensão (pt-BR, es, en): manifesto, comandos de menu, diálogos (Wizard, Sincronização, Preferências, Relatório Final) e mensagens na Output pelo idioma da KB.
+- Restauração de serviços, campos e filtros de APIs existentes ao reabrir o Wizard.
+- Diagnóstico B087 na Output ao bloquear alteração com fingerprint.
+
+## Changed
+
+- Contrato HTTP de erro de `List` alinhado a `Create` e `Update` (`ErrorResponse`, `RestStatusCode=400` e eliminação de `msg()`).
+- Documentação pública completa com READMEs em português, espanhol e inglês.
+- Ampliação da cobertura de testes unitários no pré-push mecânico.
+
+## Fixed
+
+- Reencontro seguro de API Objects com nome customizado via metadata persistente.
+- Suporte à criação e reexecução em planos parciais somente `List`/`Get` (sem Create/Update).
+- Parse de `Service Source` sem colisões ou duplicidade ao reabrir APIs já geradas.
+- Leitura de SDTs próprios sem metadata através de iteração defensiva.
+- Eliminação do falso positivo de integridade (B060) em serialização ISO-8601 com zeros fracionários.
+- Botão "Voltar" ocultado na primeira aba do Wizard e centralização de diálogos no monitor da IDE.
+
+## Validated
+
+- Linhas U14+ (canônica) e U13 (satélite) compiladas em Release e validadas por inventário offline de assembly e metadados.
+- Testes manuais e unitários de localização (pt-BR, es, en) e restauração no U15.
+
+## Assets
+
+- `GenexusOpenApiBuilder.Extension.dll` — GeneXus 18 U14, U15 e posteriores U14+.
+- `GenexusOpenApiBuilder.Extension-gx18u13.dll` — GeneXus 18 U13.
+
+---
+
+## Histórico detalhado da 0.1.0-alpha.3
+
 ### Added
 
 - Localização trilíngue da extensão (2026-08-15): detecção e resolução pelo idioma da KB (`ExtensionLanguage`, com fallback `English` sem KB aberta), catálogo centralizado de strings (`ExtensionLocalization`), localização de mensagens na janela Output (`ExtensionOutputLocalization`), comandos de menu traduzidos em português, espanhol e inglês no manifesto (`GenexusOpenApiBuilder.package`) e em `Package.cs`, e tradução de todas as janelas do Wizard, Sincronização, Preferências e Relatório Final. Testes unitários em `Tests/Localization/Test-ExtensionLanguage.ps1` e `Tests/Localization/Test-ExtensionOutputLocalization.ps1`.

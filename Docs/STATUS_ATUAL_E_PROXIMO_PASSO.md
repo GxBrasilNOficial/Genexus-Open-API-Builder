@@ -232,6 +232,8 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
 - [Release 0.1.0-alpha.1](Releases/0.1.0-alpha.1.md)
+- [Release 0.1.0-alpha.2](Releases/0.1.0-alpha.2.md)
+- [Release 0.1.0-alpha.3](Releases/0.1.0-alpha.3.md)
 
 ## Marcos ainda não iniciados
 

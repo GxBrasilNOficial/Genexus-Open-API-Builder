@@ -4,7 +4,7 @@
 
 Ferramenta open source para acelerar a geração de APIs REST a partir de **Transactions GeneXus**.
 
-Alpha pública: **[`0.1.0-alpha.2`](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.2)** — escolha a DLL correspondente à sua versão do GeneXus no Release.
+Alpha pública: **[`0.1.0-alpha.3`](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.3)** — escolha a DLL correspondente à sua versão do GeneXus no Release.
 
 Menos repetição. Mais entrega. Mais valor para a comunidade GeneXus.
 
@@ -40,14 +40,14 @@ A partir de uma Transaction:
 |------|--------|
 | Wizard funcional do MVP | Concluído (GeneXus 18 U15) |
 | Ciclo de vida (posse, sync, remoção, relatório) | Concluído |
-| Alpha pública `0.1.0-alpha.2` | Pacote desta release, com assets U14+ e U13 |
+| Alpha pública `0.1.0-alpha.3` | Pacote desta release, com assets U14+ e U13 |
 | Upgrade 13 | DLL satélite `GenexusOpenApiBuilder.Extension-gx18u13.dll` validada no U13 |
 | Upgrade 14 | Confirmado por usuário externo (Alpha `0.1.0-alpha.1`; carregamento + geração) |
 | Upgrade 15 | Base do desenvolvimento; uso confirmado por usuário externo pelo caminho de mantenedor (build local + `Install-ExtensionForGeneXus18.bat`) |
 
 ### Qual DLL baixar
 
-O Release `0.1.0-alpha.2` contém duas DLLs. Instale somente a correspondente à sua instalação:
+O Release `0.1.0-alpha.3` contém duas DLLs. Instale somente a correspondente à sua instalação:
 
 | Arquivo no GitHub Release | Serve para | Observação |
 |---|---|---|
@@ -67,7 +67,7 @@ O sufixo `-gx18u13` identifica apenas o asset de download. Não renomeie os arqu
 
 1. [Instalar a extensão](Docs/Public/INSTALL.md)
 2. [Seguir a demo rápida](Docs/Public/DEMO.md)
-3. Ler as [notas da Alpha](Docs/Releases/0.1.0-alpha.2.md)
+3. Ler as [notas da Alpha](Docs/Releases/0.1.0-alpha.3.md)
 
 ## Capturas
 
@@ -133,7 +133,7 @@ Detalhes: [Docs/Public/INSTALL.md](Docs/Public/INSTALL.md).
 | [INSTALL](Docs/Public/INSTALL.md) | Instalação |
 | [DEMO](Docs/Public/DEMO.md) | Roteiro curto |
 | [CHANGELOG](CHANGELOG.md) | Histórico de mudanças |
-| [0.1.0-alpha.2](Docs/Releases/0.1.0-alpha.2.md) | Notas PT-BR; [ES](Docs/Releases/0.1.0-alpha.2.es.md); [EN](Docs/Releases/0.1.0-alpha.2.en.md) — escolha da DLL |
+| [0.1.0-alpha.3](Docs/Releases/0.1.0-alpha.3.md) | Notas PT-BR; [ES](Docs/Releases/0.1.0-alpha.3.es.md); [EN](Docs/Releases/0.1.0-alpha.3.en.md) — escolha da DLL |
 | [Decisões do MVP](Docs/Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md) | Fonte primária funcional |
 | [Foundation](Docs/Foundation/00-MASTER_INDEX_DO_PROJETO.md) | Contratos e planejamento |
 | [Checkpoint operacional](Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md) | Estado interno do projeto |
