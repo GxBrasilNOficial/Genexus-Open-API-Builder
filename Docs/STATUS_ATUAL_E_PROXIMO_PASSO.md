@@ -110,11 +110,11 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Frente atual
 
-Sprint 9 — priorização do feedback da Alpha. A localização residual, o fingerprint B060, o aborto na primeira aba, o `Build All` pós-reencontro em `NotaFiscal` e o registro mecânico dos leftovers/monitor B081 estão encerrados.
+Sprint 9 — Suporte a Transactions com Subníveis (Multinível). Levantamento de profundidade na KB de produção (`Gx_FabricaBrasil`), especificações funcionais e plano por fases consolidados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md` e na `Emenda técnica — 2026-08-20` do registro de decisões do MVP.
 
 ## Próxima ação única
 
-Iniciar a Sprint 9 priorizando o feedback da Alpha já registrado (issues GitHub e relatos do mantenedor). A localização residual, a relitura estável do fingerprint B060, o aborto na primeira aba, o `Build All` nos dois environments e o recorte mecânico de leftovers/monitor B081 não são mais a ação operacional vigente. Evidência da sessão: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §6, §7 e §8.
+Executar a Fase 1 da frente de subníveis: leitura hierárquica recursiva de `transaction.Structure.Root.Levels` no SDK GeneXus e evolução do modelo de domínio (`ApiPlanLevel`) em `PrototypeWizardContract.cs`, `PrototypePrimaryKeyReader.cs` e `Src/Domain/ApiPlan.cs`. Evidência da frente: `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 
 ## Evidência da frente encerrada
 

@@ -54,6 +54,20 @@ O baseline canônico do MVP permanece U14+ via feed NuGet e MSBuild SDKs. A linh
 
 Permanecem válidos o mecanismo moderno como caminho canônico, U15 como ambiente principal do mantenedor e a distinção entre existência técnica de uma extensão em U13 e inclusão de U13 no baseline do MVP. Evidências: `Docs/Decisions/2026-08-12-PLANO_SUPORTE_PARALELO_GX18U13_OPCAO_B.md`, `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md` e a nota de revisão de 2026-08-13 em `Docs/Implementation/B010-SDK-E-BUILD-MINIMO.md`.
 
+## Emenda técnica — 2026-08-20 — Suporte a Transactions com subníveis
+
+### Fato que motivou a emenda
+
+A análise da KB de produção (`Gx_FabricaBrasil`) revelou que 10,2% das Transactions possuem múltiplos níveis (com até 13 subníveis paralelos e até 3 níveis de profundidade). A restrição inicial do MVP que limitava a geração estritamente ao 1º nível impedia o uso da extensão em casos centrais do negócio (como pedidos, notas fiscais, tributações e regras operacionais compostas).
+
+### Decisão de produto e arquitetura
+
+Fica autorizada a expansão do gerador para suportar Transactions com subníveis:
+1. **Elegibilidade:** Atributos de subníveis passam a ser elegíveis para seleção no Wizard, entrando como coleções aninhadas nos SDTs de `CreateRequest`, `UpdateRequest` e `Response`.
+2. **Listagem:** O endpoint `List` preserva alta performance paginando sobre o cabeçalho e incluindo contadores numéricos `<SubLevel>Count` (ex.: `ParcelasCount`, `ItensCount`), sem aninhar coleções completas na listagem geral.
+3. **Substituição completa no `Update`:** O `PUT` em transação multinível adota substituição idempotente completa da coleção de linhas no Business Component.
+4. **Detalhamento:** Especificação, levantamento e fases de implementação registrados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
+
 ## Emenda técnica — 2026-08-03
 
 ### Experimento previsto que motivou a emenda
@@ -395,6 +409,8 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 
 **Emenda técnica de 2026-08-12 — `NoAccept`:** atributos cobertos por uma regra `NoAccept` continuam visíveis na aba `Requests`, mas ficam desabilitados no `CreateRequest` e no `UpdateRequest`, porque a geração de assignments para o BC causa `spc0018` por propriedade somente leitura. Eles permanecem candidatos a `Response`, `ListResponse` e `ListFilters`. A evidência A/B e a implementação estão em `Docs/Implementation/2026-08-12-NOACCEPT-READONLY-BUSINESS-COMPONENT.md`.
 
+**Emenda técnica de 2026-08-20 — Subníveis:** atributos de subníveis selecionados passam a ser elegíveis e entram como coleções aninhadas no `CreateRequest`, conforme detalhado na `Emenda técnica — 2026-08-20` e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
+
 ## CreateRequest — presença dos membros no JSON
 
 - A obrigatoriedade de presença será definida separadamente da seleção do membro para o `sdtNomeDaTransacao_API_CreateRequest`.
@@ -416,6 +432,8 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 - O padrão será atualizar todos os campos ordinários graváveis selecionados, preservando a identidade do registro, a auditoria e os valores controlados pelo sistema.
 
 **Emenda técnica de 2026-08-12 — `NoAccept`:** a regra transversal acima também se aplica ao `UpdateRequest`; o atributo permanece fora do corpo e dos assignments de Update, embora continue disponível nos contratos de saída.
+
+**Emenda técnica de 2026-08-20 — Subníveis:** atributos de subníveis selecionados passam a ser elegíveis e entram como coleções aninhadas no `UpdateRequest`, com política de substituição completa no BC, conforme detalhado na `Emenda técnica — 2026-08-20` e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 
 ## UpdateRequest — presença dos membros no JSON
 
