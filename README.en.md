@@ -58,6 +58,7 @@ The `-gx18u13` suffix only identifies the download asset. Do not rename the file
 
 ### Known limitations
 
+- Generation covers only the Transaction's first level; sublevels (lines) are silently ignored
 - No `DELETE` service in the MVP
 - Native GeneXus OpenAPI YAML has documented restrictions; the extension does not replace the installation templates
 - Sensitive-field/audit classification still uses the default policy

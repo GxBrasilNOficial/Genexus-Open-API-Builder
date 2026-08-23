@@ -175,6 +175,7 @@ Confirmação com o plano: objetos próprios a apagar, SDTs compartilhados e Fol
 
 ## Limitações honestas da Alpha
 
+- A geração cobre apenas o primeiro nível da Transaction; subníveis (linhas) são ignorados sem aviso
 - Sem serviço `DELETE` no MVP
 - YAML OpenAPI nativo do GeneXus tem restrições documentadas
 - Classificação de campos sensíveis/auditoria ainda usa política default

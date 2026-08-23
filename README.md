@@ -58,6 +58,7 @@ O sufixo `-gx18u13` identifica apenas o asset de download. Não renomeie os arqu
 
 ### Limitações honestas
 
+- A geração cobre apenas o primeiro nível da Transaction; subníveis (linhas) são ignorados sem aviso
 - Sem serviço `DELETE` no MVP
 - YAML OpenAPI nativo do GeneXus tem restrições (documentadas); a extensão não substitui os templates da instalação
 - Classificação de campos sensíveis/auditoria ainda usa política default
