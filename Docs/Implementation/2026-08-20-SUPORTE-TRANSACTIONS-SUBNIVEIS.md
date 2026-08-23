@@ -87,7 +87,6 @@ Esses dados comprovam que o suporte a múltiplos subníveis paralelos e recursã
   - O código HTTP retornado é `422 Unprocessable Content`;
   - `&ErrorResponse.Code` retorna `!"validation_error"`;
   - `&ErrorResponse.Message` retorna `!"Business rules rejected the request."`;
-  - As mensagens detalhadas do BC continuam sendo emitidas na janela Output/log da IDE via `&Messages = &BC.GetMessages()` e `msg(...)`.
   - Não é emitido array paralelo por linha, mantendo conformidade estrita com o contrato OpenAPI entregue no MVP.
 
 ### 7. Procedimento `List` (B098) — Resumo com Contadores
