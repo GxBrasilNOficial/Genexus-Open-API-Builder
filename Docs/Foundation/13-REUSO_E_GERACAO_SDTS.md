@@ -210,6 +210,8 @@ Padrões:
 - não contém envelope, metadata, subníveis nem campos exclusivos de resposta
 - não há campos públicos com sufixo `Specified`
 
+**Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099):** Atributos de subníveis selecionados passam a ser elegíveis e são gerados como nós aninhados de coleção (`IsCollection = true`) em `sdt<NomeBase>_API_CreateRequest`, conforme detalhado na `Emenda técnica — 2026-08-20` do registro de decisões do MVP e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
+
 ## UpdateRequest
 
 Representa substituição completa via `PUT`.
@@ -232,6 +234,8 @@ Regras:
 - não há `PATCH` no MVP
 - não há campos públicos com sufixo `Specified`
 
+**Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099):** Atributos de subníveis selecionados passam a ser elegíveis e são gerados como nós aninhados de coleção (`IsCollection = true`) em `sdt<NomeBase>_API_UpdateRequest`, adotando substituição completa no Business Component.
+
 ## Response
 
 Contém todos os atributos do primeiro nível explicitamente declarados na estrutura da Transaction:
@@ -245,6 +249,8 @@ Contém todos os atributos do primeiro nível explicitamente declarados na estru
 - campos de auditoria
 
 Não inclui automaticamente atributos alcançáveis pela tabela estendida que não estejam declarados na estrutura. Não inclui subníveis nem campos sintéticos no MVP.
+
+**Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099):** `sdt<NomeBase>_API_Response` passa a incluir nós de coleção (`IsCollection = true`) para cada subnível ativo selecionado.
 
 Preserva a ordem da estrutura. Cada membro é baseado no atributo original e preserva domínio, tipo, tamanho, decimais, nulabilidade e características aplicáveis.
 
