@@ -437,6 +437,7 @@ Produto confiável inicial.
 - comunidade ativa mínima
 - releases previsíveis
 - `B101` (candidato): experimento de membro nullable para distinguir membro ausente de membro vazio, que pode rever a limitação assumida na `Emenda técnica — 2026-08-03`
+- `B103` (candidato): reconhecimento de source gerado por carimbo de versão do contrato na metadata, no lugar do catálogo textual de variantes históricas
 
 ## Gate
 

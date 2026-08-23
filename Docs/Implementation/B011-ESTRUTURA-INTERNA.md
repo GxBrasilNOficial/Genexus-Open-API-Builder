@@ -27,6 +27,22 @@ A estrutura inicial de `Src` já atende ao contrato da seção 5.7 do documento 
 
 A solution `Src/GenexusOpenApiBuilder.sln` contém somente `GenexusOpenApiBuilder.Extension`. As demais pastas já estavam materializadas com `.gitkeep` e foram mantidas como contrato de organização, sem introduzir dependências vazias.
 
+## Nota de realidade — 2026-08-23
+
+A decisão de B011 continua válida no que ela decidiu: nenhuma camada recebeu código sem responsabilidade comprovada. O que mudou é o destino do código que veio depois.
+
+`Src/Core/`, `Src/Infrastructure/` e `Src/UI/` permanecem vazias, mas as responsabilidades que o layout reservava a elas **não** migraram para lá quando ficaram comprovadas — foram atendidas dentro de `Src/Extension/`:
+
+| Pasta reservada | Responsabilidade prevista na seção 5.7 | Onde ficou de fato |
+|---|---|---|
+| `Src/UI/` | wizard e componentes de interação com o usuário | `Src/Extension/PrototypeWizardDialog.cs` |
+| `Src/Core/` | orquestração dos casos de uso | `Src/Extension/Package.cs` |
+| `Src/Infrastructure/` | adaptadores para SDK, persistência e serialização | `Src/Extension/Diagnostics/` |
+
+`Src/Extension/Diagnostics/` reúne hoje 40 arquivos e 15.549 linhas, incluindo escritores de SDT, Procedures e API Object, comparador de sincronização, inventário de remoção e integridade de metadata — geração, e não diagnóstico.
+
+**Intenção registrada:** `B104` decide, depois da Sprint 9, entre mover o código para o layout declarado ou revisar o layout para refletir a organização real. Durante a Sprint 9 a reorganização está impedida pela linha de base de não regressão da Fase 0.
+
 ## Próximo passo
 
 B012 foi concluído posteriormente; a próxima ação operacional vigente deve ser consultada em `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.

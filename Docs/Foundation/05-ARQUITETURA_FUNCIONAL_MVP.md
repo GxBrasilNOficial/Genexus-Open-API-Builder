@@ -198,6 +198,10 @@ O layout abaixo é o contrato de organização inicial de `Src`. Ele define o de
 
 `B010` cria somente a solution e o projeto mínimo em `Extension`. A criação ou separação de projetos adicionais nas demais pastas depende de necessidade comprovada; `B011` confirma e materializa a estrutura interna sem introduzir camadas vazias por obrigação arquitetural.
 
+**Nota de realidade — 2026-08-23.** O layout acima permanece como contrato de destino, mas **não** descreve a organização atual do código. `Src/Core/`, `Src/Infrastructure/` e `Src/UI/` continuam vazias, com `.gitkeep`, e o código real ficou concentrado em `Src/Extension/`: o wizard em `PrototypeWizardDialog.cs`, a orquestração dos comandos em `Package.cs` e os adaptadores do SDK, escritores de objetos, comparador de sincronização e integridade de metadata em `Src/Extension/Diagnostics/`, que reúne 40 arquivos e 15.549 linhas — quase dois terços do código do projeto — sob um nome que sugere diagnóstico e hoje abriga geração.
+
+**Intenção registrada:** a divergência será resolvida em `B104`, **depois** da Sprint 9, decidindo entre mover o código para o layout declarado ou revisar o layout para refletir a organização real. A reorganização não ocorre durante a Sprint 9 porque mover arquivos invalidaria a linha de base de não regressão da Fase 0, que compara byte a byte a saída gerada para transações de nível único. Até lá, quem procurar o wizard ou os adaptadores deve olhar em `Src/Extension/`, não nas pastas reservadas.
+
 [AF-F05]
 
 ---
