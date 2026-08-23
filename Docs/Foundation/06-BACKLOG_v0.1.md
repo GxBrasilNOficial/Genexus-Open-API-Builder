@@ -218,7 +218,7 @@ Se B004 falhar sem alternativa oficial viável:
 
 ### Nota operacional
 
-`Delete` é pós-MVP como endpoint REST. A remoção de uma API gerada pertence ao ciclo de vida da ferramenta e depende da metadata persistente.
+`Delete` é pós-MVP como endpoint REST. A remoção de uma API gerada pertence ao ciclo de vida da ferramenta e depende da metadata persistente. **Revisto em 2026-08-23:** o endpoint passa a ser entregue por `B100`, opt-in e desligado por padrão. A distinção entre remover um **registro** (serviço `Delete`, via BC) e remover a **API gerada** (tooling, por metadata) permanece integralmente.
 
 ### Nota de revisão sobre `B076`
 

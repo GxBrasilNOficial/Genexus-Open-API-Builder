@@ -169,7 +169,7 @@ Operações públicas:
 - `Create`
 - `Update`
 
-`Delete` é pós-MVP como endpoint REST.
+`Delete` é pós-MVP como endpoint REST. **Revisto em 2026-08-23:** entregue por `B100` como serviço opcional, desligado por padrão, respondendo `200` com a chave removida, `404` em registro inexistente e `422` com `Code = "validation_error"` na recusa do Business Component, conforme a nota de revisão de 2026-08-23 acima.
 
 ---
 

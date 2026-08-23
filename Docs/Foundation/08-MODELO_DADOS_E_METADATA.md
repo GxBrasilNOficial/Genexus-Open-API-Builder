@@ -303,7 +303,7 @@ Serviços padrão geram:
 
 `EndpointsCount = 4`
 
-Os serviços são `List`, `Get`, `Create` e `Update`. `Delete` é pós-MVP como endpoint REST.
+Os serviços são `List`, `Get`, `Create` e `Update`. `Delete` é pós-MVP como endpoint REST. **Revisto em 2026-08-23:** com `B100`, marcar o serviço `Delete` no Wizard leva `EndpointsCount` a 5; sem marcar — o padrão —, permanece 4.
 
 ## Uso
 
