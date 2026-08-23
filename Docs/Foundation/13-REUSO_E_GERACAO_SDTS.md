@@ -191,7 +191,7 @@ Padrões:
 
 - partes não autonumeradas da chave, atributos armazenados atribuíveis, chaves estrangeiras armazenadas e campos com regra `Default` vêm marcados
 - nullable e opcionais continuam elegíveis e marcados
-- chave autonumerada, fórmula, inferido da tabela estendida, redundante automático, subnível, `NoAccept` e não atribuível via BC ficam desabilitados
+- chave autonumerada, fórmula, inferido da tabela estendida, redundante automático, subnível (ver nota de revisão abaixo — passou a ser elegível), `NoAccept` e não atribuível via BC ficam desabilitados
 - tipos `Image`, `Video`, `Audio`, `Blob` e `BlobFile` ficam desabilitados no MVP
 - campos sensíveis elegíveis ficam desmarcados com alerta
 - auditoria operacional fica desabilitada
@@ -207,7 +207,7 @@ Padrões:
 - preserva a ordem da estrutura da Transaction
 - preserva nome exato do atributo no SDT, JSON e OpenAPI
 - preserva tipo, domínio, tamanho, decimais, nulabilidade e características aplicáveis
-- não contém envelope, metadata, subníveis nem campos exclusivos de resposta
+- não contém envelope, metadata nem campos exclusivos de resposta; subníveis passaram a ser elegíveis (ver nota de revisão abaixo)
 - não há campos públicos com sufixo `Specified`
 
 **Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099):** Atributos de subníveis selecionados passam a ser elegíveis e são gerados como nós aninhados de coleção (`IsCollection = true`) em `sdt<NomeBase>_API_CreateRequest`, conforme detalhado na `Emenda técnica — 2026-08-20` do registro de decisões do MVP e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
@@ -222,7 +222,7 @@ Regras:
 - partes da chave aparecem desabilitadas no wizard
 - contém somente atributos selecionados e atribuíveis ao BC carregado
 - campos ordinários graváveis vêm selecionados por padrão
-- auditoria, fórmulas, inferidos, redundantes, subníveis, `NoAccept` e não atribuíveis ficam desabilitados
+- auditoria, fórmulas, inferidos, redundantes, subníveis (ver nota de revisão abaixo — passaram a ser elegíveis), `NoAccept` e não atribuíveis ficam desabilitados
 - tipos `Image`, `Video`, `Audio`, `Blob` e `BlobFile` ficam desabilitados no MVP
 - campos sensíveis elegíveis ficam desmarcados com alerta
 - todos os membros selecionados têm `Required = True`
@@ -248,7 +248,7 @@ Contém todos os atributos do primeiro nível explicitamente declarados na estru
 - campos somente de leitura
 - campos de auditoria
 
-Não inclui automaticamente atributos alcançáveis pela tabela estendida que não estejam declarados na estrutura. Não inclui subníveis nem campos sintéticos no MVP.
+Não inclui automaticamente atributos alcançáveis pela tabela estendida que não estejam declarados na estrutura. Não inclui campos sintéticos no MVP; subníveis passaram a ser elegíveis (ver nota de revisão abaixo).
 
 **Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099):** `sdt<NomeBase>_API_Response` passa a incluir nós de coleção (`IsCollection = true`) para cada subnível ativo selecionado.
 
