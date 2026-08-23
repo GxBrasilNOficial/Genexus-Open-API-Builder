@@ -158,6 +158,14 @@ Validar geração de:
 
 Não deve existir endpoint `Delete` no MVP.
 
+**Nota de revisão — 2026-08-23:**
+
+**Quanto ao `Delete` (`B100`):** o critério acima passa a ser condicionado. Não deve existir endpoint `Delete` quando o serviço **não** estiver marcado no Wizard — que é o padrão, desligado. Quando marcado, valem `procCliente_API_Delete`, a rota `Delete`, o `operationId` `apiCliente.Delete` e o contrato `200` com a chave removida, `404` em registro inexistente e `422` com `Code = "validation_error"` na recusa do Business Component. Um teste escrito na forma absoluta anterior falharia exatamente quando a implementação estivesse correta.
+
+**Quanto a subníveis (B095–B099):** em transação multinível, a validação de geração acrescenta os SDTs derivados por contrato (`sdtCliente_API_CreateRequest_<Subnível>`, `sdtCliente_API_UpdateRequest_<Subnível>`, `sdtCliente_API_Response_<Subnível>`) e, quando houver subnível selecionado, o `sdtCliente_API_ListResponse_Item`. A validação de rotas acrescenta: coleções preenchidas no `Get`; substituição de linhas no `Update` somente com `<Subnível>Replace = True`; preservação das linhas quando o marcador está ausente; contadores `<Subnível>Count` na listagem; e ausência dos membros de coleção nos elementos de `items`. Em transação de nível único, todos os critérios originais permanecem exatamente como estão, inclusive `items` como coleção de `sdtCliente_API_Response`.
+
+**Não regressão:** a saída gerada para transação de nível único deve permanecer byte a byte idêntica à linha de base capturada na Fase 0.
+
 ## Resultado esperado
 
 Estrutura pronta para teste inicial.

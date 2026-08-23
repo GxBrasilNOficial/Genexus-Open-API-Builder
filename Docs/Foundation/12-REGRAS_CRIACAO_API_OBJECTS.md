@@ -113,6 +113,8 @@ api<NomeBase>
 | Create | criar via BC |
 | Update | substituir via `PUT` usando BC |
 
+**Nota de revisão — 2026-08-23 — `Delete` (B100):** os quatro serviços acima continuam sendo os obrigatórios. `B100` acrescenta um quinto serviço **opcional**, desligado por padrão: `Delete`, respondendo `200` com a chave primária removida, `404` em registro inexistente e `422` com `Code = "validation_error"` quando o Business Component recusa — inclusive por integridade referencial, seguindo a regra de `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md` de não presumir `409` quando não é possível distinguir a natureza da recusa. Marcar o serviço exige confirmação consciente no Wizard, com aviso de que apagar o cabeçalho apaga todas as linhas filhas na mesma transação atômica, e o serviço admite `SecurityLevel` próprio, mais restritivo que o dos demais.
+
 ## Regra
 
 Estrutura gerada deve ficar pronta para teste inicial simples.
@@ -133,7 +135,7 @@ Gerar serviços completos para chave simples e composta.
 | Estrutura base do objeto | Sim |
 | Get por chave composta | Sim |
 | Update por chave composta | Sim |
-| Delete por chave composta | Pós-MVP |
+| Delete por chave composta | Promovido a `B100`, na Sprint 9 (opt-in, desligado por padrão) |
 
 ## Regra
 

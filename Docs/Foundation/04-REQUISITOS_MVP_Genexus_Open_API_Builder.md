@@ -184,6 +184,8 @@ Serviços básicos gerados e prontos para teste inicial em cenário simples, com
 
 `Delete` não compõe o endpoint REST do MVP. A remoção de API gerada é uma operação de tooling distinta e deve seguir metadata de geração, não o contrato público da API.
 
+**Revisto em 2026-08-23 (`B100`):** o `Delete` fica autorizado como serviço **opcional**, desligado por padrão, executado na Sprint 9 depois da frente de subníveis. A distinção acima permanece intacta e continua importante: remover a **API gerada** é operação de tooling sobre a metadata; o serviço `Delete` remove um **registro** pelo Business Component. São coisas diferentes, e nenhuma passa a fazer o papel da outra.
+
 ---
 
 ## 8.3 Organização automática de objetos [DP-F04]
@@ -349,6 +351,8 @@ Não entram nesta fase:
 - `PATCH`
 - filtros por subnível
 
+**Nota de revisão — 2026-08-23:** o **endpoint `Delete`** sai desta lista e passa a ser entregue por `B100`, como serviço opcional desligado por padrão. Os demais itens permanecem fora de escopo — em particular **filtros por subnível**, cuja exclusão continua deliberada mesmo depois do suporte a transações multinível: os subníveis entram nos contratos como coleções, mas não como critério de filtro do `List`.
+
 [DP-F04]
 
 ---
@@ -449,7 +453,7 @@ Se não for tecnicamente viável criar ou manipular API Objects oficiais por cam
 ## Pode assumir com boa confiança
 
 - MVP focado em CRUD REST inicial via API Object oficial
-- CRUD no MVP significa `List`, `Get`, `Create` e `Update`; `Delete` é pós-MVP
+- CRUD no MVP significa `List`, `Get`, `Create` e `Update`; `Delete` é pós-MVP — **revisto em 2026-08-23:** `Delete` passa a ser entregue por `B100`, na Sprint 9, como serviço opcional desligado por padrão
 - integração à IDE é requisito central
 - simplicidade é prioridade
 - geração rastreável e conservadora é valor importante

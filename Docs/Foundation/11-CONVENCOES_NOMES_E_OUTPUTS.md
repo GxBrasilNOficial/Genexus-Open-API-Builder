@@ -164,6 +164,17 @@ Se uma versão futura do GeneXus expuser nova propriedade de extração do `File
 | Cliente | sdtCliente_API_CreateRequest | sdtCliente_API_UpdateRequest | sdtCliente_API_Response | sdtCliente_API_ListResponse |
 | Produto | sdtProduto_API_CreateRequest | sdtProduto_API_UpdateRequest | sdtProduto_API_Response | sdtProduto_API_ListResponse |
 
+**Nota de revisão — 2026-08-23 — Suporte a Subníveis:** a tabela acima permanece exata para transação de nível único. Havendo subníveis selecionados, cada subnível gera um SDT próprio **por contrato**, nomeado `sdt<NomeBase>_API_<Papel>_<Subnível>`:
+
+| Finalidade | Padrão | Exemplo |
+|-----------|--------|---------|
+| Linhas em Create | `sdt<NomeBase>_API_CreateRequest_<Subnível>` | `sdtCliente_API_CreateRequest_Parcelas` |
+| Linhas em Update | `sdt<NomeBase>_API_UpdateRequest_<Subnível>` | `sdtCliente_API_UpdateRequest_Parcelas` |
+| Linhas em Response | `sdt<NomeBase>_API_Response_<Subnível>` | `sdtCliente_API_Response_Parcelas` |
+| Item da lista | `sdt<NomeBase>_API_ListResponse_Item` | `sdtCliente_API_ListResponse_Item` |
+
+O papel permanece imediatamente após `_API_` e o subnível é qualificador, de modo que cada contrato forme um bloco contíguo na ordenação alfabética da Folder, com os derivados logo abaixo do SDT pai. Em profundidade maior que 2, o caminho se acumula no qualificador (`sdtDadosDoDia_API_Response_Turno_Funcionario`); a regra de encurtamento e o limite de nome aceito pelo GeneXus são medidos na Fase 2. O `ListResponse_Item` existe **somente** quando há subnível selecionado; sem subníveis, `Items` continua sendo coleção de `sdt<NomeBase>_API_Response`. Detalhes na `Emenda técnica — 2026-08-23` do registro de decisões do MVP.
+
 O marcador `_API_` faz parte do nome público levado pelo GeneXus para `components/schemas` no OpenAPI. Essa exposição foi aceita conscientemente para favorecer organização e identificação dentro da KB.
 
 O YAML gerado pelo GeneXus e ao menos um gerador de cliente OpenAPI devem validar a compatibilidade prática desses nomes.
@@ -339,6 +350,7 @@ Para uma Transaction `NomeDaTransacao`, os nomes das Procedures são:
 - `procNomeDaTransacao_API_Get`
 - `procNomeDaTransacao_API_Create`
 - `procNomeDaTransacao_API_Update`
+- `procNomeDaTransacao_API_Delete` — **planejado em `B100`**, gerado somente quando o serviço `Delete` for marcado no Wizard, que vem desligado por padrão
 
 Regras:
 
