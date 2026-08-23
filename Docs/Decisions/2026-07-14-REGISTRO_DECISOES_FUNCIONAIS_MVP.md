@@ -64,12 +64,12 @@ A análise da KB de produção (`Gx_FabricaBrasil`) revelou que 10,2% das Transa
 
 Fica autorizada a expansão do gerador para suportar Transactions com subníveis (B095–B099):
 1. **Elegibilidade intra-subnível:** Atributos de subníveis selecionados passam a ser elegíveis e entram como coleções aninhadas nos SDTs de `CreateRequest`, `UpdateRequest` e `Response`. Regras `NoAccept`, fórmulas de linha e atributos inferidos permanecem desabilitados em Requests (somente leitura) e elegíveis em `Response`. Chaves primárias de subnível identificam a linha no `UpdateRequest` e são opcionais/omitidas no `CreateRequest` quando autonumeradas/sequenciais.
-2. **Listagem:** O endpoint `List` preserva alta performance paginando sobre o cabeçalho e incluindo contadores numéricos `<SubLevel>Count` (ex.: `ParcelasCount`, `ItensCount`), sem aninhar coleções completas na listagem geral.
+2. **Listagem:** O endpoint `List` preserva alta performance paginando sobre o cabeçalho e incluindo contadores numéricos `<Subnível>Count` (ex.: `ParcelasCount`, `ItensCount`), sem aninhar coleções completas na listagem geral.
 3. **Substituição completa no `Update` e atomicidade:** O `PUT` em transação multinível adota substituição idempotente completa da coleção de linhas no Business Component. O `Save()` do BC governa a gravação em transação única atômica (executando `Commit` em caso de sucesso e `Rollback` em caso de falha).
 4. **Contrato de erros:** Falhas de validação em subníveis retornam o `sdt_API_ErrorResponse` top-level unificado com `Code = "validation_error"` e a `Message` emitida pelo BC, sem array paralelo por linha.
 5. **Detalhamento:** Especificação, levantamento e fases de implementação registrados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 
-**Nota de revisão — 2026-08-23.** Os itens 2 e 3 foram revistos pela `Emenda técnica — 2026-08-23`: os contadores de `List` passam a ser desativáveis por subnível e restritos a subníveis diretos, e a substituição completa no `Update` passa a exigir o marcador explícito `<SubLevel>Replace`. O item 4 permanece como decisão vigente, e a `Emenda técnica — 2026-08-23` registra que a implementação ainda não o cumpre — gap tratado em `B102`.
+**Nota de revisão — 2026-08-23.** Os itens 2 e 3 foram revistos pela `Emenda técnica — 2026-08-23`: os contadores de `List` passam a ser desativáveis por subnível e restritos a subníveis diretos, e a substituição completa no `Update` passa a exigir o marcador explícito `<Subnível>Replace`. O item 4 permanece como decisão vigente, e a `Emenda técnica — 2026-08-23` registra que a implementação ainda não o cumpre — gap tratado em `B102`.
 
 ## Emenda técnica — 2026-08-23 — Revisão dirigida da Sprint 9
 
@@ -79,10 +79,11 @@ A revisão do plano da Sprint 9, conduzida em 2026-08-23 sobre a especificação
 
 ### Decisões de contrato e arquitetura
 
-1. **Forma dos SDTs de subnível.** Cada subnível selecionado gera um SDT próprio **por contrato** (`_CreateRequest`, `_UpdateRequest`, `_Response`), referenciado como membro coleção. Um SDT único compartilhado publicaria campos somente leitura no `CreateRequest`, defeito da mesma natureza do `Errors[]` retirado pela `Emenda técnica — 2026-08-03`. Subestrutura aninhada dentro do próprio SDT fica descartada nesta frente.
-2. **Substituição no `Update` sob marcador.** A substituição completa passa a exigir `<SubLevel>Replace = True`; ausente ou `False` preserva as linhas. A decisão decorre da limitação comprovada em 2026-08-03 — ausente é indistinguível de vazio no corpo —, que sem marcador faria um `PUT` incompleto apagar linhas em silêncio. O default seguro é obtido justamente porque booleano ausente equivale a `False`.
+1. **Forma e nomenclatura dos SDTs de subnível.** Cada subnível selecionado gera um SDT próprio **por contrato**, referenciado como membro coleção, nomeado `sdt<NomeBase>_API_<Papel>_<Subnível>` — o papel permanece imediatamente após `_API_` e o subnível é qualificador, de modo que cada contrato forme um bloco contíguo na Folder (`sdtCliente_API_Response`, `sdtCliente_API_Response_Parcelas`). Um SDT único compartilhado publicaria campos somente leitura no `CreateRequest`, defeito da mesma natureza do `Errors[]` retirado pela `Emenda técnica — 2026-08-03`. Subestrutura aninhada dentro do próprio SDT fica descartada nesta frente.
+2. **Substituição no `Update` sob marcador.** A substituição completa passa a exigir `<Subnível>Replace = True`; ausente ou `False` preserva as linhas. A decisão decorre da limitação comprovada em 2026-08-03 — ausente é indistinguível de vazio no corpo —, que sem marcador faria um `PUT` incompleto apagar linhas em silêncio. O default seguro é obtido justamente porque booleano ausente equivale a `False`.
 3. **Ordem das linhas.** Declarada contratualmente como a da chave primária do subnível, ascendente. No `Update`, a ordem do payload é irrelevante, salvo chave autonumerada ou sequencial, em que a ordem determina a numeração atribuída.
 4. **Contadores de `List`.** Fórmula agregada nativa, ligados por padrão, desativáveis por subnível e restritos a subníveis diretos. Contador de neto seria soma achatada atravessando os pais, com nome que não denunciaria a agregação.
+4-A. **Tipo dos elementos de `Items` na listagem.** Em transação com subnível selecionado, `Items` passa a ser coleção de `sdt<NomeBase>_API_ListResponse_Item` — mesmos campos de cabeçalho, sem os membros de coleção, com os contadores. Em transação de nível único, `Items` continua sendo coleção de `sdt<NomeBase>_API_Response`, sem alteração alguma. O motivo é que o `List` não preenche as coleções: reusar o `Response` publicaria arrays permanentemente vazios que o consumidor leria como ausência de linhas. Fica revista, apenas para o caso com subníveis, a regra de que `Get`, `Create`, `Update` e cada item de `List` usam o mesmo contrato.
 5. **Profundidade.** Recursão genérica sem limite artificial no código; profundidade 3 é o alcance da evidência, sinalizado por aviso no Wizard acima desse valor, sem bloquear a geração.
 6. **Metadata.** `schemaVersion` passa a `V2`; a leitura aceita `V1` e `V2`, e a conversão ocorre apenas quando a geração é aplicada. Sem tolerância, toda API da Alpha ficaria irreencontrável e irremovível.
 7. **Não regressão.** Alterações de gerador nesta sprint não podem mudar a saída de transações de nível único, verificada contra linha de base capturada antes da frente.
@@ -196,7 +197,7 @@ Permanecem válidas todas as decisões de status HTTP em runtime, a semântica d
 - `Create`: incluído e marcado por padrão.
 - `Update`: incluído e marcado por padrão.
 - `Delete`: fora do primeiro MVP; quando implementado, será opt-in e desmarcado por padrão.
-- O MVP trabalhará somente com o primeiro nível da Transaction.
+- O MVP trabalhará somente com o primeiro nível da Transaction. **Superado pela `Emenda técnica — 2026-08-20`:** transações com subníveis passam a ser suportadas (B095–B099). **Remissão sobre `Delete`:** a decisão acima de mantê-lo opt-in e desmarcado por padrão permanece vigente e é executada por `B100`, conforme a `Emenda técnica — 2026-08-23`.
 - Chaves primárias simples e compostas serão suportadas.
 - Ordem e tipos das partes da chave serão preservados no `RestPath` e na chamada ao BC.
 - `Update` usará `PUT` no mesmo caminho de `Get`, com todas as partes da chave no `RestPath`.
@@ -411,12 +412,12 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 ## Sincronização com a Transaction
 
 - Os SDTs gerados serão retratos controlados do contrato da API, e não espelhos alterados automaticamente junto com a Transaction.
-- O objeto `sdtNomeDaTransacao_API_Response` cobrirá todos os atributos do primeiro nível declarados na estrutura da Transaction, incluindo atributos armazenados, inferidos da tabela estendida, fórmulas, partes da chave e campos somente de leitura.
+- O objeto `sdtNomeDaTransacao_API_Response` cobrirá todos os atributos do primeiro nível declarados na estrutura da Transaction, incluindo atributos armazenados, inferidos da tabela estendida, fórmulas, partes da chave e campos somente de leitura. **Superado em parte pelas emendas de 2026-08-20 e 2026-08-23:** o `Response` passa a incluir também um membro coleção por subnível selecionado, tipado por `sdt<NomeBase>_API_Response_<Subnível>`. A cobertura do primeiro nível permanece exatamente como descrita.
 - A extensão não incluirá indiscriminadamente todos os atributos alcançáveis pela tabela estendida que não estejam declarados na estrutura da Transaction.
 - Mudanças na Transaction somente chegarão aos contratos por uma ação explícita `Sincronizar com a Transaction`.
 - A sincronização comparará a estrutura atual com a metadata da última geração e apresentará atributos adicionados, removidos ou renomeados, mudanças de tipo e mudanças de gravabilidade.
 - Nenhuma alteração será aplicada antes da confirmação do usuário.
-- Atributo novo no primeiro nível virá proposto e marcado para inclusão no `Response`; nos Requests, dependerá de sua elegibilidade para inclusão ou alteração via BC.
+- Atributo novo no primeiro nível virá proposto e marcado para inclusão no `Response`; nos Requests, dependerá de sua elegibilidade para inclusão ou alteração via BC. **Estendido pelas emendas de 2026-08-20 e 2026-08-23:** a mesma regra vale por nível, e a sincronização compara adições, remoções e renomeações dentro da hierarquia, inclusive o caso de um subnível inteiro deixar de existir na Transaction.
 - Alterações potencialmente incompatíveis, como remoção, renomeação ou mudança de tipo, receberão aviso específico.
 - Um novo campo obrigatório ou uma nova regra aplicável via BC será sinalizado como risco de quebra do `Create`, mesmo antes de qualquer mudança no contrato publicado.
 - Se um SDT gerado tiver sido alterado manualmente desde a última geração, o MVP não tentará mesclagem automática nem o sobrescreverá silenciosamente; mostrará o conflito e permitirá manter, substituir conscientemente ou cancelar.
@@ -459,7 +460,7 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 
 **Emenda técnica de 2026-08-12 — `NoAccept`:** a regra transversal acima também se aplica ao `UpdateRequest`; o atributo permanece fora do corpo e dos assignments de Update, embora continue disponível nos contratos de saída.
 
-**Emenda técnica de 2026-08-20 — Subníveis:** atributos de subníveis selecionados passam a ser elegíveis e entram como coleções aninhadas no `UpdateRequest`, com política de substituição completa no BC, conforme detalhado na `Emenda técnica — 2026-08-20` e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`. **Revisto em 2026-08-23:** a substituição completa passa a exigir o marcador `<SubLevel>Replace = True` no próprio `UpdateRequest`; ausente ou `False`, as linhas do subnível não são tocadas.
+**Emenda técnica de 2026-08-20 — Subníveis:** atributos de subníveis selecionados passam a ser elegíveis e entram como coleções aninhadas no `UpdateRequest`, com política de substituição completa no BC, conforme detalhado na `Emenda técnica — 2026-08-20` e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`. **Revisto em 2026-08-23:** a substituição completa passa a exigir o marcador `<Subnível>Replace = True` no próprio `UpdateRequest`; ausente ou `False`, as linhas do subnível não são tocadas.
 
 ## UpdateRequest — presença dos membros no JSON
 
@@ -606,11 +607,11 @@ sdtNomeDaTransacao_API_ListResponse
 ## `sdtNomeDaTransacao_API_Response` — estrutura
 
 - Incluirá todos os atributos do primeiro nível explicitamente declarados na estrutura da Transaction: chave primária completa, atributos armazenados, atributos inferidos ou da tabela estendida declarados e fórmulas ou outros atributos calculados declarados.
-- Não incluirá automaticamente atributos da tabela estendida que não apareçam na estrutura, subníveis nem campos sintéticos.
+- Não incluirá automaticamente atributos da tabela estendida que não apareçam na estrutura, subníveis nem campos sintéticos. **Superado quanto a subníveis pelas emendas de 2026-08-20 e 2026-08-23:** subníveis selecionados no Wizard entram como membro coleção. Permanece válido para atributos não declarados na estrutura e para campos sintéticos.
 - Preservará a ordem da estrutura da Transaction.
 - Cada membro será baseado no atributo original, preservando domínio, tipo, tamanho, decimais, nulabilidade e demais características aplicáveis.
 - Os membros usarão exatamente os nomes dos atributos tanto na KB quanto no JSON, como `ProdutoId` e `ProdutoNome`.
-- `Get`, `Create`, `Update` e cada item de `List` usarão o mesmo contrato.
+- `Get`, `Create`, `Update` e cada item de `List` usarão o mesmo contrato. **Condicionado pela `Emenda técnica — 2026-08-23`:** permanece assim em transação de nível único; havendo subnível selecionado, cada item de `List` passa a usar `sdt<NomeBase>_API_ListResponse_Item`, para não publicar coleções que a listagem nunca preenche.
 - A diferença de caixa será intencional: o envelope genérico usará nomes externos em lower camel case, enquanto os dados da Transaction preservarão os nomes GeneXus.
 
 ## `sdtNomeDaTransacao_API_CreateRequest` — estrutura e presença

@@ -10,6 +10,10 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
+### Changed
+
+- Revisão dirigida do plano da Sprint 9 (2026-08-23): a especificação de subníveis ganhou a Fase 0 (linha de base de não regressão para transações planas) e a Fase 7 (ciclo de vida sob hierarquia); os SDTs de subnível passam a ser próprios por contrato, nomeados `sdt<NomeBase>_API_<Papel>_<Subnível>`; a substituição de linhas no `Update` passa a exigir o marcador `<Subnível>Replace`; os contadores de `List` ficam desativáveis por subnível e restritos a subníveis diretos, alojados em `sdt<NomeBase>_API_ListResponse_Item`, que só existe quando há subnível selecionado; a metadata vai a `schemaVersion` V2 com leitura tolerante a V1. Novos itens de backlog: `B100` (serviço `Delete` opt-in), `B101` (experimento de membro nullable), `B102` (repasse da `Message` do Business Component, primeiro item da sprint), `B103` (reconhecimento de source por versão de contrato) e `B104` (organização de `Src`). Notas de revisão alinhadas nos documentos 05, 08, 13, 26, 28, no registro de decisões (`Emenda técnica — 2026-08-23`) e em `B011`. Sem mudança de código da extensão. Detalhe: `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
+
 ---
 
 # [0.1.0-alpha.3] - 2026-08-18

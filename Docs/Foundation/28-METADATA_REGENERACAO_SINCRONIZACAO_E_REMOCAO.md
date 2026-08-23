@@ -191,3 +191,17 @@ Folder preexistente específico da Transaction pode ser reutilizado com aviso. A
 - Folder reutilizado nunca é apagado pela remoção
 - SDTs compartilhados em `GxOpenAPI` permanecem ao remover uma API específica
 - sincronização apresenta comparação antes de alterar qualquer objeto
+
+---
+
+# 10. Nota de revisão — 2026-08-23 — Suporte a Subníveis
+
+As decisões da `Emenda técnica — 2026-08-23` alcançam este contrato em quatro pontos. As seções acima permanecem válidas para transação de nível único.
+
+**Persistência por nível.** "Campos selecionados de `CreateRequest`" e "campos selecionados de `UpdateRequest`" passam a ser registrados **por nível**, junto da hierarquia (nome do nível, profundidade, nível pai, ordem e chave primária própria). É o que a Fase 6 grava e o que a Fase 7 relê ao reabrir o Wizard.
+
+**Versão do schema.** A metadata passa de `schemaVersion` V1 para V2. A leitura aceita as duas versões — V1 é interpretada como transação de nível único —, a gravação emite sempre V2, e a conversão ocorre somente quando a geração é aplicada, nunca na simples abertura do Wizard. Sem essa tolerância, toda API gerada na Alpha ficaria simultaneamente irreencontrável e irremovível, já que reencontro e remoção validam o carimbo.
+
+**Inventário próprio deixa de ser fixo.** "SDTs próprios" passa a incluir os derivados de subnível (`sdt<NomeBase>_API_<Papel>_<Subnível>`) e, quando houver subnível selecionado, o `sdt<NomeBase>_API_ListResponse_Item`. A remoção lê esses nomes da metadata em vez de assumir lista fechada, sob pena de deixar órfãos na KB. A ordem de exclusão continua respeitando a dependência entre tipos.
+
+**Sincronização hierárquica.** A comparação com a Transaction passa a percorrer a árvore de níveis, confrontando adições, remoções e renomeações dentro de cada nível por `attributeGuid`, e tratando explicitamente o caso de um subnível inteiro deixar de existir na estrutura.

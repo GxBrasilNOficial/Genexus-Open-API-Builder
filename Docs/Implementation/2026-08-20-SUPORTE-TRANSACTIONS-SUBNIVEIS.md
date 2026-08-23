@@ -48,12 +48,32 @@ Esses dados comprovam que o suporte a múltiplos subníveis paralelos e recursã
 
 Cada subnível selecionado gera portanto um SDT próprio **por contrato**, e não um SDT único compartilhado entre os três. O motivo é de contrato, não de implementação: um SDT único precisaria conter a união dos campos, e campos somente leitura (fórmula, `NoAccept`, atributo inferido) apareceriam no `CreateRequest`, contrariando a elegibilidade da seção 2 e publicando no contrato OpenAPI membros que a geração nunca lê — o mesmo defeito que motivou a retirada de `Errors[]` na `Emenda técnica — 2026-08-03`.
 
-- `sdt<Tx>_API_Response`: campos do cabeçalho + membro coleção por subnível selecionado, tipado por `sdt<Tx>_API_<SubLevel>_Response`.
-- `sdt<Tx>_API_CreateRequest`: campos do cabeçalho + membro coleção tipado por `sdt<Tx>_API_<SubLevel>_CreateRequest`.
-- `sdt<Tx>_API_UpdateRequest`: campos do cabeçalho + membro coleção tipado por `sdt<Tx>_API_<SubLevel>_UpdateRequest`, mais o marcador `<SubLevel>Replace` descrito na seção 10.
-- `sdt<Tx>_API_ListResponse`: campos de resumo do cabeçalho + contadores `<SubLevel>Count` descritos na seção 7.
+**Nomenclatura — o papel permanece imediatamente após `_API_`, e o subnível é qualificador.** O padrão é `sdt<NomeBase>_API_<Papel>_<Subnível>`, e não o inverso: assim cada contrato forma um bloco contíguo na ordenação alfabética da Folder, com seus derivados logo abaixo do SDT pai, e o nome se anuncia como derivado do contrato a que pertence.
 
-Em profundidade maior que 2, o SDT do subnível contém, por sua vez, o membro coleção do nível seguinte, com nome composto pelo caminho (`sdt<Tx>_API_<SubLevel>_<SubSubLevel>_Response`). A regra de encurtamento de nome e o limite aceito pelo GeneXus devem ser medidos na Fase 2 antes da primeira escrita real.
+- `sdt<Tx>_API_Response`: campos do cabeçalho + membro coleção por subnível selecionado, tipado por `sdt<Tx>_API_Response_<Subnível>`.
+- `sdt<Tx>_API_CreateRequest`: campos do cabeçalho + membro coleção tipado por `sdt<Tx>_API_CreateRequest_<Subnível>`.
+- `sdt<Tx>_API_UpdateRequest`: campos do cabeçalho + membro coleção tipado por `sdt<Tx>_API_UpdateRequest_<Subnível>`, mais o marcador `<Subnível>Replace` descrito na seção 10.
+- `sdt<Tx>_API_ListResponse`: envelope de lista, com os mesmos três membros de sempre (`Items`, `Pagination`, `AppliedFilters`).
+- `sdt<Tx>_API_ListResponse_Item`: **somente quando houver subnível selecionado** — tipo dos elementos de `Items`, conforme a seção 7-A.
+
+Em profundidade maior que 2, o SDT do subnível contém, por sua vez, o membro coleção do nível seguinte, com o caminho acumulado no qualificador (`sdt<Tx>_API_Response_<Subnível>_<SubSubnível>`). A regra de encurtamento de nome e o limite aceito pelo GeneXus devem ser medidos na Fase 2 antes da primeira escrita real.
+
+Exemplo completo, para `DadosDoDia -> Turno -> Funcionario` com os três níveis selecionados:
+
+```
+sdtDadosDoDia_API_CreateRequest
+sdtDadosDoDia_API_CreateRequest_Turno
+sdtDadosDoDia_API_CreateRequest_Turno_Funcionario
+sdtDadosDoDia_API_ListFilters
+sdtDadosDoDia_API_ListResponse
+sdtDadosDoDia_API_ListResponse_Item
+sdtDadosDoDia_API_Response
+sdtDadosDoDia_API_Response_Turno
+sdtDadosDoDia_API_Response_Turno_Funcionario
+sdtDadosDoDia_API_UpdateRequest
+sdtDadosDoDia_API_UpdateRequest_Turno
+sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
+```
 
 **Consequência para o inventário de remoção:** a lista de SDTs próprios deixa de ser fixa. `ApiPlanGeneratedApiRemovalPlan` passa a ler os nomes gravados na metadata em vez da lista hardcoded de cinco nomes, sob pena de deixar órfãos na KB ao remover uma API multinível. A ordem de exclusão continua respeitando a dependência de tipos (um SDT referenciado não pode ser apagado antes de quem o referencia).
 
@@ -63,28 +83,28 @@ Em profundidade maior que 2, o SDT do subnível contém, por sua vez, o membro c
   - Atribui campos do cabeçalho para `&GetResponse`.
   - Itera sobre as linhas de cada subnível do BC carregado:
     ```genexus
-    For &BCItem in &BC.<SubLevel>
+    For &BCItem in &BC.<Subnível>
         &ResponseItem = new()
         &ResponseItem.<Campo1> = &BCItem.<Campo1>
         ...
-        &GetResponse.<SubLevel>.Add(&ResponseItem)
+        &GetResponse.<Subnível>.Add(&ResponseItem)
     EndFor
     ```
 - **`Create` (`proc<Tx>_API_Create`):**
   - Atribui campos do cabeçalho de `&CreateRequest` para `&BC`.
   - Itera sobre as coleções de cada subnível do request, adicionando itens ao BC:
     ```genexus
-    For &RequestItem in &CreateRequest.<SubLevel>
+    For &RequestItem in &CreateRequest.<Subnível>
         &BCItem = new()
         &BCItem.<Campo1> = &RequestItem.<Campo1>
         ...
-        &BC.<SubLevel>.Add(&BCItem)
+        &BC.<Subnível>.Add(&BCItem)
     EndFor
     &BC.Save()
     ```
 - **`Update` (`proc<Tx>_API_Update`) — Substituição Completa sob marcador explícito:**
-  - O endpoint `Update` adota a semântica REST `PUT` de **substituição completa e idempotente**, porém condicionada ao marcador `<SubLevel>Replace` descrito na seção 10:
-    - Com `<SubLevel>Replace = True`, o payload da coleção representa o estado final desejado para as linhas, e linhas existentes no banco que forem omitidas são removidas pelo Business Component.
+  - O endpoint `Update` adota a semântica REST `PUT` de **substituição completa e idempotente**, porém condicionada ao marcador `<Subnível>Replace` descrito na seção 10:
+    - Com `<Subnível>Replace = True`, o payload da coleção representa o estado final desejado para as linhas, e linhas existentes no banco que forem omitidas são removidas pelo Business Component.
     - Com o marcador ausente ou `False`, as linhas daquele subnível não são tocadas e o `Update` atua somente sobre o cabeçalho.
     - Se o consumidor da API desejar preservar registros dentro de uma substituição, ele deve enviá-los ou marcá-los com flags da aplicação (ex.: "cancelado").
   - A ordem das linhas no payload não identifica a linha; a identificação é pela chave primária do subnível. A exceção está declarada na seção 9.
@@ -104,10 +124,19 @@ Em profundidade maior que 2, o SDT do subnível contém, por sua vez, o membro c
 
 ### 7. Procedimento `List` (B098) — Resumo com Contadores
 - A listagem geral paginada **não** aninha os arrays completos de subníveis para preservar a performance.
-- O `For each` do `List` percorre o nível 1 (cabeçalho) e projeta contadores numéricos para cada subnível ativo (`&Item.<SubLevel>Count`), informando a quantidade de registros filhos sem inflar o payload HTTP.
+- O `For each` do `List` percorre o nível 1 (cabeçalho) e projeta contadores numéricos para cada subnível ativo (`&Item.<Subnível>Count`), informando a quantidade de registros filhos sem inflar o payload HTTP.
 - **Mecanismo:** fórmula agregada nativa (`count()`) avaliada dentro do `For each` do cabeçalho, resolvida pelo GeneXus como agregação no próprio SQL. Fica descartado o `For each` aninhado com incremento manual de variável, que traria as linhas filhas ao servidor de aplicação apenas para contá-las.
 - **Controle pelo usuário:** o contador é gerado por padrão para cada subnível selecionado e pode ser **desativado individualmente** no Wizard. O controle existe porque o custo cresce com o número de subníveis paralelos: uma transação como `Empresa`, com 13 subníveis, produziria 13 agregações por linha da página.
-- **Somente subníveis diretos:** contadores são gerados apenas para subníveis de profundidade 2. Contador de neto seria uma soma achatada atravessando os pais (o total de funcionários do dia, perdendo a distribuição por turno), informação que o formato da listagem não comporta e cujo nome não denunciaria a agregação. Quem precisa do detalhe usa o `Get`, que devolve a árvore completa.
+- **Somente subníveis diretos:** contadores são gerados apenas para subníveis de profundidade 2.
+- **Onde os contadores vivem:** no `sdt<Tx>_API_ListResponse_Item`, descrito na seção 7-A, e não no `Response`. Contador de neto seria uma soma achatada atravessando os pais (o total de funcionários do dia, perdendo a distribuição por turno), informação que o formato da listagem não comporta e cujo nome não denunciaria a agregação. Quem precisa do detalhe usa o `Get`, que devolve a árvore completa.
+
+### 7-A. Tipo dos Elementos de `Items` na Listagem
+
+- Em transação **sem** subnível selecionado, nada muda: `Items` continua sendo coleção de `sdt<Tx>_API_Response`, exatamente como no contrato vigente. Essa condição não é detalhe: se o tipo mudasse para todas as transações, toda API plana da Alpha teria o contrato alterado e a linha de base da Fase 0 seria invalidada.
+- Em transação **com** subnível selecionado, `Items` passa a ser coleção de `sdt<Tx>_API_ListResponse_Item`, que contém os mesmos campos de cabeçalho do `Response`, **sem** os membros de coleção, mais os contadores `<Subnível>Count`.
+- **Motivo.** O `List` não preenche as coleções, por decisão de performance da seção 7. Reusar o `Response` publicaria em cada elemento da listagem arrays permanentemente vazios, que o consumidor leria como "não há linhas" quando o correto é "esta resposta não traz linhas". É o mesmo defeito que motivou a retirada de `Errors[]` do `sdt_API_ErrorResponse` na `Emenda técnica — 2026-08-03`: publicar no contrato uma estrutura que a geração nunca preenche. O contador substitui o array vazio por um número verdadeiro.
+- O envelope `sdt<Tx>_API_ListResponse` permanece com `Items`, `Pagination` e `AppliedFilters`; muda apenas o tipo dos elementos de `Items`.
+- A regra "`Get`, `Create`, `Update` e cada item de `List` usam o mesmo `Response`", registrada nos documentos 13 e 26 e no registro de decisões, foi escrita quando o gerador só conhecia um nível. Ela permanece válida para transação plana e fica condicionada nesta frente.
 
 ### 8. Interface do Wizard (UX) e Sincronização Hierárquica (B099)
 - A aba de seleção de campos agrupa os atributos por nível (seletor de nível / abas por nível / seções colapsáveis).
@@ -135,7 +164,7 @@ Em profundidade maior que 2, o SDT do subnível contém, por sua vez, o membro c
 
 - **Campo obrigatório dentro da linha:** vale a mesma regra da `Emenda técnica — 2026-08-03` — `Required` significa preenchimento, não presença do membro JSON. A resposta continua `400` com `Code = "invalid_request"`, e a `Message` identifica a linha pelo caminho (`Parcelas[2].ParcelaValor`). Isso não cria estrutura nova no corpo de erro, que permanece top-level com `Code` e `Message`.
 - **Coleção ausente ou vazia no `Create`:** significa zero linhas e é sucesso (`201`). O modelo GeneXus não obriga um subnível a ter linhas, e a geração não inventa essa obrigação.
-- **Marcador `<SubLevel>Replace` no `Update`:** o `UpdateRequest` recebe um membro booleano por subnível selecionado.
+- **Marcador `<Subnível>Replace` no `Update`:** o `UpdateRequest` recebe um membro booleano por subnível selecionado.
 
 | Valor recebido | Efeito sobre as linhas filhas |
 |---|---|
@@ -144,6 +173,8 @@ Em profundidade maior que 2, o SDT do subnível contém, por sua vez, o membro c
 | `True` com array vazio | todas as linhas são removidas |
 
 - **Por que o marcador existe.** A `Emenda técnica — 2026-08-03` comprovou que o corpo da requisição não permite distinguir membro ausente de membro vazio. Sem marcador, um `PUT` que **esquece** o array `Itens` seria indistinguível de um `PUT` que pede a remoção de todos os itens: o cliente atualizaria uma observação do cabeçalho e perderia as linhas, em silêncio e sem reversão. O marcador se apoia justamente na limitação — o default de um booleano é `False`, e ausente é indistinguível de `False`, de modo que o comportamento por omissão é o seguro.
+- **Marcador em profundidade maior que 2.** O marcador do nível 2 fica no corpo principal do `UpdateRequest`; o do nível 3 fica **dentro de cada item** do nível 2, porque a decisão de substituir é por linha pai. Em `DadosDoDia -> Turno -> Funcionario`, `TurnoReplace` está no topo e `FuncionarioReplace` dentro de cada `Turno` enviado.
+- **Decisão pendente para a Fase 3.** Quando `TurnoReplace = True` remove uma linha de turno, os funcionários daquela linha vão junto, por integridade do próprio Business Component; o `FuncionarioReplace` só rege os turnos que permanecem. A combinação "substituir turnos e preservar funcionários de turnos removidos" não existe. Falta especificar o comportamento exato do código gerado nesse cruzamento antes de implementar a Fase 3; até lá, o ponto fica declarado como não resolvido, e não presumido.
 - **Precedente.** A construção equivale a uma máscara de atualização por coleção, no espírito do `updateMask` adotado por APIs que expõem atualização parcial. A alternativa de uma máscara única em string foi considerada e descartada nesta frente: booleanos tipados aparecem no schema OpenAPI e são validáveis, enquanto uma string livre esconde erro de digitação em silêncio.
 
 ### 11. Colisão de Nomes
@@ -156,7 +187,7 @@ Em profundidade maior que 2, o SDT do subnível contém, por sua vez, o membro c
 
 - **Subníveis não recebem endpoints próprios.** Não são gerados `GET /<tx>/{id}/<sublevel>`, `POST /<tx>/{id}/<sublevel>` nem `DELETE /<tx>/{id}/<sublevel>/{n}`. Os subníveis existem apenas como coleções aninhadas dentro dos serviços do cabeçalho.
 - **Não há serviço `Delete` nesta frente**, em nenhum nível. A liberação do `Delete` é tratada como frente própria em `B100`.
-- **Consequência prática, que precisa constar também na documentação pública:** enquanto `B100` não estiver concluído, a única forma de remover uma linha filha é enviar o `Update` com `<SubLevel>Replace = True` e omitir a linha.
+- **Consequência prática, que precisa constar também na documentação pública:** enquanto `B100` não estiver concluído, a única forma de remover uma linha filha é enviar o `Update` com `<Subnível>Replace = True` e omitir a linha.
 
 ---
 
@@ -167,8 +198,8 @@ Em profundidade maior que 2, o SDT do subnível contém, por sua vez, o membro c
 | **Fase 0** | Linha de base de não regressão: captura dos arquivos de referência (golden files) da saída atual para transações de nível único, ligada ao checker mecânico | `Tests/` (nova cobertura), `scripts/Invoke-PrePushMechanicalChecks.ps1` |
 | **Fase 1 (B095)** | Leitura hierárquica recursiva, modelo `ApiPlanLevel` e testes offline | `PrototypeWizardContract.cs`, `PrototypePrimaryKeyReader.cs`, `ApiPlan.cs`, `Tests/TransactionStructure/` |
 | **Fase 2 (B096)** | Geração de SDTs hierárquicos por contrato, regra de nomes e desambiguação | `ApiPlanSdtGenerationPlan.cs`, `ApiPlanSdtWriter.cs` |
-| **Fase 3 (B097)** | Geração de código Business Component nas Procedures (Get, Create, Update) e marcador `<SubLevel>Replace` | `ApiPlanBusinessComponentWriter.cs` |
-| **Fase 4 (B098)** | Procedimento de List com contadores de subníveis diretos | `ApiPlanListProcedureWriter.cs` |
+| **Fase 3 (B097)** | Geração de código Business Component nas Procedures (Get, Create, Update) e marcador `<Subnível>Replace` | `ApiPlanBusinessComponentWriter.cs` |
+| **Fase 4 (B098)** | Procedimento de List com contadores de subníveis diretos e `ListResponse_Item` condicionado | `ApiPlanListProcedureWriter.cs`, `ApiPlanSdtGenerationPlan.cs` |
 | **Fase 5 (B099a)** | Interface do Wizard com agrupamento por nível, dependência entre níveis, controle de contador e aviso de profundidade | `PrototypeWizardDialog.cs` e abas de seleção |
 | **Fase 6 (B099b)** | Metadados hierárquicos (`schemaVersion` V2), sincronização e integridade | `ApiPlanMetadataFileWriter.cs`, `ApiPlanTransactionSyncComparer.cs`, `ApiPlanTransactionSyncOrchestrator.cs` |
 | **Fase 7** | Ciclo de vida sob hierarquia: releitura de contrato existente, preferências do Wizard e inventário dinâmico de remoção | `PrototypeWizardExistingApiContractReader.cs`, `PrototypeWizardPreferencesCodec.cs`, `ApiPlanGeneratedApiRemovalPlan.cs`, `ApiPlanGeneratedApiRemover.cs` |
@@ -200,7 +231,7 @@ A Fase 6 acrescenta a estrutura de níveis à metadata própria, hoje carimbada 
 4. **Checker mecânico do repositório:** `pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson` executado e aprovado.
 5. **Validação na IDE GeneXus 18:** Wizard executado em transação multinível na KB de teste, geração de SDTs/Procedures/API e `Build All` concluído com sucesso sem erros de especificação `spc0018`.
 6. **Validação contra estrutura real:** Wizard executado na cópia local da `Gx_FabricaBrasil` sobre os casos de 13 subníveis paralelos e de três níveis, com resultado registrado por medição (contagens, avisos, bloqueios).
-7. **Validação HTTP:** Chamadas reais `POST`, `GET`, `PUT` e `GET (List)` nos dois environments, validando persistência, substituição de linhas sob `<SubLevel>Replace`, preservação das linhas quando o marcador está ausente, contadores e integridade do contrato de erro.
+7. **Validação HTTP:** Chamadas reais `POST`, `GET`, `PUT` e `GET (List)` nos dois environments, validando persistência, substituição de linhas sob `<Subnível>Replace`, preservação das linhas quando o marcador está ausente, contadores e integridade do contrato de erro.
 8. **Ida e volta do Wizard:** após gerar uma API multinível, reabrir o Wizard e confirmar que a seleção de níveis e atributos volta íntegra — proteção contra o modo de falha silencioso em que a segunda execução regrava a API sem os subníveis.
 
 ---

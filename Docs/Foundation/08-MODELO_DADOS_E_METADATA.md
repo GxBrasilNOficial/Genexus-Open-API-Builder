@@ -476,3 +476,28 @@ O MVP precisa de poucos dados internos bem organizados:
 contexto → transaction → atributos → SDTs → plano → execução → resultado.
 
 Sem banco próprio e sem complexidade desnecessária.
+
+---
+
+# 21. Nota de revisão — 2026-08-23 — Modelo hierárquico
+
+O modelo descrito acima é plano: `TransactionInfo` expõe `Attributes` como lista única e `AttributeInfo` não diz a que nível pertence. Com o suporte a subníveis (B095–B099), o modelo interno passa a ser hierárquico. As tabelas acima permanecem exatas para transação de nível único.
+
+**Nova entidade `ApiPlanLevel`**, acrescentada às entidades internas principais:
+
+| Campo | Tipo |
+|---|---|
+| LevelName | texto |
+| Depth | número |
+| ParentLevelName | texto |
+| LevelOrder | número |
+| PrimaryKeys | lista texto |
+| Attributes | lista AttributeInfo |
+
+`Depth = 1` identifica o cabeçalho; 2, o primeiro subnível; e assim por diante. A leitura da estrutura é recursiva, sem limite artificial de profundidade; 3 é o alcance da evidência, não uma trava.
+
+**`TransactionInfo`** passa a expor a árvore de níveis, mantendo o nível 1 como raiz. `PrimaryKeys` do nível 1 continua com o significado atual, e cada nível carrega a própria chave.
+
+**`AttributeInfo`** ganha a referência ao nível a que pertence. Sem ela, dois atributos homônimos em níveis diferentes ficariam indistinguíveis, e os campos `IsSelectedForCreate`, `IsSelectedForUpdate` e `IsSelectedForResponse` não poderiam ser resolvidos sem ambiguidade.
+
+Detalhes e fases em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md` e na `Emenda técnica — 2026-08-23` do registro de decisões do MVP.

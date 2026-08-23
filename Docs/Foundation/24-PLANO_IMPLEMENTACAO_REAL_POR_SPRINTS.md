@@ -394,7 +394,7 @@ Aprender com o uso externo da Alpha e expandir o gerador para cobrir transaçõe
 - Fase 0: linha de base de não regressão para transações planas, por arquivos de referência ligados ao checker mecânico
 - `B095`: Leitura hierárquica recursiva da estrutura no SDK e modelo de domínio multinível (`ApiPlanLevel`)
 - `B096`: Geração de SDTs hierárquicos por subnível e por contrato, com regra de nomes e desambiguação
-- `B097`: Geração de código Business Component nas Procedures para subníveis, com substituição completa sob marcador `<SubLevel>Replace`
+- `B097`: Geração de código Business Component nas Procedures para subníveis, com substituição completa sob marcador `<Subnível>Replace`
 - `B098`: Procedimento de `List` com contadores numéricos de subníveis diretos
 - `B099`: Interface do Wizard (UX) e sincronização com metadata hierárquica (`schemaVersion` V2)
 - Fase 7: ciclo de vida sob hierarquia — releitura de contrato existente, preferências do Wizard e inventário dinâmico de remoção
@@ -416,7 +416,7 @@ Adoção é **sinal observado** no checkpoint, não condição de fechamento: el
 Dois cortes de release, e não um só:
 
 - `0.1.0-alpha.4`, logo após `B102` — melhoria pequena, independente e de valor imediato para quem já integra, publicada antes do pacote estrutural para exercitar o rito com baixo risco.
-- `0.1.0-alpha.5`, ao fim da sprint, com subníveis e `Delete`. As notas destacam separadamente o `Delete` e o marcador `<SubLevel>Replace`, que são os dois pontos onde um consumidor desatento perde dados.
+- `0.1.0-alpha.5`, ao fim da sprint, com subníveis e `Delete`. As notas destacam separadamente o `Delete` e o marcador `<Subnível>Replace`, que são os dois pontos onde um consumidor desatento perde dados.
 
 Cada corte mantém o rito já estabelecido: CHANGELOG, notas de release nos três idiomas, `README`/`INSTALL`/`DEMO` alinhados, tag e GitHub Release pre-release com a DLL anexada.
 

@@ -188,6 +188,10 @@ Regras:
 
 `items` contém elementos do SDT de resposta principal.
 
+**Nota de revisão — 2026-08-23 — Suporte a Subníveis:** a regra acima permanece exata para transação de nível único. Havendo subnível selecionado, `items` passa a conter elementos de `sdt<NomeBase>_API_ListResponse_Item`: os mesmos campos de cabeçalho do `Response`, **sem** os membros de coleção, mais os contadores `<Subnível>Count` dos subníveis diretos. A listagem continua não aninhando as coleções, por decisão de performance; publicar o `Response` aqui traria arrays permanentemente vazios, que o consumidor leria como ausência de linhas. Detalhes na `Emenda técnica — 2026-08-23`.
+
+**Confirmação de restrição — 2026-08-23:** a decisão de não oferecer atributos de subnível como filtro (seções 3 e 9) **permanece deliberada** depois da frente de subníveis, e não é pendência a resolver. Filtros continuam vindo somente do primeiro nível.
+
 `pagination` deve usar contrato compartilhado documentado em `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md`.
 
 `appliedFilters`:

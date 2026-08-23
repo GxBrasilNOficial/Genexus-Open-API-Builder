@@ -210,7 +210,7 @@ Padrões:
 - não contém envelope, metadata nem campos exclusivos de resposta; subníveis passaram a ser elegíveis (ver nota de revisão abaixo)
 - não há campos públicos com sufixo `Specified`
 
-**Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099), revista em 2026-08-23:** Atributos de subníveis selecionados passam a ser elegíveis e entram como membro coleção (`IsCollection = true`) em `sdt<NomeBase>_API_CreateRequest`. A revisão de 2026-08-23 fixou a forma desse membro: ele é tipado por um **SDT próprio do subnível, por contrato** (`sdt<NomeBase>_API_<SubLevel>_CreateRequest`), e não por subestrutura aninhada dentro do próprio SDT. Um SDT único compartilhado entre Create, Update e Response publicaria campos somente leitura no `CreateRequest`, contrariando a elegibilidade. Detalhes na `Emenda técnica — 2026-08-20`, na `Emenda técnica — 2026-08-23` do registro de decisões do MVP e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
+**Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099), revista em 2026-08-23:** Atributos de subníveis selecionados passam a ser elegíveis e entram como membro coleção (`IsCollection = true`) em `sdt<NomeBase>_API_CreateRequest`. A revisão de 2026-08-23 fixou a forma desse membro: ele é tipado por um **SDT próprio do subnível, por contrato** (`sdt<NomeBase>_API_CreateRequest_<Subnível>`), e não por subestrutura aninhada dentro do próprio SDT. Um SDT único compartilhado entre Create, Update e Response publicaria campos somente leitura no `CreateRequest`, contrariando a elegibilidade. Detalhes na `Emenda técnica — 2026-08-20`, na `Emenda técnica — 2026-08-23` do registro de decisões do MVP e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 
 ## UpdateRequest
 
@@ -234,7 +234,7 @@ Regras:
 - não há `PATCH` no MVP
 - não há campos públicos com sufixo `Specified`
 
-**Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099), revista em 2026-08-23:** Atributos de subníveis selecionados passam a ser elegíveis e entram como membro coleção (`IsCollection = true`) em `sdt<NomeBase>_API_UpdateRequest`, tipado por SDT próprio do subnível por contrato. A substituição completa no Business Component passa a ser condicionada ao marcador booleano `<SubLevel>Replace`, presente no mesmo `UpdateRequest`: com `True`, o array enviado é o estado final e linhas omitidas são removidas; ausente ou `False`, as linhas daquele subnível não são tocadas. O marcador existe porque membro ausente é indistinguível de membro vazio no corpo da requisição (`Emenda técnica — 2026-08-03`), o que sem ele faria um `PUT` incompleto apagar linhas em silêncio. Detalhes na `Emenda técnica — 2026-08-23`.
+**Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099), revista em 2026-08-23:** Atributos de subníveis selecionados passam a ser elegíveis e entram como membro coleção (`IsCollection = true`) em `sdt<NomeBase>_API_UpdateRequest`, tipado por `sdt<NomeBase>_API_UpdateRequest_<Subnível>` — SDT próprio do subnível, por contrato. A substituição completa no Business Component passa a ser condicionada ao marcador booleano `<Subnível>Replace`, presente no mesmo `UpdateRequest`: com `True`, o array enviado é o estado final e linhas omitidas são removidas; ausente ou `False`, as linhas daquele subnível não são tocadas. O marcador existe porque membro ausente é indistinguível de membro vazio no corpo da requisição (`Emenda técnica — 2026-08-03`), o que sem ele faria um `PUT` incompleto apagar linhas em silêncio. Detalhes na `Emenda técnica — 2026-08-23`.
 
 ## Response
 
@@ -250,7 +250,7 @@ Contém todos os atributos do primeiro nível explicitamente declarados na estru
 
 Não inclui automaticamente atributos alcançáveis pela tabela estendida que não estejam declarados na estrutura. Não inclui campos sintéticos no MVP; subníveis passaram a ser elegíveis (ver nota de revisão abaixo).
 
-**Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099):** `sdt<NomeBase>_API_Response` passa a incluir nós de coleção (`IsCollection = true`) para cada subnível ativo selecionado.
+**Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099), revista em 2026-08-23:** `sdt<NomeBase>_API_Response` passa a incluir um membro coleção (`IsCollection = true`) por subnível ativo selecionado, tipado por `sdt<NomeBase>_API_Response_<Subnível>` — SDT próprio do subnível, por contrato. Em profundidade maior que 2, o caminho se acumula no qualificador (`sdt<NomeBase>_API_Response_<Subnível>_<SubSubnível>`). A afirmação abaixo de que `Get`, `Create`, `Update` e cada item de `List` usam o mesmo `Response` permanece válida para transação de nível único e fica condicionada quando houver subníveis, conforme a nota da seção `ListResponse`. Detalhes na `Emenda técnica — 2026-08-23`.
 
 Preserva a ordem da estrutura. Cada membro é baseado no atributo original e preserva domínio, tipo, tamanho, decimais, nulabilidade e características aplicáveis.
 
@@ -303,6 +303,8 @@ Regras:
 - dentro da KB usa PascalCase
 - externamente usa `items`, `pagination`, `appliedFilters`, `page`, `pageSize`, `totalCount` e `totalPages`
 - um spike deve validar a estrutura no YAML gerado pelo GeneXus
+
+**Nota de revisão — 2026-08-23 — Suporte a Subníveis:** o envelope continua com exatamente três membros. O que fica condicionado é o **tipo dos elementos de `Items`**: em transação de nível único, permanece coleção de `sdt<NomeBase>_API_Response`, sem alteração; havendo subnível selecionado, passa a ser coleção de `sdt<NomeBase>_API_ListResponse_Item`, que traz os mesmos campos de cabeçalho, **sem** os membros de coleção, mais os contadores `<Subnível>Count` dos subníveis diretos. O motivo é que o `List` não preenche as coleções: reusar o `Response` publicaria arrays permanentemente vazios, que o consumidor leria como ausência de linhas — o mesmo defeito que motivou a retirada de `Errors[]` do `sdt_API_ErrorResponse`. Detalhes na `Emenda técnica — 2026-08-23` e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, seção 7-A.
 
 [SDT-F13]
 
