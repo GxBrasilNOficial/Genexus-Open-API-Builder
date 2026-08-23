@@ -62,11 +62,12 @@ A análise da KB de produção (`Gx_FabricaBrasil`) revelou que 10,2% das Transa
 
 ### Decisão de produto e arquitetura
 
-Fica autorizada a expansão do gerador para suportar Transactions com subníveis:
-1. **Elegibilidade:** Atributos de subníveis passam a ser elegíveis para seleção no Wizard, entrando como coleções aninhadas nos SDTs de `CreateRequest`, `UpdateRequest` e `Response`.
+Fica autorizada a expansão do gerador para suportar Transactions com subníveis (B095–B099):
+1. **Elegibilidade intra-subnível:** Atributos de subníveis selecionados passam a ser elegíveis e entram como coleções aninhadas nos SDTs de `CreateRequest`, `UpdateRequest` e `Response`. Regras `NoAccept`, fórmulas de linha e atributos inferidos permanecem desabilitados em Requests (somente leitura) e elegíveis em `Response`. Chaves primárias de subnível identificam a linha no `UpdateRequest` e são opcionais/omitidas no `CreateRequest` quando autonumeradas/sequenciais.
 2. **Listagem:** O endpoint `List` preserva alta performance paginando sobre o cabeçalho e incluindo contadores numéricos `<SubLevel>Count` (ex.: `ParcelasCount`, `ItensCount`), sem aninhar coleções completas na listagem geral.
-3. **Substituição completa no `Update`:** O `PUT` em transação multinível adota substituição idempotente completa da coleção de linhas no Business Component.
-4. **Detalhamento:** Especificação, levantamento e fases de implementação registrados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
+3. **Substituição completa no `Update` e atomicidade:** O `PUT` em transação multinível adota substituição idempotente completa da coleção de linhas no Business Component. O `Save()` do BC governa a gravação em transação única atômica (executando `Commit` em caso de sucesso e `Rollback` em caso de falha).
+4. **Contrato de erros:** Falhas de validação em subníveis retornam o `sdt_API_ErrorResponse` top-level unificado com `Code = "validation_error"` e a `Message` emitida pelo BC, sem array paralelo por linha.
+5. **Detalhamento:** Especificação, levantamento e fases de implementação registrados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 
 ## Emenda técnica — 2026-08-03
 

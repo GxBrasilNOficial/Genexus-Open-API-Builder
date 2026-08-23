@@ -382,22 +382,25 @@ Usuário externo testa.
 
 ---
 
-# 15. Sprint 9 — Correções Reais
+# 15. Sprint 9 — Correções Reais e Suporte a Subníveis
 
 ## Objetivo
 
-Aprender com uso externo.
+Aprender com o uso externo da Alpha e expandir o gerador para cobrir transações multinível (cabeçalho e subníveis) da KB de produção (`Gx_FabricaBrasil`).
 
 ## Entregas
 
-- bugs prioritários corrigidos
-- docs melhores
-- onboarding melhorado
-- UX refinada
+- `B095`: Leitura hierárquica recursiva da estrutura no SDK e modelo de domínio multinível (`ApiPlanLevel`)
+- `B096`: Geração de SDTs hierárquicos com nós de coleção para subníveis
+- `B097`: Geração de código Business Component nas Procedures para subníveis com substituição completa no `Update`
+- `B098`: Procedimento de `List` com contadores numéricos de subníveis
+- `B099`: Interface do Wizard (UX) e sincronização com metadata hierárquica
+- bugs prioritários corrigidos e absorção de feedbacks da Alpha
+- documentação e onboarding refinados
 
 ## Gate
 
-Adoção melhora.
+Adoção melhora e suporte prático a transações multinível comprovado na IDE com `Build All` sem `spc0018` e chamadas HTTP reais.
 
 [SPR-F24]
 

@@ -12,6 +12,87 @@
 - Em PowerShell, uma verificação direta é `[IO.File]::ReadAllBytes($path)[-1] -eq 10`; não considerar a edição concluída enquanto o último byte não for `10`.
 - `git diff --check` não acusa ausência de newline final, então esta conferência deve ser explícita antes de commitar documentação.
 
+## Skills transversais de GeneXus-XPZ-Skills
+
+O repositório irmão `C:\Dev\Knowledge\GeneXus-XPZ-Skills` (ou a raiz de repositório de skills
+publicada pela sessão que contenha a pasta `scripts\` e o documento `15-revisao-por-pares.md`,
+aqui referida como `<skills-root>`) é a fonte canônica de skills e metodologia compartilhada
+do ecossistema. O prefixo `xpz-` é marcador de família, não restrição de escopo a arquivos
+`.xpz` ou XML de KB: parte do catálogo é transversal e se aplica a este repositório de
+extensão C#. Caso a pasta de skills não esteja acessível nem resolvida na sessão, o agente
+deve avisar o usuário e não inferir caminhos alternativos.
+
+- `xpz-llm-delegate` (`<skills-root>\xpz-llm-delegate\SKILL.md`) — revisão por pares multi-modelo,
+  segunda opinião e delegação a LLM secundário. A própria skill se declara transversal.
+- `xpz-codex-apply-patch-alternative` (`<skills-root>\xpz-codex-apply-patch-alternative\SKILL.md`) —
+  backup da rota nativa `apply_patch`, aplicável apenas a agentes que a usem (Codex). Exige
+  passar a raiz deste repositório em `-RepositoryRoot` e não permite copiar o motor para cá.
+
+**Termo operacional reservado (Revisão por Pares).** Quando o usuário pedir `revisão por pares`,
+`peer review`, `painel multi-modelo` ou `validar plano multi-modelo`, carregar
+`<skills-root>\xpz-llm-delegate\SKILL.md` e `<skills-root>\15-revisao-por-pares.md` antes de
+responder, e seguir o contrato de entrada ali definido na íntegra — inclusive gate de
+autorização por destino, piso de diversidade (≥2 Criadores de Modelos distintos), recibo mínimo
+obrigatório e closeout. Esse contrato não é reproduzido aqui: as fontes acima são normativas,
+junto com os documentos que elas próprias mandam consultar. É proibido rotular como `revisão por
+pares` um parecer solo ou de uma única família de modelo; sem painel válido, rotular `parecer
+solo` ou `segunda opinião (N)`.
+
+**Alvo pré-push.** Se o alvo da revisão for o pré-push, a metodologia do `15` aplica-se sobre a
+rotina pré-push local deste `AGENTS.md` (seção "Revisão pré-push do repositório").
+`14-revisao-pre-push-reforcada.md` e os documentos que ele referencia são consultivos: servem
+como referência metodológica e nunca substituem nem importam a rotina pré-push daquele
+repositório.
+
+**Segunda opinião e tarefas pontuais.** Para pedidos de `segunda opinião` ou tarefas delegáveis,
+o agente pode consultar um modelo secundário individual via `xpz-llm-delegate`, cumprindo gate
+de autorização por destino e rotulando a resposta como parecer solo ou segunda opinião, sem
+exigir painel multi-modelo, piso de diversidade ou convergência.
+
+**Acionamento sempre humano.** O agente pode sugerir delegar, nunca acionar por conta própria. A
+saída de qualquer modelo ou painel é insumo de avaliação, não autorização para editar, commitar
+ou concluir convergência.
+
+**Lista de revisores preferidos e capacidades.** Resolver preferência por
+`Resolve-LlmDelegatePreferredReviewers.ps1`. Os arquivos `preferred-reviewers.json` e
+`capabilities.json` são machine-level, vivem em `%LOCALAPPDATA%\xpz-llm-delegate\` e **não**
+existem neste nem em nenhum repositório — não buscá-lo com `Glob`/`Grep`/`ls`; a única fonte de
+verdade sobre preferências é o `hasPreferences` devolvido pelo resolvedor.
+
+**Invocação de scripts compartilhados.** A seção "Forma canônica de invocação dos adapters" do
+`SKILL.md` é normativa para adapters de invocação (`Invoke-*`, `Start-*Job`): comando atômico,
+prompt sempre por `-MessagePath <arquivo>`, zero aspas embutidas. Com o `cwd` neste repositório
+(fora da raiz de skills), usar a forma absoluta — pela ferramenta **PowerShell**,
+`& "<skills-root>\scripts\<Adapter>.ps1" -MessagePath <arquivo>`; pela ferramenta **Bash**,
+`pwsh -NoProfile -File "<skills-root>/scripts/<Adapter>.ps1" -MessagePath <arquivo>`. Nunca usar
+path relativo pela ferramenta PowerShell. Resolvedores e scripts de suporte (`Resolve-*`, `Set-*`,
+`New-*`, `Build-*`, `Watch-*Job`) seguem suas respectivas assinaturas de parâmetros.
+
+**Trava contra colisão de nomes e escopo.** `<skills-root>\scripts` contém um
+`Invoke-PrePushMechanicalChecks.ps1` homônimo ao deste repositório, além de scripts de importação
+e build de KB (`Invoke-GeneXusXpz*`, `Invoke-GeneXusKb*`, `Invoke-XpzKbParallel*`). Nenhum deles é
+autorizado por esta seção. `Resolve-LlmDelegationPolicyPath.ps1` (`Delegation`, não `Delegate`)
+fica fora do curinga e fora do escopo: resolve política por pasta paralela de KB (`-ParallelKbRoot`)
+e não se aplica a este repositório. A rotina pré-push válida aqui é sempre a local
+(`scripts/Invoke-PrePushMechanicalChecks.ps1`, seção "Revisão pré-push do repositório"). Desta
+seção, a origem permitida de scripts do repositório irmão restringe-se a esta lista fechada:
+
+- diagnóstico e governança: `Resolve-LlmDelegate*.ps1`, `Resolve-*ModelLocality.ps1`,
+  `Set-LlmDelegatePreferredReviewers.ps1`, `New-LlmDelegatePeerReviewArtifacts.ps1`,
+  `Build-LlmDelegateCapabilityManifest.ps1`, `LlmDelegateTargetFamilySupport.ps1`;
+- despacho do painel: `Invoke-LlmDelegatePanelDispatch.ps1`;
+- adapters síncronos: `Invoke-Codex.ps1`, `Invoke-ClaudeCode.ps1`, `Invoke-ClaudeCodeAsync.ps1`,
+  `Invoke-OpenCode.ps1`, `Invoke-Gemini.ps1`, `Invoke-Copilot.ps1`, `Invoke-Antigravity.ps1`;
+- runners e monitores: `Start-CodexJob.ps1`, `Start-OpenCodeJob.ps1`, `Start-ClaudeCodeJob.ps1`,
+  `Watch-CodexJob.ps1`, `Watch-OpenCodeJob.ps1`, `Watch-ClaudeCodeJob.ps1`;
+- backup de patch textual: `Apply-ApprovedPatch.ps1` (sob o contrato de
+  `xpz-codex-apply-patch-alternative`, exigindo `-RepositoryRoot` apontando para a raiz deste
+  repositório e aprovação prévia dos caminhos).
+
+Qualquer outro script de `<skills-root>\scripts` está fora do escopo desta seção. A lista delimita
+os scripts permitidos, sem autorizar execução automática nem substituir o contrato próprio de
+cada um.
+
 ## Atualização manual da extensão para testes
 
 Sempre que uma nova DLL precisar ser instalada para teste no GeneXus 18, o agente deve primeiro distinguir atualização de código de atualização de manifesto/registro.

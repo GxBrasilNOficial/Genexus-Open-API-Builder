@@ -249,6 +249,15 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta — pré-Alpha separado; concluído (2026-08-10; limitação intransponível documentada) |
 | B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta — pré-Alpha separado; concluído (2026-08-10; GAM Backoffice + HTTP Get 200 / Create 403) |
 | B094 | Comprovar instalação por usuário externo sem clonar o repositório / sem `.bat` de administrador | Alta — Sprint 8 / evidência; concluído (2026-08-10; correção de captura 2026-08-11) |
+| B095 | Leitura hierárquica recursiva da estrutura no SDK e modelo de domínio multinível (`ApiPlanLevel`) | Alta — Sprint 9 / Fase 1; planejado |
+| B096 | Geração de SDTs hierárquicos com nós de coleção para subníveis | Alta — Sprint 9 / Fase 2; planejado |
+| B097 | Geração de código Business Component nas Procedures para subníveis com substituição completa | Alta — Sprint 9 / Fase 3; planejado |
+| B098 | Procedimento de List com contadores numéricos de subníveis | Alta — Sprint 9 / Fase 4; planejado |
+| B099 | Interface do Wizard (UX) e sincronização com metadata hierárquica | Alta — Sprint 9 / Fases 5 e 6; planejado |
+
+### Nota operacional — B095–B099 (Suporte a Transactions com Subníveis), registrada em 2026-08-20 (revisada em 2026-08-22)
+
+A frente de subníveis (B095–B099) absorve a expansão estrutural do MVP durante a Sprint 9 para viabilizar o uso da extensão em KBs de produção reais (10,2% das transações em `Gx_FabricaBrasil` são multinível, com até 3 níveis e múltiplos subníveis paralelos). O plano e decisões estão detalhados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md` e na `Emenda técnica — 2026-08-20` do registro de decisões do MVP.
 
 ### Nota operacional — revisão da Sprint 7 / Fase 7, registrada em 2026-08-07 (fechada em 2026-08-09)
 

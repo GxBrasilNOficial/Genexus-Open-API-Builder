@@ -110,11 +110,11 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Frente atual
 
-Sprint 9 — Suporte a Transactions com Subníveis (Multinível). Levantamento de profundidade na KB de produção (`Gx_FabricaBrasil`), especificações funcionais e plano por fases consolidados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md` e na `Emenda técnica — 2026-08-20` do registro de decisões do MVP.
+Sprint 9 — Suporte a Transactions com Subníveis (Multinível — B095–B099). Levantamento de profundidade na KB de produção (`Gx_FabricaBrasil`), especificações funcionais e plano por fases consolidados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md` e na `Emenda técnica — 2026-08-20` do registro de decisões do MVP.
 
 ## Próxima ação única
 
-Executar a Fase 1 da frente de subníveis: leitura hierárquica recursiva de `transaction.Structure.Root.Levels` no SDK GeneXus e evolução do modelo de domínio (`ApiPlanLevel`) em `PrototypeWizardContract.cs`, `PrototypePrimaryKeyReader.cs` e `Src/Domain/ApiPlan.cs`. Evidência da frente: `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
+Executar a Fase 1 (B095) da frente de subníveis: leitura hierárquica recursiva de `transaction.Structure.Root.Levels` no SDK GeneXus, evolução do modelo de domínio (`ApiPlanLevel`) em `PrototypeWizardContract.cs`, `PrototypePrimaryKeyReader.cs`, `Src/Domain/ApiPlan.cs` e testes unitários offline em `Tests/TransactionStructure/`. Evidência da frente: `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 
 ## Evidência da frente encerrada
 
@@ -237,7 +237,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 9 — priorização do feedback da Alpha (próxima ação única neste checkpoint).
+- Sprint 9 — Suporte a Transactions com Subníveis (B095–B099) e feedback da Alpha (frente atual ativa).
 - Sprint 10 — Beta estável.
 
 ## Protocolo de atualização
