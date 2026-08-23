@@ -390,8 +390,8 @@ Aprender com o uso externo da Alpha e expandir o gerador para cobrir transaçõe
 
 ## Entregas
 
-- `B102`: Repasse do texto emitido pelo Business Component na `Message` do `422`, com opção de desligar (**primeiro item da sprint**)
-- Fase 0: linha de base de não regressão para transações planas, por arquivos de referência ligados ao checker mecânico
+- `B102`: Repasse do texto emitido pelo Business Component na `Message` do `422`, com `Message` em `LongVarChar` truncada pela geração, experimento de `Messages[]` como coleção tipada por SDT próprio, repasse restrito a mensagens de erro, e opção de desligar por KB e por API (**primeiro item da sprint**)
+- Fase 0: linha de base de não regressão para transações planas, em duas camadas — arquivos de referência offline ligados ao checker mecânico e export XPZ dos SDTs na IDE, no início e no fim da sprint
 - `B095`: Leitura hierárquica recursiva da estrutura no SDK e modelo de domínio multinível (`ApiPlanLevel`)
 - `B096`: Geração de SDTs hierárquicos por subnível e por contrato, com regra de nomes e desambiguação
 - `B097`: Geração de código Business Component nas Procedures para subníveis, com substituição completa sob marcador `<Subnível>Replace`
@@ -399,6 +399,7 @@ Aprender com o uso externo da Alpha e expandir o gerador para cobrir transaçõe
 - `B099`: Interface do Wizard (UX) e sincronização com metadata hierárquica (`schemaVersion` V2)
 - Fase 7: ciclo de vida sob hierarquia — releitura de contrato existente, preferências do Wizard e inventário dinâmico de remoção
 - `B100`: Serviço `Delete` opt-in, com as quatro camadas anti acidente
+- `B105`: escolha do chamador sobre o detalhe do corpo de erro, podendo apenas restringir o default da API — nesta sprint se houver folga, senão Sprint 10
 - triagem do feedback da Alpha e documentação pública alinhada
 
 **Ordem de execução:** `B102` → Fase 0 → Fases 1 a 6 (`B095`–`B099`) → Fase 7 → `B100`. Detalhamento em [Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md](../Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md).
@@ -406,19 +407,26 @@ Aprender com o uso externo da Alpha e expandir o gerador para cobrir transaçõe
 ## Gate
 
 1. Suporte prático a transações multinível comprovado na IDE, com `Build All` sem `spc0018` e chamadas HTTP reais nos environments `NETPostgreSQL155` e `NETFrameworkSQLServer004`.
-2. Não regressão comprovada para transações de nível único contra a linha de base da Fase 0.
-3. Toda issue aberta na Alpha até a data de corte **triada**: respondida e classificada como corrigida, convertida em item de backlog com identificador próprio, ou recusada com justificativa registrada.
+2. Não regressão comprovada para transações de nível único contra a linha de base da Fase 0, no escopo que a própria Fase 0 declara sob comparação automática e sob conferência manual.
+3. Toda issue aberta na Alpha até a **entrada da Fase 7** — que é a data de corte — **triada**: respondida e classificada como corrigida, convertida em item de backlog com identificador próprio, ou recusada com justificativa registrada. O corte é um marco do plano, e não uma data de calendário: data fixa ou expira antes do fim da sprint, deixando issues novas fora sem critério, ou é folgada a ponto de travar o fechamento por uma issue aberta na véspera. Issue aberta depois desse ponto é triada na Sprint 10.
+4. **Repasse da `Message` (`B102`) comprovado por HTTP real nos dois environments:** transação com rule `error` na KB responde `422` com o texto da rule; com a opção desligada, responde o texto genérico; a `Message` sobrevive a acento e a mensagem longa, com truncamento visível em vez de corte silencioso. Se o experimento da coleção passar, `Messages[]` chega preenchido; se falhar, comprova-se a concatenação e a recusa fica registrada.
+5. **Serviço `Delete` (`B100`) comprovado por HTTP real nos dois environments:** `200` com a chave removida, `404` em registro inexistente, `422` com `validation_error` em recusa do Business Component, inclusive por integridade referencial. Mais as quatro camadas anti acidente demonstradas na IDE: opt-in desligado por padrão, confirmação consciente ao marcar, `SecurityLevel` próprio com aviso quando `None`, e recusa do BC respeitada sem exclusão forçada.
+
+Os gates 4 e 5 exigem os **dois** environments porque corpo de erro e `DELETE` atravessam o pipeline REST que já mostrou comportamento divergente por gerador: o `404` do IIS em todo `PUT` só apareceu no .NET Framework, e a matriz do cabeçalho `Location` diferiu entre os dois.
 
 Adoção é **sinal observado** no checkpoint, não condição de fechamento: ela não depende de trabalho do mantenedor e um gate que o mantenedor não governa vira carimbo automático ou trava indefinida. Bugs prioritários entram no gate apenas quando convertidos em itens de backlog com identificador, nunca como adjetivo.
 
 ## Publicação
 
-Dois cortes de release, e não um só:
+Três cortes de release, e não dois:
 
-- `0.1.0-alpha.4`, logo após `B102` — melhoria pequena, independente e de valor imediato para quem já integra, publicada antes do pacote estrutural para exercitar o rito com baixo risco.
-- `0.1.0-alpha.5`, ao fim da sprint, com subníveis e `Delete`. As notas destacam separadamente o `Delete` e o marcador `<Subnível>Replace`, que são os dois pontos onde um consumidor desatento perde dados.
+- `0.1.0-alpha.4`, logo após `B102`. As notas trazem seção própria de **mudança de comportamento**, e não um item na lista de melhorias: quem hoje compara a string `"Business rules rejected the request."` para detectar recusa de regra passa a receber o texto real do Business Component; o schema do corpo de erro muda para toda API regenerada; e API já gerada só muda quando o Wizard for reaberto sobre ela. As mesmas notas declaram que a geração cobre apenas o primeiro nível da Transaction, limitação que a documentação pública ainda não registrava.
+- `0.1.0-alpha.5`, ao fim da Fase 7, com os subníveis. As notas destacam o marcador `<Subnível>Replace`, ponto onde um consumidor desatento perde dados, e substituem a limitação de primeiro nível pela descrição do suporte com as limitações remanescentes: sem endpoints próprios de subnível, contadores só para subníveis diretos, profundidade acima de 3 não validada e impossibilidade de alterar netos sem substituir o nível pai.
+- `0.1.0-alpha.6`, com `B100`. Corte próprio para desacoplar: amarrado ao mesmo corte dos subníveis, um atraso no `Delete` atrasaria a publicação de tudo; separado, ele desliza para a Sprint 10 sem renegociar o release anterior nem reabrir gate. A revisão dos três `README` e do `DEMO`, que hoje afirmam "Sem serviço `DELETE` no MVP", é **condição deste corte**.
 
-Cada corte mantém o rito já estabelecido: CHANGELOG, notas de release nos três idiomas, `README`/`INSTALL`/`DEMO` alinhados, tag e GitHub Release pre-release com a DLL anexada.
+Cada corte mantém o rito já estabelecido: CHANGELOG, notas de release nos três idiomas, `README`/`INSTALL`/`DEMO` alinhados, tag e GitHub Release pre-release. Desde o `0.1.0-alpha.3` o Release publica **dois assets DLL** — a canônica U14+ e a satélite `-gx18u13` —, com tabela de escolha e SHA-256 por asset; os três cortes mantêm os dois. Publicar um release só com a DLL canônica seria lido como abandono da linha U13, ou levaria alguém a instalar a errada.
+
+O custo é honesto: três cortes são três vezes o rito completo. O ganho é que nenhum atraso de um item segura a publicação do anterior.
 
 [SPR-F24]
 

@@ -95,6 +95,31 @@ A revisão do plano da Sprint 9, conduzida em 2026-08-23 sobre a especificação
 
 Permanecem válidos o corpo de erro top-level com `Code` e `Message` sem array por linha, a atomicidade do `Save()` do Business Component governando `Commit` e `Rollback`, a elegibilidade intra-subnível da emenda de 2026-08-20 e a regra de que clientes decidem por `Code`, nunca pelo texto de `Message`.
 
+**Nota de revisão — complemento de 2026-08-23.** A decisão 10 desta emenda foi ampliada, e a afirmação de que o corpo de erro permanece sem array passou a ser condicional: ver a `Emenda técnica — 2026-08-23 (complemento)`, logo abaixo.
+
+## Emenda técnica — 2026-08-23 (complemento) — Revisão do plano de trabalho da Sprint 9
+
+### Fato que motivou a emenda
+
+Na mesma data, uma segunda revisão examinou o **plano de trabalho** da Sprint 9 — e não o desenho da frente de subníveis, já tratado pela emenda anterior. Ela encontrou uma fase fundacional sem mecanismo executável, um item de sprint sem especificação, gates que não cobriam dois dos entregáveis, e o contrato OpenAPI publicado fora do plano. As decisões abaixo consolidam o resultado.
+
+### Decisões
+
+1. **Forma do corpo de erro, agora condicionada a experimento.** A `Emenda técnica — 2026-08-03` retirou `Errors[]` depois que a IDE recusou uma tentativa com **subestrutura aninhada** dentro do próprio SDT (`sdt_API_ErrorResponse.Error`). Coleção tipada por um SDT **separado** é mecanismo distinto — o mesmo de `ListResponse.Items` — e nunca foi testado no corpo de erro. `B102` executa o experimento: aceito, o corpo ganha o membro coleção `Messages` tipado por `sdt_API_ErrorMessage`, preenchido a partir de `GetMessages()`; recusado, as mensagens vão concatenadas por `" | "`. Em ambos os casos `Message` permanece top-level e preenchido, e nenhuma das formas correlaciona mensagem com índice de linha.
+2. **Tipo e limite da `Message`.** Passa a `LongVarChar`, com truncamento explícito pela geração em cerca de 2K. Tipo sem limite não é conteúdo sem limite: um Business Component com muitas rules produziria corpo de erro arbitrariamente grande. Somente mensagens de **erro** são repassadas.
+3. **Default do repasse.** Ligado, com aviso quando `SecurityLevel = None`, e desligável por KB e por API. A decisão de 2026-07-14 sobre a `Message` continua sendo a norma; desligado por padrão perpetuaria o descumprimento para quem não conhece a opção.
+4. **Escolha do chamador (`B105`).** O consumidor pode **restringir** o detalhe do erro abaixo do default da API, nunca ampliá-lo. Sem teto, a opção de desligar seria contornável pelo cliente.
+5. **Propagação do marcador de substituição entre níveis.** Com `<Pai>Replace = True`, cada linha de pai enviada tem seus filhos regidos pelo `<Filho>Replace` daquele item; pai omitido é removido com os filhos; pai novo insere os filhos enviados. Com `<Pai>Replace` ausente ou `False`, a coleção do pai é ignorada por inteiro, inclusive os marcadores internos. Não existe caminho para alterar netos sem assumir a substituição do nível pai, e a limitação é declarada em vez de contornada por merge parcial que o Business Component não sustenta.
+6. **Caminho no erro de campo obrigatório de linha** usa índice **base 0**, o do JSON enviado pelo cliente, e não o da coleção GeneXus.
+7. **Linha de base de não regressão.** Duas camadas: comparação automática, no checker, de Source das Procedures, Service Source do API Object e plano de SDT; e conferência manual, por export XPZ, da forma física dos SDTs. Recaptura somente em commit isolado, contendo apenas os arquivos de referência e a justificativa.
+8. **Gates da sprint.** O repasse da `Message` e o serviço `Delete` passam a ter gate próprio, com HTTP real nos dois environments — o pipeline REST já divergiu por gerador antes.
+9. **Contrato OpenAPI publicado.** A trava mecânica passa a reconhecer os schemas derivados, o YAML multinível é conferido ao fim da Fase 4 e a geração de cliente é repetida como evidência pontual. Limitação do gerador nativo não bloqueia a sprint: vira documentação.
+10. **Publicação em três cortes**, com os dois assets DLL em cada um, desacoplando o `Delete` do corte de subníveis.
+
+### O que a emenda não altera
+
+Permanecem válidas a regra de que o cliente decide por `Code` e nunca pelo texto de `Message`, a ausência de array de erros **por linha**, a atomicidade do `Save()`, a elegibilidade intra-subnível, a semântica de `Required` como preenchimento fixada em 2026-08-03 e a recusa em traduzir mensagens do Business Component.
+
 ## Emenda técnica — 2026-08-03
 
 ### Experimento previsto que motivou a emenda

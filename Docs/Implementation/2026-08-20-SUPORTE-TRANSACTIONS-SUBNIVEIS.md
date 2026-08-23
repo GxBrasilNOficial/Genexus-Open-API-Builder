@@ -6,6 +6,8 @@ Frente em andamento na Sprint 9 (absorvendo os itens de backlog B095 a B099). Es
 
 Em 2026-08-23 a especificação passou por revisão dirigida e recebeu as decisões consolidadas na `Emenda técnica — 2026-08-23` do registro de decisões do MVP. A revisão acrescentou a Fase 0 (linha de base de não regressão), a Fase 7 (ciclo de vida sob hierarquia) e três itens correlatos fora da frente de subníveis (`B100`, `B101` e `B102`).
 
+Ainda em 2026-08-23, uma segunda revisão — desta vez sobre o **plano de trabalho** da sprint, e não sobre o desenho — fechou quinze pontos de exequibilidade e de gate, consolidados na `Emenda técnica — 2026-08-23 (complemento)` do mesmo registro. Dela resultaram o mecanismo concreto da Fase 0, a ampliação de `B102`, dois gates novos na sprint, a validação do contrato OpenAPI multinível, o retorno da linha `Gx18u13` ao plano, o fechamento da decisão que estava pendente na Fase 3, limiares de escala, o item `B105` e a divisão da publicação em três cortes.
+
 Próximo passo: executar `B102` (repasse da mensagem do Business Component), que precede a captura da linha de base da Fase 0 justamente para que os arquivos de referência já nasçam com o contrato de erro definitivo.
 
 ---
@@ -77,6 +79,8 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 
 **Consequência para o inventário de remoção:** a lista de SDTs próprios deixa de ser fixa. `ApiPlanGeneratedApiRemovalPlan` passa a ler os nomes gravados na metadata em vez da lista hardcoded de cinco nomes, sob pena de deixar órfãos na KB ao remover uma API multinível. A ordem de exclusão continua respeitando a dependência de tipos (um SDT referenciado não pode ser apagado antes de quem o referencia).
 
+**Ordem de criação e de remoção, declaradas em par.** A criação percorre a árvore em **pós-ordem**: o SDT mais profundo primeiro, porque o SDT pai o referencia como tipo do membro coleção e não resolve enquanto o filho não existir. A remoção segue a ordem inversa, que é o que o plano de remoção já pratica ao apagar `ListResponse` antes de `Response`.
+
 ### 4. Geração de Código Business Component nas Procedures (B097)
 - **`Get` (`proc<Tx>_API_Get`):**
   - Carrega a Transaction completa via Business Component: `&BC.Load(&PK)`.
@@ -115,12 +119,16 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
   - Se `&BC.Success()` for falso: a Procedure **não** executa `Commit` e dispara `Rollback`, garantindo ausência de escrita parcial ou registros órfãos no banco de dados.
 
 ### 6. Contrato de Erros para Subníveis (Alinhamento com o Runtime e Emenda 2026-08-03)
-- O SDT compartilhado `sdt_API_ErrorResponse` permanece top-level (`Code` e `Message`), sem array de erros aninhados.
 - Em caso de falha de validação pelo Business Component em qualquer nível (cabeçalho ou linhas filhas) durante o `Save()`:
   - O código HTTP retornado é `422 Unprocessable Content`;
   - `&ErrorResponse.Code` retorna `!"validation_error"`;
   - `&ErrorResponse.Message` carrega o texto emitido pelo Business Component, conforme `B102`. Até a conclusão de `B102`, a geração emite o texto fixo `!"Business rules rejected the request."`, que é o comportamento vigente na Alpha;
-  - Não é emitido array paralelo por linha, mantendo conformidade estrita com o contrato OpenAPI entregue no MVP.
+  - `Message` passa a ser `LongVarChar`, com truncamento explícito da geração em cerca de 2K e reticência final, em vez do corte silencioso que o `VarChar(256)` produzia.
+- **Forma do corpo de erro, decidida por experimento em `B102`.** A retirada de `Errors[]` pela `Emenda técnica — 2026-08-03` foi motivada por uma tentativa com **subestrutura aninhada** dentro do próprio SDT (`sdt_API_ErrorResponse.Error`), que a IDE recusou. Coleção tipada por um **SDT separado** é mecanismo distinto, o mesmo que já funciona em `ListResponse.Items` e que esta frente adota para subníveis, e nunca foi testado no corpo de erro. `B102` executa o experimento antes de escolher:
+  - se a IDE aceitar, `sdt_API_ErrorResponse` ganha o membro coleção `Messages`, tipado por `sdt_API_ErrorMessage`, preenchido a partir de `GetMessages()`;
+  - se recusar, as mensagens vão concatenadas em `Message`, separadas por `" | "`, e a evidência da recusa fica registrada;
+  - em ambos os casos `Message` permanece top-level e preenchido, para não quebrar consumidores da Alpha, e somente mensagens de **erro** são repassadas — warnings do Business Component não entram no corpo do `422`.
+- Não é emitido array paralelo **por linha**: nenhuma das duas formas correlaciona mensagem com índice de linha, e o corpo de erro continua sem estrutura espelhando a hierarquia.
 
 ### 7. Procedimento `List` (B098) — Resumo com Contadores
 - A listagem geral paginada **não** aninha os arrays completos de subníveis para preservar a performance.
@@ -145,6 +153,8 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 - Marcar um subnível aninhado exige que o subnível pai esteja marcado; a UI trata isso como dependência, não como escolha livre.
 - Cada subnível selecionado exibe o controle de contador de `List` (ligado por padrão), conforme a seção 7.
 - Transações com profundidade maior que 3 exibem aviso de **profundidade não validada**, sem bloquear a geração, conforme a seção 8-A.
+- A aba `Obrigatórios` passa a agrupar por nível, com a mesma estrutura da aba de seleção de campos, para que o `Required` de campo de linha descrito na seção 10 tenha onde ser marcado.
+- O resumo do Wizard passa a exibir **quantos objetos serão criados** antes de aplicar. Com um subnível a diferença é pequena; com treze subníveis paralelos a geração passa de doze para mais de cinquenta objetos, e o número precisa aparecer antes da decisão, não no relatório final.
 - O comparador de sincronização (`Sincronizar com a Transaction`) compara adições, renomeações e remoções dentro da hierarquia de níveis com base nos `attributeGuid`s.
 
 ### 8-A. Profundidade Suportada
@@ -162,7 +172,7 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 
 ### 10. `Required` no Subnível e Marcador de Substituição
 
-- **Campo obrigatório dentro da linha:** vale a mesma regra da `Emenda técnica — 2026-08-03` — `Required` significa preenchimento, não presença do membro JSON. A resposta continua `400` com `Code = "invalid_request"`, e a `Message` identifica a linha pelo caminho (`Parcelas[2].ParcelaValor`). Isso não cria estrutura nova no corpo de erro, que permanece top-level com `Code` e `Message`.
+- **Campo obrigatório dentro da linha:** vale a mesma regra da `Emenda técnica — 2026-08-03` — `Required` significa preenchimento, não presença do membro JSON. A resposta continua `400` com `Code = "invalid_request"`, e a `Message` identifica a linha pelo caminho, com **índice base 0** (`Parcelas[0].ParcelaValor` é a primeira linha). A base é a do JSON que o cliente enviou, e não a da coleção GeneXus, que itera a partir de 1: o custo é um decremento na montagem da mensagem, e o ganho é o consumidor conseguir localizar a linha no próprio payload sem conversão mental. Isso não cria estrutura nova no corpo de erro.
 - **Coleção ausente ou vazia no `Create`:** significa zero linhas e é sucesso (`201`). O modelo GeneXus não obriga um subnível a ter linhas, e a geração não inventa essa obrigação.
 - **Marcador `<Subnível>Replace` no `Update`:** o `UpdateRequest` recebe um membro booleano por subnível selecionado.
 
@@ -174,7 +184,19 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 
 - **Por que o marcador existe.** A `Emenda técnica — 2026-08-03` comprovou que o corpo da requisição não permite distinguir membro ausente de membro vazio. Sem marcador, um `PUT` que **esquece** o array `Itens` seria indistinguível de um `PUT` que pede a remoção de todos os itens: o cliente atualizaria uma observação do cabeçalho e perderia as linhas, em silêncio e sem reversão. O marcador se apoia justamente na limitação — o default de um booleano é `False`, e ausente é indistinguível de `False`, de modo que o comportamento por omissão é o seguro.
 - **Marcador em profundidade maior que 2.** O marcador do nível 2 fica no corpo principal do `UpdateRequest`; o do nível 3 fica **dentro de cada item** do nível 2, porque a decisão de substituir é por linha pai. Em `DadosDoDia -> Turno -> Funcionario`, `TurnoReplace` está no topo e `FuncionarioReplace` dentro de cada `Turno` enviado.
-- **Decisão pendente para a Fase 3.** Quando `TurnoReplace = True` remove uma linha de turno, os funcionários daquela linha vão junto, por integridade do próprio Business Component; o `FuncionarioReplace` só rege os turnos que permanecem. A combinação "substituir turnos e preservar funcionários de turnos removidos" não existe. Falta especificar o comportamento exato do código gerado nesse cruzamento antes de implementar a Fase 3; até lá, o ponto fica declarado como não resolvido, e não presumido.
+- **Regra de propagação entre níveis, fechada em 2026-08-23.** Quando `TurnoReplace = True` remove uma linha de turno, os funcionários daquela linha vão junto, por integridade do próprio Business Component; a combinação "substituir turnos e preservar funcionários de turnos removidos" não existe. O comportamento do código gerado é:
+
+| Estado no `UpdateRequest` | Efeito |
+|---|---|
+| `TurnoReplace = True`, turno enviado que já existia, `FuncionarioReplace = True` | os funcionários daquele turno são substituídos pelo array enviado |
+| `TurnoReplace = True`, turno enviado que já existia, `FuncionarioReplace` ausente ou `False` | os funcionários existentes daquele turno são preservados; o array de funcionários enviado é ignorado, sem erro |
+| `TurnoReplace = True`, turno novo | os funcionários enviados são inseridos; o marcador é irrelevante, porque não há o que preservar |
+| `TurnoReplace = True`, turno omitido | o turno é removido com seus funcionários |
+| `TurnoReplace` ausente ou `False` | o array de turnos é ignorado por inteiro, inclusive qualquer `FuncionarioReplace` dentro dele; o `PUT` atualiza somente o cabeçalho |
+
+  A consequência precisa constar da documentação pública: **não há caminho para alterar netos sem assumir a substituição do nível pai**. Quem quer editar funcionários envia `TurnoReplace = True` com o estado completo dos turnos. É limitação da máscara binária por nível, preferível a inventar uma semântica de merge parcial que o Business Component não sustenta. Ignorar sem erro o array de funcionários quando o marcador está ausente mantém a coerência com o nível 2, onde coleção sem marcador também não é tocada.
+
+  O que permanece para a Fase 3 não é a decisão, e sim a **comprovação**: confirmar na IDE que o Business Component remove os netos junto com a linha pai e que a ordem das operações não dispara erro de integridade. Isso é caso de teste do gate, não pendência de especificação.
 - **Precedente.** A construção equivale a uma máscara de atualização por coleção, no espírito do `updateMask` adotado por APIs que expõem atualização parcial. A alternativa de uma máscara única em string foi considerada e descartada nesta frente: booleanos tipados aparecem no schema OpenAPI e são validáveis, enquanto uma string livre esconde erro de digitação em silêncio.
 
 ### 11. Colisão de Nomes
@@ -188,6 +210,8 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 - **Subníveis não recebem endpoints próprios.** Não são gerados `GET /<tx>/{id}/<sublevel>`, `POST /<tx>/{id}/<sublevel>` nem `DELETE /<tx>/{id}/<sublevel>/{n}`. Os subníveis existem apenas como coleções aninhadas dentro dos serviços do cabeçalho.
 - **Não há serviço `Delete` nesta frente**, em nenhum nível. A liberação do `Delete` é tratada como frente própria em `B100`.
 - **Consequência prática, que precisa constar também na documentação pública:** enquanto `B100` não estiver concluído, a única forma de remover uma linha filha é enviar o `Update` com `<Subnível>Replace = True` e omitir a linha.
+- **Filtros de `List` por campo de subnível ficam fora desta frente.** Filtrar o cabeçalho por conteúdo de linha exige condição de existência dentro do `For each` e muda a semântica da paginação; não é extensão trivial do que a frente entrega.
+- **O `Get` devolve a árvore completa, sem paginação das linhas filhas.** Uma transação com muitas linhas produz resposta grande, e isso é limitação conhecida, não defeito. Nenhum teto é imposto agora: sem caso real medido, limitar seria otimização especulativa.
 
 ---
 
@@ -195,7 +219,7 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 
 | Fase / Backlog | Escopo | Componentes Afetados |
 |---|---|---|
-| **Fase 0** | Linha de base de não regressão: captura dos arquivos de referência (golden files) da saída atual para transações de nível único, ligada ao checker mecânico | `Tests/` (nova cobertura), `scripts/Invoke-PrePushMechanicalChecks.ps1` |
+| **Fase 0** | Linha de base de não regressão em duas camadas, conforme detalhado abaixo da tabela | `Tests/GenerationBaseline/` (nova cobertura), `scripts/Invoke-PrePushMechanicalChecks.ps1` |
 | **Fase 1 (B095)** | Leitura hierárquica recursiva, modelo `ApiPlanLevel` e testes offline | `PrototypeWizardContract.cs`, `PrototypePrimaryKeyReader.cs`, `ApiPlan.cs`, `Tests/TransactionStructure/` |
 | **Fase 2 (B096)** | Geração de SDTs hierárquicos por contrato, regra de nomes e desambiguação | `ApiPlanSdtGenerationPlan.cs`, `ApiPlanSdtWriter.cs` |
 | **Fase 3 (B097)** | Geração de código Business Component nas Procedures (Get, Create, Update) e marcador `<Subnível>Replace` | `ApiPlanBusinessComponentWriter.cs` |
@@ -204,10 +228,18 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 | **Fase 6 (B099b)** | Metadados hierárquicos (`schemaVersion` V2), sincronização e integridade | `ApiPlanMetadataFileWriter.cs`, `ApiPlanTransactionSyncComparer.cs`, `ApiPlanTransactionSyncOrchestrator.cs` |
 | **Fase 7** | Ciclo de vida sob hierarquia: releitura de contrato existente, preferências do Wizard e inventário dinâmico de remoção | `PrototypeWizardExistingApiContractReader.cs`, `PrototypeWizardPreferencesCodec.cs`, `ApiPlanGeneratedApiRemovalPlan.cs`, `ApiPlanGeneratedApiRemover.cs` |
 
-**Pré-requisito das Fases 5 a 7 — ambientes de validação.** A validação na IDE depende de estrutura multinível preparada antes, em dois ambientes com papéis distintos:
+**Mecanismo da Fase 0 — duas camadas.** A escolha decorre de uma medição: `ApiPlan` tem construtor puro, os emissores de Source são estáticos e recebem apenas o plano, e `ApiPlanSdtGenerationPlanBuilder` não referencia o SDK — mas a forma física do SDT vive em `SDTStructure` e `KBModel`, e só sai da IDE. "Byte a byte" é alcançável para uma parte da saída, e não para a outra.
+
+- **Camada offline, no checker mecânico.** Um teste monta `ApiPlan` sintético para duas ou três transações de nível único — chave simples, chave composta, uma com `NoAccept` — e grava arquivos de referência do Source de `Create`, `Update`, `Get` e `List`, do Service Source do API Object e do plano de SDT serializado em JSON. Divergência reprova o pré-push. É a camada que protege o defeito que motivou o critério: o falso positivo de adulteração no reencontro nasce do Source e do contrato, não da forma física do SDT.
+- **Camada de IDE, manual e pontual.** Export XPZ dos SDTs gerados de uma transação plana, capturado no início da sprint e reconferido no fim. Cobre ordem de itens e propriedades do SDT, que a camada offline não enxerga.
+
+**Reautorização da linha de base.** Quando a saída mudar legitimamente, a recaptura acontece em **commit próprio e isolado**, cujo diff contenha exclusivamente os arquivos de referência e a justificativa escrita da mudança. Recapturar no mesmo commit que altera o emissor transformaria a proteção em carimbo, porque ninguém revisa com atenção um diff que muda código e referência ao mesmo tempo.
+
+**Pré-requisito das Fases 5 a 7 — ambientes de validação.** A validação na IDE depende de estrutura multinível preparada antes, em três ambientes com papéis distintos:
 
 - **KB de teste `wsEducacaoSpTeste`** — transações multinível criadas para o teste, cobrindo os três casos que a frente precisa exercitar (um subnível direto, múltiplos subníveis paralelos, três níveis de profundidade), com `Create Database` nos environments `NETPostgreSQL155` e `NETFrameworkSQLServer004`. É o ambiente do gate e das chamadas HTTP reais.
 - **Cópia local da KB de produção `Gx_FabricaBrasil`** — validação contra estrutura real, onde estão os casos que nenhuma transação sintética reproduz com fidelidade (`Empresa` com 13 subníveis paralelos, `DadosDoDia` com três níveis, `CondicaoPagamento -> Parcelas`). Uso somente para medir comportamento; nenhum XML de cliente é versionado neste repositório.
+- **KB do GeneXus 18 U13** — a KB usada na validação da linha satélite exercitou até aqui a Transaction plana `Employee`. O smoke da linha `Gx18u13` descrito nos critérios de sucesso exige preparar nela ao menos uma transação multinível. É trabalho pequeno, mas é trabalho, e precisa estar previsto: a leitura hierárquica é justamente a superfície de SDK onde U13 e U15 já divergiram uma vez, no episódio `NoAccept`/`spc0018`.
 
 ---
 
@@ -225,7 +257,11 @@ A Fase 6 acrescenta a estrutura de níveis à metadata própria, hoje carimbada 
 
 ## Validação e Critérios de Sucesso
 
-1. **Não regressão de transações planas:** para transação de nível único, a saída gerada (SDTs, source das Procedures e source do API Object) permanece **byte a byte idêntica** à linha de base capturada na Fase 0. O critério existe porque o reencontro compara hashes do source contra o valor gravado na metadata: qualquer alteração incidental no emissor durante as Fases 2 a 4 acusaria APIs legítimas da Alpha de adulteração, repetindo o falso positivo diagnosticado em 2026-08-15.
+1. **Não regressão de transações planas**, com o escopo nomeado em vez de um "byte a byte" genérico:
+   - **sob comparação automática, byte a byte:** Source das Procedures `Create`, `Update`, `Get` e `List`, Service Source do API Object e plano de SDT serializado, contra os arquivos de referência da camada offline da Fase 0. Divergência reprova o pré-push;
+   - **sob conferência manual, no início e no fim da sprint:** a forma física dos SDTs, pelo export XPZ da camada de IDE;
+   - **fora da linha de base, deliberadamente:** tudo o que dependa de estado da KB do momento da captura.
+   O critério existe porque o reencontro compara hashes do source contra o valor gravado na metadata: qualquer alteração incidental no emissor durante as Fases 2 a 4 acusaria APIs legítimas da Alpha de adulteração, repetindo o falso positivo diagnosticado em 2026-08-15.
 2. **Testes automatizados offline:** teste unitário em `Tests/TransactionStructure/` com fixtures **sintéticas**, de nomes neutros, reproduzindo as formas que interessam — um subnível, múltiplos subníveis paralelos, três níveis, chave autonumerada, chave informada, fórmula de linha e `NoAccept` em subnível. O teste depende da forma da árvore, não da semântica do cliente; XML de KB de cliente não é versionado neste repositório público.
 3. **Compatibilidade canônica e satélite:** Compilação com 0 erros e 0 avisos em `Src/GenexusOpenApiBuilder.sln` e `Src/GenexusOpenApiBuilder.Gx18u13.sln`.
 4. **Checker mecânico do repositório:** `pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson` executado e aprovado.
@@ -233,6 +269,16 @@ A Fase 6 acrescenta a estrutura de níveis à metadata própria, hoje carimbada 
 6. **Validação contra estrutura real:** Wizard executado na cópia local da `Gx_FabricaBrasil` sobre os casos de 13 subníveis paralelos e de três níveis, com resultado registrado por medição (contagens, avisos, bloqueios).
 7. **Validação HTTP:** Chamadas reais `POST`, `GET`, `PUT` e `GET (List)` nos dois environments, validando persistência, substituição de linhas sob `<Subnível>Replace`, preservação das linhas quando o marcador está ausente, contadores e integridade do contrato de erro.
 8. **Ida e volta do Wizard:** após gerar uma API multinível, reabrir o Wizard e confirmar que a seleção de níveis e atributos volta íntegra — proteção contra o modo de falha silencioso em que a segunda execução regrava a API sem os subníveis.
+9. **Contrato OpenAPI publicado, ao fim da Fase 4** e não na véspera do corte, para que ainda haja sprint para reagir:
+   - a trava mecânica `Tests/OpenApiContract/Test-OpenApiClientContractValidity.ps1`, que hoje conhece apenas os sete nomes de schema atuais, passa a reconhecer os nomes derivados (`_API_Response_<Subnível>`, `_API_CreateRequest_<Subnível>`, `_API_UpdateRequest_<Subnível>`, `_API_ListResponse_Item`) e a exigi-los no YAML quando há subnível selecionado. Sem isso ela seguiria passando enquanto o contrato muda por baixo;
+   - conferência do YAML nos dois environments, para uma transação com um subnível e outra com três níveis: coleções aninhadas presentes, referências de schema resolvidas, `ListResponse_Item` com os contadores e sem os arrays, corpo de erro conforme o que `B102` fechar;
+   - geração de cliente como **evidência pontual**, repetindo o método da Sprint 6 (`openapi-generator-cli 5.3.1`, `typescript-fetch` e `csharp`, Exit Code 0). Não entra como trava recorrente: depende de ferramenta externa e de rede, e o pré-push precisa continuar rodando offline;
+   - se o gerador nativo não expressar bem os arrays aninhados, isso é limitação dele — `B088` já provou que não há ponto de extensão sem tocar a instalação. Decisão tomada de antemão: **não bloqueia a sprint**, e vira limitação documentada nos documentos 12 e 27 e nas notas do corte de subníveis.
+10. **Smoke da linha `Gx18u13`**, no corte de subníveis: Wizard sobre transação multinível na KB U13, geração e `Build All` sem `spc0018`. Chamada HTTP permanece exclusividade do U15, nos dois environments. No corte de `B102` a garantia proporcional é menor — build Release da solution satélite e inventário offline de assembly —, porque ali a mudança é no emissor de Source, idêntico nas duas linhas, e não na leitura de estrutura pelo SDK.
+11. **Escala, com limiares declarados.** Uma API sobre transação de 13 subníveis paralelos gera `6 + 3N` SDTs próprios, isto é, 45 SDTs e mais de cinquenta objetos, contra doze hoje.
+    - **Reprovam:** qualquer objeto órfão após `Remover API gerada`; colisão de nome que não resolva deterministicamente ou nome que estoure o limite do GeneXus sem o encurtamento previsto; `Build All` com erro na transação de 13 subníveis; Wizard acima de **30 s** para abrir ou para calcular o preview no pior caso da KB real, patamar em que o usuário lê travamento e não lentidão.
+    - **Alertam, registram e seguem:** abertura ou preview acima de **5 s**, sinal de que a indexação por `GetAll` de 2026-08-06 não escalou para a forma hierárquica; aplicação completa acima de **60 s**.
+    - Nenhum teto é imposto ao número de subníveis selecionáveis: seria a mesma trava artificial que a seção 8-A rejeitou para profundidade. A contagem de objetos no resumo do Wizard cumpre o papel de informar sem bloquear.
 
 ---
 
@@ -242,10 +288,13 @@ Estes itens nasceram da revisão de 2026-08-23. Não pertencem a B095–B099 e t
 
 | Item | Escopo | Posição |
 |---|---|---|
-| `B102` | Repasse do texto emitido pelo Business Component na `Message` do `422`, com opção de desligar para API exposta publicamente | **Primeiro item da Sprint 9**, antes da Fase 0 |
-| `B100` | Serviço `Delete`, opt-in, com quatro camadas anti acidente | Após a Fase 7 |
+| `B102` | Repasse do texto emitido pelo Business Component na `Message` do `422`, com `Message` em `LongVarChar`, experimento de `Messages[]` como coleção, filtro por mensagens de erro, preferência por KB e escolha por API | **Primeiro item da Sprint 9**, antes da Fase 0 |
+| `B100` | Serviço `Delete`, opt-in, com quatro camadas anti acidente | Após a Fase 7, com corte de release próprio |
+| `B105` | Escolha do chamador sobre o detalhe do corpo de erro, podendo apenas **restringir** o que o default da API permite, nunca ampliar | Fora de `B102`; nesta sprint se houver folga, senão Sprint 10 |
 | `B101` | Experimento de membro nullable para distinguir membro ausente de membro vazio | Candidato à Sprint 10, fora da Sprint 9 |
 
 **Ordem de execução resultante:** `B102` → Fase 0 → Fases 1 a 6 → Fase 7 → `B100`.
+
+`B105` nasceu separado de `B102` de propósito. Ele acrescenta parâmetro aos serviços `Create` e `Update`, muda a assinatura no API Object, muda o YAML e pede caso de teste HTTP próprio — e `B102` já é o primeiro item da sprint mexendo em quatro subsistemas. O que a Fase 0 precisa ter estabilizado é o **default por API**, que `B102` entrega.
 
 `B102` precede a Fase 0 porque altera o bloco de erro emitido para **todas** as transações, planas inclusive. Executado depois, obrigaria a recapturar a linha de base no meio da sprint, justamente quando ela mais serve.
