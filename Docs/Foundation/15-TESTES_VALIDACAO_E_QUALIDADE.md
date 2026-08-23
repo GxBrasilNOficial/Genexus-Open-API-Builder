@@ -164,7 +164,11 @@ Não deve existir endpoint `Delete` no MVP.
 
 **Quanto a subníveis (B095–B099):** em transação multinível, a validação de geração acrescenta os SDTs derivados por contrato (`sdtCliente_API_CreateRequest_<Subnível>`, `sdtCliente_API_UpdateRequest_<Subnível>`, `sdtCliente_API_Response_<Subnível>`) e, quando houver subnível selecionado, o `sdtCliente_API_ListResponse_Item`. A validação de rotas acrescenta: coleções preenchidas no `Get`; substituição de linhas no `Update` somente com `<Subnível>Replace = True`; preservação das linhas quando o marcador está ausente; contadores `<Subnível>Count` na listagem; e ausência dos membros de coleção nos elementos de `items`. Em transação de nível único, todos os critérios originais permanecem exatamente como estão, inclusive `items` como coleção de `sdtCliente_API_Response`.
 
-**Não regressão:** a saída gerada para transação de nível único deve permanecer byte a byte idêntica à linha de base capturada na Fase 0.
+**Não regressão:** a saída gerada para transação de nível único deve permanecer idêntica à linha de base capturada na Fase 0, com o escopo dividido em duas camadas, porque "byte a byte" só é alcançável em parte da saída:
+
+- **comparação automática, byte a byte, no checker pré-push:** Source das Procedures `Create`, `Update`, `Get` e `List`, Service Source do API Object e plano de SDT serializado, produzidos offline a partir de um `ApiPlan` sintético;
+- **conferência manual, no início e no fim da sprint:** a forma física dos SDTs, por export XPZ na IDE — `SDTStructure` depende do modelo da KB e não sai sem ela;
+- **recaptura da linha de base** somente em commit isolado, contendo apenas os arquivos de referência e a justificativa da mudança de saída.
 
 ## Resultado esperado
 
@@ -193,6 +197,8 @@ Campos senha/token devem iniciar desmarcados com alerta.
 `sdt_API_ErrorResponse` deve conter `Code`, `Message` e `Errors[]` com `Code`, `Message` e `Field`.
 
 Critério revisto em 2026-08-03: `Errors[]` foi retirado do SDT gerado, porque a geração nunca chegou a preenchê-lo e ele aparecia no contrato público como array sempre vazio. O critério vigente é `sdt_API_ErrorResponse` conter `Code` e `Message`. Ver a nota de revisão da seção 3 do documento 27 e `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md`.
+
+Complemento de 2026-08-23: o critério passa a depender do desfecho de `B102`, e o teste só pode ser escrito depois dele. Se o experimento do membro coleção `Messages` — tipado por `sdt_API_ErrorMessage`, mecanismo distinto da subestrutura recusada em 2026-08-03 — for aceito pela IDE, o critério passa a exigir `Code`, `Message` e `Messages[]` preenchido em recusa do Business Component; se for recusado, permanece `Code` e `Message`, com as mensagens concatenadas. Em ambos os casos `Message` é `LongVarChar` truncada pela geração, e um teste que fixe a forma antes do experimento reprovaria a implementação correta.
 
 `sdt_API_Pagination` deve conter `Page`, `PageSize`, `TotalCount` e `TotalPages`.
 

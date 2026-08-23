@@ -91,11 +91,15 @@ A frente registrada em `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md`
 
 Continuam válidas as regras de `Code` principal, de idioma de `Message` e de não tradução das mensagens do BC. Ficam suspensas, até existir caminho viável de preenchimento, as regras específicas de `Errors[].Code`, `Errors[].Message` e `Errors[].Field`.
 
+**Correção de premissa — 2026-08-23.** "Caminho viável" era leitura forte demais da evidência. O que a IDE recusou foi **subestrutura aninhada** dentro do próprio SDT (`sdt_API_ErrorResponse.Error`). Membro coleção tipado por um SDT **separado** é outro mecanismo — o mesmo que já funciona em `ListResponse.Items` — e nunca foi testado no corpo de erro. `B102` executa esse experimento: aceito, o corpo ganha `Messages`, coleção de `sdt_API_ErrorMessage` preenchida a partir de `GetMessages()`, e as regras suspensas voltam a ser decidíveis; recusado, as mensagens vão concatenadas em `Message` e a recusa fica registrada como evidência, agora sim do mecanismo certo. Em qualquer dos dois desfechos `Message` permanece top-level e preenchida, e nenhuma das formas correlaciona mensagem com índice de linha de subnível.
+
 ## Nota de revisão — 2026-08-23 — `Message` do `422` (`B102`)
 
 A regra de idioma acima pressupõe que a `Message` carregue texto produzido pela aplicação. A geração entregue **não** cumpre isso: em recusa do Business Component ela emite o texto fixo `"Business rules rejected the request."` e descarta as mensagens do BC, de modo que uma rule `error` da KB nunca chega ao consumidor — que sabe apenas que foi recusado, sem saber por quê.
 
-`B102` implementa o repasse, com salvaguardas: concatenação quando houver várias mensagens, limite de tamanho compatível com o membro do SDT, repasse apenas em falha de validação — nunca em erro de infraestrutura, onde o texto pode conter detalhe de banco — e opção no Wizard para desligar quando a API for exposta publicamente. O `Code` permanece `validation_error`, e a regra de decidir por `Code`, nunca pelo texto, continua valendo.
+`B102` implementa o repasse, com salvaguardas: repasse apenas em falha de validação — nunca em erro de infraestrutura, onde o texto pode conter detalhe de banco —, somente mensagens de **erro** do Business Component, e opção para desligar quando a API for exposta publicamente. O `Code` permanece `validation_error`, e a regra de decidir por `Code`, nunca pelo texto, continua valendo.
+
+**Complemento de 2026-08-23 — tipo, limite e forma.** O membro `Message` passa de `VarChar(256)` para `LongVarChar`, com truncamento explícito pela geração em cerca de 2K e reticência final: tipo sem limite não é conteúdo sem limite, e o corte silencioso do `VarChar` era pior do que um truncamento visível. A opção de desligar fica **ligada por padrão**, com aviso quando `SecurityLevel = None`, com default por KB no File de preferências e escolha por API na metadata. A forma do corpo — uma `Message` concatenada ou um membro coleção `Messages` — depende do experimento descrito na nota seguinte.
 
 A regra da seção 5, de usar `422` e não presumir `409` quando não é possível distinguir a natureza da recusa, permanece e passa a valer também para a recusa por integridade referencial no serviço `Delete` (`B100`).
 
