@@ -69,6 +69,31 @@ Fica autorizada a expansão do gerador para suportar Transactions com subníveis
 4. **Contrato de erros:** Falhas de validação em subníveis retornam o `sdt_API_ErrorResponse` top-level unificado com `Code = "validation_error"` e a `Message` emitida pelo BC, sem array paralelo por linha.
 5. **Detalhamento:** Especificação, levantamento e fases de implementação registrados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 
+**Nota de revisão — 2026-08-23.** Os itens 2 e 3 foram revistos pela `Emenda técnica — 2026-08-23`: os contadores de `List` passam a ser desativáveis por subnível e restritos a subníveis diretos, e a substituição completa no `Update` passa a exigir o marcador explícito `<SubLevel>Replace`. O item 4 permanece como decisão vigente, e a `Emenda técnica — 2026-08-23` registra que a implementação ainda não o cumpre — gap tratado em `B102`.
+
+## Emenda técnica — 2026-08-23 — Revisão dirigida da Sprint 9
+
+### Fato que motivou a emenda
+
+A revisão do plano da Sprint 9, conduzida em 2026-08-23 sobre a especificação de subníveis, o backlog e o código do gerador, encontrou decisões ausentes em pontos que atravessam subsistemas já entregues (reencontro, integridade, remoção governada, releitura de contrato existente), além de uma decisão registrada que a implementação não cumpre. As decisões abaixo consolidam o resultado.
+
+### Decisões de contrato e arquitetura
+
+1. **Forma dos SDTs de subnível.** Cada subnível selecionado gera um SDT próprio **por contrato** (`_CreateRequest`, `_UpdateRequest`, `_Response`), referenciado como membro coleção. Um SDT único compartilhado publicaria campos somente leitura no `CreateRequest`, defeito da mesma natureza do `Errors[]` retirado pela `Emenda técnica — 2026-08-03`. Subestrutura aninhada dentro do próprio SDT fica descartada nesta frente.
+2. **Substituição no `Update` sob marcador.** A substituição completa passa a exigir `<SubLevel>Replace = True`; ausente ou `False` preserva as linhas. A decisão decorre da limitação comprovada em 2026-08-03 — ausente é indistinguível de vazio no corpo —, que sem marcador faria um `PUT` incompleto apagar linhas em silêncio. O default seguro é obtido justamente porque booleano ausente equivale a `False`.
+3. **Ordem das linhas.** Declarada contratualmente como a da chave primária do subnível, ascendente. No `Update`, a ordem do payload é irrelevante, salvo chave autonumerada ou sequencial, em que a ordem determina a numeração atribuída.
+4. **Contadores de `List`.** Fórmula agregada nativa, ligados por padrão, desativáveis por subnível e restritos a subníveis diretos. Contador de neto seria soma achatada atravessando os pais, com nome que não denunciaria a agregação.
+5. **Profundidade.** Recursão genérica sem limite artificial no código; profundidade 3 é o alcance da evidência, sinalizado por aviso no Wizard acima desse valor, sem bloquear a geração.
+6. **Metadata.** `schemaVersion` passa a `V2`; a leitura aceita `V1` e `V2`, e a conversão ocorre apenas quando a geração é aplicada. Sem tolerância, toda API da Alpha ficaria irreencontrável e irremovível.
+7. **Não regressão.** Alterações de gerador nesta sprint não podem mudar a saída de transações de nível único, verificada contra linha de base capturada antes da frente.
+8. **Não escopo.** Subníveis não recebem endpoints próprios.
+9. **Serviço `Delete` (`B100`).** Fica autorizado como frente própria, opt-in e desligado por padrão: `200` com a chave removida, `404` em inexistente, `422` com `validation_error` em recusa do BC, inclusive por integridade referencial. Distinguir conflito referencial de recusa por regra exigiria classificar erro pelo texto da mensagem, contrariando a regra de decidir por `Code` e nunca por texto.
+10. **`Message` do `422` (`B102`).** A decisão de 2026-07-14 — `Message` como texto legível produzido pela aplicação, sem tradução pela extensão — permanece vigente e **não** é revista. Registra-se que a implementação atual não a cumpre: o gerador emite texto fixo e descarta as mensagens do BC, de modo que uma rule `error` da KB não chega ao consumidor. `B102` implementa o repasse, com opção de desligar para API exposta publicamente.
+
+### O que a emenda não altera
+
+Permanecem válidos o corpo de erro top-level com `Code` e `Message` sem array por linha, a atomicidade do `Save()` do Business Component governando `Commit` e `Rollback`, a elegibilidade intra-subnível da emenda de 2026-08-20 e a regra de que clientes decidem por `Code`, nunca pelo texto de `Message`.
+
 ## Emenda técnica — 2026-08-03
 
 ### Experimento previsto que motivou a emenda
@@ -434,7 +459,7 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 
 **Emenda técnica de 2026-08-12 — `NoAccept`:** a regra transversal acima também se aplica ao `UpdateRequest`; o atributo permanece fora do corpo e dos assignments de Update, embora continue disponível nos contratos de saída.
 
-**Emenda técnica de 2026-08-20 — Subníveis:** atributos de subníveis selecionados passam a ser elegíveis e entram como coleções aninhadas no `UpdateRequest`, com política de substituição completa no BC, conforme detalhado na `Emenda técnica — 2026-08-20` e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
+**Emenda técnica de 2026-08-20 — Subníveis:** atributos de subníveis selecionados passam a ser elegíveis e entram como coleções aninhadas no `UpdateRequest`, com política de substituição completa no BC, conforme detalhado na `Emenda técnica — 2026-08-20` e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`. **Revisto em 2026-08-23:** a substituição completa passa a exigir o marcador `<SubLevel>Replace = True` no próprio `UpdateRequest`; ausente ou `False`, as linhas do subnível não são tocadas.
 
 ## UpdateRequest — presença dos membros no JSON
 

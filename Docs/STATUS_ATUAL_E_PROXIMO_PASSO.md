@@ -110,11 +110,15 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Frente atual
 
-Sprint 9 — Suporte a Transactions com Subníveis (Multinível — B095–B099). Levantamento de profundidade na KB de produção (`Gx_FabricaBrasil`), especificações funcionais e plano por fases consolidados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md` e na `Emenda técnica — 2026-08-20` do registro de decisões do MVP.
+Sprint 9 — Suporte a Transactions com Subníveis (Multinível — B095–B099), precedida por `B102` e seguida por `B100`. Levantamento de profundidade na KB de produção (`Gx_FabricaBrasil`), especificações funcionais e plano por fases consolidados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, na `Emenda técnica — 2026-08-20` e na `Emenda técnica — 2026-08-23` do registro de decisões do MVP.
+
+Ordem de execução vigente na sprint: `B102` → Fase 0 (linha de base de não regressão) → Fases 1 a 6 (`B095`–`B099`) → Fase 7 (ciclo de vida sob hierarquia) → `B100` (serviço `Delete`). Publicação em dois cortes: `0.1.0-alpha.4` após `B102` e `0.1.0-alpha.5` ao fim da sprint.
 
 ## Próxima ação única
 
-Executar a Fase 1 (B095) da frente de subníveis: leitura hierárquica recursiva de `transaction.Structure.Root.Levels` no SDK GeneXus, evolução do modelo de domínio (`ApiPlanLevel`) em `PrototypeWizardContract.cs`, `PrototypePrimaryKeyReader.cs`, `Src/Domain/ApiPlan.cs` e testes unitários offline em `Tests/TransactionStructure/`. Evidência da frente: `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
+Executar `B102`: repassar na `Message` do `422` o texto emitido pelo Business Component, hoje descartado em favor de texto fixo (`ApiPlanBusinessComponentWriter.CurrentBusinessRuleFailureMessages`), com opção no Wizard para desligar em API exposta publicamente e com o formato atual do bloco de erro acrescentado às variantes reconhecidas pelo writer, para que APIs geradas na Alpha continuem sendo reencontradas.
+
+`B102` precede a Fase 0 porque altera o código gerado para todas as transações, planas inclusive; executado depois, obrigaria a recapturar a linha de base no meio da sprint. Somente após `B102` e a captura da Fase 0 tem início a Fase 1 (B095): leitura hierárquica recursiva de `transaction.Structure.Root.Levels` no SDK GeneXus, evolução do modelo de domínio (`ApiPlanLevel`) em `PrototypeWizardContract.cs`, `PrototypePrimaryKeyReader.cs`, `Src/Domain/ApiPlan.cs` e testes unitários offline em `Tests/TransactionStructure/`. Evidência da frente: `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 
 ## Evidência da frente encerrada
 

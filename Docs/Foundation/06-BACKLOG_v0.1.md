@@ -250,14 +250,29 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta — pré-Alpha separado; concluído (2026-08-10; GAM Backoffice + HTTP Get 200 / Create 403) |
 | B094 | Comprovar instalação por usuário externo sem clonar o repositório / sem `.bat` de administrador | Alta — Sprint 8 / evidência; concluído (2026-08-10; correção de captura 2026-08-11) |
 | B095 | Leitura hierárquica recursiva da estrutura no SDK e modelo de domínio multinível (`ApiPlanLevel`) | Alta — Sprint 9 / Fase 1; planejado |
-| B096 | Geração de SDTs hierárquicos com nós de coleção para subníveis | Alta — Sprint 9 / Fase 2; planejado |
-| B097 | Geração de código Business Component nas Procedures para subníveis com substituição completa | Alta — Sprint 9 / Fase 3; planejado |
-| B098 | Procedimento de List com contadores numéricos de subníveis | Alta — Sprint 9 / Fase 4; planejado |
+| B096 | Geração de SDTs hierárquicos por subnível e por contrato, com regra de nomes e desambiguação | Alta — Sprint 9 / Fase 2; planejado |
+| B097 | Geração de código Business Component nas Procedures para subníveis, com substituição completa sob marcador `<SubLevel>Replace` | Alta — Sprint 9 / Fase 3; planejado |
+| B098 | Procedimento de List com contadores numéricos de subníveis diretos | Alta — Sprint 9 / Fase 4; planejado |
 | B099 | Interface do Wizard (UX) e sincronização com metadata hierárquica | Alta — Sprint 9 / Fases 5 e 6; planejado |
+| B100 | Serviço `Delete` opt-in, com confirmação consciente, `SecurityLevel` próprio e documentação pública | Alta — Sprint 9 / após a Fase 7; planejado |
+| B101 | Experimento: membro nullable no SDT de request para distinguir membro ausente de membro vazio | Média — candidato à Sprint 10; planejado |
+| B102 | Repasse do texto emitido pelo Business Component na `Message` do `422`, com opção de desligar | Alta — Sprint 9 / **primeiro item**; planejado |
 
-### Nota operacional — B095–B099 (Suporte a Transactions com Subníveis), registrada em 2026-08-20 (revisada em 2026-08-22)
+### Nota operacional — B095–B099 (Suporte a Transactions com Subníveis), registrada em 2026-08-20 (revisada em 2026-08-22 e em 2026-08-23)
 
-A frente de subníveis (B095–B099) absorve a expansão estrutural do MVP durante a Sprint 9 para viabilizar o uso da extensão em KBs de produção reais (10,2% das transações em `Gx_FabricaBrasil` são multinível, com até 3 níveis e múltiplos subníveis paralelos). O plano e decisões estão detalhados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md` e na `Emenda técnica — 2026-08-20` do registro de decisões do MVP.
+A frente de subníveis (B095–B099) absorve a expansão estrutural do MVP durante a Sprint 9 para viabilizar o uso da extensão em KBs de produção reais (10,2% das transações em `Gx_FabricaBrasil` são multinível, com até 3 níveis e múltiplos subníveis paralelos). O plano e decisões estão detalhados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, na `Emenda técnica — 2026-08-20` e na `Emenda técnica — 2026-08-23` do registro de decisões do MVP.
+
+**Revisão de 2026-08-23.** A especificação passou por revisão dirigida e ganhou duas fases além de B095–B099: a **Fase 0** (linha de base de não regressão para transações planas, por arquivos de referência) e a **Fase 7** (ciclo de vida sob hierarquia: releitura de contrato existente, preferências do Wizard e inventário dinâmico de remoção). A metadata passa a `schemaVersion` V2 com leitura tolerante a V1 e conversão apenas no apply.
+
+### Nota operacional — B100, B101 e B102, registrada em 2026-08-23
+
+Os três itens nasceram da mesma revisão e **não pertencem** à frente de subníveis; cada um tem gate próprio.
+
+**B102 — urgente, primeiro item da Sprint 9.** O registro de decisões estabelece, desde 2026-07-14, que a `Message` de erro é texto legível produzido pela aplicação e que a extensão não traduz mensagens do Business Component. A geração atual não cumpre essa decisão: em falha de `Save()`, responde `422` com o texto fixo `"Business rules rejected the request."` e descarta as mensagens do BC, de modo que uma rule `error` da KB nunca chega ao consumidor. O item implementa o repasse, com salvaguardas (concatenação de múltiplas mensagens, limite de tamanho, repasse apenas em falha de validação) e opção no Wizard para desligar em API exposta publicamente. **Requisito obrigatório de compatibilidade:** o formato atual do bloco de erro precisa ser acrescentado às variantes reconhecidas pelo writer, sob pena de toda API gerada na Alpha passar a ser vista como source estranho no reencontro. Executa **antes** da Fase 0, porque altera o código gerado para todas as transações e obrigaria a recapturar a linha de base no meio da sprint.
+
+**B100 — serviço `Delete`.** Frente própria, executada após a Fase 7. Contrato: `200` com a chave primária removida; `404` em registro inexistente (a não idempotência do status fica declarada na documentação); `422` com `validation_error` em recusa do BC, inclusive por integridade referencial, sem classificar erro por texto de mensagem. Quatro camadas anti acidente: opt-in com padrão desligado; confirmação consciente ao marcar, reaproveitando `RequiresGenerationConfirmation`, com aviso de que apagar o cabeçalho apaga todas as linhas filhas na mesma transação atômica; `SecurityLevel` próprio por serviço, com aviso destacado quando `None`; e recusa do BC respeitada, sem exclusão forçada. Documentação pública completa após o gate, sem rótulo experimental.
+
+**B101 — experimento de membro nullable.** A `Emenda técnica — 2026-08-03` assumiu como limitação que campo obrigatório cujo valor legítimo seja igual ao default do tipo é recusado com `400`. Os quatro caminhos descartados naquele fechamento atacavam o mesmo ponto: recuperar a presença **depois** que o SDT já foi materializado. O experimento ataca ângulo distinto — o tipo do membro —, verificando se o deserializador de entrada preenche `null` (e não `0`) em membro nullable ausente, o que tornaria a distinção testável nativamente com `IsNull()`, sem comando `csharp` e sem acesso ao corpo bruto. Escopo: uma transação, um SDT com membro numérico nullable, dois `POST` (um com `0` explícito, outro sem o membro), resultado registrado. Fica **fora** da Sprint 9: mexeria no contrato de request de todas as transações e colidiria com a linha de base da Fase 0.
 
 ### Nota operacional — revisão da Sprint 7 / Fase 7, registrada em 2026-08-07 (fechada em 2026-08-09)
 

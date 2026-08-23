@@ -390,17 +390,35 @@ Aprender com o uso externo da Alpha e expandir o gerador para cobrir transaçõe
 
 ## Entregas
 
+- `B102`: Repasse do texto emitido pelo Business Component na `Message` do `422`, com opção de desligar (**primeiro item da sprint**)
+- Fase 0: linha de base de não regressão para transações planas, por arquivos de referência ligados ao checker mecânico
 - `B095`: Leitura hierárquica recursiva da estrutura no SDK e modelo de domínio multinível (`ApiPlanLevel`)
-- `B096`: Geração de SDTs hierárquicos com nós de coleção para subníveis
-- `B097`: Geração de código Business Component nas Procedures para subníveis com substituição completa no `Update`
-- `B098`: Procedimento de `List` com contadores numéricos de subníveis
-- `B099`: Interface do Wizard (UX) e sincronização com metadata hierárquica
-- bugs prioritários corrigidos e absorção de feedbacks da Alpha
-- documentação e onboarding refinados
+- `B096`: Geração de SDTs hierárquicos por subnível e por contrato, com regra de nomes e desambiguação
+- `B097`: Geração de código Business Component nas Procedures para subníveis, com substituição completa sob marcador `<SubLevel>Replace`
+- `B098`: Procedimento de `List` com contadores numéricos de subníveis diretos
+- `B099`: Interface do Wizard (UX) e sincronização com metadata hierárquica (`schemaVersion` V2)
+- Fase 7: ciclo de vida sob hierarquia — releitura de contrato existente, preferências do Wizard e inventário dinâmico de remoção
+- `B100`: Serviço `Delete` opt-in, com as quatro camadas anti acidente
+- triagem do feedback da Alpha e documentação pública alinhada
+
+**Ordem de execução:** `B102` → Fase 0 → Fases 1 a 6 (`B095`–`B099`) → Fase 7 → `B100`. Detalhamento em [Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md](../Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md).
 
 ## Gate
 
-Adoção melhora e suporte prático a transações multinível comprovado na IDE com `Build All` sem `spc0018` e chamadas HTTP reais.
+1. Suporte prático a transações multinível comprovado na IDE, com `Build All` sem `spc0018` e chamadas HTTP reais nos environments `NETPostgreSQL155` e `NETFrameworkSQLServer004`.
+2. Não regressão comprovada para transações de nível único contra a linha de base da Fase 0.
+3. Toda issue aberta na Alpha até a data de corte **triada**: respondida e classificada como corrigida, convertida em item de backlog com identificador próprio, ou recusada com justificativa registrada.
+
+Adoção é **sinal observado** no checkpoint, não condição de fechamento: ela não depende de trabalho do mantenedor e um gate que o mantenedor não governa vira carimbo automático ou trava indefinida. Bugs prioritários entram no gate apenas quando convertidos em itens de backlog com identificador, nunca como adjetivo.
+
+## Publicação
+
+Dois cortes de release, e não um só:
+
+- `0.1.0-alpha.4`, logo após `B102` — melhoria pequena, independente e de valor imediato para quem já integra, publicada antes do pacote estrutural para exercitar o rito com baixo risco.
+- `0.1.0-alpha.5`, ao fim da sprint, com subníveis e `Delete`. As notas destacam separadamente o `Delete` e o marcador `<SubLevel>Replace`, que são os dois pontos onde um consumidor desatento perde dados.
+
+Cada corte mantém o rito já estabelecido: CHANGELOG, notas de release nos três idiomas, `README`/`INSTALL`/`DEMO` alinhados, tag e GitHub Release pre-release com a DLL anexada.
 
 [SPR-F24]
 
@@ -418,6 +436,7 @@ Produto confiável inicial.
 - fluxo principal sólido
 - comunidade ativa mínima
 - releases previsíveis
+- `B101` (candidato): experimento de membro nullable para distinguir membro ausente de membro vazio, que pode rever a limitação assumida na `Emenda técnica — 2026-08-03`
 
 ## Gate
 

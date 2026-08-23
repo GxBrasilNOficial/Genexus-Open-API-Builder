@@ -210,7 +210,7 @@ Padrões:
 - não contém envelope, metadata nem campos exclusivos de resposta; subníveis passaram a ser elegíveis (ver nota de revisão abaixo)
 - não há campos públicos com sufixo `Specified`
 
-**Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099):** Atributos de subníveis selecionados passam a ser elegíveis e são gerados como nós aninhados de coleção (`IsCollection = true`) em `sdt<NomeBase>_API_CreateRequest`, conforme detalhado na `Emenda técnica — 2026-08-20` do registro de decisões do MVP e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
+**Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099), revista em 2026-08-23:** Atributos de subníveis selecionados passam a ser elegíveis e entram como membro coleção (`IsCollection = true`) em `sdt<NomeBase>_API_CreateRequest`. A revisão de 2026-08-23 fixou a forma desse membro: ele é tipado por um **SDT próprio do subnível, por contrato** (`sdt<NomeBase>_API_<SubLevel>_CreateRequest`), e não por subestrutura aninhada dentro do próprio SDT. Um SDT único compartilhado entre Create, Update e Response publicaria campos somente leitura no `CreateRequest`, contrariando a elegibilidade. Detalhes na `Emenda técnica — 2026-08-20`, na `Emenda técnica — 2026-08-23` do registro de decisões do MVP e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 
 ## UpdateRequest
 
@@ -234,7 +234,7 @@ Regras:
 - não há `PATCH` no MVP
 - não há campos públicos com sufixo `Specified`
 
-**Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099):** Atributos de subníveis selecionados passam a ser elegíveis e são gerados como nós aninhados de coleção (`IsCollection = true`) em `sdt<NomeBase>_API_UpdateRequest`, adotando substituição completa no Business Component.
+**Nota de revisão — 2026-08-20 — Suporte a Subníveis (B095–B099), revista em 2026-08-23:** Atributos de subníveis selecionados passam a ser elegíveis e entram como membro coleção (`IsCollection = true`) em `sdt<NomeBase>_API_UpdateRequest`, tipado por SDT próprio do subnível por contrato. A substituição completa no Business Component passa a ser condicionada ao marcador booleano `<SubLevel>Replace`, presente no mesmo `UpdateRequest`: com `True`, o array enviado é o estado final e linhas omitidas são removidas; ausente ou `False`, as linhas daquele subnível não são tocadas. O marcador existe porque membro ausente é indistinguível de membro vazio no corpo da requisição (`Emenda técnica — 2026-08-03`), o que sem ele faria um `PUT` incompleto apagar linhas em silêncio. Detalhes na `Emenda técnica — 2026-08-23`.
 
 ## Response
 
