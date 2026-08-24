@@ -10,15 +10,31 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
-### Added
+---
 
-- `B102`: Create/Update devolvem as mensagens de erro do Business Component em `ErrorResponse.Message` (`LongVarChar` 2097152, truncada visivelmente em 2045 + `...` = 2048) e em `Messages[]` tipado por `sdt_API_ErrorMessage`. Ligado por padrão, com default por KB e escolha por API fora do hash B067; o bloco Alpha de texto fixo continua reconhecido no reencontro. Gate HTTP fechado em 2026-08-24 nos dois environments da KB `wsEducacaoSpTeste` (`apiTeste`): texto da rule, acento UTF-8, truncamento visível, `Messages[]` com `business_rule`, opção desligada com texto genérico, filtro que exclui `Msg()` (tipo 0) e copia só `Type == 1` (`MessageTypes.Error`). YAML publicado de `apiTeste` declara `Messages` como `type: array` com `$ref` para `sdt_API_ErrorMessage` e **não** emite `maxLength` — `Length = 2097152` é inconsequente para o contrato publicado. Reencontro de API Alpha: cobertura parcial (Wizard na `NotaFiscal` cancelado sem escrita; catálogo mecânico de variantes; regravação `Updated=14` na `Teste`). Próxima ação: Fase 0.
+# [0.1.0-alpha.4] - 2026-08-24
 
-### Changed
+Release focada no repasse das mensagens de erro do Business Component no HTTP 422 (`B102`).
+
+## Added
+
+- `B102`: Create/Update devolvem as mensagens de erro do Business Component em `ErrorResponse.Message` (`LongVarChar` 2097152, truncada visivelmente em 2045 + `...` = 2048) e em `Messages[]` tipado por `sdt_API_ErrorMessage`. Ligado por padrão, com default por KB e escolha por API fora do hash B067; o bloco Alpha de texto fixo continua reconhecido no reencontro. Gate HTTP fechado em 2026-08-24 nos dois environments da KB `wsEducacaoSpTeste` (`apiTeste`): texto da rule, acento UTF-8, truncamento visível, `Messages[]` com `business_rule`, opção desligada com texto genérico, filtro que exclui `Msg()` (tipo 0) e copia só `Type == 1` (`MessageTypes.Error`). YAML publicado de `apiTeste` declara `Messages` como `type: array` com `$ref` para `sdt_API_ErrorMessage` e **não** emite `maxLength`. Reencontro de API Alpha: cobertura parcial.
+
+## Changed
 
 - Revisão dirigida do plano da Sprint 9 (2026-08-23): a especificação de subníveis ganhou a Fase 0 (linha de base de não regressão para transações planas) e a Fase 7 (ciclo de vida sob hierarquia); os SDTs de subnível passam a ser próprios por contrato, nomeados `sdt<NomeBase>_API_<Papel>_<Subnível>`; a substituição de linhas no `Update` passa a exigir o marcador `<Subnível>Replace`; os contadores de `List` ficam desativáveis por subnível e restritos a subníveis diretos, alojados em `sdt<NomeBase>_API_ListResponse_Item`, que só existe quando há subnível selecionado; a metadata vai a `schemaVersion` V2 com leitura tolerante a V1. Novos itens de backlog: `B100` (serviço `Delete` opt-in), `B101` (experimento de membro nullable), `B102` (repasse da `Message` do Business Component, primeiro item da sprint), `B103` (reconhecimento de source por versão de contrato) e `B104` (organização de `Src`). Notas de revisão alinhadas nos documentos 05, 08, 13, 26, 28, no registro de decisões (`Emenda técnica — 2026-08-23`) e em `B011`. Sem mudança de código da extensão. Detalhe: `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 - Revisão do plano de trabalho da Sprint 9 (2026-08-23), posterior à revisão da especificação e registrada na `Emenda técnica — 2026-08-23 (complemento)`: a Fase 0 ganha mecanismo em duas camadas — comparação automática de Source, Service Source e plano de SDT no checker, mais export XPZ dos SDTs na IDE —, e o critério de não regressão deixa de prometer "byte a byte" genérico; `B102` é especificado com `Message` em `LongVarChar` truncada pela geração, experimento de `Messages[]` como coleção tipada por SDT separado, repasse restrito a mensagens de erro, ligado por padrão, com preferência por KB e escolha por API; a sprint ganha os gates 4 e 5, cobrindo `B102` e `B100` com HTTP real nos dois environments, e a data de corte da triagem passa a ser a entrada da Fase 7; o contrato OpenAPI multinível entra nos critérios, com a trava mecânica estendida aos schemas derivados e geração de cliente como evidência pontual; a linha `Gx18u13` volta ao plano, com dois assets DLL em todos os cortes e smoke na IDE U13 no corte de subníveis; a propagação do marcador `<Subnível>Replace` entre níveis é fechada; a escala ganha limiares de reprovação e de alerta e o resumo do Wizard passa a exibir a contagem de objetos; a publicação passa a três cortes (`0.1.0-alpha.4`, `0.1.0-alpha.5` e `0.1.0-alpha.6`), desacoplando o `Delete` dos subníveis. Novo item de backlog: `B105` (escolha do chamador sobre o detalhe do corpo de erro, restringindo o default da API e nunca ampliando). Notas de reconciliação nos documentos 12, 15 e 27. Sem mudança de código da extensão.
 - Documentação pública passa a declarar que a geração cobre apenas o primeiro nível da Transaction e que subníveis são ignorados sem aviso, nos três `README` e em `Docs/Public/DEMO.md`. A limitação existe desde a primeira Alpha e não estava registrada: quem gerou uma API sobre transação multinível recebeu um contrato que cobre apenas o cabeçalho.
+
+## Validated
+
+- Gate HTTP de `B102` nos environments `.NET`/PostgreSQL e `.NET Framework`/SQL Server (`apiTeste`).
+- Linhas U14+ (canônica) e U13 (satélite) compiladas em Release para este corte.
+
+## Assets
+
+- `GenexusOpenApiBuilder.Extension.dll` — GeneXus 18 U14, U15 e posteriores U14+.
+- `GenexusOpenApiBuilder.Extension-gx18u13.dll` — GeneXus 18 U13.
 
 ---
 

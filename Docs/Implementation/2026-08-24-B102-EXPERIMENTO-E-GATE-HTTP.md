@@ -1,7 +1,8 @@
-# B102 — Experimento na IDE: coleção tipada e `Length` do `LongVarChar`
+# B102 — Experimento na IDE e gate HTTP
 
 Fecha os dois gates humanos declarados na nota `Gate humano — 2026-08-24` do documento
-`Docs/Foundation/27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md`.
+`Docs/Foundation/27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md` e registra a evidência do gate HTTP
+nos dois environments (`apiTeste`, 2026-08-24).
 
 Executado em 2026-08-24, numa KB de teste, por sonda temporária instalada na extensão. Nenhuma
 API gerada foi tocada; os SDTs da sonda usaram o prefixo próprio `sdt_GOAB_B102_` e foram

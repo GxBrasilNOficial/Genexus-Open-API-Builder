@@ -13,7 +13,7 @@
 //
 // Executada uma vez em 2026-08-24, numa KB de teste, para fechar os dois gates
 // humanos do B102. Resultado e análise em
-// Docs/Implementation/2026-08-24-B102-EXPERIMENTO-SDT-ERRO.md.
+// Docs/Implementation/2026-08-24-B102-EXPERIMENTO-E-GATE-HTTP.md.
 //
 // Para reutilizar: copiar para Src/Extension/Diagnostics/, registrar os comandos
 // nas três camadas (Package.cs, GenexusOpenApiBuilder.package e o grupo de menu),
