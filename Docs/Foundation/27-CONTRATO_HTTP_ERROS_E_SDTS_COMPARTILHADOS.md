@@ -101,6 +101,15 @@ A regra de idioma acima pressupõe que a `Message` carregue texto produzido pela
 
 **Complemento de 2026-08-23 — tipo, limite e forma.** O membro `Message` passa de `VarChar(256)` para `LongVarChar`, com truncamento explícito pela geração em cerca de 2K e reticência final: tipo sem limite não é conteúdo sem limite, e o corte silencioso do `VarChar` era pior do que um truncamento visível. A opção de desligar fica **ligada por padrão**, com aviso quando `SecurityLevel = None`, com default por KB no File de preferências e escolha por API na metadata. A forma do corpo — uma `Message` concatenada ou um membro coleção `Messages` — depende do experimento descrito na nota seguinte.
 
+**Gate humano — 2026-08-24.** Duas decisões de `B102` **não** se resolvem por leitura de código nem por teste offline; dependem de observar o SDK na IDE. Nenhuma implementação pode declará-las fechadas sem essa verificação:
+
+1. **Forma do corpo.** Se a IDE aceita o membro coleção `Messages` tipado pelo SDT **separado** `sdt_API_ErrorMessage`. Aceito, o corpo ganha a coleção; recusado, as mensagens vão concatenadas em `Message` por `" | "` e a recusa é registrada como evidência. Implementar apenas um dos ramos antes da verificação é **decidir** o experimento, não executá-lo.
+2. **Comprimento declarado do `LongVarChar`.** O `Length` do membro é repassado direto ao SDK em `ApiPlanSdtWriter.AddBuiltInMember`, via `root.AddItem(nome, tipo, length, decimals)`. Não há precedente no repositório: todos os usos atuais de `LongVarChar` são **variáveis**, que não carregam comprimento. O valor a declarar fica indeterminado até ser observado na IDE.
+
+Não confundir os dois limites. O truncamento em cerca de 2K acontece no **código GeneXus gerado** (`SubStr`); o `Length` é **declaração ao SDK** na criação do SDT. São independentes, e o comprimento declarado tende a aparecer como `maxLength` no contrato OpenAPI publicado.
+
+**Nota de coerência.** O Wizard classifica `LongVarChar` como tipo tecnicamente inadequado para **atributos da Transaction** entrando no payload. `Message` é membro fixo do contrato de erro, gerado pela extensão, e a regra não se aplica a ele.
+
 A regra da seção 5, de usar `422` e não presumir `409` quando não é possível distinguir a natureza da recusa, permanece e passa a valer também para a recusa por integridade referencial no serviço `Delete` (`B100`).
 
 ---
