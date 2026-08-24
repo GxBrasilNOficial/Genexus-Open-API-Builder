@@ -129,7 +129,9 @@ O **corpo do GitHub Release não é cópia dessas notas.** É texto próprio, es
 
 Cada seção traz: resumo curto da entrega, a tabela de escolha obrigatória da DLL (canônica U14+ e satélite `-gx18u13`), instalação, e **link absoluto** para a nota detalhada daquele idioma, fixada na tag do corte — nunca link relativo, que não resolve na página de release.
 
-Modelo canônico: `v0.1.0-alpha.3`. Antes de publicar, comparar o corpo montado com `gh release view v0.1.0-alpha.3 --json body` e confirmar que as três seções existem.
+Depois das três seções, uma seção `## Checksums` **única**, com o SHA-256 de cada asset. Ela não se repete por idioma: é tabela de dados. Os valores têm de coincidir com o `digest` que o GitHub calcula, verificável por `gh release view <tag> --json assets`. O checksum fica na página porque é lá que o download acontece; mandar conferir nas notas do repositório é pedir para sair de onde o arquivo foi baixado.
+
+Modelo canônico: `v0.1.0-alpha.3`. Antes de publicar, comparar o corpo montado com `gh release view v0.1.0-alpha.3 --json body` e confirmar que **as três seções de idioma e a seção de checksums** existem.
 
 Cada corte leva **dois assets DLL** e é publicado como **pre-release** enquanto a linha for Alpha. Conferir o SHA-256 dos assets após o download.
 
