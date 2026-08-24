@@ -93,6 +93,26 @@ Qualquer outro script de `<skills-root>\scripts` está fora do escopo desta seç
 os scripts permitidos, sem autorizar execução automática nem substituir o contrato próprio de
 cada um.
 
+## Build local da extensão
+
+Duas causas distintas travam o build local com sintomas parecidos. Antes de contornar qualquer uma delas, identificar qual é.
+
+**Causa 1 — node de build sobrevivente (arquivo em uso).** O `dotnet build` mantém vivos o MSBuild Server e o compilador VB/C# (`VBCSCompiler`), com handles abertos em `Src/Extension/obj/`. Um node de execução anterior bloqueia a build seguinte. Antes de compilar, e novamente ao terminar, executar:
+
+```powershell
+dotnet build-server shutdown
+```
+
+**Causa 2 — artefato de outro principal (negação de escrita).** Agentes que executam sob token restrito — caso do Codex, que roda como `CodexSandboxOffline` — criam artefatos em `obj/` e `bin/` cujo dono é a própria conta de sandbox. A sessão seguinte, com outro token, toma acesso negado ao sobrescrever, **mesmo sem lock algum**: token restrito não honra as ACEs herdadas de `Usuários autenticados`. Vale também no sentido inverso, quando o usuário real compila e o agente tenta em seguida. Remediação: apagar `obj/` e `bin/` antes da execução, deixando a sessão criar os artefatos que ela mesma vai sobrescrever. Ambas as pastas são ignoradas pelo git e o build completo leva cerca de 4 segundos.
+
+Como distinguir: mensagem de **arquivo em uso** aponta para a causa 1; **negação de escrita** sem nenhum processo de IDE ou compilador vivo aponta para a causa 2. Conferir o dono com `(Get-Acl <arquivo>).Owner`.
+
+- Diante de qualquer das duas, o agente **não** encerra processos de terceiros nem altera a instalação do GeneXus.
+- Se o bloqueio persistir **com a IDE GeneXus aberta**, quem segura a DLL é a IDE, e a única saída é fechá-la. Nenhuma configuração de MSBuild ou limpeza de artefato alcança esse caso.
+- `MSBUILDDISABLENODEREUSE=1` cobre apenas os nodes do MSBuild, não o `VBCSCompiler`, e não tem efeito sobre a causa 2; o `build-server shutdown` cobre os dois processos da causa 1.
+
+Ambas as causas foram diagnosticadas em 2026-08-23, em rodadas distintas de agente sobre este repositório: a causa 1 com bloqueio em `Src\Extension\obj\Release\net471\GenexusOpenApiBuilder.Extension.dll` e build limpa após o shutdown; a causa 2 com os artefatos de `obj/` e `bin/` divididos entre `ANTONIOJOSE` e `CodexSandboxOffline`.
+
 ## Atualização manual da extensão para testes
 
 Sempre que uma nova DLL precisar ser instalada para teste no GeneXus 18, o agente deve primeiro distinguir atualização de código de atualização de manifesto/registro.
