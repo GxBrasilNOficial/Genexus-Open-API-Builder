@@ -390,7 +390,7 @@ Aprender com o uso externo da Alpha e expandir o gerador para cobrir transaçõe
 
 ## Entregas
 
-- `B102`: Repasse do texto emitido pelo Business Component na `Message` do `422`, com `Message` em `LongVarChar` truncada pela geração, experimento de `Messages[]` como coleção tipada por SDT próprio, repasse restrito a mensagens de erro, e opção de desligar por KB e por API (**primeiro item da sprint**)
+- `B102`: Repasse do texto emitido pelo Business Component na `Message` do `422`, com `Message` em `LongVarChar` truncada pela geração, `Messages[]` como coleção tipada por `sdt_API_ErrorMessage`, repasse restrito a mensagens de erro, e opção de desligar por KB e por API (**primeiro item da sprint**; concluído em 2026-08-24, gate HTTP nos dois environments)
 - Fase 0: linha de base de não regressão para transações planas, em duas camadas — arquivos de referência offline ligados ao checker mecânico e export XPZ dos SDTs na IDE, no início e no fim da sprint
 - `B095`: Leitura hierárquica recursiva da estrutura no SDK e modelo de domínio multinível (`ApiPlanLevel`)
 - `B096`: Geração de SDTs hierárquicos por subnível e por contrato, com regra de nomes e desambiguação
@@ -402,14 +402,14 @@ Aprender com o uso externo da Alpha e expandir o gerador para cobrir transaçõe
 - `B105`: escolha do chamador sobre o detalhe do corpo de erro, podendo apenas restringir o default da API — nesta sprint se houver folga, senão Sprint 10
 - triagem do feedback da Alpha e documentação pública alinhada
 
-**Ordem de execução:** `B102` → Fase 0 → Fases 1 a 6 (`B095`–`B099`) → Fase 7 → `B100`. Detalhamento em [Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md](../Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md).
+**Ordem de execução:** `B102` (concluído) → Fase 0 → Fases 1 a 6 (`B095`–`B099`) → Fase 7 → `B100`. Detalhamento em [Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md](../Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md).
 
 ## Gate
 
 1. Suporte prático a transações multinível comprovado na IDE, com `Build All` sem `spc0018` e chamadas HTTP reais nos environments `NETPostgreSQL155` e `NETFrameworkSQLServer004`.
 2. Não regressão comprovada para transações de nível único contra a linha de base da Fase 0, no escopo que a própria Fase 0 declara sob comparação automática e sob conferência manual.
 3. Toda issue aberta na Alpha até a **entrada da Fase 7** — que é a data de corte — **triada**: respondida e classificada como corrigida, convertida em item de backlog com identificador próprio, ou recusada com justificativa registrada. O corte é um marco do plano, e não uma data de calendário: data fixa ou expira antes do fim da sprint, deixando issues novas fora sem critério, ou é folgada a ponto de travar o fechamento por uma issue aberta na véspera. Issue aberta depois desse ponto é triada na Sprint 10.
-4. **Repasse da `Message` (`B102`) comprovado por HTTP real nos dois environments:** transação com rule `error` na KB responde `422` com o texto da rule; com a opção desligada, responde o texto genérico; a `Message` sobrevive a acento e a mensagem longa, com truncamento visível em vez de corte silencioso. Se o experimento da coleção passar, `Messages[]` chega preenchido; se falhar, comprova-se a concatenação e a recusa fica registrada.
+4. **Repasse da `Message` (`B102`) comprovado por HTTP real nos dois environments (fechado em 2026-08-24, `apiTeste`):** transação com rule `Error()` responde `422` com o texto da rule em `Message` e `Messages[]` preenchido (`business_rule`); com a opção desligada, responde o texto genérico e o fonte gerado não chama `GetMessages()`; a `Message` sobrevive a acento e a mensagem longa, com truncamento visível em 2048 + `...`. `Msg()` no mesmo caso é emitido pelo BC (tipo 0) e não entra no corpo (filtro `Type == 1`). YAML publicado declara `Messages` e não emite `maxLength`. Reencontro Alpha: cobertura parcial.
 5. **Serviço `Delete` (`B100`) comprovado por HTTP real nos dois environments:** `200` com a chave removida, `404` em registro inexistente, `422` com `validation_error` em recusa do Business Component, inclusive por integridade referencial. Mais as quatro camadas anti acidente demonstradas na IDE: opt-in desligado por padrão, confirmação consciente ao marcar, `SecurityLevel` próprio com aviso quando `None`, e recusa do BC respeitada sem exclusão forçada.
 
 Os gates 4 e 5 exigem os **dois** environments porque corpo de erro e `DELETE` atravessam o pipeline REST que já mostrou comportamento divergente por gerador: o `404` do IIS em todo `PUT` só apareceu no .NET Framework, e a matriz do cabeçalho `Location` diferiu entre os dois.

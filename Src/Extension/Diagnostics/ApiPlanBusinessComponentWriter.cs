@@ -427,7 +427,8 @@ internal static class ApiPlanBusinessComponentWriter
 
         if (!HasExpectedVariables(procedure.Model, procedure, variables) &&
             (legacyVariables is null || !HasExpectedVariables(procedure.Model, procedure, legacyVariables)) &&
-            (previousB079Variables is null || !HasMigrablePreviousB079Variables(procedure.Model, procedure, previousB079Variables)))
+            (previousB079Variables is null || !HasMigrablePreviousB079Variables(procedure.Model, procedure, previousB079Variables)) &&
+            !HasExpectedCreateOrUpdateVariables(procedure.Model, procedure, plan, service))
         {
             throw new InvalidOperationException($"B055 bloqueado: Procedure propria '{procedure.Name}' possui variaveis divergentes da geracao {backlog}/{service}. Nenhuma alteracao foi feita.");
         }
@@ -448,8 +449,10 @@ internal static class ApiPlanBusinessComponentWriter
 
     private static bool IsManagedCreateSource(string source, ApiPlan plan)
     {
-        return HasEquivalentGeneratedSource(source, CreateContent(plan)) ||
-            HasEquivalentGeneratedSource(source, CreateContentWithoutFieldLimitValidation(plan)) ||
+        return HasEquivalentGeneratedSource(source, CreateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: true)) ||
+            HasEquivalentGeneratedSource(source, CreateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: false)) ||
+            HasEquivalentGeneratedSource(source, CreateContent(plan, includeFieldLimitValidation: false, includeMessageForwarding: true)) ||
+            HasEquivalentGeneratedSource(source, CreateContent(plan, includeFieldLimitValidation: false, includeMessageForwarding: false)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithLocationUrlAndUrlEncodeTrim(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithInlineLocationHeader(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithMethodTrimUrlEncodeLocationHeader(plan)) ||
@@ -468,8 +471,10 @@ internal static class ApiPlanBusinessComponentWriter
 
     private static bool IsManagedUpdateSource(string source, ApiPlan plan)
     {
-        return HasEquivalentGeneratedSource(source, UpdateContent(plan)) ||
-            HasEquivalentGeneratedSource(source, UpdateContentWithoutFieldLimitValidation(plan)) ||
+        return HasEquivalentGeneratedSource(source, UpdateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: true)) ||
+            HasEquivalentGeneratedSource(source, UpdateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: false)) ||
+            HasEquivalentGeneratedSource(source, UpdateContent(plan, includeFieldLimitValidation: false, includeMessageForwarding: true)) ||
+            HasEquivalentGeneratedSource(source, UpdateContent(plan, includeFieldLimitValidation: false, includeMessageForwarding: false)) ||
             HasEquivalentGeneratedSource(source, PreviousB079UpdateContentWithNativeJsonValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079UpdateContentWithSdtDirtyValidation(plan)) ||
             HasEquivalentGeneratedSource(source, PreviousB079UpdateContentWithOriginalMemberDirtyValidation(plan)) ||
@@ -830,11 +835,10 @@ internal static class ApiPlanBusinessComponentWriter
         return matches[0];
     }
 
-    private static string CreateContent(ApiPlan plan) => CreateContent(plan, includeFieldLimitValidation: true);
+    private static string CreateContent(ApiPlan plan) =>
+        CreateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: plan.IncludeBusinessComponentErrorMessages);
 
-    private static string CreateContentWithoutFieldLimitValidation(ApiPlan plan) => CreateContent(plan, includeFieldLimitValidation: false);
-
-    private static string CreateContent(ApiPlan plan, bool includeFieldLimitValidation)
+    private static string CreateContent(ApiPlan plan, bool includeFieldLimitValidation, bool includeMessageForwarding)
     {
         var bc = "&" + plan.TransactionName;
         var requiredFields = RequiredFieldsFor(plan, "CreateRequest", plan.CreateRequestFields);
@@ -890,7 +894,7 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         lines.Add($"{bodyIndent}Else");
-        lines.AddRange(CurrentBusinessRuleFailureMessages(successIndent));
+        lines.AddRange(CurrentBusinessRuleFailureMessages(successIndent, includeMessageForwarding, bc));
         lines.Add($"{bodyIndent}EndIf");
         if (guarded)
         {
@@ -1036,11 +1040,10 @@ internal static class ApiPlanBusinessComponentWriter
         return string.Join(Environment.NewLine, lines);
     }
 
-    private static string UpdateContent(ApiPlan plan) => UpdateContent(plan, includeFieldLimitValidation: true);
+    private static string UpdateContent(ApiPlan plan) =>
+        UpdateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: plan.IncludeBusinessComponentErrorMessages);
 
-    private static string UpdateContentWithoutFieldLimitValidation(ApiPlan plan) => UpdateContent(plan, includeFieldLimitValidation: false);
-
-    private static string UpdateContent(ApiPlan plan, bool includeFieldLimitValidation)
+    private static string UpdateContent(ApiPlan plan, bool includeFieldLimitValidation, bool includeMessageForwarding)
     {
         var bc = "&" + plan.TransactionName;
         var requiredFields = RequiredFieldsFor(plan, "UpdateRequest", plan.UpdateRequestFields);
@@ -1073,7 +1076,7 @@ internal static class ApiPlanBusinessComponentWriter
         lines.AddRange(ResponseAssignments(plan, bc, "&UpdateResponse", nestedIndent));
         lines.Add($"{new string(' ', nestedIndent)}&RestStatusCode = 200");
         lines.Add($"{new string(' ', assignmentIndent)}Else");
-        lines.AddRange(CurrentBusinessRuleFailureMessages(nestedIndent));
+        lines.AddRange(CurrentBusinessRuleFailureMessages(nestedIndent, includeMessageForwarding, bc));
         lines.Add($"{new string(' ', assignmentIndent)}EndIf");
         lines.Add($"{bodyIndent}Else");
         lines.AddRange(NotFoundMessages(plan, failureIndent));
@@ -2161,7 +2164,52 @@ internal static class ApiPlanBusinessComponentWriter
         $"{new string(' ', spaces)}msg(Format(!\"Genexus Open API Builder B055 BC failure: %1\", &Messages.ToJson()), status)",
     };
 
-    private static IEnumerable<string> CurrentBusinessRuleFailureMessages(int spaces)
+    private static IEnumerable<string> CurrentBusinessRuleFailureMessages(int spaces, bool includeMessageForwarding, string bc)
+    {
+        return includeMessageForwarding
+            ? CurrentBusinessRuleFailureMessagesWithForwarding(spaces, bc)
+            : PreviousAlphaBusinessRuleFailureMessages(spaces);
+    }
+
+    private static IEnumerable<string> CurrentBusinessRuleFailureMessagesWithForwarding(int spaces, string bc)
+    {
+        var indent = new string(' ', spaces);
+        yield return $"{indent}&RestStatusCode = 422";
+        yield return $"{indent}&ErrorResponse = new()";
+        yield return $"{indent}&ErrorResponse.Code = !\"validation_error\"";
+        yield return $"{indent}&Messages = {bc}.GetMessages()";
+        yield return $"{indent}&ConcatenatedMessage = !\"\"";
+        yield return $"{indent}For &i = 1 To &Messages.Count";
+        yield return $"{indent}    &Message = &Messages.Item(&i)";
+        // Filtro pelo domínio enumerado: a KB de produção compara Type a MessageTypes.Error; literal numérico falharia em silêncio.
+        yield return $"{indent}    If &Message.Type = MessageTypes.Error";
+        yield return $"{indent}        &ErrorItem = new()";
+        yield return $"{indent}        If &Message.Id.IsEmpty()";
+        yield return $"{indent}            &ErrorItem.Code = !\"business_rule\"";
+        yield return $"{indent}        Else";
+        yield return $"{indent}            &ErrorItem.Code = &Message.Id";
+        yield return $"{indent}        EndIf";
+        yield return $"{indent}        &ErrorItem.Message = &Message.Description";
+        yield return $"{indent}        &ErrorResponse.Messages.Add(&ErrorItem)";
+        yield return $"{indent}        If &ConcatenatedMessage.IsEmpty()";
+        yield return $"{indent}            &ConcatenatedMessage = &Message.Description";
+        yield return $"{indent}        Else";
+        yield return $"{indent}            &ConcatenatedMessage = &ConcatenatedMessage + !\" | \" + &Message.Description";
+        yield return $"{indent}        EndIf";
+        yield return $"{indent}    EndIf";
+        yield return $"{indent}EndFor";
+        yield return $"{indent}If &ConcatenatedMessage.IsEmpty()";
+        yield return $"{indent}    &ErrorResponse.Message = !\"Business rules rejected the request.\"";
+        yield return $"{indent}Else";
+        yield return $"{indent}    If Len(&ConcatenatedMessage) > 2048";
+        yield return $"{indent}        &ErrorResponse.Message = Substr(&ConcatenatedMessage, 1, 2045) + !\"...\"";
+        yield return $"{indent}    Else";
+        yield return $"{indent}        &ErrorResponse.Message = &ConcatenatedMessage";
+        yield return $"{indent}    EndIf";
+        yield return $"{indent}EndIf";
+    }
+
+    private static IEnumerable<string> PreviousAlphaBusinessRuleFailureMessages(int spaces)
     {
         var indent = new string(' ', spaces);
         yield return $"{indent}&RestStatusCode = 422";
@@ -2211,16 +2259,29 @@ internal static class ApiPlanBusinessComponentWriter
         })
         .ToArray();
 
-    private static IReadOnlyList<VariableSpec> CreateVariables(ApiPlan plan) => new[]
+    private static IReadOnlyList<VariableSpec> CreateVariables(ApiPlan plan) =>
+        CreateVariables(plan, plan.IncludeBusinessComponentErrorMessages);
+
+    private static IReadOnlyList<VariableSpec> CreateVariables(ApiPlan plan, bool includeMessageForwarding)
     {
-        new VariableSpec("CreateRequest", plan.CreateRequestSdtName),
-        new VariableSpec("CreateResponse", plan.ResponseSdtName),
-        new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
-        new VariableSpec("HttpResponse", "HttpResponse"),
-        new VariableSpec("LocationUrl", "VarChar(1K)"),
-        new VariableSpec("RestStatusCode", "Numeric(3.0)"),
-        new VariableSpec(plan.TransactionName, plan.TransactionName),
-    }.Concat(RequiredMemberPresenceVariables(plan, "CreateRequest", plan.CreateRequestFields)).ToArray();
+        var variables = new List<VariableSpec>
+        {
+            new VariableSpec("CreateRequest", plan.CreateRequestSdtName),
+            new VariableSpec("CreateResponse", plan.ResponseSdtName),
+            new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
+            new VariableSpec("HttpResponse", "HttpResponse"),
+            new VariableSpec("LocationUrl", "VarChar(1K)"),
+            new VariableSpec("RestStatusCode", "Numeric(3.0)"),
+            new VariableSpec(plan.TransactionName, plan.TransactionName),
+        };
+        if (includeMessageForwarding)
+        {
+            variables.AddRange(MessageForwardingVariables());
+        }
+
+        variables.AddRange(RequiredMemberPresenceVariables(plan, "CreateRequest", plan.CreateRequestFields));
+        return variables;
+    }
 
     private static IReadOnlyList<VariableSpec> LegacyCreateVariables(ApiPlan plan) => new[]
     {
@@ -2240,17 +2301,55 @@ internal static class ApiPlanBusinessComponentWriter
         new VariableSpec("Messages", "Messages, GeneXus.Common"),
     };
 
-    private static IReadOnlyList<VariableSpec> UpdateVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
-        .Concat(new[]
+    private static IReadOnlyList<VariableSpec> UpdateVariables(ApiPlan plan) =>
+        UpdateVariables(plan, plan.IncludeBusinessComponentErrorMessages);
+
+    private static IReadOnlyList<VariableSpec> UpdateVariables(ApiPlan plan, bool includeMessageForwarding)
+    {
+        var variables = plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
+            .Concat(new[]
+            {
+                new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName),
+                new VariableSpec("UpdateResponse", plan.ResponseSdtName),
+                new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
+                new VariableSpec("RestStatusCode", "Numeric(3.0)"),
+                new VariableSpec(plan.TransactionName, plan.TransactionName),
+            })
+            .ToList();
+        if (includeMessageForwarding)
         {
-            new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName),
-            new VariableSpec("UpdateResponse", plan.ResponseSdtName),
-            new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
-            new VariableSpec("RestStatusCode", "Numeric(3.0)"),
-            new VariableSpec(plan.TransactionName, plan.TransactionName),
-        })
-        .Concat(RequiredMemberPresenceVariables(plan, "UpdateRequest", plan.UpdateRequestFields))
-        .ToArray();
+            variables.AddRange(MessageForwardingVariables());
+        }
+
+        variables.AddRange(RequiredMemberPresenceVariables(plan, "UpdateRequest", plan.UpdateRequestFields));
+        return variables;
+    }
+
+    private static IEnumerable<VariableSpec> MessageForwardingVariables()
+    {
+        yield return new VariableSpec("Messages", "Messages, GeneXus.Common");
+        yield return new VariableSpec("Message", "Messages.Message, GeneXus.Common");
+        yield return new VariableSpec("ErrorItem", "sdt_API_ErrorMessage");
+        yield return new VariableSpec("ConcatenatedMessage", "LongVarChar");
+        yield return new VariableSpec("i", "Numeric(8.0)");
+    }
+
+    private static bool HasExpectedCreateOrUpdateVariables(KBModel model, Procedure procedure, ApiPlan plan, string service)
+    {
+        if (string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase))
+        {
+            return HasExpectedVariables(model, procedure, CreateVariables(plan, true))
+                || HasExpectedVariables(model, procedure, CreateVariables(plan, false));
+        }
+
+        if (string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase))
+        {
+            return HasExpectedVariables(model, procedure, UpdateVariables(plan, true))
+                || HasExpectedVariables(model, procedure, UpdateVariables(plan, false));
+        }
+
+        return false;
+    }
 
     private static IReadOnlyList<VariableSpec> LegacyUpdateVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
         .Concat(new[]

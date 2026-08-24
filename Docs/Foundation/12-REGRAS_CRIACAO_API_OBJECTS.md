@@ -277,7 +277,7 @@ Usar `sdt_API_ErrorResponse`, conforme `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILH
 - sem stack trace público
 - linguagem simples
 - log técnico interno separado
-- usar `Errors[].Code`, `Errors[].Message` e `Errors[].Field` conforme documento 27 — regra suspensa pela nota de revisão da seção 3 do documento 27; a geração entregue expõe erro top-level com `Code` e `Message`, sem `Errors[]`. **Revisto em 2026-08-23:** a ausência de array deixa de ser definitiva — `B102` testa um membro coleção `Messages`, tipado por SDT separado, mecanismo distinto da subestrutura que a IDE recusou em 2026-08-03. Ver a correção de premissa na seção 3 do documento 27
+- usar `Messages[].Code` e `Messages[].Message` conforme documento 27 — a geração atual expõe erro top-level com `Code` e `Message` e a coleção `Messages[]` tipada por `sdt_API_ErrorMessage`, mecanismo distinto da subestrutura `Errors[]` que a IDE recusou em 2026-08-03. Ver a seção 3 do documento 27. Gate HTTP de `B102` fechado em 2026-08-24 nos dois environments.
 - não tentar associar campo por análise textual da mensagem do BC
 
 [API-F12]

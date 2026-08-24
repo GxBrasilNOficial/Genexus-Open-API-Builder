@@ -256,7 +256,7 @@ internal sealed class PrototypeWizardStaticOrderPart
 
 internal sealed class PrototypeWizardReviewSelection
 {
-    public PrototypeWizardReviewSelection(string transactionName, string apiName, string servicesBasePath, string restPath, string securityLevel, int defaultPageSize, int maximumPageSize, IReadOnlyList<PrototypeWizardStaticOrderPart> staticOrder)
+    public PrototypeWizardReviewSelection(string transactionName, string apiName, string servicesBasePath, string restPath, string securityLevel, int defaultPageSize, int maximumPageSize, IReadOnlyList<PrototypeWizardStaticOrderPart> staticOrder, bool includeBusinessComponentErrorMessages)
     {
         TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
 
@@ -267,6 +267,7 @@ internal sealed class PrototypeWizardReviewSelection
         DefaultPageSize = defaultPageSize;
         MaximumPageSize = maximumPageSize;
         StaticOrder = staticOrder ?? throw new ArgumentNullException(nameof(staticOrder));
+        IncludeBusinessComponentErrorMessages = includeBusinessComponentErrorMessages;
     }
 
     public string TransactionName { get; }
@@ -284,6 +285,8 @@ internal sealed class PrototypeWizardReviewSelection
     public int MaximumPageSize { get; }
 
     public IReadOnlyList<PrototypeWizardStaticOrderPart> StaticOrder { get; }
+
+    public bool IncludeBusinessComponentErrorMessages { get; }
 }
 
 internal static class PrototypeWizardReviewSessionState

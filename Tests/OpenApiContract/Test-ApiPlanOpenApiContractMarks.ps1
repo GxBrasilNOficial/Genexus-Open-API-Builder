@@ -70,7 +70,11 @@ foreach ($writer in @(
 Assert-NotContains $sdtWriterSource 'root.AddLevel("Errors"' 'SDT compartilhado de erro nao deve recriar a subestrutura Errors, que a geracao nunca preenche.'
 Assert-NotContains $sdtPlanSource 'new ApiPlanSdtMember("Errors"' 'Plano de SDTs nao deve declarar o membro Errors no contrato de erro compartilhado.'
 Assert-Contains $sdtPlanSource 'new ApiPlanSdtMember("Code", "VarChar", 64, 0, false, false, string.Empty, "SharedErrorResponse")' 'Contrato de erro compartilhado deve manter Code top-level.'
-Assert-Contains $sdtPlanSource 'new ApiPlanSdtMember("Message", "VarChar", 256, 0, false, false, string.Empty, "SharedErrorResponse")' 'Contrato de erro compartilhado deve manter Message top-level.'
+Assert-Contains $sdtPlanSource 'new ApiPlanSdtMember("Message", "LongVarChar", 2097152, 0, false, false, string.Empty, "SharedErrorResponse")' 'Contrato de erro compartilhado deve manter Message top-level em LongVarChar 2097152.'
+Assert-Contains $sdtPlanSource 'new ApiPlanSdtMember("Messages", "sdt_API_ErrorMessage"' 'Contrato de erro compartilhado deve expor a colecao Messages tipada por SDT separado.'
+Assert-Contains $sdtPlanSource '"sdt_API_ErrorMessage"' 'Plano de SDTs deve incluir o SDT compartilhado sdt_API_ErrorMessage.'
+Assert-Contains $sdtPlanSource 'new ApiPlanSdtMember("Message", "LongVarChar", 2097152, 0, false, false, string.Empty, "SharedErrorMessage")' 'Item de Messages deve usar LongVarChar 2097152.'
+Assert-NotContains $sdtWriterSource 'root.AddLevel("Errors"' 'SDT compartilhado de erro nao deve recriar a subestrutura Errors, que a geracao nunca preenche.'
 
 Assert-Contains $businessComponentWriterSource 'PreviousB079BusinessRuleFailureMessages' 'Reconhecimento da Procedure legada com ErrorItem deve permanecer, para permitir regravar objeto antigo em vez de bloquea-lo como externo.'
 

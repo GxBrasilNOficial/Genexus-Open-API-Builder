@@ -53,7 +53,7 @@ $metadata = [Newtonsoft.Json.Linq.JObject]::Parse(@"
       `"response`": `"sdtTeste_API_Response`",
       `"listFilters`": `"sdtTeste_API_ListFilters`",
       `"listResponse`": `"sdtTeste_API_ListResponse`",
-      `"shared`": [ `"sdt_API_ErrorResponse`", `"sdt_API_Pagination`" ]
+      `"shared`": [ `"sdt_API_ErrorMessage`", `"sdt_API_ErrorResponse`", `"sdt_API_Pagination`" ]
     }
   }
 }
@@ -65,7 +65,7 @@ Assert-Equal 4 $plan.ProcedureNames.Count 'Procedures no plano'
 Assert-Equal 5 $plan.OwnSdtNames.Count 'SDTs próprios no plano'
 Assert-Equal 'sdtTeste_API_ListResponse' $plan.OwnSdtNames[0] 'ListResponse deve ser o primeiro SDT a apagar'
 Assert-Equal 'sdtTeste_API_Response' $plan.OwnSdtNames[$plan.OwnSdtNames.Count - 1] 'Response deve ser o último SDT a apagar'
-Assert-Equal 2 $plan.SharedSdtNamesPreserved.Count 'SDTs compartilhados preservados'
+Assert-Equal 3 $plan.SharedSdtNamesPreserved.Count 'SDTs compartilhados preservados'
 Assert-True $plan.FolderWasCreated 'Folder criado pela extensão'
 $summary = $plan.BuildConfirmationSummary() -replace "`r`n", "`n"
 Assert-True ($summary -match 'Business Component') 'Resumo menciona BC'

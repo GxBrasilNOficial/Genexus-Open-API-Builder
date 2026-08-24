@@ -380,7 +380,8 @@ internal sealed class PrototypeWizardReviewDialog : Form
             _securityLevelCombo.SelectedItem?.ToString() ?? _snapshot.SecurityLevel,
             (int)_defaultPageSize.Value,
             (int)_maximumPageSize.Value,
-            _snapshot.StaticOrder);
+            _snapshot.StaticOrder,
+            true);
         return true;
     }
 

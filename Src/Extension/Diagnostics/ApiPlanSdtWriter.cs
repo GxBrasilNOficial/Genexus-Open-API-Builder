@@ -146,16 +146,6 @@ internal static class ApiPlanSdtWriter
 
     private static void ValidateSdtDefinitionTypes(KBModel designModel, ApiPlanSdtDefinition definition, HashSet<string> plannedNames)
     {
-        if (string.Equals(definition.Kind, "SharedErrorResponse", StringComparison.Ordinal))
-        {
-            foreach (var member in definition.Members)
-            {
-                ResolveDbType(member.DataType);
-            }
-
-            return;
-        }
-
         foreach (var member in definition.Members.Where(item => item.Name.IndexOf(".", StringComparison.Ordinal) < 0))
         {
             if (member.IsCollection || IsSdtReference(member.DataType))
@@ -247,13 +237,6 @@ internal static class ApiPlanSdtWriter
         var root = sdt.SDTStructure.Root;
         root.Items.Clear();
         root.Name = definition.Name;
-
-        if (string.Equals(definition.Kind, "SharedErrorResponse", StringComparison.Ordinal))
-        {
-            AddBuiltInMember(root, "Code", "VarChar", 64, 0);
-            AddBuiltInMember(root, "Message", "VarChar", 256, 0);
-            return;
-        }
 
         foreach (var member in definition.Members.Where(item => item.Name.IndexOf(".", StringComparison.Ordinal) < 0))
         {

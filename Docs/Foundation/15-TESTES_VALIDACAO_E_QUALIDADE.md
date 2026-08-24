@@ -198,7 +198,7 @@ Campos senha/token devem iniciar desmarcados com alerta.
 
 Critério revisto em 2026-08-03: `Errors[]` foi retirado do SDT gerado, porque a geração nunca chegou a preenchê-lo e ele aparecia no contrato público como array sempre vazio. O critério vigente é `sdt_API_ErrorResponse` conter `Code` e `Message`. Ver a nota de revisão da seção 3 do documento 27 e `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md`.
 
-Complemento de 2026-08-23: o critério passa a depender do desfecho de `B102`, e o teste só pode ser escrito depois dele. Se o experimento do membro coleção `Messages` — tipado por `sdt_API_ErrorMessage`, mecanismo distinto da subestrutura recusada em 2026-08-03 — for aceito pela IDE, o critério passa a exigir `Code`, `Message` e `Messages[]` preenchido em recusa do Business Component; se for recusado, permanece `Code` e `Message`, com as mensagens concatenadas. Em ambos os casos `Message` é `LongVarChar` truncada pela geração, e um teste que fixe a forma antes do experimento reprovaria a implementação correta.
+Complemento de 2026-08-24: o experimento da coleção foi aceito na IDE. O critério vigente passa a exigir `Code`, `Message` (`LongVarChar` 2097152, truncada pela geração em cerca de 2K) e `Messages[]` preenchido com as mensagens de **erro** do Business Component. O texto genérico permanece apenas quando o repasse está desligado ou não há erro do BC. Gate HTTP fechado na mesma data nos dois environments (`apiTeste`): acento, truncamento visível, `Msg()` (tipo 0) excluído, YAML sem `maxLength` e com `Messages` publicado.
 
 `sdt_API_Pagination` deve conter `Page`, `PageSize`, `TotalCount` e `TotalPages`.
 

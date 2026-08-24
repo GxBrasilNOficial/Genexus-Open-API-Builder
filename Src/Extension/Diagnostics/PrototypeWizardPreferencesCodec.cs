@@ -33,6 +33,8 @@ public sealed class PrototypeWizardPreferenceValues
     public int DefaultPageSizeByDefault { get; set; } = PrototypeWizardPreferencesCodec.DefaultPageSizeFallback;
 
     public int MaximumPageSizeByDefault { get; set; } = PrototypeWizardPreferencesCodec.MaximumPageSizeFallback;
+
+    public bool IncludeBusinessComponentErrorMessagesByDefault { get; set; } = true;
 }
 
 public static class PrototypeWizardPreferencesCodec
@@ -87,6 +89,7 @@ public static class PrototypeWizardPreferencesCodec
             SecurityLevelByDefault = NormalizeSecurityLevel(ReadOptionalString(defaults, "securityLevel", SecurityLevelAuthentication)),
             DefaultPageSizeByDefault = ReadOptionalPositiveInt(defaults["pagination"] as JObject, "defaultPageSize", DefaultPageSizeFallback),
             MaximumPageSizeByDefault = ReadOptionalPositiveInt(defaults["pagination"] as JObject, "maximumPageSize", MaximumPageSizeFallback),
+            IncludeBusinessComponentErrorMessagesByDefault = ReadOptionalBool(defaults, "includeBusinessComponentErrorMessages", true),
         };
 
         Validate(preferences);
@@ -122,6 +125,7 @@ public static class PrototypeWizardPreferencesCodec
                     ["update"] = preferences.UpdateServiceByDefault,
                 },
                 ["securityLevel"] = NormalizeSecurityLevel(preferences.SecurityLevelByDefault),
+                ["includeBusinessComponentErrorMessages"] = preferences.IncludeBusinessComponentErrorMessagesByDefault,
                 ["pagination"] = new JObject
                 {
                     ["defaultPageSize"] = preferences.DefaultPageSizeByDefault,

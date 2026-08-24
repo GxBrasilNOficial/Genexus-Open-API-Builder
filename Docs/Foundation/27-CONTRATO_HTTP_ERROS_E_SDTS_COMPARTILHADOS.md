@@ -32,6 +32,7 @@ O MVP deve criar ou reencontrar os SDTs compartilhados no Root Module, dentro do
 
 O conjunto de SDTs compartilhados do MVP é fechado:
 
+- `sdt_API_ErrorMessage`
 - `sdt_API_ErrorResponse`
 - `sdt_API_Pagination`
 
@@ -95,18 +96,34 @@ Continuam válidas as regras de `Code` principal, de idioma de `Message` e de n�
 
 ## Nota de revisão — 2026-08-23 — `Message` do `422` (`B102`)
 
-A regra de idioma acima pressupõe que a `Message` carregue texto produzido pela aplicação. A geração entregue **não** cumpre isso: em recusa do Business Component ela emite o texto fixo `"Business rules rejected the request."` e descarta as mensagens do BC, de modo que uma rule `error` da KB nunca chega ao consumidor — que sabe apenas que foi recusado, sem saber por quê.
+A regra de idioma acima pressupõe que a `Message` carregue texto produzido pela aplicação. Até 2026-08-24 a geração **não** cumpria isso: em recusa do Business Component ela emitia o texto fixo `"Business rules rejected the request."` e descartava as mensagens do BC, de modo que uma rule `error` da KB nunca chegava ao consumidor — que sabia apenas que foi recusado, sem saber por quê. `B102` fechou esse gap.
 
 `B102` implementa o repasse, com salvaguardas: repasse apenas em falha de validação — nunca em erro de infraestrutura, onde o texto pode conter detalhe de banco —, somente mensagens de **erro** do Business Component, e opção para desligar quando a API for exposta publicamente. O `Code` permanece `validation_error`, e a regra de decidir por `Code`, nunca pelo texto, continua valendo.
 
 **Complemento de 2026-08-23 — tipo, limite e forma.** O membro `Message` passa de `VarChar(256)` para `LongVarChar`, com truncamento explícito pela geração em cerca de 2K e reticência final: tipo sem limite não é conteúdo sem limite, e o corte silencioso do `VarChar` era pior do que um truncamento visível. A opção de desligar fica **ligada por padrão**, com aviso quando `SecurityLevel = None`, com default por KB no File de preferências e escolha por API na metadata. A forma do corpo — uma `Message` concatenada ou um membro coleção `Messages` — depende do experimento descrito na nota seguinte.
+
+**Acréscimo — 2026-08-24.** O experimento da coleção foi aceito na IDE. O código de `B102` passou a gerar o repasse: `Message` top-level concatenada e membro coleção `Messages` tipado por `sdt_API_ErrorMessage`, preenchido a partir de `GetMessages()`. O ramo de concatenação como forma única não se aplica. Gate HTTP fechado na mesma data nos dois environments (`apiTeste`).
 
 **Gate humano — fechado em 2026-08-24.** Duas decisões de `B102` não se resolviam por leitura de código nem por teste offline. Foram observadas na IDE por sonda temporária, numa KB de teste. Evidência, método e resultado bruto em `Docs/Implementation/2026-08-24-B102-EXPERIMENTO-SDT-ERRO.md`. **Não repetir o experimento.**
 
 1. **Forma do corpo — coleção aceita.** A IDE aceitou o membro coleção `Messages` tipado pelo SDT **separado**, com `isCollection=true` e `collectionItemName` preservados após `Save` e releitura por GUID. O corpo de erro ganha `Messages`, tipado por `sdt_API_ErrorMessage`; o ramo de contingência da concatenação como forma única **não** se aplica. `Message` permanece top-level e preenchida, concatenada por `" | "`, para não quebrar consumidores da Alpha. A recusa de 2026-08-03 fica esclarecida: era a subestrutura aninhada, não o conceito de coleção.
 2. **Comprimento declarado do `LongVarChar` — o SDK não determina.** Os valores `0`, `2048`, `1048576` e `2097152` foram todos aceitos e devolvidos **sem normalização**, com `typeObserved=LONGVARCHAR` em todos. Não há valor imposto pela plataforma, e a escolha é decisão de design. **Fica decidido `Length = 2097152`**, por alinhamento ao tamanho convencional de `LongVarChar` no GeneXus, para `sdt_API_ErrorResponse.Message` e para o membro de texto de `sdt_API_ErrorMessage`.
 
-Não confundir os dois limites. O truncamento em cerca de 2K acontece no **código GeneXus gerado** (`SubStr`); o `Length` é **declaração ao SDK** na criação do SDT. São independentes. Se o comprimento declarado vira `maxLength` no contrato OpenAPI publicado, e com que valor, **não** foi verificado pela sonda — segue premissa, a conferir no gate HTTP do `B102`.
+Não confundir os dois limites. O truncamento em cerca de 2K acontece no **código GeneXus gerado** (`SubStr`); o `Length` é **declaração ao SDK** na criação do SDT. São independentes. O YAML publicado de `apiTeste` (os dois environments, 2026-08-24) **não** emite `maxLength` em nenhum membro — zero ocorrências no arquivo inteiro. `Message` e o texto de `sdt_API_ErrorMessage` saem como `type: string`. A decisão `Length = 2097152` permanece como declaração ao SDK e é inconsequente para o contrato OpenAPI publicado pelo gerador nativo.
+
+**Gate HTTP — fechado em 2026-08-24.** KB `wsEducacaoSpTeste`, Transaction `Teste`, `apiTeste`, environments `.NET`/PostgreSQL e `.NET Framework`/SQL Server.
+
+| Caso | Evidência |
+|---|---|
+| Ligado, 422 com texto da rule | os dois environments |
+| Acento UTF-8 | os dois |
+| Truncamento em 2048 + `...` | os dois |
+| `Messages[]` preenchido, `business_rule` | os dois; schema publicado com `type: array` e `$ref` para `sdt_API_ErrorMessage` |
+| Desligado → texto genérico | os dois, e o fonte gerado sem `GetMessages()` |
+| Warning excluído | os dois, com o aviso comprovadamente emitido |
+| Reencontro de API Alpha | cobertura parcial: Wizard na `NotaFiscal`/`apiFiscalPublica` em estado de reencontro, cancelado sem escrita; catálogo mecânico de variantes Alpha; regravação `Updated=14`, `Blocked=0` na `Teste` |
+
+**Tipos de mensagem — só o que está provado.** A Procedure gerada compara `gxTpr_Type == 1` a partir de `MessageTypes.Error`. No `Teste_BC`, `Error()` entra como tipo 1 e `Msg()` como tipo 0. Não afirmar `Warning = 2`: essa equivalência não foi medida nesta frente. A leitura do objeto de exemplo do GAM distribuído pelo GeneXus (`MessageTypes.Error = 1`) foi evidência independente na revisão por pares, não repetida nesta sessão.
 
 **Nota de coerência.** O Wizard classifica `LongVarChar` como tipo tecnicamente inadequado para **atributos da Transaction** entrando no payload. `Message` é membro fixo do contrato de erro, gerado pela extensão, e a regra não se aplica a ele.
 

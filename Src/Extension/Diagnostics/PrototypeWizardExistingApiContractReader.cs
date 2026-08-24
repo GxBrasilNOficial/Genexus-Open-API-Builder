@@ -88,6 +88,7 @@ internal static class PrototypeWizardExistingApiContractReader
         var securityLevel = ReadString(metadata.Document, "security.level") ?? source.SecurityLevel;
         var defaultPageSize = ReadInt(metadata.Document, "pagination.defaultPageSize");
         var maximumPageSize = ReadInt(metadata.Document, "pagination.maximumPageSize");
+        var includeBusinessComponentErrorMessages = ReadOptionalBool(metadata.Document, "errorDetail.includeBusinessComponentMessages") ?? true;
         var staticOrder = ReadStaticOrder(metadata.Document);
         var requiredFields = ReadRequiredFields(metadata.Document);
         IReadOnlyDictionary<string, string> serviceDescriptions = metadata.ServiceDescriptions.IsAvailable
@@ -116,7 +117,8 @@ internal static class PrototypeWizardExistingApiContractReader
             maximumPageSize,
             staticOrder,
             serviceDescriptions,
-            source.DuplicateServiceNames);
+            source.DuplicateServiceNames,
+            includeBusinessComponentErrorMessages);
     }
 
     private static API? ResolveApiObject(
@@ -545,6 +547,12 @@ internal static class PrototypeWizardExistingApiContractReader
         return value?.Type == JTokenType.Integer ? value.Value<int>() : null;
     }
 
+    private static bool? ReadOptionalBool(JObject? document, string path)
+    {
+        var value = document?.SelectToken(path);
+        return value?.Type == JTokenType.Boolean ? value.Value<bool>() : null;
+    }
+
     private sealed class ExistingApiSource
     {
         public static ExistingApiSource Empty { get; } = new(
@@ -681,7 +689,8 @@ internal sealed class PrototypeWizardExistingApiContract
         int? maximumPageSize,
         IReadOnlyList<PrototypeWizardExistingStaticOrder> staticOrder,
         IReadOnlyDictionary<string, string> serviceDescriptions,
-        IReadOnlyList<string> duplicateServiceNames)
+        IReadOnlyList<string> duplicateServiceNames,
+        bool includeBusinessComponentErrorMessages = true)
     {
         HasExistingApi = hasExistingApi;
         // A primeira declaração de cada nome vence: contrato de origem malformado não pode
@@ -715,6 +724,7 @@ internal sealed class PrototypeWizardExistingApiContract
         MaximumPageSize = maximumPageSize;
         StaticOrder = staticOrder;
         ServiceDescriptions = serviceDescriptions;
+        IncludeBusinessComponentErrorMessages = includeBusinessComponentErrorMessages;
     }
 
     public bool HasExistingApi { get; }
@@ -730,6 +740,7 @@ internal sealed class PrototypeWizardExistingApiContract
     public IReadOnlyList<PrototypeWizardExistingStaticOrder> StaticOrder { get; }
     public IReadOnlyDictionary<string, string> ServiceDescriptions { get; }
     public IReadOnlyList<string> DuplicateServiceNames { get; }
+    public bool IncludeBusinessComponentErrorMessages { get; }
 
     public bool TryGetServiceSelection(string name, out bool selected)
     {

@@ -19,6 +19,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
     private readonly CheckBox _createServiceCheck = CreateCheckBox("Create");
     private readonly CheckBox _updateServiceCheck = CreateCheckBox("Update");
     private readonly ComboBox _securityLevelCombo = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 180 };
+    private readonly CheckBox _includeBcErrorMessagesCheck = CreateCheckBox(string.Empty);
     private readonly NumericUpDown _defaultPageSizeInput = CreateNumericInput();
     private readonly NumericUpDown _maximumPageSizeInput = CreateNumericInput();
 
@@ -151,13 +152,15 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             Dock = DockStyle.Top,
             AutoSize = true,
             ColumnCount = 2,
-            RowCount = 3,
+            RowCount = 4,
         };
         execution.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 260));
         execution.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         AddField(execution, 0, _texts.Translate("Security Level"), _securityLevelCombo);
-        AddField(execution, 1, _texts.Translate("Default Page Size"), _defaultPageSizeInput);
-        AddField(execution, 2, _texts.Translate("Maximum Page Size"), _maximumPageSizeInput);
+        execution.Controls.Add(_includeBcErrorMessagesCheck, 0, 1);
+        execution.SetColumnSpan(_includeBcErrorMessagesCheck, 2);
+        AddField(execution, 2, _texts.Translate("Default Page Size"), _defaultPageSizeInput);
+        AddField(execution, 3, _texts.Translate("Maximum Page Size"), _maximumPageSizeInput);
         executionGroup.Controls.Add(execution);
         root.Controls.Add(executionGroup, 0, 4);
 
@@ -206,6 +209,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         _createServiceCheck.Checked = preferences.CreateServiceByDefault;
         _updateServiceCheck.Checked = preferences.UpdateServiceByDefault;
         _securityLevelCombo.SelectedItem = PrototypeWizardPreferences.NormalizeSecurityLevel(preferences.SecurityLevelByDefault);
+        _includeBcErrorMessagesCheck.Checked = preferences.IncludeBusinessComponentErrorMessagesByDefault;
         _defaultPageSizeInput.Value = Math.Max(_defaultPageSizeInput.Minimum, Math.Min(_defaultPageSizeInput.Maximum, preferences.DefaultPageSizeByDefault));
         _maximumPageSizeInput.Value = Math.Max(_maximumPageSizeInput.Minimum, Math.Min(_maximumPageSizeInput.Maximum, preferences.MaximumPageSizeByDefault));
     }
@@ -237,6 +241,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             CreateServiceByDefault = _createServiceCheck.Checked,
             UpdateServiceByDefault = _updateServiceCheck.Checked,
             SecurityLevelByDefault = PrototypeWizardPreferences.NormalizeSecurityLevel(_securityLevelCombo.SelectedItem as string),
+            IncludeBusinessComponentErrorMessagesByDefault = _includeBcErrorMessagesCheck.Checked,
             DefaultPageSizeByDefault = (int)_defaultPageSizeInput.Value,
             MaximumPageSizeByDefault = (int)_maximumPageSizeInput.Value,
         };
@@ -260,6 +265,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         _generateMetadataCheck.Text = _texts.Translate("Marcar metadata da API por padrao");
         _applyListCheck.Text = _texts.Translate("Marcar listagem por padrao");
         _applyBusinessComponentCheck.Text = _texts.Translate("Marcar Get/Create/Update REST por padrao");
+        _includeBcErrorMessagesCheck.Text = _texts.Translate("Incluir mensagens de erro do Business Component no corpo HTTP 422");
     }
 
     private static CheckBox CreateCheckBox(string text)

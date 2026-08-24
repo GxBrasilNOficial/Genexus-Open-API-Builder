@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-08-23.
+2026-08-24.
 
 ## Último marco concluído
 
@@ -107,28 +107,25 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Em 2026-08-16 a localização residual em inglês (KB italiana com fallback `English`) e o reencontro do API Object após falso positivo do fingerprint B060 foram validados no U15 em `NotaFiscal`: `Updated=13`, `Blocked=0`, metadata `Reencountered`. Evidência: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §6.
 - Em 2026-08-16 o wizard único passou a ocultar Voltar na primeira aba; o aborto B034 foi validado em inglês, espanhol e português; o apply em pt-BR reencontrou `apiNotaFiscal` (`Updated=13`, `Blocked=0`) e o `Build All` passou nos environments `.NET`/PostgreSQL e `.NET Framework`/SQL Server, sem `spc0018` nas Procedures da API. Evidência: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §7.
 - Em 2026-08-16 leftovers de localização (confirmação B035, fallback `<não definido>`, MessageBoxes do relatório final) passaram pelo catálogo; o relatório B081 usa a janela owner da IDE para o monitor, sem a posição do cursor. Cobertura mecânica apenas. Validação U15 em multi-monitor e B035 em es/en ainda pendente. Evidência: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §8.
+- `B102` concluído em 2026-08-24 na KB `wsEducacaoSpTeste` / Transaction `Teste` (`apiTeste`): Create/Update com a opção ligada devolvem o texto da rule `Error()` em `ErrorResponse.Message` e em `Messages[]` (`business_rule`) nos environments `.NET`/PostgreSQL e `.NET Framework`/SQL Server; acento UTF-8 e truncamento visível em 2048 + `...`; opção desligada volta ao texto genérico sem `GetMessages()`; `Msg()` no mesmo `B102ERR` é emitido pelo BC (tipo 0) e fica fora do 422 (filtro `Type == 1`). YAML publicado de `apiTeste` declara `Messages` como `type: array` com `$ref` para `sdt_API_ErrorMessage` e **não** emite `maxLength` para o `LongVarChar`. Reencontro de API Alpha: cobertura parcial (Wizard na `NotaFiscal`/`apiFiscalPublica` em estado de reencontro, cancelado sem escrita; catálogo mecânico de variantes; regravação `Updated=14`, `Blocked=0` na `Teste`). Evidência: documentos 27 e `Docs/Implementation/2026-08-24-B102-EXPERIMENTO-SDT-ERRO.md`.
 
 ## Frente atual
 
 Sprint 9 — Suporte a Transactions com Subníveis (Multinível — B095–B099), precedida por `B102` e seguida por `B100`. Levantamento de profundidade na KB de produção (`Gx_FabricaBrasil`), especificações funcionais e plano por fases consolidados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, na `Emenda técnica — 2026-08-20`, na `Emenda técnica — 2026-08-23` e na `Emenda técnica — 2026-08-23 (complemento)` do registro de decisões do MVP.
 
-Ordem de execução vigente na sprint: `B102` → Fase 0 (linha de base de não regressão) → Fases 1 a 6 (`B095`–`B099`) → Fase 7 (ciclo de vida sob hierarquia) → `B100` (serviço `Delete`). Publicação em três cortes: `0.1.0-alpha.4` após `B102`, `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis, e `0.1.0-alpha.6` com o `Delete`, cada um com os dois assets DLL. `B105` entra na sprint apenas se houver folga.
+Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (linha de base de não regressão) → Fases 1 a 6 (`B095`–`B099`) → Fase 7 (ciclo de vida sob hierarquia) → `B100` (serviço `Delete`). Publicação em três cortes: `0.1.0-alpha.4` após `B102`, `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis, e `0.1.0-alpha.6` com o `Delete`, cada um com os dois assets DLL. `B105` entra na sprint apenas se houver folga.
 
 Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibilidade e de gate: mecanismo em duas camadas para a Fase 0, ampliação de `B102`, gates próprios para `B102` e `B100` com HTTP real nos dois environments, validação do contrato OpenAPI multinível ao fim da Fase 4, retorno da linha `Gx18u13` ao plano, fechamento da regra de propagação do marcador `<Subnível>Replace`, limiares de escala, `B105` e a divisão da publicação em três cortes.
 
 ## Próxima ação única
 
-Executar `B102`: repassar na `Message` do `422` o texto emitido pelo Business Component, hoje descartado em favor de texto fixo (`ApiPlanBusinessComponentWriter.CurrentBusinessRuleFailureMessages`), com o formato atual do bloco de erro acrescentado às variantes reconhecidas pelo writer, para que APIs geradas na Alpha continuem sendo reencontradas. O escopo fechado em 2026-08-23 inclui: `Message` em `LongVarChar` truncada pela geração em cerca de 2K; experimento na IDE de `Messages[]` como coleção tipada por `sdt_API_ErrorMessage`, com queda para concatenação por `" | "` se recusado; repasse restrito a mensagens de erro; e a opção de desligar ligada por padrão, com default por KB em `GxOpenApiBuilder_Settings` e escolha por API persistida na metadata.
-
-`B102` precede a Fase 0 porque altera o código gerado para todas as transações, planas inclusive; executado depois, obrigaria a recapturar a linha de base no meio da sprint. Somente após `B102` e a captura da Fase 0 tem início a Fase 1 (B095): leitura hierárquica recursiva de `transaction.Structure.Root.Levels` no SDK GeneXus, evolução do modelo de domínio (`ApiPlanLevel`) em `PrototypeWizardContract.cs`, `PrototypePrimaryKeyReader.cs`, `Src/Domain/ApiPlan.cs` e testes unitários offline em `Tests/TransactionStructure/`. Evidência da frente: `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
+Capturar a linha de base da Fase 0 (não regressão de transações planas) em duas camadas: arquivos de referência offline de Source, Service Source e plano de SDT ligados ao checker mecânico (`Tests/GenerationBaseline/`), e export XPZ dos SDTs na IDE. Recaptura só em commit isolado. Somente depois começa a Fase 1 (`B095`): leitura hierárquica recursiva de `transaction.Structure.Root.Levels` no SDK GeneXus, evolução do modelo de domínio (`ApiPlanLevel`) e testes unitários offline em `Tests/TransactionStructure/`. Evidência da frente: `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 
 ## Evidência da frente encerrada
 
-- Localização trilíngue (pt-BR, es, en), restauração de filtros de API existente, diagnóstico B087 na Output e contrato de erro de `List` com `ErrorResponse`/`RestStatusCode`, registrados em `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md`.
-- Teste manual residual em espanhol e inglês (fallback `English` com KB italiana) na Transaction `NotaFiscal`; falso positivo do fingerprint B060 corrigido com `DateParseHandling.None`; reencontro `Updated=13`, `Blocked=0`, metadata `Reencountered`.
-- Primeira aba do wizard único sem Voltar; aborto B034 validado em inglês, espanhol e português; `Build All` pós-reencontro de `apiNotaFiscal` nos environments `.NET`/PostgreSQL e `.NET Framework`/SQL Server, sem `spc0018`.
-- Leftovers B035/`<não definido>`/MessageBoxes do relatório e owner/monitor do B081 registrados no catálogo e no código; cobertura mecânica apenas. Multi-monitor e B035 em es/en continuam em `Bloqueios e fatos ainda não validados`.
-- Gate Sprint 8 (U14) e Fase 2 U13 permanecem evidência histórica nas seções seguintes e na sequência operacional; não são a frente que esta promoção encerra.
+- `B102` validado por HTTP real nos dois environments da KB `wsEducacaoSpTeste` (`apiTeste`): 422 com texto da rule, acento, truncamento 2048 + `...`, `Messages[]` com `business_rule`; opção desligada com texto genérico; warning `Msg()` comprovadamente emitido pelo BC e ausente do corpo. YAML de `apiTeste` com `Messages` array e sem `maxLength`.
+- Reencontro Alpha registrado como cobertura parcial: Wizard na Transaction `NotaFiscal` (`apiFiscalPublica`) em `teste de reencontro`, cancelado sem escrita; catálogo mecânico de variantes Alpha; regravação na `Teste` com `Updated=14`, `Blocked=0`.
+- Localização trilíngue, fingerprint B060, aborto na primeira aba e `Build All` pós-reencontro de `apiNotaFiscal` permanecem evidência histórica nas seções seguintes; não são a frente que esta promoção encerra.
 
 ## Evidência da frente U13 iniciada
 
@@ -148,7 +145,7 @@ Executar `B102`: repassar na `Message` do `422` o texto emitido pelo Business Co
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única é executar `B102` (repasse da mensagem do Business Component), que precede a Fase 0 e a Fase 1 (B095) da frente de subníveis na Sprint 9; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é capturar a Fase 0; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
@@ -210,6 +207,7 @@ Executar `B102`: repassar na `Message` do `422` o texto emitido pelo Business Co
 55. Em 2026-08-16 a primeira aba do wizard único deixou de exibir Voltar; Cancelar/fechar foi validado em inglês, espanhol e português; o apply em pt-BR reencontrou `apiNotaFiscal` (`Updated=13`, `Blocked=0`, Guid `ee78dcc0-…`); o `Build All` passou em `NETPostgreSQL155` e `NETFrameworkSQLServer004`, gerando Procedures/API/SDTs e a permissão GAM `apiNotaFiscal-ee78dcc0-…`, sem `spc0018`. Próxima ação = Sprint 9. Detalhe: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §7.
 56. Em 2026-08-16 leftovers B035/`<não definido>`/MessageBoxes do relatório e o owner/monitor do B081 foram registrados no catálogo e no código (`ResolveFinalReportOwner`, sem `OpenForms`). Testes mecânicos passaram; não há evidência U15 de multi-monitor nem de B035 em es/en. Próxima ação = Sprint 9. Detalhe: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §8.
 57. Em 2026-08-16 a revisão pré-push alinhou o checkpoint (`Evidência da frente encerrada`, `Critério de conclusão da revisão pré-push`, `Marcos ainda não iniciados`) e os documentos 06 e 24 à promoção já vigente: localização residual, fingerprint B060, aborto na primeira aba e `Build All` pós-reencontro encerrados; próxima ação única = Sprint 9.
+58. Em 2026-08-24 o gate HTTP de `B102` fechou nos dois environments da KB `wsEducacaoSpTeste` (`apiTeste`): 422 com texto da rule, acento UTF-8, truncamento 2048 + `...`, `Messages[]` com `business_rule`; opção desligada com texto genérico e fonte sem `GetMessages()`; `Msg()` emitido pelo BC (tipo 0) e excluído do corpo (filtro `Type == 1` a partir de `MessageTypes.Error`). YAML de `apiTeste` declara `Messages` como array com `$ref` para `sdt_API_ErrorMessage` e zero ocorrências de `maxLength`. Reencontro Alpha: cobertura parcial. Próxima ação única = Fase 0. Evidência: documento 27 e `Docs/Implementation/2026-08-24-B102-EXPERIMENTO-SDT-ERRO.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -235,6 +233,8 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [2026-08-12 — Evidência usuário externo U14 / gate Sprint 8](Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md)
 - [2026-08-12 — Evidência usuário externo U15 / reforço Alpha](Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md)
 - [2026-08-15 — Localização trilíngue e filtros existentes](Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md)
+- [2026-08-20 — Suporte a Transactions com subníveis](Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md)
+- [2026-08-24 — B102 experimento SDT de erro e gate HTTP](Implementation/2026-08-24-B102-EXPERIMENTO-SDT-ERRO.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
 - [Release 0.1.0-alpha.1](Releases/0.1.0-alpha.1.md)

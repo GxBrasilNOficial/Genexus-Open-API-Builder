@@ -33,6 +33,8 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly RadioButton _securityAuthenticationRadio = new() { AutoSize = true, Text = "Authentication", Checked = true, Margin = new Padding(0, 2, 18, 2) };
     private readonly RadioButton _securityAuthorizationRadio = new() { AutoSize = true, Text = "Authorization", Margin = new Padding(0, 2, 18, 2) };
     private readonly RadioButton _securityNoneRadio = new() { AutoSize = true, Text = "None", Margin = new Padding(0, 2, 18, 2) };
+    private readonly CheckBox _includeBcErrorMessagesCheck = new() { AutoSize = true, Checked = true, Margin = new Padding(0, 8, 0, 2) };
+    private readonly Label _bcErrorMessagesWarningLabel = new() { AutoSize = true, ForeColor = Color.DarkGoldenrod, MaximumSize = new Size(780, 0), Margin = new Padding(0, 4, 0, 0) };
     private readonly NumericUpDown _defaultPageSize = CreateNumericInput();
     private readonly NumericUpDown _maximumPageSize = CreateNumericInput();
     private readonly ListBox _staticOrderList = new() { Dock = DockStyle.Fill, HorizontalScrollbar = true, IntegralHeight = false };
@@ -104,6 +106,7 @@ internal sealed class PrototypeWizardDialog : Form
         LoadSnapshot();
         WireGenerationConfirmation();
         WireServiceSelectionRefresh();
+        WireBusinessComponentErrorMessageWarning();
         ApplyWizardPreferences();
     }
 
@@ -116,6 +119,8 @@ internal sealed class PrototypeWizardDialog : Form
         _securityAuthenticationRadio.Text = _texts.Translate("Authentication");
         _securityAuthorizationRadio.Text = _texts.Translate("Authorization");
         _securityNoneRadio.Text = _texts.Translate("None");
+        _includeBcErrorMessagesCheck.Text = _texts.Translate("Incluir mensagens de erro do Business Component no corpo HTTP 422");
+        _bcErrorMessagesWarningLabel.Text = _texts.Translate("Com Security Level = None a API e publica: as mensagens de regra de negocio da KB ficam visiveis no JSON de erro.");
         _enableBusinessComponentCheck.Text = _texts.Translate("Habilitar Business Component agora");
         _generateSdtsCheck.Text = _texts.Translate("Confirmar: Criar ou validar estruturas de dados ao concluir");
         _generateProceduresCheck.Text = _texts.Translate("Confirmar: Criar ou validar Procedures ao concluir");
@@ -426,9 +431,11 @@ internal sealed class PrototypeWizardDialog : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 3,
+            RowCount = 5,
             Padding = new Padding(8),
         };
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -451,6 +458,8 @@ internal sealed class PrototypeWizardDialog : Form
             44,
             12,
             0), 0, 2);
+        panel.Controls.Add(_includeBcErrorMessagesCheck, 0, 3);
+        panel.Controls.Add(_bcErrorMessagesWarningLabel, 0, 4);
         tab.Controls.Add(panel);
         return tab;
     }
@@ -736,6 +745,8 @@ internal sealed class PrototypeWizardDialog : Form
             ApplySecurityPreference(existingApi.SecurityLevel ?? "Authentication");
         }
 
+        _includeBcErrorMessagesCheck.Checked = existingApi.IncludeBusinessComponentErrorMessages;
+
         foreach (var item in GetStaticOrder())
         {
             _staticOrderList.Items.Add($"{item.Order}. {item.AttributeName} {item.Direction}");
@@ -795,16 +806,17 @@ internal sealed class PrototypeWizardDialog : Form
         _suppressGenerationPreviewRefresh = true;
         try
         {
-            if (!_snapshot.ExistingApiContract.HasExistingApi)
-            {
-                ApplyServicePreference("List", _preferences.ListServiceByDefault);
-                ApplyServicePreference("Get", _preferences.GetServiceByDefault);
-                ApplyServicePreference("Create", _preferences.CreateServiceByDefault);
-                ApplyServicePreference("Update", _preferences.UpdateServiceByDefault);
-                ApplySecurityPreference(_preferences.SecurityLevelByDefault);
-                _defaultPageSize.Value = ClampNumeric(_defaultPageSize, _preferences.DefaultPageSizeByDefault);
-                _maximumPageSize.Value = ClampNumeric(_maximumPageSize, _preferences.MaximumPageSizeByDefault);
-            }
+        if (!_snapshot.ExistingApiContract.HasExistingApi)
+        {
+            ApplyServicePreference("List", _preferences.ListServiceByDefault);
+            ApplyServicePreference("Get", _preferences.GetServiceByDefault);
+            ApplyServicePreference("Create", _preferences.CreateServiceByDefault);
+            ApplyServicePreference("Update", _preferences.UpdateServiceByDefault);
+            ApplySecurityPreference(_preferences.SecurityLevelByDefault);
+            _defaultPageSize.Value = ClampNumeric(_defaultPageSize, _preferences.DefaultPageSizeByDefault);
+            _maximumPageSize.Value = ClampNumeric(_maximumPageSize, _preferences.MaximumPageSizeByDefault);
+            _includeBcErrorMessagesCheck.Checked = _preferences.IncludeBusinessComponentErrorMessagesByDefault;
+        }
             RefreshEndpointsText();
             RefreshRequiredText();
             ApplyPreference(_generateSdtsCheck, _preferences.GenerateSdtsByDefault);
@@ -841,6 +853,22 @@ internal sealed class PrototypeWizardDialog : Form
         _securityAuthorizationRadio.Checked = string.Equals(normalized, PrototypeWizardPreferences.SecurityLevelAuthorization, StringComparison.Ordinal);
         _securityNoneRadio.Checked = string.Equals(normalized, PrototypeWizardPreferences.SecurityLevelNone, StringComparison.Ordinal);
         _securityAuthenticationRadio.Checked = string.Equals(normalized, PrototypeWizardPreferences.SecurityLevelAuthentication, StringComparison.Ordinal);
+        RefreshBusinessComponentErrorMessageWarning();
+    }
+
+    private void WireBusinessComponentErrorMessageWarning()
+    {
+        _includeBcErrorMessagesCheck.CheckedChanged += (_, _) => RefreshBusinessComponentErrorMessageWarning();
+        _securityAuthenticationRadio.CheckedChanged += (_, _) => RefreshBusinessComponentErrorMessageWarning();
+        _securityAuthorizationRadio.CheckedChanged += (_, _) => RefreshBusinessComponentErrorMessageWarning();
+        _securityNoneRadio.CheckedChanged += (_, _) => RefreshBusinessComponentErrorMessageWarning();
+        RefreshBusinessComponentErrorMessageWarning();
+    }
+
+    private void RefreshBusinessComponentErrorMessageWarning()
+    {
+        _bcErrorMessagesWarningLabel.Visible = _includeBcErrorMessagesCheck.Checked
+            && string.Equals(GetSelectedSecurityLevel(), PrototypeWizardPreferences.SecurityLevelNone, StringComparison.Ordinal);
     }
 
     private static decimal ClampNumeric(NumericUpDown input, int value)
@@ -1112,7 +1140,8 @@ internal sealed class PrototypeWizardDialog : Form
             GetSelectedSecurityLevel(),
             (int)_defaultPageSize.Value,
             (int)_maximumPageSize.Value,
-            GetStaticOrder());
+            GetStaticOrder(),
+            _includeBcErrorMessagesCheck.Checked);
         Selection = new PrototypeWizardFlowSelection(
             contractSelection,
             reviewSelection,
@@ -1152,6 +1181,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"Services base path: {review.ServicesBasePath}{Environment.NewLine}" +
             $"RestPath: {review.RestPath}{Environment.NewLine}" +
             $"{_texts.Translate("Security Level")}: {review.SecurityLevel}{Environment.NewLine}" +
+            $"{_texts.Translate("Incluir mensagens de erro do Business Component no corpo HTTP 422")}: {review.IncludeBusinessComponentErrorMessages}{Environment.NewLine}" +
             $"{_texts.Translate("Paginação")}: Default={review.DefaultPageSize}, Maximum={review.MaximumPageSize}{Environment.NewLine}" +
             $"{_texts.Translate("Ordenação")}: {string.Join(", ", review.StaticOrder.Select(item => item.AttributeName + " " + item.Direction))}{Environment.NewLine}" +
             $"{_texts.Translate("Campos bloqueados visíveis")}: CreateRequest={createBlocked}, UpdateRequest={updateBlocked}, ListFilters={filterBlocked}{Environment.NewLine}" +
@@ -1532,7 +1562,8 @@ internal sealed class PrototypeWizardDialog : Form
                 GetSelectedSecurityLevel(),
                 (int)_defaultPageSize.Value,
                 (int)_maximumPageSize.Value,
-                GetStaticOrder());
+                GetStaticOrder(),
+                _includeBcErrorMessagesCheck.Checked);
             var selection = new PrototypeWizardFlowSelection(
                 contract,
                 review,

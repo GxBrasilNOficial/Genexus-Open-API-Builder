@@ -35,6 +35,7 @@ Assert-True ($description::IsOwnedSdt($sdtLegacy, $sdtName)) 'SDT legado compat�
 Assert-False ($description::IsOwnedSdt('Genexus Open API Builder B041 - CreateRequest', $sdtName)) 'SDT com backlog divergente deve bloquear.'
 Assert-False ($description::IsOwnedSdt('Genexus Open API Builder B040-B046 SDT - B040 - UpdateRequest', $sdtName)) 'SDT com kind divergente deve bloquear.'
 Assert-True ($description::IsOwnedSdt('Genexus Open API Builder B040-B046 SDT - B045/B046 - SharedErrorResponse', 'sdt_API_ErrorResponse')) 'SDT compartilhado legado compatível deve ser próprio.'
+Assert-True ($description::IsOwnedSdt('Genexus Open API Builder B040-B046 SDT - B102 - SharedErrorMessage', 'sdt_API_ErrorMessage')) 'SDT compartilhado de item de erro do B102 deve ser próprio.'
 
 $metadataName = 'apiTeste_Metadata'
 $metadataLegacy = $description::CreateLegacyMetadataDescription('Teste', 'apiTeste')

@@ -73,6 +73,11 @@ public static class ApiPlanOwnedObjectDescription
 
     public static string CreateLegacySdtDescription(string sdtName)
     {
+        if (string.Equals(sdtName, "sdt_API_ErrorMessage", StringComparison.Ordinal))
+        {
+            return $"{LegacySdtPrefix} - B102 - SharedErrorMessage";
+        }
+
         if (string.Equals(sdtName, "sdt_API_ErrorResponse", StringComparison.Ordinal))
         {
             return $"{LegacySdtPrefix} - B045/B046 - SharedErrorResponse";

@@ -46,6 +46,7 @@ internal static class ApiPlanSdtGenerationPlanBuilder
 
         var sharedSdts = new[]
         {
+            CreateErrorMessageSdt(),
             CreateErrorResponseSdt(),
             CreatePaginationSdt(),
         };
@@ -138,6 +139,20 @@ internal static class ApiPlanSdtGenerationPlanBuilder
             });
     }
 
+    private static ApiPlanSdtDefinition CreateErrorMessageSdt()
+    {
+        return new ApiPlanSdtDefinition(
+            "sdt_API_ErrorMessage",
+            "B102",
+            "SharedErrorMessage",
+            ApiPlanSdtScope.RootModuleGxOpenApiFolder,
+            new[]
+            {
+                new ApiPlanSdtMember("Code", "VarChar", 64, 0, false, false, string.Empty, "SharedErrorMessage"),
+                new ApiPlanSdtMember("Message", "LongVarChar", 2097152, 0, false, false, string.Empty, "SharedErrorMessage"),
+            });
+    }
+
     private static ApiPlanSdtDefinition CreateErrorResponseSdt()
     {
         return new ApiPlanSdtDefinition(
@@ -148,7 +163,8 @@ internal static class ApiPlanSdtGenerationPlanBuilder
             new[]
             {
                 new ApiPlanSdtMember("Code", "VarChar", 64, 0, false, false, string.Empty, "SharedErrorResponse"),
-                new ApiPlanSdtMember("Message", "VarChar", 256, 0, false, false, string.Empty, "SharedErrorResponse"),
+                new ApiPlanSdtMember("Message", "LongVarChar", 2097152, 0, false, false, string.Empty, "SharedErrorResponse"),
+                new ApiPlanSdtMember("Messages", "sdt_API_ErrorMessage", 0, 0, false, true, "sdt_API_ErrorMessage", "SharedErrorResponse"),
             });
     }
 

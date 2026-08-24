@@ -69,6 +69,7 @@ Assert-True $defaults.UpdateServiceByDefault 'Serviço Update deve iniciar habil
 Assert-Equal 'Authentication' $defaults.SecurityLevelByDefault 'Segurança default deve ser Authentication.'
 Assert-Equal 50 $defaults.DefaultPageSizeByDefault 'Paginação default deve iniciar em 50.'
 Assert-Equal 200 $defaults.MaximumPageSizeByDefault 'Paginação máxima default deve iniciar em 200.'
+Assert-True $defaults.IncludeBusinessComponentErrorMessagesByDefault 'Default deve incluir mensagens de erro do Business Component.'
 
 $values = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferenceValues]::new()
 $values.GenerateSdtsByDefault = $true
@@ -101,6 +102,7 @@ Assert-False $parsed.UpdateServiceByDefault 'Serialização deve preservar servi
 Assert-Equal 'Authorization' $parsed.SecurityLevelByDefault 'SecurityLevel deve ser normalizado ao serializar/parsear.'
 Assert-Equal 40 $parsed.DefaultPageSizeByDefault 'Serialização deve preservar DefaultPageSize.'
 Assert-Equal 100 $parsed.MaximumPageSizeByDefault 'Serialização deve preservar MaximumPageSize.'
+Assert-True $parsed.IncludeBusinessComponentErrorMessagesByDefault 'Serialização deve preservar o default ligado do repasse de mensagens do BC.'
 
 $legacyJson = @'
 {
@@ -120,6 +122,7 @@ Assert-True $legacyParsed.ListServiceByDefault 'JSON sem bloco services deve apl
 Assert-Equal 'Authentication' $legacyParsed.SecurityLevelByDefault 'JSON sem securityLevel deve aplicar fallback Authentication.'
 Assert-Equal 50 $legacyParsed.DefaultPageSizeByDefault 'JSON sem pagination deve aplicar DefaultPageSize fallback.'
 Assert-Equal 200 $legacyParsed.MaximumPageSizeByDefault 'JSON sem pagination deve aplicar MaximumPageSize fallback.'
+Assert-True $legacyParsed.IncludeBusinessComponentErrorMessagesByDefault 'JSON sem includeBusinessComponentErrorMessages deve aplicar fallback ligado.'
 
 $invalidPagination = $json.Replace('"defaultPageSize": 40', '"defaultPageSize": 120')
 Assert-Throws { [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Parse($invalidPagination) | Out-Null } 'DefaultPageSize maior que MaximumPageSize deve ser rejeitado.'

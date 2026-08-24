@@ -8,7 +8,7 @@ Em 2026-08-23 a especificação passou por revisão dirigida e recebeu as decis�
 
 Ainda em 2026-08-23, uma segunda revisão — desta vez sobre o **plano de trabalho** da sprint, e não sobre o desenho — fechou quinze pontos de exequibilidade e de gate, consolidados na `Emenda técnica — 2026-08-23 (complemento)` do mesmo registro. Dela resultaram o mecanismo concreto da Fase 0, a ampliação de `B102`, dois gates novos na sprint, a validação do contrato OpenAPI multinível, o retorno da linha `Gx18u13` ao plano, o fechamento da decisão que estava pendente na Fase 3, limiares de escala, o item `B105` e a divisão da publicação em três cortes.
 
-Próximo passo: executar `B102` (repasse da mensagem do Business Component), que precede a captura da linha de base da Fase 0 justamente para que os arquivos de referência já nasçam com o contrato de erro definitivo.
+Próximo passo: capturar a linha de base da Fase 0 (arquivos de referência offline ligados ao checker e export XPZ dos SDTs na IDE). `B102` está concluído: gate HTTP nos dois environments, YAML de `apiTeste` sem `maxLength` e com `Messages[]` publicado. Reencontro de API Alpha: cobertura parcial.
 
 ---
 
@@ -122,12 +122,9 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 - Em caso de falha de validação pelo Business Component em qualquer nível (cabeçalho ou linhas filhas) durante o `Save()`:
   - O código HTTP retornado é `422 Unprocessable Content`;
   - `&ErrorResponse.Code` retorna `!"validation_error"`;
-  - `&ErrorResponse.Message` carrega o texto emitido pelo Business Component, conforme `B102`. Até a conclusão de `B102`, a geração emite o texto fixo `!"Business rules rejected the request."`, que é o comportamento vigente na Alpha;
-  - `Message` passa a ser `LongVarChar`, com truncamento explícito da geração em cerca de 2K e reticência final, em vez do corte silencioso que o `VarChar(256)` produzia.
-- **Forma do corpo de erro, decidida por experimento em `B102`.** A retirada de `Errors[]` pela `Emenda técnica — 2026-08-03` foi motivada por uma tentativa com **subestrutura aninhada** dentro do próprio SDT (`sdt_API_ErrorResponse.Error`), que a IDE recusou. Coleção tipada por um **SDT separado** é mecanismo distinto, o mesmo que já funciona em `ListResponse.Items` e que esta frente adota para subníveis, e nunca foi testado no corpo de erro. `B102` executa o experimento antes de escolher:
-  - se a IDE aceitar, `sdt_API_ErrorResponse` ganha o membro coleção `Messages`, tipado por `sdt_API_ErrorMessage`, preenchido a partir de `GetMessages()`;
-  - se recusar, as mensagens vão concatenadas em `Message`, separadas por `" | "`, e a evidência da recusa fica registrada;
-  - em ambos os casos `Message` permanece top-level e preenchido, para não quebrar consumidores da Alpha, e somente mensagens de **erro** são repassadas — warnings do Business Component não entram no corpo do `422`.
+  - `&ErrorResponse.Message` carrega o texto emitido pelo Business Component, conforme `B102`. A geração atual emite esse texto em `Message` (`LongVarChar`, truncada visivelmente em cerca de 2K) e em `Messages[]` tipado por `sdt_API_ErrorMessage`; o texto fixo da Alpha permanece apenas no reconhecimento de reencontro e quando o repasse está desligado;
+  - `Message` é `LongVarChar`, com truncamento explícito da geração em cerca de 2K e reticência final, em vez do corte silencioso que o `VarChar(256)` produzia.
+- **Forma do corpo de erro, fechada pelo experimento de `B102` em 2026-08-24.** A retirada de `Errors[]` pela `Emenda técnica — 2026-08-03` foi motivada por uma tentativa com **subestrutura aninhada** dentro do próprio SDT (`sdt_API_ErrorResponse.Error`), que a IDE recusou. Coleção tipada por um **SDT separado** é mecanismo distinto, o mesmo que já funciona em `ListResponse.Items`. A IDE aceitou esse mecanismo: `sdt_API_ErrorResponse` ganha o membro coleção `Messages`, tipado por `sdt_API_ErrorMessage`, preenchido a partir de `GetMessages()`. `Message` permanece top-level e preenchido, concatenado por `" | "`, para não quebrar consumidores da Alpha. Somente mensagens de **erro** são repassadas — `Msg()` do Business Component não entra no corpo do `422` (tipo 0 no `Teste_BC`; o Create filtra `Type == 1`). Gate HTTP fechado nos dois environments em 2026-08-24.
 - Não é emitido array paralelo **por linha**: nenhuma das duas formas correlaciona mensagem com índice de linha, e o corpo de erro continua sem estrutura espelhando a hierarquia.
 
 ### 7. Procedimento `List` (B098) — Resumo com Contadores
@@ -288,7 +285,7 @@ Estes itens nasceram da revisão de 2026-08-23. Não pertencem a B095–B099 e t
 
 | Item | Escopo | Posição |
 |---|---|---|
-| `B102` | Repasse do texto emitido pelo Business Component na `Message` do `422`, com `Message` em `LongVarChar`, experimento de `Messages[]` como coleção, filtro por mensagens de erro, preferência por KB e escolha por API | **Primeiro item da Sprint 9**, antes da Fase 0 |
+| `B102` | Repasse do texto emitido pelo Business Component na `Message` do `422`, com `Message` em `LongVarChar`, `Messages[]` como coleção tipada por `sdt_API_ErrorMessage`, filtro por mensagens de erro, preferência por KB e escolha por API | **Primeiro item da Sprint 9**; concluído em 2026-08-24 (gate HTTP nos dois environments), antes da Fase 0 |
 | `B100` | Serviço `Delete`, opt-in, com quatro camadas anti acidente | Após a Fase 7, com corte de release próprio |
 | `B105` | Escolha do chamador sobre o detalhe do corpo de erro, podendo apenas **restringir** o que o default da API permite, nunca ampliar | Fora de `B102`; nesta sprint se houver folga, senão Sprint 10 |
 | `B101` | Experimento de membro nullable para distinguir membro ausente de membro vazio | Candidato à Sprint 10, fora da Sprint 9 |

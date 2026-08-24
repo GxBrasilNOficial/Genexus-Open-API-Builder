@@ -57,6 +57,7 @@ internal static class PrototypeExistingObjectReader
         }
 
         results.Add(CreateResult("Folder", "GxOpenAPI", CountByName(Folder.GetAll(designModel), "GxOpenAPI")));
+        results.Add(CreateResult("SDT", "sdt_API_ErrorMessage", CountByName(SDT.GetAll(designModel), "sdt_API_ErrorMessage")));
         results.Add(CreateResult("SDT", "sdt_API_ErrorResponse", CountByName(SDT.GetAll(designModel), "sdt_API_ErrorResponse")));
         results.Add(CreateResult("SDT", "sdt_API_Pagination", CountByName(SDT.GetAll(designModel), "sdt_API_Pagination")));
 

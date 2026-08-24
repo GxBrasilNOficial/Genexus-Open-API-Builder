@@ -276,6 +276,18 @@ if ($metadataWriterSource.IndexOf('CreatePlannedContract(apiPlan, useLegacyPathP
 if ($metadataWriterSource.IndexOf('storedContractWithoutPagination.Remove("pagination")', [StringComparison]::Ordinal) -lt 0) {
     throw 'ASSERT_FAILED: O reencounter deve comparar metadata legada sem considerar a paginação.'
 }
+$plannedContractStart = $metadataWriterSource.IndexOf('private static JObject CreatePlannedContract(', [StringComparison]::Ordinal)
+$nextMethodStart = $metadataWriterSource.IndexOf('private static JObject CreateClassificationObject(', [StringComparison]::Ordinal)
+if ($plannedContractStart -lt 0 -or $nextMethodStart -lt 0 -or $nextMethodStart -le $plannedContractStart) {
+    throw 'ASSERT_FAILED: Nao foi possivel isolar CreatePlannedContract.'
+}
+$plannedContractSource = $metadataWriterSource.Substring($plannedContractStart, $nextMethodStart - $plannedContractStart)
+if ($plannedContractSource.IndexOf('includeBusinessComponentMessages', [StringComparison]::Ordinal) -ge 0) {
+    throw 'ASSERT_FAILED: O hash B067 nao deve incluir includeBusinessComponentMessages no contrato planejado.'
+}
+if ($metadataWriterSource.IndexOf('["errorDetail"]', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: A metadata deve persistir errorDetail fora do hash B067.'
+}
 if ($metadataWriterSource.IndexOf('HasCompatibleGeneratedBaseline', [StringComparison]::Ordinal) -lt 0) {
     throw 'ASSERT_FAILED: O writer deve possuir uma validacao de baseline independente do plano desejado.'
 }

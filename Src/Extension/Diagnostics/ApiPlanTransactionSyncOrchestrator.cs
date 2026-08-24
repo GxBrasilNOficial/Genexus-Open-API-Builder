@@ -80,6 +80,7 @@ internal static class ApiPlanTransactionSyncOrchestrator
         var securityLevel = RequireString(metadata.SelectToken("security.level"), "security.level");
         var defaultPageSize = metadata.SelectToken("pagination.defaultPageSize")?.Value<int>() ?? 50;
         var maximumPageSize = metadata.SelectToken("pagination.maximumPageSize")?.Value<int>() ?? 200;
+        var includeBusinessComponentErrorMessages = metadata.SelectToken("errorDetail.includeBusinessComponentMessages")?.Value<bool>() ?? true;
         var staticOrder = ((JArray?)metadata["order"] ?? new JArray())
             .Select(token =>
             {
@@ -152,7 +153,8 @@ internal static class ApiPlanTransactionSyncOrchestrator
                 securityLevel,
                 defaultPageSize,
                 maximumPageSize,
-                staticOrder),
+                staticOrder,
+                includeBusinessComponentErrorMessages),
             requiredFields,
             new PrototypeWizardBusinessComponentSelection(preview.TransactionName, isBc, false, bcStatus),
             generateSdts: true,

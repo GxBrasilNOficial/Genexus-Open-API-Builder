@@ -78,8 +78,10 @@ Assert-Contains $source 'FieldLimitValidation("&CreateRequest", plan.CreateReque
 Assert-Contains $source 'FieldLimitValidation("&UpdateRequest", plan.UpdateRequestFields, 0)' 'Update deve validar os limites dos atributos antes do Save.'
 Assert-Contains $source 'NumericMaximumLiteral(field.Length, field.Decimals)' 'A validacao numerica deve derivar o maior valor a partir de Length e Decimals.'
 Assert-Contains $source 'Len({member}) > {field.Length}' 'A validacao textual deve derivar o maior comprimento a partir de Length.'
-Assert-Contains $source 'CreateContentWithoutFieldLimitValidation(plan)' 'Procedures Create antigas sem validacao de limite devem ser reconhecidas como migraveis.'
-Assert-Contains $source 'UpdateContentWithoutFieldLimitValidation(plan)' 'Procedures Update antigas sem validacao de limite devem ser reconhecidas como migraveis.'
+Assert-Contains $source 'CreateContent(plan, includeFieldLimitValidation: false, includeMessageForwarding: true)' 'Procedures Create antigas sem validacao de limite, com ou sem repasse, devem ser reconhecidas como migraveis.'
+Assert-Contains $source 'CreateContent(plan, includeFieldLimitValidation: false, includeMessageForwarding: false)' 'Procedures Create Alpha sem validacao de limite devem ser reconhecidas como migraveis.'
+Assert-Contains $source 'UpdateContent(plan, includeFieldLimitValidation: false, includeMessageForwarding: true)' 'Procedures Update antigas sem validacao de limite, com ou sem repasse, devem ser reconhecidas como migraveis.'
+Assert-Contains $source 'UpdateContent(plan, includeFieldLimitValidation: false, includeMessageForwarding: false)' 'Procedures Update Alpha sem validacao de limite devem ser reconhecidas como migraveis.'
 Assert-Contains $source 'If {requestVariable}.{field.Name} = {emptyVariable}.{field.Name}' 'Validacao atual deve comparar cada obrigatorio contra instancia vazia do proprio SDT de request, sem ramificar por tipo.'
 Assert-Contains $source 'new VariableSpec(EmptyRequestVariableName(requestName), RequestSdtName(plan, requestName))' 'Procedures com obrigatorios devem declarar a instancia vazia do SDT de request usada na comparacao.'
 Assert-Contains $source 'absentInPreviousVariants' 'Preflight nao pode exigir a instancia vazia do SDT em Procedures geradas antes desta validacao.'
@@ -106,15 +108,28 @@ Assert-NotContains $currentPresenceSource 'csharp ' 'Procedure gerada atualmente
 Assert-NotContains $currentPresenceSource '.IsDirty(' 'Procedure gerada atualmente nao deve chamar IsDirty: o metodo nao existe no Source GeneXus.'
 Assert-NotContains $currentPresenceSource '&HttpRequest.ToString()' 'Procedure gerada atualmente nao deve tentar ler o corpo bruto: ele ja foi consumido pelo pipeline REST.'
 
-$currentFailureStart = $source.IndexOf('private static IEnumerable<string> CurrentBusinessRuleFailureMessages', [StringComparison]::Ordinal)
+Assert-Contains $source 'new VariableSpec("ErrorItem", "sdt_API_ErrorMessage")' 'Create/Update com repasse devem declarar ErrorItem tipado pelo SDT separado.'
+Assert-Contains $source 'new VariableSpec("ConcatenatedMessage", "LongVarChar")' 'Create/Update com repasse devem concatenar mensagens em LongVarChar.'
+Assert-Contains $source 'includeMessageForwarding: true' 'Reconhecimento de Create/Update deve aceitar o bloco com repasse de mensagens.'
+Assert-Contains $source 'includeMessageForwarding: false' 'Reconhecimento de Create/Update deve aceitar o bloco Alpha sem repasse.'
+
+$currentFailureStart = $source.IndexOf('private static IEnumerable<string> CurrentBusinessRuleFailureMessagesWithForwarding', [StringComparison]::Ordinal)
+$previousAlphaStart = $source.IndexOf('private static IEnumerable<string> PreviousAlphaBusinessRuleFailureMessages', [StringComparison]::Ordinal)
 $previousFailureStart = $source.IndexOf('private static IEnumerable<string> BusinessRuleFailureMessages', [StringComparison]::Ordinal)
-if ($currentFailureStart -lt 0 -or $previousFailureStart -lt 0 -or $previousFailureStart -le $currentFailureStart) {
-    throw 'ASSERT_SECTION_FAILED: nao foi possivel isolar CurrentBusinessRuleFailureMessages atual.'
+if ($currentFailureStart -lt 0 -or $previousAlphaStart -lt 0 -or $previousFailureStart -lt 0 -or $previousAlphaStart -le $currentFailureStart -or $previousFailureStart -le $previousAlphaStart) {
+    throw 'ASSERT_SECTION_FAILED: nao foi possivel isolar CurrentBusinessRuleFailureMessagesWithForwarding e PreviousAlphaBusinessRuleFailureMessages.'
 }
 
-$currentFailureSource = $source.Substring($currentFailureStart, $previousFailureStart - $currentFailureStart)
+$currentFailureSource = $source.Substring($currentFailureStart, $previousAlphaStart - $currentFailureStart)
 Assert-NotContains $currentFailureSource 'msg(' 'Procedure REST atual nao deve emitir msg em falha de regra de negocio.'
-Assert-NotContains $currentFailureSource '&Messages = ' 'Procedure REST atual nao deve manter coleta de Messages sem consumidor.'
-Assert-NotContains $currentFailureSource '&ErrorResponse.Errors.Add(&ErrorItem)' 'Procedure gerada atualmente nao deve chamar Errors.Add com item nested enquanto GeneXus rejeita a validacao do objeto.'
+Assert-Contains $currentFailureSource '.GetMessages()' 'Procedure REST atual deve ler GetMessages do Business Component.'
+Assert-Contains $currentFailureSource '&Message.Type = MessageTypes.Error' 'Procedure REST atual deve filtrar mensagens de erro pelo domínio enumerado MessageTypes.Error.'
+Assert-Contains $currentFailureSource '&ErrorResponse.Messages.Add(&ErrorItem)' 'Procedure REST atual deve preencher Messages[] do corpo de erro.'
+Assert-Contains $currentFailureSource 'Substr(&ConcatenatedMessage, 1, 2045)' 'Procedure REST atual deve truncar Message em cerca de 2K com reticencias visiveis.'
+Assert-NotContains $currentFailureSource '&ErrorResponse.Errors.Add(&ErrorItem)' 'Procedure gerada atualmente nao deve chamar Errors.Add com item nested.'
+
+$previousAlphaSource = $source.Substring($previousAlphaStart, $previousFailureStart - $previousAlphaStart)
+Assert-NotContains $previousAlphaSource '.GetMessages()' 'Bloco Alpha reconhecido nao deve coletar GetMessages.'
+Assert-Contains $previousAlphaSource 'Business rules rejected the request.' 'Bloco Alpha reconhecido deve preservar a Message generica.'
 
 Write-Output 'PASS: ApiPlanBusinessComponentWriterVariableContract'

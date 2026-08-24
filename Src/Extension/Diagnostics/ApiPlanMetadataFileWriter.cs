@@ -392,6 +392,10 @@ internal static class ApiPlanMetadataFileWriter
                 ["requiresGenerationConfirmation"] = apiPlan.Security.RequiresGenerationConfirmation,
                 ["notes"] = ToStringArray(apiPlan.Security.Notes),
             },
+            ["errorDetail"] = new JObject
+            {
+                ["includeBusinessComponentMessages"] = apiPlan.IncludeBusinessComponentErrorMessages,
+            },
             ["descriptions"] = new JObject
             {
                 ["language"] = apiPlan.ServiceDescriptionLanguage,

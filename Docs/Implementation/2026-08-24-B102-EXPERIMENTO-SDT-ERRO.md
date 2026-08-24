@@ -100,14 +100,14 @@ o outro é limite operacional em runtime.
 
 ---
 
-## 5. O que o experimento **não** respondeu
+## 5. Premissas abertas pelo experimento — fechadas no gate HTTP
 
-- **Como o gerador nativo renderiza `LongVarChar` no YAML publicado.** A sonda criou SDT; não gerou
-  contrato OpenAPI. Se o `Length` declarado vira `maxLength` no schema, e com que valor, segue
-  premissa. Aparece no gate HTTP do `B102`, sem custo adicional.
-- **O comportamento em runtime.** Nada aqui substitui a validação por HTTP real nos dois
-  environments (`.NET`/PostgreSQL e `.NET Framework`/SQL Server), que continua sendo requisito do
-  `B102`.
+A sonda criou SDT e não gerou contrato OpenAPI nem chamou HTTP. Essas perguntas ficaram para o gate HTTP de `B102` e foram respondidas em 2026-08-24 nos YAMLs e nas chamadas de `apiTeste` (`NETPostgreSQL155` e `NETFrameworkSQLServer004`):
+
+- **`maxLength` não existe no YAML.** Zero ocorrências em cada `apiTeste.yaml`. `Message` e o texto de `sdt_API_ErrorMessage` saem como `type: string`, sem comprimento. A decisão `Length = 2097152` é inconsequente para o contrato publicado pelo gerador nativo.
+- **`Messages` está no schema publicado**, como `type: array` com `$ref: "#/components/schemas/sdt_API_ErrorMessage"`.
+- **Runtime HTTP.** Ligado: 422 com texto da rule, acento UTF-8, truncamento visível em 2048 + `...`, `Messages[]` com um item `business_rule`. Desligado: texto genérico e fonte sem `GetMessages()`. Warning: o `Teste_BC` emite `Error()` (tipo 1) e `Msg()` (tipo 0) no mesmo `B102ERR`; o Create copia só `gxTpr_Type == 1` (`MessageTypes.Error`); o aviso não aparece no HTTP. Não afirmar `Warning = 2`.
+- **Reencontro Alpha.** Cobertura parcial: Wizard na Transaction `NotaFiscal` (`apiFiscalPublica`) chegou a `teste de reencontro` e foi cancelado sem escrita; o catálogo mecânico de variantes já cobre o bloco Alpha; a regravação na `Teste` reportou `Updated=14`, `Blocked=0`. Cancelar prova abertura sem bloquear, não que regravar preserve.
 
 ---
 

@@ -15,6 +15,7 @@ internal static class ApiPlanBuilder
 {
     private static readonly string[] SharedSdtNames =
     {
+        "sdt_API_ErrorMessage",
         "sdt_API_ErrorResponse",
         "sdt_API_Pagination",
     };
@@ -132,7 +133,8 @@ internal static class ApiPlanBuilder
             filters,
             requiredFields,
             services,
-            selection.BusinessComponentSelection);
+            selection.BusinessComponentSelection,
+            review.IncludeBusinessComponentErrorMessages);
     }
 
     private static IReadOnlyList<ApiPlanField> CreateSelectedFields(
@@ -379,7 +381,8 @@ internal sealed class ApiPlan
         IReadOnlyList<ApiPlanFilter> listFilters,
         IReadOnlyList<ApiPlanRequiredField> requiredFields,
         IReadOnlyList<ApiPlanService> services,
-        PrototypeWizardBusinessComponentSelection businessComponent)
+        PrototypeWizardBusinessComponentSelection businessComponent,
+        bool includeBusinessComponentErrorMessages)
     {
         TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
         ModuleTarget = moduleTarget ?? throw new ArgumentNullException(nameof(moduleTarget));
@@ -422,6 +425,7 @@ internal sealed class ApiPlan
         RequiredFields = requiredFields ?? throw new ArgumentNullException(nameof(requiredFields));
         Services = services ?? throw new ArgumentNullException(nameof(services));
         BusinessComponent = businessComponent ?? throw new ArgumentNullException(nameof(businessComponent));
+        IncludeBusinessComponentErrorMessages = includeBusinessComponentErrorMessages;
     }
 
     public string TransactionName { get; }
@@ -507,6 +511,8 @@ internal sealed class ApiPlan
     public IReadOnlyList<ApiPlanService> Services { get; }
 
     public PrototypeWizardBusinessComponentSelection BusinessComponent { get; }
+
+    public bool IncludeBusinessComponentErrorMessages { get; }
 }
 
 internal sealed class ApiPlanSecurity
