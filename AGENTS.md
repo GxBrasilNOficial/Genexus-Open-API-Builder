@@ -113,6 +113,30 @@ Como distinguir: mensagem de **arquivo em uso** aponta para a causa 1; **negaç�
 
 Ambas as causas foram diagnosticadas em 2026-08-23, em rodadas distintas de agente sobre este repositório: a causa 1 com bloqueio em `Src\Extension\obj\Release\net471\GenexusOpenApiBuilder.Extension.dll` e build limpa após o shutdown; a causa 2 com os artefatos de `obj/` e `bin/` divididos entre `ANTONIOJOSE` e `CodexSandboxOffline`.
 
+## Corte de release
+
+Publicação exige **autorização humana explícita a cada corte**. `git push`, criação de tag e publicação de GitHub Release nunca são inferidos de "a frente terminou".
+
+Cada corte produz três notas no repositório, em `Docs/Releases/`: `<versão>.md` (pt-BR), `<versão>.es.md` e `<versão>.en.md`. Links entre elas são relativos, porque a navegação é dentro da pasta.
+
+O **corpo do GitHub Release não é cópia dessas notas.** É texto próprio, escrito para a página, com três seções de idioma no mesmo corpo, nesta ordem:
+
+```markdown
+# Português (Brasil)
+# Español
+# English
+```
+
+Cada seção traz: resumo curto da entrega, a tabela de escolha obrigatória da DLL (canônica U14+ e satélite `-gx18u13`), instalação, e **link absoluto** para a nota detalhada daquele idioma, fixada na tag do corte — nunca link relativo, que não resolve na página de release.
+
+Modelo canônico: `v0.1.0-alpha.3`. Antes de publicar, comparar o corpo montado com `gh release view v0.1.0-alpha.3 --json body` e confirmar que as três seções existem.
+
+Cada corte leva **dois assets DLL** e é publicado como **pre-release** enquanto a linha for Alpha. Conferir o SHA-256 dos assets após o download.
+
+Também atualizar, no mesmo corte: `CHANGELOG.md`, a versão em `Src/Extension/Version.Shared.props` e os três `README` quando a entrega mudar comportamento visível ao consumidor.
+
+Registrado em 2026-08-24, depois de o corte `0.1.0-alpha.4` sair com o corpo do release em português apenas, montado por cópia da nota pt-BR e com links relativos que não resolvem na página. A convenção trilíngue existia só como padrão nos cortes anteriores, sem estar escrita em lugar nenhum.
+
 ## Atualização manual da extensão para testes
 
 Sempre que uma nova DLL precisar ser instalada para teste no GeneXus 18, o agente deve primeiro distinguir atualização de código de atualização de manifesto/registro.
