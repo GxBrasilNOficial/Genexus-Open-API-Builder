@@ -96,7 +96,7 @@ Continuam válidas as regras de `Code` principal, de idioma de `Message` e de n�
 
 ## Nota de revisão — 2026-08-23 — `Message` do `422` (`B102`)
 
-A regra de idioma acima pressupõe que a `Message` carregue texto produzido pela aplicação. Até 2026-08-24 a geração **não** cumpria isso: em recusa do Business Component ela emitia o texto fixo `"Business rules rejected the request."` e descartava as mensagens do BC, de modo que uma rule `error` da KB nunca chegava ao consumidor — que sabia apenas que foi recusado, sem saber por quê. `B102` fechou esse gap.
+A regra de idioma acima pressupõe que a `Message` carregue texto produzido pela aplicação. A geração **não** cumpria isso: em recusa do Business Component ela emitia o texto fixo `"Business rules rejected the request."` e descartava as mensagens do BC, de modo que uma rule `error` da KB nunca chegava ao consumidor — que sabia apenas que foi recusado, sem saber por quê. `B102` fecha esse gap.
 
 `B102` implementa o repasse, com salvaguardas: repasse apenas em falha de validação — nunca em erro de infraestrutura, onde o texto pode conter detalhe de banco —, somente mensagens de **erro** do Business Component, e opção para desligar quando a API for exposta publicamente. O `Code` permanece `validation_error`, e a regra de decidir por `Code`, nunca pelo texto, continua valendo.
 
@@ -119,7 +119,7 @@ Não confundir os dois limites. O truncamento em cerca de 2K acontece no **códi
 |---|---|
 | Ligado, 422 com texto da rule | os dois environments |
 | Acento UTF-8 | os dois |
-| Truncamento em 2048 + `...` | os dois |
+| Truncamento em 2045 + `...` = 2048 | os dois |
 | `Messages[]` preenchido, `business_rule` | os dois; schema publicado com `type: array` e `$ref` para `sdt_API_ErrorMessage` |
 | Desligado → texto genérico | os dois, e o fonte gerado sem `GetMessages()` |
 | Warning excluído | os dois, com o aviso comprovadamente emitido |

@@ -141,6 +141,7 @@ Validar geração de:
 - sdtCliente_API_Response
 - sdtCliente_API_ListFilters
 - sdtCliente_API_ListResponse
+- sdt_API_ErrorMessage
 - sdt_API_ErrorResponse
 - sdt_API_Pagination
 
