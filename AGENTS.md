@@ -95,7 +95,7 @@ cada um.
 
 ## Build local da extensão
 
-Duas causas distintas travam o build local com sintomas parecidos. Antes de contornar qualquer uma delas, identificar qual é.
+Duas causas distintas travam o build local com sintomas parecidos. Antes de contornar qualquer uma delas, identificar qual é: mensagem de **arquivo em uso** aponta para a causa 1; **negação de escrita** sem nenhum processo de IDE ou compilador vivo aponta para a causa 2. O dono, por `(Get-Acl -LiteralPath <arquivo>).Owner` divergindo de `[Security.Principal.WindowsIdentity]::GetCurrent().Name`, é indício e não confirmação: antivírus, indexador e sincronizador também seguram arquivo, e a permissão relevante pode estar no diretório-pai.
 
 **Causa 1 — node de build sobrevivente (arquivo em uso).** O `dotnet build` mantém vivos o MSBuild Server e o compilador VB/C# (`VBCSCompiler`), com handles abertos em `Src/Extension/obj/`. Um node de execução anterior bloqueia a build seguinte. Antes de compilar, e novamente ao terminar, executar:
 
@@ -103,15 +103,23 @@ Duas causas distintas travam o build local com sintomas parecidos. Antes de cont
 dotnet build-server shutdown
 ```
 
-**Causa 2 — artefato de outro principal (negação de escrita).** Agentes que executam sob token restrito — caso do Codex, que roda como `CodexSandboxOffline` — criam artefatos em `obj/` e `bin/` cujo dono é a própria conta de sandbox. A sessão seguinte, com outro token, toma acesso negado ao sobrescrever, **mesmo sem lock algum**: token restrito não honra as ACEs herdadas de `Usuários autenticados`. Vale também no sentido inverso, quando o usuário real compila e o agente tenta em seguida. Remediação: apagar `obj/` e `bin/` antes da execução, deixando a sessão criar os artefatos que ela mesma vai sobrescrever. Ambas as pastas são ignoradas pelo git e o build completo leva cerca de 4 segundos.
+**Causa 2 — artefato de outro principal (negação de escrita).** Agentes às vezes executam sob conta própria — medido no Codex, que roda como `CodexSandboxOffline`. Artefatos criados por uma identidade em `obj/` e `bin/` podem negar escrita à seguinte, **sem lock algum**. O mecanismo não foi isolado: token restrito, ACE de `CREATOR OWNER`, nível de integridade e política da própria ferramenta são todos compatíveis com o observado — numa amostra, `Usuários autenticados` já tinha `Modify` no arquivo negado, o que desfavorece a explicação por ACL simples. Por isso **não** conserte por permissão: `icacls` amplo deixa a árvore permanentemente afrouxada e pode nem resolver. Também não eleve o build nem use `takeown`. O sentido inverso — artefato do usuário negando escrita ao agente — não foi medido.
 
-Como distinguir: mensagem de **arquivo em uso** aponta para a causa 1; **negação de escrita** sem nenhum processo de IDE ou compilador vivo aponta para a causa 2. Conferir o dono com `(Get-Acl <arquivo>).Owner`.
+Nesta ordem, e tudo reversível de propósito:
+
+1. **Redirecionar a saída** sem tocar na árvore bloqueada. No MSBuild são duas propriedades distintas: `BaseOutputPath` governa `bin/` e `BaseIntermediateOutputPath` governa `obj/` — redirecionar só a primeira deixa o build escrevendo no `obj/` bloqueado.
+2. **Renomear** o diretório bloqueado, com `-LiteralPath`, para um nome que ainda não exista (`obj` → `obj.orphan-<data>`). Preserva o conteúdo e costuma passar onde escrever falha, porque depende de direito no diretório-pai. Renomeie apenas o que a ferramenta recria, e apenas o mais interno que resolva o bloqueio. Vá ao passo 3 se houver conteúdo versionado dentro, se o diretório tiver `ReparsePoint` em `Attributes`, ou se você não souber dizer.
+3. **Parar e reportar ao usuário da sessão** qual identidade é dona e qual está tentando escrever. Apagar o que ficou é decisão dele, não sua.
+
+**Não apague** `obj/`, `bin/` ou qualquer diretório gerado para resolver isto.
 
 - Diante de qualquer das duas, o agente **não** encerra processos de terceiros nem altera a instalação do GeneXus.
 - Se o bloqueio persistir **com a IDE GeneXus aberta**, quem segura a DLL é a IDE, e a única saída é fechá-la. Nenhuma configuração de MSBuild ou limpeza de artefato alcança esse caso.
 - `MSBUILDDISABLENODEREUSE=1` cobre apenas os nodes do MSBuild, não o `VBCSCompiler`, e não tem efeito sobre a causa 2; o `build-server shutdown` cobre os dois processos da causa 1.
 
 Ambas as causas foram diagnosticadas em 2026-08-23, em rodadas distintas de agente sobre este repositório: a causa 1 com bloqueio em `Src\Extension\obj\Release\net471\GenexusOpenApiBuilder.Extension.dll` e build limpa após o shutdown; a causa 2 com os artefatos de `obj/` e `bin/` divididos entre `ANTONIOJOSE` e `CodexSandboxOffline`.
+
+A remediação da causa 2 foi revista em 2026-08-25, depois de revisão por pares em painel multi-modelo. A redação original afirmava o mecanismo como fato, alegava simetria não medida e mandava **apagar** `obj/` e `bin/` como primeira ação — numa árvore cujo conteúdo o agente não inspecionara. A escada de três passos substitui a deleção por ações reversíveis e devolve ao humano a única decisão irreversível. Apagar artefatos entre rodadas continua válido para quem é dono das duas identidades e conhece o conteúdo; o que a seção proíbe é o agente fazê-lo por conta própria.
 
 ## Corte de release
 
