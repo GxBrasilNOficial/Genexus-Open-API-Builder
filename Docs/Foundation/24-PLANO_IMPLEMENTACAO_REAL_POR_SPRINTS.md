@@ -402,7 +402,7 @@ Aprender com o uso externo da Alpha e expandir o gerador para cobrir transaçõe
 - `B105`: escolha do chamador sobre o detalhe do corpo de erro, podendo apenas restringir o default da API — nesta sprint se houver folga, senão Sprint 10
 - triagem do feedback da Alpha e documentação pública alinhada
 
-**Ordem de execução:** `B102` (concluído) → Fase 0 → Fases 1 a 6 (`B095`–`B099`) → Fase 7 → `B100`. Detalhamento em [Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md](../Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md).
+**Ordem de execução:** `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; conferência de fim permanece) → Fases 1 a 6 (`B095`–`B099`) → Fase 7 → `B100`. Detalhamento em [Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md](../Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md).
 
 ## Gate
 

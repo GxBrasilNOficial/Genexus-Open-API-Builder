@@ -10,6 +10,10 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
+### Added
+
+- Fase 0 (Sprint 9): linha de base offline de transações planas em `Tests/GenerationBaseline/`, ligada ao checker pré-push como `tests.generationBaseline` (Source de Create/Update/Get/List, Service Source do API Object e plano de SDT, gerador pós-B102). Captura IDE de início registrada em `Tests/GenerationBaseline/IdeXpz/CAPTURE-INICIO.md` (Transaction plana `Teste` + SDTs compartilhados já presentes na KB). Conferência XPZ de fim da sprint permanece. Evidência: `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
+
 ### Fixed
 
 - `B107`: `Test-OpenApiClientContractValidity.ps1` deixa de ler YAML de pastas `C:\KBs\...` (falso verde e amarre à máquina). A trava do pré-push fica offline sobre `ApiPlan.cs`, incluindo `sdt_API_ErrorMessage`. Conferência de YAML publicado permanece evidência pontual na IDE.
