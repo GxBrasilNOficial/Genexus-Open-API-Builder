@@ -84,12 +84,12 @@ function Initialize-GeneXusAssemblyResolver {
 }
 
 if (-not (Test-Path -LiteralPath $DllPath -PathType Leaf)) {
-    Write-Error "DLL Release não encontrada: $DllPath. Compile Src/GenexusOpenApiBuilder.sln em Release antes deste teste."
+    Write-Output "ENVIRONMENT_BLOCKED: DLL Release não encontrada: $DllPath. Compile Src/GenexusOpenApiBuilder.sln em Release antes deste teste."
     exit 2
 }
 
 if (-not (Test-Path -LiteralPath $GeneXusDirectory -PathType Container)) {
-    Write-Error "Instalação GeneXus não encontrada em modo leitura: $GeneXusDirectory"
+    Write-Output "ENVIRONMENT_BLOCKED: Instalação GeneXus não encontrada em modo leitura: $GeneXusDirectory"
     exit 2
 }
 
