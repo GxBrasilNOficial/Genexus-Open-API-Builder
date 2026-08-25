@@ -96,9 +96,9 @@ Continuam válidas as regras de `Code` principal, de idioma de `Message` e de n�
 
 ## Nota de revisão — 2026-08-23 — `Message` do `422` (`B102`)
 
-A regra de idioma acima pressupõe que a `Message` carregue texto produzido pela aplicação. A geração **não** cumpria isso: em recusa do Business Component ela emitia o texto fixo `"Business rules rejected the request."` e descartava as mensagens do BC, de modo que uma rule `error` da KB nunca chegava ao consumidor — que sabia apenas que foi recusado, sem saber por quê. `B102` fecha esse gap.
+A regra de idioma acima pressupõe que a `Message` carregue texto produzido pela aplicação. Na data desta revisão, a geração **ainda não** cumpria isso: em recusa do Business Component ela emitia o texto fixo `"Business rules rejected the request."` e descartava as mensagens do BC, de modo que uma rule `error` da KB nunca chegava ao consumidor — que sabia apenas que foi recusado, sem saber por quê. O `B102` foi definido para fechar esse gap.
 
-`B102` implementa o repasse, com salvaguardas: repasse apenas em falha de validação — nunca em erro de infraestrutura, onde o texto pode conter detalhe de banco —, somente mensagens de **erro** do Business Component, e opção para desligar quando a API for exposta publicamente. O `Code` permanece `validation_error`, e a regra de decidir por `Code`, nunca pelo texto, continua valendo.
+O `B102` foi especificado com o repasse e estas salvaguardas: repasse apenas em falha de validação — nunca em erro de infraestrutura, onde o texto pode conter detalhe de banco —, somente mensagens de **erro** do Business Component, e opção para desligar quando a API for exposta publicamente. O `Code` permanece `validation_error`, e a regra de decidir por `Code`, nunca pelo texto, continua valendo.
 
 **Complemento de 2026-08-23 — tipo, limite e forma.** O membro `Message` passa de `VarChar(256)` para `LongVarChar`, com truncamento explícito pela geração em cerca de 2K e reticência final: tipo sem limite não é conteúdo sem limite, e o corte silencioso do `VarChar` era pior do que um truncamento visível. A opção de desligar fica **ligada por padrão**, com aviso quando `SecurityLevel = None`, com default por KB no File de preferências e escolha por API na metadata. A forma do corpo — uma `Message` concatenada ou um membro coleção `Messages` — depende do experimento descrito na nota seguinte.
 
@@ -201,7 +201,7 @@ Operações públicas:
 - `Create`
 - `Update`
 
-`Delete` é pós-MVP como endpoint REST. **Revisto em 2026-08-23:** entregue por `B100` como serviço opcional, desligado por padrão, respondendo `200` com a chave removida, `404` em registro inexistente e `422` com `Code = "validation_error"` na recusa do Business Component, conforme a nota de revisão de 2026-08-23 acima.
+`Delete` é pós-MVP como endpoint REST. **Revisão de 2026-08-23:** o `B100` foi planejado como serviço opcional, desligado por padrão, a ser executado após a Fase 7. Quando implementado e marcado no Wizard, deverá responder `200` com a chave removida, `404` em registro inexistente e `422` com `Code = "validation_error"` na recusa do Business Component; até lá, não há endpoint `Delete`.
 
 ---
 
@@ -249,5 +249,5 @@ Um spike deve verificar se erros interceptados pelo GAM ou pelo runtime antes da
 - `sdt_API_ErrorResponse` contém `Code`, `Message` (`LongVarChar` 2097152) e `Messages[]` tipado por `sdt_API_ErrorMessage` (`Code`, `Message`); `Field` e `Errors[]` ficam fora do contrato entregue — ver seção 3 e o fechamento de `B102`
 - `Update` retorna 200 com Response completo
 - `Create` retorna 201
-- não há endpoint `Delete` no MVP
+- não há endpoint `Delete` por padrão; quando o `B100` estiver implementado e o serviço estiver marcado no Wizard, valerão seus critérios próprios de `200`, `404` e `422`
 - status de erro são testáveis em cenário simples

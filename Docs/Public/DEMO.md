@@ -1,6 +1,6 @@
 # Demo rápida — Genexus Open API Builder
 
-Roteiro visual da Alpha `0.1.0-alpha.1` (Transaction de exemplo: `NotaFiscal`).
+Roteiro visual da Alpha `0.1.0-alpha.4` (Transaction de exemplo: `NotaFiscal`).
 
 Use sempre uma **KB de teste**, com backup. Não execute na KB de produção.
 
@@ -69,7 +69,11 @@ Filtros candidatos do serviço List (operadores por tipo).
 
 `Authentication` (padrão), `Authorization` ou `None` (exige confirmação).
 
+Na Alpha `0.1.0-alpha.4`, a aba também oferece o checkbox **Incluir mensagens de erro do Business Component no corpo HTTP 422**, ligado por padrão; com `Security Level = None`, o Wizard avisa que as mensagens de regra da KB ficarão visíveis no JSON de erro.
+
 ![Segurança](../Images/alpha-wizard-seguranca.png)
+
+A captura de Segurança é uma referência visual anterior e pode não exibir esse checkbox; o controle vigente está descrito no texto acima e nas notas da Alpha.
 
 ## 11. Paginação
 
@@ -176,12 +180,12 @@ Confirmação com o plano: objetos próprios a apagar, SDTs compartilhados e Fol
 ## Limitações honestas da Alpha
 
 - A geração cobre apenas o primeiro nível da Transaction; subníveis (linhas) são ignorados sem aviso
-- Sem serviço `DELETE` no MVP
+- Serviço `DELETE` ainda não entregue; o `B100` está planejado como opt-in para corte posterior
 - YAML OpenAPI nativo do GeneXus tem restrições documentadas
 - Classificação de campos sensíveis/auditoria ainda usa política default
 - Validação prática principal no Upgrade 15
 
-Detalhes: [notas 0.1.0-alpha.1](../Releases/0.1.0-alpha.1.md).
+Detalhes: [notas 0.1.0-alpha.4](../Releases/0.1.0-alpha.4.md).
 
 ## Índice das capturas
 
@@ -197,7 +201,7 @@ Todas em `Docs/Images/`:
 | `alpha-wizard-response.png` | Response |
 | `alpha-wizard-filtros.png` | Filtros List |
 | `alpha-wizard-paths.png` | Paths |
-| `alpha-wizard-seguranca.png` | Segurança |
+| `alpha-wizard-seguranca.png` | Segurança (referência visual anterior; não mostra necessariamente o checkbox B102) |
 | `alpha-wizard-paginacao.png` | Paginação |
 | `alpha-wizard-ordenacao.png` | Ordenação |
 | `alpha-wizard-obrigatorios.png` | Obrigatórios |

@@ -260,9 +260,9 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B103 | Substituir o reconhecimento de source gerado por catálogo textual de variantes por carimbo de versão do contrato na metadata | Média — candidato à Sprint 10; planejado |
 | B104 | Reorganizar `Src` conforme o layout da seção 5.7 da arquitetura, ou revisar o layout para refletir a organização real | Média — após a Sprint 9; planejado |
 | B105 | Escolha do chamador sobre o detalhe do corpo de erro, restringindo o default da API e nunca ampliando | Média — Sprint 9 se houver folga, senão Sprint 10; planejado |
-| B106 | Atualizar `Docs/Public/DEMO.md`, preso ao roteiro da `0.1.0-alpha.1` | Baixa — higiene documental; planejado |
+| B106 | Alinhar `Docs/Public/DEMO.md` à Alpha `0.1.0-alpha.4` | Baixa — higiene documental; concluído (2026-08-24; checkbox B102 e link das notas alinhados) |
 
-**B106 — `DEMO.md` preso à `0.1.0-alpha.1`.** O roteiro visual público declara, na abertura e no link das notas ao final, a versão `0.1.0-alpha.1`. Desde então saíram três cortes, e o `0.1.0-alpha.4` mudou o corpo de erro que uma demonstração exercita. A aba Segurança também ganhou o checkbox de repasse das mensagens do Business Component, que o roteiro não registra. Gap encontrado na revisão pré-push retroativa de 2026-08-24; é anterior à frente do `B102` e não decorre dela, por isso vira item próprio em vez de ser absorvido por aquela correção. Rever também as capturas em `Docs/Images/` citadas pelo roteiro, que podem ser anteriores ao checkbox.
+**B106 — concluído em 2026-08-24.** O roteiro foi atualizado para a Alpha `0.1.0-alpha.4`, passou a registrar o checkbox de repasse das mensagens do Business Component e aponta para as notas da Alpha 4. A captura de Segurança foi explicitamente marcada como referência visual anterior; uma nova captura da UI permanece uma melhoria visual separada, sem bloquear a documentação textual.
 
 ### Nota operacional — B095–B099 (Suporte a Transactions com Subníveis), registrada em 2026-08-20 (revisada em 2026-08-22 e em 2026-08-23)
 

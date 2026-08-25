@@ -8,7 +8,7 @@ Em 2026-08-23 a especificação passou por revisão dirigida e recebeu as decis�
 
 Ainda em 2026-08-23, uma segunda revisão — desta vez sobre o **plano de trabalho** da sprint, e não sobre o desenho — fechou quinze pontos de exequibilidade e de gate, consolidados na `Emenda técnica — 2026-08-23 (complemento)` do mesmo registro. Dela resultaram o mecanismo concreto da Fase 0, a ampliação de `B102`, dois gates novos na sprint, a validação do contrato OpenAPI multinível, o retorno da linha `Gx18u13` ao plano, o fechamento da decisão que estava pendente na Fase 3, limiares de escala, o item `B105` e a divisão da publicação em três cortes.
 
-Próximo passo: capturar a linha de base da Fase 0 (arquivos de referência offline ligados ao checker e export XPZ dos SDTs na IDE). `B102` está concluído: gate HTTP nos dois environments, YAML de `apiTeste` sem `maxLength` e com `Messages[]` publicado. Reencontro de API Alpha: cobertura parcial.
+**Atualização de 2026-08-24.** `B102` está concluído: gate HTTP nos dois environments, YAML de `apiTeste` sem `maxLength` e com `Messages[]` publicado. Reencontro de API Alpha: cobertura parcial. Próximo passo: capturar a linha de base da Fase 0 (arquivos de referência offline ligados ao checker e export XPZ dos SDTs na IDE).
 
 ---
 
