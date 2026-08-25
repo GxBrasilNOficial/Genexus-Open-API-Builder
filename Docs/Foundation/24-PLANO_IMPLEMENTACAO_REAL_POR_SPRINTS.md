@@ -391,7 +391,7 @@ Aprender com o uso externo da Alpha e expandir o gerador para cobrir transaçõe
 ## Entregas
 
 - `B102`: Repasse do texto emitido pelo Business Component na `Message` do `422`, com `Message` em `LongVarChar` truncada pela geração, `Messages[]` como coleção tipada por `sdt_API_ErrorMessage`, repasse restrito a mensagens de erro, e opção de desligar por KB e por API (**primeiro item da sprint**; concluído em 2026-08-24, gate HTTP nos dois environments)
-- Fase 0: linha de base de não regressão para transações planas, em duas camadas — arquivos de referência offline ligados ao checker mecânico e export XPZ dos SDTs na IDE, no início e no fim da sprint
+- Fase 0: linha de base de não regressão para transações planas, em duas camadas — arquivos de referência offline ligados ao checker mecânico e export XPZ dos SDTs na IDE, no início e no fim da sprint (**camada offline e captura IDE de início em 2026-08-25**; conferência de fim permanece — ver `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`)
 - `B095`: Leitura hierárquica recursiva da estrutura no SDK e modelo de domínio multinível (`ApiPlanLevel`)
 - `B096`: Geração de SDTs hierárquicos por subnível e por contrato, com regra de nomes e desambiguação
 - `B097`: Geração de código Business Component nas Procedures para subníveis, com substituição completa sob marcador `<Subnível>Replace`

@@ -110,6 +110,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B102` concluído em 2026-08-24 na KB `wsEducacaoSpTeste` / Transaction `Teste` (`apiTeste`): Create/Update com a opção ligada devolvem o texto da rule `Error()` em `ErrorResponse.Message` e em `Messages[]` (`business_rule`) nos environments `.NET`/PostgreSQL e `.NET Framework`/SQL Server; acento UTF-8 e truncamento visível em 2045 + `...` = 2048; opção desligada volta ao texto genérico sem `GetMessages()`; `Msg()` no mesmo `B102ERR` é emitido pelo BC (tipo 0) e fica fora do 422 (filtro `Type == 1`). YAML publicado de `apiTeste` declara `Messages` como `type: array` com `$ref` para `sdt_API_ErrorMessage` e **não** emite `maxLength` para o `LongVarChar`. Reencontro de API Alpha: cobertura parcial (Wizard na `NotaFiscal`/`apiFiscalPublica` em estado de reencontro, cancelado sem escrita; catálogo mecânico de variantes; regravação `Updated=14`, `Blocked=0` na `Teste`). Evidência: documentos 27 e `Docs/Implementation/2026-08-24-B102-EXPERIMENTO-E-GATE-HTTP.md`.
 - Corte `0.1.0-alpha.4` preparado em 2026-08-24: CHANGELOG, notas nos três idiomas, versão no `Version.Shared.props`, README/`INSTALL` alinhados ao contrato de erro HTTP, dois assets DLL. Próxima ação após a publicação = Fase 0.
 - `B107` concluído em 2026-08-25: `Test-OpenApiClientContractValidity.ps1` deixou de depender de YAML em `C:\KBs\...`; a trava do pré-push é só offline sobre `ApiPlan.cs` (inclui `sdt_API_ErrorMessage`). Não misturado com a Fase 0.
+- Fase 0 (camada offline) capturada em 2026-08-25: fixtures sintéticas `FlatSimpleKey`, `FlatCompositeKey` e `FlatNoAccept` em `Tests/GenerationBaseline/Baselines/`, teste ligado ao checker como `tests.generationBaseline`, refletindo o gerador pós-B102. Captura IDE de início (Transaction plana `Teste` + SDTs compartilhados) registrada em `Tests/GenerationBaseline/IdeXpz/CAPTURE-INICIO.md` a partir da pasta paralela `Gx_wsEducacaoSpTeste` — objetos **já existentes** na KB (não regenerados na IDE neste dia; DLL da sessão Fase 0 não instalada; timestamps do dia = rematerialização do XPZ).
 
 ## Frente atual
 
@@ -121,7 +122,7 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-Capturar a linha de base da Fase 0 (não regressão de transações planas) em duas camadas: arquivos de referência offline de Source, Service Source e plano de SDT ligados ao checker mecânico (`Tests/GenerationBaseline/`), e export XPZ dos SDTs na IDE. Recaptura só em commit isolado. Somente depois começa a Fase 1 (`B095`): leitura hierárquica recursiva de `transaction.Structure.Root.Levels` no SDK GeneXus, evolução do modelo de domínio (`ApiPlanLevel`) e testes unitários offline em `Tests/TransactionStructure/`. Evidência da frente: `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
+Após conferência humana da Fase 0, iniciar a Fase 1 (`B095`): leitura hierárquica recursiva de `transaction.Structure.Root.Levels` no SDK GeneXus, evolução do modelo de domínio (`ApiPlanLevel`) e testes unitários offline em `Tests/TransactionStructure/`. A Fase 0 está completa nas duas camadas de início: offline no checker (`Tests/GenerationBaseline/`) e captura IDE registrada em `Tests/GenerationBaseline/IdeXpz/CAPTURE-INICIO.md` (Transaction `Teste`). A conferência XPZ de **fim** da sprint fica para o fechamento da Sprint 9. Evidência: `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md` e `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 
 ## Evidência da frente encerrada
 
@@ -147,7 +148,7 @@ Capturar a linha de base da Fase 0 (não regressão de transações planas) em d
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única é capturar a Fase 0; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é, após conferência da Fase 0, iniciar a Fase 1 (`B095`); a Fase 0 de início (offline + captura IDE) está registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
@@ -212,6 +213,7 @@ Capturar a linha de base da Fase 0 (não regressão de transações planas) em d
 58. Em 2026-08-24 o gate HTTP de `B102` fechou nos dois environments da KB `wsEducacaoSpTeste` (`apiTeste`): 422 com texto da rule, acento UTF-8, truncamento 2045 + `...` = 2048, `Messages[]` com `business_rule`; opção desligada com texto genérico e fonte sem `GetMessages()`; `Msg()` emitido pelo BC (tipo 0) e excluído do corpo (filtro `Type == 1` a partir de `MessageTypes.Error`). YAML de `apiTeste` declara `Messages` como array com `$ref` para `sdt_API_ErrorMessage` e zero ocorrências de `maxLength`. Reencontro Alpha: cobertura parcial. Próxima ação única = Fase 0. Evidência: documento 27 e `Docs/Implementation/2026-08-24-B102-EXPERIMENTO-E-GATE-HTTP.md`.
 59. Em 2026-08-24 o corte `0.1.0-alpha.4` foi preparado (CHANGELOG, notas PT/ES/EN, versão, README/`INSTALL` com o contrato de erro HTTP, dois assets DLL). A publicação (tag + GitHub Release) acompanha este commit. Próxima ação única permanece a Fase 0.
 60. Em 2026-08-25 `B107` fechou: o teste de contrato de cliente OpenAPI no pré-push não lê mais YAML da KB; permanece offline em `ApiPlan.cs` com `sdt_API_ErrorMessage`. Próxima ação única permanece a Fase 0.
+61. Em 2026-08-25 a camada offline da Fase 0 foi capturada (`Tests/GenerationBaseline/`, `tests.generationBaseline`) com fixtures planas e referências pós-B102. Em seguida a captura IDE de início foi registrada (`IdeXpz/CAPTURE-INICIO.md`, Transaction `Teste`) a partir do acervo já existente na KB de teste — sem regeneração na IDE neste dia e sem instalar a DLL da sessão. Próxima ação única = após conferência, Fase 1 (`B095`). Evidência: `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -239,6 +241,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [2026-08-15 — Localização trilíngue e filtros existentes](Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md)
 - [2026-08-20 — Suporte a Transactions com subníveis](Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md)
 - [2026-08-24 — B102 experimento SDT de erro e gate HTTP](Implementation/2026-08-24-B102-EXPERIMENTO-E-GATE-HTTP.md)
+- [2026-08-25 — Fase 0 linha de base de não regressão](Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
 - [Release 0.1.0-alpha.1](Releases/0.1.0-alpha.1.md)

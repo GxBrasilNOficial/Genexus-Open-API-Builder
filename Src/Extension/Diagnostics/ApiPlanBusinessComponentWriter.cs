@@ -835,6 +835,11 @@ internal static class ApiPlanBusinessComponentWriter
         return matches[0];
     }
 
+    /// <summary>
+    /// Emissão atual de Source Create para a linha de base offline da Fase 0.
+    /// </summary>
+    internal static string CreateCurrentSource(ApiPlan plan) => CreateContent(plan);
+
     private static string CreateContent(ApiPlan plan) =>
         CreateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: plan.IncludeBusinessComponentErrorMessages);
 
@@ -1022,6 +1027,11 @@ internal static class ApiPlanBusinessComponentWriter
         return $"!\"{basePath}/\" + " + string.Join(" + !\"/\" + ", keyParts);
     }
 
+    /// <summary>
+    /// Emissão atual de Source Get para a linha de base offline da Fase 0.
+    /// </summary>
+    internal static string CreateCurrentGetSource(ApiPlan plan) => GetContent(plan);
+
     private static string GetContent(ApiPlan plan)
     {
         var bc = "&" + plan.TransactionName;
@@ -1039,6 +1049,11 @@ internal static class ApiPlanBusinessComponentWriter
         lines.Add("EndIf");
         return string.Join(Environment.NewLine, lines);
     }
+
+    /// <summary>
+    /// Emissão atual de Source Update para a linha de base offline da Fase 0.
+    /// </summary>
+    internal static string CreateCurrentUpdateSource(ApiPlan plan) => UpdateContent(plan);
 
     private static string UpdateContent(ApiPlan plan) =>
         UpdateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: plan.IncludeBusinessComponentErrorMessages);

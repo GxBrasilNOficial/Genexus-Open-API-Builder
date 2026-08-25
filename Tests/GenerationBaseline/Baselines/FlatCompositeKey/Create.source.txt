@@ -1,0 +1,89 @@
+&RestStatusCode = 201
+If &CreateRequest.FlatCompositeKeyCompanyId > 999999999
+    &RestStatusCode = 400
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"attribute_limit_exceeded"
+    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyCompanyId")
+EndIf
+If &CreateRequest.FlatCompositeKeyItemId > 999999999
+    &RestStatusCode = 400
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"attribute_limit_exceeded"
+    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyItemId")
+EndIf
+If Len(&CreateRequest.FlatCompositeKeyCode) > 20
+    &RestStatusCode = 400
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"attribute_limit_exceeded"
+    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyCode")
+EndIf
+If Len(&CreateRequest.FlatCompositeKeyDescription) > 100
+    &RestStatusCode = 400
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"attribute_limit_exceeded"
+    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyDescription")
+EndIf
+If &RestStatusCode = 201
+    &FlatCompositeKey = new()
+    &FlatCompositeKey.FlatCompositeKeyCompanyId = &CreateRequest.FlatCompositeKeyCompanyId
+    &FlatCompositeKey.FlatCompositeKeyItemId = &CreateRequest.FlatCompositeKeyItemId
+    &FlatCompositeKey.FlatCompositeKeyCode = &CreateRequest.FlatCompositeKeyCode
+    &FlatCompositeKey.FlatCompositeKeyDescription = &CreateRequest.FlatCompositeKeyDescription
+    &FlatCompositeKey.Save()
+    If &FlatCompositeKey.Success()
+        If StrSearch(Trim(&FlatCompositeKey.FlatCompositeKeyCode), !"/") > 0
+            Rollback
+            &RestStatusCode = 400
+            &ErrorResponse = new()
+            &ErrorResponse.Code = !"invalid_request"
+            &ErrorResponse.Message = !"Primary key text value must not contain '/' because it cannot be addressed in the REST path Location."
+        Else
+            Commit
+            &FlatCompositeKey.Load(&FlatCompositeKey.FlatCompositeKeyCompanyId, &FlatCompositeKey.FlatCompositeKeyItemId, &FlatCompositeKey.FlatCompositeKeyCode)
+            &CreateResponse = new()
+            &CreateResponse.FlatCompositeKeyCompanyId = &FlatCompositeKey.FlatCompositeKeyCompanyId
+            &CreateResponse.FlatCompositeKeyItemId = &FlatCompositeKey.FlatCompositeKeyItemId
+            &CreateResponse.FlatCompositeKeyCode = &FlatCompositeKey.FlatCompositeKeyCode
+            &CreateResponse.FlatCompositeKeyDescription = &FlatCompositeKey.FlatCompositeKeyDescription
+            &LocationUrl = !"/flatcompositekey"
+            &LocationUrl = &LocationUrl + !"/" + &FlatCompositeKey.FlatCompositeKeyCompanyId.ToString().Trim()
+            &LocationUrl = &LocationUrl + !"/" + &FlatCompositeKey.FlatCompositeKeyItemId.ToString().Trim()
+            &LocationUrl = &LocationUrl + !"/" + StrReplace(URLEncode(Trim(&FlatCompositeKey.FlatCompositeKeyCode)), !"+" , !"%20")
+            &HttpResponse.AddHeader(!"Location", &LocationUrl)
+            &RestStatusCode = 201
+        EndIf
+    Else
+        &RestStatusCode = 422
+        &ErrorResponse = new()
+        &ErrorResponse.Code = !"validation_error"
+        &Messages = &FlatCompositeKey.GetMessages()
+        &ConcatenatedMessage = !""
+        For &i = 1 To &Messages.Count
+            &Message = &Messages.Item(&i)
+            If &Message.Type = MessageTypes.Error
+                &ErrorItem = new()
+                If &Message.Id.IsEmpty()
+                    &ErrorItem.Code = !"business_rule"
+                Else
+                    &ErrorItem.Code = &Message.Id
+                EndIf
+                &ErrorItem.Message = &Message.Description
+                &ErrorResponse.Messages.Add(&ErrorItem)
+                If &ConcatenatedMessage.IsEmpty()
+                    &ConcatenatedMessage = &Message.Description
+                Else
+                    &ConcatenatedMessage = &ConcatenatedMessage + !" | " + &Message.Description
+                EndIf
+            EndIf
+        EndFor
+        If &ConcatenatedMessage.IsEmpty()
+            &ErrorResponse.Message = !"Business rules rejected the request."
+        Else
+            If Len(&ConcatenatedMessage) > 2048
+                &ErrorResponse.Message = Substr(&ConcatenatedMessage, 1, 2045) + !"..."
+            Else
+                &ErrorResponse.Message = &ConcatenatedMessage
+            EndIf
+        EndIf
+    EndIf
+EndIf

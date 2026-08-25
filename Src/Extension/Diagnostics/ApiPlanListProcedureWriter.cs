@@ -267,6 +267,11 @@ internal static class ApiPlanListProcedureWriter
         }
     }
 
+    /// <summary>
+    /// Emissão atual de Source List para a linha de base offline da Fase 0.
+    /// </summary>
+    internal static string CreateCurrentListSource(ApiPlan plan) => CreateListSource(plan);
+
     private static string CreateListSource(ApiPlan plan)
     {
         return CreateListSource(plan, includeParameterCopy: true, initializeAppliedFilters: true, useAppliedFiltersVariable: true, attachAppliedFiltersImmediately: true, assignAppliedFiltersThroughResponse: false, trackAppliedFilters: false, useExplicitErrors: true);

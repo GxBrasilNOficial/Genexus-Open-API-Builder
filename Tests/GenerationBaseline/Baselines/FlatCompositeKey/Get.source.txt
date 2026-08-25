@@ -1,0 +1,15 @@
+&RestStatusCode = 200
+&FlatCompositeKey.Load(&FlatCompositeKeyCompanyId, &FlatCompositeKeyItemId, &FlatCompositeKeyCode)
+If &FlatCompositeKey.Success()
+    &GetResponse = new()
+    &GetResponse.FlatCompositeKeyCompanyId = &FlatCompositeKey.FlatCompositeKeyCompanyId
+    &GetResponse.FlatCompositeKeyItemId = &FlatCompositeKey.FlatCompositeKeyItemId
+    &GetResponse.FlatCompositeKeyCode = &FlatCompositeKey.FlatCompositeKeyCode
+    &GetResponse.FlatCompositeKeyDescription = &FlatCompositeKey.FlatCompositeKeyDescription
+    &RestStatusCode = 200
+Else
+    &RestStatusCode = 404
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"not_found"
+    &ErrorResponse.Message = !"FlatCompositeKey was not found."
+EndIf

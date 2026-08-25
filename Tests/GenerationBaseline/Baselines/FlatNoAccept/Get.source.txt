@@ -1,0 +1,14 @@
+&RestStatusCode = 200
+&FlatNoAccept.Load(&FlatNoAcceptId)
+If &FlatNoAccept.Success()
+    &GetResponse = new()
+    &GetResponse.FlatNoAcceptId = &FlatNoAccept.FlatNoAcceptId
+    &GetResponse.FlatNoAcceptTitle = &FlatNoAccept.FlatNoAcceptTitle
+    &GetResponse.FlatNoAcceptAddedDate = &FlatNoAccept.FlatNoAcceptAddedDate
+    &RestStatusCode = 200
+Else
+    &RestStatusCode = 404
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"not_found"
+    &ErrorResponse.Message = !"FlatNoAccept was not found."
+EndIf

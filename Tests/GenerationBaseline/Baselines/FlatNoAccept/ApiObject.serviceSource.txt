@@ -1,0 +1,28 @@
+apiFlatNoAccept
+{
+    [Description("List FlatNoAccept")]
+    [RestPath("/flatnoaccept")]
+    [SecurityLevel(Authentication)]
+    List(in: &ApiPage, in: &ApiPageSize, in: &FlatNoAcceptTitle, out: &ListResponse, out: &ErrorResponse)
+        => procFlatNoAccept_API_List(&ApiPage, &ApiPageSize, &FlatNoAcceptTitle, &ListResponse, &ErrorResponse, &RestStatusCode);
+
+    [Description("Get FlatNoAccept")]
+    [RestPath("/flatnoaccept/{&FlatNoAcceptId}")]
+    [SecurityLevel(Authentication)]
+    Get(in: &FlatNoAcceptId, out: &GetResponse, out: &ErrorResponse)
+        => procFlatNoAccept_API_Get(&FlatNoAcceptId, &GetResponse, &ErrorResponse, &RestStatusCode);
+
+    [Description("Create FlatNoAccept")]
+    [RestMethod(POST)]
+    [RestPath("/flatnoaccept")]
+    [SecurityLevel(Authentication)]
+    Create(in: &CreateRequest, out: &CreateResponse, out: &ErrorResponse)
+        => procFlatNoAccept_API_Create(&CreateRequest, &CreateResponse, &ErrorResponse, &RestStatusCode);
+
+    [Description("Update FlatNoAccept")]
+    [RestMethod(PUT)]
+    [RestPath("/flatnoaccept/{&FlatNoAcceptId}")]
+    [SecurityLevel(Authentication)]
+    Update(in: &FlatNoAcceptId, in: &UpdateRequest, out: &UpdateResponse, out: &ErrorResponse)
+        => procFlatNoAccept_API_Update(&FlatNoAcceptId, &UpdateRequest, &UpdateResponse, &ErrorResponse, &RestStatusCode);
+}

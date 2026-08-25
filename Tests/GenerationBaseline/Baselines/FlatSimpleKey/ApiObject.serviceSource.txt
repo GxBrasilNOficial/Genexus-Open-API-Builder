@@ -1,0 +1,28 @@
+apiFlatSimpleKey
+{
+    [Description("List FlatSimpleKey")]
+    [RestPath("/flatsimplekey")]
+    [SecurityLevel(Authentication)]
+    List(in: &ApiPage, in: &ApiPageSize, in: &FlatSimpleKeyName, out: &ListResponse, out: &ErrorResponse)
+        => procFlatSimpleKey_API_List(&ApiPage, &ApiPageSize, &FlatSimpleKeyName, &ListResponse, &ErrorResponse, &RestStatusCode);
+
+    [Description("Get FlatSimpleKey")]
+    [RestPath("/flatsimplekey/{&FlatSimpleKeyId}")]
+    [SecurityLevel(Authentication)]
+    Get(in: &FlatSimpleKeyId, out: &GetResponse, out: &ErrorResponse)
+        => procFlatSimpleKey_API_Get(&FlatSimpleKeyId, &GetResponse, &ErrorResponse, &RestStatusCode);
+
+    [Description("Create FlatSimpleKey")]
+    [RestMethod(POST)]
+    [RestPath("/flatsimplekey")]
+    [SecurityLevel(Authentication)]
+    Create(in: &CreateRequest, out: &CreateResponse, out: &ErrorResponse)
+        => procFlatSimpleKey_API_Create(&CreateRequest, &CreateResponse, &ErrorResponse, &RestStatusCode);
+
+    [Description("Update FlatSimpleKey")]
+    [RestMethod(PUT)]
+    [RestPath("/flatsimplekey/{&FlatSimpleKeyId}")]
+    [SecurityLevel(Authentication)]
+    Update(in: &FlatSimpleKeyId, in: &UpdateRequest, out: &UpdateResponse, out: &ErrorResponse)
+        => procFlatSimpleKey_API_Update(&FlatSimpleKeyId, &UpdateRequest, &UpdateResponse, &ErrorResponse, &RestStatusCode);
+}

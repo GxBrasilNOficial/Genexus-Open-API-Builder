@@ -1,0 +1,28 @@
+apiFlatCompositeKey
+{
+    [Description("List FlatCompositeKey")]
+    [RestPath("/flatcompositekey")]
+    [SecurityLevel(Authentication)]
+    List(in: &ApiPage, in: &ApiPageSize, in: &FlatCompositeKeyCompanyId, in: &FlatCompositeKeyDescription, out: &ListResponse, out: &ErrorResponse)
+        => procFlatCompositeKey_API_List(&ApiPage, &ApiPageSize, &FlatCompositeKeyCompanyId, &FlatCompositeKeyDescription, &ListResponse, &ErrorResponse, &RestStatusCode);
+
+    [Description("Get FlatCompositeKey")]
+    [RestPath("/flatcompositekey/{&FlatCompositeKeyCompanyId}/{&FlatCompositeKeyItemId}/{&FlatCompositeKeyCode}")]
+    [SecurityLevel(Authentication)]
+    Get(in: &FlatCompositeKeyCompanyId, in: &FlatCompositeKeyItemId, in: &FlatCompositeKeyCode, out: &GetResponse, out: &ErrorResponse)
+        => procFlatCompositeKey_API_Get(&FlatCompositeKeyCompanyId, &FlatCompositeKeyItemId, &FlatCompositeKeyCode, &GetResponse, &ErrorResponse, &RestStatusCode);
+
+    [Description("Create FlatCompositeKey")]
+    [RestMethod(POST)]
+    [RestPath("/flatcompositekey")]
+    [SecurityLevel(Authentication)]
+    Create(in: &CreateRequest, out: &CreateResponse, out: &ErrorResponse)
+        => procFlatCompositeKey_API_Create(&CreateRequest, &CreateResponse, &ErrorResponse, &RestStatusCode);
+
+    [Description("Update FlatCompositeKey")]
+    [RestMethod(PUT)]
+    [RestPath("/flatcompositekey/{&FlatCompositeKeyCompanyId}/{&FlatCompositeKeyItemId}/{&FlatCompositeKeyCode}")]
+    [SecurityLevel(Authentication)]
+    Update(in: &FlatCompositeKeyCompanyId, in: &FlatCompositeKeyItemId, in: &FlatCompositeKeyCode, in: &UpdateRequest, out: &UpdateResponse, out: &ErrorResponse)
+        => procFlatCompositeKey_API_Update(&FlatCompositeKeyCompanyId, &FlatCompositeKeyItemId, &FlatCompositeKeyCode, &UpdateRequest, &UpdateResponse, &ErrorResponse, &RestStatusCode);
+}

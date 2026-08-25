@@ -1,0 +1,7 @@
+# Pasta reservada ao export XPZ manual dos SDTs de uma Transaction plana (camada IDE da Fase 0).
+# Não versionar XML/XPZ de KB de cliente. Usar apenas KB de teste.
+# Ver Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md
+*
+!.gitignore
+!README.md
+!CAPTURE-INICIO.md

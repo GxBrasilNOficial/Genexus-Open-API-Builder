@@ -1,0 +1,64 @@
+&RestStatusCode = 200
+&ListResponse = new()
+&AppliedFilters = new()
+&ListResponse.AppliedFilters = &AppliedFilters
+&ApiPage = &pApiPage
+&ApiPageSize = &pApiPageSize
+If &ApiPage.IsEmpty()
+    &ApiPage = 1
+EndIf
+If &ApiPageSize.IsEmpty()
+    &ApiPageSize = 50
+EndIf
+If &ApiPage < 1
+    &RestStatusCode = 400
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"invalid_request"
+    &ErrorResponse.Message = !"page must be greater than or equal to 1"
+    return
+EndIf
+If &ApiPageSize < 1
+    &RestStatusCode = 400
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"invalid_request"
+    &ErrorResponse.Message = !"pageSize must be greater than or equal to 1"
+    return
+EndIf
+If &ApiPageSize > 200
+    &RestStatusCode = 400
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"invalid_request"
+    &ErrorResponse.Message = !"pageSize exceeds the configured maximum"
+    return
+EndIf
+&FirstRecord = ((&ApiPage - 1) * &ApiPageSize) + 1
+&LastRecord = &ApiPage * &ApiPageSize
+&TotalCount = 0
+If not &FlatCompositeKeyCompanyId.IsEmpty()
+    &AppliedFilters.FlatCompositeKeyCompanyId = &FlatCompositeKeyCompanyId
+EndIf
+If not &FlatCompositeKeyDescription.IsEmpty()
+    &AppliedFilters.FlatCompositeKeyDescription = &FlatCompositeKeyDescription
+EndIf
+For each
+    order FlatCompositeKeyCompanyId, FlatCompositeKeyItemId, FlatCompositeKeyCode
+    where FlatCompositeKeyCompanyId = &FlatCompositeKeyCompanyId when not &FlatCompositeKeyCompanyId.IsEmpty()
+    where FlatCompositeKeyDescription like !"%" + &FlatCompositeKeyDescription.Trim() + !"%" when not &FlatCompositeKeyDescription.IsEmpty()
+    &TotalCount += 1
+    If &TotalCount >= &FirstRecord and &TotalCount <= &LastRecord
+        &Item = new()
+        &Item.FlatCompositeKeyCompanyId = FlatCompositeKeyCompanyId
+        &Item.FlatCompositeKeyItemId = FlatCompositeKeyItemId
+        &Item.FlatCompositeKeyCode = FlatCompositeKeyCode
+        &Item.FlatCompositeKeyDescription = FlatCompositeKeyDescription
+        &ListResponse.Items.Add(&Item)
+    EndIf
+EndFor
+&ListResponse.Pagination.Page = &ApiPage
+&ListResponse.Pagination.PageSize = &ApiPageSize
+&ListResponse.Pagination.TotalCount = &TotalCount
+If &TotalCount = 0
+    &ListResponse.Pagination.TotalPages = 0
+Else
+    &ListResponse.Pagination.TotalPages = Int((&TotalCount + &ApiPageSize - 1) / &ApiPageSize)
+EndIf

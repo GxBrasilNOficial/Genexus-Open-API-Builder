@@ -8,7 +8,14 @@ Em 2026-08-23 a especificação passou por revisão dirigida e recebeu as decis�
 
 Ainda em 2026-08-23, uma segunda revisão — desta vez sobre o **plano de trabalho** da sprint, e não sobre o desenho — fechou quinze pontos de exequibilidade e de gate, consolidados na `Emenda técnica — 2026-08-23 (complemento)` do mesmo registro. Dela resultaram o mecanismo concreto da Fase 0, a ampliação de `B102`, dois gates novos na sprint, a validação do contrato OpenAPI multinível, o retorno da linha `Gx18u13` ao plano, o fechamento da decisão que estava pendente na Fase 3, limiares de escala, o item `B105` e a divisão da publicação em três cortes.
 
-**Atualização de 2026-08-24.** `B102` está concluído: gate HTTP nos dois environments, YAML de `apiTeste` sem `maxLength` e com `Messages[]` publicado. Reencontro de API Alpha: cobertura parcial. Próximo passo: capturar a linha de base da Fase 0 (arquivos de referência offline ligados ao checker e export XPZ dos SDTs na IDE).
+**Atualização de 2026-08-25 (tarde).** Camada offline da Fase 0 capturada e ligada ao checker
+(`Tests/GenerationBaseline/`, `tests.generationBaseline`). Captura IDE de início registrada
+em `Tests/GenerationBaseline/IdeXpz/CAPTURE-INICIO.md` (SDTs da Transaction plana `Teste` +
+compartilhados, a partir de `C:\Dev\Prod\Gx_wsEducacaoSpTeste\ObjetosDaKbEmXml\SDT`).
+Esses SDTs são o acervo **já existente** na KB — **não** regenerados na IDE neste dia e
+**sem** instalação da DLL da sessão Fase 0; timestamps de 2026-08-25 na pasta paralela são
+de rematerialização do XPZ. Conferência XPZ de fim de sprint permanece para o fechamento.
+Detalhe: `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 
 ---
 

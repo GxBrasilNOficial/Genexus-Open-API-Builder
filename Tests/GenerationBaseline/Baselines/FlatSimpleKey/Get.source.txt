@@ -1,0 +1,14 @@
+&RestStatusCode = 200
+&FlatSimpleKey.Load(&FlatSimpleKeyId)
+If &FlatSimpleKey.Success()
+    &GetResponse = new()
+    &GetResponse.FlatSimpleKeyId = &FlatSimpleKey.FlatSimpleKeyId
+    &GetResponse.FlatSimpleKeyName = &FlatSimpleKey.FlatSimpleKeyName
+    &GetResponse.FlatSimpleKeyActive = &FlatSimpleKey.FlatSimpleKeyActive
+    &RestStatusCode = 200
+Else
+    &RestStatusCode = 404
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"not_found"
+    &ErrorResponse.Message = !"FlatSimpleKey was not found."
+EndIf
