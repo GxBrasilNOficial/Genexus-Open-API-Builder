@@ -1,6 +1,6 @@
 # B102 — Experimento na IDE e gate HTTP
 
-Fecha os dois gates humanos declarados na nota `Gate humano — 2026-08-24` do documento
+Fecha os dois gates humanos declarados na nota `Gate humano — fechado em 2026-08-24` do documento
 `Docs/Foundation/27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md` e registra a evidência do gate HTTP
 nos dois environments (`apiTeste`, 2026-08-24).
 

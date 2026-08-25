@@ -36,7 +36,7 @@ A partir de una Transaction:
 
 ### Contrato de error HTTP (desde `0.1.0-alpha.4`)
 
-Si el Business Component rechaza una regla, `Create` y `Update` responden **HTTP 422** con `ErrorResponse.Code = validation_error`, el texto de las rules en `Message` y la colección `Messages[]` (solo mensajes de error). Una API ya generada solo cambia al reabrir el Wizard. Quien comparaba la cadena fija `"Business rules rejected the request."` debe pasar a decidir por el `Code`. Detalle y opción de desactivar: [notas 0.1.0-alpha.4](Docs/Releases/0.1.0-alpha.4.es.md).
+Si el Business Component rechaza una regla, `Create` y `Update` responden **HTTP 422** con `ErrorResponse.Code = validation_error`, el texto de las rules en `Message` y la colección `Messages[]` (solo mensajes de error). El Source de cada API solo cambia al reabrir el Wizard sobre ella; el SDT compartido `sdt_API_ErrorResponse` es único en la KB, así que regenerar cualquier API actualiza el schema de error publicado por todas. Quien comparaba la cadena fija `"Business rules rejected the request."` debe pasar a decidir por el `Code`. Detalle y opción de desactivar: [notas 0.1.0-alpha.4](Docs/Releases/0.1.0-alpha.4.es.md).
 
 ## Estado actual
 
