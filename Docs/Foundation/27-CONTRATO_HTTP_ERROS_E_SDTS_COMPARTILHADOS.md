@@ -249,5 +249,5 @@ Um spike deve verificar se erros interceptados pelo GAM ou pelo runtime antes da
 - `sdt_API_ErrorResponse` contém `Code`, `Message` (`LongVarChar` 2097152) e `Messages[]` tipado por `sdt_API_ErrorMessage` (`Code`, `Message`); `Field` e `Errors[]` ficam fora do contrato entregue — ver seção 3 e o fechamento de `B102`
 - `Update` retorna 200 com Response completo
 - `Create` retorna 201
-- não há endpoint `Delete` por padrão; quando o `B100` estiver implementado e o serviço estiver marcado no Wizard, valerão seus critérios próprios de `200`, `404` e `422`
+- não há endpoint `Delete` no MVP: a lista de serviços gerados é fechada em `List`, `Get`, `Create` e `Update` (`PrototypeWizardContract.ServiceNames`), sem opção de marcar `Delete` no Wizard. Quando o `B100` — pós-MVP, opt-in, após a Fase 7 — for implementado, este item é **substituído** pelos critérios próprios dele (`200`, `404`, `422`); até lá vale na forma absoluta
 - status de erro são testáveis em cenário simples
