@@ -10,6 +10,10 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
+### Fixed
+
+- `B107`: `Test-OpenApiClientContractValidity.ps1` deixa de ler YAML de pastas `C:\KBs\...` (falso verde e amarre à máquina). A trava do pré-push fica offline sobre `ApiPlan.cs`, incluindo `sdt_API_ErrorMessage`. Conferência de YAML publicado permanece evidência pontual na IDE.
+
 ---
 
 # [0.1.0-alpha.4] - 2026-08-24

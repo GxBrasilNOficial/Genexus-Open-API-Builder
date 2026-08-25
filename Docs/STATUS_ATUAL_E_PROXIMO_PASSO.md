@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-08-24.
+2026-08-25.
 
 ## Último marco concluído
 
@@ -109,6 +109,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Em 2026-08-16 leftovers de localização (confirmação B035, fallback `<não definido>`, MessageBoxes do relatório final) passaram pelo catálogo; o relatório B081 usa a janela owner da IDE para o monitor, sem a posição do cursor. Cobertura mecânica apenas. Validação U15 em multi-monitor e B035 em es/en ainda pendente. Evidência: `Docs/Implementation/2026-08-15-LOCALIZACAO-TRILINGUE-E-FILTROS-EXISTENTES.md` §8.
 - `B102` concluído em 2026-08-24 na KB `wsEducacaoSpTeste` / Transaction `Teste` (`apiTeste`): Create/Update com a opção ligada devolvem o texto da rule `Error()` em `ErrorResponse.Message` e em `Messages[]` (`business_rule`) nos environments `.NET`/PostgreSQL e `.NET Framework`/SQL Server; acento UTF-8 e truncamento visível em 2045 + `...` = 2048; opção desligada volta ao texto genérico sem `GetMessages()`; `Msg()` no mesmo `B102ERR` é emitido pelo BC (tipo 0) e fica fora do 422 (filtro `Type == 1`). YAML publicado de `apiTeste` declara `Messages` como `type: array` com `$ref` para `sdt_API_ErrorMessage` e **não** emite `maxLength` para o `LongVarChar`. Reencontro de API Alpha: cobertura parcial (Wizard na `NotaFiscal`/`apiFiscalPublica` em estado de reencontro, cancelado sem escrita; catálogo mecânico de variantes; regravação `Updated=14`, `Blocked=0` na `Teste`). Evidência: documentos 27 e `Docs/Implementation/2026-08-24-B102-EXPERIMENTO-E-GATE-HTTP.md`.
 - Corte `0.1.0-alpha.4` preparado em 2026-08-24: CHANGELOG, notas nos três idiomas, versão no `Version.Shared.props`, README/`INSTALL` alinhados ao contrato de erro HTTP, dois assets DLL. Próxima ação após a publicação = Fase 0.
+- `B107` concluído em 2026-08-25: `Test-OpenApiClientContractValidity.ps1` deixou de depender de YAML em `C:\KBs\...`; a trava do pré-push é só offline sobre `ApiPlan.cs` (inclui `sdt_API_ErrorMessage`). Não misturado com a Fase 0.
 
 ## Frente atual
 
@@ -210,6 +211,7 @@ Capturar a linha de base da Fase 0 (não regressão de transações planas) em d
 57. Em 2026-08-16 a revisão pré-push alinhou o checkpoint (`Evidência da frente encerrada`, `Critério de conclusão da revisão pré-push`, `Marcos ainda não iniciados`) e os documentos 06 e 24 à promoção já vigente: localização residual, fingerprint B060, aborto na primeira aba e `Build All` pós-reencontro encerrados; próxima ação única = Sprint 9.
 58. Em 2026-08-24 o gate HTTP de `B102` fechou nos dois environments da KB `wsEducacaoSpTeste` (`apiTeste`): 422 com texto da rule, acento UTF-8, truncamento 2045 + `...` = 2048, `Messages[]` com `business_rule`; opção desligada com texto genérico e fonte sem `GetMessages()`; `Msg()` emitido pelo BC (tipo 0) e excluído do corpo (filtro `Type == 1` a partir de `MessageTypes.Error`). YAML de `apiTeste` declara `Messages` como array com `$ref` para `sdt_API_ErrorMessage` e zero ocorrências de `maxLength`. Reencontro Alpha: cobertura parcial. Próxima ação única = Fase 0. Evidência: documento 27 e `Docs/Implementation/2026-08-24-B102-EXPERIMENTO-E-GATE-HTTP.md`.
 59. Em 2026-08-24 o corte `0.1.0-alpha.4` foi preparado (CHANGELOG, notas PT/ES/EN, versão, README/`INSTALL` com o contrato de erro HTTP, dois assets DLL). A publicação (tag + GitHub Release) acompanha este commit. Próxima ação única permanece a Fase 0.
+60. Em 2026-08-25 `B107` fechou: o teste de contrato de cliente OpenAPI no pré-push não lê mais YAML da KB; permanece offline em `ApiPlan.cs` com `sdt_API_ErrorMessage`. Próxima ação única permanece a Fase 0.
 
 ## Bloqueios e fatos ainda não validados
 
