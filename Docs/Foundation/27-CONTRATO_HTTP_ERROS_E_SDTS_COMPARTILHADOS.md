@@ -90,6 +90,8 @@ A frente registrada em `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md`
 
 Continuam válidas as regras de `Code` principal, de idioma de `Message` e de não tradução das mensagens do BC. Ficam suspensas, até existir caminho viável de preenchimento, as regras específicas de `Errors[].Code`, `Errors[].Message` e `Errors[].Field`.
 
+**Remissão — 2026-08-24.** As regras de `Errors[]` acima permanecem fora do contrato entregue; o caminho viável fechado por `B102` é `Messages[]` tipado por SDT separado, sem `Field`. Ver Acréscimo e Gate humano abaixo.
+
 **Correção de premissa — 2026-08-23.** "Caminho viável" era leitura forte demais da evidência. O que a IDE recusou foi **subestrutura aninhada** dentro do próprio SDT (`sdt_API_ErrorResponse.Error`). Membro coleção tipado por um SDT **separado** é outro mecanismo — o mesmo que já funciona em `ListResponse.Items` — e nunca foi testado no corpo de erro. `B102` executa esse experimento: aceito, o corpo ganha `Messages`, coleção de `sdt_API_ErrorMessage` preenchida a partir de `GetMessages()`, e as regras suspensas voltam a ser decidíveis; recusado, as mensagens vão concatenadas em `Message` e a recusa fica registrada como evidência, agora sim do mecanismo certo. Em qualquer dos dois desfechos `Message` permanece top-level e preenchida, e nenhuma das formas correlaciona mensagem com índice de linha de subnível.
 
 ## Nota de revisão — 2026-08-23 — `Message` do `422` (`B102`)
@@ -99,6 +101,8 @@ A regra de idioma acima pressupõe que a `Message` carregue texto produzido pela
 `B102` implementa o repasse, com salvaguardas: repasse apenas em falha de validação — nunca em erro de infraestrutura, onde o texto pode conter detalhe de banco —, somente mensagens de **erro** do Business Component, e opção para desligar quando a API for exposta publicamente. O `Code` permanece `validation_error`, e a regra de decidir por `Code`, nunca pelo texto, continua valendo.
 
 **Complemento de 2026-08-23 — tipo, limite e forma.** O membro `Message` passa de `VarChar(256)` para `LongVarChar`, com truncamento explícito pela geração em cerca de 2K e reticência final: tipo sem limite não é conteúdo sem limite, e o corte silencioso do `VarChar` era pior do que um truncamento visível. A opção de desligar fica **ligada por padrão**, com aviso quando `SecurityLevel = None`, com default por KB no File de preferências e escolha por API na metadata. A forma do corpo — uma `Message` concatenada ou um membro coleção `Messages` — depende do experimento descrito na nota seguinte.
+
+**Remissão — 2026-08-24.** O experimento e o comprimento declarado fecharam na mesma data; ver Acréscimo e Gate humano abaixo. Não ler este complemento isolado como estado aberto.
 
 **Acréscimo — 2026-08-24.** O experimento da coleção foi aceito na IDE. O código de `B102` passou a gerar o repasse: `Message` top-level concatenada e membro coleção `Messages` tipado por `sdt_API_ErrorMessage`, preenchido a partir de `GetMessages()`. O ramo de concatenação como forma única não se aplica. Gate HTTP fechado na mesma data nos dois environments (`apiTeste`).
 

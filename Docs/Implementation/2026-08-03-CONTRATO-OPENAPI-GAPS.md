@@ -152,6 +152,8 @@ Estado final lido em `NETPostgreSQL155\web\apiNotaFiscal.yaml`:
 - `200` e `404` como únicos códigos declarados, conforme a limitação caracterizada;
 - schemas de request sem bloco `required:`, conforme a limitação caracterizada.
 
+**Remissão — 2026-08-24.** O estado "apenas `Code` e `Message`" descreve o fechamento desta frente de 2026-08-03; desde `B102` o SDT inclui também `Messages[]` tipado por `sdt_API_ErrorMessage`. Ver documento 27 e `Docs/Implementation/2026-08-24-B102-EXPERIMENTO-E-GATE-HTTP.md`.
+
 O Build All regerou a documentação REST das demais APIs da KB sem erro relacionado ao `sdt_API_ErrorResponse` reformado.
 
 A sonda temporária `ServiceRequiredPropertyProbe` foi removida do código antes do fechamento, junto com sua chamada no fluxo do wizard.

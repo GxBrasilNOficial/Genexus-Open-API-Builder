@@ -102,6 +102,8 @@ Correções feitas durante a validação:
 
 A geração sem `ErrorItem` nested foi validada mecanicamente no repositório e reexecutada na IDE até gravar Procedures, API Object, List e metadata. O preenchimento de `Errors[]` permanece pendente de prova específica sobre a tipagem real de item de subestrutura SDT no SDK/GeneXus.
 
+**Remissão — 2026-08-24.** A pendência acima ficou datada nesta evidência de B071–B079; `B102` fechou o corpo de erro com `Messages[]` tipado por `sdt_API_ErrorMessage`, sem reintroduzir `Errors[]`. Ver documento 27 e `Docs/Implementation/2026-08-24-B102-EXPERIMENTO-E-GATE-HTTP.md`.
+
 Atualização de 2026-08-03: a subestrutura `Errors` foi retirada também do SDT compartilhado `sdt_API_ErrorResponse`, porque continuava aparecendo no contrato OpenAPI como array que nunca é preenchido. Ver `2026-08-03-CONTRATO-OPENAPI-GAPS.md`. O reconhecimento das Procedures com `ErrorItem` descrito acima permanece ativo, e é justamente ele que permite regravar uma Procedure antiga para o contrato atual depois da mudança do SDT.
 
 ### Validação de membros obrigatórios: por que deixou de ser por presença

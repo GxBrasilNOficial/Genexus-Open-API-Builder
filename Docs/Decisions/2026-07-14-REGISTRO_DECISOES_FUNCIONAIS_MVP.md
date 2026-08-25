@@ -590,6 +590,7 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 - O MVP terá dois SDTs compartilhados por KB: `sdt_API_ErrorResponse` e `sdt_API_Pagination`.
 - `sdt_API_ErrorResponse` terá `Code`, `Message` e a coleção interna `Errors`; cada item de `Errors` terá `Code`, `Message` e `Field`.
 - `Errors` será subestrutura do próprio `sdt_API_ErrorResponse`; não será criado `sdt_API_ErrorDetail` separado no MVP.
+- Remissão — 2026-08-24: desde o fechamento de `B102` o conjunto compartilhado passa a três SDTs — `sdt_API_ErrorMessage`, `sdt_API_ErrorResponse` e `sdt_API_Pagination`. `sdt_API_ErrorResponse` contém `Code`, `Message` (`LongVarChar` 2097152) e `Messages[]` tipado por `sdt_API_ErrorMessage`; `Errors` como subestrutura interna e `Field` ficam fora do contrato entregue. Ver `Emenda técnica — 2026-08-24`.
 - `sdt_API_Pagination` terá `Page`, `PageSize`, `TotalCount` e `TotalPages` e será usado pelo membro `Pagination` dos `ListResponse` específicos.
 - Os SDTs compartilhados serão criados uma única vez, reutilizados pelas gerações seguintes e nunca sobrescritos silenciosamente quando houver estrutura incompatível.
 - O Folder e seus objetos não serão apagados automaticamente ao remover uma API nem ao desinstalar a extensão.
