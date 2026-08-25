@@ -58,37 +58,35 @@ Novos compartilhados só entram futuramente quando tiverem estrutura idêntica e
 Estrutura obrigatória:
 
 - `Code`
-- `Message`
-- `Errors[]`
+- `Message` (`LongVarChar` com `Length = 2097152`, truncada pela geração em cerca de 2K com reticência final)
+- `Messages[]` (coleção tipada pelo SDT compartilhado `sdt_API_ErrorMessage`)
 
-Cada item de `Errors[]` deve conter:
+Cada item de `Messages[]` deve conter:
 
 - `Code`
-- `Message`
-- `Field`
+- `Message` (`LongVarChar` com `Length = 2097152`)
+
+`Field` **não** integra o contrato entregue do MVP.
 
 Regras:
 
 - `Code` principal é estável, em inglês e `snake_case`
 - códigos principais previstos: `invalid_request`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `validation_error`, `internal_error`
-- `Message` e `Errors[].Message` são legíveis no idioma usado pela aplicação e pela KB
+- `Message` e `Messages[].Message` são legíveis no idioma usado pela aplicação e pela KB
 - a extensão não traduz mensagens produzidas pelo BC
-- `Errors[].Code` preserva o identificador da mensagem do BC quando existir
-- sem identificador do BC, `Errors[].Code` usa `business_rule`
-- `Errors[].Field` usa exatamente o nome público da entrada quando houver associação confiável
-- `Errors[].Field` não expõe variáveis internas de Procedures
+- `Messages[].Code` preserva o identificador da mensagem do BC quando existir
+- sem identificador do BC, `Messages[].Code` usa `business_rule`
 - a extensão não tenta descobrir campo analisando texto de mensagem
-- regras gerais, mensagens sem associação confiável ou regras envolvendo vários campos deixam `Field` vazio
 - não há membro separado `Location` no contrato de erro do MVP
-- não criar `sdt_API_ErrorDetail` separado; `Errors` é subestrutura interna de `sdt_API_ErrorResponse`
+- não criar `sdt_API_ErrorDetail` separado; `Messages` é coleção tipada por `sdt_API_ErrorMessage`, não subestrutura aninhada no próprio `sdt_API_ErrorResponse`
 
 ## Nota de revisão — 2026-08-03
 
-O enunciado acima permanece registrado como o contrato pretendido. A geração entregue **não** contém `Errors[]`.
+O enunciado normativo original previa `Errors[]` com `Code`, `Message` e `Field`. A geração entregue **não** contém `Errors[]`.
 
 Em B071-B073/B079 a tentativa de preencher `Errors[]` por `ErrorItem` de subestrutura SDT foi descartada depois que a IDE manteve a rejeição da validação da Procedure. O erro público passou a ser top-level, com `Code` e `Message`; a geração atual não usa `msg()` como transporte para mensagens do Business Component. O SDT compartilhado, porém, preservou a subestrutura, que continuou aparecendo no contrato OpenAPI como array que nunca é preenchido.
 
-A frente registrada em `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md` removeu o nível `Errors` de `sdt_API_ErrorResponse`. O SDT gerado passa a conter apenas `Code` e `Message`, e o schema derivado `sdt_API_ErrorResponse.Errors_Error` deixa de existir no YAML.
+A frente registrada em `Docs/Implementation/2026-08-03-CONTRATO-OPENAPI-GAPS.md` removeu o nível `Errors` de `sdt_API_ErrorResponse`. Naquela frente o SDT gerado passou a conter apenas `Code` e `Message`, e o schema derivado `sdt_API_ErrorResponse.Errors_Error` deixou de existir no YAML. A coleção `Messages[]` entra depois, no fechamento de `B102` — ver Acréscimo e Gate humano abaixo.
 
 Continuam válidas as regras de `Code` principal, de idioma de `Message` e de não tradução das mensagens do BC. Ficam suspensas, até existir caminho viável de preenchimento, as regras específicas de `Errors[].Code`, `Errors[].Message` e `Errors[].Field`.
 
@@ -232,8 +230,8 @@ Erros controlados pelas Procedures e pelo objeto `API` usam `sdt_API_ErrorRespon
 Quando falhas do BC produzirem mensagens:
 
 - o erro principal usa `Code = validation_error`
-- a mensagem principal é um resumo
-- `Errors[]` deriva das mensagens do BC conforme as regras deste documento; ver a nota de revisão da seção 3, que registra a retirada de `Errors[]` da geração entregue
+- a mensagem principal é o texto das rules concatenado em `Message` (ou o texto genérico quando o repasse está desligado)
+- `Messages[]` deriva das mensagens de **erro** do BC conforme as regras da seção 3; `Errors[]` permanece fora da geração entregue
 
 Um spike deve verificar se erros interceptados pelo GAM ou pelo runtime antes da Procedure podem preservar o mesmo corpo. A uniformidade nesses casos não é prometida antes dessa validação.
 
@@ -244,7 +242,7 @@ Um spike deve verificar se erros interceptados pelo GAM ou pelo runtime antes da
 - erros usam `sdt_API_ErrorResponse`
 - paginação usa `sdt_API_Pagination`
 - `sdt_API_Pagination` contém `TotalPages`, não `hasNextPage`
-- `sdt_API_ErrorResponse` contém `Errors[].Code`, `Errors[].Message` e `Errors[].Field` — critério suspenso pela nota de revisão da seção 3; a geração entregue expõe erro top-level com `Code` e `Message`
+- `sdt_API_ErrorResponse` contém `Code`, `Message` (`LongVarChar` 2097152) e `Messages[]` tipado por `sdt_API_ErrorMessage` (`Code`, `Message`); `Field` e `Errors[]` ficam fora do contrato entregue — ver seção 3 e o fechamento de `B102`
 - `Update` retorna 200 com Response completo
 - `Create` retorna 201
 - não há endpoint `Delete` no MVP

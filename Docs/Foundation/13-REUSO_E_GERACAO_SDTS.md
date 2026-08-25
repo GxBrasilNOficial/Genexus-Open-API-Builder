@@ -175,7 +175,7 @@ Ao criar:
 
 Derivada da metadata da Transaction.
 
-Os SDTs compartilhados `sdt_API_ErrorResponse` e `sdt_API_Pagination` ficam no `Root Module`, no Folder `GxOpenAPI`, conforme documento 27.
+Os SDTs compartilhados `sdt_API_ErrorMessage`, `sdt_API_ErrorResponse` e `sdt_API_Pagination` ficam no `Root Module`, no Folder `GxOpenAPI`, conforme documento 27.
 
 [NOM-F11][MD-F08][SDT-F13]
 

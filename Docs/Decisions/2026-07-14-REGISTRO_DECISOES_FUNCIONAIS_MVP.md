@@ -71,6 +71,8 @@ Fica autorizada a expansão do gerador para suportar Transactions com subníveis
 
 **Nota de revisão — 2026-08-23.** Os itens 2 e 3 foram revistos pela `Emenda técnica — 2026-08-23`: os contadores de `List` passam a ser desativáveis por subnível e restritos a subníveis diretos, e a substituição completa no `Update` passa a exigir o marcador explícito `<Subnível>Replace`. O item 4 permanece como decisão vigente, e a `Emenda técnica — 2026-08-23` registra que a implementação ainda não o cumpre — gap tratado em `B102`.
 
+**Remissão — 2026-08-24.** O item 4 desta emenda (contrato de erros / `Message` do BC) passou a ser cumprido pelo fechamento de `B102`; ver `Emenda técnica — 2026-08-24`.
+
 ## Emenda técnica — 2026-08-23 — Revisão dirigida da Sprint 9
 
 ### Fato que motivou a emenda
@@ -91,6 +93,8 @@ A revisão do plano da Sprint 9, conduzida em 2026-08-23 sobre a especificação
 9. **Serviço `Delete` (`B100`).** Fica autorizado como frente própria, opt-in e desligado por padrão: `200` com a chave removida, `404` em inexistente, `422` com `validation_error` em recusa do BC, inclusive por integridade referencial. Distinguir conflito referencial de recusa por regra exigiria classificar erro pelo texto da mensagem, contrariando a regra de decidir por `Code` e nunca por texto.
 10. **`Message` do `422` (`B102`).** A decisão de 2026-07-14 — `Message` como texto legível produzido pela aplicação, sem tradução pela extensão — permanece vigente e **não** é revista. Registra-se que a implementação atual não a cumpre: o gerador emite texto fixo e descarta as mensagens do BC, de modo que uma rule `error` da KB não chega ao consumidor. `B102` implementa o repasse, com opção de desligar para API exposta publicamente.
 
+**Remissão — 2026-08-24.** A afirmação de que a implementação não cumpria a decisão 10 ficou datada nesta emenda; o gap fechou em `B102` — ver `Emenda técnica — 2026-08-24`.
+
 ### O que a emenda não altera
 
 Permanecem válidos o corpo de erro top-level com `Code` e `Message` sem array por linha, a atomicidade do `Save()` do Business Component governando `Commit` e `Rollback`, a elegibilidade intra-subnível da emenda de 2026-08-20 e a regra de que clientes decidem por `Code`, nunca pelo texto de `Message`.
@@ -106,6 +110,9 @@ Na mesma data, uma segunda revisão examinou o **plano de trabalho** da Sprint 9
 ### Decisões
 
 1. **Forma do corpo de erro, agora condicionada a experimento.** A `Emenda técnica — 2026-08-03` retirou `Errors[]` depois que a IDE recusou uma tentativa com **subestrutura aninhada** dentro do próprio SDT (`sdt_API_ErrorResponse.Error`). Coleção tipada por um SDT **separado** é mecanismo distinto — o mesmo de `ListResponse.Items` — e nunca foi testado no corpo de erro. `B102` executa o experimento: aceito, o corpo ganha o membro coleção `Messages` tipado por `sdt_API_ErrorMessage`, preenchido a partir de `GetMessages()`; recusado, as mensagens vão concatenadas por `" | "`. Em ambos os casos `Message` permanece top-level e preenchido, e nenhuma das formas correlaciona mensagem com índice de linha.
+
+**Remissão — 2026-08-24.** O experimento da decisão 1 fechou com coleção aceita; ver `Emenda técnica — 2026-08-24`.
+
 2. **Tipo e limite da `Message`.** Passa a `LongVarChar`, com truncamento explícito pela geração em cerca de 2K. Tipo sem limite não é conteúdo sem limite: um Business Component com muitas rules produziria corpo de erro arbitrariamente grande. Somente mensagens de **erro** são repassadas.
 3. **Default do repasse.** Ligado, com aviso quando `SecurityLevel = None`, e desligável por KB e por API. A decisão de 2026-07-14 sobre a `Message` continua sendo a norma; desligado por padrão perpetuaria o descumprimento para quem não conhece a opção.
 4. **Escolha do chamador (`B105`).** O consumidor pode **restringir** o detalhe do erro abaixo do default da API, nunca ampliá-lo. Sem teto, a opção de desligar seria contornável pelo cliente.
@@ -119,6 +126,29 @@ Na mesma data, uma segunda revisão examinou o **plano de trabalho** da Sprint 9
 ### O que a emenda não altera
 
 Permanecem válidas a regra de que o cliente decide por `Code` e nunca pelo texto de `Message`, a ausência de array de erros **por linha**, a atomicidade do `Save()`, a elegibilidade intra-subnível, a semântica de `Required` como preenchimento fixada em 2026-08-03 e a recusa em traduzir mensagens do Business Component.
+
+## Emenda técnica — 2026-08-24 — Fechamento de `B102` (contrato de erro HTTP 422)
+
+### Fato que motivou a emenda
+
+Em 2026-08-24 o experimento da coleção tipada por SDT separado foi aceito na IDE e o gate HTTP de `B102` fechou nos dois environments da KB `wsEducacaoSpTeste` (`apiTeste`). A geração passou a cumprir a decisão de 2026-07-14 sobre `Message` legível produzida pela aplicação, e o corpo de erro ganhou `Messages[]` sem reintroduzir `Errors[]` nem `Field`. Evidência: documento 27 e `Docs/Implementation/2026-08-24-B102-EXPERIMENTO-E-GATE-HTTP.md`.
+
+### Decisões
+
+1. **Forma do corpo.** `sdt_API_ErrorResponse` contém `Code`, `Message` top-level e o membro coleção `Messages` tipado por `sdt_API_ErrorMessage`, preenchido a partir de `GetMessages()`. O ramo de concatenação como forma única **não** se aplica. `Message` permanece preenchida, concatenada por `" | "`, para não quebrar consumidores da Alpha. Nenhuma das formas correlaciona mensagem com índice de linha de subnível.
+2. **Tipo e limite.** `Message` (top-level e no item de `Messages[]`) é `LongVarChar` com `Length = 2097152` na declaração ao SDK; a geração trunca visivelmente em cerca de 2K com reticência final (`SubStr` + `...`). O YAML nativo **não** emite `maxLength`.
+3. **Filtro.** Só mensagens de **erro** do Business Component entram no corpo (`MessageTypes.Error` / `Type == 1`). `Msg()` fica de fora. `Field` permanece fora do contrato entregue.
+4. **`Messages[].Code`.** Preserva o identificador da mensagem do BC quando existir; sem identificador, usa `business_rule`. O `Code` principal do envelope continua `validation_error`.
+5. **Default do repasse.** Ligado por padrão, com aviso quando `SecurityLevel = None`, desligável por KB e por API. Desligado, o corpo volta ao texto genérico `"Business rules rejected the request."` sem chamar `GetMessages()`.
+6. **Decisão por `Code`.** Clientes continuam decidindo por `Code`, nunca pelo texto de `Message`.
+
+### O que a emenda não altera
+
+Permanecem válidas a ausência de array de erros **por linha**, a atomicidade do `Save()`, a elegibilidade intra-subnível, a semântica de `Required` como preenchimento, a recusa em traduzir mensagens do BC e a retirada definitiva de `Errors[]` como subestrutura aninhada.
+
+### Remissões
+
+Ficam remidos, quanto ao estado de implementação, os trechos das emendas de 2026-08-20 e 2026-08-23 que registravam o gap de `B102` ou o experimento ainda aberto, e a afirmação da `Emenda técnica — 2026-08-03 — contrato OpenAPI publicado` de que o SDT compartilhava apenas `Code` e `Message` — válida naquela data; desde esta emenda o SDT inclui também `Messages[]`.
 
 ## Emenda técnica — 2026-08-03
 
@@ -157,6 +187,8 @@ A conferência do YAML gerado pelo GeneXus, feita depois do fechamento de `B071`
 Este registro previa corpo de erro com `Errors[]` derivado das mensagens do BC, com `Code`, `Message` e `Field` por item. O preenchimento foi descartado em `B071`-`B073`/`B079`, depois que a IDE manteve a rejeição da validação da Procedure com `ErrorItem` de subestrutura SDT, e o erro público passou a ser top-level.
 
 A decisão revista retira `Errors[]` também da estrutura do SDT compartilhado `sdt_API_ErrorResponse`, que passa a conter apenas `Code` e `Message`. O motivo é que manter a subestrutura publicava no contrato um array que a geração nunca preenche, pior do que não oferecê-lo: o consumidor poderia construir tratamento de erro sobre um campo sempre ausente.
+
+**Remissão — 2026-08-24.** A afirmação "apenas `Code` e `Message`" descreve o estado após esta emenda de 2026-08-03; desde o fechamento de `B102` o SDT inclui também `Messages[]` — ver `Emenda técnica — 2026-08-24`.
 
 Ficam revistos por esta emenda os trechos deste registro que descrevem `Errors[].Message`, `Errors[].Code` e `Errors[].Field`. Permanecem válidas as regras de `Code` principal, de idioma de `Message`, de não tradução das mensagens do BC e de decisão do cliente por `Code` e nunca por texto.
 
@@ -532,6 +564,7 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 - A extensão não tentará descobrir o campo analisando o texto da mensagem do BC. O preenchimento ocorrerá somente quando a validação gerada já conhecer a entrada ou quando metadados nativos fornecerem uma relação inequívoca.
 - Regras gerais, regras envolvendo vários campos e mensagens sem associação confiável deixarão `Field` vazio.
 - Remissão: os itens acima que descrevem `Errors[]` foram revistos pela `Emenda técnica — 2026-08-03 — contrato OpenAPI publicado`. O corpo de erro entregue é top-level, com `Code` e `Message`, e `Errors[]` não existe no SDT gerado.
+- Remissão — 2026-08-24: desde o fechamento de `B102` o SDT inclui também `Messages[]` tipado por `sdt_API_ErrorMessage`; ver `Emenda técnica — 2026-08-24`. `Field` permanece fora do contrato entregue.
 - Não será acrescentado um membro separado como `Location` ao contrato de erro no MVP.
 - Erros controlados pelas Procedures e pelo objeto `API` usarão `sdt_API_ErrorResponse`.
 - Um spike deverá verificar se erros interceptados pelo GAM ou pelo runtime antes da Procedure podem preservar o mesmo corpo. A uniformidade nesses casos não será prometida antes dessa validação.
