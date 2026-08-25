@@ -44,8 +44,10 @@ pwsh -NoProfile -File Tests/GenerationBaseline/Test-ApiPlanGenerationBaseline.ps
 
 ### Objetivo
 
-Export XPZ dos SDTs gerados de **uma** Transaction plana, para cobrir ordem de itens e
-propriedades físicas do SDT que a camada offline não enxerga.
+Export/rematerialização XPZ da forma física dos SDTs de **uma** Transaction plana **já
+presentes na KB**, para cobrir ordem de itens e propriedades do `SDTStructure` que a
+camada offline não enxerga. O objetivo da captura de início é âncora de deriva ao longo
+da sprint — **não** provar que a DLL do dia da captura regravaria os mesmos bytes.
 
 ### Instruções de captura (início da sprint)
 
@@ -70,6 +72,12 @@ SDTs compartilhados). Manifesto versionado com SHA-256:
 hoje na pasta paralela são de **rematerialização** do XPZ já existente. A captura IDE
 fixa a forma física dos objetos **já presentes** na KB (gerações anteriores). A
 camada offline, por outro lado, reflete o emissor do código atual (pós-B102).
+
+**Decisão (2026-08-25, pré-push reforçada):** essa definição de captura de início foi
+confirmada — **não** é gap regenerar API + Build só para “atualizar” o XPZ de início.
+Os commits da Fase 0 / B107 / correções de pré-push **não** alteram o writer de SDT em
+produção; exigir regravação na IDE seria outra meta (paridade com o emissor do dia),
+fora do objetivo desta camada.
 
 A conferência de **fim** da sprint permanece para o fechamento da Sprint 9 — não ocorre agora.
 

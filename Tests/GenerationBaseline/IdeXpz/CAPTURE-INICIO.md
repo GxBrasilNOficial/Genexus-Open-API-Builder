@@ -24,6 +24,10 @@ ela emite Source/Service Source/plano de SDT a partir do código do gerador atua
 (pós-B102). A camada IDE não prova paridade com essa DLL até haver reinstalação e
 regravação explícitas na IDE.
 
+**Decisão (2026-08-25):** para o início da Sprint 9, a captura acima **cumpre** o
+objetivo da camada IDE (âncora de deriva na KB). Não se exige regenerar a API nem
+instalar a DLL da sessão Fase 0 só para “atualizar” estes hashes.
+
 ## Origem dos arquivos
 
 Copiados de:

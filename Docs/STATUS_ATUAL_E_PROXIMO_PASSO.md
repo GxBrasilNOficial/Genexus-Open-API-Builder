@@ -122,7 +122,7 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-Após conferência humana da Fase 0, iniciar a Fase 1 (`B095`): leitura hierárquica recursiva de `transaction.Structure.Root.Levels` no SDK GeneXus, evolução do modelo de domínio (`ApiPlanLevel`) e testes unitários offline em `Tests/TransactionStructure/`. A Fase 0 está completa nas duas camadas de início: offline no checker (`Tests/GenerationBaseline/`) e captura IDE registrada em `Tests/GenerationBaseline/IdeXpz/CAPTURE-INICIO.md` (Transaction `Teste`). A conferência XPZ de **fim** da sprint fica para o fechamento da Sprint 9. Evidência: `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md` e `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
+Após conferência humana da Fase 0, iniciar a Fase 1 (`B095`): leitura hierárquica recursiva de `transaction.Structure.Root.Levels` no SDK GeneXus, evolução do modelo de domínio (`ApiPlanLevel`) e testes unitários offline em `Tests/TransactionStructure/`. A Fase 0 está completa nas duas camadas de início: offline no checker (`Tests/GenerationBaseline/`) e captura IDE registrada em `Tests/GenerationBaseline/IdeXpz/CAPTURE-INICIO.md` (Transaction `Teste` — forma física dos SDTs **já presentes** na KB; sem regeneração Wizard+DLL no dia da captura; decisão de 2026-08-25: isso não é gap). A conferência XPZ de **fim** da sprint fica para o fechamento da Sprint 9. Evidência: `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md` e `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 
 ## Evidência da frente encerrada
 

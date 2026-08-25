@@ -170,7 +170,7 @@ Não deve existir endpoint `Delete` no MVP.
 **Não regressão:** a saída gerada para transação de nível único deve permanecer idêntica à linha de base capturada na Fase 0, com o escopo dividido em duas camadas, porque "byte a byte" só é alcançável em parte da saída:
 
 - **comparação automática, byte a byte, no checker pré-push:** Source das Procedures `Create`, `Update`, `Get` e `List`, Service Source do API Object e plano de SDT serializado, produzidos offline a partir de um `ApiPlan` sintético;
-- **conferência manual, no início e no fim da sprint:** a forma física dos SDTs, por export XPZ na IDE — `SDTStructure` depende do modelo da KB e não sai sem ela;
+- **conferência manual, no início e no fim da sprint:** a forma física dos SDTs já presentes na KB, por export/rematerialização XPZ — `SDTStructure` depende do modelo da KB e não sai sem ela; a captura de início **não** exige regenerar a API nem instalar a DLL do dia (âncora de deriva na KB; paridade com o emissor atual é da camada offline);
 - **recaptura da linha de base** somente em commit isolado, contendo apenas os arquivos de referência e a justificativa da mudança de saída.
 
 ## Resultado esperado
