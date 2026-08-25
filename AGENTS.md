@@ -233,13 +233,13 @@ pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
 5. concluir a revisão semântica exigida pelas instruções globais; `exit 0` mecânico não substitui essa revisão;
 6. quando o checker ou seu teste mudar, executar também `pwsh -NoProfile -File Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`.
 
-**Afrouxamento de regra normativa é evento de risco, não detalhe de redação.** Quando o intervalo revisado transformar uma regra de `não existe` em `não existe por padrão`, de `deve` em `deveria`, de absoluto em condicional, ou passar a descrever comportamento no presente condicional, isso vira **verificação obrigatória contra o código** — mesmo que todos os documentos concordem entre si. A varredura semântica procura divergência; convergência na direção errada passa limpo por ela. Um critério de aceite que proíbe reprova uma implementação parcial; um que já prevê o caso não reprova nada.
-
-Registrado em 2026-08-24, depois de três documentos normativos passarem a descrever, no presente condicional, um checkbox de `Delete` no Wizard e objetos `proc<Nome>_API_Delete` que **não existem** — a lista de serviços é fechada em `PrototypeWizardContract.ServiceNames`. O afrouxamento aumentou a coerência entre os documentos e, por isso, sobreviveu a três rodadas de revisão semântica; uma delas chegou a citar a redação afrouxada como texto vigente correto. Só caiu quando alguém foi ler o código em vez de comparar documentos entre si.
-
 - `scripts/Invoke-PrePushMechanicalChecks.ps1` é o nome canônico e não deve divergir do contrato global.
 - `manualRequired` bloqueia o push até a revisão humana registrar gaps confirmados, flags descartados e áreas não cobertas.
 - Após alterar `.github/ISSUE_TEMPLATE/`, abrir uma vez o seletor **New issue** no navegador: o check `tests.issueForms` reduz o risco, mas só o GitHub confirma se o formulário aparece (YAML inválido some sem aviso).
+
+**Afrouxamento de regra normativa é evento de risco, não detalhe de redação.** Quando o intervalo revisado transformar uma regra de `não existe` em `não existe por padrão`, de `deve` em `deveria`, de absoluto em condicional, ou passar a descrever comportamento no presente condicional, isso vira **verificação obrigatória contra o código** — mesmo que todos os documentos concordem entre si. A varredura semântica procura divergência; convergência na direção errada passa limpo por ela. Um critério de aceite que proíbe reprova uma implementação parcial; um que já prevê o caso não reprova nada.
+
+Registrado em 2026-08-24, depois de três documentos normativos passarem a descrever, no presente condicional, um checkbox de `Delete` no Wizard e objetos `proc<Nome>_API_Delete` que **não existem** — a lista de serviços é fechada em `PrototypeWizardContract.ServiceNames`. O afrouxamento aumentou a coerência entre os documentos e, por isso, sobreviveu a três rodadas de revisão semântica; uma delas chegou a citar a redação afrouxada como texto vigente correto. Só caiu quando alguém foi ler o código em vez de comparar documentos entre si.
 
 ### Revisão semântica de contrato runtime
 
