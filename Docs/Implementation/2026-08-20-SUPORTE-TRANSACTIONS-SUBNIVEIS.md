@@ -17,9 +17,9 @@ Esses SDTs são o acervo **já existente** na KB — **não** regenerados na IDE
 de rematerialização do XPZ. Conferência XPZ de fim de sprint permanece para o fechamento.
 Detalhe: `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 
-**Atualização de 2026-08-25 (noite).** Conferência humana da Fase 0 encerrada; camadas de início permanecem; próxima ação = Fase 1 (`B095`).
+**Atualização de 2026-08-25 (noite).** ~~Conferência humana da Fase 0 encerrada; camadas de início permanecem; próxima ação = Fase 1 (`B095`).~~ **Superada** pela atualização B095 abaixo.
 
-**Atualização de 2026-08-25 (noite, B095).** Fase 1 (`B095`) concluída: leitor hierárquico à parte (`TransactionStructureReader`), modelo `ApiPlanLevel` / `ApiPlanLevelField`, testes offline em `Tests/TransactionStructure/` ligados ao pré-push. Wizard flat intocado. Próxima ação = Fase 2 (`B096`). Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
+**Atualização de 2026-08-25 (noite, B095).** Fase 1 (`B095`) concluída: leitor hierárquico à parte (`TransactionStructureReader` com núcleo `Build` + adaptador SDK), modelo `ApiPlanLevel` / `ApiPlanLevelField`, critério compartilhado `TransactionAttributeKeyTraits`, testes offline com ouro em `Tests/TransactionStructure/Baselines/` ligados ao pré-push. Caminho flat do Wizard sem o leitor hierárquico. Próxima ação = Fase 2 (`B096`). Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
 
 ---
 
@@ -228,7 +228,7 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 | Fase / Backlog | Escopo | Componentes Afetados |
 |---|---|---|
 | **Fase 0** | Linha de base de não regressão em duas camadas, conforme detalhado abaixo da tabela | `Tests/GenerationBaseline/` (nova cobertura), `scripts/Invoke-PrePushMechanicalChecks.ps1` |
-| **Fase 1 (B095)** | Leitura hierárquica recursiva, modelo `ApiPlanLevel` e testes offline | `TransactionStructureReader.cs` (leitor à parte), `ApiPlan.cs`, `Tests/TransactionStructure/` — **não** altera `PrototypeWizardContract.cs` nem `PrototypePrimaryKeyReader.cs` |
+| **Fase 1 (B095)** | Leitura hierárquica recursiva, modelo `ApiPlanLevel` e testes offline do núcleo | `TransactionStructureReader.cs`, `TransactionAttributeKeyTraits.cs`, `ApiPlan.cs`, `Tests/TransactionStructure/` — o Wizard flat **não** consome o leitor hierárquico; só delega autonumeração ao helper compartilhado. `PrototypePrimaryKeyReader.cs` intocado |
 | **Fase 2 (B096)** | Geração de SDTs hierárquicos por contrato, regra de nomes e desambiguação | `ApiPlanSdtGenerationPlan.cs`, `ApiPlanSdtWriter.cs` |
 | **Fase 3 (B097)** | Geração de código Business Component nas Procedures (Get, Create, Update) e marcador `<Subnível>Replace` | `ApiPlanBusinessComponentWriter.cs` |
 | **Fase 4 (B098)** | Procedimento de List com contadores de subníveis diretos e `ListResponse_Item` condicionado | `ApiPlanListProcedureWriter.cs`, `ApiPlanSdtGenerationPlan.cs` |

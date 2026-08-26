@@ -12,13 +12,13 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Added
 
-- `B095` (Sprint 9 / Fase 1): leitura hierárquica recursiva de `transaction.Structure.Root.Levels`, modelo `ApiPlanLevel` / `ApiPlanLevelField`, `ApiPlan.Levels` (ainda não consumido pelo Wizard flat) e testes offline em `Tests/TransactionStructure/` ligados ao pré-push como `tests.transactionStructure`. Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
+- `B095` (Sprint 9 / Fase 1): leitura hierárquica com núcleo recursivo `Build`/`ReadLevel` sobre fonte neutra, adaptador SDK fino (`Read(Transaction)`), modelo `ApiPlanLevel` / `ApiPlanLevelField`, `ApiPlan.Levels` (ainda não consumido pelo Wizard flat), helper `TransactionAttributeKeyTraits` compartilhado com o Wizard, fixtures + ouro em `Tests/TransactionStructure/Baselines/` e gate `tests.transactionStructure`. Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
 - Fase 0 (Sprint 9): linha de base offline de transações planas em `Tests/GenerationBaseline/`, ligada ao checker pré-push como `tests.generationBaseline` (Source de Create/Update/Get/List, Service Source do API Object e plano de SDT, gerador pós-B102). Captura IDE de início registrada em `Tests/GenerationBaseline/IdeXpz/CAPTURE-INICIO.md` (Transaction plana `Teste` + SDTs compartilhados já presentes na KB). Conferência XPZ de fim da sprint permanece. Evidência: `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 
 ### Fixed
 
 - `B107`: `Test-OpenApiClientContractValidity.ps1` deixa de ler YAML de pastas `C:\KBs\...` (falso verde e amarre à máquina). A trava do pré-push fica offline sobre `ApiPlan.cs`, incluindo `sdt_API_ErrorMessage`. Conferência de YAML publicado permanece evidência pontual na IDE.
-- Documentação da Fase 1 (`B095`): a tabela de componentes em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md` passa a listar `TransactionStructureReader.cs` e a declarar que `PrototypeWizardContract.cs` / `PrototypePrimaryKeyReader.cs` ficaram de fora (leitor à parte), alinhada à evidência `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
+- Documentação e teste da Fase 1 (`B095`): o teste deixa de montar `ApiPlanLevel` à mão (falso verde) e passa a exercitar `Build` + `IsAutonumberCore` + ouro JSON; a tabela de componentes e a evidência declaram o que o offline cobre e o que fica para smoke IDE.
 
 ---
 

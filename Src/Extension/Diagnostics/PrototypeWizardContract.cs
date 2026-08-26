@@ -221,7 +221,7 @@ internal static class PrototypeWizardContractReader
             return "Desabilitado em request: regra NoAccept torna o atributo somente leitura via BC";
         }
 
-        if (isPrimaryKey && IsAutonumber(item, primaryKeyPartCount))
+        if (isPrimaryKey && TransactionAttributeKeyTraits.IsAutonumber(item, primaryKeyPartCount))
         {
             return "Desabilitado no CreateRequest: chave primaria autonumerada pelo BC";
         }
@@ -244,42 +244,6 @@ internal static class PrototypeWizardContractReader
         return new HashSet<string>(
             PrototypeWizardNoAcceptRuleReader.ReadAttributeNames(transaction.Rules?.Source ?? string.Empty),
             StringComparer.OrdinalIgnoreCase);
-    }
-
-    private static bool IsAutonumber(
-        Artech.Genexus.Common.Parts.TransactionAttribute item,
-        int primaryKeyPartCount)
-    {
-        try
-        {
-            if (item?.Attribute == null)
-            {
-                return true;
-            }
-
-            // GeneXus: autonumeracao so existe em PK de um unico campo. Em chave composta,
-            // nenhuma parte pode ser autonumerada — a contagem decide sem consultar a propriedade.
-            // Evidencia 2026-08-06: Teste (PK=3, Autonumber='False') e NotaFiscal (PK=1, Autonumber='True').
-            if (primaryKeyPartCount > 1)
-            {
-                return false;
-            }
-
-            // Tenta obter pela propriedade publica "Autonumber" do SDK do GeneXus.
-            // O fallback "idAUTONUMBER" e mantido por compatibilidade historica com descritores de metadados internos de versoes do SDK.
-            var value = item.Attribute.GetPropertyValueString("Autonumber") ?? item.Attribute.GetPropertyValueString("idAUTONUMBER");
-            if (string.Equals(value, "False", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "0", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            return true;
-        }
-        catch
-        {
-            // Em caso de duvida ou excecao na leitura da propriedade, adota fallback conservador (bloqueia o campo no CreateRequest).
-            return true;
-        }
     }
 
     private static string DescribeUpdatePayloadDisabledReason(bool isPrimaryKey, string payloadDisabledReason)
@@ -335,10 +299,7 @@ internal static class PrototypeWizardContractReader
 
     private static bool IsNullable(object value)
     {
-        var text = value.ToString();
-        return string.Equals(text, "True", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(text, "Yes", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(text, "Nullable", StringComparison.OrdinalIgnoreCase);
+        return TransactionAttributeKeyTraits.IsNullable(value);
     }
 
     private static bool IsFormula(Artech.Genexus.Common.Objects.Attribute attribute)

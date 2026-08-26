@@ -1,0 +1,140 @@
+{
+  "transactionName": "Header",
+  "maxDepth": 2,
+  "levelCount": 2,
+  "root": {
+    "levelName": "Header",
+    "depth": 1,
+    "parentLevelName": "",
+    "levelOrder": 1,
+    "primaryKey": [
+      {
+        "order": 1,
+        "attributeGuid": "a4000001-0001-4000-8000-000000000001",
+        "name": "HeaderId",
+        "dataType": "Numeric",
+        "length": 8,
+        "decimals": 0,
+        "isPrimaryKey": true,
+        "isNullable": false,
+        "isInferred": false,
+        "isRedundant": false,
+        "isForeignKey": false,
+        "isFormula": false,
+        "isNoAccept": false,
+        "isAutonumber": true
+      }
+    ],
+    "fields": [
+      {
+        "order": 1,
+        "attributeGuid": "a4000001-0001-4000-8000-000000000001",
+        "name": "HeaderId",
+        "dataType": "Numeric",
+        "length": 8,
+        "decimals": 0,
+        "isPrimaryKey": true,
+        "isNullable": false,
+        "isInferred": false,
+        "isRedundant": false,
+        "isForeignKey": false,
+        "isFormula": false,
+        "isNoAccept": false,
+        "isAutonumber": true
+      }
+    ],
+    "childLevels": [
+      {
+        "levelName": "<unnamed>",
+        "depth": 2,
+        "parentLevelName": "Header",
+        "levelOrder": 1,
+        "primaryKey": [
+          {
+            "order": 3,
+            "attributeGuid": "a4000001-0001-4000-8000-000000000001",
+            "name": "HeaderId",
+            "dataType": "Numeric",
+            "length": 8,
+            "decimals": 0,
+            "isPrimaryKey": true,
+            "isNullable": false,
+            "isInferred": false,
+            "isRedundant": false,
+            "isForeignKey": true,
+            "isFormula": false,
+            "isNoAccept": false,
+            "isAutonumber": false
+          },
+          {
+            "order": 1,
+            "attributeGuid": "a4000001-0002-4000-8000-000000000001",
+            "name": "LineId",
+            "dataType": "Numeric",
+            "length": 4,
+            "decimals": 0,
+            "isPrimaryKey": true,
+            "isNullable": false,
+            "isInferred": false,
+            "isRedundant": false,
+            "isForeignKey": false,
+            "isFormula": false,
+            "isNoAccept": false,
+            "isAutonumber": false
+          }
+        ],
+        "fields": [
+          {
+            "order": 1,
+            "attributeGuid": "a4000001-0002-4000-8000-000000000001",
+            "name": "LineId",
+            "dataType": "Numeric",
+            "length": 4,
+            "decimals": 0,
+            "isPrimaryKey": true,
+            "isNullable": false,
+            "isInferred": false,
+            "isRedundant": false,
+            "isForeignKey": false,
+            "isFormula": false,
+            "isNoAccept": false,
+            "isAutonumber": false
+          },
+          {
+            "order": 2,
+            "attributeGuid": "a4000001-0002-4000-8000-000000000002",
+            "name": "LineText",
+            "dataType": "VarChar",
+            "length": 40,
+            "decimals": 0,
+            "isPrimaryKey": false,
+            "isNullable": false,
+            "isInferred": false,
+            "isRedundant": false,
+            "isForeignKey": false,
+            "isFormula": false,
+            "isNoAccept": false,
+            "isAutonumber": false
+          },
+          {
+            "order": 3,
+            "attributeGuid": "a4000001-0001-4000-8000-000000000001",
+            "name": "HeaderId",
+            "dataType": "Numeric",
+            "length": 8,
+            "decimals": 0,
+            "isPrimaryKey": true,
+            "isNullable": false,
+            "isInferred": false,
+            "isRedundant": false,
+            "isForeignKey": true,
+            "isFormula": false,
+            "isNoAccept": false,
+            "isAutonumber": false
+          }
+        ],
+        "childLevels": []
+      }
+    ]
+  }
+}

@@ -12,6 +12,8 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// <summary>
 /// B095 — leitura hierárquica recursiva de <c>transaction.Structure.Root.Levels</c>.
 /// Leitor à parte do caminho flat do Wizard (<see cref="PrototypeWizardContractReader"/>).
+/// O núcleo recursivo opera sobre <see cref="TransactionStructureLevelSource"/> para ser
+/// exercitado offline; o adaptador SDK só traduz <see cref="TransactionLevel"/>.
 /// </summary>
 internal static class TransactionStructureReader
 {
@@ -27,14 +29,17 @@ internal static class TransactionStructureReader
         var noAcceptNames = new HashSet<string>(
             PrototypeWizardNoAcceptRuleReader.ReadAttributeNames(transaction.Rules?.Source ?? string.Empty),
             StringComparer.OrdinalIgnoreCase);
-        var rootLevel = ReadLevel(root, depth: 1, parentLevelName: string.Empty, levelOrder: 1, noAcceptNames);
-        return new TransactionStructureSnapshot(transaction.Name, rootLevel);
+        var rootSource = MapLevel(root);
+        return Build(transaction.Name, rootSource, noAcceptNames);
     }
 
     /// <summary>
-    /// Monta o snapshot a partir de uma árvore já normalizada (fixtures offline).
+    /// Núcleo recursivo: a mesma travessia usada após o adaptador SDK.
     /// </summary>
-    public static TransactionStructureSnapshot FromRootLevel(string transactionName, ApiPlanLevel rootLevel)
+    public static TransactionStructureSnapshot Build(
+        string transactionName,
+        TransactionStructureLevelSource rootLevel,
+        ISet<string>? noAcceptAttributeNames = null)
     {
         if (string.IsNullOrWhiteSpace(transactionName))
         {
@@ -46,17 +51,10 @@ internal static class TransactionStructureReader
             throw new ArgumentNullException(nameof(rootLevel));
         }
 
-        if (rootLevel.Depth != 1)
-        {
-            throw new ArgumentException("Root level Depth must be 1.", nameof(rootLevel));
-        }
-
-        if (!string.IsNullOrEmpty(rootLevel.ParentLevelName))
-        {
-            throw new ArgumentException("Root ParentLevelName must be empty.", nameof(rootLevel));
-        }
-
-        return new TransactionStructureSnapshot(transactionName, rootLevel);
+        var noAcceptNames = noAcceptAttributeNames
+            ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var root = ReadLevel(rootLevel, depth: 1, parentLevelName: string.Empty, levelOrder: 1, noAcceptNames);
+        return new TransactionStructureSnapshot(transactionName, root);
     }
 
     public static IReadOnlyList<TransactionStructureFixture> CreateFixtures()
@@ -66,6 +64,7 @@ internal static class TransactionStructureReader
             CreateOneSublevelFixture(),
             CreateParallelSublevelsFixture(),
             CreateThreeDeepFixture(),
+            CreateInheritedPrimaryKeyFixture(),
         };
     }
 
@@ -92,23 +91,112 @@ internal static class TransactionStructureReader
         return (value ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n");
     }
 
+    private static TransactionStructureLevelSource MapLevel(TransactionLevel level)
+    {
+        var attributes = level.Attributes
+            .Select(MapAttribute)
+            .ToArray();
+        var primaryKeyNames = level.PrimaryKey
+            .Select(part => part.Name)
+            .ToArray();
+
+        // Partes de PK ausentes de Attributes (ex.: herdadas) entram no mapa para não sumirem.
+        var attributeNames = new HashSet<string>(attributes.Select(item => item.Name), StringComparer.OrdinalIgnoreCase);
+        var extras = new List<TransactionStructureAttributeSource>();
+        foreach (var part in level.PrimaryKey)
+        {
+            if (!attributeNames.Contains(part.Name))
+            {
+                extras.Add(MapAttribute(part));
+                attributeNames.Add(part.Name);
+            }
+        }
+
+        if (extras.Count > 0)
+        {
+            attributes = attributes.Concat(extras).ToArray();
+        }
+
+        var children = level.Levels.Select(MapLevel).ToArray();
+        return new TransactionStructureLevelSource(level.Name ?? string.Empty, attributes, primaryKeyNames, children);
+    }
+
+    private static TransactionStructureAttributeSource MapAttribute(TransactionAttribute item)
+    {
+        var attribute = item.Attribute;
+        string? autonumberValue = null;
+        var hasMetadata = false;
+        if (attribute != null)
+        {
+            hasMetadata = true;
+            try
+            {
+                autonumberValue = attribute.GetPropertyValueString("Autonumber")
+                    ?? attribute.GetPropertyValueString("idAUTONUMBER");
+            }
+            catch
+            {
+                hasMetadata = false;
+            }
+        }
+
+        return new TransactionStructureAttributeSource(
+            item.Name,
+            (attribute?.Guid ?? item.Guid).ToString(),
+            attribute?.Type.ToString() ?? string.Empty,
+            attribute?.Length ?? 0,
+            attribute?.Decimals ?? 0,
+            TransactionAttributeKeyTraits.IsNullable(item.IsNullable),
+            item.IsInferred,
+            item.IsRedundant,
+            item.IsForeignKey,
+            attribute?.Formula is not null,
+            hasMetadata,
+            autonumberValue);
+    }
+
     private static ApiPlanLevel ReadLevel(
-        TransactionLevel level,
+        TransactionStructureLevelSource level,
         int depth,
         string parentLevelName,
         int levelOrder,
         ISet<string> noAcceptNames)
     {
         var levelName = string.IsNullOrWhiteSpace(level.Name) ? "<unnamed>" : level.Name;
-        var primaryKeyNames = new HashSet<string>(
-            level.PrimaryKey.Select(part => part.Name),
-            StringComparer.OrdinalIgnoreCase);
-        var primaryKeyPartCount = primaryKeyNames.Count;
+        var primaryKeyNames = new HashSet<string>(level.PrimaryKeyNames, StringComparer.OrdinalIgnoreCase);
+        var primaryKeyPartCount = level.PrimaryKeyNames.Count;
+        var attributesByName = new Dictionary<string, TransactionStructureAttributeSource>(StringComparer.OrdinalIgnoreCase);
+        foreach (var attribute in level.Attributes)
+        {
+            attributesByName[attribute.Name] = attribute;
+        }
+
         var fields = level.Attributes
             .Select((item, index) => CreateField(index + 1, item, primaryKeyNames, primaryKeyPartCount, noAcceptNames))
             .ToArray();
-        var primaryKey = fields.Where(item => item.IsPrimaryKey).OrderBy(item => item.Order).ToArray();
-        var childLevels = level.Levels
+        var fieldsByName = fields.ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase);
+
+        // Ordem da PK = ordem declarada em PrimaryKeyNames (espelha level.PrimaryKey do SDK), não a ordem de Attributes.
+        var primaryKey = new List<ApiPlanLevelField>();
+        for (var index = 0; index < level.PrimaryKeyNames.Count; index++)
+        {
+            var name = level.PrimaryKeyNames[index];
+            if (fieldsByName.TryGetValue(name, out var existing))
+            {
+                primaryKey.Add(existing);
+                continue;
+            }
+
+            if (!attributesByName.TryGetValue(name, out var source))
+            {
+                throw new InvalidOperationException(
+                    "Primary key part '" + name + "' was listed on level '" + levelName + "' but has no attribute metadata.");
+            }
+
+            primaryKey.Add(CreateField(index + 1, source, primaryKeyNames, primaryKeyPartCount, noAcceptNames));
+        }
+
+        var childLevels = level.ChildLevels
             .Select((child, index) => ReadLevel(child, depth + 1, levelName, index + 1, noAcceptNames))
             .ToArray();
 
@@ -124,71 +212,33 @@ internal static class TransactionStructureReader
 
     private static ApiPlanLevelField CreateField(
         int order,
-        TransactionAttribute item,
+        TransactionStructureAttributeSource item,
         ISet<string> primaryKeyNames,
         int primaryKeyPartCount,
         ISet<string> noAcceptNames)
     {
-        var attribute = item.Attribute;
-        var name = item.Name;
-        var isPrimaryKey = primaryKeyNames.Contains(name);
-        var isFormula = attribute?.Formula is not null;
-        var isNoAccept = noAcceptNames.Contains(name);
-        var isAutonumber = isPrimaryKey && IsAutonumber(item, primaryKeyPartCount);
+        var isPrimaryKey = primaryKeyNames.Contains(item.Name);
+        var isAutonumber = isPrimaryKey
+            && TransactionAttributeKeyTraits.IsAutonumberCore(
+                primaryKeyPartCount,
+                item.HasAttributeMetadata,
+                item.AutonumberPropertyValue);
 
         return new ApiPlanLevelField(
             order,
-            (attribute?.Guid ?? item.Guid).ToString(),
-            name,
-            attribute?.Type.ToString() ?? string.Empty,
-            attribute?.Length ?? 0,
-            attribute?.Decimals ?? 0,
+            item.AttributeGuid,
+            item.Name,
+            item.DataType,
+            item.Length,
+            item.Decimals,
             isPrimaryKey,
-            IsNullable(item.IsNullable),
+            item.IsNullable,
             item.IsInferred,
             item.IsRedundant,
             item.IsForeignKey,
-            isFormula,
-            isNoAccept,
+            item.IsFormula,
+            noAcceptNames.Contains(item.Name),
             isAutonumber);
-    }
-
-    private static bool IsAutonumber(TransactionAttribute item, int primaryKeyPartCount)
-    {
-        try
-        {
-            if (item?.Attribute == null)
-            {
-                return true;
-            }
-
-            if (primaryKeyPartCount > 1)
-            {
-                return false;
-            }
-
-            var value = item.Attribute.GetPropertyValueString("Autonumber")
-                ?? item.Attribute.GetPropertyValueString("idAUTONUMBER");
-            if (string.Equals(value, "False", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(value, "0", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            return true;
-        }
-        catch
-        {
-            return true;
-        }
-    }
-
-    private static bool IsNullable(object value)
-    {
-        var text = value?.ToString() ?? string.Empty;
-        return string.Equals(text, "True", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(text, "Yes", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(text, "Nullable", StringComparison.OrdinalIgnoreCase);
     }
 
     private static JObject SerializeLevel(ApiPlanLevel level)
@@ -228,146 +278,236 @@ internal static class TransactionStructureReader
 
     private static TransactionStructureFixture CreateOneSublevelFixture()
     {
-        // Cabeçalho + um subnível; PK de linha informada; fórmula e NoAccept na linha.
-        var headerId = Field(1, "a1000001-0001-4000-8000-000000000001", "OrderId", "Numeric", 8, 0, true, false, false, false, false, false, false, true);
-        var headerDesc = Field(2, "a1000001-0001-4000-8000-000000000002", "OrderDesc", "VarChar", 40, 0, false, true, false, false, false, false, false, false);
-        var lineId = Field(1, "a1000001-0002-4000-8000-000000000001", "LineId", "Numeric", 4, 0, true, false, false, false, false, false, false, false);
-        var lineQty = Field(2, "a1000001-0002-4000-8000-000000000002", "LineQty", "Numeric", 8, 2, false, false, false, false, false, false, false, false);
-        var lineTotal = Field(3, "a1000001-0002-4000-8000-000000000003", "LineTotal", "Numeric", 12, 2, false, false, false, false, false, true, false, false);
-        var lineStamp = Field(4, "a1000001-0002-4000-8000-000000000004", "LineStamp", "DateTime", 0, 0, false, false, false, false, false, false, true, false);
+        // Cabeçalho + um subnível; PK de linha informada (Autonumber=False); fórmula; NoAccept.
+        var headerId = Attr("a1000001-0001-4000-8000-000000000001", "OrderId", "Numeric", 8, 0, false, false, false, false, false, true, "True");
+        var headerDesc = Attr("a1000001-0001-4000-8000-000000000002", "OrderDesc", "VarChar", 40, 0, true, false, false, false, false, true, null);
+        var lineId = Attr("a1000001-0002-4000-8000-000000000001", "LineId", "Numeric", 4, 0, false, false, false, false, false, true, "False");
+        var lineQty = Attr("a1000001-0002-4000-8000-000000000002", "LineQty", "Numeric", 8, 2, false, false, false, false, false, true, null);
+        var lineTotal = Attr("a1000001-0002-4000-8000-000000000003", "LineTotal", "Numeric", 12, 2, false, false, false, false, true, true, null);
+        var lineStamp = Attr("a1000001-0002-4000-8000-000000000004", "LineStamp", "DateTime", 0, 0, false, false, false, false, false, true, null);
 
-        var lines = new ApiPlanLevel(
+        var lines = new TransactionStructureLevelSource(
             "Lines",
-            2,
-            "Order",
-            1,
-            new[] { lineId },
             new[] { lineId, lineQty, lineTotal, lineStamp },
-            Array.Empty<ApiPlanLevel>());
+            new[] { "LineId" },
+            Array.Empty<TransactionStructureLevelSource>());
 
-        var root = new ApiPlanLevel(
+        var root = new TransactionStructureLevelSource(
             "Order",
-            1,
-            string.Empty,
-            1,
-            new[] { headerId },
             new[] { headerId, headerDesc },
+            new[] { "OrderId" },
             new[] { lines });
 
-        return new TransactionStructureFixture("OneSublevel", FromRootLevel("Order", root));
+        var noAccept = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "LineStamp" };
+        return new TransactionStructureFixture("OneSublevel", Build("Order", root, noAccept));
     }
 
     private static TransactionStructureFixture CreateParallelSublevelsFixture()
     {
-        // Dois subníveis irmãos; NoAccept em um campo de Tags.
-        var docId = Field(1, "a2000001-0001-4000-8000-000000000001", "DocId", "Numeric", 8, 0, true, false, false, false, false, false, false, true);
-        var noteId = Field(1, "a2000001-0002-4000-8000-000000000001", "NoteId", "Numeric", 4, 0, true, false, false, false, false, false, false, false);
-        var noteText = Field(2, "a2000001-0002-4000-8000-000000000002", "NoteText", "VarChar", 60, 0, false, true, false, false, false, false, false, false);
-        var tagId = Field(1, "a2000001-0003-4000-8000-000000000001", "TagId", "Numeric", 4, 0, true, false, false, false, false, false, false, false);
-        var tagCode = Field(2, "a2000001-0003-4000-8000-000000000002", "TagCode", "VarChar", 20, 0, false, false, false, false, false, false, true, false);
+        var docId = Attr("a2000001-0001-4000-8000-000000000001", "DocId", "Numeric", 8, 0, false, false, false, false, false, true, "True");
+        var noteId = Attr("a2000001-0002-4000-8000-000000000001", "NoteId", "Numeric", 4, 0, false, false, false, false, false, true, "False");
+        var noteText = Attr("a2000001-0002-4000-8000-000000000002", "NoteText", "VarChar", 60, 0, true, false, false, false, false, true, null);
+        var tagId = Attr("a2000001-0003-4000-8000-000000000001", "TagId", "Numeric", 4, 0, false, false, false, false, false, true, "False");
+        var tagCode = Attr("a2000001-0003-4000-8000-000000000002", "TagCode", "VarChar", 20, 0, false, false, false, false, false, true, null);
 
-        var notes = new ApiPlanLevel(
+        var notes = new TransactionStructureLevelSource(
             "Notes",
-            2,
-            "Document",
-            1,
-            new[] { noteId },
             new[] { noteId, noteText },
-            Array.Empty<ApiPlanLevel>());
+            new[] { "NoteId" },
+            Array.Empty<TransactionStructureLevelSource>());
 
-        var tags = new ApiPlanLevel(
+        var tags = new TransactionStructureLevelSource(
             "Tags",
-            2,
-            "Document",
-            2,
-            new[] { tagId },
             new[] { tagId, tagCode },
-            Array.Empty<ApiPlanLevel>());
+            new[] { "TagId" },
+            Array.Empty<TransactionStructureLevelSource>());
 
-        var root = new ApiPlanLevel(
+        var root = new TransactionStructureLevelSource(
             "Document",
-            1,
-            string.Empty,
-            1,
             new[] { docId },
-            new[] { docId },
+            new[] { "DocId" },
             new[] { notes, tags });
 
-        return new TransactionStructureFixture("ParallelSublevels", FromRootLevel("Document", root));
+        var noAccept = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "TagCode" };
+        return new TransactionStructureFixture("ParallelSublevels", Build("Document", root, noAccept));
     }
 
     private static TransactionStructureFixture CreateThreeDeepFixture()
     {
-        // Três níveis; fórmula no nível 3; PK autonumerada no nível 3 (PK simples do nível).
-        var dayId = Field(1, "a3000001-0001-4000-8000-000000000001", "DayId", "Numeric", 8, 0, true, false, false, false, false, false, false, true);
-        var shiftId = Field(1, "a3000001-0002-4000-8000-000000000001", "ShiftId", "Numeric", 4, 0, true, false, false, false, false, false, false, false);
-        var shiftName = Field(2, "a3000001-0002-4000-8000-000000000002", "ShiftName", "VarChar", 40, 0, false, false, false, false, false, false, false, false);
-        var workerId = Field(1, "a3000001-0003-4000-8000-000000000001", "WorkerId", "Numeric", 8, 0, true, false, false, false, false, false, false, true);
-        var workerName = Field(2, "a3000001-0003-4000-8000-000000000002", "WorkerName", "VarChar", 60, 0, false, false, false, false, false, false, false, false);
-        var workerScore = Field(3, "a3000001-0003-4000-8000-000000000003", "WorkerScore", "Numeric", 8, 2, false, false, false, false, false, true, false, false);
+        // Três níveis; WorkerId com Autonumber=True (PK simples do nível); fórmula em WorkerScore.
+        var dayId = Attr("a3000001-0001-4000-8000-000000000001", "DayId", "Numeric", 8, 0, false, false, false, false, false, true, "True");
+        var shiftId = Attr("a3000001-0002-4000-8000-000000000001", "ShiftId", "Numeric", 4, 0, false, false, false, false, false, true, "False");
+        var shiftName = Attr("a3000001-0002-4000-8000-000000000002", "ShiftName", "VarChar", 40, 0, false, false, false, false, false, true, null);
+        var workerId = Attr("a3000001-0003-4000-8000-000000000001", "WorkerId", "Numeric", 8, 0, false, false, false, false, false, true, "True");
+        var workerName = Attr("a3000001-0003-4000-8000-000000000002", "WorkerName", "VarChar", 60, 0, false, false, false, false, false, true, null);
+        var workerScore = Attr("a3000001-0003-4000-8000-000000000003", "WorkerScore", "Numeric", 8, 2, false, false, false, false, true, true, null);
 
-        var workers = new ApiPlanLevel(
+        var workers = new TransactionStructureLevelSource(
             "Worker",
-            3,
-            "Shift",
-            1,
-            new[] { workerId },
             new[] { workerId, workerName, workerScore },
-            Array.Empty<ApiPlanLevel>());
+            new[] { "WorkerId" },
+            Array.Empty<TransactionStructureLevelSource>());
 
-        var shifts = new ApiPlanLevel(
+        var shifts = new TransactionStructureLevelSource(
             "Shift",
-            2,
-            "Day",
-            1,
-            new[] { shiftId },
             new[] { shiftId, shiftName },
+            new[] { "ShiftId" },
             new[] { workers });
 
-        var root = new ApiPlanLevel(
+        var root = new TransactionStructureLevelSource(
             "Day",
-            1,
-            string.Empty,
-            1,
             new[] { dayId },
-            new[] { dayId },
+            new[] { "DayId" },
             new[] { shifts });
 
-        return new TransactionStructureFixture("ThreeDeep", FromRootLevel("Day", root));
+        return new TransactionStructureFixture("ThreeDeep", Build("Day", root));
     }
 
-    private static ApiPlanLevelField Field(
-        int order,
+    private static TransactionStructureFixture CreateInheritedPrimaryKeyFixture()
+    {
+        // PK composta na ordem HeaderId, LineId — HeaderId herdado entra nas Attributes e em PrimaryKeyNames.
+        // Autonumber deve ser false porque primaryKeyPartCount > 1.
+        // Nível sem nome exercita o fallback <unnamed>.
+        var headerId = Attr("a4000001-0001-4000-8000-000000000001", "HeaderId", "Numeric", 8, 0, false, false, false, false, false, true, "True");
+        var inheritedHeader = Attr("a4000001-0001-4000-8000-000000000001", "HeaderId", "Numeric", 8, 0, false, false, false, true, false, true, "True");
+        var lineId = Attr("a4000001-0002-4000-8000-000000000001", "LineId", "Numeric", 4, 0, false, false, false, false, false, true, "True");
+        var lineText = Attr("a4000001-0002-4000-8000-000000000002", "LineText", "VarChar", 40, 0, false, false, false, false, false, true, null);
+
+        var line = new TransactionStructureLevelSource(
+            string.Empty,
+            new[] { lineId, lineText, inheritedHeader },
+            new[] { "HeaderId", "LineId" },
+            Array.Empty<TransactionStructureLevelSource>());
+
+        var root = new TransactionStructureLevelSource(
+            "Header",
+            new[] { headerId },
+            new[] { "HeaderId" },
+            new[] { line });
+
+        return new TransactionStructureFixture("InheritedPrimaryKey", Build("Header", root));
+    }
+
+    private static TransactionStructureAttributeSource Attr(
         string guid,
         string name,
         string dataType,
         int length,
         int decimals,
-        bool isPrimaryKey,
         bool isNullable,
         bool isInferred,
         bool isRedundant,
         bool isForeignKey,
         bool isFormula,
-        bool isNoAccept,
-        bool isAutonumber)
+        bool hasAttributeMetadata,
+        string? autonumberPropertyValue)
     {
-        return new ApiPlanLevelField(
-            order,
-            guid,
+        return new TransactionStructureAttributeSource(
             name,
+            guid,
             dataType,
             length,
             decimals,
-            isPrimaryKey,
             isNullable,
             isInferred,
             isRedundant,
             isForeignKey,
             isFormula,
-            isNoAccept,
-            isAutonumber);
+            hasAttributeMetadata,
+            autonumberPropertyValue);
     }
+}
+
+/// <summary>
+/// Forma neutra da árvore de níveis, independente do SDK, para o núcleo recursivo e fixtures.
+/// </summary>
+internal sealed class TransactionStructureLevelSource
+{
+    public TransactionStructureLevelSource(
+        string name,
+        IReadOnlyList<TransactionStructureAttributeSource> attributes,
+        IReadOnlyList<string> primaryKeyNames,
+        IReadOnlyList<TransactionStructureLevelSource> childLevels)
+    {
+        Name = name ?? string.Empty;
+        Attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
+        PrimaryKeyNames = primaryKeyNames ?? throw new ArgumentNullException(nameof(primaryKeyNames));
+        ChildLevels = childLevels ?? throw new ArgumentNullException(nameof(childLevels));
+    }
+
+    public string Name { get; }
+
+    public IReadOnlyList<TransactionStructureAttributeSource> Attributes { get; }
+
+    /// <summary>Ordem das partes da chave neste nível (espelha <c>TransactionLevel.PrimaryKey</c>).</summary>
+    public IReadOnlyList<string> PrimaryKeyNames { get; }
+
+    public IReadOnlyList<TransactionStructureLevelSource> ChildLevels { get; }
+}
+
+internal sealed class TransactionStructureAttributeSource
+{
+    public TransactionStructureAttributeSource(
+        string name,
+        string attributeGuid,
+        string dataType,
+        int length,
+        int decimals,
+        bool isNullable,
+        bool isInferred,
+        bool isRedundant,
+        bool isForeignKey,
+        bool isFormula,
+        bool hasAttributeMetadata,
+        string? autonumberPropertyValue)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Attribute name is required.", nameof(name));
+        }
+
+        if (string.IsNullOrWhiteSpace(attributeGuid))
+        {
+            throw new ArgumentException("Attribute GUID is required.", nameof(attributeGuid));
+        }
+
+        Name = name;
+        AttributeGuid = attributeGuid;
+        DataType = dataType ?? string.Empty;
+        Length = length;
+        Decimals = decimals;
+        IsNullable = isNullable;
+        IsInferred = isInferred;
+        IsRedundant = isRedundant;
+        IsForeignKey = isForeignKey;
+        IsFormula = isFormula;
+        HasAttributeMetadata = hasAttributeMetadata;
+        AutonumberPropertyValue = autonumberPropertyValue;
+    }
+
+    public string Name { get; }
+
+    public string AttributeGuid { get; }
+
+    public string DataType { get; }
+
+    public int Length { get; }
+
+    public int Decimals { get; }
+
+    public bool IsNullable { get; }
+
+    public bool IsInferred { get; }
+
+    public bool IsRedundant { get; }
+
+    public bool IsForeignKey { get; }
+
+    public bool IsFormula { get; }
+
+    public bool HasAttributeMetadata { get; }
+
+    public string? AutonumberPropertyValue { get; }
 }
 
 internal sealed class TransactionStructureSnapshot

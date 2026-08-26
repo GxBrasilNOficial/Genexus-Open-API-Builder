@@ -1,0 +1,156 @@
+{
+  "transactionName": "Order",
+  "maxDepth": 2,
+  "levelCount": 2,
+  "root": {
+    "levelName": "Order",
+    "depth": 1,
+    "parentLevelName": "",
+    "levelOrder": 1,
+    "primaryKey": [
+      {
+        "order": 1,
+        "attributeGuid": "a1000001-0001-4000-8000-000000000001",
+        "name": "OrderId",
+        "dataType": "Numeric",
+        "length": 8,
+        "decimals": 0,
+        "isPrimaryKey": true,
+        "isNullable": false,
+        "isInferred": false,
+        "isRedundant": false,
+        "isForeignKey": false,
+        "isFormula": false,
+        "isNoAccept": false,
+        "isAutonumber": true
+      }
+    ],
+    "fields": [
+      {
+        "order": 1,
+        "attributeGuid": "a1000001-0001-4000-8000-000000000001",
+        "name": "OrderId",
+        "dataType": "Numeric",
+        "length": 8,
+        "decimals": 0,
+        "isPrimaryKey": true,
+        "isNullable": false,
+        "isInferred": false,
+        "isRedundant": false,
+        "isForeignKey": false,
+        "isFormula": false,
+        "isNoAccept": false,
+        "isAutonumber": true
+      },
+      {
+        "order": 2,
+        "attributeGuid": "a1000001-0001-4000-8000-000000000002",
+        "name": "OrderDesc",
+        "dataType": "VarChar",
+        "length": 40,
+        "decimals": 0,
+        "isPrimaryKey": false,
+        "isNullable": true,
+        "isInferred": false,
+        "isRedundant": false,
+        "isForeignKey": false,
+        "isFormula": false,
+        "isNoAccept": false,
+        "isAutonumber": false
+      }
+    ],
+    "childLevels": [
+      {
+        "levelName": "Lines",
+        "depth": 2,
+        "parentLevelName": "Order",
+        "levelOrder": 1,
+        "primaryKey": [
+          {
+            "order": 1,
+            "attributeGuid": "a1000001-0002-4000-8000-000000000001",
+            "name": "LineId",
+            "dataType": "Numeric",
+            "length": 4,
+            "decimals": 0,
+            "isPrimaryKey": true,
+            "isNullable": false,
+            "isInferred": false,
+            "isRedundant": false,
+            "isForeignKey": false,
+            "isFormula": false,
+            "isNoAccept": false,
+            "isAutonumber": false
+          }
+        ],
+        "fields": [
+          {
+            "order": 1,
+            "attributeGuid": "a1000001-0002-4000-8000-000000000001",
+            "name": "LineId",
+            "dataType": "Numeric",
+            "length": 4,
+            "decimals": 0,
+            "isPrimaryKey": true,
+            "isNullable": false,
+            "isInferred": false,
+            "isRedundant": false,
+            "isForeignKey": false,
+            "isFormula": false,
+            "isNoAccept": false,
+            "isAutonumber": false
+          },
+          {
+            "order": 2,
+            "attributeGuid": "a1000001-0002-4000-8000-000000000002",
+            "name": "LineQty",
+            "dataType": "Numeric",
+            "length": 8,
+            "decimals": 2,
+            "isPrimaryKey": false,
+            "isNullable": false,
+            "isInferred": false,
+            "isRedundant": false,
+            "isForeignKey": false,
+            "isFormula": false,
+            "isNoAccept": false,
+            "isAutonumber": false
+          },
+          {
+            "order": 3,
+            "attributeGuid": "a1000001-0002-4000-8000-000000000003",
+            "name": "LineTotal",
+            "dataType": "Numeric",
+            "length": 12,
+            "decimals": 2,
+            "isPrimaryKey": false,
+            "isNullable": false,
+            "isInferred": false,
+            "isRedundant": false,
+            "isForeignKey": false,
+            "isFormula": true,
+            "isNoAccept": false,
+            "isAutonumber": false
+          },
+          {
+            "order": 4,
+            "attributeGuid": "a1000001-0002-4000-8000-000000000004",
+            "name": "LineStamp",
+            "dataType": "DateTime",
+            "length": 0,
+            "decimals": 0,
+            "isPrimaryKey": false,
+            "isNullable": false,
+            "isInferred": false,
+            "isRedundant": false,
+            "isForeignKey": false,
+            "isFormula": false,
+            "isNoAccept": true,
+            "isAutonumber": false
+          }
+        ],
+        "childLevels": []
+      }
+    ]
+  }
+}

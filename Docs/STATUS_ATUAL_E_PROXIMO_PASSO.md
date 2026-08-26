@@ -122,11 +122,11 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-Iniciar a Fase 2 (`B096`): geração de SDTs hierárquicos por subnível e por contrato, com regra de nomes e desambiguação. A Fase 1 (`B095`) está concluída (leitor à parte, `ApiPlanLevel`, testes offline). A conferência XPZ de **fim** da sprint continua reservada ao fechamento da Sprint 9. Evidência B095: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
+Iniciar a Fase 2 (`B096`): geração de SDTs hierárquicos por subnível e por contrato, com regra de nomes e desambiguação. A Fase 1 (`B095`) está concluída (núcleo recursivo offline + adaptador SDK + helper de autonumeração). A conferência XPZ de **fim** da sprint continua reservada ao fechamento da Sprint 9. Evidência B095: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
 
 ## Evidência da frente encerrada
 
-- `B095` (Fase 1): leitor `TransactionStructureReader` à parte do Wizard flat; modelo `ApiPlanLevel` / `ApiPlanLevelField`; `ApiPlan.Levels` aditivo e ainda não consumido pela geração; fixtures `OneSublevel`, `ParallelSublevels`, `ThreeDeep` com casos especiais embutidos; teste `tests.transactionStructure` no pré-push; builds Release canônico (0 avisos) e satélite U13 (0 erros).
+- `B095` (Fase 1): leitor `TransactionStructureReader` à parte (núcleo `Build` + adaptador SDK); `TransactionAttributeKeyTraits` compartilhado com o Wizard flat; modelo `ApiPlanLevel` / `ApiPlanLevelField`; `ApiPlan.Levels` aditivo e ainda não consumido pela geração; fixtures `OneSublevel`, `ParallelSublevels`, `ThreeDeep`, `InheritedPrimaryKey` via `Build` + ouro JSON; teste `tests.transactionStructure` no pré-push; builds Release canônico (0 avisos) e satélite U13 (0 erros).
 - `B102` validado por HTTP real nos dois environments da KB `wsEducacaoSpTeste` (`apiTeste`): 422 com texto da rule, acento, truncamento 2045 + `...` = 2048, `Messages[]` com `business_rule`; opção desligada com texto genérico; warning `Msg()` comprovadamente emitido pelo BC e ausente do corpo. YAML de `apiTeste` com `Messages` array e sem `maxLength`.
 - Reencontro Alpha registrado como cobertura parcial: Wizard na Transaction `NotaFiscal` (`apiFiscalPublica`) em `teste de reencontro`, cancelado sem escrita; catálogo mecânico de variantes Alpha; regravação na `Teste` com `Updated=14`, `Blocked=0`.
 - Localização trilíngue, fingerprint B060, aborto na primeira aba e `Build All` pós-reencontro de `apiNotaFiscal` permanecem evidência histórica nas seções seguintes; não são a frente que esta promoção encerra.
@@ -216,7 +216,7 @@ Iniciar a Fase 2 (`B096`): geração de SDTs hierárquicos por subnível e por c
 60. Em 2026-08-25 `B107` fechou: o teste de contrato de cliente OpenAPI no pré-push não lê mais YAML da KB; permanece offline em `ApiPlan.cs` com `sdt_API_ErrorMessage`. Próxima ação única permanece a Fase 0.
 61. Em 2026-08-25 a camada offline da Fase 0 foi capturada (`Tests/GenerationBaseline/`, `tests.generationBaseline`) com fixtures planas e referências pós-B102. Em seguida a captura IDE de início foi registrada (`IdeXpz/CAPTURE-INICIO.md`, Transaction `Teste`) a partir do acervo já existente na KB de teste — sem regeneração na IDE neste dia e sem instalar a DLL da sessão. Evidência: `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 62. Em 2026-08-25 a conferência humana da Fase 0 fechou sem defeito bloqueante e o intervalo foi enviado a `origin/main`. Este alinhamento registra a Fase 0 como concluída nas camadas de início no CHANGELOG `[Unreleased]`, no plano 24 e neste checkpoint. Próxima ação única = Fase 1 (`B095`).
-63. Em 2026-08-25 a Fase 1 (`B095`) fechou: leitor hierárquico à parte, `ApiPlanLevel`, testes `Tests/TransactionStructure/` no pré-push, builds Release canônico e satélite. Próxima ação única = Fase 2 (`B096`). Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
+63. Em 2026-08-25 a Fase 1 (`B095`) fechou: leitor hierárquico à parte com núcleo recursivo testável offline, helper de autonumeração compartilhado, ouro JSON e builds Release canônico e satélite. Próxima ação única = Fase 2 (`B096`). Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
 
 ## Bloqueios e fatos ainda não validados
 
