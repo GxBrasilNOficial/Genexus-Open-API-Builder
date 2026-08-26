@@ -100,12 +100,10 @@ Receber `ApiPlan`.
 | ReexecutionMode | safe/update/cancel |
 | RestArtifactTarget | API Object |
 
-**Nota de revisão — 2026-08-23 — Suporte a Subníveis:** a tabela acima descreve um plano plano, com um nome de SDT por contrato. Com subníveis (B095–B099), o `ApiPlan` passa a carregar também:
+**Nota de revisão — 2026-08-23 — Suporte a Subníveis** (atualizada em 2026-08-26 após `B095`): a tabela acima descreve um plano plano, com um nome de SDT por contrato. Com subníveis (B095–B099), o `ApiPlan` passa a carregar também:
 
-- a **árvore de níveis** (`ApiPlanLevel`: nome, profundidade, nível pai, ordem, chave primária própria e campos candidatos da estrutura por nível — `Fields`; seleção por contrato = B099+), conforme a seção 21 de `08-MODELO_DADOS_E_METADATA.md`;
-- os **nomes dos SDTs derivados** por nível e por contrato (`sdt<NomeBase>_API_<Papel>_<Subnível>`), que deixam de ser deriváveis de um nome único;
-- o nome do **SDT de item de lista** (`sdt<NomeBase>_API_ListResponse_Item`), presente somente quando há subnível selecionado;
-- quais subníveis têm **contador de `List`** ativo.
+- **Já em B095:** a **árvore de níveis** (`ApiPlanLevel`: nome, profundidade, nível pai, ordem, chave primária própria e campos candidatos da estrutura por nível — `Fields`; seleção por contrato = B099+), conforme a seção 21 de `08-MODELO_DADOS_E_METADATA.md`, exposta de forma aditiva em `ApiPlan.Levels` (ainda sem consumidor na geração nem no Wizard flat).
+- **Fases seguintes (B096+):** os **nomes dos SDTs derivados** por nível e por contrato (`sdt<NomeBase>_API_<Papel>_<Subnível>`), que deixam de ser deriváveis de um nome único; o nome do **SDT de item de lista** (`sdt<NomeBase>_API_ListResponse_Item`), presente somente quando há subnível selecionado; e quais subníveis têm **contador de `List`** ativo.
 
 Os campos existentes continuam com o mesmo significado, e transação de nível único produz exatamente o mesmo plano de hoje. Detalhes em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 

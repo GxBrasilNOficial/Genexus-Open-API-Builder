@@ -76,7 +76,7 @@ Transformar uma Transaction em base REST utilizável, gerando:
 
 # 5. Estado Atual da Documentação
 
-Os documentos 00 até 28 estão consolidados, com documentos arquivados separados em `Docs/Foundation/Archive`. A implementação prática ainda não foi iniciada.
+Os documentos 00 até 28 estão consolidados, com documentos arquivados separados em `Docs/Foundation/Archive`. A implementação prática **já está em linha Alpha**; o estado operacional e a próxima ação ficam no [checkpoint](../STATUS_ATUAL_E_PROXIMO_PASSO.md).
 
 Coleção documental completa cobrindo:
 
@@ -232,8 +232,8 @@ Ecossistema maduro.
 
 1. Ler o `README.md`.
 2. Se for contribuir ou retomar a implementação, consultar o [checkpoint operacional](../STATUS_ATUAL_E_PROXIMO_PASSO.md).
-3. Aguardar uma release antes de procurar uma versão instalável; ainda não existe implementação publicada.
-4. Acompanhar o roadmap e, quando houver Alpha, testar primeiro em KB de teste.
+3. Para versão instalável, usar a release Alpha publicada no GitHub (ver `CHANGELOG.md` e `Docs/Releases/`); testar primeiro em KB de teste.
+4. Acompanhar o roadmap e o próximo corte Alpha previsto no checkpoint.
 5. Reportar feedback e contribuir conforme `CONTRIBUTING.md`.
 
 ---

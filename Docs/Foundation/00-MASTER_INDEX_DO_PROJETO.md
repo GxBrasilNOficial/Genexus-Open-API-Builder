@@ -3,12 +3,12 @@
 ## Índice Mestre, Estado Atual e Direção do Projeto
 
 **Projeto:** Genexus Open API Builder
-**Status documental:** Coleção Foundation consolidada e liberada para orientar a implementação
-**Status técnico:** Implementação prática ainda não iniciada
-**Status público:** Repositório público; implementação ainda não iniciada
+**Status documental:** Coleção Foundation consolidada; checkpoint operacional em `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`
+**Status técnico:** Extensão em linha Alpha; Sprint 9 em andamento (Fase 1/`B095` concluída; próxima = Fase 2/`B096`)
+**Status público:** Repositório público; releases Alpha no GitHub (corte vigente `0.1.0-alpha.4`)
 **Idioma:** Português BR
 **Público principal:** mantenedor principal, futuros colaboradores técnicos e comunidade interessada
-**Data:** 2026-07-15
+**Data:** 2026-08-26
 
 ---
 
