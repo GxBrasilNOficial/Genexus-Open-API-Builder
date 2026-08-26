@@ -1,0 +1,19 @@
+&RestStatusCode = 200
+&CollisionDoc.Load(&DocId)
+If &CollisionDoc.Success()
+    &GetResponse = new()
+    &GetResponse.DocId = &CollisionDoc.DocId
+    &GetResponse.Notes = &CollisionDoc.Notes
+    For &Bc_Notes in &CollisionDoc.Notes
+        &Get_Notes = new()
+        &Get_Notes.NoteId = &Bc_Notes.NoteId
+        &Get_Notes.NoteText = &Bc_Notes.NoteText
+        &GetResponse.Notes1.Add(&Get_Notes)
+    EndFor
+    &RestStatusCode = 200
+Else
+    &RestStatusCode = 404
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"not_found"
+    &ErrorResponse.Message = !"CollisionDoc was not found."
+EndIf

@@ -867,6 +867,15 @@ internal static class ApiPlanBusinessComponentWriter
 
         lines.Add($"{bodyIndent}{bc} = new()");
         lines.AddRange(plan.CreateRequestFields.Select(field => $"{bodyIndent}{bc}.{field.Name} = &CreateRequest.{field.Name}"));
+        if (ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(plan))
+        {
+            lines.AddRange(ApiPlanBusinessComponentHierarchicalSource.EmitCreateCollectionAssignments(
+                plan,
+                bc,
+                "&CreateRequest",
+                guarded ? 4 : 0));
+        }
+
         lines.Add($"{bodyIndent}{bc}.Save()");
         lines.Add($"{bodyIndent}If {bc}.Success()");
         if (!string.IsNullOrEmpty(slashGuard))
@@ -882,6 +891,15 @@ internal static class ApiPlanBusinessComponentWriter
             lines.Add($"{bodyIndent}        {bc}.Load({LoadArguments(plan, bc)})");
             lines.Add($"{bodyIndent}        &CreateResponse = new()");
             lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", committedIndent));
+            if (ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(plan))
+            {
+                lines.AddRange(ApiPlanBusinessComponentHierarchicalSource.EmitGetCollectionAssignments(
+                    plan,
+                    bc,
+                    "&CreateResponse",
+                    committedIndent));
+            }
+
             lines.AddRange(CreateLocationUrlAssignments(plan, bc, committedIndent));
             lines.Add($"{bodyIndent}        &HttpResponse.AddHeader(!\"Location\", &LocationUrl)");
             lines.Add($"{bodyIndent}        &RestStatusCode = 201");
@@ -893,6 +911,15 @@ internal static class ApiPlanBusinessComponentWriter
             lines.Add($"{bodyIndent}    {bc}.Load({LoadArguments(plan, bc)})");
             lines.Add($"{bodyIndent}    &CreateResponse = new()");
             lines.AddRange(ResponseAssignments(plan, bc, "&CreateResponse", successIndent));
+            if (ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(plan))
+            {
+                lines.AddRange(ApiPlanBusinessComponentHierarchicalSource.EmitGetCollectionAssignments(
+                    plan,
+                    bc,
+                    "&CreateResponse",
+                    successIndent));
+            }
+
             lines.AddRange(CreateLocationUrlAssignments(plan, bc, successIndent));
             lines.Add($"{bodyIndent}    &HttpResponse.AddHeader(!\"Location\", &LocationUrl)");
             lines.Add($"{bodyIndent}    &RestStatusCode = 201");
@@ -1043,6 +1070,15 @@ internal static class ApiPlanBusinessComponentWriter
             "    &GetResponse = new()",
         };
         lines.AddRange(ResponseAssignments(plan, bc, "&GetResponse", 4));
+        if (ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(plan))
+        {
+            lines.AddRange(ApiPlanBusinessComponentHierarchicalSource.EmitGetCollectionAssignments(
+                plan,
+                bc,
+                "&GetResponse",
+                4));
+        }
+
         lines.Add("    &RestStatusCode = 200");
         lines.Add("Else");
         lines.AddRange(NotFoundMessages(plan, 4));
@@ -1083,12 +1119,30 @@ internal static class ApiPlanBusinessComponentWriter
         lines.Add($"{bodyIndent}{bc}.Load({LoadArguments(plan, "&")})");
         lines.Add($"{bodyIndent}If {bc}.Success()");
         lines.AddRange(plan.UpdateRequestFields.Select(field => $"{new string(' ', assignmentIndent)}{bc}.{field.Name} = &UpdateRequest.{field.Name}"));
+        if (ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(plan))
+        {
+            lines.AddRange(ApiPlanBusinessComponentHierarchicalSource.EmitUpdateCollectionAssignments(
+                plan,
+                bc,
+                "&UpdateRequest",
+                assignmentIndent));
+        }
+
         lines.Add($"{new string(' ', assignmentIndent)}{bc}.Save()");
         lines.Add($"{new string(' ', assignmentIndent)}If {bc}.Success()");
         lines.Add($"{new string(' ', nestedIndent)}Commit");
         lines.Add($"{new string(' ', nestedIndent)}{bc}.Load({LoadArguments(plan, "&")})");
         lines.Add($"{new string(' ', nestedIndent)}&UpdateResponse = new()");
         lines.AddRange(ResponseAssignments(plan, bc, "&UpdateResponse", nestedIndent));
+        if (ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(plan))
+        {
+            lines.AddRange(ApiPlanBusinessComponentHierarchicalSource.EmitGetCollectionAssignments(
+                plan,
+                bc,
+                "&UpdateResponse",
+                nestedIndent));
+        }
+
         lines.Add($"{new string(' ', nestedIndent)}&RestStatusCode = 200");
         lines.Add($"{new string(' ', assignmentIndent)}Else");
         lines.AddRange(CurrentBusinessRuleFailureMessages(nestedIndent, includeMessageForwarding, bc));
@@ -2264,15 +2318,24 @@ internal static class ApiPlanBusinessComponentWriter
         yield return $"{indent}&ErrorResponse.Message = !\"{plan.TransactionName} was not found.\"";
     }
 
-    private static IReadOnlyList<VariableSpec> GetVariables(ApiPlan plan) => plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
-        .Concat(new[]
+    private static IReadOnlyList<VariableSpec> GetVariables(ApiPlan plan)
+    {
+        var variables = plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
+            .Concat(new[]
+            {
+                new VariableSpec("GetResponse", plan.ResponseSdtName),
+                new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
+                new VariableSpec("RestStatusCode", "Numeric(3.0)"),
+                new VariableSpec(plan.TransactionName, plan.TransactionName),
+            })
+            .ToList();
+        if (ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(plan))
         {
-            new VariableSpec("GetResponse", plan.ResponseSdtName),
-            new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
-            new VariableSpec("RestStatusCode", "Numeric(3.0)"),
-            new VariableSpec(plan.TransactionName, plan.TransactionName),
-        })
-        .ToArray();
+            variables.AddRange(ApiPlanBusinessComponentHierarchicalSource.CollectGetVariables(plan));
+        }
+
+        return variables;
+    }
 
     private static IReadOnlyList<VariableSpec> CreateVariables(ApiPlan plan) =>
         CreateVariables(plan, plan.IncludeBusinessComponentErrorMessages);
@@ -2295,6 +2358,11 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         variables.AddRange(RequiredMemberPresenceVariables(plan, "CreateRequest", plan.CreateRequestFields));
+        if (ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(plan))
+        {
+            variables.AddRange(ApiPlanBusinessComponentHierarchicalSource.CollectCreateVariables(plan));
+        }
+
         return variables;
     }
 
@@ -2337,6 +2405,11 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         variables.AddRange(RequiredMemberPresenceVariables(plan, "UpdateRequest", plan.UpdateRequestFields));
+        if (ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(plan))
+        {
+            variables.AddRange(ApiPlanBusinessComponentHierarchicalSource.CollectUpdateVariables(plan));
+        }
+
         return variables;
     }
 

@@ -1,0 +1,69 @@
+&RestStatusCode = 201
+&Document = new()
+For &Create_Notes in &CreateRequest.Notes
+    &Bc_Notes = new()
+    &Bc_Notes.NoteId = &Create_Notes.NoteId
+    &Bc_Notes.NoteText = &Create_Notes.NoteText
+    &Document.Notes.Add(&Bc_Notes)
+EndFor
+For &Create_Tags in &CreateRequest.Tags
+    &Bc_Tags = new()
+    &Bc_Tags.TagId = &Create_Tags.TagId
+    &Document.Tags.Add(&Bc_Tags)
+EndFor
+&Document.Save()
+If &Document.Success()
+    Commit
+    &Document.Load(&Document.DocId)
+    &CreateResponse = new()
+    &CreateResponse.DocId = &Document.DocId
+    For &Bc_Notes in &Document.Notes
+        &Get_Notes = new()
+        &Get_Notes.NoteId = &Bc_Notes.NoteId
+        &Get_Notes.NoteText = &Bc_Notes.NoteText
+        &CreateResponse.Notes.Add(&Get_Notes)
+    EndFor
+    For &Bc_Tags in &Document.Tags
+        &Get_Tags = new()
+        &Get_Tags.TagId = &Bc_Tags.TagId
+        &Get_Tags.TagCode = &Bc_Tags.TagCode
+        &CreateResponse.Tags.Add(&Get_Tags)
+    EndFor
+    &LocationUrl = !"/document"
+    &LocationUrl = &LocationUrl + !"/" + &Document.DocId.ToString().Trim()
+    &HttpResponse.AddHeader(!"Location", &LocationUrl)
+    &RestStatusCode = 201
+Else
+    &RestStatusCode = 422
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"validation_error"
+    &Messages = &Document.GetMessages()
+    &ConcatenatedMessage = !""
+    For &i = 1 To &Messages.Count
+        &Message = &Messages.Item(&i)
+        If &Message.Type = MessageTypes.Error
+            &ErrorItem = new()
+            If &Message.Id.IsEmpty()
+                &ErrorItem.Code = !"business_rule"
+            Else
+                &ErrorItem.Code = &Message.Id
+            EndIf
+            &ErrorItem.Message = &Message.Description
+            &ErrorResponse.Messages.Add(&ErrorItem)
+            If &ConcatenatedMessage.IsEmpty()
+                &ConcatenatedMessage = &Message.Description
+            Else
+                &ConcatenatedMessage = &ConcatenatedMessage + !" | " + &Message.Description
+            EndIf
+        EndIf
+    EndFor
+    If &ConcatenatedMessage.IsEmpty()
+        &ErrorResponse.Message = !"Business rules rejected the request."
+    Else
+        If Len(&ConcatenatedMessage) > 2048
+            &ErrorResponse.Message = Substr(&ConcatenatedMessage, 1, 2045) + !"..."
+        Else
+            &ErrorResponse.Message = &ConcatenatedMessage
+        EndIf
+    EndIf
+EndIf

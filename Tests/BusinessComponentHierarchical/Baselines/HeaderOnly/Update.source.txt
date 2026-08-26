@@ -1,0 +1,67 @@
+&RestStatusCode = 200
+If &UpdateRequest.SoloId > 99999999
+    &RestStatusCode = 400
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"attribute_limit_exceeded"
+    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"SoloId")
+EndIf
+If Len(&UpdateRequest.SoloName) > 40
+    &RestStatusCode = 400
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"attribute_limit_exceeded"
+    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"SoloName")
+EndIf
+If &RestStatusCode = 200
+    &HeaderOnly.Load(&SoloId)
+    If &HeaderOnly.Success()
+        &HeaderOnly.SoloId = &UpdateRequest.SoloId
+        &HeaderOnly.SoloName = &UpdateRequest.SoloName
+        &HeaderOnly.Save()
+        If &HeaderOnly.Success()
+            Commit
+            &HeaderOnly.Load(&SoloId)
+            &UpdateResponse = new()
+            &UpdateResponse.SoloId = &HeaderOnly.SoloId
+            &UpdateResponse.SoloName = &HeaderOnly.SoloName
+            &RestStatusCode = 200
+        Else
+            &RestStatusCode = 422
+            &ErrorResponse = new()
+            &ErrorResponse.Code = !"validation_error"
+            &Messages = &HeaderOnly.GetMessages()
+            &ConcatenatedMessage = !""
+            For &i = 1 To &Messages.Count
+                &Message = &Messages.Item(&i)
+                If &Message.Type = MessageTypes.Error
+                    &ErrorItem = new()
+                    If &Message.Id.IsEmpty()
+                        &ErrorItem.Code = !"business_rule"
+                    Else
+                        &ErrorItem.Code = &Message.Id
+                    EndIf
+                    &ErrorItem.Message = &Message.Description
+                    &ErrorResponse.Messages.Add(&ErrorItem)
+                    If &ConcatenatedMessage.IsEmpty()
+                        &ConcatenatedMessage = &Message.Description
+                    Else
+                        &ConcatenatedMessage = &ConcatenatedMessage + !" | " + &Message.Description
+                    EndIf
+                EndIf
+            EndFor
+            If &ConcatenatedMessage.IsEmpty()
+                &ErrorResponse.Message = !"Business rules rejected the request."
+            Else
+                If Len(&ConcatenatedMessage) > 2048
+                    &ErrorResponse.Message = Substr(&ConcatenatedMessage, 1, 2045) + !"..."
+                Else
+                    &ErrorResponse.Message = &ConcatenatedMessage
+                EndIf
+            EndIf
+        EndIf
+    Else
+        &RestStatusCode = 404
+        &ErrorResponse = new()
+        &ErrorResponse.Code = !"not_found"
+        &ErrorResponse.Message = !"HeaderOnly was not found."
+    EndIf
+EndIf

@@ -1,0 +1,19 @@
+&RestStatusCode = 200
+&Header.Load(&HeaderId)
+If &Header.Success()
+    &GetResponse = new()
+    &GetResponse.HeaderId = &Header.HeaderId
+    For &Bc_Level1 in &Header.<unnamed>
+        &Get_Level1 = new()
+        &Get_Level1.LineId = &Bc_Level1.LineId
+        &Get_Level1.LineText = &Bc_Level1.LineText
+        &Get_Level1.HeaderId = &Bc_Level1.HeaderId
+        &GetResponse.Level1.Add(&Get_Level1)
+    EndFor
+    &RestStatusCode = 200
+Else
+    &RestStatusCode = 404
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"not_found"
+    &ErrorResponse.Message = !"Header was not found."
+EndIf

@@ -1,0 +1,13 @@
+&RestStatusCode = 200
+&HeaderOnly.Load(&SoloId)
+If &HeaderOnly.Success()
+    &GetResponse = new()
+    &GetResponse.SoloId = &HeaderOnly.SoloId
+    &GetResponse.SoloName = &HeaderOnly.SoloName
+    &RestStatusCode = 200
+Else
+    &RestStatusCode = 404
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"not_found"
+    &ErrorResponse.Message = !"HeaderOnly was not found."
+EndIf

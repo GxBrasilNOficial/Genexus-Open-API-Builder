@@ -1,0 +1,56 @@
+&RestStatusCode = 201
+&LongTx = new()
+For &Create_L1_BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL in &CreateRequest.BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+    &Bc_L1_BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL = new()
+    &Bc_L1_BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL.LongLineId = &Create_L1_BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL.LongLineId
+    &LongTx.BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL.Add(&Bc_L1_BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL)
+EndFor
+&LongTx.Save()
+If &LongTx.Success()
+    Commit
+    &LongTx.Load(&LongTx.LongId)
+    &CreateResponse = new()
+    &CreateResponse.LongId = &LongTx.LongId
+    For &Bc_L1_BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL in &LongTx.BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+        &Get_L1_BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL = new()
+        &Get_L1_BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL.LongLineId = &Bc_L1_BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL.LongLineId
+        &CreateResponse.BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL.Add(&Get_L1_BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL)
+    EndFor
+    &LocationUrl = !"/longtx"
+    &LocationUrl = &LocationUrl + !"/" + &LongTx.LongId.ToString().Trim()
+    &HttpResponse.AddHeader(!"Location", &LocationUrl)
+    &RestStatusCode = 201
+Else
+    &RestStatusCode = 422
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"validation_error"
+    &Messages = &LongTx.GetMessages()
+    &ConcatenatedMessage = !""
+    For &i = 1 To &Messages.Count
+        &Message = &Messages.Item(&i)
+        If &Message.Type = MessageTypes.Error
+            &ErrorItem = new()
+            If &Message.Id.IsEmpty()
+                &ErrorItem.Code = !"business_rule"
+            Else
+                &ErrorItem.Code = &Message.Id
+            EndIf
+            &ErrorItem.Message = &Message.Description
+            &ErrorResponse.Messages.Add(&ErrorItem)
+            If &ConcatenatedMessage.IsEmpty()
+                &ConcatenatedMessage = &Message.Description
+            Else
+                &ConcatenatedMessage = &ConcatenatedMessage + !" | " + &Message.Description
+            EndIf
+        EndIf
+    EndFor
+    If &ConcatenatedMessage.IsEmpty()
+        &ErrorResponse.Message = !"Business rules rejected the request."
+    Else
+        If Len(&ConcatenatedMessage) > 2048
+            &ErrorResponse.Message = Substr(&ConcatenatedMessage, 1, 2045) + !"..."
+        Else
+            &ErrorResponse.Message = &ConcatenatedMessage
+        EndIf
+    EndIf
+EndIf

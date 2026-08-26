@@ -21,7 +21,9 @@ Detalhe: `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 
 **Atualização de 2026-08-25 (noite, B095).** Fase 1 (`B095`) concluída: leitor hierárquico à parte (`TransactionStructureReader` com núcleo `Build` + adaptador SDK), modelo `ApiPlanLevel` / `ApiPlanLevelField`, critério compartilhado `TransactionAttributeKeyTraits`, testes offline com ouro em `Tests/TransactionStructure/Baselines/` ligados ao pré-push. Caminho flat do Wizard sem o leitor hierárquico. ~~Próxima ação = Fase 2 (`B096`).~~ **Superada** pela atualização B096 abaixo. Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
 
-**Atualização de 2026-08-26 (B096).** Fase 2 (`B096`) concluída: plano de SDT hierárquico por contrato (Create/Update/Response + `<Subnível>Replace`), naming/desambiguação/encurtamento de objeto a 128, ouro offline e gate `tests.sdtHierarchicalPlan`. Wizard flat e `ListResponse_Item` fora deste recorte. Próxima ação = Fase 3 (`B097`). Evidência: `Docs/Implementation/2026-08-26-B096-SDTS-HIERARQUICOS.md`.
+**Atualização de 2026-08-26 (B097).** Fase 3 (`B097`) concluída: Source BC hierárquico Get/Create/Update com `<Subnível>Replace`, mapa alinhado ao B096, ouro offline e gate `tests.businessComponentHierarchical`. Wizard flat e `ListResponse_Item` fora deste recorte. Próxima ação = Fase 4 (`B098`). Evidência: `Docs/Implementation/2026-08-26-B097-BC-HIERARQUICO.md`.
+
+**Atualização de 2026-08-26 (B096).** Fase 2 (`B096`) concluída: plano de SDT hierárquico por contrato (Create/Update/Response + `<Subnível>Replace`), naming/desambiguação/encurtamento de objeto a 128, ouro offline e gate `tests.sdtHierarchicalPlan`. Wizard flat e `ListResponse_Item` fora deste recorte. ~~Próxima ação = Fase 3 (`B097`).~~ **Superada** pela atualização B097 acima. Evidência: `Docs/Implementation/2026-08-26-B096-SDTS-HIERARQUICOS.md`.
 
 ---
 
@@ -232,7 +234,7 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 | **Fase 0** | Linha de base de não regressão em duas camadas, conforme detalhado abaixo da tabela | `Tests/GenerationBaseline/` (nova cobertura), `scripts/Invoke-PrePushMechanicalChecks.ps1` |
 | **Fase 1 (B095)** | Leitura hierárquica recursiva, modelo `ApiPlanLevel` e testes offline do núcleo | `TransactionStructureReader.cs`, `TransactionAttributeKeyTraits.cs`, `ApiPlan.cs`, `Tests/TransactionStructure/` — o Wizard flat **não** consome o leitor hierárquico; só delega autonumeração ao helper compartilhado. `PrototypePrimaryKeyReader.cs` intocado |
 | **Fase 2 (B096)** | Geração de SDTs hierárquicos por contrato, regra de nomes e desambiguação (**concluída em 2026-08-26**, plano offline; writer físico inalterado) | `ApiPlanSdtGenerationPlan.cs`, `ApiPlanSdtHierarchicalNaming.cs`, `Tests/SdtHierarchicalPlan/` |
-| **Fase 3 (B097)** | Geração de código Business Component nas Procedures (Get, Create, Update) e marcador `<Subnível>Replace` | `ApiPlanBusinessComponentWriter.cs` |
+| **Fase 3 (B097)** | Geração de código Business Component nas Procedures (Get, Create, Update) e marcador `<Subnível>Replace` (**concluída em 2026-08-26**, Source offline) | `ApiPlanBusinessComponentWriter.cs`, `ApiPlanBusinessComponentHierarchicalSource.cs`, `ApiPlanHierarchicalContractMap.cs`, `Tests/BusinessComponentHierarchical/` |
 | **Fase 4 (B098)** | Procedimento de List com contadores de subníveis diretos e `ListResponse_Item` condicionado | `ApiPlanListProcedureWriter.cs`, `ApiPlanSdtGenerationPlan.cs` |
 | **Fase 5 (B099a)** | Interface do Wizard com agrupamento por nível, dependência entre níveis, controle de contador e aviso de profundidade | `PrototypeWizardDialog.cs` e abas de seleção |
 | **Fase 6 (B099b)** | Metadados hierárquicos (`schemaVersion` V2), sincronização e integridade | `ApiPlanMetadataFileWriter.cs`, `ApiPlanTransactionSyncComparer.cs`, `ApiPlanTransactionSyncOrchestrator.cs` |
@@ -303,7 +305,7 @@ Estes itens nasceram da revisão de 2026-08-23. Não pertencem a B095–B099 e t
 | `B105` | Escolha do chamador sobre o detalhe do corpo de erro, podendo apenas **restringir** o que o default da API permite, nunca ampliar | Fora de `B102`; nesta sprint se houver folga, senão Sprint 10 |
 | `B101` | Experimento de membro nullable para distinguir membro ausente de membro vazio | Candidato à Sprint 10, fora da Sprint 9 |
 
-**Ordem de execução resultante:** `B102` (concluído) → Fase 0 (concluída nas camadas de início; conferência de fim permanece) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fases 3 a 6 (`B097`–`B099`) → Fase 7 → `B100`.
+**Ordem de execução resultante:** `B102` (concluído) → Fase 0 (concluída nas camadas de início; conferência de fim permanece) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fases 4 a 6 (`B098`–`B099`) → Fase 7 → `B100`.
 
 `B105` nasceu separado de `B102` de propósito. Ele acrescenta parâmetro aos serviços `Create` e `Update`, muda a assinatura no API Object, muda o YAML e pede caso de teste HTTP próprio — e `B102` já é o primeiro item da sprint mexendo em quatro subsistemas. O que a Fase 0 precisa ter estabilizado é o **default por API**, que `B102` entrega.
 

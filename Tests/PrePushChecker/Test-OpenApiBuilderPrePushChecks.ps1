@@ -190,6 +190,7 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.generationBaseline' }).status -eq 'passed') 'O teste unitário da linha de base de geração (Fase 0) deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.transactionStructure' }).status -eq 'passed') 'O teste unitário da leitura hierárquica B095 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.sdtHierarchicalPlan' }).status -eq 'passed') 'O teste unitário do plano de SDT hierárquico B096 deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.businessComponentHierarchical' }).status -eq 'passed') 'O teste unitário do Source BC hierárquico B097 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractAutonumberCompositeKey' }).status -eq 'passed') 'O teste unitário de autonumeração e chave composta deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractGenerationStateReader' }).status -eq 'passed') 'O teste unitário do leitor de estado de geração deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractCreateRequired' }).status -eq 'passed') 'O teste unitário do contrato de wizard CreateRequired deveria passar na fixture.'

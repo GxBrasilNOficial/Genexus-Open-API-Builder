@@ -1,0 +1,24 @@
+&RestStatusCode = 200
+&Document.Load(&DocId)
+If &Document.Success()
+    &GetResponse = new()
+    &GetResponse.DocId = &Document.DocId
+    For &Bc_Notes in &Document.Notes
+        &Get_Notes = new()
+        &Get_Notes.NoteId = &Bc_Notes.NoteId
+        &Get_Notes.NoteText = &Bc_Notes.NoteText
+        &GetResponse.Notes.Add(&Get_Notes)
+    EndFor
+    For &Bc_Tags in &Document.Tags
+        &Get_Tags = new()
+        &Get_Tags.TagId = &Bc_Tags.TagId
+        &Get_Tags.TagCode = &Bc_Tags.TagCode
+        &GetResponse.Tags.Add(&Get_Tags)
+    EndFor
+    &RestStatusCode = 200
+Else
+    &RestStatusCode = 404
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"not_found"
+    &ErrorResponse.Message = !"Document was not found."
+EndIf

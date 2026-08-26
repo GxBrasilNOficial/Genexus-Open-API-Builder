@@ -117,18 +117,19 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 Sprint 9 — Suporte a Transactions com Subníveis (Multinível — B095–B099), precedida por `B102` e seguida por `B100`. Levantamento de profundidade na KB de produção (`Gx_FabricaBrasil`), especificações funcionais e plano por fases consolidados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, na `Emenda técnica — 2026-08-20`, na `Emenda técnica — 2026-08-23` e na `Emenda técnica — 2026-08-23 (complemento)` do registro de decisões do MVP.
 
-Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; conferência de fim permanece) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fases 3 a 6 (`B097`–`B099`) → Fase 7 (ciclo de vida sob hierarquia) → `B100` (serviço `Delete`). Publicação em três cortes: `0.1.0-alpha.4` após `B102` (este corte, 2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis, e `0.1.0-alpha.6` com o `Delete`, cada um com os dois assets DLL. `B105` entra na sprint apenas se houver folga.
+Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; conferência de fim permanece) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fases 4 a 6 (`B098`–`B099`) → Fase 7 (ciclo de vida sob hierarquia) → `B100` (serviço `Delete`). Publicação em três cortes: `0.1.0-alpha.4` após `B102` (este corte, 2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis, e `0.1.0-alpha.6` com o `Delete`, cada um com os dois assets DLL. `B105` entra na sprint apenas se houver folga.
 
 Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibilidade e de gate: mecanismo em duas camadas para a Fase 0, ampliação de `B102`, gates próprios para `B102` e `B100` com HTTP real nos dois environments, validação do contrato OpenAPI multinível ao fim da Fase 4, retorno da linha `Gx18u13` ao plano, fechamento da regra de propagação do marcador `<Subnível>Replace`, limiares de escala, `B105` e a divisão da publicação em três cortes.
 
 ## Próxima ação única
 
-Iniciar a Fase 3 (`B097`): geração de código Business Component nas Procedures para subníveis, com substituição completa sob o marcador `<Subnível>Replace`. A Fase 2 (`B096`) está concluída (plano de SDT hierárquico offline, naming e desambiguação; Wizard e `ListResponse_Item` fora do recorte). A conferência XPZ de **fim** da sprint continua reservada ao fechamento da Sprint 9. Evidência B096: `Docs/Implementation/2026-08-26-B096-SDTS-HIERARQUICOS.md`.
+Iniciar a Fase 4 (`B098`): Procedimento `List` com contadores de subníveis diretos e `ListResponse_Item` condicionado. A Fase 3 (`B097`) está concluída (Source BC hierárquico Get/Create/Update com `<Subnível>Replace` offline). A conferência XPZ de **fim** da sprint continua reservada ao fechamento da Sprint 9. Evidência B097: `Docs/Implementation/2026-08-26-B097-BC-HIERARQUICO.md`.
 
 ## Evidência da frente encerrada
 
+- `B097` (Fase 3): mapa `ApiPlanHierarchicalContractMap` alinhado ao naming B096; emissor `ApiPlanBusinessComponentHierarchicalSource` para Get (For no BC), Create (For no request + Add) e Update (`Replace` com match-by-PK ou `Clear`+Add se PK autonumerada; pai novo ignora Replace dos filhos); writer plano ramifica só com subníveis; fixtures + ouro em `Tests/BusinessComponentHierarchical/Baselines/` e gate `tests.businessComponentHierarchical`; linha de base plana e plano B096 intactos.
 - `B096` (Fase 2): `ApiPlanSdtGenerationPlanBuilder` emite SDTs derivados por contrato quando `ApiPlan.Levels` tem filhos; naming `sdt<Tx>_API_<Papel>_<caminho>` com desambiguação por `LevelOrder` e encurtamento de objeto a 128 (folha ≤32 tenta reusar a folha; senão hash); marcador `<Subnível>Replace` no Update; pós-ordem na lista `OwnSdts`; `ListResponse.Items` permanece coleção de `Response`; fixtures + ouro em `Tests/SdtHierarchicalPlan/Baselines/` e gate `tests.sdtHierarchicalPlan`; caminho plano idêntico à Fase 0.
-- `B095` (Fase 1): leitor `TransactionStructureReader` à parte (núcleo `Build` + adaptador SDK); `TransactionAttributeKeyTraits` compartilhado com o Wizard flat; modelo `ApiPlanLevel` / `ApiPlanLevelField`; `ApiPlan.Levels` aditivo, agora consumido pelo plano de SDT quando há subníveis (Wizard flat continua sem o leitor); fixtures `OneSublevel`, `ParallelSublevels`, `ThreeDeep`, `InheritedPrimaryKey` via `Build` + ouro JSON; teste `tests.transactionStructure` no pré-push; builds Release canônico (0 avisos) e satélite U13 (0 erros).
+- `B095` (Fase 1): leitor `TransactionStructureReader` à parte (núcleo `Build` + adaptador SDK); `TransactionAttributeKeyTraits` compartilhado com o Wizard flat; modelo `ApiPlanLevel` / `ApiPlanLevelField`; `ApiPlan.Levels` aditivo, agora consumido pelo plano de SDT e pelo Source BC quando há subníveis (Wizard flat continua sem o leitor); fixtures `OneSublevel`, `ParallelSublevels`, `ThreeDeep`, `InheritedPrimaryKey` via `Build` + ouro JSON; teste `tests.transactionStructure` no pré-push; builds Release canônico (0 avisos) e satélite U13 (0 erros).
 - `B102` validado por HTTP real nos dois environments da KB `wsEducacaoSpTeste` (`apiTeste`): 422 com texto da rule, acento, truncamento 2045 + `...` = 2048, `Messages[]` com `business_rule`; opção desligada com texto genérico; warning `Msg()` comprovadamente emitido pelo BC e ausente do corpo. YAML de `apiTeste` com `Messages` array e sem `maxLength`.
 - Reencontro Alpha registrado como cobertura parcial: Wizard na Transaction `NotaFiscal` (`apiFiscalPublica`) em `teste de reencontro`, cancelado sem escrita; catálogo mecânico de variantes Alpha; regravação na `Teste` com `Updated=14`, `Blocked=0`.
 - Localização trilíngue, fingerprint B060, aborto na primeira aba e `Build All` pós-reencontro de `apiNotaFiscal` permanecem evidência histórica nas seções seguintes; não são a frente que esta promoção encerra.
@@ -151,7 +152,7 @@ Iniciar a Fase 3 (`B097`): geração de código Business Component nas Procedure
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única é a Fase 3 (`B097`); a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é a Fase 4 (`B098`); a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
@@ -220,6 +221,7 @@ Iniciar a Fase 3 (`B097`): geração de código Business Component nas Procedure
 62. Em 2026-08-25 a conferência humana da Fase 0 fechou sem defeito bloqueante e o intervalo foi enviado a `origin/main`. Este alinhamento registra a Fase 0 como concluída nas camadas de início no CHANGELOG `[Unreleased]`, no plano 24 e neste checkpoint. Próxima ação única = Fase 1 (`B095`).
 63. Em 2026-08-25 a Fase 1 (`B095`) fechou: leitor hierárquico à parte com núcleo recursivo testável offline, helper de autonumeração compartilhado, ouro JSON e builds Release canônico e satélite. Próxima ação única = Fase 2 (`B096`). Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
 64. Em 2026-08-26 a Fase 2 (`B096`) fechou: plano de SDT hierárquico por contrato, naming/desambiguação/encurtamento de objeto a 128, ouro offline e gate `tests.sdtHierarchicalPlan`; linha de base plana intacta. Próxima ação única = Fase 3 (`B097`). Evidência: `Docs/Implementation/2026-08-26-B096-SDTS-HIERARQUICOS.md`.
+65. Em 2026-08-26 a Fase 3 (`B097`) fechou: Source BC hierárquico Get/Create/Update com `<Subnível>Replace`, mapa alinhado ao B096, ouro offline e gate `tests.businessComponentHierarchical`; linha de base plana e plano B096 intactos. Próxima ação única = Fase 4 (`B098`). Evidência: `Docs/Implementation/2026-08-26-B097-BC-HIERARQUICO.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -250,6 +252,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [2026-08-25 — Fase 0 linha de base de não regressão](Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md)
 - [2026-08-25 — B095 leitura hierárquica](Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md)
 - [2026-08-26 — B096 SDTs hierárquicos](Implementation/2026-08-26-B096-SDTS-HIERARQUICOS.md)
+- [2026-08-26 — B097 BC hierárquico](Implementation/2026-08-26-B097-BC-HIERARQUICO.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
 - [Release 0.1.0-alpha.1](Releases/0.1.0-alpha.1.md)

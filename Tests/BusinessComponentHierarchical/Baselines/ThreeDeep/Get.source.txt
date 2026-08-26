@@ -1,0 +1,25 @@
+&RestStatusCode = 200
+&Day.Load(&DayId)
+If &Day.Success()
+    &GetResponse = new()
+    &GetResponse.DayId = &Day.DayId
+    For &Bc_Shift in &Day.Shift
+        &Get_Shift = new()
+        &Get_Shift.ShiftId = &Bc_Shift.ShiftId
+        &Get_Shift.ShiftName = &Bc_Shift.ShiftName
+        For &Bc_Shift_Worker in &Bc_Shift.Worker
+            &Get_Shift_Worker = new()
+            &Get_Shift_Worker.WorkerId = &Bc_Shift_Worker.WorkerId
+            &Get_Shift_Worker.WorkerName = &Bc_Shift_Worker.WorkerName
+            &Get_Shift_Worker.WorkerScore = &Bc_Shift_Worker.WorkerScore
+            &Get_Shift.Worker.Add(&Get_Shift_Worker)
+        EndFor
+        &GetResponse.Shift.Add(&Get_Shift)
+    EndFor
+    &RestStatusCode = 200
+Else
+    &RestStatusCode = 404
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"not_found"
+    &ErrorResponse.Message = !"Day was not found."
+EndIf

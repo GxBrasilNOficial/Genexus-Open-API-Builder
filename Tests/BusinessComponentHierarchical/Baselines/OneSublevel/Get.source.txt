@@ -1,0 +1,21 @@
+&RestStatusCode = 200
+&Order.Load(&OrderId)
+If &Order.Success()
+    &GetResponse = new()
+    &GetResponse.OrderId = &Order.OrderId
+    &GetResponse.OrderDesc = &Order.OrderDesc
+    For &Bc_Lines in &Order.Lines
+        &Get_Lines = new()
+        &Get_Lines.LineId = &Bc_Lines.LineId
+        &Get_Lines.LineQty = &Bc_Lines.LineQty
+        &Get_Lines.LineTotal = &Bc_Lines.LineTotal
+        &Get_Lines.LineStamp = &Bc_Lines.LineStamp
+        &GetResponse.Lines.Add(&Get_Lines)
+    EndFor
+    &RestStatusCode = 200
+Else
+    &RestStatusCode = 404
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"not_found"
+    &ErrorResponse.Message = !"Order was not found."
+EndIf
