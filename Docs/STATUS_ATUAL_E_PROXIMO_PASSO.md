@@ -230,6 +230,8 @@ Iniciar a Fase 4 (`B098`): Procedimento `List` com contadores de subníveis dire
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
 - limitações do YAML OpenAPI nativo do GeneXus (documentadas em B088; intransponíveis sem patch na instalação — não bloqueiam o MVP).
 - Relatório B081 no monitor da IDE em multi-monitor e confirmação B035 localizada em espanhol/inglês ainda sem evidência U15 (`NotaFiscal` já tinha Business Component nos testes anteriores).
+- Dívida adiada do B097 (2026-08-26), **fora do B098**: no Update com `Replace` e PK de linha autonumerada, o Source ainda atribui a PK na reinserção (`Clear`+Add), enquanto o Create omite; alinhar o Update ao Create (e/ou limpar o contrato UpdateRequest) fica para depois, com smoke IDE. Não é contrato do List.
+- Dívida adiada do B097/fixture B095 (2026-08-26), **fora do B098**: a fixture `InheritedPrimaryKey` emite `&Header.<unnamed>` no BC enquanto o SDT usa `Level1`; em Transaction real o nível tem nome. Resolver depois (trava no emissor e/ou fixture de Source com nome real). Contadores/List não devem copiar o token `<unnamed>` do mapa. Não é contrato do List.
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 
 ## Documentos governantes
