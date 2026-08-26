@@ -494,7 +494,7 @@ O modelo das seções anteriores continua exato para transação de nível únic
 | ParentLevelName | texto (vazio no cabeçalho) |
 | LevelOrder | número |
 | PrimaryKey | lista `ApiPlanLevelField` |
-| Fields | lista `ApiPlanLevelField` |
+| Fields | lista `ApiPlanLevelField` — candidatos da estrutura do nível; **não** seleção Create/Update/Response do Wizard |
 | ChildLevels | lista `ApiPlanLevel` |
 
 `Depth = 1` identifica o cabeçalho; 2, o primeiro subnível; e assim por diante. A leitura da estrutura é recursiva, sem limite artificial de profundidade; 3 é o alcance da evidência na KB de produção, não uma trava.

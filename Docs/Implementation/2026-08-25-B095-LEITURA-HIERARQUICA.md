@@ -35,6 +35,8 @@ Revisão pós-crítica: a primeira entrega montava `ApiPlanLevel` à mão nas fi
 | Ouro | `Tests/TransactionStructure/Baselines/*.json` |
 | Gate | `scripts/Invoke-PrePushMechanicalChecks.ps1` → `tests.transactionStructure` |
 
+**`ApiPlanLevel.Fields`.** São candidatos da estrutura do nível (todos os atributos lidos), não a seleção Create/Update/Response do Wizard. Seleção por contrato = B099+.
+
 **Wizard flat.** O caminho de leitura plana da Transaction **não** passa a usar `TransactionStructureReader`. Houve apenas extração do critério de autonumeração para o helper compartilhado (antes duplicado), para o Wizard e o B095 não divergirem.
 
 ## Fixtures offline (todas passam por `Build`)
