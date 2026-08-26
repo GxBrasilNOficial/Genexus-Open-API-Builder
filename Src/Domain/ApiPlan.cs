@@ -382,7 +382,8 @@ internal sealed class ApiPlan
         IReadOnlyList<ApiPlanRequiredField> requiredFields,
         IReadOnlyList<ApiPlanService> services,
         PrototypeWizardBusinessComponentSelection businessComponent,
-        bool includeBusinessComponentErrorMessages)
+        bool includeBusinessComponentErrorMessages,
+        IReadOnlyList<ApiPlanLevel>? levels = null)
     {
         TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
         ModuleTarget = moduleTarget ?? throw new ArgumentNullException(nameof(moduleTarget));
@@ -426,6 +427,8 @@ internal sealed class ApiPlan
         Services = services ?? throw new ArgumentNullException(nameof(services));
         BusinessComponent = businessComponent ?? throw new ArgumentNullException(nameof(businessComponent));
         IncludeBusinessComponentErrorMessages = includeBusinessComponentErrorMessages;
+        // B095: árvore hierárquica opcional. Geração e Wizard flat ainda não consomem Levels.
+        Levels = levels ?? Array.Empty<ApiPlanLevel>();
     }
 
     public string TransactionName { get; }
@@ -513,6 +516,12 @@ internal sealed class ApiPlan
     public PrototypeWizardBusinessComponentSelection BusinessComponent { get; }
 
     public bool IncludeBusinessComponentErrorMessages { get; }
+
+    /// <summary>
+    /// Árvore de níveis da Transaction (B095). Vazia enquanto o plano flat não carregar a leitura hierárquica.
+    /// Depth 1 = cabeçalho; ParentLevelName vazio no raiz.
+    /// </summary>
+    public IReadOnlyList<ApiPlanLevel> Levels { get; }
 }
 
 internal sealed class ApiPlanSecurity
@@ -767,6 +776,131 @@ internal sealed class ApiPlanField
     public bool IsWritableByUpdate { get; }
 
     public bool IsFilterEligible { get; }
+}
+
+/// <summary>
+/// Nível da Transaction no modelo interno (B095). Filho do cabeçalho ou de outro subnível.
+/// </summary>
+internal sealed class ApiPlanLevel
+{
+    public ApiPlanLevel(
+        string levelName,
+        int depth,
+        string parentLevelName,
+        int levelOrder,
+        IReadOnlyList<ApiPlanLevelField> primaryKey,
+        IReadOnlyList<ApiPlanLevelField> fields,
+        IReadOnlyList<ApiPlanLevel> childLevels)
+    {
+        if (string.IsNullOrWhiteSpace(levelName))
+        {
+            throw new ArgumentException("LevelName is required.", nameof(levelName));
+        }
+
+        if (depth < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(depth), depth, "Depth starts at 1 for the header.");
+        }
+
+        if (levelOrder < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(levelOrder), levelOrder, "LevelOrder starts at 1 among siblings.");
+        }
+
+        LevelName = levelName;
+        Depth = depth;
+        ParentLevelName = parentLevelName ?? string.Empty;
+        LevelOrder = levelOrder;
+        PrimaryKey = primaryKey ?? throw new ArgumentNullException(nameof(primaryKey));
+        Fields = fields ?? throw new ArgumentNullException(nameof(fields));
+        ChildLevels = childLevels ?? throw new ArgumentNullException(nameof(childLevels));
+    }
+
+    public string LevelName { get; }
+
+    public int Depth { get; }
+
+    /// <summary>Vazio no cabeçalho (raiz).</summary>
+    public string ParentLevelName { get; }
+
+    public int LevelOrder { get; }
+
+    public IReadOnlyList<ApiPlanLevelField> PrimaryKey { get; }
+
+    public IReadOnlyList<ApiPlanLevelField> Fields { get; }
+
+    public IReadOnlyList<ApiPlanLevel> ChildLevels { get; }
+}
+
+/// <summary>
+/// Campo candidato lido na estrutura de um nível (B095). Sem seleção de Wizard.
+/// </summary>
+internal sealed class ApiPlanLevelField
+{
+    public ApiPlanLevelField(
+        int order,
+        string attributeGuid,
+        string name,
+        string dataType,
+        int length,
+        int decimals,
+        bool isPrimaryKey,
+        bool isNullable,
+        bool isInferred,
+        bool isRedundant,
+        bool isForeignKey,
+        bool isFormula,
+        bool isNoAccept,
+        bool isAutonumber)
+    {
+        Order = order;
+        if (string.IsNullOrWhiteSpace(attributeGuid))
+        {
+            throw new ArgumentException("Attribute GUID is required.", nameof(attributeGuid));
+        }
+
+        AttributeGuid = attributeGuid;
+        Name = name ?? throw new ArgumentNullException(nameof(name));
+        DataType = dataType ?? throw new ArgumentNullException(nameof(dataType));
+        Length = length;
+        Decimals = decimals;
+        IsPrimaryKey = isPrimaryKey;
+        IsNullable = isNullable;
+        IsInferred = isInferred;
+        IsRedundant = isRedundant;
+        IsForeignKey = isForeignKey;
+        IsFormula = isFormula;
+        IsNoAccept = isNoAccept;
+        IsAutonumber = isAutonumber;
+    }
+
+    public int Order { get; }
+
+    public string AttributeGuid { get; }
+
+    public string Name { get; }
+
+    public string DataType { get; }
+
+    public int Length { get; }
+
+    public int Decimals { get; }
+
+    public bool IsPrimaryKey { get; }
+
+    public bool IsNullable { get; }
+
+    public bool IsInferred { get; }
+
+    public bool IsRedundant { get; }
+
+    public bool IsForeignKey { get; }
+
+    public bool IsFormula { get; }
+
+    public bool IsNoAccept { get; }
+
+    public bool IsAutonumber { get; }
 }
 
 internal sealed class ApiPlanFilter

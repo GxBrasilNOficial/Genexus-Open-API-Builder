@@ -249,7 +249,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta — pré-Alpha separado; concluído (2026-08-10; limitação intransponível documentada) |
 | B089 | Automatar validação de permissões granulares GAM por roles não-administradoras | Alta — pré-Alpha separado; concluído (2026-08-10; GAM Backoffice + HTTP Get 200 / Create 403) |
 | B094 | Comprovar instalação por usuário externo sem clonar o repositório / sem `.bat` de administrador | Alta — Sprint 8 / evidência; concluído (2026-08-10; correção de captura 2026-08-11) |
-| B095 | Leitura hierárquica recursiva da estrutura no SDK e modelo de domínio multinível (`ApiPlanLevel`) | Alta — Sprint 9 / Fase 1; planejado |
+| B095 | Leitura hierárquica recursiva da estrutura no SDK e modelo de domínio multinível (`ApiPlanLevel`) | Alta — Sprint 9 / Fase 1; concluído (2026-08-25; offline) |
 | B096 | Geração de SDTs hierárquicos por subnível e por contrato, com regra de nomes e desambiguação | Alta — Sprint 9 / Fase 2; planejado |
 | B097 | Geração de código Business Component nas Procedures para subníveis, com substituição completa sob marcador `<Subnível>Replace` | Alta — Sprint 9 / Fase 3; planejado |
 | B098 | Procedimento de List com contadores numéricos de subníveis diretos | Alta — Sprint 9 / Fase 4; planejado |

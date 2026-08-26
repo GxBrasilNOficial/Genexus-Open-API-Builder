@@ -12,6 +12,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Added
 
+- `B095` (Sprint 9 / Fase 1): leitura hierárquica recursiva de `transaction.Structure.Root.Levels`, modelo `ApiPlanLevel` / `ApiPlanLevelField`, `ApiPlan.Levels` (ainda não consumido pelo Wizard flat) e testes offline em `Tests/TransactionStructure/` ligados ao pré-push como `tests.transactionStructure`. Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
 - Fase 0 (Sprint 9): linha de base offline de transações planas em `Tests/GenerationBaseline/`, ligada ao checker pré-push como `tests.generationBaseline` (Source de Create/Update/Get/List, Service Source do API Object e plano de SDT, gerador pós-B102). Captura IDE de início registrada em `Tests/GenerationBaseline/IdeXpz/CAPTURE-INICIO.md` (Transaction plana `Teste` + SDTs compartilhados já presentes na KB). Conferência XPZ de fim da sprint permanece. Evidência: `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 
 ### Fixed
