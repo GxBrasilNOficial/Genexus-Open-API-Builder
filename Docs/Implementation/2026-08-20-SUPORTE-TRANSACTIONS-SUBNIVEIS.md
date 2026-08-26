@@ -44,7 +44,7 @@ Esses dados comprovam que o suporte a múltiplos subníveis paralelos e recursã
 
 ### 1. Leitura Hierárquica da Estrutura e Modelo de Domínio (B095)
 - A leitura via GeneXus SDK navega recursivamente pela árvore de `TransactionLevel`s a partir de `transaction.Structure.Root`.
-- Cada nível é representado no modelo `ApiPlanLevel` com `LevelName`, `Depth` (1 para cabeçalho, 2 para 1º subnível, 3 para aninhamento), `ParentLevelName`, `LevelOrder`, `PrimaryKey` composta do nível e listas de campos selecionados.
+- Cada nível é representado no modelo `ApiPlanLevel` com `LevelName`, `Depth` (1 para cabeçalho, 2 para 1º subnível, 3 para aninhamento), `ParentLevelName`, `LevelOrder`, `PrimaryKey` composta do nível e lista de campos candidatos da estrutura (`Fields`; seleção por contrato = B099+).
 
 ### 2. Regras Explícitas de Elegibilidade Intra-Subnível
 - **Fórmulas de subnível** (ex.: `ItemTotal = ItemQtd * ItemPreco`): desabilitadas em `CreateRequest` e `UpdateRequest` (somente leitura); elegíveis e habilitadas em `Response`.
