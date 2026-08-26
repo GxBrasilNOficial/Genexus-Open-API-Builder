@@ -22,6 +22,8 @@ Escopo: leitor à parte, modelo `ApiPlanLevel`, testes offline. Sem geração, W
 | Teste | `Tests/TransactionStructure/Test-TransactionStructureReader.ps1` |
 | Gate | `scripts/Invoke-PrePushMechanicalChecks.ps1` → `tests.transactionStructure` |
 
+**Alinhamento pós-revisão pré-push (2026-08-25).** A tabela de fases em `2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md` ainda listava `PrototypeWizardContract.cs` e `PrototypePrimaryKeyReader.cs` como componentes da Fase 1. Isso divergia da entrega (leitor à parte). A tabela foi corrigida para nomear `TransactionStructureReader.cs` e declarar explicitamente que o caminho flat do Wizard e o leitor de PK de cabeçalho **não** foram alterados.
+
 ## Fixtures offline
 
 - `OneSublevel` — cabeçalho + um subnível; PK de linha informada; fórmula; `NoAccept`.

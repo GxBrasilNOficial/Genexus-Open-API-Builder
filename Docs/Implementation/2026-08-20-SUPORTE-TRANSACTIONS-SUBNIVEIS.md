@@ -228,7 +228,7 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 | Fase / Backlog | Escopo | Componentes Afetados |
 |---|---|---|
 | **Fase 0** | Linha de base de não regressão em duas camadas, conforme detalhado abaixo da tabela | `Tests/GenerationBaseline/` (nova cobertura), `scripts/Invoke-PrePushMechanicalChecks.ps1` |
-| **Fase 1 (B095)** | Leitura hierárquica recursiva, modelo `ApiPlanLevel` e testes offline | `PrototypeWizardContract.cs`, `PrototypePrimaryKeyReader.cs`, `ApiPlan.cs`, `Tests/TransactionStructure/` |
+| **Fase 1 (B095)** | Leitura hierárquica recursiva, modelo `ApiPlanLevel` e testes offline | `TransactionStructureReader.cs` (leitor à parte), `ApiPlan.cs`, `Tests/TransactionStructure/` — **não** altera `PrototypeWizardContract.cs` nem `PrototypePrimaryKeyReader.cs` |
 | **Fase 2 (B096)** | Geração de SDTs hierárquicos por contrato, regra de nomes e desambiguação | `ApiPlanSdtGenerationPlan.cs`, `ApiPlanSdtWriter.cs` |
 | **Fase 3 (B097)** | Geração de código Business Component nas Procedures (Get, Create, Update) e marcador `<Subnível>Replace` | `ApiPlanBusinessComponentWriter.cs` |
 | **Fase 4 (B098)** | Procedimento de List com contadores de subníveis diretos e `ListResponse_Item` condicionado | `ApiPlanListProcedureWriter.cs`, `ApiPlanSdtGenerationPlan.cs` |

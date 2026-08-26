@@ -18,6 +18,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 ### Fixed
 
 - `B107`: `Test-OpenApiClientContractValidity.ps1` deixa de ler YAML de pastas `C:\KBs\...` (falso verde e amarre à máquina). A trava do pré-push fica offline sobre `ApiPlan.cs`, incluindo `sdt_API_ErrorMessage`. Conferência de YAML publicado permanece evidência pontual na IDE.
+- Documentação da Fase 1 (`B095`): a tabela de componentes em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md` passa a listar `TransactionStructureReader.cs` e a declarar que `PrototypeWizardContract.cs` / `PrototypePrimaryKeyReader.cs` ficaram de fora (leitor à parte), alinhada à evidência `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
 
 ---
 
