@@ -481,23 +481,24 @@ Sem banco próprio e sem complexidade desnecessária.
 
 # 21. Nota de revisão — 2026-08-23 — Modelo hierárquico
 
-O modelo descrito acima é plano: `TransactionInfo` expõe `Attributes` como lista única e `AttributeInfo` não diz a que nível pertence. Com o suporte a subníveis (B095–B099), o modelo interno passa a ser hierárquico. As tabelas acima permanecem exatas para transação de nível único.
+**Atualização de 2026-08-26 (B095).** O esboço abaixo da emenda de 2026-08-23 previa árvore em `TransactionInfo` com `PrimaryKeys` (texto) e `Attributes` (`AttributeInfo`). A Fase 1 entregou outra forma, de propósito: leitor à parte e modelo em `ApiPlan`, sem alterar o caminho flat.
 
-**Nova entidade `ApiPlanLevel`**, acrescentada às entidades internas principais:
+O modelo das seções anteriores continua exato para transação de nível único e para o Wizard flat atual: `TransactionInfo` segue plano (`Attributes` como lista única); `AttributeInfo` ainda não carrega referência de nível.
 
-| Campo | Tipo |
+**Entrega B095 — `ApiPlanLevel` / `ApiPlanLevelField`**, em `Src/Domain/ApiPlan.cs`, consumidos pelo `TransactionStructureReader` e expostos de forma aditiva em `ApiPlan.Levels` (ainda sem consumidor na geração nem no Wizard):
+
+| Campo (`ApiPlanLevel`) | Tipo |
 |---|---|
 | LevelName | texto |
 | Depth | número |
-| ParentLevelName | texto |
+| ParentLevelName | texto (vazio no cabeçalho) |
 | LevelOrder | número |
-| PrimaryKeys | lista texto |
-| Attributes | lista AttributeInfo |
+| PrimaryKey | lista `ApiPlanLevelField` |
+| Fields | lista `ApiPlanLevelField` |
+| ChildLevels | lista `ApiPlanLevel` |
 
-`Depth = 1` identifica o cabeçalho; 2, o primeiro subnível; e assim por diante. A leitura da estrutura é recursiva, sem limite artificial de profundidade; 3 é o alcance da evidência, não uma trava.
+`Depth = 1` identifica o cabeçalho; 2, o primeiro subnível; e assim por diante. A leitura da estrutura é recursiva, sem limite artificial de profundidade; 3 é o alcance da evidência na KB de produção, não uma trava.
 
-**`TransactionInfo`** passa a expor a árvore de níveis, mantendo o nível 1 como raiz. `PrimaryKeys` do nível 1 continua com o significado atual, e cada nível carrega a própria chave.
+**Ainda pendente (B099+).** A seleção por contrato (`IsSelectedForCreate` / `Update` / `Response`) e a desambiguação de atributos homônimos entre níveis continuam necessários quando o Wizard passar a operar a árvore. O veículo deixa de ser “`AttributeInfo` ganha nível em `TransactionInfo`” e passa a ser o plano hierárquico (`ApiPlan.Levels` / campos por nível) — o problema da ambiguidade permanece; o esboço de 2026-08-23 sobre `TransactionInfo`/`AttributeInfo` não é mais o contrato vigente.
 
-**`AttributeInfo`** ganha a referência ao nível a que pertence. Sem ela, dois atributos homônimos em níveis diferentes ficariam indistinguíveis, e os campos `IsSelectedForCreate`, `IsSelectedForUpdate` e `IsSelectedForResponse` não poderiam ser resolvidos sem ambiguidade.
-
-Detalhes e fases em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md` e na `Emenda técnica — 2026-08-23` do registro de decisões do MVP.
+Detalhes e fases em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, evidência B095 em `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md` e na `Emenda técnica — 2026-08-23` do registro de decisões do MVP.

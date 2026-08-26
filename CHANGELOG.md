@@ -17,6 +17,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Fixed
 
+- `Docs/Foundation/08-MODELO_DADOS_E_METADATA.md` §21: esboço Sprint 9 (`PrimaryKeys` texto / `AttributeInfo` / árvore em `TransactionInfo`) alinhado à entrega B095 (`ApiPlanLevelField`, `ChildLevels`, `ApiPlan.Levels`; Wizard flat e `TransactionInfo` planos).
 - `TransactionAttributeKeyTraits.IsAutonumberCore`: short-circuit de PK composta **antes** do fail-open por metadata ausente — alinha o núcleo ao overload SDK. Caso `pkCount>1` + `hasAttributeMetadata=false` passa de `true` (histórico flat / Core anterior) para `false`. Teste cobre `(3, false, null)`.
 - `TransactionAttributeKeyTraits.IsAutonumber`: short-circuit de PK composta **antes** de `GetPropertyValueString` — se a leitura lançar em chave composta, continua `false` (não cai no fail-open `true`). O teste `Test-PrototypeWizardAutonumberCompositeKey.ps1` trava essa ordem. `IsNullable` no helper permanece null-safe (`null` → `false`, sem NRE).
 - `B107`: `Test-OpenApiClientContractValidity.ps1` deixa de ler YAML de pastas `C:\KBs\...` (falso verde e amarre à máquina). A trava do pré-push fica offline sobre `ApiPlan.cs`, incluindo `sdt_API_ErrorMessage`. Conferência de YAML publicado permanece evidência pontual na IDE.
