@@ -103,7 +103,7 @@ Receber `ApiPlan`.
 **Nota de revisão — 2026-08-23 — Suporte a Subníveis** (atualizada em 2026-08-26 após `B095` e `B096`): a tabela acima descreve um plano plano, com um nome de SDT por contrato. Com subníveis (B095–B099), o `ApiPlan` passa a carregar também:
 
 - **Já em B095:** a **árvore de níveis** (`ApiPlanLevel`: nome, profundidade, nível pai, ordem, chave primária própria e campos candidatos da estrutura por nível — `Fields`; seleção por contrato = B099+), conforme a seção 21 de `08-MODELO_DADOS_E_METADATA.md`, exposta de forma aditiva em `ApiPlan.Levels`.
-- **Já em B096:** o **plano de SDT** consome `Levels` quando há filhos e emite SDTs derivados por contrato (`sdt<NomeBase>_API_<Papel>_<Subnível>`), com desambiguação e encurtamento a 128. O Wizard flat ainda não consome a árvore nem o naming hierárquico.
+- **Já em B096:** o **plano de SDT** consome `Levels` quando há filhos e emite SDTs derivados por contrato (`sdt<NomeBase>_API_<Papel>_<Subnível>`), com desambiguação e encurtamento de objeto a 128. O Wizard flat ainda não consome a árvore nem o naming hierárquico.
 - **Fases seguintes (B098+):** o nome do **SDT de item de lista** (`sdt<NomeBase>_API_ListResponse_Item`), presente somente quando há subnível selecionado; e quais subníveis têm **contador de `List`** ativo. Até B098, `ListResponse.Items` continua coleção de `Response`.
 
 Os campos existentes continuam com o mesmo significado, e transação de nível único produz exatamente o mesmo plano de hoje. Detalhes em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.

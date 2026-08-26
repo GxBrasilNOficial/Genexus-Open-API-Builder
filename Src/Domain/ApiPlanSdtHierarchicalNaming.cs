@@ -8,9 +8,11 @@ namespace GenexusOpenApiBuilder.Extension.Domain;
 
 /// <summary>
 /// B096 — nomes de SDT/membro hierárquicos, desambiguação estável e encurtamento.
-/// Limite de objeto GeneXus 18: 128 caracteres (plataforma desde GX15). Confirmado
-/// offline nesta fase; escrita real na KB fica para smoke posterior, antes da
-/// primeira API multinível.
+/// Limite de objeto GeneXus 18: 128 caracteres (plataforma desde GX15). O
+/// encurtamento dispara quando o nome completo do SDT estoura 128 ou colide;
+/// folha ≤32 só escolhe entre reusar a folha e o hash de 8 hex. Nomes de
+/// membro não têm teto nesta fase. Confirmado offline; escrita real na KB
+/// fica para smoke posterior, antes da primeira API multinível.
 /// </summary>
 internal static class ApiPlanSdtHierarchicalNaming
 {
@@ -85,6 +87,7 @@ internal static class ApiPlanSdtHierarchicalNaming
 
     public static string AllocateMemberName(string preferred, int levelOrder, ISet<string> reserved)
     {
+        // 128 aplica-se só a nome de objeto (AllocateSdtName); membro não tem teto nesta fase.
         if (string.IsNullOrWhiteSpace(preferred))
         {
             throw new ArgumentException("Preferred member name is required.", nameof(preferred));
@@ -156,6 +159,7 @@ internal static class ApiPlanSdtHierarchicalNaming
 
         var qualifier = string.Join("_", qualifierParts);
         var full = "sdt" + transactionName + "_API_" + role + "_" + qualifier;
+        // Gatilho: nome completo > 128 ou colisão. Folha ≤ 32 só escolhe entre reusar a folha e o hash.
         if (full.Length <= GeneXusObjectNameMaxLength && reserved.Add(full))
         {
             return full;
@@ -221,6 +225,7 @@ internal static class ApiPlanSdtHierarchicalNaming
         var maxTransactionLength = GeneXusObjectNameMaxLength - overhead;
         if (maxTransactionLength < 1)
         {
+            // Ramo defensivo: com papéis atuais e cauda de no máximo 32 ou 8 hex, não dispara.
             var emergency = prefix + apiMarker + role + "_" + tail;
             return emergency.Length <= GeneXusObjectNameMaxLength
                 ? emergency

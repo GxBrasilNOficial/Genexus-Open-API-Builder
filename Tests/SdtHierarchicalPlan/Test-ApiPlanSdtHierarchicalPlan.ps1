@@ -171,6 +171,8 @@ $domainSource = [IO.File]::ReadAllText($domainSourcePath)
 $contractSource = [IO.File]::ReadAllText($contractSourcePath)
 
 Assert-Contains $namingSource 'GeneXusObjectNameMaxLength = 128' 'Limite de nome GeneXus 18 deve ser 128.'
+Assert-Contains $namingSource 'membro não tem teto nesta fase' '128 não se aplica a nome de membro nesta fase.'
+Assert-Contains $namingSource 'Gatilho: nome completo' 'O gatilho do encurtamento deve ser nome completo ou colisão, não folha > 32.'
 Assert-Contains $namingSource '_API_CreateRequest_' 'Padrao de SDT Create derivado deve existir no helper.'
 Assert-Contains $namingSource '_API_UpdateRequest_' 'Padrao de SDT Update derivado deve existir no helper.'
 Assert-Contains $namingSource '_API_Response_' 'Padrao de SDT Response derivado deve existir no helper.'
@@ -296,7 +298,7 @@ try {
         Assert-True ($sdtName.Length -le 128) "SDT '$sdtName' estoura 128."
         Assert-True ($sdtName.Length -gt 0) "SDT hierarquico sem nome."
         if ([string]$sdt.backlogId -eq 'B096') {
-            Assert-True ($sdtName.IndexOf('LongTx', [StringComparison]::Ordinal) -ge 0) "Encurtamento deve preservar o nome da Transaction: $sdtName"
+            Assert-True ($sdtName.IndexOf('LongTx', [StringComparison]::Ordinal) -ge 0) "Neste fixture o fragmento LongTx permanece no SDT encurtado: $sdtName"
         }
     }
 

@@ -12,14 +12,14 @@ Escopo: plano de SDT por contrato e por subnível, regra de nomes, desambiguaç�
 - Marcador `<Subnível>Replace` no `UpdateRequest` do pai (nível 2 no corpo; nível 3 dentro do item do pai).
 - `ListResponse.Items` continua coleção de `Response`. `ListResponse_Item` fica para B098.
 - Wizard flat não consome o naming nem o plano hierárquico.
-- Limite de nome de objeto GeneXus 18: **128** caracteres (plataforma desde GX15). Confirmado offline nesta fase; escrita real na KB fica para smoke posterior, antes da primeira API multinível.
+- Limite de nome de objeto GeneXus 18: **128** caracteres (plataforma desde GX15). Confirmado offline nesta fase; escrita real na KB fica para smoke posterior, antes da primeira API multinível. O teto **não** se aplica a nomes de membro: coleção e `Replace` usam o identificador sanitizado do nível; o ouro `LongQualifier` congela 106 e 113 caracteres.
 
 ## O que o teste offline realmente cobre
 
 | Camada | O que cobre offline | O que não cobre |
 |---|---|---|
 | `ApiPlanSdtGenerationPlanBuilder` + `Levels` | SDTs derivados por contrato, pós-ordem, Replace, elegibilidade, `Items` ainda tipado em `Response` | `SDTStructure` físico na IDE |
-| `ApiPlanSdtHierarchicalNaming` | desambiguação estável, `<unnamed>` → `Level{n}`, encurtamento com hash de 8 hex quando o qualificador passa de 32 caracteres, colisão irresolúvel | objeto SDT gravado na KB |
+| `ApiPlanSdtHierarchicalNaming` | desambiguação estável, `<unnamed>` → `Level{n}`, encurtamento quando o nome completo estoura 128 ou colide (folha ≤32 tenta reusar a folha; senão hash de 8 hex; Transaction pode ser truncada), membros sem teto, colisão irresolúvel | objeto SDT gravado na KB; aceitação de membro longo na IDE |
 | Ouro `Baselines/*.json` | forma serializada estável do plano | diff contra XPZ de cliente |
 | Writer | inalterado; já cria coleção tipada por outro SDT na ordem de `OwnSdts` | smoke de `Save()` hierárquico |
 
@@ -47,5 +47,5 @@ Fixtures: `OneSublevel`, `ParallelSublevels`, `ThreeDeep`, `InheritedPrimaryKey`
 
 - B097 (BC / Source), B098 (`List` + `ListResponse_Item`), B099 (Wizard/metadata), Fase 7, B100.
 - Ligar o Wizard ao leitor hierárquico e à seleção por subnível.
-- Smoke IDE com escrita de SDTs hierárquicos e conferência do limite 128 num objeto real.
+- Smoke IDE com escrita de SDTs hierárquicos, conferência do limite 128 no objeto e aceitação dos nomes de membro (coleção e `Replace`) sem teto nesta fase.
 - Inventário dinâmico de remoção (Fase 7): B086 ainda lê a lista plana; não gravar API multinível na KB nesta fase.

@@ -21,7 +21,7 @@ Detalhe: `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 
 **Atualização de 2026-08-25 (noite, B095).** Fase 1 (`B095`) concluída: leitor hierárquico à parte (`TransactionStructureReader` com núcleo `Build` + adaptador SDK), modelo `ApiPlanLevel` / `ApiPlanLevelField`, critério compartilhado `TransactionAttributeKeyTraits`, testes offline com ouro em `Tests/TransactionStructure/Baselines/` ligados ao pré-push. Caminho flat do Wizard sem o leitor hierárquico. ~~Próxima ação = Fase 2 (`B096`).~~ **Superada** pela atualização B096 abaixo. Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
 
-**Atualização de 2026-08-26 (B096).** Fase 2 (`B096`) concluída: plano de SDT hierárquico por contrato (Create/Update/Response + `<Subnível>Replace`), naming/desambiguação/encurtamento a 128, ouro offline e gate `tests.sdtHierarchicalPlan`. Wizard flat e `ListResponse_Item` fora deste recorte. Próxima ação = Fase 3 (`B097`). Evidência: `Docs/Implementation/2026-08-26-B096-SDTS-HIERARQUICOS.md`.
+**Atualização de 2026-08-26 (B096).** Fase 2 (`B096`) concluída: plano de SDT hierárquico por contrato (Create/Update/Response + `<Subnível>Replace`), naming/desambiguação/encurtamento de objeto a 128, ouro offline e gate `tests.sdtHierarchicalPlan`. Wizard flat e `ListResponse_Item` fora deste recorte. Próxima ação = Fase 3 (`B097`). Evidência: `Docs/Implementation/2026-08-26-B096-SDTS-HIERARQUICOS.md`.
 
 ---
 
@@ -71,7 +71,7 @@ Cada subnível selecionado gera portanto um SDT próprio **por contrato**, e nã
 - `sdt<Tx>_API_ListResponse`: envelope de lista, com os mesmos três membros de sempre (`Items`, `Pagination`, `AppliedFilters`).
 - `sdt<Tx>_API_ListResponse_Item`: **somente quando houver subnível selecionado** — tipo dos elementos de `Items`, conforme a seção 7-A.
 
-Em profundidade maior que 2, o SDT do subnível contém, por sua vez, o membro coleção do nível seguinte, com o caminho acumulado no qualificador (`sdt<Tx>_API_Response_<Subnível>_<SubSubnível>`). Limite de nome GeneXus 18 = **128**; a Fase 2 encurta o qualificador quando a folha passa de 32 caracteres (hash SHA-256 de 8 hex). Escrita real na KB e smoke do limite ficam para depois desta fase.
+Em profundidade maior que 2, o SDT do subnível contém, por sua vez, o membro coleção do nível seguinte, com o caminho acumulado no qualificador (`sdt<Tx>_API_Response_<Subnível>_<SubSubnível>`). Limite de nome de **objeto** GeneXus 18 = **128**. A Fase 2 (`B096`) encurta o nome do SDT quando o nome completo estoura 128 ou colide: folha até 32 caracteres tenta reusar a folha; senão (ou se essa forma não couber/colidir) usa hash SHA-256 de 8 hex. O encurtamento pode truncar o nome da Transaction. Nomes de membro (coleção e `Replace`) herdam o identificador sanitizado do nível, sem teto nesta fase. Escrita real na KB e smoke do limite (objeto e membro) ficam para depois desta fase.
 
 Exemplo completo, para `DadosDoDia -> Turno -> Funcionario` com os três níveis selecionados:
 
