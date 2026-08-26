@@ -63,4 +63,14 @@ Assert-True ($sdkBody.IndexOf('Evidência 2026-08-06', [StringComparison]::Ordin
 $coreDoc = $helper.Substring($coreDocStart, $coreStart - $coreDocStart)
 Assert-True ($coreDoc.IndexOf('Evidência 2026-08-06', [StringComparison]::Ordinal) -ge 0) 'Evidência 2026-08-06 deve ficar no XML de IsAutonumberCore.'
 
+# Núcleo puro: contagem antes do fail-open por metadata ausente.
+$nullableStart = $helper.IndexOf('public static bool IsNullable(', [StringComparison]::Ordinal)
+Assert-True ($nullableStart -gt $coreStart) 'IsNullable deve seguir IsAutonumberCore.'
+$coreBody = $helper.Substring($coreStart, $nullableStart - $coreStart)
+$coreCount = $coreBody.IndexOf('if (primaryKeyPartCount > 1)', [StringComparison]::Ordinal)
+$coreFailOpen = $coreBody.IndexOf('if (!hasAttributeMetadata)', [StringComparison]::Ordinal)
+Assert-True ($coreCount -ge 0) 'Short-circuit de PK composta deve existir em IsAutonumberCore.'
+Assert-True ($coreFailOpen -ge 0) 'Fail-open por metadata ausente deve existir em IsAutonumberCore.'
+Assert-True ($coreCount -lt $coreFailOpen) 'Em IsAutonumberCore, PK composta deve decidir antes do fail-open.'
+
 Write-Output 'PASS: PrototypeWizardAutonumberCompositeKey'

@@ -199,9 +199,10 @@ try {
 
     # Núcleo puro do helper: defeito aqui falha o assert (não é constante de fixture).
     Assert-True (-not [bool]$isAutonumberPure.Invoke($null, @(3, $true, 'True'))) 'PK composta nunca é autonumerada.'
+    Assert-True (-not [bool]$isAutonumberPure.Invoke($null, @(3, $false, $null))) 'PK composta sem metadata = false (contagem sobre fail-open).'
     Assert-True ([bool]$isAutonumberPure.Invoke($null, @(1, $true, 'True'))) 'PK simples Autonumber=True.'
     Assert-True (-not [bool]$isAutonumberPure.Invoke($null, @(1, $true, 'False'))) 'PK simples Autonumber=False.'
-    Assert-True ([bool]$isAutonumberPure.Invoke($null, @(1, $false, 'False'))) 'Sem metadata, fail-open = true.'
+    Assert-True ([bool]$isAutonumberPure.Invoke($null, @(1, $false, 'False'))) 'PK simples sem metadata, fail-open = true.'
 
     $fixtures = @($createFixtures.Invoke($null, @()))
     Assert-True ($fixtures.Count -eq 4) "Esperava 4 fixtures; encontrado $($fixtures.Count)."
