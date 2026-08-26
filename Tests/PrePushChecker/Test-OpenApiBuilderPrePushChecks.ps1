@@ -64,6 +64,8 @@ Assert-True ($source -match 'Tests/Installation/Test-InstallExtensionBatPathHand
 Assert-True ($source -match 'Tests/Localization/Test-ExtensionLanguage\.ps1') 'O checker deve executar o teste unitário da resolução do idioma da extensão.'
 Assert-True ($source -match 'Tests/Localization/Test-ExtensionOutputLocalization\.ps1') 'O checker deve executar o teste unitário da localização do Output da extensão.'
 Assert-True ($source -match 'Tests/IssueForms/Test-GitHubIssueFormsYaml\.ps1') 'O checker deve executar o teste unitário dos YAML / Issue Forms.'
+Assert-True ($source.Contains('\b(B00[0-6])\b')) 'currentFront deve reconhecer somente spikes B000-B006.'
+Assert-True ($source -match 'lista vazia com próxima ação B007\+') 'O JSON notCovered deve declarar que manualRequired vazio fora de B000-B006 não substitui a revisão semântica.'
 
 $fixtures = @(
     @{ Text = 'error NU1004: The package lock file is inconsistent.'; Phase = 'restore'; Expected = 'lockFileInconsistent' },
@@ -246,6 +248,7 @@ try {
         $historicalResult = $historicalJson | ConvertFrom-Json
         Assert-True ($historicalExit -eq 0) 'Uma referência histórica B000 não deve exigir revisão manual sem frente vigente.'
         Assert-True (@($historicalResult.manualRequired).Count -eq 0) 'Referências históricas não devem alimentar manualRequired.'
+        Assert-True (@($historicalResult.notCovered | Where-Object { $_ -match 'B000-B006' }).Count -eq 1) 'notCovered deve explicar o recorte B000-B006 de currentFront/manualRequired.'
 
         [System.IO.Directory]::CreateDirectory((Join-Path $PWD 'Docs')) | Out-Null
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Docs\STATUS_ATUAL_E_PROXIMO_PASSO.md'), "## Próxima ação única`n`nExecutar B006.`n`n## Histórico`n`nB000 concluído.`n", [System.Text.UTF8Encoding]::new($false))

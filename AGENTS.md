@@ -242,7 +242,8 @@ pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
 6. quando o checker ou seu teste mudar, executar também `pwsh -NoProfile -File Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`.
 
 - `scripts/Invoke-PrePushMechanicalChecks.ps1` é o nome canônico e não deve divergir do contrato global.
-- `manualRequired` bloqueia o push até a revisão humana registrar gaps confirmados, flags descartados e áreas não cobertas.
+- `manualRequired` no JSON **não** é a revisão semântica. Só dispara quando a `Próxima ação única` do checkpoint é um spike `B000`–`B006` e o intervalo menciona esse ID (checklist de encerramento de sonda). Lista vazia com próxima ação `B007+` (hoje `B097`) é o comportamento esperado, não falso verde.
+- Gaps confirmados, flags descartados e áreas não cobertas pertencem ao relatório da revisão semântica (passo 5), independentemente de `manualRequired`.
 - Após alterar `.github/ISSUE_TEMPLATE/`, abrir uma vez o seletor **New issue** no navegador: o check `tests.issueForms` reduz o risco, mas só o GitHub confirma se o formulário aparece (YAML inválido some sem aviso).
 
 **Afrouxamento de regra normativa é evento de risco, não detalhe de redação.** Quando o intervalo revisado transformar uma regra de `não existe` em `não existe por padrão`, de `deve` em `deveria`, de absoluto em condicional, ou passar a descrever comportamento no presente condicional, isso vira **verificação obrigatória contra o código** — mesmo que todos os documentos concordem entre si. A varredura semântica procura divergência; convergência na direção errada passa limpo por ela. Um critério de aceite que proíbe reprova uma implementação parcial; um que já prevê o caso não reprova nada.

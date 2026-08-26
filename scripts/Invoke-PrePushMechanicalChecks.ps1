@@ -115,6 +115,7 @@ function Get-ManualRequirements {
     $paths = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--name-only', '-z', 'origin/main..HEAD') -WorkingDirectory $WorkingDirectory
     $worktreePaths = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--name-only', '-z') -WorkingDirectory $WorkingDirectory
     if ($patch.ExitCode -ne 0 -or $worktreePatch.ExitCode -ne 0 -or $paths.ExitCode -ne 0 -or $worktreePaths.ExitCode -ne 0) { return @() }
+    # CurrentFront só é preenchido para spike B000-B006. Fora disso a lista vazia é o contrato, não omissão.
     if ([string]::IsNullOrWhiteSpace($CurrentFront)) { return @() }
     $frontPattern = [regex]::Escape($CurrentFront)
     if (($patch.StdOut + $worktreePatch.StdOut) -notmatch "(?i)\b($frontPattern)\b") { return @() }
@@ -301,6 +302,7 @@ if (Test-Path -LiteralPath $checkpoint -PathType Leaf) {
     $checkpointText = Get-Content -LiteralPath $checkpoint -Raw
     $nextAction = [regex]::Match($checkpointText, '(?ms)^## Próxima ação única\s*(?<content>.*?)(?=^## |\z)')
     if ($nextAction.Success) {
+        # Recorte deliberado: só spikes B000-B006. Ampliar para B097+ faria todo commit do checkpoint sair incomplete.
         $front = [regex]::Match($nextAction.Groups['content'].Value, '\b(B00[0-6])\b')
         if ($front.Success) { $currentFront = $front.Value }
     }
@@ -329,7 +331,7 @@ $localReadiness = if ($overallStatus -eq 'passed') { 'ready' } else { 'blocked' 
     warnings = @($warnings)
     incompleteReasons = @($incompleteReasons)
     manualRequired = @($manualRequired)
-    notCovered = @('Validação funcional na IDE GeneXus, acesso a KB, instalação de DLL e scripts em Tools não são executados.', 'manualRequired e workingTreeDirty exigem revisão humana; não comprovam fechamento semântico.')
+    notCovered = @('Validação funcional na IDE GeneXus, acesso a KB, instalação de DLL e scripts em Tools não são executados.', 'manualRequired e workingTreeDirty exigem revisão humana; não comprovam fechamento semântico.', 'currentFront/manualRequired só reconhecem spike B000-B006 vigente no checkpoint; lista vazia com próxima ação B007+ (ex. B097) é esperada e não substitui a revisão semântica.')
 } | ConvertTo-Json -Depth 8
 
 exit $exitCode
