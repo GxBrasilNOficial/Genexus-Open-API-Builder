@@ -9,12 +9,17 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 internal static class TransactionAttributeKeyTraits
 {
     /// <summary>
-    /// GeneXus: autonumeração só existe em PK de um único campo. Em chave composta,
-    /// nenhuma parte pode ser autonumerada — a contagem decide sem consultar a propriedade.
-    /// Evidência 2026-08-06: Teste (PK=3, Autonumber='False') e NotaFiscal (PK=1, Autonumber='True').
+    /// Overload SDK: PK composta decide antes de consultar a propriedade (comportamento histórico do Wizard flat).
     /// </summary>
     public static bool IsAutonumber(TransactionAttribute item, int primaryKeyPartCount)
     {
+        // GeneXus: autonumeração só existe em PK de um único campo. Em chave composta,
+        // a contagem decide sem consultar a propriedade — inclusive se a leitura lançar.
+        if (primaryKeyPartCount > 1)
+        {
+            return false;
+        }
+
         try
         {
             if (item?.Attribute == null)
@@ -36,6 +41,9 @@ internal static class TransactionAttributeKeyTraits
 
     /// <summary>
     /// Núcleo puro para fixtures offline e para o adaptador SDK.
+    /// GeneXus: autonumeração só existe em PK de um único campo. Em chave composta,
+    /// nenhuma parte pode ser autonumerada — a contagem decide sem consultar a propriedade.
+    /// Evidência 2026-08-06: Teste (PK=3, Autonumber='False') e NotaFiscal (PK=1, Autonumber='True').
     /// </summary>
     public static bool IsAutonumberCore(int primaryKeyPartCount, bool hasAttributeMetadata, string? autonumberPropertyValue)
     {
