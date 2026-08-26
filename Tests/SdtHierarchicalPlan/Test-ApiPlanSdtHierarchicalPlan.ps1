@@ -177,8 +177,8 @@ Assert-Contains $namingSource '_API_CreateRequest_' 'Padrao de SDT Create deriva
 Assert-Contains $namingSource '_API_UpdateRequest_' 'Padrao de SDT Update derivado deve existir no helper.'
 Assert-Contains $namingSource '_API_Response_' 'Padrao de SDT Response derivado deve existir no helper.'
 Assert-Contains $builderSource 'HasSelectedSublevels' 'Builder deve ramificar no caminho hierarquico.'
-Assert-Contains $builderSource 'ListResponse_Item' 'ListResponse_Item fica explicitamente fora de B096.'
-Assert-Contains $domainSource 'O plano de SDT consome Levels' 'ApiPlan deve declarar consumo B096 do Levels.'
+Assert-Contains $builderSource 'ListResponse_Item' 'Plano hierarquico deve emitir ListResponse_Item (B098).'
+Assert-Contains $domainSource 'O plano de SDT consome Levels' 'ApiPlan deve declarar consumo B096+ do Levels.'
 Assert-NotContains $contractSource 'ApiPlanSdtHierarchicalNaming' 'Wizard flat nao deve acoplar o naming B096.'
 
 if (-not (Test-Path -LiteralPath $DllPath -PathType Leaf)) {
@@ -248,6 +248,7 @@ try {
     $headerCreate = Find-OwnSdt $one 'sdtOrder_API_CreateRequest'
     $headerUpdate = Find-OwnSdt $one 'sdtOrder_API_UpdateRequest'
     $listResponse = Find-OwnSdt $one 'sdtOrder_API_ListResponse'
+    $listItem = Find-OwnSdt $one 'sdtOrder_API_ListResponse_Item'
     Assert-True ($null -ne $linesCreate) 'OneSublevel deve emitir SDT Create das linhas.'
     Assert-True ($null -ne $linesUpdate) 'OneSublevel deve emitir SDT Update das linhas.'
     Assert-True ($null -ne $linesResponse) 'OneSublevel deve emitir SDT Response das linhas.'
@@ -259,9 +260,13 @@ try {
     Assert-True ($null -ne (Find-Member $linesResponse 'LineStamp')) 'NoAccept entra no Response da linha.'
     Assert-True ($null -ne (Find-Member $headerUpdate 'LinesReplace')) 'Update do cabecalho leva LinesReplace.'
     Assert-True ([bool](Find-Member $headerCreate 'Lines').isCollection) 'Create do cabecalho leva colecao Lines.'
+    Assert-True ($null -ne $listItem) 'OneSublevel deve emitir ListResponse_Item.'
+    Assert-True ($null -ne (Find-Member $listItem 'LinesCount')) 'ListResponse_Item leva contador do subnivel direto.'
+    Assert-True ($null -eq (($listItem.members | Where-Object { $_.isCollection } | Select-Object -First 1))) 'ListResponse_Item nao publica colecoes.'
     $items = Find-Member $listResponse 'Items'
-    Assert-True ([string]$items.collectionItemType -eq 'sdtOrder_API_Response') 'ListResponse.Items permanece colecao de Response em B096.'
+    Assert-True ([string]$items.collectionItemType -eq 'sdtOrder_API_ListResponse_Item') 'ListResponse.Items tipa ListResponse_Item quando ha subnivel.'
     Assert-True ((Get-OwnSdtIndex $one 'sdtOrder_API_CreateRequest_Lines') -lt (Get-OwnSdtIndex $one 'sdtOrder_API_CreateRequest')) 'Create das linhas em pos-ordem, antes do cabecalho.'
+    Assert-True ((Get-OwnSdtIndex $one 'sdtOrder_API_ListResponse_Item') -lt (Get-OwnSdtIndex $one 'sdtOrder_API_ListResponse')) 'ListResponse_Item antes do envelope ListResponse.'
 
     $three = $captured['ThreeDeep'] | ConvertFrom-Json
     Assert-True ($null -ne (Find-OwnSdt $three 'sdtDay_API_CreateRequest_Shift_Worker')) 'Profundidade 3 acumula o caminho no qualificador.'

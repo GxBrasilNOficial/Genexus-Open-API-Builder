@@ -399,6 +399,11 @@ internal static class ApiPlanListProcedureWriter
         lines.Add("    If &TotalCount >= &FirstRecord and &TotalCount <= &LastRecord");
         lines.Add("        &Item = new()");
         lines.AddRange(plan.ResponseFields.Select(field => $"        &Item.{field.Name} = {field.Name}"));
+        foreach (var count in ResolveListCountAssignments(plan))
+        {
+            lines.Add($"        &Item.{count.MemberName} = count({count.AggregateAttributeName})");
+        }
+
         lines.Add("        &ListResponse.Items.Add(&Item)");
         lines.Add("    EndIf");
         lines.Add("EndFor");
@@ -411,6 +416,32 @@ internal static class ApiPlanListProcedureWriter
         lines.Add($"    &ListResponse.Pagination.TotalPages = Int((&TotalCount + &{PageSizeVariableName} - 1) / &{PageSizeVariableName})");
         lines.Add("EndIf");
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private static IReadOnlyList<ApiPlanListCountMember> ResolveListCountAssignments(ApiPlan plan)
+    {
+        if (!ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(plan))
+        {
+            return Array.Empty<ApiPlanListCountMember>();
+        }
+
+        return ApiPlanListHierarchicalContractBuilder.Create(plan).Counts;
+    }
+
+    internal static string ResolveListItemSdtName(ApiPlan plan)
+    {
+        if (!ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(plan))
+        {
+            return plan.ResponseSdtName;
+        }
+
+        var contract = ApiPlanListHierarchicalContractBuilder.Create(plan);
+        if (!contract.HasListResponseItem)
+        {
+            throw new InvalidOperationException("List hierarquico bloqueado: ListResponse_Item ausente no contrato. Nenhuma alteracao foi feita.");
+        }
+
+        return contract.ListResponseItemSdtName;
     }
 
     private static IEnumerable<string> ValidateRanges(ApiPlan plan, bool useExplicitErrors)
@@ -633,7 +664,7 @@ internal static class ApiPlanListProcedureWriter
             new("ErrorResponse", "sdt_API_ErrorResponse"),
             new("RestStatusCode", "Numeric(3.0)"),
             new("AppliedFilters", plan.ListFiltersSdtName),
-            new("Item", plan.ResponseSdtName),
+            new("Item", ResolveListItemSdtName(plan)),
             new("FirstRecord", "Numeric(18.0)"),
             new("LastRecord", "Numeric(18.0)"),
             new("TotalCount", "Numeric(18.0)"),

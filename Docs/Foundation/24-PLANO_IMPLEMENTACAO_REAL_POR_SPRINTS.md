@@ -395,14 +395,14 @@ Aprender com o uso externo da Alpha e expandir o gerador para cobrir transaçõe
 - `B095`: Leitura hierárquica recursiva da estrutura no SDK e modelo de domínio multinível (`ApiPlanLevel`) (**concluído em 2026-08-25**; evidência `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`)
 - `B096`: Geração de SDTs hierárquicos por subnível e por contrato, com regra de nomes e desambiguação (**concluído em 2026-08-26**; evidência `Docs/Implementation/2026-08-26-B096-SDTS-HIERARQUICOS.md`)
 - `B097`: Geração de código Business Component nas Procedures para subníveis, com substituição completa sob marcador `<Subnível>Replace` (**concluído em 2026-08-26**; evidência `Docs/Implementation/2026-08-26-B097-BC-HIERARQUICO.md`)
-- `B098`: Procedimento de `List` com contadores numéricos de subníveis diretos
+- `B098`: Procedimento de `List` com contadores numéricos de subníveis diretos e `ListResponse_Item` condicionado (**concluído em 2026-08-26**; evidência `Docs/Implementation/2026-08-26-B098-LIST-CONTADORES.md`)
 - `B099`: Interface do Wizard (UX) e sincronização com metadata hierárquica (`schemaVersion` V2)
 - Fase 7: ciclo de vida sob hierarquia — releitura de contrato existente, preferências do Wizard e inventário dinâmico de remoção
 - `B100`: Serviço `Delete` opt-in, com as quatro camadas anti acidente
 - `B105`: escolha do chamador sobre o detalhe do corpo de erro, podendo apenas restringir o default da API — nesta sprint se houver folga, senão Sprint 10
 - triagem do feedback da Alpha e documentação pública alinhada
 
-**Ordem de execução:** `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; conferência de fim permanece) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fases 4 a 6 (`B098`–`B099`) → Fase 7 → `B100`. Detalhamento em [Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md](../Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md).
+**Ordem de execução:** `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; conferência de fim permanece) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fases 5 e 6 (`B099`) → Fase 7 → `B100`. Detalhamento em [Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md](../Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md).
 
 ## Gate
 

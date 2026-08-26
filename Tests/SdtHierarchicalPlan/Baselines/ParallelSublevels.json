@@ -283,6 +283,44 @@
       "members": []
     },
     {
+      "name": "sdtDocument_API_ListResponse_Item",
+      "backlogId": "B098",
+      "kind": "ListResponse_Item",
+      "scope": "TransactionModuleFolder:DocumentOpenApi",
+      "members": [
+        {
+          "name": "DocId",
+          "dataType": "Attribute:DocId",
+          "length": 8,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        },
+        {
+          "name": "NotesCount",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        },
+        {
+          "name": "TagsCount",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        }
+      ]
+    },
+    {
       "name": "sdtDocument_API_ListResponse",
       "backlogId": "B044",
       "kind": "ListResponse",
@@ -290,12 +328,12 @@
       "members": [
         {
           "name": "Items",
-          "dataType": "sdtDocument_API_Response",
+          "dataType": "sdtDocument_API_ListResponse_Item",
           "length": 0,
           "decimals": 0,
           "isNullable": false,
           "isCollection": true,
-          "collectionItemType": "sdtDocument_API_Response",
+          "collectionItemType": "sdtDocument_API_ListResponse_Item",
           "source": "ListResponse"
         },
         {

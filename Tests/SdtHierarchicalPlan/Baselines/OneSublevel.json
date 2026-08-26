@@ -229,6 +229,44 @@
       "members": []
     },
     {
+      "name": "sdtOrder_API_ListResponse_Item",
+      "backlogId": "B098",
+      "kind": "ListResponse_Item",
+      "scope": "TransactionModuleFolder:OrderOpenApi",
+      "members": [
+        {
+          "name": "OrderId",
+          "dataType": "Attribute:OrderId",
+          "length": 8,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        },
+        {
+          "name": "OrderDesc",
+          "dataType": "Attribute:OrderDesc",
+          "length": 40,
+          "decimals": 0,
+          "isNullable": true,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        },
+        {
+          "name": "LinesCount",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        }
+      ]
+    },
+    {
       "name": "sdtOrder_API_ListResponse",
       "backlogId": "B044",
       "kind": "ListResponse",
@@ -236,12 +274,12 @@
       "members": [
         {
           "name": "Items",
-          "dataType": "sdtOrder_API_Response",
+          "dataType": "sdtOrder_API_ListResponse_Item",
           "length": 0,
           "decimals": 0,
           "isNullable": false,
           "isCollection": true,
-          "collectionItemType": "sdtOrder_API_Response",
+          "collectionItemType": "sdtOrder_API_ListResponse_Item",
           "source": "ListResponse"
         },
         {

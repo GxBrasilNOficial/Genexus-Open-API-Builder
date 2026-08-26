@@ -149,6 +149,34 @@
       "members": []
     },
     {
+      "name": "sdtLongTx_API_ListResponse_Item",
+      "backlogId": "B098",
+      "kind": "ListResponse_Item",
+      "scope": "TransactionModuleFolder:LongTxOpenApi",
+      "members": [
+        {
+          "name": "LongId",
+          "dataType": "Attribute:LongId",
+          "length": 8,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        },
+        {
+          "name": "BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLCount",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        }
+      ]
+    },
+    {
       "name": "sdtLongTx_API_ListResponse",
       "backlogId": "B044",
       "kind": "ListResponse",
@@ -156,12 +184,12 @@
       "members": [
         {
           "name": "Items",
-          "dataType": "sdtLongTx_API_Response",
+          "dataType": "sdtLongTx_API_ListResponse_Item",
           "length": 0,
           "decimals": 0,
           "isNullable": false,
           "isCollection": true,
-          "collectionItemType": "sdtLongTx_API_Response",
+          "collectionItemType": "sdtLongTx_API_ListResponse_Item",
           "source": "ListResponse"
         },
         {

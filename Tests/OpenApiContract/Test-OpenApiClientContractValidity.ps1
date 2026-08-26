@@ -39,7 +39,8 @@ foreach ($pattern in $expectedSdtPatterns) {
 $expectedNestedPatterns = @(
     '_API_CreateRequest_',
     '_API_UpdateRequest_',
-    '_API_Response_'
+    '_API_Response_',
+    '_API_ListResponse_Item'
 )
 foreach ($pattern in $expectedNestedPatterns) {
     Assert-Contains $namingSource $pattern "O padrao derivado de SDT '$pattern' deve permanecer declarado em ApiPlanSdtHierarchicalNaming.cs."

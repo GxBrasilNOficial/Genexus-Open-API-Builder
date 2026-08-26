@@ -38,7 +38,7 @@ Fixtures (reuso B096): `OneSublevel`, `ParallelSublevels`, `ThreeDeep`, `Inherit
 
 ## Fora deste fechamento
 
-- B098 (`List` + `ListResponse_Item` + contadores), B099 (Wizard/metadata), Fase 7, B100.
+- B099 (Wizard/metadata), Fase 7, B100.
 - Ligar o Wizard ao leitor hierárquico.
 - Smoke IDE / HTTP multinível e comprovação de remoção de netos com a linha pai (gate da sprint, não pendência de spec).
 - Required com caminho `Parcelas[0].Campo` e inventário dinâmico de remoção.

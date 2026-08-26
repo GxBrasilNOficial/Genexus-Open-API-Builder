@@ -104,7 +104,7 @@ Receber `ApiPlan`.
 
 - **Já em B095:** a **árvore de níveis** (`ApiPlanLevel`: nome, profundidade, nível pai, ordem, chave primária própria e campos candidatos da estrutura por nível — `Fields`; seleção por contrato = B099+), conforme a seção 21 de `08-MODELO_DADOS_E_METADATA.md`, exposta de forma aditiva em `ApiPlan.Levels`.
 - **Já em B096:** o **plano de SDT** consome `Levels` quando há filhos e emite SDTs derivados por contrato (`sdt<NomeBase>_API_<Papel>_<Subnível>`), com desambiguação e encurtamento de objeto a 128. O Wizard flat ainda não consome a árvore nem o naming hierárquico.
-- **Fases seguintes (B098+):** o nome do **SDT de item de lista** (`sdt<NomeBase>_API_ListResponse_Item`), presente somente quando há subnível selecionado; e quais subníveis têm **contador de `List`** ativo. Até B098, `ListResponse.Items` continua coleção de `Response`.
+- **Fases seguintes (B099+):** quais subníveis têm **contador de `List`** ativo passa a ser editável no Wizard. Desde B098, com subníveis o plano emite `sdt<NomeBase>_API_ListResponse_Item` e tipa `ListResponse.Items`; contadores default ligados via `IncludeListCount`.
 
 Os campos existentes continuam com o mesmo significado, e transação de nível único produz exatamente o mesmo plano de hoje. Detalhes em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 

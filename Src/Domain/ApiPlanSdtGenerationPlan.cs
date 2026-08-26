@@ -118,10 +118,22 @@ internal static class ApiPlanSdtGenerationPlanBuilder
             includeReplace: false,
             reservedSdtNames);
         ownSdts.Add(CreateListFiltersSdt(apiPlan, transactionFolderScope));
-        // B096 nao emite ListResponse_Item; Items permanece colecao de Response ate B098.
+
+        var listContract = ApiPlanListHierarchicalContractBuilder.Create(apiPlan);
+        if (!listContract.HasListResponseItem)
+        {
+            throw new InvalidOperationException("Criacao de SDTs bloqueada: contrato List hierarquico ausente. Nenhuma alteracao foi feita.");
+        }
+
+        reservedSdtNames.Add(listContract.ListResponseItemSdtName);
+        ownSdts.Add(CreateListResponseItemSdt(
+            listContract.ListResponseItemSdtName,
+            apiPlan.ResponseFields,
+            listContract.Counts,
+            transactionFolderScope));
         ownSdts.Add(CreateListResponseSdt(
             apiPlan.ListResponseSdtName,
-            apiPlan.ResponseSdtName,
+            listContract.ListResponseItemSdtName,
             apiPlan.ListFiltersSdtName,
             transactionFolderScope));
         return ownSdts;
@@ -405,7 +417,35 @@ internal static class ApiPlanSdtGenerationPlanBuilder
             "ListFilters");
     }
 
-    private static ApiPlanSdtDefinition CreateListResponseSdt(string name, string responseSdtName, string listFiltersSdtName, string scope)
+    private static ApiPlanSdtDefinition CreateListResponseItemSdt(
+        string name,
+        IReadOnlyList<ApiPlanField> headerFields,
+        IReadOnlyList<ApiPlanListCountMember> counts,
+        string scope)
+    {
+        var members = new List<ApiPlanSdtMember>(headerFields.Count + counts.Count);
+        foreach (var field in headerFields)
+        {
+            members.Add(CreateMember(field, "ListResponse_Item"));
+        }
+
+        foreach (var count in counts)
+        {
+            members.Add(new ApiPlanSdtMember(
+                count.MemberName,
+                "Numeric",
+                9,
+                0,
+                false,
+                false,
+                string.Empty,
+                "ListResponse_Item"));
+        }
+
+        return new ApiPlanSdtDefinition(name, "B098", "ListResponse_Item", scope, members);
+    }
+
+    private static ApiPlanSdtDefinition CreateListResponseSdt(string name, string itemSdtName, string listFiltersSdtName, string scope)
     {
         return new ApiPlanSdtDefinition(
             name,
@@ -414,7 +454,7 @@ internal static class ApiPlanSdtGenerationPlanBuilder
             scope,
             new[]
             {
-                new ApiPlanSdtMember("Items", responseSdtName, 0, 0, false, true, responseSdtName, "ListResponse"),
+                new ApiPlanSdtMember("Items", itemSdtName, 0, 0, false, true, itemSdtName, "ListResponse"),
                 new ApiPlanSdtMember("Pagination", "sdt_API_Pagination", 0, 0, false, false, string.Empty, "ListResponse"),
                 new ApiPlanSdtMember("AppliedFilters", listFiltersSdtName, 0, 0, true, false, string.Empty, "ListResponse"),
             });

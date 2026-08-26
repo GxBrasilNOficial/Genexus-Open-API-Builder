@@ -209,6 +209,44 @@
       "members": []
     },
     {
+      "name": "sdtCollisionDoc_API_ListResponse_Item",
+      "backlogId": "B098",
+      "kind": "ListResponse_Item",
+      "scope": "TransactionModuleFolder:CollisionDocOpenApi",
+      "members": [
+        {
+          "name": "DocId",
+          "dataType": "Attribute:DocId",
+          "length": 8,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        },
+        {
+          "name": "Notes",
+          "dataType": "Attribute:Notes",
+          "length": 40,
+          "decimals": 0,
+          "isNullable": true,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        },
+        {
+          "name": "Notes1Count",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        }
+      ]
+    },
+    {
       "name": "sdtCollisionDoc_API_ListResponse",
       "backlogId": "B044",
       "kind": "ListResponse",
@@ -216,12 +254,12 @@
       "members": [
         {
           "name": "Items",
-          "dataType": "sdtCollisionDoc_API_Response",
+          "dataType": "sdtCollisionDoc_API_ListResponse_Item",
           "length": 0,
           "decimals": 0,
           "isNullable": false,
           "isCollection": true,
-          "collectionItemType": "sdtCollisionDoc_API_Response",
+          "collectionItemType": "sdtCollisionDoc_API_ListResponse_Item",
           "source": "ListResponse"
         },
         {

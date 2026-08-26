@@ -22,6 +22,7 @@ internal static class ApiPlanSdtHierarchicalNaming
     public const string NestedCreateRequestNamePattern = "_API_CreateRequest_";
     public const string NestedUpdateRequestNamePattern = "_API_UpdateRequest_";
     public const string NestedResponseNamePattern = "_API_Response_";
+    public const string ListResponseItemNamePattern = "_API_ListResponse_Item";
 
     public static bool TryGetRoot(ApiPlan apiPlan, out ApiPlanLevel root)
     {
@@ -129,6 +130,43 @@ internal static class ApiPlanSdtHierarchicalNaming
         }
 
         return AllocateMemberName(collectionMemberName + "Replace", levelOrder, reserved);
+    }
+
+    public static string AllocateCountMemberName(string collectionMemberName, int levelOrder, ISet<string> reserved)
+    {
+        if (string.IsNullOrWhiteSpace(collectionMemberName))
+        {
+            throw new ArgumentException("Collection member name is required.", nameof(collectionMemberName));
+        }
+
+        return AllocateMemberName(collectionMemberName + "Count", levelOrder, reserved);
+    }
+
+    public static string AllocateListResponseItemSdtName(string transactionName, ISet<string> reserved)
+    {
+        if (string.IsNullOrWhiteSpace(transactionName))
+        {
+            throw new ArgumentException("Transaction name is required.", nameof(transactionName));
+        }
+
+        if (reserved is null)
+        {
+            throw new ArgumentNullException(nameof(reserved));
+        }
+
+        var preferred = "sdt" + transactionName + ListResponseItemNamePattern;
+        if (preferred.Length <= GeneXusObjectNameMaxLength && reserved.Add(preferred))
+        {
+            return preferred;
+        }
+
+        var fitted = TryAllocateFitted(preferred, reserved);
+        if (fitted is not null)
+        {
+            return fitted;
+        }
+
+        throw CreateUnresolvableCollision(preferred);
     }
 
     public static string AllocateSdtName(

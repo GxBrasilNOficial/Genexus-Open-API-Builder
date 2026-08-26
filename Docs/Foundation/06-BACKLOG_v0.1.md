@@ -252,7 +252,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B095 | Leitura hierárquica recursiva da estrutura no SDK e modelo de domínio multinível (`ApiPlanLevel`) | Alta — Sprint 9 / Fase 1; concluído (2026-08-25; offline) |
 | B096 | Geração de SDTs hierárquicos por subnível e por contrato, com regra de nomes e desambiguação | Alta — Sprint 9 / Fase 2; concluído (2026-08-26; offline) |
 | B097 | Geração de código Business Component nas Procedures para subníveis, com substituição completa sob marcador `<Subnível>Replace` | Alta — Sprint 9 / Fase 3; concluído 2026-08-26 |
-| B098 | Procedimento de List com contadores numéricos de subníveis diretos | Alta — Sprint 9 / Fase 4; planejado |
+| B098 | Procedimento de List com contadores numéricos de subníveis diretos | Alta — Sprint 9 / Fase 4; concluído (2026-08-26; offline) |
 | B099 | Interface do Wizard (UX) e sincronização com metadata hierárquica | Alta — Sprint 9 / Fases 5 e 6; planejado |
 | B100 | Serviço `Delete` opt-in, com confirmação consciente, `SecurityLevel` próprio e documentação pública | Alta — Sprint 9 / após a Fase 7, com corte `0.1.0-alpha.6` próprio; planejado |
 | B101 | Experimento: membro nullable no SDT de request para distinguir membro ausente de membro vazio | Média — candidato à Sprint 10; planejado |

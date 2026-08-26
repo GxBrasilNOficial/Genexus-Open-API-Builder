@@ -138,7 +138,7 @@ internal static class ApiPlanSdtHierarchicalPlanBaseline
         return BuildFromRoot("HeaderOnly", snapshot.TransactionName, snapshot.RootLevel);
     }
 
-    private static ApiPlanSdtHierarchicalPlanFixture BuildFromRoot(
+    internal static ApiPlanSdtHierarchicalPlanFixture BuildFromRoot(
         string fixtureName,
         string transactionName,
         ApiPlanLevel root)

@@ -303,6 +303,34 @@
       "members": []
     },
     {
+      "name": "sdtDay_API_ListResponse_Item",
+      "backlogId": "B098",
+      "kind": "ListResponse_Item",
+      "scope": "TransactionModuleFolder:DayOpenApi",
+      "members": [
+        {
+          "name": "DayId",
+          "dataType": "Attribute:DayId",
+          "length": 8,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        },
+        {
+          "name": "ShiftCount",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        }
+      ]
+    },
+    {
       "name": "sdtDay_API_ListResponse",
       "backlogId": "B044",
       "kind": "ListResponse",
@@ -310,12 +338,12 @@
       "members": [
         {
           "name": "Items",
-          "dataType": "sdtDay_API_Response",
+          "dataType": "sdtDay_API_ListResponse_Item",
           "length": 0,
           "decimals": 0,
           "isNullable": false,
           "isCollection": true,
-          "collectionItemType": "sdtDay_API_Response",
+          "collectionItemType": "sdtDay_API_ListResponse_Item",
           "source": "ListResponse"
         },
         {

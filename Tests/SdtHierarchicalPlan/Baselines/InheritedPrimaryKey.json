@@ -199,6 +199,34 @@
       "members": []
     },
     {
+      "name": "sdtHeader_API_ListResponse_Item",
+      "backlogId": "B098",
+      "kind": "ListResponse_Item",
+      "scope": "TransactionModuleFolder:HeaderOpenApi",
+      "members": [
+        {
+          "name": "HeaderId",
+          "dataType": "Attribute:HeaderId",
+          "length": 8,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        },
+        {
+          "name": "Level1Count",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        }
+      ]
+    },
+    {
       "name": "sdtHeader_API_ListResponse",
       "backlogId": "B044",
       "kind": "ListResponse",
@@ -206,12 +234,12 @@
       "members": [
         {
           "name": "Items",
-          "dataType": "sdtHeader_API_Response",
+          "dataType": "sdtHeader_API_ListResponse_Item",
           "length": 0,
           "decimals": 0,
           "isNullable": false,
           "isCollection": true,
-          "collectionItemType": "sdtHeader_API_Response",
+          "collectionItemType": "sdtHeader_API_ListResponse_Item",
           "source": "ListResponse"
         },
         {

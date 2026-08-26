@@ -427,8 +427,9 @@ internal sealed class ApiPlan
         Services = services ?? throw new ArgumentNullException(nameof(services));
         BusinessComponent = businessComponent ?? throw new ArgumentNullException(nameof(businessComponent));
         IncludeBusinessComponentErrorMessages = includeBusinessComponentErrorMessages;
-        // B095–B097: árvore hierárquica opcional. Plano de SDT e Source BC
+        // B095–B098: árvore hierárquica opcional. Plano de SDT, Source BC e List
         // consomem Levels quando há subníveis; o Wizard flat ainda não.
+        // O plano de SDT consome Levels (B096+) e o List emite ListResponse_Item (B098).
         Levels = levels ?? Array.Empty<ApiPlanLevel>();
     }
 
@@ -791,7 +792,8 @@ internal sealed class ApiPlanLevel
         int levelOrder,
         IReadOnlyList<ApiPlanLevelField> primaryKey,
         IReadOnlyList<ApiPlanLevelField> fields,
-        IReadOnlyList<ApiPlanLevel> childLevels)
+        IReadOnlyList<ApiPlanLevel> childLevels,
+        bool includeListCount = true)
     {
         if (string.IsNullOrWhiteSpace(levelName))
         {
@@ -815,6 +817,8 @@ internal sealed class ApiPlanLevel
         PrimaryKey = primaryKey ?? throw new ArgumentNullException(nameof(primaryKey));
         Fields = fields ?? throw new ArgumentNullException(nameof(fields));
         ChildLevels = childLevels ?? throw new ArgumentNullException(nameof(childLevels));
+        // B098: contador de List ligado por padrao; o Wizard (B099) podera desligar por subnivel.
+        IncludeListCount = includeListCount;
     }
 
     public string LevelName { get; }
@@ -831,6 +835,30 @@ internal sealed class ApiPlanLevel
     public IReadOnlyList<ApiPlanLevelField> Fields { get; }
 
     public IReadOnlyList<ApiPlanLevel> ChildLevels { get; }
+
+    /// <summary>
+    /// Quando true e o nivel e filho direto do cabecalho, o List emite <c>&lt;Subnivel&gt;Count</c>
+    /// em <c>ListResponse_Item</c> (B098). Neto nao recebe contador.
+    /// </summary>
+    public bool IncludeListCount { get; }
+
+    public ApiPlanLevel WithIncludeListCount(bool includeListCount)
+    {
+        if (includeListCount == IncludeListCount)
+        {
+            return this;
+        }
+
+        return new ApiPlanLevel(
+            LevelName,
+            Depth,
+            ParentLevelName,
+            LevelOrder,
+            PrimaryKey,
+            Fields,
+            ChildLevels,
+            includeListCount);
+    }
 }
 
 /// <summary>
