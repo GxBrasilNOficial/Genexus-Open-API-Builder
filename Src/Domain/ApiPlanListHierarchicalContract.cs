@@ -108,6 +108,12 @@ internal static class ApiPlanListHierarchicalContractBuilder
             reservedSdtNames);
     }
 
+    /// <summary>
+    /// Atributo passado a <c>count()</c> no Source List.
+    /// Residual B098: com PK composta herdada, <c>PrimaryKey[0]</c> pode ser a parte do pai
+    /// (ex. HeaderId) e não agregar linhas — ver dívida no checkpoint e em
+    /// <c>Docs/Implementation/2026-08-26-B098-LIST-CONTADORES.md</c>. Corrigir antes do smoke IDE.
+    /// </summary>
     internal static string ResolveAggregateAttributeName(ApiPlanLevel child)
     {
         if (child.PrimaryKey.Count > 0)

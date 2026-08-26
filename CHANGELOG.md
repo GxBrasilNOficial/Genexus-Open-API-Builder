@@ -20,6 +20,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Fixed
 
+- Documentação B098: residual `count(HeaderId)` na fixture `InheritedPrimaryKey` / PK composta herdada registrado no checkpoint e na evidência — corrigir em `ResolveAggregateAttributeName` antes do smoke IDE multinível (ouro atual congela o emissor).
 - Documentação B096 (naming): gatilho do encurtamento é o nome completo do SDT estourar 128 ou colidir; folha ≤32 só escolhe entre reusar a folha e o hash de 8 hex; o nome da Transaction pode ser truncado; 128 não se aplica a membro (ouro `LongQualifier`: coleção 106, `Replace` 113).
 - Checker e `AGENTS.md`: `currentFront`/`manualRequired` documentados como exclusivos de spike `B000`–`B006`; lista vazia com próxima ação `B007+` (ex. `B099a`) é o contrato, não falso verde, e não substitui a revisão semântica.
 - Documentação B096: `10` declara o plano de SDT consumindo `Levels` quando há filhos; `ListResponse_Item` e contadores permanecem B098+; o `11` registra o limite 128 de objeto; o `08` e o `13` deixam de afirmar que a geração não consome a árvore; o `15`, o `26` e o `28` separam o contrato-alvo (B098 / Fase 7) do plano já emitido; a especificação de subníveis alinha a ordem de execução, o critério 2 (`Tests/SdtHierarchicalPlan/`) e o critério 9 (trava OpenAPI também lê `ApiPlanSdtHierarchicalNaming.cs`; `_API_ListResponse_Item` ainda não).
