@@ -483,7 +483,7 @@ Sem banco próprio e sem complexidade desnecessária.
 
 **Atualização de 2026-08-26 (B095).** O esboço abaixo da emenda de 2026-08-23 previa árvore em `TransactionInfo` com `PrimaryKeys` (texto) e `Attributes` (`AttributeInfo`). A Fase 1 entregou outra forma, de propósito: leitor à parte e modelo em `ApiPlan`, sem alterar o caminho flat.
 
-O modelo das seções anteriores continua exato para transação de nível único e para o Wizard flat atual: `TransactionInfo` segue plano (`Attributes` como lista única); `AttributeInfo` ainda não carrega referência de nível.
+O modelo das seções anteriores continua exato para transação de nível único e para o Wizard flat atual: `TransactionInfo` e `AttributeInfo` são entidades **conceituais** deste documento (não classes em `Src/`); nesse registro, `TransactionInfo` segue plano (`Attributes` como lista única) e `AttributeInfo` ainda não carrega referência de nível. Já `ApiPlanLevel` / `ApiPlanLevelField` abaixo são tipos verificáveis no código.
 
 **Entrega B095 — `ApiPlanLevel` / `ApiPlanLevelField`**, em `Src/Domain/ApiPlan.cs`, consumidos pelo `TransactionStructureReader` e expostos de forma aditiva em `ApiPlan.Levels` (ainda sem consumidor na geração nem no Wizard):
 
