@@ -1,0 +1,306 @@
+{
+  "phase": "Sprint4SdtEnginePreviewOnly",
+  "writesKnowledgeBase": false,
+  "status": "ResolvedSdtContractPreviewNoKbWrite",
+  "ownSdts": [
+    {
+      "name": "sdtLongTx_API_CreateRequest_C47857DF",
+      "backlogId": "B096",
+      "kind": "CreateRequest",
+      "scope": "TransactionModuleFolder:LongTxOpenApi",
+      "members": [
+        {
+          "name": "LongLineId",
+          "dataType": "Attribute:LongLineId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "CreateRequest"
+        }
+      ]
+    },
+    {
+      "name": "sdtLongTx_API_CreateRequest",
+      "backlogId": "B040",
+      "kind": "CreateRequest",
+      "scope": "TransactionModuleFolder:LongTxOpenApi",
+      "members": [
+        {
+          "name": "BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",
+          "dataType": "sdtLongTx_API_CreateRequest_C47857DF",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtLongTx_API_CreateRequest_C47857DF",
+          "source": "CreateRequest"
+        }
+      ]
+    },
+    {
+      "name": "sdtLongTx_API_UpdateRequest_3C665CAA",
+      "backlogId": "B096",
+      "kind": "UpdateRequest",
+      "scope": "TransactionModuleFolder:LongTxOpenApi",
+      "members": [
+        {
+          "name": "LongLineId",
+          "dataType": "Attribute:LongLineId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "UpdateRequest"
+        }
+      ]
+    },
+    {
+      "name": "sdtLongTx_API_UpdateRequest",
+      "backlogId": "B041",
+      "kind": "UpdateRequest",
+      "scope": "TransactionModuleFolder:LongTxOpenApi",
+      "members": [
+        {
+          "name": "LongId",
+          "dataType": "Attribute:LongId",
+          "length": 8,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "UpdateRequest"
+        },
+        {
+          "name": "BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLReplace",
+          "dataType": "Boolean",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "UpdateRequest"
+        },
+        {
+          "name": "BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",
+          "dataType": "sdtLongTx_API_UpdateRequest_3C665CAA",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtLongTx_API_UpdateRequest_3C665CAA",
+          "source": "UpdateRequest"
+        }
+      ]
+    },
+    {
+      "name": "sdtLongTx_API_Response_A23A4D3D",
+      "backlogId": "B096",
+      "kind": "Response",
+      "scope": "TransactionModuleFolder:LongTxOpenApi",
+      "members": [
+        {
+          "name": "LongLineId",
+          "dataType": "Attribute:LongLineId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "Response"
+        }
+      ]
+    },
+    {
+      "name": "sdtLongTx_API_Response",
+      "backlogId": "B042",
+      "kind": "Response",
+      "scope": "TransactionModuleFolder:LongTxOpenApi",
+      "members": [
+        {
+          "name": "LongId",
+          "dataType": "Attribute:LongId",
+          "length": 8,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "Response"
+        },
+        {
+          "name": "BranchLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL",
+          "dataType": "sdtLongTx_API_Response_A23A4D3D",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtLongTx_API_Response_A23A4D3D",
+          "source": "Response"
+        }
+      ]
+    },
+    {
+      "name": "sdtLongTx_API_ListFilters",
+      "backlogId": "B043",
+      "kind": "ListFilters",
+      "scope": "TransactionModuleFolder:LongTxOpenApi",
+      "members": []
+    },
+    {
+      "name": "sdtLongTx_API_ListResponse",
+      "backlogId": "B044",
+      "kind": "ListResponse",
+      "scope": "TransactionModuleFolder:LongTxOpenApi",
+      "members": [
+        {
+          "name": "Items",
+          "dataType": "sdtLongTx_API_Response",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtLongTx_API_Response",
+          "source": "ListResponse"
+        },
+        {
+          "name": "Pagination",
+          "dataType": "sdt_API_Pagination",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse"
+        },
+        {
+          "name": "AppliedFilters",
+          "dataType": "sdtLongTx_API_ListFilters",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": true,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse"
+        }
+      ]
+    }
+  ],
+  "sharedSdts": [
+    {
+      "name": "sdt_API_ErrorMessage",
+      "backlogId": "B102",
+      "kind": "SharedErrorMessage",
+      "scope": "RootModuleFolder:GxOpenAPI",
+      "members": [
+        {
+          "name": "Code",
+          "dataType": "VarChar",
+          "length": 64,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedErrorMessage"
+        },
+        {
+          "name": "Message",
+          "dataType": "LongVarChar",
+          "length": 2097152,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedErrorMessage"
+        }
+      ]
+    },
+    {
+      "name": "sdt_API_ErrorResponse",
+      "backlogId": "B045/B046",
+      "kind": "SharedErrorResponse",
+      "scope": "RootModuleFolder:GxOpenAPI",
+      "members": [
+        {
+          "name": "Code",
+          "dataType": "VarChar",
+          "length": 64,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedErrorResponse"
+        },
+        {
+          "name": "Message",
+          "dataType": "LongVarChar",
+          "length": 2097152,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedErrorResponse"
+        },
+        {
+          "name": "Messages",
+          "dataType": "sdt_API_ErrorMessage",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdt_API_ErrorMessage",
+          "source": "SharedErrorResponse"
+        }
+      ]
+    },
+    {
+      "name": "sdt_API_Pagination",
+      "backlogId": "B045/B046",
+      "kind": "SharedPagination",
+      "scope": "RootModuleFolder:GxOpenAPI",
+      "members": [
+        {
+          "name": "Page",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedPagination"
+        },
+        {
+          "name": "PageSize",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedPagination"
+        },
+        {
+          "name": "TotalCount",
+          "dataType": "Numeric",
+          "length": 18,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedPagination"
+        },
+        {
+          "name": "TotalPages",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedPagination"
+        }
+      ]
+    }
+  ]
+}

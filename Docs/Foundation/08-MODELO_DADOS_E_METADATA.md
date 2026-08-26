@@ -485,7 +485,7 @@ Sem banco próprio e sem complexidade desnecessária.
 
 O modelo das seções anteriores continua exato para transação de nível único e para o Wizard flat atual: `TransactionInfo` e `AttributeInfo` são entidades **conceituais** deste documento (não classes em `Src/`); nesse registro, `TransactionInfo` segue plano (`Attributes` como lista única) e `AttributeInfo` ainda não carrega referência de nível. Já `ApiPlanLevel` / `ApiPlanLevelField` abaixo são tipos verificáveis no código.
 
-**Entrega B095 — `ApiPlanLevel` / `ApiPlanLevelField`**, em `Src/Domain/ApiPlan.cs`, consumidos pelo `TransactionStructureReader` e expostos de forma aditiva em `ApiPlan.Levels` (ainda sem consumidor na geração nem no Wizard):
+**Entrega B095 — `ApiPlanLevel` / `ApiPlanLevelField`**, em `Src/Domain/ApiPlan.cs`, consumidos pelo `TransactionStructureReader` e expostos de forma aditiva em `ApiPlan.Levels`. A partir de B096, o plano de SDT consome `Levels` quando há filhos; o Wizard flat continua sem o leitor hierárquico.
 
 | Campo (`ApiPlanLevel`) | Tipo |
 |---|---|
@@ -501,4 +501,4 @@ O modelo das seções anteriores continua exato para transação de nível únic
 
 **Ainda pendente (B099+).** A seleção por contrato (`IsSelectedForCreate` / `Update` / `Response`) e a desambiguação de atributos homônimos entre níveis continuam necessários quando o Wizard passar a operar a árvore. O veículo deixa de ser “`AttributeInfo` ganha nível em `TransactionInfo`” e passa a ser o plano hierárquico (`ApiPlan.Levels` / campos por nível) — o problema da ambiguidade permanece; o esboço de 2026-08-23 sobre `TransactionInfo`/`AttributeInfo` não é mais o contrato vigente.
 
-Detalhes e fases em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, evidência B095 em `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md` e na `Emenda técnica — 2026-08-23` do registro de decisões do MVP.
+Detalhes e fases em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, evidência B095 em `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`, evidência B096 em `Docs/Implementation/2026-08-26-B096-SDTS-HIERARQUICOS.md` e na `Emenda técnica — 2026-08-23` do registro de decisões do MVP.

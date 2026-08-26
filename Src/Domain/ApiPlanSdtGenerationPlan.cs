@@ -17,32 +17,34 @@ internal static class ApiPlanSdtGenerationPlanBuilder
         var listFiltersSdtName = apiPlan.ListFiltersSdtName;
         var transactionFolderScope = ApiPlanSdtScope.CreateTransactionModuleFolderScope(apiPlan.TransactionFolderName);
 
-        var ownSdts = new[]
-        {
-            CreateFieldBackedSdt(
-                apiPlan.CreateRequestSdtName,
-                "B040",
-                "CreateRequest",
-                transactionFolderScope,
-                apiPlan.CreateRequestFields,
-                "CreateRequest"),
-            CreateFieldBackedSdt(
-                apiPlan.UpdateRequestSdtName,
-                "B041",
-                "UpdateRequest",
-                transactionFolderScope,
-                apiPlan.UpdateRequestFields,
-                "UpdateRequest"),
-            CreateFieldBackedSdt(
-                apiPlan.ResponseSdtName,
-                "B042",
-                "Response",
-                transactionFolderScope,
-                apiPlan.ResponseFields,
-                "Response"),
-            CreateListFiltersSdt(apiPlan, transactionFolderScope),
-            CreateListResponseSdt(apiPlan.ListResponseSdtName, responseSdtName, listFiltersSdtName, transactionFolderScope),
-        };
+        var ownSdts = ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(apiPlan)
+            ? CreateHierarchicalOwnSdts(apiPlan, transactionFolderScope)
+            : new[]
+            {
+                CreateFieldBackedSdt(
+                    apiPlan.CreateRequestSdtName,
+                    "B040",
+                    "CreateRequest",
+                    transactionFolderScope,
+                    apiPlan.CreateRequestFields,
+                    "CreateRequest"),
+                CreateFieldBackedSdt(
+                    apiPlan.UpdateRequestSdtName,
+                    "B041",
+                    "UpdateRequest",
+                    transactionFolderScope,
+                    apiPlan.UpdateRequestFields,
+                    "UpdateRequest"),
+                CreateFieldBackedSdt(
+                    apiPlan.ResponseSdtName,
+                    "B042",
+                    "Response",
+                    transactionFolderScope,
+                    apiPlan.ResponseFields,
+                    "Response"),
+                CreateListFiltersSdt(apiPlan, transactionFolderScope),
+                CreateListResponseSdt(apiPlan.ListResponseSdtName, responseSdtName, listFiltersSdtName, transactionFolderScope),
+            };
 
         var sharedSdts = new[]
         {
@@ -57,6 +59,285 @@ internal static class ApiPlanSdtGenerationPlanBuilder
             "ResolvedSdtContractPreviewNoKbWrite",
             ownSdts,
             sharedSdts);
+    }
+
+    private static IReadOnlyList<ApiPlanSdtDefinition> CreateHierarchicalOwnSdts(
+        ApiPlan apiPlan,
+        string transactionFolderScope)
+    {
+        if (!ApiPlanSdtHierarchicalNaming.TryGetRoot(apiPlan, out var root))
+        {
+            throw new InvalidOperationException("Criacao de SDTs bloqueada: ApiPlan hierarquico sem nivel raiz. Nenhuma alteracao foi feita.");
+        }
+
+        var reservedSdtNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            apiPlan.CreateRequestSdtName,
+            apiPlan.UpdateRequestSdtName,
+            apiPlan.ResponseSdtName,
+            apiPlan.ListFiltersSdtName,
+            apiPlan.ListResponseSdtName,
+        };
+        foreach (var sharedName in apiPlan.SharedSdtNames)
+        {
+            reservedSdtNames.Add(sharedName);
+        }
+
+        var ownSdts = new List<ApiPlanSdtDefinition>();
+        AppendHeaderContract(
+            ownSdts,
+            apiPlan,
+            root,
+            "CreateRequest",
+            apiPlan.CreateRequestSdtName,
+            "B040",
+            apiPlan.CreateRequestFields,
+            transactionFolderScope,
+            includeReplace: false,
+            reservedSdtNames);
+        AppendHeaderContract(
+            ownSdts,
+            apiPlan,
+            root,
+            "UpdateRequest",
+            apiPlan.UpdateRequestSdtName,
+            "B041",
+            apiPlan.UpdateRequestFields,
+            transactionFolderScope,
+            includeReplace: true,
+            reservedSdtNames);
+        AppendHeaderContract(
+            ownSdts,
+            apiPlan,
+            root,
+            "Response",
+            apiPlan.ResponseSdtName,
+            "B042",
+            apiPlan.ResponseFields,
+            transactionFolderScope,
+            includeReplace: false,
+            reservedSdtNames);
+        ownSdts.Add(CreateListFiltersSdt(apiPlan, transactionFolderScope));
+        // B096 nao emite ListResponse_Item; Items permanece colecao de Response ate B098.
+        ownSdts.Add(CreateListResponseSdt(
+            apiPlan.ListResponseSdtName,
+            apiPlan.ResponseSdtName,
+            apiPlan.ListFiltersSdtName,
+            transactionFolderScope));
+        return ownSdts;
+    }
+
+    private static void AppendHeaderContract(
+        List<ApiPlanSdtDefinition> ownSdts,
+        ApiPlan apiPlan,
+        ApiPlanLevel root,
+        string role,
+        string headerSdtName,
+        string backlogId,
+        IReadOnlyList<ApiPlanField> headerFields,
+        string scope,
+        bool includeReplace,
+        ISet<string> reservedSdtNames)
+    {
+        var reservedMembers = new HashSet<string>(
+            headerFields.Select(field => field.Name),
+            StringComparer.OrdinalIgnoreCase);
+        var childLinks = AppendChildren(
+            ownSdts,
+            apiPlan,
+            root.ChildLevels,
+            Array.Empty<string>(),
+            role,
+            includeReplace,
+            scope,
+            reservedSdtNames,
+            reservedMembers);
+        var members = new List<ApiPlanSdtMember>(headerFields.Count + (childLinks.Count * 2));
+        foreach (var field in headerFields)
+        {
+            members.Add(CreateMember(field, role));
+        }
+
+        AppendChildContractMembers(members, childLinks, role, includeReplace);
+        ownSdts.Add(new ApiPlanSdtDefinition(headerSdtName, backlogId, role, scope, members));
+    }
+
+    private static string EmitNestedSdt(
+        List<ApiPlanSdtDefinition> ownSdts,
+        ApiPlan apiPlan,
+        ApiPlanLevel level,
+        IReadOnlyList<string> qualifierParts,
+        string role,
+        bool includeReplace,
+        string scope,
+        ISet<string> reservedSdtNames)
+    {
+        var eligible = SelectLevelFields(level.Fields, role).ToArray();
+        var reservedMembers = new HashSet<string>(
+            eligible.Select(field => field.Name),
+            StringComparer.OrdinalIgnoreCase);
+        var childLinks = AppendChildren(
+            ownSdts,
+            apiPlan,
+            level.ChildLevels,
+            qualifierParts,
+            role,
+            includeReplace,
+            scope,
+            reservedSdtNames,
+            reservedMembers);
+        var members = new List<ApiPlanSdtMember>(eligible.Length + (childLinks.Count * 2));
+        foreach (var field in eligible)
+        {
+            members.Add(CreateMember(field, role));
+        }
+
+        AppendChildContractMembers(members, childLinks, role, includeReplace);
+        var sdtName = ApiPlanSdtHierarchicalNaming.AllocateSdtName(
+            apiPlan.TransactionName,
+            role,
+            qualifierParts,
+            reservedSdtNames);
+        ownSdts.Add(new ApiPlanSdtDefinition(sdtName, "B096", role, scope, members));
+        return sdtName;
+    }
+
+    private static IReadOnlyList<HierarchicalChildLink> AppendChildren(
+        List<ApiPlanSdtDefinition> ownSdts,
+        ApiPlan apiPlan,
+        IReadOnlyList<ApiPlanLevel> children,
+        IReadOnlyList<string> ancestorQualifiers,
+        string role,
+        bool includeReplace,
+        string scope,
+        ISet<string> reservedSdtNames,
+        ISet<string> parentReservedMembers)
+    {
+        if (children.Count == 0)
+        {
+            return Array.Empty<HierarchicalChildLink>();
+        }
+
+        var links = new List<HierarchicalChildLink>(children.Count);
+        foreach (var child in children)
+        {
+            var sanitized = ApiPlanSdtHierarchicalNaming.SanitizeLevelIdentifier(child.LevelName, child.LevelOrder);
+            var childQualifiers = new List<string>(ancestorQualifiers.Count + 1);
+            childQualifiers.AddRange(ancestorQualifiers);
+            childQualifiers.Add(sanitized);
+            var childSdtName = EmitNestedSdt(
+                ownSdts,
+                apiPlan,
+                child,
+                childQualifiers,
+                role,
+                includeReplace,
+                scope,
+                reservedSdtNames);
+            var collectionName = ApiPlanSdtHierarchicalNaming.AllocateMemberName(
+                sanitized,
+                child.LevelOrder,
+                parentReservedMembers);
+            var replaceName = includeReplace
+                ? ApiPlanSdtHierarchicalNaming.AllocateReplaceMemberName(
+                    collectionName,
+                    child.LevelOrder,
+                    parentReservedMembers)
+                : string.Empty;
+            links.Add(new HierarchicalChildLink(collectionName, replaceName, childSdtName));
+        }
+
+        return links;
+    }
+
+    private static void AppendChildContractMembers(
+        List<ApiPlanSdtMember> members,
+        IReadOnlyList<HierarchicalChildLink> childLinks,
+        string source,
+        bool includeReplace)
+    {
+        foreach (var link in childLinks)
+        {
+            if (includeReplace)
+            {
+                members.Add(new ApiPlanSdtMember(
+                    link.ReplaceName,
+                    "Boolean",
+                    0,
+                    0,
+                    false,
+                    false,
+                    string.Empty,
+                    source));
+            }
+
+            members.Add(new ApiPlanSdtMember(
+                link.CollectionName,
+                link.SdtName,
+                0,
+                0,
+                false,
+                true,
+                link.SdtName,
+                source));
+        }
+    }
+
+    private static IEnumerable<ApiPlanLevelField> SelectLevelFields(
+        IReadOnlyList<ApiPlanLevelField> fields,
+        string role)
+    {
+        foreach (var field in fields)
+        {
+            if (IsLevelFieldEligible(field, role))
+            {
+                yield return field;
+            }
+        }
+    }
+
+    internal static bool IsLevelFieldEligible(ApiPlanLevelField field, string role)
+    {
+        if (string.Equals(role, "Response", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (field.IsFormula || field.IsNoAccept || field.IsInferred || field.IsRedundant)
+        {
+            return false;
+        }
+
+        if (string.Equals(role, "CreateRequest", StringComparison.Ordinal))
+        {
+            if (field.IsAutonumber)
+            {
+                return false;
+            }
+
+            if (field.IsPrimaryKey && field.IsForeignKey)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private readonly struct HierarchicalChildLink
+    {
+        public HierarchicalChildLink(string collectionName, string replaceName, string sdtName)
+        {
+            CollectionName = collectionName;
+            ReplaceName = replaceName;
+            SdtName = sdtName;
+        }
+
+        public string CollectionName { get; }
+
+        public string ReplaceName { get; }
+
+        public string SdtName { get; }
     }
 
     private static ApiPlanSdtDefinition CreateFieldBackedSdt(
@@ -182,6 +463,19 @@ internal static class ApiPlanSdtGenerationPlanBuilder
                 new ApiPlanSdtMember("TotalCount", "Numeric", 18, 0, false, false, string.Empty, "SharedPagination"),
                 new ApiPlanSdtMember("TotalPages", "Numeric", 9, 0, false, false, string.Empty, "SharedPagination"),
             });
+    }
+
+    private static ApiPlanSdtMember CreateMember(ApiPlanLevelField field, string source)
+    {
+        return new ApiPlanSdtMember(
+            field.Name,
+            $"Attribute:{field.Name}",
+            field.Length,
+            field.Decimals,
+            field.IsNullable,
+            false,
+            string.Empty,
+            source);
     }
 
     private static ApiPlanSdtMember CreateMember(ApiPlanField field, string source)

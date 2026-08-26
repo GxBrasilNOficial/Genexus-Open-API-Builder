@@ -19,7 +19,9 @@ Detalhe: `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 
 **Atualização de 2026-08-25 (noite).** ~~Conferência humana da Fase 0 encerrada; camadas de início permanecem; próxima ação = Fase 1 (`B095`).~~ **Superada** pela atualização B095 abaixo.
 
-**Atualização de 2026-08-25 (noite, B095).** Fase 1 (`B095`) concluída: leitor hierárquico à parte (`TransactionStructureReader` com núcleo `Build` + adaptador SDK), modelo `ApiPlanLevel` / `ApiPlanLevelField`, critério compartilhado `TransactionAttributeKeyTraits`, testes offline com ouro em `Tests/TransactionStructure/Baselines/` ligados ao pré-push. Caminho flat do Wizard sem o leitor hierárquico. Próxima ação = Fase 2 (`B096`). Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
+**Atualização de 2026-08-25 (noite, B095).** Fase 1 (`B095`) concluída: leitor hierárquico à parte (`TransactionStructureReader` com núcleo `Build` + adaptador SDK), modelo `ApiPlanLevel` / `ApiPlanLevelField`, critério compartilhado `TransactionAttributeKeyTraits`, testes offline com ouro em `Tests/TransactionStructure/Baselines/` ligados ao pré-push. Caminho flat do Wizard sem o leitor hierárquico. ~~Próxima ação = Fase 2 (`B096`).~~ **Superada** pela atualização B096 abaixo. Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
+
+**Atualização de 2026-08-26 (B096).** Fase 2 (`B096`) concluída: plano de SDT hierárquico por contrato (Create/Update/Response + `<Subnível>Replace`), naming/desambiguação/encurtamento a 128, ouro offline e gate `tests.sdtHierarchicalPlan`. Wizard flat e `ListResponse_Item` fora deste recorte. Próxima ação = Fase 3 (`B097`). Evidência: `Docs/Implementation/2026-08-26-B096-SDTS-HIERARQUICOS.md`.
 
 ---
 
@@ -69,7 +71,7 @@ Cada subnível selecionado gera portanto um SDT próprio **por contrato**, e nã
 - `sdt<Tx>_API_ListResponse`: envelope de lista, com os mesmos três membros de sempre (`Items`, `Pagination`, `AppliedFilters`).
 - `sdt<Tx>_API_ListResponse_Item`: **somente quando houver subnível selecionado** — tipo dos elementos de `Items`, conforme a seção 7-A.
 
-Em profundidade maior que 2, o SDT do subnível contém, por sua vez, o membro coleção do nível seguinte, com o caminho acumulado no qualificador (`sdt<Tx>_API_Response_<Subnível>_<SubSubnível>`). A regra de encurtamento de nome e o limite aceito pelo GeneXus devem ser medidos na Fase 2 antes da primeira escrita real.
+Em profundidade maior que 2, o SDT do subnível contém, por sua vez, o membro coleção do nível seguinte, com o caminho acumulado no qualificador (`sdt<Tx>_API_Response_<Subnível>_<SubSubnível>`). Limite de nome GeneXus 18 = **128**; a Fase 2 encurta o qualificador quando a folha passa de 32 caracteres (hash SHA-256 de 8 hex). Escrita real na KB e smoke do limite ficam para depois desta fase.
 
 Exemplo completo, para `DadosDoDia -> Turno -> Funcionario` com os três níveis selecionados:
 
@@ -229,7 +231,7 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 |---|---|---|
 | **Fase 0** | Linha de base de não regressão em duas camadas, conforme detalhado abaixo da tabela | `Tests/GenerationBaseline/` (nova cobertura), `scripts/Invoke-PrePushMechanicalChecks.ps1` |
 | **Fase 1 (B095)** | Leitura hierárquica recursiva, modelo `ApiPlanLevel` e testes offline do núcleo | `TransactionStructureReader.cs`, `TransactionAttributeKeyTraits.cs`, `ApiPlan.cs`, `Tests/TransactionStructure/` — o Wizard flat **não** consome o leitor hierárquico; só delega autonumeração ao helper compartilhado. `PrototypePrimaryKeyReader.cs` intocado |
-| **Fase 2 (B096)** | Geração de SDTs hierárquicos por contrato, regra de nomes e desambiguação | `ApiPlanSdtGenerationPlan.cs`, `ApiPlanSdtWriter.cs` |
+| **Fase 2 (B096)** | Geração de SDTs hierárquicos por contrato, regra de nomes e desambiguação (**concluída em 2026-08-26**, plano offline; writer físico inalterado) | `ApiPlanSdtGenerationPlan.cs`, `ApiPlanSdtHierarchicalNaming.cs`, `Tests/SdtHierarchicalPlan/` |
 | **Fase 3 (B097)** | Geração de código Business Component nas Procedures (Get, Create, Update) e marcador `<Subnível>Replace` | `ApiPlanBusinessComponentWriter.cs` |
 | **Fase 4 (B098)** | Procedimento de List com contadores de subníveis diretos e `ListResponse_Item` condicionado | `ApiPlanListProcedureWriter.cs`, `ApiPlanSdtGenerationPlan.cs` |
 | **Fase 5 (B099a)** | Interface do Wizard com agrupamento por nível, dependência entre níveis, controle de contador e aviso de profundidade | `PrototypeWizardDialog.cs` e abas de seleção |

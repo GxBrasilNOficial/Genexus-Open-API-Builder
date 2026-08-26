@@ -427,7 +427,8 @@ internal sealed class ApiPlan
         Services = services ?? throw new ArgumentNullException(nameof(services));
         BusinessComponent = businessComponent ?? throw new ArgumentNullException(nameof(businessComponent));
         IncludeBusinessComponentErrorMessages = includeBusinessComponentErrorMessages;
-        // B095: árvore hierárquica opcional. Geração e Wizard flat ainda não consomem Levels.
+        // B095/B096: árvore hierárquica opcional. O plano de SDT consome Levels
+        // quando há subníveis; o Wizard flat ainda não.
         Levels = levels ?? Array.Empty<ApiPlanLevel>();
     }
 

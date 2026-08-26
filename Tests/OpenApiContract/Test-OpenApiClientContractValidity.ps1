@@ -9,7 +9,9 @@ $ErrorActionPreference = 'Stop'
 
 $repositoryRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 $apiPlanPath = Join-Path $repositoryRoot 'Src\Domain\ApiPlan.cs'
+$namingPath = Join-Path $repositoryRoot 'Src\Domain\ApiPlanSdtHierarchicalNaming.cs'
 $apiPlanSource = Get-Content -Path $apiPlanPath -Raw
+$namingSource = Get-Content -Path $namingPath -Raw
 
 function Assert-Contains {
     param([string]$Text, [string]$Expected, [string]$Message)
@@ -32,6 +34,15 @@ $expectedSdtPatterns = @(
 
 foreach ($pattern in $expectedSdtPatterns) {
     Assert-Contains $apiPlanSource $pattern "O padrao de nome de SDT '$pattern' deve permanecer declarado em ApiPlan.cs."
+}
+
+$expectedNestedPatterns = @(
+    '_API_CreateRequest_',
+    '_API_UpdateRequest_',
+    '_API_Response_'
+)
+foreach ($pattern in $expectedNestedPatterns) {
+    Assert-Contains $namingSource $pattern "O padrao derivado de SDT '$pattern' deve permanecer declarado em ApiPlanSdtHierarchicalNaming.cs."
 }
 
 # 2. Servicos suportados no plano (o operationId apiNome.Servico e emitido pelo GeneXus)
