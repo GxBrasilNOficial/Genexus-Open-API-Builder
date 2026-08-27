@@ -37,6 +37,9 @@ Assert-True ($source -match 'Tests/OpenApiContract/Test-OpenApiClientContractVal
 Assert-True ($source -match 'Tests/GenerationBaseline/Test-ApiPlanGenerationBaseline\.ps1') 'O checker deve executar o teste unitário da linha de base de geração (Fase 0).'
 Assert-True ($source -match 'Tests/TransactionStructure/Test-TransactionStructureReader\.ps1') 'O checker deve executar o teste unitário da leitura hierárquica B095.'
 Assert-True ($source -match 'Tests/SdtHierarchicalPlan/Test-ApiPlanSdtHierarchicalPlan\.ps1') 'O checker deve executar o teste unitário do plano de SDT hierárquico B096.'
+Assert-True ($source -match 'Tests/BusinessComponentHierarchical/Test-ApiPlanBusinessComponentHierarchical\.ps1') 'O checker deve executar o teste unitário do Source BC hierárquico B097.'
+Assert-True ($source -match 'Tests/ListHierarchical/Test-ApiPlanListHierarchical\.ps1') 'O checker deve executar o teste unitário do List hierárquico B098.'
+Assert-True ($source -match 'Tests/WizardHierarchical/Test-ApiPlanHierarchicalWizardSelection\.ps1') 'O checker deve executar o teste unitário da seleção hierárquica do Wizard B099a.'
 Assert-True ($source -match 'Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract\.ps1') 'O checker deve executar o teste unitário do parser Service Source.'
 Assert-True ($source -match 'Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity\.ps1') 'O checker deve executar o teste unitário da integridade B067.'
 Assert-True ($source -match 'Tests/ApiObjectOwnership/Test-ApiPlanApiObjectOwnership\.ps1') 'O checker deve executar o teste unitário da posse B087 do API Object.'
@@ -101,6 +104,9 @@ try {
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\GenerationBaseline'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\TransactionStructure'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\SdtHierarchicalPlan'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\BusinessComponentHierarchical'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ListHierarchical'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\WizardHierarchical'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\WizardContract'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ExtensionAssemblyInventory'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\Installation'))
@@ -144,6 +150,9 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GenerationBaseline\Test-ApiPlanGenerationBaseline.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generation Baseline'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\TransactionStructure\Test-TransactionStructureReader.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Transaction Structure Reader'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\SdtHierarchicalPlan\Test-ApiPlanSdtHierarchicalPlan.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Sdt Hierarchical Plan'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\BusinessComponentHierarchical\Test-ApiPlanBusinessComponentHierarchical.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Business Component Hierarchical'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ListHierarchical\Test-ApiPlanListHierarchical.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture List Hierarchical'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardHierarchical\Test-ApiPlanHierarchicalWizardSelection.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Wizard Hierarchical Selection'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-PrototypeWizardAutonumberCompositeKey.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Autonumber Composite Key'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-ApiPlanGenerationStateReaderGetAllIndex.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generation State Reader GetAll Index'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-PrototypeWizardCreateRequiredPrimaryKeyOptional.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Create Required Primary Key Optional'`n", [System.Text.UTF8Encoding]::new($false))
@@ -225,6 +234,8 @@ try {
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/GenerationBaseline/Test-ApiPlanGenerationBaseline.ps1' }).Count -eq 1) 'O comando do teste Generation Baseline deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/TransactionStructure/Test-TransactionStructureReader.ps1' }).Count -eq 1) 'O comando do teste Transaction Structure deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/SdtHierarchicalPlan/Test-ApiPlanSdtHierarchicalPlan.ps1' }).Count -eq 1) 'O comando do teste Sdt Hierarchical Plan deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/BusinessComponentHierarchical/Test-ApiPlanBusinessComponentHierarchical.ps1' }).Count -eq 1) 'O comando do teste Business Component Hierarchical deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ListHierarchical/Test-ApiPlanListHierarchical.ps1' }).Count -eq 1) 'O comando do teste List Hierarchical deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardHierarchical/Test-ApiPlanHierarchicalWizardSelection.ps1' }).Count -eq 1) 'O comando do teste Wizard Hierarchical Selection deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-PrototypeWizardAutonumberCompositeKey.ps1' }).Count -eq 1) 'O comando do teste Autonumber Composite Key deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-ApiPlanGenerationStateReaderGetAllIndex.ps1' }).Count -eq 1) 'O comando do teste Generation State Reader GetAll Index deve aparecer no JSON.'
