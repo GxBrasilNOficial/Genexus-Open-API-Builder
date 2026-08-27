@@ -174,7 +174,7 @@ A reorganização de `NotaFiscal` veio do pattern Work With for Web / impacto de
 Código e testes mecânicos, sem evidência U15 desta leva:
 
 - Confirmação B035 de habilitar Business Component, fallback `<não definido>` no resumo de path e MessageBoxes do relatório final (objeto principal ausente / falha ao abrir) passam por `ExtensionLocalization` (es/en).
-- Relatório B081: owner = `Form.ActiveForm`, fallback `Process.MainWindowHandle`; `ShowDialog(owner)`; monitor pela janela da IDE, não pelo cursor. Sem `Application.OpenForms.FirstOrDefault`.
+- Relatório B081: owner = `Form.ActiveForm` visível, fallback `Process.MainWindowHandle`; `ShowDialog(owner)`; monitor pela janela da IDE, não pelo cursor. Sem `Application.OpenForms.FirstOrDefault`. ActiveForm oculto (Wizard já fechado) é ignorado — evidência U15 em 2026-08-26 na `Teste`.
 
 Pendente de validação manual: relatório no monitor da IDE em multi-monitor; confirmação B035 em espanhol e inglês (nos testes anteriores `NotaFiscal` já tinha Business Component habilitado).
 

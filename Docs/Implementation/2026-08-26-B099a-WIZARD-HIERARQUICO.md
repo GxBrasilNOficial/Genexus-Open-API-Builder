@@ -36,11 +36,19 @@ Escopo: interface do Wizard com agrupamento por nível, dependência pai/filho, 
 - Linha de base Fase 0 e ouro B096 intactos.
 - Manifesto/registro da extensão: inalterado. Atualização para teste na IDE = só a DLL canônica (`Install-ExtensionForGeneXus18.bat` como administrador, IDE fechada); sem `genexus /install`.
 
+## Smoke U15 — 2026-08-26
+
+KB `wsEducacaoSpTeste`, Transaction `Teste`, API `apiTeste`, folder `TesteOpenApi`. Sem Remover/Sync; metadata permanece `GOAB_API_METADATA_B060_V1`. Sem smoke HTTP multinível.
+
+### Três níveis (`TesteItem` → `TesteItemFolio`)
+
+Wizard e SDTs do Folio corretos; o primeiro apply bloqueou B055 em `&Bc_TesteItem_TesteItemFolio` com tipo `Teste.TesteItemFolio`. Correção: tipo BC aninhado usa o caminho completo (`Teste.TesteItem.TesteItemFolio`). Reapply: `SuccessWithWarnings`, `Blocked=0`, metadata reencontrada. `Build All` passou em `NETPostgreSQL155` e `NETFrameworkSQLServer004` (especificou Get/Create/Update/List e gerou os SDTs do Folio; sem `spc0018`; aviso ambiental `FBiTextSharp.dll` só no Framework). Relatório B081: a primeira chamada gravou Output sem diálogo (owner = Wizard oculto); a segunda mostrou o diálogo. Correção do owner em `ResolveFinalReportOwner`.
+
+### Quatro níveis (`…Folio` → `TesteItemFolioDoc`, irmão `TestePortfolio`)
+
+Wizard em complemento: seletor `Cabeçalho (Teste)`, `TesteItem`, `TesteItem / TesteItemFolio`, `TesteItem / TesteItemFolio / TesteItemFolioDoc`, `TestePortfolio`. Contador de List visível só nos filhos diretos (`TesteItem`, `TestePortfolio`); ausente em Folio e FolioDoc. Aviso de profundidade > 3 sem bloquear. Resumo: `Subníveis selecionados: 4`; SDTs `Completar: gerenciados=19, ausentes=3, planejados=22` (a pasta reutilizada entra na conta). Apply: diálogo B081 visível, `SuccessWithWarnings`, `Created=3` (`sdtTeste_API_{CreateRequest,UpdateRequest,Response}_TesteItem_TesteItemFolio_TesteItemFolioDoc`), `Updated=24`, `Blocked=0`, `DuraçãoMs=27243`. B071/B070 aplicados; metadata `Reencountered`, `Bytes=81932`, `Sha256='5EAB5D532CB9760C818C4A7F11BDB88B2EE5DF0E47E882256EE10D5FA0E364B6'`. O `PlannedContractHash` V1 ficou igual ao apply de três níveis (`21F955426F5A11630ECEBC05BA582D56F6B64CB8D6B8E157D6B97381A87F22CD`): o contrato planejado B067 ainda não inclui a árvore hierárquica (Fase 6). `Build All` passou nos dois environments: especificou `apiTeste` e as quatro Procedures, gerou os três SDTs de FolioDoc, sem `spc0018`; o `.cs` de `procTeste_API_List` não reapareceu na geração (List especificado e compile OK; incremental). Aviso `FBiTextSharp.dll` só no Framework.
+
 ## Validação ainda humana
 
-- Wizard em Transaction plana: visual idêntico ao atual.
-- Wizard em Transaction com subníveis: seletor, dependência, contador, aviso se depth>3, resumo com contagem e aviso V1.
-- Apply opcional + `Build All` sem `spc0018`.
-- Não Remover, não Sync, não ida-e-volta da árvore até B099b.
-
-Pré-requisito: Transaction multinível na KB `wsEducacaoSpTeste` (um subnível, paralelos, três níveis) se ainda não existir.
+- Wizard em Transaction plana: visual idêntico ao atual (não refeito neste smoke).
+- HTTP multinível (GET/POST com linhas de Folio/FolioDoc) fora deste recorte.

@@ -2048,7 +2048,12 @@ public sealed class Package : AbstractPackageUI
 
     private static System.Windows.Forms.IWin32Window? ResolveFinalReportOwner()
     {
-        if (System.Windows.Forms.Form.ActiveForm is { } activeForm)
+        // Depois de Concluir e aplicar o Wizard fecha, mas permanece no `using`
+        // até o fim do método. ActiveForm pode ser essa janela oculta; ShowDialog
+        // com owner invisível abre o relatório sem o usuário ver.
+        if (System.Windows.Forms.Form.ActiveForm is { } activeForm
+            && activeForm.Visible
+            && !activeForm.IsDisposed)
         {
             return activeForm;
         }

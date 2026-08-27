@@ -34,6 +34,20 @@ function Assert-Contains {
     }
 }
 
+function Get-BcVariableTypes {
+    param($Method, $Plan)
+
+    $map = @{}
+    foreach ($item in @($Method.Invoke($null, @($Plan)))) {
+        $nameProperty = $item.GetType().GetProperty('Name')
+        $typeProperty = $item.GetType().GetProperty('DataType')
+        $name = [string]$nameProperty.GetValue($item)
+        $map[$name] = [string]$typeProperty.GetValue($item)
+    }
+
+    return ,$map
+}
+
 function Write-Utf8LfFile {
     param(
         [Parameter(Mandatory)] [string]$Path,
@@ -123,7 +137,10 @@ Assert-Contains $writerSource 'EmitUpdateCollectionAssignments' 'Update deve emi
 Assert-Contains $writerSource 'EmitGetCollectionAssignments' 'Get deve emitir colecoes hierarquicas.'
 Assert-Contains $hierarchicalSource 'ReplaceMemberName' 'Emissor deve respeitar o marcador Replace.'
 Assert-Contains $hierarchicalSource 'HasAutonumberPrimaryKey' 'Update autonumerado usa Clear+Add.'
+Assert-Contains $hierarchicalSource 'node.BcLevelType' 'Variavel BC deve usar o tipo com caminho completo do nivel.'
 Assert-Contains $mapSource 'ApiPlanHierarchicalContractMapBuilder' 'Mapa compartilhado B096/B097 deve existir.'
+Assert-Contains $mapSource 'BuildBcLevelType' 'Mapa deve montar o tipo BC aninhado.'
+Assert-True ($hierarchicalSource.IndexOf('plan.TransactionName + "." + node.BcCollectionName', [StringComparison]::Ordinal) -lt 0) 'Tipo BC nao pode mais ser Transaction.Folha sem ancestrais.'
 
 if (-not (Test-Path -LiteralPath $DllPath -PathType Leaf)) {
     Write-Output "ENVIRONMENT_BLOCKED: DLL Release ausente em $DllPath"
@@ -150,12 +167,15 @@ try {
     $toFileMap = $snapshotType.GetMethod('ToFileMap', [System.Reflection.BindingFlags]'Instance, NonPublic, Public')
     $nameProperty = $fixtureType.GetProperty('Name', [System.Reflection.BindingFlags]'Instance, NonPublic, Public')
     $planProperty = $fixtureType.GetProperty('Plan', [System.Reflection.BindingFlags]'Instance, NonPublic, Public')
+    $sourceType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanBusinessComponentHierarchicalSource', $true, $false)
+    $collectGet = $sourceType.GetMethod('CollectGetVariables', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
 
     Assert-True ($null -ne $createFixtures) 'CreateFixtures nao encontrado.'
     Assert-True ($null -ne $capture) 'Capture nao encontrado.'
     Assert-True ($null -ne $normalize) 'NormalizeForComparison nao encontrado.'
     Assert-True ($null -ne $assertMap) 'AssertMapMatchesSdtPlan nao encontrado.'
     Assert-True ($null -ne $toFileMap) 'ToFileMap nao encontrado.'
+    Assert-True ($null -ne $collectGet) 'CollectGetVariables nao encontrado.'
 
     $fixtures = @($createFixtures.Invoke($null, @()))
     Assert-True ($fixtures.Count -ge 5) "Esperava pelo menos 5 fixtures; encontrado $($fixtures.Count)."
@@ -193,6 +213,26 @@ try {
             Assert-True ($updateSource.IndexOf('ShiftReplace', [StringComparison]::Ordinal) -ge 0) 'ThreeDeep deve emitir ShiftReplace.'
             Assert-True ($updateSource.IndexOf('WorkerReplace', [StringComparison]::Ordinal) -ge 0) 'ThreeDeep deve emitir WorkerReplace aninhado.'
             Assert-True ($updateSource.IndexOf('.Clear()', [StringComparison]::Ordinal) -ge 0) 'Worker autonumerado deve usar Clear no Replace.'
+            $bcTypes = Get-BcVariableTypes -Method $collectGet -Plan $plan
+            Assert-True ($bcTypes.ContainsKey('Bc_Shift')) 'ThreeDeep deve declarar &Bc_Shift.'
+            Assert-True ($bcTypes.ContainsKey('Bc_Shift_Worker')) 'ThreeDeep deve declarar &Bc_Shift_Worker.'
+            Assert-True ($bcTypes['Bc_Shift'] -eq 'Day.Shift') 'Filho direto usa Transaction.Nivel.'
+            Assert-True ($bcTypes['Bc_Shift_Worker'] -eq 'Day.Shift.Worker') 'Neto usa caminho completo Transaction.Pai.Neto.'
+            Assert-True ($bcTypes['Bc_Shift_Worker'] -ne 'Day.Worker') 'Neto nao pode ser Transaction.Folha.'
+        }
+
+        if ($fixtureName -eq 'OneSublevel') {
+            $bcTypes = Get-BcVariableTypes -Method $collectGet -Plan $plan
+            Assert-True ($bcTypes.ContainsKey('Bc_Lines')) 'OneSublevel deve declarar &Bc_Lines.'
+            Assert-True ($bcTypes['Bc_Lines'] -eq 'Order.Lines') 'Filho direto OneSublevel permanece Transaction.Nivel.'
+        }
+
+        if ($fixtureName -eq 'ParallelSublevels') {
+            $bcTypes = Get-BcVariableTypes -Method $collectGet -Plan $plan
+            Assert-True ($bcTypes.ContainsKey('Bc_Notes')) 'ParallelSublevels deve declarar &Bc_Notes.'
+            Assert-True ($bcTypes.ContainsKey('Bc_Tags')) 'ParallelSublevels deve declarar &Bc_Tags.'
+            Assert-True ($bcTypes['Bc_Notes'] -eq 'Document.Notes') 'Paralelo Notes permanece Transaction.Nivel.'
+            Assert-True ($bcTypes['Bc_Tags'] -eq 'Document.Tags') 'Paralelo Tags permanece Transaction.Nivel.'
         }
 
         if ($fixtureName -eq 'MemberCollision') {

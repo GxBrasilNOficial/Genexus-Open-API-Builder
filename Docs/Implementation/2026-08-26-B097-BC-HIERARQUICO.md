@@ -49,3 +49,11 @@ Registradas no checkpoint; **não** bloqueiam B098 nem alteram o contrato do Lis
 
 1. **Update + PK autonumerada de linha.** Com `Replace` e chave autonumerada, o Source faz `Clear`+Add e ainda atribui a PK a partir do request; o Create omite o campo. Resolver mais tarde: omitir a PK no Update como no Create (ajuste local de Source) e, se desejado, alinhar o `UpdateRequest` do B096 para não publicar o campo. Confirmar com smoke IDE.
 2. **`BcCollectionName` `<unnamed>`.** A fixture `InheritedPrimaryKey` (nível sem nome no B095) gera `&Header.<unnamed>` no BC e `Level1` no SDT. Em Transaction real o nível tem nome. Resolver mais tarde: recusar emissão BC sem nome de nível e/ou renomear a fixture de Source; manter o teste de `<unnamed>` só no leitor/naming. Quem consumir o mapa (ex.: contadores B098) não deve tratar `<unnamed>` como nome de produção.
+
+## Correção 2026-08-26 — tipo BC de nível aninhado
+
+O tipo da variável `&Bc_<token>` era `Transaction.NomeDoNível`. Isso vale para filho direto (`Day.Shift`, `Teste.TesteItem`) e falha no neto: GeneXus resolve `Teste.TesteItem.TesteItemFolio`, não `Teste.TesteItemFolio`. O preflight B055 bloqueou o apply de três níveis na `Teste` sem gravar Source BC.
+
+`ApiPlanHierarchicalNode.BcLevelType` agora monta o caminho completo dos `LevelName` estruturais. O ouro de Source B097 não muda (só o tipo da variável). O teste `ThreeDeep` passa a exigir `Day.Shift.Worker` e a recusar `Day.Worker`.
+
+Smoke U15 (2026-08-26) na Transaction `Teste` (`apiTeste`): reapply após a correção gravou Get/Create/Update sem B055; `Build All` passou em `NETPostgreSQL155` e `NETFrameworkSQLServer004` sem `spc0018`, gerando os SDTs do Folio. O apply de quatro níveis no mesmo dia especificou o tipo `Teste.TesteItem.TesteItemFolio.TesteItemFolioDoc` e gerou os SDTs de FolioDoc nos dois environments, também sem `spc0018`. Detalhe do Wizard/apply: `Docs/Implementation/2026-08-26-B099a-WIZARD-HIERARQUICO.md`.

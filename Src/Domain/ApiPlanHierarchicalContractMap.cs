@@ -59,6 +59,7 @@ internal static class ApiPlanHierarchicalContractMapBuilder
             apiPlan,
             root.ChildLevels,
             Array.Empty<string>(),
+            Array.Empty<string>(),
             role,
             includeReplace,
             reservedMembers,
@@ -70,6 +71,7 @@ internal static class ApiPlanHierarchicalContractMapBuilder
         ApiPlan apiPlan,
         IReadOnlyList<ApiPlanLevel> children,
         IReadOnlyList<string> ancestorQualifiers,
+        IReadOnlyList<string> ancestorBcNames,
         string role,
         bool includeReplace,
         ISet<string> parentReservedMembers,
@@ -87,6 +89,9 @@ internal static class ApiPlanHierarchicalContractMapBuilder
             var childQualifiers = new List<string>(ancestorQualifiers.Count + 1);
             childQualifiers.AddRange(ancestorQualifiers);
             childQualifiers.Add(sanitized);
+            var childBcNames = new List<string>(ancestorBcNames.Count + 1);
+            childBcNames.AddRange(ancestorBcNames);
+            childBcNames.Add(child.LevelName);
             var eligible = child.Fields
                 .Where(field => ApiPlanSdtGenerationPlanBuilder.IsLevelFieldEligible(field, role))
                 .ToArray();
@@ -98,6 +103,7 @@ internal static class ApiPlanHierarchicalContractMapBuilder
                 apiPlan,
                 child.ChildLevels,
                 childQualifiers,
+                childBcNames,
                 role,
                 includeReplace,
                 childReservedMembers,
@@ -126,10 +132,22 @@ internal static class ApiPlanHierarchicalContractMapBuilder
                 itemSdtName,
                 eligible,
                 nested,
-                variableToken));
+                variableToken,
+                BuildBcLevelType(apiPlan.TransactionName, ancestorBcNames, child.LevelName)));
         }
 
         return nodes;
+    }
+
+    private static string BuildBcLevelType(
+        string transactionName,
+        IReadOnlyList<string> ancestorBcNames,
+        string levelName)
+    {
+        var parts = new List<string>(ancestorBcNames.Count + 2) { transactionName };
+        parts.AddRange(ancestorBcNames);
+        parts.Add(levelName);
+        return string.Join(".", parts);
     }
 
     private static string BuildVariableToken(
@@ -224,7 +242,8 @@ internal sealed class ApiPlanHierarchicalNode
         string itemSdtName,
         IReadOnlyList<ApiPlanLevelField> eligibleFields,
         IReadOnlyList<ApiPlanHierarchicalNode> children,
-        string variableToken)
+        string variableToken,
+        string bcLevelType)
     {
         Level = level ?? throw new ArgumentNullException(nameof(level));
         BcCollectionName = bcCollectionName ?? throw new ArgumentNullException(nameof(bcCollectionName));
@@ -234,6 +253,7 @@ internal sealed class ApiPlanHierarchicalNode
         EligibleFields = eligibleFields ?? throw new ArgumentNullException(nameof(eligibleFields));
         Children = children ?? throw new ArgumentNullException(nameof(children));
         VariableToken = variableToken ?? throw new ArgumentNullException(nameof(variableToken));
+        BcLevelType = bcLevelType ?? throw new ArgumentNullException(nameof(bcLevelType));
     }
 
     public ApiPlanLevel Level { get; }
@@ -255,6 +275,13 @@ internal sealed class ApiPlanHierarchicalNode
 
     /// <summary>Sufixo estável para nomes de variáveis de loop no Source.</summary>
     public string VariableToken { get; }
+
+    /// <summary>
+    /// Tipo GeneXus do item de nível no Business Component. Filho direto:
+    /// <c>Transaction.Nivel</c>. Nível aninhado: caminho completo
+    /// <c>Transaction.Pai.Neto</c>, nunca <c>Transaction.Neto</c>.
+    /// </summary>
+    public string BcLevelType { get; }
 
     public bool HasAutonumberPrimaryKey =>
         Level.PrimaryKey.Any(levelField => levelField.IsAutonumber);

@@ -47,7 +47,7 @@ internal static class ApiPlanBusinessComponentHierarchicalSource
     {
         var map = ApiPlanHierarchicalContractMapBuilder.Create(plan);
         var variables = new List<VariableSpec>();
-        CollectGetNodeVariables(plan, map.Response.Children, variables);
+        CollectGetNodeVariables(map.Response.Children, variables);
         return variables;
     }
 
@@ -55,9 +55,9 @@ internal static class ApiPlanBusinessComponentHierarchicalSource
     {
         var map = ApiPlanHierarchicalContractMapBuilder.Create(plan);
         var variables = new List<VariableSpec>();
-        CollectCreateNodeVariables(plan, map.CreateRequest.Children, variables);
+        CollectCreateNodeVariables(map.CreateRequest.Children, variables);
         // CreateResponse reusa o mapeamento Response (prefixo Get_).
-        CollectGetNodeVariables(plan, map.Response.Children, variables);
+        CollectGetNodeVariables(map.Response.Children, variables);
         return DeduplicateVariables(variables);
     }
 
@@ -65,8 +65,8 @@ internal static class ApiPlanBusinessComponentHierarchicalSource
     {
         var map = ApiPlanHierarchicalContractMapBuilder.Create(plan);
         var variables = new List<VariableSpec>();
-        CollectUpdateNodeVariables(plan, map.UpdateRequest.Children, variables);
-        CollectGetNodeVariables(plan, map.Response.Children, variables);
+        CollectUpdateNodeVariables(map.UpdateRequest.Children, variables);
+        CollectGetNodeVariables(map.Response.Children, variables);
         return DeduplicateVariables(variables);
     }
 
@@ -304,39 +304,36 @@ internal static class ApiPlanBusinessComponentHierarchicalSource
     }
 
     private static void CollectGetNodeVariables(
-        ApiPlan plan,
         IReadOnlyList<ApiPlanHierarchicalNode> nodes,
         List<VariableSpec> variables)
     {
         foreach (var node in nodes)
         {
-            variables.Add(new VariableSpec("Bc_" + node.VariableToken, BcLevelType(plan, node)));
+            variables.Add(new VariableSpec("Bc_" + node.VariableToken, node.BcLevelType));
             variables.Add(new VariableSpec("Get_" + node.VariableToken, node.ItemSdtName));
-            CollectGetNodeVariables(plan, node.Children, variables);
+            CollectGetNodeVariables(node.Children, variables);
         }
     }
 
     private static void CollectCreateNodeVariables(
-        ApiPlan plan,
         IReadOnlyList<ApiPlanHierarchicalNode> nodes,
         List<VariableSpec> variables)
     {
         foreach (var node in nodes)
         {
-            variables.Add(new VariableSpec("Bc_" + node.VariableToken, BcLevelType(plan, node)));
+            variables.Add(new VariableSpec("Bc_" + node.VariableToken, node.BcLevelType));
             variables.Add(new VariableSpec("Create_" + node.VariableToken, node.ItemSdtName));
-            CollectCreateNodeVariables(plan, node.Children, variables);
+            CollectCreateNodeVariables(node.Children, variables);
         }
     }
 
     private static void CollectUpdateNodeVariables(
-        ApiPlan plan,
         IReadOnlyList<ApiPlanHierarchicalNode> nodes,
         List<VariableSpec> variables)
     {
         foreach (var node in nodes)
         {
-            variables.Add(new VariableSpec("Bc_" + node.VariableToken, BcLevelType(plan, node)));
+            variables.Add(new VariableSpec("Bc_" + node.VariableToken, node.BcLevelType));
             variables.Add(new VariableSpec("Update_" + node.VariableToken, node.ItemSdtName));
             if (!node.HasAutonumberPrimaryKey && node.MatchKeyFields.Count > 0)
             {
@@ -344,10 +341,7 @@ internal static class ApiPlanBusinessComponentHierarchicalSource
                 variables.Add(new VariableSpec("Found_" + node.VariableToken, "Boolean"));
             }
 
-            CollectUpdateNodeVariables(plan, node.Children, variables);
+            CollectUpdateNodeVariables(node.Children, variables);
         }
     }
-
-    private static string BcLevelType(ApiPlan plan, ApiPlanHierarchicalNode node) =>
-        plan.TransactionName + "." + node.BcCollectionName;
 }
