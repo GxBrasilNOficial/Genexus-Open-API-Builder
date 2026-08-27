@@ -31,6 +31,7 @@ internal static class ApiPlanSdtHierarchicalPlanBaseline
             .ToList();
         fromReader.Add(CreateMemberCollision());
         fromReader.Add(CreateLongQualifier());
+        fromReader.Add(CreateVariableTokenCollision());
         fromReader.Add(CreateHeaderOnly());
         return fromReader;
     }
@@ -123,6 +124,56 @@ internal static class ApiPlanSdtHierarchicalPlanBaseline
             new[] { line });
         var snapshot = TransactionStructureReader.Build(transactionName, root);
         return BuildFromRoot("LongQualifier", snapshot.TransactionName, snapshot.RootLevel);
+    }
+
+    /// <summary>
+    /// Dois ramos com path longo e a mesma folha <c>SameLeaf</c> (LevelOrder=1 em cada pai):
+    /// <see cref="ApiPlanHierarchicalContractMapBuilder"/> trunca para <c>L1_SameLeaf</c> e
+    /// desambigua a segunda rota para <c>L1_SameLeaf_V2</c>.
+    /// </summary>
+    private static ApiPlanSdtHierarchicalPlanFixture CreateVariableTokenCollision()
+    {
+        var branchAName = "BranchA" + new string('A', 40);
+        var branchBName = "BranchB" + new string('B', 40);
+        var headerId = Attr("c4000001-0001-4000-8000-000000000001", "CollideId", "Numeric", 8, 0, false, false, false, false, false, true, "True");
+        var leafAId = Attr("c4000001-0002-4000-8000-000000000001", "SameLeafId", "Numeric", 4, 0, false, false, false, false, false, true, "False");
+        var leafAText = Attr("c4000001-0002-4000-8000-000000000002", "SameLeafText", "VarChar", 40, 0, true, false, false, false, false, true, null);
+        var leafBId = Attr("c4000001-0003-4000-8000-000000000001", "SameLeafId", "Numeric", 4, 0, false, false, false, false, false, true, "False");
+        var leafBText = Attr("c4000001-0003-4000-8000-000000000002", "SameLeafText", "VarChar", 40, 0, true, false, false, false, false, true, null);
+
+        var leafA = new TransactionStructureLevelSource(
+            "SameLeaf",
+            new[] { leafAId, leafAText },
+            new[] { "SameLeafId" },
+            Array.Empty<TransactionStructureLevelSource>());
+        var leafB = new TransactionStructureLevelSource(
+            "SameLeaf",
+            new[] { leafBId, leafBText },
+            new[] { "SameLeafId" },
+            Array.Empty<TransactionStructureLevelSource>());
+        var branchA = new TransactionStructureLevelSource(
+            branchAName,
+            new[]
+            {
+                Attr("c4000001-0004-4000-8000-000000000001", "BranchAId", "Numeric", 4, 0, false, false, false, false, false, true, "False"),
+            },
+            new[] { "BranchAId" },
+            new[] { leafA });
+        var branchB = new TransactionStructureLevelSource(
+            branchBName,
+            new[]
+            {
+                Attr("c4000001-0005-4000-8000-000000000001", "BranchBId", "Numeric", 4, 0, false, false, false, false, false, true, "False"),
+            },
+            new[] { "BranchBId" },
+            new[] { leafB });
+        var root = new TransactionStructureLevelSource(
+            "TokenCollide",
+            new[] { headerId },
+            new[] { "CollideId" },
+            new[] { branchA, branchB });
+        var snapshot = TransactionStructureReader.Build("TokenCollide", root);
+        return BuildFromRoot("VariableTokenCollision", snapshot.TransactionName, snapshot.RootLevel);
     }
 
     private static ApiPlanSdtHierarchicalPlanFixture CreateHeaderOnly()

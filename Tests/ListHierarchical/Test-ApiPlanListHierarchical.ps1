@@ -161,7 +161,7 @@ try {
     $fixtures = @($createFixtures.Invoke($null, @()))
     Assert-True ($fixtures.Count -ge 6) "Esperava pelo menos 6 fixtures; encontrado $($fixtures.Count)."
 
-    $expectedNames = @('OneSublevel', 'ParallelSublevels', 'ThreeDeep', 'InheritedPrimaryKey', 'MemberCollision', 'HeaderOnly', 'CountsDisabled')
+    $expectedNames = @('OneSublevel', 'ParallelSublevels', 'ThreeDeep', 'InheritedPrimaryKey', 'MemberCollision', 'LongQualifier', 'VariableTokenCollision', 'HeaderOnly', 'CountsDisabled')
     $actualNames = @($fixtures | ForEach-Object { $nameProperty.GetValue($_) })
     foreach ($expectedName in $expectedNames) {
         Assert-True ($actualNames -contains $expectedName) "Fixture ausente: $expectedName"

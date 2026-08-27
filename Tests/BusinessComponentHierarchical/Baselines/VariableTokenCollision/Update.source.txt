@@ -1,0 +1,225 @@
+&RestStatusCode = 200
+If &UpdateRequest.CollideId > 99999999
+    &RestStatusCode = 400
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"attribute_limit_exceeded"
+    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"CollideId")
+EndIf
+If &RestStatusCode = 200
+    &TokenCollide.Load(&CollideId)
+    If &TokenCollide.Success()
+        &TokenCollide.CollideId = &UpdateRequest.CollideId
+        If &UpdateRequest.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAReplace
+            &Idx_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA = &TokenCollide.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.Count
+            Do While &Idx_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA >= 1
+                &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA = &TokenCollide.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.Item(&Idx_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)
+                &Found_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA = False
+                For &Update_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA in &UpdateRequest.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                    If &Update_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId = &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId
+                        &Found_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA = True
+                        Exit
+                    EndIf
+                EndFor
+                If not &Found_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                    &TokenCollide.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.Remove(&Idx_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)
+                EndIf
+                &Idx_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA = &Idx_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA - 1
+            EndDo
+            For &Update_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA in &UpdateRequest.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                &Found_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA = False
+                For &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA in &TokenCollide.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                    If &Update_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId = &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId
+                        &Found_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA = True
+                        &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId = &Update_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId
+                        If &Update_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeafReplace
+                            &Idx_L1_SameLeaf = &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf.Count
+                            Do While &Idx_L1_SameLeaf >= 1
+                                &Bc_L1_SameLeaf = &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf.Item(&Idx_L1_SameLeaf)
+                                &Found_L1_SameLeaf = False
+                                For &Update_L1_SameLeaf in &Update_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf
+                                    If &Update_L1_SameLeaf.SameLeafId = &Bc_L1_SameLeaf.SameLeafId
+                                        &Found_L1_SameLeaf = True
+                                        Exit
+                                    EndIf
+                                EndFor
+                                If not &Found_L1_SameLeaf
+                                    &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf.Remove(&Idx_L1_SameLeaf)
+                                EndIf
+                                &Idx_L1_SameLeaf = &Idx_L1_SameLeaf - 1
+                            EndDo
+                            For &Update_L1_SameLeaf in &Update_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf
+                                &Found_L1_SameLeaf = False
+                                For &Bc_L1_SameLeaf in &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf
+                                    If &Update_L1_SameLeaf.SameLeafId = &Bc_L1_SameLeaf.SameLeafId
+                                        &Found_L1_SameLeaf = True
+                                        &Bc_L1_SameLeaf.SameLeafId = &Update_L1_SameLeaf.SameLeafId
+                                        &Bc_L1_SameLeaf.SameLeafText = &Update_L1_SameLeaf.SameLeafText
+                                        Exit
+                                    EndIf
+                                EndFor
+                                If not &Found_L1_SameLeaf
+                                    &Bc_L1_SameLeaf = new()
+                                        &Bc_L1_SameLeaf.SameLeafId = &Update_L1_SameLeaf.SameLeafId
+                                        &Bc_L1_SameLeaf.SameLeafText = &Update_L1_SameLeaf.SameLeafText
+                                    &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf.Add(&Bc_L1_SameLeaf)
+                                EndIf
+                            EndFor
+                        EndIf
+                        Exit
+                    EndIf
+                EndFor
+                If not &Found_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                    &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA = new()
+                        &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId = &Update_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId
+                    For &Update_L1_SameLeaf in &Update_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf
+                        &Bc_L1_SameLeaf = new()
+                        &Bc_L1_SameLeaf.SameLeafId = &Update_L1_SameLeaf.SameLeafId
+                        &Bc_L1_SameLeaf.SameLeafText = &Update_L1_SameLeaf.SameLeafText
+                        &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf.Add(&Bc_L1_SameLeaf)
+                    EndFor
+                    &TokenCollide.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.Add(&Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)
+                EndIf
+            EndFor
+        EndIf
+        If &UpdateRequest.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBReplace
+            &Idx_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB = &TokenCollide.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.Count
+            Do While &Idx_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB >= 1
+                &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB = &TokenCollide.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.Item(&Idx_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB)
+                &Found_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB = False
+                For &Update_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB in &UpdateRequest.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+                    If &Update_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId = &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId
+                        &Found_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB = True
+                        Exit
+                    EndIf
+                EndFor
+                If not &Found_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+                    &TokenCollide.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.Remove(&Idx_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB)
+                EndIf
+                &Idx_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB = &Idx_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB - 1
+            EndDo
+            For &Update_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB in &UpdateRequest.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+                &Found_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB = False
+                For &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB in &TokenCollide.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+                    If &Update_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId = &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId
+                        &Found_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB = True
+                        &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId = &Update_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId
+                        If &Update_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeafReplace
+                            &Idx_L1_SameLeaf_V2 = &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf.Count
+                            Do While &Idx_L1_SameLeaf_V2 >= 1
+                                &Bc_L1_SameLeaf_V2 = &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf.Item(&Idx_L1_SameLeaf_V2)
+                                &Found_L1_SameLeaf_V2 = False
+                                For &Update_L1_SameLeaf_V2 in &Update_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf
+                                    If &Update_L1_SameLeaf_V2.SameLeafId = &Bc_L1_SameLeaf_V2.SameLeafId
+                                        &Found_L1_SameLeaf_V2 = True
+                                        Exit
+                                    EndIf
+                                EndFor
+                                If not &Found_L1_SameLeaf_V2
+                                    &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf.Remove(&Idx_L1_SameLeaf_V2)
+                                EndIf
+                                &Idx_L1_SameLeaf_V2 = &Idx_L1_SameLeaf_V2 - 1
+                            EndDo
+                            For &Update_L1_SameLeaf_V2 in &Update_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf
+                                &Found_L1_SameLeaf_V2 = False
+                                For &Bc_L1_SameLeaf_V2 in &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf
+                                    If &Update_L1_SameLeaf_V2.SameLeafId = &Bc_L1_SameLeaf_V2.SameLeafId
+                                        &Found_L1_SameLeaf_V2 = True
+                                        &Bc_L1_SameLeaf_V2.SameLeafId = &Update_L1_SameLeaf_V2.SameLeafId
+                                        &Bc_L1_SameLeaf_V2.SameLeafText = &Update_L1_SameLeaf_V2.SameLeafText
+                                        Exit
+                                    EndIf
+                                EndFor
+                                If not &Found_L1_SameLeaf_V2
+                                    &Bc_L1_SameLeaf_V2 = new()
+                                        &Bc_L1_SameLeaf_V2.SameLeafId = &Update_L1_SameLeaf_V2.SameLeafId
+                                        &Bc_L1_SameLeaf_V2.SameLeafText = &Update_L1_SameLeaf_V2.SameLeafText
+                                    &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf.Add(&Bc_L1_SameLeaf_V2)
+                                EndIf
+                            EndFor
+                        EndIf
+                        Exit
+                    EndIf
+                EndFor
+                If not &Found_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+                    &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB = new()
+                        &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId = &Update_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId
+                    For &Update_L1_SameLeaf_V2 in &Update_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf
+                        &Bc_L1_SameLeaf_V2 = new()
+                        &Bc_L1_SameLeaf_V2.SameLeafId = &Update_L1_SameLeaf_V2.SameLeafId
+                        &Bc_L1_SameLeaf_V2.SameLeafText = &Update_L1_SameLeaf_V2.SameLeafText
+                        &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf.Add(&Bc_L1_SameLeaf_V2)
+                    EndFor
+                    &TokenCollide.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.Add(&Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB)
+                EndIf
+            EndFor
+        EndIf
+        &TokenCollide.Save()
+        If &TokenCollide.Success()
+            Commit
+            &TokenCollide.Load(&CollideId)
+            &UpdateResponse = new()
+            &UpdateResponse.CollideId = &TokenCollide.CollideId
+            For &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA in &TokenCollide.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                &Get_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA = new()
+                &Get_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId = &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId
+                For &Bc_L1_SameLeaf in &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf
+                    &Get_L1_SameLeaf = new()
+                    &Get_L1_SameLeaf.SameLeafId = &Bc_L1_SameLeaf.SameLeafId
+                    &Get_L1_SameLeaf.SameLeafText = &Bc_L1_SameLeaf.SameLeafText
+                    &Get_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf.Add(&Get_L1_SameLeaf)
+                EndFor
+                &UpdateResponse.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.Add(&Get_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)
+            EndFor
+            For &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB in &TokenCollide.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+                &Get_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB = new()
+                &Get_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId = &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId
+                For &Bc_L1_SameLeaf_V2 in &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf
+                    &Get_L1_SameLeaf_V2 = new()
+                    &Get_L1_SameLeaf_V2.SameLeafId = &Bc_L1_SameLeaf_V2.SameLeafId
+                    &Get_L1_SameLeaf_V2.SameLeafText = &Bc_L1_SameLeaf_V2.SameLeafText
+                    &Get_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf.Add(&Get_L1_SameLeaf_V2)
+                EndFor
+                &UpdateResponse.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.Add(&Get_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB)
+            EndFor
+            &RestStatusCode = 200
+        Else
+            &RestStatusCode = 422
+            &ErrorResponse = new()
+            &ErrorResponse.Code = !"validation_error"
+            &Messages = &TokenCollide.GetMessages()
+            &ConcatenatedMessage = !""
+            For &i = 1 To &Messages.Count
+                &Message = &Messages.Item(&i)
+                If &Message.Type = MessageTypes.Error
+                    &ErrorItem = new()
+                    If &Message.Id.IsEmpty()
+                        &ErrorItem.Code = !"business_rule"
+                    Else
+                        &ErrorItem.Code = &Message.Id
+                    EndIf
+                    &ErrorItem.Message = &Message.Description
+                    &ErrorResponse.Messages.Add(&ErrorItem)
+                    If &ConcatenatedMessage.IsEmpty()
+                        &ConcatenatedMessage = &Message.Description
+                    Else
+                        &ConcatenatedMessage = &ConcatenatedMessage + !" | " + &Message.Description
+                    EndIf
+                EndIf
+            EndFor
+            If &ConcatenatedMessage.IsEmpty()
+                &ErrorResponse.Message = !"Business rules rejected the request."
+            Else
+                If Len(&ConcatenatedMessage) > 2048
+                    &ErrorResponse.Message = Substr(&ConcatenatedMessage, 1, 2045) + !"..."
+                Else
+                    &ErrorResponse.Message = &ConcatenatedMessage
+                EndIf
+            EndIf
+        EndIf
+    Else
+        &RestStatusCode = 404
+        &ErrorResponse = new()
+        &ErrorResponse.Code = !"not_found"
+        &ErrorResponse.Message = !"TokenCollide was not found."
+    EndIf
+EndIf

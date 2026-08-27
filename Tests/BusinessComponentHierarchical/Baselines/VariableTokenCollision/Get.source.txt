@@ -1,0 +1,34 @@
+&RestStatusCode = 200
+&TokenCollide.Load(&CollideId)
+If &TokenCollide.Success()
+    &GetResponse = new()
+    &GetResponse.CollideId = &TokenCollide.CollideId
+    For &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA in &TokenCollide.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        &Get_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA = new()
+        &Get_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId = &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId
+        For &Bc_L1_SameLeaf in &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf
+            &Get_L1_SameLeaf = new()
+            &Get_L1_SameLeaf.SameLeafId = &Bc_L1_SameLeaf.SameLeafId
+            &Get_L1_SameLeaf.SameLeafText = &Bc_L1_SameLeaf.SameLeafText
+            &Get_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf.Add(&Get_L1_SameLeaf)
+        EndFor
+        &GetResponse.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.Add(&Get_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)
+    EndFor
+    For &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB in &TokenCollide.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+        &Get_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB = new()
+        &Get_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId = &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId
+        For &Bc_L1_SameLeaf_V2 in &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf
+            &Get_L1_SameLeaf_V2 = new()
+            &Get_L1_SameLeaf_V2.SameLeafId = &Bc_L1_SameLeaf_V2.SameLeafId
+            &Get_L1_SameLeaf_V2.SameLeafText = &Bc_L1_SameLeaf_V2.SameLeafText
+            &Get_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf.Add(&Get_L1_SameLeaf_V2)
+        EndFor
+        &GetResponse.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.Add(&Get_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB)
+    EndFor
+    &RestStatusCode = 200
+Else
+    &RestStatusCode = 404
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"not_found"
+    &ErrorResponse.Message = !"TokenCollide was not found."
+EndIf

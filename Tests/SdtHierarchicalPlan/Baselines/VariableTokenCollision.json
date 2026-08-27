@@ -1,0 +1,686 @@
+{
+  "phase": "Sprint4SdtEnginePreviewOnly",
+  "writesKnowledgeBase": false,
+  "status": "ResolvedSdtContractPreviewNoKbWrite",
+  "ownSdts": [
+    {
+      "name": "sdtTokenCollide_API_CreateRequest_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_SameLeaf",
+      "backlogId": "B096",
+      "kind": "CreateRequest",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "SameLeafId",
+          "dataType": "Attribute:SameLeafId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "CreateRequest"
+        },
+        {
+          "name": "SameLeafText",
+          "dataType": "Attribute:SameLeafText",
+          "length": 40,
+          "decimals": 0,
+          "isNullable": true,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "CreateRequest"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_CreateRequest_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "backlogId": "B096",
+      "kind": "CreateRequest",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "BranchAId",
+          "dataType": "Attribute:BranchAId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "CreateRequest"
+        },
+        {
+          "name": "SameLeaf",
+          "dataType": "sdtTokenCollide_API_CreateRequest_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_SameLeaf",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtTokenCollide_API_CreateRequest_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_SameLeaf",
+          "source": "CreateRequest"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_CreateRequest_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_SameLeaf",
+      "backlogId": "B096",
+      "kind": "CreateRequest",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "SameLeafId",
+          "dataType": "Attribute:SameLeafId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "CreateRequest"
+        },
+        {
+          "name": "SameLeafText",
+          "dataType": "Attribute:SameLeafText",
+          "length": 40,
+          "decimals": 0,
+          "isNullable": true,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "CreateRequest"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_CreateRequest_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "backlogId": "B096",
+      "kind": "CreateRequest",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "BranchBId",
+          "dataType": "Attribute:BranchBId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "CreateRequest"
+        },
+        {
+          "name": "SameLeaf",
+          "dataType": "sdtTokenCollide_API_CreateRequest_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_SameLeaf",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtTokenCollide_API_CreateRequest_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_SameLeaf",
+          "source": "CreateRequest"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_CreateRequest",
+      "backlogId": "B040",
+      "kind": "CreateRequest",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "dataType": "sdtTokenCollide_API_CreateRequest_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtTokenCollide_API_CreateRequest_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "source": "CreateRequest"
+        },
+        {
+          "name": "BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+          "dataType": "sdtTokenCollide_API_CreateRequest_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtTokenCollide_API_CreateRequest_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+          "source": "CreateRequest"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_UpdateRequest_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_SameLeaf",
+      "backlogId": "B096",
+      "kind": "UpdateRequest",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "SameLeafId",
+          "dataType": "Attribute:SameLeafId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "UpdateRequest"
+        },
+        {
+          "name": "SameLeafText",
+          "dataType": "Attribute:SameLeafText",
+          "length": 40,
+          "decimals": 0,
+          "isNullable": true,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "UpdateRequest"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_UpdateRequest_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "backlogId": "B096",
+      "kind": "UpdateRequest",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "BranchAId",
+          "dataType": "Attribute:BranchAId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "UpdateRequest"
+        },
+        {
+          "name": "SameLeafReplace",
+          "dataType": "Boolean",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "UpdateRequest"
+        },
+        {
+          "name": "SameLeaf",
+          "dataType": "sdtTokenCollide_API_UpdateRequest_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_SameLeaf",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtTokenCollide_API_UpdateRequest_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_SameLeaf",
+          "source": "UpdateRequest"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_UpdateRequest_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_SameLeaf",
+      "backlogId": "B096",
+      "kind": "UpdateRequest",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "SameLeafId",
+          "dataType": "Attribute:SameLeafId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "UpdateRequest"
+        },
+        {
+          "name": "SameLeafText",
+          "dataType": "Attribute:SameLeafText",
+          "length": 40,
+          "decimals": 0,
+          "isNullable": true,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "UpdateRequest"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_UpdateRequest_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "backlogId": "B096",
+      "kind": "UpdateRequest",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "BranchBId",
+          "dataType": "Attribute:BranchBId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "UpdateRequest"
+        },
+        {
+          "name": "SameLeafReplace",
+          "dataType": "Boolean",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "UpdateRequest"
+        },
+        {
+          "name": "SameLeaf",
+          "dataType": "sdtTokenCollide_API_UpdateRequest_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_SameLeaf",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtTokenCollide_API_UpdateRequest_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_SameLeaf",
+          "source": "UpdateRequest"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_UpdateRequest",
+      "backlogId": "B041",
+      "kind": "UpdateRequest",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "CollideId",
+          "dataType": "Attribute:CollideId",
+          "length": 8,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "UpdateRequest"
+        },
+        {
+          "name": "BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAReplace",
+          "dataType": "Boolean",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "UpdateRequest"
+        },
+        {
+          "name": "BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "dataType": "sdtTokenCollide_API_UpdateRequest_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtTokenCollide_API_UpdateRequest_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "source": "UpdateRequest"
+        },
+        {
+          "name": "BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBReplace",
+          "dataType": "Boolean",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "UpdateRequest"
+        },
+        {
+          "name": "BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+          "dataType": "sdtTokenCollide_API_UpdateRequest_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtTokenCollide_API_UpdateRequest_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+          "source": "UpdateRequest"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_Response_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_SameLeaf",
+      "backlogId": "B096",
+      "kind": "Response",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "SameLeafId",
+          "dataType": "Attribute:SameLeafId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "Response"
+        },
+        {
+          "name": "SameLeafText",
+          "dataType": "Attribute:SameLeafText",
+          "length": 40,
+          "decimals": 0,
+          "isNullable": true,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "Response"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_Response_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "backlogId": "B096",
+      "kind": "Response",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "BranchAId",
+          "dataType": "Attribute:BranchAId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "Response"
+        },
+        {
+          "name": "SameLeaf",
+          "dataType": "sdtTokenCollide_API_Response_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_SameLeaf",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtTokenCollide_API_Response_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_SameLeaf",
+          "source": "Response"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_Response_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_SameLeaf",
+      "backlogId": "B096",
+      "kind": "Response",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "SameLeafId",
+          "dataType": "Attribute:SameLeafId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "Response"
+        },
+        {
+          "name": "SameLeafText",
+          "dataType": "Attribute:SameLeafText",
+          "length": 40,
+          "decimals": 0,
+          "isNullable": true,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "Response"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_Response_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "backlogId": "B096",
+      "kind": "Response",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "BranchBId",
+          "dataType": "Attribute:BranchBId",
+          "length": 4,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "Response"
+        },
+        {
+          "name": "SameLeaf",
+          "dataType": "sdtTokenCollide_API_Response_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_SameLeaf",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtTokenCollide_API_Response_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_SameLeaf",
+          "source": "Response"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_Response",
+      "backlogId": "B042",
+      "kind": "Response",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "CollideId",
+          "dataType": "Attribute:CollideId",
+          "length": 8,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "Response"
+        },
+        {
+          "name": "BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "dataType": "sdtTokenCollide_API_Response_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtTokenCollide_API_Response_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "source": "Response"
+        },
+        {
+          "name": "BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+          "dataType": "sdtTokenCollide_API_Response_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtTokenCollide_API_Response_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+          "source": "Response"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_ListFilters",
+      "backlogId": "B043",
+      "kind": "ListFilters",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": []
+    },
+    {
+      "name": "sdtTokenCollide_API_ListResponse_Item",
+      "backlogId": "B098",
+      "kind": "ListResponse_Item",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "CollideId",
+          "dataType": "Attribute:CollideId",
+          "length": 8,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        },
+        {
+          "name": "BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACount",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        },
+        {
+          "name": "BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBCount",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse_Item"
+        }
+      ]
+    },
+    {
+      "name": "sdtTokenCollide_API_ListResponse",
+      "backlogId": "B044",
+      "kind": "ListResponse",
+      "scope": "TransactionModuleFolder:TokenCollideOpenApi",
+      "members": [
+        {
+          "name": "Items",
+          "dataType": "sdtTokenCollide_API_ListResponse_Item",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdtTokenCollide_API_ListResponse_Item",
+          "source": "ListResponse"
+        },
+        {
+          "name": "Pagination",
+          "dataType": "sdt_API_Pagination",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse"
+        },
+        {
+          "name": "AppliedFilters",
+          "dataType": "sdtTokenCollide_API_ListFilters",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": true,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "ListResponse"
+        }
+      ]
+    }
+  ],
+  "sharedSdts": [
+    {
+      "name": "sdt_API_ErrorMessage",
+      "backlogId": "B102",
+      "kind": "SharedErrorMessage",
+      "scope": "RootModuleFolder:GxOpenAPI",
+      "members": [
+        {
+          "name": "Code",
+          "dataType": "VarChar",
+          "length": 64,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedErrorMessage"
+        },
+        {
+          "name": "Message",
+          "dataType": "LongVarChar",
+          "length": 2097152,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedErrorMessage"
+        }
+      ]
+    },
+    {
+      "name": "sdt_API_ErrorResponse",
+      "backlogId": "B045/B046",
+      "kind": "SharedErrorResponse",
+      "scope": "RootModuleFolder:GxOpenAPI",
+      "members": [
+        {
+          "name": "Code",
+          "dataType": "VarChar",
+          "length": 64,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedErrorResponse"
+        },
+        {
+          "name": "Message",
+          "dataType": "LongVarChar",
+          "length": 2097152,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedErrorResponse"
+        },
+        {
+          "name": "Messages",
+          "dataType": "sdt_API_ErrorMessage",
+          "length": 0,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": true,
+          "collectionItemType": "sdt_API_ErrorMessage",
+          "source": "SharedErrorResponse"
+        }
+      ]
+    },
+    {
+      "name": "sdt_API_Pagination",
+      "backlogId": "B045/B046",
+      "kind": "SharedPagination",
+      "scope": "RootModuleFolder:GxOpenAPI",
+      "members": [
+        {
+          "name": "Page",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedPagination"
+        },
+        {
+          "name": "PageSize",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedPagination"
+        },
+        {
+          "name": "TotalCount",
+          "dataType": "Numeric",
+          "length": 18,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedPagination"
+        },
+        {
+          "name": "TotalPages",
+          "dataType": "Numeric",
+          "length": 9,
+          "decimals": 0,
+          "isNullable": false,
+          "isCollection": false,
+          "collectionItemType": "",
+          "source": "SharedPagination"
+        }
+      ]
+    }
+  ]
+}

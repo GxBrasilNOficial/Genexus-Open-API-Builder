@@ -1,0 +1,90 @@
+&RestStatusCode = 201
+&TokenCollide = new()
+For &Create_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA in &CreateRequest.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA = new()
+    &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId = &Create_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId
+    For &Create_L1_SameLeaf in &Create_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf
+        &Bc_L1_SameLeaf = new()
+        &Bc_L1_SameLeaf.SameLeafId = &Create_L1_SameLeaf.SameLeafId
+        &Bc_L1_SameLeaf.SameLeafText = &Create_L1_SameLeaf.SameLeafText
+        &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf.Add(&Bc_L1_SameLeaf)
+    EndFor
+    &TokenCollide.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.Add(&Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)
+EndFor
+For &Create_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB in &CreateRequest.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+    &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB = new()
+    &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId = &Create_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId
+    For &Create_L1_SameLeaf_V2 in &Create_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf
+        &Bc_L1_SameLeaf_V2 = new()
+        &Bc_L1_SameLeaf_V2.SameLeafId = &Create_L1_SameLeaf_V2.SameLeafId
+        &Bc_L1_SameLeaf_V2.SameLeafText = &Create_L1_SameLeaf_V2.SameLeafText
+        &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf.Add(&Bc_L1_SameLeaf_V2)
+    EndFor
+    &TokenCollide.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.Add(&Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB)
+EndFor
+&TokenCollide.Save()
+If &TokenCollide.Success()
+    Commit
+    &TokenCollide.Load(&TokenCollide.CollideId)
+    &CreateResponse = new()
+    &CreateResponse.CollideId = &TokenCollide.CollideId
+    For &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA in &TokenCollide.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        &Get_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA = new()
+        &Get_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId = &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BranchAId
+        For &Bc_L1_SameLeaf in &Bc_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf
+            &Get_L1_SameLeaf = new()
+            &Get_L1_SameLeaf.SameLeafId = &Bc_L1_SameLeaf.SameLeafId
+            &Get_L1_SameLeaf.SameLeafText = &Bc_L1_SameLeaf.SameLeafText
+            &Get_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.SameLeaf.Add(&Get_L1_SameLeaf)
+        EndFor
+        &CreateResponse.BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.Add(&Get_BranchAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)
+    EndFor
+    For &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB in &TokenCollide.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+        &Get_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB = new()
+        &Get_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId = &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.BranchBId
+        For &Bc_L1_SameLeaf_V2 in &Bc_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf
+            &Get_L1_SameLeaf_V2 = new()
+            &Get_L1_SameLeaf_V2.SameLeafId = &Bc_L1_SameLeaf_V2.SameLeafId
+            &Get_L1_SameLeaf_V2.SameLeafText = &Bc_L1_SameLeaf_V2.SameLeafText
+            &Get_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.SameLeaf.Add(&Get_L1_SameLeaf_V2)
+        EndFor
+        &CreateResponse.BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB.Add(&Get_BranchBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB)
+    EndFor
+    &LocationUrl = !"/tokencollide"
+    &LocationUrl = &LocationUrl + !"/" + &TokenCollide.CollideId.ToString().Trim()
+    &HttpResponse.AddHeader(!"Location", &LocationUrl)
+    &RestStatusCode = 201
+Else
+    &RestStatusCode = 422
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"validation_error"
+    &Messages = &TokenCollide.GetMessages()
+    &ConcatenatedMessage = !""
+    For &i = 1 To &Messages.Count
+        &Message = &Messages.Item(&i)
+        If &Message.Type = MessageTypes.Error
+            &ErrorItem = new()
+            If &Message.Id.IsEmpty()
+                &ErrorItem.Code = !"business_rule"
+            Else
+                &ErrorItem.Code = &Message.Id
+            EndIf
+            &ErrorItem.Message = &Message.Description
+            &ErrorResponse.Messages.Add(&ErrorItem)
+            If &ConcatenatedMessage.IsEmpty()
+                &ConcatenatedMessage = &Message.Description
+            Else
+                &ConcatenatedMessage = &ConcatenatedMessage + !" | " + &Message.Description
+            EndIf
+        EndIf
+    EndFor
+    If &ConcatenatedMessage.IsEmpty()
+        &ErrorResponse.Message = !"Business rules rejected the request."
+    Else
+        If Len(&ConcatenatedMessage) > 2048
+            &ErrorResponse.Message = Substr(&ConcatenatedMessage, 1, 2045) + !"..."
+        Else
+            &ErrorResponse.Message = &ConcatenatedMessage
+        EndIf
+    EndIf
+EndIf

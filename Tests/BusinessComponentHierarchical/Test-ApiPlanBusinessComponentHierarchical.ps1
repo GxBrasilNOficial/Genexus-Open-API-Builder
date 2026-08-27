@@ -209,7 +209,7 @@ try {
     $fixtures = @($createFixtures.Invoke($null, @()))
     Assert-True ($fixtures.Count -ge 5) "Esperava pelo menos 5 fixtures; encontrado $($fixtures.Count)."
 
-    $expectedNames = @('OneSublevel', 'ParallelSublevels', 'ThreeDeep', 'InheritedPrimaryKey', 'MemberCollision', 'HeaderOnly')
+    $expectedNames = @('OneSublevel', 'ParallelSublevels', 'ThreeDeep', 'InheritedPrimaryKey', 'MemberCollision', 'VariableTokenCollision', 'HeaderOnly')
     $actualNames = @($fixtures | ForEach-Object { $nameProperty.GetValue($_) })
     foreach ($expectedName in $expectedNames) {
         Assert-True ($actualNames -contains $expectedName) "Fixture ausente: $expectedName"
@@ -267,6 +267,30 @@ try {
         if ($fixtureName -eq 'MemberCollision') {
             Assert-True ($createSource.IndexOf('Notes1', [StringComparison]::Ordinal) -ge 0) 'MemberCollision Create deve usar membro SDT desambiguado Notes1.'
             Assert-True ($createSource.IndexOf('.Notes.Add', [StringComparison]::Ordinal) -ge 0) 'MemberCollision Create deve Add no BC estrutural Notes.'
+        }
+
+        if ($fixtureName -eq 'VariableTokenCollision') {
+            $mapCreate = $mapBuilderType.GetMethod('Create', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
+            Assert-True ($null -ne $mapCreate) 'ApiPlanHierarchicalContractMapBuilder.Create ausente.'
+            $map = $mapCreate.Invoke($null, @($plan))
+            $createTree = $map.GetType().GetProperty('CreateRequest').GetValue($map)
+            $branchNodes = @($createTree.GetType().GetProperty('Children').GetValue($createTree))
+            Assert-True ($branchNodes.Count -eq 2) 'VariableTokenCollision deve ter dois ramos no mapa Create.'
+            $leafTokens = foreach ($branch in $branchNodes) {
+                $leaves = @($branch.GetType().GetProperty('Children').GetValue($branch))
+                Assert-True ($leaves.Count -eq 1) 'Cada ramo deve ter uma folha SameLeaf.'
+                [string]$leaves[0].GetType().GetProperty('VariableToken').GetValue($leaves[0])
+            }
+            Assert-True ($leafTokens -contains 'L1_SameLeaf') 'Primeira rota truncada deve reservar L1_SameLeaf.'
+            Assert-True ($leafTokens -contains 'L1_SameLeaf_V2') 'Segunda rota colidente deve desambiguar para L1_SameLeaf_V2.'
+            Assert-True ($createSource.IndexOf('&Bc_L1_SameLeaf', [StringComparison]::Ordinal) -ge 0) 'Create deve emitir &Bc_L1_SameLeaf.'
+            Assert-True ($createSource.IndexOf('&Bc_L1_SameLeaf_V2', [StringComparison]::Ordinal) -ge 0) 'Create deve emitir &Bc_L1_SameLeaf_V2.'
+            Assert-True ($createSource.IndexOf('&Create_L1_SameLeaf', [StringComparison]::Ordinal) -ge 0) 'Create deve emitir &Create_L1_SameLeaf.'
+            Assert-True ($createSource.IndexOf('&Create_L1_SameLeaf_V2', [StringComparison]::Ordinal) -ge 0) 'Create deve emitir &Create_L1_SameLeaf_V2.'
+            $bcTypes = Get-BcVariableTypes -Method $collectGet -Plan $plan
+            Assert-True ($bcTypes.ContainsKey('Bc_L1_SameLeaf')) 'Get deve declarar &Bc_L1_SameLeaf.'
+            Assert-True ($bcTypes.ContainsKey('Bc_L1_SameLeaf_V2')) 'Get deve declarar &Bc_L1_SameLeaf_V2.'
+            Assert-True ($bcTypes['Bc_L1_SameLeaf'] -ne $bcTypes['Bc_L1_SameLeaf_V2']) 'Tokens desambiguados devem mapear tipos BC distintos.'
         }
 
         if ($UpdateBaselines) {

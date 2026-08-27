@@ -225,6 +225,7 @@ try {
         'InheritedPrimaryKey',
         'MemberCollision',
         'LongQualifier',
+        'VariableTokenCollision',
         'HeaderOnly'
     )
     Assert-True ($fixtures.Count -eq $expectedNames.Count) "Esperava $($expectedNames.Count) fixtures; encontrado $($fixtures.Count)."
