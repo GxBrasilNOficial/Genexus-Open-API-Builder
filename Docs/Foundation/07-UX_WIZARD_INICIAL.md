@@ -213,7 +213,7 @@ Faz parte do MVP:
 - **agrupamento por nível** — seletor compartilhado (ComboBox com caminho `Shift / Worker`) nas abas Requests, Response e Obrigatórios; o cabeçalho permanece nas listas flat e cada subnível tem listas próprias;
 - **dependência entre níveis** — marcar um neto inclui os ancestrais; desmarcar o pai desmarca os descendentes; subnível vazio não é gerado;
 - **controle de contador por subnível** — cada filho direto (`Depth == 2`) exibe o contador de `List` ligado por padrão, podendo ser desmarcado;
-- **aviso de profundidade** — transação com mais de 3 níveis exibe aviso de profundidade não validada, sem bloquear a geração.
+- **aviso de profundidade** — transação com mais de 4 níveis exibe aviso de profundidade não validada, sem bloquear a geração.
 
 Required de linha aparece na UI e não alimenta o writer BC nesta fase. Detalhes na `Emenda técnica — 2026-08-23` do registro de decisões do MVP e em `Docs/Implementation/2026-08-26-B099a-WIZARD-HIERARQUICO.md`.
 

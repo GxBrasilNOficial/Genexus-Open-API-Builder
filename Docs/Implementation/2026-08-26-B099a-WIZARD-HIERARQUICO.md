@@ -12,7 +12,7 @@ Escopo: interface do Wizard com agrupamento por nível, dependência pai/filho, 
 - Marcar um neto inclui os ancestrais; desmarcar o pai desmarca os descendentes.
 - Subnível sem nenhum atributo marcado e sem filhos sobreviventes não entra na poda.
 - Contador de List só no filho direto (`Depth == 2`), ligado por padrão.
-- Profundidade máxima > 3: aviso, sem bloquear.
+- Profundidade máxima > 4: aviso, sem bloquear.
 - Apply de objetos hierárquicos é permitido; metadata/sync/remoção continuam V1 até `B099b`. O resumo avisa para não usar Remover nem Sync nesta API.
 - Required de linha aparece na UI e não alimenta o writer BC (400 com caminho `Parcelas[0].Campo` permanece para frente posterior, para não recapturar o ouro B097).
 - Dívida `count(HeaderId)` em `InheritedPrimaryKey` permanece: não bloqueia esta UI; bloqueia confiança no smoke HTTP/List.
@@ -30,7 +30,7 @@ Escopo: interface do Wizard com agrupamento por nível, dependência pai/filho, 
 
 ## Validação desta frente
 
-- Teste offline: dependência pai/filho, nível vazio omitido, `IncludeListCount=false`, aviso em profundidade 4, transação sem filhos selecionados.
+- Teste offline: dependência pai/filho, nível vazio omitido, `IncludeListCount=false`, aviso em profundidade 5, transação sem filhos selecionados.
 - Build Release canônico: 0 avisos, 0 erros.
 - Build Release satélite U13: 0 erros (aviso MSB3277 ambiental conhecido).
 - Linha de base Fase 0 e ouro B096 intactos.
@@ -46,7 +46,7 @@ Wizard e SDTs do Folio corretos; o primeiro apply bloqueou B055 em `&Bc_TesteIte
 
 ### Quatro níveis (`…Folio` → `TesteItemFolioDoc`, irmão `TestePortfolio`)
 
-Wizard em complemento: seletor `Cabeçalho (Teste)`, `TesteItem`, `TesteItem / TesteItemFolio`, `TesteItem / TesteItemFolio / TesteItemFolioDoc`, `TestePortfolio`. Contador de List visível só nos filhos diretos (`TesteItem`, `TestePortfolio`); ausente em Folio e FolioDoc. Aviso de profundidade > 3 sem bloquear. Resumo: `Subníveis selecionados: 4`; SDTs `Completar: gerenciados=19, ausentes=3, planejados=22` (a pasta reutilizada entra na conta). Apply: diálogo B081 visível, `SuccessWithWarnings`, `Created=3` (`sdtTeste_API_{CreateRequest,UpdateRequest,Response}_TesteItem_TesteItemFolio_TesteItemFolioDoc`), `Updated=24`, `Blocked=0`, `DuraçãoMs=27243`. B071/B070 aplicados; metadata `Reencountered`, `Bytes=81932`, `Sha256='5EAB5D532CB9760C818C4A7F11BDB88B2EE5DF0E47E882256EE10D5FA0E364B6'`. O `PlannedContractHash` V1 ficou igual ao apply de três níveis (`21F955426F5A11630ECEBC05BA582D56F6B64CB8D6B8E157D6B97381A87F22CD`): o contrato planejado B067 ainda não inclui a árvore hierárquica (Fase 6). `Build All` passou nos dois environments: especificou `apiTeste` e as quatro Procedures, gerou os três SDTs de FolioDoc, sem `spc0018`; o `.cs` de `procTeste_API_List` não reapareceu na geração (List especificado e compile OK; incremental). Aviso `FBiTextSharp.dll` só no Framework.
+Wizard em complemento: seletor `Cabeçalho (Teste)`, `TesteItem`, `TesteItem / TesteItemFolio`, `TesteItem / TesteItemFolio / TesteItemFolioDoc`, `TestePortfolio`. Contador de List visível só nos filhos diretos (`TesteItem`, `TestePortfolio`); ausente em Folio e FolioDoc. Naquele apply o aviso ainda citava 3 níveis (`ValidatedDepth` da época); a geração não bloqueou. `ValidatedDepth` passou a 4 depois do `Build All`. Resumo: `Subníveis selecionados: 4`; SDTs `Completar: gerenciados=19, ausentes=3, planejados=22` (a pasta reutilizada entra na conta). Apply: diálogo B081 visível, `SuccessWithWarnings`, `Created=3` (`sdtTeste_API_{CreateRequest,UpdateRequest,Response}_TesteItem_TesteItemFolio_TesteItemFolioDoc`), `Updated=24`, `Blocked=0`, `DuraçãoMs=27243`. B071/B070 aplicados; metadata `Reencountered`, `Bytes=81932`, `Sha256='5EAB5D532CB9760C818C4A7F11BDB88B2EE5DF0E47E882256EE10D5FA0E364B6'`. O `PlannedContractHash` V1 ficou igual ao apply de três níveis (`21F955426F5A11630ECEBC05BA582D56F6B64CB8D6B8E157D6B97381A87F22CD`): o contrato planejado B067 ainda não inclui a árvore hierárquica (Fase 6). `Build All` passou nos dois environments: especificou `apiTeste` e as quatro Procedures, gerou os três SDTs de FolioDoc, sem `spc0018`; o `.cs` de `procTeste_API_List` não reapareceu na geração (List especificado e compile OK; incremental). Aviso `FBiTextSharp.dll` só no Framework.
 
 ## Validação ainda humana
 

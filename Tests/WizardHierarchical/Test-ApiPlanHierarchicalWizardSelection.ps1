@@ -127,10 +127,12 @@ Assert-Contains $dialogSource 'HierarchicalSelection' 'O fluxo do Wizard deve pe
 Assert-Contains $dialogSource '_levelCreateFieldsList' 'Listas de subnível devem ser distintas das do cabeçalho.'
 Assert-Contains $builderSource 'ResolveHierarchicalLevels' 'ApiPlanBuilder deve podar Levels a partir da seleção.'
 Assert-Contains $readerSource 'CreateFourDeepFixture' 'Fixture de profundidade 4 deve existir fora de CreateFixtures.'
+Assert-Contains $readerSource 'CreateFiveDeepFixture' 'Fixture de profundidade 5 deve existir fora de CreateFixtures.'
 
 $createFixturesBlock = [regex]::Match($readerSource, 'public static IReadOnlyList<TransactionStructureFixture> CreateFixtures\(\)[\s\S]*?return new\[\]')
 Assert-True $createFixturesBlock.Success 'CreateFixtures deve existir.'
 Assert-NotContains $createFixturesBlock.Value 'CreateFourDeepFixture' 'FourDeep não deve entrar no ouro B095.'
+Assert-NotContains $createFixturesBlock.Value 'CreateFiveDeepFixture' 'FiveDeep não deve entrar no ouro B095.'
 
 function Find-NodeByLevelName {
     param($Selection, [string]$Name)
@@ -169,6 +171,7 @@ try {
 
     $createFixtures = $readerType.GetMethod('CreateFixtures', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     $createFourDeep = $readerType.GetMethod('CreateFourDeepFixture', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
+    $createFiveDeep = $readerType.GetMethod('CreateFiveDeepFixture', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     $createDefault = $selectionType.GetMethod('CreateDefault', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     $hasSelectedMethod = Get-InstanceMethod $selectionType 'HasSelectedSublevels'
     $countSelectedMethod = Get-InstanceMethod $selectionType 'CountSelectedSublevels'
@@ -181,6 +184,7 @@ try {
 
     Assert-True ($null -ne $createFixtures) 'CreateFixtures não encontrado.'
     Assert-True ($null -ne $createFourDeep) 'CreateFourDeepFixture não encontrado.'
+    Assert-True ($null -ne $createFiveDeep) 'CreateFiveDeepFixture não encontrado.'
     Assert-True ($null -ne $createDefault) 'CreateDefault não encontrado.'
 
     $fixtures = @($createFixtures.Invoke($null, @()))
@@ -259,10 +263,16 @@ try {
     $fourRoot = Get-Prop (Get-Prop $fourFixture 'Snapshot') 'RootLevel'
     $fourSelection = $createDefault.Invoke($null, @($fourRoot))
     Assert-True (([int](Get-Prop $fourSelection 'MaxDepth')) -eq 4) 'FourDeep MaxDepth=4.'
-    Assert-True ([bool](Get-Prop $fourSelection 'WarnUnvalidatedDepth')) 'Profundidade 4 deve avisar.'
+    Assert-False ([bool](Get-Prop $fourSelection 'WarnUnvalidatedDepth')) 'Profundidade 4 não avisa após o smoke U15.'
+    $fiveFixture = $createFiveDeep.Invoke($null, @())
+    $fiveRoot = Get-Prop (Get-Prop $fiveFixture 'Snapshot') 'RootLevel'
+    $fiveSelection = $createDefault.Invoke($null, @($fiveRoot))
+    Assert-True (([int](Get-Prop $fiveSelection 'MaxDepth')) -eq 5) 'FiveDeep MaxDepth=5.'
+    Assert-True ([bool](Get-Prop $fiveSelection 'WarnUnvalidatedDepth')) 'Profundidade 5 deve avisar.'
     $warningField = $selectionType.GetField('DepthWarningText', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     Assert-True ($null -ne $warningField) 'DepthWarningText deve existir.'
     Assert-Contains ([string]$warningField.GetValue($null)) 'Profundidade não validada' 'Texto canônico do aviso de profundidade.'
+    Assert-Contains ([string]$warningField.GetValue($null)) 'até 4 níveis' 'O aviso deve citar a profundidade validada atual.'
 
     Write-Output 'PASS: ApiPlanHierarchicalWizardSelection'
 }

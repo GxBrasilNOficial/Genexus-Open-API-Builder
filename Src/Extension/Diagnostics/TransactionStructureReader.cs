@@ -390,7 +390,7 @@ internal static class TransactionStructureReader
     }
 
     /// <summary>
-    /// Fixture só para o aviso de profundidade B099a. Não entra em <see cref="CreateFixtures"/>
+    /// Fixture da profundidade validada (4) no Wizard B099a. Não entra em <see cref="CreateFixtures"/>
     /// para não recapturar o ouro B095.
     /// </summary>
     public static TransactionStructureFixture CreateFourDeepFixture()
@@ -421,6 +421,46 @@ internal static class TransactionStructureReader
             new[] { "RootId" },
             new[] { branch });
         return new TransactionStructureFixture("FourDeep", Build("Root", root));
+    }
+
+    /// <summary>
+    /// Fixture só para o aviso de profundidade B099a quando MaxDepth &gt; ValidatedDepth.
+    /// Não entra em <see cref="CreateFixtures"/> para não recapturar o ouro B095.
+    /// </summary>
+    public static TransactionStructureFixture CreateFiveDeepFixture()
+    {
+        var l5Id = Attr("a5000001-0005-4000-8000-000000000001", "TipId", "Numeric", 4, 0, false, false, false, false, false, true, "False");
+        var l4Id = Attr("a5000001-0004-4000-8000-000000000001", "LeafId", "Numeric", 4, 0, false, false, false, false, false, true, "False");
+        var l3Id = Attr("a5000001-0003-4000-8000-000000000001", "NodeId", "Numeric", 4, 0, false, false, false, false, false, true, "False");
+        var l2Id = Attr("a5000001-0002-4000-8000-000000000001", "BranchId", "Numeric", 4, 0, false, false, false, false, false, true, "False");
+        var l1Id = Attr("a5000001-0001-4000-8000-000000000001", "RootId", "Numeric", 8, 0, false, false, false, false, false, true, "True");
+
+        var tip = new TransactionStructureLevelSource(
+            "Tip",
+            new[] { l5Id },
+            new[] { "TipId" },
+            Array.Empty<TransactionStructureLevelSource>());
+        var leaf = new TransactionStructureLevelSource(
+            "Leaf",
+            new[] { l4Id },
+            new[] { "LeafId" },
+            new[] { tip });
+        var node = new TransactionStructureLevelSource(
+            "Node",
+            new[] { l3Id },
+            new[] { "NodeId" },
+            new[] { leaf });
+        var branch = new TransactionStructureLevelSource(
+            "Branch",
+            new[] { l2Id },
+            new[] { "BranchId" },
+            new[] { node });
+        var root = new TransactionStructureLevelSource(
+            "Root",
+            new[] { l1Id },
+            new[] { "RootId" },
+            new[] { branch });
+        return new TransactionStructureFixture("FiveDeep", Build("Root", root));
     }
 
     private static TransactionStructureAttributeSource Attr(

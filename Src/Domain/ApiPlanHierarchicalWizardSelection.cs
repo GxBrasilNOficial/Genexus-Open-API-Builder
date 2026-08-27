@@ -12,10 +12,10 @@ namespace GenexusOpenApiBuilder.Extension.Domain;
 /// </summary>
 internal sealed class ApiPlanHierarchicalWizardSelection
 {
-    public const int ValidatedDepth = 3;
+    public const int ValidatedDepth = 4;
 
     public const string DepthWarningText =
-        "Profundidade não validada: a evidência da sprint cobre até 3 níveis. A geração não é bloqueada; desmarque os níveis mais profundos se não quiser incluí-los.";
+        "Profundidade não validada: a evidência da sprint cobre até 4 níveis. A geração não é bloqueada; desmarque os níveis mais profundos se não quiser incluí-los.";
 
     public const string LifecycleV1WarningText =
         "Metadata, sincronização e remoção ainda são V1: não use Remover API gerada nem Sincronizar com a Transaction nesta API até B099b.";
