@@ -253,7 +253,9 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B096 | Geração de SDTs hierárquicos por subnível e por contrato, com regra de nomes e desambiguação | Alta — Sprint 9 / Fase 2; concluído (2026-08-26; offline) |
 | B097 | Geração de código Business Component nas Procedures para subníveis, com substituição completa sob marcador `<Subnível>Replace` | Alta — Sprint 9 / Fase 3; concluído 2026-08-26 |
 | B098 | Procedimento de List com contadores numéricos de subníveis diretos | Alta — Sprint 9 / Fase 4; concluído (2026-08-26; offline) |
-| B099 | Interface do Wizard (UX) e sincronização com metadata hierárquica | Alta — Sprint 9 / Fases 5 e 6; planejado |
+| B099a | Interface do Wizard (UX) hierárquica: agrupamento por nível, dependência entre níveis, controle de contador e aviso de profundidade | Alta — Sprint 9 / Fase 5; concluído (2026-08-26; smoke U15 de 3 e 4 níveis com `Build All` nos dois environments) |
+| B099v | Validação em runtime do que as Fases 2 a 5 emitiram: correção da agregação `count()` com PK composta herdada, smoke HTTP multinível nos dois environments e critério 9 (contrato OpenAPI publicado) | Alta — Sprint 9 / Fase 5-A; planejado |
+| B099b | Sincronização com metadata hierárquica (`schemaVersion` V2) e integridade | Alta — Sprint 9 / Fase 6; planejado |
 | B100 | Serviço `Delete` opt-in, com confirmação consciente, `SecurityLevel` próprio e documentação pública | Alta — Sprint 9 / após a Fase 7, com corte `0.1.0-alpha.6` próprio; planejado |
 | B101 | Experimento: membro nullable no SDT de request para distinguir membro ausente de membro vazio | Média — candidato à Sprint 10; planejado |
 | B102 | Repasse do texto emitido pelo Business Component na `Message` do `422`, com `Message` em `LongVarChar`, `Messages[]` como coleção tipada por `sdt_API_ErrorMessage`, filtro por mensagens de erro e opção de desligar por KB e por API | Alta — Sprint 9 / **primeiro item**; concluído (2026-08-24; gate HTTP nos dois environments) |
