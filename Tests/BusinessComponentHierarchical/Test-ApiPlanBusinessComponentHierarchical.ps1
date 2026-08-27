@@ -140,6 +140,8 @@ Assert-Contains $hierarchicalSource 'HasAutonumberPrimaryKey' 'Update autonumera
 Assert-Contains $hierarchicalSource 'node.BcLevelType' 'Variavel BC deve usar o tipo com caminho completo do nivel.'
 Assert-Contains $mapSource 'ApiPlanHierarchicalContractMapBuilder' 'Mapa compartilhado B096/B097 deve existir.'
 Assert-Contains $mapSource 'BuildBcLevelType' 'Mapa deve montar o tipo BC aninhado.'
+Assert-Contains $mapSource 'AllocateVariableToken' 'Mapa deve reservar VariableToken.'
+Assert-Contains $mapSource '_V' 'Colisao de VariableToken deve desambiguar com sufixo _V.'
 Assert-True ($hierarchicalSource.IndexOf('plan.TransactionName + "." + node.BcCollectionName', [StringComparison]::Ordinal) -lt 0) 'Tipo BC nao pode mais ser Transaction.Folha sem ancestrais.'
 
 if (-not (Test-Path -LiteralPath $DllPath -PathType Leaf)) {
@@ -169,6 +171,9 @@ try {
     $planProperty = $fixtureType.GetProperty('Plan', [System.Reflection.BindingFlags]'Instance, NonPublic, Public')
     $sourceType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanBusinessComponentHierarchicalSource', $true, $false)
     $collectGet = $sourceType.GetMethod('CollectGetVariables', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
+    $mapBuilderType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Domain.ApiPlanHierarchicalContractMapBuilder', $true, $false)
+    $allocateToken = $mapBuilderType.GetMethod('AllocateVariableToken', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
+    $buildToken = $mapBuilderType.GetMethod('BuildVariableToken', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
 
     Assert-True ($null -ne $createFixtures) 'CreateFixtures nao encontrado.'
     Assert-True ($null -ne $capture) 'Capture nao encontrado.'
@@ -176,6 +181,30 @@ try {
     Assert-True ($null -ne $assertMap) 'AssertMapMatchesSdtPlan nao encontrado.'
     Assert-True ($null -ne $toFileMap) 'ToFileMap nao encontrado.'
     Assert-True ($null -ne $collectGet) 'CollectGetVariables nao encontrado.'
+    Assert-True ($null -ne $allocateToken) 'AllocateVariableToken nao encontrado.'
+    Assert-True ($null -ne $buildToken) 'BuildVariableToken nao encontrado.'
+
+    $reservedTokens = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $firstToken = [string]$allocateToken.Invoke($null, @([string[]]@(), 'Notes', 1, $reservedTokens))
+    Assert-True ($firstToken -eq 'Notes') "Primeiro VariableToken curto deve ser Notes; obtido '$firstToken'."
+    $secondToken = [string]$allocateToken.Invoke($null, @([string[]]@(), 'Notes', 1, $reservedTokens))
+    Assert-True ($secondToken -eq 'Notes_V2') "Colisao de VariableToken deve virar Notes_V2; obtido '$secondToken'."
+    $thirdToken = [string]$allocateToken.Invoke($null, @([string[]]@(), 'Notes', 1, $reservedTokens))
+    Assert-True ($thirdToken -eq 'Notes_V3') "Segunda colisao de VariableToken deve virar Notes_V3; obtido '$thirdToken'."
+
+    $longAncestors = [string[]]@(
+        'AAAAAAAAAAAAAAA',
+        'BBBBBBBBBBBBBBB',
+        'CCCCCCCCCCCCCCC'
+    )
+    $longJoined = ($longAncestors + 'LeafLevel') -join '_'
+    Assert-True ($longJoined.Length -gt 48) "Fixture de path longo deve exceder 48; length=$($longJoined.Length)."
+    $longToken = [string]$buildToken.Invoke($null, @($longAncestors, 'LeafLevel', 7))
+    Assert-True ($longToken -eq 'L7_LeafLevel') "Path longo deve encurtar para L{order}_folha; obtido '$longToken'."
+    $reservedLong = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    [void]$reservedLong.Add('L7_LeafLevel')
+    $longDisambiguated = [string]$allocateToken.Invoke($null, @($longAncestors, 'LeafLevel', 7, $reservedLong))
+    Assert-True ($longDisambiguated -eq 'L7_LeafLevel_V2') "Colisao no token encurtado deve virar L7_LeafLevel_V2; obtido '$longDisambiguated'."
 
     $fixtures = @($createFixtures.Invoke($null, @()))
     Assert-True ($fixtures.Count -ge 5) "Esperava pelo menos 5 fixtures; encontrado $($fixtures.Count)."

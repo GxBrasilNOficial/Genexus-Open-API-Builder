@@ -242,6 +242,71 @@ try {
     Assert-True ($responseEligible.Count -eq 1) 'Response deve preservar LineQty elegível.'
     Assert-True ([string](Get-Prop $responseEligible[0] 'Name') -eq 'LineQty') 'O campo Response deve ser LineQty.'
 
+    $lineFieldNames = @('LineId', 'LineQty', 'LineTotal', 'LineStamp')
+    function Clear-LineRoleFields {
+        param($Selection, [string]$Key)
+        foreach ($fieldName in $lineFieldNames) {
+            foreach ($role in @('CreateRequest', 'UpdateRequest', 'Response')) {
+                [void]$setFieldMethod.Invoke($Selection, @($Key, $role, $fieldName, $false))
+            }
+        }
+    }
+
+    function Assert-RoleEligibleNames {
+        param(
+            $PrunedChild,
+            [string]$Role,
+            [string[]]$ExpectedNames,
+            [string]$Message
+        )
+
+        $eligible = @($selectForRole.Invoke($null, @($PrunedChild, $Role)))
+        $actual = @($eligible | ForEach-Object { [string](Get-Prop $_ 'Name') })
+        Assert-True ($actual.Count -eq $ExpectedNames.Count) ("{0} (count): esperado {1}, obtido {2} [{3}]." -f $Message, $ExpectedNames.Count, $actual.Count, ($actual -join ','))
+        foreach ($expectedName in $ExpectedNames) {
+            Assert-True ($actual -contains $expectedName) ("{0}: falta {1}." -f $Message, $expectedName)
+        }
+    }
+
+    Clear-LineRoleFields -Selection $oneSelection -Key $linesKey
+    [void]$setFieldMethod.Invoke($oneSelection, @($linesKey, 'CreateRequest', 'LineQty', $true))
+    $prunedCreateOnly = @(Get-Prop ($pruneMethod.Invoke($oneSelection, @())) 'ChildLevels')[0]
+    Assert-RoleEligibleNames $prunedCreateOnly 'CreateRequest' @('LineQty') 'Create-only'
+    Assert-RoleEligibleNames $prunedCreateOnly 'UpdateRequest' @() 'Create-only não vaza para Update'
+    Assert-RoleEligibleNames $prunedCreateOnly 'Response' @() 'Create-only não vaza para Response'
+    Assert-True (@(Get-Prop $prunedCreateOnly 'SelectedCreateFieldNames') -contains 'LineQty') 'SelectedCreateFieldNames guarda LineQty.'
+    Assert-True (@(Get-Prop $prunedCreateOnly 'SelectedUpdateFieldNames').Count -eq 0) 'SelectedUpdateFieldNames vazio no Create-only.'
+    Assert-True (@(Get-Prop $prunedCreateOnly 'SelectedResponseFieldNames').Count -eq 0) 'SelectedResponseFieldNames vazio no Create-only.'
+
+    Clear-LineRoleFields -Selection $oneSelection -Key $linesKey
+    [void]$setFieldMethod.Invoke($oneSelection, @($linesKey, 'UpdateRequest', 'LineQty', $true))
+    $prunedUpdateOnly = @(Get-Prop ($pruneMethod.Invoke($oneSelection, @())) 'ChildLevels')[0]
+    Assert-RoleEligibleNames $prunedUpdateOnly 'CreateRequest' @() 'Update-only não vaza para Create'
+    Assert-RoleEligibleNames $prunedUpdateOnly 'UpdateRequest' @('LineQty') 'Update-only'
+    Assert-RoleEligibleNames $prunedUpdateOnly 'Response' @() 'Update-only não vaza para Response'
+
+    Clear-LineRoleFields -Selection $oneSelection -Key $linesKey
+    [void]$setFieldMethod.Invoke($oneSelection, @($linesKey, 'CreateRequest', 'LineQty', $true))
+    [void]$setFieldMethod.Invoke($oneSelection, @($linesKey, 'UpdateRequest', 'LineQty', $true))
+    $prunedCreateUpdate = @(Get-Prop ($pruneMethod.Invoke($oneSelection, @())) 'ChildLevels')[0]
+    Assert-RoleEligibleNames $prunedCreateUpdate 'CreateRequest' @('LineQty') 'Create+Update sem Response (Create)'
+    Assert-RoleEligibleNames $prunedCreateUpdate 'UpdateRequest' @('LineQty') 'Create+Update sem Response (Update)'
+    Assert-RoleEligibleNames $prunedCreateUpdate 'Response' @() 'Create+Update não inventa Response'
+
+    Clear-LineRoleFields -Selection $oneSelection -Key $linesKey
+    [void]$setFieldMethod.Invoke($oneSelection, @($linesKey, 'CreateRequest', 'LineQty', $true))
+    [void]$setFieldMethod.Invoke($oneSelection, @($linesKey, 'UpdateRequest', 'LineId', $true))
+    [void]$setFieldMethod.Invoke($oneSelection, @($linesKey, 'Response', 'LineStamp', $true))
+    $prunedDistinct = @(Get-Prop ($pruneMethod.Invoke($oneSelection, @())) 'ChildLevels')[0]
+    Assert-RoleEligibleNames $prunedDistinct 'CreateRequest' @('LineQty') 'Papéis distintos (Create=LineQty)'
+    Assert-RoleEligibleNames $prunedDistinct 'UpdateRequest' @('LineId') 'Papéis distintos (Update=LineId)'
+    Assert-RoleEligibleNames $prunedDistinct 'Response' @('LineStamp') 'Papéis distintos (Response=LineStamp)'
+    $unionFields = @((Get-Prop $prunedDistinct 'Fields') | ForEach-Object { [string](Get-Prop $_ 'Name') })
+    Assert-True ($unionFields -contains 'LineQty') 'Fields da poda une Create.'
+    Assert-True ($unionFields -contains 'LineId') 'Fields da poda une Update.'
+    Assert-True ($unionFields -contains 'LineStamp') 'Fields da poda une Response.'
+    Assert-False ($unionFields -contains 'LineTotal') 'LineTotal não marcado não entra na união.'
+
     $parallelRoot = Get-Prop (Get-Prop $byName['ParallelSublevels'] 'Snapshot') 'RootLevel'
     $parallelSelection = $createDefault.Invoke($null, @($parallelRoot))
     Assert-True (([int]$countSelectedMethod.Invoke($parallelSelection, @())) -eq 2) 'Parallel default: Notes e Tags.'

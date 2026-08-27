@@ -21,6 +21,8 @@ Detalhe: `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 
 **Atualização de 2026-08-25 (noite, B095).** Fase 1 (`B095`) concluída: leitor hierárquico à parte (`TransactionStructureReader` com núcleo `Build` + adaptador SDK), modelo `ApiPlanLevel` / `ApiPlanLevelField`, critério compartilhado `TransactionAttributeKeyTraits`, testes offline com ouro em `Tests/TransactionStructure/Baselines/` ligados ao pré-push. Caminho flat do Wizard sem o leitor hierárquico. ~~Próxima ação = Fase 2 (`B096`).~~ **Superada** pela atualização B096 abaixo. Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
 
+**Atualização de 2026-08-27.** §8 e §8-A alinhados a `ValidatedDepth = 4` (aviso acima de 4; survey de produção permanece 3). Remissão correspondente na emenda de 2026-08-23 do registro de decisões. Testes offline ampliam combinações Create/Update/Response na poda e colisão/`AllocateVariableToken`.
+
 **Atualização de 2026-08-26 (B099a).** Fase 5 (`B099a`) concluída: Wizard hierárquico (seletor compartilhado, dependência pai/filho, contador desligável, aviso de profundidade), `ApiPlan.Levels` podado para preview e apply, ouro offline e gate `tests.wizardHierarchical`. Metadata V2, sync e remoção ficam na Fase 6. Próxima ação = Fase 6 (`B099b`). Evidência: `Docs/Implementation/2026-08-26-B099a-WIZARD-HIERARQUICO.md`.
 
 **Atualização de 2026-08-26 (B098).** Fase 4 (`B098`) concluída: `ListResponse_Item` condicionado, contadores `count()` de subníveis diretos, ouro offline e gate `tests.listHierarchical`. Wizard flat e metadata V2 fora deste recorte. ~~Próxima ação = Fase 5 (`B099a`).~~ **Superada** pela atualização B099a acima. Evidência: `Docs/Implementation/2026-08-26-B098-LIST-CONTADORES.md`.
@@ -168,7 +170,7 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 - Subníveis sem nenhum atributo marcado não são gerados nos SDTs nem no código de BC.
 - Marcar um subnível aninhado exige que o subnível pai esteja marcado; a UI trata isso como dependência, não como escolha livre.
 - Cada subnível selecionado exibe o controle de contador de `List` (ligado por padrão), conforme a seção 7.
-- Transações com profundidade maior que 3 exibem aviso de **profundidade não validada**, sem bloquear a geração, conforme a seção 8-A.
+- Transações com profundidade maior que 4 exibem aviso de **profundidade não validada**, sem bloquear a geração, conforme a seção 8-A.
 - A aba `Obrigatórios` passa a agrupar por nível, com a mesma estrutura da aba de seleção de campos, para que o `Required` de campo de linha descrito na seção 10 tenha onde ser marcado.
 - O resumo do Wizard passa a exibir **quantos objetos serão criados** antes de aplicar. Com um subnível a diferença é pequena; com treze subníveis paralelos a geração passa de doze para mais de cinquenta objetos, e o número precisa aparecer antes da decisão, não no relatório final.
 - O comparador de sincronização (`Sincronizar com a Transaction`) compara adições, renomeações e remoções dentro da hierarquia de níveis com base nos `attributeGuid`s.
@@ -176,8 +178,9 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 ### 8-A. Profundidade Suportada
 
 - O leitor de estrutura, o modelo de domínio e os geradores tratam níveis por **recursão genérica, sem limite artificial** no código. Limite embutido custaria mais para implementar do que a recursão honesta e transformaria um caso raro em bloqueio total do wizard, inclusive para o cabeçalho.
-- A profundidade **3** é o alcance da **evidência**, não uma trava: é o que a KB de produção apresenta (`DadosDoDia -> Turno -> Funcionario`), o que os testes offline cobrem e o que a validação na IDE comprova.
-- Acima de 3 níveis, o Wizard avisa que a profundidade não foi validada e deixa a decisão com o usuário, que pode desmarcar os níveis mais profundos.
+- A profundidade **3** permanece o máximo observado no levantamento da KB de produção (`DadosDoDia -> Turno -> Funcionario`); isso descreve o acervo, não a trava do Wizard.
+- A profundidade **4** é o alcance da **evidência de validação** na KB de teste (`Teste` com `TesteItem` → `TesteItemFolio` → `TesteItemFolioDoc`, mais o irmão `TestePortfolio`), coberta pelos testes offline (`FourDeep` / `ValidatedDepth`) e pelo smoke U15 de 2026-08-26. `ValidatedDepth = 4` no código.
+- Acima de 4 níveis, o Wizard avisa que a profundidade não foi validada e deixa a decisão com o usuário, que pode desmarcar os níveis mais profundos.
 
 ### 9. Ordem das Linhas na Coleção
 

@@ -31,7 +31,7 @@ Escopo: interface do Wizard com agrupamento por nível, dependência pai/filho, 
 
 ## Validação desta frente
 
-- Teste offline: dependência pai/filho, nível vazio omitido, `IncludeListCount=false`, aviso em profundidade 5, transação sem filhos selecionados.
+- Teste offline: dependência pai/filho, nível vazio omitido, `IncludeListCount=false`, aviso em profundidade 5, transação sem filhos selecionados; combinações Create-only / Update-only / Create+Update / papéis com campos distintos; colisão de `VariableToken` (`Notes` → `Notes_V2` / path longo `L7_LeafLevel_V2`) no gate B097.
 - Build Release canônico: 0 avisos, 0 erros.
 - Build Release satélite U13: 0 erros (aviso MSB3277 ambiental conhecido).
 - Linha de base Fase 0 e ouro B096 intactos.
