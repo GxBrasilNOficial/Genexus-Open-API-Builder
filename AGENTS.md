@@ -263,13 +263,17 @@ Para cada mudança que altere assinatura, `Source`, `Rules`, variáveis, parâme
 2. Conferir se cada consumidor foi atualizado no mesmo commit. Build Release da extensão não valida semanticamente o código GeneXus gerado.
 3. Conferir se o preflight cobre todos os objetos que serão gravados antes do primeiro `Save()`. Quando o fluxo grava mais de um objeto, procurar risco de escrita parcial em resolução de tipos, criação/remoção de variáveis, `Source`, `Rules`, objetos ausentes, colisões externas e validação pós-save.
 4. Conferir se a evidência manual cobre o consumidor final do contrato. Se uma Procedure é chamada por API Object, validar também especificação/build do API Object, não só da Procedure.
-5. Declarar no relatório da revisão:
+5. Conferir a **data do gerador contra a data do artefato**. Evidência de runtime — smoke na IDE, `Build All`, chamada HTTP — vale para a DLL que a produziu, e só para ela. Sempre que um commit posterior tocar o emissor (`ApiPlan*`, writers de Source, mapa de contrato, plano de SDT), os objetos que ficaram na KB deixam de corresponder ao gerador vigente: não podem ser citados como estado atual nem reaproveitados como base de medição nova. Antes de planejar qualquer medição sobre artefatos que já estão na KB, comparar a data da captura com o último commit que alterou o emissor; havendo mudança no meio, o plano começa por reinstalar a DLL e reaplicar o Wizard. Evidência antiga permanece válida para o que provou **na data em que foi capturada** — é o alcance dela que expira, não o registro.
+6. Declarar no relatório da revisão:
    - contratos alterados;
    - produtores;
    - consumidores;
    - evidência de atualização de cada consumidor;
    - risco de escrita parcial encontrado ou descartado;
-   - validação manual/runtime ainda faltante.
+   - validação manual/runtime ainda faltante;
+   - evidência de runtime cuja DLL precede alguma mudança de emissor no intervalo revisado.
+
+Registrado em 2026-08-27, depois de a rotina pré-push planejar um smoke HTTP multinível "sobre a `apiTeste` de quatro níveis já gerada e buildada". A geração era de 2026-08-26 e o commit `8f80f39`, do dia seguinte, mudara a poda por papel, o mapa BC e a desambiguação de `VariableToken`. Executada como estava escrita, a bateria mediria o gerador anterior e o resultado pareceria válido. O defeito nasceu de tratar "os objetos já existem na KB" como economia, sem confrontar a data deles com a do emissor.
 
 ### GeneXus Open API Builder — trio API/Procedure/SDT
 
