@@ -48,6 +48,8 @@ Fixtures: reuso B096/B097 + `CountsDisabled` (mesmo `OneSublevel` com contadores
 
 ## Dívidas conscientemente adiadas (2026-08-26)
 
-Registradas no checkpoint; **corrigir antes do smoke IDE multinível** (não bloqueiam B099a).
+Registradas no checkpoint; ~~corrigir antes do smoke IDE multinível~~ (não bloqueiam B099a).
+
+**Remissão — 2026-08-27.** O gatilho acima venceu sem ser cumprido: o smoke IDE multinível ocorreu em 2026-08-26 (três e quatro níveis na `Teste`, `Build All` nos dois environments) e a correção não foi feita. A dívida 1 passa a ser o **primeiro item da Fase 5-A (`B099v`)**, antes do smoke **HTTP** multinível — que é onde o contador realmente é medido. Ver `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`, seção `Próxima ação única`.
 
 1. **`count()` com PK herdada.** `ResolveAggregateAttributeName` devolve `PrimaryKey[0]` do subnível. Na fixture `InheritedPrimaryKey` a PK da linha é `HeaderId` + `LineId`; o Source emite `&Item.Level1Count = count(HeaderId)`. Dentro do `For each` do cabeçalho isso não agrega as linhas — o atributo próprio é `LineId`. O ouro `InheritedPrimaryKey.txt` replica o emissor; o teste offline passa sem provar o contador. Em Transaction real com PK composta (FK do pai + parte própria) o `List` publicaria contagem errada. Correção: preferir a primeira parte de PK do nível que não seja só a herdada do pai (ex.: primeira não-FK / não coincidente com PK do cabeçalho), com fallback estável; atualizar o ouro e acrescentar asserção no teste que rejeite `count(<atributo do cabeçalho>)` nesse caso.
