@@ -8,10 +8,10 @@ Escopo: plano de SDT com `ListResponse_Item` condicionado, Source `List` com `co
 
 - Ramifica só quando `ApiPlanSdtHierarchicalNaming.HasSelectedSublevels`; caminho plano permanece byte a byte com a Fase 0 (`Items` continua coleção de `Response`).
 - Com subníveis: `ListResponse.Items` tipa `sdt<Tx>_API_ListResponse_Item` (cabeçalho sem coleções + `<Subnível>Count` dos filhos diretos com `IncludeListCount`).
-- Contadores só em profundidade 2; neto não entra. `IncludeListCount` default `true` no modelo; UI de desligar fica em B099.
+- Contadores só em profundidade 2; neto não entra. `IncludeListCount` default `true` no modelo; UI de desligar entregue em B099a.
 - Agregação nativa `&Item.<Count> = count(<atributo do filho>)` dentro do `For each` do cabeçalho; sem `For each` aninhado. A escolha do atributo hoje é `PrimaryKey[0]` (ver dívida abaixo).
 - Nomes de contador alinhados ao reserved/desambiguação do plano de SDT via `ApiPlanListHierarchicalContractBuilder`.
-- Wizard flat não popula `Levels`; geração na IDE continua plana até B099.
+- Neste recorte o Wizard ainda não populava `Levels`. Desde B099a o Wizard poda `Levels` e o apply hierárquico é permitido.
 
 ## Entrega
 

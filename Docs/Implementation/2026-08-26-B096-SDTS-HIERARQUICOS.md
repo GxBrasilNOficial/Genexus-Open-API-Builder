@@ -7,11 +7,11 @@ Escopo: plano de SDT por contrato e por subnível, regra de nomes, desambiguaç�
 ## Decisões de recorte (entrevista)
 
 - Builder ramifica só quando `ApiPlan.Levels` tem filhos; transação plana permanece no caminho dos cinco SDTs próprios.
-- Até B099, todo subnível presente na árvore conta como selecionado.
+- Neste recorte, todo subnível presente na árvore conta como selecionado. Desde B099a o Wizard poda `Levels`.
 - Elegibilidade intra-subnível aplicada pelos flags B095: fórmula, `NoAccept`, inferido e redundante fora de Create/Update; PK autonumerada e PK herdada (`IsPrimaryKey` + `IsForeignKey`) fora do Create da linha.
 - Marcador `<Subnível>Replace` no `UpdateRequest` do pai (nível 2 no corpo; nível 3 dentro do item do pai).
 - `ListResponse.Items` continua coleção de `Response`. `ListResponse_Item` fica para B098.
-- Wizard flat não consome o naming nem o plano hierárquico.
+- Neste recorte o Wizard flat não consumia o naming nem o plano hierárquico. Desde B099a o Wizard consome o naming via `Levels` podados.
 - Limite de nome de objeto GeneXus 18: **128** caracteres (plataforma desde GX15). Confirmado offline nesta fase; escrita real na KB fica para smoke posterior, antes da primeira API multinível. O teto **não** se aplica a nomes de membro: coleção e `Replace` usam o identificador sanitizado do nível; o ouro `LongQualifier` congela 106 e 113 caracteres.
 
 ## O que o teste offline realmente cobre

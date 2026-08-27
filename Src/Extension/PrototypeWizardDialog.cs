@@ -78,6 +78,32 @@ internal sealed class PrototypeWizardDialog : Form
     private bool _apiObjectOwnershipDiagnosticWritten;
     private bool _applyBusinessComponentWhenReady;
     private string _generationContext = "Plano da Transaction ainda nao consultado na KB.";
+    private readonly ComboBox _requestLevelSelector = CreateLevelComboBox();
+    private readonly ComboBox _responseLevelSelector = CreateLevelComboBox();
+    private readonly ComboBox _requiredLevelSelector = CreateLevelComboBox();
+    private readonly CheckBox _includeLevelCheckRequests = new() { AutoSize = true };
+    private readonly CheckBox _includeLevelCheckResponse = new() { AutoSize = true };
+    private readonly CheckBox _includeLevelCheckRequired = new() { AutoSize = true };
+    private readonly CheckBox _listCountCheckRequests = new() { AutoSize = true };
+    private readonly CheckBox _listCountCheckResponse = new() { AutoSize = true };
+    private readonly CheckBox _listCountCheckRequired = new() { AutoSize = true };
+    private readonly Label _depthWarningRequests = CreateDepthWarningLabel();
+    private readonly Label _depthWarningResponse = CreateDepthWarningLabel();
+    private readonly Label _depthWarningRequired = CreateDepthWarningLabel();
+    private readonly FlowLayoutPanel _levelCreateFieldsList = CreateChoicePanel();
+    private readonly FlowLayoutPanel _levelUpdateFieldsList = CreateChoicePanel();
+    private readonly FlowLayoutPanel _levelResponseFieldsList = CreateChoicePanel();
+    private readonly FlowLayoutPanel _levelCreateRequiredList = CreateChoicePanel();
+    private readonly Panel _requestHeaderBody = new() { Dock = DockStyle.Fill };
+    private readonly Panel _requestLevelBody = new() { Dock = DockStyle.Fill };
+    private readonly Panel _responseHeaderBody = new() { Dock = DockStyle.Fill };
+    private readonly Panel _responseLevelBody = new() { Dock = DockStyle.Fill };
+    private readonly Panel _requiredHeaderBody = new() { Dock = DockStyle.Fill };
+    private readonly Panel _requiredLevelBody = new() { Dock = DockStyle.Fill };
+    private readonly List<Control> _levelBars = new();
+    private ApiPlanHierarchicalWizardSelection? _hierarchicalSelection;
+    private string _currentLevelPathKey = string.Empty;
+    private bool _syncingLevelUi;
 
     public PrototypeWizardDialog(KBModel designModel, Transaction transaction, PrototypeWizardContractSnapshot snapshot, PrototypeBusinessComponentSnapshot businessComponentSnapshot, PrototypeWizardPreferences preferences, Func<bool> enableBusinessComponent, Action<string> writeBusinessComponentOutput, ExtensionTexts texts)
     {
@@ -128,6 +154,16 @@ internal sealed class PrototypeWizardDialog : Form
         _generateMetadataCheck.Text = _texts.Translate("Confirmar: Gravar metadata da API ao concluir");
         _applyBusinessComponentCheck.Text = _texts.Translate("Completar Get/Create/Update REST ao concluir");
         _applyListCheck.Text = _texts.Translate("Completar listagem ao concluir");
+        _includeLevelCheckRequests.Text = _texts.Translate("Incluir este subnível");
+        _includeLevelCheckResponse.Text = _texts.Translate("Incluir este subnível");
+        _includeLevelCheckRequired.Text = _texts.Translate("Incluir este subnível");
+        _listCountCheckRequests.Text = _texts.Translate("Incluir contador no List");
+        _listCountCheckResponse.Text = _texts.Translate("Incluir contador no List");
+        _listCountCheckRequired.Text = _texts.Translate("Incluir contador no List");
+        var depthWarning = _texts.Translate(ApiPlanHierarchicalWizardSelection.DepthWarningText);
+        _depthWarningRequests.Text = depthWarning;
+        _depthWarningResponse.Text = depthWarning;
+        _depthWarningRequired.Text = depthWarning;
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
@@ -159,7 +195,7 @@ internal sealed class PrototypeWizardDialog : Form
 
         _tabs.TabPages.Add(CreateListTab(_texts.Translate("Serviços"), _servicesList, _texts.Translate("Serviços REST do MVP. Todos iniciam habilitados.")));
         _tabs.TabPages.Add(CreateRequestTab());
-        _tabs.TabPages.Add(CreateListTab(_texts.RoleLabel("Response"), _responseFieldsList, _texts.Translate("Campos devolvidos no response principal.")));
+        _tabs.TabPages.Add(CreateResponseTab());
         _tabs.TabPages.Add(CreateFilterTab());
         _tabs.TabPages.Add(CreateListGenerationTab());
         _tabs.TabPages.Add(CreatePathsTab());
@@ -355,21 +391,135 @@ internal sealed class PrototypeWizardDialog : Form
         return tab;
     }
 
+    private static ComboBox CreateLevelComboBox()
+    {
+        return new ComboBox
+        {
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            Dock = DockStyle.Fill,
+            IntegralHeight = false,
+        };
+    }
+
+    private static Label CreateDepthWarningLabel()
+    {
+        return new Label
+        {
+            AutoSize = true,
+            ForeColor = Color.DarkGoldenrod,
+            MaximumSize = new Size(1100, 0),
+            Padding = new Padding(0, 4, 0, 4),
+            Visible = false,
+        };
+    }
+
+    private Control CreateLevelBar(ComboBox selector, CheckBox includeLevel, CheckBox includeCount, Label warning)
+    {
+        var panel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            ColumnCount = 1,
+            RowCount = 2,
+            Padding = new Padding(0, 0, 0, 8),
+            Visible = false,
+        };
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        var row = new TableLayoutPanel
+        {
+            AutoSize = true,
+            Dock = DockStyle.Top,
+            ColumnCount = 3,
+        };
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        row.Controls.Add(selector, 0, 0);
+        row.Controls.Add(includeLevel, 1, 0);
+        row.Controls.Add(includeCount, 2, 0);
+        panel.Controls.Add(row, 0, 0);
+        panel.Controls.Add(warning, 0, 1);
+        selector.SelectedIndexChanged += (_, _) => HandleLevelSelectorChanged(selector);
+        includeLevel.CheckedChanged += (_, _) => HandleIncludeLevelChanged(includeLevel);
+        includeCount.CheckedChanged += (_, _) => HandleIncludeListCountChanged(includeCount);
+        _levelBars.Add(panel);
+        return panel;
+    }
+
     private TabPage CreateRequestTab()
     {
         var tab = new TabPage(_texts.Translate("Requests"));
-        var split = new TableLayoutPanel
+        var panel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Padding = new Padding(8),
+        };
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.Controls.Add(CreateLevelBar(_requestLevelSelector, _includeLevelCheckRequests, _listCountCheckRequests, _depthWarningRequests), 0, 0);
+
+        var headerSplit = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
             RowCount = 1,
+        };
+        headerSplit.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        headerSplit.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        headerSplit.Controls.Add(CreateGroup(_texts.RoleLabel("CreateRequest"), _createFieldsList), 0, 0);
+        headerSplit.Controls.Add(CreateGroup(_texts.RoleLabel("UpdateRequest"), _updateFieldsList), 1, 0);
+        _requestHeaderBody.Controls.Add(headerSplit);
+
+        var levelSplit = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+        };
+        levelSplit.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        levelSplit.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        levelSplit.Controls.Add(CreateGroup(_texts.RoleLabel("CreateRequest"), _levelCreateFieldsList), 0, 0);
+        levelSplit.Controls.Add(CreateGroup(_texts.RoleLabel("UpdateRequest"), _levelUpdateFieldsList), 1, 0);
+        _requestLevelBody.Controls.Add(levelSplit);
+        _requestLevelBody.Visible = false;
+
+        var body = new Panel { Dock = DockStyle.Fill };
+        body.Controls.Add(_requestLevelBody);
+        body.Controls.Add(_requestHeaderBody);
+        panel.Controls.Add(body, 0, 1);
+        tab.Controls.Add(panel);
+        return tab;
+    }
+
+    private TabPage CreateResponseTab()
+    {
+        var tab = new TabPage(_texts.RoleLabel("Response"));
+        var panel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
             Padding = new Padding(8),
         };
-        split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        split.Controls.Add(CreateGroup(_texts.RoleLabel("CreateRequest"), _createFieldsList), 0, 0);
-        split.Controls.Add(CreateGroup(_texts.RoleLabel("UpdateRequest"), _updateFieldsList), 1, 0);
-        tab.Controls.Add(split);
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.Controls.Add(CreateLevelBar(_responseLevelSelector, _includeLevelCheckResponse, _listCountCheckResponse, _depthWarningResponse), 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Campos devolvidos no response principal.")), 0, 1);
+
+        _responseHeaderBody.Controls.Add(_responseFieldsList);
+        _responseLevelBody.Controls.Add(_levelResponseFieldsList);
+        _responseLevelBody.Visible = false;
+
+        var body = new Panel { Dock = DockStyle.Fill };
+        body.Controls.Add(_responseLevelBody);
+        body.Controls.Add(_responseHeaderBody);
+        panel.Controls.Add(body, 0, 2);
+        tab.Controls.Add(panel);
         return tab;
     }
 
@@ -512,9 +662,19 @@ internal sealed class PrototypeWizardDialog : Form
             Padding = new Padding(8),
         };
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0). Chave primária não autonumerada inicia opcional no Create; marque aqui se quiser exigir o valor no payload."), 64), 0, 0);
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.Controls.Add(CreateLevelBar(_requiredLevelSelector, _includeLevelCheckRequired, _listCountCheckRequired, _depthWarningRequired), 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0). Chave primária não autonumerada inicia opcional no Create; marque aqui se quiser exigir o valor no payload. Em subnível, a marcação fica só na UI nesta frente: o writer ainda valida Required apenas no cabeçalho."), 64), 0, 1);
+
+        var headerPanel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+        };
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
 
         var createGroup = new GroupBox
         {
@@ -531,9 +691,24 @@ internal sealed class PrototypeWizardDialog : Form
             Padding = new Padding(8),
         };
         updateGroup.Controls.Add(_updateRequiredText);
+        headerPanel.Controls.Add(createGroup, 0, 0);
+        headerPanel.Controls.Add(updateGroup, 0, 1);
+        _requiredHeaderBody.Controls.Add(headerPanel);
 
-        panel.Controls.Add(createGroup, 0, 1);
-        panel.Controls.Add(updateGroup, 0, 2);
+        var levelCreateGroup = new GroupBox
+        {
+            Dock = DockStyle.Fill,
+            Text = $"{_texts.RoleLabel("CreateRequest")} - {_texts.Translate("Obrigatório no payload (editável)")}",
+            Padding = new Padding(8),
+        };
+        levelCreateGroup.Controls.Add(_levelCreateRequiredList);
+        _requiredLevelBody.Controls.Add(levelCreateGroup);
+        _requiredLevelBody.Visible = false;
+
+        var body = new Panel { Dock = DockStyle.Fill };
+        body.Controls.Add(_requiredLevelBody);
+        body.Controls.Add(_requiredHeaderBody);
+        panel.Controls.Add(body, 0, 2);
         tab.Controls.Add(panel);
         return tab;
     }
@@ -755,6 +930,7 @@ internal sealed class PrototypeWizardDialog : Form
         RefreshEndpointsText();
         RefreshRequiredText();
         RefreshBusinessComponentText();
+        TryLoadHierarchicalSelection();
     }
 
     private void WireGenerationConfirmation()
@@ -903,6 +1079,341 @@ internal sealed class PrototypeWizardDialog : Form
         };
     }
 
+    private void TryLoadHierarchicalSelection()
+    {
+        try
+        {
+            var snapshot = TransactionStructureReader.Read(_transaction);
+            if (snapshot.RootLevel.ChildLevels.Count == 0)
+            {
+                return;
+            }
+
+            _hierarchicalSelection = ApiPlanHierarchicalWizardSelection.CreateDefault(snapshot.RootLevel);
+            foreach (var bar in _levelBars)
+            {
+                bar.Visible = true;
+            }
+
+            _syncingLevelUi = true;
+            try
+            {
+                BindLevelSelector(_requestLevelSelector);
+                BindLevelSelector(_responseLevelSelector);
+                BindLevelSelector(_requiredLevelSelector);
+            }
+            finally
+            {
+                _syncingLevelUi = false;
+            }
+
+            SelectLevel(_hierarchicalSelection.RootPathKey);
+        }
+        catch
+        {
+            _hierarchicalSelection = null;
+        }
+    }
+
+    private void BindLevelSelector(ComboBox selector)
+    {
+        selector.Items.Clear();
+        if (_hierarchicalSelection is null)
+        {
+            return;
+        }
+
+        foreach (var option in _hierarchicalSelection.Options)
+        {
+            selector.Items.Add(option);
+        }
+    }
+
+    private void HandleLevelSelectorChanged(ComboBox sender)
+    {
+        if (_syncingLevelUi ||
+            _hierarchicalSelection is null ||
+            sender.SelectedItem is not ApiPlanHierarchicalWizardSelection.LevelNode node)
+        {
+            return;
+        }
+
+        FlushCurrentSublevelFromUi();
+        SelectLevel(node.PathKey);
+        RefreshGenerationPreviewUnlessSuppressed();
+    }
+
+    private void HandleIncludeLevelChanged(CheckBox sender)
+    {
+        if (_syncingLevelUi || _hierarchicalSelection is null || string.IsNullOrEmpty(_currentLevelPathKey))
+        {
+            return;
+        }
+
+        FlushCurrentSublevelFromUi();
+        _hierarchicalSelection.SetLevelIncluded(_currentLevelPathKey, sender.Checked);
+        _syncingLevelUi = true;
+        try
+        {
+            _includeLevelCheckRequests.Checked = sender.Checked;
+            _includeLevelCheckResponse.Checked = sender.Checked;
+            _includeLevelCheckRequired.Checked = sender.Checked;
+        }
+        finally
+        {
+            _syncingLevelUi = false;
+        }
+
+        SelectLevel(_currentLevelPathKey);
+        RefreshGenerationPreviewUnlessSuppressed();
+    }
+
+    private void HandleIncludeListCountChanged(CheckBox sender)
+    {
+        if (_syncingLevelUi || _hierarchicalSelection is null || string.IsNullOrEmpty(_currentLevelPathKey))
+        {
+            return;
+        }
+
+        _hierarchicalSelection.SetIncludeListCount(_currentLevelPathKey, sender.Checked);
+        _syncingLevelUi = true;
+        try
+        {
+            _listCountCheckRequests.Checked = sender.Checked;
+            _listCountCheckResponse.Checked = sender.Checked;
+            _listCountCheckRequired.Checked = sender.Checked;
+        }
+        finally
+        {
+            _syncingLevelUi = false;
+        }
+
+        RefreshGenerationPreviewUnlessSuppressed();
+    }
+
+    private void FlushCurrentSublevelFromUi()
+    {
+        if (_hierarchicalSelection is null || string.IsNullOrEmpty(_currentLevelPathKey))
+        {
+            return;
+        }
+
+        var node = _hierarchicalSelection.GetNode(_currentLevelPathKey);
+        if (node.IsRoot)
+        {
+            return;
+        }
+
+        _hierarchicalSelection.ReplaceSelectedFields(_currentLevelPathKey, "CreateRequest", GetCheckedValues(_levelCreateFieldsList));
+        _hierarchicalSelection.ReplaceSelectedFields(_currentLevelPathKey, "UpdateRequest", GetCheckedValues(_levelUpdateFieldsList));
+        _hierarchicalSelection.ReplaceSelectedFields(_currentLevelPathKey, "Response", GetCheckedValues(_levelResponseFieldsList));
+        if (node.CanIncludeListCount)
+        {
+            _hierarchicalSelection.SetIncludeListCount(_currentLevelPathKey, _listCountCheckRequests.Checked);
+        }
+    }
+
+    private void SelectLevel(string pathKey)
+    {
+        if (_hierarchicalSelection is null)
+        {
+            return;
+        }
+
+        _currentLevelPathKey = pathKey;
+        var node = _hierarchicalSelection.GetNode(pathKey);
+        var included = _hierarchicalSelection.IsLevelIncluded(pathKey);
+        var showHeader = node.IsRoot;
+        _syncingLevelUi = true;
+        try
+        {
+            SyncSelector(_requestLevelSelector, pathKey);
+            SyncSelector(_responseLevelSelector, pathKey);
+            SyncSelector(_requiredLevelSelector, pathKey);
+            _includeLevelCheckRequests.Visible = !showHeader;
+            _includeLevelCheckResponse.Visible = !showHeader;
+            _includeLevelCheckRequired.Visible = !showHeader;
+            _includeLevelCheckRequests.Checked = included;
+            _includeLevelCheckResponse.Checked = included;
+            _includeLevelCheckRequired.Checked = included;
+            _listCountCheckRequests.Visible = node.CanIncludeListCount;
+            _listCountCheckResponse.Visible = node.CanIncludeListCount;
+            _listCountCheckRequired.Visible = node.CanIncludeListCount;
+            if (node.CanIncludeListCount)
+            {
+                var includeCount = _hierarchicalSelection.GetIncludeListCount(pathKey);
+                _listCountCheckRequests.Checked = includeCount;
+                _listCountCheckResponse.Checked = includeCount;
+                _listCountCheckRequired.Checked = includeCount;
+            }
+
+            var warn = _hierarchicalSelection.WarnUnvalidatedDepth;
+            _depthWarningRequests.Visible = warn;
+            _depthWarningResponse.Visible = warn;
+            _depthWarningRequired.Visible = warn;
+            _requestHeaderBody.Visible = showHeader;
+            _requestLevelBody.Visible = !showHeader;
+            _responseHeaderBody.Visible = showHeader;
+            _responseLevelBody.Visible = !showHeader;
+            _requiredHeaderBody.Visible = showHeader;
+            _requiredLevelBody.Visible = !showHeader;
+        }
+        finally
+        {
+            _syncingLevelUi = false;
+        }
+
+        if (!showHeader)
+        {
+            PopulateLevelFieldLists(node, included);
+            RefreshLevelRequiredText();
+        }
+    }
+
+    private static void SyncSelector(ComboBox selector, string pathKey)
+    {
+        for (var index = 0; index < selector.Items.Count; index++)
+        {
+            if (selector.Items[index] is ApiPlanHierarchicalWizardSelection.LevelNode node &&
+                string.Equals(node.PathKey, pathKey, StringComparison.Ordinal))
+            {
+                selector.SelectedIndex = index;
+                return;
+            }
+        }
+    }
+
+    private void PopulateLevelFieldLists(ApiPlanHierarchicalWizardSelection.LevelNode node, bool included)
+    {
+        var selection = _hierarchicalSelection;
+        if (selection is null)
+        {
+            return;
+        }
+
+        _levelCreateFieldsList.SuspendLayout();
+        _levelUpdateFieldsList.SuspendLayout();
+        _levelResponseFieldsList.SuspendLayout();
+        _levelCreateFieldsList.Controls.Clear();
+        _levelUpdateFieldsList.Controls.Clear();
+        _levelResponseFieldsList.Controls.Clear();
+        foreach (var field in node.Level.Fields)
+        {
+            var label = FormatLevelField(field);
+            var createReason = ApiPlanHierarchicalWizardSelection.FieldDisabledReason(field, "CreateRequest");
+            var updateReason = ApiPlanHierarchicalWizardSelection.FieldDisabledReason(field, "UpdateRequest");
+            var createEnabled = included && createReason is null;
+            var updateEnabled = included && updateReason is null;
+            AddChoice(
+                _levelCreateFieldsList,
+                new ChoiceItem(field.Name, createEnabled, label, createReason is null ? null : _texts.Translate(createReason), _texts.Translate("Bloqueado - Motivo: ")),
+                included && selection.IsFieldSelected(node.PathKey, "CreateRequest", field.Name) && createReason is null);
+            AddChoice(
+                _levelUpdateFieldsList,
+                new ChoiceItem(field.Name, updateEnabled, label, updateReason is null ? null : _texts.Translate(updateReason), _texts.Translate("Bloqueado - Motivo: ")),
+                included && selection.IsFieldSelected(node.PathKey, "UpdateRequest", field.Name) && updateReason is null);
+            AddChoice(
+                _levelResponseFieldsList,
+                new ChoiceItem(field.Name, included, label),
+                included && selection.IsFieldSelected(node.PathKey, "Response", field.Name));
+        }
+
+        _levelCreateFieldsList.ResumeLayout();
+        _levelUpdateFieldsList.ResumeLayout();
+        _levelResponseFieldsList.ResumeLayout();
+    }
+
+    private void RefreshLevelRequiredText()
+    {
+        if (_hierarchicalSelection is null || string.IsNullOrEmpty(_currentLevelPathKey))
+        {
+            return;
+        }
+
+        var node = _hierarchicalSelection.GetNode(_currentLevelPathKey);
+        if (node.IsRoot)
+        {
+            return;
+        }
+
+        _levelCreateRequiredList.SuspendLayout();
+        _levelCreateRequiredList.Controls.Clear();
+        foreach (var fieldName in _hierarchicalSelection.GetSelectedFields(_currentLevelPathKey, "CreateRequest"))
+        {
+            AddChoice(_levelCreateRequiredList, new ChoiceItem(fieldName, true, fieldName), false);
+        }
+
+        _levelCreateRequiredList.ResumeLayout();
+    }
+
+    private string FormatLevelField(ApiPlanLevelField field)
+    {
+        var markers = new List<string>();
+        if (field.IsPrimaryKey)
+        {
+            markers.Add("PK");
+        }
+
+        if (field.IsFormula)
+        {
+            markers.Add(_texts.Translate("Fórmula"));
+        }
+
+        if (field.IsNoAccept)
+        {
+            markers.Add("NoAccept");
+        }
+
+        if (field.IsAutonumber)
+        {
+            markers.Add("Autonumber");
+        }
+
+        var suffix = markers.Count == 0 ? string.Empty : " [" + string.Join(", ", markers) + "]";
+        return $"{field.Name} ({field.DataType}, {field.Length}.{field.Decimals}){suffix}";
+    }
+
+    private string FormatHierarchicalSummary()
+    {
+        if (_hierarchicalSelection is null || !_hierarchicalSelection.HasSublevels)
+        {
+            return string.Empty;
+        }
+
+        var builder = new StringBuilder();
+        builder.Append(Environment.NewLine);
+        builder.Append(_texts.Translate("Subníveis selecionados"));
+        builder.Append(": ");
+        builder.Append(_hierarchicalSelection.CountSelectedSublevels());
+        builder.Append(Environment.NewLine);
+        if (_cachedGenerationState is not null)
+        {
+            builder.Append(_texts.Translate("SDTs planejados"));
+            builder.Append(": ");
+            builder.Append(_cachedGenerationState.Sdts.Detail);
+            builder.Append(Environment.NewLine);
+        }
+
+        if (_hierarchicalSelection.WarnUnvalidatedDepth)
+        {
+            builder.Append(_texts.Translate(ApiPlanHierarchicalWizardSelection.DepthWarningText));
+            builder.Append(Environment.NewLine);
+        }
+
+        builder.Append(_texts.Translate(ApiPlanHierarchicalWizardSelection.LifecycleV1WarningText));
+        return builder.ToString();
+    }
+
+    private string FormatHierarchicalGuarantee()
+    {
+        if (_hierarchicalSelection is null || !_hierarchicalSelection.HasSublevels)
+        {
+            return string.Empty;
+        }
+
+        return Environment.NewLine + _texts.Translate(ApiPlanHierarchicalWizardSelection.LifecycleV1WarningText);
+    }
+
     private string FormatAttribute(PrototypeWizardAttributeDecision attribute)
     {
         var markers = new List<string>();
@@ -1046,7 +1557,16 @@ internal sealed class PrototypeWizardDialog : Form
 
         if (string.Equals(tabName, _texts.Translate("Obrigatórios"), StringComparison.Ordinal))
         {
-            RefreshRequiredText();
+            if (_hierarchicalSelection is not null &&
+                !string.IsNullOrEmpty(_currentLevelPathKey) &&
+                !_hierarchicalSelection.GetNode(_currentLevelPathKey).IsRoot)
+            {
+                RefreshLevelRequiredText();
+            }
+            else
+            {
+                RefreshRequiredText();
+            }
         }
 
         if (_showingSummary)
@@ -1097,6 +1617,7 @@ internal sealed class PrototypeWizardDialog : Form
     }
     private bool TryCreateSelection()
     {
+        FlushCurrentSublevelFromUi();
         var selectedServices = GetCheckedValues(_servicesList);
         if (selectedServices.Count == 0)
         {
@@ -1152,7 +1673,8 @@ internal sealed class PrototypeWizardDialog : Form
             _generateApiObjectCheck.Checked,
             _generateMetadataCheck.Checked,
             _applyListCheck.Checked,
-            _applyBusinessComponentCheck.Checked && IsBusinessComponentReady());
+            _applyBusinessComponentCheck.Checked && IsBusinessComponentReady(),
+            _hierarchicalSelection);
         return true;
     }
     private void ShowSummary()
@@ -1192,7 +1714,8 @@ internal sealed class PrototypeWizardDialog : Form
             $"{_texts.Translate("Completar listagem")}: {Selection.ApplyList}{Environment.NewLine}" +
             $"{_texts.Translate("Gravar metadata da API")}: {Selection.GenerateMetadata}{Environment.NewLine}" +
             $"{_texts.Translate("Completar Get/Create/Update REST")}: {Selection.ApplyBusinessComponent}{Environment.NewLine}" +
-            $"{_texts.Translate("Estado da geracao")}: {_generationContext}";
+            $"{_texts.Translate("Estado da geracao")}: {_generationContext}" +
+            FormatHierarchicalSummary();
         _summaryEndpointText.Text =
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
             _texts.Translate("Campos bloqueados ficam visíveis com motivo no fluxo do wizard.") + Environment.NewLine +
@@ -1200,7 +1723,8 @@ internal sealed class PrototypeWizardDialog : Form
             _texts.Translate("ApiPlan sera montado em memoria ao concluir o wizard.") + Environment.NewLine +
             _texts.Translate("Estruturas de dados, Procedures, API Object, listagem e metadata so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK.") + Environment.NewLine +
             _texts.Translate("A opção de Business Component completa Get/Create/Update e status HTTP nas Procedures já geradas.") + Environment.NewLine +
-            _texts.Translate("A listagem completa a primeira versão paginada do endpoint; a metadata grava o File JSON inicial.");
+            _texts.Translate("A listagem completa a primeira versão paginada do endpoint; a metadata grava o File JSON inicial.") +
+            FormatHierarchicalGuarantee();
         _showingSummary = true;
         _tabs.SelectedIndex = _tabs.TabPages.Count - 1;
         RefreshCompletionCaption();
@@ -1341,7 +1865,8 @@ internal sealed class PrototypeWizardDialog : Form
             _applyListCheck.Checked ? "1" : "0",
             _applyBusinessComponentCheck.Checked ? "1" : "0",
             _enableBusinessComponentCheck.Checked ? "1" : "0",
-            IsBusinessComponentReady() ? "1" : "0");
+            IsBusinessComponentReady() ? "1" : "0",
+            _hierarchicalSelection?.Fingerprint() ?? string.Empty);
     }
 
     private void ApplyGenerationPreviewState(ApiPlanGenerationState? state)
@@ -1538,6 +2063,7 @@ internal sealed class PrototypeWizardDialog : Form
 
     private ApiPlanGenerationState? ReadGenerationState()
     {
+        FlushCurrentSublevelFromUi();
         var selectedServices = GetCheckedValues(_servicesList);
         if (selectedServices.Count == 0)
         {
@@ -1574,7 +2100,8 @@ internal sealed class PrototypeWizardDialog : Form
                 false,
                 false,
                 false,
-                false);
+                false,
+                _hierarchicalSelection);
             return ApiPlanGenerationStateReader.ReadForIntentionalChange(_designModel, _transaction, ApiPlanBuilder.Build(_designModel, _transaction, selection));
         }
         catch
@@ -1945,7 +2472,8 @@ internal sealed class PrototypeWizardFlowSelection
         bool generateApiObject,
         bool generateMetadata,
         bool applyList,
-        bool applyBusinessComponent)
+        bool applyBusinessComponent,
+        ApiPlanHierarchicalWizardSelection? hierarchicalSelection = null)
     {
         ContractSelection = contractSelection ?? throw new ArgumentNullException(nameof(contractSelection));
         ReviewSelection = reviewSelection ?? throw new ArgumentNullException(nameof(reviewSelection));
@@ -1957,6 +2485,7 @@ internal sealed class PrototypeWizardFlowSelection
         GenerateMetadata = generateMetadata;
         ApplyList = applyList;
         ApplyBusinessComponent = applyBusinessComponent;
+        HierarchicalSelection = hierarchicalSelection;
     }
 
     public PrototypeWizardContractSelection ContractSelection { get; }
@@ -1978,6 +2507,8 @@ internal sealed class PrototypeWizardFlowSelection
     public bool ApplyList { get; }
 
     public bool ApplyBusinessComponent { get; }
+
+    public ApiPlanHierarchicalWizardSelection? HierarchicalSelection { get; }
 }
 
 internal sealed class PrototypeWizardBusinessComponentSelection

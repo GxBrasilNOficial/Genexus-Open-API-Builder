@@ -91,6 +91,7 @@ internal static class ApiPlanBuilder
             preserveExistingServiceContract ? existingApiContract : null);
         var security = ApiPlanSecurity.CreateResolved(review.SecurityLevel);
         var names = ApiPlanNames.Create(transaction.Name, contract.SelectedServices);
+        var levels = ResolveHierarchicalLevels(selection);
 
         return new ApiPlan(
             transaction.Name,
@@ -134,7 +135,25 @@ internal static class ApiPlanBuilder
             requiredFields,
             services,
             selection.BusinessComponentSelection,
-            review.IncludeBusinessComponentErrorMessages);
+            review.IncludeBusinessComponentErrorMessages,
+            levels);
+    }
+
+    private static IReadOnlyList<ApiPlanLevel>? ResolveHierarchicalLevels(PrototypeWizardFlowSelection selection)
+    {
+        var hierarchical = selection.HierarchicalSelection;
+        if (hierarchical is null || !hierarchical.HasSublevels)
+        {
+            return null;
+        }
+
+        var pruned = hierarchical.Prune();
+        if (pruned.ChildLevels.Count == 0)
+        {
+            return null;
+        }
+
+        return new[] { pruned };
     }
 
     private static IReadOnlyList<ApiPlanField> CreateSelectedFields(
@@ -427,9 +446,8 @@ internal sealed class ApiPlan
         Services = services ?? throw new ArgumentNullException(nameof(services));
         BusinessComponent = businessComponent ?? throw new ArgumentNullException(nameof(businessComponent));
         IncludeBusinessComponentErrorMessages = includeBusinessComponentErrorMessages;
-        // B095–B098: árvore hierárquica opcional. Plano de SDT, Source BC e List
-        // consomem Levels quando há subníveis; o Wizard flat ainda não.
-        // O plano de SDT consome Levels (B096+) e o List emite ListResponse_Item (B098).
+        // B095–B099a: árvore hierárquica opcional. O plano de SDT consome Levels (B096+),
+        // o List emite ListResponse_Item (B098) e o Wizard popula a árvore podada desde B099a.
         Levels = levels ?? Array.Empty<ApiPlanLevel>();
     }
 
@@ -817,7 +835,7 @@ internal sealed class ApiPlanLevel
         PrimaryKey = primaryKey ?? throw new ArgumentNullException(nameof(primaryKey));
         Fields = fields ?? throw new ArgumentNullException(nameof(fields));
         ChildLevels = childLevels ?? throw new ArgumentNullException(nameof(childLevels));
-        // B098: contador de List ligado por padrao; o Wizard (B099) podera desligar por subnivel.
+        // B098: contador de List ligado por padrao; o Wizard (B099a) desliga por subnivel direto.
         IncludeListCount = includeListCount;
     }
 
@@ -862,7 +880,7 @@ internal sealed class ApiPlanLevel
 }
 
 /// <summary>
-/// Campo candidato lido na estrutura de um nível (B095). Sem seleção de Wizard.
+/// Campo candidato lido na estrutura de um nível (B095). A seleção do Wizard (B099a) poda a árvore, sem flags neste tipo.
 /// </summary>
 internal sealed class ApiPlanLevelField
 {

@@ -11,8 +11,8 @@ Escopo: emissão offline de Source `Get` / `Create` / `Update` com subníveis e 
 - **Get:** `For` nas coleções do BC → preenche `&GetResponse.<membro SDT>`.
 - **Create:** `For` no request → `Add` no BC (recursivo) → `Save`.
 - **Update:** cabeçalho sempre; coleção só se `<Subnível>Replace`; match-by-PK com remoção de omitidos; autonumerado → `Clear` + reinserção; pai novo ignora Replace dos filhos; `Replace` ausente/`False` não toca a coleção.
-- Required aninhado com caminho/índice fica para quando o Wizard gravar Required por nível (B099); header Required permanece.
-- Wizard flat não popula `Levels`; geração na IDE continua plana até B099.
+- Required aninhado com caminho/índice: B099a expõe required de linha na UI; o writer BC ainda valida só o cabeçalho (não recapturar ouro desta frente).
+- Neste recorte o Wizard ainda não populava `Levels`. Desde B099a o Wizard poda `Levels` e o apply hierárquico é permitido.
 
 ## Entrega
 

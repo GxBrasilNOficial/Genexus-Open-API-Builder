@@ -11,7 +11,8 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 /// <summary>
 /// B095 — leitura hierárquica recursiva de <c>transaction.Structure.Root.Levels</c>.
-/// Leitor à parte do caminho flat do Wizard (<see cref="PrototypeWizardContractReader"/>).
+/// O contrato flat do cabeçalho permanece em <see cref="PrototypeWizardContractReader"/>.
+/// Desde B099a o Wizard consome <see cref="Read"/> para subníveis.
 /// O núcleo recursivo opera sobre <see cref="TransactionStructureLevelSource"/> para ser
 /// exercitado offline; o adaptador SDK só traduz <see cref="TransactionLevel"/>.
 /// </summary>
@@ -386,6 +387,40 @@ internal static class TransactionStructureReader
             new[] { line });
 
         return new TransactionStructureFixture("InheritedPrimaryKey", Build("Header", root));
+    }
+
+    /// <summary>
+    /// Fixture só para o aviso de profundidade B099a. Não entra em <see cref="CreateFixtures"/>
+    /// para não recapturar o ouro B095.
+    /// </summary>
+    public static TransactionStructureFixture CreateFourDeepFixture()
+    {
+        var l4Id = Attr("a5000001-0004-4000-8000-000000000001", "LeafId", "Numeric", 4, 0, false, false, false, false, false, true, "False");
+        var l3Id = Attr("a5000001-0003-4000-8000-000000000001", "NodeId", "Numeric", 4, 0, false, false, false, false, false, true, "False");
+        var l2Id = Attr("a5000001-0002-4000-8000-000000000001", "BranchId", "Numeric", 4, 0, false, false, false, false, false, true, "False");
+        var l1Id = Attr("a5000001-0001-4000-8000-000000000001", "RootId", "Numeric", 8, 0, false, false, false, false, false, true, "True");
+
+        var leaf = new TransactionStructureLevelSource(
+            "Leaf",
+            new[] { l4Id },
+            new[] { "LeafId" },
+            Array.Empty<TransactionStructureLevelSource>());
+        var node = new TransactionStructureLevelSource(
+            "Node",
+            new[] { l3Id },
+            new[] { "NodeId" },
+            new[] { leaf });
+        var branch = new TransactionStructureLevelSource(
+            "Branch",
+            new[] { l2Id },
+            new[] { "BranchId" },
+            new[] { node });
+        var root = new TransactionStructureLevelSource(
+            "Root",
+            new[] { l1Id },
+            new[] { "RootId" },
+            new[] { branch });
+        return new TransactionStructureFixture("FourDeep", Build("Root", root));
     }
 
     private static TransactionStructureAttributeSource Attr(

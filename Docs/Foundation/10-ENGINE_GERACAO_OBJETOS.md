@@ -100,11 +100,13 @@ Receber `ApiPlan`.
 | ReexecutionMode | safe/update/cancel |
 | RestArtifactTarget | API Object |
 
-**Nota de revisão — 2026-08-23 — Suporte a Subníveis** (atualizada em 2026-08-26 após `B095` e `B096`): a tabela acima descreve um plano plano, com um nome de SDT por contrato. Com subníveis (B095–B099), o `ApiPlan` passa a carregar também:
+**Nota de revisão — 2026-08-23 — Suporte a Subníveis** (atualizada em 2026-08-26 após `B095`–`B099a`): a tabela acima descreve um plano plano, com um nome de SDT por contrato. Com subníveis (B095–B099), o `ApiPlan` passa a carregar também:
 
-- **Já em B095:** a **árvore de níveis** (`ApiPlanLevel`: nome, profundidade, nível pai, ordem, chave primária própria e campos candidatos da estrutura por nível — `Fields`; seleção por contrato = B099+), conforme a seção 21 de `08-MODELO_DADOS_E_METADATA.md`, exposta de forma aditiva em `ApiPlan.Levels`.
-- **Já em B096:** o **plano de SDT** consome `Levels` quando há filhos e emite SDTs derivados por contrato (`sdt<NomeBase>_API_<Papel>_<Subnível>`), com desambiguação e encurtamento de objeto a 128. O Wizard flat ainda não consome a árvore nem o naming hierárquico.
-- **Fases seguintes (B099+):** quais subníveis têm **contador de `List`** ativo passa a ser editável no Wizard. Desde B098, com subníveis o plano emite `sdt<NomeBase>_API_ListResponse_Item` e tipa `ListResponse.Items`; contadores default ligados via `IncludeListCount`.
+- **Já em B095:** a **árvore de níveis** (`ApiPlanLevel`: nome, profundidade, nível pai, ordem, chave primária própria e campos candidatos da estrutura por nível — `Fields`; seleção por contrato = B099a), conforme a seção 21 de `08-MODELO_DADOS_E_METADATA.md`, exposta de forma aditiva em `ApiPlan.Levels`.
+- **Já em B096:** o **plano de SDT** consome `Levels` quando há filhos e emite SDTs derivados por contrato (`sdt<NomeBase>_API_<Papel>_<Subnível>`), com desambiguação e encurtamento de objeto a 128.
+- **Já em B098:** com subníveis o plano emite `sdt<NomeBase>_API_ListResponse_Item` e tipa `ListResponse.Items`; contadores default ligados via `IncludeListCount`.
+- **Já em B099a:** o Wizard consome o leitor, poda `Levels` pela seleção (seletor compartilhado, dependência pai/filho, contador desligável, aviso de profundidade). Transação de nível único permanece no caminho flat.
+- **Fase 6 (`B099b`):** metadata `schemaVersion` V2, sincronização e integridade. Apply hierárquico já é permitido; Remover/Sync continuam V1 até essa fase.
 
 Os campos existentes continuam com o mesmo significado, e transação de nível único produz exatamente o mesmo plano de hoje. Detalhes em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 

@@ -208,14 +208,14 @@ Faz parte do MVP:
 - escolha de operador/período/intervalo conforme `26-CONTRATO_FILTROS_PAGINACAO_ORDENACAO.md`
 - seleção de ordenação estática
 
-**Nota de revisão — 2026-08-23 — Suporte a Subníveis (Fase 5 / B099a):** a lista acima permanece exata para transação de nível único. Havendo subníveis, esta tela recebe quatro acréscimos:
+**Nota de revisão — 2026-08-23 — Suporte a Subníveis (Fase 5 / B099a):** a lista acima permanece exata para transação de nível único. Havendo subníveis, esta tela recebe quatro acréscimos, entregues em 2026-08-26:
 
-- **agrupamento por nível** — os atributos deixam de ser uma lista única e passam a ser apresentados por nível (seletor, abas ou seções colapsáveis), com seleção granular do que entra em `Create`, `Update` e `Response` em cada um;
-- **dependência entre níveis** — marcar um subnível aninhado exige o subnível pai marcado; a UI trata isso como dependência, não como escolha livre;
-- **controle de contador por subnível** — cada subnível direto selecionado exibe o contador de `List` ligado por padrão, podendo ser desmarcado, conforme a seção 7 de `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`;
-- **aviso de profundidade** — transação com mais de 3 níveis exibe aviso de profundidade não validada, sem bloquear a geração, cabendo ao usuário desmarcar os níveis mais profundos.
+- **agrupamento por nível** — seletor compartilhado (ComboBox com caminho `Shift / Worker`) nas abas Requests, Response e Obrigatórios; o cabeçalho permanece nas listas flat e cada subnível tem listas próprias;
+- **dependência entre níveis** — marcar um neto inclui os ancestrais; desmarcar o pai desmarca os descendentes; subnível vazio não é gerado;
+- **controle de contador por subnível** — cada filho direto (`Depth == 2`) exibe o contador de `List` ligado por padrão, podendo ser desmarcado;
+- **aviso de profundidade** — transação com mais de 3 níveis exibe aviso de profundidade não validada, sem bloquear a geração.
 
-Subnível sem nenhum atributo marcado não é gerado. Detalhes na `Emenda técnica — 2026-08-23` do registro de decisões do MVP.
+Required de linha aparece na UI e não alimenta o writer BC nesta fase. Detalhes na `Emenda técnica — 2026-08-23` do registro de decisões do MVP e em `Docs/Implementation/2026-08-26-B099a-WIZARD-HIERARQUICO.md`.
 
 ## Ações
 

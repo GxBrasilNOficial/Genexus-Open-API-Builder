@@ -485,7 +485,7 @@ Sem banco próprio e sem complexidade desnecessária.
 
 O modelo das seções anteriores continua exato para transação de nível único e para o Wizard flat atual: `TransactionInfo` e `AttributeInfo` são entidades **conceituais** deste documento (não classes em `Src/`); nesse registro, `TransactionInfo` segue plano (`Attributes` como lista única) e `AttributeInfo` ainda não carrega referência de nível. Já `ApiPlanLevel` / `ApiPlanLevelField` abaixo são tipos verificáveis no código.
 
-**Entrega B095 — `ApiPlanLevel` / `ApiPlanLevelField`**, em `Src/Domain/ApiPlan.cs`, consumidos pelo `TransactionStructureReader` e expostos de forma aditiva em `ApiPlan.Levels`. A partir de B096, o plano de SDT consome `Levels` quando há filhos; o Wizard flat continua sem o leitor hierárquico.
+**Entrega B095 — `ApiPlanLevel` / `ApiPlanLevelField`**, em `Src/Domain/ApiPlan.cs`, consumidos pelo `TransactionStructureReader` e expostos de forma aditiva em `ApiPlan.Levels`. A partir de B096, o plano de SDT consome `Levels` quando há filhos. Desde B099a, o Wizard também consome o leitor e poda `Levels`; transação de nível único permanece no caminho flat.
 
 | Campo (`ApiPlanLevel`) | Tipo |
 |---|---|
