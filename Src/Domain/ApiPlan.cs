@@ -811,7 +811,10 @@ internal sealed class ApiPlanLevel
         IReadOnlyList<ApiPlanLevelField> primaryKey,
         IReadOnlyList<ApiPlanLevelField> fields,
         IReadOnlyList<ApiPlanLevel> childLevels,
-        bool includeListCount = true)
+        bool includeListCount = true,
+        IReadOnlyCollection<string>? selectedCreateFieldNames = null,
+        IReadOnlyCollection<string>? selectedUpdateFieldNames = null,
+        IReadOnlyCollection<string>? selectedResponseFieldNames = null)
     {
         if (string.IsNullOrWhiteSpace(levelName))
         {
@@ -837,6 +840,11 @@ internal sealed class ApiPlanLevel
         ChildLevels = childLevels ?? throw new ArgumentNullException(nameof(childLevels));
         // B098: contador de List ligado por padrao; o Wizard (B099a) desliga por subnivel direto.
         IncludeListCount = includeListCount;
+        // null = sem filtro do Wizard (fixtures / leitor): todos os Fields passam pela elegibilidade do papel.
+        // nao-null = selecao explicita B099a por papel (pode ser vazia).
+        SelectedCreateFieldNames = FreezeOptionalNames(selectedCreateFieldNames);
+        SelectedUpdateFieldNames = FreezeOptionalNames(selectedUpdateFieldNames);
+        SelectedResponseFieldNames = FreezeOptionalNames(selectedResponseFieldNames);
     }
 
     public string LevelName { get; }
@@ -860,6 +868,18 @@ internal sealed class ApiPlanLevel
     /// </summary>
     public bool IncludeListCount { get; }
 
+    /// <summary>
+    /// Nomes marcados no Wizard para CreateRequest neste nivel; <c>null</c> quando a arvore
+    /// nao veio da poda B099a (fixtures / leitor puro).
+    /// </summary>
+    public IReadOnlyCollection<string>? SelectedCreateFieldNames { get; }
+
+    /// <summary>Equivalente a <see cref="SelectedCreateFieldNames"/> para UpdateRequest.</summary>
+    public IReadOnlyCollection<string>? SelectedUpdateFieldNames { get; }
+
+    /// <summary>Equivalente a <see cref="SelectedCreateFieldNames"/> para Response.</summary>
+    public IReadOnlyCollection<string>? SelectedResponseFieldNames { get; }
+
     public ApiPlanLevel WithIncludeListCount(bool includeListCount)
     {
         if (includeListCount == IncludeListCount)
@@ -875,7 +895,20 @@ internal sealed class ApiPlanLevel
             PrimaryKey,
             Fields,
             ChildLevels,
-            includeListCount);
+            includeListCount,
+            SelectedCreateFieldNames,
+            SelectedUpdateFieldNames,
+            SelectedResponseFieldNames);
+    }
+
+    private static IReadOnlyCollection<string>? FreezeOptionalNames(IReadOnlyCollection<string>? names)
+    {
+        if (names is null)
+        {
+            return null;
+        }
+
+        return new HashSet<string>(names, StringComparer.OrdinalIgnoreCase).ToArray();
     }
 }
 

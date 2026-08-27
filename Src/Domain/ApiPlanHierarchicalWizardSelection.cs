@@ -302,24 +302,31 @@ internal sealed class ApiPlanHierarchicalWizardSelection
         }
 
         IReadOnlyList<ApiPlanLevelField> fields;
+        IReadOnlyCollection<string>? selectedCreate = null;
+        IReadOnlyCollection<string>? selectedUpdate = null;
+        IReadOnlyCollection<string>? selectedResponse = null;
         if (node.IsRoot)
         {
             fields = level.Fields;
         }
         else
         {
+            selectedCreate = SnapshotSelectedNames(pathKey, "CreateRequest", level);
+            selectedUpdate = SnapshotSelectedNames(pathKey, "UpdateRequest", level);
+            selectedResponse = SnapshotSelectedNames(pathKey, "Response", level);
+
             var selectedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var name in _createFields[pathKey])
+            foreach (var name in selectedCreate)
             {
                 selectedNames.Add(name);
             }
 
-            foreach (var name in _updateFields[pathKey])
+            foreach (var name in selectedUpdate)
             {
                 selectedNames.Add(name);
             }
 
-            foreach (var name in _responseFields[pathKey])
+            foreach (var name in selectedResponse)
             {
                 selectedNames.Add(name);
             }
@@ -328,6 +335,12 @@ internal sealed class ApiPlanHierarchicalWizardSelection
             if (fields.Count == 0 && children.Count > 0)
             {
                 fields = level.PrimaryKey;
+                var primaryKeyNames = level.PrimaryKey
+                    .Select(field => field.Name)
+                    .ToArray();
+                selectedCreate = primaryKeyNames;
+                selectedUpdate = primaryKeyNames;
+                selectedResponse = primaryKeyNames;
             }
 
             if (fields.Count == 0 && children.Count == 0)
@@ -347,7 +360,25 @@ internal sealed class ApiPlanHierarchicalWizardSelection
             level.PrimaryKey,
             fields,
             children,
-            includeListCount);
+            includeListCount,
+            selectedCreate,
+            selectedUpdate,
+            selectedResponse);
+    }
+
+    private IReadOnlyCollection<string> SnapshotSelectedNames(string pathKey, string role, ApiPlanLevel level)
+    {
+        var selected = GetFieldSet(pathKey, role);
+        var names = new List<string>();
+        foreach (var field in level.Fields)
+        {
+            if (selected.Contains(field.Name))
+            {
+                names.Add(field.Name);
+            }
+        }
+
+        return names;
     }
 
     private static int CountChildren(ApiPlanLevel level)

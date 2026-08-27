@@ -55,6 +55,7 @@ internal static class ApiPlanHierarchicalContractMapBuilder
         var reservedMembers = new HashSet<string>(
             headerFields.Select(field => field.Name),
             StringComparer.OrdinalIgnoreCase);
+        var reservedVariableTokens = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var children = BuildChildren(
             apiPlan,
             root.ChildLevels,
@@ -63,7 +64,8 @@ internal static class ApiPlanHierarchicalContractMapBuilder
             role,
             includeReplace,
             reservedMembers,
-            reservedSdtNames);
+            reservedSdtNames,
+            reservedVariableTokens);
         return new ApiPlanHierarchicalRoleTree(role, children);
     }
 
@@ -75,7 +77,8 @@ internal static class ApiPlanHierarchicalContractMapBuilder
         string role,
         bool includeReplace,
         ISet<string> parentReservedMembers,
-        ISet<string> reservedSdtNames)
+        ISet<string> reservedSdtNames,
+        ISet<string> reservedVariableTokens)
     {
         if (children.Count == 0)
         {
@@ -92,9 +95,7 @@ internal static class ApiPlanHierarchicalContractMapBuilder
             var childBcNames = new List<string>(ancestorBcNames.Count + 1);
             childBcNames.AddRange(ancestorBcNames);
             childBcNames.Add(child.LevelName);
-            var eligible = child.Fields
-                .Where(field => ApiPlanSdtGenerationPlanBuilder.IsLevelFieldEligible(field, role))
-                .ToArray();
+            var eligible = ApiPlanSdtGenerationPlanBuilder.SelectLevelFieldsForRole(child, role).ToArray();
             var childReservedMembers = new HashSet<string>(
                 eligible.Select(field => field.Name),
                 StringComparer.OrdinalIgnoreCase);
@@ -107,7 +108,8 @@ internal static class ApiPlanHierarchicalContractMapBuilder
                 role,
                 includeReplace,
                 childReservedMembers,
-                reservedSdtNames);
+                reservedSdtNames,
+                reservedVariableTokens);
             var itemSdtName = ApiPlanSdtHierarchicalNaming.AllocateSdtName(
                 apiPlan.TransactionName,
                 role,
@@ -123,7 +125,11 @@ internal static class ApiPlanHierarchicalContractMapBuilder
                     child.LevelOrder,
                     parentReservedMembers)
                 : string.Empty;
-            var variableToken = BuildVariableToken(ancestorQualifiers, sanitized, child.LevelOrder);
+            var variableToken = AllocateVariableToken(
+                ancestorQualifiers,
+                sanitized,
+                child.LevelOrder,
+                reservedVariableTokens);
             nodes.Add(new ApiPlanHierarchicalNode(
                 child,
                 child.LevelName,
@@ -148,6 +154,33 @@ internal static class ApiPlanHierarchicalContractMapBuilder
         parts.AddRange(ancestorBcNames);
         parts.Add(levelName);
         return string.Join(".", parts);
+    }
+
+    private static string AllocateVariableToken(
+        IReadOnlyList<string> ancestorQualifiers,
+        string sanitizedLevel,
+        int levelOrder,
+        ISet<string> reservedTokens)
+    {
+        var candidate = BuildVariableToken(ancestorQualifiers, sanitizedLevel, levelOrder);
+        if (reservedTokens.Add(candidate))
+        {
+            return candidate;
+        }
+
+        for (var suffix = 2; suffix < 1000; suffix++)
+        {
+            var disambiguated = candidate + "_V" + suffix.ToString(CultureInfo.InvariantCulture);
+            if (reservedTokens.Add(disambiguated))
+            {
+                return disambiguated;
+            }
+        }
+
+        throw new InvalidOperationException(
+            "Mapa hierarquico bloqueado: esgotou desambiguacao de VariableToken para '" +
+            candidate +
+            "'. Nenhuma alteracao foi feita.");
     }
 
     private static string BuildVariableToken(

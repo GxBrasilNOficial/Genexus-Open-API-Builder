@@ -494,11 +494,12 @@ O modelo das seções anteriores continua exato para transação de nível únic
 | ParentLevelName | texto (vazio no cabeçalho) |
 | LevelOrder | número |
 | PrimaryKey | lista `ApiPlanLevelField` |
-| Fields | lista `ApiPlanLevelField` — candidatos da estrutura do nível; **não** seleção Create/Update/Response do Wizard |
+| Fields | lista `ApiPlanLevelField` — candidatos estruturais do nível após a poda (união dos nomes selecionados nos papéis; leitor puro traz todos os da estrutura) |
+| SelectedCreateFieldNames / SelectedUpdateFieldNames / SelectedResponseFieldNames | coleção opcional de nomes; `null` fora da poda B099a; não-null = seleção explícita por papel |
 | ChildLevels | lista `ApiPlanLevel` |
 
-`Depth = 1` identifica o cabeçalho; 2, o primeiro subnível; e assim por diante. A leitura da estrutura é recursiva, sem limite artificial de profundidade; 3 é o alcance da evidência na KB de produção, não uma trava.
+`Depth = 1` identifica o cabeçalho; 2, o primeiro subnível; e assim por diante. A leitura da estrutura é recursiva, sem limite artificial de profundidade; **4** é o alcance da evidência validada na sprint (smoke U15), não uma trava — profundidade maior gera aviso no Wizard sem bloquear.
 
-**Ainda pendente (B099+).** A seleção por contrato (`IsSelectedForCreate` / `Update` / `Response`) e a desambiguação de atributos homônimos entre níveis continuam necessários quando o Wizard passar a operar a árvore. O veículo deixa de ser “`AttributeInfo` ganha nível em `TransactionInfo`” e passa a ser o plano hierárquico (`ApiPlan.Levels` / campos por nível) — o problema da ambiguidade permanece; o esboço de 2026-08-23 sobre `TransactionInfo`/`AttributeInfo` não é mais o contrato vigente.
+**Seleção por contrato (B099a).** O Wizard mantém listas Create/Update/Response por subnível e a poda grava `SelectedCreateFieldNames` / `SelectedUpdateFieldNames` / `SelectedResponseFieldNames` em `ApiPlanLevel`. O plano de SDT e o mapa BC consomem essa seleção por papel (além da elegibilidade técnica). `Fields` permanece a união estrutural dos nomes selecionados (ou a PK quando o nível só sobrevive por filhos). Required de linha continua só na UI até frente posterior. Desambiguação de atributos homônimos entre níveis permanece dívida consciente quando nomes colidem além do reserved de membros SDT.
 
 Detalhes e fases em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, evidência B095 em `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`, evidência B096 em `Docs/Implementation/2026-08-26-B096-SDTS-HIERARQUICOS.md` e na `Emenda técnica — 2026-08-23` do registro de decisões do MVP.

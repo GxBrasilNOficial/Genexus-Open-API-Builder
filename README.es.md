@@ -62,7 +62,8 @@ El sufijo `-gx18u13` identifica solamente el asset de descarga. No cambie el nom
 
 ### Limitaciones conocidas
 
-- La generación cubre solo el primer nivel de la Transaction; los subniveles (líneas) se ignoran sin aviso
+- Transactions con subniveles: el Wizard genera encabezado + líneas seleccionadas; metadata, Sync y Eliminar siguen en V1 — no use Sync/Eliminar en una API jerárquica hasta la frente de metadata V2
+- Contadores de List solo en hijos directos; profundidad mayor que 4 avisa sin bloquear
 - Sin servicio `DELETE` en el MVP
 - El YAML OpenAPI nativo de GeneXus tiene restricciones (documentadas); la extensión no reemplaza los templates de la instalación
 - La clasificación de campos sensibles/auditoría todavía utiliza la política predeterminada

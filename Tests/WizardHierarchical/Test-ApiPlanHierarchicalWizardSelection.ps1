@@ -152,6 +152,12 @@ function Get-InstanceMethod {
     return $method
 }
 
+function Get-StaticMethod {
+    param($Type, [string]$Name)
+    $method = $Type.GetMethod($Name, [System.Reflection.BindingFlags]'Static, NonPublic, Public')
+    return $method
+}
+
 if (-not (Test-Path -LiteralPath $DllPath -PathType Leaf)) {
     Write-Output "ENVIRONMENT_BLOCKED: DLL Release ausente em $DllPath"
     exit 2
@@ -168,6 +174,8 @@ try {
     $assembly = [System.Reflection.Assembly]::LoadFrom($DllPath)
     $readerType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.TransactionStructureReader', $true, $false)
     $selectionType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Domain.ApiPlanHierarchicalWizardSelection', $true, $false)
+    $sdtPlanType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Domain.ApiPlanSdtGenerationPlanBuilder', $true, $false)
+    Assert-True ($null -ne $sdtPlanType) 'ApiPlanSdtGenerationPlanBuilder não encontrado.'
 
     $createFixtures = $readerType.GetMethod('CreateFixtures', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     $createFourDeep = $readerType.GetMethod('CreateFourDeepFixture', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
@@ -222,6 +230,17 @@ try {
 
     [void]$setFieldMethod.Invoke($oneSelection, @($linesKey, 'Response', 'LineQty', $true))
     Assert-True ([bool]$hasSelectedMethod.Invoke($oneSelection, @())) 'Um campo marcado reintroduz o subnível.'
+    $prunedRole = $pruneMethod.Invoke($oneSelection, @())
+    $prunedRoleChild = @(Get-Prop $prunedRole 'ChildLevels')[0]
+    $selectForRole = Get-StaticMethod $sdtPlanType 'SelectLevelFieldsForRole'
+    Assert-True ($null -ne $selectForRole) 'SelectLevelFieldsForRole deve existir no plano de SDT.'
+    $createEligible = @($selectForRole.Invoke($null, @($prunedRoleChild, 'CreateRequest')))
+    $updateEligible = @($selectForRole.Invoke($null, @($prunedRoleChild, 'UpdateRequest')))
+    $responseEligible = @($selectForRole.Invoke($null, @($prunedRoleChild, 'Response')))
+    Assert-True ($createEligible.Count -eq 0) 'CreateRequest não deve herdar campo marcado só em Response.'
+    Assert-True ($updateEligible.Count -eq 0) 'UpdateRequest não deve herdar campo marcado só em Response.'
+    Assert-True ($responseEligible.Count -eq 1) 'Response deve preservar LineQty elegível.'
+    Assert-True ([string](Get-Prop $responseEligible[0] 'Name') -eq 'LineQty') 'O campo Response deve ser LineQty.'
 
     $parallelRoot = Get-Prop (Get-Prop $byName['ParallelSublevels'] 'Snapshot') 'RootLevel'
     $parallelSelection = $createDefault.Invoke($null, @($parallelRoot))

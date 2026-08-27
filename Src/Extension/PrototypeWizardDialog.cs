@@ -1109,9 +1109,29 @@ internal sealed class PrototypeWizardDialog : Form
 
             SelectLevel(_hierarchicalSelection.RootPathKey);
         }
-        catch
+        catch (Exception ex)
         {
             _hierarchicalSelection = null;
+            foreach (var bar in _levelBars)
+            {
+                bar.Visible = false;
+            }
+
+            var detail = string.IsNullOrWhiteSpace(ex.Message) ? ex.GetType().Name : ex.Message;
+            var message =
+                "[Genexus Open API Builder][Wizard] Falha ao ler a estrutura hierárquica da Transaction '" +
+                _transaction.Name +
+                "'. O Wizard segue no caminho de nível único (sem subníveis). Detalhe: " +
+                detail;
+            _writeBusinessComponentOutput(message);
+            MessageBox.Show(
+                this,
+                _texts.Translate(
+                    "Não foi possível ler os subníveis desta Transaction. O Wizard continua só com o cabeçalho. Detalhe: ") +
+                detail,
+                Text,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
         }
     }
 

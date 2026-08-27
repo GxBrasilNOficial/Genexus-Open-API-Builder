@@ -72,12 +72,26 @@ internal static class ApiPlanBusinessComponentHierarchicalSource
 
     private static IEnumerable<VariableSpec> DeduplicateVariables(IReadOnlyList<VariableSpec> variables)
     {
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var seen = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var variable in variables)
         {
-            if (seen.Add(variable.Name))
+            if (!seen.TryGetValue(variable.Name, out var existingType))
             {
+                seen[variable.Name] = variable.DataType;
                 yield return variable;
+                continue;
+            }
+
+            if (!string.Equals(existingType, variable.DataType, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Source BC hierarquico bloqueado: variavel '" +
+                    variable.Name +
+                    "' colide com tipos distintos ('" +
+                    existingType +
+                    "' vs '" +
+                    variable.DataType +
+                    "'). Nenhuma alteracao foi feita.");
             }
         }
     }

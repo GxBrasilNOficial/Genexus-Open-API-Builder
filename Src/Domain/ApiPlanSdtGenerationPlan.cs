@@ -184,7 +184,7 @@ internal static class ApiPlanSdtGenerationPlanBuilder
         string scope,
         ISet<string> reservedSdtNames)
     {
-        var eligible = SelectLevelFields(level.Fields, role).ToArray();
+        var eligible = SelectLevelFieldsForRole(level, role).ToArray();
         var reservedMembers = new HashSet<string>(
             eligible.Select(field => field.Name),
             StringComparer.OrdinalIgnoreCase);
@@ -293,6 +293,46 @@ internal static class ApiPlanSdtGenerationPlanBuilder
                 link.SdtName,
                 source));
         }
+    }
+
+    internal static IEnumerable<ApiPlanLevelField> SelectLevelFieldsForRole(ApiPlanLevel level, string role)
+    {
+        if (level is null)
+        {
+            throw new ArgumentNullException(nameof(level));
+        }
+
+        var selectedNames = ResolveWizardSelectedNames(level, role);
+        foreach (var field in level.Fields)
+        {
+            if (selectedNames is not null && !selectedNames.Contains(field.Name))
+            {
+                continue;
+            }
+
+            if (IsLevelFieldEligible(field, role))
+            {
+                yield return field;
+            }
+        }
+    }
+
+    private static ISet<string>? ResolveWizardSelectedNames(ApiPlanLevel level, string role)
+    {
+        IReadOnlyCollection<string>? names = role switch
+        {
+            "CreateRequest" => level.SelectedCreateFieldNames,
+            "UpdateRequest" => level.SelectedUpdateFieldNames,
+            "Response" => level.SelectedResponseFieldNames,
+            _ => null,
+        };
+
+        if (names is null)
+        {
+            return null;
+        }
+
+        return new HashSet<string>(names, StringComparer.OrdinalIgnoreCase);
     }
 
     private static IEnumerable<ApiPlanLevelField> SelectLevelFields(

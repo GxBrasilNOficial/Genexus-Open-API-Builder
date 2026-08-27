@@ -423,6 +423,9 @@ internal static class ExtensionOutputLocalization
         new("Falha ao habilitar Business Component para", "Fallo al habilitar Business Component para", "Failed to enable Business Component for"),
         new("Business Component habilitado por confirmacao explicita para", "Business Component habilitado por confirmación explícita para", "Business Component enabled by explicit confirmation for"),
         new("A alteracao foi gravada na KB e nao sera revertida automaticamente.", "El cambio se grabó en la KB y no se revertirá automáticamente.", "The change was saved to the KB and will not be reverted automatically."),
+        new("Falha ao ler a estrutura hierárquica da Transaction", "Fallo al leer la estructura jerárquica de la Transaction", "Failed to read the hierarchical structure of Transaction"),
+        new("O Wizard segue no caminho de nível único (sem subníveis).", "El Wizard continúa en el camino de nivel único (sin subniveles).", "The Wizard continues on the single-level path (no sublevels)."),
+        new("Detalhe:", "Detalle:", "Detail:"),
         new("Nenhum", "Ningún", "No"),
     };
 
