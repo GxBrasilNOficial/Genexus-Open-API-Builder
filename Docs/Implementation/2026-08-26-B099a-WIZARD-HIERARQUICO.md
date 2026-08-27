@@ -32,6 +32,7 @@ Escopo: interface do Wizard com agrupamento por nível, dependência pai/filho, 
 ## Validação desta frente
 
 - Teste offline: dependência pai/filho, nível vazio omitido, `IncludeListCount=false`, aviso em profundidade 5, transação sem filhos selecionados; combinações Create-only / Update-only / Create+Update / papéis com campos distintos; colisão de `VariableToken` no alocador e fixture end-to-end `VariableTokenCollision` (`L1_SameLeaf` / `L1_SameLeaf_V2` no mapa e no Source BC).
+- 2026-08-27: removido o helper morto `SelectLevelFields` em `ApiPlanSdtGenerationPlanBuilder`. Não tinha chamadores; o filtro vigente permanece `SelectLevelFieldsForRole`. Sem mudança de contrato.
 - Build Release canônico: 0 avisos, 0 erros.
 - Build Release satélite U13: 0 erros (aviso MSB3277 ambiental conhecido).
 - Linha de base Fase 0 e ouro B096 intactos.

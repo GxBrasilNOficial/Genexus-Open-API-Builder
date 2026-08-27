@@ -335,19 +335,6 @@ internal static class ApiPlanSdtGenerationPlanBuilder
         return new HashSet<string>(names, StringComparer.OrdinalIgnoreCase);
     }
 
-    private static IEnumerable<ApiPlanLevelField> SelectLevelFields(
-        IReadOnlyList<ApiPlanLevelField> fields,
-        string role)
-    {
-        foreach (var field in fields)
-        {
-            if (IsLevelFieldEligible(field, role))
-            {
-                yield return field;
-            }
-        }
-    }
-
     internal static bool IsLevelFieldEligible(ApiPlanLevelField field, string role)
     {
         if (string.Equals(role, "Response", StringComparison.Ordinal))
