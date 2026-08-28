@@ -397,14 +397,14 @@ Aprender com o uso externo da Alpha e expandir o gerador para cobrir transaçõe
 - `B097`: Geração de código Business Component nas Procedures para subníveis, com substituição completa sob marcador `<Subnível>Replace` (**concluído em 2026-08-26**; correção do tipo BC aninhado no mesmo dia; evidência `Docs/Implementation/2026-08-26-B097-BC-HIERARQUICO.md`)
 - `B098`: Procedimento de `List` com contadores numéricos de subníveis diretos e `ListResponse_Item` condicionado (**concluído em 2026-08-26**; evidência `Docs/Implementation/2026-08-26-B098-LIST-CONTADORES.md`)
 - `B099a`: Interface do Wizard com agrupamento por nível, dependência entre níveis, controle de contador e aviso de profundidade (**concluído em 2026-08-26**; smoke U15 de 3 e 4 níveis na `Teste` com `Build All` nos dois environments; evidência `Docs/Implementation/2026-08-26-B099a-WIZARD-HIERARQUICO.md`)
-- `B099v` (Fase 5-A): validação em runtime do que as Fases 2 a 5 emitiram, antes que a Fase 6 grave metadata V2 sobre ele — correção da agregação `count()` com PK composta herdada, smoke HTTP multinível nos dois environments e o critério 9 (contrato OpenAPI publicado), cujo prazo original era o fim da Fase 4
+- `B099v` (Fase 5-A): validação em runtime do que as Fases 2 a 5 emitiram, antes que a Fase 6 grave metadata V2 sobre ele — correção da agregação `count()` com PK composta herdada, smoke HTTP multinível nos dois environments e o critério 9 (contrato OpenAPI publicado) (**concluído em 2026-08-28**; evidência `Docs/Implementation/2026-08-28-B099v-VALIDACAO-RUNTIME-MULTINIVEL.md`)
 - `B099b`: Sincronização com metadata hierárquica (`schemaVersion` V2) e integridade
 - Fase 7: ciclo de vida sob hierarquia — releitura de contrato existente, preferências do Wizard e inventário dinâmico de remoção
 - `B100`: Serviço `Delete` opt-in, com as quatro camadas anti acidente
 - `B105`: escolha do chamador sobre o detalhe do corpo de erro, podendo apenas restringir o default da API — nesta sprint se houver folga, senão Sprint 10
 - triagem do feedback da Alpha e documentação pública alinhada
 
-**Ordem de execução:** `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; conferência de fim permanece) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` → Fase 6/`B099b` → Fase 7 → `B100`. Detalhamento em [Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md](../Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md).
+**Ordem de execução:** `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; conferência de fim permanece) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` → Fase 7 → `B100`. Detalhamento em [Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md](../Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md).
 
 ## Gate
 

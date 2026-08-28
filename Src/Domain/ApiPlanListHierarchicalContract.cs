@@ -110,13 +110,20 @@ internal static class ApiPlanListHierarchicalContractBuilder
 
     /// <summary>
     /// Atributo passado a <c>count()</c> no Source List.
-    /// Residual B098: com PK composta herdada, <c>PrimaryKey[0]</c> pode ser a parte do pai
-    /// (ex. HeaderId) e não agregar linhas — ver dívida no checkpoint e em
-    /// <c>Docs/Implementation/2026-08-26-B098-LIST-CONTADORES.md</c>. Primeiro item da Fase 5-A
-    /// (<c>B099v</c>), antes do smoke HTTP multinível: preferir a primeira parte de PK própria do nível.
+    /// Preferência: primeira parte de PK própria do nível (<c>!IsForeignKey</c>).
+    /// Com PK composta herdada, <c>PrimaryKey[0]</c> costuma ser a FK do pai (ex. HeaderId)
+    /// e não agrega linhas dentro do <c>For each</c> do cabeçalho — a parte própria
+    /// (ex. LineId) é a correta. Fallback: <c>PrimaryKey[0]</c>, depois <c>Fields[0]</c>.
+    /// Correção B099v (Fase 5-A), dívida do B098.
     /// </summary>
     internal static string ResolveAggregateAttributeName(ApiPlanLevel child)
     {
+        var ownPrimaryKey = child.PrimaryKey.FirstOrDefault(field => !field.IsForeignKey);
+        if (ownPrimaryKey != null)
+        {
+            return ownPrimaryKey.Name;
+        }
+
         if (child.PrimaryKey.Count > 0)
         {
             return child.PrimaryKey[0].Name;

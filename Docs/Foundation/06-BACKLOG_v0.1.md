@@ -254,7 +254,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B097 | Geração de código Business Component nas Procedures para subníveis, com substituição completa sob marcador `<Subnível>Replace` | Alta — Sprint 9 / Fase 3; concluído 2026-08-26 |
 | B098 | Procedimento de List com contadores numéricos de subníveis diretos | Alta — Sprint 9 / Fase 4; concluído (2026-08-26; offline) |
 | B099a | Interface do Wizard (UX) hierárquica: agrupamento por nível, dependência entre níveis, controle de contador e aviso de profundidade | Alta — Sprint 9 / Fase 5; concluído (2026-08-26; smoke U15 de 3 e 4 níveis com `Build All` nos dois environments) |
-| B099v | Validação em runtime do que as Fases 2 a 5 emitiram: correção da agregação `count()` com PK composta herdada, smoke HTTP multinível nos dois environments e critério 9 (contrato OpenAPI publicado) | Alta — Sprint 9 / Fase 5-A; planejado |
+| B099v | Validação em runtime do que as Fases 2 a 5 emitiram: correção da agregação `count()` com PK composta herdada, smoke HTTP multinível nos dois environments e critério 9 (contrato OpenAPI publicado) | Alta — Sprint 9 / Fase 5-A; concluído (2026-08-28; smoke HTTP + OpenAPI) |
 | B099b | Sincronização com metadata hierárquica (`schemaVersion` V2) e integridade | Alta — Sprint 9 / Fase 6; planejado |
 | B100 | Serviço `Delete` opt-in, com confirmação consciente, `SecurityLevel` próprio e documentação pública | Alta — Sprint 9 / após a Fase 7, com corte `0.1.0-alpha.6` próprio; planejado |
 | B101 | Experimento: membro nullable no SDT de request para distinguir membro ausente de membro vazio | Média — candidato à Sprint 10; planejado |

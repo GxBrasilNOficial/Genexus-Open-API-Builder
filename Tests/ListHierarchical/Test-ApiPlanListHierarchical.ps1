@@ -190,6 +190,11 @@ try {
             Assert-Contains $listSource '&Item.LinesCount' 'OneSublevel deve preencher LinesCount.'
         }
 
+        if ($fixtureName -eq 'InheritedPrimaryKey') {
+            Assert-Contains $listSource 'count(LineId)' 'InheritedPrimaryKey deve agregar a PK propria (LineId), nao a FK do pai.'
+            Assert-True ($listSource.IndexOf('count(HeaderId)', [StringComparison]::Ordinal) -lt 0) 'InheritedPrimaryKey nao deve emitir count(HeaderId).'
+        }
+
         if ($fixtureName -eq 'ThreeDeep') {
             Assert-Contains $listSource 'ShiftCount' 'ThreeDeep deve contar apenas o subnivel direto.'
             Assert-True ($listSource.IndexOf('WorkerCount', [StringComparison]::Ordinal) -lt 0) 'ThreeDeep nao deve emitir contador de neto.'
