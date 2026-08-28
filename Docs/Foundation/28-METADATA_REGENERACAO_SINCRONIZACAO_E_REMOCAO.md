@@ -161,6 +161,8 @@ Ela deve:
 - preservar Folder criado pela extensão quando contiver objetos alheios
 - preservar os SDTs compartilhados em `GxOpenAPI`
 
+**Build após remoção (evidência B099b, 2026-08-28).** Remover apaga objetos do **Design**; caches de especificação e artefatos gerados por **environment** (`GXSPC*`, `GeneXus.Programs.Common.sdts.targets`, `type_Sdt*.cs`) podem continuar referenciando SDTs removidos. Work With Objects limpo no Design **não** garante Build All incremental limpo. Após Remover, tratar **Rebuild All por environment** como passo operacional recomendado — em KBs grandes o custo de horas evita falha tardia na compilação por SDT órfão. Evidência: `Docs/Implementation/2026-08-28-B099b-METADATA-HIERARQUICA-V2.md` (seção build pós-Remover).
+
 ---
 
 # 8. Colisões

@@ -113,6 +113,20 @@ Ordem de `objects.sdts.own`: ListResponse → CreateRequest → UpdateRequest �
 
 Conclusão: leitura V1 + reencontro + apply grava V2 com inventário `own` **sem** inventar hierarquia; hash B067 preservado em API plana.
 
+## Validação IDE — Build pós-Remover (2026-08-28)
+
+Após o smoke de Remover na `Teste`, um **Build All** incremental da `apiFiscalPublica` no environment `NETPostgreSQL155` falhou na compilação de `type_SdtsdtTeste_API_ListResponse.cs` (`GxSimpleCollection<>`, `AppliedFilters` sem tipo). **Work With Objects** no Design não listava mais `apiTeste`, `procTeste_API_*` nem `sdtTeste_API_*` — o Design estava limpo.
+
+Diagnóstico: resíduo de **cache de especificação/geração do environment**, não objeto vivo no Design. O incremental ainda tinha specs em `GXSPC155\GEN41\` (`apiTeste.sp1`, `procTeste_API_*.sp1`), entradas em `GeneXus.Programs.Common.sdts.targets` e `.cs` gerados da `Teste`. Consulta ao SQL (`ModelEntityVersion`, `ModelId = 1` Design) confirmou ausência dos objetos; registros órfãos permaneciam em snapshots/versions antigas e no cache local do generator.
+
+| Ação | Environment | Resultado |
+|---|---|---|
+| Build All incremental | `NETPostgreSQL155` | **Falhou** (SDT Teste corrompido no cache) |
+| **Rebuild All** | `NETPostgreSQL155` | **OK** — limpou cache e `sdts.targets` |
+| Build All | `NETFrameworkSQLServer004` | **OK** (sem Rebuild All necessário nesta KB) |
+
+**Lição operacional:** após `Remover API gerada`, confirmar limpeza no Design (Work With Objects) **e** executar **Rebuild All em cada environment** afetado antes de confiar em Build All incremental — especialmente em KBs de produção, onde Build All sozinho pode regenerar lixo por horas até falhar do mesmo modo. Build All incremental no segundo environment pode passar se o cache local já estiver alinhado; Rebuild All permanece o passo seguro quando houve Remover.
+
 ## Fechamento B099b
 
 Fase 6 encerrada em 2026-08-28: código, testes offline, smoke IDE hierárquico (`Teste`: Wizard, Sync, Remover) e smoke plano V1→V2 (`NotaFiscal`). Residual consciente para Fase 7: detector de conflito SDT flat vs hierárquico no Sync.
