@@ -1,10 +1,10 @@
 &RestStatusCode = 201
 &Header = new()
-For &Create_Level1 in &CreateRequest.Level1
-    &Bc_Level1 = new()
-    &Bc_Level1.LineId = &Create_Level1.LineId
-    &Bc_Level1.LineText = &Create_Level1.LineText
-    &Header.<unnamed>.Add(&Bc_Level1)
+For &Create_Line in &CreateRequest.Line
+    &Bc_Line = new()
+    &Bc_Line.LineId = &Create_Line.LineId
+    &Bc_Line.LineText = &Create_Line.LineText
+    &Header.Line.Add(&Bc_Line)
 EndFor
 &Header.Save()
 If &Header.Success()
@@ -12,12 +12,12 @@ If &Header.Success()
     &Header.Load(&Header.HeaderId)
     &CreateResponse = new()
     &CreateResponse.HeaderId = &Header.HeaderId
-    For &Bc_Level1 in &Header.<unnamed>
-        &Get_Level1 = new()
-        &Get_Level1.LineId = &Bc_Level1.LineId
-        &Get_Level1.LineText = &Bc_Level1.LineText
-        &Get_Level1.HeaderId = &Bc_Level1.HeaderId
-        &CreateResponse.Level1.Add(&Get_Level1)
+    For &Bc_Line in &Header.Line
+        &Get_Line = new()
+        &Get_Line.LineId = &Bc_Line.LineId
+        &Get_Line.LineText = &Bc_Line.LineText
+        &Get_Line.HeaderId = &Bc_Line.HeaderId
+        &CreateResponse.Line.Add(&Get_Line)
     EndFor
     &LocationUrl = !"/header"
     &LocationUrl = &LocationUrl + !"/" + &Header.HeaderId.ToString().Trim()

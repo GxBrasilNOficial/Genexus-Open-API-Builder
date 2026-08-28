@@ -3,12 +3,12 @@
 If &Header.Success()
     &GetResponse = new()
     &GetResponse.HeaderId = &Header.HeaderId
-    For &Bc_Level1 in &Header.<unnamed>
-        &Get_Level1 = new()
-        &Get_Level1.LineId = &Bc_Level1.LineId
-        &Get_Level1.LineText = &Bc_Level1.LineText
-        &Get_Level1.HeaderId = &Bc_Level1.HeaderId
-        &GetResponse.Level1.Add(&Get_Level1)
+    For &Bc_Line in &Header.Line
+        &Get_Line = new()
+        &Get_Line.LineId = &Bc_Line.LineId
+        &Get_Line.LineText = &Bc_Line.LineText
+        &Get_Line.HeaderId = &Bc_Line.HeaderId
+        &GetResponse.Line.Add(&Get_Line)
     EndFor
     &RestStatusCode = 200
 Else

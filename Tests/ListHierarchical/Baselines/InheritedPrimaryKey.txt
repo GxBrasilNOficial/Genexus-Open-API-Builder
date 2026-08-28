@@ -1,6 +1,6 @@
 itemSdt=sdtHeader_API_ListResponse_Item
 listResponseItemSdt=sdtHeader_API_ListResponse_Item
-counts=Level1Count=LineId
+counts=LineCount=LineId
 ---
 &RestStatusCode = 200
 &ListResponse = new()
@@ -44,7 +44,7 @@ For each
     If &TotalCount >= &FirstRecord and &TotalCount <= &LastRecord
         &Item = new()
         &Item.HeaderId = HeaderId
-        &Item.Level1Count = count(LineId)
+        &Item.LineCount = count(LineId)
         &ListResponse.Items.Add(&Item)
     EndIf
 EndFor

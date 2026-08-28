@@ -69,6 +69,10 @@ internal static class TransactionStructureReader
         };
     }
 
+    /// <summary>Fixture exclusiva do gate B095 para exercitar fallback <c>&lt;unnamed&gt;</c> no leitor.</summary>
+    public static TransactionStructureFixture CreateUnnamedSublevelReaderFixture() =>
+        CreateUnnamedSublevelFixture();
+
     public static string SerializeSnapshot(TransactionStructureSnapshot snapshot)
     {
         if (snapshot is null)
@@ -368,14 +372,13 @@ internal static class TransactionStructureReader
     {
         // PK composta na ordem HeaderId, LineId — HeaderId herdado entra nas Attributes e em PrimaryKeyNames.
         // Autonumber deve ser false porque primaryKeyPartCount > 1.
-        // Nível sem nome exercita o fallback <unnamed>.
         var headerId = Attr("a4000001-0001-4000-8000-000000000001", "HeaderId", "Numeric", 8, 0, false, false, false, false, false, true, "True");
         var inheritedHeader = Attr("a4000001-0001-4000-8000-000000000001", "HeaderId", "Numeric", 8, 0, false, false, false, true, false, true, "True");
         var lineId = Attr("a4000001-0002-4000-8000-000000000001", "LineId", "Numeric", 4, 0, false, false, false, false, false, true, "True");
         var lineText = Attr("a4000001-0002-4000-8000-000000000002", "LineText", "VarChar", 40, 0, false, false, false, false, false, true, null);
 
         var line = new TransactionStructureLevelSource(
-            string.Empty,
+            "Line",
             new[] { lineId, lineText, inheritedHeader },
             new[] { "HeaderId", "LineId" },
             Array.Empty<TransactionStructureLevelSource>());
@@ -387,6 +390,27 @@ internal static class TransactionStructureReader
             new[] { line });
 
         return new TransactionStructureFixture("InheritedPrimaryKey", Build("Header", root));
+    }
+
+    private static TransactionStructureFixture CreateUnnamedSublevelFixture()
+    {
+        // Exercita somente o fallback <unnamed> do leitor B095; nao entra no mapa BC (nome obrigatorio).
+        var docId = Attr("a4100001-0001-4000-8000-000000000001", "DocId", "Numeric", 8, 0, false, false, false, false, false, true, "True");
+        var itemName = Attr("a4100001-0002-4000-8000-000000000001", "ItemName", "VarChar", 40, 0, false, false, false, false, false, true, null);
+
+        var unnamed = new TransactionStructureLevelSource(
+            string.Empty,
+            new[] { itemName },
+            Array.Empty<string>(),
+            Array.Empty<TransactionStructureLevelSource>());
+
+        var root = new TransactionStructureLevelSource(
+            "Doc",
+            new[] { docId },
+            new[] { "DocId" },
+            new[] { unnamed });
+
+        return new TransactionStructureFixture("UnnamedSublevel", Build("Doc", root));
     }
 
     /// <summary>

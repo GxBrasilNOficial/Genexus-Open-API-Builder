@@ -186,12 +186,14 @@ try {
     $snapshotType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.TransactionStructureSnapshot', $true, $false)
 
     $createFixtures = $readerType.GetMethod('CreateFixtures', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
+    $createUnnamedReaderFixture = $readerType.GetMethod('CreateUnnamedSublevelReaderFixture', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     $serialize = $readerType.GetMethod('SerializeSnapshot', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     $normalize = $readerType.GetMethod('NormalizeForComparison', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     $isAutonumberPure = $helperType.GetMethod('IsAutonumberCore', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     $flattenMethod = $snapshotType.GetMethod('FlattenLevels', [System.Reflection.BindingFlags]'Instance, NonPublic, Public')
 
     Assert-True ($null -ne $createFixtures) 'CreateFixtures não encontrado.'
+    Assert-True ($null -ne $createUnnamedReaderFixture) 'CreateUnnamedSublevelReaderFixture não encontrado.'
     Assert-True ($null -ne $serialize) 'SerializeSnapshot não encontrado.'
     Assert-True ($null -ne $normalize) 'NormalizeForComparison não encontrado.'
     Assert-True ($null -ne $isAutonumberPure) 'IsAutonumberCore não encontrado.'
@@ -205,16 +207,19 @@ try {
     Assert-True ([bool]$isAutonumberPure.Invoke($null, @(1, $false, 'False'))) 'PK simples sem metadata, fail-open = true.'
 
     $fixtures = @($createFixtures.Invoke($null, @()))
-    Assert-True ($fixtures.Count -eq 4) "Esperava 4 fixtures; encontrado $($fixtures.Count)."
+    Assert-True ($fixtures.Count -eq 4) "Esperava 4 fixtures compartilhados; encontrado $($fixtures.Count)."
 
-    $expectedNames = @('OneSublevel', 'ParallelSublevels', 'ThreeDeep', 'InheritedPrimaryKey')
-    $actualNames = @($fixtures | ForEach-Object { [string](Get-Prop $_ 'Name') })
+    $unnamedReaderFixture = $createUnnamedReaderFixture.Invoke($null, @())
+    $fixturesForBaseline = @($fixtures) + @($unnamedReaderFixture)
+
+    $expectedNames = @('OneSublevel', 'ParallelSublevels', 'ThreeDeep', 'InheritedPrimaryKey', 'UnnamedSublevel')
+    $actualNames = @($fixturesForBaseline | ForEach-Object { [string](Get-Prop $_ 'Name') })
     foreach ($expectedName in $expectedNames) {
         Assert-True ($actualNames -contains $expectedName) "Fixture ausente: $expectedName"
     }
 
     $byName = @{}
-    foreach ($fixture in $fixtures) {
+    foreach ($fixture in $fixturesForBaseline) {
         $byName[[string](Get-Prop $fixture 'Name')] = $fixture
     }
 
@@ -249,17 +254,22 @@ try {
 
     $inherited = Get-Prop $byName['InheritedPrimaryKey'] 'Snapshot'
     $inheritedFlat = @($flattenMethod.Invoke($inherited, @()))
-    $unnamed = Find-LevelByName $inheritedFlat '<unnamed>'
-    Assert-True ($null -ne $unnamed) 'Nível sem nome deve virar <unnamed>.'
-    $pk = @(Get-Prop $unnamed 'PrimaryKey')
+    $lineLevel = Find-LevelByName $inheritedFlat 'Line'
+    Assert-True ($null -ne $lineLevel) 'Subnivel Line deve existir na fixture InheritedPrimaryKey.'
+    $pk = @(Get-Prop $lineLevel 'PrimaryKey')
     Assert-True ($pk.Count -eq 2) 'PK herdada deve ter 2 partes.'
     Assert-True ([string](Get-Prop $pk[0] 'Name') -eq 'HeaderId') 'Ordem da PK: HeaderId primeiro.'
     Assert-True ([string](Get-Prop $pk[1] 'Name') -eq 'LineId') 'Ordem da PK: LineId segundo.'
     Assert-True (-not [bool](Get-Prop $pk[0] 'IsAutonumber')) 'PK composta: HeaderId não autonumerado.'
     Assert-True (-not [bool](Get-Prop $pk[1] 'IsAutonumber')) 'PK composta: LineId não autonumerado.'
 
+    $unnamedFixture = Get-Prop $byName['UnnamedSublevel'] 'Snapshot'
+    $unnamedFlat = @($flattenMethod.Invoke($unnamedFixture, @()))
+    $unnamed = Find-LevelByName $unnamedFlat '<unnamed>'
+    Assert-True ($null -ne $unnamed) 'Nível sem nome deve virar <unnamed>.'
+
     $divergences = [System.Collections.Generic.List[string]]::new()
-    foreach ($fixture in $fixtures) {
+    foreach ($fixture in $fixturesForBaseline) {
         $fixtureName = [string](Get-Prop $fixture 'Name')
         $snapshot = Get-Prop $fixture 'Snapshot'
         $actual = [string]$normalize.Invoke($null, @([string]$serialize.Invoke($null, @($snapshot))))

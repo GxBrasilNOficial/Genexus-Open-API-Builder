@@ -250,6 +250,11 @@ internal static class ApiPlanBusinessComponentHierarchicalSource
         yield return $"{indent}            {foundVar} = True";
         foreach (var field in node.EligibleFields)
         {
+            if (!ShouldAssignFieldToBc(field))
+            {
+                continue;
+            }
+
             yield return $"{indent}            {bcItem}.{field.Name} = {requestItem}.{field.Name}";
         }
 
@@ -265,6 +270,11 @@ internal static class ApiPlanBusinessComponentHierarchicalSource
         yield return $"{indent}        {bcItem} = new()";
         foreach (var field in node.EligibleFields)
         {
+            if (!ShouldAssignFieldToBc(field))
+            {
+                continue;
+            }
+
             yield return $"{indent}            {bcItem}.{field.Name} = {requestItem}.{field.Name}";
         }
 
@@ -292,6 +302,11 @@ internal static class ApiPlanBusinessComponentHierarchicalSource
         yield return $"{indent}    {bcItem} = new()";
         foreach (var field in node.EligibleFields)
         {
+            if (!ShouldAssignFieldToBc(field))
+            {
+                continue;
+            }
+
             yield return $"{indent}    {bcItem}.{field.Name} = {requestItem}.{field.Name}";
         }
 
@@ -305,6 +320,13 @@ internal static class ApiPlanBusinessComponentHierarchicalSource
 
         yield return $"{indent}    {bcParent}.{node.BcCollectionName}.Add({bcItem})";
         yield return $"{indent}EndFor";
+    }
+
+    private static bool ShouldAssignFieldToBc(ApiPlanLevelField field)
+    {
+        // CreateRequest ja exclui autonumerados em EligibleFields; UpdateRequest nao.
+        // Na atribuicao ao BC (Create e Update), omitir PK autonumerada como no Create.
+        return !field.IsAutonumber;
     }
 
     private static string BuildPkMatchCondition(

@@ -36,7 +36,6 @@ If &RestStatusCode = 200
                             &Bc_Shift.Worker.Clear()
                             For &Update_Shift_Worker in &Update_Shift.Worker
                                 &Bc_Shift_Worker = new()
-                                &Bc_Shift_Worker.WorkerId = &Update_Shift_Worker.WorkerId
                                 &Bc_Shift_Worker.WorkerName = &Update_Shift_Worker.WorkerName
                                 &Bc_Shift.Worker.Add(&Bc_Shift_Worker)
                             EndFor
@@ -50,7 +49,6 @@ If &RestStatusCode = 200
                         &Bc_Shift.ShiftName = &Update_Shift.ShiftName
                     For &Update_Shift_Worker in &Update_Shift.Worker
                         &Bc_Shift_Worker = new()
-                        &Bc_Shift_Worker.WorkerId = &Update_Shift_Worker.WorkerId
                         &Bc_Shift_Worker.WorkerName = &Update_Shift_Worker.WorkerName
                         &Bc_Shift.Worker.Add(&Bc_Shift_Worker)
                     EndFor

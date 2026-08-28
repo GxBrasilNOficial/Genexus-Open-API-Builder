@@ -88,6 +88,15 @@ internal static class ApiPlanHierarchicalContractMapBuilder
         var nodes = new List<ApiPlanHierarchicalNode>(children.Count);
         foreach (var child in children)
         {
+            if (string.IsNullOrWhiteSpace(child.LevelName) ||
+                string.Equals(child.LevelName, ApiPlanSdtHierarchicalNaming.UnnamedLevelToken, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Mapa hierarquico bloqueado: subnivel sem nome estrutural na Transaction (LevelOrder="
+                    + child.LevelOrder.ToString(CultureInfo.InvariantCulture)
+                    + "). Em Transaction real todo subnivel tem nome; corrija a estrutura antes do apply. Nenhuma alteracao foi feita.");
+            }
+
             var sanitized = ApiPlanSdtHierarchicalNaming.SanitizeLevelIdentifier(child.LevelName, child.LevelOrder);
             var childQualifiers = new List<string>(ancestorQualifiers.Count + 1);
             childQualifiers.AddRange(ancestorQualifiers);

@@ -1,0 +1,75 @@
+{
+  "transactionName": "Doc",
+  "maxDepth": 2,
+  "levelCount": 2,
+  "root": {
+    "levelName": "Doc",
+    "depth": 1,
+    "parentLevelName": "",
+    "levelOrder": 1,
+    "primaryKey": [
+      {
+        "order": 1,
+        "attributeGuid": "a4100001-0001-4000-8000-000000000001",
+        "name": "DocId",
+        "dataType": "Numeric",
+        "length": 8,
+        "decimals": 0,
+        "isPrimaryKey": true,
+        "isNullable": false,
+        "isInferred": false,
+        "isRedundant": false,
+        "isForeignKey": false,
+        "isFormula": false,
+        "isNoAccept": false,
+        "isAutonumber": true
+      }
+    ],
+    "fields": [
+      {
+        "order": 1,
+        "attributeGuid": "a4100001-0001-4000-8000-000000000001",
+        "name": "DocId",
+        "dataType": "Numeric",
+        "length": 8,
+        "decimals": 0,
+        "isPrimaryKey": true,
+        "isNullable": false,
+        "isInferred": false,
+        "isRedundant": false,
+        "isForeignKey": false,
+        "isFormula": false,
+        "isNoAccept": false,
+        "isAutonumber": true
+      }
+    ],
+    "childLevels": [
+      {
+        "levelName": "<unnamed>",
+        "depth": 2,
+        "parentLevelName": "Doc",
+        "levelOrder": 1,
+        "primaryKey": [],
+        "fields": [
+          {
+            "order": 1,
+            "attributeGuid": "a4100001-0002-4000-8000-000000000001",
+            "name": "ItemName",
+            "dataType": "VarChar",
+            "length": 40,
+            "decimals": 0,
+            "isPrimaryKey": false,
+            "isNullable": false,
+            "isInferred": false,
+            "isRedundant": false,
+            "isForeignKey": false,
+            "isFormula": false,
+            "isNoAccept": false,
+            "isAutonumber": false
+          }
+        ],
+        "childLevels": []
+      }
+    ]
+  }
+}

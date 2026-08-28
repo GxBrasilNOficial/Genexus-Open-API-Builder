@@ -137,10 +137,12 @@ Assert-Contains $writerSource 'EmitUpdateCollectionAssignments' 'Update deve emi
 Assert-Contains $writerSource 'EmitGetCollectionAssignments' 'Get deve emitir colecoes hierarquicas.'
 Assert-Contains $hierarchicalSource 'ReplaceMemberName' 'Emissor deve respeitar o marcador Replace.'
 Assert-Contains $hierarchicalSource 'HasAutonumberPrimaryKey' 'Update autonumerado usa Clear+Add.'
+Assert-Contains $hierarchicalSource 'ShouldAssignFieldToBc' 'Update deve omitir PK autonumerada na atribuicao ao BC.'
 Assert-Contains $hierarchicalSource 'node.BcLevelType' 'Variavel BC deve usar o tipo com caminho completo do nivel.'
 Assert-Contains $mapSource 'ApiPlanHierarchicalContractMapBuilder' 'Mapa compartilhado B096/B097 deve existir.'
 Assert-Contains $mapSource 'BuildBcLevelType' 'Mapa deve montar o tipo BC aninhado.'
 Assert-Contains $mapSource 'AllocateVariableToken' 'Mapa deve reservar VariableToken.'
+Assert-Contains $mapSource 'subnivel sem nome estrutural' 'Mapa BC deve recusar subnivel sem nome na Transaction.'
 Assert-Contains $mapSource '_V' 'Colisao de VariableToken deve desambiguar com sufixo _V.'
 Assert-True ($hierarchicalSource.IndexOf('plan.TransactionName + "." + node.BcCollectionName', [StringComparison]::Ordinal) -lt 0) 'Tipo BC nao pode mais ser Transaction.Folha sem ancestrais.'
 
@@ -242,6 +244,8 @@ try {
             Assert-True ($updateSource.IndexOf('ShiftReplace', [StringComparison]::Ordinal) -ge 0) 'ThreeDeep deve emitir ShiftReplace.'
             Assert-True ($updateSource.IndexOf('WorkerReplace', [StringComparison]::Ordinal) -ge 0) 'ThreeDeep deve emitir WorkerReplace aninhado.'
             Assert-True ($updateSource.IndexOf('.Clear()', [StringComparison]::Ordinal) -ge 0) 'Worker autonumerado deve usar Clear no Replace.'
+            Assert-True ($createSource.IndexOf('&Bc_Shift_Worker.WorkerId =', [StringComparison]::Ordinal) -lt 0) 'Create nao deve atribuir PK autonumerada WorkerId.'
+            Assert-True ($updateSource.IndexOf('&Bc_Shift_Worker.WorkerId =', [StringComparison]::Ordinal) -lt 0) 'Update Clear+Add nao deve atribuir PK autonumerada WorkerId.'
             $bcTypes = Get-BcVariableTypes -Method $collectGet -Plan $plan
             Assert-True ($bcTypes.ContainsKey('Bc_Shift')) 'ThreeDeep deve declarar &Bc_Shift.'
             Assert-True ($bcTypes.ContainsKey('Bc_Shift_Worker')) 'ThreeDeep deve declarar &Bc_Shift_Worker.'
@@ -262,6 +266,11 @@ try {
             Assert-True ($bcTypes.ContainsKey('Bc_Tags')) 'ParallelSublevels deve declarar &Bc_Tags.'
             Assert-True ($bcTypes['Bc_Notes'] -eq 'Document.Notes') 'Paralelo Notes permanece Transaction.Nivel.'
             Assert-True ($bcTypes['Bc_Tags'] -eq 'Document.Tags') 'Paralelo Tags permanece Transaction.Nivel.'
+        }
+
+        if ($fixtureName -eq 'InheritedPrimaryKey') {
+            Assert-True ($getSource.IndexOf('.Line', [StringComparison]::Ordinal) -ge 0) 'InheritedPrimaryKey deve usar nome estrutural Line no BC.'
+            Assert-True ($getSource.IndexOf('<unnamed>', [StringComparison]::Ordinal) -lt 0) 'InheritedPrimaryKey nao deve emitir colecao BC <unnamed>.'
         }
 
         if ($fixtureName -eq 'MemberCollision') {

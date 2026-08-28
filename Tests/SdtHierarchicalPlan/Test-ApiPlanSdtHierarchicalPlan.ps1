@@ -281,10 +281,10 @@ try {
     Assert-True ($null -eq (Find-Member $workerCreateFull 'WorkerScore')) 'Formula nao entra no Create da linha.'
 
     $inherited = $captured['InheritedPrimaryKey'] | ConvertFrom-Json
-    $unnamedCreate = Find-OwnSdt $inherited 'sdtHeader_API_CreateRequest_Level1'
-    Assert-True ($null -ne $unnamedCreate) 'Nivel sem nome vira Level1 no SDT.'
-    Assert-True ($null -eq (Find-Member $unnamedCreate 'HeaderId')) 'PK herdada (FK) nao entra no Create da linha.'
-    Assert-True ($null -ne (Find-Member $unnamedCreate 'LineId')) 'Parte propria da PK informada entra no Create.'
+    $lineCreate = Find-OwnSdt $inherited 'sdtHeader_API_CreateRequest_Line'
+    Assert-True ($null -ne $lineCreate) 'Subnivel Line gera SDT derivado com o nome estrutural.'
+    Assert-True ($null -eq (Find-Member $lineCreate 'HeaderId')) 'PK herdada (FK) nao entra no Create da linha.'
+    Assert-True ($null -ne (Find-Member $lineCreate 'LineId')) 'Parte propria da PK informada entra no Create.'
 
     $collision = $captured['MemberCollision'] | ConvertFrom-Json
     $collisionCreate = Find-OwnSdt $collision 'sdtCollisionDoc_API_CreateRequest'

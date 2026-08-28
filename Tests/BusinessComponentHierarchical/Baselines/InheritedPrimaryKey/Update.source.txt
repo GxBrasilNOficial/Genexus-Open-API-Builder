@@ -9,39 +9,39 @@ If &RestStatusCode = 200
     &Header.Load(&HeaderId)
     If &Header.Success()
         &Header.HeaderId = &UpdateRequest.HeaderId
-        If &UpdateRequest.Level1Replace
-            &Idx_Level1 = &Header.<unnamed>.Count
-            Do While &Idx_Level1 >= 1
-                &Bc_Level1 = &Header.<unnamed>.Item(&Idx_Level1)
-                &Found_Level1 = False
-                For &Update_Level1 in &UpdateRequest.Level1
-                    If &Update_Level1.HeaderId = &Bc_Level1.HeaderId and &Update_Level1.LineId = &Bc_Level1.LineId
-                        &Found_Level1 = True
+        If &UpdateRequest.LineReplace
+            &Idx_Line = &Header.Line.Count
+            Do While &Idx_Line >= 1
+                &Bc_Line = &Header.Line.Item(&Idx_Line)
+                &Found_Line = False
+                For &Update_Line in &UpdateRequest.Line
+                    If &Update_Line.HeaderId = &Bc_Line.HeaderId and &Update_Line.LineId = &Bc_Line.LineId
+                        &Found_Line = True
                         Exit
                     EndIf
                 EndFor
-                If not &Found_Level1
-                    &Header.<unnamed>.Remove(&Idx_Level1)
+                If not &Found_Line
+                    &Header.Line.Remove(&Idx_Line)
                 EndIf
-                &Idx_Level1 = &Idx_Level1 - 1
+                &Idx_Line = &Idx_Line - 1
             EndDo
-            For &Update_Level1 in &UpdateRequest.Level1
-                &Found_Level1 = False
-                For &Bc_Level1 in &Header.<unnamed>
-                    If &Update_Level1.HeaderId = &Bc_Level1.HeaderId and &Update_Level1.LineId = &Bc_Level1.LineId
-                        &Found_Level1 = True
-                        &Bc_Level1.LineId = &Update_Level1.LineId
-                        &Bc_Level1.LineText = &Update_Level1.LineText
-                        &Bc_Level1.HeaderId = &Update_Level1.HeaderId
+            For &Update_Line in &UpdateRequest.Line
+                &Found_Line = False
+                For &Bc_Line in &Header.Line
+                    If &Update_Line.HeaderId = &Bc_Line.HeaderId and &Update_Line.LineId = &Bc_Line.LineId
+                        &Found_Line = True
+                        &Bc_Line.LineId = &Update_Line.LineId
+                        &Bc_Line.LineText = &Update_Line.LineText
+                        &Bc_Line.HeaderId = &Update_Line.HeaderId
                         Exit
                     EndIf
                 EndFor
-                If not &Found_Level1
-                    &Bc_Level1 = new()
-                        &Bc_Level1.LineId = &Update_Level1.LineId
-                        &Bc_Level1.LineText = &Update_Level1.LineText
-                        &Bc_Level1.HeaderId = &Update_Level1.HeaderId
-                    &Header.<unnamed>.Add(&Bc_Level1)
+                If not &Found_Line
+                    &Bc_Line = new()
+                        &Bc_Line.LineId = &Update_Line.LineId
+                        &Bc_Line.LineText = &Update_Line.LineText
+                        &Bc_Line.HeaderId = &Update_Line.HeaderId
+                    &Header.Line.Add(&Bc_Line)
                 EndIf
             EndFor
         EndIf
@@ -51,12 +51,12 @@ If &RestStatusCode = 200
             &Header.Load(&HeaderId)
             &UpdateResponse = new()
             &UpdateResponse.HeaderId = &Header.HeaderId
-            For &Bc_Level1 in &Header.<unnamed>
-                &Get_Level1 = new()
-                &Get_Level1.LineId = &Bc_Level1.LineId
-                &Get_Level1.LineText = &Bc_Level1.LineText
-                &Get_Level1.HeaderId = &Bc_Level1.HeaderId
-                &UpdateResponse.Level1.Add(&Get_Level1)
+            For &Bc_Line in &Header.Line
+                &Get_Line = new()
+                &Get_Line.LineId = &Bc_Line.LineId
+                &Get_Line.LineText = &Bc_Line.LineText
+                &Get_Line.HeaderId = &Bc_Line.HeaderId
+                &UpdateResponse.Line.Add(&Get_Line)
             EndFor
             &RestStatusCode = 200
         Else

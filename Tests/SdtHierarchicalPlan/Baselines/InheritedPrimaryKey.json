@@ -4,7 +4,7 @@
   "status": "ResolvedSdtContractPreviewNoKbWrite",
   "ownSdts": [
     {
-      "name": "sdtHeader_API_CreateRequest_Level1",
+      "name": "sdtHeader_API_CreateRequest_Line",
       "backlogId": "B096",
       "kind": "CreateRequest",
       "scope": "TransactionModuleFolder:HeaderOpenApi",
@@ -38,19 +38,19 @@
       "scope": "TransactionModuleFolder:HeaderOpenApi",
       "members": [
         {
-          "name": "Level1",
-          "dataType": "sdtHeader_API_CreateRequest_Level1",
+          "name": "Line",
+          "dataType": "sdtHeader_API_CreateRequest_Line",
           "length": 0,
           "decimals": 0,
           "isNullable": false,
           "isCollection": true,
-          "collectionItemType": "sdtHeader_API_CreateRequest_Level1",
+          "collectionItemType": "sdtHeader_API_CreateRequest_Line",
           "source": "CreateRequest"
         }
       ]
     },
     {
-      "name": "sdtHeader_API_UpdateRequest_Level1",
+      "name": "sdtHeader_API_UpdateRequest_Line",
       "backlogId": "B096",
       "kind": "UpdateRequest",
       "scope": "TransactionModuleFolder:HeaderOpenApi",
@@ -104,7 +104,7 @@
           "source": "UpdateRequest"
         },
         {
-          "name": "Level1Replace",
+          "name": "LineReplace",
           "dataType": "Boolean",
           "length": 0,
           "decimals": 0,
@@ -114,19 +114,19 @@
           "source": "UpdateRequest"
         },
         {
-          "name": "Level1",
-          "dataType": "sdtHeader_API_UpdateRequest_Level1",
+          "name": "Line",
+          "dataType": "sdtHeader_API_UpdateRequest_Line",
           "length": 0,
           "decimals": 0,
           "isNullable": false,
           "isCollection": true,
-          "collectionItemType": "sdtHeader_API_UpdateRequest_Level1",
+          "collectionItemType": "sdtHeader_API_UpdateRequest_Line",
           "source": "UpdateRequest"
         }
       ]
     },
     {
-      "name": "sdtHeader_API_Response_Level1",
+      "name": "sdtHeader_API_Response_Line",
       "backlogId": "B096",
       "kind": "Response",
       "scope": "TransactionModuleFolder:HeaderOpenApi",
@@ -180,13 +180,13 @@
           "source": "Response"
         },
         {
-          "name": "Level1",
-          "dataType": "sdtHeader_API_Response_Level1",
+          "name": "Line",
+          "dataType": "sdtHeader_API_Response_Line",
           "length": 0,
           "decimals": 0,
           "isNullable": false,
           "isCollection": true,
-          "collectionItemType": "sdtHeader_API_Response_Level1",
+          "collectionItemType": "sdtHeader_API_Response_Line",
           "source": "Response"
         }
       ]
@@ -215,7 +215,7 @@
           "source": "ListResponse_Item"
         },
         {
-          "name": "Level1Count",
+          "name": "LineCount",
           "dataType": "Numeric",
           "length": 9,
           "decimals": 0,
