@@ -312,7 +312,7 @@ internal static class ApiPlanGenerationStateReader
         var transaction = transactionMatches[0];
         var apiObject = apiMatches[0];
 
-        var ownershipOk = HasString(metadata["schemaVersion"], ApiPlanMetadataFileWriter.SchemaVersion)
+        var ownershipOk = ApiPlanMetadataFileWriter.IsSupportedSchemaVersion(metadata["schemaVersion"]?.Value<string>())
             && HasString(metadata.SelectToken("ownership.transactionName"), apiPlan.TransactionName)
             && HasString(metadata.SelectToken("ownership.transactionGuid"), transaction.Guid.ToString())
             && HasString(metadata.SelectToken("ownership.apiName"), apiPlan.ApiName)

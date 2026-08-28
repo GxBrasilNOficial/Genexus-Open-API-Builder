@@ -295,4 +295,20 @@ if ($metadataWriterSource.IndexOf('ParseMetadataBytes', [StringComparison]::Ordi
     throw 'ASSERT_FAILED: O writer deve reler a metadata sem converter generatedAtUtc em DateTime.'
 }
 
+if ($metadataWriterSource.IndexOf('GOAB_API_METADATA_B060_V2', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: A gravacao deve emitir schemaVersion V2.'
+}
+if ($metadataWriterSource.IndexOf('GOAB_API_METADATA_B060_V1', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: A leitura deve continuar tolerando schemaVersion V1.'
+}
+if ($metadataWriterSource.IndexOf('ApiPlanMetadataLevelsCodec.CreateLevelsToken', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: A metadata V2 deve serializar levels via codec.'
+}
+if ($plannedContractSource.IndexOf('CreateLevelsToken', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: O PlannedContractHash B067 deve incluir levels quando ha subniveis.'
+}
+if ($metadataWriterSource.IndexOf('["own"]', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: A metadata V2 deve gravar objects.sdts.own para remocao hierarquica.'
+}
+
 Write-Output 'PASS: ApiPlanMetadataIntegrity'

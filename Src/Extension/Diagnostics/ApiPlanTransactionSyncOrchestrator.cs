@@ -31,12 +31,50 @@ internal static class ApiPlanTransactionSyncOrchestrator
         var metadataFile = FindOwnedMetadataFile(designModel, $"api{transaction.Name}_Metadata", transaction.Name);
         var metadata = ParseMetadata(metadataFile);
         RequireOwnership(metadata, transaction);
-        var metadataStructure = ApiPlanTransactionSyncComparer.ReadStructure(metadata);
+        var metadataStructure = ReadMetadataStructure(metadata);
         var snapshot = PrototypeWizardContractReader.Read(transaction);
-        var currentStructure = snapshot.Attributes.Select(ToSyncSnapshot).ToArray();
+        ApiPlanLevel? currentHierarchicalRoot = null;
+        if (ApiPlanMetadataLevelsCodec.HasHierarchicalLevels(metadata))
+        {
+            currentHierarchicalRoot = TransactionStructureReader.Read(transaction).RootLevel;
+        }
+
+        var currentStructure = BuildCurrentStructure(currentHierarchicalRoot, metadata, snapshot);
         var diff = ApiPlanTransactionSyncComparer.Compare(metadataStructure, currentStructure);
         var sdtConflicts = DetectSdtConflicts(designModel, metadata);
-        return new ApiPlanTransactionSyncPreview(transaction.Name, metadata, metadataFile, snapshot, diff, sdtConflicts);
+        return new ApiPlanTransactionSyncPreview(
+            transaction.Name,
+            metadata,
+            metadataFile,
+            snapshot,
+            diff,
+            sdtConflicts,
+            currentHierarchicalRoot);
+    }
+
+    private static IReadOnlyList<ApiPlanTransactionSyncAttributeSnapshot> ReadMetadataStructure(JObject metadata)
+    {
+        if (ApiPlanMetadataLevelsCodec.HasHierarchicalLevels(metadata))
+        {
+            var root = ApiPlanMetadataLevelsCodec.TryReadRoot(metadata)
+                ?? throw new InvalidOperationException("Metadata hierárquica sem levels legível. Regenere a API pelo Wizard antes de sincronizar.");
+            return ApiPlanMetadataLevelsCodec.FlattenToSyncSnapshots(root);
+        }
+
+        return ApiPlanTransactionSyncComparer.ReadStructure(metadata);
+    }
+
+    private static IReadOnlyList<ApiPlanTransactionSyncAttributeSnapshot> BuildCurrentStructure(
+        ApiPlanLevel? currentHierarchicalRoot,
+        JObject metadata,
+        PrototypeWizardContractSnapshot snapshot)
+    {
+        if (currentHierarchicalRoot is not null && ApiPlanMetadataLevelsCodec.HasHierarchicalLevels(metadata))
+        {
+            return ApiPlanMetadataLevelsCodec.FlattenToSyncSnapshots(currentHierarchicalRoot);
+        }
+
+        return snapshot.Attributes.Select(ToSyncSnapshot).ToArray();
     }
 
     public static PrototypeWizardFlowSelection BuildSelection(
@@ -137,6 +175,20 @@ internal static class ApiPlanTransactionSyncOrchestrator
         var isBc = metadata.SelectToken("businessComponent.isBusinessComponent")?.Value<bool>()
             ?? preview.Snapshot.Attributes.Count > 0;
 
+        ApiPlanHierarchicalWizardSelection? hierarchicalSelection = null;
+        if (ApiPlanMetadataLevelsCodec.HasHierarchicalLevels(metadata))
+        {
+            if (preview.CurrentHierarchicalRoot is null)
+            {
+                throw new InvalidOperationException("Preview hierárquico sem árvore corrente da Transaction.");
+            }
+
+            var persistedRoot = ApiPlanMetadataLevelsCodec.TryReadRoot(metadata)
+                ?? throw new InvalidOperationException("Metadata hierárquica sem levels para restaurar a seleção do Sync.");
+            hierarchicalSelection = ApiPlanHierarchicalWizardSelection.CreateDefault(preview.CurrentHierarchicalRoot);
+            hierarchicalSelection.ApplyPersistedPrune(persistedRoot);
+        }
+
         return new PrototypeWizardFlowSelection(
             new PrototypeWizardContractSelection(
                 preview.TransactionName,
@@ -165,7 +217,8 @@ internal static class ApiPlanTransactionSyncOrchestrator
             applyBusinessComponent: services.Any(name =>
                 string.Equals(name, "Get", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(name, "Create", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(name, "Update", StringComparison.OrdinalIgnoreCase)));
+                || string.Equals(name, "Update", StringComparison.OrdinalIgnoreCase)),
+            hierarchicalSelection);
     }
 
     public static IReadOnlyCollection<string> ResolvePreservedSdtNames(
@@ -456,7 +509,8 @@ internal sealed class ApiPlanTransactionSyncPreview
         WikiFileKBObject metadataFile,
         PrototypeWizardContractSnapshot snapshot,
         ApiPlanTransactionSyncDiff diff,
-        IReadOnlyList<ApiPlanTransactionSyncSdtConflict> sdtConflicts)
+        IReadOnlyList<ApiPlanTransactionSyncSdtConflict> sdtConflicts,
+        ApiPlanLevel? currentHierarchicalRoot = null)
     {
         TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
         Metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
@@ -464,6 +518,7 @@ internal sealed class ApiPlanTransactionSyncPreview
         Snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
         Diff = diff ?? throw new ArgumentNullException(nameof(diff));
         SdtConflicts = sdtConflicts ?? throw new ArgumentNullException(nameof(sdtConflicts));
+        CurrentHierarchicalRoot = currentHierarchicalRoot;
     }
 
     public string TransactionName { get; }
@@ -477,6 +532,9 @@ internal sealed class ApiPlanTransactionSyncPreview
     public ApiPlanTransactionSyncDiff Diff { get; }
 
     public IReadOnlyList<ApiPlanTransactionSyncSdtConflict> SdtConflicts { get; }
+
+    /// <summary>Árvore corrente da Transaction quando a metadata é hierárquica V2; null no sync plano.</summary>
+    public ApiPlanLevel? CurrentHierarchicalRoot { get; }
 }
 
 internal sealed class ApiPlanTransactionSyncSdtConflict

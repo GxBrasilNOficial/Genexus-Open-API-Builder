@@ -73,6 +73,20 @@ Assert-True ($summary -match '(?m)^  - procTeste_API_List$') 'Procedure List em 
 Assert-True ($summary -match '(?m)^  - procTeste_API_Get$') 'Procedure Get em linha própria'
 Assert-True ($summary -match '(?m)^Procedures \(4\):$') 'Cabeçalho de Procedures em linha própria'
 
+$metadataV2 = [Newtonsoft.Json.Linq.JObject]::Parse($metadata.ToString([Newtonsoft.Json.Formatting]::None))
+$metadataV2['schemaVersion'] = [Newtonsoft.Json.Linq.JValue]::new('GOAB_API_METADATA_B060_V2')
+$own = [Newtonsoft.Json.Linq.JArray]::new()
+[void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_ListResponse'))
+[void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_ListResponse_Item'))
+[void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_CreateRequest'))
+[void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_CreateRequest_Item'))
+[void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_Response'))
+$metadataV2['objects']['sdts']['own'] = $own
+$planV2 = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGeneratedApiRemovalPlan]::FromMetadata($metadataV2, 'Teste', $txGuid)
+Assert-Equal 5 $planV2.OwnSdtNames.Count 'V2 com own deve usar o inventário completo'
+Assert-Equal 'sdtTeste_API_ListResponse' $planV2.OwnSdtNames[0] 'V2 own preserva ordem de remoção'
+Assert-Equal 'sdtTeste_API_CreateRequest_Item' $planV2.OwnSdtNames[3] 'V2 own inclui SDT hierárquico'
+
 try {
     [void][GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGeneratedApiRemovalPlan]::FromMetadata($metadata, 'Outra', $txGuid)
     throw 'ASSERT_FAILED: deveria rejeitar Transaction divergente.'

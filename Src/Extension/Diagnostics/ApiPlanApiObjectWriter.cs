@@ -146,7 +146,7 @@ internal static class ApiPlanApiObjectWriter
 
         return ApiPlanApiObjectOwnership.MatchesMetadataOwnership(
             metadata,
-            ApiPlanMetadataFileWriter.SchemaVersion,
+            ApiPlanMetadataFileWriter.SupportedSchemaVersions,
             apiPlan.ApiName,
             apiObject.Guid.ToString());
     }
@@ -285,7 +285,7 @@ internal static class ApiPlanApiObjectWriter
         var storedSchema = metadata["schemaVersion"]?.Value<string>() ?? string.Empty;
         var ownershipOk = ApiPlanApiObjectOwnership.MatchesMetadataOwnership(
             metadata,
-            ApiPlanMetadataFileWriter.SchemaVersion,
+            ApiPlanMetadataFileWriter.SupportedSchemaVersions,
             apiPlan.ApiName,
             apiObject.Guid.ToString());
         if (!ownershipOk)
@@ -429,7 +429,7 @@ internal static class ApiPlanApiObjectWriter
             {
                 metadataOwnershipMatches = ApiPlanApiObjectOwnership.MatchesMetadataOwnership(
                     metadata,
-                    ApiPlanMetadataFileWriter.SchemaVersion,
+                    ApiPlanMetadataFileWriter.SupportedSchemaVersions,
                     apiPlan.ApiName,
                     apiObject.Guid.ToString());
                 if (metadataOwnershipMatches)

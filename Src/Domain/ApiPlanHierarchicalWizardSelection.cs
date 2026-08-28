@@ -17,9 +17,6 @@ internal sealed class ApiPlanHierarchicalWizardSelection
     public const string DepthWarningText =
         "Profundidade não validada: a evidência da sprint cobre até 4 níveis. A geração não é bloqueada; desmarque os níveis mais profundos se não quiser incluí-los.";
 
-    public const string LifecycleV1WarningText =
-        "Metadata, sincronização e remoção ainda são V1: não use Remover API gerada nem Sincronizar com a Transaction nesta API até B099b.";
-
     private readonly ApiPlanLevel _root;
     private readonly Dictionary<string, LevelNode> _nodes;
     private readonly Dictionary<string, bool> _included;
@@ -75,6 +72,100 @@ internal sealed class ApiPlanHierarchicalWizardSelection
         }
 
         return new ApiPlanHierarchicalWizardSelection(root, Flatten(root));
+    }
+
+    /// <summary>
+    /// B099b — reaplica na árvore corrente a poda e as seleções persistidas na metadata V2.
+    /// Níveis ausentes na Transaction atual são ignorados; níveis novos ficam desmarcados.
+    /// </summary>
+    public void ApplyPersistedPrune(ApiPlanLevel persistedRoot)
+    {
+        if (persistedRoot is null)
+        {
+            throw new ArgumentNullException(nameof(persistedRoot));
+        }
+
+        foreach (var node in Options)
+        {
+            if (!node.IsRoot)
+            {
+                _included[node.PathKey] = false;
+            }
+        }
+
+        ApplyPersistedLevel(persistedRoot, RootPathKey);
+    }
+
+    private void ApplyPersistedLevel(ApiPlanLevel persisted, string pathKey)
+    {
+        if (!_nodes.TryGetValue(pathKey, out var node))
+        {
+            return;
+        }
+
+        if (!node.IsRoot)
+        {
+            SetLevelIncluded(pathKey, true);
+        }
+
+        if (persisted.SelectedCreateFieldNames is not null)
+        {
+            ReplaceSelectedFields(pathKey, "CreateRequest", persisted.SelectedCreateFieldNames);
+        }
+        else if (!node.IsRoot)
+        {
+            ReplaceSelectedFields(pathKey, "CreateRequest", persisted.Fields.Select(field => field.Name));
+        }
+
+        if (persisted.SelectedUpdateFieldNames is not null)
+        {
+            ReplaceSelectedFields(pathKey, "UpdateRequest", persisted.SelectedUpdateFieldNames);
+        }
+        else if (!node.IsRoot)
+        {
+            ReplaceSelectedFields(pathKey, "UpdateRequest", persisted.Fields.Select(field => field.Name));
+        }
+
+        if (persisted.SelectedResponseFieldNames is not null)
+        {
+            ReplaceSelectedFields(pathKey, "Response", persisted.SelectedResponseFieldNames);
+        }
+        else if (!node.IsRoot)
+        {
+            ReplaceSelectedFields(pathKey, "Response", persisted.Fields.Select(field => field.Name));
+        }
+
+        if (node.CanIncludeListCount)
+        {
+            SetIncludeListCount(pathKey, persisted.IncludeListCount);
+        }
+
+        foreach (var child in persisted.ChildLevels)
+        {
+            var childKey = FindChildPathKey(node, child);
+            if (childKey is null)
+            {
+                continue;
+            }
+
+            ApplyPersistedLevel(child, childKey);
+        }
+    }
+
+    private static string? FindChildPathKey(LevelNode parent, ApiPlanLevel persistedChild)
+    {
+        var expectedSuffix = FormatSegment(persistedChild);
+        foreach (var childKey in parent.ChildPathKeys)
+        {
+            if (string.Equals(childKey, parent.PathKey + "/" + expectedSuffix, StringComparison.Ordinal)
+                || childKey.EndsWith("/" + expectedSuffix, StringComparison.Ordinal)
+                || string.Equals(childKey, expectedSuffix, StringComparison.Ordinal))
+            {
+                return childKey;
+            }
+        }
+
+        return null;
     }
 
     public LevelNode GetNode(string pathKey)

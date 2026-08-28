@@ -152,6 +152,37 @@ public static class ApiPlanApiObjectOwnership
             && HasString(metadata.SelectToken("ownership.apiGuid"), apiGuid);
     }
 
+    public static bool MatchesMetadataOwnership(
+        JObject metadata,
+        IEnumerable<string> supportedSchemaVersions,
+        string expectedApiName,
+        string apiGuid)
+    {
+        if (metadata is null)
+        {
+            throw new ArgumentNullException(nameof(metadata));
+        }
+
+        if (supportedSchemaVersions is null)
+        {
+            throw new ArgumentNullException(nameof(supportedSchemaVersions));
+        }
+
+        var schemaOk = false;
+        foreach (var supported in supportedSchemaVersions)
+        {
+            if (HasString(metadata["schemaVersion"], supported))
+            {
+                schemaOk = true;
+                break;
+            }
+        }
+
+        return schemaOk
+            && HasString(metadata.SelectToken("ownership.apiName"), expectedApiName)
+            && HasString(metadata.SelectToken("ownership.apiGuid"), apiGuid);
+    }
+
     public static OwnershipKind Resolve(
         bool ownedMetadataFilePresent,
         JObject? metadata,

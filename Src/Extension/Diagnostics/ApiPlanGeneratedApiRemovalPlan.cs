@@ -12,6 +12,12 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// </summary>
 public sealed class ApiPlanGeneratedApiRemovalPlan
 {
+    private static readonly string[] SupportedSchemaVersions =
+    {
+        "GOAB_API_METADATA_B060_V1",
+        "GOAB_API_METADATA_B060_V2",
+    };
+
     private ApiPlanGeneratedApiRemovalPlan(
         string transactionName,
         string apiName,
@@ -64,7 +70,7 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
             throw new ArgumentException("Transaction GUID is required.", nameof(expectedTransactionGuid));
         }
 
-        RequireString(metadata["schemaVersion"], "GOAB_API_METADATA_B060_V1", "schemaVersion");
+        RequireSupportedSchemaVersion(metadata["schemaVersion"]);
         RequireString(metadata.SelectToken("ownership.transactionName"), expectedTransactionName, "ownership.transactionName");
         RequireString(metadata.SelectToken("ownership.transactionGuid"), expectedTransactionGuid, "ownership.transactionGuid");
 
@@ -77,18 +83,22 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
         var procedures = ReadStringArray(metadata.SelectToken("objects.procedures"));
         var shared = ReadStringArray(metadata.SelectToken("objects.sdts.shared"));
         // Ordem de exclusao: ListResponse tipa Items com Response; apagar Response antes falha na IDE.
-        var ownSdts = new[]
-            {
-                metadata.SelectToken("objects.sdts.listResponse")?.Value<string>(),
-                metadata.SelectToken("objects.sdts.createRequest")?.Value<string>(),
-                metadata.SelectToken("objects.sdts.updateRequest")?.Value<string>(),
-                metadata.SelectToken("objects.sdts.listFilters")?.Value<string>(),
-                metadata.SelectToken("objects.sdts.response")?.Value<string>(),
-            }
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .Select(name => name!)
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
+        // V2 pode trazer objects.sdts.own com inventário completo (inclui SDTs hierárquicos).
+        var ownFromMetadata = ReadStringArray(metadata.SelectToken("objects.sdts.own"));
+        var ownSdts = ownFromMetadata.Count > 0
+            ? ownFromMetadata
+            : new[]
+                {
+                    metadata.SelectToken("objects.sdts.listResponse")?.Value<string>(),
+                    metadata.SelectToken("objects.sdts.createRequest")?.Value<string>(),
+                    metadata.SelectToken("objects.sdts.updateRequest")?.Value<string>(),
+                    metadata.SelectToken("objects.sdts.listFilters")?.Value<string>(),
+                    metadata.SelectToken("objects.sdts.response")?.Value<string>(),
+                }
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(name => name!)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
 
         foreach (var sharedName in shared)
         {
@@ -166,6 +176,29 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
         }
 
         return token.Value<string>()!;
+    }
+
+    private static void RequireSupportedSchemaVersion(JToken? token)
+    {
+        var actual = token is not null && token.Type == JTokenType.String ? token.Value<string>() : null;
+        var supported = false;
+        if (!string.IsNullOrWhiteSpace(actual))
+        {
+            for (var index = 0; index < SupportedSchemaVersions.Length; index++)
+            {
+                if (string.Equals(actual, SupportedSchemaVersions[index], StringComparison.Ordinal))
+                {
+                    supported = true;
+                    break;
+                }
+            }
+        }
+
+        if (!supported)
+        {
+            throw new InvalidOperationException(
+                $"Metadata de remoção incompatível em 'schemaVersion': esperado V1 ou V2, encontrado '{actual ?? "<ausente>"}'.");
+        }
     }
 
     private static void RequireString(JToken? token, string expected, string path)

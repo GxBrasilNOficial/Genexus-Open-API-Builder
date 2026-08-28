@@ -1420,18 +1420,12 @@ internal sealed class PrototypeWizardDialog : Form
             builder.Append(Environment.NewLine);
         }
 
-        builder.Append(_texts.Translate(ApiPlanHierarchicalWizardSelection.LifecycleV1WarningText));
-        return builder.ToString();
+        return builder.ToString().TrimEnd();
     }
 
     private string FormatHierarchicalGuarantee()
     {
-        if (_hierarchicalSelection is null || !_hierarchicalSelection.HasSublevels)
-        {
-            return string.Empty;
-        }
-
-        return Environment.NewLine + _texts.Translate(ApiPlanHierarchicalWizardSelection.LifecycleV1WarningText);
+        return string.Empty;
     }
 
     private string FormatAttribute(PrototypeWizardAttributeDecision attribute)

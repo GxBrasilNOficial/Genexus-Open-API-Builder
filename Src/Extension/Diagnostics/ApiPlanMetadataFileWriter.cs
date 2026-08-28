@@ -15,8 +15,32 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanMetadataFileWriter
 {
-    internal const string SchemaVersion = "GOAB_API_METADATA_B060_V1";
+    internal const string SchemaVersionV1 = "GOAB_API_METADATA_B060_V1";
+    internal const string SchemaVersion = "GOAB_API_METADATA_B060_V2";
+    internal static readonly string[] SupportedSchemaVersions =
+    {
+        SchemaVersionV1,
+        SchemaVersion,
+    };
     internal const string B067IntegrityVersion = ApiPlanMetadataIntegrity.Version;
+
+    internal static bool IsSupportedSchemaVersion(string? schemaVersion)
+    {
+        if (string.IsNullOrWhiteSpace(schemaVersion))
+        {
+            return false;
+        }
+
+        for (var index = 0; index < SupportedSchemaVersions.Length; index++)
+        {
+            if (string.Equals(schemaVersion, SupportedSchemaVersions[index], StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     public static ApiPlanMetadataFileWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
@@ -197,7 +221,7 @@ internal static class ApiPlanMetadataFileWriter
             throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: File proprio '{apiPlan.MetadataFileName}' possui JSON invalido. Nenhuma alteracao foi feita.", ex);
         }
 
-        RequireString(metadata, "schemaVersion", SchemaVersion, apiPlan.MetadataFileName);
+        RequireSupportedSchemaVersion(metadata["schemaVersion"], apiPlan.MetadataFileName);
         RequireString(metadata.SelectToken("ownership.transactionName"), apiPlan.TransactionName, "ownership.transactionName", apiPlan.MetadataFileName);
         RequireString(metadata.SelectToken("ownership.transactionGuid"), transaction.Guid.ToString(), "ownership.transactionGuid", apiPlan.MetadataFileName);
         RequireString(metadata.SelectToken("ownership.apiName"), apiPlan.ApiName, "ownership.apiName", apiPlan.MetadataFileName);
@@ -339,6 +363,7 @@ internal static class ApiPlanMetadataFileWriter
                     ["response"] = apiPlan.ResponseSdtName,
                     ["listFilters"] = apiPlan.ListFiltersSdtName,
                     ["listResponse"] = apiPlan.ListResponseSdtName,
+                    ["own"] = ToStringArray(BuildOwnSdtNamesForRemoval(apiPlan)),
                     ["shared"] = ToStringArray(apiPlan.SharedSdtNames),
                 },
             },
@@ -351,6 +376,7 @@ internal static class ApiPlanMetadataFileWriter
                 ["description"] = apiPlan.ServiceDescriptions.Single(description => string.Equals(description.ServiceName, service.Name, StringComparison.OrdinalIgnoreCase)).Description,
             })),
             ["transactionStructure"] = ToFieldArray(transactionStructure),
+            ["levels"] = ApiPlanMetadataLevelsCodec.CreateLevelsToken(apiPlan),
             ["fields"] = new JObject
             {
                 ["primaryKey"] = ToFieldArray(apiPlan.PrimaryKey),
@@ -529,7 +555,34 @@ internal static class ApiPlanMetadataFileWriter
             };
         }
 
+        var levels = ApiPlanMetadataLevelsCodec.CreateLevelsToken(apiPlan);
+        if (levels is not null)
+        {
+            contract["levels"] = levels;
+        }
+
         return contract;
+    }
+
+    private static IReadOnlyList<string> BuildOwnSdtNamesForRemoval(ApiPlan apiPlan)
+    {
+        if (ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(apiPlan))
+        {
+            // OwnSdts sai em pós-ordem (filhos antes do pai). Remover precisa do inverso.
+            return ApiPlanSdtGenerationPlanBuilder.Create(apiPlan).OwnSdts
+                .Select(definition => definition.Name)
+                .Reverse()
+                .ToArray();
+        }
+
+        return new[]
+        {
+            apiPlan.ListResponseSdtName,
+            apiPlan.CreateRequestSdtName,
+            apiPlan.UpdateRequestSdtName,
+            apiPlan.ListFiltersSdtName,
+            apiPlan.ResponseSdtName,
+        };
     }
 
     private static JObject CreateClassificationObject(ApiPlanFieldClassificationConfiguration configuration)
@@ -662,6 +715,15 @@ internal static class ApiPlanMetadataFileWriter
         if (token is null || token.Type != JTokenType.String || !string.Equals(token.Value<string>(), expectedValue, StringComparison.Ordinal))
         {
             throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: File proprio '{fileName}' possui '{tokenPath}' incompativel. Nenhuma alteracao foi feita.");
+        }
+    }
+
+    private static void RequireSupportedSchemaVersion(JToken? token, string fileName)
+    {
+        var actual = token is not null && token.Type == JTokenType.String ? token.Value<string>() : null;
+        if (!IsSupportedSchemaVersion(actual))
+        {
+            throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: File proprio '{fileName}' possui 'schemaVersion' incompativel. Nenhuma alteracao foi feita.");
         }
     }
 

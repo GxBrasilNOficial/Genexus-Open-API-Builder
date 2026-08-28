@@ -106,7 +106,7 @@ Receber `ApiPlan`.
 - **Já em B096:** o **plano de SDT** consome `Levels` quando há filhos e emite SDTs derivados por contrato (`sdt<NomeBase>_API_<Papel>_<Subnível>`), com desambiguação e encurtamento de objeto a 128.
 - **Já em B098:** com subníveis o plano emite `sdt<NomeBase>_API_ListResponse_Item` e tipa `ListResponse.Items`; contadores default ligados via `IncludeListCount`.
 - **Já em B099a:** o Wizard consome o leitor, poda `Levels` pela seleção (seletor compartilhado, dependência pai/filho, contador desligável, aviso de profundidade). Transação de nível único permanece no caminho flat.
-- **Fase 6 (`B099b`):** metadata `schemaVersion` V2, sincronização e integridade. Apply hierárquico já é permitido; Remover/Sync continuam V1 até essa fase.
+- **Fase 6 (`B099b`, concluída 2026-08-28):** metadata `schemaVersion` V2, sincronização hierárquica, integridade com árvore e remoção via `objects.sdts.own`. Apply, Sync e Remover liberados para API com subníveis.
 
 Os campos existentes continuam com o mesmo significado, e transação de nível único produz exatamente o mesmo plano de hoje. Detalhes em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 
