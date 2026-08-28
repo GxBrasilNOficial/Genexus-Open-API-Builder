@@ -110,29 +110,47 @@ internal sealed class ApiPlanHierarchicalWizardSelection
 
         if (persisted.SelectedCreateFieldNames is not null)
         {
-            ReplaceSelectedFields(pathKey, "CreateRequest", persisted.SelectedCreateFieldNames);
+            ReplaceSelectedFields(
+                pathKey,
+                "CreateRequest",
+                ResolvePersistedNamesToCurrent(persisted, node, persisted.SelectedCreateFieldNames));
         }
         else if (!node.IsRoot)
         {
-            ReplaceSelectedFields(pathKey, "CreateRequest", persisted.Fields.Select(field => field.Name));
+            ReplaceSelectedFields(
+                pathKey,
+                "CreateRequest",
+                ResolvePersistedNamesToCurrent(persisted, node, persisted.Fields.Select(field => field.Name)));
         }
 
         if (persisted.SelectedUpdateFieldNames is not null)
         {
-            ReplaceSelectedFields(pathKey, "UpdateRequest", persisted.SelectedUpdateFieldNames);
+            ReplaceSelectedFields(
+                pathKey,
+                "UpdateRequest",
+                ResolvePersistedNamesToCurrent(persisted, node, persisted.SelectedUpdateFieldNames));
         }
         else if (!node.IsRoot)
         {
-            ReplaceSelectedFields(pathKey, "UpdateRequest", persisted.Fields.Select(field => field.Name));
+            ReplaceSelectedFields(
+                pathKey,
+                "UpdateRequest",
+                ResolvePersistedNamesToCurrent(persisted, node, persisted.Fields.Select(field => field.Name)));
         }
 
         if (persisted.SelectedResponseFieldNames is not null)
         {
-            ReplaceSelectedFields(pathKey, "Response", persisted.SelectedResponseFieldNames);
+            ReplaceSelectedFields(
+                pathKey,
+                "Response",
+                ResolvePersistedNamesToCurrent(persisted, node, persisted.SelectedResponseFieldNames));
         }
         else if (!node.IsRoot)
         {
-            ReplaceSelectedFields(pathKey, "Response", persisted.Fields.Select(field => field.Name));
+            ReplaceSelectedFields(
+                pathKey,
+                "Response",
+                ResolvePersistedNamesToCurrent(persisted, node, persisted.Fields.Select(field => field.Name)));
         }
 
         if (node.CanIncludeListCount)
@@ -150,6 +168,107 @@ internal sealed class ApiPlanHierarchicalWizardSelection
 
             ApplyPersistedLevel(child, childKey);
         }
+    }
+
+    /// <summary>
+    /// Sync hierárquico — após <see cref="ApplyPersistedPrune"/>, marca campos ADDED
+    /// escolhidos na UI no nível certo (por AttributeGuid), sem misturá-los nas listas flat da raiz.
+    /// </summary>
+    public void IncludeAddedFieldsByGuid(string role, IEnumerable<string> attributeGuids)
+    {
+        if (attributeGuids is null)
+        {
+            throw new ArgumentNullException(nameof(attributeGuids));
+        }
+
+        foreach (var guid in attributeGuids)
+        {
+            if (string.IsNullOrWhiteSpace(guid))
+            {
+                continue;
+            }
+
+            foreach (var node in Options)
+            {
+                var field = node.Level.Fields.FirstOrDefault(item =>
+                    string.Equals(item.AttributeGuid, guid, StringComparison.OrdinalIgnoreCase));
+                if (field is null)
+                {
+                    continue;
+                }
+
+                if (!IsLevelIncluded(node.PathKey))
+                {
+                    break;
+                }
+
+                SetFieldSelected(node.PathKey, role, field.Name, true);
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Mapeia nomes persistidos para nomes correntes pelo AttributeGuid (rename-safe).
+    /// GUID ausente na Transaction atual é descartado (campo removido).
+    /// </summary>
+    private static IReadOnlyList<string> ResolvePersistedNamesToCurrent(
+        ApiPlanLevel persisted,
+        LevelNode currentNode,
+        IEnumerable<string> persistedNames)
+    {
+        var persistedByName = new Dictionary<string, ApiPlanLevelField>(StringComparer.OrdinalIgnoreCase);
+        foreach (var field in persisted.Fields)
+        {
+            if (!persistedByName.ContainsKey(field.Name))
+            {
+                persistedByName[field.Name] = field;
+            }
+        }
+
+        var currentByGuid = new Dictionary<string, ApiPlanLevelField>(StringComparer.OrdinalIgnoreCase);
+        foreach (var field in currentNode.Level.Fields)
+        {
+            if (!currentByGuid.ContainsKey(field.AttributeGuid))
+            {
+                currentByGuid[field.AttributeGuid] = field;
+            }
+        }
+
+        var resolved = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in persistedNames)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                continue;
+            }
+
+            string? currentName = null;
+            if (persistedByName.TryGetValue(name, out var persistedField)
+                && currentByGuid.TryGetValue(persistedField.AttributeGuid, out var byGuid))
+            {
+                currentName = byGuid.Name;
+            }
+            else
+            {
+                var sameName = currentNode.Level.Fields.FirstOrDefault(field =>
+                    string.Equals(field.Name, name, StringComparison.OrdinalIgnoreCase));
+                if (sameName is not null)
+                {
+                    currentName = sameName.Name;
+                }
+            }
+
+            if (currentName is null || !seen.Add(currentName))
+            {
+                continue;
+            }
+
+            resolved.Add(currentName);
+        }
+
+        return resolved;
     }
 
     private static string? FindChildPathKey(LevelNode parent, ApiPlanLevel persistedChild)

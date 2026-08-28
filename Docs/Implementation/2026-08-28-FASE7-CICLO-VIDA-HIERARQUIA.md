@@ -90,7 +90,35 @@ Inventário dinâmico sem bloco `own` ficou coberto pelo teste offline (`tests.g
 - Inventário dinâmico depende de stub mínimo: metadata hierárquica incompleta (SDTs ausentes ou `levels` inválidos) cai no fallback flat.
 - Corte `0.1.0-alpha.5` exige autorização humana explícita (notas trilíngues + dois assets DLL).
 - Critérios 6 (`Gx_FabricaBrasil`) e 10 (smoke U13) continuam fora desta fase, gates da sprint.
+- Lacuna Sync ADDED/rename em subnível: **fechada** em 2026-08-28 (offline + smoke IDE com delta; ver seção seguinte).
+
+## Sync hierárquico — IncludeAdded e Selected* por GUID (2026-08-28)
+
+Gap: o diff do Sync achata a árvore e enxerga ADDED em subnível, mas o apply fazia `CreateDefault` + `ApplyPersistedPrune` (apagava a seleção do campo novo) e as listas flat só resolviam GUID na raiz. Rename pelo mesmo GUID também perdia o nome em `Selected*`.
+
+| Peça | Alteração |
+|---|---|
+| `ApiPlanHierarchicalWizardSelection.cs` | `ResolvePersistedNamesToCurrent` no prune; `IncludeAddedFieldsByGuid` |
+| `ApiPlanTransactionSyncOrchestrator.cs` | `ApplyHierarchicalIncludeAdded` após o prune em `BuildSelection` |
+| `Tests/WizardHierarchical/Test-ApiPlanHierarchicalWizardSelection.ps1` | casos rename (Old→New por GUID) e ADDED (`NewAttr` + `Prune`) |
+
+Validação offline: Build Release 0 erros; `tests.wizardHierarchical` PASS (rename + ADDED).
+
+### Smoke IDE Sync com delta (2026-08-28)
+
+KB `wsEducacaoSpTeste`, Transaction `Teste` / `apiTeste`. Atributo novo `TesteItemObs2` (VARCHAR) em `TesteItem`. Include marcado em Create/Update/Response; ListFilters vazio. Manifesto inalterado.
+
+| Check | Resultado |
+|---|---|
+| Diff B085 | `Adicionados=1; Removidos=0; Renomeados=0; Modificados=0; Inalterados=16` — `+ TesteItemObs2` |
+| Conflito SDT | nenhum |
+| Relatório B081 | `Operação='Sincronizar'`, `SuccessWithWarnings`, `Criados=0`, `Atualizados=27`, `Bloqueados=0`, `Avisos=2`, `DuraçãoMs=24434` |
+| Metadata B060 | `Reencountered`, V2, `Bytes=117066`, SHA-256 `B3DC4F39…4096A31C` |
+| B067 `PlannedContractHash` | `B04A8DFB9C1B511BB2D8D8173A0D4E8998A6416804B2C406A61C813DFE6B8F58` |
+| SDT Create | `sdtTeste_API_CreateRequest_TesteItem` contém `TesteItemObs2` |
+| SDT Update | `sdtTeste_API_UpdateRequest_TesteItem` contém `TesteItemObs2` |
+| SDT Response | `sdtTeste_API_Response_TesteItem` contém `TesteItemObs2` |
 
 ## Conclusão
 
-Fase 7 encerrada em 2026-08-28: código, testes offline, gate `tests.wizardLifecycle` e smoke IDE (apply, critério 8, Sync, Remover preview). Próximos passos operacionais: corte `0.1.0-alpha.5` (com autorização) e `B100` (Delete).
+Fase 7 encerrada em 2026-08-28: código, testes offline, gate `tests.wizardLifecycle` e smoke IDE (apply, critério 8, Sync zero-diff, Remover preview). Lacuna Sync ADDED/rename fechada no mesmo dia (offline + smoke com delta em `TesteItemObs2`). Próximos passos operacionais: corte `0.1.0-alpha.5` (com autorização) e `B100` (Delete).

@@ -187,6 +187,7 @@ internal static class ApiPlanTransactionSyncOrchestrator
                 ?? throw new InvalidOperationException("Metadata hierárquica sem levels para restaurar a seleção do Sync.");
             hierarchicalSelection = ApiPlanHierarchicalWizardSelection.CreateDefault(preview.CurrentHierarchicalRoot);
             hierarchicalSelection.ApplyPersistedPrune(persistedRoot);
+            ApplyHierarchicalIncludeAdded(hierarchicalSelection, choices);
         }
 
         return new PrototypeWizardFlowSelection(
@@ -219,6 +220,21 @@ internal static class ApiPlanTransactionSyncOrchestrator
                 || string.Equals(name, "Create", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(name, "Update", StringComparison.OrdinalIgnoreCase)),
             hierarchicalSelection);
+    }
+
+    private static void ApplyHierarchicalIncludeAdded(
+        ApiPlanHierarchicalWizardSelection selection,
+        ApiPlanTransactionSyncChoices choices)
+    {
+        foreach (var role in new[] { "CreateRequest", "UpdateRequest", "Response" })
+        {
+            if (!choices.IncludeAddedByRole.TryGetValue(role, out var guids) || guids is null || guids.Count == 0)
+            {
+                continue;
+            }
+
+            selection.IncludeAddedFieldsByGuid(role, guids);
+        }
     }
 
     public static IReadOnlyCollection<string> ResolvePreservedSdtNames(
