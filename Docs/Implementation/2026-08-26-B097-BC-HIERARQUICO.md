@@ -50,6 +50,29 @@ Registradas no checkpoint; **não** bloqueiam B098 nem alteram o contrato do Lis
 1. **Update + PK autonumerada de linha — concluído em 2026-08-28.** `ShouldAssignFieldToBc` omite campos `IsAutonumber` na atribuição ao BC em Create e Update (incluindo Clear+Add). Ouro `ThreeDeep/Update.source.txt` atualizado; asserções no gate `tests.businessComponentHierarchical`.
 2. **`BcCollectionName` `<unnamed>` — concluído em 2026-08-28.** `ApiPlanHierarchicalContractMapBuilder` recusa subnível sem nome estrutural; fixture `InheritedPrimaryKey` renomeou o filho para `Line`; fallback `<unnamed>` permanece só no leitor B095 (`UnnamedSublevel` reader-only).
 
+## Nota 2026-08-28 — Autonumber, PK composta e validação IDE
+
+Conferência com a skill nexa (`object-transaction.md`), o FAQ de training GeneXus *Autonumbering the second level of a transaction* e a [Serial rule](https://wiki.genexus.com/commwiki/servlet/wiki?6866,Serial%20rule) na wiki:
+
+- A propriedade **Autonumber** só se aplica a **PK simples** (um único atributo), tipicamente no **primeiro nível** da Transaction.
+- Em subnível, a PK física é **composta** (identificadores herdados do pai + identificador da linha). Marcar Autonumber no atributo da linha é **ignorado** pelo GeneXus (Warning no Impact Analysis); numeração automática de linha usa a rule **`Serial`**, não Autonumber.
+
+O projeto já reflete isso em `TransactionAttributeKeyTraits`: com `primaryKeyPartCount > 1`, `IsAutonumber` é **false** antes de ler a propriedade — ver fixture `InheritedPrimaryKey` e gate `Tests/WizardContract/Test-PrototypeWizardAutonumberCompositeKey.ps1`.
+
+**Validação IDE de Autonumber em subnível descartada.** Não reproduzir na Transaction `Teste` (ex.: marcar `TesteItemFolioDocId` como Autonumber): o GeneXus não honra Autonumber ali, o leitor hierárquico reporta PK composta e o gerador permanece em match-by-PK — comportamento correto para linha com PK informada.
+
+A fixture offline `ThreeDeep` **simplifica** o nível `Worker` (só `WorkerId` em `PrimaryKeyNames`, contagem = 1) para exercitar o caminho Update **Clear+Add** quando `HasAutonumberPrimaryKey = true`. Não espelha uma Transaction real multinível; cobre o emissor BC de forma modelada.
+
+**Evidência fechada para a dívida 1 (PK autonumerada no Update):**
+
+| Camada | Evidência |
+|---|---|
+| Offline | Ouro `ThreeDeep/Update.source.txt` + gate `tests.businessComponentHierarchical` |
+| Coerência GeneXus | `InheritedPrimaryKey` + `IsAutonumberCore` (PK composta nunca autonumerada) |
+| Regressão IDE (2026-08-28) | DLL pós-B097, reapply `apiTeste` (`Updated=27`, `Blocked=0`), Build All nos dois environments, smoke HTTP 16/16 (`Temp/b099v-smoke-hierarchical-2026-08-28.json`) |
+
+Numeração de linha por **`Serial`** (sequencial, distinta de Autonumber) permanece fora do critério `IsAutonumber` atual — frente futura se entrar Transaction com `Serial` no contrato hierárquico.
+
 ## Correção 2026-08-26 — tipo BC de nível aninhado
 
 O tipo da variável `&Bc_<token>` era `Transaction.NomeDoNível`. Isso vale para filho direto (`Day.Shift`, `Teste.TesteItem`) e falha no neto: GeneXus resolve `Teste.TesteItem.TesteItemFolio`, não `Teste.TesteItemFolio`. O preflight B055 bloqueou o apply de três níveis na `Teste` sem gravar Source BC.
