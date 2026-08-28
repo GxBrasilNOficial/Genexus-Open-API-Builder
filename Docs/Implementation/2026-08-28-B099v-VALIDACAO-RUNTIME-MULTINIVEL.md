@@ -48,6 +48,21 @@ Bateria (16 checks por environment):
 
 **.NET Framework / SQL Server** e **.NET / PostgreSQL**: `passed=True` (2026-08-28 07:17 local).
 
+### Cadeia completa no HEAD `7845754` (2026-08-28 ~14:49–14:57)
+
+Fecha o gap de data gerador × artefato da pré-push reforçada. Sequência:
+
+1. Build Release da extensão (0 avisos/erros); SHA-256 `BA14FF1FD47C5933368FF90B2624FC039AFCC8F33B878321628253226F8C61E4`.
+2. IDE fechada; `Install-ExtensionForGeneXus18.bat` (admin); DLL instalada = build (`InstalledMatchesBuild=True`). Manifesto inalterado — sem `genexus /install`.
+3. Wizard na `Teste` / `apiTeste`: preflight aprovado antes do 1º Save; B081 `SuccessWithWarnings`, `Created=0`, `Updated=27`, `Blocked=0`, `Avisos=2`, `DuraçãoMs=24864`; `PlannedContractHash` estável `21F955426F5A11630ECEBC05BA582D56F6B64CB8D6B8E157D6B97381A87F22CD`.
+4. Build All: `NETFrameworkSQLServer004` e `NETPostgreSQL155` — `Success: Build All` (aviso `FBiTextSharp.dll` só no Framework).
+5. Smoke HTTP (mesmo script `Temp/Invoke-B099vHierarchicalSmoke.ps1`), 16/16 em cada environment:
+
+| Environment | Resultado | Captura |
+|---|---|---|
+| `NETFrameworkSQLServer` | `passed=True` | `Temp/b099v-smoke-hierarchical-2026-08-28-head-7845754-fullchain.json` |
+| `NETPostgreSQL` | `passed=True` | idem |
+
 Nota operacional: Create exige PK de cabeçalho explícita (`TesteId`, `TesteDate`, `TesteCodigo`) no payload; omitir gera colisão (`DuplicatePrimaryKey`) porque as rules preenchem valores repetidos quando a PK não vem no corpo.
 
 ## Item 4 — critério 9 (contrato OpenAPI publicado)
