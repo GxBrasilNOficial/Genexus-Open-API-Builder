@@ -334,6 +334,13 @@ internal static class ApiPlanTransactionSyncOrchestrator
 
     private static IReadOnlyList<ApiPlanTransactionSyncSdtConflict> DetectSdtConflicts(KBModel designModel, JObject metadata)
     {
+        // B099b/Fase 7: metadata hierárquica grava campos flat no cabeçalho; comparar
+        // membros do SDT raiz contra esse snapshot produz falso positivo nos três contratos.
+        if (ApiPlanMetadataLevelsCodec.HasHierarchicalLevels(metadata))
+        {
+            return Array.Empty<ApiPlanTransactionSyncSdtConflict>();
+        }
+
         var conflicts = new List<ApiPlanTransactionSyncSdtConflict>();
         AddConflictIfDiverged(designModel, conflicts, metadata.SelectToken("objects.sdts.createRequest")?.Value<string>(), ReadFieldNames(metadata, "fields.createRequest"));
         AddConflictIfDiverged(designModel, conflicts, metadata.SelectToken("objects.sdts.updateRequest")?.Value<string>(), ReadFieldNames(metadata, "fields.updateRequest"));

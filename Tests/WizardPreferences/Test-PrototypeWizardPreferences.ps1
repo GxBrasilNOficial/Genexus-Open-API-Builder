@@ -119,6 +119,21 @@ $legacyJson = @'
 '@
 $legacyParsed = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Parse($legacyJson)
 Assert-True $legacyParsed.ListServiceByDefault 'JSON sem bloco services deve aplicar fallback conservador habilitado.'
+
+$legacyNoSchema = @'
+{
+  "wizardDefaults": {
+    "generateSdts": true,
+    "generateProcedures": false,
+    "generateApiObject": true,
+    "generateMetadata": false,
+    "applyList": true,
+    "applyBusinessComponent": false
+  }
+}
+'@
+$legacyNoSchemaParsed = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Parse($legacyNoSchema)
+Assert-True $legacyNoSchemaParsed.GenerateSdtsByDefault 'JSON legado sem schemaVersion deve ser tolerado.'
 Assert-Equal 'Authentication' $legacyParsed.SecurityLevelByDefault 'JSON sem securityLevel deve aplicar fallback Authentication.'
 Assert-Equal 50 $legacyParsed.DefaultPageSizeByDefault 'JSON sem pagination deve aplicar DefaultPageSize fallback.'
 Assert-Equal 200 $legacyParsed.MaximumPageSizeByDefault 'JSON sem pagination deve aplicar MaximumPageSize fallback.'

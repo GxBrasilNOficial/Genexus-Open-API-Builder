@@ -1090,6 +1090,11 @@ internal sealed class PrototypeWizardDialog : Form
             }
 
             _hierarchicalSelection = ApiPlanHierarchicalWizardSelection.CreateDefault(snapshot.RootLevel);
+            var persistedRoot = _snapshot.ExistingApiContract.PersistedHierarchicalRoot;
+            if (persistedRoot is not null)
+            {
+                _hierarchicalSelection.ApplyPersistedPrune(persistedRoot);
+            }
             foreach (var bar in _levelBars)
             {
                 bar.Visible = true;

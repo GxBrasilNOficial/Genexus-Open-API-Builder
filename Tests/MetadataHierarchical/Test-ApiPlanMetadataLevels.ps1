@@ -99,7 +99,7 @@ $codecPath = Join-Path $repositoryRoot 'Src\Extension\Diagnostics\ApiPlanMetadat
 Assert-Contains ([IO.File]::ReadAllText($writerPath)) 'GOAB_API_METADATA_B060_V2' 'SchemaVersion de gravação deve ser V2.'
 Assert-Contains ([IO.File]::ReadAllText($writerPath)) 'SchemaVersionV1' 'Constante V1 deve existir para leitura tolerante.'
 Assert-Contains ([IO.File]::ReadAllText($writerPath)) 'CreateLevelsToken' 'Metadata deve serializar levels.'
-Assert-Contains ([IO.File]::ReadAllText($writerPath)) 'BuildOwnSdtNamesForRemoval' 'Metadata deve inventariar SDTs próprios para remoção.'
+Assert-Contains ([IO.File]::ReadAllText($writerPath)) 'ApiPlanGeneratedApiRemovalInventory.BuildOwnSdtNamesForRemoval' 'Metadata deve inventariar SDTs próprios para remoção.'
 Assert-Contains ([IO.File]::ReadAllText($codecPath)) 'HasHierarchicalLevels' 'Codec deve detectar árvore hierárquica.'
 Assert-Contains ([IO.File]::ReadAllText($codecPath)) 'FlattenToSyncSnapshots' 'Codec deve achatar árvore para diff de Sync.'
 

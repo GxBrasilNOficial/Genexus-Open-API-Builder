@@ -4,7 +4,7 @@
 
 **Projeto:** Genexus Open API Builder
 **Status documental:** Coleção Foundation consolidada; checkpoint operacional em `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`
-**Status técnico:** Extensão em linha Alpha; Sprint 9 em andamento (Fase 6/`B099b` concluída em 2026-08-28; Fase 7 não iniciada)
+**Status técnico:** Extensão em linha Alpha; Sprint 9 em andamento (Fase 7 concluída em 2026-08-28; próximo corte `0.1.0-alpha.5`, depois `B100`)
 **Status público:** Repositório público; releases Alpha no GitHub (corte vigente `0.1.0-alpha.4`)
 **Idioma:** Português BR
 **Público principal:** mantenedor principal, futuros colaboradores técnicos e comunidade interessada

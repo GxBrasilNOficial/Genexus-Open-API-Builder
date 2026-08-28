@@ -9,7 +9,7 @@ Escopo: `schemaVersion` V2 com árvore de níveis, leitura tolerante de V1, `Pla
 - Gravação sempre `GOAB_API_METADATA_B060_V2`; leitura aceita V1 e V2 (V1 = nível único).
 - Sem migração autônoma na abertura do Wizard: V1 só vira V2 quando a geração aplica e regrava o File.
 - `levels` só entra no JSON e no contrato B067 quando há subníveis selecionados; API plana mantém hash compatível com o contrato flat anterior.
-- `objects.sdts.own` lista SDTs próprios na ordem de remoção (inventário gravado na apply). A Fase 7 ainda pode evoluir inventário dinâmico/releitura do Wizard.
+- `objects.sdts.own` lista SDTs próprios na ordem de remoção (inventário gravado na apply). A Fase 7 acrescentou inventário dinâmico quando `own` estiver ausente (ver `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`).
 - Critérios 6 (`Gx_FabricaBrasil`) e 10 (smoke U13) continuam fora desta fase.
 
 ## Peças
@@ -55,7 +55,7 @@ Avisos esperados (não bloqueantes): fallback de descrições em inglês; Folder
 
 ## Validação IDE — Sync apply (2026-08-28)
 
-Mesma KB/API. Preview: diff `0/0/0/0/16`; conflitos SDT raiz (falso positivo hierárquico — detector flat). Apply com **Replace** nos três SDTs; `PreservedSdts=0`.
+Mesma KB/API. Preview: diff hierárquico sem falso positivo de conflito SDT raiz (corrigido na Fase 7); apply com **Replace** nos três SDTs quando necessário; `PreservedSdts=0`.
 
 | Check | Resultado |
 |---|---|
@@ -129,4 +129,4 @@ Diagnóstico: resíduo de **cache de especificação/geração do environment**,
 
 ## Fechamento B099b
 
-Fase 6 encerrada em 2026-08-28: código, testes offline, smoke IDE hierárquico (`Teste`: Wizard, Sync, Remover) e smoke plano V1→V2 (`NotaFiscal`). Residual consciente para Fase 7: detector de conflito SDT flat vs hierárquico no Sync.
+Fase 6 encerrada em 2026-08-28: código, testes offline, smoke IDE hierárquico (`Teste`: Wizard, Sync, Remover) e smoke plano V1→V2 (`NotaFiscal`). Residual Sync flat vs hierárquico **encerrado na Fase 7** — ver `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.

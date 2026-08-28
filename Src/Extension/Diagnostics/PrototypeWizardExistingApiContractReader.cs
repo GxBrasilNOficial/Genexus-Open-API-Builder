@@ -10,6 +10,7 @@ using Artech.Architecture.Common.Objects;
 using Artech.Genexus.Common.Objects;
 using Artech.Genexus.Common.Parts.SDT;
 using Artech.Genexus.Common.Wiki;
+using GenexusOpenApiBuilder.Extension.Domain;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -99,6 +100,9 @@ internal static class PrototypeWizardExistingApiContractReader
                 .ToDictionary(group => group.Key, group => group.First().Description!, StringComparer.OrdinalIgnoreCase);
 
         var hasExistingApi = api is not null || metadata.IsAvailable;
+        var persistedHierarchicalRoot = metadata.Document is not null && ApiPlanMetadataLevelsCodec.HasHierarchicalLevels(metadata.Document)
+            ? ApiPlanMetadataLevelsCodec.TryReadRoot(metadata.Document)
+            : null;
         return new PrototypeWizardExistingApiContract(
             hasExistingApi,
             serviceDefinitions,
@@ -118,7 +122,8 @@ internal static class PrototypeWizardExistingApiContractReader
             staticOrder,
             serviceDescriptions,
             source.DuplicateServiceNames,
-            includeBusinessComponentErrorMessages);
+            includeBusinessComponentErrorMessages,
+            persistedHierarchicalRoot);
     }
 
     private static API? ResolveApiObject(
@@ -667,7 +672,9 @@ internal sealed class PrototypeWizardExistingApiContract
             null,
             Array.Empty<PrototypeWizardExistingStaticOrder>(),
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
-            Array.Empty<string>())
+            Array.Empty<string>(),
+            includeBusinessComponentErrorMessages: true,
+            persistedHierarchicalRoot: null)
     {
     }
 
@@ -690,7 +697,8 @@ internal sealed class PrototypeWizardExistingApiContract
         IReadOnlyList<PrototypeWizardExistingStaticOrder> staticOrder,
         IReadOnlyDictionary<string, string> serviceDescriptions,
         IReadOnlyList<string> duplicateServiceNames,
-        bool includeBusinessComponentErrorMessages = true)
+        bool includeBusinessComponentErrorMessages = true,
+        ApiPlanLevel? persistedHierarchicalRoot = null)
     {
         HasExistingApi = hasExistingApi;
         // A primeira declaração de cada nome vence: contrato de origem malformado não pode
@@ -725,6 +733,7 @@ internal sealed class PrototypeWizardExistingApiContract
         StaticOrder = staticOrder;
         ServiceDescriptions = serviceDescriptions;
         IncludeBusinessComponentErrorMessages = includeBusinessComponentErrorMessages;
+        PersistedHierarchicalRoot = persistedHierarchicalRoot;
     }
 
     public bool HasExistingApi { get; }
@@ -741,6 +750,7 @@ internal sealed class PrototypeWizardExistingApiContract
     public IReadOnlyDictionary<string, string> ServiceDescriptions { get; }
     public IReadOnlyList<string> DuplicateServiceNames { get; }
     public bool IncludeBusinessComponentErrorMessages { get; }
+    public ApiPlanLevel? PersistedHierarchicalRoot { get; }
 
     public bool TryGetServiceSelection(string name, out bool selected)
     {

@@ -363,7 +363,7 @@ internal static class ApiPlanMetadataFileWriter
                     ["response"] = apiPlan.ResponseSdtName,
                     ["listFilters"] = apiPlan.ListFiltersSdtName,
                     ["listResponse"] = apiPlan.ListResponseSdtName,
-                    ["own"] = ToStringArray(BuildOwnSdtNamesForRemoval(apiPlan)),
+                    ["own"] = ToStringArray(ApiPlanGeneratedApiRemovalInventory.BuildOwnSdtNamesForRemoval(apiPlan)),
                     ["shared"] = ToStringArray(apiPlan.SharedSdtNames),
                 },
             },
@@ -562,27 +562,6 @@ internal static class ApiPlanMetadataFileWriter
         }
 
         return contract;
-    }
-
-    private static IReadOnlyList<string> BuildOwnSdtNamesForRemoval(ApiPlan apiPlan)
-    {
-        if (ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(apiPlan))
-        {
-            // OwnSdts sai em pós-ordem (filhos antes do pai). Remover precisa do inverso.
-            return ApiPlanSdtGenerationPlanBuilder.Create(apiPlan).OwnSdts
-                .Select(definition => definition.Name)
-                .Reverse()
-                .ToArray();
-        }
-
-        return new[]
-        {
-            apiPlan.ListResponseSdtName,
-            apiPlan.CreateRequestSdtName,
-            apiPlan.UpdateRequestSdtName,
-            apiPlan.ListFiltersSdtName,
-            apiPlan.ResponseSdtName,
-        };
     }
 
     private static JObject CreateClassificationObject(ApiPlanFieldClassificationConfiguration configuration)

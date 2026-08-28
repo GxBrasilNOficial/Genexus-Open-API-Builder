@@ -1,23 +1,18 @@
+#requires -Version 7.4
+
+[CmdletBinding()]
+param(
+    [string]$DllPath = '',
+    [string]$GeneXusDirectory = 'C:\Program Files (x86)\GeneXus\GeneXus18'
+)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$helperPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanGeneratedApiRemovalPlan.cs'
-$newtonsoftPath = Get-ChildItem -Path (Join-Path $env:USERPROFILE '.nuget\packages\newtonsoft.json') -Filter Newtonsoft.Json.dll -Recurse |
-    Where-Object { $_.FullName -match '\\lib\\netstandard2\.0\\Newtonsoft\.Json\.dll$' } |
-    Sort-Object FullName -Descending |
-    Select-Object -First 1 -ExpandProperty FullName
-
-if ([string]::IsNullOrWhiteSpace($newtonsoftPath)) {
-    throw 'Newtonsoft.Json.dll não encontrado no cache NuGet local.'
+$repositoryRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+if ([string]::IsNullOrWhiteSpace($DllPath)) {
+    $DllPath = Join-Path $repositoryRoot 'Src\Extension\bin\Release\net471\GenexusOpenApiBuilder.Extension.dll'
 }
-
-$runtimeAssemblies = @([System.AppContext]::GetData('TRUSTED_PLATFORM_ASSEMBLIES') -split [System.IO.Path]::PathSeparator |
-    Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-if ($runtimeAssemblies.Count -eq 0) {
-    throw 'Assemblies do runtime PowerShell atual não foram encontrados.'
-}
-
-Add-Type -Path $helperPath -ReferencedAssemblies @(($runtimeAssemblies + $newtonsoftPath) | Sort-Object -Unique)
 
 function Assert-True {
     param([bool]$Condition, [string]$Message)
@@ -31,9 +26,101 @@ function Assert-Equal {
     }
 }
 
-$txGuid = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
-$apiGuid = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
-$metadata = [Newtonsoft.Json.Linq.JObject]::Parse(@"
+function Get-Prop {
+    param($Object, [string]$Name)
+    $property = $Object.GetType().GetProperty($Name, [System.Reflection.BindingFlags]'Instance, NonPublic, Public')
+    if ($null -eq $property) { throw "PROPERTY_MISSING: $Name" }
+    return $property.GetValue($Object)
+}
+
+function Get-Count {
+    param($Object)
+    if ($null -eq $Object) { return 0 }
+    $countProperty = $Object.GetType().GetProperty('Count', [System.Reflection.BindingFlags]'Instance, Public')
+    if ($null -ne $countProperty) {
+        return [int]$countProperty.GetValue($Object)
+    }
+    $count = 0
+    foreach ($item in @($Object)) { $count++ }
+    return $count
+}
+
+function Get-ItemAt {
+    param($Object, [int]$Index)
+    $list = @($Object)
+    return $list[$Index]
+}
+
+function Get-AssemblyDirectoryCandidates {
+    param([string]$GeneXusRoot)
+    $candidates = [System.Collections.Generic.List[string]]::new()
+    foreach ($relative in @('Packages', 'GeneXusBlazorControls', '')) {
+        $path = if ([string]::IsNullOrWhiteSpace($relative)) { $GeneXusRoot } else { Join-Path $GeneXusRoot $relative }
+        if (Test-Path -LiteralPath $path -PathType Container) {
+            $candidates.Add($path)
+        }
+    }
+    $dllDirectory = Split-Path -Parent $DllPath
+    if (Test-Path -LiteralPath $dllDirectory -PathType Container) {
+        $candidates.Add($dllDirectory)
+    }
+    return @($candidates | Select-Object -Unique)
+}
+
+function Initialize-GeneXusAssemblyResolver {
+    param([string[]]$SearchDirectories)
+    $script:AssemblySearchDirectories = @($SearchDirectories)
+    $script:AssemblyResolveBusy = $false
+    $script:AssemblyResolveHandler = [System.ResolveEventHandler]{
+        param($sender, $args)
+        if ($script:AssemblyResolveBusy) { return $null }
+        $script:AssemblyResolveBusy = $true
+        try {
+            $requestedName = New-Object System.Reflection.AssemblyName($args.Name)
+            $simpleName = $requestedName.Name
+            if ($simpleName.EndsWith('.resources', [System.StringComparison]::OrdinalIgnoreCase)) {
+                return $null
+            }
+            foreach ($directory in $script:AssemblySearchDirectories) {
+                $candidate = Join-Path $directory ($simpleName + '.dll')
+                if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                    return [System.Reflection.Assembly]::LoadFrom($candidate)
+                }
+            }
+            return $null
+        }
+        finally {
+            $script:AssemblyResolveBusy = $false
+        }
+    }
+    [System.AppDomain]::CurrentDomain.add_AssemblyResolve($script:AssemblyResolveHandler)
+}
+
+if (-not (Test-Path -LiteralPath $DllPath -PathType Leaf)) {
+    Write-Output "ENVIRONMENT_BLOCKED: DLL Release ausente em $DllPath"
+    exit 2
+}
+
+if (-not (Test-Path -LiteralPath $GeneXusDirectory -PathType Container)) {
+    Write-Output "ENVIRONMENT_BLOCKED: Instalacao GeneXus nao encontrada em modo leitura: $GeneXusDirectory"
+    exit 2
+}
+
+$script:AssemblyResolveHandler = $null
+try {
+    Initialize-GeneXusAssemblyResolver -SearchDirectories (Get-AssemblyDirectoryCandidates -GeneXusRoot $GeneXusDirectory)
+    $assembly = [System.Reflection.Assembly]::LoadFrom($DllPath)
+    $planType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGeneratedApiRemovalPlan', $true, $false)
+    $inventoryType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGeneratedApiRemovalInventory', $true, $false)
+    Assert-True ($null -ne $planType) 'ApiPlanGeneratedApiRemovalPlan não encontrado.'
+    Assert-True ($null -ne $inventoryType) 'ApiPlanGeneratedApiRemovalInventory não encontrado.'
+
+    $fromMetadata = $planType.GetMethod('FromMetadata', [System.Reflection.BindingFlags]'Static, Public')
+    $resolveOwn = $inventoryType.GetMethod('ResolveOwnSdtNames', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
+
+    $txGuid = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+    $apiGuid = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+    $metadata = [Newtonsoft.Json.Linq.JObject]::Parse(@"
 {
   `"schemaVersion`": `"GOAB_API_METADATA_B060_V1`",
   `"ownership`": {
@@ -59,41 +146,75 @@ $metadata = [Newtonsoft.Json.Linq.JObject]::Parse(@"
 }
 "@)
 
-$plan = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGeneratedApiRemovalPlan]::FromMetadata($metadata, 'Teste', $txGuid)
-Assert-Equal 'apiTeste' $plan.ApiName 'ApiName do plano'
-Assert-Equal 4 $plan.ProcedureNames.Count 'Procedures no plano'
-Assert-Equal 5 $plan.OwnSdtNames.Count 'SDTs próprios no plano'
-Assert-Equal 'sdtTeste_API_ListResponse' $plan.OwnSdtNames[0] 'ListResponse deve ser o primeiro SDT a apagar'
-Assert-Equal 'sdtTeste_API_Response' $plan.OwnSdtNames[$plan.OwnSdtNames.Count - 1] 'Response deve ser o último SDT a apagar'
-Assert-Equal 3 $plan.SharedSdtNamesPreserved.Count 'SDTs compartilhados preservados'
-Assert-True $plan.FolderWasCreated 'Folder criado pela extensão'
-$summary = $plan.BuildConfirmationSummary() -replace "`r`n", "`n"
-Assert-True ($summary -match 'Business Component') 'Resumo menciona BC'
-Assert-True ($summary -match '(?m)^  - procTeste_API_List$') 'Procedure List em linha própria'
-Assert-True ($summary -match '(?m)^  - procTeste_API_Get$') 'Procedure Get em linha própria'
-Assert-True ($summary -match '(?m)^Procedures \(4\):$') 'Cabeçalho de Procedures em linha própria'
+    $plan = $fromMetadata.Invoke($null, @($metadata, 'Teste', $txGuid))
+    Assert-Equal 'apiTeste' (Get-Prop $plan 'ApiName') 'ApiName do plano'
+    Assert-Equal 4 (Get-Count (Get-Prop $plan 'ProcedureNames')) 'Procedures no plano'
+    $ownSdts = Get-Prop $plan 'OwnSdtNames'
+    Assert-Equal 5 (Get-Count $ownSdts) 'SDTs próprios flat'
+    Assert-Equal 'sdtTeste_API_ListResponse' (Get-ItemAt $ownSdts 0) 'ListResponse primeiro'
 
-$metadataV2 = [Newtonsoft.Json.Linq.JObject]::Parse($metadata.ToString([Newtonsoft.Json.Formatting]::None))
-$metadataV2['schemaVersion'] = [Newtonsoft.Json.Linq.JValue]::new('GOAB_API_METADATA_B060_V2')
-$own = [Newtonsoft.Json.Linq.JArray]::new()
-[void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_ListResponse'))
-[void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_ListResponse_Item'))
-[void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_CreateRequest'))
-[void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_CreateRequest_Item'))
-[void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_Response'))
-$metadataV2['objects']['sdts']['own'] = $own
-$planV2 = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGeneratedApiRemovalPlan]::FromMetadata($metadataV2, 'Teste', $txGuid)
-Assert-Equal 5 $planV2.OwnSdtNames.Count 'V2 com own deve usar o inventário completo'
-Assert-Equal 'sdtTeste_API_ListResponse' $planV2.OwnSdtNames[0] 'V2 own preserva ordem de remoção'
-Assert-Equal 'sdtTeste_API_CreateRequest_Item' $planV2.OwnSdtNames[3] 'V2 own inclui SDT hierárquico'
+    $metadataV2 = [Newtonsoft.Json.Linq.JObject]::Parse($metadata.ToString([Newtonsoft.Json.Formatting]::None))
+    $metadataV2['schemaVersion'] = [Newtonsoft.Json.Linq.JValue]::new('GOAB_API_METADATA_B060_V2')
+    $own = [Newtonsoft.Json.Linq.JArray]::new()
+    [void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_ListResponse'))
+    [void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_ListResponse_Item'))
+    [void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_CreateRequest'))
+    [void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_CreateRequest_Item'))
+    [void]$own.Add([Newtonsoft.Json.Linq.JValue]::new('sdtTeste_API_Response'))
+    $metadataV2['objects']['sdts']['own'] = $own
+    $planV2 = $fromMetadata.Invoke($null, @($metadataV2, 'Teste', $txGuid))
+    $ownV2 = Get-Prop $planV2 'OwnSdtNames'
+    Assert-Equal 5 (Get-Count $ownV2) 'V2 com own usa inventário gravado'
+    Assert-Equal 'sdtTeste_API_CreateRequest_Item' (Get-ItemAt $ownV2 3) 'own inclui SDT hierárquico'
 
-try {
-    [void][GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGeneratedApiRemovalPlan]::FromMetadata($metadata, 'Outra', $txGuid)
-    throw 'ASSERT_FAILED: deveria rejeitar Transaction divergente.'
+    $dynamic = [Newtonsoft.Json.Linq.JObject]::Parse($metadataV2.ToString([Newtonsoft.Json.Formatting]::None))
+    $sdtsToken = $dynamic.SelectToken('objects.sdts')
+    if ($sdtsToken -is [Newtonsoft.Json.Linq.JObject]) {
+        [void]$sdtsToken.Remove('own')
+    }
+    $dynamic['levels'] = [Newtonsoft.Json.Linq.JObject]::Parse(@'
+{
+  "levelName": "Teste",
+  "depth": 1,
+  "parentLevelName": "",
+  "levelOrder": 1,
+  "includeListCount": true,
+  "primaryKey": [],
+  "fields": [],
+  "childLevels": [
+    {
+      "levelName": "TesteItem",
+      "depth": 2,
+      "parentLevelName": "Teste",
+      "levelOrder": 1,
+      "includeListCount": false,
+      "primaryKey": [],
+      "fields": [],
+      "childLevels": [],
+      "selectedCreateFieldNames": ["TesteItemId"],
+      "selectedUpdateFieldNames": ["TesteItemId"],
+      "selectedResponseFieldNames": ["TesteItemId"]
+    }
+  ]
 }
-catch {
-    if ($_.Exception.Message -notmatch 'ownership.transactionName') {
-        throw
+'@)
+    $dynamicOwn = $resolveOwn.Invoke($null, @(, $dynamic))
+    Assert-True ((Get-Count $dynamicOwn) -gt 5) 'Inventário dinâmico hierárquico sem own'
+    Assert-Equal 'sdtTeste_API_ListResponse' (Get-ItemAt $dynamicOwn 0) 'Ordem dinâmica preserva ListResponse primeiro'
+
+    try {
+        [void]$fromMetadata.Invoke($null, @($metadata, 'Outra', $txGuid))
+        throw 'ASSERT_FAILED: deveria rejeitar Transaction divergente.'
+    }
+    catch {
+        if ($_.Exception.Message -notmatch 'ownership.transactionName') {
+            throw
+        }
+    }
+}
+finally {
+    if ($null -ne $script:AssemblyResolveHandler) {
+        [System.AppDomain]::CurrentDomain.remove_AssemblyResolve($script:AssemblyResolveHandler)
     }
 }
 

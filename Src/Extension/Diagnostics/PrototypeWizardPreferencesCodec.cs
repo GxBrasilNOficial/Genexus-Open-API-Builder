@@ -40,6 +40,10 @@ public sealed class PrototypeWizardPreferenceValues
 public static class PrototypeWizardPreferencesCodec
 {
     public const string SchemaVersion = "GOAB_WIZARD_PREFERENCES_V1";
+    public static readonly string[] SupportedSchemaVersions =
+    {
+        SchemaVersion,
+    };
     public const string FileName = "GxOpenApiBuilder_Settings";
     public const string SecurityLevelAuthentication = "Authentication";
     public const string SecurityLevelAuthorization = "Authorization";
@@ -70,7 +74,7 @@ public static class PrototypeWizardPreferencesCodec
     public static PrototypeWizardPreferenceValues Parse(string json)
     {
         var root = JObject.Parse(json);
-        RequireString(root, "schemaVersion", SchemaVersion);
+        RequireSupportedSchemaVersion(root);
         var defaults = root["wizardDefaults"] as JObject
             ?? throw new JsonException("Membro obrigatorio 'wizardDefaults' ausente.");
 
@@ -155,6 +159,34 @@ public static class PrototypeWizardPreferencesCodec
             && !preferences.UpdateServiceByDefault)
         {
             throw new JsonException("Preferencias de servico invalidas: ao menos um servico deve iniciar marcado.");
+        }
+    }
+
+    public static bool IsSupportedSchemaVersion(string? schemaVersion)
+    {
+        if (string.IsNullOrWhiteSpace(schemaVersion))
+        {
+            return true;
+        }
+
+        for (var index = 0; index < SupportedSchemaVersions.Length; index++)
+        {
+            if (string.Equals(schemaVersion, SupportedSchemaVersions[index], StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void RequireSupportedSchemaVersion(JObject root)
+    {
+        var actual = root["schemaVersion"]?.Value<string>();
+        if (!IsSupportedSchemaVersion(actual))
+        {
+            throw new JsonException(
+                $"Membro 'schemaVersion' incompativel: esperado '{SchemaVersion}' ou ausente (legado), atual='{actual ?? "<ausente>"}'.");
         }
     }
 

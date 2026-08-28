@@ -84,21 +84,7 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
         var shared = ReadStringArray(metadata.SelectToken("objects.sdts.shared"));
         // Ordem de exclusao: ListResponse tipa Items com Response; apagar Response antes falha na IDE.
         // V2 pode trazer objects.sdts.own com inventário completo (inclui SDTs hierárquicos).
-        var ownFromMetadata = ReadStringArray(metadata.SelectToken("objects.sdts.own"));
-        var ownSdts = ownFromMetadata.Count > 0
-            ? ownFromMetadata
-            : new[]
-                {
-                    metadata.SelectToken("objects.sdts.listResponse")?.Value<string>(),
-                    metadata.SelectToken("objects.sdts.createRequest")?.Value<string>(),
-                    metadata.SelectToken("objects.sdts.updateRequest")?.Value<string>(),
-                    metadata.SelectToken("objects.sdts.listFilters")?.Value<string>(),
-                    metadata.SelectToken("objects.sdts.response")?.Value<string>(),
-                }
-                .Where(name => !string.IsNullOrWhiteSpace(name))
-                .Select(name => name!)
-                .Distinct(StringComparer.Ordinal)
-                .ToArray();
+        var ownSdts = ApiPlanGeneratedApiRemovalInventory.ResolveOwnSdtNames(metadata);
 
         foreach (var sharedName in shared)
         {
