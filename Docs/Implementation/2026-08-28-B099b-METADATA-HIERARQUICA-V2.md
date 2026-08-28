@@ -96,11 +96,23 @@ Mesmo plano B086; usuário respondeu **Sim**.
 
 Conclusão Remover (apply): remoção hierárquica completa via `objects.sdts.own`; KB limpa para regeneração futura (Wizard necessário antes de novo smoke HTTP).
 
-## Pendente opcional (fora do escopo B099b)
+## Validação IDE — Reencontro plano V1→V2 (2026-08-28)
 
-1. Segundo Sync — irrelevante após remoção.
-2. Reencontro de API **plana** V1 (ex. `NotaFiscal`) na apply.
+KB `wsEducacaoSpTeste`, Transaction `NotaFiscal`, API `apiFiscalPublica` (plana, sem subníveis). Baseline V1 exportado antes do apply (`D:\Temp\apiNotaFiscal_Metadata.json`, `Bytes=83812`).
+
+| Check | Antes (V1) | Depois (apply B099b) |
+|---|---|---|
+| `schemaVersion` | `GOAB_API_METADATA_B060_V1` | `GOAB_API_METADATA_B060_V2` |
+| `levels` | ausente | `null` (plano explícito) |
+| `objects.sdts.own` | ausente | 5 SDTs flat |
+| Bytes / SHA-256 | 83 812 | 84 068 / `CFA7913E58C75F5CAA4B3D140D7338D6D94D2FDADC3BF234D5D6F4A49963A7FA` |
+| B067 `PlannedContractHash` | `8F737F1ADDDEC1FDBDF9D2BEE1B09788FA5C5D40587C61DFC5AB8C25AF8BCABF` | **inalterado** (contrato flat estável) |
+| Relatório B081 | — | `Updated=14`, `Blocked=0`, `SuccessWithWarnings`, `DuraçãoMs=11113` |
+
+Ordem de `objects.sdts.own`: ListResponse → CreateRequest → UpdateRequest → ListFilters → Response.
+
+Conclusão: leitura V1 + reencontro + apply grava V2 com inventário `own` **sem** inventar hierarquia; hash B067 preservado em API plana.
 
 ## Fechamento B099b
 
-Fase 6 encerrada em 2026-08-28: código, testes offline, smoke IDE (Wizard, Sync, Remover) e documentação. Residual consciente registrado para Fase 7: detector de conflito SDT flat vs hierárquico; reencontro plano V1→V2 na apply (`NotaFiscal`) permanece opcional não executado.
+Fase 6 encerrada em 2026-08-28: código, testes offline, smoke IDE hierárquico (`Teste`: Wizard, Sync, Remover) e smoke plano V1→V2 (`NotaFiscal`). Residual consciente para Fase 7: detector de conflito SDT flat vs hierárquico no Sync.
