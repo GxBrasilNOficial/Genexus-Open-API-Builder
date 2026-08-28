@@ -271,9 +271,9 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 
 ## Versionamento da Metadata e Compatibilidade com a Alpha
 
-A Fase 6 acrescenta a estrutura de níveis à metadata própria, hoje carimbada `GOAB_API_METADATA_B060_V1` e validada por igualdade exata tanto no reencontro quanto no plano de remoção.
+A Fase 6 (`B099b`, concluída em 2026-08-28) acrescentou a estrutura de níveis à metadata própria. Antes dela, a Alpha gravava somente `GOAB_API_METADATA_B060_V1`; a partir de `B099b`, a **gravação** emite `GOAB_API_METADATA_B060_V2` e o reencontro/remoção validam o carimbo com tolerância V1+V2.
 
-- A **leitura** passa a aceitar `V1` e `V2`. Metadata `V1` é interpretada como transação de nível único.
+- A **leitura** aceita `V1` e `V2`. Metadata `V1` é interpretada como transação de nível único.
 - A **gravação** emite sempre `V2`.
 - **Não há passo de migração autônomo.** O arquivo `V1` só é convertido quando a geração for efetivamente aplicada àquela API, momento em que o arquivo já seria regravado e o SHA-256 recalculado de qualquer forma. Converter durante a simples abertura do Wizard alteraria a KB numa operação que o usuário entende como leitura, mudando o próprio mecanismo de integridade sem que ele tenha pedido.
 - A mesma política de tolerância vale para `GOAB_WIZARD_PREFERENCES_V1`, tratado na Fase 7.
