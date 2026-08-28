@@ -12,6 +12,30 @@ namespace GenexusOpenApiBuilder.Extension.Domain;
 /// </summary>
 internal static class ApiPlanHierarchicalContractMapBuilder
 {
+    /// <summary>
+    /// B097 — valida nomes estruturais de subníveis antes de qualquer Save() ou emissão BC.
+    /// Subnível sem nome ou <c>&lt;unnamed&gt;</c> bloqueia o apply inteiro (preflight + mapa).
+    /// </summary>
+    internal static void ValidateStructuralSublevelNames(ApiPlan apiPlan)
+    {
+        if (apiPlan is null)
+        {
+            throw new ArgumentNullException(nameof(apiPlan));
+        }
+
+        if (!ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(apiPlan))
+        {
+            return;
+        }
+
+        if (!ApiPlanSdtHierarchicalNaming.TryGetRoot(apiPlan, out var root))
+        {
+            throw new InvalidOperationException("Mapa hierarquico bloqueado: ApiPlan sem nivel raiz. Nenhuma alteracao foi feita.");
+        }
+
+        ValidateStructuralSublevelNamesRecursive(root.ChildLevels);
+    }
+
     public static ApiPlanHierarchicalContractMap Create(ApiPlan apiPlan)
     {
         if (apiPlan is null)
@@ -23,6 +47,8 @@ internal static class ApiPlanHierarchicalContractMapBuilder
         {
             return ApiPlanHierarchicalContractMap.Empty;
         }
+
+        ValidateStructuralSublevelNames(apiPlan);
 
         if (!ApiPlanSdtHierarchicalNaming.TryGetRoot(apiPlan, out var root))
         {
@@ -88,14 +114,7 @@ internal static class ApiPlanHierarchicalContractMapBuilder
         var nodes = new List<ApiPlanHierarchicalNode>(children.Count);
         foreach (var child in children)
         {
-            if (string.IsNullOrWhiteSpace(child.LevelName) ||
-                string.Equals(child.LevelName, ApiPlanSdtHierarchicalNaming.UnnamedLevelToken, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException(
-                    "Mapa hierarquico bloqueado: subnivel sem nome estrutural na Transaction (LevelOrder="
-                    + child.LevelOrder.ToString(CultureInfo.InvariantCulture)
-                    + "). Em Transaction real todo subnivel tem nome; corrija a estrutura antes do apply. Nenhuma alteracao foi feita.");
-            }
+            EnsureStructuralSublevelName(child);
 
             var sanitized = ApiPlanSdtHierarchicalNaming.SanitizeLevelIdentifier(child.LevelName, child.LevelOrder);
             var childQualifiers = new List<string>(ancestorQualifiers.Count + 1);
@@ -226,6 +245,27 @@ internal static class ApiPlanHierarchicalContractMapBuilder
         }
 
         return reserved;
+    }
+
+    private static void ValidateStructuralSublevelNamesRecursive(IReadOnlyList<ApiPlanLevel> children)
+    {
+        foreach (var child in children)
+        {
+            EnsureStructuralSublevelName(child);
+            ValidateStructuralSublevelNamesRecursive(child.ChildLevels);
+        }
+    }
+
+    private static void EnsureStructuralSublevelName(ApiPlanLevel child)
+    {
+        if (string.IsNullOrWhiteSpace(child.LevelName) ||
+            string.Equals(child.LevelName, ApiPlanSdtHierarchicalNaming.UnnamedLevelToken, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Mapa hierarquico bloqueado: subnivel sem nome estrutural na Transaction (LevelOrder="
+                + child.LevelOrder.ToString(CultureInfo.InvariantCulture)
+                + "). Em Transaction real todo subnivel tem nome; corrija a estrutura antes do apply. Nenhuma alteracao foi feita.");
+        }
     }
 }
 
