@@ -179,8 +179,7 @@ Confirmação com o plano: objetos próprios a apagar, SDTs compartilhados e Fol
 
 ## Limitações honestas da Alpha
 
-- Transações com subníveis: o Wizard gera cabeçalho + linhas selecionadas; metadata, Sync e Remover ainda são V1 — não use Sync/Remover em API hierárquica até a frente de metadata V2
-- Contadores de List só nos filhos diretos; profundidade acima de 4 gera aviso sem bloquear
+- Transações com subníveis: o Wizard gera cabeçalho + linhas selecionadas; metadata V2, Sync e Remover cobrem a hierarquia; sem endpoints próprios de subnível; contadores de List só nos filhos diretos; profundidade acima de 4 gera aviso sem bloquear; alterar netos exige substituir o nível pai (`<Subnível>Replace`)
 - Serviço `DELETE` ainda não entregue; o `B100` está planejado como opt-in para corte posterior
 - YAML OpenAPI nativo do GeneXus tem restrições documentadas
 - Classificação de campos sensíveis/auditoria ainda usa política default

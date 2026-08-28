@@ -48,4 +48,4 @@ Fixtures: `OneSublevel`, `ParallelSublevels`, `ThreeDeep`, `InheritedPrimaryKey`
 - B098 (`List` + `ListResponse_Item`), B099 (Wizard/metadata), Fase 7, B100.
 - Ligar o Wizard ao leitor hierárquico e à seleção por subnível.
 - Smoke IDE com escrita de SDTs hierárquicos, conferência do limite 128 no objeto e aceitação dos nomes de membro (coleção e `Replace`) sem teto nesta fase.
-- Inventário dinâmico de remoção (Fase 7): B086 ainda lê a lista plana; não gravar API multinível na KB nesta fase.
+- Inventário dinâmico de remoção (Fase 7): na época do B096 o B086 ainda lia a lista plana; **desde `B099b`/Fase 7** o inventário usa `objects.sdts.own` ou reconstrução a partir de `levels` — ver `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.

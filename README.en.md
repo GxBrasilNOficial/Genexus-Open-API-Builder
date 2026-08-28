@@ -62,8 +62,7 @@ The `-gx18u13` suffix only identifies the download asset. Do not rename the file
 
 ### Known limitations
 
-- Transactions with sublevels: the Wizard generates header + selected lines; metadata, Sync, and Remove are still V1 — do not Sync/Remove a hierarchical API until the V2 metadata front
-- List counters only on direct children; depth above 4 warns without blocking
+- Transactions with sublevels: the Wizard generates header + selected lines; V2 metadata, Sync, and Remove cover the hierarchy; no dedicated sublevel endpoints; List counters only on direct children; depth above 4 warns without blocking; changing grandchildren requires replacing the parent level (`<Sublevel>Replace`)
 - No `DELETE` service in the MVP
 - Native GeneXus OpenAPI YAML has documented restrictions; the extension does not replace the installation templates
 - Sensitive-field/audit classification still uses the default policy
