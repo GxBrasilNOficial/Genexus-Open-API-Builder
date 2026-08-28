@@ -44,7 +44,8 @@ Revisão pós-crítica: a primeira entrega montava `ApiPlanLevel` à mão nas fi
 - `OneSublevel` — cabeçalho + um subnível; PK de linha com `Autonumber=False`; fórmula; `NoAccept`.
 - `ParallelSublevels` — dois subníveis irmãos; `NoAccept` em um campo.
 - `ThreeDeep` — três níveis; PK com `Autonumber=True` e fórmula no nível mais fundo.
-- `InheritedPrimaryKey` — PK composta na ordem declarada; nível sem nome → `<unnamed>`; autonumeração negada por contagem de partes.
+- `InheritedPrimaryKey` — PK composta na ordem declarada (`HeaderId` + `LineId`); subnível nomeado `Line`; autonumeração negada por contagem de partes.
+- `UnnamedSublevel` — nível sem nome → `<unnamed>` (fixture reader-only fora de `CreateFixtures`, com ouro próprio); cobre o token de fallback do leitor.
 
 ## Validação mecânica
 

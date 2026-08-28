@@ -14,8 +14,8 @@ Escopo: corrigir a agregação `count()` com PK composta herdada; regerar `apiTe
 
 | Peça | Alteração |
 |---|---|
-| `Src/Domain/ApiPlanListHierarchicalContract.cs` | `ResolveAggregateAttributeName` passa a preferir a primeira PK com `!IsForeignKey`; fallback estável para `PrimaryKey[0]` e `Fields[0]` |
-| `Tests/ListHierarchical/Baselines/InheritedPrimaryKey.txt` | ouro atualizado: `count(LineId)` / `Level1Count=LineId` |
+| `Src/Domain/ApiPlanListHierarchicalContract.cs` | `ResolveAggregateAttributeName` passa a preferir a primeira PK com `!IsForeignKey`; fallback estável para `PrimaryKey[0]` e `Fields[0]`. Residual consciente: quando **todas** as partes da PK do subnível são FK (ex. `InvoiceId`+`ProductId`), o fallback ainda pode devolver o atributo do cabeçalho — ver dívida residual em `2026-08-26-B098-LIST-CONTADORES.md` |
+| `Tests/ListHierarchical/Baselines/InheritedPrimaryKey.txt` | ouro atualizado: `count(LineId)` / `LineCount=LineId` |
 | `Tests/ListHierarchical/Test-ApiPlanListHierarchical.ps1` | asserção que rejeita `count(HeaderId)` na fixture `InheritedPrimaryKey` |
 
 Validação offline: `PASS: ApiPlanListHierarchicalBaseline`. Build Release canônico: 0 avisos, 0 erros.
