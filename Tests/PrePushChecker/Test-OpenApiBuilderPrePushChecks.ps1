@@ -40,6 +40,8 @@ Assert-True ($source -match 'Tests/SdtHierarchicalPlan/Test-ApiPlanSdtHierarchic
 Assert-True ($source -match 'Tests/BusinessComponentHierarchical/Test-ApiPlanBusinessComponentHierarchical\.ps1') 'O checker deve executar o teste unitário do Source BC hierárquico B097.'
 Assert-True ($source -match 'Tests/ListHierarchical/Test-ApiPlanListHierarchical\.ps1') 'O checker deve executar o teste unitário do List hierárquico B098.'
 Assert-True ($source -match 'Tests/WizardHierarchical/Test-ApiPlanHierarchicalWizardSelection\.ps1') 'O checker deve executar o teste unitário da seleção hierárquica do Wizard B099a.'
+Assert-True ($source -match 'Tests/WizardLifecycle/Test-ApiPlanWizardHierarchicalLifecycle\.ps1') 'O checker deve executar o teste unitário do ciclo de vida hierárquico do Wizard (Fase 7).'
+Assert-True ($source -match 'Tests/MetadataHierarchical/Test-ApiPlanMetadataLevels\.ps1') 'O checker deve executar o teste unitário da metadata hierárquica B099b.'
 Assert-True ($source -match 'Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract\.ps1') 'O checker deve executar o teste unitário do parser Service Source.'
 Assert-True ($source -match 'Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity\.ps1') 'O checker deve executar o teste unitário da integridade B067.'
 Assert-True ($source -match 'Tests/ApiObjectOwnership/Test-ApiPlanApiObjectOwnership\.ps1') 'O checker deve executar o teste unitário da posse B087 do API Object.'
@@ -108,6 +110,8 @@ try {
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\BusinessComponentHierarchical'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ListHierarchical'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\WizardHierarchical'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\WizardLifecycle'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\MetadataHierarchical'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\WizardContract'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ExtensionAssemblyInventory'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\Installation'))
@@ -155,6 +159,8 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\BusinessComponentHierarchical\Test-ApiPlanBusinessComponentHierarchical.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Business Component Hierarchical'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ListHierarchical\Test-ApiPlanListHierarchical.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture List Hierarchical'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardHierarchical\Test-ApiPlanHierarchicalWizardSelection.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Wizard Hierarchical Selection'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardLifecycle\Test-ApiPlanWizardHierarchicalLifecycle.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Wizard Hierarchical Lifecycle'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\MetadataHierarchical\Test-ApiPlanMetadataLevels.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Metadata Hierarchical Levels'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-PrototypeWizardAutonumberCompositeKey.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Autonumber Composite Key'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-ApiPlanGenerationStateReaderGetAllIndex.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generation State Reader GetAll Index'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\WizardContract\Test-PrototypeWizardCreateRequiredPrimaryKeyOptional.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Create Required Primary Key Optional'`n", [System.Text.UTF8Encoding]::new($false))
@@ -205,6 +211,8 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.businessComponentHierarchical' }).status -eq 'passed') 'O teste unitário do Source BC hierárquico B097 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.listHierarchical' }).status -eq 'passed') 'O teste unitário do List hierárquico B098 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardHierarchical' }).status -eq 'passed') 'O teste unitário da seleção hierárquica do Wizard B099a deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardLifecycle' }).status -eq 'passed') 'O teste unitário do ciclo de vida hierárquico do Wizard (Fase 7) deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.metadataHierarchical' }).status -eq 'passed') 'O teste unitário da metadata hierárquica B099b deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractAutonumberCompositeKey' }).status -eq 'passed') 'O teste unitário de autonumeração e chave composta deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractGenerationStateReader' }).status -eq 'passed') 'O teste unitário do leitor de estado de geração deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.wizardContractCreateRequired' }).status -eq 'passed') 'O teste unitário do contrato de wizard CreateRequired deveria passar na fixture.'
@@ -241,6 +249,8 @@ try {
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/BusinessComponentHierarchical/Test-ApiPlanBusinessComponentHierarchical.ps1' }).Count -eq 1) 'O comando do teste Business Component Hierarchical deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ListHierarchical/Test-ApiPlanListHierarchical.ps1' }).Count -eq 1) 'O comando do teste List Hierarchical deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardHierarchical/Test-ApiPlanHierarchicalWizardSelection.ps1' }).Count -eq 1) 'O comando do teste Wizard Hierarchical Selection deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardLifecycle/Test-ApiPlanWizardHierarchicalLifecycle.ps1' }).Count -eq 1) 'O comando do teste Wizard Hierarchical Lifecycle deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/MetadataHierarchical/Test-ApiPlanMetadataLevels.ps1' }).Count -eq 1) 'O comando do teste Metadata Hierarchical Levels deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-PrototypeWizardAutonumberCompositeKey.ps1' }).Count -eq 1) 'O comando do teste Autonumber Composite Key deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-ApiPlanGenerationStateReaderGetAllIndex.ps1' }).Count -eq 1) 'O comando do teste Generation State Reader GetAll Index deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/WizardContract/Test-PrototypeWizardCreateRequiredPrimaryKeyOptional.ps1' }).Count -eq 1) 'O comando do teste Create Required Primary Key Optional deve aparecer no JSON.'
