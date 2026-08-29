@@ -82,11 +82,12 @@ fora do objetivo desta camada.
 A conferência de **fim** da sprint foi registrada em 2026-08-28 em
 `Tests/GenerationBaseline/IdeXpz/CAPTURE-FIM.md` (XPZ `processado_wsEducacaoSpTeste_full_20260828a.xpz`).
 
-### Conferência de fim de sprint (não agora)
+### Conferência de fim de sprint (fechada em 2026-08-28)
 
-Repetir o export da mesma Transaction (ou da mesma seleção de SDTs) e comparar ordem de
-itens e propriedades relevantes com o XPZ de início. Divergência inesperada bloqueia o
-fechamento da sprint até justificativa ou correção.
+Concluída conforme `CAPTURE-FIM.md`: rematerialização do XPZ de 2026-08-28, comparação com a
+âncora de início e interpretação das divergências esperadas (hierarquia na `Teste`) versus
+ruído de serialização nos compartilhados. A proteção contínua contra regressão do emissor
+plano permanece na camada offline (`tests.generationBaseline`).
 
 ## Fora de escopo desta entrega
 

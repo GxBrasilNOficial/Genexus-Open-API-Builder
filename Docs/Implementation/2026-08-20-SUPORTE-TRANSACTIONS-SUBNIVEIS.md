@@ -322,7 +322,7 @@ Estes itens nasceram da revisão de 2026-08-23. Não pertencem a B095–B099 e t
 | `B105` | Escolha do chamador sobre o detalhe do corpo de erro, podendo apenas **restringir** o que o default da API permite, nunca ampliar | Fora de `B102`; nesta sprint se houver folga, senão Sprint 10 |
 | `B101` | Experimento de membro nullable para distinguir membro ausente de membro vazio | Candidato à Sprint 10, fora da Sprint 9 |
 
-**Ordem de execução resultante:** `B102` (concluído) → Fase 0 (concluída nas camadas de início; conferência de fim permanece) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100`.
+**Ordem de execução resultante:** `B102` (concluído) → Fase 0 (concluída: camadas de início + conferência de fim em 2026-08-28, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100`.
 
 `B105` nasceu separado de `B102` de propósito. Ele acrescenta parâmetro aos serviços `Create` e `Update`, muda a assinatura no API Object, muda o YAML e pede caso de teste HTTP próprio — e `B102` já é o primeiro item da sprint mexendo em quatro subsistemas. O que a Fase 0 precisa ter estabilizado é o **default por API**, que `B102` entrega.
 

@@ -13,6 +13,12 @@ $extensionFileName = 'GenexusOpenApiBuilder.Extension.dll'
 $targetDll = Join-Path $GeneXusDirectory "Packages\$extensionFileName"
 $geneXusExe = Join-Path $GeneXusDirectory 'GeneXus.exe'
 
+# Linha satélite U13: DLL sob artifacts\gx18u13 ou diretório GeneXus18up13.
+$isGx18u13 = ($BuildDll -match '(?i)[\\/]gx18u13[\\/]') -or
+    ($GeneXusDirectory -match '(?i)GeneXus18up13')
+$installBatName = if ($isGx18u13) { 'Install-ExtensionForGx18u13.bat' } else { 'Install-ExtensionForGeneXus18.bat' }
+$registerBatName = if ($isGx18u13) { 'Register-ExtensionForGx18u13.bat' } else { 'Register-ExtensionForGeneXus18.bat' }
+
 if (-not (Test-Path -LiteralPath $BuildDll -PathType Leaf)) {
     throw "DLL compilada não encontrada: $BuildDll"
 }
@@ -30,8 +36,8 @@ if (-not $Apply) {
         BuildSha256 = $buildHash
         TargetDll = $targetDll
         GeneXusDirectory = $GeneXusDirectory
-        NextCommand = 'Install-ExtensionForGeneXus18.bat'
-        FollowingCommand = 'Register-ExtensionForGeneXus18.bat'
+        NextCommand = $installBatName
+        FollowingCommand = $registerBatName
         RegistrationInput = 'genexus /install; depois exit'
         OperationalNote = 'O PowerShell apenas copia e valida. O registro ocorre somente pelo segundo .bat, sem Administrador.'
     }
@@ -80,5 +86,5 @@ if (Test-Path -LiteralPath $backupDll -PathType Leaf) {
     InstalledSha256 = $installedHash
     BackupDll = $backupPath
     RegistrationDeferred = $true
-    NextCommand = 'Register-ExtensionForGeneXus18.bat'
+    NextCommand = $registerBatName
 }

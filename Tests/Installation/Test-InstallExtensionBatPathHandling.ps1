@@ -7,6 +7,7 @@ $installBatPath = Join-Path $PSScriptRoot '..\..\Install-ExtensionForGeneXus18.b
 $u13InstallBatPath = Join-Path $PSScriptRoot '..\..\Install-ExtensionForGx18u13.bat'
 $registerBatPath = Join-Path $PSScriptRoot '..\..\Register-ExtensionForGeneXus18.bat'
 $u13RegisterBatPath = Join-Path $PSScriptRoot '..\..\Register-ExtensionForGx18u13.bat'
+$copyScriptPath = Join-Path $PSScriptRoot '..\..\Tools\Copy-ExtensionForGeneXus18.ps1'
 
 function Read-Source {
     param([string]$Path)
@@ -60,5 +61,11 @@ Assert-Contains $u13RegisterBat 'GeneXus18up13' 'Register U13 deve defaultar par
 Assert-Contains $u13RegisterBat 'if exist "%GENEXUS_DIRECTORY%\GeneXus.exe" goto geneXusFound' 'Register U13 deve validar caminhos com (x86) sem bloco parentizado.'
 Assert-Contains $u13RegisterBat 'genexus /install' 'Register U13 deve orientar genexus /install.'
 Assert-NotContains $u13RegisterBat 'GeneXus18"' 'Register U13 não deve defaultar para GeneXus18 canônico.'
+
+$copyScript = Read-Source $copyScriptPath
+Assert-Contains $copyScript 'Register-ExtensionForGx18u13.bat' 'Copy-Extension deve nomear o Register satélite U13.'
+Assert-Contains $copyScript 'Register-ExtensionForGeneXus18.bat' 'Copy-Extension deve nomear o Register canônico U14+.'
+Assert-Contains $copyScript 'gx18u13' 'Copy-Extension deve detectar a linha satélite pela pasta gx18u13 na BuildDll.'
+Assert-Contains $copyScript '$registerBatName' 'Copy-Extension deve escolher o Register pela linha detectada.'
 
 Write-Output 'PASS: InstallExtensionBatPathHandling'
