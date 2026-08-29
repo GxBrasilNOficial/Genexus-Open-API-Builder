@@ -397,8 +397,28 @@ internal sealed class PrototypeWizardDialog : Form
         {
             DropDownStyle = ComboBoxStyle.DropDownList,
             Dock = DockStyle.Fill,
+            // DropDownHeight é recalculado em BindLevelSelector / AdjustLevelComboDropDownHeight
+            // para aproveitar o espaço vertical do diálogo (ex.: Empresa com 13+ níveis).
             IntegralHeight = false,
         };
+    }
+
+    /// <summary>
+    /// Expande a lista do seletor de nível até caber todos os itens ou ~55% da altura do diálogo.
+    /// </summary>
+    private void AdjustLevelComboDropDownHeight(ComboBox selector)
+    {
+        if (selector is null || selector.Items.Count == 0)
+        {
+            return;
+        }
+
+        var itemHeight = selector.ItemHeight > 0
+            ? selector.ItemHeight
+            : Math.Max(16, selector.Font.Height + 2);
+        var needed = (selector.Items.Count * itemHeight) + 4;
+        var maxByDialog = Math.Max(itemHeight * 6, (int)(ClientSize.Height * 0.55));
+        selector.DropDownHeight = Math.Min(needed, maxByDialog);
     }
 
     private static Label CreateDepthWarningLabel()
@@ -442,6 +462,7 @@ internal sealed class PrototypeWizardDialog : Form
         panel.Controls.Add(row, 0, 0);
         panel.Controls.Add(warning, 0, 1);
         selector.SelectedIndexChanged += (_, _) => HandleLevelSelectorChanged(selector);
+        selector.DropDown += (_, _) => AdjustLevelComboDropDownHeight(selector);
         includeLevel.CheckedChanged += (_, _) => HandleIncludeLevelChanged(includeLevel);
         includeCount.CheckedChanged += (_, _) => HandleIncludeListCountChanged(includeCount);
         _levelBars.Add(panel);
@@ -1152,6 +1173,8 @@ internal sealed class PrototypeWizardDialog : Form
         {
             selector.Items.Add(option);
         }
+
+        AdjustLevelComboDropDownHeight(selector);
     }
 
     private void HandleLevelSelectorChanged(ComboBox sender)

@@ -57,6 +57,5 @@ evidência versionável da captura de início.
 
 ## Conferência de fim de sprint
 
-Ainda **não** realizada. No fechamento da Sprint 9, reexportar/rematerializar os mesmos
-SDTs e comparar ordem de itens e propriedades com estes hashes — após as frentes da
-sprint, com a DLL então vigente instalada se a comparação for contra objetos regravados.
+**Fechada em 2026-08-28** — ver `CAPTURE-FIM.md` (rematerialização via
+`processado_wsEducacaoSpTeste_full_20260828a.xpz`).

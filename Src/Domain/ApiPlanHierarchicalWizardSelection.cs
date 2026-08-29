@@ -515,36 +515,20 @@ internal sealed class ApiPlanHierarchicalWizardSelection
         IReadOnlyCollection<string>? selectedCreate = null;
         IReadOnlyCollection<string>? selectedUpdate = null;
         IReadOnlyCollection<string>? selectedResponse = null;
-        if (node.IsRoot)
-        {
-            fields = level.Fields;
-        }
-        else
+        // Raiz e subnível incluído: Fields = catálogo completo do nível na Transaction.
+        // Omissão de campo no Wizard fica só em Selected* (o gerador já filtra por papel).
+        // Antes, subnível gravava em Fields a união dos Selected* — campo desmarcado
+        // sumia do snapshot Sync e reaparecia como falso Added.
+        fields = level.Fields;
+        if (!node.IsRoot)
         {
             selectedCreate = SnapshotSelectedNames(pathKey, "CreateRequest", level);
             selectedUpdate = SnapshotSelectedNames(pathKey, "UpdateRequest", level);
             selectedResponse = SnapshotSelectedNames(pathKey, "Response", level);
 
-            var selectedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var name in selectedCreate)
+            var selectedCount = selectedCreate.Count + selectedUpdate.Count + selectedResponse.Count;
+            if (selectedCount == 0 && children.Count > 0)
             {
-                selectedNames.Add(name);
-            }
-
-            foreach (var name in selectedUpdate)
-            {
-                selectedNames.Add(name);
-            }
-
-            foreach (var name in selectedResponse)
-            {
-                selectedNames.Add(name);
-            }
-
-            fields = level.Fields.Where(field => selectedNames.Contains(field.Name)).ToArray();
-            if (fields.Count == 0 && children.Count > 0)
-            {
-                fields = level.PrimaryKey;
                 var primaryKeyNames = level.PrimaryKey
                     .Select(field => field.Name)
                     .ToArray();
@@ -553,7 +537,7 @@ internal sealed class ApiPlanHierarchicalWizardSelection
                 selectedResponse = primaryKeyNames;
             }
 
-            if (fields.Count == 0 && children.Count == 0)
+            if (selectedCount == 0 && children.Count == 0)
             {
                 return null;
             }

@@ -440,11 +440,14 @@ try {
     Assert-RoleEligibleNames $prunedDistinct 'CreateRequest' @('LineQty') 'Papéis distintos (Create=LineQty)'
     Assert-RoleEligibleNames $prunedDistinct 'UpdateRequest' @('LineId') 'Papéis distintos (Update=LineId)'
     Assert-RoleEligibleNames $prunedDistinct 'Response' @('LineStamp') 'Papéis distintos (Response=LineStamp)'
-    $unionFields = @((Get-Prop $prunedDistinct 'Fields') | ForEach-Object { [string](Get-Prop $_ 'Name') })
-    Assert-True ($unionFields -contains 'LineQty') 'Fields da poda une Create.'
-    Assert-True ($unionFields -contains 'LineId') 'Fields da poda une Update.'
-    Assert-True ($unionFields -contains 'LineStamp') 'Fields da poda une Response.'
-    Assert-False ($unionFields -contains 'LineTotal') 'LineTotal não marcado não entra na união.'
+    $catalogFields = @((Get-Prop $prunedDistinct 'Fields') | ForEach-Object { [string](Get-Prop $_ 'Name') })
+    Assert-True ($catalogFields -contains 'LineQty') 'Fields mantém LineQty (marcado em Create).'
+    Assert-True ($catalogFields -contains 'LineId') 'Fields mantém LineId (marcado em Update).'
+    Assert-True ($catalogFields -contains 'LineStamp') 'Fields mantém LineStamp (marcado em Response).'
+    Assert-True ($catalogFields -contains 'LineTotal') 'Fields mantém LineTotal omitido — catálogo completo (anti falso Added no Sync).'
+    Assert-False (@(Get-Prop $prunedDistinct 'SelectedCreateFieldNames') -contains 'LineTotal') 'LineTotal omitido não entra em SelectedCreate.'
+    Assert-False (@(Get-Prop $prunedDistinct 'SelectedUpdateFieldNames') -contains 'LineTotal') 'LineTotal omitido não entra em SelectedUpdate.'
+    Assert-False (@(Get-Prop $prunedDistinct 'SelectedResponseFieldNames') -contains 'LineTotal') 'LineTotal omitido não entra em SelectedResponse.'
 
     $parallelRoot = Get-Prop (Get-Prop $byName['ParallelSublevels'] 'Snapshot') 'RootLevel'
     $parallelSelection = $createDefault.Invoke($null, @($parallelRoot))

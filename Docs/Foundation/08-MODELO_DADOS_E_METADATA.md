@@ -494,12 +494,12 @@ O modelo das seções anteriores continua exato para transação de nível únic
 | ParentLevelName | texto (vazio no cabeçalho) |
 | LevelOrder | número |
 | PrimaryKey | lista `ApiPlanLevelField` |
-| Fields | lista `ApiPlanLevelField` — candidatos estruturais do nível após a poda (união dos nomes selecionados nos papéis; leitor puro traz todos os da estrutura) |
-| SelectedCreateFieldNames / SelectedUpdateFieldNames / SelectedResponseFieldNames | coleção opcional de nomes; `null` fora da poda B099a; não-null = seleção explícita por papel |
+| Fields | lista `ApiPlanLevelField` — catálogo estrutural completo do nível (leitor puro e poda B099a); omissão de campo no Wizard não remove o membro daqui |
+| SelectedCreateFieldNames / SelectedUpdateFieldNames / SelectedResponseFieldNames | coleção opcional de nomes; `null` fora da poda B099a / na raiz; não-null em subnível = seleção explícita por papel (geração e Sync usam isto para omissão) |
 | ChildLevels | lista `ApiPlanLevel` |
 
 `Depth = 1` identifica o cabeçalho; 2, o primeiro subnível; e assim por diante. A leitura da estrutura é recursiva, sem limite artificial de profundidade; **4** é o alcance da evidência validada na sprint (smoke U15), não uma trava — profundidade maior gera aviso no Wizard sem bloquear.
 
-**Seleção por contrato (B099a).** O Wizard mantém listas Create/Update/Response por subnível e a poda grava `SelectedCreateFieldNames` / `SelectedUpdateFieldNames` / `SelectedResponseFieldNames` em `ApiPlanLevel`. O plano de SDT e o mapa BC consomem essa seleção por papel (além da elegibilidade técnica). `Fields` permanece a união estrutural dos nomes selecionados (ou a PK quando o nível só sobrevive por filhos). Required de linha continua só na UI até frente posterior. Desambiguação de atributos homônimos entre níveis permanece dívida consciente quando nomes colidem além do reserved de membros SDT.
+**Seleção por contrato (B099a; alinhado 2026-08-28).** O Wizard mantém listas Create/Update/Response por subnível e a poda grava `SelectedCreateFieldNames` / `SelectedUpdateFieldNames` / `SelectedResponseFieldNames` em `ApiPlanLevel`. O plano de SDT e o mapa BC consomem essa seleção por papel (além da elegibilidade técnica). `Fields` no subnível incluído é o catálogo completo do nível (como na raiz); campo desmarcado fica só fora de `Selected*`, para o Sync não reportar falso `Added`. Se o nível só sobrevive por filhos e nenhum papel tem campo marcado, `Selected*` cai na PK. Required de linha continua só na UI até frente posterior. Desambiguação de atributos homônimos entre níveis permanece dívida consciente quando nomes colidem além do reserved de membros SDT.
 
 Detalhes e fases em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, evidência B095 em `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`, evidência B096 em `Docs/Implementation/2026-08-26-B096-SDTS-HIERARQUICOS.md` e na `Emenda técnica — 2026-08-23` do registro de decisões do MVP.

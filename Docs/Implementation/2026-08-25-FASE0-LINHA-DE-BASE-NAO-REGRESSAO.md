@@ -79,7 +79,8 @@ Os commits da Fase 0 / B107 / correções de pré-push **não** alteram o writer
 produção; exigir regravação na IDE seria outra meta (paridade com o emissor do dia),
 fora do objetivo desta camada.
 
-A conferência de **fim** da sprint permanece para o fechamento da Sprint 9 — não ocorre agora.
+A conferência de **fim** da sprint foi registrada em 2026-08-28 em
+`Tests/GenerationBaseline/IdeXpz/CAPTURE-FIM.md` (XPZ `processado_wsEducacaoSpTeste_full_20260828a.xpz`).
 
 ### Conferência de fim de sprint (não agora)
 
