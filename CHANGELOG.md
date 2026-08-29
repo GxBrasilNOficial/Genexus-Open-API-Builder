@@ -28,6 +28,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Fixed
 
+- Evidência B099a: nota de época em `Fields` (união estrutural na entrega 2026-08-26 → catálogo completo desde 2026-08-28 / FASE7).
 - `Tools/Copy-ExtensionForGeneXus18.ps1`: `NextCommand` / `FollowingCommand` escolhem `Register-ExtensionForGx18u13.bat` (e o Install satélite no dry-run) quando a `BuildDll` está sob `gx18u13` ou o diretório é `GeneXus18up13`; linha canônica permanece no Register U14+.
 - Documentação da Fase 0: CHANGELOG, plano `24`, especificação de subníveis e evidência `2026-08-25-FASE0-…` alinhados à conferência XPZ de fim já fechada em `CAPTURE-FIM.md` (2026-08-28).
 - Sync hierárquico: poda de subnível grava catálogo completo em `Fields` e deixa omissão só em `Selected*` — campo desmarcado no Wizard deixa de aparecer como falso `Added` no Sync. Metadata antiga (união em `fields`) só melhora após regravação de `levels`. Teste `tests.wizardHierarchical` atualizado. Smoke U15: `TesteItemObs2` omitido → Sync `Adicionados=0`. Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.

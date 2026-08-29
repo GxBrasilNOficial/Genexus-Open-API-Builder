@@ -15,7 +15,7 @@ Escopo: interface do Wizard com agrupamento por nível, dependência pai/filho, 
 - Profundidade máxima > 4: aviso, sem bloquear.
 - Apply de objetos hierárquicos é permitido; metadata/sync/remoção continuam V1 até `B099b`. O resumo avisa para não usar Remover nem Sync nesta API.
 - Required de linha aparece na UI e não alimenta o writer BC (400 com caminho `Parcelas[0].Campo` permanece para frente posterior, para não recapturar o ouro B097).
-- Seleção Create/Update/Response por subnível é preservada na poda (`Selected*FieldNames`) e consumida pelo plano de SDT / mapa BC; `Fields` fica como união estrutural.
+- Seleção Create/Update/Response por subnível é preservada na poda (`Selected*FieldNames`) e consumida pelo plano de SDT / mapa BC; ~~`Fields` fica como união estrutural~~ — válido na entrega B099a (2026-08-26); em 2026-08-28 a poda passou a gravar em `Fields` o catálogo completo do nível (omissão só em `Selected*`, anti falso `Added` no Sync). Ver `Docs/Foundation/08-MODELO_DADOS_E_METADATA.md` e `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
 - ~~Dívida `count(HeaderId)` em `InheritedPrimaryKey` permanece~~ — corrigida em B099v (2026-08-28); ver `Docs/Implementation/2026-08-28-B099v-VALIDACAO-RUNTIME-MULTINIVEL.md`.
 
 ## Entrega
