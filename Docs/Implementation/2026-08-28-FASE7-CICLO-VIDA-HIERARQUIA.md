@@ -90,7 +90,8 @@ Inventário dinâmico sem bloco `own` ficou coberto pelo teste offline (`tests.g
 - Inventário dinâmico depende de stub mínimo: metadata hierárquica incompleta (SDTs ausentes ou `levels` inválidos) cai no fallback flat.
 - Corte `0.1.0-alpha.5` exige autorização humana explícita (notas trilíngues + dois assets DLL).
 - Critérios 6 (`Gx_FabricaBrasil`) e 10 (smoke U13) continuam fora desta fase, gates da sprint.
-- Lacuna Sync ADDED/rename em subnível: **fechada** em 2026-08-28 (offline + smoke IDE com delta; ver seção seguinte).
+- Lacuna Sync ADDED/rename em subnível (apply IncludeAdded / remap por GUID): **fechada** em 2026-08-28 (offline + smoke IDE com delta; ver seção seguinte).
+- **Sync hierárquico — falso `Added` por campo omitido de propósito (adiado):** o diff compara `levels.fields` podados (união do que entrou em Create/Update/Response) com a Transaction completa. Campo desmarcado no Wizard some de `fields` mas continua na Transaction → toda Sync sem mudança estrutural reporta `Added`. Distinto do gap de apply já corrigido. Não há inventário de “conhecido e excluído”; raiz não sofre o mesmo efeito (`Prune` da raiz grava todos os `Fields`). Remédio candidato (outra sessão): em subnível incluído, persistir catálogo completo em `Fields` e manter omissão só em `Selected*` (o gerador já filtra por papel). Metadata já gravada só melhora após Wizard/Sync que reescreva `levels`. Sem smoke IDE deste falso positivo na data do registro.
 
 ## Sync hierárquico — IncludeAdded e Selected* por GUID (2026-08-28)
 

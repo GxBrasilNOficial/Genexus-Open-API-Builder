@@ -256,6 +256,7 @@ Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
 - Relatório B081 no monitor da IDE em multi-monitor e confirmação B035 localizada em espanhol/inglês ainda sem evidência U15 (`NotaFiscal` já tinha Business Component nos testes anteriores). O caso do diálogo invisível após o Wizard fechar (owner = `ActiveForm` oculto) foi corrigido em 2026-08-26; falta só a evidência em dois monitores.
 - Gap B099a (2026-08-26): required de linha aparece na UI e **não** alimenta o writer BC (validação 400 com caminho `Parcelas[0].Campo` fica para frente posterior, para não recapturar o ouro B097).
 - Residual B099b (Sync flat vs SDT raiz hierárquico): **encerrado na Fase 7** (`DetectSdtConflicts` vazio em metadata hierárquica; smoke Sync 2026-08-28 sem conflito).
+- Sync hierárquico — falso `Added` por campo de subnível omitido de propósito no Wizard: residual consciente adiado (2026-08-28); preview mistura “novo na Transaction” com “não quis na API”. Detalhe e remédio candidato em `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md` (Residual consciente). Não bloqueia o corte `0.1.0-alpha.5`.
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 
 ## Documentos governantes
