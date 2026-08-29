@@ -45,6 +45,11 @@ internal static class ApiPlanMetadataLevelsCodec
         return children is not null && children.Count > 0;
     }
 
+    /// <summary>
+    /// Lê a raiz de <c>levels</c>. Retorna <c>null</c> se a propriedade estiver ausente.
+    /// Se <c>levels</c> existir mas estiver malformado (ex.: sem <c>levelName</c>), propaga
+    /// <see cref="InvalidOperationException"/> — não engole erro de parse.
+    /// </summary>
     public static ApiPlanLevel? TryReadRoot(JObject metadata)
     {
         if (metadata is null)

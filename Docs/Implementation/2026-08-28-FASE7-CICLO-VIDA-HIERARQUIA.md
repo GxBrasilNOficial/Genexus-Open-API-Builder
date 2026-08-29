@@ -8,7 +8,7 @@ Escopo: releitura de `levels` no reencontro do Wizard, tolerância de leitura em
 
 - Releitura hierárquica só quando a metadata V2 contém `levels` com subníveis (`HasHierarchicalLevels`); API plana permanece inalterada.
 - Preferências: JSON legado **sem** `schemaVersion` continua válido (mesma política V1/V2 da metadata).
-- Inventário dinâmico: se `objects.sdts.own` estiver ausente mas houver `levels`, reconstruir a ordem de remoção via stub `ApiPlan` + `ApiPlanSdtGenerationPlanBuilder` (inverso da pós-ordem de criação); fallback flat nos cinco nomes fixos quando não houver hierarquia.
+- Inventário dinâmico: se `objects.sdts.own` estiver ausente mas houver `levels` legível, reconstruir a ordem de remoção via stub `ApiPlan` + `ApiPlanSdtGenerationPlanBuilder` (inverso da pós-ordem de criação); fallback flat nos cinco nomes fixos quando **não** há hierarquia, ou quando o stub não monta (ex.: SDTs raiz ausentes). `levels` anunciado porém ilegível **falha** — não cai no flat.
 - Sync: `DetectSdtConflicts` retorna vazio quando a metadata é hierárquica — o residual B099b (membros flat vs SDTs raiz) deixa de bloquear o preview.
 - Corte `0.1.0-alpha.5` permanece **após** autorização humana explícita (AGENTS.md).
 
@@ -87,7 +87,7 @@ Inventário dinâmico sem bloco `own` ficou coberto pelo teste offline (`tests.g
 
 ## Residual consciente
 
-- Inventário dinâmico depende de stub mínimo: metadata hierárquica incompleta (SDTs ausentes ou `levels` inválidos) cai no fallback flat.
+- Inventário dinâmico: sem `own`, com `levels` legível e stub montável → ordem hierárquica; sem hierarquia ou stub incompleto (ex.: SDTs raiz ausentes) → fallback flat dos cinco nomes. **`levels` presente mas ilegível** (`levelName`/`attributeGuid` etc.) → a remoção **falha** com erro explícito; não usa flat (evita órfãos de subnível). Sem teste IDE desse caso corrompido; coberto offline em `tests.generatedApiRemovalPlan`.
 - Corte `0.1.0-alpha.5` exige autorização humana explícita (notas trilíngues + dois assets DLL).
 - Critérios 6 (`Gx_FabricaBrasil`) e 10 (smoke U13) continuam fora desta fase, gates da sprint.
 - Lacuna Sync ADDED/rename em subnível (apply IncludeAdded / remap por GUID): **fechada** em 2026-08-28 (offline + smoke IDE com delta; ver seção seguinte).

@@ -37,7 +37,19 @@ internal static class ApiPlanGeneratedApiRemovalInventory
 
         if (ApiPlanMetadataLevelsCodec.HasHierarchicalLevels(metadata))
         {
-            var stub = TryCreateStubApiPlanFromMetadata(metadata);
+            ApiPlan? stub;
+            try
+            {
+                stub = TryCreateStubApiPlanFromMetadata(metadata);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // levels anunciados mas ilegíveis: não cair no flat (deixaria SDTs de subnível órfãos).
+                throw new InvalidOperationException(
+                    "Metadata hierárquica com levels ilegível; a remoção não usa fallback flat. Corrija a metadata ou regenere a API.",
+                    ex);
+            }
+
             if (stub is not null)
             {
                 return BuildOwnSdtNamesForRemoval(stub);

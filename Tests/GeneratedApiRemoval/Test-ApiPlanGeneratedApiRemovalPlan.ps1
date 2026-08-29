@@ -26,6 +26,13 @@ function Assert-Equal {
     }
 }
 
+function Assert-Contains {
+    param([string]$Text, [string]$Needle, [string]$Message)
+    if ($Text.IndexOf($Needle, [StringComparison]::Ordinal) -lt 0) {
+        throw "ASSERT_CONTAINS_FAILED: $Message"
+    }
+}
+
 function Get-Prop {
     param($Object, [string]$Name)
     $property = $Object.GetType().GetProperty($Name, [System.Reflection.BindingFlags]'Instance, NonPublic, Public')
@@ -201,6 +208,22 @@ try {
     $dynamicOwn = $resolveOwn.Invoke($null, @(, $dynamic))
     Assert-True ((Get-Count $dynamicOwn) -gt 5) 'Inventário dinâmico hierárquico sem own'
     Assert-Equal 'sdtTeste_API_ListResponse' (Get-ItemAt $dynamicOwn 0) 'Ordem dinâmica preserva ListResponse primeiro'
+
+    $corrupt = [Newtonsoft.Json.Linq.JObject]::Parse($dynamic.ToString([Newtonsoft.Json.Formatting]::None))
+    $corruptLevels = $corrupt['levels']
+    Assert-True ($corruptLevels -is [Newtonsoft.Json.Linq.JObject]) 'levels do caso dinâmico deve ser JObject.'
+    [void]$corruptLevels.Remove('levelName')
+    $threwCorrupt = $false
+    try {
+        [void]$resolveOwn.Invoke($null, @(, $corrupt))
+    }
+    catch {
+        $threwCorrupt = $true
+        $msg = [string]$_.Exception.ToString()
+        Assert-Contains $msg 'levels ilegível' 'Remoção deve recusar levels ilegível sem fallback flat.'
+    }
+
+    Assert-True $threwCorrupt 'levels sem levelName deve falhar (fail-closed), não cair no flat.'
 
     try {
         [void]$fromMetadata.Invoke($null, @($metadata, 'Outra', $txGuid))
