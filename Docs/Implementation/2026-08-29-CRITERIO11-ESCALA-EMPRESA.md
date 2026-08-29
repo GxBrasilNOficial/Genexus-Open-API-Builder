@@ -74,7 +74,7 @@ Permaneceram (previsto): `sdt_API_ErrorMessage`, `sdt_API_ErrorResponse`, `sdt_A
 
 - HTTP na `Empresa` (critério 7 já fechou na `Teste`).
 - Sync na `Empresa` (Fase 7 já fechou na `Teste`).
-- Sinal de vida no apply/Remover (`B082`) — nova sessão, fora do corte `0.1.0-alpha.5`.
+- Sinal de vida no apply/Remover (`B082`) — missão de outra sessão, fora do corte `0.1.0-alpha.5`.
 
 ## Status
 

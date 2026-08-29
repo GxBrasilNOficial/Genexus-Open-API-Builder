@@ -336,7 +336,7 @@ Ordem acordada de execução:
 
 - `B088`: investigar/documentar limitações do template nativo `Swagger.Yaml.stg` (respostas declaradas só `200`/`404`; não emissão de `required:` nos schemas) — **concluído** (2026-08-10; limitação intransponível; evidência `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`)
 - `B089`: evidência HTTP `403` com role GAM não-administradora — **concluído** (2026-08-10; GAM Backoffice + HTTP Get 200 / Create 403 nos dois environments; evidência `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D)
-- `B082`: tempo de execução no wizard (prioridade média; fora da linha de corte do MVP)
+- `B082`: sinal de vida no Wizard (abertura/apply) e no Remover — **missão de outra sessão**; fora da linha de corte do MVP e fora do corte `0.1.0-alpha.5`; recado `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`
 
 ## Gate
 

@@ -135,9 +135,13 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 Evidências: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`, `Docs/Implementation/2026-08-28-CRITERIO6-GX-FABRICABRASIL.md`, `Docs/Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md`, `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
 
+## Missão estacionada (outra sessão)
+
+`B082` — sinal de vida no Wizard (abertura e apply) e no Remover enquanto o thread da UI está bloqueado. **Não misturar com o corte `0.1.0-alpha.5`.** Recado: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
+
 ## Evidência da frente encerrada
 
-- Critério 11 (2026-08-29): escala `Empresa` / 13 subníveis; OwnSdts=44; PostgreSQL Success; Remover 50 sem órfão; pasta `EmpresaOpenApi` reutilizada vazia de propósito. Evidência: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
+- Critério 11 (2026-08-29): escala `Empresa` / 13 subníveis; OwnSdts=44; `Build All` Success nos dois environments; Remover 50 sem órfão; pasta `EmpresaOpenApi` reutilizada vazia de propósito. Evidência: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
 - Fase 7: ciclo de vida sob hierarquia; releitura de `levels` no Wizard; inventário dinâmico de remoção; Sync sem falso positivo SDT; smoke U15 na `Teste`/`apiTeste` (apply `Created=24`, critério 8, Sync `0/0/0/0/16`, Remover preview 18 SDTs / cancelado); Sync com delta `TesteItemObs2` (`Updated=27`, membro nos três SDTs `*_TesteItem`). Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
 - `B099b` (Fase 6): metadata V2 hierárquica; Wizard/Sync/Remover na `Teste`/`apiTeste`; reencontro plano V1→V2 na `NotaFiscal`/`apiFiscalPublica` (`PlannedContractHash` estável `8F737F1A…`, `levels=null`, `own`=5). Evidência: `Docs/Implementation/2026-08-28-B099b-METADATA-HIERARQUICA-V2.md`.
 - `B099v` (Fase 5-A): `ResolveAggregateAttributeName` preferindo PK própria (`!IsForeignKey`); ouro `InheritedPrimaryKey.txt` e asserção anti-`count(HeaderId)` em `tests.listHierarchical`; reapply na `Teste` de quatro níveis (`Updated=27`, `Blocked=0`); `Build All` nos dois environments sem `spc0018`; smoke HTTP multinível (16 checks × 2 environments): POST/GET, PUT com e sem Replace, List com contadores; YAML hierárquico conferido; clientes `typescript-fetch`/`csharp` com `openapi-generator-cli 5.3.1`. Metadata permanece V1. Não Remover/Sync até `B099b`. Residual consciente: PK de subnível toda-FK ainda pode cair em `count(<cabeçalho>)` — ver `Docs/Implementation/2026-08-26-B098-LIST-CONTADORES.md`. Evidência: `Docs/Implementation/2026-08-28-B099v-VALIDACAO-RUNTIME-MULTINIVEL.md`.
@@ -263,7 +267,7 @@ Evidências: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`, `D
 - Gap B099a (2026-08-26): required de linha aparece na UI e **não** alimenta o writer BC (validação 400 com caminho `Parcelas[0].Campo` fica para frente posterior, para não recapturar o ouro B097).
 - Residual B099b (Sync flat vs SDT raiz hierárquico): **encerrado na Fase 7** (`DetectSdtConflicts` vazio em metadata hierárquica; smoke Sync 2026-08-28 sem conflito).
 - Sync hierárquico — falso `Added` por campo de subnível omitido de propósito no Wizard: **corrigido e smoke U15 2026-08-28** (`TesteItemObs2` desmarcado → Sync `Adicionados=0`, `Inalterados=17`). Metadata antiga só melhora após regravação de `levels`.
-- UX de espera do Wizard (abertura e apply) e do Remover — **nova sessão, não misturar com o corte `0.1.0-alpha.5`.** A medição do critério 11 encerrou. Em 2026-08-29, na `Empresa` (`Gx_FabricaBrasil`): abertura ~7 s sem “carregando”; apply no thread da UI deixa a IDE irresponsiva (107 min); Remover some o diálogo e bloqueia ~32 s até o B081. Relato de usuário que fechou o GeneXus na marra. Correlato de `B082`. Recado: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
+- UX de espera do Wizard (abertura e apply) e do Remover — **missão de outra sessão (`B082`); não misturar com o corte `0.1.0-alpha.5`.** A medição do critério 11 encerrou. Em 2026-08-29, na `Empresa` (`Gx_FabricaBrasil`): abertura ~7 s sem “carregando”; apply no thread da UI deixa a IDE irresponsiva (107 min); Remover some o diálogo e bloqueia ~32 s até o B081. Relato de usuário que fechou o GeneXus na marra. Recado: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 
 ## Documentos governantes
@@ -293,7 +297,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [2026-08-28 — Critério 6 Gx_FabricaBrasil](Implementation/2026-08-28-CRITERIO6-GX-FABRICABRASIL.md)
 - [2026-08-29 — Critério 10 smoke Gx18u13](Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md)
 - [2026-08-29 — Critério 11 escala Empresa](Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md)
-- [2026-08-29 — UX progresso Wizard/apply (residual, nova sessão)](Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md)
+- [2026-08-29 — UX progresso Wizard/apply (missão B082, outra sessão)](Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
 - [Release 0.1.0-alpha.1](Releases/0.1.0-alpha.1.md)

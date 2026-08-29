@@ -1,7 +1,7 @@
-# Residual — sinal de vida no Wizard (abertura e apply) e no Remover
+# Missão estacionada — sinal de vida no Wizard (abertura e apply) e no Remover
 
 Data: 2026-08-29.
-Estado: recado para **nova sessão**. A medição do critério 11 **encerrou**; não implementar isto no corte `0.1.0-alpha.5`, salvo decisão explícita em contrário.
+Estado: **missão de outra sessão** (`B082`). A medição do critério 11 **encerrou**; não implementar isto no corte `0.1.0-alpha.5`.
 Correlato de backlog: `B082` (mostrar tempo de execução) — o tempo sozinho não resolve o que foi visto; o usuário precisa de feedback **enquanto** a IDE está bloqueada.
 
 ## O que aconteceu
@@ -32,4 +32,4 @@ Referência de código: `PrototypeWizardDialog.AcceptSelection` (fecha o diálog
 
 ## Fora deste recado
 
-Critério 11 (escala) **fechou** em 2026-08-29: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`. Este arquivo não pede reabrir a medição; só guarda o residual de UX.
+Critério 11 (escala) **fechou** em 2026-08-29: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`. Este arquivo não pede reabrir a medição; só guarda a missão `B082` para outra sessão.
