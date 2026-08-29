@@ -119,6 +119,12 @@ internal static class ApiPlanSdtWriter
 
         foreach (var definition in allDefinitions)
         {
+            if (definition.Members.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    $"Criacao de SDT bloqueada: o SDT '{definition.Name}' nao tem membros. Nenhuma alteracao foi feita.");
+            }
+
             ValidateSdtDefinitionTypes(designModel, definition, plannedNames);
             var existing = SDT.GetAll(designModel)
                 .Where(sdt => string.Equals(sdt.Name, definition.Name, StringComparison.OrdinalIgnoreCase))

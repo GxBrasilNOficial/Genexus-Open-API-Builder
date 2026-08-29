@@ -240,7 +240,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 |---|---|---|
 | B080 | Integrar menu/contexto IDE | Alta — atendido em substância (Wizard + preferências); residual cosmético de nome/rótulo |
 | B081 | Exibir relatório final interno | Alta — concluído (código + U15 2026-08-08/09; efeitos colaterais, Folder criado, reuso e dimensões da UI) |
-| B082 | Mostrar tempo execução | Média — fora da linha de corte do MVP |
+| B082 | Mostrar tempo execução | Média — fora da linha de corte do MVP; em 2026-08-29 o apply da `Empresa` (107 min) e o Remover (`Deleted=50`, ~32 s) mostraram que tempo sozinho não basta — falta sinal de vida enquanto o thread da UI está bloqueado (`Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`) |
 | B083 | Detectar conflito antes salvar | Alta — concluído (núcleo no preflight; residual UX nome/tipo/módulo/Folder validado U15 2026-08-08) |
 | B084 | Bloquear overwrite silencioso | Alta — atendido (sem `_v2`) |
 | B085 | Sincronizar com a Transaction usando metadata | Alta — concluído (código + validação U15 2026-08-08) |

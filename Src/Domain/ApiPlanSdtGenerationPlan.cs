@@ -205,6 +205,13 @@ internal static class ApiPlanSdtGenerationPlanBuilder
         }
 
         AppendChildContractMembers(members, childLinks, role, includeReplace);
+        if (members.Count == 0)
+        {
+            // GeneXus recusa SDT sem itens. Filho so com PK herdada no Create nao e emitido
+            // e a colecao correspondente tambem nao entra no pai daquele papel.
+            return string.Empty;
+        }
+
         var sdtName = ApiPlanSdtHierarchicalNaming.AllocateSdtName(
             apiPlan.TransactionName,
             role,
@@ -246,6 +253,11 @@ internal static class ApiPlanSdtGenerationPlanBuilder
                 includeReplace,
                 scope,
                 reservedSdtNames);
+            if (string.IsNullOrEmpty(childSdtName))
+            {
+                continue;
+            }
+
             var collectionName = ApiPlanSdtHierarchicalNaming.AllocateMemberName(
                 sanitized,
                 child.LevelOrder,

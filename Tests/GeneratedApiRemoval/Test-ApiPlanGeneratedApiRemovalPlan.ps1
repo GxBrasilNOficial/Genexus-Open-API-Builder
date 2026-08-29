@@ -159,6 +159,10 @@ try {
     $ownSdts = Get-Prop $plan 'OwnSdtNames'
     Assert-Equal 5 (Get-Count $ownSdts) 'SDTs próprios flat'
     Assert-Equal 'sdtTeste_API_ListResponse' (Get-ItemAt $ownSdts 0) 'ListResponse primeiro'
+    $listsMethod = $planType.GetMethod('BuildConfirmationLists', [System.Reflection.BindingFlags]'Instance, Public')
+    $lists = [string]$listsMethod.Invoke($plan, @())
+    Assert-Contains $lists "  - sdtTeste_API_ListResponse" 'Lista de confirmacao deve citar cada SDT em linha propria.'
+    Assert-Contains $lists "SDTs próprios (5):" 'Lista de confirmacao deve contar SDTs proprios.'
 
     $metadataV2 = [Newtonsoft.Json.Linq.JObject]::Parse($metadata.ToString([Newtonsoft.Json.Formatting]::None))
     $metadataV2['schemaVersion'] = [Newtonsoft.Json.Linq.JValue]::new('GOAB_API_METADATA_B060_V2')
@@ -240,5 +244,25 @@ finally {
         [System.AppDomain]::CurrentDomain.remove_AssemblyResolve($script:AssemblyResolveHandler)
     }
 }
+
+$confirmDialogPath = Join-Path $repositoryRoot 'Src\Extension\ExtensionConfirmDialog.cs'
+$confirmDialogSource = Get-Content -Raw -LiteralPath $confirmDialogPath
+Assert-True ($confirmDialogSource -match 'WordWrap = false') 'O preview B086 nao deve quebrar nome de objeto no meio da palavra.'
+Assert-True ($confirmDialogSource -match 'ScrollBars = ScrollBars\.Both') 'O preview B086 deve rolar vertical e horizontal quando a lista exceder a area.'
+Assert-True ($confirmDialogSource -match 'BuildConfirmationLists\(\)') 'O preview B086 deve reusar a mesma lista da Output.'
+Assert-True ($confirmDialogSource -match 'RowStyle\(SizeType\.Percent, 100f\)') 'O preview B086 deve reservar a linha do meio para a lista rolavel.'
+Assert-True ($confirmDialogSource -match 'FlowDirection = FlowDirection\.RightToLeft') 'O preview B086 deve manter Sim/Nao fora da area de rolagem.'
+Assert-True ($confirmDialogSource -match 'working\.Height - 32') 'O preview B086 deve limitar a altura a area util do monitor.'
+Assert-True ($confirmDialogSource -match 'MaximumSize = new Size\(maxWidth, maxHeight\)') 'O preview B086 nao deve estourar a tela.'
+Assert-True ($confirmDialogSource -notmatch 'Screen\.FromPoint\(Cursor\.Position\)\.WorkingArea') 'O preview B086 nao deve escolher o monitor pela posicao do cursor.'
+Assert-True ($confirmDialogSource -match 'IWin32Window\? owner') 'O preview B086 deve receber a janela owner da IDE.'
+Assert-True ($confirmDialogSource -match '_owner\.Handle') 'O preview B086 deve priorizar o monitor da janela owner.'
+Assert-True ($confirmDialogSource -match 'Process\.GetCurrentProcess\(\)\.MainWindowHandle') 'O preview B086 deve usar a janela principal do processo como fallback.'
+Assert-True ($confirmDialogSource -match 'AcceptButton = _noButton') 'O preview B086 deve manter Nao como default seguro.'
+Assert-True ($confirmDialogSource -notmatch '_leftColumnLabel') 'O preview B086 nao deve mais partir a lista em duas colunas com wrap.'
+
+$packageSource = Get-Content -Raw -LiteralPath (Join-Path $repositoryRoot 'Src\Extension\Package.cs')
+Assert-True ($packageSource -match 'new ExtensionConfirmDialog\(') 'Package deve abrir o preview B086 pelo ExtensionConfirmDialog.'
+Assert-True ($packageSource -match 'confirmationDialog\.ShowDialog\(owner\)') 'Package deve ancorar o preview B086 no owner da IDE.'
 
 Write-Output 'PASS: ApiPlanGeneratedApiRemovalPlan'

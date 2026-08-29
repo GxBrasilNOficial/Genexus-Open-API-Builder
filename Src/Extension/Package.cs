@@ -1007,13 +1007,18 @@ public sealed class Package : AbstractPackageUI
             var plan = ApiPlanGeneratedApiRemover.Preview(knowledgeBase.DesignModel, transaction);
             WriteOutput($"[Genexus Open API Builder][B086] Plano de remocao para Transaction='{transaction.Name}':{Environment.NewLine}{plan.BuildConfirmationSummary()}");
 
+            var owner = ResolveFinalReportOwner();
             using var confirmationDialog = new ExtensionConfirmDialog(
                 texts.RemoveGeneratedApi,
                 texts.RemovalConfirmationIntro,
                 plan,
                 texts.ConfirmDeletion,
-                texts);
-            if (confirmationDialog.ShowDialog() != System.Windows.Forms.DialogResult.Yes)
+                texts,
+                owner);
+            var confirmationResult = owner is null
+                ? confirmationDialog.ShowDialog()
+                : confirmationDialog.ShowDialog(owner);
+            if (confirmationResult != System.Windows.Forms.DialogResult.Yes)
             {
                 WriteOutput($"[Genexus Open API Builder][B086] Remocao cancelada pelo usuario para Transaction='{transaction.Name}'. Nenhuma alteracao foi feita na KB.");
                 return true;

@@ -308,6 +308,7 @@ A Fase 6 (`B099b`, concluída em 2026-08-28) acrescentou a estrutura de níveis 
     - **Reprovam:** qualquer objeto órfão após `Remover API gerada`; colisão de nome que não resolva deterministicamente ou nome que estoure o limite do GeneXus sem o encurtamento previsto; `Build All` com erro na transação de 13 subníveis; Wizard acima de **30 s** para abrir ou para calcular o preview no pior caso da KB real, patamar em que o usuário lê travamento e não lentidão.
     - **Alertam, registram e seguem:** abertura ou preview acima de **5 s**, sinal de que a indexação por `GetAll` de 2026-08-06 não escalou para a forma hierárquica; aplicação completa acima de **60 s**.
     - Nenhum teto é imposto ao número de subníveis selecionáveis: seria a mesma trava artificial que a seção 8-A rejeitou para profundidade. A contagem de objetos no resumo do Wizard cumpre o papel de informar sem bloquear.
+    - **Status 2026-08-29: aprovado** — `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`. Alertas de tempo registrados; `Build All` Success nos dois environments; Remover sem órfão.
 
 ---
 

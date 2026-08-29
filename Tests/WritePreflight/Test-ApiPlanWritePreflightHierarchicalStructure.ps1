@@ -12,6 +12,7 @@ $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $preflightSourcePath = Join-Path $repositoryRoot 'Src\Extension\Diagnostics\ApiPlanWritePreflight.cs'
 $mapSourcePath = Join-Path $repositoryRoot 'Src\Domain\ApiPlanHierarchicalContractMap.cs'
+$sdtWriterSourcePath = Join-Path $repositoryRoot 'Src\Extension\Diagnostics\ApiPlanSdtWriter.cs'
 
 if ([string]::IsNullOrWhiteSpace($DllPath)) {
     $DllPath = Join-Path $repositoryRoot 'Src\Extension\bin\Release\net471\GenexusOpenApiBuilder.Extension.dll'
@@ -114,12 +115,16 @@ function Invoke-ExpectInvalidOperation {
 
 Assert-True (Test-Path -LiteralPath $preflightSourcePath -PathType Leaf) "Fonte ausente: $preflightSourcePath"
 Assert-True (Test-Path -LiteralPath $mapSourcePath -PathType Leaf) "Fonte ausente: $mapSourcePath"
+Assert-True (Test-Path -LiteralPath $sdtWriterSourcePath -PathType Leaf) "Fonte ausente: $sdtWriterSourcePath"
 
 $preflightSource = [IO.File]::ReadAllText($preflightSourcePath)
 $mapSource = [IO.File]::ReadAllText($mapSourcePath)
+$sdtWriterSource = [IO.File]::ReadAllText($sdtWriterSourcePath)
 
 Assert-Contains $preflightSource 'ValidateStructuralSublevelNames(apiPlan)' 'Preflight agregado deve validar subnivel sem nome antes do primeiro Save().'
 Assert-Contains $mapSource 'ValidateStructuralSublevelNames(ApiPlan apiPlan)' 'Validacao estrutural deve ser compartilhada com o mapa BC.'
+Assert-Contains $mapSource 'eligible.Length == 0 && nested.Count == 0' 'Mapa BC deve pular filho sem membros no papel.'
+Assert-Contains $sdtWriterSource 'nao tem membros' 'Preflight de SDT deve recusar definicao sem membros antes do Save().'
 
 if (-not (Test-Path -LiteralPath $DllPath -PathType Leaf)) {
     Write-Output "ENVIRONMENT_BLOCKED: DLL Release ausente em $DllPath"

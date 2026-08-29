@@ -138,6 +138,11 @@ internal static class ApiPlanHierarchicalContractMapBuilder
                 childReservedMembers,
                 reservedSdtNames,
                 reservedVariableTokens);
+            if (eligible.Length == 0 && nested.Count == 0)
+            {
+                continue;
+            }
+
             var itemSdtName = ApiPlanSdtHierarchicalNaming.AllocateSdtName(
                 apiPlan.TransactionName,
                 role,

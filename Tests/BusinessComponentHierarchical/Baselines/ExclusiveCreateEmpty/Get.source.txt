@@ -1,0 +1,18 @@
+&RestStatusCode = 200
+&Firm.Load(&FirmId)
+If &Firm.Success()
+    &GetResponse = new()
+    &GetResponse.FirmId = &Firm.FirmId
+    &GetResponse.FirmName = &Firm.FirmName
+    For &Bc_Exclusive in &Firm.Exclusive
+        &Get_Exclusive = new()
+        &Get_Exclusive.FirmId = &Bc_Exclusive.FirmId
+        &GetResponse.Exclusive.Add(&Get_Exclusive)
+    EndFor
+    &RestStatusCode = 200
+Else
+    &RestStatusCode = 404
+    &ErrorResponse = new()
+    &ErrorResponse.Code = !"not_found"
+    &ErrorResponse.Message = !"Firm was not found."
+EndIf

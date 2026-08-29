@@ -16,6 +16,7 @@ $namingSourcePath = Join-Path $repositoryRoot 'Src\Domain\ApiPlanSdtHierarchical
 $builderSourcePath = Join-Path $repositoryRoot 'Src\Domain\ApiPlanSdtGenerationPlan.cs'
 $domainSourcePath = Join-Path $repositoryRoot 'Src\Domain\ApiPlan.cs'
 $contractSourcePath = Join-Path $repositoryRoot 'Src\Extension\Diagnostics\PrototypeWizardContract.cs'
+$writerSourcePath = Join-Path $repositoryRoot 'Src\Extension\Diagnostics\ApiPlanSdtWriter.cs'
 
 if ([string]::IsNullOrWhiteSpace($DllPath)) {
     $DllPath = Join-Path $repositoryRoot 'Src\Extension\bin\Release\net471\GenexusOpenApiBuilder.Extension.dll'
@@ -164,11 +165,13 @@ Assert-True (Test-Path -LiteralPath $namingSourcePath -PathType Leaf) "Fonte aus
 Assert-True (Test-Path -LiteralPath $builderSourcePath -PathType Leaf) "Fonte ausente: $builderSourcePath"
 Assert-True (Test-Path -LiteralPath $domainSourcePath -PathType Leaf) "Fonte ausente: $domainSourcePath"
 Assert-True (Test-Path -LiteralPath $contractSourcePath -PathType Leaf) "Fonte ausente: $contractSourcePath"
+Assert-True (Test-Path -LiteralPath $writerSourcePath -PathType Leaf) "Fonte ausente: $writerSourcePath"
 
 $namingSource = [IO.File]::ReadAllText($namingSourcePath)
 $builderSource = [IO.File]::ReadAllText($builderSourcePath)
 $domainSource = [IO.File]::ReadAllText($domainSourcePath)
 $contractSource = [IO.File]::ReadAllText($contractSourcePath)
+$writerSource = [IO.File]::ReadAllText($writerSourcePath)
 
 Assert-Contains $namingSource 'GeneXusObjectNameMaxLength = 128' 'Limite de nome GeneXus 18 deve ser 128.'
 Assert-Contains $namingSource 'membro não tem teto nesta fase' '128 não se aplica a nome de membro nesta fase.'
@@ -178,6 +181,8 @@ Assert-Contains $namingSource '_API_UpdateRequest_' 'Padrao de SDT Update deriva
 Assert-Contains $namingSource '_API_Response_' 'Padrao de SDT Response derivado deve existir no helper.'
 Assert-Contains $builderSource 'HasSelectedSublevels' 'Builder deve ramificar no caminho hierarquico.'
 Assert-Contains $builderSource 'ListResponse_Item' 'Plano hierarquico deve emitir ListResponse_Item (B098).'
+Assert-Contains $builderSource 'GeneXus recusa SDT sem itens' 'Builder deve pular SDT aninhado sem membros.'
+Assert-Contains $writerSource 'nao tem membros' 'Preflight deve recusar SDT sem membros antes do Save().'
 Assert-Contains $domainSource 'O plano de SDT consome Levels' 'ApiPlan deve declarar consumo B096+ do Levels.'
 Assert-NotContains $contractSource 'ApiPlanSdtHierarchicalNaming' 'Wizard flat nao deve acoplar o naming B096.'
 
@@ -226,7 +231,8 @@ try {
         'MemberCollision',
         'LongQualifier',
         'VariableTokenCollision',
-        'HeaderOnly'
+        'HeaderOnly',
+        'ExclusiveCreateEmpty'
     )
     Assert-True ($fixtures.Count -eq $expectedNames.Count) "Esperava $($expectedNames.Count) fixtures; encontrado $($fixtures.Count)."
     $actualNames = @($fixtures | ForEach-Object { [string]$nameProperty.GetValue($_) })
@@ -285,6 +291,18 @@ try {
     Assert-True ($null -ne $lineCreate) 'Subnivel Line gera SDT derivado com o nome estrutural.'
     Assert-True ($null -eq (Find-Member $lineCreate 'HeaderId')) 'PK herdada (FK) nao entra no Create da linha.'
     Assert-True ($null -ne (Find-Member $lineCreate 'LineId')) 'Parte propria da PK informada entra no Create.'
+
+    $exclusive = $captured['ExclusiveCreateEmpty'] | ConvertFrom-Json
+    Assert-True ($null -eq (Find-OwnSdt $exclusive 'sdtFirm_API_CreateRequest_Exclusive')) 'Filho so-PK-herdada nao emite SDT Create.'
+    Assert-True ($null -ne (Find-OwnSdt $exclusive 'sdtFirm_API_UpdateRequest_Exclusive')) 'Filho so-PK-herdada emite SDT Update.'
+    Assert-True ($null -ne (Find-OwnSdt $exclusive 'sdtFirm_API_Response_Exclusive')) 'Filho so-PK-herdada emite SDT Response.'
+    $firmCreate = Find-OwnSdt $exclusive 'sdtFirm_API_CreateRequest'
+    $firmUpdate = Find-OwnSdt $exclusive 'sdtFirm_API_UpdateRequest'
+    $firmListItem = Find-OwnSdt $exclusive 'sdtFirm_API_ListResponse_Item'
+    Assert-True ($null -ne $firmCreate) 'Cabecalho Create de ExclusiveCreateEmpty deve existir.'
+    Assert-True ($null -eq (Find-Member $firmCreate 'Exclusive')) 'Create do cabecalho nao leva colecao Exclusive vazia.'
+    Assert-True ($null -ne (Find-Member $firmUpdate 'Exclusive')) 'Update do cabecalho leva colecao Exclusive.'
+    Assert-True ($null -ne (Find-Member $firmListItem 'ExclusiveCount')) 'List ainda conta o subnivel Exclusive.'
 
     $collision = $captured['MemberCollision'] | ConvertFrom-Json
     $collisionCreate = Find-OwnSdt $collision 'sdtCollisionDoc_API_CreateRequest'

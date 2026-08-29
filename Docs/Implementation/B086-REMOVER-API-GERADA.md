@@ -11,7 +11,7 @@ Comando explícito que remove somente objetos próprios identificados pela metad
 3. Monta o plano a partir de `ownership` + `objects` (Procedures, SDTs próprios, API Object, Folder).
 4. Mostra resumo e exige confirmação Yes/No (default No). Antes do Yes/No e de novo imediatamente antes do primeiro `Delete()`, o preflight `ValidateRemovalTargets` confere ambiguidade e posse do API Object, de cada Procedure e de cada SDT próprio listados na metadata. Ausência de um alvo é aceita (idempotente); ambiguidade ou objeto não próprio bloqueiam com **nenhuma alteração feita**.
 5. Apaga nesta ordem: API Object → Procedures → SDTs próprios (ListResponse antes de Response) → Metadata File → Folder (só se `wasCreated=true` e ficar vazio). A IDE bloqueia exclusão quando ainda há referência; por isso o dependente sai antes do referenciado. As checagens de posse/ambiguidade se repetem em cada etapa como defesa; se o estado da KB mudar após o preflight, a remoção interrompe sem novas exclusões (residual de falha IDE/SDK no meio da sequência permanece).
-6. Confirmação lista Procedures e SDTs **um por linha** (com seções separadas).
+6. Confirmação lista Procedures e SDTs **um por linha** (o mesmo texto da Output, sem wrap). Com dezenas de SDTs próprios (ex.: `Empresa`, 44), a lista rola; a pergunta e os botões Sim/Não permanecem visíveis dentro da área útil do monitor. Esc e Enter continuam em **Não**.
 7. Folder: `wasCreated=false` → texto “reutilizado; nunca apagar”; `wasCreated=true` → “criado pela extensão; apagar só se ficar vazio”.
 
 Preserva: Transaction, Business Component, Folder reutilizado, SDTs `sdt_API_*` compartilhados.
@@ -66,3 +66,11 @@ Após a troca para `{Nome} - by Genexus Open API Builder` (evidência `2026-08-0
 1. **Remover com posse canônica:** `Deleted=12` (API, 4 Procedures, 5 SDTs, metadata, Folder criado), `Blocked=0`.
 2. **Sem metadata:** bloqueio sem escrita (`Deleted=0`).
 3. **Cancelamento:** plano montado; usuário recusou; nenhuma alteração.
+
+## Correção — preview com rolagem (2026-08-29)
+
+Na cópia `Gx_FabricaBrasil` / Transaction `Empresa` (44 SDTs próprios), `ExtensionConfirmDialog` dimensionava a janela pela altura total das duas colunas, sem teto nem rolagem: o texto cortava e os botões Sim/Não saíam da área útil.
+
+O diálogo passou a limitar largura e altura à `WorkingArea` do monitor da IDE (`WorkingArea - 32`). A lista de Procedures/SDTs usa o mesmo texto da Output (`BuildConfirmationLists`), em fonte monoespaçada, **uma linha por objeto e sem wrap** — nomes longos como `…TipoDeRomaneioAntigoParaBusifrigTipolancto` não partem no meio da palavra. A pergunta e os botões Sim/Não ficam fora da rolagem. Default seguro permanece **Não** (Esc/Enter). Teste: `Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPlan.ps1`.
+
+Na mesma medição o usuário confirmou **Sim**: `Deleted=50`, B081 `Success` / `DuraçãoMs=31836`, Design sem `*Empresa_API*`. A pasta `EmpresaOpenApi` vazia permaneceu (`wasCreated=false`). Evidência de escala: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.

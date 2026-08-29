@@ -106,13 +106,9 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
             shared);
     }
 
-    public string BuildConfirmationSummary()
+    public string BuildConfirmationLists()
     {
         var builder = new System.Text.StringBuilder();
-        builder.Append("Transaction: ").AppendLine(TransactionName);
-        builder.Append("API Object: ").AppendLine(ApiName);
-        builder.Append("Metadata File: ").AppendLine(MetadataFileName);
-        builder.AppendLine();
         builder.Append("Procedures (").Append(ProcedureNames.Count).AppendLine("):");
         AppendIndentedItems(builder, ProcedureNames);
         builder.AppendLine();
@@ -121,6 +117,17 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
         builder.AppendLine();
         builder.Append("SDTs compartilhados preservados (").Append(SharedSdtNamesPreserved.Count).AppendLine("):");
         AppendIndentedItems(builder, SharedSdtNamesPreserved);
+        return builder.ToString().TrimEnd();
+    }
+
+    public string BuildConfirmationSummary()
+    {
+        var builder = new System.Text.StringBuilder();
+        builder.Append("Transaction: ").AppendLine(TransactionName);
+        builder.Append("API Object: ").AppendLine(ApiName);
+        builder.Append("Metadata File: ").AppendLine(MetadataFileName);
+        builder.AppendLine();
+        builder.AppendLine(BuildConfirmationLists());
 
         if (!string.IsNullOrWhiteSpace(FolderName))
         {

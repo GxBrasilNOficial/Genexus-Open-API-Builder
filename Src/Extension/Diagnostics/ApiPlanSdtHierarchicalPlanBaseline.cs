@@ -33,6 +33,7 @@ internal static class ApiPlanSdtHierarchicalPlanBaseline
         fromReader.Add(CreateLongQualifier());
         fromReader.Add(CreateVariableTokenCollision());
         fromReader.Add(CreateHeaderOnly());
+        fromReader.Add(CreateExclusiveCreateEmpty());
         return fromReader;
     }
 
@@ -187,6 +188,29 @@ internal static class ApiPlanSdtHierarchicalPlanBaseline
             Array.Empty<TransactionStructureLevelSource>());
         var snapshot = TransactionStructureReader.Build("HeaderOnly", root);
         return BuildFromRoot("HeaderOnly", snapshot.TransactionName, snapshot.RootLevel);
+    }
+
+    /// <summary>
+    /// Filho cuja unica PK e a FK herdada: Create fica sem membros (GeneXus recusa SDT vazio).
+    /// Nao entra em <see cref="TransactionStructureReader.CreateFixtures"/> para nao recapturar o ouro B095.
+    /// </summary>
+    private static ApiPlanSdtHierarchicalPlanFixture CreateExclusiveCreateEmpty()
+    {
+        var firmId = Attr("e1000001-0001-4000-8000-000000000001", "FirmId", "Numeric", 8, 0, false, false, false, false, false, true, "True");
+        var firmName = Attr("e1000001-0001-4000-8000-000000000002", "FirmName", "VarChar", 40, 0, false, false, false, false, false, true, null);
+        var inheritedFirm = Attr("e1000001-0001-4000-8000-000000000001", "FirmId", "Numeric", 8, 0, false, false, false, true, false, true, "True");
+        var exclusive = new TransactionStructureLevelSource(
+            "Exclusive",
+            new[] { inheritedFirm },
+            new[] { "FirmId" },
+            Array.Empty<TransactionStructureLevelSource>());
+        var root = new TransactionStructureLevelSource(
+            "Firm",
+            new[] { firmId, firmName },
+            new[] { "FirmId" },
+            new[] { exclusive });
+        var snapshot = TransactionStructureReader.Build("Firm", root);
+        return BuildFromRoot("ExclusiveCreateEmpty", snapshot.TransactionName, snapshot.RootLevel);
     }
 
     internal static ApiPlanSdtHierarchicalPlanFixture BuildFromRoot(

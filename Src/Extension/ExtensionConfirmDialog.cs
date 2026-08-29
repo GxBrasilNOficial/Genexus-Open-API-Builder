@@ -1,47 +1,53 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
-using System.Text;
+using System.Linq;
 using System.Windows.Forms;
 using GenexusOpenApiBuilder.Extension.Diagnostics;
 using GenexusOpenApiBuilder.Extension.Domain;
 
 namespace GenexusOpenApiBuilder.Extension;
 
+/// <summary>
+/// Confirmação Yes/No do Remover API gerada. A lista usa o mesmo texto da Output,
+/// uma linha por objeto, sem quebrar nome; a pergunta e os botões ficam fora da rolagem.
+/// </summary>
 internal sealed class ExtensionConfirmDialog : Form
 {
     private const int Pad = 12;
-    private const int ColumnGap = 24;
-    private const int ButtonGap = 8;
     private const int TargetTextWidth = 1040;
 
+    private readonly IWin32Window? _owner;
     private readonly PictureBox _iconBox;
     private readonly Label _introLabel;
     private readonly Label _identityLabel;
-    private readonly Label _leftColumnLabel;
-    private readonly Label _rightColumnLabel;
     private readonly Label _notesLabel;
     private readonly Label _confirmLabel;
     private readonly Button _yesButton;
     private readonly Button _noButton;
+    private readonly TextBox _bodyBox;
+    private readonly TableLayoutPanel _header;
+    private readonly TableLayoutPanel _footer;
 
     public ExtensionConfirmDialog(
         string caption,
         string intro,
         ApiPlanGeneratedApiRemovalPlan plan,
         string confirmQuestion,
-        ExtensionTexts texts)
+        ExtensionTexts texts,
+        IWin32Window? owner = null)
     {
+        _owner = owner;
         Text = caption ?? string.Empty;
         StartPosition = FormStartPosition.Manual;
-        AutoScaleMode = AutoScaleMode.None;
+        AutoScaleMode = AutoScaleMode.Font;
         ShowIcon = false;
         ShowInTaskbar = false;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
+        FormBorderStyle = FormBorderStyle.Sizable;
         MinimizeBox = false;
+        MaximizeBox = true;
         Font = SystemFonts.MessageBoxFont ?? SystemFonts.DefaultFont;
         BackColor = SystemColors.Control;
 
@@ -49,23 +55,34 @@ internal sealed class ExtensionConfirmDialog : Form
         var identity = ExtensionOutputLocalization.Translate(
             $"Transaction: {plan.TransactionName}    API Object: {plan.ApiName}    Metadata File: {plan.MetadataFileName}",
             language);
-        var leftColumn = ExtensionOutputLocalization.Translate(BuildLeftColumn(plan), language);
-        var rightColumn = ExtensionOutputLocalization.Translate(BuildRightColumn(plan), language);
+        var lists = ExtensionOutputLocalization.Translate(plan.BuildConfirmationLists(), language);
         var notes = ExtensionOutputLocalization.Translate(BuildNotes(plan), language);
 
         _iconBox = new PictureBox
         {
             Image = SystemIcons.Warning.ToBitmap(),
             SizeMode = PictureBoxSizeMode.AutoSize,
-            Location = new Point(Pad, Pad),
+            Margin = new Padding(0, 0, Pad, 0),
         };
 
         _introLabel = CreateLabel(intro);
         _identityLabel = CreateLabel(identity);
-        _leftColumnLabel = CreateLabel(leftColumn);
-        _rightColumnLabel = CreateLabel(rightColumn);
         _notesLabel = CreateLabel(notes);
         _confirmLabel = CreateLabel(confirmQuestion);
+
+        _bodyBox = new TextBox
+        {
+            Multiline = true,
+            ReadOnly = true,
+            WordWrap = false,
+            ScrollBars = ScrollBars.Both,
+            Dock = DockStyle.Fill,
+            Font = new Font(FontFamily.GenericMonospace, 9f),
+            Text = lists,
+            TabStop = false,
+            HideSelection = true,
+            BorderStyle = BorderStyle.FixedSingle,
+        };
 
         _noButton = new Button
         {
@@ -84,18 +101,92 @@ internal sealed class ExtensionConfirmDialog : Form
         AcceptButton = _noButton;
         CancelButton = _noButton;
 
-        Controls.Add(_iconBox);
-        Controls.Add(_introLabel);
-        Controls.Add(_identityLabel);
-        Controls.Add(_leftColumnLabel);
-        Controls.Add(_rightColumnLabel);
-        Controls.Add(_notesLabel);
-        Controls.Add(_confirmLabel);
-        Controls.Add(_yesButton);
-        Controls.Add(_noButton);
+        _header = BuildHeader();
+        _footer = BuildFooter();
 
-        Load += (_, _) => LayoutToWorkingArea();
-        Shown += (_, _) => _noButton.Focus();
+        var root = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Padding = new Padding(Pad),
+        };
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.Controls.Add(_header, 0, 0);
+        root.Controls.Add(_bodyBox, 0, 1);
+        root.Controls.Add(_footer, 0, 2);
+        Controls.Add(root);
+
+        Load += (_, _) => FitToCurrentWorkingArea(plan);
+        Shown += (_, _) =>
+        {
+            FitToCurrentWorkingArea(plan);
+            ClearBodySelection();
+            _noButton.Focus();
+        };
+    }
+
+    private TableLayoutPanel BuildHeader()
+    {
+        var text = new TableLayoutPanel
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Margin = new Padding(0),
+        };
+        text.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        text.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        text.Controls.Add(_introLabel, 0, 0);
+        text.Controls.Add(_identityLabel, 0, 1);
+
+        var header = new TableLayoutPanel
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            Margin = new Padding(0, 0, 0, 8),
+        };
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        header.Controls.Add(_iconBox, 0, 0);
+        header.Controls.Add(text, 1, 0);
+        return header;
+    }
+
+    private TableLayoutPanel BuildFooter()
+    {
+        var buttons = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.RightToLeft,
+            AutoSize = true,
+            WrapContents = false,
+            Padding = new Padding(0, 8, 0, 0),
+            Margin = new Padding(0),
+        };
+        buttons.Controls.Add(_noButton);
+        buttons.Controls.Add(_yesButton);
+
+        var footer = new TableLayoutPanel
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Margin = new Padding(0),
+        };
+        footer.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        footer.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        footer.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        footer.Controls.Add(_notesLabel, 0, 0);
+        footer.Controls.Add(_confirmLabel, 0, 1);
+        footer.Controls.Add(buttons, 0, 2);
+        return footer;
     }
 
     private static Label CreateLabel(string text)
@@ -106,104 +197,117 @@ internal sealed class ExtensionConfirmDialog : Form
             Text = text ?? string.Empty,
             UseMnemonic = false,
             BackColor = Color.Transparent,
+            Margin = new Padding(0, 0, 0, 0),
         };
     }
 
-    private void LayoutToWorkingArea()
+    private void ClearBodySelection()
     {
-        var working = Screen.FromPoint(Cursor.Position).WorkingArea;
-        var textLeft = Pad + SystemIcons.Warning.Width + Pad;
-        var maxTextWidth = Math.Max(640, working.Width - textLeft - Pad - 48);
-        var textWidth = Math.Min(TargetTextWidth, maxTextWidth);
-        var columnWidth = Math.Max(280, (textWidth - ColumnGap) / 2);
-
-        PlaceLabel(_introLabel, textLeft, Pad, textWidth);
-        PlaceLabel(_identityLabel, textLeft, _introLabel.Bottom + 8, textWidth);
-
-        var columnsTop = _identityLabel.Bottom + 8;
-        PlaceLabel(_leftColumnLabel, textLeft, columnsTop, columnWidth);
-        PlaceLabel(_rightColumnLabel, textLeft + columnWidth + ColumnGap, columnsTop, columnWidth);
-
-        var columnsBottom = Math.Max(_leftColumnLabel.Bottom, _rightColumnLabel.Bottom);
-        PlaceLabel(_notesLabel, textLeft, columnsBottom + 8, textWidth);
-        PlaceLabel(_confirmLabel, textLeft, _notesLabel.Bottom + 8, textWidth);
-
-        var noSize = _noButton.GetPreferredSize(Size.Empty);
-        var yesSize = _yesButton.GetPreferredSize(Size.Empty);
-        _noButton.Size = noSize;
-        _yesButton.Size = yesSize;
-
-        var buttonTop = _confirmLabel.Bottom + Pad;
-        var clientWidth = textLeft + textWidth + Pad;
-        var clientHeight = buttonTop + Math.Max(noSize.Height, yesSize.Height) + Pad;
-
-        _noButton.Location = new Point(clientWidth - Pad - noSize.Width, buttonTop);
-        _yesButton.Location = new Point(_noButton.Left - ButtonGap - yesSize.Width, buttonTop);
-        ClientSize = new Size(clientWidth, clientHeight);
-
-        var left = working.Left + Math.Max(0, (working.Width - Width) / 2);
-        var top = working.Top + Math.Max(24, (working.Height - Height) / 5);
-        left = Math.Min(left, working.Right - Width);
-        top = Math.Min(top, working.Bottom - Height);
-        Location = new Point(Math.Max(working.Left, left), Math.Max(working.Top, top));
+        _bodyBox.SelectionStart = 0;
+        _bodyBox.SelectionLength = 0;
     }
 
-    private static void PlaceLabel(Label label, int left, int top, int maxWidth)
+    private void FitToCurrentWorkingArea(ApiPlanGeneratedApiRemovalPlan plan)
     {
-        label.MaximumSize = new Size(maxWidth, 0);
-        label.AutoSize = true;
-        label.Location = new Point(left, top);
+        var working = GetTargetWorkingArea();
+        var maxHeight = Math.Max(360, working.Height - 32);
+        var maxWidth = Math.Max(640, working.Width - 32);
+        var minimumHeight = Math.Min(420, maxHeight);
+        var minimumWidth = Math.Min(720, maxWidth);
+        MinimumSize = new Size(minimumWidth, minimumHeight);
+        MaximumSize = new Size(maxWidth, maxHeight);
+
+        var innerWidth = Math.Max(280, Math.Min(TargetTextWidth, maxWidth) - (Pad * 2) - SystemIcons.Warning.Width - Pad);
+        _introLabel.MaximumSize = new Size(innerWidth, 0);
+        _identityLabel.MaximumSize = new Size(innerWidth, 0);
+        _notesLabel.MaximumSize = new Size(Math.Max(280, maxWidth - (Pad * 4)), 0);
+        _confirmLabel.MaximumSize = new Size(Math.Max(280, maxWidth - (Pad * 4)), 0);
+
+        var preferredWidth = MeasurePreferredWidth(plan, maxWidth, minimumWidth);
+        var preferredHeight = MeasurePreferredHeight(preferredWidth);
+        preferredHeight = Math.Min(Math.Max(preferredHeight, minimumHeight), maxHeight);
+        Size = new Size(preferredWidth, preferredHeight);
+        CenterInWorkingArea(working);
     }
 
-    private static string BuildLeftColumn(ApiPlanGeneratedApiRemovalPlan plan)
+    private int MeasurePreferredWidth(ApiPlanGeneratedApiRemovalPlan plan, int maxWidth, int minimumWidth)
     {
-        var builder = new StringBuilder();
-        builder.Append("Procedures (").Append(plan.ProcedureNames.Count).AppendLine("):");
-        AppendItems(builder, plan.ProcedureNames);
-        return builder.ToString().TrimEnd();
+        var longest = plan.OwnSdtNames
+            .Concat(plan.ProcedureNames)
+            .Concat(plan.SharedSdtNamesPreserved)
+            .DefaultIfEmpty(string.Empty)
+            .Max(name => name.Length);
+        var sample = "  - " + new string('W', Math.Max(24, longest));
+        var lineWidth = TextRenderer.MeasureText(sample, _bodyBox.Font).Width + 48;
+        var chrome = Width - ClientSize.Width;
+        if (chrome < 16)
+        {
+            chrome = 24;
+        }
+
+        return Math.Min(Math.Max(lineWidth + chrome + (Pad * 2), minimumWidth), maxWidth);
     }
 
-    private static string BuildRightColumn(ApiPlanGeneratedApiRemovalPlan plan)
+    private int MeasurePreferredHeight(int width)
     {
-        var builder = new StringBuilder();
-        builder.Append("SDTs próprios (").Append(plan.OwnSdtNames.Count).AppendLine("):");
-        AppendItems(builder, plan.OwnSdtNames);
-        builder.AppendLine();
-        builder.Append("SDTs compartilhados preservados (").Append(plan.SharedSdtNamesPreserved.Count).AppendLine("):");
-        AppendItems(builder, plan.SharedSdtNamesPreserved);
-        return builder.ToString().TrimEnd();
+        var headerHeight = _header.GetPreferredSize(new Size(width, 0)).Height;
+        var footerHeight = _footer.GetPreferredSize(new Size(width, 0)).Height;
+        var lineHeight = Math.Max(16, TextRenderer.MeasureText("Ag", _bodyBox.Font).Height + 1);
+        var lineCount = Math.Max(1, _bodyBox.Lines.Length);
+        var bodyHeight = (lineCount * lineHeight) + 24;
+        var chrome = Height - ClientSize.Height;
+        if (chrome < 32)
+        {
+            chrome = 48;
+        }
+
+        return headerHeight + footerHeight + bodyHeight + chrome + (Pad * 2);
+    }
+
+    private Rectangle GetTargetWorkingArea()
+    {
+        if (_owner is not null && _owner.Handle != IntPtr.Zero)
+        {
+            return Screen.FromHandle(_owner.Handle).WorkingArea;
+        }
+
+        if (IsHandleCreated)
+        {
+            return Screen.FromHandle(Handle).WorkingArea;
+        }
+
+        var processMainWindowHandle = Process.GetCurrentProcess().MainWindowHandle;
+        if (processMainWindowHandle != IntPtr.Zero)
+        {
+            return Screen.FromHandle(processMainWindowHandle).WorkingArea;
+        }
+
+        return Screen.PrimaryScreen?.WorkingArea ?? Screen.AllScreens[0].WorkingArea;
+    }
+
+    private void CenterInWorkingArea(Rectangle working)
+    {
+        Location = new Point(
+            working.Left + Math.Max(0, (working.Width - Width) / 2),
+            working.Top + Math.Max(0, (working.Height - Height) / 2));
     }
 
     private static string BuildNotes(ApiPlanGeneratedApiRemovalPlan plan)
     {
-        var builder = new StringBuilder();
-        if (!string.IsNullOrWhiteSpace(plan.FolderName))
+        if (string.IsNullOrWhiteSpace(plan.FolderName))
         {
-            if (plan.FolderWasCreated)
-            {
-                builder.Append("Folder: ").Append(plan.FolderName).AppendLine(" (criado pela extensão; apagar só se ficar vazio)");
-            }
-            else
-            {
-                builder.Append("Folder: ").Append(plan.FolderName).AppendLine(" (reutilizado; nunca apagar)");
-            }
+            return "Business Component da Transaction: não será revertido.";
         }
 
-        builder.Append("Business Component da Transaction: não será revertido.");
-        return builder.ToString().TrimEnd();
-    }
-
-    private static void AppendItems(StringBuilder builder, IReadOnlyList<string> items)
-    {
-        if (items.Count == 0)
+        if (plan.FolderWasCreated)
         {
-            builder.AppendLine("  (nenhum)");
-            return;
+            return "Folder: " + plan.FolderName + " (criado pela extensão; apagar só se ficar vazio)"
+                + Environment.NewLine
+                + "Business Component da Transaction: não será revertido.";
         }
 
-        foreach (var item in items)
-        {
-            builder.Append("  - ").AppendLine(item);
-        }
+        return "Folder: " + plan.FolderName + " (reutilizado; nunca apagar)"
+            + Environment.NewLine
+            + "Business Component da Transaction: não será revertido.";
     }
 }

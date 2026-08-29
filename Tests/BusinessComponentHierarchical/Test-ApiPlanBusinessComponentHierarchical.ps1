@@ -211,7 +211,7 @@ try {
     $fixtures = @($createFixtures.Invoke($null, @()))
     Assert-True ($fixtures.Count -ge 5) "Esperava pelo menos 5 fixtures; encontrado $($fixtures.Count)."
 
-    $expectedNames = @('OneSublevel', 'ParallelSublevels', 'ThreeDeep', 'InheritedPrimaryKey', 'MemberCollision', 'VariableTokenCollision', 'HeaderOnly')
+    $expectedNames = @('OneSublevel', 'ParallelSublevels', 'ThreeDeep', 'InheritedPrimaryKey', 'MemberCollision', 'VariableTokenCollision', 'HeaderOnly', 'ExclusiveCreateEmpty')
     $actualNames = @($fixtures | ForEach-Object { $nameProperty.GetValue($_) })
     foreach ($expectedName in $expectedNames) {
         Assert-True ($actualNames -contains $expectedName) "Fixture ausente: $expectedName"
@@ -233,6 +233,11 @@ try {
         if ($fixtureName -eq 'HeaderOnly') {
             Assert-True ($getSource.IndexOf('For &Bc_', [StringComparison]::Ordinal) -lt 0) 'HeaderOnly nao deve emitir For hierarquico no Get.'
             Assert-True ($updateSource.IndexOf('Replace', [StringComparison]::Ordinal) -lt 0) 'HeaderOnly nao deve emitir Replace.'
+        }
+        elseif ($fixtureName -eq 'ExclusiveCreateEmpty') {
+            Assert-True ($getSource.IndexOf('For &Bc_', [StringComparison]::Ordinal) -ge 0) 'ExclusiveCreateEmpty Get deve iterar Exclusive.'
+            Assert-True ($createSource.IndexOf('For &Create_', [StringComparison]::Ordinal) -lt 0) 'ExclusiveCreateEmpty Create nao deve iterar colecao vazia.'
+            Assert-True ($updateSource.IndexOf('Replace', [StringComparison]::Ordinal) -ge 0) 'ExclusiveCreateEmpty Update deve condicionar Replace.'
         }
         else {
             Assert-True ($getSource.IndexOf('For &Bc_', [StringComparison]::Ordinal) -ge 0) "$fixtureName Get deve iterar colecoes BC."

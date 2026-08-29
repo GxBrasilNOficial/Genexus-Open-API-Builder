@@ -161,7 +161,7 @@ try {
     $fixtures = @($createFixtures.Invoke($null, @()))
     Assert-True ($fixtures.Count -ge 6) "Esperava pelo menos 6 fixtures; encontrado $($fixtures.Count)."
 
-    $expectedNames = @('OneSublevel', 'ParallelSublevels', 'ThreeDeep', 'InheritedPrimaryKey', 'MemberCollision', 'LongQualifier', 'VariableTokenCollision', 'HeaderOnly', 'CountsDisabled')
+    $expectedNames = @('OneSublevel', 'ParallelSublevels', 'ThreeDeep', 'InheritedPrimaryKey', 'MemberCollision', 'LongQualifier', 'VariableTokenCollision', 'HeaderOnly', 'CountsDisabled', 'ExclusiveCreateEmpty')
     $actualNames = @($fixtures | ForEach-Object { $nameProperty.GetValue($_) })
     foreach ($expectedName in $expectedNames) {
         Assert-True ($actualNames -contains $expectedName) "Fixture ausente: $expectedName"
@@ -193,6 +193,11 @@ try {
         if ($fixtureName -eq 'InheritedPrimaryKey') {
             Assert-Contains $listSource 'count(LineId)' 'InheritedPrimaryKey deve agregar a PK propria (LineId), nao a FK do pai.'
             Assert-True ($listSource.IndexOf('count(HeaderId)', [StringComparison]::Ordinal) -lt 0) 'InheritedPrimaryKey nao deve emitir count(HeaderId).'
+        }
+
+        if ($fixtureName -eq 'ExclusiveCreateEmpty') {
+            Assert-Contains $listSource 'ExclusiveCount' 'ExclusiveCreateEmpty deve contar o subnivel mesmo sem Create.'
+            Assert-Contains $listSource 'count(FirmId)' 'ExclusiveCreateEmpty agrega a unica PK do filho (FirmId herdado).'
         }
 
         if ($fixtureName -eq 'ThreeDeep') {
