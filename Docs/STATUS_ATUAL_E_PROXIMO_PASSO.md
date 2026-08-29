@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-08-28.
+2026-08-29.
 
 ## Último marco concluído
 
@@ -118,6 +118,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B099v` concluído em 2026-08-28: correção de `ResolveAggregateAttributeName` (PK própria em `count()`), ouro e gate `tests.listHierarchical` atualizados; reapply do Wizard na `Teste` de quatro níveis (`Updated=27`, `Blocked=0`); `Build All` nos dois environments sem `spc0018`; smoke HTTP multinível (POST/GET/PUT com e sem Replace, List com contadores) aprovado nos dois environments; YAML hierárquico conferido e clientes `typescript-fetch`/`csharp` gerados com `openapi-generator-cli 5.3.1`. Evidência: `Docs/Implementation/2026-08-28-B099v-VALIDACAO-RUNTIME-MULTINIVEL.md`.
 - `B099b` concluído em 2026-08-28: metadata V2 (`levels`, `objects.sdts.own`); Sync/Remover liberados; smoke `Teste` + reencontro plano V1→V2 na `NotaFiscal` (`PlannedContractHash` estável `8F737F1A…`). Residual Sync flat vs hierárquico endereçado na Fase 7. Evidência: `Docs/Implementation/2026-08-28-B099b-METADATA-HIERARQUICA-V2.md`.
 - Fase 7 (Sprint 9) concluída em 2026-08-28: releitura de `levels` no Wizard, tolerância de preferências legadas, inventário dinâmico de remoção, Sync sem falso positivo SDT hierárquico; smoke IDE na `Teste`/`apiTeste` (apply, critério 8, Sync zero-diff, Remover preview cancelado). Lacuna Sync ADDED/rename em subnível fechada no mesmo dia (offline + smoke com `TesteItemObs2` nos SDTs `*_TesteItem`). Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
+- Critério 10 (smoke `Gx18u13` multinível) concluído em 2026-08-29: DLL satélite instalada e hash batendo (`GxLine=Gx18u13`, `PackageCompatibility=143920`); Wizard reencontro na `Teste`/`apiTeste` (`Updated=27`, `Blocked=0`); `Build All` nos environments `NETFrameworkSQLServer004` e `NETPostgreSQL155` sem `spc0018`. HTTP fora de escopo (U15). Evidência: `Docs/Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md`.
 
 ## Frente atual
 
@@ -129,9 +130,9 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Aguardar autorização para o corte `0.1.0-alpha.5`** (subníveis: notas trilíngues em `Docs/Releases/`, CHANGELOG, versão, dois assets DLL, GitHub Release pre-release). Em seguida: iniciar `B100` (serviço `Delete`). A KB `wsEducacaoSpTeste` mantém `apiTeste` hierárquica com `TesteItemObs2` após o smoke Sync com delta.
+**Aguardar autorização para o corte `0.1.0-alpha.5`** (subníveis: notas trilíngues em `Docs/Releases/`, CHANGELOG, versão, dois assets DLL, GitHub Release pre-release). Gates da sprint fora das fases (critério 6 `Gx_FabricaBrasil` e critério 10 smoke U13) estão fechados. Em seguida: iniciar `B100` (serviço `Delete`). A KB `wsEducacaoSpTeste` mantém `apiTeste` hierárquica após o smoke U13 de reencontro.
 
-Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
+Evidências: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`, `Docs/Implementation/2026-08-28-CRITERIO6-GX-FABRICABRASIL.md`, `Docs/Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md`.
 
 ## Evidência da frente encerrada
 
@@ -157,6 +158,7 @@ Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
 - `N=143920` foi corroborado por `C:\ProgramData\GeneXus\GeneXus\18\packages.143920.xml`; os arquivos U13 pinados foram copiados apenas para a área local ignorada.
 - Fase 2 compilou `Src/GenexusOpenApiBuilder.Gx18u13.sln` em Release; o asset passou pelo inventário offline com `PackageCompatibility=143920`, manifesto, recurso, referências e `GxLine=Gx18u13`. Evidência: `Docs/Implementation/2026-08-12-FASE2-SATELITE-GX18U13.md`.
 - Carga funcional U13 confirmada pelo `genexus /install`, Extensions Manager marcado, menus principal e de contexto e Wizard executado na Transaction `Employee`; relatório `SuccessWithWarnings`, com `Created=15`, `Updated=1`, `Blocked=0` e um aviso de fallback de descrições para inglês. O `Build All` também passou; os builds focados das Procedures registraram a evidência A/B de `NoAccept` e motivaram a correção atual.
+- Critério 10 (2026-08-29): smoke multinível na mesma KB (`Teste`/`apiTeste`, quatro níveis) com DLL satélite vigente; `Build All` nos dois environments sem `spc0018`. `Register-ExtensionForGx18u13.bat` dedica o registro ao path U13. Evidência: `Docs/Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md`.
 
 ## Critério de conclusão da revisão pré-push
 
@@ -245,7 +247,8 @@ Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
 73. Em 2026-08-28 a Fase 6 (`B099b`) fechou: metadata V2 com `levels` e `objects.sdts.own`; Sync hierárquico; Remover com inventário gravado; aviso V1 de ciclo de vida removido; smoke U15 na `Teste`/`apiTeste` (Wizard apply, Sync preview+apply, Remover preview+apply, `Removidos=24`); smoke plano V1→V2 na `NotaFiscal`/`apiFiscalPublica` (`Updated=14`, `PlannedContractHash` inalterado `8F737F1A…`, `levels=null`, `own`=5); build pós-Remover validado (`NETPostgreSQL155` Rebuild All; `NETFrameworkSQLServer004` Build All). Lição operacional: após Remover, Rebuild All por environment — Design limpo não limpa cache do generator. KB ficou sem `apiTeste` no Design após remoção de teste; `apiFiscalPublica` permanece. Residual consciente: detector de conflito SDT no Sync (flat vs raiz hierárquico) — Fase 7. ~~Próxima frente planejada = Fase 7 (não iniciada).~~ **Superada** pelo item 74. Evidência: `Docs/Implementation/2026-08-28-B099b-METADATA-HIERARQUICA-V2.md`.
 74. Em 2026-08-28 a Fase 7 fechou: releitura de `levels` no Wizard (`PersistedHierarchicalRoot` + `ApplyPersistedPrune`); inventário dinâmico de remoção; Sync sem falso positivo SDT; smoke U15 na `Teste`/`apiTeste` — apply `Created=24`, V2 `Bytes=115730`, hash `88AF3B4A…`; critério 8 (reencontro íntegro); Sync `0/0/0/0/16`; Remover preview 18 SDTs / cancelado (`apiTeste` permanece). No mesmo dia, lacuna Sync ADDED/rename em subnível fechada offline (`IncludeAddedFieldsByGuid` + remap por GUID; `tests.wizardHierarchical` PASS). ~~Próxima ação = autorização do corte `0.1.0-alpha.5`.~~ **Superada** pelo item 75. Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
 75. Em 2026-08-28 o fechamento offline da lacuna Sync hierárquico (IncludeAdded + Selected* por GUID) ficou pronto para smoke IDE com delta em `TesteItem`. ~~Próxima ação única = esse smoke.~~ **Superada** pelo item 76.
-76. Em 2026-08-28 o smoke IDE Sync com delta fechou na `Teste`/`apiTeste`: `+ TesteItemObs2`, Include Create/Update/Response, `Updated=27`, `Blocked=0`; membro `TesteItemObs2` confirmado em `sdtTeste_API_CreateRequest_TesteItem`, `…_UpdateRequest_TesteItem` e `…_Response_TesteItem`; metadata V2 `Bytes=117066`, `PlannedContractHash` `B04A8DFB…`. Próxima ação = autorização do corte `0.1.0-alpha.5`, depois `B100`. Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
+76. Em 2026-08-28 o smoke IDE Sync com delta fechou na `Teste`/`apiTeste`: `+ TesteItemObs2`, Include Create/Update/Response, `Updated=27`, `Blocked=0`; membro `TesteItemObs2` confirmado em `sdtTeste_API_CreateRequest_TesteItem`, `…_UpdateRequest_TesteItem` e `…_Response_TesteItem`; metadata V2 `Bytes=117066`, `PlannedContractHash` `B04A8DFB…`. ~~Próxima ação = autorização do corte `0.1.0-alpha.5`, depois `B100`.~~ **Superada** pelo item 77 quanto aos gates restantes; o corte permanece sob autorização humana. Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
+77. Em 2026-08-29 o critério 10 fechou no GeneXus 18 U13: DLL satélite `InstalledMatchesBuild=True` (`SHA-256` `5C0C4707…`, `GxLine=Gx18u13`, `N=143920`); Wizard reencontro `Teste`/`apiTeste` (`SuccessWithWarnings`, `Updated=27`, `Blocked=0`); `Build All` em `NETFrameworkSQLServer004` e `NETPostgreSQL155` sem `spc0018`. HTTP fora do gate. Próxima ação única = autorização do corte `0.1.0-alpha.5`, depois `B100`. Evidência: `Docs/Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -283,6 +286,8 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [2026-08-26 — B098 List contadores](Implementation/2026-08-26-B098-LIST-CONTADORES.md)
 - [2026-08-26 — B099a Wizard hierárquico](Implementation/2026-08-26-B099a-WIZARD-HIERARQUICO.md)
 - [2026-08-28 — B099v validação runtime multinível](Implementation/2026-08-28-B099v-VALIDACAO-RUNTIME-MULTINIVEL.md)
+- [2026-08-28 — Critério 6 Gx_FabricaBrasil](Implementation/2026-08-28-CRITERIO6-GX-FABRICABRASIL.md)
+- [2026-08-29 — Critério 10 smoke Gx18u13](Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
 - [Release 0.1.0-alpha.1](Releases/0.1.0-alpha.1.md)

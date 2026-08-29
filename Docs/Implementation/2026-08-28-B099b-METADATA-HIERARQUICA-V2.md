@@ -10,7 +10,7 @@ Escopo: `schemaVersion` V2 com árvore de níveis, leitura tolerante de V1, `Pla
 - Sem migração autônoma na abertura do Wizard: V1 só vira V2 quando a geração aplica e regrava o File.
 - `levels` só entra no JSON e no contrato B067 quando há subníveis selecionados; API plana mantém hash compatível com o contrato flat anterior.
 - `objects.sdts.own` lista SDTs próprios na ordem de remoção (inventário gravado na apply). A Fase 7 acrescentou inventário dinâmico quando `own` estiver ausente (ver `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`).
-- Critérios 6 (`Gx_FabricaBrasil`) e 10 (smoke U13) continuam fora desta fase.
+- Critérios 6 (`Gx_FabricaBrasil`) e 10 (smoke U13) ficaram fora desta fase na época; **fechados** em 2026-08-28 / 2026-08-29 — ver `2026-08-28-CRITERIO6-GX-FABRICABRASIL.md` e `2026-08-29-CRITERIO10-SMOKE-GX18U13.md`.
 
 ## Peças
 

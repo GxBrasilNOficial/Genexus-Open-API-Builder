@@ -7,7 +7,7 @@ Escopo: corrigir a agregação `count()` com PK composta herdada; regerar `apiTe
 ## Decisões de recorte
 
 - A Fase 5 (`B099a`) fechou Wizard e apply IDE; esta fase fecha **runtime** (HTTP + contrato OpenAPI publicado) antes que a Fase 6 grave metadata V2 sobre o contrato hierárquico.
-- Critérios 6 (`Gx_FabricaBrasil`) e 10 (smoke `Gx18u13`) **fora** deste recorte — permanecem gates da sprint.
+- Critérios 6 (`Gx_FabricaBrasil`) e 10 (smoke `Gx18u13`) **fora** deste recorte na época do B099v; fechados depois (2026-08-28 / 2026-08-29) — ver `2026-08-28-CRITERIO6-GX-FABRICABRASIL.md` e `2026-08-29-CRITERIO10-SMOKE-GX18U13.md`.
 - Script de smoke e capturas JSON ficam em `Temp/` (ignorado pelo Git): `Invoke-B099vHierarchicalSmoke.ps1`, `b099v-smoke-hierarchical-2026-08-28.json`, saída de clientes em `Temp/b099v-openapi-client/`.
 
 ## Item 1 — correção `count()` (PK própria)

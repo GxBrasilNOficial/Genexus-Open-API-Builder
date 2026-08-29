@@ -57,7 +57,7 @@ if not "%EXITCODE%"=="0" (
 )
 echo O registro da extensao nao foi executado.
 echo Se o manifesto, a identidade do pacote ou o registro de comandos mudou desde o ultimo genexus /install bem-sucedido nesta IDE, execute:
-echo   Register-ExtensionForGeneXus18.bat "%GENEXUS_DIRECTORY%"
+echo   Register-ExtensionForGx18u13.bat "%GENEXUS_DIRECTORY%"
 echo no cmd normal (sem Administrador) e, no prompt aberto, digite genexus /install e depois exit.
 pause
 exit /b %EXITCODE%

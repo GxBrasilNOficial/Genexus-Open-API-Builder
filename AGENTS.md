@@ -169,10 +169,10 @@ Esse BAT usa exclusivamente `artifacts/gx18u13/bin/Release/net471/GenexusOpenApi
 
 Quando houver, desde o ultimo `genexus /install` bem-sucedido, alteracao em `Src/Extension/GenexusOpenApiBuilder.package`, na identidade do pacote ou no registro da extensao, acrescentar entre os passos 2 e 3:
 
-1. executar `Register-ExtensionForGeneXus18.bat` normalmente, sem Administrador, passando o mesmo diretório quando ele não for o padrão; isso vale também após uma instalação satélite U13. Não existe um `Register-ExtensionForGx18u13.bat` separado no repositório;
+1. para U14+: executar `Register-ExtensionForGeneXus18.bat` normalmente, sem Administrador, passando o mesmo diretório quando ele não for o padrão; para U13: executar `Register-ExtensionForGx18u13.bat` (default `GeneXus18up13`), sem Administrador, passando o diretório só se a instalação U13 não estiver no path padrão;
 2. no prompt aberto pelo segundo arquivo, digitar `genexus /install`, conferir a varredura e depois digitar `exit`.
 
-- `Install-ExtensionForGeneXus18.bat` é o caminho operacional primário para a DLL canônica U14+; `Install-ExtensionForGx18u13.bat` é o caminho primário exclusivo da DLL satélite U13. `Register-ExtensionForGeneXus18.bat` é condicional à atualização de manifesto/registro para ambas as linhas e recebe o mesmo diretório da instalação testada.
+- `Install-ExtensionForGeneXus18.bat` é o caminho operacional primário para a DLL canônica U14+; `Install-ExtensionForGx18u13.bat` é o caminho primário exclusivo da DLL satélite U13. `Register-ExtensionForGeneXus18.bat` é condicional à atualização de manifesto/registro na linha U14+; `Register-ExtensionForGx18u13.bat` é o equivalente dedicado da linha U13 (mesmo contrato: cmd normal, `genexus /install`, `exit`).
 - O agente não executa esses arquivos nem altera `C:\Program Files (x86)\GeneXus`; apenas orienta a execução manual.
 - Não substituir a instalação por uma chamada direta a `Tools/Copy-ExtensionForGeneXus18.ps1`. O `.ps1` é implementação interna exclusiva da etapa de cópia e validação; ele não registra a extensão.
 - Ao avisar que chegou a hora de atualizar e testar, declarar explicitamente se o manifesto/registro mudou e solicitar `genexus /install` somente nesse caso.
