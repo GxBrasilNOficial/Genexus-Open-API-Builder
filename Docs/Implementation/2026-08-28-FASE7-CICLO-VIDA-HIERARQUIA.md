@@ -10,7 +10,7 @@ Escopo: releitura de `levels` no reencontro do Wizard, tolerância de leitura em
 - Preferências: JSON legado **sem** `schemaVersion` continua válido (mesma política V1/V2 da metadata).
 - Inventário dinâmico: se `objects.sdts.own` estiver ausente mas houver `levels` legível, reconstruir a ordem de remoção via stub `ApiPlan` + `ApiPlanSdtGenerationPlanBuilder` (inverso da pós-ordem de criação); fallback flat nos cinco nomes fixos quando **não** há hierarquia, ou quando o stub não monta (ex.: SDTs raiz ausentes). `levels` anunciado porém ilegível **falha** — não cai no flat.
 - Sync: `DetectSdtConflicts` retorna vazio quando a metadata é hierárquica — o residual B099b (membros flat vs SDTs raiz) deixa de bloquear o preview.
-- Corte `0.1.0-alpha.5` permanece **após** autorização humana explícita (AGENTS.md).
+- Corte `0.1.0-alpha.5` publicado em 2026-08-30 (tag + GitHub Release pre-release).
 
 ## Peças
 
@@ -88,7 +88,7 @@ Inventário dinâmico sem bloco `own` ficou coberto pelo teste offline (`tests.g
 ## Residual consciente
 
 - Inventário dinâmico: sem `own`, com `levels` legível e stub montável → ordem hierárquica; sem hierarquia ou stub incompleto (ex.: SDTs raiz ausentes) → fallback flat dos cinco nomes. **`levels` presente mas ilegível** (`levelName`/`attributeGuid` etc.) → a remoção **falha** com erro explícito; não usa flat (evita órfãos de subnível). Sem teste IDE desse caso corrompido; coberto offline em `tests.generatedApiRemovalPlan`.
-- Corte `0.1.0-alpha.5` exige autorização humana explícita (notas trilíngues + dois assets DLL).
+- Corte `0.1.0-alpha.5` publicado em 2026-08-30 (tag + GitHub Release pre-release, dois assets DLL).
 - Critérios 6 (`Gx_FabricaBrasil`) e 10 (smoke U13): eram gates da sprint fora desta fase; **fechados** em 2026-08-28 e 2026-08-29 — evidências `2026-08-28-CRITERIO6-GX-FABRICABRASIL.md` e `2026-08-29-CRITERIO10-SMOKE-GX18U13.md`.
 - Lacuna Sync ADDED/rename em subnível (apply IncludeAdded / remap por GUID): **fechada** em 2026-08-28 (offline + smoke IDE com delta; ver seção seguinte).
 - **Sync hierárquico — falso `Added` por campo omitido de propósito (corrigido 2026-08-28):** a poda de subnível passa a gravar em `Fields` o catálogo completo do nível e deixa a omissão só em `Selected*`. O Sync (`FlattenToSyncSnapshots`) deixa de tratar campo desmarcado como `Added`. Metadata já gravada no formato antigo (união em `fields`) só melhora após Wizard/Sync que reescreva `levels`. Teste offline: `tests.wizardHierarchical` (asserção `LineTotal` permanece em `Fields` fora de `Selected*`). **Smoke U15 2026-08-28:** Wizard em `Teste`/`apiTeste` desmarcou `TesteItemObs2` em Create/Update (`Updated=27`, `Blocked=0`, metadata `Bytes=116942`, `PlannedContractHash='C1640995…'`); Sync imediato sem mudança na Transaction → `Adicionados=0; Removidos=0; Renomeados=0; Modificados=0; Inalterados=17` (`Nenhuma sincronizacao necessaria`).
@@ -122,4 +122,4 @@ KB `wsEducacaoSpTeste`, Transaction `Teste` / `apiTeste`. Atributo novo `TesteIt
 
 ## Conclusão
 
-Fase 7 encerrada em 2026-08-28: código, testes offline, gate `tests.wizardLifecycle` e smoke IDE (apply, critério 8, Sync zero-diff, Remover preview). Lacuna Sync ADDED/rename fechada no mesmo dia (offline + smoke com delta em `TesteItemObs2`). Corte `0.1.0-alpha.5` preparado em 2026-08-30; publicação (tag + GitHub Release) e `B100` seguem autorização/execução respectivas.
+Fase 7 encerrada em 2026-08-28: código, testes offline, gate `tests.wizardLifecycle` e smoke IDE (apply, critério 8, Sync zero-diff, Remover preview). Lacuna Sync ADDED/rename fechada no mesmo dia (offline + smoke com delta em `TesteItemObs2`). Corte `0.1.0-alpha.5` publicado em 2026-08-30; próxima frente = `B100`.

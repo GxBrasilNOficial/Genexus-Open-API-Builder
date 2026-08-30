@@ -131,7 +131,7 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Iniciar `B100` (serviço `Delete` opt-in)** após a publicação do corte `0.1.0-alpha.5` (tag + GitHub Release pre-release, quando autorizada). O pacote documental e as duas DLLs Release deste corte já estão montados. Gates da sprint fora das fases (critério 6, 10 e 11) permanecem fechados. A KB `wsEducacaoSpTeste` mantém `apiTeste` hierárquica após o smoke U13 de reencontro.
+**Iniciar `B100` (serviço `Delete` opt-in).** O corte `0.1.0-alpha.5` está publicado (tag + GitHub Release pre-release). Gates da sprint fora das fases (critério 6, 10 e 11) permanecem fechados. A KB `wsEducacaoSpTeste` mantém `apiTeste` hierárquica após o smoke U13 de reencontro.
 
 Evidências: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`, `Docs/Implementation/2026-08-28-CRITERIO6-GX-FABRICABRASIL.md`, `Docs/Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md`, `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
 
@@ -173,7 +173,7 @@ Evidências: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`, `D
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única é iniciar `B100` depois da publicação do corte `0.1.0-alpha.5`; o pacote do corte (notas trilíngues, CHANGELOG, versão, README/`INSTALL`/`DEMO`) está montado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é iniciar `B100`; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
@@ -256,7 +256,7 @@ Evidências: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`, `D
 76. Em 2026-08-28 o smoke IDE Sync com delta fechou na `Teste`/`apiTeste`: `+ TesteItemObs2`, Include Create/Update/Response, `Updated=27`, `Blocked=0`; membro `TesteItemObs2` confirmado em `sdtTeste_API_CreateRequest_TesteItem`, `…_UpdateRequest_TesteItem` e `…_Response_TesteItem`; metadata V2 `Bytes=117066`, `PlannedContractHash` `B04A8DFB…`. ~~Próxima ação = autorização do corte `0.1.0-alpha.5`, depois `B100`.~~ **Superada** pelo item 77 quanto aos gates restantes; o corte permanece sob autorização humana. Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
 77. Em 2026-08-29 o critério 10 fechou no GeneXus 18 U13: DLL satélite `InstalledMatchesBuild=True` (`SHA-256` `5C0C4707…`, `GxLine=Gx18u13`, `N=143920`); Wizard reencontro `Teste`/`apiTeste` (`SuccessWithWarnings`, `Updated=27`, `Blocked=0`); `Build All` em `NETFrameworkSQLServer004` e `NETPostgreSQL155` sem `spc0018`. HTTP fora do gate. ~~Próxima ação única = autorização do corte `0.1.0-alpha.5`, depois `B100`.~~ **Superada** pelo item 78 quanto ao critério 11; o corte permanece sob autorização humana. Evidência: `Docs/Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md`.
 78. Em 2026-08-29 o critério 11 fechou na `Empresa` (`Gx_FabricaBrasil`): skip de SDT Create vazio (`ExclusiveCreateEmpty`); apply `SuccessWithWarnings`, OwnSdts=44, Criados=50; `Build All` Success nos dois environments; critério 8; Remover `Deleted=50`, `Blocked=0`, sem órfão; BC ligado; `EmpresaOpenApi` reutilizada vazia de propósito. Alertas: abertura ~7 s, apply 107 min, Remover ~32 s sem casca. ~~Próxima ação única = autorização do corte `0.1.0-alpha.5`, depois `B100`.~~ **Superada** pelo item 79. Evidência: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
-79. Em 2026-08-30 o corte `0.1.0-alpha.5` foi preparado (CHANGELOG, notas PT/ES/EN, versão `0.1.0-alpha.5`, README/`INSTALL`/`DEMO` alinhados aos subníveis, dois assets DLL com SHA-256 nas notas). A publicação (tag + GitHub Release pre-release) exige autorização explícita nesta sessão. Próxima ação única = `B100` após essa publicação.
+79. Em 2026-08-30 o corte `0.1.0-alpha.5` foi publicado (tag `v0.1.0-alpha.5` + GitHub Release pre-release, dois assets DLL). Próxima ação única = `B100`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -309,7 +309,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 9 — subníveis preparados em `0.1.0-alpha.5` (tag e GitHub Release ainda não publicados); `B100` (`Delete`) ainda não iniciado.
+- Sprint 9 — subníveis publicados em `0.1.0-alpha.5`; `B100` (`Delete`) ainda não iniciado.
 - Sprint 10 — Beta estável.
 
 ## Protocolo de atualização
