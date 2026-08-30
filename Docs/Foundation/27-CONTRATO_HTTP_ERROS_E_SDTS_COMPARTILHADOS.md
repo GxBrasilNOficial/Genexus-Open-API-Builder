@@ -200,8 +200,9 @@ Operações públicas:
 - `Get`
 - `Create`
 - `Update`
+- `Delete` (opt-in, padrão desligado; `B100` concluído em 2026-08-30)
 
-`Delete` é pós-MVP como endpoint REST. **Revisão de 2026-08-23:** o `B100` foi planejado como serviço opcional, desligado por padrão, a ser executado após a Fase 7. Quando implementado e marcado no Wizard, deverá responder `200` com a chave removida, `404` em registro inexistente e `422` com `Code = "validation_error"` na recusa do Business Component; até lá, não há endpoint `Delete`.
+**B100:** quando marcado, responde `200` com a chave removida, `404` em registro inexistente e `422` com `Code = "validation_error"` na recusa do Business Component. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`. A revisão de 2026-08-23 que descrevia o serviço como futuro permanece só como histórico.
 
 ---
 
@@ -221,7 +222,7 @@ KB sem GAM:
 - somente `None`
 - aviso explícito de API sem autenticação
 
-O valor deve ser gravado explicitamente em todos os serviços. O MVP não oferece configuração diferente por serviço.
+O valor deve ser gravado explicitamente em todos os serviços. Os serviços `List`/`Get`/`Create`/`Update` compartilham o `Security Level` do wizard. **Remissão `B100` (2026-08-30):** o `Delete` tem `SecurityLevel` próprio na aba Segurança, fora das preferências da KB.
 
 `SecurityPermission` granular por serviço fica para evolução posterior.
 
@@ -249,5 +250,5 @@ Um spike deve verificar se erros interceptados pelo GAM ou pelo runtime antes da
 - `sdt_API_ErrorResponse` contém `Code`, `Message` (`LongVarChar` 2097152) e `Messages[]` tipado por `sdt_API_ErrorMessage` (`Code`, `Message`); `Field` e `Errors[]` ficam fora do contrato entregue — ver seção 3 e o fechamento de `B102`
 - `Update` retorna 200 com Response completo
 - `Create` retorna 201
-- não há endpoint `Delete` no MVP: a lista de serviços gerados é fechada em `List`, `Get`, `Create` e `Update` (`PrototypeWizardContract.ServiceNames`), sem opção de marcar `Delete` no Wizard. Quando o `B100` — pós-MVP, opt-in, após a Fase 7 — for implementado, este item é **substituído** pelos critérios próprios dele (`200`, `404`, `422`); até lá vale na forma absoluta
+- `Delete` é opt-in (`PrototypeWizardContract.ServiceNames` inclui `Delete`): desmarcado, não há rota; marcado, valem `200`, `404` e `422` (`B100`, 2026-08-30)
 - status de erro são testáveis em cenário simples

@@ -253,6 +253,8 @@ Assert-True ($confirmDialogSource -match 'BuildConfirmationLists\(\)') 'O previe
 Assert-True ($confirmDialogSource -match 'RowStyle\(SizeType\.Percent, 100f\)') 'O preview B086 deve reservar a linha do meio para a lista rolavel.'
 Assert-True ($confirmDialogSource -match 'FlowDirection = FlowDirection\.RightToLeft') 'O preview B086 deve manter Sim/Nao fora da area de rolagem.'
 Assert-True ($confirmDialogSource -match 'working\.Height - 32') 'O preview B086 deve limitar a altura a area util do monitor.'
+Assert-True ($confirmDialogSource -match 'Size = new Size\(preferredWidth, maxHeight\)') 'O preview B086 deve abrir com a altura disponivel da tela.'
+Assert-True ($confirmDialogSource -match 'WidthScale = 1\.5') 'O preview B086 deve ampliar a largura em pelo menos 50%.'
 Assert-True ($confirmDialogSource -match 'MaximumSize = new Size\(maxWidth, maxHeight\)') 'O preview B086 nao deve estourar a tela.'
 Assert-True ($confirmDialogSource -notmatch 'Screen\.FromPoint\(Cursor\.Position\)\.WorkingArea') 'O preview B086 nao deve escolher o monitor pela posicao do cursor.'
 Assert-True ($confirmDialogSource -match 'IWin32Window\? owner') 'O preview B086 deve receber a janela owner da IDE.'

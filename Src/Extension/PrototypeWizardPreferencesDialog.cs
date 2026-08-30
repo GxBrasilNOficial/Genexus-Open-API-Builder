@@ -18,6 +18,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
     private readonly CheckBox _getServiceCheck = CreateCheckBox("Get");
     private readonly CheckBox _createServiceCheck = CreateCheckBox("Create");
     private readonly CheckBox _updateServiceCheck = CreateCheckBox("Update");
+    private readonly CheckBox _deleteServiceCheck = CreateCheckBox("Delete");
     private readonly ComboBox _securityLevelCombo = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 180 };
     private readonly CheckBox _includeBcErrorMessagesCheck = CreateCheckBox(string.Empty);
     private readonly NumericUpDown _defaultPageSizeInput = CreateNumericInput();
@@ -133,6 +134,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         services.Controls.Add(_getServiceCheck);
         services.Controls.Add(_createServiceCheck);
         services.Controls.Add(_updateServiceCheck);
+        services.Controls.Add(_deleteServiceCheck);
         servicesGroup.Controls.Add(services);
         root.Controls.Add(servicesGroup, 0, 3);
 
@@ -208,6 +210,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         _getServiceCheck.Checked = preferences.GetServiceByDefault;
         _createServiceCheck.Checked = preferences.CreateServiceByDefault;
         _updateServiceCheck.Checked = preferences.UpdateServiceByDefault;
+        _deleteServiceCheck.Checked = preferences.DeleteServiceByDefault;
         _securityLevelCombo.SelectedItem = PrototypeWizardPreferences.NormalizeSecurityLevel(preferences.SecurityLevelByDefault);
         _includeBcErrorMessagesCheck.Checked = preferences.IncludeBusinessComponentErrorMessagesByDefault;
         _defaultPageSizeInput.Value = Math.Max(_defaultPageSizeInput.Minimum, Math.Min(_defaultPageSizeInput.Maximum, preferences.DefaultPageSizeByDefault));
@@ -216,7 +219,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
 
     private void SaveAndClose()
     {
-        if (!_listServiceCheck.Checked && !_getServiceCheck.Checked && !_createServiceCheck.Checked && !_updateServiceCheck.Checked)
+        if (!_listServiceCheck.Checked && !_getServiceCheck.Checked && !_createServiceCheck.Checked && !_updateServiceCheck.Checked && !_deleteServiceCheck.Checked)
         {
             MessageBox.Show(this, _texts.Translate("Marque ao menos um servico padrao."), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
@@ -240,6 +243,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             GetServiceByDefault = _getServiceCheck.Checked,
             CreateServiceByDefault = _createServiceCheck.Checked,
             UpdateServiceByDefault = _updateServiceCheck.Checked,
+            DeleteServiceByDefault = _deleteServiceCheck.Checked,
             SecurityLevelByDefault = PrototypeWizardPreferences.NormalizeSecurityLevel(_securityLevelCombo.SelectedItem as string),
             IncludeBusinessComponentErrorMessagesByDefault = _includeBcErrorMessagesCheck.Checked,
             DefaultPageSizeByDefault = (int)_defaultPageSizeInput.Value,

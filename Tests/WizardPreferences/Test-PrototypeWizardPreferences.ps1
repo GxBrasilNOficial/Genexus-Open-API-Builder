@@ -66,6 +66,7 @@ Assert-True $defaults.ListServiceByDefault 'Serviço List deve iniciar habilitad
 Assert-True $defaults.GetServiceByDefault 'Serviço Get deve iniciar habilitado.'
 Assert-True $defaults.CreateServiceByDefault 'Serviço Create deve iniciar habilitado.'
 Assert-True $defaults.UpdateServiceByDefault 'Serviço Update deve iniciar habilitado.'
+Assert-False $defaults.DeleteServiceByDefault 'Serviço Delete deve iniciar desmarcado (opt-in).'
 Assert-Equal 'Authentication' $defaults.SecurityLevelByDefault 'Segurança default deve ser Authentication.'
 Assert-Equal 50 $defaults.DefaultPageSizeByDefault 'Paginação default deve iniciar em 50.'
 Assert-Equal 200 $defaults.MaximumPageSizeByDefault 'Paginação máxima default deve iniciar em 200.'
@@ -82,6 +83,7 @@ $values.ListServiceByDefault = $true
 $values.GetServiceByDefault = $false
 $values.CreateServiceByDefault = $true
 $values.UpdateServiceByDefault = $false
+$values.DeleteServiceByDefault = $true
 $values.SecurityLevelByDefault = 'authorization'
 $values.DefaultPageSizeByDefault = 40
 $values.MaximumPageSizeByDefault = 100
@@ -99,6 +101,7 @@ Assert-True $parsed.ListServiceByDefault 'Serialização deve preservar serviço
 Assert-False $parsed.GetServiceByDefault 'Serialização deve preservar serviço Get.'
 Assert-True $parsed.CreateServiceByDefault 'Serialização deve preservar serviço Create.'
 Assert-False $parsed.UpdateServiceByDefault 'Serialização deve preservar serviço Update.'
+Assert-True $parsed.DeleteServiceByDefault 'Serialização deve preservar serviço Delete.'
 Assert-Equal 'Authorization' $parsed.SecurityLevelByDefault 'SecurityLevel deve ser normalizado ao serializar/parsear.'
 Assert-Equal 40 $parsed.DefaultPageSizeByDefault 'Serialização deve preservar DefaultPageSize.'
 Assert-Equal 100 $parsed.MaximumPageSizeByDefault 'Serialização deve preservar MaximumPageSize.'
@@ -119,6 +122,7 @@ $legacyJson = @'
 '@
 $legacyParsed = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Parse($legacyJson)
 Assert-True $legacyParsed.ListServiceByDefault 'JSON sem bloco services deve aplicar fallback conservador habilitado.'
+Assert-False $legacyParsed.DeleteServiceByDefault 'JSON sem membro delete deve aplicar fallback desmarcado.'
 
 $legacyNoSchema = @'
 {
@@ -142,7 +146,7 @@ Assert-True $legacyParsed.IncludeBusinessComponentErrorMessagesByDefault 'JSON s
 $invalidPagination = $json.Replace('"defaultPageSize": 40', '"defaultPageSize": 120')
 Assert-Throws { [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Parse($invalidPagination) | Out-Null } 'DefaultPageSize maior que MaximumPageSize deve ser rejeitado.'
 
-$invalidServices = $json.Replace('"list": true', '"list": false').Replace('"create": true', '"create": false')
+$invalidServices = $json.Replace('"list": true', '"list": false').Replace('"create": true', '"create": false').Replace('"delete": true', '"delete": false')
 Assert-Throws { [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Parse($invalidServices) | Out-Null } 'Todos os serviços desmarcados devem ser rejeitados.'
 
 Assert-Equal 'None' ([GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::NormalizeSecurityLevel('none')) 'SecurityLevel None deve ser normalizado.'

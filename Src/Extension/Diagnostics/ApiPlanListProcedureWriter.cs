@@ -649,6 +649,13 @@ internal static class ApiPlanListProcedureWriter
             return annotation + $"    Update({parameters}){Environment.NewLine}        => {procedure}({arguments});";
         }
 
+        if (includeBusinessComponentParameters && string.Equals(service, "Delete", StringComparison.OrdinalIgnoreCase))
+        {
+            var parameters = string.Join(", ", plan.PrimaryKey.Select(field => $"in: &{field.Name}").Concat(exposeErrorResponse ? new[] { "out: &ErrorResponse" } : Array.Empty<string>()));
+            var arguments = string.Join(", ", plan.PrimaryKey.Select(field => $"&{field.Name}").Concat(new[] { "&ErrorResponse", "&RestStatusCode" }));
+            return annotation + $"    Delete({parameters}){Environment.NewLine}        => {procedure}({arguments});";
+        }
+
         return annotation + $"    {service}(){Environment.NewLine}        => {procedure}();";
     }
 
@@ -1093,7 +1100,7 @@ internal static class ApiPlanListProcedureWriter
         }
 
         annotations.Add($"    [RestPath(\"{EscapeDescription(servicePlan.RestPath.Trim())}\")]");
-        annotations.Add($"    [SecurityLevel({plan.Security.SecurityLevel})]");
+        annotations.Add($"    [SecurityLevel({servicePlan.ResolveSecurityLevel(plan.Security.SecurityLevel)})]");
         return string.Join(Environment.NewLine, annotations) + Environment.NewLine;
     }
 

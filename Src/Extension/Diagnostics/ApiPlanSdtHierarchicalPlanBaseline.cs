@@ -339,6 +339,11 @@ internal static class ApiPlanSdtHierarchicalPlanBaseline
             return new ApiPlanService("Update", "PUT", AppendKeyPath(restPath, primaryKey), apiName + ".Update");
         }
 
+        if (string.Equals(serviceName, "Delete", StringComparison.OrdinalIgnoreCase))
+        {
+            return new ApiPlanService("Delete", "DELETE", AppendKeyPath(restPath, primaryKey), apiName + ".Delete");
+        }
+
         return new ApiPlanService(serviceName, string.Empty, restPath, apiName + "." + serviceName);
     }
 

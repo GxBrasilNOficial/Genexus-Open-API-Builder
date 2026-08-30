@@ -10,7 +10,13 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
-Nenhuma mudança registrada após `0.1.0-alpha.5`.
+### Added
+
+- `B100`: serviço REST `Delete` opt-in (desligado por padrão). Procedure `proc*_API_Delete`, `DELETE` no path da chave do Get, `200` / `404` / `422` via BC, `SecurityLevel` próprio, confirmação ao marcar. HTTP: 401/404/200 nos dois environments da `apiNotaFiscal`; 422 de integridade no Framework (PostgreSQL dispensado em 2026-08-30). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
+
+### Changed
+
+- Documentação pública (README ×3, `DEMO`) e contratos 15/27: `Delete` deixa de ser “inexistente no MVP” e passa a opt-in. O corte `0.1.0-alpha.6` (tag, notas, dois assets DLL) permanece sob autorização humana.
 
 ---
 

@@ -20,6 +20,8 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
     private readonly KBModel? _designModel;
     private readonly ExtensionTexts _texts;
     private readonly IWin32Window? _owner;
+    private const double WidthScale = 1.5;
+
     private readonly TextBox _bodyBox = new()
     {
         Multiline = true,
@@ -46,7 +48,7 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
         ShowIcon = false;
         ShowInTaskbar = false;
         FormBorderStyle = FormBorderStyle.Sizable;
-        MinimumSize = new Size(560, 420);
+        MinimumSize = new Size(1080, 420);
         BuildLayout();
         SizeToReportContent();
         Shown += (_, _) =>
@@ -85,48 +87,43 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
 
     private void SizeToReportContent()
     {
-        var working = GetTargetWorkingArea();
-        var lineCount = Math.Max(1, _bodyBox.Lines.Length);
-        var lineHeight = Math.Max(16, TextRenderer.MeasureText("Ag", _bodyBox.Font).Height + 1);
-        var estimatedBodyHeight = (lineCount * lineHeight) + 40;
-        var chromeHeight = 150;
-        // Amplia a area de leitura, sem ultrapassar os limites da area util abaixo.
-        var preferredHeight = (int)Math.Ceiling((estimatedBodyHeight + chromeHeight) * 1.10);
-        var baseWidth = lineCount <= 18 ? 760 : 920;
-        var preferredWidth = (int)Math.Ceiling(baseWidth * 1.20);
-
-        var maxHeight = Math.Max(260, working.Height - 32);
-        var maxWidth = Math.Max(360, working.Width - 32);
-        var minimumHeight = Math.Min(420, maxHeight);
-        var minimumWidth = Math.Min(560, maxWidth);
-        MinimumSize = new Size(minimumWidth, minimumHeight);
-        MaximumSize = new Size(maxWidth, maxHeight);
-
-        preferredHeight = Math.Min(Math.Max(preferredHeight, minimumHeight), maxHeight);
-        preferredWidth = Math.Min(Math.Max(preferredWidth, minimumWidth), maxWidth);
-
-        Size = new Size(preferredWidth, preferredHeight);
-        CenterInWorkingArea(working);
-
-        var bodyAvailable = Math.Max(120, Height - chromeHeight);
-        _bodyBox.ScrollBars = estimatedBodyHeight > bodyAvailable + 8
-            ? ScrollBars.Vertical
-            : ScrollBars.None;
+        ApplyWorkingAreaSize();
     }
 
     private void FitToCurrentWorkingArea()
     {
-        var working = GetTargetWorkingArea();
-        var maxHeight = Math.Max(260, working.Height - 32);
-        var maxWidth = Math.Max(360, working.Width - 32);
-        var minimumHeight = Math.Min(420, maxHeight);
-        var minimumWidth = Math.Min(560, maxWidth);
+        ApplyWorkingAreaSize();
+    }
 
+    private void ApplyWorkingAreaSize()
+    {
+        var working = GetTargetWorkingArea();
+        var maxHeight = Math.Max(360, working.Height - 32);
+        var maxWidth = Math.Max(640, working.Width - 32);
+        var minimumHeight = Math.Min(420, maxHeight);
+        var minimumWidth = Math.Min(1080, maxWidth);
         MinimumSize = new Size(minimumWidth, minimumHeight);
         MaximumSize = new Size(maxWidth, maxHeight);
-        Size = new Size(
-            Math.Min(Math.Max(Width, minimumWidth), maxWidth),
-            Math.Min(Math.Max(Height, minimumHeight), maxHeight));
+
+        var longestLineWidth = 0;
+        foreach (var line in _bodyBox.Lines)
+        {
+            longestLineWidth = Math.Max(
+                longestLineWidth,
+                TextRenderer.MeasureText(line ?? string.Empty, _bodyBox.Font).Width);
+        }
+
+        var chrome = Width - ClientSize.Width;
+        if (chrome < 16)
+        {
+            chrome = 24;
+        }
+
+        var contentWidth = longestLineWidth + chrome + 48;
+        var preferredWidth = (int)Math.Ceiling(contentWidth * WidthScale);
+        preferredWidth = Math.Min(Math.Max(preferredWidth, minimumWidth), maxWidth);
+
+        Size = new Size(preferredWidth, maxHeight);
         CenterInWorkingArea(working);
     }
 

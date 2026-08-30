@@ -63,7 +63,7 @@ El sufijo `-gx18u13` identifica solamente el asset de descarga. No cambie el nom
 ### Limitaciones conocidas
 
 - Transactions con subniveles: el Wizard genera encabezado + líneas seleccionadas; metadata V2, Sync y Eliminar cubren la jerarquía; sin endpoints propios de subnivel; contadores de List solo en hijos directos; profundidad mayor que 4 avisa sin bloquear; alterar nietos exige reemplazar el nivel padre (`<Subnivel>Replace`)
-- Sin servicio `DELETE` en el MVP
+- El servicio `DELETE` es opt-in y está desactivado por defecto; una API ya generada solo obtiene el endpoint al reabrir el Wizard y marcarlo. Borrar el encabezado borra las líneas hijas en la misma transacción. `404` en un id inexistente no es idempotente (`200`)
 - El YAML OpenAPI nativo de GeneXus tiene restricciones (documentadas); la extensión no reemplaza los templates de la instalación
 - La clasificación de campos sensibles/auditoría todavía utiliza la política predeterminada
 - La obligatoriedad en Create/Update valida el **llenado** (no la presencia JSON pura), con la limitación conocida de valores iguales al valor predeterminado del tipo

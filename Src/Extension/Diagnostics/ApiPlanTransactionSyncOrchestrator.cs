@@ -218,7 +218,8 @@ internal static class ApiPlanTransactionSyncOrchestrator
             applyBusinessComponent: services.Any(name =>
                 string.Equals(name, "Get", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(name, "Create", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(name, "Update", StringComparison.OrdinalIgnoreCase)),
+                || string.Equals(name, "Update", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(name, "Delete", StringComparison.OrdinalIgnoreCase)),
             hierarchicalSelection);
     }
 

@@ -120,20 +120,21 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Fase 7 (Sprint 9) concluída em 2026-08-28: releitura de `levels` no Wizard, tolerância de preferências legadas, inventário dinâmico de remoção, Sync sem falso positivo SDT hierárquico; smoke IDE na `Teste`/`apiTeste` (apply, critério 8, Sync zero-diff, Remover preview cancelado). Lacuna Sync ADDED/rename em subnível fechada no mesmo dia (offline + smoke com `TesteItemObs2` nos SDTs `*_TesteItem`). Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
 - Critério 10 (smoke `Gx18u13` multinível) concluído em 2026-08-29: DLL satélite instalada e hash batendo (`GxLine=Gx18u13`, `PackageCompatibility=143920`); Wizard reencontro na `Teste`/`apiTeste` (`Updated=27`, `Blocked=0`); `Build All` nos environments `NETFrameworkSQLServer004` e `NETPostgreSQL155` sem `spc0018`. HTTP fora de escopo (U15). Evidência: `Docs/Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md`.
 - Critério 11 (escala, 13 subníveis) concluído em 2026-08-29 na `Empresa` (`Gx_FabricaBrasil`): apply `SuccessWithWarnings`, OwnSdts=44 (skip Create vazio de `ExclusivoEmVenda`), `Build All` Success nos dois environments, critério 8, Remover `Deleted=50` sem órfão, BC preservado, pasta reutilizada vazia de propósito. Alertas de tempo (abertura ~7 s; apply 107 min; Remover ~32 s). Evidência: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
+- `B100` concluído em 2026-08-30: serviço `Delete` opt-in na `apiNotaFiscal`; 401/404/200 nos dois environments; 422 de integridade no Framework (PostgreSQL dispensado). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 
 ## Frente atual
 
-Sprint 9 — Suporte a Transactions com Subníveis (Multinível — B095–B099), precedida por `B102` e seguida por `B100`. Levantamento de profundidade na KB de produção (`Gx_FabricaBrasil`), especificações funcionais e plano por fases consolidados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, na `Emenda técnica — 2026-08-20`, na `Emenda técnica — 2026-08-23` e na `Emenda técnica — 2026-08-23 (complemento)` do registro de decisões do MVP.
+Sprint 9 — Suporte a Transactions com Subníveis (Multinível — B095–B099), precedida por `B102` e seguida por `B100` (**concluído**). Levantamento de profundidade na KB de produção (`Gx_FabricaBrasil`), especificações funcionais e plano por fases consolidados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, na `Emenda técnica — 2026-08-20`, na `Emenda técnica — 2026-08-23` e na `Emenda técnica — 2026-08-23 (complemento)` do registro de decisões do MVP.
 
-Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; **conferência de fim em 2026-08-28**, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100` (serviço `Delete`). Publicação em três cortes: `0.1.0-alpha.4` após `B102` (2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis (este corte, 2026-08-30), e `0.1.0-alpha.6` com o `Delete`, cada um com os dois assets DLL. `B105` entra na sprint apenas se houver folga.
+Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; **conferência de fim em 2026-08-28**, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100` (concluído em 2026-08-30). Publicação em três cortes: `0.1.0-alpha.4` após `B102` (2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis (2026-08-30), e `0.1.0-alpha.6` com o `Delete` (**código e docs neste commit; tag/Release ainda não**). `B105` entra na sprint apenas se houver folga.
 
 Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibilidade e de gate: mecanismo em duas camadas para a Fase 0, ampliação de `B102`, gates próprios para `B102` e `B100` com HTTP real nos dois environments, validação do contrato OpenAPI multinível ao fim da Fase 4, retorno da linha `Gx18u13` ao plano, fechamento da regra de propagação do marcador `<Subnível>Replace`, limiares de escala, `B105` e a divisão da publicação em três cortes.
 
 ## Próxima ação única
 
-**Iniciar `B100` (serviço `Delete` opt-in).** O corte `0.1.0-alpha.5` está publicado (tag + GitHub Release pre-release). Gates da sprint fora das fases (critério 6, 10 e 11) permanecem fechados. A KB `wsEducacaoSpTeste` mantém `apiTeste` hierárquica após o smoke U13 de reencontro.
+**Preparar o corte `0.1.0-alpha.6`.** O `B100` está no código e na documentação; a versão do pacote ainda é `0.1.0-alpha.5`. Publicação (tag, GitHub Release pre-release, dois assets DLL, notas trilíngues) exige autorização humana explícita. `B105` permanece folga/Sprint 10. `B082` continua em outra sessão.
 
-Evidências: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`, `Docs/Implementation/2026-08-28-CRITERIO6-GX-FABRICABRASIL.md`, `Docs/Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md`, `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
+Evidência do B100: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 
 ## Missão estacionada (outra sessão)
 
@@ -141,6 +142,7 @@ Evidências: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`, `D
 
 ## Evidência da frente encerrada
 
+- `B100` (2026-08-30): Delete opt-in; Wizard/confirmação/`SecurityLevel`; HTTP 401/404/200 nos dois environments da `apiNotaFiscal`; 422 de integridade no Framework (PostgreSQL dispensado). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 - Critério 11 (2026-08-29): escala `Empresa` / 13 subníveis; OwnSdts=44; `Build All` Success nos dois environments; Remover 50 sem órfão; pasta `EmpresaOpenApi` reutilizada vazia de propósito. Evidência: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
 - Fase 7: ciclo de vida sob hierarquia; releitura de `levels` no Wizard; inventário dinâmico de remoção; Sync sem falso positivo SDT; smoke U15 na `Teste`/`apiTeste` (apply `Created=24`, critério 8, Sync `0/0/0/0/16`, Remover preview 18 SDTs / cancelado); Sync com delta `TesteItemObs2` (`Updated=27`, membro nos três SDTs `*_TesteItem`). Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
 - `B099b` (Fase 6): metadata V2 hierárquica; Wizard/Sync/Remover na `Teste`/`apiTeste`; reencontro plano V1→V2 na `NotaFiscal`/`apiFiscalPublica` (`PlannedContractHash` estável `8F737F1A…`, `levels=null`, `own`=5). Evidência: `Docs/Implementation/2026-08-28-B099b-METADATA-HIERARQUICA-V2.md`.
@@ -173,7 +175,7 @@ Evidências: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`, `D
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única é iniciar `B100`; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é preparar o corte `0.1.0-alpha.6` (`B100` já concluído neste intervalo); o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
@@ -256,7 +258,8 @@ Evidências: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`, `D
 76. Em 2026-08-28 o smoke IDE Sync com delta fechou na `Teste`/`apiTeste`: `+ TesteItemObs2`, Include Create/Update/Response, `Updated=27`, `Blocked=0`; membro `TesteItemObs2` confirmado em `sdtTeste_API_CreateRequest_TesteItem`, `…_UpdateRequest_TesteItem` e `…_Response_TesteItem`; metadata V2 `Bytes=117066`, `PlannedContractHash` `B04A8DFB…`. ~~Próxima ação = autorização do corte `0.1.0-alpha.5`, depois `B100`.~~ **Superada** pelo item 77 quanto aos gates restantes; o corte permanece sob autorização humana. Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
 77. Em 2026-08-29 o critério 10 fechou no GeneXus 18 U13: DLL satélite `InstalledMatchesBuild=True` (`SHA-256` `5C0C4707…`, `GxLine=Gx18u13`, `N=143920`); Wizard reencontro `Teste`/`apiTeste` (`SuccessWithWarnings`, `Updated=27`, `Blocked=0`); `Build All` em `NETFrameworkSQLServer004` e `NETPostgreSQL155` sem `spc0018`. HTTP fora do gate. ~~Próxima ação única = autorização do corte `0.1.0-alpha.5`, depois `B100`.~~ **Superada** pelo item 78 quanto ao critério 11; o corte permanece sob autorização humana. Evidência: `Docs/Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md`.
 78. Em 2026-08-29 o critério 11 fechou na `Empresa` (`Gx_FabricaBrasil`): skip de SDT Create vazio (`ExclusiveCreateEmpty`); apply `SuccessWithWarnings`, OwnSdts=44, Criados=50; `Build All` Success nos dois environments; critério 8; Remover `Deleted=50`, `Blocked=0`, sem órfão; BC ligado; `EmpresaOpenApi` reutilizada vazia de propósito. Alertas: abertura ~7 s, apply 107 min, Remover ~32 s sem casca. ~~Próxima ação única = autorização do corte `0.1.0-alpha.5`, depois `B100`.~~ **Superada** pelo item 79. Evidência: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
-79. Em 2026-08-30 o corte `0.1.0-alpha.5` foi publicado (tag `v0.1.0-alpha.5` + GitHub Release pre-release, dois assets DLL). Próxima ação única = `B100`.
+79. Em 2026-08-30 o corte `0.1.0-alpha.5` foi publicado (tag `v0.1.0-alpha.5` + GitHub Release pre-release, dois assets DLL). ~~Próxima ação única = `B100`.~~ **Superada** pelo item 80.
+80. Em 2026-08-30 o `B100` fechou: Delete opt-in no gerador; `apiNotaFiscal` com HTTP 401/404/200 nos dois environments e 422 de integridade no Framework (PostgreSQL dispensado). Próxima ação única = preparar o corte `0.1.0-alpha.6` (autorização humana). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -299,6 +302,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [2026-08-29 — Critério 10 smoke Gx18u13](Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md)
 - [2026-08-29 — Critério 11 escala Empresa](Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md)
 - [2026-08-29 — UX progresso Wizard/apply (missão B082, outra sessão)](Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md)
+- [2026-08-30 — B100 Delete opt-in](Implementation/2026-08-30-B100-DELETE-OPT-IN.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
 - [Release 0.1.0-alpha.1](Releases/0.1.0-alpha.1.md)
@@ -309,7 +313,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 9 — subníveis publicados em `0.1.0-alpha.5`; `B100` (`Delete`) ainda não iniciado.
+- Sprint 9 — subníveis publicados em `0.1.0-alpha.5`; `B100` (`Delete`) concluído no código; corte `0.1.0-alpha.6` ainda não publicado.
 - Sprint 10 — Beta estável.
 
 ## Protocolo de atualização

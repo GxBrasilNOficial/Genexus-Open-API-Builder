@@ -35,6 +35,11 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly RadioButton _securityNoneRadio = new() { AutoSize = true, Text = "None", Margin = new Padding(0, 2, 18, 2) };
     private readonly CheckBox _includeBcErrorMessagesCheck = new() { AutoSize = true, Checked = true, Margin = new Padding(0, 8, 0, 2) };
     private readonly Label _bcErrorMessagesWarningLabel = new() { AutoSize = true, ForeColor = Color.DarkGoldenrod, MaximumSize = new Size(780, 0), Margin = new Padding(0, 4, 0, 0) };
+    private readonly ComboBox _deleteSecurityCombo = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 180 };
+    private readonly Label _deleteSecurityWarningLabel = new() { AutoSize = true, ForeColor = Color.DarkGoldenrod, MaximumSize = new Size(780, 0), Margin = new Padding(0, 4, 0, 0) };
+    private bool _deleteConfirmedThisSession;
+    private bool _deleteDeclinedThisSession;
+    private bool _deleteSecurityEditedManually;
     private readonly NumericUpDown _defaultPageSize = CreateNumericInput();
     private readonly NumericUpDown _maximumPageSize = CreateNumericInput();
     private readonly ListBox _staticOrderList = new() { Dock = DockStyle.Fill, HorizontalScrollbar = true, IntegralHeight = false };
@@ -68,6 +73,8 @@ internal sealed class PrototypeWizardDialog : Form
     private Button? _nextButton;
     private Button? _backButton;
     private bool _showingSummary;
+    private bool _suppressTabChanged;
+    private int _lastWorkingTabIndex;
     private bool _loadingSnapshot;
     private bool _servicesBasePathEditedManually;
     private bool _businessComponentEnabledDuringWizard;
@@ -147,6 +154,7 @@ internal sealed class PrototypeWizardDialog : Form
         _securityNoneRadio.Text = _texts.Translate("None");
         _includeBcErrorMessagesCheck.Text = _texts.Translate("Incluir mensagens de erro do Business Component no corpo HTTP 422");
         _bcErrorMessagesWarningLabel.Text = _texts.Translate("Com Security Level = None a API e publica: as mensagens de regra de negocio da KB ficam visiveis no JSON de erro.");
+        _deleteSecurityWarningLabel.Text = _texts.Translate("Delete com Security Level = None deixa a exclusao publica. Confirme com consciencia.");
         _enableBusinessComponentCheck.Text = _texts.Translate("Habilitar Business Component agora");
         _generateSdtsCheck.Text = _texts.Translate("Confirmar: Criar ou validar estruturas de dados ao concluir");
         _generateProceduresCheck.Text = _texts.Translate("Confirmar: Criar ou validar Procedures ao concluir");
@@ -193,7 +201,7 @@ internal sealed class PrototypeWizardDialog : Form
 
         root.Controls.Add(_headerLabel, 0, 0);
 
-        _tabs.TabPages.Add(CreateListTab(_texts.Translate("Serviços"), _servicesList, _texts.Translate("Serviços REST do MVP. Todos iniciam habilitados.")));
+        _tabs.TabPages.Add(CreateListTab(_texts.Translate("Serviços"), _servicesList, _texts.Translate("Serviços REST. List, Get, Create e Update iniciam habilitados. Delete é opcional e inicia desmarcado.")));
         _tabs.TabPages.Add(CreateRequestTab());
         _tabs.TabPages.Add(CreateResponseTab());
         _tabs.TabPages.Add(CreateFilterTab());
@@ -602,9 +610,12 @@ internal sealed class PrototypeWizardDialog : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 5,
+            RowCount = 8,
             Padding = new Padding(8),
         };
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -622,6 +633,11 @@ internal sealed class PrototypeWizardDialog : Form
         options.Controls.Add(_securityAuthorizationRadio);
         options.Controls.Add(_securityNoneRadio);
 
+        _deleteSecurityCombo.Items.Add(PrototypeWizardPreferences.SecurityLevelAuthentication);
+        _deleteSecurityCombo.Items.Add(PrototypeWizardPreferences.SecurityLevelAuthorization);
+        _deleteSecurityCombo.Items.Add(PrototypeWizardPreferences.SecurityLevelNone);
+        _deleteSecurityCombo.SelectedItem = PrototypeWizardPreferences.SecurityLevelAuthentication;
+
         panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Security Level único aplicado aos serviços gerados no MVP.")), 0, 0);
         panel.Controls.Add(options, 0, 1);
         panel.Controls.Add(CreateWrappingLabel(
@@ -629,8 +645,11 @@ internal sealed class PrototypeWizardDialog : Form
             44,
             12,
             0), 0, 2);
-        panel.Controls.Add(_includeBcErrorMessagesCheck, 0, 3);
-        panel.Controls.Add(_bcErrorMessagesWarningLabel, 0, 4);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Security Level do Delete (somente quando o serviço Delete estiver marcado). Pode ser mais restritivo que o dos demais serviços.")), 0, 3);
+        panel.Controls.Add(_deleteSecurityCombo, 0, 4);
+        panel.Controls.Add(_deleteSecurityWarningLabel, 0, 5);
+        panel.Controls.Add(_includeBcErrorMessagesCheck, 0, 6);
+        panel.Controls.Add(_bcErrorMessagesWarningLabel, 0, 7);
         tab.Controls.Add(panel);
         return tab;
     }
@@ -941,6 +960,12 @@ internal sealed class PrototypeWizardDialog : Form
             ApplySecurityPreference(existingApi.SecurityLevel ?? "Authentication");
         }
 
+        if (existingApi.TryGetService("Delete", out var existingDelete) && !string.IsNullOrWhiteSpace(existingDelete.SecurityLevel))
+        {
+            _deleteSecurityCombo.SelectedItem = PrototypeWizardPreferences.NormalizeSecurityLevel(existingDelete.SecurityLevel);
+            _deleteSecurityEditedManually = true;
+        }
+
         _includeBcErrorMessagesCheck.Checked = existingApi.IncludeBusinessComponentErrorMessages;
 
         foreach (var item in GetStaticOrder())
@@ -992,6 +1017,19 @@ internal sealed class PrototypeWizardDialog : Form
         {
             check.CheckedChanged += (_, _) =>
             {
+                if (check.Tag is ChoiceItem item && string.Equals(item.Value, "Delete", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (check.Checked)
+                    {
+                        _deleteDeclinedThisSession = false;
+                    }
+                    else
+                    {
+                        _deleteConfirmedThisSession = false;
+                    }
+                }
+
+                RefreshDeleteSecurityControls();
                 RefreshEndpointsText();
                 RefreshGenerationPreviewUnlessSuppressed();
             };
@@ -1009,6 +1047,7 @@ internal sealed class PrototypeWizardDialog : Form
             ApplyServicePreference("Get", _preferences.GetServiceByDefault);
             ApplyServicePreference("Create", _preferences.CreateServiceByDefault);
             ApplyServicePreference("Update", _preferences.UpdateServiceByDefault);
+            ApplyServicePreference("Delete", _preferences.DeleteServiceByDefault);
             ApplySecurityPreference(_preferences.SecurityLevelByDefault);
             _defaultPageSize.Value = ClampNumeric(_defaultPageSize, _preferences.DefaultPageSizeByDefault);
             _maximumPageSize.Value = ClampNumeric(_maximumPageSize, _preferences.MaximumPageSizeByDefault);
@@ -1030,6 +1069,7 @@ internal sealed class PrototypeWizardDialog : Form
         }
 
         RefreshGenerationPreview(forceRefresh: true);
+        RefreshDeleteSecurityControls();
     }
 
     private void ApplyServicePreference(string serviceName, bool preferredChecked)
@@ -1056,10 +1096,132 @@ internal sealed class PrototypeWizardDialog : Form
     private void WireBusinessComponentErrorMessageWarning()
     {
         _includeBcErrorMessagesCheck.CheckedChanged += (_, _) => RefreshBusinessComponentErrorMessageWarning();
-        _securityAuthenticationRadio.CheckedChanged += (_, _) => RefreshBusinessComponentErrorMessageWarning();
-        _securityAuthorizationRadio.CheckedChanged += (_, _) => RefreshBusinessComponentErrorMessageWarning();
-        _securityNoneRadio.CheckedChanged += (_, _) => RefreshBusinessComponentErrorMessageWarning();
+        _securityAuthenticationRadio.CheckedChanged += (_, _) =>
+        {
+            SyncDeleteSecurityFromApiUnlessEdited();
+            RefreshBusinessComponentErrorMessageWarning();
+            RefreshDeleteSecurityControls();
+        };
+        _securityAuthorizationRadio.CheckedChanged += (_, _) =>
+        {
+            SyncDeleteSecurityFromApiUnlessEdited();
+            RefreshBusinessComponentErrorMessageWarning();
+            RefreshDeleteSecurityControls();
+        };
+        _securityNoneRadio.CheckedChanged += (_, _) =>
+        {
+            SyncDeleteSecurityFromApiUnlessEdited();
+            RefreshBusinessComponentErrorMessageWarning();
+            RefreshDeleteSecurityControls();
+        };
+        _deleteSecurityCombo.SelectedIndexChanged += (_, _) =>
+        {
+            if (IsDeleteServiceChecked())
+            {
+                _deleteSecurityEditedManually = true;
+            }
+
+            RefreshDeleteSecurityControls();
+        };
         RefreshBusinessComponentErrorMessageWarning();
+        RefreshDeleteSecurityControls();
+    }
+
+    private void SyncDeleteSecurityFromApiUnlessEdited()
+    {
+        if (_deleteSecurityEditedManually || !IsDeleteServiceChecked())
+        {
+            return;
+        }
+
+        _deleteSecurityCombo.SelectedItem = GetSelectedSecurityLevel();
+    }
+
+    private bool IsDeleteServiceChecked()
+    {
+        return GetCheckedValues(_servicesList).Any(name => string.Equals(name, "Delete", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void UncheckDeleteService()
+    {
+        foreach (var check in _servicesList.Controls.OfType<CheckBox>())
+        {
+            if (check.Tag is ChoiceItem item
+                && string.Equals(item.Value, "Delete", StringComparison.OrdinalIgnoreCase)
+                && check.Checked)
+            {
+                check.Checked = false;
+                return;
+            }
+        }
+    }
+
+    private void RefreshDeleteSecurityControls()
+    {
+        var deleteSelected = IsDeleteServiceChecked();
+        _deleteSecurityCombo.Enabled = deleteSelected;
+        if (!deleteSelected)
+        {
+            _deleteSecurityWarningLabel.Visible = false;
+            if (!_deleteSecurityEditedManually)
+            {
+                _deleteSecurityCombo.SelectedItem = GetSelectedSecurityLevel();
+            }
+
+            return;
+        }
+
+        if (_deleteSecurityCombo.SelectedItem is null)
+        {
+            _deleteSecurityCombo.SelectedItem = GetSelectedSecurityLevel();
+        }
+
+        _deleteSecurityWarningLabel.Visible = string.Equals(
+            GetSelectedDeleteSecurityLevel(),
+            PrototypeWizardPreferences.SecurityLevelNone,
+            StringComparison.Ordinal);
+    }
+
+    private string GetSelectedDeleteSecurityLevel()
+    {
+        return PrototypeWizardPreferences.NormalizeSecurityLevel(_deleteSecurityCombo.SelectedItem as string ?? GetSelectedSecurityLevel());
+    }
+
+    private bool ConfirmDeleteServiceIfSelected(IReadOnlyList<string> selectedServices)
+    {
+        var deleteSelected = selectedServices.Any(name => string.Equals(name, "Delete", StringComparison.OrdinalIgnoreCase));
+        if (!deleteSelected)
+        {
+            return true;
+        }
+
+        if (_snapshot.ExistingApiContract.TryGetServiceSelection("Delete", out var existingDeleteSelected) && existingDeleteSelected)
+        {
+            _deleteConfirmedThisSession = true;
+        }
+
+        if (_deleteConfirmedThisSession)
+        {
+            return true;
+        }
+
+        var message = _texts.Translate("Marcar Delete gera exclusao de registro via Business Component. Apagar o cabecalho apaga as linhas filhas na mesma transacao atomica. Continuar?");
+        if (string.Equals(GetSelectedDeleteSecurityLevel(), PrototypeWizardPreferences.SecurityLevelNone, StringComparison.Ordinal))
+        {
+            message += Environment.NewLine + Environment.NewLine + _texts.Translate("Delete com Security Level = None deixa a exclusao publica.");
+        }
+
+        var answer = MessageBox.Show(this, message, Text, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+        if (answer != DialogResult.Yes)
+        {
+            _deleteDeclinedThisSession = true;
+            UncheckDeleteService();
+            return true;
+        }
+
+        _deleteDeclinedThisSession = false;
+        _deleteConfirmedThisSession = true;
+        return true;
     }
 
     private void RefreshBusinessComponentErrorMessageWarning()
@@ -1577,6 +1739,12 @@ internal sealed class PrototypeWizardDialog : Form
 
     private void HandleSelectedTabChanged()
     {
+        if (_suppressTabChanged)
+        {
+            RefreshCurrentTabLabel();
+            return;
+        }
+
         var tabName = _tabs.SelectedTab?.Text ?? "<null>";
         if (string.Equals(tabName, _texts.Translate("Resumo"), StringComparison.Ordinal))
         {
@@ -1587,10 +1755,16 @@ internal sealed class PrototypeWizardDialog : Form
             {
                 ShowSummary();
             }
+            else if (!_showingSummary)
+            {
+                RestoreWorkingTabAfterRejectedSummary();
+            }
 
             RefreshCurrentTabLabel();
             return;
         }
+
+        _lastWorkingTabIndex = _tabs.SelectedIndex;
 
         if (ShouldRefreshGenerationPreviewOnTab(tabName))
         {
@@ -1621,6 +1795,39 @@ internal sealed class PrototypeWizardDialog : Form
         }
 
         RefreshCurrentTabLabel();
+    }
+
+    private void RestoreWorkingTabAfterRejectedSummary()
+    {
+        var lastWorking = Math.Max(0, _tabs.TabPages.Count - 2);
+        var target = _lastWorkingTabIndex;
+        if (target < 0 || target > lastWorking)
+        {
+            target = lastWorking;
+        }
+
+        _showingSummary = false;
+        _summaryDecisionText.Text = string.Empty;
+        _summaryEndpointText.Text = string.Empty;
+        if (_nextButton is not null)
+        {
+            _nextButton.Text = _texts.Next;
+        }
+
+        if (target == _tabs.SelectedIndex)
+        {
+            return;
+        }
+
+        _suppressTabChanged = true;
+        try
+        {
+            _tabs.SelectedIndex = target;
+        }
+        finally
+        {
+            _suppressTabChanged = false;
+        }
     }
 
     private bool ShouldRefreshGenerationPreviewOnTab(string tabName)
@@ -1688,6 +1895,13 @@ internal sealed class PrototypeWizardDialog : Form
             return false;
         }
 
+        if (!ConfirmDeleteServiceIfSelected(selectedServices))
+        {
+            return false;
+        }
+
+        selectedServices = GetCheckedValues(_servicesList);
+
         var contractSelection = new PrototypeWizardContractSelection(
             _snapshot.TransactionName,
             selectedServices,
@@ -1704,7 +1918,8 @@ internal sealed class PrototypeWizardDialog : Form
             (int)_defaultPageSize.Value,
             (int)_maximumPageSize.Value,
             GetStaticOrder(),
-            _includeBcErrorMessagesCheck.Checked);
+            _includeBcErrorMessagesCheck.Checked,
+            GetSelectedDeleteSecurityLevel());
         Selection = new PrototypeWizardFlowSelection(
             contractSelection,
             reviewSelection,
@@ -1733,7 +1948,13 @@ internal sealed class PrototypeWizardDialog : Form
         var createBlocked = CountBlocked(_createFieldsList);
         var updateBlocked = CountBlocked(_updateFieldsList);
         var filterBlocked = CountBlocked(_filtersList);
+        var deleteSelected = contract.SelectedServices.Any(name => string.Equals(name, "Delete", StringComparison.OrdinalIgnoreCase));
+        var deleteSecurityLine = deleteSelected
+            ? $"{_texts.Translate("Security Level do Delete")}: {(review.DeleteSecurityLevel ?? review.SecurityLevel)}{Environment.NewLine}"
+            : string.Empty;
+        var deleteWithdrawalNotice = FormatDeleteWithdrawalNotice();
         _summaryDecisionText.Text =
+            deleteWithdrawalNotice +
             $"Transaction: {contract.TransactionName}{Environment.NewLine}" +
             $"{_texts.Translate("Serviços")}: {string.Join(", ", contract.SelectedServices)}{Environment.NewLine}" +
             $"{_texts.RoleLabel("CreateRequest")}: {contract.CreateFields.Count} {_texts.Translate("campo(s)")}, {createRequired} {_texts.Translate("obrigatório(s) no payload")}{Environment.NewLine}" +
@@ -1745,6 +1966,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"Services base path: {review.ServicesBasePath}{Environment.NewLine}" +
             $"RestPath: {review.RestPath}{Environment.NewLine}" +
             $"{_texts.Translate("Security Level")}: {review.SecurityLevel}{Environment.NewLine}" +
+            deleteSecurityLine +
             $"{_texts.Translate("Incluir mensagens de erro do Business Component no corpo HTTP 422")}: {review.IncludeBusinessComponentErrorMessages}{Environment.NewLine}" +
             $"{_texts.Translate("Paginação")}: Default={review.DefaultPageSize}, Maximum={review.MaximumPageSize}{Environment.NewLine}" +
             $"{_texts.Translate("Ordenação")}: {string.Join(", ", review.StaticOrder.Select(item => item.AttributeName + " " + item.Direction))}{Environment.NewLine}" +
@@ -1759,6 +1981,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"{_texts.Translate("Estado da geracao")}: {_generationContext}" +
             FormatHierarchicalSummary();
         _summaryEndpointText.Text =
+            deleteWithdrawalNotice +
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
             _texts.Translate("Campos bloqueados ficam visíveis com motivo no fluxo do wizard.") + Environment.NewLine +
             _texts.Translate("Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0).") + Environment.NewLine +
@@ -1770,6 +1993,18 @@ internal sealed class PrototypeWizardDialog : Form
         _showingSummary = true;
         _tabs.SelectedIndex = _tabs.TabPages.Count - 1;
         RefreshCompletionCaption();
+    }
+
+    private string FormatDeleteWithdrawalNotice()
+    {
+        if (!_deleteDeclinedThisSession)
+        {
+            return string.Empty;
+        }
+
+        return _texts.Translate("*** DESISTÊNCIA DO DELETE *** A confirmação foi recusada nesta sessão. O serviço Delete foi desmarcado e não será gerado.")
+            + Environment.NewLine
+            + Environment.NewLine;
     }
     private void RefreshCompletionCaption()
     {
@@ -1835,6 +2070,10 @@ internal sealed class PrototypeWizardDialog : Form
             else if (upperService == "UPDATE")
             {
                 lines.Add("Update PUT  " + keyPath);
+            }
+            else if (upperService == "DELETE")
+            {
+                lines.Add("Delete DELETE " + keyPath);
             }
             else
             {
@@ -2131,7 +2370,8 @@ internal sealed class PrototypeWizardDialog : Form
                 (int)_defaultPageSize.Value,
                 (int)_maximumPageSize.Value,
                 GetStaticOrder(),
-                _includeBcErrorMessagesCheck.Checked);
+                _includeBcErrorMessagesCheck.Checked,
+                GetSelectedDeleteSecurityLevel());
             var selection = new PrototypeWizardFlowSelection(
                 contract,
                 review,

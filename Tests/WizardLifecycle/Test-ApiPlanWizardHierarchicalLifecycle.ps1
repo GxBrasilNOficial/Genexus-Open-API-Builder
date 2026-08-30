@@ -39,6 +39,9 @@ Assert-Contains $sync 'HasHierarchicalLevels(metadata)' 'Sync deve pular conflit
 Assert-Contains $inventory 'ResolveOwnSdtNames' 'Inventário dinâmico deve resolver SDTs próprios.'
 Assert-Contains $inventory 'TryCreateStubApiPlanFromMetadata' 'Inventário dinâmico deve reconstruir plano a partir da metadata.'
 Assert-Contains $preferences 'SupportedSchemaVersions' 'Preferências devem declarar schemas suportados.'
-Assert-Contains $preferences 'IsSupportedSchemaVersion' 'Preferências devem tolerar schema legado/ausente.'
+Assert-Contains $dialog '_deleteDeclinedThisSession' 'Recusar Delete deve marcar desistencia na sessao.'
+Assert-Contains $dialog 'FormatDeleteWithdrawalNotice' 'Resumo deve destacar a desistencia do Delete.'
+Assert-Contains $dialog 'UncheckDeleteService' 'Recusar a confirmacao do Delete deve desmarcar o servico.'
+Assert-Contains $dialog 'deleteSecurityLine' 'Resumo so lista Security Level do Delete quando o servico estiver marcado.'
 
 Write-Output 'PASS: ApiPlanWizardHierarchicalLifecycle'

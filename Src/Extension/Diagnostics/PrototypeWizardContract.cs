@@ -12,7 +12,7 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// </summary>
 internal static class PrototypeWizardContractReader
 {
-    private static readonly string[] ServiceNames = { "List", "Get", "Create", "Update" };
+    private static readonly string[] ServiceNames = { "List", "Get", "Create", "Update", "Delete" };
 
     public static PrototypeWizardContractSnapshot Read(Transaction transaction)
     {
@@ -176,9 +176,17 @@ internal static class PrototypeWizardContractReader
         PrototypeWizardExistingApiContract existingApiContract,
         string serviceName)
     {
-        return existingApiContract.TryGetServiceSelection(serviceName, out var selected)
-            ? selected
-            : existingApiContract.ServicesAvailable ? false : true;
+        if (existingApiContract.TryGetServiceSelection(serviceName, out var selected))
+        {
+            return selected;
+        }
+
+        if (existingApiContract.ServicesAvailable)
+        {
+            return false;
+        }
+
+        return !string.Equals(serviceName, "Delete", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool ResolveExistingFieldSelection(

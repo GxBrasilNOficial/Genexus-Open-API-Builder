@@ -227,14 +227,19 @@ internal static class PrototypeWizardExistingApiContractReader
                 ? resolvedMethod.ToUpperInvariant()
                 : string.Equals(serviceName, "Create", StringComparison.OrdinalIgnoreCase)
                     ? "POST"
-                    : string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase) ? "PUT" : "GET";
+                    : string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase)
+                        ? "PUT"
+                        : string.Equals(serviceName, "Delete", StringComparison.OrdinalIgnoreCase)
+                            ? "DELETE"
+                            : "GET";
 
             services.Add(new PrototypeWizardExistingService(
                 serviceName,
                 httpMethod,
                 restPath,
                 apiName + "." + serviceName,
-                description));
+                description,
+                resolvedSecurity));
             if (string.Equals(serviceName, "List", StringComparison.OrdinalIgnoreCase))
             {
                 listRestPath = restPath;
@@ -846,13 +851,14 @@ internal sealed class ExistingApiMetadataServiceDescriptions
 
 internal sealed class PrototypeWizardExistingService
 {
-    public PrototypeWizardExistingService(string name, string httpMethod, string? restPath, string? operationId, string? description)
+    public PrototypeWizardExistingService(string name, string httpMethod, string? restPath, string? operationId, string? description, string? securityLevel = null)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
         HttpMethod = httpMethod ?? throw new ArgumentNullException(nameof(httpMethod));
         RestPath = restPath;
         OperationId = operationId;
         Description = description;
+        SecurityLevel = securityLevel;
     }
 
     public string Name { get; }
@@ -860,6 +866,7 @@ internal sealed class PrototypeWizardExistingService
     public string? RestPath { get; }
     public string? OperationId { get; }
     public string? Description { get; }
+    public string? SecurityLevel { get; }
 }
 
 internal sealed class PrototypeWizardExistingStaticOrder

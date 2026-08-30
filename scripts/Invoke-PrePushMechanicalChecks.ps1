@@ -337,7 +337,7 @@ $localReadiness = if ($overallStatus -eq 'passed') { 'ready' } else { 'blocked' 
     warnings = @($warnings)
     incompleteReasons = @($incompleteReasons)
     manualRequired = @($manualRequired)
-    notCovered = @('Validação funcional na IDE GeneXus, acesso a KB, instalação de DLL e scripts em Tools não são executados.', 'manualRequired e workingTreeDirty exigem revisão humana; não comprovam fechamento semântico.', 'currentFront/manualRequired só reconhecem spike B000-B006 vigente no checkpoint; lista vazia com próxima ação B007+ (ex. B099v) é esperada e não substitui a revisão semântica.')
+    notCovered = @('Validação funcional na IDE GeneXus, acesso a KB, instalação de DLL e scripts em Tools não são executados.', 'manualRequired e workingTreeDirty exigem revisão humana; não comprovam fechamento semântico.', 'currentFront/manualRequired só reconhecem spike B000-B006 vigente no checkpoint; lista vazia com próxima ação B007+ (ex. corte 0.1.0-alpha.6) é esperada e não substitui a revisão semântica.')
 } | ConvertTo-Json -Depth 8
 
 exit $exitCode

@@ -13,7 +13,7 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// </summary>
 internal static class PrototypeExistingObjectReader
 {
-    private static readonly string[] ProcedureSuffixes = { "List", "Get", "Create", "Update" };
+    private static readonly string[] ProcedureSuffixes = { "List", "Get", "Create", "Update", "Delete" };
 
     private static readonly string[] SdtSuffixes =
     {

@@ -21,7 +21,7 @@ Detalhe: `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 
 **Atualização de 2026-08-25 (noite, B095).** Fase 1 (`B095`) concluída: leitor hierárquico à parte (`TransactionStructureReader` com núcleo `Build` + adaptador SDK), modelo `ApiPlanLevel` / `ApiPlanLevelField`, critério compartilhado `TransactionAttributeKeyTraits`, testes offline com ouro em `Tests/TransactionStructure/Baselines/` ligados ao pré-push. Caminho flat do Wizard sem o leitor hierárquico. ~~Próxima ação = Fase 2 (`B096`).~~ **Superada** pela atualização B096 abaixo. Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
 
-**Atualização de 2026-08-28 (Fase 7).** Fase 7 concluída: releitura de `levels` no Wizard, tolerância de preferências legadas, inventário dinâmico de remoção e Sync sem falso positivo SDT hierárquico; smoke U15 na `Teste`/`apiTeste` (apply, critério 8, Sync, Remover preview). Próxima frente = `B100` (corte `0.1.0-alpha.5` publicado). Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
+**Atualização de 2026-08-30 (`B100`).** Serviço `Delete` opt-in concluído. Próxima ação operacional = preparar o corte `0.1.0-alpha.6`. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 
 **Atualização de 2026-08-28 (B099v).** Fase 5-A (`B099v`) concluída: correção de `ResolveAggregateAttributeName` (PK própria em `count()`), ouro e gate `tests.listHierarchical` atualizados; reapply do Wizard na `Teste` de quatro níveis; smoke HTTP multinível nos dois environments; critério 9 (YAML hierárquico + geração de cliente). Evidência: `Docs/Implementation/2026-08-28-B099v-VALIDACAO-RUNTIME-MULTINIVEL.md`.
 
@@ -323,7 +323,7 @@ Estes itens nasceram da revisão de 2026-08-23. Não pertencem a B095–B099 e t
 | `B105` | Escolha do chamador sobre o detalhe do corpo de erro, podendo apenas **restringir** o que o default da API permite, nunca ampliar | Fora de `B102`; nesta sprint se houver folga, senão Sprint 10 |
 | `B101` | Experimento de membro nullable para distinguir membro ausente de membro vazio | Candidato à Sprint 10, fora da Sprint 9 |
 
-**Ordem de execução resultante:** `B102` (concluído) → Fase 0 (concluída: camadas de início + conferência de fim em 2026-08-28, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100`.
+**Ordem de execução resultante:** `B102` (concluído) → Fase 0 (concluída: camadas de início + conferência de fim em 2026-08-28, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100` (concluído em 2026-08-30).
 
 `B105` nasceu separado de `B102` de propósito. Ele acrescenta parâmetro aos serviços `Create` e `Update`, muda a assinatura no API Object, muda o YAML e pede caso de teste HTTP próprio — e `B102` já é o primeiro item da sprint mexendo em quatro subsistemas. O que a Fase 0 precisa ter estabilizado é o **default por API**, que `B102` entrega.
 

@@ -1,7 +1,7 @@
 # Missão estacionada — sinal de vida no Wizard (abertura e apply) e no Remover
 
 Data: 2026-08-29.
-Estado: **missão de outra sessão** (`B082`). A medição do critério 11 **encerrou**; não implementar isto no corte `0.1.0-alpha.5`.
+Estado: **missão de outra sessão** (`B082`). A medição do critério 11 **encerrou**; não implementar isto no corte `0.1.0-alpha.5` nem misturar com o fechamento do `B100`.
 Correlato de backlog: `B082` (mostrar tempo de execução) — o tempo sozinho não resolve o que foi visto; o usuário precisa de feedback **enquanto** a IDE está bloqueada.
 
 ## O que aconteceu

@@ -373,6 +373,7 @@ internal static class ApiPlanMetadataFileWriter
                 ["httpMethod"] = service.HttpMethod,
                 ["restPath"] = service.RestPath,
                 ["operationId"] = service.OperationId,
+                ["securityLevel"] = service.ResolveSecurityLevel(apiPlan.Security.SecurityLevel),
                 ["description"] = apiPlan.ServiceDescriptions.Single(description => string.Equals(description.ServiceName, service.Name, StringComparison.OrdinalIgnoreCase)).Description,
             })),
             ["transactionStructure"] = ToFieldArray(transactionStructure),

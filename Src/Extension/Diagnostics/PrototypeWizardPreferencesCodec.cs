@@ -28,6 +28,8 @@ public sealed class PrototypeWizardPreferenceValues
 
     public bool UpdateServiceByDefault { get; set; } = true;
 
+    public bool DeleteServiceByDefault { get; set; }
+
     public string SecurityLevelByDefault { get; set; } = PrototypeWizardPreferencesCodec.SecurityLevelAuthentication;
 
     public int DefaultPageSizeByDefault { get; set; } = PrototypeWizardPreferencesCodec.DefaultPageSizeFallback;
@@ -90,6 +92,7 @@ public static class PrototypeWizardPreferencesCodec
             GetServiceByDefault = ReadOptionalBool(defaults["services"] as JObject, "get", true),
             CreateServiceByDefault = ReadOptionalBool(defaults["services"] as JObject, "create", true),
             UpdateServiceByDefault = ReadOptionalBool(defaults["services"] as JObject, "update", true),
+            DeleteServiceByDefault = ReadOptionalBool(defaults["services"] as JObject, "delete", false),
             SecurityLevelByDefault = NormalizeSecurityLevel(ReadOptionalString(defaults, "securityLevel", SecurityLevelAuthentication)),
             DefaultPageSizeByDefault = ReadOptionalPositiveInt(defaults["pagination"] as JObject, "defaultPageSize", DefaultPageSizeFallback),
             MaximumPageSizeByDefault = ReadOptionalPositiveInt(defaults["pagination"] as JObject, "maximumPageSize", MaximumPageSizeFallback),
@@ -127,6 +130,7 @@ public static class PrototypeWizardPreferencesCodec
                     ["get"] = preferences.GetServiceByDefault,
                     ["create"] = preferences.CreateServiceByDefault,
                     ["update"] = preferences.UpdateServiceByDefault,
+                    ["delete"] = preferences.DeleteServiceByDefault,
                 },
                 ["securityLevel"] = NormalizeSecurityLevel(preferences.SecurityLevelByDefault),
                 ["includeBusinessComponentErrorMessages"] = preferences.IncludeBusinessComponentErrorMessagesByDefault,
@@ -156,7 +160,8 @@ public static class PrototypeWizardPreferencesCodec
         if (!preferences.ListServiceByDefault
             && !preferences.GetServiceByDefault
             && !preferences.CreateServiceByDefault
-            && !preferences.UpdateServiceByDefault)
+            && !preferences.UpdateServiceByDefault
+            && !preferences.DeleteServiceByDefault)
         {
             throw new JsonException("Preferencias de servico invalidas: ao menos um servico deve iniciar marcado.");
         }

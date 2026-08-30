@@ -60,8 +60,12 @@ Assert-NotContains $previousUrlEncodeTrimSource 'StrReplace(URLEncode' 'Variante
 
 Assert-Contains $source '[RestMethod({method.ToUpperInvariant()})]' 'API Object deve projetar RestMethod planejado, incluindo PUT no Update.'
 Assert-Contains $source '[RestPath(\"{EscapeDescription(ResolveService(plan, service).RestPath.Trim())}\")]' 'API Object deve projetar RestPath planejado em cada servico REST.'
-Assert-Contains $source '[SecurityLevel({plan.Security.SecurityLevel})]' 'API Object deve projetar SecurityLevel explicitamente em cada servico REST.'
+Assert-Contains $source '[SecurityLevel({ResolveService(plan, service).ResolveSecurityLevel(plan.Security.SecurityLevel)})]' 'API Object deve projetar SecurityLevel por servico, com fallback no nivel da API.'
 Assert-Contains $source 'AddStatusEvent(events, "List")' 'API Object deve propagar o status HTTP também no retorno da List.'
+Assert-Contains $source 'AddStatusEvent(events, "Delete")' 'API Object deve propagar o status HTTP no retorno do Delete quando o servico estiver no plano.'
+Assert-Contains $source '{bc}.Delete()' 'Delete deve chamar Delete() no Business Component apos Load com sucesso.'
+Assert-Contains $source 'private static string DeleteRules(ApiPlan plan)' 'Delete deve declarar parm com a chave primaria, ErrorResponse e RestStatusCode.'
+Assert-Contains $source 'Rollback' 'Delete deve desfazer a exclusao quando o Business Component recusar.'
 Assert-Contains $source 'CreatePreviousB079ApiEvents' 'Preflight deve reconhecer Events anteriores sem List.After apenas para migração.'
 Assert-Contains $apiPlanSource '"{&" + item.Name + "}"' 'ApiPlan deve gerar RestPath parametrizado com variavel GeneXus para o runtime casar path params.'
 Assert-Contains $source 'MatchesPreviousB079RestMethodContract' 'Preflight deve reconhecer a versao B079 anterior apenas como migravel quando faltar PUT/RestPath.'
@@ -132,4 +136,5 @@ $previousAlphaSource = $source.Substring($previousAlphaStart, $previousFailureSt
 Assert-NotContains $previousAlphaSource '.GetMessages()' 'Bloco Alpha reconhecido nao deve coletar GetMessages.'
 Assert-Contains $previousAlphaSource 'Business rules rejected the request.' 'Bloco Alpha reconhecido deve preservar a Message generica.'
 
-Write-Output 'PASS: ApiPlanBusinessComponentWriterVariableContract'
+Assert-Contains $source 'predecessorWithoutDelete' 'Preflight de Events deve aceitar API Object B079 sem Delete.After ao acrescentar o servico Delete.'
+Assert-Contains $source 'AddStatusEvent(events, "Delete")' 'API Object com Delete deve emitir Delete.After para RestCode.'

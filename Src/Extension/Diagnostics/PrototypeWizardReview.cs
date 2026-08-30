@@ -80,6 +80,11 @@ internal static class PrototypeWizardReviewReader
             return new PrototypeWizardEndpointDecision("Update", "PUT", AppendKeyPath(restPath, primaryKeyParts));
         }
 
+        if (upperService == "DELETE")
+        {
+            return new PrototypeWizardEndpointDecision("Delete", "DELETE", AppendKeyPath(restPath, primaryKeyParts));
+        }
+
         return new PrototypeWizardEndpointDecision(service, "<nao definido>", restPath);
     }
 
@@ -256,7 +261,7 @@ internal sealed class PrototypeWizardStaticOrderPart
 
 internal sealed class PrototypeWizardReviewSelection
 {
-    public PrototypeWizardReviewSelection(string transactionName, string apiName, string servicesBasePath, string restPath, string securityLevel, int defaultPageSize, int maximumPageSize, IReadOnlyList<PrototypeWizardStaticOrderPart> staticOrder, bool includeBusinessComponentErrorMessages)
+    public PrototypeWizardReviewSelection(string transactionName, string apiName, string servicesBasePath, string restPath, string securityLevel, int defaultPageSize, int maximumPageSize, IReadOnlyList<PrototypeWizardStaticOrderPart> staticOrder, bool includeBusinessComponentErrorMessages, string? deleteSecurityLevel = null)
     {
         TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
 
@@ -268,6 +273,8 @@ internal sealed class PrototypeWizardReviewSelection
         MaximumPageSize = maximumPageSize;
         StaticOrder = staticOrder ?? throw new ArgumentNullException(nameof(staticOrder));
         IncludeBusinessComponentErrorMessages = includeBusinessComponentErrorMessages;
+        var trimmedDeleteSecurity = (deleteSecurityLevel ?? string.Empty).Trim();
+        DeleteSecurityLevel = trimmedDeleteSecurity.Length == 0 ? null : trimmedDeleteSecurity;
     }
 
     public string TransactionName { get; }
@@ -287,6 +294,8 @@ internal sealed class PrototypeWizardReviewSelection
     public IReadOnlyList<PrototypeWizardStaticOrderPart> StaticOrder { get; }
 
     public bool IncludeBusinessComponentErrorMessages { get; }
+
+    public string? DeleteSecurityLevel { get; }
 }
 
 internal static class PrototypeWizardReviewSessionState

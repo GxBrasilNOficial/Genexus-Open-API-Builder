@@ -62,16 +62,24 @@ internal static class ApiPlanBusinessComponentWriter
         var updateContent = UpdateContent(plan);
         var updateRules = UpdateRules(plan);
         var updateVariables = CoalesceVariableSpecs(UpdateVariables(plan), "B071-B073/B079");
+        var deleteContent = HasService(plan, "Delete") ? DeleteContent(plan) : null;
+        var deleteRules = HasService(plan, "Delete") ? DeleteRules(plan) : null;
+        var deleteVariables = HasService(plan, "Delete") ? CoalesceVariableSpecs(DeleteVariables(plan), "B100") : null;
         var apiSource = CreateB055ServiceGroupSource(plan);
         var apiVariables = CoalesceVariableSpecs(ApiVariableSpecs(plan), "B071-B073/B079");
 
         var get = FindProcedure(model, plan, "Get", "B051");
         var create = FindProcedure(model, plan, "Create", "B052");
         var update = FindProcedure(model, plan, "Update", "B053");
+        var delete = HasService(plan, "Delete") ? FindProcedure(model, plan, "Delete", "B100") : null;
         var api = FindApi(model, plan, allowIntentionalContractRefresh);
         EnsureProcedure(get, plan, "B051", "Get", Skeleton("B051", "Get"), getContent, getVariables, getRules, IsManagedGetSource, allowIntentionalContractRefresh: allowIntentionalContractRefresh);
         EnsureProcedure(create, plan, "B052", "Create", Skeleton("B052", "Create"), createContent, createVariables, createRules, IsManagedCreateSource, LegacyCreateContent(plan), LegacyCreateRules(), LegacyCreateVariables(plan), PreviousB079CreateVariables(plan), allowIntentionalContractRefresh);
         EnsureProcedure(update, plan, "B053", "Update", Skeleton("B053", "Update"), updateContent, updateVariables, updateRules, IsManagedUpdateSource, LegacyUpdateContent(plan), LegacyUpdateRules(plan), LegacyUpdateVariables(plan), PreviousB079UpdateVariables(plan), allowIntentionalContractRefresh);
+        if (delete is not null && deleteContent is not null && deleteRules is not null && deleteVariables is not null)
+        {
+            EnsureProcedure(delete, plan, "B100", "Delete", Skeleton("B100", "Delete"), deleteContent, deleteVariables, deleteRules, IsManagedDeleteSource, allowIntentionalContractRefresh: allowIntentionalContractRefresh);
+        }
         if (!allowIntentionalContractRefresh)
         {
             EnsureApi(api, plan);
@@ -83,6 +91,10 @@ internal static class ApiPlanBusinessComponentWriter
         ValidateProcedureVariableSpecs(model, get, getVariables);
         ValidateProcedureVariableSpecs(model, create, createVariables);
         ValidateProcedureVariableSpecs(model, update, updateVariables);
+        if (delete is not null && deleteVariables is not null)
+        {
+            ValidateProcedureVariableSpecs(model, delete, deleteVariables);
+        }
         ValidateApiVariableSpecs(model, api, apiVariables);
 
         ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan, preserveSdtNames, onSdtWrite);
@@ -91,6 +103,10 @@ internal static class ApiPlanBusinessComponentWriter
         SaveProcedure(model, get, getContent, getVariables, getRules);
         SaveProcedure(model, create, createContent, createVariables, createRules);
         SaveProcedure(model, update, updateContent, updateVariables, updateRules);
+        if (delete is not null && deleteContent is not null && deleteRules is not null && deleteVariables is not null)
+        {
+            SaveProcedure(model, delete, deleteContent, deleteVariables, deleteRules);
+        }
         return new ApiPlanBusinessComponentWriteResult(get.Guid, create.Guid, update.Guid, api.Guid, plan.PrimaryKey.Count, plan.CreateRequestFields.Count, plan.UpdateRequestFields.Count, plan.ResponseFields.Count);
     }
 
@@ -445,6 +461,12 @@ internal static class ApiPlanBusinessComponentWriter
     private static bool IsManagedGetSource(string source, ApiPlan plan)
     {
         return HasEquivalentGeneratedSource(source, GetContent(plan));
+    }
+
+    private static bool IsManagedDeleteSource(string source, ApiPlan plan)
+    {
+        return HasEquivalentGeneratedSource(source, DeleteContent(plan, includeMessageForwarding: true)) ||
+            HasEquivalentGeneratedSource(source, DeleteContent(plan, includeMessageForwarding: false));
     }
 
     private static bool IsManagedCreateSource(string source, ApiPlan plan)
@@ -1080,6 +1102,34 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         lines.Add("    &RestStatusCode = 200");
+        lines.Add("Else");
+        lines.AddRange(NotFoundMessages(plan, 4));
+        lines.Add("EndIf");
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    internal static string CreateCurrentDeleteSource(ApiPlan plan) => DeleteContent(plan);
+
+    private static string DeleteContent(ApiPlan plan) =>
+        DeleteContent(plan, plan.IncludeBusinessComponentErrorMessages);
+
+    private static string DeleteContent(ApiPlan plan, bool includeMessageForwarding)
+    {
+        var bc = "&" + plan.TransactionName;
+        var lines = new List<string>
+        {
+            "&RestStatusCode = 200",
+            $"{bc}.Load({LoadArguments(plan, "&")})",
+            $"If {bc}.Success()",
+            $"    {bc}.Delete()",
+            $"    If {bc}.Success()",
+            "        Commit",
+            "        &RestStatusCode = 200",
+            "    Else",
+        };
+        lines.AddRange(CurrentBusinessRuleFailureMessages(8, includeMessageForwarding, bc));
+        lines.Add("        Rollback");
+        lines.Add("    EndIf");
         lines.Add("Else");
         lines.AddRange(NotFoundMessages(plan, 4));
         lines.Add("EndIf");
@@ -2337,6 +2387,27 @@ internal static class ApiPlanBusinessComponentWriter
         return variables;
     }
 
+    private static IReadOnlyList<VariableSpec> DeleteVariables(ApiPlan plan) =>
+        DeleteVariables(plan, plan.IncludeBusinessComponentErrorMessages);
+
+    private static IReadOnlyList<VariableSpec> DeleteVariables(ApiPlan plan, bool includeMessageForwarding)
+    {
+        var variables = plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
+            .Concat(new[]
+            {
+                new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"),
+                new VariableSpec("RestStatusCode", "Numeric(3.0)"),
+                new VariableSpec(plan.TransactionName, plan.TransactionName),
+            })
+            .ToList();
+        if (includeMessageForwarding)
+        {
+            variables.AddRange(MessageForwardingVariables());
+        }
+
+        return variables;
+    }
+
     private static IReadOnlyList<VariableSpec> CreateVariables(ApiPlan plan) =>
         CreateVariables(plan, plan.IncludeBusinessComponentErrorMessages);
 
@@ -2525,6 +2596,7 @@ internal static class ApiPlanBusinessComponentWriter
     private static string ApiVariables(ApiPlan plan) => string.Join(Environment.NewLine, ApiVariableSpecs(plan).Select(variable => $"{variable.Name} [ DataType = '{variable.DataType}' ]"));
 
     private static string GetRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "out:&GetResponse", "out:&ErrorResponse", "out:&RestStatusCode" }))});";
+    private static string DeleteRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "out:&ErrorResponse", "out:&RestStatusCode" }))});";
     private static string CreateRules() => "parm(in:&CreateRequest, out:&CreateResponse, out:&ErrorResponse, out:&RestStatusCode);";
     private static string UpdateRules(ApiPlan plan) => $"parm({string.Join(", ", plan.PrimaryKey.Select(field => $"in:&{field.Name}").Concat(new[] { "in:&UpdateRequest", "out:&UpdateResponse", "out:&ErrorResponse", "out:&RestStatusCode" }))});";
     private static string LegacyCreateRules() => "parm(in:&CreateRequest, out:&CreateResponse);";
@@ -2560,6 +2632,14 @@ internal static class ApiPlanBusinessComponentWriter
             var arguments = string.Join(", ", plan.PrimaryKey.Select(field => $"&{field.Name}").Concat(new[] { "&UpdateRequest", "&UpdateResponse", "&ErrorResponse", "&RestStatusCode" }));
             return annotation + $"    Update({parameters}){Environment.NewLine}        => {procedure}({arguments});";
         }
+
+        if (includeBusinessComponentParameters && string.Equals(service, "Delete", StringComparison.OrdinalIgnoreCase))
+        {
+            var parameters = string.Join(", ", plan.PrimaryKey.Select(field => $"in: &{field.Name}").Concat(exposeErrorResponse ? new[] { "out: &ErrorResponse" } : Array.Empty<string>()));
+            var arguments = string.Join(", ", plan.PrimaryKey.Select(field => $"&{field.Name}").Concat(new[] { "&ErrorResponse", "&RestStatusCode" }));
+            return annotation + $"    Delete({parameters}){Environment.NewLine}        => {procedure}({arguments});";
+        }
+
         return annotation + $"    {service}(){Environment.NewLine}        => {procedure}();";
     }
 
@@ -2579,10 +2659,11 @@ internal static class ApiPlanBusinessComponentWriter
             plan.Services.Any(service => string.Equals(service.Name, "List", StringComparison.OrdinalIgnoreCase)),
             plan.Services.Any(service => string.Equals(service.Name, "Get", StringComparison.OrdinalIgnoreCase)),
             plan.Services.Any(service => string.Equals(service.Name, "Create", StringComparison.OrdinalIgnoreCase)),
-            plan.Services.Any(service => string.Equals(service.Name, "Update", StringComparison.OrdinalIgnoreCase)));
+            plan.Services.Any(service => string.Equals(service.Name, "Update", StringComparison.OrdinalIgnoreCase)),
+            plan.Services.Any(service => string.Equals(service.Name, "Delete", StringComparison.OrdinalIgnoreCase)));
     }
 
-    private static string CreateApiEvents(bool includeList, bool includeGet, bool includeCreate, bool includeUpdate)
+    private static string CreateApiEvents(bool includeList, bool includeGet, bool includeCreate, bool includeUpdate, bool includeDelete = false)
     {
         var events = new List<string>();
         if (includeList)
@@ -2603,6 +2684,11 @@ internal static class ApiPlanBusinessComponentWriter
         if (includeUpdate)
         {
             AddStatusEvent(events, "Update");
+        }
+
+        if (includeDelete)
+        {
+            AddStatusEvent(events, "Delete");
         }
 
         return string.Join(Environment.NewLine, events);
@@ -2657,8 +2743,37 @@ internal static class ApiPlanBusinessComponentWriter
             return false;
         }
 
-        return HasExpectedApiEvents(api, plan) ||
-            string.Equals(NormalizeForComparison(api.Events.Source), NormalizeForComparison(CreatePreviousB079ApiEvents()), StringComparison.Ordinal);
+        var current = NormalizeForComparison(api.Events.Source);
+        if (string.IsNullOrWhiteSpace(api.Events.Source))
+        {
+            return true;
+        }
+
+        if (HasExpectedApiEvents(api, plan))
+        {
+            return true;
+        }
+
+        if (string.Equals(current, NormalizeForComparison(CreatePreviousB079ApiEvents()), StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (plan is not null && HasService(plan, "Delete"))
+        {
+            var predecessorWithoutDelete = CreateApiEvents(
+                plan.Services.Any(service => string.Equals(service.Name, "List", StringComparison.OrdinalIgnoreCase)),
+                plan.Services.Any(service => string.Equals(service.Name, "Get", StringComparison.OrdinalIgnoreCase)),
+                plan.Services.Any(service => string.Equals(service.Name, "Create", StringComparison.OrdinalIgnoreCase)),
+                plan.Services.Any(service => string.Equals(service.Name, "Update", StringComparison.OrdinalIgnoreCase)),
+                includeDelete: false);
+            if (string.Equals(current, NormalizeForComparison(predecessorWithoutDelete), StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string ServiceAnnotations(ApiPlan plan, string service, bool includeDescriptions, bool includeRestMethod)
@@ -2679,7 +2794,7 @@ internal static class ApiPlanBusinessComponentWriter
         }
 
         annotations.Add($"    [RestPath(\"{EscapeDescription(ResolveService(plan, service).RestPath.Trim())}\")]");
-        annotations.Add($"    [SecurityLevel({plan.Security.SecurityLevel})]");
+        annotations.Add($"    [SecurityLevel({ResolveService(plan, service).ResolveSecurityLevel(plan.Security.SecurityLevel)})]");
         return string.Join(Environment.NewLine, annotations) + Environment.NewLine;
     }
 

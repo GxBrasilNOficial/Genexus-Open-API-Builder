@@ -17,7 +17,7 @@ namespace GenexusOpenApiBuilder.Extension;
 internal sealed class ExtensionConfirmDialog : Form
 {
     private const int Pad = 12;
-    private const int TargetTextWidth = 1040;
+    private const double WidthScale = 1.5;
 
     private readonly IWin32Window? _owner;
     private readonly PictureBox _iconBox;
@@ -213,55 +213,44 @@ internal sealed class ExtensionConfirmDialog : Form
         var maxHeight = Math.Max(360, working.Height - 32);
         var maxWidth = Math.Max(640, working.Width - 32);
         var minimumHeight = Math.Min(420, maxHeight);
-        var minimumWidth = Math.Min(720, maxWidth);
+        var minimumWidth = Math.Min(1080, maxWidth);
         MinimumSize = new Size(minimumWidth, minimumHeight);
         MaximumSize = new Size(maxWidth, maxHeight);
 
-        var innerWidth = Math.Max(280, Math.Min(TargetTextWidth, maxWidth) - (Pad * 2) - SystemIcons.Warning.Width - Pad);
+        var preferredWidth = MeasurePreferredWidth(plan, maxWidth, minimumWidth);
+        var innerWidth = Math.Max(280, preferredWidth - (Pad * 4) - SystemIcons.Warning.Width - Pad);
         _introLabel.MaximumSize = new Size(innerWidth, 0);
         _identityLabel.MaximumSize = new Size(innerWidth, 0);
-        _notesLabel.MaximumSize = new Size(Math.Max(280, maxWidth - (Pad * 4)), 0);
-        _confirmLabel.MaximumSize = new Size(Math.Max(280, maxWidth - (Pad * 4)), 0);
+        _notesLabel.MaximumSize = new Size(Math.Max(280, preferredWidth - (Pad * 4)), 0);
+        _confirmLabel.MaximumSize = new Size(Math.Max(280, preferredWidth - (Pad * 4)), 0);
 
-        var preferredWidth = MeasurePreferredWidth(plan, maxWidth, minimumWidth);
-        var preferredHeight = MeasurePreferredHeight(preferredWidth);
-        preferredHeight = Math.Min(Math.Max(preferredHeight, minimumHeight), maxHeight);
-        Size = new Size(preferredWidth, preferredHeight);
+        Size = new Size(preferredWidth, maxHeight);
         CenterInWorkingArea(working);
     }
 
     private int MeasurePreferredWidth(ApiPlanGeneratedApiRemovalPlan plan, int maxWidth, int minimumWidth)
     {
-        var longest = plan.OwnSdtNames
+        var headerWidth = new[]
+            {
+                TextRenderer.MeasureText(_identityLabel.Text ?? string.Empty, _identityLabel.Font).Width,
+                TextRenderer.MeasureText(_introLabel.Text ?? string.Empty, _introLabel.Font).Width,
+            }
+            .Max();
+        var listWidth = plan.OwnSdtNames
             .Concat(plan.ProcedureNames)
             .Concat(plan.SharedSdtNamesPreserved)
+            .Select(name => "  - " + name)
             .DefaultIfEmpty(string.Empty)
-            .Max(name => name.Length);
-        var sample = "  - " + new string('W', Math.Max(24, longest));
-        var lineWidth = TextRenderer.MeasureText(sample, _bodyBox.Font).Width + 48;
+            .Max(line => TextRenderer.MeasureText(line, _bodyBox.Font).Width);
         var chrome = Width - ClientSize.Width;
         if (chrome < 16)
         {
             chrome = 24;
         }
 
-        return Math.Min(Math.Max(lineWidth + chrome + (Pad * 2), minimumWidth), maxWidth);
-    }
-
-    private int MeasurePreferredHeight(int width)
-    {
-        var headerHeight = _header.GetPreferredSize(new Size(width, 0)).Height;
-        var footerHeight = _footer.GetPreferredSize(new Size(width, 0)).Height;
-        var lineHeight = Math.Max(16, TextRenderer.MeasureText("Ag", _bodyBox.Font).Height + 1);
-        var lineCount = Math.Max(1, _bodyBox.Lines.Length);
-        var bodyHeight = (lineCount * lineHeight) + 24;
-        var chrome = Height - ClientSize.Height;
-        if (chrome < 32)
-        {
-            chrome = 48;
-        }
-
-        return headerHeight + footerHeight + bodyHeight + chrome + (Pad * 2);
+        var contentWidth = Math.Max(headerWidth, listWidth) + chrome + (Pad * 4) + SystemIcons.Warning.Width;
+        var scaledWidth = (int)Math.Ceiling(contentWidth * WidthScale);
+        return Math.Min(Math.Max(scaledWidth, minimumWidth), maxWidth);
     }
 
     private Rectangle GetTargetWorkingArea()

@@ -47,7 +47,7 @@ foreach ($pattern in $expectedNestedPatterns) {
 }
 
 # 2. Servicos suportados no plano (o operationId apiNome.Servico e emitido pelo GeneXus)
-$expectedServices = @('List', 'Get', 'Create', 'Update')
+$expectedServices = @('List', 'Get', 'Create', 'Update', 'Delete')
 foreach ($service in $expectedServices) {
     Assert-Contains $apiPlanSource $service "O servico '$service' deve permanecer suportado em ApiPlan.cs."
 }

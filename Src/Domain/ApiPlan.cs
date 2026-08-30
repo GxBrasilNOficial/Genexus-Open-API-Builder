@@ -88,7 +88,8 @@ internal static class ApiPlanBuilder
             review.ApiName,
             review.RestPath,
             primaryKey,
-            preserveExistingServiceContract ? existingApiContract : null);
+            preserveExistingServiceContract ? existingApiContract : null,
+            review.DeleteSecurityLevel);
         var security = ApiPlanSecurity.CreateResolved(review.SecurityLevel);
         var names = ApiPlanNames.Create(transaction.Name, contract.SelectedServices);
         var levels = ResolveHierarchicalLevels(selection);
@@ -242,20 +243,22 @@ internal static class ApiPlanBuilder
         string apiName,
         string restPath,
         IReadOnlyList<ApiPlanField> primaryKey,
-        PrototypeWizardExistingApiContract? existingApiContract)
+        PrototypeWizardExistingApiContract? existingApiContract,
+        string? deleteSecurityLevel)
     {
         return selectedServices
             .Select(service => existingApiContract is not null && existingApiContract.TryGetService(service, out var existingService)
                 ? new ApiPlanService(
                     existingService.Name,
                     existingService.HttpMethod,
-                    existingService.RestPath ?? CreateService(service, apiName, restPath, primaryKey).RestPath,
-                    existingService.OperationId ?? apiName + "." + existingService.Name)
-                : CreateService(service, apiName, restPath, primaryKey))
+                    existingService.RestPath ?? CreateService(service, apiName, restPath, primaryKey, deleteSecurityLevel).RestPath,
+                    existingService.OperationId ?? apiName + "." + existingService.Name,
+                    existingService.SecurityLevel)
+                : CreateService(service, apiName, restPath, primaryKey, deleteSecurityLevel))
             .ToArray();
     }
 
-    private static ApiPlanService CreateService(string serviceName, string apiName, string restPath, IReadOnlyList<ApiPlanField> primaryKey)
+    private static ApiPlanService CreateService(string serviceName, string apiName, string restPath, IReadOnlyList<ApiPlanField> primaryKey, string? deleteSecurityLevel)
     {
         var upperService = serviceName.ToUpperInvariant();
         if (upperService == "LIST")
@@ -276,6 +279,16 @@ internal static class ApiPlanBuilder
         if (upperService == "UPDATE")
         {
             return new ApiPlanService("Update", "PUT", AppendKeyPath(restPath, primaryKey), apiName + ".Update");
+        }
+
+        if (upperService == "DELETE")
+        {
+            return new ApiPlanService(
+                "Delete",
+                "DELETE",
+                AppendKeyPath(restPath, primaryKey),
+                apiName + ".Delete",
+                deleteSecurityLevel);
         }
 
         return new ApiPlanService(serviceName, string.Empty, restPath, apiName + "." + serviceName);
@@ -321,6 +334,11 @@ internal static class ApiPlanBuilder
         if (string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase))
         {
             return "Update " + transactionDescriptionSubject;
+        }
+
+        if (string.Equals(serviceName, "Delete", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Delete " + transactionDescriptionSubject;
         }
 
         return serviceName + " " + transactionDescriptionSubject;
@@ -1052,12 +1070,14 @@ internal sealed class ApiPlanServiceDescription
 
 internal sealed class ApiPlanService
 {
-    public ApiPlanService(string name, string httpMethod, string restPath, string operationId)
+    public ApiPlanService(string name, string httpMethod, string restPath, string operationId, string? securityLevel = null)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
         HttpMethod = httpMethod ?? throw new ArgumentNullException(nameof(httpMethod));
         RestPath = restPath ?? throw new ArgumentNullException(nameof(restPath));
         OperationId = operationId ?? throw new ArgumentNullException(nameof(operationId));
+        var trimmedSecurity = (securityLevel ?? string.Empty).Trim();
+        SecurityLevel = trimmedSecurity.Length == 0 ? null : trimmedSecurity;
     }
 
     public string Name { get; }
@@ -1067,6 +1087,19 @@ internal sealed class ApiPlanService
     public string RestPath { get; }
 
     public string OperationId { get; }
+
+    public string? SecurityLevel { get; }
+
+    public string ResolveSecurityLevel(string planSecurityLevel)
+    {
+        var own = SecurityLevel;
+        if (own is null || string.IsNullOrWhiteSpace(own))
+        {
+            return planSecurityLevel;
+        }
+
+        return own;
+    }
 }
 
 internal sealed class ApiPlanNames

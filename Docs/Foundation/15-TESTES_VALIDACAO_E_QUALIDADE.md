@@ -151,19 +151,18 @@ Validar geração de:
 - Get
 - Create
 - Update
+- Delete (opt-in; ausente quando desmarcado)
 - Create com status 201
 - Update com PUT e status 200
 - List sem resultados com 200, coleção vazia e totais zero
-- operationIds no padrão `apiCliente.List`, `apiCliente.Get`, `apiCliente.Create` e `apiCliente.Update`
+- operationIds no padrão `apiCliente.List`, `apiCliente.Get`, `apiCliente.Create` e `apiCliente.Update` (e `apiCliente.Delete` quando o serviço estiver marcado)
 - descrições `[Description]` curtas nos serviços selecionados
 
-Não deve existir endpoint `Delete` no MVP.
+Não deve existir endpoint `Delete` **enquanto o serviço estiver desmarcado** (padrão). Marcado, valem `proc*_API_Delete`, a rota `Delete`, o `operationId` `api*.Delete` e o contrato `200` / `404` / `422` (`B100`, 2026-08-30).
 
-**Nota de revisão — 2026-08-23:**
+**Nota de revisão — 2026-08-23 / correção 2026-08-24 / fechamento 2026-08-30:**
 
-**Quanto ao `Delete` (`B100`):** o critério acima vale **integralmente** enquanto o `B100` não for implementado. A lista de serviços gerados é fechada em `List`, `Get`, `Create` e `Update` (`PrototypeWizardContract.ServiceNames`); não existe checkbox de `Delete` no Wizard, nem Procedure, nem rota. Um teste na forma absoluta é hoje o comportamento **correto**, não um falso positivo.
-
-**Condicionamento futuro, quando o `B100` for entregue:** o critério passa a ser: não deve existir endpoint `Delete` com o serviço desmarcado — que será o padrão, desligado; marcado, valem `procCliente_API_Delete`, a rota `Delete`, o `operationId` `apiCliente.Delete` e o contrato `200` com a chave removida, `404` em registro inexistente e `422` com `Code = "validation_error"` na recusa do Business Component. Este parágrafo descreve estado futuro e **não** afrouxa o critério corrente. **Correção de 2026-08-24:** a redação anterior condicionava o critério desde já, descrevendo como vigente uma UI que não existe — um `Delete` parcialmente implementado não seria reprovado por ela.
+Até o `B100`, o critério absoluto (“não deve existir endpoint Delete”) era o comportamento correto. O condicionamento ao checkbox foi escrito cedo demais em 2026-08-23 e revertido em 2026-08-24. Desde 2026-08-30 o critério vigente é o do parágrafo anterior.
 
 **Quanto a subníveis (B095–B099 + Fase 7):** o critério abaixo é da frente completa. Hoje (Fase 7 concluída em 2026-08-28): metadata V2 hierárquica; Sync e Remover operacionais (sem falso positivo SDT raiz); Wizard poda `Levels` e relê a seleção no reencontro; plano offline emite SDTs derivados, Source BC com `<Subnível>Replace` e `List` com `ListResponse_Item` + contadores; smoke HTTP multinível validado na Fase 5-A (`B099v`). Required de linha é só UI. Gates `tests.wizardHierarchical`, `tests.wizardLifecycle`, `tests.sdtHierarchicalPlan`, `tests.businessComponentHierarchical`, `tests.listHierarchical`, `tests.metadataHierarchical`.
 

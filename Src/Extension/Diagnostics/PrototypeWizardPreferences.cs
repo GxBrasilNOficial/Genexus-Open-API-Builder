@@ -41,6 +41,8 @@ internal sealed class PrototypeWizardPreferences
 
     public bool UpdateServiceByDefault { get; set; } = true;
 
+    public bool DeleteServiceByDefault { get; set; }
+
     public string SecurityLevelByDefault { get; set; } = SecurityLevelAuthentication;
 
     public int DefaultPageSizeByDefault { get; set; } = DefaultPageSizeFallback;
@@ -68,6 +70,7 @@ internal sealed class PrototypeWizardPreferences
             GetServiceByDefault = GetServiceByDefault,
             CreateServiceByDefault = CreateServiceByDefault,
             UpdateServiceByDefault = UpdateServiceByDefault,
+            DeleteServiceByDefault = DeleteServiceByDefault,
             SecurityLevelByDefault = SecurityLevelByDefault,
             DefaultPageSizeByDefault = DefaultPageSizeByDefault,
             MaximumPageSizeByDefault = MaximumPageSizeByDefault,
@@ -99,6 +102,7 @@ internal sealed class PrototypeWizardPreferences
             GetServiceByDefault = values.GetServiceByDefault,
             CreateServiceByDefault = values.CreateServiceByDefault,
             UpdateServiceByDefault = values.UpdateServiceByDefault,
+            DeleteServiceByDefault = values.DeleteServiceByDefault,
             SecurityLevelByDefault = values.SecurityLevelByDefault,
             DefaultPageSizeByDefault = values.DefaultPageSizeByDefault,
             MaximumPageSizeByDefault = values.MaximumPageSizeByDefault,
@@ -120,6 +124,7 @@ internal sealed class PrototypeWizardPreferences
             GetServiceByDefault = GetServiceByDefault,
             CreateServiceByDefault = CreateServiceByDefault,
             UpdateServiceByDefault = UpdateServiceByDefault,
+            DeleteServiceByDefault = DeleteServiceByDefault,
             SecurityLevelByDefault = SecurityLevelByDefault,
             DefaultPageSizeByDefault = DefaultPageSizeByDefault,
             MaximumPageSizeByDefault = MaximumPageSizeByDefault,

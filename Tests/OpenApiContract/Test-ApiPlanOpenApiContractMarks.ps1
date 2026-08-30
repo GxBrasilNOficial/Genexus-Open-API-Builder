@@ -87,7 +87,7 @@ Assert-NotContains $apiObjectWriterSource 'REST API for {apiPlan.TransactionName
 
 # 4. Security Level explicitamente aplicado nos servicos do API Object.
 
-Assert-Contains $businessComponentWriterSource 'annotations.Add($"    [SecurityLevel({plan.Security.SecurityLevel})]");' 'Writer de Business Component deve aplicar SecurityLevel em cada servico do API Object.'
-Assert-Contains $listProcedureWriterSource 'annotations.Add($"    [SecurityLevel({plan.Security.SecurityLevel})]");' 'Writer de List deve aplicar SecurityLevel em cada servico do API Object.'
+Assert-Contains $businessComponentWriterSource 'ResolveSecurityLevel(plan.Security.SecurityLevel)' 'Writer de Business Component deve aplicar SecurityLevel por servico, com fallback no nivel da API.'
+Assert-Contains $listProcedureWriterSource 'ResolveSecurityLevel(plan.Security.SecurityLevel)' 'Writer de List deve aplicar SecurityLevel por servico, com fallback no nivel da API.'
 
 Write-Output 'PASS: ApiPlanOpenApiContractMarks'

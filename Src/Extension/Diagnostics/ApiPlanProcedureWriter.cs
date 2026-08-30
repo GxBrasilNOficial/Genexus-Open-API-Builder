@@ -113,6 +113,11 @@ internal static class ApiPlanProcedureWriter
             return "B053";
         }
 
+        if (string.Equals(serviceName, "Delete", StringComparison.OrdinalIgnoreCase))
+        {
+            return "B100";
+        }
+
         return "B050-B053";
     }
 
