@@ -226,6 +226,14 @@ public static class ApiPlanServiceSourceContract
         }
 
         if (hasRestRuntimeContract &&
+            validateRestMethods &&
+            normalizedServices.Any(service => string.Equals(service, "Delete", StringComparison.OrdinalIgnoreCase)) &&
+            compactSource.IndexOf("[RestMethod(DELETE)]", StringComparison.Ordinal) < 0)
+        {
+            return false;
+        }
+
+        if (hasRestRuntimeContract &&
             validateSecurityLevel &&
             compactSource.IndexOf("[SecurityLevel(", StringComparison.Ordinal) < 0)
         {
@@ -235,7 +243,10 @@ public static class ApiPlanServiceSourceContract
         if (hasRestRuntimeContract &&
             validateRestMethods &&
             normalizedPrimaryKeyNames.Length > 0 &&
-            normalizedServices.Any(service => string.Equals(service, "Get", StringComparison.OrdinalIgnoreCase) || string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase)) &&
+            normalizedServices.Any(service =>
+                string.Equals(service, "Get", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(service, "Delete", StringComparison.OrdinalIgnoreCase)) &&
             !normalizedPrimaryKeyNames.All(name => compactSource.IndexOf("{&" + name + "}", StringComparison.Ordinal) >= 0))
         {
             return false;
@@ -277,6 +288,11 @@ public static class ApiPlanServiceSourceContract
             return "Get(" + string.Join(",", primaryKeyNames.Select(name => "in:&" + name).Concat(exposeErrorResponse ? new[] { "out:&GetResponse", "out:&ErrorResponse" } : new[] { "out:&GetResponse" })) + ")";
         }
 
+        if (hasRestRuntimeContract && string.Equals(service, "Delete", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Delete(" + string.Join(",", primaryKeyNames.Select(name => "in:&" + name).Concat(exposeErrorResponse ? new[] { "out:&ErrorResponse" } : Array.Empty<string>())) + ")";
+        }
+
         if (!includeBusinessComponentParameters || (!string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase) && !string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase)))
         {
             return service + "()";
@@ -315,6 +331,11 @@ public static class ApiPlanServiceSourceContract
         if (hasRestRuntimeContract && string.Equals(service, "Get", StringComparison.OrdinalIgnoreCase))
         {
             return string.Join(",", primaryKeyNames.Select(name => "&" + name).Concat(new[] { "&GetResponse", "&ErrorResponse", "&RestStatusCode" }));
+        }
+
+        if (hasRestRuntimeContract && string.Equals(service, "Delete", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Join(",", primaryKeyNames.Select(name => "&" + name).Concat(new[] { "&ErrorResponse", "&RestStatusCode" }));
         }
 
         if (!includeBusinessComponentParameters)

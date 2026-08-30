@@ -7,7 +7,8 @@ $readerPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\Prototype
 $existingReaderPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\PrototypeWizardExistingApiContractReader.cs'
 $packagePath = Join-Path $PSScriptRoot '..\..\Src\Extension\Package.cs'
 $dialogPath = Join-Path $PSScriptRoot '..\..\Src\Extension\PrototypeWizardDialog.cs'
-foreach ($path in @($readerPath, $existingReaderPath, $packagePath, $dialogPath)) {
+$apiPlanPath = Join-Path $PSScriptRoot '..\..\Src\Domain\ApiPlan.cs'
+foreach ($path in @($readerPath, $existingReaderPath, $packagePath, $dialogPath, $apiPlanPath)) {
     if (-not (Test-Path -LiteralPath $path)) {
         throw "SOURCE_MISSING: $path"
     }
@@ -24,6 +25,7 @@ $reader = [IO.File]::ReadAllText($readerPath)
 $existingReader = [IO.File]::ReadAllText($existingReaderPath)
 $package = [IO.File]::ReadAllText($packagePath)
 $dialog = [IO.File]::ReadAllText($dialogPath)
+$apiPlan = [IO.File]::ReadAllText($apiPlanPath)
 
 Assert-Contains $reader 'Read(KBModel designModel, Transaction transaction)' 'O snapshot do Wizard deve aceitar a KB ativa para reencounter.'
 Assert-Contains $reader 'existingApiContract.FiltersAvailable ? false : filter.DefaultSelected' 'Com contrato de filtros existente, campos novos nao devem voltar aos defaults de uma API nova.'
@@ -42,7 +44,9 @@ Assert-Contains $existingReader 'ApiPlanOwnedObjectDescription.IsCanonical(api.D
 Assert-Contains $existingReader 'GeneratedProcedureCallPattern.Matches(source)' 'A descoberta sem metadata deve exigir chamada a Procedure gerada para a Transaction.'
 Assert-Contains $existingReader '.Concat(ownedMatches)' 'Sem metadata, o reader deve considerar em conjunto o nome convencional e APIs customizadas próprias.'
 Assert-Contains $existingReader 'return candidates.Length == 1 ? candidates[0] : null;' 'API Objects candidatos ambíguos não devem ser escolhidos arbitrariamente.'
-Assert-Contains $existingReader 'ServiceBlockPattern' 'A leitura deve localizar os serviços persistidos.'
+Assert-Contains $existingReader '(?<service>List|Get|Create|Update|Delete)' 'A regex de Service Source deve reconhecer o Delete opt-in além de List/Get/Create/Update.'
+Assert-Contains $existingReader '_API_(?:List|Get|Create|Update|Delete)' 'A descoberta por Procedure gerada deve aceitar proc*_API_Delete.'
+Assert-Contains $existingReader 'item["securityLevel"]?.Value<string>()' 'A metadata deve restaurar o SecurityLevel por serviço, inclusive o do Delete.'
 Assert-Contains $existingReader '(?<![\w.])' 'A regex de Service Source deve ignorar chamadas como procX_API_List e Modulo.List.'
 Assert-Contains $existingReader 'DuplicateServiceNames' 'Duplicidade real no Service Source deve ser reportada, nao convertida em excecao.'
 Assert-Contains $existingReader 'fields.listFilters' 'A metadata deve ser fallback para os filtros persistidos.'
@@ -70,5 +74,7 @@ Assert-Contains $dialog 'ReadForIntentionalChange(_designModel, _transaction' 'O
 Assert-Contains $dialog 'HasGetCreateUpdateServices' 'A etapa Get/Create/Update REST só fica disponível com os três serviços selecionados.'
 Assert-Contains $dialog 'Bloqueado: marque Get, Create e Update nos Serviços' 'Sem Create/Update o Wizard deve bloquear a etapa BC com motivo explícito.'
 Assert-Contains $dialog 'WireServiceSelectionRefresh' 'Mudança de serviços deve recalcular a disponibilidade da etapa BC.'
+Assert-Contains $apiPlan 'string.Equals(service, "Delete", StringComparison.OrdinalIgnoreCase)' 'No reencontro, o SecurityLevel do Delete deve seguir a escolha do Wizard, nao o valor vazio da metadata antiga.'
+Assert-Contains $apiPlan '&& !string.IsNullOrWhiteSpace(deleteSecurityLevel)' 'O combo do Delete so prevalece quando o review trouxe um nivel explicito.'
 
 Write-Output 'PASS: PrototypeWizardExistingApiFilters'

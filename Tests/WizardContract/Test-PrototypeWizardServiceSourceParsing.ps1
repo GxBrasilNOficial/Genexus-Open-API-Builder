@@ -112,15 +112,27 @@ $fullSource = @'
     [RestPath("/notafiscal/{&NotaFiscalId}")]
     Update(in: &NotaFiscalId, in: &UpdateRequest, out: &UpdateResponse)
         => procNotaFiscal_API_Update(&NotaFiscalId, &UpdateRequest, &UpdateResponse);
+
+    [RestMethod(DELETE)]
+    [RestPath("/notafiscal/{&NotaFiscalId}")]
+    [SecurityLevel(Authorization)]
+    Delete(in: &NotaFiscalId, out: &ErrorResponse)
+        => procNotaFiscal_API_Delete(&NotaFiscalId, &ErrorResponse, &RestStatusCode);
 '@
 
 $fullMatches = @($serviceBlock.Matches($fullSource))
-Assert-True ($fullMatches.Count -eq 4) "O Source completo deve produzir exatamente 4 declarações; obtido $($fullMatches.Count)."
+Assert-True ($fullMatches.Count -eq 5) "O Source completo deve produzir exatamente 5 declarações; obtido $($fullMatches.Count)."
 
 $fullNames = @($fullMatches | ForEach-Object { $_.Groups['service'].Value })
-foreach ($expected in @('List', 'Get', 'Create', 'Update')) {
+foreach ($expected in @('List', 'Get', 'Create', 'Update', 'Delete')) {
     Assert-True (@($fullNames | Where-Object { $_ -eq $expected }).Count -eq 1) "$expected deve aparecer uma única vez no Source completo."
 }
+
+$deleteCallOnly = '        => procNotaFiscal_API_Delete(&NotaFiscalId, &ErrorResponse, &RestStatusCode);'
+Assert-True (@($serviceBlock.Matches($deleteCallOnly)).Count -eq 0) 'A chamada proc*_API_Delete não deve ser lida como declaração do serviço Delete.'
+
+$deleteOwnedCalls = @($generatedProcedureCall.Matches($fullSource))
+Assert-True (@($deleteOwnedCalls | Where-Object { $_.Groups['transaction'].Value -eq 'NotaFiscal' }).Count -ge 5) 'A regex de Procedure gerada deve incluir procNotaFiscal_API_Delete.'
 
 # Duplicidade real do Source é tolerada pelo leitor e reportada, não convertida em exceção.
 Assert-Contains $readerText 'declaredServiceNames' 'O leitor deve rastrear os nomes de serviço já declarados.'

@@ -27,7 +27,7 @@ internal static class PrototypeWizardExistingApiContractReader
     // O lookbehind exclui o sufixo das chamadas geradas (procX_API_List(...), Modulo.List(...)),
     // que antes era lido como uma segunda declaração do mesmo serviço.
     private static readonly Regex ServiceBlockPattern = new(
-        @"(?<annotations>(?:\s*\[[^\r\n]*\]\s*)*)(?<![\w.])(?<service>List|Get|Create|Update)\s*\((?<parameters>[^)]*)\)",
+        @"(?<annotations>(?:\s*\[[^\r\n]*\]\s*)*)(?<![\w.])(?<service>List|Get|Create|Update|Delete)\s*\((?<parameters>[^)]*)\)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     private static readonly Regex InputParameterPattern = new(
@@ -39,7 +39,7 @@ internal static class PrototypeWizardExistingApiContractReader
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     private static readonly Regex GeneratedProcedureCallPattern = new(
-        @"\bproc(?<transaction>[A-Za-z_][A-Za-z0-9_]*)_API_(?:List|Get|Create|Update)\s*\(",
+        @"\bproc(?<transaction>[A-Za-z_][A-Za-z0-9_]*)_API_(?:List|Get|Create|Update|Delete)\s*\(",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     public static PrototypeWizardExistingApiContract Read(KBModel designModel, Transaction transaction)
@@ -530,6 +530,7 @@ internal static class PrototypeWizardExistingApiContractReader
                 HttpMethod = item["httpMethod"]?.Value<string>(),
                 RestPath = item["restPath"]?.Value<string>(),
                 OperationId = item["operationId"]?.Value<string>(),
+                SecurityLevel = item["securityLevel"]?.Value<string>(),
             })
             .Where(item => !string.IsNullOrWhiteSpace(item.Name))
             .GroupBy(item => item.Name!, StringComparer.OrdinalIgnoreCase)
@@ -540,7 +541,8 @@ internal static class PrototypeWizardExistingApiContractReader
                     group.First().HttpMethod ?? "GET",
                     group.First().RestPath,
                     group.First().OperationId,
-                    group.First().Description),
+                    group.First().Description,
+                    group.First().SecurityLevel),
                 StringComparer.OrdinalIgnoreCase);
         return new ExistingApiMetadataServiceSelection(true, values.Keys, values);
     }

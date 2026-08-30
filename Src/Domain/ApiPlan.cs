@@ -247,14 +247,25 @@ internal static class ApiPlanBuilder
         string? deleteSecurityLevel)
     {
         return selectedServices
-            .Select(service => existingApiContract is not null && existingApiContract.TryGetService(service, out var existingService)
-                ? new ApiPlanService(
+            .Select(service =>
+            {
+                if (existingApiContract is null || !existingApiContract.TryGetService(service, out var existingService))
+                {
+                    return CreateService(service, apiName, restPath, primaryKey, deleteSecurityLevel);
+                }
+
+                var created = CreateService(service, apiName, restPath, primaryKey, deleteSecurityLevel);
+                var securityLevel = string.Equals(service, "Delete", StringComparison.OrdinalIgnoreCase)
+                    && !string.IsNullOrWhiteSpace(deleteSecurityLevel)
+                    ? deleteSecurityLevel
+                    : existingService.SecurityLevel;
+                return new ApiPlanService(
                     existingService.Name,
                     existingService.HttpMethod,
-                    existingService.RestPath ?? CreateService(service, apiName, restPath, primaryKey, deleteSecurityLevel).RestPath,
+                    existingService.RestPath ?? created.RestPath,
                     existingService.OperationId ?? apiName + "." + existingService.Name,
-                    existingService.SecurityLevel)
-                : CreateService(service, apiName, restPath, primaryKey, deleteSecurityLevel))
+                    securityLevel);
+            })
             .ToArray();
     }
 

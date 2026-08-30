@@ -121,4 +121,23 @@ Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceCo
 $b079WithoutSecurityLevelOrPost = $b079WithoutSecurityLevel -replace '(?m)^\s*\[RestMethod\(POST\)\]\r?\n', ''
 Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesPreviousB079SecurityLevelContract($b079WithoutSecurityLevelOrPost, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'MatchesPreviousB079SecurityLevelContract deve rejeitar fontes sem RestMethod(POST).'
 
+[string[]]$servicesWithDelete = @('List', 'Get', 'Create', 'Update', 'Delete')
+$b079WithDelete = $b079.Replace(
+    '        => Entities.procSimulationResult_API_Update(&SimulationResultId, &UpdateRequest, &UpdateResponse, &ErrorResponse, &RestStatusCode);',
+    @'
+        => Entities.procSimulationResult_API_Update(&SimulationResultId, &UpdateRequest, &UpdateResponse, &ErrorResponse, &RestStatusCode);
+    [RestMethod(DELETE)]
+    [RestPath("/simulationresult/{&SimulationResultId}")]
+    [SecurityLevel(Authentication)]
+    Delete(in: &SimulationResultId, out: &ErrorResponse)
+        => Entities.procSimulationResult_API_Delete(&SimulationResultId, &ErrorResponse, &RestStatusCode);
+'@)
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079($b079WithDelete, 'apiSimulationResult', 'SimulationResult', 'Entities', $servicesWithDelete, $primaryKey, $listFilters, $true)) 'B079 deve reconhecer Delete com PK, ErrorResponse e RestStatusCode.'
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079($b079, 'apiSimulationResult', 'SimulationResult', 'Entities', $servicesWithDelete, $primaryKey, $listFilters, $true)) 'B079 deve recusar plano com Delete quando o Source ainda nao declara o servico.'
+$b079WithDeleteWithoutMethod = $b079WithDelete -replace '(?m)^\s*\[RestMethod\(DELETE\)\]\r?\n', ''
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079($b079WithDeleteWithoutMethod, 'apiSimulationResult', 'SimulationResult', 'Entities', $servicesWithDelete, $primaryKey, $listFilters, $true)) 'B079 deve exigir Delete exposto como DELETE no API Object.'
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesPreviousB079RestMethodContract($b079WithDeleteWithoutMethod, 'apiSimulationResult', 'SimulationResult', 'Entities', $servicesWithDelete, $primaryKey, $listFilters, $true)) 'B079 anterior sem RestMethod(DELETE) deve permanecer migravel.'
+$b079WithDeleteInternalErrorOnly = $b079WithDelete.Replace(', out: &ErrorResponse)', ')')
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079InternalErrorOnly($b079WithDeleteInternalErrorOnly, 'apiSimulationResult', 'SimulationResult', 'Entities', $servicesWithDelete, $primaryKey, $listFilters, $true)) 'B079 legado deve reconhecer Delete com ErrorResponse apenas interno.'
+
 Write-Output 'PASS: ApiPlanServiceSourceContract'

@@ -18,6 +18,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 - Documentação pública (README ×3, `DEMO`) e contratos 15/27: `Delete` deixa de ser “inexistente no MVP” e passa a opt-in. O corte `0.1.0-alpha.6` (tag, notas, dois assets DLL) permanece sob autorização humana.
 - README ×3 (“O que gera”) e `DEMO` passam a citar `Delete` opt-in; o teste de reencontro de serviços do Wizard trava a forma atual de `ResolveExistingServiceSelection`.
+- Reencontro do `Delete`: o leitor de Service Source e de metadata passa a ver o serviço e o `securityLevel` por item; o matcher B079 reconhece a assinatura atual (`PK` + `ErrorResponse` + `RestStatusCode`); o Apply usa o combo do Delete em vez de um `SecurityLevel` vazio herdado do contrato existente.
 
 ---
 
