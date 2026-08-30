@@ -1,6 +1,6 @@
 # Demo rápida — Genexus Open API Builder
 
-Roteiro visual da Alpha `0.1.0-alpha.4` (Transaction de exemplo: `NotaFiscal`).
+Roteiro visual da Alpha `0.1.0-alpha.5` (Transaction de exemplo: `NotaFiscal`).
 
 Use sempre uma **KB de teste**, com backup. Não execute na KB de produção.
 
@@ -185,7 +185,7 @@ Confirmação com o plano: objetos próprios a apagar, SDTs compartilhados e Fol
 - Classificação de campos sensíveis/auditoria ainda usa política default
 - Validação prática principal no Upgrade 15
 
-Detalhes: [notas 0.1.0-alpha.4](../Releases/0.1.0-alpha.4.md).
+Detalhes: [notas 0.1.0-alpha.5](../Releases/0.1.0-alpha.5.md).
 
 ## Índice das capturas
 

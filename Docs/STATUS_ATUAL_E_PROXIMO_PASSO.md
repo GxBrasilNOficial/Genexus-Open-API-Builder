@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-08-29.
+2026-08-30.
 
 ## Último marco concluído
 
@@ -125,13 +125,13 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 Sprint 9 — Suporte a Transactions com Subníveis (Multinível — B095–B099), precedida por `B102` e seguida por `B100`. Levantamento de profundidade na KB de produção (`Gx_FabricaBrasil`), especificações funcionais e plano por fases consolidados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, na `Emenda técnica — 2026-08-20`, na `Emenda técnica — 2026-08-23` e na `Emenda técnica — 2026-08-23 (complemento)` do registro de decisões do MVP.
 
-Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; **conferência de fim em 2026-08-28**, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100` (serviço `Delete`). Publicação em três cortes: `0.1.0-alpha.4` após `B102` (este corte, 2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis (próximo corte), e `0.1.0-alpha.6` com o `Delete`, cada um com os dois assets DLL. `B105` entra na sprint apenas se houver folga.
+Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; **conferência de fim em 2026-08-28**, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100` (serviço `Delete`). Publicação em três cortes: `0.1.0-alpha.4` após `B102` (2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis (este corte, 2026-08-30), e `0.1.0-alpha.6` com o `Delete`, cada um com os dois assets DLL. `B105` entra na sprint apenas se houver folga.
 
 Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibilidade e de gate: mecanismo em duas camadas para a Fase 0, ampliação de `B102`, gates próprios para `B102` e `B100` com HTTP real nos dois environments, validação do contrato OpenAPI multinível ao fim da Fase 4, retorno da linha `Gx18u13` ao plano, fechamento da regra de propagação do marcador `<Subnível>Replace`, limiares de escala, `B105` e a divisão da publicação em três cortes.
 
 ## Próxima ação única
 
-**Aguardar autorização para o corte `0.1.0-alpha.5`** (subníveis: notas trilíngues em `Docs/Releases/`, CHANGELOG, versão, dois assets DLL, GitHub Release pre-release). Gates da sprint fora das fases (critério 6 `Gx_FabricaBrasil`, critério 10 smoke U13 e critério 11 escala `Empresa`) estão fechados. Em seguida: iniciar `B100` (serviço `Delete`). A KB `wsEducacaoSpTeste` mantém `apiTeste` hierárquica após o smoke U13 de reencontro.
+**Iniciar `B100` (serviço `Delete` opt-in)** após a publicação do corte `0.1.0-alpha.5` (tag + GitHub Release pre-release, quando autorizada). O pacote documental e as duas DLLs Release deste corte já estão montados. Gates da sprint fora das fases (critério 6, 10 e 11) permanecem fechados. A KB `wsEducacaoSpTeste` mantém `apiTeste` hierárquica após o smoke U13 de reencontro.
 
 Evidências: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`, `Docs/Implementation/2026-08-28-CRITERIO6-GX-FABRICABRASIL.md`, `Docs/Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md`, `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
 
@@ -173,7 +173,7 @@ Evidências: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`, `D
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única aguarda autorização para o corte `0.1.0-alpha.5`; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é iniciar `B100` depois da publicação do corte `0.1.0-alpha.5`; o pacote do corte (notas trilíngues, CHANGELOG, versão, README/`INSTALL`/`DEMO`) está montado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
@@ -255,7 +255,8 @@ Evidências: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`, `D
 75. Em 2026-08-28 o fechamento offline da lacuna Sync hierárquico (IncludeAdded + Selected* por GUID) ficou pronto para smoke IDE com delta em `TesteItem`. ~~Próxima ação única = esse smoke.~~ **Superada** pelo item 76.
 76. Em 2026-08-28 o smoke IDE Sync com delta fechou na `Teste`/`apiTeste`: `+ TesteItemObs2`, Include Create/Update/Response, `Updated=27`, `Blocked=0`; membro `TesteItemObs2` confirmado em `sdtTeste_API_CreateRequest_TesteItem`, `…_UpdateRequest_TesteItem` e `…_Response_TesteItem`; metadata V2 `Bytes=117066`, `PlannedContractHash` `B04A8DFB…`. ~~Próxima ação = autorização do corte `0.1.0-alpha.5`, depois `B100`.~~ **Superada** pelo item 77 quanto aos gates restantes; o corte permanece sob autorização humana. Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
 77. Em 2026-08-29 o critério 10 fechou no GeneXus 18 U13: DLL satélite `InstalledMatchesBuild=True` (`SHA-256` `5C0C4707…`, `GxLine=Gx18u13`, `N=143920`); Wizard reencontro `Teste`/`apiTeste` (`SuccessWithWarnings`, `Updated=27`, `Blocked=0`); `Build All` em `NETFrameworkSQLServer004` e `NETPostgreSQL155` sem `spc0018`. HTTP fora do gate. ~~Próxima ação única = autorização do corte `0.1.0-alpha.5`, depois `B100`.~~ **Superada** pelo item 78 quanto ao critério 11; o corte permanece sob autorização humana. Evidência: `Docs/Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md`.
-78. Em 2026-08-29 o critério 11 fechou na `Empresa` (`Gx_FabricaBrasil`): skip de SDT Create vazio (`ExclusiveCreateEmpty`); apply `SuccessWithWarnings`, OwnSdts=44, Criados=50; `Build All` Success nos dois environments; critério 8; Remover `Deleted=50`, `Blocked=0`, sem órfão; BC ligado; `EmpresaOpenApi` reutilizada vazia de propósito. Alertas: abertura ~7 s, apply 107 min, Remover ~32 s sem casca. Próxima ação única = autorização do corte `0.1.0-alpha.5`, depois `B100`. Evidência: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
+78. Em 2026-08-29 o critério 11 fechou na `Empresa` (`Gx_FabricaBrasil`): skip de SDT Create vazio (`ExclusiveCreateEmpty`); apply `SuccessWithWarnings`, OwnSdts=44, Criados=50; `Build All` Success nos dois environments; critério 8; Remover `Deleted=50`, `Blocked=0`, sem órfão; BC ligado; `EmpresaOpenApi` reutilizada vazia de propósito. Alertas: abertura ~7 s, apply 107 min, Remover ~32 s sem casca. ~~Próxima ação única = autorização do corte `0.1.0-alpha.5`, depois `B100`.~~ **Superada** pelo item 79. Evidência: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
+79. Em 2026-08-30 o corte `0.1.0-alpha.5` foi preparado (CHANGELOG, notas PT/ES/EN, versão `0.1.0-alpha.5`, README/`INSTALL`/`DEMO` alinhados aos subníveis, dois assets DLL com SHA-256 nas notas). A publicação (tag + GitHub Release pre-release) exige autorização explícita nesta sessão. Próxima ação única = `B100` após essa publicação.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -304,10 +305,11 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [Release 0.1.0-alpha.2](Releases/0.1.0-alpha.2.md)
 - [Release 0.1.0-alpha.3](Releases/0.1.0-alpha.3.md)
 - [Release 0.1.0-alpha.4](Releases/0.1.0-alpha.4.md)
+- [Release 0.1.0-alpha.5](Releases/0.1.0-alpha.5.md)
 
 ## Marcos ainda não iniciados
 
-- Sprint 9 — Suporte a Transactions com Subníveis (B095–B099) e feedback da Alpha (frente atual ativa).
+- Sprint 9 — subníveis publicados em `0.1.0-alpha.5`; `B100` (`Delete`) ainda não iniciado.
 - Sprint 10 — Beta estável.
 
 ## Protocolo de atualização

@@ -10,7 +10,15 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
-### Added
+Nenhuma mudança registrada após `0.1.0-alpha.5`.
+
+---
+
+# [0.1.0-alpha.5] - 2026-08-30
+
+Release focada no suporte a Transactions com subníveis (Sprint 9, Fases 0–7).
+
+## Added
 
 - Critério 11 (Sprint 9): escala na Transaction `Empresa` (13 subníveis) na cópia `Gx_FabricaBrasil` — apply `SuccessWithWarnings` (44 SDTs próprios; skip do Create vazio de `ExclusivoEmVenda`), `Build All` Success nos dois environments, critério 8, Remover `Deleted=50` sem órfão. Alertas de tempo registrados. Evidência: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
 - Fase 7 (Sprint 9): ciclo de vida sob hierarquia — releitura de `levels` no reencontro do Wizard (`PersistedHierarchicalRoot` + `ApplyPersistedPrune`), tolerância de preferências legadas sem `schemaVersion`, inventário dinâmico de SDTs próprios na remoção (`ApiPlanGeneratedApiRemovalInventory`), Sync sem falso positivo de conflito SDT em metadata hierárquica; gates `tests.wizardLifecycle` e testes de remoção/preferências atualizados. Smoke U15 na `Teste`/`apiTeste` (apply, critério 8, Sync zero-diff, Remover preview cancelado). Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
@@ -25,6 +33,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Changed
 
+- Documentação pública (README ×3, `INSTALL`, `DEMO`) substitui a limitação de “somente o primeiro nível” pela descrição do suporte hierárquico e aponta as notas `0.1.0-alpha.5`.
 - Sprint 9: inserida a **Fase 5-A (`B099v`)** entre as Fases 5 e 6, sem renumerar as seguintes — validação em runtime do que as Fases 2 a 5 emitiram: correção da agregação `count()` com PK composta herdada, smoke HTTP multinível nos dois environments e o critério 9 (contrato OpenAPI publicado). Motivo da ordem: a Fase 6 grava metadata V2 sobre o contrato hierárquico, e defeito de Source BC ou de `List` descoberto depois custa migração de integridade. Decidido em 2026-08-27, na revisão semântica da rotina pré-push, que expôs dois gatilhos vencidos: o critério 9 devido ao fim da Fase 4 (nunca executado na parte manual) e a dívida do `count()` ancorada em "antes do smoke IDE multinível", marco já ocorrido em 2026-08-26. Os critérios 6 (`Gx_FabricaBrasil`) e 10 (smoke `Gx18u13`) permanecem gates da sprint, fora desta fase. A fase começa por reinstalar a DLL e reaplicar o Wizard: a `apiTeste` de quatro níveis hoje na KB é de 2026-08-26 e precede `8f80f39`, que mudou poda por papel, mapa BC e desambiguação de `VariableToken` — medir sobre ela seria medir o gerador antigo. Ressalva de datação registrada também na evidência do B099a. O backlog `06` desdobra a linha `B099` em `B099a` (concluído), `B099v` e `B099b`.
 
 ### Fixed
@@ -56,6 +65,19 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - `TransactionAttributeKeyTraits.IsAutonumber`: short-circuit de PK composta **antes** de `GetPropertyValueString` — se a leitura lançar em chave composta, continua `false` (não cai no fail-open `true`). O teste `Test-PrototypeWizardAutonumberCompositeKey.ps1` trava essa ordem. `IsNullable` no helper permanece null-safe (`null` → `false`, sem NRE).
 - `B107`: `Test-OpenApiClientContractValidity.ps1` deixa de ler YAML de pastas `C:\KBs\...` (falso verde e amarre à máquina). A trava do pré-push fica offline sobre `ApiPlan.cs`, incluindo `sdt_API_ErrorMessage`. Conferência de YAML publicado permanece evidência pontual na IDE.
 - Documentação e teste da Fase 1 (`B095`): o teste deixa de montar `ApiPlanLevel` à mão (falso verde) e passa a exercitar `Build` + `IsAutonumberCore` + ouro JSON; a tabela de componentes e a evidência declaram o que o offline cobre e o que fica para smoke IDE.
+
+## Validated
+
+- Smoke HTTP multinível nos environments `.NET`/PostgreSQL e `.NET Framework`/SQL Server (`apiTeste`).
+- Ciclo de vida hierárquico no U15 (Wizard, Sync, Remover); reencontro plano V1→V2.
+- Smoke U13 multinível (`Build All` nos dois environments; HTTP fora do gate).
+- Escala `Empresa` (13 subníveis) com `Build All` Success nos dois environments.
+- Linhas U14+ (canônica) e U13 (satélite) compiladas em Release para este corte.
+
+## Assets
+
+- `GenexusOpenApiBuilder.Extension.dll` — GeneXus 18 U14, U15 e posteriores U14+. SHA-256 `89CACE1F006AD9411D1BC8E6ACD24C80CBCA2151C9DAC238F8BE4A88F18DB13A`.
+- `GenexusOpenApiBuilder.Extension-gx18u13.dll` — GeneXus 18 U13. SHA-256 `0C98FF68F48830A38B53855D5DB9B3C65B2C080F22A143016A47A23E3DFDA17F`.
 
 ---
 

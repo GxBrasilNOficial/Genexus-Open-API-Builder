@@ -4,7 +4,7 @@
 
 Herramienta open source para acelerar la generación de APIs REST a partir de **Transactions GeneXus**.
 
-Alpha pública: **[`0.1.0-alpha.4`](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.4)** — elija la DLL correspondiente a su versión de GeneXus en el Release.
+Alpha pública: **[`0.1.0-alpha.5`](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.5)** — elija la DLL correspondiente a su versión de GeneXus en el Release.
 
 Menos repetición. Más entrega. Más valor para la comunidad GeneXus.
 
@@ -36,7 +36,7 @@ A partir de una Transaction:
 
 ### Contrato de error HTTP (desde `0.1.0-alpha.4`)
 
-Si el Business Component rechaza una regla, `Create` y `Update` responden **HTTP 422** con `ErrorResponse.Code = validation_error`, el texto de las rules en `Message` y la colección `Messages[]` (solo mensajes de error). El Source de cada API solo cambia al reabrir el Wizard sobre ella; el SDT compartido `sdt_API_ErrorResponse` es único en la KB, así que regenerar cualquier API actualiza el schema de error publicado por todas. Quien comparaba la cadena fija `"Business rules rejected the request."` debe pasar a decidir por el `Code`. Detalle y opción de desactivar: [notas 0.1.0-alpha.4](Docs/Releases/0.1.0-alpha.4.es.md).
+Si el Business Component rechaza una regla, `Create` y `Update` responden **HTTP 422** con `ErrorResponse.Code = validation_error`, el texto de las rules en `Message` y la colección `Messages[]` (solo mensajes de error). El Source de cada API solo cambia al reabrir el Wizard sobre ella; el SDT compartido `sdt_API_ErrorResponse` es único en la KB, así que regenerar cualquier API actualiza el schema de error publicado por todas. Quien comparaba la cadena fija `"Business rules rejected the request."` debe pasar a decidir por el `Code`. Detalle y opción de desactivar: [notas 0.1.0-alpha.4](Docs/Releases/0.1.0-alpha.4.es.md). Subniveles y el marcador `<Subnivel>Replace`: [notas 0.1.0-alpha.5](Docs/Releases/0.1.0-alpha.5.es.md).
 
 ## Estado actual
 
@@ -44,14 +44,14 @@ Si el Business Component rechaza una regla, `Create` y `Update` responden **HTTP
 |------|--------|
 | Wizard funcional del MVP | Completado (GeneXus 18 U15) |
 | Ciclo de vida (propiedad, sincronización, eliminación, informe) | Completado |
-| Alpha pública `0.1.0-alpha.4` | Paquete de esta release, con assets U14+ y U13 |
+| Alpha pública `0.1.0-alpha.5` | Paquete de esta release (subniveles), con assets U14+ y U13 |
 | Upgrade 13 | DLL satélite `GenexusOpenApiBuilder.Extension-gx18u13.dll` validada en U13 |
 | Upgrade 14 | Confirmado por un usuario externo (Alpha `0.1.0-alpha.1`; carga + generación) |
 | Upgrade 15 | Base del desarrollo; uso confirmado por un usuario externo mediante el camino del mantenedor (build local + `Install-ExtensionForGeneXus18.bat`) |
 
 ### Qué DLL descargar
 
-El Release `0.1.0-alpha.4` contiene dos DLLs. Instale solamente la correspondiente a su instalación:
+El Release `0.1.0-alpha.5` contiene dos DLLs. Instale solamente la correspondiente a su instalación:
 
 | Archivo en el GitHub Release | Sirve para | Observación |
 |---|---|---|
@@ -72,7 +72,7 @@ El sufijo `-gx18u13` identifica solamente el asset de descarga. No cambie el nom
 
 1. [Instalar la extensión](Docs/Public/INSTALL.md)
 2. [Seguir la demo rápida](Docs/Public/DEMO.md)
-3. Leer las [notas de la Alpha](Docs/Releases/0.1.0-alpha.4.es.md)
+3. Leer las [notas de la Alpha](Docs/Releases/0.1.0-alpha.5.es.md)
 
 ## Capturas
 
@@ -138,7 +138,7 @@ Detalles: [Docs/Public/INSTALL.md](Docs/Public/INSTALL.md).
 | [INSTALL](Docs/Public/INSTALL.md) | Instalación |
 | [DEMO](Docs/Public/DEMO.md) | Guion corto |
 | [CHANGELOG](CHANGELOG.md) | Historial de cambios |
-| [0.1.0-alpha.4](Docs/Releases/0.1.0-alpha.4.es.md) | Notas ES; [PT-BR](Docs/Releases/0.1.0-alpha.4.md); [EN](Docs/Releases/0.1.0-alpha.4.en.md) — elección de la DLL |
+| [0.1.0-alpha.5](Docs/Releases/0.1.0-alpha.5.es.md) | Notas ES; [PT-BR](Docs/Releases/0.1.0-alpha.5.md); [EN](Docs/Releases/0.1.0-alpha.5.en.md) — elección de la DLL |
 | [Decisiones del MVP](Docs/Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md) | Fuente primaria funcional |
 | [Foundation](Docs/Foundation/00-MASTER_INDEX_DO_PROJETO.md) | Contratos y planificación |
 | [Checkpoint operativo](Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md) | Estado interno del proyecto |
