@@ -6,7 +6,7 @@ Correlato de backlog: `B082` (mostrar tempo de execução) — o tempo sozinho n
 
 ## O que aconteceu
 
-Na cópia `Gx_FabricaBrasil`, Transaction `Empresa` (13 subníveis, 49 SDTs planejados, cabeçalho ~162 attrs / `ListResponse_Item` com 175 membros):
+Na cópia `Gx_FabricaBrasil`, Transaction `Empresa` (13 subníveis; Wizard na casa de 49 objetos planejados; apply `OwnSdts=44` após o skip do Create vazio; cabeçalho ~162 attrs / `ListResponse_Item` com 175 membros):
 
 1. **Abertura** do Wizard ~7 s (alerta do critério 11: > 5 s; abaixo da reprova de 30 s). Sem indicador de “carregando, aguarde”.
 2. **Apply** (`Concluir e aplicar`) no thread da UI: a IDE fica irresponsiva; a janela chega a colapsar numa fatia no canto, tela preta. Comparado ao WorkWithWeb, que gera objetos demorados sem parecer travamento.

@@ -183,6 +183,7 @@ Assert-Contains $builderSource 'HasSelectedSublevels' 'Builder deve ramificar no
 Assert-Contains $builderSource 'ListResponse_Item' 'Plano hierarquico deve emitir ListResponse_Item (B098).'
 Assert-Contains $builderSource 'GeneXus recusa SDT sem itens' 'Builder deve pular SDT aninhado sem membros.'
 Assert-Contains $writerSource 'nao tem membros' 'Preflight deve recusar SDT sem membros antes do Save().'
+Assert-Contains $writerSource 'Kind, "ListFilters"' 'ListFilters sem filtros permanece vazio de proposito e nao e bloqueado.'
 Assert-Contains $domainSource 'O plano de SDT consome Levels' 'ApiPlan deve declarar consumo B096+ do Levels.'
 Assert-NotContains $contractSource 'ApiPlanSdtHierarchicalNaming' 'Wizard flat nao deve acoplar o naming B096.'
 

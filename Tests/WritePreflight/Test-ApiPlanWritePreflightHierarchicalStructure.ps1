@@ -125,6 +125,7 @@ Assert-Contains $preflightSource 'ValidateStructuralSublevelNames(apiPlan)' 'Pre
 Assert-Contains $mapSource 'ValidateStructuralSublevelNames(ApiPlan apiPlan)' 'Validacao estrutural deve ser compartilhada com o mapa BC.'
 Assert-Contains $mapSource 'eligible.Length == 0 && nested.Count == 0' 'Mapa BC deve pular filho sem membros no papel.'
 Assert-Contains $sdtWriterSource 'nao tem membros' 'Preflight de SDT deve recusar definicao sem membros antes do Save().'
+Assert-Contains $sdtWriterSource 'Kind, "ListFilters"' 'ListFilters vazio (sem filtros) deve passar no preflight; o GeneXus recusa o Create aninhado vazio, nao o envelope de filtros.'
 
 if (-not (Test-Path -LiteralPath $DllPath -PathType Leaf)) {
     Write-Output "ENVIRONMENT_BLOCKED: DLL Release ausente em $DllPath"

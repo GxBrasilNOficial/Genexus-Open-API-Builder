@@ -29,7 +29,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Fixed
 
-- Plano de SDT hierárquico: filho cujo Create fica só com PK herdada (0 membros) deixa de emitir SDT aninhado vazio — o GeneXus recusa SDT sem itens. Mapa BC e preflight alinhados. Fixture `ExclusiveCreateEmpty`. Evidência: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
+- Plano de SDT hierárquico: filho cujo Create fica só com PK herdada (0 membros) deixa de emitir SDT aninhado vazio — o GeneXus recusa SDT sem itens. Mapa BC alinhado. Preflight recusa SDT vazio **exceto** `ListFilters` sem filtros (contrato vigente; ouro `HeaderOnly`). Fixture `ExclusiveCreateEmpty`. Evidência: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
 - Preview B086 (`ExtensionConfirmDialog`): lista de dezenas de SDTs passa a caber na área útil (teto `WorkingArea - 32`, rolagem, uma linha por objeto sem wrap); Sim/Não e a pergunta ficam fora da rolagem. Default continua Não. Teste `tests.generatedApiRemovalPlan`. Evidência: `Docs/Implementation/B086-REMOVER-API-GERADA.md`.
 - Evidência B099a: nota de época em `Fields` (união estrutural na entrega 2026-08-26 → catálogo completo desde 2026-08-28 / FASE7).
 - `Tools/Copy-ExtensionForGeneXus18.ps1`: `NextCommand` / `FollowingCommand` escolhem `Register-ExtensionForGx18u13.bat` (e o Install satélite no dry-run) quando a `BuildDll` está sob `gx18u13` ou o diretório é `GeneXus18up13`; linha canônica permanece no Register U14+.
