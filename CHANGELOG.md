@@ -17,6 +17,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 ### Changed
 
 - Documentação pública (README ×3, `DEMO`) e contratos 15/27: `Delete` deixa de ser “inexistente no MVP” e passa a opt-in. O corte `0.1.0-alpha.6` (tag, notas, dois assets DLL) permanece sob autorização humana.
+- README ×3 (“O que gera”) e `DEMO` passam a citar `Delete` opt-in; o teste de reencontro de serviços do Wizard trava a forma atual de `ResolveExistingServiceSelection`.
 
 ---
 

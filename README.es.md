@@ -26,7 +26,7 @@ Reduce el tiempo necesario para montar la estructura inicial de una API REST en 
 
 A partir de una Transaction:
 
-- API Object principal (`List`, `Get`, `Create`, `Update`)
+- API Object principal (`List`, `Get`, `Create`, `Update`; `Delete` opt-in, desactivado por defecto)
 - Procedures de apoyo
 - SDTs propios (Create, Update, Response, filtros, lista)
 - SDTs compartidos de error y paginación

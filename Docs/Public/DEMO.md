@@ -37,7 +37,7 @@ No objeto Transaction: **Genexus Open API Builder** → Wizard / Sincronizar / R
 
 ## 5. Wizard — Serviços
 
-Escolha `List`, `Get`, `Create` e `Update` (todos habilitados por padrão no MVP).
+Escolha `List`, `Get`, `Create` e `Update` (habilitados por padrão). `Delete` é opt-in e fica desmarcado até você marcar.
 
 ![Serviços](../Images/alpha-wizard-servicos.png)
 
@@ -153,7 +153,7 @@ Folder `<Transaction>OpenApi` com API Object, Procedures e SDTs próprios.
 
 ## 23. Build e checagem
 
-Execute Build na API (ou Build All). Se o environment estiver publicado, teste `List`/`Get`/`Create`/`Update` conforme a segurança escolhida.
+Execute Build na API (ou Build All). Se o environment estiver publicado, teste `List`/`Get`/`Create`/`Update` conforme a segurança escolhida, e `Delete` só se o serviço tiver sido marcado.
 
 ---
 

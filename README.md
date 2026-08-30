@@ -26,7 +26,7 @@ Reduz o tempo para montar a estrutura inicial de uma API REST no ecossistema Gen
 
 A partir de uma Transaction:
 
-- API Object principal (`List`, `Get`, `Create`, `Update`)
+- API Object principal (`List`, `Get`, `Create`, `Update`; `Delete` opt-in, desligado por padrão)
 - Procedures de apoio
 - SDTs próprios (Create, Update, Response, filtros, lista)
 - SDTs compartilhados de erro e paginação

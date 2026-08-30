@@ -26,7 +26,7 @@ It reduces the time needed to assemble the initial structure of a REST API in th
 
 From a Transaction:
 
-- Main API Object (`List`, `Get`, `Create`, `Update`)
+- Main API Object (`List`, `Get`, `Create`, `Update`; `Delete` is opt-in and off by default)
 - Supporting Procedures
 - Custom SDTs (Create, Update, Response, filters, list)
 - Shared error and pagination SDTs
