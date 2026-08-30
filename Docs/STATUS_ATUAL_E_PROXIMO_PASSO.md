@@ -309,7 +309,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 9 — subníveis publicados em `0.1.0-alpha.5`; `B100` (`Delete`) ainda não iniciado.
+- Sprint 9 — subníveis preparados em `0.1.0-alpha.5` (tag e GitHub Release ainda não publicados); `B100` (`Delete`) ainda não iniciado.
 - Sprint 10 — Beta estável.
 
 ## Protocolo de atualização
