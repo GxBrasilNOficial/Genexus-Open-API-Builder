@@ -233,8 +233,8 @@ sdtDadosDoDia_API_UpdateRequest_Turno_Funcionario
 ### 12. Não Escopo Declarado
 
 - **Subníveis não recebem endpoints próprios.** Não são gerados `GET /<tx>/{id}/<sublevel>`, `POST /<tx>/{id}/<sublevel>` nem `DELETE /<tx>/{id}/<sublevel>/{n}`. Os subníveis existem apenas como coleções aninhadas dentro dos serviços do cabeçalho.
-- **Não há serviço `Delete` nesta frente**, em nenhum nível. A liberação do `Delete` é tratada como frente própria em `B100`.
-- **Consequência prática, que precisa constar também na documentação pública:** enquanto `B100` não estiver concluído, a única forma de remover uma linha filha é enviar o `Update` com `<Subnível>Replace = True` e omitir a linha.
+- **Não há serviço `Delete` nesta frente**, em nenhum nível. A liberação do `Delete` de **cabeçalho** ficou na frente própria `B100` (concluída em 2026-08-30, opt-in). Continua **sem** `DELETE /<tx>/{id}/<sublevel>/{n}`.
+- **Consequência prática, que precisa constar também na documentação pública:** remover uma **linha filha** continua sendo enviar o `Update` com `<Subnível>Replace = True` e omitir a linha. O `Delete` do `B100` apaga o registro do cabeçalho (e as filhas na mesma transação do BC), não uma linha isolada.
 - **Filtros de `List` por campo de subnível ficam fora desta frente.** Filtrar o cabeçalho por conteúdo de linha exige condição de existência dentro do `For each` e muda a semântica da paginação; não é extensão trivial do que a frente entrega.
 - **O `Get` devolve a árvore completa, sem paginação das linhas filhas.** Uma transação com muitas linhas produz resposta grande, e isso é limitação conhecida, não defeito. Nenhum teto é imposto agora: sem caso real medido, limitar seria otimização especulativa.
 
@@ -319,7 +319,7 @@ Estes itens nasceram da revisão de 2026-08-23. Não pertencem a B095–B099 e t
 | Item | Escopo | Posição |
 |---|---|---|
 | `B102` | Repasse do texto emitido pelo Business Component na `Message` do `422`, com `Message` em `LongVarChar`, `Messages[]` como coleção tipada por `sdt_API_ErrorMessage`, filtro por mensagens de erro, preferência por KB e escolha por API | **Primeiro item da Sprint 9**; concluído em 2026-08-24 (gate HTTP nos dois environments), antes da Fase 0 |
-| `B100` | Serviço `Delete`, opt-in, com quatro camadas anti acidente | Após a Fase 7, com corte de release próprio |
+| `B100` | Serviço `Delete`, opt-in, com quatro camadas anti acidente | Após a Fase 7; **concluído em 2026-08-30**; corte `0.1.0-alpha.6` ainda não publicado |
 | `B105` | Escolha do chamador sobre o detalhe do corpo de erro, podendo apenas **restringir** o que o default da API permite, nunca ampliar | Fora de `B102`; nesta sprint se houver folga, senão Sprint 10 |
 | `B101` | Experimento de membro nullable para distinguir membro ausente de membro vazio | Candidato à Sprint 10, fora da Sprint 9 |
 

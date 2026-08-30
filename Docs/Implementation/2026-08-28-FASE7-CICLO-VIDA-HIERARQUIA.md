@@ -122,4 +122,4 @@ KB `wsEducacaoSpTeste`, Transaction `Teste` / `apiTeste`. Atributo novo `TesteIt
 
 ## Conclusão
 
-Fase 7 encerrada em 2026-08-28: código, testes offline, gate `tests.wizardLifecycle` e smoke IDE (apply, critério 8, Sync zero-diff, Remover preview). Lacuna Sync ADDED/rename fechada no mesmo dia (offline + smoke com delta em `TesteItemObs2`). Corte `0.1.0-alpha.5` publicado em 2026-08-30; próxima frente = `B100`.
+Fase 7 encerrada em 2026-08-28: código, testes offline, gate `tests.wizardLifecycle` e smoke IDE (apply, critério 8, Sync zero-diff, Remover preview). Lacuna Sync ADDED/rename fechada no mesmo dia (offline + smoke com delta em `TesteItemObs2`). Corte `0.1.0-alpha.5` publicado em 2026-08-30; naquela data a próxima frente era `B100`. `B100` concluído em 2026-08-30; a próxima ação vigente fica no checkpoint (preparar `0.1.0-alpha.6`).
