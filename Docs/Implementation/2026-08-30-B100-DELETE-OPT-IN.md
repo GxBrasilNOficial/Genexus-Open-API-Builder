@@ -106,7 +106,18 @@ Smoke U15 na `NotaFiscal` / `apiNotaFiscal`, reencontro:
 
 ---
 
-## 7. Fora deste recorte
+## 7. Output, prévia e preferências (2026-08-31)
+
+Três correções no mesmo recorte, fumadas no U15 em `NotaFiscal` / `apiNotaFiscal`:
+
+1. **Prefixo da etapa Procedures.** Com Delete no plano, Output usa `[B050-B053/B100]` no bloco e em cada item; o Delete sai `Backlog='B100'`. Apply de reencontro `SuccessWithWarnings`, `Atualizados=15`, `Bloqueados=0`.
+2. **Prévia / fingerprint.** Combo do Delete e checkbox 422 entram no fingerprint; mudança no combo dispara refresh. Apply com rádio `Authentication` e combo Delete `Authorization`: Service Source dos quatro em `[SecurityLevel(Authentication)]`, Delete em `[SecurityLevel(Authorization)]`. Clique direto em Resumo já forçava `forceRefresh: true`; o cache obsoleto só afetava as abas de geração (SDTs, Procedures, API Object, Metadata).
+3. **Preferências.** Delete sozinho (sem Get, Create e Update) recusa gravar; zero serviços continua no gate `Marque ao menos um serviço padrão.`; cancelar após a recusa não altera `GxOpenApiBuilder_Settings`.
+4. **Regressão Delete × BC.** Sim desmarca Delete e deixa Completar REST desmarcado; remarcar Delete religa a etapa. No reencontro de API que já tem Delete, remarcar nesta sessão **não** reabre o diálogo de adesão (`ExistingApiContract`). Wizard cancelado; a KB permanece com o Apply do item 2.
+
+---
+
+## 8. Fora deste recorte
 
 - Corte GitHub `0.1.0-alpha.6` (tag, notas trilíngues, dois assets DLL): autorização humana.
 - `B082` (progresso na UI): outra sessão.
@@ -115,10 +126,10 @@ Smoke U15 na `NotaFiscal` / `apiNotaFiscal`, reencontro:
 
 ---
 
-## 8. Testes offline
+## 9. Testes offline
 
-`Tests/WizardPreferences/Test-PrototypeWizardPreferences.ps1` (default `false`, fallback legado).
+`Tests/WizardPreferences/Test-PrototypeWizardPreferences.ps1` (default `false`, fallback legado; diálogo recusa Delete sem Get/Create/Update).
 `Tests/WizardLifecycle/Test-ApiPlanWizardHierarchicalLifecycle.ps1` (recusar confirmação desmarca
 Delete). `Tests/WizardContract/Test-PrototypeWizardExistingApiFilters.ps1` (reencontro: rádio nos quatro, combo no Delete; Sync lê
-`services[].securityLevel` do Delete). `Tests/WizardNavigation/Test-PrototypeWizardBusinessComponentNavigationPolicy.ps1` (Delete sem etapa BC é recusado). Contrato OpenAPI: `Delete` entra em
+`services[].securityLevel` do Delete; Output `B050-B053/B100`; fingerprint do combo e do checkbox 422). `Tests/WizardNavigation/Test-PrototypeWizardBusinessComponentNavigationPolicy.ps1` (Delete sem etapa BC é recusado). `Tests/OwnershipDescriptions/Test-ApiPlanOwnedObjectDescription.ps1` (Delete canônico, legado `B100` e fallback `B050-B053`). `Tests/Localization/Test-ExtensionLanguage.ps1` (mensagem das preferências). Contrato OpenAPI: `Delete` entra em
 `PrototypeWizardContract.ServiceNames` e na trava `Tests/OpenApiContract/`.

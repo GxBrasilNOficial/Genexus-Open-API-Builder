@@ -121,6 +121,18 @@ internal static class ApiPlanProcedureWriter
         return "B050-B053";
     }
 
+    internal static string FormatOutputStage(ApiPlan apiPlan)
+    {
+        if (apiPlan?.Services is null)
+        {
+            return "B050-B053";
+        }
+
+        return apiPlan.Services.Any(service => string.Equals(service.Name, "Delete", StringComparison.OrdinalIgnoreCase))
+            ? "B050-B053/B100"
+            : "B050-B053";
+    }
+
     private static ApiPlanProcedurePreflightResult PreflightProcedures(KBModel designModel, IReadOnlyList<ApiPlanProcedureDefinition> definitions)
     {
         var existingByName = new Dictionary<string, Procedure>(StringComparer.OrdinalIgnoreCase);

@@ -386,10 +386,11 @@ public sealed class Package : AbstractPackageUI
         try
         {
             var result = ApiPlanProcedureWriter.CreateOrReencounter(designModel, transaction, apiPlan);
-            WriteOutput($"[Genexus Open API Builder][B050-B053] Escrita de Procedures concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedProcedures={result.PlannedProcedures}, ReencounteredSdts={result.ReencounteredSdts}, Created={result.CreatedProcedures}, Reencountered={result.ReencounteredProcedures}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhum API Object, REST completo ou metadata persistente definitiva foi criado.");
+            var procedureStage = ApiPlanProcedureWriter.FormatOutputStage(apiPlan);
+            WriteOutput($"[Genexus Open API Builder][{procedureStage}] Escrita de Procedures concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedProcedures={result.PlannedProcedures}, ReencounteredSdts={result.ReencounteredSdts}, Created={result.CreatedProcedures}, Reencountered={result.ReencounteredProcedures}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhum API Object, REST completo ou metadata persistente definitiva foi criado.");
             foreach (var item in result.Items)
             {
-                WriteOutput($"[Genexus Open API Builder][B050-B053] Procedure {item.Status}: Backlog='{item.BacklogId}', Service='{item.ServiceName}', Name='{item.Name}', Guid='{item.Guid}'.");
+                WriteOutput($"[Genexus Open API Builder][{procedureStage}] Procedure {item.Status}: Backlog='{item.BacklogId}', Service='{item.ServiceName}', Name='{item.Name}', Guid='{item.Guid}'.");
                 report?.AddFromWriteStatus("Procedure", item.Name, item.Status, item.ServiceName);
             }
 
@@ -397,8 +398,8 @@ public sealed class Package : AbstractPackageUI
         }
         catch (Exception ex)
         {
-            WriteOutput($"[Genexus Open API Builder][B050-B053] Criacao de Procedures bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
-            report?.AddBlocked("Procedures", "B050-B053", ex.Message);
+            WriteOutput($"[Genexus Open API Builder][{ApiPlanProcedureWriter.FormatOutputStage(apiPlan)}] Criacao de Procedures bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
+            report?.AddBlocked("Procedures", ApiPlanProcedureWriter.FormatOutputStage(apiPlan), ex.Message);
             return false;
         }
     }
@@ -1184,7 +1185,7 @@ public sealed class Package : AbstractPackageUI
         {
             if (selection.GenerateProcedures)
             {
-                WriteOutput($"[Genexus Open API Builder][B050-B053] Etapa de Procedures nao executada pelo wizard para Transaction='{transaction.Name}' porque B040-B046 falhou ou foi bloqueado neste fluxo. Nenhuma Procedure foi criada pelo wizard.");
+                WriteOutput($"[Genexus Open API Builder][{ApiPlanProcedureWriter.FormatOutputStage(apiPlan)}] Etapa de Procedures nao executada pelo wizard para Transaction='{transaction.Name}' porque B040-B046 falhou ou foi bloqueado neste fluxo. Nenhuma Procedure foi criada pelo wizard.");
             }
 
             if (selection.GenerateApiObject)
@@ -1219,14 +1220,14 @@ public sealed class Package : AbstractPackageUI
         }
         else if (selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyList || selection.ApplyBusinessComponent)
         {
-            WriteOutput($"[Genexus Open API Builder][B050-B053] Etapa de Procedures nao confirmada no wizard para Transaction='{transaction.Name}'. A dependencia sera reencontrada e validada pelo preflight da etapa seguinte.");
+            WriteOutput($"[Genexus Open API Builder][{ApiPlanProcedureWriter.FormatOutputStage(apiPlan)}] Etapa de Procedures nao confirmada no wizard para Transaction='{transaction.Name}'. A dependencia sera reencontrada e validada pelo preflight da etapa seguinte.");
         }
 
         if (!proceduresReady)
         {
             if (selection.GenerateApiObject)
             {
-                WriteOutput($"[Genexus Open API Builder][B054] Etapa de API Object nao executada pelo wizard para Transaction='{transaction.Name}' porque B050-B053 falhou ou foi bloqueado neste fluxo. Nenhum API Object foi criado pelo wizard.");
+                WriteOutput($"[Genexus Open API Builder][B054] Etapa de API Object nao executada pelo wizard para Transaction='{transaction.Name}' porque a etapa de Procedures falhou ou foi bloqueada neste fluxo. Nenhum API Object foi criado pelo wizard.");
             }
 
             if (selection.ApplyBusinessComponent)
@@ -1236,12 +1237,12 @@ public sealed class Package : AbstractPackageUI
 
             if (selection.ApplyList)
             {
-                WriteOutput($"[Genexus Open API Builder][B070] List nao foi aplicado para Transaction='{transaction.Name}' porque B050-B053 falhou ou foi bloqueado neste fluxo.");
+                WriteOutput($"[Genexus Open API Builder][B070] List nao foi aplicado para Transaction='{transaction.Name}' porque a etapa de Procedures falhou ou foi bloqueada neste fluxo.");
             }
 
             if (selection.GenerateMetadata)
             {
-                WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B050-B053 falhou ou foi bloqueado neste fluxo.");
+                WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque a etapa de Procedures falhou ou foi bloqueada neste fluxo.");
             }
 
             stopwatch.Stop();

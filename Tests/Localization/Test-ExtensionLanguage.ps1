@@ -69,6 +69,9 @@ Assert-Contains $wizard '_texts.Translate("Habilitar Business Component altera a
 Assert-Contains $localization 'O serviço Delete exige Completar REST via Business Component no mesmo Apply.' 'O catálogo deve recusar Delete sem a etapa BC.'
 Assert-Contains $localization 'The Delete service requires Completing REST via Business Component in the same Apply.' 'O catálogo deve recusar Delete sem a etapa BC em inglês.'
 Assert-Contains $localization 'El servicio Delete exige Completar REST vía Business Component en el mismo Apply.' 'O catálogo deve recusar Delete sem a etapa BC em espanhol.'
+Assert-Equal 'Delete marcado exige Get, Create e Update nos serviços padrão. Marque os três ou desmarque Delete.' ($uiTerms::PortugueseChrome('Delete marcado exige Get, Create e Update nos servicos padrao. Marque os tres ou desmarque Delete.')) 'PT-BR deve recusar Delete sozinho nas preferências.'
+Assert-Contains $localization 'A marked Delete requires Get, Create, and Update among the default services. Check all three or clear Delete.' 'O catálogo deve recusar Delete sozinho nas preferências em inglês.'
+Assert-Contains $localization 'Delete marcado exige Get, Create y Update en los servicios predeterminados. Marque los tres o desmarque Delete.' 'O catálogo deve recusar Delete sozinho nas preferências em espanhol.'
 Assert-Contains $finalReport '_texts.Translate("Objeto principal ''{0}'' não foi encontrado na KB.")' 'O erro de objeto ausente deve passar pelo catálogo.'
 Assert-Contains $finalReport '_texts.Translate("Não foi possível abrir o objeto principal: {0}")' 'O erro de abertura deve passar pelo catálogo.'
 

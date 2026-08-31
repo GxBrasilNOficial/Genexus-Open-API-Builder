@@ -152,4 +152,14 @@ Assert-Throws { [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPref
 Assert-Equal 'None' ([GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::NormalizeSecurityLevel('none')) 'SecurityLevel None deve ser normalizado.'
 Assert-Equal 'Authentication' ([GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::NormalizeSecurityLevel('valor-invalido')) 'SecurityLevel inválido deve cair em Authentication.'
 
+$preferencesDialogPath = Join-Path $PSScriptRoot '..\..\Src\Extension\PrototypeWizardPreferencesDialog.cs'
+if (-not (Test-Path -LiteralPath $preferencesDialogPath)) {
+    throw "SOURCE_MISSING: $preferencesDialogPath"
+}
+
+$preferencesDialog = [IO.File]::ReadAllText($preferencesDialogPath)
+if ($preferencesDialog.IndexOf('Delete marcado exige Get, Create e Update nos servicos padrao. Marque os tres ou desmarque Delete.', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_CONTAINS_FAILED: Preferências devem recusar gravar Delete sem Get, Create e Update.'
+}
+
 Write-Output 'PASS: PrototypeWizardPreferencesCodec'

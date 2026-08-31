@@ -42,8 +42,14 @@ public static class ApiPlanOwnedObjectDescription
             return true;
         }
 
-        return TryCreateLegacyProcedureDescription(procedureName, out var expected)
-            && string.Equals(description, expected, StringComparison.Ordinal);
+        if (TryCreateLegacyProcedureDescription(procedureName, out var expected)
+            && string.Equals(description, expected, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return TryCreateAlternateLegacyDeleteProcedureDescription(procedureName, out var alternateDelete)
+            && string.Equals(description, alternateDelete, StringComparison.Ordinal);
     }
 
     public static bool IsOwnedSdt(string? description, string sdtName)
@@ -112,6 +118,27 @@ public static class ApiPlanOwnedObjectDescription
         try
         {
             expected = CreateLegacyProcedureDescription(procedureName);
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            expected = string.Empty;
+            return false;
+        }
+    }
+
+    private static bool TryCreateAlternateLegacyDeleteProcedureDescription(string procedureName, out string expected)
+    {
+        try
+        {
+            var serviceName = GetApiServiceName(procedureName, "proc");
+            if (!string.Equals(serviceName, "Delete", StringComparison.OrdinalIgnoreCase))
+            {
+                expected = string.Empty;
+                return false;
+            }
+
+            expected = $"{LegacyProcedurePrefix} - B050-B053 - Delete";
             return true;
         }
         catch (ArgumentException)
@@ -265,7 +292,8 @@ public static class ApiPlanOwnedObjectDescription
         if (string.Equals(serviceName, "List", StringComparison.OrdinalIgnoreCase)) return "B050";
         if (string.Equals(serviceName, "Get", StringComparison.OrdinalIgnoreCase)) return "B051";
         if (string.Equals(serviceName, "Create", StringComparison.OrdinalIgnoreCase)) return "B052";
-        return string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase) ? "B053" : "B050-B053";
+        if (string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase)) return "B053";
+        return string.Equals(serviceName, "Delete", StringComparison.OrdinalIgnoreCase) ? "B100" : "B050-B053";
     }
 
     private static string ResolveSdtBacklogId(string kind)

@@ -45,6 +45,7 @@ public static class ExtensionUiTerms
             "Marcar listagem por padrao" => "Marcar listagem por padrão",
             "Marcar REST via Business Component por padrao" => "Marcar REST via Business Component por padrão",
             "Marque ao menos um servico padrao." => "Marque ao menos um serviço padrão.",
+            "Delete marcado exige Get, Create e Update nos servicos padrao. Marque os tres ou desmarque Delete." => "Delete marcado exige Get, Create e Update nos serviços padrão. Marque os três ou desmarque Delete.",
             _ => source,
         };
     }

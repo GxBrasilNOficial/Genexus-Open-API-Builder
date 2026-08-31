@@ -348,7 +348,8 @@ internal static class ApiPlanGenerationStateReader
         if (string.Equals(serviceName, "List", StringComparison.OrdinalIgnoreCase)) return "B050";
         if (string.Equals(serviceName, "Get", StringComparison.OrdinalIgnoreCase)) return "B051";
         if (string.Equals(serviceName, "Create", StringComparison.OrdinalIgnoreCase)) return "B052";
-        return string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase) ? "B053" : "B050-B053";
+        if (string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase)) return "B053";
+        return string.Equals(serviceName, "Delete", StringComparison.OrdinalIgnoreCase) ? "B100" : "B050-B053";
     }
 
     private sealed class KbObjectNameIndex

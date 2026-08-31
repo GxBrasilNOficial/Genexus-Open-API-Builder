@@ -1132,7 +1132,11 @@ internal sealed class PrototypeWizardDialog : Form
 
     private void WireBusinessComponentErrorMessageWarning()
     {
-        _includeBcErrorMessagesCheck.CheckedChanged += (_, _) => RefreshBusinessComponentErrorMessageWarning();
+        _includeBcErrorMessagesCheck.CheckedChanged += (_, _) =>
+        {
+            RefreshBusinessComponentErrorMessageWarning();
+            RefreshGenerationPreviewUnlessSuppressed();
+        };
         _securityAuthenticationRadio.CheckedChanged += (_, _) =>
         {
             SyncDeleteSecurityFromApiUnlessEdited();
@@ -1159,6 +1163,7 @@ internal sealed class PrototypeWizardDialog : Form
             }
 
             RefreshDeleteSecurityControls();
+            RefreshGenerationPreviewUnlessSuppressed();
         };
         RefreshBusinessComponentErrorMessageWarning();
         RefreshDeleteSecurityControls();
@@ -2205,6 +2210,8 @@ internal sealed class PrototypeWizardDialog : Form
             _servicesBasePathText.Text.Trim(),
             _restPathText.Text.Trim(),
             GetSelectedSecurityLevel(),
+            GetSelectedDeleteSecurityLevel(),
+            _includeBcErrorMessagesCheck.Checked ? "1" : "0",
             _defaultPageSize.Value.ToString(),
             _maximumPageSize.Value.ToString(),
             _generateSdtsCheck.Checked ? "1" : "0",
@@ -2484,7 +2491,12 @@ internal sealed class PrototypeWizardDialog : Form
             return "B052";
         }
 
-        return string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase) ? "B053" : "B050-B053";
+        if (string.Equals(serviceName, "Update", StringComparison.OrdinalIgnoreCase))
+        {
+            return "B053";
+        }
+
+        return string.Equals(serviceName, "Delete", StringComparison.OrdinalIgnoreCase) ? "B100" : "B050-B053";
     }
 
     private string FormatKeySuffix()

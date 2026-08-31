@@ -225,6 +225,17 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             return;
         }
 
+        if (_deleteServiceCheck.Checked && !(_getServiceCheck.Checked && _createServiceCheck.Checked && _updateServiceCheck.Checked))
+        {
+            MessageBox.Show(
+                this,
+                _texts.Translate("Delete marcado exige Get, Create e Update nos servicos padrao. Marque os tres ou desmarque Delete."),
+                Text,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return;
+        }
+
         if (_defaultPageSizeInput.Value > _maximumPageSizeInput.Value)
         {
             MessageBox.Show(this, _texts.Translate("Default Page Size deve ser menor ou igual a Maximum Page Size."), Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);

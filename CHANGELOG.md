@@ -31,6 +31,12 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Documentos Foundation `05`, `10`, `11` e `12` §11: deixam de afirmar Delete como pós-MVP absoluto e passam ao contrato vigente (quatro serviços obrigatórios + Delete opt-in desligado por padrão).
 - Foundation `04`, `06` (nota operacional e `B075`) e `08` (regra MVP de `EndpointsCount`): a frase vigente deixa de ser “Delete é pós-MVP” / “não existe Delete no MVP”, para o mesmo contrato opt-in do `B100`. O plano 24 anota o `B075` da Sprint 6 como critério histórico.
 
+### Fixed
+
+- Output da etapa Procedures com Delete: o prefixo da etapa passa a `B050-B053/B100` (o item já saía `Backlog='B100'`). Smoke U15 2026-08-31 na `apiNotaFiscal`: prefixo no bloco e nos cinco itens; Delete com `Backlog='B100'`.
+- Prévia do Wizard: o fingerprint e o refresh passam a incluir o Security Level do Delete e o checkbox de mensagens HTTP 422. Smoke U15: rádio Authentication, combo Delete Authorization; Apply `Updated=15`; Service Source dos quatro em `[SecurityLevel(Authentication)]` e Delete em `[SecurityLevel(Authorization)]`. Ir direto ao Resumo força refresh (`forceRefresh: true`); o cache só afeta as abas de geração.
+- Preferências do Wizard: recusam gravar Delete sem Get, Create e Update (sem marcar serviços em silêncio). Smoke U15: só Delete dispara a mensagem nova; zero serviços continua no gate antigo; cancelar após a recusa não grava.
+
 ### Removed
 
 - Handlers incrementais órfãos B040/B050/B054 em `Package.cs` (`ExecuteCreate*` / `TryConfirmAndCreate*` e os MessageBox de «4 Procedures»). Não estavam no menu nem no manifesto; Wizard e Sync continuam nos `TryCreate*`.

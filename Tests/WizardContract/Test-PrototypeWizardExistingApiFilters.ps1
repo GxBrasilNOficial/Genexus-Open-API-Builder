@@ -9,8 +9,9 @@ $packagePath = Join-Path $PSScriptRoot '..\..\Src\Extension\Package.cs'
 $dialogPath = Join-Path $PSScriptRoot '..\..\Src\Extension\PrototypeWizardDialog.cs'
 $apiPlanPath = Join-Path $PSScriptRoot '..\..\Src\Domain\ApiPlan.cs'
 $apiObjectWriterPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanApiObjectWriter.cs'
+$procedureWriterPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanProcedureWriter.cs'
 $orchestratorPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanTransactionSyncOrchestrator.cs'
-foreach ($path in @($readerPath, $existingReaderPath, $packagePath, $dialogPath, $apiPlanPath, $apiObjectWriterPath, $orchestratorPath)) {
+foreach ($path in @($readerPath, $existingReaderPath, $packagePath, $dialogPath, $apiPlanPath, $apiObjectWriterPath, $procedureWriterPath, $orchestratorPath)) {
     if (-not (Test-Path -LiteralPath $path)) {
         throw "SOURCE_MISSING: $path"
     }
@@ -29,7 +30,9 @@ $package = [IO.File]::ReadAllText($packagePath)
 $dialog = [IO.File]::ReadAllText($dialogPath)
 $apiPlan = [IO.File]::ReadAllText($apiPlanPath)
 $apiObjectWriter = [IO.File]::ReadAllText($apiObjectWriterPath)
+$procedureWriter = [IO.File]::ReadAllText($procedureWriterPath)
 $orchestrator = [IO.File]::ReadAllText($orchestratorPath)
+$dialogNorm = $dialog.Replace("`r`n", "`n")
 
 Assert-Contains $reader 'Read(KBModel designModel, Transaction transaction)' 'O snapshot do Wizard deve aceitar a KB ativa para reencounter.'
 Assert-Contains $reader 'existingApiContract.FiltersAvailable ? false : filter.DefaultSelected' 'Com contrato de filtros existente, campos novos nao devem voltar aos defaults de uma API nova.'
@@ -76,6 +79,10 @@ Assert-Contains $package 'PrototypeWizardContractReader.Read(knowledgeBase.Desig
 Assert-Contains $package 'ReadForIntentionalChange(knowledgeBase.DesignModel, transaction, apiPlan)' 'O Wizard deve validar o baseline sem bloquear mudancas deliberadas no contrato.'
 Assert-Contains $package 'ValidateForIntentionalChange(' 'O preflight do Wizard deve aceitar um novo plano depois de validar o baseline.'
 Assert-Contains $package 'ThrowIfDeleteWithoutBusinessComponent' 'Wizard e Sync devem recusar Delete sem Completar REST via Business Component antes do primeiro Save().'
+Assert-Contains $package 'FormatOutputStage(apiPlan)' 'A etapa de Procedures no Output deve usar o rótulo dinâmico B050-B053/B100 quando o plano inclui Delete.'
+Assert-Contains $procedureWriter '"B050-B053/B100"' 'FormatOutputStage deve emitir B050-B053/B100 quando o plano inclui Delete.'
+Assert-Contains $dialogNorm "GetSelectedSecurityLevel(),`n            GetSelectedDeleteSecurityLevel(),`n            _includeBcErrorMessagesCheck.Checked ? `"1`" : `"0`"" 'O fingerprint da prévia deve incluir o rádio da API, o combo do Delete e o checkbox 422.'
+Assert-Contains $dialogNorm "RefreshDeleteSecurityControls();`n            RefreshGenerationPreviewUnlessSuppressed();" 'Mudança no combo do Delete deve invalidar a prévia gerada.'
 Assert-Contains $package 'name.EndsWith("_API_Delete", StringComparison.OrdinalIgnoreCase)' 'O relatório do Apply BC deve marcar proc*_API_Delete quando o serviço estiver no plano.'
 Assert-Contains $dialog 'RequestApplyBusinessComponentForDelete' 'Marcar Delete deve pedir a etapa Completar REST via Business Component.'
 Assert-Contains $dialog 'Delete exige Completar REST via Business Component no mesmo Apply.' 'A confirmação do Delete deve citar a etapa BC no mesmo Apply.'

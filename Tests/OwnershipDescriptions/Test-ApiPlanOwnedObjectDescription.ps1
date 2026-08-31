@@ -28,6 +28,12 @@ Assert-False ($description::IsOwnedProcedure('Genexus Open API Builder B051 - Li
 Assert-False ($description::IsOwnedProcedure('Genexus Open API Builder B050 - Get', $procedureName)) 'Procedure com serviço divergente deve bloquear.'
 Assert-False ($description::IsOwnedProcedure('Genexus Open API Builder B050-B053 Procedure - B050 - List', 'ProcedureHumana')) 'Objeto sem nome gerado não deve herdar posse legada.'
 
+$deleteName = 'procTeste_API_Delete'
+$deleteLegacy = $description::CreateLegacyProcedureDescription($deleteName)
+Assert-True ($description::IsOwnedProcedure($deleteName + $description::Suffix, $deleteName)) 'Procedure Delete canônica deve ser própria.'
+Assert-True ($description::IsOwnedProcedure($deleteLegacy, $deleteName)) 'Procedure Delete legada B100 deve ser própria.'
+Assert-True ($description::IsOwnedProcedure('Genexus Open API Builder B050-B053 Procedure - B050-B053 - Delete', $deleteName)) 'Procedure Delete com sentinela B050-B053 deve continuar própria.'
+
 $sdtName = 'sdtTeste_API_CreateRequest'
 $sdtLegacy = $description::CreateLegacySdtDescription($sdtName)
 Assert-True ($description::IsOwnedSdt($sdtName + $description::Suffix, $sdtName)) 'SDT canônico deve ser próprio.'
