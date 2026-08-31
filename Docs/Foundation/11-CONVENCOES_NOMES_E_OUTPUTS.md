@@ -262,7 +262,7 @@ O `Services base path` não é o mesmo conceito que o `RestPath`: o primeiro par
 - `Get`
 - `Create`
 - `Update`
-- `Delete` fica reservado para evolução futura
+- `Delete` — opt-in, desligado por padrão (`B100`, 2026-08-30)
 
 ## Chave composta
 
@@ -270,7 +270,7 @@ Chave simples e composta devem ser suportadas sem degradação parcial.
 
 ## Regra
 
-`Delete` não compõe o endpoint REST do MVP. Chave composta não bloqueia `List`, `Get`, `Create` ou `Update`.
+`Delete` não entra no contrato REST enquanto estiver desmarcado. Marcado, usa o mesmo path de chave do `Get` e a Procedure `procNomeDaTransacao_API_Delete`. Chave composta não bloqueia `List`, `Get`, `Create`, `Update` nem o `Delete` opt-in.
 
 ## Terminologia
 
@@ -352,7 +352,7 @@ Para uma Transaction `NomeDaTransacao`, os nomes das Procedures são:
 - `procNomeDaTransacao_API_Get`
 - `procNomeDaTransacao_API_Create`
 - `procNomeDaTransacao_API_Update`
-- `procNomeDaTransacao_API_Delete` — **planejado em `B100`**, gerado somente quando o serviço `Delete` for marcado no Wizard, que vem desligado por padrão
+- `procNomeDaTransacao_API_Delete` — `B100` concluído; gerado somente quando o serviço `Delete` está marcado no Wizard (desligado por padrão)
 
 Regras:
 

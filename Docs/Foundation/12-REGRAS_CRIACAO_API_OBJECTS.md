@@ -201,14 +201,13 @@ Onde o contrato declara obrigatoriedade, vale a ressalva de semântica registrad
 
 ## Default MVP
 
-Não gerar endpoint `Delete`.
+Não gerar endpoint `Delete` **enquanto o serviço estiver desmarcado** (padrão). Marcado no Wizard (`B100`, 2026-08-30), gerar `proc*_API_Delete`, rota `DELETE` no path da chave do Get, `200` / `404` / `422` via BC e `SecurityLevel` próprio.
 
 ## Evolução futura
 
 - soft delete
 - flags de inativação
 - auditoria avançada
-- endpoint `Delete` opt-in
 
 [API-F12]
 

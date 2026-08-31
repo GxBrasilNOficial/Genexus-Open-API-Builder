@@ -57,8 +57,8 @@ A arquitetura inicial deve seguir:
 | SDTs padrão | Criar contratos próprios da API |
 | Reuso de SDTs | Fora do MVP, exceto reencontro dos próprios por metadata |
 | Reexecução | Sempre confirmar e usar metadata persistente |
-| Operações MVP | List, Get, Create, Update |
-| Delete | Pós-MVP como endpoint; remoção de API gerada é tooling |
+| Operações MVP | List, Get, Create, Update (obrigatórios); Delete opt-in, desligado por padrão (`B100`) |
+| Delete | Endpoint REST opt-in (`B100`, 2026-08-30); remoção da API gerada continua sendo tooling |
 | Camada de execução | API Object delega para Procedures, que usam BC |
 | Configuração no wizard | campos de Create/Update, filtros de List, paginação, ordenação, Security Level, API name, Services base path e RestPath |
 | Gerador prioritário | .NET |
@@ -387,11 +387,13 @@ Para Transactions compatíveis com o escopo inicial do MVP, o objetivo funcional
 - `Create`
 - `Update`
 
+`Delete` é opt-in e fica desligado por padrão (`B100`, 2026-08-30): só entra no API Object quando o operador marca o serviço no Wizard.
+
 O API Object deve delegar a execução para Procedures geradas, e essas Procedures devem usar a Transaction como Business Component quando aplicável.
 
 Sem `Business Component`, o MVP não gera a API. `Create` deve retornar `201`; `Update` usa `PUT`, retorna `200` e devolve `Response` completo.
 
-`Delete` fica fora do endpoint REST do MVP. A operação de remover uma API gerada pertence ao ciclo de vida da ferramenta e deve ser tratada por metadata, não como serviço público da API.
+A operação de **remover uma API gerada** (tooling) permanece distinta do serviço REST `Delete` e continua tratada por metadata, não como serviço público da API.
 
 ## Observação crítica
 
@@ -505,7 +507,7 @@ Não fazem parte do MVP:
 - pluralização avançada
 - matching complexo de SDTs
 - reuso arbitrário de SDTs externos
-- endpoint `Delete`
+- `Delete` ligado por padrão (o MVP só gera o serviço quando o operador marca o opt-in)
 - versionamento automático por `_v2`
 - escolha livre de módulo destino
 - hacks fora do SDK oficial

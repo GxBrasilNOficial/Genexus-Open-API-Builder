@@ -20,6 +20,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - README ×3 (“O que gera”) e `DEMO` passam a citar `Delete` opt-in; o teste de reencontro de serviços do Wizard trava a forma atual de `ResolveExistingServiceSelection`.
 - README ×3 (contrato de erro HTTP): o 422 de `Create`/`Update` (rules do BC) passa a citar também o `Delete` opt-in na recusa por integridade referencial, alinhado ao documento 27.
 - Reencontro do `Delete`: o leitor de Service Source e de metadata passa a ver o serviço e o `securityLevel` por item; o matcher B079 reconhece a assinatura atual (`PK` + `ErrorResponse` + `RestStatusCode`); o Apply usa o combo do Delete em vez de um `SecurityLevel` vazio herdado do contrato existente.
+- Documentos Foundation `05`, `10`, `11` e `12` §11: deixam de afirmar Delete como pós-MVP absoluto e passam ao contrato vigente (quatro serviços obrigatórios + Delete opt-in desligado por padrão).
 
 ---
 

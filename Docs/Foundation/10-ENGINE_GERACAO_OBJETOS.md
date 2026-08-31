@@ -230,14 +230,14 @@ Criar API Object, único artefato REST aceito conforme documento 09.
 
 ## Deve conter serviços MVP.
 
-Serviços públicos:
+Serviços públicos obrigatórios:
 
 - `List`
 - `Get`
 - `Create`
 - `Update`
 
-Não gerar endpoint `Delete` no MVP.
+`Delete` é opt-in, desligado por padrão (`B100`, 2026-08-30). Não gerar o endpoint enquanto o serviço estiver desmarcado; marcado, gerar `proc*_API_Delete` e a rota `DELETE` no path da chave do Get.
 
 Se API Object não for viável, abortar geração.
 
