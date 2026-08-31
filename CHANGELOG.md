@@ -12,7 +12,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Planned
 
-- `B108` (pendência, não implementado): preferências da KB só na criação da API; no reencontro preservar o contrato gravado. Checkpoint e documento 06.
+- `B108` (pendência, plano aprovado 2026-08-31, código adiado): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Checkpoint e documento 06.
 
 ---
 

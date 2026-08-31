@@ -21,7 +21,7 @@ Detalhe: `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 
 **Atualização de 2026-08-25 (noite, B095).** Fase 1 (`B095`) concluída: leitor hierárquico à parte (`TransactionStructureReader` com núcleo `Build` + adaptador SDK), modelo `ApiPlanLevel` / `ApiPlanLevelField`, critério compartilhado `TransactionAttributeKeyTraits`, testes offline com ouro em `Tests/TransactionStructure/Baselines/` ligados ao pré-push. Caminho flat do Wizard sem o leitor hierárquico. ~~Próxima ação = Fase 2 (`B096`).~~ **Superada** pela atualização B096 abaixo. Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
 
-**Atualização de 2026-08-31 (publicação `0.1.0-alpha.6`).** Tag `v0.1.0-alpha.6` e GitHub Release pre-release com os dois assets DLL. Próxima ação operacional = `B108`. Evidência: [Release](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.6).
+**Atualização de 2026-08-31 (publicação `0.1.0-alpha.6`).** Tag `v0.1.0-alpha.6` e GitHub Release pre-release com os dois assets DLL. Próxima ação operacional = `B108` (plano aprovado e gravado; código adiado). Plano: [2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md](2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md). Evidência: [Release](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.6).
 
 **Atualização de 2026-08-31 (pacote `0.1.0-alpha.6`).** CHANGELOG, notas PT/ES/EN, versão `0.1.0-alpha.6`, README/`INSTALL`/`DEMO` e builds Release canônico + satélite preparados. ~~Tag e GitHub Release aguardam autorização humana.~~ **Superada** pela publicação acima. Evidência: `Docs/Releases/0.1.0-alpha.6.md`.
 

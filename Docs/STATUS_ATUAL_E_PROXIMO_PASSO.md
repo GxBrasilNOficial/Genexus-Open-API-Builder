@@ -136,7 +136,7 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Implementar `B108`** — preferências da KB (`GxOpenApiBuilder_Settings`) só na **criação** de API; no reencontro/update, preservar o que já está na API/metadata. O corte `0.1.0-alpha.6` está publicado (tag + GitHub Release pre-release). `B082` continua em outra sessão. `B105` permanece folga/Sprint 10.
+**Implementar `B108`** — plano aprovado e gravado; **código ainda não iniciado** (adiado de propósito). Preferências da KB só na criação; no reencontro checkboxes espelham a KB; desmarcar confirma (default Não) e o Apply rebaixa/remove; Delete some com BC. Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. O corte `0.1.0-alpha.6` está publicado. `B082` continua em outra sessão. `B105` permanece folga/Sprint 10.
 
 Evidência do B100: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 Notas do corte: `Docs/Releases/0.1.0-alpha.6.md`.
@@ -148,7 +148,7 @@ Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/t
 
 ## Pendência urgente (próxima sessão de código)
 
-`B108` — preferências da KB (`GxOpenApiBuilder_Settings`) só na **criação** de API; no **reencontro/update**, o Wizard preserva o que já está na API/metadata e o operador só muda o que quiser. Diagnóstico 2026-08-31 na `NotaFiscal`: “Marcar REST via Business Component por padrão” religou o checkbox depois de um Apply com a etapa desmarcada, porque o default da KB não distingue primeira geração de reencontro. Serviços já leem o contrato existente; os checkboxes de geração (SDTs, Procedures, API Object, List, BC, metadata) ainda aplicam o File da KB. Item: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`). Pontos de código: `PrototypeWizardDialog` (`ApplyPreference`, `_applyBusinessComponentWhenReady`), `PrototypeWizardBusinessComponentNavigationPolicy.ResolveApplyBusinessComponentAfterGenerationRefresh`.
+`B108` — **plano completo aprovado em 2026-08-31; implementação adiada.** Ler primeiro `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Resumo: defaults `GxOpenApiBuilder_Settings` só na criação; reencontro espelha KB nos checkboxes de geração; desmarcar pede confirmação (default Não) e Apply rebaixa (List/BC) ou remove (SDTs próprios, Procedures, API Object, metadata); Delete some com BC; cascata de dependências; trava B054 de rebaixamento acidental permanece, com caminho explícito de retração. Diagnóstico original na `NotaFiscal`: preferência religava BC sem retirar Source. Item: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
 
 ## Evidência da frente encerrada
 
@@ -189,7 +189,7 @@ Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/t
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única é `B108` (preferências só na criação); o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é `B108` (plano aprovado; código adiado — `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
@@ -283,6 +283,7 @@ Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/t
 87. Em 2026-08-31 o residual do nível próprio do Delete no IIS fechou: Build All nos dois environments (`apinotafiscal.cs` ~16:04, Delete `SecurityHigh`); HTTP `goab_api_teste` 201/200/404; HTTP `goab_role_denied` GET 200 e DELETE 403 `code` 139 nos dois. ~~Próxima ação única permanece o corte `0.1.0-alpha.6`.~~ **Superada** pelo item 88. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §3.
 88. Em 2026-08-31 o pacote do corte `0.1.0-alpha.6` foi preparado (CHANGELOG, notas PT/ES/EN, versão, README/`INSTALL`/`DEMO`, builds Release canônico e satélite). ~~Próxima ação única = autorização humana para publicar (tag + GitHub Release pre-release + dois assets DLL).~~ **Superada** pelo item 89. `B108` permanece fora deste corte.
 89. Em 2026-08-31 o corte `0.1.0-alpha.6` foi publicado (tag `v0.1.0-alpha.6` + GitHub Release pre-release, dois assets DLL). Próxima ação única = `B108`.
+90. Em 2026-08-31 o plano de `B108` foi discutido, aprovado e gravado (preferências só na criação; checkboxes espelham KB; desmarcar confirma e rebaixa/remove; Delete some com BC). **Implementação adiada** de propósito para nova sessão. Próxima ação única permanece `B108` (código). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -339,7 +340,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 10 — Beta estável (`B108` é a próxima ação de código; `B082` permanece estacionado).
+- Sprint 10 — Beta estável (`B108` é a próxima ação de código, plano gravado; `B082` permanece estacionado).
 
 ## Protocolo de atualização
 
