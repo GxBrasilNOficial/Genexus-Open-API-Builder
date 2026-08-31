@@ -20,6 +20,7 @@ Comando explícito que compara a Transaction atual com a metadata, apresenta dif
 
 - `transactionStructure[]` com snapshot completo da Transaction na geração.
 - `fields.*.attributeGuid`, `fields.required[].attributeGuid`, `order[].attributeGuid`.
+- `services[]` inclui `securityLevel` por serviço; o Sync reconstrói o do Delete a partir desse campo, não de `security.level`.
 - KB de teste pode regenerar metadata pelo Wizard antes do sync (sem metadata antiga sem GUID).
 
 ## Código / menu
@@ -28,7 +29,7 @@ Comando explícito que compara a Transaction atual com a metadata, apresenta dif
 - Comando `Sincronizar com a Transaction` em `Package.cs` e `GenexusOpenApiBuilder.package` (menu principal e contexto; `Remover API gerada` fica por último)
 - Preflight de Sync permite atualizar o contrato B067 e o Source/Rules gerados de Procedures/API (B055/B070) de propósito; o Wizard continua bloqueando divergência não intencional
 - UI de campos adicionados: grade 2x2 (Response/CreateRequest na primeira linha; UpdateRequest/ListFilters na segunda), com GUID abreviado na lista
-- Testes: `Tests/TransactionSync/Test-ApiPlanTransactionSyncComparer.ps1`, `Tests/TransactionSync/Test-ApiPlanTransactionSyncFieldSelection.ps1`; contrato de posse Sync em `Tests/ApiObjectOwnership/Test-ApiPlanApiObjectOwnership.ps1`
+- Testes: `Tests/TransactionSync/Test-ApiPlanTransactionSyncComparer.ps1`, `Tests/TransactionSync/Test-ApiPlanTransactionSyncFieldSelection.ps1`; contrato de posse Sync em `Tests/ApiObjectOwnership/Test-ApiPlanApiObjectOwnership.ps1`; trava do `SecurityLevel` do Delete em `Tests/WizardContract/Test-PrototypeWizardExistingApiFilters.ps1`
 
 ## Validação manual U15 (2026-08-08)
 
@@ -56,3 +57,24 @@ Transaction `NotaFiscal`, KB de teste, DLL Release instalada (manifesto inaltera
 3. **Aplicar sincronizacao** → preflight aprovado; `Updated=13`, `Blocked=0`, `PreservedSdts=0`; Output com B040–B046 reencontrados, B071–B079 (`ResponseFields=6`, `CreateFields=5`, `UpdateFields=5`), B070, B060 (`Reencountered`, Guid `d0e010a7-7d26-4f2c-83a6-5195d211aa75`) e B067; avisos só de idioma e Folder reutilizado.
 
 Status: **concluído** (fix de posse Sync validado no U15).
+
+## Correção — SecurityLevel do Delete (2026-08-31)
+
+O Apply intencional do Sync regrava o Service Source via writer BC. Até este conserto o orquestrador lia só `security.level` (nível global) e `ApiPlanBuilder.Build` no Sync não recebia o `DesignModel`, então o Delete mais restrito (ou mais frouxo) que o restante da API virava o nível global.
+
+Código: `ReadPersistedDeleteSecurityLevel` em `ApiPlanTransactionSyncOrchestrator` lê `services[].securityLevel` do item `Delete` e passa no `PrototypeWizardReviewSelection`; `Package.cs` monta o plano com `ApiPlanBuilder.Build(knowledgeBase.DesignModel, transaction, selection)`. Manifesto inalterado (só DLL).
+
+### Validação manual U15 (2026-08-31)
+
+KB `wsEducacaoSpTeste`, Transaction `NotaFiscal` / `apiNotaFiscal`, DLL Release vigente.
+
+1. Wizard: API `Authorization`, Delete `Authentication`, Completar REST via Business Component `True` → Apply `SuccessWithWarnings`, `Blocked=0`.
+2. Service Source **antes** do Sync: `Delete` com `[SecurityLevel(Authentication)]`; List/Get/Create/Update com `Authorization`.
+3. Sync sem delta → nenhuma escrita (esperado; não prova o conserto).
+4. Delta mínimo: `NotaFiscalObs` Length `40.0` → `41.0`. Preview: `Modificados=1`, `Inalterados=8`, sem Added e sem conflito de SDT.
+5. Aplicar: `Trigger='SyncB085'`; Procedures reencontradas incluindo `procNotaFiscal_API_Delete`; BC com `DeleteProcedureGuid`; metadata `Reencountered` Guid `bc37000d-8132-40fd-b99b-2b55a319abe1`; B067 `PlannedContractHash='C4C8E598…'`; relatório `Atualizados=15`, `Bloqueados=0`, `Avisos=2`.
+6. Service Source **depois** do Sync: `Delete` permanece `[SecurityLevel(Authentication)]`; os outros, `Authorization`.
+
+Ensaio: o Length 41 ficou na Transaction; o operador pode reverter para 40 e sincronizar de novo se quiser limpar o delta.
+
+Status: **concluído** (preservação do SecurityLevel do Delete no Sync validada no U15).

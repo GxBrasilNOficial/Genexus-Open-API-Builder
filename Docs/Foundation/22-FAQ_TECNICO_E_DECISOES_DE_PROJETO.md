@@ -94,7 +94,7 @@ O foco principal atual é geração inicial de APIs REST baseadas em Transaction
 
 ## Resposta
 
-Porque `List`, `Get`, `Create` e `Update` resolvem dores frequentes, geram valor rápido e reduzem complexidade inicial. O `Delete` é opt-in e fica desligado por padrão (`B100`, 2026-08-30): só entra no API Object quando o operador marca o serviço no Wizard, com confirmação consciente e `SecurityLevel` próprio. Quem não marcar continua gerando exatamente os quatro serviços acima.
+Porque `List`, `Get`, `Create` e `Update` resolvem dores frequentes, geram valor rápido e reduzem complexidade inicial. O `Delete` é opt-in e fica desligado por padrão (`B100`, 2026-08-30): só entra no API Object quando o operador marca o serviço no Wizard, com confirmação consciente e `SecurityLevel` próprio. O Sync (`B085`) preserva esse nível por serviço; não o substitui pelo nível global da API. Quem não marcar continua gerando exatamente os quatro serviços acima.
 
 **Atualização — 2026-08-23 / fechamento `B100` em 2026-08-30:** o endpoint deixou de ser pós-MVP absoluto. A distinção entre apagar um **registro** (serviço REST `Delete`, via BC) e remover a **API gerada** (tooling, por metadata) permanece.
 

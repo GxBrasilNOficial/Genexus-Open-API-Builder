@@ -303,7 +303,7 @@ Serviços padrão geram:
 
 `EndpointsCount = 4` sem `Delete`; `5` quando o operador marca o opt-in.
 
-Os serviços obrigatórios são `List`, `Get`, `Create` e `Update`. O `Delete` é opt-in (`B100`, 2026-08-30): desligado por padrão o `EndpointsCount` permanece 4; marcado no Wizard, passa a 5.
+Os serviços obrigatórios são `List`, `Get`, `Create` e `Update`. O `Delete` é opt-in (`B100`, 2026-08-30): desligado por padrão o `EndpointsCount` permanece 4; marcado no Wizard, passa a 5. O `SecurityLevel` da API fica em `security.level`; o do `Delete`, quando o serviço existe, em `services[].securityLevel`. O Sync (`B085`) reconstrói esse valor por item para o writer BC não regravar o Delete com o nível global.
 
 ## Uso
 

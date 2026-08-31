@@ -63,7 +63,15 @@ Build All nos dois environments sem `spc0018` nas Procedures da API (aviso ambie
 
 ---
 
-## 4. Fora deste recorte
+## 4. Sync (`B085`) e o nível próprio do Delete
+
+O `SecurityLevel` do Delete não segue o nível global da API. O Sync regrava o Service Source no Apply intencional; desde 2026-08-31 ele lê `services[].securityLevel` do item Delete na metadata e monta o ApiPlan com o contrato da KB. Sem isso o writer BC copiava `security.level` para o Delete.
+
+Evidência U15: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md` (seção 2026-08-31). HTTP do Delete permanece o da seção 3; este recorte não refez chamada REST.
+
+---
+
+## 5. Fora deste recorte
 
 - Corte GitHub `0.1.0-alpha.6` (tag, notas trilíngues, dois assets DLL): autorização humana.
 - `B082` (progresso na UI): outra sessão.
@@ -72,9 +80,10 @@ Build All nos dois environments sem `spc0018` nas Procedures da API (aviso ambie
 
 ---
 
-## 5. Testes offline
+## 6. Testes offline
 
 `Tests/WizardPreferences/Test-PrototypeWizardPreferences.ps1` (default `false`, fallback legado).
 `Tests/WizardLifecycle/Test-ApiPlanWizardHierarchicalLifecycle.ps1` (recusar confirmação desmarca
-Delete). Contrato OpenAPI: `Delete` entra em `PrototypeWizardContract.ServiceNames` e na trava
-`Tests/OpenApiContract/`.
+Delete). `Tests/WizardContract/Test-PrototypeWizardExistingApiFilters.ps1` (Sync lê
+`services[].securityLevel` do Delete). Contrato OpenAPI: `Delete` entra em
+`PrototypeWizardContract.ServiceNames` e na trava `Tests/OpenApiContract/`.

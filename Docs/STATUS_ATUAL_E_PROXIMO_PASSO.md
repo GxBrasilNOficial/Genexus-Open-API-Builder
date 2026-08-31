@@ -94,6 +94,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B089` concluído em 2026-08-10: evidência HTTP **403** com papel GAM não-administrador sob `SecurityLevel = Authorization` em `apiNotaFiscal` — role `Role_GOAB_Test_Denied`, Get Permitir / Create não atribuído, usuário `goab_role_denied`; GET **200** e POST Create **403** (`code` 139) nos environments .NET Framework/SQL Server e .NET/PostgreSQL. Setup via GAM Backoffice (telas nativas). Documentado em `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D. Sem mudança de código da extensão.
 - Pacote documental da Alpha `0.1.0-alpha.1` preparado em 2026-08-10: README público, `Docs/Public/INSTALL.md`, `Docs/Public/DEMO.md`, `Docs/Releases/0.1.0-alpha.1.md`, corte no CHANGELOG e versão do csproj.
 - Correção B085 (2026-08-10): Sync não exige mais `IsManagedApiObject` contra o ApiPlan reconstruído — posse por metadata; seleção de campos com ordem estável. Validado no U15 em `NotaFiscal` com `+ NotaFiscalObs3`: preflight OK, `Updated=13`, `Blocked=0`.
+- Correção B085 (2026-08-31): Sync preserva o `SecurityLevel` próprio do Delete (`services[].securityLevel` + `ApiPlanBuilder.Build` com `DesignModel`). Validado no U15 em `NotaFiscal`/`apiNotaFiscal`: API `Authorization`, Delete `Authentication` após Apply com delta `NotaFiscalObs` 40→41 (`Atualizados=15`, `Blocked=0`). Evidência: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`.
 - `B094` concluído em 2026-08-10 e corrigido em 2026-08-11: evidência de instalação sem clonar/`Install-*.bat` (Add > Local + `genexus /install`) ativando marcada + menus no U15, ainda com elevação (UAC); captura confiável em cmd elevado mostrou `Package 'GenexusOpenApiBuilder.Extension.dll' added`. Sem mudança de código da extensão. Evidência: `Docs/Implementation/B094-INSTALACAO-APENAS-COM-A-DLL-SEM-CLONAR.md`. Documentação pública não alterada nesta frente.
 - Documentação pública alinhada ao `B094` em 2026-08-11: `Docs/Public/INSTALL.md` com caminho do usuário final (DLL) e do mantenedor; `README.md` com atualização pelos dois caminhos; `Docs/Releases/0.1.0-alpha.1.md` corrige o que não entra; `CHANGELOG.md` registra a mudança sob `[0.1.0-alpha.1]`. Sem mudança de código da extensão. Correção imediata na mesma data: ordem de instalação do usuário final alinhada ao B094 (Add > Local com IDE aberta); atualização só com Add > Local marcada como não comprovada (falha observada com DLL já em `Packages`).
 - Em 2026-08-11 o INSTALL publicado do usuário final foi ancorado ao redo do mantenedor (B094 §6: limpeza + Add > Local + `/install` + menus). Não havia gap de “ninguém executou a sequência”; naquele momento o gate restante continuava sendo usuário externo.
@@ -147,6 +148,7 @@ Evidência do B100: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 ## Evidência da frente encerrada
 
 - `B100` (2026-08-30): Delete opt-in; Wizard/confirmação/`SecurityLevel`; HTTP 401/404/200 nos dois environments da `apiNotaFiscal`; 422 de integridade no Framework (PostgreSQL dispensado). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
+- Sync `B085` × Delete (2026-08-31): Apply intencional com delta de Length em `NotaFiscalObs` regrava BC/Service Source e mantém `[SecurityLevel(Authentication)]` no Delete enquanto o restante fica `Authorization`. Evidência: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`.
 - Critério 11 (2026-08-29): escala `Empresa` / 13 subníveis; OwnSdts=44; `Build All` Success nos dois environments; Remover 50 sem órfão; pasta `EmpresaOpenApi` reutilizada vazia de propósito. Evidência: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
 - Fase 7: ciclo de vida sob hierarquia; releitura de `levels` no Wizard; inventário dinâmico de remoção; Sync sem falso positivo SDT; smoke U15 na `Teste`/`apiTeste` (apply `Created=24`, critério 8, Sync `0/0/0/0/16`, Remover preview 18 SDTs / cancelado); Sync com delta `TesteItemObs2` (`Updated=27`, membro nos três SDTs `*_TesteItem`). Evidência: `Docs/Implementation/2026-08-28-FASE7-CICLO-VIDA-HIERARQUIA.md`.
 - `B099b` (Fase 6): metadata V2 hierárquica; Wizard/Sync/Remover na `Teste`/`apiTeste`; reencontro plano V1→V2 na `NotaFiscal`/`apiFiscalPublica` (`PlannedContractHash` estável `8F737F1A…`, `levels=null`, `own`=5). Evidência: `Docs/Implementation/2026-08-28-B099b-METADATA-HIERARQUICA-V2.md`.
@@ -265,6 +267,7 @@ Evidência do B100: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 79. Em 2026-08-30 o corte `0.1.0-alpha.5` foi publicado (tag `v0.1.0-alpha.5` + GitHub Release pre-release, dois assets DLL). ~~Próxima ação única = `B100`.~~ **Superada** pelo item 80.
 80. Em 2026-08-30 o `B100` fechou: Delete opt-in no gerador; `apiNotaFiscal` com HTTP 401/404/200 nos dois environments e 422 de integridade no Framework (PostgreSQL dispensado). Próxima ação única = preparar o corte `0.1.0-alpha.6` (autorização humana). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 81. Em 2026-08-31 ficou registrada a pendência urgente `B108` (preferências da KB só na criação; reencontro preserva a API). Não substitui a próxima ação única do corte `0.1.0-alpha.6`. Detalhe no documento 06.
+82. Em 2026-08-31 o Sync (`B085`) passou a preservar o `SecurityLevel` do Delete; validado no U15 em `apiNotaFiscal` (Delete `Authentication` após Apply com `NotaFiscalObs` 40→41). Próxima ação única permanece o corte `0.1.0-alpha.6`. Evidência: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -308,6 +311,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [2026-08-29 — Critério 11 escala Empresa](Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md)
 - [2026-08-29 — UX progresso Wizard/apply (missão B082, outra sessão)](Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md)
 - [2026-08-30 — B100 Delete opt-in](Implementation/2026-08-30-B100-DELETE-OPT-IN.md)
+- [B085 — Sincronizar com a Transaction](Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
 - [Release 0.1.0-alpha.1](Releases/0.1.0-alpha.1.md)

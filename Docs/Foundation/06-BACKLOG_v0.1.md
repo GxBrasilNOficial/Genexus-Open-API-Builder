@@ -243,7 +243,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B082 | Mostrar tempo execução | Média — **missão de outra sessão**; fora da linha de corte do MVP e **fora do corte `0.1.0-alpha.5`**. Em 2026-08-29 o apply da `Empresa` (107 min) e o Remover (`Deleted=50`, ~32 s) mostraram que tempo sozinho não basta — falta sinal de vida enquanto o thread da UI está bloqueado (`Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`) |
 | B083 | Detectar conflito antes salvar | Alta — concluído (núcleo no preflight; residual UX nome/tipo/módulo/Folder validado U15 2026-08-08) |
 | B084 | Bloquear overwrite silencioso | Alta — atendido (sem `_v2`) |
-| B085 | Sincronizar com a Transaction usando metadata | Alta — concluído (código + validação U15 2026-08-08) |
+| B085 | Sincronizar com a Transaction usando metadata | Alta — concluído (código + validação U15 2026-08-08; SecurityLevel do Delete no Sync, U15 2026-08-31) |
 | B086 | Remover API gerada por metadata, sem reverter BC | Alta — concluído (código + validação U15 2026-08-08/09; Folder criado e reutilizado) |
 | B087 | Ancorar posse na metadata e liberar a `Description` do API Object | Alta — concluído (código + validação U15 2026-08-07) |
 | B088 | Reconciliar restrições do template nativo Swagger.Yaml.stg (respostas declaradas 200/404 e emissão de required em schemas) | Alta — pré-Alpha separado; concluído (2026-08-10; limitação intransponível documentada) |
@@ -308,7 +308,7 @@ Após a Sprint 6, o pacote histórico “conflitos e reexecução” da Fase 7 f
 
 1. `B087` (posse sem travar `Description`) — concluído
 2. `B086` (`Remover API gerada`) — concluído (U15 2026-08-08)
-3. `B085` (`Sincronizar com a Transaction`) — concluído (U15 2026-08-08)
+3. `B085` (`Sincronizar com a Transaction`) — concluído (U15 2026-08-08; preservação do SecurityLevel do Delete no Apply do Sync, U15 2026-08-31)
 4. `B081` (relatório final pós-aplicação) — concluído (U15 2026-08-08/09; criação reportada como `Created=12`, incluindo o Folder)
 5. residual de apresentação de `B083` — concluído (U15 2026-08-08)
 6. alinhamento de Folder reutilizado à decisão do MVP (reutilizar `NomeOpenApi` preexistente no módulo correto com aviso) — concluído (U15 2026-08-09; caminho feliz e bloqueios para contêiner incorreto, duplicidade e sentinela alheia)
