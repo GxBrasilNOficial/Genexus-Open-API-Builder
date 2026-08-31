@@ -165,6 +165,14 @@ public static class PrototypeWizardPreferencesCodec
         {
             throw new JsonException("Preferencias de servico invalidas: ao menos um servico deve iniciar marcado.");
         }
+
+        if (preferences.DeleteServiceByDefault
+            && !(preferences.GetServiceByDefault
+                && preferences.CreateServiceByDefault
+                && preferences.UpdateServiceByDefault))
+        {
+            throw new JsonException("Preferencias de servico invalidas: Delete marcado exige Get, Create e Update.");
+        }
     }
 
     public static bool IsSupportedSchemaVersion(string? schemaVersion)

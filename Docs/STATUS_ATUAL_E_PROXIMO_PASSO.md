@@ -136,7 +136,7 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Preparar o corte `0.1.0-alpha.6`.** O `B100` está no código e na documentação; a versão do pacote ainda é `0.1.0-alpha.5`. Publicação (tag, GitHub Release pre-release, dois assets DLL, notas trilíngues) exige autorização humana explícita. `B105` permanece folga/Sprint 10. `B082` continua em outra sessão. `B108` é pendência urgente de código para a **próxima sessão** (não misturar com o corte até decisão humana).
+**Preparar o corte `0.1.0-alpha.6`.** O `B100` está no código e na documentação; a versão do pacote ainda é `0.1.0-alpha.5`. Publicação (tag, GitHub Release pre-release, dois assets DLL, notas trilíngues) exige autorização humana explícita. HTTP de contrato do Delete (401/404/200/422) recapturado em 2026-08-31; residual = nível Authorization no Delete no binário IIS após Apply+Build All. `B105` permanece folga/Sprint 10. `B082` continua em outra sessão. `B108` é pendência urgente de código para a **próxima sessão** (não misturar com o corte até decisão humana).
 
 Evidência do B100: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 
@@ -150,7 +150,7 @@ Evidência do B100: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 
 ## Evidência da frente encerrada
 
-- `B100` (2026-08-30): Delete opt-in; Wizard/confirmação/`SecurityLevel`; HTTP 401/404/200 nos dois environments da `apiNotaFiscal`; 422 de integridade no Framework (PostgreSQL dispensado). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
+- `B100` (2026-08-30; HTTP recapturado 2026-08-31): Delete opt-in; Wizard/confirmação/`SecurityLevel`; HTTP 401/404/200 nos dois environments da `apiNotaFiscal` e 422 de integridade no Framework. Residual do corte: Authorization no Delete no C# servido (hoje `SecurityLow` também no Delete). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §3.
 - Sync `B085` × Delete (2026-08-31): Apply intencional com delta de Length em `NotaFiscalObs` regrava BC/Service Source e mantém `[SecurityLevel(Authentication)]` no Delete enquanto o restante fica `Authorization`. Evidência: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`.
 - Wizard no reencontro (2026-08-31): rádio Authorization→Authentication na `apiNotaFiscal`; Service Source dos cinco serviços em `Authentication`. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §5.
 - Delete exige etapa BC (2026-08-31): UI + Apply U15 na `apiNotaFiscal` (`Updated=15`, Service Source REST via BC). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §6.
@@ -277,9 +277,11 @@ Evidência do B100: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 83. Em 2026-08-31 o reencontro do Wizard passou a gravar o rádio em List/Get/Create/Update (Delete no combo). Smoke U15: `apiNotaFiscal` Authorization→Authentication, `Updated=15`, Service Source dos cinco em `Authentication`. Próxima ação única permanece o corte `0.1.0-alpha.6`. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §5.
 84. Em 2026-08-31 o Delete passou a exigir Completar REST via Business Component no mesmo Apply. Smoke U15 na `apiNotaFiscal`: diálogo Não/Sim; remarcar Delete religa BC; Apply `Updated=15`, `Blocked=0`; Service Source do Delete com `ErrorResponse` / `RestStatusCode`. Próxima ação única permanece o corte `0.1.0-alpha.6`. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §6.
 85. Em 2026-08-31 o Output da etapa Procedures passou a `[B050-B053/B100]`; a prévia passou a invalidar cache no combo do Delete; as preferências recusam Delete sem Get/Create/Update. Smoke U15 na `apiNotaFiscal` (prefixo, Service Source Authentication vs Authorization no Delete, mensagem de preferências, regressão Sim/religar BC). Próxima ação única permanece o corte `0.1.0-alpha.6`. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §7.
+86. Em 2026-08-31 o codec das preferências passou a recusar Delete sem Get/Create/Update (`Parse`/`Serialize`; `Load` cai em defaults). Diálogo e Wizard `NotaFiscal` (cancelar) já fumados; Load de File inválido não entra na IDE (File é blob). HTTP 401/404/200/422 recapturado na IIS; residual = Authorization no Delete no binário. Próxima ação única permanece o corte `0.1.0-alpha.6`.
 
 ## Bloqueios e fatos ainda não validados
 
+- HTTP do Delete: 401/404/200/422 de contrato recapturados em 2026-08-31 na `apiNotaFiscal`. Residual antes do corte `0.1.0-alpha.6`: nível Authorization no Delete no C# servido (Apply com o combo + Build All; o gerado em 31/08 ~09:08 ainda está `SecurityLow` no Delete). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §3.
 - Add > Local por usuário externo em máquina nunca usada com a extensão (o relato U14 usou cópia em `Packages` + `/install`); instalação sem elevação alguma continua sem comprovação.
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação. Em `Remover API gerada` (B086), ambiguidade e posse de API/Procedures/SDTs próprios passam a ser validadas antes do primeiro `Delete()` (`ValidateRemovalTargets` em Preview e Remove); permanece residual a falha IDE/SDK no meio da sequência de exclusões já iniciada.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.

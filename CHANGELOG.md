@@ -31,12 +31,13 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Documentos Foundation `05`, `10`, `11` e `12` §11: deixam de afirmar Delete como pós-MVP absoluto e passam ao contrato vigente (quatro serviços obrigatórios + Delete opt-in desligado por padrão).
 - Foundation `04`, `06` (nota operacional e `B075`) e `08` (regra MVP de `EndpointsCount`): a frase vigente deixa de ser “Delete é pós-MVP” / “não existe Delete no MVP”, para o mesmo contrato opt-in do `B100`. O plano 24 anota o `B075` da Sprint 6 como critério histórico.
 - Foundation `07` (UX do wizard): Passo 2 passa a citar Delete opt-in, confirmação, combo de Security Level e dependência da etapa Completar REST via Business Component, sem alterar a estrutura de 3 passos.
+- HTTP do Delete recapturado em 2026-08-31 na `apiNotaFiscal` (401/404/200 nos dois environments; 422 de integridade no Framework). Residual do corte `0.1.0-alpha.6`: nível Authorization no Delete no binário IIS (C# de 31/08 ~09:08 ainda emite `SecurityLow` também no Delete). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §3.
 
 ### Fixed
 
 - Output da etapa Procedures com Delete: o prefixo da etapa passa a `B050-B053/B100` (o item já saía `Backlog='B100'`). Smoke U15 2026-08-31 na `apiNotaFiscal`: prefixo no bloco e nos cinco itens; Delete com `Backlog='B100'`.
 - Prévia do Wizard: o fingerprint e o refresh passam a incluir o Security Level do Delete e o checkbox de mensagens HTTP 422. Smoke U15: rádio Authentication, combo Delete Authorization; Apply `Updated=15`; Service Source dos quatro em `[SecurityLevel(Authentication)]` e Delete em `[SecurityLevel(Authorization)]`. Ir direto ao Resumo força refresh (`forceRefresh: true`); o cache só afeta as abas de geração.
-- Preferências do Wizard: recusam gravar Delete sem Get, Create e Update (sem marcar serviços em silêncio). Smoke U15: só Delete dispara a mensagem nova; zero serviços continua no gate antigo; cancelar após a recusa não grava.
+- Preferências do Wizard: recusam gravar Delete sem Get, Create e Update (sem marcar serviços em silêncio). Smoke U15: só Delete dispara a mensagem nova; cancelar não grava. O codec (`Parse`/`Serialize`) recusa o mesmo estado; o `Load` cai em defaults conservadores. Load de File inválido não foi fumado na IDE (File é blob, sem edição de JSON na tela); cobre o teste offline.
 
 ### Removed
 

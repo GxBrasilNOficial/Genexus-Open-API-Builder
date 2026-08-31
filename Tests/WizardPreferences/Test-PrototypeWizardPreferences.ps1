@@ -83,7 +83,7 @@ $values.ListServiceByDefault = $true
 $values.GetServiceByDefault = $false
 $values.CreateServiceByDefault = $true
 $values.UpdateServiceByDefault = $false
-$values.DeleteServiceByDefault = $true
+$values.DeleteServiceByDefault = $false
 $values.SecurityLevelByDefault = 'authorization'
 $values.DefaultPageSizeByDefault = 40
 $values.MaximumPageSizeByDefault = 100
@@ -101,7 +101,7 @@ Assert-True $parsed.ListServiceByDefault 'Serialização deve preservar serviço
 Assert-False $parsed.GetServiceByDefault 'Serialização deve preservar serviço Get.'
 Assert-True $parsed.CreateServiceByDefault 'Serialização deve preservar serviço Create.'
 Assert-False $parsed.UpdateServiceByDefault 'Serialização deve preservar serviço Update.'
-Assert-True $parsed.DeleteServiceByDefault 'Serialização deve preservar serviço Delete.'
+Assert-False $parsed.DeleteServiceByDefault 'Serialização deve preservar serviço Delete desmarcado.'
 Assert-Equal 'Authorization' $parsed.SecurityLevelByDefault 'SecurityLevel deve ser normalizado ao serializar/parsear.'
 Assert-Equal 40 $parsed.DefaultPageSizeByDefault 'Serialização deve preservar DefaultPageSize.'
 Assert-Equal 100 $parsed.MaximumPageSizeByDefault 'Serialização deve preservar MaximumPageSize.'
@@ -143,14 +143,40 @@ Assert-Equal 50 $legacyParsed.DefaultPageSizeByDefault 'JSON sem pagination deve
 Assert-Equal 200 $legacyParsed.MaximumPageSizeByDefault 'JSON sem pagination deve aplicar MaximumPageSize fallback.'
 Assert-True $legacyParsed.IncludeBusinessComponentErrorMessagesByDefault 'JSON sem includeBusinessComponentErrorMessages deve aplicar fallback ligado.'
 
+$withDelete = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferenceValues]::new()
+$withDelete.ListServiceByDefault = $true
+$withDelete.GetServiceByDefault = $true
+$withDelete.CreateServiceByDefault = $true
+$withDelete.UpdateServiceByDefault = $true
+$withDelete.DeleteServiceByDefault = $true
+$withDeleteParsed = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Parse(
+    [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Serialize($withDelete))
+Assert-True $withDeleteParsed.DeleteServiceByDefault 'Delete com Get, Create e Update deve serializar.'
+
 $invalidPagination = $json.Replace('"defaultPageSize": 40', '"defaultPageSize": 120')
 Assert-Throws { [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Parse($invalidPagination) | Out-Null } 'DefaultPageSize maior que MaximumPageSize deve ser rejeitado.'
 
-$invalidServices = $json.Replace('"list": true', '"list": false').Replace('"create": true', '"create": false').Replace('"delete": true', '"delete": false')
+$invalidServices = $json.Replace('"list": true', '"list": false').Replace('"create": true', '"create": false')
 Assert-Throws { [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Parse($invalidServices) | Out-Null } 'Todos os serviços desmarcados devem ser rejeitados.'
+
+$invalidDelete = $json.Replace('"delete": false', '"delete": true')
+Assert-Throws { [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Parse($invalidDelete) | Out-Null } 'Delete sem Get, Create e Update deve ser rejeitado no parse.'
+
+$deleteWithoutGcu = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferenceValues]::new()
+$deleteWithoutGcu.ListServiceByDefault = $true
+$deleteWithoutGcu.GetServiceByDefault = $false
+$deleteWithoutGcu.CreateServiceByDefault = $true
+$deleteWithoutGcu.UpdateServiceByDefault = $true
+$deleteWithoutGcu.DeleteServiceByDefault = $true
+Assert-Throws { [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Serialize($deleteWithoutGcu) | Out-Null } 'Serialize deve recusar Delete sem Get, Create e Update.'
 
 Assert-Equal 'None' ([GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::NormalizeSecurityLevel('none')) 'SecurityLevel None deve ser normalizado.'
 Assert-Equal 'Authentication' ([GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::NormalizeSecurityLevel('valor-invalido')) 'SecurityLevel inválido deve cair em Authentication.'
+
+$codecSource = [IO.File]::ReadAllText($codecPath)
+if ($codecSource.IndexOf('Delete marcado exige Get, Create e Update.', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_CONTAINS_FAILED: O codec deve recusar Delete sem Get, Create e Update no parse/serialize.'
+}
 
 $preferencesDialogPath = Join-Path $PSScriptRoot '..\..\Src\Extension\PrototypeWizardPreferencesDialog.cs'
 if (-not (Test-Path -LiteralPath $preferencesDialogPath)) {

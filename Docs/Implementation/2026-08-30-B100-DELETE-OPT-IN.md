@@ -61,6 +61,10 @@ Create/Update de `apiGuiaPed`. A amarração nota↔guia no produto é `wpAtuali
 dois environments; o 422 de integridade ficou comprovado no Framework. O mesmo gerador emite o
 Source nos dois.
 
+**Alcance da tabela acima:** gerador de **2026-08-30** (ids 23 / 10).
+
+**Recaptura HTTP 2026-08-31 (tarde):** IIS `apiNotaFiscal`, C# de 31/08 ~09:08 com `ApiIntegratedSecurityLevel` **por serviço**; Delete e os demais em `SecurityLow` (Authentication). Nos dois environments: DELETE sem token **401**, id inexistente **404** `not_found`, Create **201** + DELETE **200** + GET **404** (Framework ids 24 e 25; PostgreSQL 12 e 13). Integridade Framework na nota 1: **422** `validation_error` / `CannotDeleteReferencedRecord`; GET depois **200**. O Wizard nesta KB mostra Delete `Authorization`; o binário servido ainda não (falta Build All depois do Apply com o combo). Residual do corte `0.1.0-alpha.6`: o **nível próprio** (Authorization no Delete versus Authentication nos demais), não repetir 200/404/422 de contrato.
+
 Build All nos dois environments sem `spc0018` nas Procedures da API (aviso ambiental
 `FBiTextSharp.dll` no Framework).
 
@@ -70,7 +74,7 @@ Build All nos dois environments sem `spc0018` nas Procedures da API (aviso ambie
 
 O `SecurityLevel` do Delete não segue o nível global da API. O Sync regrava o Service Source no Apply intencional; desde 2026-08-31 ele lê `services[].securityLevel` do item Delete na metadata e monta o ApiPlan com o contrato da KB. Sem isso o writer BC copiava `security.level` para o Delete.
 
-Evidência U15: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md` (seção 2026-08-31). HTTP do Delete permanece o da seção 3; este recorte não refez chamada REST.
+Evidência U15: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md` (seção 2026-08-31). HTTP do Delete: ver alcance na seção 3; este recorte não refez chamada REST.
 
 ---
 
@@ -112,14 +116,14 @@ Três correções no mesmo recorte, fumadas no U15 em `NotaFiscal` / `apiNotaFis
 
 1. **Prefixo da etapa Procedures.** Com Delete no plano, Output usa `[B050-B053/B100]` no bloco e em cada item; o Delete sai `Backlog='B100'`. Apply de reencontro `SuccessWithWarnings`, `Atualizados=15`, `Bloqueados=0`.
 2. **Prévia / fingerprint.** Combo do Delete e checkbox 422 entram no fingerprint; mudança no combo dispara refresh. Apply com rádio `Authentication` e combo Delete `Authorization`: Service Source dos quatro em `[SecurityLevel(Authentication)]`, Delete em `[SecurityLevel(Authorization)]`. Clique direto em Resumo já forçava `forceRefresh: true`; o cache obsoleto só afetava as abas de geração (SDTs, Procedures, API Object, Metadata).
-3. **Preferências.** Delete sozinho (sem Get, Create e Update) recusa gravar; zero serviços continua no gate `Marque ao menos um serviço padrão.`; cancelar após a recusa não altera `GxOpenApiBuilder_Settings`.
+3. **Preferências.** Delete sozinho recusa gravar no diálogo (smoke U15: File carregou os cinco serviços; só Delete recusou; cancelar não gravou). O codec (`Parse`/`Serialize`) recusa o mesmo estado (`JsonException`; o `Load` cai em defaults conservadores). Teste offline em `Tests/WizardPreferences/Test-PrototypeWizardPreferences.ps1`. O File `GxOpenApiBuilder_Settings` é blob (`External File Name` `GxOpenApiBuilder_Settings.json`): **não há edição de JSON na IDE**; o Load de File inválido **não** foi fumado na IDE (exportar/substituir o blob ficou de fora). Zero serviços continua no gate antigo.
 4. **Regressão Delete × BC.** Sim desmarca Delete e deixa Completar REST desmarcado; remarcar Delete religa a etapa. No reencontro de API que já tem Delete, remarcar nesta sessão **não** reabre o diálogo de adesão (`ExistingApiContract`). Wizard cancelado; a KB permanece com o Apply do item 2.
 
 ---
 
 ## 8. Fora deste recorte
 
-- Corte GitHub `0.1.0-alpha.6` (tag, notas trilíngues, dois assets DLL): autorização humana.
+- Corte GitHub `0.1.0-alpha.6` (tag, notas trilíngues, dois assets DLL): autorização humana. Residual HTTP: nível próprio do Delete no binário IIS (Apply com combo Authorization + Build All; hoje o C# servido ainda está Authentication no Delete). 401/404/200/422 de contrato recapturados em 2026-08-31 (§3).
 - `B082` (progresso na UI): outra sessão.
 - `B105` (teto de detalhe de erro pelo chamador): Sprint 9 se houver folga, senão Sprint 10.
 - Regenerar `apiGuiaPed` só para o 422 do PostgreSQL: cancelado.
@@ -128,7 +132,7 @@ Três correções no mesmo recorte, fumadas no U15 em `NotaFiscal` / `apiNotaFis
 
 ## 9. Testes offline
 
-`Tests/WizardPreferences/Test-PrototypeWizardPreferences.ps1` (default `false`, fallback legado; diálogo recusa Delete sem Get/Create/Update).
+`Tests/WizardPreferences/Test-PrototypeWizardPreferences.ps1` (default `false`, fallback legado; diálogo e codec recusam Delete sem Get/Create/Update).
 `Tests/WizardLifecycle/Test-ApiPlanWizardHierarchicalLifecycle.ps1` (recusar confirmação desmarca
 Delete). `Tests/WizardContract/Test-PrototypeWizardExistingApiFilters.ps1` (reencontro: rádio nos quatro, combo no Delete; Sync lê
 `services[].securityLevel` do Delete; Output `B050-B053/B100`; fingerprint do combo e do checkbox 422). `Tests/WizardNavigation/Test-PrototypeWizardBusinessComponentNavigationPolicy.ps1` (Delete sem etapa BC é recusado). `Tests/OwnershipDescriptions/Test-ApiPlanOwnedObjectDescription.ps1` (Delete canônico, legado `B100` e fallback `B050-B053`). `Tests/Localization/Test-ExtensionLanguage.ps1` (mensagem das preferências). Contrato OpenAPI: `Delete` entra em
