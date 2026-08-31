@@ -30,6 +30,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Mensagens de preflight dos writers: deixam de pedir `Execute B040-B046` / `B050-B053` / `B054` e passam a indicar o Wizard.
 - Documentos Foundation `05`, `10`, `11` e `12` §11: deixam de afirmar Delete como pós-MVP absoluto e passam ao contrato vigente (quatro serviços obrigatórios + Delete opt-in desligado por padrão).
 - Foundation `04`, `06` (nota operacional e `B075`) e `08` (regra MVP de `EndpointsCount`): a frase vigente deixa de ser “Delete é pós-MVP” / “não existe Delete no MVP”, para o mesmo contrato opt-in do `B100`. O plano 24 anota o `B075` da Sprint 6 como critério histórico.
+- Foundation `07` (UX do wizard): Passo 2 passa a citar Delete opt-in, confirmação, combo de Security Level e dependência da etapa Completar REST via Business Component, sem alterar a estrutura de 3 passos.
 
 ### Fixed
 

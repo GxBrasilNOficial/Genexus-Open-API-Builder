@@ -62,6 +62,7 @@ Este documento **não define código-fonte**, **não escolhe framework UI**, **n
 | B080 | Entrada via menu/contexto |
 | B081 | Tela final resultado |
 | B083/B084 | painel de conflitos antes de salvar e bloqueio de overwrite silencioso |
+| B100 | Delete opt-in: checkbox, confirmação, combo de Security Level e dependência da etapa REST via Business Component |
 
 ---
 
@@ -161,10 +162,12 @@ Wizard com etapas mínimas e possibilidade de subdivisão visual conforme a impl
 | Services base path | Sim |
 | Caminho comum dos serviços (RestPath) | Sim |
 | Serviços `List/Get/Create/Update` | Sim |
+| Serviço `Delete` | Não (opt-in, desmarcado) |
 | Campos de Create e Update | Sim |
 | Filtros de List | Sim |
 | Paginação e ordenação | Sim |
-| Security Level | Sim |
+| Security Level (rádio único) | Sim |
+| Security Level do Delete | Só com Delete marcado |
 
 O wizard não terá campo de descrição de serviço. As descrições são geradas automaticamente conforme as convenções do documento 11.
 
@@ -176,7 +179,7 @@ O wizard não terá campo de descrição de serviço. As descrições são gerad
 | Services base path | acompanha Nome API até edição manual |
 | RestPath | nome da Transaction em minúsculas separadas por hífen, sem pluralização automática |
 | Módulo | módulo da Transaction, não editável no MVP |
-| Serviços | List/Get/Create/Update habilitados |
+| Serviços | List/Get/Create/Update habilitados; Delete desmarcado |
 | Default Page Size | 50 |
 | Maximum Page Size | 200 |
 | Ordenação | chave primária completa ascendente |
@@ -196,6 +199,20 @@ Campos tecnicamente inadequados aparecem desabilitados, com motivo. Campos de au
 O MVP não oferece reuso arbitrário de SDTs externos. O wizard pode mostrar apenas contratos próprios reencontrados por metadata.
 
 Colisão com SDT externo de mesmo nome bloqueia a geração até o usuário resolver na KB e executar novamente.
+
+## Delete opt-in
+
+**Nota de revisão — 2026-08-31 — `B100`:** o Passo 2 permanece o mesmo contrato de quatro serviços obrigatórios. O `Delete` entra neste passo como checkbox opt-in, não como quinto serviço obrigatório nem como tela extra.
+
+UX vigente:
+
+- checkbox `Delete` inicia desmarcado; marcar gera exclusão de registro via Business Component (cabeçalho e linhas filhas na mesma transação atômica) e exige confirmação consciente na primeira adesão;
+- no reencontro de API que já tem Delete no contrato, remarcar nesta sessão não reabre esse diálogo;
+- marcar Delete pede a etapa Completar REST via Business Component no mesmo Apply; desmarcar essa etapa com Delete marcado pergunta se desmarca Delete ou restaura a etapa (Não = default, restaura);
+- sem essa etapa, o Apply não gera o endpoint Delete;
+- o rádio `Security Level` vale para List/Get/Create/Update; o Delete tem combo próprio, visível só quando o serviço está marcado, e pode ser mais restritivo que o rádio.
+
+Detalhe de geração e HTTP: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`. Contrato de requisitos: documento 04.
 
 ## Revisão de Campos
 
@@ -260,6 +277,7 @@ O MVP não cria sufixos automáticos, não adota objeto externo e não altera ne
 - Possíveis objetos a criar
 - campos e filtros selecionados
 - paginação, ordenação e `Security Level`
+- se Delete estiver marcado: `Security Level` do Delete e Completar REST via Business Component (sem essa etapa o resumo declara que o endpoint Delete não é gerado)
 - idioma usado nos `[Description]` dos serviços e eventual fallback para inglês
 
 ## Botões
@@ -330,6 +348,8 @@ Mensagem principal:
 - Informe um nome válido.
 - Já existe objeto com esse nome.
 - Processo concluído com sucesso.
+- Marcar Delete gera exclusão de registro via Business Component. Continuar?
+- Delete exige Completar REST via Business Component. Desmarcar essa etapa também desmarca Delete. Continuar?
 
 [UX-F07]
 
@@ -416,6 +436,7 @@ Mensagem principal:
 
 - UX prioriza simplicidade
 - wizard possui 3 passos fixos
+- Delete é opt-in no Passo 2 (desmarcado); List/Get/Create/Update continuam obrigatórios
 - painel de conflitos dentro do Passo 2
 - resultado final precisa transparência
 
