@@ -10,20 +10,29 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
-### Added
+### Planned
+
+- `B108` (pendência, não implementado): preferências da KB só na criação da API; no reencontro preservar o contrato gravado. Checkpoint e documento 06.
+
+---
+
+# [0.1.0-alpha.6] - 2026-08-31
+
+Release focada no serviço REST `Delete` opt-in (`B100`). Pacote documental e builds preparados; tag e GitHub Release aguardam autorização humana.
+
+## Added
 
 - `B100`: serviço REST `Delete` opt-in (desligado por padrão). Procedure `proc*_API_Delete`, `DELETE` no path da chave do Get, `200` / `404` / `422` via BC, `SecurityLevel` próprio, confirmação ao marcar. HTTP: 401/404/200 nos dois environments da `apiNotaFiscal`; 422 de integridade no Framework (PostgreSQL dispensado em 2026-08-30). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 
-### Changed
+## Changed
 
-- Documentação pública (README ×3, `DEMO`) e contratos 15/27: `Delete` deixa de ser “inexistente no MVP” e passa a opt-in. O corte `0.1.0-alpha.6` (tag, notas, dois assets DLL) permanece sob autorização humana.
+- Documentação pública (README ×3, `DEMO`) e contratos 15/27: `Delete` deixa de ser “inexistente no MVP” e passa a opt-in.
 - README ×3 (“O que gera”) e `DEMO` passam a citar `Delete` opt-in; o teste de reencontro de serviços do Wizard trava a forma atual de `ResolveExistingServiceSelection`.
 - README ×3 (contrato de erro HTTP): o 422 de `Create`/`Update` (rules do BC) passa a citar também o `Delete` opt-in na recusa por integridade referencial, alinhado ao documento 27.
 - Wizard, preferências, Output B079 e relatório: a etapa BC passa a se chamar REST via Business Component e cita Delete quando marcado; o Apply lista `proc*_API_Delete`.
 - B054 recusa regravar skeleton sobre API Object que já tem contrato REST (ex.: marcar Delete só na etapa de API Object, sem BC).
 - Delete marcado exige Completar REST via Business Component no mesmo Apply (UI + `ThrowIfDeleteWithoutBusinessComponent` antes do primeiro `Save()`). Sem a etapa BC não há skeleton `proc*_API_Delete` nem rota B054. Validado no U15 em 2026-08-31 (`apiNotaFiscal`: diálogo ao desmarcar BC; remarcar Delete religa BC; Apply `Updated=15`, `Blocked=0`; Service Source do Delete com `ErrorResponse` / `RestStatusCode`).
 - FAQ `22`: o `Delete` deixa de ser descrito como pós-MVP absoluto na resposta principal.
-- `B108` (pendência, não implementado): preferências da KB só na criação da API; no reencontro preservar o contrato gravado. Checkpoint e documento 06.
 - Reencontro do `Delete`: o leitor de Service Source e de metadata passa a ver o serviço e o `securityLevel` por item; o matcher B079 reconhece a assinatura atual (`PK` + `ErrorResponse` + `RestStatusCode`); o Apply usa o combo do Delete em vez de um `SecurityLevel` vazio herdado do contrato existente.
 - Sync (`B085`): reconstrói o `SecurityLevel` próprio do Delete a partir da metadata (`services[].securityLevel`) e monta o ApiPlan com o contrato da KB ativa, para não regravar o Delete com o nível global da API. Validado no U15 em 2026-08-31 (`apiNotaFiscal`: API `Authorization`, Delete `Authentication` após Apply do Sync com delta `NotaFiscalObs` 40→41). Evidência: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`.
 - Reencontro: List/Get/Create/Update passam a herdar o Security Level do rádio do Wizard; o nível persistido por serviço só permanece no Delete (combo). Path/`operationId` da API existente continuam preservados. Validado no U15 em 2026-08-31 (`apiNotaFiscal`: abertura Authorization + Delete Authentication; rádio mudado para Authentication; Apply `Updated=15`, `Blocked=0`; Service Source dos cinco serviços com `[SecurityLevel(Authentication)]`).
@@ -33,15 +42,26 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Foundation `07` (UX do wizard): Passo 2 passa a citar Delete opt-in, confirmação, combo de Security Level e dependência da etapa Completar REST via Business Component, sem alterar a estrutura de 3 passos.
 - HTTP do Delete recapturado em 2026-08-31 na `apiNotaFiscal` (401/404/200 nos dois environments; 422 de integridade no Framework). Residual do nível próprio no IIS fechado no mesmo dia: Build All com Delete `SecurityHigh` e demais `SecurityLow`; `goab_api_teste` 201/200/404; `goab_role_denied` GET 200 e DELETE 403 `code` 139 nos dois. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §3.
 
-### Fixed
+## Fixed
 
 - Output da etapa Procedures com Delete: o prefixo da etapa passa a `B050-B053/B100` (o item já saía `Backlog='B100'`). Smoke U15 2026-08-31 na `apiNotaFiscal`: prefixo no bloco e nos cinco itens; Delete com `Backlog='B100'`.
 - Prévia do Wizard: o fingerprint e o refresh passam a incluir o Security Level do Delete e o checkbox de mensagens HTTP 422. Smoke U15: rádio Authentication, combo Delete Authorization; Apply `Updated=15`; Service Source dos quatro em `[SecurityLevel(Authentication)]` e Delete em `[SecurityLevel(Authorization)]`. Ir direto ao Resumo força refresh (`forceRefresh: true`); o cache só afeta as abas de geração.
 - Preferências do Wizard: recusam gravar Delete sem Get, Create e Update (sem marcar serviços em silêncio). Smoke U15: só Delete dispara a mensagem nova; cancelar não grava. O codec (`Parse`/`Serialize`) recusa o mesmo estado; o `Load` cai em defaults conservadores. Load de File inválido não foi fumado na IDE (File é blob, sem edição de JSON na tela); cobre o teste offline.
 
-### Removed
+## Removed
 
 - Handlers incrementais órfãos B040/B050/B054 em `Package.cs` (`ExecuteCreate*` / `TryConfirmAndCreate*` e os MessageBox de «4 Procedures»). Não estavam no menu nem no manifesto; Wizard e Sync continuam nos `TryCreate*`.
+
+## Validated
+
+- HTTP do Delete nos environments `.NET`/PostgreSQL e `.NET Framework`/SQL Server (`apiNotaFiscal`), inclusive nível próprio Authorization vs Authentication no IIS.
+- Smoke U15 de reencontro, Sync, dependência BC, Output, prévia e preferências.
+- Linhas U14+ (canônica) e U13 (satélite) compiladas em Release para este corte.
+
+## Assets
+
+- `GenexusOpenApiBuilder.Extension.dll` — GeneXus 18 U14, U15 e posteriores U14+. SHA-256 `BE15C49E8F5909C2000910D0B6FD54A16A8AE567AE463C46842C9B933C5035BD`.
+- `GenexusOpenApiBuilder.Extension-gx18u13.dll` — GeneXus 18 U13. SHA-256 `58600B4F7E6E4123BFBD22B913E11B81A0C2365A7240193DB7D450A0F7838187`.
 
 ---
 

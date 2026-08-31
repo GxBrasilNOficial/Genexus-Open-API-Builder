@@ -21,7 +21,9 @@ Detalhe: `Docs/Implementation/2026-08-25-FASE0-LINHA-DE-BASE-NAO-REGRESSAO.md`.
 
 **Atualização de 2026-08-25 (noite, B095).** Fase 1 (`B095`) concluída: leitor hierárquico à parte (`TransactionStructureReader` com núcleo `Build` + adaptador SDK), modelo `ApiPlanLevel` / `ApiPlanLevelField`, critério compartilhado `TransactionAttributeKeyTraits`, testes offline com ouro em `Tests/TransactionStructure/Baselines/` ligados ao pré-push. Caminho flat do Wizard sem o leitor hierárquico. ~~Próxima ação = Fase 2 (`B096`).~~ **Superada** pela atualização B096 abaixo. Evidência: `Docs/Implementation/2026-08-25-B095-LEITURA-HIERARQUICA.md`.
 
-**Atualização de 2026-08-30 (`B100`).** Serviço `Delete` opt-in concluído. Próxima ação operacional = preparar o corte `0.1.0-alpha.6`. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
+**Atualização de 2026-08-31 (pacote `0.1.0-alpha.6`).** CHANGELOG, notas PT/ES/EN, versão `0.1.0-alpha.6`, README/`INSTALL`/`DEMO` e builds Release canônico + satélite preparados. Tag e GitHub Release aguardam autorização humana. Evidência: `Docs/Releases/0.1.0-alpha.6.md`.
+
+**Atualização de 2026-08-30 (`B100`).** Serviço `Delete` opt-in concluído. ~~Próxima ação operacional = preparar o corte `0.1.0-alpha.6`.~~ **Superada** pela atualização do pacote acima. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 
 **Atualização de 2026-08-28 (B099v).** Fase 5-A (`B099v`) concluída: correção de `ResolveAggregateAttributeName` (PK própria em `count()`), ouro e gate `tests.listHierarchical` atualizados; reapply do Wizard na `Teste` de quatro níveis; smoke HTTP multinível nos dois environments; critério 9 (YAML hierárquico + geração de cliente). Evidência: `Docs/Implementation/2026-08-28-B099v-VALIDACAO-RUNTIME-MULTINIVEL.md`.
 
@@ -319,7 +321,7 @@ Estes itens nasceram da revisão de 2026-08-23. Não pertencem a B095–B099 e t
 | Item | Escopo | Posição |
 |---|---|---|
 | `B102` | Repasse do texto emitido pelo Business Component na `Message` do `422`, com `Message` em `LongVarChar`, `Messages[]` como coleção tipada por `sdt_API_ErrorMessage`, filtro por mensagens de erro, preferência por KB e escolha por API | **Primeiro item da Sprint 9**; concluído em 2026-08-24 (gate HTTP nos dois environments), antes da Fase 0 |
-| `B100` | Serviço `Delete`, opt-in, com quatro camadas anti acidente | Após a Fase 7; **concluído em 2026-08-30**; corte `0.1.0-alpha.6` ainda não publicado |
+| `B100` | Serviço `Delete`, opt-in, com quatro camadas anti acidente | Após a Fase 7; **concluído em 2026-08-30**; pacote `0.1.0-alpha.6` preparado em 2026-08-31 (publicação pendente) |
 | `B105` | Escolha do chamador sobre o detalhe do corpo de erro, podendo apenas **restringir** o que o default da API permite, nunca ampliar | Fora de `B102`; nesta sprint se houver folga, senão Sprint 10 |
 | `B101` | Experimento de membro nullable para distinguir membro ausente de membro vazio | Candidato à Sprint 10, fora da Sprint 9 |
 

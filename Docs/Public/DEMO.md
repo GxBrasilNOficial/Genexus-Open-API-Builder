@@ -1,6 +1,6 @@
 # Demo rápida — Genexus Open API Builder
 
-Roteiro visual da Alpha `0.1.0-alpha.5` (Transaction de exemplo: `NotaFiscal`).
+Roteiro visual da Alpha `0.1.0-alpha.6` (Transaction de exemplo: `NotaFiscal`).
 
 Use sempre uma **KB de teste**, com backup. Não execute na KB de produção.
 
@@ -180,12 +180,12 @@ Confirmação com o plano: objetos próprios a apagar, SDTs compartilhados e Fol
 ## Limitações honestas da Alpha
 
 - Transações com subníveis: o Wizard gera cabeçalho + linhas selecionadas; metadata V2, Sync e Remover cobrem a hierarquia; sem endpoints próprios de subnível; contadores de List só nos filhos diretos; profundidade acima de 4 gera aviso sem bloquear; alterar netos exige substituir o nível pai (`<Subnível>Replace`)
-- Serviço `DELETE` opt-in e desligado por padrão; API já gerada só ganha o endpoint ao reabrir o Wizard com o checkbox marcado. Apagar o cabeçalho apaga as linhas filhas na mesma transação. O corte publicado ainda é `0.1.0-alpha.5`; `0.1.0-alpha.6` publica o Delete após autorização
+- Serviço `DELETE` opt-in e desligado por padrão; API já gerada só ganha o endpoint ao reabrir o Wizard com o checkbox marcado. Apagar o cabeçalho apaga as linhas filhas na mesma transação.
 - YAML OpenAPI nativo do GeneXus tem restrições documentadas
 - Classificação de campos sensíveis/auditoria ainda usa política default
 - Validação prática principal no Upgrade 15
 
-Detalhes: [notas 0.1.0-alpha.5](../Releases/0.1.0-alpha.5.md).
+Detalhes: [notas 0.1.0-alpha.6](../Releases/0.1.0-alpha.6.md).
 
 ## Índice das capturas
 

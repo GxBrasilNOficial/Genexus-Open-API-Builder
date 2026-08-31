@@ -1,6 +1,6 @@
 # Instalação — Genexus Open API Builder
 
-Guia para instalar a extensão no **GeneXus 18**. A Alpha `0.1.0-alpha.5` publica duas DLLs: uma para a linha U14+ e outra para o Upgrade 13. A validação principal da linha canônica foi feita no **Upgrade 15**; o Upgrade 14 foi confirmado por usuário externo com a Alpha `0.1.0-alpha.1` (carregamento + geração), ver [evidência 2026-08-12](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md).
+Guia para instalar a extensão no **GeneXus 18**. A Alpha `0.1.0-alpha.6` publica duas DLLs: uma para a linha U14+ e outra para o Upgrade 13. A validação principal da linha canônica foi feita no **Upgrade 15**; o Upgrade 14 foi confirmado por usuário externo com a Alpha `0.1.0-alpha.1` (carregamento + geração), ver [evidência 2026-08-12](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md).
 
 Há dois caminhos:
 
@@ -20,7 +20,7 @@ Fonte factual: evidência [B094](../Implementation/B094-INSTALACAO-APENAS-COM-A-
 
 ### Escolha da DLL
 
-No GitHub Release `0.1.0-alpha.5`, baixe somente um dos arquivos:
+No GitHub Release `0.1.0-alpha.6`, baixe somente um dos arquivos:
 
 | Arquivo | Use quando | Não use quando |
 |---|---|---|
@@ -161,7 +161,7 @@ Siga o roteiro curto em [DEMO.md](DEMO.md).
 
 ## Notas da Alpha
 
-- Notas de release: [0.1.0-alpha.5](../Releases/0.1.0-alpha.5.md)
-- Español: [notas 0.1.0-alpha.5](../Releases/0.1.0-alpha.5.es.md)
-- English: [release notes 0.1.0-alpha.5](../Releases/0.1.0-alpha.5.en.md)
+- Notas de release: [0.1.0-alpha.6](../Releases/0.1.0-alpha.6.md)
+- Español: [notas 0.1.0-alpha.6](../Releases/0.1.0-alpha.6.es.md)
+- English: [release notes 0.1.0-alpha.6](../Releases/0.1.0-alpha.6.en.md)
 - Changelog: [CHANGELOG.md](../../CHANGELOG.md)

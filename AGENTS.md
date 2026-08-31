@@ -242,7 +242,7 @@ pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
 6. quando o checker ou seu teste mudar, executar também `pwsh -NoProfile -File Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`.
 
 - `scripts/Invoke-PrePushMechanicalChecks.ps1` é o nome canônico e não deve divergir do contrato global.
-- `manualRequired` no JSON **não** é a revisão semântica. Só dispara quando a `Próxima ação única` do checkpoint é um spike `B000`–`B006` e o intervalo menciona esse ID (checklist de encerramento de sonda). Lista vazia com próxima ação `B007+` (hoje preparar o corte `0.1.0-alpha.6`) é o comportamento esperado, não falso verde.
+- `manualRequired` no JSON **não** é a revisão semântica. Só dispara quando a `Próxima ação única` do checkpoint é um spike `B000`–`B006` e o intervalo menciona esse ID (checklist de encerramento de sonda). Lista vazia com próxima ação `B007+` (hoje autorizar a publicação do corte `0.1.0-alpha.6`) é o comportamento esperado, não falso verde.
 - Gaps confirmados, flags descartados e áreas não cobertas pertencem ao relatório da revisão semântica (passo 5), independentemente de `manualRequired`.
 - Após alterar `.github/ISSUE_TEMPLATE/`, abrir uma vez o seletor **New issue** no navegador: o check `tests.issueForms` reduz o risco, mas só o GitHub confirma se o formulário aparece (YAML inválido some sem aviso).
 
