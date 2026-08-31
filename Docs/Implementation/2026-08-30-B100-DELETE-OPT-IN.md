@@ -8,13 +8,15 @@ Fecha o serviço REST `Delete` (opt-in, desligado por padrão) na KB `wsEducacao
 
 ## 1. Contrato gerado
 
-Quando o checkbox `Delete` está marcado no Wizard:
+Quando o checkbox `Delete` está marcado no Wizard **e** `Completar REST via Business Component` está marcado no mesmo Apply:
 
-- Procedure `proc<Nome>_API_Delete`
+- Procedure `proc<Nome>_API_Delete` com `Load` → `Delete()` → 200/404/422
 - rota `DELETE` no mesmo path da chave do Get
 - Events `Delete.After` com `&RestCode = &RestStatusCode`
 - `SecurityLevel` próprio (aba Segurança); aviso se `None`
 - HTTP: `200` (chave removida), `404` `not_found` (inexistente), `422` `validation_error` (recusa do BC, inclusive integridade)
+
+Delete marcado sem a etapa BC **bloqueia** o Apply antes do primeiro `Save()`. Não gera skeleton `proc*_API_Delete` nem rota B054 `Delete() => proc();`.
 
 Quando está desmarcado (padrão e fallback de File antigo sem o membro): o API Object não declara
 `Delete`, não há `proc*_API_Delete` nova, e a aba Segurança não sugere nível para um serviço que
@@ -32,7 +34,8 @@ Reabrir uma API que já tem Delete não pede a confirmação de novo.
 1. Preferência KB `services.delete` default e fallback `false`.
 2. Checkbox desmarcado em API nova; API existente não herda o default da casa.
 3. Confirmação consciente ao marcar; aviso se Delete estiver com `None`.
-4. Recusa do BC (`Load` → `Delete()` → Commit ou Rollback); sem exclusão forçada.
+4. Delete exige Completar REST via Business Component no mesmo Apply (2026-08-31).
+5. Recusa do BC (`Load` → `Delete()` → Commit ou Rollback); sem exclusão forçada.
 
 ---
 
@@ -86,7 +89,24 @@ Smoke U15 na `NotaFiscal` / `apiNotaFiscal`, reencontro, REST via Business Compo
 
 ---
 
-## 6. Fora deste recorte
+## 6. Delete exige a etapa BC (2026-08-31)
+
+Até este conserto o checkbox `Delete` e `Completar REST via Business Component` eram independentes: Procedures + API Object sem BC emitiam skeleton e rota B054 sem 200/404/422, apesar da confirmação falar em exclusão via BC.
+
+Trava: `ThrowIfDeleteWithoutBusinessComponent` no Apply do Wizard e do Sync; na UI, marcar Delete pede a etapa BC (`RequestApplyBusinessComponentForDelete`) e desmarcar BC com Delete marcado pede confirmação (desmarca Delete ou restaura BC).
+
+Get/Create/Update skeleton da Sprint 5 permanecem. Delete não é serviço B054.
+
+Smoke U15 na `NotaFiscal` / `apiNotaFiscal`, reencontro:
+
+1. Desmarcar Completar REST via BC com Delete marcado: diálogo; Não remarca a etapa BC; Sim desmarca Delete na aba Serviços sem segundo aviso.
+2. Remarcar Delete: a etapa BC volta marcada; resumo com Delete, `ApplyBusinessComponent=True` e `DELETE /notafiscal/{NotaFiscalId}`.
+3. Apply `SuccessWithWarnings`, `Atualizados=15`, `Bloqueados=0`, `ApplyBusinessComponent=True`; B054 absorvido pelo B071–B073/B079 (`DeleteProcedureGuid`, `DescribedServices=5`).
+4. Service Source de `apiNotaFiscal`: Delete com `ErrorResponse` e `&RestStatusCode`, não `Delete() => proc();`.
+
+---
+
+## 7. Fora deste recorte
 
 - Corte GitHub `0.1.0-alpha.6` (tag, notas trilíngues, dois assets DLL): autorização humana.
 - `B082` (progresso na UI): outra sessão.
@@ -95,10 +115,10 @@ Smoke U15 na `NotaFiscal` / `apiNotaFiscal`, reencontro, REST via Business Compo
 
 ---
 
-## 7. Testes offline
+## 8. Testes offline
 
 `Tests/WizardPreferences/Test-PrototypeWizardPreferences.ps1` (default `false`, fallback legado).
 `Tests/WizardLifecycle/Test-ApiPlanWizardHierarchicalLifecycle.ps1` (recusar confirmação desmarca
 Delete). `Tests/WizardContract/Test-PrototypeWizardExistingApiFilters.ps1` (reencontro: rádio nos quatro, combo no Delete; Sync lê
-`services[].securityLevel` do Delete). Contrato OpenAPI: `Delete` entra em
+`services[].securityLevel` do Delete). `Tests/WizardNavigation/Test-PrototypeWizardBusinessComponentNavigationPolicy.ps1` (Delete sem etapa BC é recusado). Contrato OpenAPI: `Delete` entra em
 `PrototypeWizardContract.ServiceNames` e na trava `Tests/OpenApiContract/`.

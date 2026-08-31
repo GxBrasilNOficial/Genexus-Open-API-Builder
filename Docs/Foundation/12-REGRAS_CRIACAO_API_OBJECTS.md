@@ -113,7 +113,7 @@ api<NomeBase>
 | Create | criar via BC |
 | Update | substituir via `PUT` usando BC |
 
-**Nota de revisão — 2026-08-23 — `Delete` (B100):** os quatro serviços acima continuam sendo os obrigatórios. `B100` acrescenta um quinto serviço **opcional**, desligado por padrão: `Delete`, respondendo `200` com a chave primária removida, `404` em registro inexistente e `422` com `Code = "validation_error"` quando o Business Component recusa — inclusive por integridade referencial, seguindo a regra de `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md` de não presumir `409` quando não é possível distinguir a natureza da recusa. Marcar o serviço exige confirmação consciente no Wizard, com aviso de que apagar o cabeçalho apaga todas as linhas filhas na mesma transação atômica, e o serviço admite `SecurityLevel` próprio, mais restritivo que o dos demais.
+**Nota de revisão — 2026-08-23 — `Delete` (B100):** os quatro serviços acima continuam sendo os obrigatórios. `B100` acrescenta um quinto serviço **opcional**, desligado por padrão: `Delete`, respondendo `200` com a chave primária removida, `404` em registro inexistente e `422` com `Code = "validation_error"` quando o Business Component recusa — inclusive por integridade referencial, seguindo a regra de `27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md` de não presumir `409` quando não é possível distinguir a natureza da recusa. Marcar o serviço exige confirmação consciente no Wizard, `Completar REST via Business Component` no mesmo Apply, aviso de que apagar o cabeçalho apaga todas as linhas filhas na mesma transação atômica, e o serviço admite `SecurityLevel` próprio, mais restritivo que o dos demais.
 
 ## Regra
 
@@ -201,7 +201,7 @@ Onde o contrato declara obrigatoriedade, vale a ressalva de semântica registrad
 
 ## Default MVP
 
-Não gerar endpoint `Delete` **enquanto o serviço estiver desmarcado** (padrão). Marcado no Wizard (`B100`, 2026-08-30), gerar `proc*_API_Delete`, rota `DELETE` no path da chave do Get, `200` / `404` / `422` via BC e `SecurityLevel` próprio.
+Não gerar endpoint `Delete` **enquanto o serviço estiver desmarcado** (padrão). Marcado no Wizard (`B100`, 2026-08-30), gerar `proc*_API_Delete`, rota `DELETE` no path da chave do Get, `200` / `404` / `422` via BC e `SecurityLevel` próprio — **somente** no mesmo Apply em que `Completar REST via Business Component` estiver marcado. Sem essa etapa o Apply bloqueia; não há skeleton nem rota B054 de Delete.
 
 ## Evolução futura
 

@@ -237,7 +237,7 @@ Serviços públicos obrigatórios:
 - `Create`
 - `Update`
 
-`Delete` é opt-in, desligado por padrão (`B100`, 2026-08-30). Não gerar o endpoint enquanto o serviço estiver desmarcado; marcado, gerar `proc*_API_Delete` e a rota `DELETE` no path da chave do Get.
+`Delete` é opt-in, desligado por padrão (`B100`, 2026-08-30). Não gerar o endpoint enquanto o serviço estiver desmarcado; marcado no mesmo Apply que Completar REST via Business Component, gerar `proc*_API_Delete` e a rota `DELETE` no path da chave do Get com `200` / `404` / `422`. Sem a etapa BC o Apply bloqueia.
 
 Se API Object não for viável, abortar geração.
 

@@ -42,6 +42,7 @@ Assert-Contains $preferences 'SupportedSchemaVersions' 'Preferências devem decl
 Assert-Contains $dialog '_deleteDeclinedThisSession' 'Recusar Delete deve marcar desistencia na sessao.'
 Assert-Contains $dialog 'FormatDeleteWithdrawalNotice' 'Resumo deve destacar a desistencia do Delete.'
 Assert-Contains $dialog 'UncheckDeleteService' 'Recusar a confirmacao do Delete deve desmarcar o servico.'
+Assert-Contains $dialog 'RequestApplyBusinessComponentForDelete' 'Marcar Delete deve pedir Completar REST via Business Component.'
 Assert-Contains $dialog 'deleteSecurityLine' 'Resumo so lista Security Level do Delete quando o servico estiver marcado.'
 
 Write-Output 'PASS: ApiPlanWizardHierarchicalLifecycle'

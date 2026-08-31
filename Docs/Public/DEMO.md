@@ -113,7 +113,7 @@ Confirmação do API Object.
 
 ## 17. Business Component
 
-Completar REST via Business Component (Get, Create, Update; Delete se marcado).
+Completar REST via Business Component (Get, Create, Update; Delete se marcado). Delete marcado exige esta etapa no mesmo Apply.
 
 ![Business Component](../Images/alpha-wizard-business-component.png)
 

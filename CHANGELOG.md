@@ -21,6 +21,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - README ×3 (contrato de erro HTTP): o 422 de `Create`/`Update` (rules do BC) passa a citar também o `Delete` opt-in na recusa por integridade referencial, alinhado ao documento 27.
 - Wizard, preferências, Output B079 e relatório: a etapa BC passa a se chamar REST via Business Component e cita Delete quando marcado; o Apply lista `proc*_API_Delete`.
 - B054 recusa regravar skeleton sobre API Object que já tem contrato REST (ex.: marcar Delete só na etapa de API Object, sem BC).
+- Delete marcado exige Completar REST via Business Component no mesmo Apply (UI + `ThrowIfDeleteWithoutBusinessComponent` antes do primeiro `Save()`). Sem a etapa BC não há skeleton `proc*_API_Delete` nem rota B054. Validado no U15 em 2026-08-31 (`apiNotaFiscal`: diálogo ao desmarcar BC; remarcar Delete religa BC; Apply `Updated=15`, `Blocked=0`; Service Source do Delete com `ErrorResponse` / `RestStatusCode`).
 - FAQ `22`: o `Delete` deixa de ser descrito como pós-MVP absoluto na resposta principal.
 - `B108` (pendência, não implementado): preferências da KB só na criação da API; no reencontro preservar o contrato gravado. Checkpoint e documento 06.
 - Reencontro do `Delete`: o leitor de Service Source e de metadata passa a ver o serviço e o `securityLevel` por item; o matcher B079 reconhece a assinatura atual (`PK` + `ErrorResponse` + `RestStatusCode`); o Apply usa o combo do Delete em vez de um `SecurityLevel` vazio herdado do contrato existente.

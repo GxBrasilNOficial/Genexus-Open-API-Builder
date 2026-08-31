@@ -31,6 +31,22 @@ Assert-True ($policy::HasGetCreateUpdateServices([string[]]@('Get', 'Create', 'U
 Assert-True ($policy::HasGetCreateUpdateServices([string[]]@('List', 'Get', 'Create', 'Update'))) 'Os quatro serviços do MVP habilitam a etapa B071-B073/B079.'
 Assert-True ($policy::HasGetCreateUpdateServices([string[]]@('List', 'Get', 'Create', 'Update', 'Delete'))) 'Delete extra não desabilita a etapa BC; Get/Create/Update continuam sendo o pré-requisito.'
 
+Assert-False ($policy::HasDeleteService([string[]]@())) 'Coleção vazia não conta Delete.'
+Assert-False ($policy::HasDeleteService([string[]]@('List', 'Get', 'Create', 'Update'))) 'Os quatro obrigatórios sem Delete não exigem a etapa BC por causa do Delete.'
+Assert-True ($policy::HasDeleteService([string[]]@('List', 'Get', 'Create', 'Update', 'Delete'))) 'Serviço Delete marcado deve ser detectado.'
+Assert-True ($policy::IsDeleteAllowed([string[]]@('List', 'Get', 'Create', 'Update'), $false)) 'Sem Delete, Apply sem BC permanece permitido.'
+Assert-False ($policy::IsDeleteAllowed([string[]]@('List', 'Get', 'Create', 'Update', 'Delete'), $false)) 'Delete marcado sem Completar REST via BC deve ser recusado.'
+Assert-True ($policy::IsDeleteAllowed([string[]]@('Delete'), $true)) 'Delete marcado com a etapa BC no mesmo Apply deve ser permitido.'
+$threwDeleteWithoutBc = $false
+try {
+    $policy::ThrowIfDeleteWithoutBusinessComponent([string[]]@('Delete'), $false)
+}
+catch [System.InvalidOperationException] {
+    $threwDeleteWithoutBc = $_.Exception.Message -eq $policy::DeleteRequiresBusinessComponentRefusal
+}
+Assert-True $threwDeleteWithoutBc 'ThrowIfDeleteWithoutBusinessComponent deve usar a recusa canônica.'
+$policy::ThrowIfDeleteWithoutBusinessComponent([string[]]@('Get', 'Create', 'Update'), $false)
+
 Assert-False ($policy::ShouldAllowApplyBusinessComponent($false, $false, $true, $true, $true, $true)) 'Aplicação via BC não deve ser permitida quando a Transaction não está apta e a habilitação explícita não foi marcada.'
 Assert-False ($policy::ShouldAllowApplyBusinessComponent($false, $true, $false, $true, $true, $true)) 'Aplicação via BC não deve ser permitida sem SDTs disponíveis ou confirmados.'
 Assert-False ($policy::ShouldAllowApplyBusinessComponent($false, $true, $true, $false, $true, $true)) 'Aplicação via BC não deve ser permitida sem Procedures disponíveis ou confirmadas.'

@@ -84,6 +84,7 @@ internal sealed class PrototypeWizardDialog : Form
     private string? _cachedGenerationFingerprint;
     private bool _apiObjectOwnershipDiagnosticWritten;
     private bool _applyBusinessComponentWhenReady;
+    private bool _suppressDeleteBcCoupling;
     private string _generationContext = "Plano da Transaction ainda nao consultado na KB.";
     private readonly ComboBox _requestLevelSelector = CreateLevelComboBox();
     private readonly ComboBox _responseLevelSelector = CreateLevelComboBox();
@@ -1007,6 +1008,37 @@ internal sealed class PrototypeWizardDialog : Form
                 _applyBusinessComponentWhenReady = _applyBusinessComponentCheck.Checked;
             }
 
+            if (!_suppressDeleteBcCoupling
+                && _applyBusinessComponentCheck.Enabled
+                && !_applyBusinessComponentCheck.Checked
+                && IsDeleteServiceChecked())
+            {
+                var uncheckDelete = MessageBox.Show(
+                    this,
+                    _texts.Translate("Delete exige Completar REST via Business Component. Desmarcar essa etapa também desmarca Delete. Continuar?"),
+                    Text,
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2);
+                if (uncheckDelete == DialogResult.Yes)
+                {
+                    UncheckDeleteService();
+                }
+                else
+                {
+                    _suppressDeleteBcCoupling = true;
+                    try
+                    {
+                        _applyBusinessComponentWhenReady = true;
+                        _applyBusinessComponentCheck.Checked = true;
+                    }
+                    finally
+                    {
+                        _suppressDeleteBcCoupling = false;
+                    }
+                }
+            }
+
             RefreshGenerationPreviewUnlessSuppressed();
         };
     }
@@ -1022,6 +1054,7 @@ internal sealed class PrototypeWizardDialog : Form
                     if (check.Checked)
                     {
                         _deleteDeclinedThisSession = false;
+                        RequestApplyBusinessComponentForDelete();
                     }
                     else
                     {
@@ -1062,6 +1095,10 @@ internal sealed class PrototypeWizardDialog : Form
             ApplyPreference(_applyBusinessComponentCheck, _preferences.ApplyBusinessComponentByDefault);
             ApplyPreference(_applyListCheck, _preferences.ApplyListByDefault);
             ApplyPreference(_generateMetadataCheck, _preferences.GenerateMetadataByDefault);
+            if (IsDeleteServiceChecked())
+            {
+                RequestApplyBusinessComponentForDelete();
+            }
         }
         finally
         {
@@ -1156,6 +1193,23 @@ internal sealed class PrototypeWizardDialog : Form
         }
     }
 
+    private void RequestApplyBusinessComponentForDelete()
+    {
+        _applyBusinessComponentWhenReady = true;
+        if (_applyBusinessComponentCheck.Enabled && !_applyBusinessComponentCheck.Checked)
+        {
+            _suppressDeleteBcCoupling = true;
+            try
+            {
+                _applyBusinessComponentCheck.Checked = true;
+            }
+            finally
+            {
+                _suppressDeleteBcCoupling = false;
+            }
+        }
+    }
+
     private void RefreshDeleteSecurityControls()
     {
         var deleteSelected = IsDeleteServiceChecked();
@@ -1205,7 +1259,9 @@ internal sealed class PrototypeWizardDialog : Form
             return true;
         }
 
-        var message = _texts.Translate("Marcar Delete gera exclusao de registro via Business Component. Apagar o cabecalho apaga as linhas filhas na mesma transacao atomica. Continuar?");
+        var message = _texts.Translate("Marcar Delete gera exclusao de registro via Business Component. Apagar o cabecalho apaga as linhas filhas na mesma transacao atomica. Continuar?")
+            + Environment.NewLine + Environment.NewLine
+            + _texts.Translate("Delete exige Completar REST via Business Component no mesmo Apply.");
         if (string.Equals(GetSelectedDeleteSecurityLevel(), PrototypeWizardPreferences.SecurityLevelNone, StringComparison.Ordinal))
         {
             message += Environment.NewLine + Environment.NewLine + _texts.Translate("Delete com Security Level = None deixa a exclusao publica.");
@@ -1901,6 +1957,17 @@ internal sealed class PrototypeWizardDialog : Form
         }
 
         selectedServices = GetCheckedValues(_servicesList);
+        var applyBusinessComponent = _applyBusinessComponentCheck.Checked && IsBusinessComponentReady();
+        if (!PrototypeWizardBusinessComponentNavigationPolicy.IsDeleteAllowed(selectedServices, applyBusinessComponent))
+        {
+            MessageBox.Show(
+                this,
+                _texts.Translate(PrototypeWizardBusinessComponentNavigationPolicy.DeleteRequiresBusinessComponentRefusal),
+                Text,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return false;
+        }
 
         var contractSelection = new PrototypeWizardContractSelection(
             _snapshot.TransactionName,
@@ -1930,7 +1997,7 @@ internal sealed class PrototypeWizardDialog : Form
             _generateApiObjectCheck.Checked,
             _generateMetadataCheck.Checked,
             _applyListCheck.Checked,
-            _applyBusinessComponentCheck.Checked && IsBusinessComponentReady(),
+            applyBusinessComponent,
             _hierarchicalSelection);
         return true;
     }
@@ -1988,6 +2055,7 @@ internal sealed class PrototypeWizardDialog : Form
             _texts.Translate("ApiPlan sera montado em memoria ao concluir o wizard.") + Environment.NewLine +
             _texts.Translate("Estruturas de dados, Procedures, API Object, listagem e metadata so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK.") + Environment.NewLine +
             _texts.Translate("A opção de Business Component completa Get, Create, Update e, se marcado, Delete, com status HTTP nas Procedures já geradas.") + Environment.NewLine +
+            _texts.Translate("Delete marcado sem Completar REST via Business Component não gera o endpoint.") + Environment.NewLine +
             _texts.Translate("A listagem completa a primeira versão paginada do endpoint; a metadata grava o File JSON inicial.") +
             FormatHierarchicalGuarantee();
         _showingSummary = true;
@@ -2225,7 +2293,15 @@ internal sealed class PrototypeWizardDialog : Form
         }
 
         _applyBusinessComponentCheck.Enabled = canApplyBusinessComponent;
-        _applyBusinessComponentCheck.Checked = shouldApplyWhenAllowed;
+        _suppressDeleteBcCoupling = true;
+        try
+        {
+            _applyBusinessComponentCheck.Checked = shouldApplyWhenAllowed;
+        }
+        finally
+        {
+            _suppressDeleteBcCoupling = false;
+        }
     }
 
     private void ApplyBusinessComponentControlState()

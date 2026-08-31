@@ -658,6 +658,9 @@ public sealed class Package : AbstractPackageUI
 
             try
             {
+                PrototypeWizardBusinessComponentNavigationPolicy.ThrowIfDeleteWithoutBusinessComponent(
+                    apiPlan.Services.Select(service => service.Name),
+                    selection.ApplyBusinessComponent);
                 ApiPlanWritePreflight.ValidateForSync(knowledgeBase.DesignModel, transaction, apiPlan);
             }
             catch (Exception ex)
@@ -1140,6 +1143,9 @@ public sealed class Package : AbstractPackageUI
 
         try
         {
+            PrototypeWizardBusinessComponentNavigationPolicy.ThrowIfDeleteWithoutBusinessComponent(
+                apiPlan.Services.Select(service => service.Name),
+                selection.ApplyBusinessComponent);
             ApiPlanWritePreflight.ValidateForIntentionalChange(
                 knowledgeBase.DesignModel,
                 transaction,

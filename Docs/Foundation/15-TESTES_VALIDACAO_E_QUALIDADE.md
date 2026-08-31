@@ -158,7 +158,7 @@ Validar geração de:
 - operationIds no padrão `apiCliente.List`, `apiCliente.Get`, `apiCliente.Create` e `apiCliente.Update` (e `apiCliente.Delete` quando o serviço estiver marcado)
 - descrições `[Description]` curtas nos serviços selecionados
 
-Não deve existir endpoint `Delete` **enquanto o serviço estiver desmarcado** (padrão). Marcado, valem `proc*_API_Delete`, a rota `Delete`, o `operationId` `api*.Delete` e o contrato `200` / `404` / `422` (`B100`, 2026-08-30).
+Não deve existir endpoint `Delete` **enquanto o serviço estiver desmarcado** (padrão). Marcado **e** com Completar REST via Business Component no mesmo Apply, valem `proc*_API_Delete`, a rota `Delete`, o `operationId` `api*.Delete` e o contrato `200` / `404` / `422` (`B100`, 2026-08-30). Delete marcado sem a etapa BC não gera o endpoint.
 
 **Nota de revisão — 2026-08-23 / correção 2026-08-24 / fechamento 2026-08-30:**
 

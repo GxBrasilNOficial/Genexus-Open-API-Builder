@@ -66,7 +66,9 @@ Assert-Contains $localization 'Habilitar Business Component cambia la Transactio
 Assert-Contains $localization '"<não definido>" => "<undefined>"' 'O fallback de path deve ter tradução em inglês.'
 Assert-Contains $localization '"<não definido>" => "<no definido>"' 'O fallback de path deve ter tradução em espanhol.'
 Assert-Contains $wizard '_texts.Translate("Habilitar Business Component altera a Transaction ''{0}'' na KB.' 'A confirmação B035 deve passar pelo catálogo.'
-Assert-Contains $wizard '_texts.Translate("<não definido>")' 'O fallback de path deve passar pelo catálogo.'
+Assert-Contains $localization 'O serviço Delete exige Completar REST via Business Component no mesmo Apply.' 'O catálogo deve recusar Delete sem a etapa BC.'
+Assert-Contains $localization 'The Delete service requires Completing REST via Business Component in the same Apply.' 'O catálogo deve recusar Delete sem a etapa BC em inglês.'
+Assert-Contains $localization 'El servicio Delete exige Completar REST vía Business Component en el mismo Apply.' 'O catálogo deve recusar Delete sem a etapa BC em espanhol.'
 Assert-Contains $finalReport '_texts.Translate("Objeto principal ''{0}'' não foi encontrado na KB.")' 'O erro de objeto ausente deve passar pelo catálogo.'
 Assert-Contains $finalReport '_texts.Translate("Não foi possível abrir o objeto principal: {0}")' 'O erro de abertura deve passar pelo catálogo.'
 
