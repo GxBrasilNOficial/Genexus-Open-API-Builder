@@ -130,20 +130,21 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 Sprint 9 — Suporte a Transactions com Subníveis (Multinível — B095–B099), precedida por `B102` e seguida por `B100` (**concluído**). Levantamento de profundidade na KB de produção (`Gx_FabricaBrasil`), especificações funcionais e plano por fases consolidados em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, na `Emenda técnica — 2026-08-20`, na `Emenda técnica — 2026-08-23` e na `Emenda técnica — 2026-08-23 (complemento)` do registro de decisões do MVP.
 
-Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; **conferência de fim em 2026-08-28**, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100` (concluído em 2026-08-30). Publicação em três cortes: `0.1.0-alpha.4` após `B102` (2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis (2026-08-30), e `0.1.0-alpha.6` com o `Delete` (**pacote preparado em 2026-08-31; tag/Release ainda não**). `B105` entra na sprint apenas se houver folga.
+Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; **conferência de fim em 2026-08-28**, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100` (concluído em 2026-08-30). Publicação em três cortes: `0.1.0-alpha.4` após `B102` (2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis (2026-08-30), e `0.1.0-alpha.6` com o `Delete` (**publicado em 2026-08-31**). `B105` entra na sprint apenas se houver folga.
 
 Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibilidade e de gate: mecanismo em duas camadas para a Fase 0, ampliação de `B102`, gates próprios para `B102` e `B100` com HTTP real nos dois environments, validação do contrato OpenAPI multinível ao fim da Fase 4, retorno da linha `Gx18u13` ao plano, fechamento da regra de propagação do marcador `<Subnível>Replace`, limiares de escala, `B105` e a divisão da publicação em três cortes.
 
 ## Próxima ação única
 
-**Autorizar a publicação do corte `0.1.0-alpha.6`.** Pacote documental e builds Release (canônica U14+ e satélite U13) preparados em 2026-08-31; tag `v0.1.0-alpha.6`, GitHub Release pre-release e upload dos dois assets DLL exigem autorização humana explícita. `B108` permanece pendência urgente de código para a **próxima sessão** (não misturar com a publicação até decisão humana). `B082` continua em outra sessão.
+**Implementar `B108`** — preferências da KB (`GxOpenApiBuilder_Settings`) só na **criação** de API; no reencontro/update, preservar o que já está na API/metadata. O corte `0.1.0-alpha.6` está publicado (tag + GitHub Release pre-release). `B082` continua em outra sessão. `B105` permanece folga/Sprint 10.
 
 Evidência do B100: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 Notas do corte: `Docs/Releases/0.1.0-alpha.6.md`.
+Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.6
 
 ## Missão estacionada (outra sessão)
 
-`B082` — sinal de vida no Wizard (abertura e apply) e no Remover enquanto o thread da UI está bloqueado. **Não misturar com o corte `0.1.0-alpha.5`.** Recado: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
+`B082` — sinal de vida no Wizard (abertura e apply) e no Remover enquanto o thread da UI está bloqueado. **Não misturar com `B108`.** Recado: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
 
 ## Pendência urgente (próxima sessão de código)
 
@@ -188,7 +189,7 @@ Notas do corte: `Docs/Releases/0.1.0-alpha.6.md`.
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única é autorizar a publicação do corte `0.1.0-alpha.6` (pacote preparado em 2026-08-31); o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é `B108` (preferências só na criação); o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
@@ -280,7 +281,8 @@ Notas do corte: `Docs/Releases/0.1.0-alpha.6.md`.
 85. Em 2026-08-31 o Output da etapa Procedures passou a `[B050-B053/B100]`; a prévia passou a invalidar cache no combo do Delete; as preferências recusam Delete sem Get/Create/Update. Smoke U15 na `apiNotaFiscal` (prefixo, Service Source Authentication vs Authorization no Delete, mensagem de preferências, regressão Sim/religar BC). Próxima ação única permanece o corte `0.1.0-alpha.6`. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §7.
 86. Em 2026-08-31 o codec das preferências passou a recusar Delete sem Get/Create/Update (`Parse`/`Serialize`; `Load` cai em defaults). Diálogo e Wizard `NotaFiscal` (cancelar) já fumados; Load de File inválido não entra na IDE (File é blob). HTTP 401/404/200/422 recapturado na IIS; residual = Authorization no Delete no binário. Próxima ação única permanece o corte `0.1.0-alpha.6`.
 87. Em 2026-08-31 o residual do nível próprio do Delete no IIS fechou: Build All nos dois environments (`apinotafiscal.cs` ~16:04, Delete `SecurityHigh`); HTTP `goab_api_teste` 201/200/404; HTTP `goab_role_denied` GET 200 e DELETE 403 `code` 139 nos dois. ~~Próxima ação única permanece o corte `0.1.0-alpha.6`.~~ **Superada** pelo item 88. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §3.
-88. Em 2026-08-31 o pacote do corte `0.1.0-alpha.6` foi preparado (CHANGELOG, notas PT/ES/EN, versão, README/`INSTALL`/`DEMO`, builds Release canônico e satélite). Próxima ação única = autorização humana para publicar (tag + GitHub Release pre-release + dois assets DLL). `B108` permanece fora deste corte.
+88. Em 2026-08-31 o pacote do corte `0.1.0-alpha.6` foi preparado (CHANGELOG, notas PT/ES/EN, versão, README/`INSTALL`/`DEMO`, builds Release canônico e satélite). ~~Próxima ação única = autorização humana para publicar (tag + GitHub Release pre-release + dois assets DLL).~~ **Superada** pelo item 89. `B108` permanece fora deste corte.
+89. Em 2026-08-31 o corte `0.1.0-alpha.6` foi publicado (tag `v0.1.0-alpha.6` + GitHub Release pre-release, dois assets DLL). Próxima ação única = `B108`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -333,11 +335,11 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [Release 0.1.0-alpha.3](Releases/0.1.0-alpha.3.md)
 - [Release 0.1.0-alpha.4](Releases/0.1.0-alpha.4.md)
 - [Release 0.1.0-alpha.5](Releases/0.1.0-alpha.5.md)
+- [Release 0.1.0-alpha.6](Releases/0.1.0-alpha.6.md)
 
 ## Marcos ainda não iniciados
 
-- Sprint 9 — subníveis publicados em `0.1.0-alpha.5`; `B100` (`Delete`) concluído no código; corte `0.1.0-alpha.6` ainda não publicado.
-- Sprint 10 — Beta estável.
+- Sprint 10 — Beta estável (`B108` é a próxima ação de código; `B082` permanece estacionado).
 
 ## Protocolo de atualização
 
