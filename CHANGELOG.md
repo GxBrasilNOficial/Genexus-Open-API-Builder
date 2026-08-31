@@ -31,7 +31,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Documentos Foundation `05`, `10`, `11` e `12` §11: deixam de afirmar Delete como pós-MVP absoluto e passam ao contrato vigente (quatro serviços obrigatórios + Delete opt-in desligado por padrão).
 - Foundation `04`, `06` (nota operacional e `B075`) e `08` (regra MVP de `EndpointsCount`): a frase vigente deixa de ser “Delete é pós-MVP” / “não existe Delete no MVP”, para o mesmo contrato opt-in do `B100`. O plano 24 anota o `B075` da Sprint 6 como critério histórico.
 - Foundation `07` (UX do wizard): Passo 2 passa a citar Delete opt-in, confirmação, combo de Security Level e dependência da etapa Completar REST via Business Component, sem alterar a estrutura de 3 passos.
-- HTTP do Delete recapturado em 2026-08-31 na `apiNotaFiscal` (401/404/200 nos dois environments; 422 de integridade no Framework). Residual do corte `0.1.0-alpha.6`: nível Authorization no Delete no binário IIS (C# de 31/08 ~09:08 ainda emite `SecurityLow` também no Delete). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §3.
+- HTTP do Delete recapturado em 2026-08-31 na `apiNotaFiscal` (401/404/200 nos dois environments; 422 de integridade no Framework). Residual do nível próprio no IIS fechado no mesmo dia: Build All com Delete `SecurityHigh` e demais `SecurityLow`; `goab_api_teste` 201/200/404; `goab_role_denied` GET 200 e DELETE 403 `code` 139 nos dois. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §3.
 
 ### Fixed
 

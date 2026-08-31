@@ -63,7 +63,9 @@ Source nos dois.
 
 **Alcance da tabela acima:** gerador de **2026-08-30** (ids 23 / 10).
 
-**Recaptura HTTP 2026-08-31 (tarde):** IIS `apiNotaFiscal`, C# de 31/08 ~09:08 com `ApiIntegratedSecurityLevel` **por serviço**; Delete e os demais em `SecurityLow` (Authentication). Nos dois environments: DELETE sem token **401**, id inexistente **404** `not_found`, Create **201** + DELETE **200** + GET **404** (Framework ids 24 e 25; PostgreSQL 12 e 13). Integridade Framework na nota 1: **422** `validation_error` / `CannotDeleteReferencedRecord`; GET depois **200**. O Wizard nesta KB mostra Delete `Authorization`; o binário servido ainda não (falta Build All depois do Apply com o combo). Residual do corte `0.1.0-alpha.6`: o **nível próprio** (Authorization no Delete versus Authentication nos demais), não repetir 200/404/422 de contrato.
+**Recaptura HTTP 2026-08-31 (tarde):** IIS `apiNotaFiscal`, C# de 31/08 ~09:08 com `ApiIntegratedSecurityLevel` **por serviço**; Delete e os demais em `SecurityLow` (Authentication). Nos dois environments: DELETE sem token **401**, id inexistente **404** `not_found`, Create **201** + DELETE **200** + GET **404** (Framework ids 24 e 25; PostgreSQL 12 e 13). Integridade Framework na nota 1: **422** `validation_error` / `CannotDeleteReferencedRecord`; GET depois **200**. Naquela hora o Wizard já mostrava Delete `Authorization`; o binário das 09:08 ainda não.
+
+**Fechamento do residual (2026-08-31, fim da tarde):** Service Source já misto (List/Get/Create/Update `Authentication`, Delete `Authorization`). Build All nos dois environments regenerou `apinotafiscal.cs` (~16:04): `gxep_delete` / `delete` → `SecurityHigh`; os demais → `SecurityLow`. Permissão GAM `apiNotaFiscal-d94c699a-f3f9-49b2-9364-6be46bd4152a`. HTTP com `goab_api_teste`: GET list 401 sem token / 200 com token; DELETE 401 sem token; 404 `not_found`; POST 201 + DELETE 200 + GET 404 (Framework id 26, PostgreSQL id 14). HTTP com `goab_role_denied` (`Role_GOAB_Test_Denied`: Get Permitir, Delete ausente, sem alterar `goab_api_teste`): GET list **200** nos dois; GET `/1` **200** no Framework e **404** `not_found` no PostgreSQL (id 1 inexistente nesse banco); DELETE `/1` **403** `code` 139 nos dois. O 403 no PostgreSQL (não 404) confirma Authorization no Delete antes da Procedure. Residual do nível próprio no binário IIS: **fechado**.
 
 Build All nos dois environments sem `spc0018` nas Procedures da API (aviso ambiental
 `FBiTextSharp.dll` no Framework).
@@ -123,7 +125,7 @@ Três correções no mesmo recorte, fumadas no U15 em `NotaFiscal` / `apiNotaFis
 
 ## 8. Fora deste recorte
 
-- Corte GitHub `0.1.0-alpha.6` (tag, notas trilíngues, dois assets DLL): autorização humana. Residual HTTP: nível próprio do Delete no binário IIS (Apply com combo Authorization + Build All; hoje o C# servido ainda está Authentication no Delete). 401/404/200/422 de contrato recapturados em 2026-08-31 (§3).
+- Corte GitHub `0.1.0-alpha.6` (tag, notas trilíngues, dois assets DLL): autorização humana. HTTP de contrato e nível próprio do Delete no C#/IIS fechados em 2026-08-31 (§3).
 - `B082` (progresso na UI): outra sessão.
 - `B105` (teto de detalhe de erro pelo chamador): Sprint 9 se houver folga, senão Sprint 10.
 - Regenerar `apiGuiaPed` só para o 422 do PostgreSQL: cancelado.
