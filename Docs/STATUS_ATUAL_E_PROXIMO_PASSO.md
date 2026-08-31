@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-08-30.
+2026-08-31.
 
 ## Último marco concluído
 
@@ -132,13 +132,17 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Preparar o corte `0.1.0-alpha.6`.** O `B100` está no código e na documentação; a versão do pacote ainda é `0.1.0-alpha.5`. Publicação (tag, GitHub Release pre-release, dois assets DLL, notas trilíngues) exige autorização humana explícita. `B105` permanece folga/Sprint 10. `B082` continua em outra sessão.
+**Preparar o corte `0.1.0-alpha.6`.** O `B100` está no código e na documentação; a versão do pacote ainda é `0.1.0-alpha.5`. Publicação (tag, GitHub Release pre-release, dois assets DLL, notas trilíngues) exige autorização humana explícita. `B105` permanece folga/Sprint 10. `B082` continua em outra sessão. `B108` é pendência urgente de código para a **próxima sessão** (não misturar com o corte até decisão humana).
 
 Evidência do B100: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 
 ## Missão estacionada (outra sessão)
 
 `B082` — sinal de vida no Wizard (abertura e apply) e no Remover enquanto o thread da UI está bloqueado. **Não misturar com o corte `0.1.0-alpha.5`.** Recado: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
+
+## Pendência urgente (próxima sessão de código)
+
+`B108` — preferências da KB (`GxOpenApiBuilder_Settings`) só na **criação** de API; no **reencontro/update**, o Wizard preserva o que já está na API/metadata e o operador só muda o que quiser. Diagnóstico 2026-08-31 na `NotaFiscal`: “Marcar REST via Business Component por padrão” religou o checkbox depois de um Apply com a etapa desmarcada, porque o default da KB não distingue primeira geração de reencontro. Serviços já leem o contrato existente; os checkboxes de geração (SDTs, Procedures, API Object, List, BC, metadata) ainda aplicam o File da KB. Item: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`). Pontos de código: `PrototypeWizardDialog` (`ApplyPreference`, `_applyBusinessComponentWhenReady`), `PrototypeWizardBusinessComponentNavigationPolicy.ResolveApplyBusinessComponentAfterGenerationRefresh`.
 
 ## Evidência da frente encerrada
 
@@ -260,6 +264,7 @@ Evidência do B100: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 78. Em 2026-08-29 o critério 11 fechou na `Empresa` (`Gx_FabricaBrasil`): skip de SDT Create vazio (`ExclusiveCreateEmpty`); apply `SuccessWithWarnings`, OwnSdts=44, Criados=50; `Build All` Success nos dois environments; critério 8; Remover `Deleted=50`, `Blocked=0`, sem órfão; BC ligado; `EmpresaOpenApi` reutilizada vazia de propósito. Alertas: abertura ~7 s, apply 107 min, Remover ~32 s sem casca. ~~Próxima ação única = autorização do corte `0.1.0-alpha.5`, depois `B100`.~~ **Superada** pelo item 79. Evidência: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
 79. Em 2026-08-30 o corte `0.1.0-alpha.5` foi publicado (tag `v0.1.0-alpha.5` + GitHub Release pre-release, dois assets DLL). ~~Próxima ação única = `B100`.~~ **Superada** pelo item 80.
 80. Em 2026-08-30 o `B100` fechou: Delete opt-in no gerador; `apiNotaFiscal` com HTTP 401/404/200 nos dois environments e 422 de integridade no Framework (PostgreSQL dispensado). Próxima ação única = preparar o corte `0.1.0-alpha.6` (autorização humana). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
+81. Em 2026-08-31 ficou registrada a pendência urgente `B108` (preferências da KB só na criação; reencontro preserva a API). Não substitui a próxima ação única do corte `0.1.0-alpha.6`. Detalhe no documento 06.
 
 ## Bloqueios e fatos ainda não validados
 

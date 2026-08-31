@@ -113,7 +113,7 @@ Confirmação do API Object.
 
 ## 17. Business Component
 
-Completar Get/Create/Update REST via Business Component.
+Completar REST via Business Component (Get, Create, Update; Delete se marcado).
 
 ![Business Component](../Images/alpha-wizard-business-component.png)
 

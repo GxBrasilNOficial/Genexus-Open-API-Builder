@@ -140,4 +140,25 @@ Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceCo
 $b079WithDeleteInternalErrorOnly = $b079WithDelete.Replace(', out: &ErrorResponse)', ')')
 Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079InternalErrorOnly($b079WithDeleteInternalErrorOnly, 'apiSimulationResult', 'SimulationResult', 'Entities', $servicesWithDelete, $primaryKey, $listFilters, $true)) 'B079 legado deve reconhecer Delete com ErrorResponse apenas interno.'
 
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::LooksLikeRestCompleteServiceGroupSource($b054)) 'Skeleton B054 não é contrato REST completo.'
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::LooksLikeRestCompleteServiceGroupSource($b079)) 'Source B079 com ErrorResponse/RestStatusCode é contrato REST completo.'
+try {
+    [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::ThrowIfB054WouldDowngradeRestContract($b079)
+    throw 'ASSERT_TRUE_FAILED: B054 deve recusar rebaixar Source REST completo.'
+}
+catch {
+    if ($_.Exception.Message -eq 'ASSERT_TRUE_FAILED: B054 deve recusar rebaixar Source REST completo.') {
+        throw
+    }
+
+    $refusal = $_.Exception.Message
+    if ($_.Exception.InnerException -is [System.InvalidOperationException]) {
+        $refusal = $_.Exception.InnerException.Message
+    }
+
+    Assert-True ($refusal -eq [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::B054RestDowngradeRefusal) 'A recusa B054 deve usar a mensagem canônica.'
+}
+
+[GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::ThrowIfB054WouldDowngradeRestContract($b054)
+
 Write-Output 'PASS: ApiPlanServiceSourceContract'

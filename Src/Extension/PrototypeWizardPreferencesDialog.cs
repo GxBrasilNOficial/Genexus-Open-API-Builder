@@ -268,7 +268,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         _generateApiObjectCheck.Text = _texts.Translate("Marcar API Object por padrao");
         _generateMetadataCheck.Text = _texts.Translate("Marcar metadata da API por padrao");
         _applyListCheck.Text = _texts.Translate("Marcar listagem por padrao");
-        _applyBusinessComponentCheck.Text = _texts.Translate("Marcar Get/Create/Update REST por padrao");
+        _applyBusinessComponentCheck.Text = _texts.Translate("Marcar REST via Business Component por padrao");
         _includeBcErrorMessagesCheck.Text = _texts.Translate("Incluir mensagens de erro do Business Component no corpo HTTP 422");
     }
 

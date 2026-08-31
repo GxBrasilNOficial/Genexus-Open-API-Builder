@@ -682,12 +682,16 @@ public sealed class Package : AbstractPackageUI
                 allowIntentionalContractRefresh,
                 preserveSdtNames,
                 onSdtWrite: item => AppendSdtWriteItemToReport(report, item));
-            WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Get/Create/Update aplicados via Business Component e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', GetProcedureGuid='{result.GetProcedureGuid}', CreateProcedureGuid='{result.CreateProcedureGuid}', UpdateProcedureGuid='{result.UpdateProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', PrimaryKeyParts={result.PrimaryKeyParts}, CreateFields={result.CreateFields}, UpdateFields={result.UpdateFields}, ResponseFields={result.ResponseFields}. Status HTTP controlado por RestCode no API Object; ErrorResponse exposto como saida publica dos servicos; Location de Create emitido nativamente via HttpResponse.");
+            var deleteGuidPart = result.DeleteProcedureGuid == Guid.Empty
+                ? string.Empty
+                : $", DeleteProcedureGuid='{result.DeleteProcedureGuid}'";
+            WriteOutput($"[Genexus Open API Builder][B071-B073/B079] REST via Business Component aplicado e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', GetProcedureGuid='{result.GetProcedureGuid}', CreateProcedureGuid='{result.CreateProcedureGuid}', UpdateProcedureGuid='{result.UpdateProcedureGuid}'{deleteGuidPart}, ApiObjectGuid='{result.ApiObjectGuid}', PrimaryKeyParts={result.PrimaryKeyParts}, CreateFields={result.CreateFields}, UpdateFields={result.UpdateFields}, ResponseFields={result.ResponseFields}. Status HTTP controlado por RestCode no API Object; ErrorResponse exposto como saida publica dos servicos; Location de Create emitido nativamente via HttpResponse.");
             WriteOutput($"[Genexus Open API Builder][B056] Descricoes reaplicadas no API Object real durante B071-B073/B079: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiObjectGuid='{result.ApiObjectGuid}', DescribedServices={apiPlan.ServiceDescriptions.Count}. Service Source preserva o contrato Procedure/API Object atual.");
             foreach (var procedureName in apiPlan.ProcedureNames.Where(name =>
                          name.EndsWith("_API_Get", StringComparison.OrdinalIgnoreCase)
                          || name.EndsWith("_API_Create", StringComparison.OrdinalIgnoreCase)
-                         || name.EndsWith("_API_Update", StringComparison.OrdinalIgnoreCase)))
+                         || name.EndsWith("_API_Update", StringComparison.OrdinalIgnoreCase)
+                         || name.EndsWith("_API_Delete", StringComparison.OrdinalIgnoreCase)))
             {
                 report?.AddUpdated("Procedure", procedureName, "Business Component");
             }
@@ -700,8 +704,8 @@ public sealed class Package : AbstractPackageUI
         catch (Exception ex)
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
-            WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Aplicacao REST de Get/Create/Update bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{errorDetail}'");
-            report?.AddBlocked("Business Component", "Get/Create/Update", errorDetail);
+            WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Aplicacao REST via Business Component bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{errorDetail}'");
+            report?.AddBlocked("Business Component", "REST", errorDetail);
             return false;
         }
     }
@@ -1377,7 +1381,7 @@ public sealed class Package : AbstractPackageUI
 
             if (selection.ApplyBusinessComponent)
             {
-                WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Get/Create/Update REST nao foi aplicado para Transaction='{transaction.Name}' porque os SDTs requeridos falharam ou foram bloqueados neste fluxo.");
+                WriteOutput($"[Genexus Open API Builder][B071-B073/B079] REST via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque os SDTs requeridos falharam ou foram bloqueados neste fluxo.");
             }
 
             if (selection.ApplyList)
@@ -1414,7 +1418,7 @@ public sealed class Package : AbstractPackageUI
 
             if (selection.ApplyBusinessComponent)
             {
-                WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Get/Create/Update REST nao foi aplicado para Transaction='{transaction.Name}' porque as Procedures requeridas falharam ou foram bloqueadas neste fluxo.");
+                WriteOutput($"[Genexus Open API Builder][B071-B073/B079] REST via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque as Procedures requeridas falharam ou foram bloqueadas neste fluxo.");
             }
 
             if (selection.ApplyList)
@@ -1469,7 +1473,7 @@ public sealed class Package : AbstractPackageUI
         {
             if (selection.ApplyBusinessComponent)
             {
-                WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Get/Create/Update REST nao foi aplicado para Transaction='{transaction.Name}' porque o API Object falhou ou foi bloqueado neste fluxo.");
+                WriteOutput($"[Genexus Open API Builder][B071-B073/B079] REST via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque o API Object falhou ou foi bloqueado neste fluxo.");
             }
 
             if (selection.ApplyList)

@@ -670,6 +670,7 @@ internal static class ApiPlanApiObjectWriter
             }
             else
             {
+                ApiPlanServiceSourceContract.ThrowIfB054WouldDowngradeRestContract(preflight.ExistingApiObject.ServiceGroupSource.Source);
                 preflight.ExistingApiObject.ServiceGroupSource.Source = ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan);
             }
 

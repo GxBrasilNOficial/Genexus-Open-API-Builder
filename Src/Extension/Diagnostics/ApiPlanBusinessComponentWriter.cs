@@ -107,7 +107,7 @@ internal static class ApiPlanBusinessComponentWriter
         {
             SaveProcedure(model, delete, deleteContent, deleteVariables, deleteRules);
         }
-        return new ApiPlanBusinessComponentWriteResult(get.Guid, create.Guid, update.Guid, api.Guid, plan.PrimaryKey.Count, plan.CreateRequestFields.Count, plan.UpdateRequestFields.Count, plan.ResponseFields.Count);
+        return new ApiPlanBusinessComponentWriteResult(get.Guid, create.Guid, update.Guid, api.Guid, plan.PrimaryKey.Count, plan.CreateRequestFields.Count, plan.UpdateRequestFields.Count, plan.ResponseFields.Count, delete is null ? Guid.Empty : delete.Guid);
     }
 
     internal static bool IsManagedApiObject(KBModel model, ApiPlan plan, API api)
@@ -2856,7 +2856,7 @@ internal sealed class VariableSpec
 
 internal sealed class ApiPlanBusinessComponentWriteResult
 {
-    public ApiPlanBusinessComponentWriteResult(Guid getProcedureGuid, Guid createProcedureGuid, Guid updateProcedureGuid, Guid apiObjectGuid, int primaryKeyParts, int createFields, int updateFields, int responseFields)
+    public ApiPlanBusinessComponentWriteResult(Guid getProcedureGuid, Guid createProcedureGuid, Guid updateProcedureGuid, Guid apiObjectGuid, int primaryKeyParts, int createFields, int updateFields, int responseFields, Guid deleteProcedureGuid)
     {
         GetProcedureGuid = getProcedureGuid;
         CreateProcedureGuid = createProcedureGuid;
@@ -2866,12 +2866,14 @@ internal sealed class ApiPlanBusinessComponentWriteResult
         CreateFields = createFields;
         UpdateFields = updateFields;
         ResponseFields = responseFields;
+        DeleteProcedureGuid = deleteProcedureGuid;
     }
 
     public Guid GetProcedureGuid { get; }
     public Guid CreateProcedureGuid { get; }
     public Guid UpdateProcedureGuid { get; }
     public Guid ApiObjectGuid { get; }
+    public Guid DeleteProcedureGuid { get; }
     public int PrimaryKeyParts { get; }
     public int CreateFields { get; }
     public int UpdateFields { get; }

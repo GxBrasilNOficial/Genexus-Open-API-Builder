@@ -6,6 +6,30 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 public static class ApiPlanServiceSourceContract
 {
+    public const string B054RestDowngradeRefusal =
+        "Criacao de API Object bloqueada: o API Object proprio ja possui contrato REST (Business Component). Nao regrave o Service Source via B054. Para incluir ou alterar servicos (por exemplo Delete), marque a etapa Completar REST via Business Component. Nenhuma alteracao foi feita.";
+
+    public static bool LooksLikeRestCompleteServiceGroupSource(string source)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return false;
+        }
+
+        return source.IndexOf("out:&ErrorResponse", StringComparison.OrdinalIgnoreCase) >= 0
+            || source.IndexOf("out: &ErrorResponse", StringComparison.OrdinalIgnoreCase) >= 0
+            || source.IndexOf("out:&RestStatusCode", StringComparison.OrdinalIgnoreCase) >= 0
+            || source.IndexOf("out: &RestStatusCode", StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    public static void ThrowIfB054WouldDowngradeRestContract(string existingSource)
+    {
+        if (LooksLikeRestCompleteServiceGroupSource(existingSource))
+        {
+            throw new InvalidOperationException(B054RestDowngradeRefusal);
+        }
+    }
+
     public static bool MatchesB054(
         string source,
         string apiName,

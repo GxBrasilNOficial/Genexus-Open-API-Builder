@@ -94,9 +94,9 @@ O foco principal atual é geração inicial de APIs REST baseadas em Transaction
 
 ## Resposta
 
-Porque `List`, `Get`, `Create` e `Update` resolvem dores frequentes, geram valor rápido e reduzem complexidade inicial. Endpoint `Delete` fica pós-MVP.
+Porque `List`, `Get`, `Create` e `Update` resolvem dores frequentes, geram valor rápido e reduzem complexidade inicial. O `Delete` é opt-in e fica desligado por padrão (`B100`, 2026-08-30): só entra no API Object quando o operador marca o serviço no Wizard, com confirmação consciente e `SecurityLevel` próprio. Quem não marcar continua gerando exatamente os quatro serviços acima.
 
-**Atualização — 2026-08-23:** o `Delete` foi autorizado em `B100`, na Sprint 9, como serviço **opcional e desligado por padrão**, com confirmação consciente no Wizard e `SecurityLevel` próprio. Quem não marcar continua gerando exatamente os quatro serviços descritos acima.
+**Atualização — 2026-08-23 / fechamento `B100` em 2026-08-30:** o endpoint deixou de ser pós-MVP absoluto. A distinção entre apagar um **registro** (serviço REST `Delete`, via BC) e remover a **API gerada** (tooling, por metadata) permanece.
 
 [MVP-F04][FAQ-F22]
 

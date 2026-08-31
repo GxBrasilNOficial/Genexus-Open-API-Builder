@@ -19,6 +19,10 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Documentação pública (README ×3, `DEMO`) e contratos 15/27: `Delete` deixa de ser “inexistente no MVP” e passa a opt-in. O corte `0.1.0-alpha.6` (tag, notas, dois assets DLL) permanece sob autorização humana.
 - README ×3 (“O que gera”) e `DEMO` passam a citar `Delete` opt-in; o teste de reencontro de serviços do Wizard trava a forma atual de `ResolveExistingServiceSelection`.
 - README ×3 (contrato de erro HTTP): o 422 de `Create`/`Update` (rules do BC) passa a citar também o `Delete` opt-in na recusa por integridade referencial, alinhado ao documento 27.
+- Wizard, preferências, Output B079 e relatório: a etapa BC passa a se chamar REST via Business Component e cita Delete quando marcado; o Apply lista `proc*_API_Delete`.
+- B054 recusa regravar skeleton sobre API Object que já tem contrato REST (ex.: marcar Delete só na etapa de API Object, sem BC).
+- FAQ `22`: o `Delete` deixa de ser descrito como pós-MVP absoluto na resposta principal.
+- `B108` (pendência, não implementado): preferências da KB só na criação da API; no reencontro preservar o contrato gravado. Checkpoint e documento 06.
 - Reencontro do `Delete`: o leitor de Service Source e de metadata passa a ver o serviço e o `securityLevel` por item; o matcher B079 reconhece a assinatura atual (`PK` + `ErrorResponse` + `RestStatusCode`); o Apply usa o combo do Delete em vez de um `SecurityLevel` vazio herdado do contrato existente.
 - Documentos Foundation `05`, `10`, `11` e `12` §11: deixam de afirmar Delete como pós-MVP absoluto e passam ao contrato vigente (quatro serviços obrigatórios + Delete opt-in desligado por padrão).
 

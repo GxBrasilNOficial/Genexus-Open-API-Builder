@@ -53,7 +53,7 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly CheckBox _generateProceduresCheck = new() { AutoSize = true, Text = "Confirmar: Criar ou validar Procedures ao concluir", Dock = DockStyle.Top };
     private readonly CheckBox _generateApiObjectCheck = new() { AutoSize = true, Text = "Confirmar: Criar ou validar API Object ao concluir", Dock = DockStyle.Top };
     private readonly CheckBox _generateMetadataCheck = new() { AutoSize = true, Text = "Confirmar: Gravar metadata da API ao concluir", Dock = DockStyle.Top };
-    private readonly CheckBox _applyBusinessComponentCheck = new() { AutoSize = true, Text = "Completar Get/Create/Update REST ao concluir", Dock = DockStyle.Top };
+    private readonly CheckBox _applyBusinessComponentCheck = new() { AutoSize = true, Text = "Completar REST via Business Component ao concluir", Dock = DockStyle.Top };
     private readonly CheckBox _applyListCheck = new() { AutoSize = true, Text = "Completar listagem ao concluir", Dock = DockStyle.Top };
     private readonly TextBox _sdtGenerationText = CreateReadOnlyTextBox();
     private readonly TextBox _procedureGenerationText = CreateReadOnlyTextBox();
@@ -160,7 +160,7 @@ internal sealed class PrototypeWizardDialog : Form
         _generateProceduresCheck.Text = _texts.Translate("Confirmar: Criar ou validar Procedures ao concluir");
         _generateApiObjectCheck.Text = _texts.Translate("Confirmar: Criar ou validar API Object ao concluir");
         _generateMetadataCheck.Text = _texts.Translate("Confirmar: Gravar metadata da API ao concluir");
-        _applyBusinessComponentCheck.Text = _texts.Translate("Completar Get/Create/Update REST ao concluir");
+        _applyBusinessComponentCheck.Text = _texts.Translate("Completar REST via Business Component ao concluir");
         _applyListCheck.Text = _texts.Translate("Completar listagem ao concluir");
         _includeLevelCheckRequests.Text = _texts.Translate("Incluir este subnível");
         _includeLevelCheckResponse.Text = _texts.Translate("Incluir este subnível");
@@ -772,7 +772,7 @@ internal sealed class PrototypeWizardDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Business Component preserva as regras da Transaction. A confirmação abaixo completa Get, Create e Update nas Procedures já geradas e sincroniza o API Object; não cria novos objetos."), 52), 0, 0);
+        panel.Controls.Add(CreateWrappingLabel(_texts.Translate("Business Component preserva as regras da Transaction. A confirmação abaixo completa Get, Create e Update nas Procedures já geradas e, se Delete estiver marcado, também o Delete; sincroniza o API Object; não cria novos objetos."), 52), 0, 0);
         panel.Controls.Add(_enableBusinessComponentCheck, 0, 1);
         panel.Controls.Add(_applyBusinessComponentCheck, 0, 2);
         panel.Controls.Add(_businessComponentText, 0, 3);
@@ -1977,7 +1977,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"{_texts.Translate("Criar ou validar API Object")}: {Selection.GenerateApiObject}{Environment.NewLine}" +
             $"{_texts.Translate("Completar listagem")}: {Selection.ApplyList}{Environment.NewLine}" +
             $"{_texts.Translate("Gravar metadata da API")}: {Selection.GenerateMetadata}{Environment.NewLine}" +
-            $"{_texts.Translate("Completar Get/Create/Update REST")}: {Selection.ApplyBusinessComponent}{Environment.NewLine}" +
+            $"{_texts.Translate("Completar REST via Business Component")}: {Selection.ApplyBusinessComponent}{Environment.NewLine}" +
             $"{_texts.Translate("Estado da geracao")}: {_generationContext}" +
             FormatHierarchicalSummary();
         _summaryEndpointText.Text =
@@ -1987,7 +1987,7 @@ internal sealed class PrototypeWizardDialog : Form
             _texts.Translate("Required marca membro obrigatório no payload: Create/Update respondem 400 quando ele chega ausente ou com o valor default do tipo (vazio, false ou 0).") + Environment.NewLine +
             _texts.Translate("ApiPlan sera montado em memoria ao concluir o wizard.") + Environment.NewLine +
             _texts.Translate("Estruturas de dados, Procedures, API Object, listagem e metadata so serao escritos se as respectivas abas estiverem confirmadas e o preflight tecnico estiver OK.") + Environment.NewLine +
-            _texts.Translate("A opção de Business Component completa Get/Create/Update e status HTTP nas Procedures já geradas.") + Environment.NewLine +
+            _texts.Translate("A opção de Business Component completa Get, Create, Update e, se marcado, Delete, com status HTTP nas Procedures já geradas.") + Environment.NewLine +
             _texts.Translate("A listagem completa a primeira versão paginada do endpoint; a metadata grava o File JSON inicial.") +
             FormatHierarchicalGuarantee();
         _showingSummary = true;
@@ -2210,13 +2210,13 @@ internal sealed class PrototypeWizardDialog : Form
         else if (IsBusinessComponentReady())
         {
             _applyBusinessComponentCheck.Text = canApplyBusinessComponent
-                ? _texts.Translate("Confirmar: Completar Get/Create/Update REST ao concluir")
+                ? _texts.Translate("Confirmar: Completar REST via Business Component ao concluir")
                 : _texts.Translate("Bloqueado: confirme SDTs, Procedures e API Object");
         }
         else if (_enableBusinessComponentCheck.Checked)
         {
             _applyBusinessComponentCheck.Text = canApplyBusinessComponent
-                ? _texts.Translate("Confirmar: Completar Get/Create/Update REST após habilitar")
+                ? _texts.Translate("Confirmar: Completar REST via Business Component após habilitar")
                 : _texts.Translate("Bloqueado: confirme SDTs, Procedures e API Object antes de aplicar BC");
         }
         else
@@ -2448,7 +2448,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"Transaction: {_businessComponentSnapshot.TransactionName}{Environment.NewLine}" +
             $"IsBusinessComponent: {IsBusinessComponentReady()}{Environment.NewLine}" +
             $"Status: {effectiveStatus}{Environment.NewLine}{Environment.NewLine}" +
-            _texts.Translate("Sem Business Component, a habilitação e a aplicação REST de Get/Create/Update ficam bloqueadas. O wizard pode continuar para etapas que não exigem habilitar essa propriedade. A habilitação exige confirmação explícita e altera a Transaction na KB; cancelar o wizard depois disso não reverte automaticamente a propriedade.");
+            _texts.Translate("Sem Business Component, a habilitação e a aplicação REST via Business Component ficam bloqueadas. O wizard pode continuar para etapas que não exigem habilitar essa propriedade. A habilitação exige confirmação explícita e altera a Transaction na KB; cancelar o wizard depois disso não reverte automaticamente a propriedade.");
         _enableBusinessComponentCheck.Enabled = !_businessComponentSnapshot.IsBusinessComponent && !_businessComponentEnabledDuringWizard;
         _enableBusinessComponentCheck.Visible = !_businessComponentSnapshot.IsBusinessComponent;
         ApplyBusinessComponentControlState();

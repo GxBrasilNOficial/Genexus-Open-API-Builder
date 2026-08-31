@@ -29,6 +29,7 @@ Assert-False ($policy::HasGetCreateUpdateServices([string[]]@('List', 'Get'))) '
 Assert-False ($policy::HasGetCreateUpdateServices([string[]]@('Get', 'Create'))) 'Sem Update a etapa B071-B073/B079 permanece bloqueada.'
 Assert-True ($policy::HasGetCreateUpdateServices([string[]]@('Get', 'Create', 'Update'))) 'Get/Create/Update juntos habilitam a etapa B071-B073/B079.'
 Assert-True ($policy::HasGetCreateUpdateServices([string[]]@('List', 'Get', 'Create', 'Update'))) 'Os quatro serviços do MVP habilitam a etapa B071-B073/B079.'
+Assert-True ($policy::HasGetCreateUpdateServices([string[]]@('List', 'Get', 'Create', 'Update', 'Delete'))) 'Delete extra não desabilita a etapa BC; Get/Create/Update continuam sendo o pré-requisito.'
 
 Assert-False ($policy::ShouldAllowApplyBusinessComponent($false, $false, $true, $true, $true, $true)) 'Aplicação via BC não deve ser permitida quando a Transaction não está apta e a habilitação explícita não foi marcada.'
 Assert-False ($policy::ShouldAllowApplyBusinessComponent($false, $true, $false, $true, $true, $true)) 'Aplicação via BC não deve ser permitida sem SDTs disponíveis ou confirmados.'

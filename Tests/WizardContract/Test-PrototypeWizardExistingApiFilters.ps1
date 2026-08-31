@@ -8,7 +8,8 @@ $existingReaderPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\P
 $packagePath = Join-Path $PSScriptRoot '..\..\Src\Extension\Package.cs'
 $dialogPath = Join-Path $PSScriptRoot '..\..\Src\Extension\PrototypeWizardDialog.cs'
 $apiPlanPath = Join-Path $PSScriptRoot '..\..\Src\Domain\ApiPlan.cs'
-foreach ($path in @($readerPath, $existingReaderPath, $packagePath, $dialogPath, $apiPlanPath)) {
+$apiObjectWriterPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanApiObjectWriter.cs'
+foreach ($path in @($readerPath, $existingReaderPath, $packagePath, $dialogPath, $apiPlanPath, $apiObjectWriterPath)) {
     if (-not (Test-Path -LiteralPath $path)) {
         throw "SOURCE_MISSING: $path"
     }
@@ -26,6 +27,7 @@ $existingReader = [IO.File]::ReadAllText($existingReaderPath)
 $package = [IO.File]::ReadAllText($packagePath)
 $dialog = [IO.File]::ReadAllText($dialogPath)
 $apiPlan = [IO.File]::ReadAllText($apiPlanPath)
+$apiObjectWriter = [IO.File]::ReadAllText($apiObjectWriterPath)
 
 Assert-Contains $reader 'Read(KBModel designModel, Transaction transaction)' 'O snapshot do Wizard deve aceitar a KB ativa para reencounter.'
 Assert-Contains $reader 'existingApiContract.FiltersAvailable ? false : filter.DefaultSelected' 'Com contrato de filtros existente, campos novos nao devem voltar aos defaults de uma API nova.'
@@ -69,9 +71,12 @@ Assert-Contains $package 'ApiPlanBuilder.Build(transaction, selection)' 'O fluxo
 Assert-Contains $package 'PrototypeWizardContractReader.Read(knowledgeBase.DesignModel, transaction)' 'O Wizard principal deve usar a leitura da KB ativa.'
 Assert-Contains $package 'ReadForIntentionalChange(knowledgeBase.DesignModel, transaction, apiPlan)' 'O Wizard deve validar o baseline sem bloquear mudancas deliberadas no contrato.'
 Assert-Contains $package 'ValidateForIntentionalChange(' 'O preflight do Wizard deve aceitar um novo plano depois de validar o baseline.'
-Assert-Contains $package 'allowIntentionalContractRefresh: true' 'As escritas confirmadas pelo Wizard devem atualizar deliberadamente o contrato.'
+Assert-Contains $package 'name.EndsWith("_API_Delete", StringComparison.OrdinalIgnoreCase)' 'O relatório do Apply BC deve marcar proc*_API_Delete quando o serviço estiver no plano.'
+Assert-Contains $apiObjectWriter 'ThrowIfB054WouldDowngradeRestContract' 'B054 não deve regravar skeleton sobre API Object já com contrato REST.'
 Assert-Contains $dialog 'ReadForIntentionalChange(_designModel, _transaction' 'O estado exibido dentro do Wizard também deve aceitar mudanças deliberadas.'
-Assert-Contains $dialog 'HasGetCreateUpdateServices' 'A etapa Get/Create/Update REST só fica disponível com os três serviços selecionados.'
+Assert-Contains $dialog 'HasGetCreateUpdateServices' 'A etapa REST via Business Component só fica disponível com Get, Create e Update selecionados.'
+Assert-Contains $dialog 'Completar REST via Business Component ao concluir' 'O checkbox da etapa BC deve citar REST via Business Component, não só Get/Create/Update.'
+Assert-Contains $dialog 'se Delete estiver marcado, também o Delete' 'A aba BC deve declarar que Delete marcado entra no Apply.'
 Assert-Contains $dialog 'Bloqueado: marque Get, Create e Update nos Serviços' 'Sem Create/Update o Wizard deve bloquear a etapa BC com motivo explícito.'
 Assert-Contains $dialog 'WireServiceSelectionRefresh' 'Mudança de serviços deve recalcular a disponibilidade da etapa BC.'
 Assert-Contains $apiPlan 'string.Equals(service, "Delete", StringComparison.OrdinalIgnoreCase)' 'No reencontro, o SecurityLevel do Delete deve seguir a escolha do Wizard, nao o valor vazio da metadata antiga.'

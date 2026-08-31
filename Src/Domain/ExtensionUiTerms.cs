@@ -43,7 +43,7 @@ public static class ExtensionUiTerms
             "Marcar API Object por padrao" => "Marcar API Object por padrão",
             "Marcar metadata da API por padrao" => "Marcar metadata da API por padrão",
             "Marcar listagem por padrao" => "Marcar listagem por padrão",
-            "Marcar Get/Create/Update REST por padrao" => "Marcar Get/Create/Update REST por padrão",
+            "Marcar REST via Business Component por padrao" => "Marcar REST via Business Component por padrão",
             "Marque ao menos um servico padrao." => "Marque ao menos um serviço padrão.",
             _ => source,
         };
