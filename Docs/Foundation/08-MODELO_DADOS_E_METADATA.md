@@ -301,9 +301,9 @@ Campos de origem de migração não são auditoria operacional. Um campo como `P
 
 Serviços padrão geram:
 
-`EndpointsCount = 4`
+`EndpointsCount = 4` sem `Delete`; `5` quando o operador marca o opt-in.
 
-Os serviços são `List`, `Get`, `Create` e `Update`. `Delete` é pós-MVP como endpoint REST. **Revisto em 2026-08-23:** com `B100`, marcar o serviço `Delete` no Wizard leva `EndpointsCount` a 5; sem marcar — o padrão —, permanece 4.
+Os serviços obrigatórios são `List`, `Get`, `Create` e `Update`. O `Delete` é opt-in (`B100`, 2026-08-30): desligado por padrão o `EndpointsCount` permanece 4; marcado no Wizard, passa a 5.
 
 ## Uso
 

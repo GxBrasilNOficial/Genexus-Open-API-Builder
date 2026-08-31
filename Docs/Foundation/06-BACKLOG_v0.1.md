@@ -210,7 +210,7 @@ Se B004 falhar sem alternativa oficial viável:
 | B072 | Gerar `Create` | Alta |
 | B073 | Gerar `Update` com `PUT` e resposta 200 completa | Alta |
 | B074 | Gerar paths e operationIds conforme convenção | Alta |
-| B075 | Validar ausência de endpoint `Delete` no MVP | Alta |
+| B075 | Validar ausência de endpoint `Delete` enquanto o serviço estiver desmarcado (padrão; opt-in `B100`) | Alta |
 | B076 | Distinguir filtro de `List` ausente de `false`, `0` e string vazia; recusar campo obrigatório não preenchido em `Create` e `Update` | Alta |
 | B077 | Retornar paginação com `totalCount` e `totalPages` confiáveis | Alta |
 | B078 | Validar `operationId` no padrão `apiNome.Serviço` | Alta |
@@ -218,7 +218,7 @@ Se B004 falhar sem alternativa oficial viável:
 
 ### Nota operacional
 
-`Delete` é pós-MVP como endpoint REST. A remoção de uma API gerada pertence ao ciclo de vida da ferramenta e depende da metadata persistente. **Revisto em 2026-08-23:** o endpoint passa a ser entregue por `B100`, opt-in e desligado por padrão. A distinção entre remover um **registro** (serviço `Delete`, via BC) e remover a **API gerada** (tooling, por metadata) permanece integralmente.
+Os quatro serviços obrigatórios são `List`, `Get`, `Create` e `Update`. O endpoint REST `Delete` é opt-in (`B100`, concluído em 2026-08-30), desligado por padrão. A remoção de uma API gerada pertence ao ciclo de vida da ferramenta e depende da metadata persistente. A distinção entre remover um **registro** (serviço `Delete`, via BC) e remover a **API gerada** (tooling, por metadata) permanece integralmente.
 
 ### Nota de revisão sobre `B076`
 
@@ -399,7 +399,7 @@ B094 investigou, no GeneXus 18 U15, qual artefato distribuir e se um usuário ex
 | B071 | Existe `Get` funcional para chave simples e composta |
 | B072 | Existe `Create` funcional |
 | B073 | Existe `Update` funcional com HTTP 200 e Response completo |
-| B075 | Não existe endpoint `Delete` no MVP |
+| B075 | Sem endpoint `Delete` enquanto o serviço estiver desmarcado; marcado, vale o contrato `B100` |
 | B076 | Filtros de `List` distinguem ausência de valores válidos `false`, `0` e string vazia; `Create` e `Update` respondem 400 quando campo obrigatório chega ausente ou com o valor default do tipo, conforme a nota de revisão da Fase 6 |
 | B077 | ListResponse retorna `items`, `pagination` e `appliedFilters` |
 | B078 | OperationIds seguem `apiCliente.List`, `apiCliente.Get`, `apiCliente.Create` e `apiCliente.Update` |

@@ -284,7 +284,7 @@ Completar o comportamento REST sobre os objetos já criados e aplicar explicitam
 - `B072`: completar Create com HTTP 201 e `Location` quando controlável com segurança
 - `B073`: completar Update com PUT, HTTP 200 e Response completo
 - `B074`: aplicar paths e operationIds convencionados
-- `B075`: comprovar ausência de endpoint Delete no MVP
+- `B075`: comprovar ausência de endpoint Delete no MVP (Sprint 6; o `B100` passou a permitir Delete só como opt-in)
 - `B076`: distinguir filtro de `List` ausente de vazio, `false` e zero por `Json Null Serialization`, e recusar com 400 campo obrigatório que chegue ausente ou com o valor default do tipo, conforme a nota de revisão da Fase 6 no documento 06
 - `B077`: comprovar `totalCount`, `totalPages` e `appliedFilters`
 - `B078`: validar operationIds no padrão `apiNome.Serviço`

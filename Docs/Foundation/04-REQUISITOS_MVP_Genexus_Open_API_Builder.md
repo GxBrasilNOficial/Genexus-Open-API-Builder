@@ -173,6 +173,7 @@ Gerar estrutura para:
 - `Get`
 - `Create`
 - `Update`
+- `Delete` (opt-in, desligado por padrão; `B100`)
 
 ### Critério de aceite
 
@@ -182,9 +183,9 @@ Serviços básicos gerados e prontos para teste inicial em cenário simples, com
 
 ### Nota operacional
 
-`Delete` não compõe o endpoint REST do MVP. A remoção de API gerada é uma operação de tooling distinta e deve seguir metadata de geração, não o contrato público da API.
+Os quatro serviços obrigatórios são `List`, `Get`, `Create` e `Update`. O `Delete` é opt-in (`B100`, 2026-08-30): desligado por padrão; marcado no Wizard, entra no API Object com confirmação consciente e `SecurityLevel` próprio. A remoção da **API gerada** continua sendo operação de tooling sobre a metadata, distinta do serviço REST que apaga um **registro** via Business Component.
 
-**Revisto em 2026-08-23 (`B100`):** o `Delete` fica autorizado como serviço **opcional**, desligado por padrão, executado na Sprint 9 depois da frente de subníveis. A distinção acima permanece intacta e continua importante: remover a **API gerada** é operação de tooling sobre a metadata; o serviço `Delete` remove um **registro** pelo Business Component. São coisas diferentes, e nenhuma passa a fazer o papel da outra.
+**Histórico — até 2026-08-23:** esta nota dizia que o `Delete` não compunha o endpoint REST do MVP. O `B100` promoveu o endpoint a opt-in; a distinção tooling versus registro permanece.
 
 ---
 
@@ -344,14 +345,13 @@ Não entram nesta fase:
 - analytics
 - múltiplos templates complexos
 - suíte corporativa completa
-- endpoint `Delete`
 - reuso arbitrário de SDTs externos
 - versionamento automático por sufixo `_v2`
 - escolha livre de módulo destino
 - `PATCH`
 - filtros por subnível
 
-**Nota de revisão — 2026-08-23:** o **endpoint `Delete`** sai desta lista e passa a ser entregue por `B100`, como serviço opcional desligado por padrão. Os demais itens permanecem fora de escopo — em particular **filtros por subnível**, cuja exclusão continua deliberada mesmo depois do suporte a transações multinível: os subníveis entram nos contratos como coleções, mas não como critério de filtro do `List`.
+**Nota de revisão — 2026-08-23 / fechamento `B100` em 2026-08-30:** o **endpoint `Delete`** saiu desta lista (opt-in desligado por padrão). Os demais itens permanecem fora de escopo — em particular **filtros por subnível**, cuja exclusão continua deliberada mesmo depois do suporte a transações multinível: os subníveis entram nos contratos como coleções, mas não como critério de filtro do `List`.
 
 [DP-F04]
 
@@ -453,7 +453,7 @@ Se não for tecnicamente viável criar ou manipular API Objects oficiais por cam
 ## Pode assumir com boa confiança
 
 - MVP focado em CRUD REST inicial via API Object oficial
-- CRUD no MVP significa `List`, `Get`, `Create` e `Update`; `Delete` é pós-MVP — **revisto em 2026-08-23:** `Delete` passa a ser entregue por `B100`, na Sprint 9, como serviço opcional desligado por padrão
+- CRUD no MVP: `List`, `Get`, `Create` e `Update` obrigatórios; `Delete` opt-in desligado por padrão (`B100`, 2026-08-30)
 - integração à IDE é requisito central
 - simplicidade é prioridade
 - geração rastreável e conservadora é valor importante
