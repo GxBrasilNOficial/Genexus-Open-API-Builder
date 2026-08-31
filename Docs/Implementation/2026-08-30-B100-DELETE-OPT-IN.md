@@ -71,7 +71,22 @@ Evidência U15: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md` (seç�
 
 ---
 
-## 5. Fora deste recorte
+## 5. Wizard no reencontro — rádio global (2026-08-31)
+
+O Apply do Wizard sobre API existente deve gravar o que está na UI: rádio para List/Get/Create/Update, combo para Delete. Até este conserto o `CreateServices` copiava `securityLevel` persistido por serviço também nos quatro obrigatórios, então mudar o rádio não regrava o Service Source.
+
+Código: `ResolveReencounteredServiceSecurityLevel` em `ApiPlan.cs` — Delete usa o combo; os demais herdam `plan.Security` (o rádio). Path e `operationId` da API existente continuam preservados.
+
+Smoke U15 na `NotaFiscal` / `apiNotaFiscal`, reencontro, REST via Business Component marcado:
+
+1. Abertura: global `Authorization`, Delete `Authentication`.
+2. Operador mudou o rádio para `Authentication` (combo inalterado).
+3. Apply `SuccessWithWarnings`, `Atualizados=15`, `Bloqueados=0`, `ApplyBusinessComponent=True`.
+4. Service Source: List, Get, Create, Update e Delete com `[SecurityLevel(Authentication)]`.
+
+---
+
+## 6. Fora deste recorte
 
 - Corte GitHub `0.1.0-alpha.6` (tag, notas trilíngues, dois assets DLL): autorização humana.
 - `B082` (progresso na UI): outra sessão.
@@ -80,10 +95,10 @@ Evidência U15: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md` (seç�
 
 ---
 
-## 6. Testes offline
+## 7. Testes offline
 
 `Tests/WizardPreferences/Test-PrototypeWizardPreferences.ps1` (default `false`, fallback legado).
 `Tests/WizardLifecycle/Test-ApiPlanWizardHierarchicalLifecycle.ps1` (recusar confirmação desmarca
-Delete). `Tests/WizardContract/Test-PrototypeWizardExistingApiFilters.ps1` (Sync lê
+Delete). `Tests/WizardContract/Test-PrototypeWizardExistingApiFilters.ps1` (reencontro: rádio nos quatro, combo no Delete; Sync lê
 `services[].securityLevel` do Delete). Contrato OpenAPI: `Delete` entra em
 `PrototypeWizardContract.ServiceNames` e na trava `Tests/OpenApiContract/`.

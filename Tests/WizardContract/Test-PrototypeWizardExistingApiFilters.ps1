@@ -83,7 +83,9 @@ Assert-Contains $dialog 'Completar REST via Business Component ao concluir' 'O c
 Assert-Contains $dialog 'se Delete estiver marcado, também o Delete' 'A aba BC deve declarar que Delete marcado entra no Apply.'
 Assert-Contains $dialog 'Bloqueado: marque Get, Create e Update nos Serviços' 'Sem Create/Update o Wizard deve bloquear a etapa BC com motivo explícito.'
 Assert-Contains $dialog 'WireServiceSelectionRefresh' 'Mudança de serviços deve recalcular a disponibilidade da etapa BC.'
+Assert-Contains $apiPlan 'ResolveReencounteredServiceSecurityLevel' 'No reencontro, o SecurityLevel por servico e resolvido a parte: Delete pelo combo, List/Get/Create/Update pelo nivel global do Wizard.'
 Assert-Contains $apiPlan 'string.Equals(service, "Delete", StringComparison.OrdinalIgnoreCase)' 'No reencontro, o SecurityLevel do Delete deve seguir a escolha do Wizard, nao o valor vazio da metadata antiga.'
-Assert-Contains $apiPlan '&& !string.IsNullOrWhiteSpace(deleteSecurityLevel)' 'O combo do Delete so prevalece quando o review trouxe um nivel explicito.'
+Assert-Contains $apiPlan '!string.IsNullOrWhiteSpace(deleteSecurityLevel)' 'O combo do Delete so prevalece quando o review trouxe um nivel explicito.'
+Assert-Contains $apiPlan 'existingService.SecurityLevel);' 'O nivel persistido por servico so alimenta o Delete; List/Get/Create/Update herdam o radio.'
 
 Write-Output 'PASS: PrototypeWizardExistingApiFilters'

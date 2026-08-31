@@ -176,7 +176,7 @@ internal static class ApiPlanListProcedureWriter
         var name = $"proc{plan.TransactionName}_API_List";
         var matches = Procedure.GetAll(model).Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase)).ToArray();
         if (matches.Length != 1 || !ApiPlanOwnedObjectDescription.IsOwnedProcedure(matches.Single().Description, name))
-            throw new InvalidOperationException($"B070 bloqueado: Procedure propria '{name}' nao foi reencontrada com seguranca. Execute B050-B053 antes. Nenhuma alteracao foi feita.");
+            throw new InvalidOperationException($"B070 bloqueado: Procedure propria '{name}' nao foi reencontrada com seguranca. Gere as Procedures pelo Wizard antes. Nenhuma alteracao foi feita.");
         return matches.Single();
     }
 
@@ -188,7 +188,7 @@ internal static class ApiPlanListProcedureWriter
                 ? ApiPlanApiObjectWriter.IsOwnedApiObjectForIntentionalWrite(model, plan, matches.Single())
                 : ApiPlanApiObjectWriter.IsOwnedApiObject(model, plan, matches.Single()));
         if (!owned)
-            throw new InvalidOperationException($"B070 bloqueado: API Object proprio '{plan.ApiName}' nao foi reencontrado com seguranca. Execute B054 antes. Nenhuma alteracao foi feita.");
+            throw new InvalidOperationException($"B070 bloqueado: API Object proprio '{plan.ApiName}' nao foi reencontrado com seguranca. Gere o API Object pelo Wizard antes. Nenhuma alteracao foi feita.");
         return matches.Single();
     }
 

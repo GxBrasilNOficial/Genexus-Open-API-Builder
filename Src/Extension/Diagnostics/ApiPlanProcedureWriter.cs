@@ -65,7 +65,7 @@ internal static class ApiPlanProcedureWriter
 
             if (matches.Length == 0)
             {
-                throw new InvalidOperationException($"Criacao de Procedures bloqueada: SDT requerido nao foi reencontrado: '{definition.Name}'. Execute B040-B046 antes. Nenhuma alteracao foi feita.");
+                throw new InvalidOperationException($"Criacao de Procedures bloqueada: SDT requerido nao foi reencontrado: '{definition.Name}'. Gere os SDTs pelo Wizard antes. Nenhuma alteracao foi feita.");
             }
 
             if (matches.Length > 1)
@@ -76,7 +76,7 @@ internal static class ApiPlanProcedureWriter
             var sdt = matches[0];
             if (!ApiPlanOwnedObjectDescription.IsOwnedSdt(sdt.Description, definition.Name))
             {
-                throw new InvalidOperationException($"Criacao de Procedures bloqueada: SDT requerido externo ou incompativel chamado '{definition.Name}'. Execute B040-B046 para reencontrar SDTs proprios antes. Nenhuma alteracao foi feita.");
+                throw new InvalidOperationException($"Criacao de Procedures bloqueada: SDT requerido externo ou incompativel chamado '{definition.Name}'. Gere ou reencontre os SDTs pelo Wizard antes. Nenhuma alteracao foi feita.");
             }
 
             resolved.Add(sdt.Guid);

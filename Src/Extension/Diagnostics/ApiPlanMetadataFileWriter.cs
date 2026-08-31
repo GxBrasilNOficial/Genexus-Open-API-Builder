@@ -142,7 +142,7 @@ internal static class ApiPlanMetadataFileWriter
 
         if (matches.Length == 0)
         {
-            throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: API Object requerido nao foi reencontrado: '{apiPlan.ApiName}'. Execute B054/B055 antes. Nenhuma alteracao foi feita.");
+            throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: API Object requerido nao foi reencontrado: '{apiPlan.ApiName}'. Gere o API Object pelo Wizard antes. Nenhuma alteracao foi feita.");
         }
 
         if (matches.Length > 1)

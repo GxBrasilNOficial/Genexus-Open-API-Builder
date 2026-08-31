@@ -255,10 +255,10 @@ internal static class ApiPlanBuilder
                 }
 
                 var created = CreateService(service, apiName, restPath, primaryKey, deleteSecurityLevel);
-                var securityLevel = string.Equals(service, "Delete", StringComparison.OrdinalIgnoreCase)
-                    && !string.IsNullOrWhiteSpace(deleteSecurityLevel)
-                    ? deleteSecurityLevel
-                    : existingService.SecurityLevel;
+                var securityLevel = ResolveReencounteredServiceSecurityLevel(
+                    service,
+                    deleteSecurityLevel,
+                    existingService.SecurityLevel);
                 return new ApiPlanService(
                     existingService.Name,
                     existingService.HttpMethod,
@@ -267,6 +267,21 @@ internal static class ApiPlanBuilder
                     securityLevel);
             })
             .ToArray();
+    }
+
+    private static string? ResolveReencounteredServiceSecurityLevel(
+        string service,
+        string? deleteSecurityLevel,
+        string? persistedSecurityLevel)
+    {
+        if (string.Equals(service, "Delete", StringComparison.OrdinalIgnoreCase))
+        {
+            return !string.IsNullOrWhiteSpace(deleteSecurityLevel)
+                ? deleteSecurityLevel
+                : persistedSecurityLevel;
+        }
+
+        return null;
     }
 
     private static ApiPlanService CreateService(string serviceName, string apiName, string restPath, IReadOnlyList<ApiPlanField> primaryKey, string? deleteSecurityLevel)
