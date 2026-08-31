@@ -36,7 +36,7 @@ A partir de uma Transaction:
 
 ### Contrato de erro HTTP (desde `0.1.0-alpha.4`)
 
-Em recusa de regra do Business Component, `Create` e `Update` respondem **HTTP 422** com `ErrorResponse.Code = validation_error`, o texto das rules em `Message` e a coleção `Messages[]` (só mensagens de erro). O Source de cada API só muda ao reabrir o Wizard sobre ela; o SDT compartilhado `sdt_API_ErrorResponse` é único na KB, então regerar qualquer API atualiza o schema de erro publicado por todas. Quem comparava a string fixa `"Business rules rejected the request."` precisa passar a decidir pelo `Code`. Detalhe e opção de desligar: [notas 0.1.0-alpha.4](Docs/Releases/0.1.0-alpha.4.md). Subníveis e o marcador `<Subnível>Replace`: [notas 0.1.0-alpha.5](Docs/Releases/0.1.0-alpha.5.md).
+Em recusa de regra do Business Component, `Create` e `Update` respondem **HTTP 422** com `ErrorResponse.Code = validation_error`, o texto das rules em `Message` e a coleção `Messages[]` (só mensagens de erro). O `Delete` opt-in, quando marcado, responde **HTTP 422** na recusa por integridade referencial, com o mesmo SDT. O Source de cada API só muda ao reabrir o Wizard sobre ela; o SDT compartilhado `sdt_API_ErrorResponse` é único na KB, então regerar qualquer API atualiza o schema de erro publicado por todas. Quem comparava a string fixa `"Business rules rejected the request."` precisa passar a decidir pelo `Code`. Detalhe e opção de desligar: [notas 0.1.0-alpha.4](Docs/Releases/0.1.0-alpha.4.md). Subníveis e o marcador `<Subnível>Replace`: [notas 0.1.0-alpha.5](Docs/Releases/0.1.0-alpha.5.md).
 
 ## Status atual
 

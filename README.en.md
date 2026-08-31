@@ -36,7 +36,7 @@ From a Transaction:
 
 ### HTTP error contract (since `0.1.0-alpha.4`)
 
-When the Business Component rejects a rule, `Create` and `Update` respond with **HTTP 422**, `ErrorResponse.Code = validation_error`, the rule text in `Message`, and the `Messages[]` collection (error messages only). Each API's Source changes only when you reopen the Wizard on it; the shared `sdt_API_ErrorResponse` SDT is unique per KB, so regenerating any API updates the error schema published by all of them. Callers that compared the fixed string `"Business rules rejected the request."` should switch to `Code`. Details and the opt-out: [0.1.0-alpha.4 notes](Docs/Releases/0.1.0-alpha.4.en.md). Sublevels and the `<Sublevel>Replace` marker: [0.1.0-alpha.5 notes](Docs/Releases/0.1.0-alpha.5.en.md).
+When the Business Component rejects a rule, `Create` and `Update` respond with **HTTP 422**, `ErrorResponse.Code = validation_error`, the rule text in `Message`, and the `Messages[]` collection (error messages only). Opt-in `Delete`, when enabled, responds with **HTTP 422** on referential-integrity refusal, using the same SDT. Each API's Source changes only when you reopen the Wizard on it; the shared `sdt_API_ErrorResponse` SDT is unique per KB, so regenerating any API updates the error schema published by all of them. Callers that compared the fixed string `"Business rules rejected the request."` should switch to `Code`. Details and the opt-out: [0.1.0-alpha.4 notes](Docs/Releases/0.1.0-alpha.4.en.md). Sublevels and the `<Sublevel>Replace` marker: [0.1.0-alpha.5 notes](Docs/Releases/0.1.0-alpha.5.en.md).
 
 ## Current status
 
