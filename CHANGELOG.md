@@ -18,7 +18,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 # [0.1.0-alpha.6] - 2026-08-31
 
-Release focada no serviço REST `Delete` opt-in (`B100`). Pacote documental e builds preparados; tag e GitHub Release aguardam autorização humana.
+Release focada no serviço REST `Delete` opt-in (`B100`). Publicado em 2026-08-31 (tag `v0.1.0-alpha.6` + GitHub Release pre-release, dois assets DLL).
 
 ## Added
 
