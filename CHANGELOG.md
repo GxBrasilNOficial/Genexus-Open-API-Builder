@@ -28,6 +28,10 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Documentos Foundation `05`, `10`, `11` e `12` §11: deixam de afirmar Delete como pós-MVP absoluto e passam ao contrato vigente (quatro serviços obrigatórios + Delete opt-in desligado por padrão).
 - Foundation `04`, `06` (nota operacional e `B075`) e `08` (regra MVP de `EndpointsCount`): a frase vigente deixa de ser “Delete é pós-MVP” / “não existe Delete no MVP”, para o mesmo contrato opt-in do `B100`. O plano 24 anota o `B075` da Sprint 6 como critério histórico.
 
+### Removed
+
+- Handlers incrementais órfãos B040/B050/B054 em `Package.cs` (`ExecuteCreate*` / `TryConfirmAndCreate*` e os MessageBox de «4 Procedures»). Não estavam no menu nem no manifesto; Wizard e Sync continuam nos `TryCreate*`.
+
 ---
 
 # [0.1.0-alpha.5] - 2026-08-30
