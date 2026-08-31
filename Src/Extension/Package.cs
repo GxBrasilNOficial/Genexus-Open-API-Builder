@@ -838,7 +838,7 @@ public sealed class Package : AbstractPackageUI
 
             var selection = ApiPlanTransactionSyncOrchestrator.BuildSelection(preview, dialog.Choices);
             var preserveSdts = ApiPlanTransactionSyncOrchestrator.ResolvePreservedSdtNames(preview, dialog.Choices);
-            var apiPlan = ApiPlanBuilder.Build(transaction, selection);
+            var apiPlan = ApiPlanBuilder.Build(knowledgeBase.DesignModel, transaction, selection);
             var report = new ApiPlanApplicationFinalReportCollector("Sincronizar", transaction.Name, apiPlan.ApiName);
             var stopwatch = Stopwatch.StartNew();
             AppendPlanWarnings(report, apiPlan);

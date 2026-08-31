@@ -9,7 +9,8 @@ $packagePath = Join-Path $PSScriptRoot '..\..\Src\Extension\Package.cs'
 $dialogPath = Join-Path $PSScriptRoot '..\..\Src\Extension\PrototypeWizardDialog.cs'
 $apiPlanPath = Join-Path $PSScriptRoot '..\..\Src\Domain\ApiPlan.cs'
 $apiObjectWriterPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanApiObjectWriter.cs'
-foreach ($path in @($readerPath, $existingReaderPath, $packagePath, $dialogPath, $apiPlanPath, $apiObjectWriterPath)) {
+$orchestratorPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanTransactionSyncOrchestrator.cs'
+foreach ($path in @($readerPath, $existingReaderPath, $packagePath, $dialogPath, $apiPlanPath, $apiObjectWriterPath, $orchestratorPath)) {
     if (-not (Test-Path -LiteralPath $path)) {
         throw "SOURCE_MISSING: $path"
     }
@@ -28,6 +29,7 @@ $package = [IO.File]::ReadAllText($packagePath)
 $dialog = [IO.File]::ReadAllText($dialogPath)
 $apiPlan = [IO.File]::ReadAllText($apiPlanPath)
 $apiObjectWriter = [IO.File]::ReadAllText($apiObjectWriterPath)
+$orchestrator = [IO.File]::ReadAllText($orchestratorPath)
 
 Assert-Contains $reader 'Read(KBModel designModel, Transaction transaction)' 'O snapshot do Wizard deve aceitar a KB ativa para reencounter.'
 Assert-Contains $reader 'existingApiContract.FiltersAvailable ? false : filter.DefaultSelected' 'Com contrato de filtros existente, campos novos nao devem voltar aos defaults de uma API nova.'
@@ -67,7 +69,9 @@ Assert-Contains $dialog 'ApplyPersistedPrune' 'Wizard deve restaurar seleção h
 Assert-Contains $existingReader 'metadata.Services.IsAvailable' 'A seleção de serviços deve preferir a metadata existente.'
 Assert-Contains $reader 'ExistingApiContract' 'O snapshot deve transportar o contrato existente para as demais abas.'
 Assert-Contains $package 'ApiPlanBuilder.Build(knowledgeBase.DesignModel, transaction, selection)' 'O fluxo principal continua montando o ApiPlan a partir das escolhas editáveis.'
-Assert-Contains $package 'ApiPlanBuilder.Build(transaction, selection)' 'O fluxo de sincronização continua montando o ApiPlan a partir das escolhas editáveis.'
+Assert-Contains $package 'var apiPlan = ApiPlanBuilder.Build(knowledgeBase.DesignModel, transaction, selection);' 'O Sync deve montar o ApiPlan com o contrato da KB ativa, nao so as escolhas da metadata.'
+Assert-Contains $orchestrator 'ReadPersistedDeleteSecurityLevel(serviceTokens)' 'O Sync deve ler o securityLevel persistido do servico Delete na metadata.'
+Assert-Contains $orchestrator 'deleteSecurityLevel)' 'O ReviewSelection do Sync deve receber o SecurityLevel do Delete, nao so o nivel global.'
 Assert-Contains $package 'PrototypeWizardContractReader.Read(knowledgeBase.DesignModel, transaction)' 'O Wizard principal deve usar a leitura da KB ativa.'
 Assert-Contains $package 'ReadForIntentionalChange(knowledgeBase.DesignModel, transaction, apiPlan)' 'O Wizard deve validar o baseline sem bloquear mudancas deliberadas no contrato.'
 Assert-Contains $package 'ValidateForIntentionalChange(' 'O preflight do Wizard deve aceitar um novo plano depois de validar o baseline.'

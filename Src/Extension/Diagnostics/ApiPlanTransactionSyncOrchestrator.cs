@@ -103,7 +103,8 @@ internal static class ApiPlanTransactionSyncOrchestrator
         var responseFields = ResolveSelectedFieldNames(metadata, "fields.response", attributesByGuid, choices, "Response", preview);
         var listFilters = ResolveSelectedFieldNames(metadata, "fields.listFilters", attributesByGuid, choices, "ListFilters", preview, listFiltersMode: true);
 
-        var services = ((JArray?)metadata.SelectToken("services") ?? new JArray())
+        var serviceTokens = (JArray?)metadata.SelectToken("services") ?? new JArray();
+        var services = serviceTokens
             .Select(token => token["name"]?.Value<string>() ?? string.Empty)
             .Where(name => !string.IsNullOrWhiteSpace(name))
             .ToArray();
@@ -112,6 +113,7 @@ internal static class ApiPlanTransactionSyncOrchestrator
             throw new InvalidOperationException("Metadata sem servicos para reconstruir o ApiPlan na sincronizacao.");
         }
 
+        var deleteSecurityLevel = ReadPersistedDeleteSecurityLevel(serviceTokens);
         var apiName = RequireString(metadata.SelectToken("api.name"), "api.name");
         var servicesBasePath = RequireString(metadata.SelectToken("api.servicesBasePath"), "api.servicesBasePath");
         var restPath = RequireString(metadata.SelectToken("api.restPath"), "api.restPath");
@@ -207,7 +209,8 @@ internal static class ApiPlanTransactionSyncOrchestrator
                 defaultPageSize,
                 maximumPageSize,
                 staticOrder,
-                includeBusinessComponentErrorMessages),
+                includeBusinessComponentErrorMessages,
+                deleteSecurityLevel),
             requiredFields,
             new PrototypeWizardBusinessComponentSelection(preview.TransactionName, isBc, false, bcStatus),
             generateSdts: true,
@@ -267,6 +270,28 @@ internal static class ApiPlanTransactionSyncOrchestrator
         }
 
         return preserved;
+    }
+
+    private static string? ReadPersistedDeleteSecurityLevel(JArray serviceTokens)
+    {
+        foreach (var token in serviceTokens)
+        {
+            var name = token["name"]?.Value<string>() ?? string.Empty;
+            if (!string.Equals(name, "Delete", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var raw = token["securityLevel"]?.Value<string>();
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                return null;
+            }
+
+            return PrototypeWizardPreferences.NormalizeSecurityLevel(raw);
+        }
+
+        return null;
     }
 
     internal static ApiPlanTransactionSyncAttributeSnapshot ToSyncSnapshot(PrototypeWizardAttributeDecision attribute)

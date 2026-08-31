@@ -24,6 +24,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - FAQ `22`: o `Delete` deixa de ser descrito como pós-MVP absoluto na resposta principal.
 - `B108` (pendência, não implementado): preferências da KB só na criação da API; no reencontro preservar o contrato gravado. Checkpoint e documento 06.
 - Reencontro do `Delete`: o leitor de Service Source e de metadata passa a ver o serviço e o `securityLevel` por item; o matcher B079 reconhece a assinatura atual (`PK` + `ErrorResponse` + `RestStatusCode`); o Apply usa o combo do Delete em vez de um `SecurityLevel` vazio herdado do contrato existente.
+- Sync (`B085`): reconstrói o `SecurityLevel` próprio do Delete a partir da metadata (`services[].securityLevel`) e monta o ApiPlan com o contrato da KB ativa, para não regravar o Delete com o nível global da API.
 - Documentos Foundation `05`, `10`, `11` e `12` §11: deixam de afirmar Delete como pós-MVP absoluto e passam ao contrato vigente (quatro serviços obrigatórios + Delete opt-in desligado por padrão).
 - Foundation `04`, `06` (nota operacional e `B075`) e `08` (regra MVP de `EndpointsCount`): a frase vigente deixa de ser “Delete é pós-MVP” / “não existe Delete no MVP”, para o mesmo contrato opt-in do `B100`. O plano 24 anota o `B075` da Sprint 6 como critério histórico.
 
