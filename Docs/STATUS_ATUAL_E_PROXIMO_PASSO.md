@@ -145,7 +145,7 @@ Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/t
 
 ## Missão estacionada (outra sessão)
 
-`B082` — Fases A+B entregues; Preview do Sync com a mesma casca do Remover (2026-09-01, `Empresa`). `RefreshFolders` exercido no primeiro Apply da `Company` em `ShowcaseUnanimo`. Residual de outra sessão (não é a próxima ação): casca × B081 no Apply/Sync; `progress` na revalidação do `Remove()` efetivo; `GetAll` no Remove/`ApiPlanApiObjectWriter`/metadata/BC/List. Registro: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md` («Fora da fila operacional»). **Não reabrir o desenho** nem misturar com `B108`. Recado original: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
+`B082` — Fases A+B entregues; Preview do Sync com a mesma casca do Remover (2026-09-01, `Empresa`). `RefreshFolders` exercido no primeiro Apply da `Company` em `ShowcaseUnanimo`. Residual de outra sessão (não é a próxima ação): checklist numerado 1–5 em `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md` («Fora da fila operacional») — casca × B081; `progress` no Remove efetivo; `DoEvents`/reentrância (P1 aceito no corte); índice/`GetAll` incompleto (Procedure/List/BC/API/metadata/Remove); higiene doc opcional (itens 91+ na sequência operacional). **Não reabrir o desenho** nem misturar com `B108`. Recado original: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
 
 ## Pendência urgente (próxima sessão de código)
 
