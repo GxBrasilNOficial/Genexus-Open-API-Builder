@@ -25,7 +25,7 @@ Sem mudar o contrato de escrita (preflight antes do primeiro `Save()`, mesma ord
 
 1. Diálogo de progresso visível durante apply, Sync e Remover (incluindo Preview).
 2. Cursor de espera no owner da IDE.
-3. Sinal na abertura do Wizard (tempos na Output; índice na abertura ainda é Fase C).
+3. Sinal na abertura do Wizard (casca + tempos `PrefsMs` / `ContratoMs` / `InterfaceMs` na Output). O índice único da KB **não** entra nessa abertura: na `Empresa` (2026-08-31) `IndiceKb=2394` ms foi no Apply, depois de Concluir.
 4. Aviso no Resumo quando SDTs+Procedures planejados ≥ 25.
 
 ## Fora deste recado

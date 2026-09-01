@@ -56,7 +56,11 @@ Fora de escopo imediato: multi-threading de escrita; cancelar um `Save()` SDK no
 
 ### Fora da fila operacional
 
-Abertura ainda passa de 5 s, com a maior fatia em `InterfaceMs` (montagem do diálogo), não no índice do Apply. Isso **não** é a próxima ação de código (`B108`).
+Abertura ainda passa de 5 s. Na `Empresa`, a maior fatia foi `InterfaceMs=4770` (montagem do diálogo); `ContratoMs=1404` lê o contrato existente (`PrototypeWizardContractReader` / `GetAll` próprios da abertura). **Não** há `ApiPlanKbObjectNameIndex` nesse caminho — o índice único começa no Apply (`IndiceKb`) e no Preview do Remover.
+
+`GetAll` residual depois do índice (não é a próxima ação): `ApiPlanApiObjectWriter`, `ApiPlanMetadataFileWriter`, writers BC/List, e o `Remove()` efetivo (`kbIndex: null` + `GetAll` por `Delete` e checagem pós-`Delete`). Preview do Remover e preflight/Apply de SDT/Procedure já reutilizam o índice.
+
+Isso **não** é a próxima ação de código (`B108`).
 
 ### Fase B — Consolidar sonda em B082 produtivo
 
