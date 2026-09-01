@@ -20,6 +20,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 - Índice da KB: `RefreshFolders` após criar `GxOpenAPI`, para o segundo `CreateOrReencounter` no mesmo Apply (REST via BC) não tentar `CreateSharedFolder` de novo. Smoke `ShowcaseUnanimo` / `Company` (2026-09-01): primeiro Apply, Criados=16 (inclui Folder `GxOpenAPI`), Bloqueados=0.
 - Registro B082: medição por item na casca (`ElapsedMs`); Output fica com totais de fase, sem dump de ms por objeto.
+- Registro B082 (2026-09-01): polimento de outra sessão anotado — casca × B081 no Apply/Sync; `progress` na revalidação do `Remove()` efetivo — junto com o `GetAll` residual já previsto. Não é a próxima ação (`B108`).
 
 ### Planned
 

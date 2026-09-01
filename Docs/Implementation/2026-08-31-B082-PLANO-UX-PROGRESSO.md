@@ -64,6 +64,11 @@ Abertura ainda passa de 5 s. Na `Empresa`, a maior fatia foi `InterfaceMs=4770` 
 
 `GetAll` residual depois do índice (não é a próxima ação): `ApiPlanApiObjectWriter`, `ApiPlanMetadataFileWriter`, writers BC/List, e o `Remove()` efetivo (`kbIndex: null` + `GetAll` por `Delete` e checagem pós-`Delete`). Preview do Remover, Preview do Sync e preflight/Apply de SDT/Procedure já reutilizam o índice.
 
+Polimento B082 para **outra sessão** (junto com o residual acima; **não** misturar com `B108`):
+
+1. **Casca × relatório B081 no Apply/Sync.** O `using` da casca ainda está aberto quando `ShowFinalReport` roda (`Package.cs`). O Remover já fecha a casca e só então abre o B081. Camadas de UI; sem evidência de gravação incorreta.
+2. **`Remove()` efetivo: `ValidateRemovalTargets(..., progress: null, kbIndex: null)`.** O Preview encaminha `progress` e `kbIndex`; o Remove recebe `busy.Session` e não passa. O loop de `Delete` aborta; a revalidação pré-Delete não. Corrigir o `progress` é o abort cooperativo nessa fase. O `kbIndex` no Remove efetivo é o mesmo residual `GetAll` do item anterior.
+
 Isso **não** é a próxima ação de código (`B108`).
 
 ### Fase B — Consolidar sonda em B082 produtivo
@@ -104,7 +109,7 @@ O Remover exige `api{Transaction}_Metadata`. Abort no meio dos SDTs deixa objeto
 
 ### 4.6 Rodapé dos diálogos
 
-`Dock.Fill` ignora `Form.Padding`. O quadro de progresso usa um `Panel` com padding; Wizard e relatório B081 têm margem inferior na faixa de botões. O Preview do Remover e o Preview do Sync abrem a mesma casca de progresso **antes** da confirmação (índice da KB + validação), com `PreviewMs` no Output.
+`Dock.Fill` ignora `Form.Padding`. O quadro de progresso usa um `Panel` com padding; Wizard e relatório B081 têm margem inferior na faixa de botões. O Preview do Remover e o Preview do Sync abrem a mesma casca de progresso **antes** da confirmação (índice da KB + validação), com `PreviewMs` no Output. No Apply/Sync o B081 ainda abre com a casca viva (pendência na seção «Fora da fila operacional»).
 
 ---
 
