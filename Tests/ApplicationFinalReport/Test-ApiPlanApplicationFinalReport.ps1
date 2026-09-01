@@ -85,7 +85,7 @@ Assert-True ($dialogSource -match '_owner\.Handle') 'Dialogo B081 deve priorizar
 Assert-True ($dialogSource -match 'Process\.GetCurrentProcess\(\)\.MainWindowHandle') 'Dialogo B081 deve usar a janela principal do processo como fallback.'
 Assert-True ($dialogSource -notmatch 'Screen\.FromPoint\(Cursor\.Position\)\.WorkingArea') 'Dialogo B081 não deve escolher o monitor pela posição do cursor.'
 Assert-True ($dialogSource -match 'MaximumSize = new Size\(maxWidth, maxHeight\)') 'Dialogo B081 deve limitar o tamanho maximo a area util da tela.'
-Assert-True ($dialogSource -match 'working\.Height - 32') 'Dialogo B081 deve reservar margem vertical na area util.'
+Assert-True ($dialogSource -match 'working\.Height - 64') 'Dialogo B081 deve reservar margem vertical na area util.'
 Assert-True ($dialogSource -match 'working\.Width - 32') 'Dialogo B081 deve reservar margem horizontal na area util.'
 Assert-True ($dialogSource -match 'FitToCurrentWorkingArea\(\)') 'Dialogo B081 deve recalcular os limites depois de criar o handle.'
 Assert-True ($dialogSource -match 'CenterInWorkingArea\(working\)') 'Dialogo B081 deve manter os botoes dentro da area util do monitor.'

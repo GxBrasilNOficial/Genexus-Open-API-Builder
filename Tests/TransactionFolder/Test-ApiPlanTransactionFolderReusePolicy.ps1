@@ -63,13 +63,13 @@ Assert-Contains $folderSource 'transaction.Module' 'A decisao deve considerar o 
 Assert-Contains $folderSource 'folder.Module' 'A decisao deve comparar o Module do Folder.'
 Assert-Contains $folderSource 'CreateReuseWarning' 'O reuso deve produzir aviso explicito.'
 
-Assert-Contains $stateSource 'InspectFolder(KbObjectNameIndex index, Transaction transaction, ApiPlan apiPlan)' 'O leitor de estado deve receber a Transaction para validar o contenedor.'
+Assert-Contains $stateSource 'InspectFolder(ApiPlanKbObjectNameIndex index, Transaction transaction, ApiPlan apiPlan)' 'O leitor de estado deve receber a Transaction para validar o contenedor.'
 Assert-Contains $stateSource 'ApiPlanTransactionFolder.IsReusable(matches[0], transaction, apiPlan)' 'O leitor de estado deve compartilhar a politica de reuso.'
 Assert-Contains $stateSource 'ApiPlanTransactionFolder.CreateReuseWarning(apiPlan)' 'O detalhe do Wizard deve informar o reuso.'
 Assert-Contains $stateSource 'TransactionFolderWarning' 'O estado deve transportar o aviso para o relatorio final.'
 
 Assert-Contains $packageSource 'AppendTransactionFolderWarning(report, generationState);' 'Wizard/Sync devem propagar o aviso ao relatorio B081.'
-Assert-Contains $packageSource 'ReadForSync(knowledgeBase.DesignModel, transaction, apiPlan)' 'Sync deve validar o Folder no contenedor da Transaction.'
+Assert-Contains $packageSource 'ReadForSyncWithIndex(knowledgeBase.DesignModel, transaction, apiPlan)' 'Sync deve validar o Folder no contenedor da Transaction.'
 Assert-Contains $metadataSource '"wasCreated"] = apiPlan.TransactionFolderWasCreated' 'Metadata deve continuar persistindo wasCreated.'
 
 Write-Output 'PASS: ApiPlanTransactionFolderReusePolicy'

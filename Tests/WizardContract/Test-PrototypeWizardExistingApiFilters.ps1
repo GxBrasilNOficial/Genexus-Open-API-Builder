@@ -76,7 +76,7 @@ Assert-Contains $package 'var apiPlan = ApiPlanBuilder.Build(knowledgeBase.Desig
 Assert-Contains $orchestrator 'ReadPersistedDeleteSecurityLevel(serviceTokens)' 'O Sync deve ler o securityLevel persistido do servico Delete na metadata.'
 Assert-Contains $orchestrator 'deleteSecurityLevel)' 'O ReviewSelection do Sync deve receber o SecurityLevel do Delete, nao so o nivel global.'
 Assert-Contains $package 'PrototypeWizardContractReader.Read(knowledgeBase.DesignModel, transaction)' 'O Wizard principal deve usar a leitura da KB ativa.'
-Assert-Contains $package 'ReadForIntentionalChange(knowledgeBase.DesignModel, transaction, apiPlan)' 'O Wizard deve validar o baseline sem bloquear mudancas deliberadas no contrato.'
+Assert-Contains $package 'ReadForIntentionalChangeWithIndex(knowledgeBase.DesignModel, transaction, apiPlan)' 'O Wizard deve validar o baseline sem bloquear mudancas deliberadas no contrato.'
 Assert-Contains $package 'ValidateForIntentionalChange(' 'O preflight do Wizard deve aceitar um novo plano depois de validar o baseline.'
 Assert-Contains $package 'ThrowIfDeleteWithoutBusinessComponent' 'Wizard e Sync devem recusar Delete sem Completar REST via Business Component antes do primeiro Save().'
 Assert-Contains $package 'FormatOutputStage(apiPlan)' 'A etapa de Procedures no Output deve usar o rótulo dinâmico B050-B053/B100 quando o plano inclui Delete.'

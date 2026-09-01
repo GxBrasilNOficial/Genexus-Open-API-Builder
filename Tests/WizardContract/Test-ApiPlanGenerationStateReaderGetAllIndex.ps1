@@ -2,11 +2,15 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $sourcePath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanGenerationStateReader.cs'
-if (-not (Test-Path -LiteralPath $sourcePath)) {
-    throw "SOURCE_MISSING: $sourcePath"
+$indexPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanKbObjectNameIndex.cs'
+foreach ($path in @($sourcePath, $indexPath)) {
+    if (-not (Test-Path -LiteralPath $path)) {
+        throw "SOURCE_MISSING: $path"
+    }
 }
 
 $source = [IO.File]::ReadAllText($sourcePath)
+$indexSource = [IO.File]::ReadAllText($indexPath)
 
 function Assert-Contains {
     param([string]$Text, [string]$Needle, [string]$Message)
@@ -22,9 +26,9 @@ function Assert-NotContains {
     }
 }
 
-Assert-Contains $source 'KbObjectNameIndex.Create' 'Read deve construir indice unico por tipo.'
-Assert-Contains $source 'SDT.GetAll(designModel).ToLookup' 'SDT.GetAll deve ocorrer uma vez no indice.'
-Assert-Contains $source 'Procedure.GetAll(designModel).ToLookup' 'Procedure.GetAll deve ocorrer uma vez no indice.'
+Assert-Contains $source 'ApiPlanKbObjectNameIndex.Create' 'Read deve construir indice unico por tipo.'
+Assert-Contains $indexSource 'SDT.GetAll(designModel).ToLookup' 'SDT.GetAll deve ocorrer uma vez no indice.'
+Assert-Contains $indexSource 'Procedure.GetAll(designModel).ToLookup' 'Procedure.GetAll deve ocorrer uma vez no indice.'
 Assert-Contains $source 'index.FindSdts(definition.Name)' 'Inspecao de SDT deve usar o indice.'
 Assert-Contains $source 'index.FindProcedures(name)' 'Inspecao de Procedure deve usar o indice.'
 

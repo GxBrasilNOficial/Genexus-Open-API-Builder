@@ -31,15 +31,15 @@ if ($removeStart -lt 0 -or $previewStart -lt 0 -or $previewStart -le $removeStar
 }
 
 $removeBlock = $source.Substring($removeStart, $previewStart - $removeStart)
-Assert-Contains $removeBlock 'ValidateRemovalTargets(designModel, plan);' 'Remove deve executar o preflight antes de qualquer Delete.'
-$validationIndex = $removeBlock.IndexOf('ValidateRemovalTargets(designModel, plan);', [StringComparison]::Ordinal)
-$deleteIndex = $removeBlock.IndexOf('DeleteApiObject(designModel, plan, deleted);', [StringComparison]::Ordinal)
+Assert-Contains $removeBlock 'ValidateRemovalTargets(designModel, plan' 'Remove deve executar o preflight antes de qualquer Delete.'
+$validationIndex = $removeBlock.IndexOf('ValidateRemovalTargets(designModel, plan', [StringComparison]::Ordinal)
+$deleteIndex = $removeBlock.IndexOf('DeleteApiObject(designModel, plan, deleted)', [StringComparison]::Ordinal)
 if ($validationIndex -lt 0 -or $deleteIndex -lt 0 -or $validationIndex -ge $deleteIndex) {
     throw 'ASSERT_ORDER_FAILED: preflight deve ocorrer antes da primeira exclusão.'
 }
 
-Assert-Contains $source 'ValidateRemovalTargets(designModel, plan);' 'Preview e Remove devem compartilhar o preflight.'
-Assert-Equal 2 ([regex]::Matches($source, 'ValidateRemovalTargets\(designModel, plan\);').Count) 'Preview e Remove devem ser os únicos pontos de entrada do preflight.'
+Assert-Contains $source 'ValidateRemovalTargets(designModel, plan, progress' 'Preview e Remove devem compartilhar o preflight (com progresso/índice opcionais).'
+Assert-Equal 3 ([regex]::Matches($source, 'ValidateRemovalTargets\(designModel, plan').Count) 'Wrapper de 2 args, Remove e Preview devem ser os únicos pontos de entrada do preflight.'
 Assert-Contains $source 'ValidateApiObjectTarget' 'Preflight deve validar o API Object.'
 Assert-Contains $source 'ValidateProcedureTarget' 'Preflight deve validar Procedures.'
 Assert-Contains $source 'ValidateOwnSdtTarget' 'Preflight deve validar SDTs próprios.'
