@@ -24,7 +24,9 @@ internal static class ApiPlanSdtWriter
         Transaction transaction,
         ApiPlan apiPlan,
         IReadOnlyCollection<string>? preserveSdtNames,
-        System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite = null)
+        System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite = null,
+        ApiPlanBusyProgressSession? progress = null,
+        ApiPlanKbObjectNameIndex? kbIndex = null)
     {
         if (designModel is null)
         {
@@ -48,8 +50,14 @@ internal static class ApiPlanSdtWriter
 
         var preserve = new HashSet<string>(preserveSdtNames ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
         var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
-        var preflight = CreatePreflightResult(designModel, generationPlan);
+        var planned = generationPlan.SharedSdts.Count + generationPlan.OwnSdts.Count;
+        kbIndex ??= ApiPlanKbObjectNameIndex.Create(designModel, progress);
+        progress?.Report("SDTs", 0, planned, "Preflight");
+        progress?.PumpAndThrowIfAbortRequested();
+        var preflight = CreatePreflightResult(designModel, generationPlan, kbIndex, progress);
+        progress?.PumpAndThrowIfAbortRequested();
         ApiPlanTransactionFolder.Preflight(designModel, transaction, apiPlan);
+        progress?.PumpAndThrowIfAbortRequested();
         var sharedFolderWasCreated = preflight.SharedFolder is null;
         var sharedFolder = preflight.SharedFolder ?? CreateSharedFolder(designModel);
         if (sharedFolderWasCreated)
@@ -57,19 +65,35 @@ internal static class ApiPlanSdtWriter
             apiPlan.SharedSdtFolderWasCreated = true;
         }
 
+        progress?.PumpAndThrowIfAbortRequested();
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan);
         var results = new List<ApiPlanSdtWriteItemResult>();
+        var current = 0;
 
         foreach (var sdt in generationPlan.SharedSdts)
         {
-            var result = CreateOrReencounterSdt(designModel, transaction, sharedFolder, sdt, preflight, preserve);
+            progress?.ThrowIfAbortRequested();
+            current++;
+            progress?.Report("SDTs", current, planned, sdt.Name);
+            progress?.Pump();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var result = CreateOrReencounterSdt(designModel, transaction, sharedFolder, sdt, preflight, preserve, progress, kbIndex);
+            sw.Stop();
+            progress?.Report("SDTs", current, planned, sdt.Name, sw.ElapsedMilliseconds);
             onSdtWrite?.Invoke(result);
             results.Add(result);
         }
 
         foreach (var sdt in generationPlan.OwnSdts)
         {
-            var result = CreateOrReencounterSdt(designModel, transaction, transactionFolder, sdt, preflight, preserve);
+            progress?.ThrowIfAbortRequested();
+            current++;
+            progress?.Report("SDTs", current, planned, sdt.Name);
+            progress?.Pump();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var result = CreateOrReencounterSdt(designModel, transaction, transactionFolder, sdt, preflight, preserve, progress, kbIndex);
+            sw.Stop();
+            progress?.Report("SDTs", current, planned, sdt.Name, sw.ElapsedMilliseconds);
             onSdtWrite?.Invoke(result);
             results.Add(result);
         }
@@ -99,26 +123,36 @@ internal static class ApiPlanSdtWriter
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
-        CreatePreflightResult(designModel, ApiPlanSdtGenerationPlanBuilder.Create(apiPlan));
+        CreatePreflightResult(
+            designModel,
+            ApiPlanSdtGenerationPlanBuilder.Create(apiPlan),
+            ApiPlanKbObjectNameIndex.Create(designModel));
         ApiPlanTransactionFolder.Preflight(designModel, transaction, apiPlan);
     }
 
-    private static ApiPlanSdtPreflightResult CreatePreflightResult(KBModel designModel, ApiPlanSdtGenerationPlan generationPlan)
+    private static ApiPlanSdtPreflightResult CreatePreflightResult(
+        KBModel designModel,
+        ApiPlanSdtGenerationPlan generationPlan,
+        ApiPlanKbObjectNameIndex kbIndex,
+        ApiPlanBusyProgressSession? progress = null)
     {
         var allDefinitions = generationPlan.SharedSdts.Concat(generationPlan.OwnSdts).ToArray();
         var plannedNames = new HashSet<string>(allDefinitions.Select(item => item.Name), StringComparer.OrdinalIgnoreCase);
         var existingByName = new Dictionary<string, SDT>(StringComparer.OrdinalIgnoreCase);
 
-        var folders = Folder.GetAll(designModel)
-            .Where(folder => string.Equals(folder.Name, SharedFolderName, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-        if (folders.Length > 1)
+        progress?.PumpAndThrowIfAbortRequested();
+        var folders = kbIndex.FindFolders(SharedFolderName);
+        if (folders.Count > 1)
         {
-            throw new InvalidOperationException($"Criacao de SDTs bloqueada: foram encontrados {folders.Length} Folders chamados '{SharedFolderName}'. Nenhuma alteracao foi feita.");
+            throw new InvalidOperationException($"Criacao de SDTs bloqueada: foram encontrados {folders.Count} Folders chamados '{SharedFolderName}'. Nenhuma alteracao foi feita.");
         }
 
+        var preflightIndex = 0;
         foreach (var definition in allDefinitions)
         {
+            preflightIndex++;
+            progress?.Report("SDTs", preflightIndex, allDefinitions.Length, $"Preflight {definition.Name}");
+            progress?.PumpAndThrowIfAbortRequested();
             if (definition.Members.Count == 0 &&
                 !string.Equals(definition.Kind, "ListFilters", StringComparison.Ordinal))
             {
@@ -126,19 +160,16 @@ internal static class ApiPlanSdtWriter
                     $"Criacao de SDT bloqueada: o SDT '{definition.Name}' nao tem membros. Nenhuma alteracao foi feita.");
             }
 
-            ValidateSdtDefinitionTypes(designModel, definition, plannedNames);
-            var existing = SDT.GetAll(designModel)
-                .Where(sdt => string.Equals(sdt.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
+            ValidateSdtDefinitionTypes(definition, plannedNames, kbIndex);
+            var existingCount = kbIndex.GetSdtCount(definition.Name);
 
-            if (existing.Length > 1)
+            if (existingCount > 1)
             {
-                throw new InvalidOperationException($"Criacao de SDT bloqueada: foram encontrados {existing.Length} SDTs chamados '{definition.Name}'. Nenhuma alteracao foi feita.");
+                throw new InvalidOperationException($"Criacao de SDT bloqueada: foram encontrados {existingCount} SDTs chamados '{definition.Name}'. Nenhuma alteracao foi feita.");
             }
 
-            if (existing.Length == 1)
+            if (existingCount == 1 && kbIndex.TryGetSingleSdt(definition.Name, out var existingSdt))
             {
-                var existingSdt = existing[0];
                 if (!ApiPlanOwnedObjectDescription.IsOwnedSdt(existingSdt.Description, definition.Name))
                 {
                     throw new InvalidOperationException($"Criacao de SDT bloqueada: ja existe SDT externo ou incompativel chamado '{definition.Name}'. Nenhuma alteracao foi feita.");
@@ -148,16 +179,19 @@ internal static class ApiPlanSdtWriter
             }
         }
 
-        return new ApiPlanSdtPreflightResult(folders.SingleOrDefault(), existingByName);
+        return new ApiPlanSdtPreflightResult(folders.Count == 1 ? folders[0] : null, existingByName);
     }
 
-    private static void ValidateSdtDefinitionTypes(KBModel designModel, ApiPlanSdtDefinition definition, HashSet<string> plannedNames)
+    private static void ValidateSdtDefinitionTypes(
+        ApiPlanSdtDefinition definition,
+        HashSet<string> plannedNames,
+        ApiPlanKbObjectNameIndex kbIndex)
     {
         foreach (var member in definition.Members.Where(item => item.Name.IndexOf(".", StringComparison.Ordinal) < 0))
         {
             if (member.IsCollection || IsSdtReference(member.DataType))
             {
-                if (!plannedNames.Contains(member.DataType) && !OwnedSdtExists(designModel, member.DataType))
+                if (!plannedNames.Contains(member.DataType) && !kbIndex.OwnedSdtExists(member.DataType))
                 {
                     throw new InvalidOperationException($"Criacao de SDT bloqueada: tipo SDT requerido nao foi validado antes da escrita para membro '{member.Name}': '{member.DataType}'. Nenhuma alteracao foi feita.");
                 }
@@ -167,19 +201,12 @@ internal static class ApiPlanSdtWriter
 
             if (IsAttributeReference(member.DataType))
             {
-                EnsureAttributeExists(designModel, member.Name, member.DataType);
+                EnsureAttributeExists(kbIndex, member.Name, member.DataType);
                 continue;
             }
 
             ResolveDbType(member.DataType);
         }
-    }
-
-    private static bool OwnedSdtExists(KBModel designModel, string name)
-    {
-        return SDT.GetAll(designModel)
-            .Any(sdt => string.Equals(sdt.Name, name, StringComparison.OrdinalIgnoreCase) &&
-                        ApiPlanOwnedObjectDescription.IsOwnedSdt(sdt.Description, name));
     }
 
     private static Folder CreateSharedFolder(KBModel designModel)
@@ -198,7 +225,9 @@ internal static class ApiPlanSdtWriter
         Folder? targetFolder,
         ApiPlanSdtDefinition definition,
         ApiPlanSdtPreflightResult preflight,
-        ISet<string> preserveSdtNames)
+        ISet<string> preserveSdtNames,
+        ApiPlanBusyProgressSession? progress,
+        ApiPlanKbObjectNameIndex kbIndex)
     {
         if (preflight.ExistingSdtsByName.TryGetValue(definition.Name, out var existingSdt))
         {
@@ -209,9 +238,10 @@ internal static class ApiPlanSdtWriter
 
             if (!preserveSdtNames.Contains(definition.Name))
             {
-                ConfigureSdt(designModel, existingSdt, definition);
+                ConfigureSdt(designModel, existingSdt, definition, kbIndex);
             }
 
+            progress?.PumpAndThrowIfAbortRequested();
             existingSdt.Save();
 
             return new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, ApiPlanSdtWriteStatus.Reencountered, existingSdt.Guid);
@@ -232,14 +262,15 @@ internal static class ApiPlanSdtWriter
             sdt.Module = transaction.Module;
         }
 
-        ConfigureSdt(designModel, sdt, definition);
+        ConfigureSdt(designModel, sdt, definition, kbIndex);
+        progress?.PumpAndThrowIfAbortRequested();
         sdt.Save();
 
         var persisted = SDT.Get(designModel, sdt.Guid);
         return new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, ApiPlanSdtWriteStatus.Created, persisted.Guid);
     }
 
-    private static void ConfigureSdt(KBModel designModel, SDT sdt, ApiPlanSdtDefinition definition)
+    private static void ConfigureSdt(KBModel designModel, SDT sdt, ApiPlanSdtDefinition definition, ApiPlanKbObjectNameIndex kbIndex)
     {
         var root = sdt.SDTStructure.Root;
         root.Items.Clear();
@@ -247,11 +278,11 @@ internal static class ApiPlanSdtWriter
 
         foreach (var member in definition.Members.Where(item => item.Name.IndexOf(".", StringComparison.Ordinal) < 0))
         {
-            AddMember(designModel, root, member);
+            AddMember(designModel, root, member, kbIndex);
         }
     }
 
-    private static void AddMember(KBModel designModel, SDTLevel root, ApiPlanSdtMember member)
+    private static void AddMember(KBModel designModel, SDTLevel root, ApiPlanSdtMember member, ApiPlanKbObjectNameIndex kbIndex)
     {
         if (member.IsCollection || IsSdtReference(member.DataType))
         {
@@ -275,7 +306,7 @@ internal static class ApiPlanSdtWriter
         {
             var item = root.AddItem(member.Name, eDBType.CHARACTER, Math.Max(member.Length, 0), Math.Max(member.Decimals, 0));
             ConfigureJsonNullSerialization(item, member);
-            item.AttributeBasedOn = EnsureAttributeExists(designModel, member.Name, member.DataType);
+            item.AttributeBasedOn = EnsureAttributeExists(kbIndex, member.Name, member.DataType);
             return;
         }
 
@@ -314,21 +345,21 @@ internal static class ApiPlanSdtWriter
         return dataType.StartsWith("Attribute:", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static Artech.Genexus.Common.Objects.Attribute EnsureAttributeExists(KBModel model, string memberName, string dataType)
+    private static Artech.Genexus.Common.Objects.Attribute EnsureAttributeExists(
+        ApiPlanKbObjectNameIndex kbIndex,
+        string memberName,
+        string dataType)
     {
         const string prefix = "Attribute:";
         var attributeName = dataType.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
             ? dataType.Substring(prefix.Length).Trim()
             : dataType.Trim();
-        var matches = Artech.Genexus.Common.Objects.Attribute.GetAll(model)
-            .Where(attribute => string.Equals(attribute.Name, attributeName, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-        if (matches.Length != 1)
+        if (!kbIndex.TryGetSingleAttribute(attributeName, out var attribute))
         {
             throw new InvalidOperationException($"Criacao de SDT bloqueada: atributo base requerido para membro '{memberName}' nao foi reencontrado com seguranca: '{attributeName}'. Nenhuma alteracao foi feita.");
         }
 
-        return matches[0];
+        return attribute;
     }
 
     private static eDBType ResolveDbType(string dataType)

@@ -158,6 +158,76 @@ internal sealed class ExtensionTexts
         _ => "Confirm deletion?",
     };
 
+    public string BusyProgressStarting => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Processando…",
+        ExtensionLanguage.Spanish => "Procesando…",
+        _ => "Processing…",
+    };
+
+    public string BusyProgressAbort => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Abortar",
+        ExtensionLanguage.Spanish => "Abortar",
+        _ => "Abort",
+    };
+
+    public string BusyProgressAbortHint => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Abortar pede parada após o objeto atual. A KB pode ficar inconsistente — melhor que fechar o GeneXus na marra.",
+        ExtensionLanguage.Spanish => "Abortar pide detenerse tras el objeto actual. La KB puede quedar inconsistente — mejor que cerrar GeneXus a la fuerza.",
+        _ => "Abort stops after the current object. The KB may be left inconsistent — better than force-closing GeneXus.",
+    };
+
+    public string BusyProgressAbortRequested => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Abortar solicitado — aguardando o objeto atual terminar…",
+        ExtensionLanguage.Spanish => "Abortar solicitado — esperando a que termine el objeto actual…",
+        _ => "Abort requested — waiting for the current object to finish…",
+    };
+
+    public string BusyProgressTitleApply => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Genexus Open API Builder — Aplicando",
+        ExtensionLanguage.Spanish => "Genexus Open API Builder — Aplicando",
+        _ => "Genexus Open API Builder — Applying",
+    };
+
+    public string BusyProgressTitleRemove => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Genexus Open API Builder — Removendo",
+        ExtensionLanguage.Spanish => "Genexus Open API Builder — Eliminando",
+        _ => "Genexus Open API Builder — Removing",
+    };
+
+    public string BusyProgressTitleSync => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Genexus Open API Builder — Sincronizando",
+        ExtensionLanguage.Spanish => "Genexus Open API Builder — Sincronizando",
+        _ => "Genexus Open API Builder — Synchronizing",
+    };
+
+    public string BusyProgressTitleLoadingWizard => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Genexus Open API Builder — Carregando Wizard",
+        ExtensionLanguage.Spanish => "Genexus Open API Builder — Cargando Wizard",
+        _ => "Genexus Open API Builder — Loading Wizard",
+    };
+
+    public string BusyProgressTitleLoadingRemove => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Genexus Open API Builder — Preparando remoção",
+        ExtensionLanguage.Spanish => "Genexus Open API Builder — Preparando eliminación",
+        _ => "Genexus Open API Builder — Preparing removal",
+    };
+
+    public string BusyProgressLastItemMs => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Último item: {0} ms",
+        ExtensionLanguage.Spanish => "Último ítem: {0} ms",
+        _ => "Last item: {0} ms",
+    };
+
     public string RoleLabel(string role)
     {
         return ExtensionUiTerms.RoleLabel(Language, role);
@@ -334,6 +404,7 @@ internal sealed class ExtensionTexts
                 "File de metadata planejado" => "Archivo de metadatos planificado",
                 "List planejado" => "List planificado",
                 "Resumo das decisões acumuladas para montagem do ApiPlan em memória." => "Resumen de las decisiones acumuladas para montar el ApiPlan en memoria.",
+                "AVISO DE ESCALA: esta Transaction planeja {0} objetos (SDTs + Procedures). O Apply pode levar vários minutos. Abortar só para depois do objeto atual; um Save() longo pode congelar a IDE." => "AVISO DE ESCALA: esta Transaction planifica {0} objetos (SDTs + Procedures). El Apply puede tardar varios minutos. Abortar solo para después del objeto actual; un Save() largo puede congelar la IDE.",
                 "Selecione ao menos um serviço." => "Seleccione al menos un servicio.",
                 "Informe Nome API, Services base path e RestPath." => "Informe Nombre de la API, ruta base de servicios y RestPath.",
                 "RestPath deve iniciar com '/'." => "RestPath debe comenzar con '/'.",
@@ -545,6 +616,7 @@ internal sealed class ExtensionTexts
                 "File de metadata planejado" => "Planned metadata file",
                 "List planejado" => "Planned List",
                 "Resumo das decisões acumuladas para montagem do ApiPlan em memória." => "Summary of accumulated decisions for building the ApiPlan in memory.",
+                "AVISO DE ESCALA: esta Transaction planeja {0} objetos (SDTs + Procedures). O Apply pode levar vários minutos. Abortar só para depois do objeto atual; um Save() longo pode congelar a IDE." => "SCALE WARNING: this Transaction plans {0} objects (SDTs + Procedures). Apply may take several minutes. Abort only stops after the current object; a long Save() may freeze the IDE.",
                 "Selecione ao menos um serviço." => "Select at least one service.",
                 "Informe Nome API, Services base path e RestPath." => "Enter the API name, services base path, and RestPath.",
                 "RestPath deve iniciar com '/'." => "RestPath must start with '/'.",

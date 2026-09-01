@@ -39,7 +39,9 @@ internal static class ApiPlanBusinessComponentWriter
         ApiPlan plan,
         bool allowIntentionalContractRefresh,
         IReadOnlyCollection<string>? preserveSdtNames,
-        System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite = null)
+        System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite = null,
+        ApiPlanBusyProgressSession? progress = null,
+        ApiPlanKbObjectNameIndex? kbIndex = null)
     {
         if (model is null) throw new ArgumentNullException(nameof(model));
         if (transaction is null) throw new ArgumentNullException(nameof(transaction));
@@ -51,7 +53,10 @@ internal static class ApiPlanBusinessComponentWriter
         if (!HasService(plan, "Get") || !HasService(plan, "Create") || !HasService(plan, "Update"))
             throw new InvalidOperationException("B071-B073/B079 bloqueado: o ApiPlan precisa conter Get, Create e Update. Nenhuma alteracao foi feita.");
 
+        progress?.Report("Business Component", 0, 0, "Preparando");
+        progress?.PumpAndThrowIfAbortRequested();
         EnsureSdts(model, plan);
+        progress?.PumpAndThrowIfAbortRequested();
         ApiPlanTransactionFolder.Preflight(model, transaction, plan);
         var getContent = GetContent(plan);
         var getRules = GetRules(plan);
@@ -80,6 +85,7 @@ internal static class ApiPlanBusinessComponentWriter
         {
             EnsureProcedure(delete, plan, "B100", "Delete", Skeleton("B100", "Delete"), deleteContent, deleteVariables, deleteRules, IsManagedDeleteSource, allowIntentionalContractRefresh: allowIntentionalContractRefresh);
         }
+        progress?.PumpAndThrowIfAbortRequested();
         if (!allowIntentionalContractRefresh)
         {
             EnsureApi(api, plan);
@@ -97,16 +103,36 @@ internal static class ApiPlanBusinessComponentWriter
         }
         ValidateApiVariableSpecs(model, api, apiVariables);
 
-        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan, preserveSdtNames, onSdtWrite);
+        progress?.PumpAndThrowIfAbortRequested();
+        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan, preserveSdtNames, onSdtWrite, progress, kbIndex);
+        progress?.PumpAndThrowIfAbortRequested();
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
-        SaveApi(model, api, transactionFolder, plan, apiSource, apiVariables);
-        SaveProcedure(model, get, getContent, getVariables, getRules);
-        SaveProcedure(model, create, createContent, createVariables, createRules);
-        SaveProcedure(model, update, updateContent, updateVariables, updateRules);
+
+        var saveSteps = new List<(string Label, System.Action Save)>
+        {
+            (api.Name, () => SaveApi(model, api, transactionFolder, plan, apiSource, apiVariables)),
+            (get.Name, () => SaveProcedure(model, get, getContent, getVariables, getRules)),
+            (create.Name, () => SaveProcedure(model, create, createContent, createVariables, createRules)),
+            (update.Name, () => SaveProcedure(model, update, updateContent, updateVariables, updateRules)),
+        };
         if (delete is not null && deleteContent is not null && deleteRules is not null && deleteVariables is not null)
         {
-            SaveProcedure(model, delete, deleteContent, deleteVariables, deleteRules);
+            saveSteps.Add((delete.Name, () => SaveProcedure(model, delete, deleteContent, deleteVariables, deleteRules)));
         }
+
+        var saveIndex = 0;
+        foreach (var step in saveSteps)
+        {
+            progress?.ThrowIfAbortRequested();
+            saveIndex++;
+            progress?.Report("Business Component", saveIndex, saveSteps.Count, step.Label);
+            progress?.Pump();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            step.Save();
+            sw.Stop();
+            progress?.Report("Business Component", saveIndex, saveSteps.Count, step.Label, sw.ElapsedMilliseconds);
+        }
+
         return new ApiPlanBusinessComponentWriteResult(get.Guid, create.Guid, update.Guid, api.Guid, plan.PrimaryKey.Count, plan.CreateRequestFields.Count, plan.UpdateRequestFields.Count, plan.ResponseFields.Count, delete is null ? Guid.Empty : delete.Guid);
     }
 

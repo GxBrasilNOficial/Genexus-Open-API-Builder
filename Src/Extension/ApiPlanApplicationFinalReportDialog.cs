@@ -98,7 +98,7 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
     private void ApplyWorkingAreaSize()
     {
         var working = GetTargetWorkingArea();
-        var maxHeight = Math.Max(360, working.Height - 32);
+        var maxHeight = Math.Max(360, working.Height - 64);
         var maxWidth = Math.Max(640, working.Width - 32);
         var minimumHeight = Math.Min(420, maxHeight);
         var minimumWidth = Math.Min(1080, maxWidth);
@@ -190,7 +190,7 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
             FlowDirection = FlowDirection.RightToLeft,
             AutoSize = true,
             WrapContents = false,
-            Padding = new Padding(0, 8, 0, 0),
+            Padding = new Padding(0, 8, 4, 12),
         };
 
         var closeButton = new Button
@@ -199,6 +199,7 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
             DialogResult = DialogResult.OK,
             AutoSize = true,
             Padding = new Padding(12, 4, 12, 4),
+            Margin = new Padding(6, 4, 0, 8),
         };
         AcceptButton = closeButton;
         CancelButton = closeButton;
@@ -211,6 +212,7 @@ internal sealed class ApiPlanApplicationFinalReportDialog : Form
                 Text = _texts.OpenMainObject,
                 AutoSize = true,
                 Padding = new Padding(12, 4, 12, 4),
+                Margin = new Padding(6, 4, 0, 8),
             };
             openButton.Click += (_, _) => TryOpenMainObject();
             buttons.Controls.Add(openButton);

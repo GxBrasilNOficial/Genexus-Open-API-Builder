@@ -10,9 +10,14 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
+### Added
+
+- `B082` (Fases A+B, 2026-08-31): quadro de progresso na abertura do Wizard, Apply, Sync e Remover (Preview antes do Sim); Abortar cooperativo; índice da KB (sem `GetAll` por objeto no preflight/Preview); tempos `[B082] Fase` / `PreviewMs` na Output; aviso de escala no Resumo (≥25 SDTs+Procedures); rodapé dos botões com margem. Smoke `FabricaBrasil18Test` / `Tributacao` (Apply criar ~17 s de SDTs; reencontro ~21 s; BC+List ~110 s; Remover Preview ~2,5 s; Delete 33 ~33,5 s; abort entre objetos). Plano: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`. Fase C (índice na abertura) e D (corte/backlog concluído) pendentes. Não misturar com `B108`.
+
 ### Planned
 
 - `B108` (pendência, plano aprovado 2026-08-31, código adiado): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Checkpoint e documento 06.
+- `B082` Fase C/D: índice também na abertura do Wizard; fechar backlog/corte quando autorizado.
 
 ---
 

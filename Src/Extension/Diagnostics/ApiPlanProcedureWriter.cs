@@ -10,7 +10,12 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanProcedureWriter
 {
-    public static ApiPlanProcedureWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
+    public static ApiPlanProcedureWriteResult CreateOrReencounter(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        ApiPlanBusyProgressSession? progress = null,
+        ApiPlanKbObjectNameIndex? kbIndex = null)
     {
         if (designModel is null)
         {
@@ -33,15 +38,29 @@ internal static class ApiPlanProcedureWriter
         }
 
         var sdtGenerationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
-        var resolvedSdts = PreflightRequiredSdts(designModel, sdtGenerationPlan);
+        progress?.Report("Procedures", 0, 0, "Preflight");
+        progress?.PumpAndThrowIfAbortRequested();
+        kbIndex ??= ApiPlanKbObjectNameIndex.Create(designModel, progress);
+        var resolvedSdts = PreflightRequiredSdts(sdtGenerationPlan, kbIndex, progress);
         var definitions = CreateProcedureDefinitions(apiPlan);
+        progress?.PumpAndThrowIfAbortRequested();
         var preflight = PreflightProcedures(designModel, definitions);
+        progress?.PumpAndThrowIfAbortRequested();
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan);
         var results = new List<ApiPlanProcedureWriteItemResult>();
+        var current = 0;
 
         foreach (var definition in definitions)
         {
-            results.Add(CreateOrReencounterProcedure(designModel, transaction, transactionFolder, definition, preflight));
+            progress?.ThrowIfAbortRequested();
+            current++;
+            progress?.Report("Procedures", current, definitions.Count, definition.Name);
+            progress?.Pump();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var item = CreateOrReencounterProcedure(designModel, transaction, transactionFolder, definition, preflight, progress);
+            sw.Stop();
+            progress?.Report("Procedures", current, definitions.Count, definition.Name, sw.ElapsedMilliseconds);
+            results.Add(item);
         }
 
         return new ApiPlanProcedureWriteResult(
@@ -54,26 +73,36 @@ internal static class ApiPlanProcedureWriter
             results);
     }
 
-    private static IReadOnlyList<Guid> PreflightRequiredSdts(KBModel designModel, ApiPlanSdtGenerationPlan generationPlan)
+    private static IReadOnlyList<Guid> PreflightRequiredSdts(
+        ApiPlanSdtGenerationPlan generationPlan,
+        ApiPlanKbObjectNameIndex kbIndex,
+        ApiPlanBusyProgressSession? progress = null)
     {
+        var definitions = generationPlan.SharedSdts.Concat(generationPlan.OwnSdts).ToArray();
         var resolved = new List<Guid>();
-        foreach (var definition in generationPlan.SharedSdts.Concat(generationPlan.OwnSdts))
+        var index = 0;
+        foreach (var definition in definitions)
         {
-            var matches = SDT.GetAll(designModel)
-                .Where(sdt => string.Equals(sdt.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
+            index++;
+            progress?.Report("Procedures", index, definitions.Length, $"SDT {definition.Name}");
+            progress?.PumpAndThrowIfAbortRequested();
+            var existingCount = kbIndex.GetSdtCount(definition.Name);
 
-            if (matches.Length == 0)
+            if (existingCount == 0)
             {
                 throw new InvalidOperationException($"Criacao de Procedures bloqueada: SDT requerido nao foi reencontrado: '{definition.Name}'. Gere os SDTs pelo Wizard antes. Nenhuma alteracao foi feita.");
             }
 
-            if (matches.Length > 1)
+            if (existingCount > 1)
             {
-                throw new InvalidOperationException($"Criacao de Procedures bloqueada: foram encontrados {matches.Length} SDTs chamados '{definition.Name}'. Nenhuma alteracao foi feita.");
+                throw new InvalidOperationException($"Criacao de Procedures bloqueada: foram encontrados {existingCount} SDTs chamados '{definition.Name}'. Nenhuma alteracao foi feita.");
             }
 
-            var sdt = matches[0];
+            if (!kbIndex.TryGetSingleSdt(definition.Name, out var sdt))
+            {
+                throw new InvalidOperationException($"Criacao de Procedures bloqueada: SDT requerido nao foi reencontrado: '{definition.Name}'. Gere os SDTs pelo Wizard antes. Nenhuma alteracao foi feita.");
+            }
+
             if (!ApiPlanOwnedObjectDescription.IsOwnedSdt(sdt.Description, definition.Name))
             {
                 throw new InvalidOperationException($"Criacao de Procedures bloqueada: SDT requerido externo ou incompativel chamado '{definition.Name}'. Gere ou reencontre os SDTs pelo Wizard antes. Nenhuma alteracao foi feita.");
@@ -162,11 +191,18 @@ internal static class ApiPlanProcedureWriter
         return new ApiPlanProcedurePreflightResult(existingByName);
     }
 
-    private static ApiPlanProcedureWriteItemResult CreateOrReencounterProcedure(KBModel designModel, Transaction transaction, Folder transactionFolder, ApiPlanProcedureDefinition definition, ApiPlanProcedurePreflightResult preflight)
+    private static ApiPlanProcedureWriteItemResult CreateOrReencounterProcedure(
+        KBModel designModel,
+        Transaction transaction,
+        Folder transactionFolder,
+        ApiPlanProcedureDefinition definition,
+        ApiPlanProcedurePreflightResult preflight,
+        ApiPlanBusyProgressSession? progress = null)
     {
         if (preflight.ExistingProceduresByName.TryGetValue(definition.Name, out var existingProcedure))
         {
             existingProcedure.Parent = transactionFolder;
+            progress?.PumpAndThrowIfAbortRequested();
             existingProcedure.Save();
             return new ApiPlanProcedureWriteItemResult(definition.BacklogId, definition.ServiceName, definition.Name, ApiPlanProcedureWriteStatus.Reencountered, existingProcedure.Guid);
         }
@@ -180,6 +216,7 @@ internal static class ApiPlanProcedureWriter
         procedure.Parent = transactionFolder;
 
         ConfigureProcedure(procedure, definition);
+        progress?.PumpAndThrowIfAbortRequested();
         procedure.Save();
 
         var persisted = Procedure.Get(designModel, procedure.Guid);

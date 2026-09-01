@@ -352,14 +352,20 @@ public sealed class Package : AbstractPackageUI
         ApiPlan apiPlan,
         string triggerSource,
         IReadOnlyCollection<string>? preserveSdtNames = null,
-        ApiPlanApplicationFinalReportCollector? report = null)
+        ApiPlanApplicationFinalReportCollector? report = null,
+        ApiPlanBusyProgressSession? progress = null,
+        ApiPlanKbObjectNameIndex? kbIndex = null)
     {
         try
         {
-            Action<ApiPlanSdtWriteItemResult> onSdtWrite = item => AppendSdtWriteItemToReport(report, item);
+            Action<ApiPlanSdtWriteItemResult> onSdtWrite = item =>
+            {
+                AppendSdtWriteItemToReport(report, item);
+                WriteOutput($"[Genexus Open API Builder][B082] SDT {item.Status}: Name='{item.Name}', Scope='{item.Scope}'.");
+            };
             var result = preserveSdtNames is null
-                ? ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames: null, onSdtWrite: onSdtWrite)
-                : ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames, onSdtWrite: onSdtWrite);
+                ? ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames: null, onSdtWrite: onSdtWrite, progress: progress, kbIndex: kbIndex)
+                : ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames, onSdtWrite: onSdtWrite, progress: progress, kbIndex: kbIndex);
             WriteOutput($"[Genexus Open API Builder][B040-B046] Escrita de SDTs concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedOwnSdts={result.PlannedOwnSdts}, PlannedSharedSdts={result.PlannedSharedSdts}, Created={result.CreatedSdts}, Reencountered={result.ReencounteredSdts}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhuma Procedure, API Object ou metadata persistente definitiva foi criada.");
             foreach (var item in result.Items)
             {
@@ -367,6 +373,10 @@ public sealed class Package : AbstractPackageUI
             }
 
             return true;
+        }
+        catch (ApiPlanBusyAbortedException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -381,20 +391,27 @@ public sealed class Package : AbstractPackageUI
         Transaction transaction,
         ApiPlan apiPlan,
         string triggerSource,
-        ApiPlanApplicationFinalReportCollector? report = null)
+        ApiPlanApplicationFinalReportCollector? report = null,
+        ApiPlanBusyProgressSession? progress = null,
+        ApiPlanKbObjectNameIndex? kbIndex = null)
     {
         try
         {
-            var result = ApiPlanProcedureWriter.CreateOrReencounter(designModel, transaction, apiPlan);
+            var result = ApiPlanProcedureWriter.CreateOrReencounter(designModel, transaction, apiPlan, progress, kbIndex);
             var procedureStage = ApiPlanProcedureWriter.FormatOutputStage(apiPlan);
             WriteOutput($"[Genexus Open API Builder][{procedureStage}] Escrita de Procedures concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedProcedures={result.PlannedProcedures}, ReencounteredSdts={result.ReencounteredSdts}, Created={result.CreatedProcedures}, Reencountered={result.ReencounteredProcedures}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhum API Object, REST completo ou metadata persistente definitiva foi criado.");
             foreach (var item in result.Items)
             {
                 WriteOutput($"[Genexus Open API Builder][{procedureStage}] Procedure {item.Status}: Backlog='{item.BacklogId}', Service='{item.ServiceName}', Name='{item.Name}', Guid='{item.Guid}'.");
+                WriteOutput($"[Genexus Open API Builder][B082] Procedure {item.Status}: Name='{item.Name}'.");
                 report?.AddFromWriteStatus("Procedure", item.Name, item.Status, item.ServiceName);
             }
 
             return true;
+        }
+        catch (ApiPlanBusyAbortedException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -479,7 +496,9 @@ public sealed class Package : AbstractPackageUI
         string triggerSource,
         bool allowIntentionalContractRefresh = false,
         IReadOnlyCollection<string>? preserveSdtNames = null,
-        ApiPlanApplicationFinalReportCollector? report = null)
+        ApiPlanApplicationFinalReportCollector? report = null,
+        ApiPlanBusyProgressSession? progress = null,
+        ApiPlanKbObjectNameIndex? kbIndex = null)
     {
         try
         {
@@ -489,7 +508,9 @@ public sealed class Package : AbstractPackageUI
                 apiPlan,
                 allowIntentionalContractRefresh,
                 preserveSdtNames,
-                onSdtWrite: item => AppendSdtWriteItemToReport(report, item));
+                onSdtWrite: item => AppendSdtWriteItemToReport(report, item),
+                progress: progress,
+                kbIndex: kbIndex);
             var deleteGuidPart = result.DeleteProcedureGuid == Guid.Empty
                 ? string.Empty
                 : $", DeleteProcedureGuid='{result.DeleteProcedureGuid}'";
@@ -509,6 +530,10 @@ public sealed class Package : AbstractPackageUI
             report?.SetApiName(apiPlan.ApiName);
             return true;
         }
+        catch (ApiPlanBusyAbortedException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
@@ -525,7 +550,8 @@ public sealed class Package : AbstractPackageUI
         string triggerSource,
         bool allowIntentionalContractRefresh = false,
         IReadOnlyCollection<string>? preserveSdtNames = null,
-        ApiPlanApplicationFinalReportCollector? report = null)
+        ApiPlanApplicationFinalReportCollector? report = null,
+        ApiPlanBusyProgressSession? progress = null)
     {
         try
         {
@@ -535,7 +561,8 @@ public sealed class Package : AbstractPackageUI
                 apiPlan,
                 allowIntentionalContractRefresh,
                 preserveSdtNames,
-                onSdtWrite: item => AppendSdtWriteItemToReport(report, item));
+                onSdtWrite: item => AppendSdtWriteItemToReport(report, item),
+                progress: progress);
             WriteOutput($"[Genexus Open API Builder][B070] List aplicado e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', ListProcedureGuid='{result.ListProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', Filters={result.Filters}, OrderParts={result.OrderParts}, DefaultPageSize={result.DefaultPageSize}, MaximumPageSize={result.MaximumPageSize}. B076 e validacao runtime do List permanecem pendentes.");
             var listProcedure = apiPlan.ProcedureNames.FirstOrDefault(name =>
                 name.EndsWith("_API_List", StringComparison.OrdinalIgnoreCase));
@@ -548,6 +575,10 @@ public sealed class Package : AbstractPackageUI
             report?.SetMainObject(apiPlan.ApiName, result.ApiObjectGuid);
             report?.SetApiName(apiPlan.ApiName);
             return true;
+        }
+        catch (ApiPlanBusyAbortedException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -650,7 +681,7 @@ public sealed class Package : AbstractPackageUI
             var report = new ApiPlanApplicationFinalReportCollector("Sincronizar", transaction.Name, apiPlan.ApiName);
             var stopwatch = Stopwatch.StartNew();
             AppendPlanWarnings(report, apiPlan);
-            var syncState = ApiPlanGenerationStateReader.ReadForSync(knowledgeBase.DesignModel, transaction, apiPlan);
+            var (syncState, syncKbIndex) = ApiPlanGenerationStateReader.ReadForSyncWithIndex(knowledgeBase.DesignModel, transaction, apiPlan);
             AppendTransactionFolderWarning(report, syncState);
             foreach (var preserved in preserveSdts.OrderBy(name => name, StringComparer.OrdinalIgnoreCase))
             {
@@ -681,97 +712,145 @@ public sealed class Package : AbstractPackageUI
 
             WriteOutput($"[Genexus Open API Builder][B085] Preflight de sincronizacao aprovado. Aplicando para Transaction='{transaction.Name}', ApiName='{apiPlan.ApiName}'.");
 
-            if (!TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", preserveSdts, report))
+            try
             {
-                stopwatch.Stop();
-                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
-                return true;
-            }
+                using var busy = ExtensionBusyProgressScope.Show(ResolveFinalReportOwner(), texts.BusyProgressTitleSync, texts);
+                WriteOutput($"[Genexus Open API Builder][B082] Sync iniciado: Transaction='{transaction.Name}'.");
 
-            if (!TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", report))
-            {
-                stopwatch.Stop();
-                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
-                return true;
-            }
-
-            if (selection.GenerateApiObject && !selection.ApplyBusinessComponent)
-            {
-                if (!TryCreateApiObject(
-                    knowledgeBase.DesignModel,
-                    transaction,
-                    apiPlan,
-                    "SyncB085",
-                    report,
-                    allowIntentionalContractRefresh: true))
+                if (!TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", preserveSdts, report, busy.Session, syncKbIndex))
                 {
                     stopwatch.Stop();
                     ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                     return true;
                 }
-            }
-            else if (selection.GenerateApiObject && selection.ApplyBusinessComponent)
-            {
-                if (!API.GetAll(knowledgeBase.DesignModel).Any(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase)))
+
+                syncKbIndex.RefreshSdts(knowledgeBase.DesignModel);
+
+                if (!TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", report, busy.Session, syncKbIndex))
                 {
-                    if (!TryCreateApiObject(
+                    stopwatch.Stop();
+                    ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                    return true;
+                }
+
+                busy.ThrowIfAbortRequested();
+                if (selection.GenerateApiObject && !selection.ApplyBusinessComponent)
+                {
+                    busy.Report("API Object", 0, 0, apiPlan.ApiName);
+                    var apiMs = busy.Measure(() =>
+                    {
+                        if (!TryCreateApiObject(
+                            knowledgeBase.DesignModel,
+                            transaction,
+                            apiPlan,
+                            "SyncB085",
+                            report,
+                            allowIntentionalContractRefresh: true))
+                        {
+                            throw new InvalidOperationException("SYNC_API_OBJECT_FAILED");
+                        }
+                    });
+                    busy.Report("API Object", 1, 1, apiPlan.ApiName, apiMs);
+                }
+                else if (selection.GenerateApiObject && selection.ApplyBusinessComponent)
+                {
+                    if (!API.GetAll(knowledgeBase.DesignModel).Any(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        busy.Report("API Object", 0, 0, apiPlan.ApiName);
+                        var apiMs = busy.Measure(() =>
+                        {
+                            if (!TryCreateApiObject(
+                                knowledgeBase.DesignModel,
+                                transaction,
+                                apiPlan,
+                                "SyncB085",
+                                report,
+                                allowIntentionalContractRefresh: true))
+                            {
+                                throw new InvalidOperationException("SYNC_API_OBJECT_FAILED");
+                            }
+                        });
+                        busy.Report("API Object", 1, 1, apiPlan.ApiName, apiMs);
+                    }
+                }
+
+                busy.ThrowIfAbortRequested();
+                if (selection.ApplyBusinessComponent)
+                {
+                    var bcFailed = !TryApplyBusinessComponent(
                         knowledgeBase.DesignModel,
                         transaction,
                         apiPlan,
                         "SyncB085",
-                        report,
-                        allowIntentionalContractRefresh: true))
+                        allowIntentionalContractRefresh: true,
+                        preserveSdtNames: preserveSdts,
+                        report: report,
+                        progress: busy.Session,
+                        kbIndex: syncKbIndex);
+                    if (bcFailed)
                     {
                         stopwatch.Stop();
                         ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                         return true;
                     }
                 }
-            }
 
-            if (selection.ApplyBusinessComponent)
-            {
-                if (!TryApplyBusinessComponent(
-                    knowledgeBase.DesignModel,
-                    transaction,
-                    apiPlan,
-                    "SyncB085",
-                    allowIntentionalContractRefresh: true,
-                    preserveSdtNames: preserveSdts,
-                    report: report))
+                busy.ThrowIfAbortRequested();
+                if (selection.ApplyList)
                 {
-                    stopwatch.Stop();
-                    ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
-                    return true;
+                    var listFailed = !TryApplyList(
+                        knowledgeBase.DesignModel,
+                        transaction,
+                        apiPlan,
+                        "SyncB085",
+                        allowIntentionalContractRefresh: true,
+                        preserveSdtNames: preserveSdts,
+                        report: report,
+                        progress: busy.Session);
+                    if (listFailed)
+                    {
+                        stopwatch.Stop();
+                        ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                        return true;
+                    }
+                }
+
+                busy.ThrowIfAbortRequested();
+                if (selection.GenerateMetadata)
+                {
+                    busy.Report("Metadata", 0, 0, apiPlan.MetadataFileName);
+                    var metaMs = busy.Measure(() =>
+                    {
+                        if (!TryWriteMetadataFile(
+                            knowledgeBase.DesignModel,
+                            transaction,
+                            apiPlan,
+                            "SyncB085",
+                            allowIntentionalContractRefresh: true,
+                            report: report))
+                        {
+                            throw new InvalidOperationException("SYNC_METADATA_FAILED");
+                        }
+                    });
+                    busy.Report("Metadata", 1, 1, apiPlan.MetadataFileName, metaMs);
                 }
             }
-
-            if (selection.ApplyList)
+            catch (ApiPlanBusyAbortedException abortEx)
             {
-                if (!TryApplyList(
-                    knowledgeBase.DesignModel,
-                    transaction,
-                    apiPlan,
-                    "SyncB085",
-                    allowIntentionalContractRefresh: true,
-                    preserveSdtNames: preserveSdts,
-                    report: report))
-                {
-                    stopwatch.Stop();
-                    ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
-                    return true;
-                }
+                WriteOutput($"[Genexus Open API Builder][B082] Sync abortado: Transaction='{transaction.Name}', Error='{abortEx.Message}'");
+                report.HeadlineOverride = "Sincronização abortada pelo usuário.";
+                report.AddWarning(abortEx.Message);
+                report.AddBlocked("Sync", transaction.Name, "Abortado [B082]");
+                stopwatch.Stop();
+                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                return true;
             }
-
-            if (selection.GenerateMetadata)
+            catch (InvalidOperationException ex) when (
+                ex.Message == "SYNC_API_OBJECT_FAILED" || ex.Message == "SYNC_METADATA_FAILED")
             {
-                TryWriteMetadataFile(
-                    knowledgeBase.DesignModel,
-                    transaction,
-                    apiPlan,
-                    "SyncB085",
-                    allowIntentionalContractRefresh: true,
-                    report: report);
+                stopwatch.Stop();
+                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                return true;
             }
 
             WriteOutput($"[Genexus Open API Builder][B085] Sincronizacao concluida para Transaction='{transaction.Name}', ApiName='{apiPlan.ApiName}', PreservedSdts={preserveSdts.Count}.");
@@ -819,10 +898,31 @@ public sealed class Package : AbstractPackageUI
 
         try
         {
-            var plan = ApiPlanGeneratedApiRemover.Preview(knowledgeBase.DesignModel, transaction);
-            WriteOutput($"[Genexus Open API Builder][B086] Plano de remocao para Transaction='{transaction.Name}':{Environment.NewLine}{plan.BuildConfirmationSummary()}");
-
             var owner = ResolveFinalReportOwner();
+            ApiPlanGeneratedApiRemovalPlan plan;
+            using (var loading = ExtensionBusyProgressScope.Show(owner, texts.BusyProgressTitleLoadingRemove, texts))
+            {
+                var previewWatch = Stopwatch.StartNew();
+                try
+                {
+                    var kbIndex = ApiPlanKbObjectNameIndex.Create(knowledgeBase.DesignModel, loading.Session);
+                    plan = ApiPlanGeneratedApiRemover.Preview(
+                        knowledgeBase.DesignModel,
+                        transaction,
+                        loading.Session,
+                        kbIndex);
+                }
+                catch (ApiPlanBusyAbortedException abortEx)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B082] Remover preview abortado: Transaction='{transaction.Name}', Error='{abortEx.Message}'");
+                    return true;
+                }
+
+                previewWatch.Stop();
+                WriteOutput($"[Genexus Open API Builder][B082] Remover PreviewMs={previewWatch.ElapsedMilliseconds}.");
+            }
+
+            WriteOutput($"[Genexus Open API Builder][B086] Plano de remocao para Transaction='{transaction.Name}':{Environment.NewLine}{plan.BuildConfirmationSummary()}");
             using var confirmationDialog = new ExtensionConfirmDialog(
                 texts.RemoveGeneratedApi,
                 texts.RemovalConfirmationIntro,
@@ -840,7 +940,28 @@ public sealed class Package : AbstractPackageUI
             }
 
             var stopwatch = Stopwatch.StartNew();
-            var result = ApiPlanGeneratedApiRemover.Remove(knowledgeBase.DesignModel, transaction);
+            ApiPlanGeneratedApiRemovalResult result;
+            using (var busy = ExtensionBusyProgressScope.Show(owner, texts.BusyProgressTitleRemove, texts))
+            {
+                WriteOutput($"[Genexus Open API Builder][B082] Remover iniciado: Transaction='{transaction.Name}', PlannedDeletes={ApiPlanGeneratedApiRemover.CountPlannedDeletes(plan)}.");
+                try
+                {
+                    result = ApiPlanGeneratedApiRemover.Remove(knowledgeBase.DesignModel, transaction, busy.Session);
+                }
+                catch (ApiPlanBusyAbortedException abortEx)
+                {
+                    stopwatch.Stop();
+                    WriteOutput($"[Genexus Open API Builder][B082] Remover abortado: Transaction='{transaction.Name}', Error='{abortEx.Message}'");
+                    var abortReport = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, plan.ApiName);
+                    abortReport.SetApiName(plan.ApiName);
+                    abortReport.HeadlineOverride = "Remoção abortada pelo usuário.";
+                    abortReport.AddWarning(abortEx.Message);
+                    abortReport.AddBlocked("Remover", transaction.Name, "Abortado [B082]");
+                    ShowFinalReport(abortReport, stopwatch.Elapsed, knowledgeBase.DesignModel);
+                    return true;
+                }
+            }
+
             stopwatch.Stop();
             WriteOutput($"[Genexus Open API Builder][B086] Remocao concluida: Transaction='{transaction.Name}', ApiName='{result.Plan.ApiName}', Deleted={result.DeletedItems.Count}, Items='{string.Join("; ", result.DeletedItems)}'. SDTs compartilhados e Business Component da Transaction nao foram alterados.");
             var report = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, result.Plan.ApiName);
@@ -999,26 +1120,76 @@ public sealed class Package : AbstractPackageUI
         ClearPrototypeWizardMemory(clearTransaction: false);
         PrototypeTransactionSelectionState.Store(knowledgeBase, transaction);
 
-        var preferencesLoadResult = PrototypeWizardPreferencesStore.Load(knowledgeBase.DesignModel);
-        WriteOutput($"[Genexus Open API Builder][Prefs] {preferencesLoadResult.Status}");
-
-        var snapshot = PrototypeWizardContractReader.Read(knowledgeBase.DesignModel, transaction);
-        var duplicateServices = snapshot.ExistingApiContract.DuplicateServiceNames;
-        if (duplicateServices.Count > 0)
+        PrototypeWizardPreferencesLoadResult? preferencesLoadResult = null;
+        PrototypeWizardContractSnapshot? snapshot = null;
+        PrototypeBusinessComponentSnapshot? businessComponentSnapshot = null;
+        PrototypeWizardDialog? dialog = null;
+        var openingWatch = Stopwatch.StartNew();
+        using (var loading = ExtensionBusyProgressScope.Show(ResolveFinalReportOwner(), texts.BusyProgressTitleLoadingWizard, texts))
         {
-            WriteOutput($"[Genexus Open API Builder][B034] Service Source do API Object declara servico duplicado: ApiName='{snapshot.ExistingApiContract.ApiName ?? "api" + transaction.Name}', Servicos='{string.Join(", ", duplicateServices)}'. O wizard usou a primeira declaracao de cada servico e nenhuma alteracao foi feita na KB; revise o API Object na IDE.");
+            try
+            {
+                loading.Report("Preferências", 0, 0, "GxOpenApiBuilder_Settings");
+                var prefsWatch = Stopwatch.StartNew();
+                preferencesLoadResult = PrototypeWizardPreferencesStore.Load(knowledgeBase.DesignModel);
+                prefsWatch.Stop();
+                WriteOutput($"[Genexus Open API Builder][Prefs] {preferencesLoadResult.Status}");
+                WriteOutput($"[Genexus Open API Builder][B082] Abertura PrefsMs={prefsWatch.ElapsedMilliseconds}.");
+                loading.Report("Preferências", 1, 1, "GxOpenApiBuilder_Settings", prefsWatch.ElapsedMilliseconds);
+
+                loading.ThrowIfAbortRequested();
+                loading.Report("Contrato", 0, 0, transaction.Name);
+                var contractWatch = Stopwatch.StartNew();
+                snapshot = PrototypeWizardContractReader.Read(knowledgeBase.DesignModel, transaction);
+                contractWatch.Stop();
+                WriteOutput($"[Genexus Open API Builder][B082] Abertura ContratoMs={contractWatch.ElapsedMilliseconds}.");
+                loading.Report("Contrato", 1, 1, transaction.Name, contractWatch.ElapsedMilliseconds);
+
+                var duplicateServices = snapshot.ExistingApiContract.DuplicateServiceNames;
+                if (duplicateServices.Count > 0)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B034] Service Source do API Object declara servico duplicado: ApiName='{snapshot.ExistingApiContract.ApiName ?? "api" + transaction.Name}', Servicos='{string.Join(", ", duplicateServices)}'. O wizard usou a primeira declaracao de cada servico e nenhuma alteracao foi feita na KB; revise o API Object na IDE.");
+                }
+
+                loading.ThrowIfAbortRequested();
+                loading.Report("Business Component", 0, 0, transaction.Name);
+                var bcWatch = Stopwatch.StartNew();
+                businessComponentSnapshot = PrototypeBusinessComponentReader.Read(transaction);
+                bcWatch.Stop();
+                WriteOutput($"[Genexus Open API Builder][B082] Abertura BusinessComponentMs={bcWatch.ElapsedMilliseconds}.");
+                loading.Report("Business Component", 1, 1, transaction.Name, bcWatch.ElapsedMilliseconds);
+
+                loading.ThrowIfAbortRequested();
+                loading.Report("Interface", 0, 0, texts.Wizard);
+                var uiWatch = Stopwatch.StartNew();
+                dialog = new PrototypeWizardDialog(
+                    knowledgeBase.DesignModel,
+                    transaction,
+                    snapshot,
+                    businessComponentSnapshot,
+                    preferencesLoadResult.Preferences,
+                    () => EnableBusinessComponentForWizard(transaction),
+                    WriteOutput,
+                    texts);
+                uiWatch.Stop();
+                WriteOutput($"[Genexus Open API Builder][B082] Abertura InterfaceMs={uiWatch.ElapsedMilliseconds}.");
+                loading.Report("Interface", 1, 1, texts.Wizard, uiWatch.ElapsedMilliseconds);
+            }
+            catch (ApiPlanBusyAbortedException abortEx)
+            {
+                openingWatch.Stop();
+                WriteOutput($"[Genexus Open API Builder][B082] Abertura abortada apos {openingWatch.ElapsedMilliseconds} ms: {abortEx.Message}");
+                ClearPrototypeWizardMemory(clearTransaction: true);
+                dialog?.Dispose();
+                return true;
+            }
         }
 
-        var businessComponentSnapshot = PrototypeBusinessComponentReader.Read(transaction);
-        using var dialog = new PrototypeWizardDialog(
-            knowledgeBase.DesignModel,
-            transaction,
-            snapshot,
-            businessComponentSnapshot,
-            preferencesLoadResult.Preferences,
-            () => EnableBusinessComponentForWizard(transaction),
-            WriteOutput,
-            texts);
+        openingWatch.Stop();
+        WriteOutput($"[Genexus Open API Builder][B082] Abertura total ate ShowDialog={openingWatch.ElapsedMilliseconds} ms.");
+
+        using (dialog!)
+        {
         var result = dialog.ShowDialog();
         var businessComponentExitStatus = dialog.BusinessComponentEnabledDuringWizard
             ? "Business Component foi habilitado por confirmacao explicita antes da saida; essa alteracao foi gravada na KB e nao foi revertida automaticamente."
@@ -1086,7 +1257,10 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B056] Descricoes no ApiPlan: Resolved={serviceDescriptionsResolvedCount}/{apiPlan.ServiceDescriptions.Count}, Language='{apiPlan.ServiceDescriptionLanguage}', LanguageSource='{apiPlan.ServiceDescriptionLanguageSource}', FallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, FallbackReason='{apiPlan.ServiceDescriptionFallbackReason}'. Sem aplicar [Description] em objeto API real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B092] Seguranca no ApiPlan: SecurityLevel='{apiPlan.Security.SecurityLevel}', GamCondition='{apiPlan.Security.GamCondition}', RequiresGenerationConfirmation={apiPlan.Security.RequiresGenerationConfirmation}. Sem aplicar seguranca em objetos reais.");
         WriteOutput($"[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria. GenerateSdts={selection.GenerateSdts}, GenerateProcedures={selection.GenerateProcedures}, GenerateApiObject={selection.GenerateApiObject}, GenerateMetadata={selection.GenerateMetadata}, ApplyList={selection.ApplyList}, ApplyBusinessComponent={selection.ApplyBusinessComponent}; escritas confirmadas no wizard exigem preflight completo antes de qualquer Save().");
-        var generationState = ApiPlanGenerationStateReader.ReadForIntentionalChange(knowledgeBase.DesignModel, transaction, apiPlan);
+        var applyFromConfirm = Stopwatch.StartNew();
+        var phaseWatch = Stopwatch.StartNew();
+        var (generationState, kbIndexForApply) = ApiPlanGenerationStateReader.ReadForIntentionalChangeWithIndex(knowledgeBase.DesignModel, transaction, apiPlan);
+        WriteProbePhase("IndiceKb", phaseWatch.ElapsedMilliseconds);
         WriteApiObjectBaselineDiagnostic(generationState);
         var preflightScope = ApiPlanWritePreflightScope.FromSelection(
             selection.GenerateSdts,
@@ -1142,6 +1316,7 @@ public sealed class Package : AbstractPackageUI
                 preflightScope.RequireApiObject,
                 preflightScope.RequireMetadataFile));
 
+        phaseWatch.Restart();
         try
         {
             PrototypeWizardBusinessComponentNavigationPolicy.ThrowIfDeleteWithoutBusinessComponent(
@@ -1158,6 +1333,7 @@ public sealed class Package : AbstractPackageUI
         }
         catch (Exception ex)
         {
+            WriteProbePhase("PreflightAgregado", phaseWatch.ElapsedMilliseconds);
             WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Preflight agregado bloqueou o wizard antes do primeiro Save(): Transaction='{transaction.Name}', Error='{ex.Message}'");
             if (!report.HasInterrupted)
             {
@@ -1165,208 +1341,277 @@ public sealed class Package : AbstractPackageUI
             }
 
             stopwatch.Stop();
+            WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
             ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
             return true;
         }
 
+        WriteProbePhase("PreflightAgregado", phaseWatch.ElapsedMilliseconds);
         WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Preflight agregado aprovado antes do primeiro Save(): Transaction='{transaction.Name}', ConflictMode='{apiPlan.ConflictMode}', ReexecutionMode='{apiPlan.ReexecutionMode}'.");
 
-        var sdtsReady = true;
-        if (selection.GenerateSdts)
+        var applyOwner = ResolveFinalReportOwner();
+        try
         {
-            sdtsReady = TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard", report: report);
-        }
-        else if (selection.GenerateProcedures || selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyList || selection.ApplyBusinessComponent)
-        {
-            WriteOutput($"[Genexus Open API Builder][B040-B046] Etapa de SDTs nao confirmada no wizard para Transaction='{transaction.Name}'. A dependencia sera reencontrada e validada pelo preflight da etapa seguinte.");
-        }
+            using var busy = ExtensionBusyProgressScope.Show(applyOwner, texts.BusyProgressTitleApply, texts);
+            WriteOutput($"[Genexus Open API Builder][B082] Apply Wizard iniciado: Transaction='{transaction.Name}'.");
 
-        if (!sdtsReady)
-        {
+            phaseWatch.Restart();
+            var sdtsReady = true;
+            if (selection.GenerateSdts)
+            {
+                sdtsReady = TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard", report: report, progress: busy.Session, kbIndex: kbIndexForApply);
+            }
+            else if (selection.GenerateProcedures || selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyList || selection.ApplyBusinessComponent)
+            {
+                WriteOutput($"[Genexus Open API Builder][B040-B046] Etapa de SDTs nao confirmada no wizard para Transaction='{transaction.Name}'. A dependencia sera reencontrada e validada pelo preflight da etapa seguinte.");
+            }
+
+            WriteProbePhase("SDTs", phaseWatch.ElapsedMilliseconds);
+            if (sdtsReady && selection.GenerateSdts)
+            {
+                phaseWatch.Restart();
+                kbIndexForApply.RefreshSdts(knowledgeBase.DesignModel);
+                WriteProbePhase("IndiceSdtAposGravacao", phaseWatch.ElapsedMilliseconds);
+            }
+
+            if (!sdtsReady)
+            {
+                if (selection.GenerateProcedures)
+                {
+                    WriteOutput($"[Genexus Open API Builder][{ApiPlanProcedureWriter.FormatOutputStage(apiPlan)}] Etapa de Procedures nao executada pelo wizard para Transaction='{transaction.Name}' porque B040-B046 falhou ou foi bloqueado neste fluxo. Nenhuma Procedure foi criada pelo wizard.");
+                }
+
+                if (selection.GenerateApiObject)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B054] Etapa de API Object nao executada pelo wizard para Transaction='{transaction.Name}' porque B040-B046 falhou ou foi bloqueado neste fluxo. Nenhum API Object foi criado pelo wizard.");
+                }
+
+                if (selection.ApplyBusinessComponent)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B071-B073/B079] REST via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque os SDTs requeridos falharam ou foram bloqueados neste fluxo.");
+                }
+
+                if (selection.ApplyList)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B070] List nao foi aplicado para Transaction='{transaction.Name}' porque B040-B046 falhou ou foi bloqueado neste fluxo.");
+                }
+
+                if (selection.GenerateMetadata)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B040-B046 falhou ou foi bloqueado neste fluxo.");
+                }
+
+                stopwatch.Stop();
+                WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
+                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                return true;
+            }
+
+            phaseWatch.Restart();
+            var proceduresReady = true;
             if (selection.GenerateProcedures)
             {
-                WriteOutput($"[Genexus Open API Builder][{ApiPlanProcedureWriter.FormatOutputStage(apiPlan)}] Etapa de Procedures nao executada pelo wizard para Transaction='{transaction.Name}' porque B040-B046 falhou ou foi bloqueado neste fluxo. Nenhuma Procedure foi criada pelo wizard.");
+                proceduresReady = TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard", report, busy.Session, kbIndexForApply);
             }
-
-            if (selection.GenerateApiObject)
+            else if (selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyList || selection.ApplyBusinessComponent)
             {
-                WriteOutput($"[Genexus Open API Builder][B054] Etapa de API Object nao executada pelo wizard para Transaction='{transaction.Name}' porque B040-B046 falhou ou foi bloqueado neste fluxo. Nenhum API Object foi criado pelo wizard.");
+                WriteOutput($"[Genexus Open API Builder][{ApiPlanProcedureWriter.FormatOutputStage(apiPlan)}] Etapa de Procedures nao confirmada no wizard para Transaction='{transaction.Name}'. A dependencia sera reencontrada e validada pelo preflight da etapa seguinte.");
             }
 
+            WriteProbePhase("Procedures", phaseWatch.ElapsedMilliseconds);
+            if (!proceduresReady)
+            {
+                if (selection.GenerateApiObject)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B054] Etapa de API Object nao executada pelo wizard para Transaction='{transaction.Name}' porque a etapa de Procedures falhou ou foi bloqueada neste fluxo. Nenhum API Object foi criado pelo wizard.");
+                }
+
+                if (selection.ApplyBusinessComponent)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B071-B073/B079] REST via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque as Procedures requeridas falharam ou foram bloqueadas neste fluxo.");
+                }
+
+                if (selection.ApplyList)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B070] List nao foi aplicado para Transaction='{transaction.Name}' porque a etapa de Procedures falhou ou foi bloqueada neste fluxo.");
+                }
+
+                if (selection.GenerateMetadata)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque a etapa de Procedures falhou ou foi bloqueada neste fluxo.");
+                }
+
+                stopwatch.Stop();
+                WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
+                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                return true;
+            }
+
+            busy.ThrowIfAbortRequested();
+            phaseWatch.Restart();
+            var apiObjectReady = true;
+            if (selection.GenerateApiObject && !selection.ApplyBusinessComponent)
+            {
+                busy.Report("API Object", 0, 0, apiPlan.ApiName);
+                var apiMs = busy.Measure(() =>
+                {
+                    apiObjectReady = TryCreateApiObject(
+                        knowledgeBase.DesignModel,
+                        transaction,
+                        apiPlan,
+                        "Wizard",
+                        report,
+                        allowIntentionalContractRefresh: true);
+                });
+                busy.Report("API Object", 1, 1, apiPlan.ApiName, apiMs);
+            }
+            else if (selection.GenerateApiObject && selection.ApplyBusinessComponent)
+            {
+                if (API.GetAll(knowledgeBase.DesignModel).Any(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    WriteOutput($"[Genexus Open API Builder][B054] API Object ja existe para Transaction='{transaction.Name}'. Como B071-B073/B079 tambem foi confirmado, a atualizacao do API Object sera absorvida pelo preflight de Business Component.");
+                }
+                else
+                {
+                    busy.Report("API Object", 0, 0, apiPlan.ApiName);
+                    var apiMs = busy.Measure(() =>
+                    {
+                        apiObjectReady = TryCreateApiObject(
+                            knowledgeBase.DesignModel,
+                            transaction,
+                            apiPlan,
+                            "Wizard",
+                            report,
+                            allowIntentionalContractRefresh: true);
+                    });
+                    busy.Report("API Object", 1, 1, apiPlan.ApiName, apiMs);
+                }
+            }
+            else if (selection.ApplyBusinessComponent)
+            {
+                WriteOutput($"[Genexus Open API Builder][B054] Etapa de API Object nao confirmada no wizard para Transaction='{transaction.Name}'. A dependencia sera reencontrada e validada pelo preflight de Business Component.");
+            }
+
+            WriteProbePhase("ApiObject", phaseWatch.ElapsedMilliseconds);
+            if (!apiObjectReady)
+            {
+                if (selection.ApplyBusinessComponent)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B071-B073/B079] REST via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque o API Object falhou ou foi bloqueado neste fluxo.");
+                }
+
+                if (selection.ApplyList)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B070] List nao foi aplicado para Transaction='{transaction.Name}' porque B054 falhou ou foi bloqueado neste fluxo.");
+                }
+
+                if (selection.GenerateMetadata)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B054 falhou ou foi bloqueado neste fluxo.");
+                }
+
+                stopwatch.Stop();
+                WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
+                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                return true;
+            }
+
+            busy.ThrowIfAbortRequested();
+            phaseWatch.Restart();
+            var businessComponentReady = true;
             if (selection.ApplyBusinessComponent)
             {
-                WriteOutput($"[Genexus Open API Builder][B071-B073/B079] REST via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque os SDTs requeridos falharam ou foram bloqueados neste fluxo.");
-            }
-
-            if (selection.ApplyList)
-            {
-                WriteOutput($"[Genexus Open API Builder][B070] List nao foi aplicado para Transaction='{transaction.Name}' porque B040-B046 falhou ou foi bloqueado neste fluxo.");
-            }
-
-            if (selection.GenerateMetadata)
-            {
-                WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B040-B046 falhou ou foi bloqueado neste fluxo.");
-            }
-
-            stopwatch.Stop();
-            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
-            return true;
-        }
-
-        var proceduresReady = true;
-        if (selection.GenerateProcedures)
-        {
-            proceduresReady = TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard", report);
-        }
-        else if (selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyList || selection.ApplyBusinessComponent)
-        {
-            WriteOutput($"[Genexus Open API Builder][{ApiPlanProcedureWriter.FormatOutputStage(apiPlan)}] Etapa de Procedures nao confirmada no wizard para Transaction='{transaction.Name}'. A dependencia sera reencontrada e validada pelo preflight da etapa seguinte.");
-        }
-
-        if (!proceduresReady)
-        {
-            if (selection.GenerateApiObject)
-            {
-                WriteOutput($"[Genexus Open API Builder][B054] Etapa de API Object nao executada pelo wizard para Transaction='{transaction.Name}' porque a etapa de Procedures falhou ou foi bloqueada neste fluxo. Nenhum API Object foi criado pelo wizard.");
-            }
-
-            if (selection.ApplyBusinessComponent)
-            {
-                WriteOutput($"[Genexus Open API Builder][B071-B073/B079] REST via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque as Procedures requeridas falharam ou foram bloqueadas neste fluxo.");
-            }
-
-            if (selection.ApplyList)
-            {
-                WriteOutput($"[Genexus Open API Builder][B070] List nao foi aplicado para Transaction='{transaction.Name}' porque a etapa de Procedures falhou ou foi bloqueada neste fluxo.");
-            }
-
-            if (selection.GenerateMetadata)
-            {
-                WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque a etapa de Procedures falhou ou foi bloqueada neste fluxo.");
-            }
-
-            stopwatch.Stop();
-            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
-            return true;
-        }
-
-        var apiObjectReady = true;
-        if (selection.GenerateApiObject && !selection.ApplyBusinessComponent)
-        {
-            apiObjectReady = TryCreateApiObject(
-                knowledgeBase.DesignModel,
-                transaction,
-                apiPlan,
-                "Wizard",
-                report,
-                allowIntentionalContractRefresh: true);
-        }
-        else if (selection.GenerateApiObject && selection.ApplyBusinessComponent)
-        {
-            if (API.GetAll(knowledgeBase.DesignModel).Any(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase)))
-            {
-                WriteOutput($"[Genexus Open API Builder][B054] API Object ja existe para Transaction='{transaction.Name}'. Como B071-B073/B079 tambem foi confirmado, a atualizacao do API Object sera absorvida pelo preflight de Business Component.");
-            }
-            else
-            {
-                apiObjectReady = TryCreateApiObject(
+                businessComponentReady = TryApplyBusinessComponent(
                     knowledgeBase.DesignModel,
                     transaction,
                     apiPlan,
                     "Wizard",
-                    report,
-                    allowIntentionalContractRefresh: true);
+                    allowIntentionalContractRefresh: true,
+                    report: report,
+                    progress: busy.Session,
+                    kbIndex: kbIndexForApply);
             }
-        }
-        else if (selection.ApplyBusinessComponent)
-        {
-            WriteOutput($"[Genexus Open API Builder][B054] Etapa de API Object nao confirmada no wizard para Transaction='{transaction.Name}'. A dependencia sera reencontrada e validada pelo preflight de Business Component.");
-        }
 
-        if (!apiObjectReady)
-        {
-            if (selection.ApplyBusinessComponent)
+            WriteProbePhase("BusinessComponent", phaseWatch.ElapsedMilliseconds);
+            if (!businessComponentReady)
             {
-                WriteOutput($"[Genexus Open API Builder][B071-B073/B079] REST via Business Component nao foi aplicado para Transaction='{transaction.Name}' porque o API Object falhou ou foi bloqueado neste fluxo.");
+                if (selection.GenerateMetadata)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B071-B073/B079 falhou ou foi bloqueado neste fluxo.");
+                }
+
+                stopwatch.Stop();
+                WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
+                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                return true;
             }
 
+            busy.ThrowIfAbortRequested();
+            phaseWatch.Restart();
+            var listReady = true;
             if (selection.ApplyList)
             {
-                WriteOutput($"[Genexus Open API Builder][B070] List nao foi aplicado para Transaction='{transaction.Name}' porque B054 falhou ou foi bloqueado neste fluxo.");
+                listReady = TryApplyList(
+                    knowledgeBase.DesignModel,
+                    transaction,
+                    apiPlan,
+                    "Wizard",
+                    allowIntentionalContractRefresh: true,
+                    report: report,
+                    progress: busy.Session);
             }
 
+            WriteProbePhase("List", phaseWatch.ElapsedMilliseconds);
+            if (!listReady)
+            {
+                if (selection.GenerateMetadata)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B070 falhou ou foi bloqueado neste fluxo.");
+                }
+
+                stopwatch.Stop();
+                WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
+                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                return true;
+            }
+
+            busy.ThrowIfAbortRequested();
+            phaseWatch.Restart();
             if (selection.GenerateMetadata)
             {
-                WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B054 falhou ou foi bloqueado neste fluxo.");
+                busy.Report("Metadata", 0, 0, apiPlan.MetadataFileName);
+                var metaMs = busy.Measure(() =>
+                {
+                    TryWriteMetadataFile(
+                        knowledgeBase.DesignModel,
+                        transaction,
+                        apiPlan,
+                        "Wizard",
+                        allowIntentionalContractRefresh: true,
+                        report: report);
+                });
+                busy.Report("Metadata", 1, 1, apiPlan.MetadataFileName, metaMs);
             }
 
+            WriteProbePhase("Metadata", phaseWatch.ElapsedMilliseconds);
+        }
+        catch (ApiPlanBusyAbortedException abortEx)
+        {
+            WriteOutput($"[Genexus Open API Builder][B082] Apply Wizard abortado: Transaction='{transaction.Name}', Error='{abortEx.Message}'");
+            report.HeadlineOverride = "Aplicação abortada pelo usuário.";
+            report.AddWarning(abortEx.Message);
+            report.AddBlocked("Apply", transaction.Name, "Abortado [B082]");
             stopwatch.Stop();
+            WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
             ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
             return true;
-        }
-
-        var businessComponentReady = true;
-        if (selection.ApplyBusinessComponent)
-        {
-            businessComponentReady = TryApplyBusinessComponent(
-                knowledgeBase.DesignModel,
-                transaction,
-                apiPlan,
-                "Wizard",
-                allowIntentionalContractRefresh: true,
-                report: report);
-        }
-
-        if (!businessComponentReady)
-        {
-            if (selection.GenerateMetadata)
-            {
-                WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B071-B073/B079 falhou ou foi bloqueado neste fluxo.");
-            }
-
-            stopwatch.Stop();
-            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
-            return true;
-        }
-
-        var listReady = true;
-        if (selection.ApplyList)
-        {
-            listReady = TryApplyList(
-                knowledgeBase.DesignModel,
-                transaction,
-                apiPlan,
-                "Wizard",
-                allowIntentionalContractRefresh: true,
-                report: report);
-        }
-
-        if (!listReady)
-        {
-            if (selection.GenerateMetadata)
-            {
-                WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B070 falhou ou foi bloqueado neste fluxo.");
-            }
-
-            stopwatch.Stop();
-            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
-            return true;
-        }
-
-        if (selection.GenerateMetadata)
-        {
-            TryWriteMetadataFile(
-                knowledgeBase.DesignModel,
-                transaction,
-                apiPlan,
-                "Wizard",
-                allowIntentionalContractRefresh: true,
-                report: report);
         }
 
         stopwatch.Stop();
+        WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
         ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
         return true;
+        } // using dialog [B082]
     }
 
     private static bool QueryConfigureWizardContract(CommandData data, ref CommandStatus status)
@@ -1898,6 +2143,11 @@ public sealed class Package : AbstractPackageUI
         }
 
         public IntPtr Handle { get; }
+    }
+
+    private static void WriteProbePhase(string phaseName, long elapsedMs)
+    {
+        WriteOutput($"[Genexus Open API Builder][B082] Fase {phaseName}={elapsedMs} ms.");
     }
 
     private static void WriteOutput(string message)

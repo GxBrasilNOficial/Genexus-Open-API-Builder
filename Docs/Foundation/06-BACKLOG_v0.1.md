@@ -240,7 +240,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 |---|---|---|
 | B080 | Integrar menu/contexto IDE | Alta — atendido em substância (Wizard + preferências); residual cosmético de nome/rótulo |
 | B081 | Exibir relatório final interno | Alta — concluído (código + U15 2026-08-08/09; efeitos colaterais, Folder criado, reuso e dimensões da UI) |
-| B082 | Mostrar tempo execução | Média — **missão de outra sessão**; fora da linha de corte do MVP e **fora do corte `0.1.0-alpha.5`**. Em 2026-08-29 o apply da `Empresa` (107 min) e o Remover (`Deleted=50`, ~32 s) mostraram que tempo sozinho não basta — falta sinal de vida enquanto o thread da UI está bloqueado (`Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`) |
+| B082 | Mostrar tempo execução / sinal de vida | Média — **Fases A+B em código** (2026-08-31): progresso, abort, índice, tempos na Output, aviso de escala, Preview do Remover. Smoke `Tributacao`. **Não concluído**: Fase C (índice na abertura) e D (corte). Fora da linha de corte do MVP e **fora do corte `0.1.0-alpha.5`**. Recado `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`; plano `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`. Não misturar com `B108` |
 | B083 | Detectar conflito antes salvar | Alta — concluído (núcleo no preflight; residual UX nome/tipo/módulo/Folder validado U15 2026-08-08) |
 | B084 | Bloquear overwrite silencioso | Alta — atendido (sem `_v2`) |
 | B085 | Sincronizar com a Transaction usando metadata | Alta — concluído (código + validação U15 2026-08-08; SecurityLevel do Delete no Sync, U15 2026-08-31) |
@@ -445,7 +445,7 @@ Os itens e intervalos abaixo formam a linha de corte exaustiva do MVP. Um item o
 - Fase 7: B080, B081 e B083–B087 (B088 e B089 saem do gate obrigatório da Sprint 7 e ficam pré-Alpha separados; ver nota de 2026-08-07)
 - Fase 8: B090–B093
 
-`B082` fica fora da linha de corte e **estacionado como missão de outra sessão** (não misturar com `0.1.0-alpha.5`): mostrar o tempo de execução é útil, mas não comprova contrato funcional, segurança nem ciclo de vida; a evidência da `Empresa` mostra que falta sinal de vida no thread da UI.
+`B082` fica fora da linha de corte do MVP e fora de `0.1.0-alpha.5`. Fases A+B (progresso/abort/índice) estão em código desde 2026-08-31; Fase C/D e corte pendentes. Não misturar com `B108`. A evidência da `Empresa` (2026-08-29) motivou o sinal de vida no thread da UI.
 
 `B088` e `B089` foram concluídos em 2026-08-10 e não bloqueiam o marco **wizard funcional do MVP** da Sprint 7 revisada.
 

@@ -36,7 +36,9 @@ internal static class ApiPlanListProcedureWriter
         ApiPlan plan,
         bool allowIntentionalContractRefresh,
         IReadOnlyCollection<string>? preserveSdtNames,
-        System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite = null)
+        System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite = null,
+        ApiPlanBusyProgressSession? progress = null,
+        ApiPlanKbObjectNameIndex? kbIndex = null)
     {
         if (model is null) throw new ArgumentNullException(nameof(model));
         if (transaction is null) throw new ArgumentNullException(nameof(transaction));
@@ -46,6 +48,8 @@ internal static class ApiPlanListProcedureWriter
         if (!HasService(plan, "List"))
             throw new InvalidOperationException("B070 bloqueado: o ApiPlan precisa conter List. Nenhuma alteracao foi feita.");
 
+        progress?.Report("List", 0, 0, "Preparando");
+        progress?.PumpAndThrowIfAbortRequested();
         ApiPlanSdtWriter.Preflight(model, transaction, plan);
         var procedure = FindListProcedure(model, plan);
         var api = FindApi(model, plan, allowIntentionalContractRefresh);
@@ -67,10 +71,28 @@ internal static class ApiPlanListProcedureWriter
         ValidateVariableSpecs(model, procedure, procedureVariables);
         ValidateVariableSpecs(model, api, apiVariables);
 
-        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan, preserveSdtNames, onSdtWrite);
+        progress?.PumpAndThrowIfAbortRequested();
+        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan, preserveSdtNames, onSdtWrite, progress, kbIndex);
+        progress?.PumpAndThrowIfAbortRequested();
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
-        SaveApi(model, api, transactionFolder, plan, apiSource, apiVariables);
-        SaveProcedure(model, procedure, source, procedureVariables, rules);
+
+        var saveSteps = new (string Label, System.Action Save)[]
+        {
+            (api.Name, () => SaveApi(model, api, transactionFolder, plan, apiSource, apiVariables)),
+            (procedure.Name, () => SaveProcedure(model, procedure, source, procedureVariables, rules)),
+        };
+        var saveIndex = 0;
+        foreach (var step in saveSteps)
+        {
+            progress?.ThrowIfAbortRequested();
+            saveIndex++;
+            progress?.Report("List", saveIndex, saveSteps.Length, step.Label);
+            progress?.Pump();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            step.Save();
+            sw.Stop();
+            progress?.Report("List", saveIndex, saveSteps.Length, step.Label, sw.ElapsedMilliseconds);
+        }
 
         return new ApiPlanListProcedureWriteResult(
             procedure.Guid,

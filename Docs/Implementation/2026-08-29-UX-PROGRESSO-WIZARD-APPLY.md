@@ -1,7 +1,7 @@
 # Missão estacionada — sinal de vida no Wizard (abertura e apply) e no Remover
 
 Data: 2026-08-29.
-Estado: **missão de outra sessão** (`B082`). A medição do critério 11 **encerrou**; não implementar isto no corte `0.1.0-alpha.5` nem misturar com o fechamento do `B100`.
+Estado: **recado histórico**. Fases A+B do `B082` foram implementadas em 2026-08-31 (`Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`). A medição do critério 11 **encerrou**; não misturar com `B108` nem com o corte `0.1.0-alpha.5` / fechamento do `B100`.
 Correlato de backlog: `B082` (mostrar tempo de execução) — o tempo sozinho não resolve o que foi visto; o usuário precisa de feedback **enquanto** a IDE está bloqueada.
 
 ## O que aconteceu
@@ -19,17 +19,15 @@ O Wizard é `ShowDialog`. Em `Concluir e aplicar` o diálogo fecha (`DialogResul
 
 O `KBModel` da extensão vive nesse thread. Mandar `Save()` para background não é a primeira hipótese — afinidade STA/UI do SDK.
 
-## Abordagem a explorar na sessão seguinte
+## Abordagem (implementada nas Fases A+B)
 
-Sem mudar o contrato de escrita (preflight antes do primeiro `Save()`, mesma ordem de objetos):
+Sem mudar o contrato de escrita (preflight antes do primeiro `Save()`, mesma ordem de objetos). Detalhe e evidência: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
 
-1. Não deixar a IDE “vazia” durante o apply **nem durante o Remover**: ou manter o diálogo aberto até o último `Save()`/`Delete()`, ou abrir um diálogo sempre visível (`Processando… 12/49`), com `Refresh` a cada objeto.
+1. Diálogo de progresso visível durante apply, Sync e Remover (incluindo Preview).
 2. Cursor de espera no owner da IDE.
-3. O mesmo sinal na **abertura** (os ~7 s do `GetAll` / montagem do diálogo).
-4. Aviso honesto no Resumo quando `planejados` for alto: a IDE fica irresponsiva até terminar; não fechar o GeneXus.
-
-Referência de código: `PrototypeWizardDialog.AcceptSelection` (fecha o diálogo) e a sequência de escrita em `Package.cs` após `ShowDialog` retornar OK.
+3. Sinal na abertura do Wizard (tempos na Output; índice na abertura ainda é Fase C).
+4. Aviso no Resumo quando SDTs+Procedures planejados ≥ 25.
 
 ## Fora deste recado
 
-Critério 11 (escala) **fechou** em 2026-08-29: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`. Este arquivo não pede reabrir a medição; só guarda a missão `B082` para outra sessão.
+Critério 11 (escala) **fechou** em 2026-08-29: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`. Este arquivo não pede reabrir a medição.

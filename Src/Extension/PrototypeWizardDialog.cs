@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -227,7 +228,8 @@ internal sealed class PrototypeWizardDialog : Form
             AutoSize = true,
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.RightToLeft,
-            Padding = new Padding(0, 10, 0, 0),
+            WrapContents = false,
+            Padding = new Padding(0, 10, 4, 12),
         };
 
         var next = CreateButton(_texts.Next);
@@ -283,8 +285,9 @@ internal sealed class PrototypeWizardDialog : Form
         {
             Text = text,
             AutoSize = true,
-            MinimumSize = new Size(96, 30),
-            Margin = new Padding(6, 0, 0, 0),
+            MinimumSize = new Size(96, 32),
+            Padding = new Padding(10, 4, 10, 4),
+            Margin = new Padding(6, 4, 0, 8),
         };
     }
 
@@ -2025,7 +2028,9 @@ internal sealed class PrototypeWizardDialog : Form
             ? $"{_texts.Translate("Security Level do Delete")}: {(review.DeleteSecurityLevel ?? review.SecurityLevel)}{Environment.NewLine}"
             : string.Empty;
         var deleteWithdrawalNotice = FormatDeleteWithdrawalNotice();
+        var scaleWarning = FormatScaleWarning();
         _summaryDecisionText.Text =
+            scaleWarning +
             deleteWithdrawalNotice +
             $"Transaction: {contract.TransactionName}{Environment.NewLine}" +
             $"{_texts.Translate("Serviços")}: {string.Join(", ", contract.SelectedServices)}{Environment.NewLine}" +
@@ -2053,6 +2058,7 @@ internal sealed class PrototypeWizardDialog : Form
             $"{_texts.Translate("Estado da geracao")}: {_generationContext}" +
             FormatHierarchicalSummary();
         _summaryEndpointText.Text =
+            scaleWarning +
             deleteWithdrawalNotice +
             FormatEndpoints(review.RestPath, contract.SelectedServices) + Environment.NewLine + Environment.NewLine +
             _texts.Translate("Campos bloqueados ficam visíveis com motivo no fluxo do wizard.") + Environment.NewLine +
@@ -2078,6 +2084,61 @@ internal sealed class PrototypeWizardDialog : Form
         return _texts.Translate("*** DESISTÊNCIA DO DELETE *** A confirmação foi recusada nesta sessão. O serviço Delete foi desmarcado e não será gerado.")
             + Environment.NewLine
             + Environment.NewLine;
+    }
+
+    private const int PlannedWriteWarningThreshold = 25;
+
+    private string FormatScaleWarning()
+    {
+        var planned = 0;
+        if (_generateSdtsCheck.Checked)
+        {
+            planned += TryReadPlannedCount(_cachedGenerationState?.Sdts.Detail);
+        }
+
+        if (_generateProceduresCheck.Checked)
+        {
+            planned += TryReadPlannedCount(_cachedGenerationState?.Procedures.Detail);
+        }
+
+        if (planned < PlannedWriteWarningThreshold)
+        {
+            return string.Empty;
+        }
+
+        return string.Format(
+                System.Globalization.CultureInfo.InvariantCulture,
+                _texts.Translate("AVISO DE ESCALA: esta Transaction planeja {0} objetos (SDTs + Procedures). O Apply pode levar vários minutos. Abortar só para depois do objeto atual; um Save() longo pode congelar a IDE."),
+                planned)
+            + Environment.NewLine
+            + Environment.NewLine;
+    }
+
+    private static int TryReadPlannedCount(string? detail)
+    {
+        if (string.IsNullOrWhiteSpace(detail))
+        {
+            return 0;
+        }
+
+        var text = detail!;
+        const string marker = "planejados=";
+        var start = text.IndexOf(marker, StringComparison.Ordinal);
+        if (start < 0)
+        {
+            return 0;
+        }
+
+        start += marker.Length;
+        var end = start;
+        while (end < text.Length && char.IsDigit(text[end]))
+        {
+            end++;
+        }
+
+        return int.TryParse(text.Substring(start, end - start), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+            ? value
+            : 0;
     }
     private void RefreshCompletionCaption()
     {
