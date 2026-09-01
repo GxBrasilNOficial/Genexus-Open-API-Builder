@@ -681,41 +681,47 @@ public sealed class Package : AbstractPackageUI
             var report = new ApiPlanApplicationFinalReportCollector("Sincronizar", transaction.Name, apiPlan.ApiName);
             var stopwatch = Stopwatch.StartNew();
             AppendPlanWarnings(report, apiPlan);
-            var (syncState, syncKbIndex) = ApiPlanGenerationStateReader.ReadForSyncWithIndex(knowledgeBase.DesignModel, transaction, apiPlan);
-            AppendTransactionFolderWarning(report, syncState);
-            foreach (var preserved in preserveSdts.OrderBy(name => name, StringComparer.OrdinalIgnoreCase))
-            {
-                report.AddWarning($"SDT preservado (Keep): {preserved}.");
-            }
-
-            try
-            {
-                PrototypeWizardBusinessComponentNavigationPolicy.ThrowIfDeleteWithoutBusinessComponent(
-                    apiPlan.Services.Select(service => service.Name),
-                    selection.ApplyBusinessComponent);
-                ApiPlanWritePreflight.ValidateForSync(knowledgeBase.DesignModel, transaction, apiPlan);
-            }
-            catch (Exception ex)
-            {
-                var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
-                WriteOutput($"[Genexus Open API Builder][B085] Sincronizacao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}'");
-                AppendCollisionConflictsToReport(report, syncState.CollectCollisionConflicts());
-                if (!report.HasInterrupted)
-                {
-                    report.AddBlocked("Preflight", "Sync", errorDetail);
-                }
-
-                stopwatch.Stop();
-                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
-                return true;
-            }
-
-            WriteOutput($"[Genexus Open API Builder][B085] Preflight de sincronizacao aprovado. Aplicando para Transaction='{transaction.Name}', ApiName='{apiPlan.ApiName}'.");
 
             try
             {
                 using var busy = ExtensionBusyProgressScope.Show(ResolveFinalReportOwner(), texts.BusyProgressTitleSync, texts);
                 WriteOutput($"[Genexus Open API Builder][B082] Sync iniciado: Transaction='{transaction.Name}'.");
+                var (syncState, syncKbIndex) = ApiPlanGenerationStateReader.ReadForSyncWithIndex(
+                    knowledgeBase.DesignModel,
+                    transaction,
+                    apiPlan,
+                    busy.Session);
+                AppendTransactionFolderWarning(report, syncState);
+                foreach (var preserved in preserveSdts.OrderBy(name => name, StringComparer.OrdinalIgnoreCase))
+                {
+                    report.AddWarning($"SDT preservado (Keep): {preserved}.");
+                }
+
+                busy.Report("Validando", 0, 0, "Preflight");
+                busy.Session.PumpAndThrowIfAbortRequested();
+                try
+                {
+                    PrototypeWizardBusinessComponentNavigationPolicy.ThrowIfDeleteWithoutBusinessComponent(
+                        apiPlan.Services.Select(service => service.Name),
+                        selection.ApplyBusinessComponent);
+                    ApiPlanWritePreflight.ValidateForSync(knowledgeBase.DesignModel, transaction, apiPlan);
+                }
+                catch (Exception ex) when (ex is not ApiPlanBusyAbortedException)
+                {
+                    var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
+                    WriteOutput($"[Genexus Open API Builder][B085] Sincronizacao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}'");
+                    AppendCollisionConflictsToReport(report, syncState.CollectCollisionConflicts());
+                    if (!report.HasInterrupted)
+                    {
+                        report.AddBlocked("Preflight", "Sync", errorDetail);
+                    }
+
+                    stopwatch.Stop();
+                    ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                    return true;
+                }
+
+                WriteOutput($"[Genexus Open API Builder][B085] Preflight de sincronizacao aprovado. Aplicando para Transaction='{transaction.Name}', ApiName='{apiPlan.ApiName}'.");
 
                 if (!TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", preserveSdts, report, busy.Session, syncKbIndex))
                 {
@@ -1259,101 +1265,106 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria. GenerateSdts={selection.GenerateSdts}, GenerateProcedures={selection.GenerateProcedures}, GenerateApiObject={selection.GenerateApiObject}, GenerateMetadata={selection.GenerateMetadata}, ApplyList={selection.ApplyList}, ApplyBusinessComponent={selection.ApplyBusinessComponent}; escritas confirmadas no wizard exigem preflight completo antes de qualquer Save().");
         var applyFromConfirm = Stopwatch.StartNew();
         var phaseWatch = Stopwatch.StartNew();
-        var (generationState, kbIndexForApply) = ApiPlanGenerationStateReader.ReadForIntentionalChangeWithIndex(knowledgeBase.DesignModel, transaction, apiPlan);
-        WriteProbePhase("IndiceKb", phaseWatch.ElapsedMilliseconds);
-        WriteApiObjectBaselineDiagnostic(generationState);
-        var preflightScope = ApiPlanWritePreflightScope.FromSelection(
-            selection.GenerateSdts,
-            selection.GenerateProcedures,
-            selection.GenerateApiObject,
-            selection.GenerateMetadata,
-            selection.ApplyList,
-            selection.ApplyBusinessComponent);
-        var blockedGenerationStages = new[]
-            {
-                preflightScope.RequireSdts ? generationState.Sdts : null,
-                preflightScope.RequireProcedures ? generationState.Procedures : null,
-                preflightScope.RequireApiObject ? generationState.ApiObject : null,
-                preflightScope.RequireMetadataFile ? generationState.MetadataFile : null,
-            }
-            .Where(stage => stage is not null)
-            .Cast<ApiPlanGenerationStageState>()
-            .Where(stage => stage.IsBlocked)
-            .ToArray();
-        if (blockedGenerationStages.Length > 0)
-        {
-            var collisions = generationState.CollectCollisionConflicts(
-                preflightScope.RequireSdts,
-                preflightScope.RequireProcedures,
-                preflightScope.RequireApiObject,
-                preflightScope.RequireMetadataFile);
-            var collisionText = collisions.Count == 0
-                ? string.Empty
-                : Environment.NewLine + ApiPlanCollisionConflict.FormatList(collisions);
-            WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Estado bloqueado detectado no wizard antes de confirmar escrita: Transaction='{transaction.Name}', BlockedStages='{string.Join(",", blockedGenerationStages.Select(stage => stage.StageName))}', Details='{string.Join(" | ", blockedGenerationStages.Select(stage => stage.Detail))}'{collisionText}. Nenhum Save foi solicitado.");
-        }
-        if (!selection.GenerateSdts && !selection.GenerateProcedures && !selection.GenerateApiObject && !selection.GenerateMetadata && !selection.ApplyList && !selection.ApplyBusinessComponent)
-        {
-            WriteOutput($"[Genexus Open API Builder][B040-B046/B060] Nenhuma etapa de escrita foi confirmada no wizard para Transaction='{transaction.Name}'. Nenhuma escrita foi solicitada.");
-            return true;
-        }
-
+        var applyOwner = ResolveFinalReportOwner();
         var report = new ApiPlanApplicationFinalReportCollector("Wizard", transaction.Name, apiPlan.ApiName);
         var stopwatch = Stopwatch.StartNew();
-        AppendPlanWarnings(report, apiPlan);
-        AppendTransactionFolderWarning(report, generationState);
-        foreach (var stage in new[] { generationState.Sdts, generationState.Procedures, generationState.ApiObject, generationState.MetadataFile }
-            .Where(stage => stage.IsBlocked))
-        {
-            report.AddWarning($"Etapa '{stage.StageName}' bloqueada na KB: {stage.Detail}");
-        }
-
-        AppendCollisionConflictsToReport(
-            report,
-            generationState.CollectCollisionConflicts(
-                preflightScope.RequireSdts,
-                preflightScope.RequireProcedures,
-                preflightScope.RequireApiObject,
-                preflightScope.RequireMetadataFile));
-
-        phaseWatch.Restart();
-        try
-        {
-            PrototypeWizardBusinessComponentNavigationPolicy.ThrowIfDeleteWithoutBusinessComponent(
-                apiPlan.Services.Select(service => service.Name),
-                selection.ApplyBusinessComponent);
-            ApiPlanWritePreflight.ValidateForIntentionalChange(
-                knowledgeBase.DesignModel,
-                transaction,
-                apiPlan,
-                preflightScope.RequireSdts,
-                preflightScope.RequireProcedures,
-                preflightScope.RequireApiObject,
-                preflightScope.RequireMetadataFile);
-        }
-        catch (Exception ex)
-        {
-            WriteProbePhase("PreflightAgregado", phaseWatch.ElapsedMilliseconds);
-            WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Preflight agregado bloqueou o wizard antes do primeiro Save(): Transaction='{transaction.Name}', Error='{ex.Message}'");
-            if (!report.HasInterrupted)
-            {
-                report.AddBlocked("Preflight", "B063/B064/B067", ex.Message);
-            }
-
-            stopwatch.Stop();
-            WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
-            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
-            return true;
-        }
-
-        WriteProbePhase("PreflightAgregado", phaseWatch.ElapsedMilliseconds);
-        WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Preflight agregado aprovado antes do primeiro Save(): Transaction='{transaction.Name}', ConflictMode='{apiPlan.ConflictMode}', ReexecutionMode='{apiPlan.ReexecutionMode}'.");
-
-        var applyOwner = ResolveFinalReportOwner();
         try
         {
             using var busy = ExtensionBusyProgressScope.Show(applyOwner, texts.BusyProgressTitleApply, texts);
             WriteOutput($"[Genexus Open API Builder][B082] Apply Wizard iniciado: Transaction='{transaction.Name}'.");
+            var (generationState, kbIndexForApply) = ApiPlanGenerationStateReader.ReadForIntentionalChangeWithIndex(
+                knowledgeBase.DesignModel,
+                transaction,
+                apiPlan,
+                busy.Session);
+            WriteProbePhase("IndiceKb", phaseWatch.ElapsedMilliseconds);
+            WriteApiObjectBaselineDiagnostic(generationState);
+            var preflightScope = ApiPlanWritePreflightScope.FromSelection(
+                selection.GenerateSdts,
+                selection.GenerateProcedures,
+                selection.GenerateApiObject,
+                selection.GenerateMetadata,
+                selection.ApplyList,
+                selection.ApplyBusinessComponent);
+            var blockedGenerationStages = new[]
+                {
+                    preflightScope.RequireSdts ? generationState.Sdts : null,
+                    preflightScope.RequireProcedures ? generationState.Procedures : null,
+                    preflightScope.RequireApiObject ? generationState.ApiObject : null,
+                    preflightScope.RequireMetadataFile ? generationState.MetadataFile : null,
+                }
+                .Where(stage => stage is not null)
+                .Cast<ApiPlanGenerationStageState>()
+                .Where(stage => stage.IsBlocked)
+                .ToArray();
+            if (blockedGenerationStages.Length > 0)
+            {
+                var collisions = generationState.CollectCollisionConflicts(
+                    preflightScope.RequireSdts,
+                    preflightScope.RequireProcedures,
+                    preflightScope.RequireApiObject,
+                    preflightScope.RequireMetadataFile);
+                var collisionText = collisions.Count == 0
+                    ? string.Empty
+                    : Environment.NewLine + ApiPlanCollisionConflict.FormatList(collisions);
+                WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Estado bloqueado detectado no wizard antes de confirmar escrita: Transaction='{transaction.Name}', BlockedStages='{string.Join(",", blockedGenerationStages.Select(stage => stage.StageName))}', Details='{string.Join(" | ", blockedGenerationStages.Select(stage => stage.Detail))}'{collisionText}. Nenhum Save foi solicitado.");
+            }
+            if (!selection.GenerateSdts && !selection.GenerateProcedures && !selection.GenerateApiObject && !selection.GenerateMetadata && !selection.ApplyList && !selection.ApplyBusinessComponent)
+            {
+                WriteOutput($"[Genexus Open API Builder][B040-B046/B060] Nenhuma etapa de escrita foi confirmada no wizard para Transaction='{transaction.Name}'. Nenhuma escrita foi solicitada.");
+                return true;
+            }
+
+            AppendPlanWarnings(report, apiPlan);
+            AppendTransactionFolderWarning(report, generationState);
+            foreach (var stage in new[] { generationState.Sdts, generationState.Procedures, generationState.ApiObject, generationState.MetadataFile }
+                .Where(stage => stage.IsBlocked))
+            {
+                report.AddWarning($"Etapa '{stage.StageName}' bloqueada na KB: {stage.Detail}");
+            }
+
+            AppendCollisionConflictsToReport(
+                report,
+                generationState.CollectCollisionConflicts(
+                    preflightScope.RequireSdts,
+                    preflightScope.RequireProcedures,
+                    preflightScope.RequireApiObject,
+                    preflightScope.RequireMetadataFile));
+
+            busy.Report("Validando", 0, 0, "Preflight");
+            busy.Session.PumpAndThrowIfAbortRequested();
+            phaseWatch.Restart();
+            try
+            {
+                PrototypeWizardBusinessComponentNavigationPolicy.ThrowIfDeleteWithoutBusinessComponent(
+                    apiPlan.Services.Select(service => service.Name),
+                    selection.ApplyBusinessComponent);
+                ApiPlanWritePreflight.ValidateForIntentionalChange(
+                    knowledgeBase.DesignModel,
+                    transaction,
+                    apiPlan,
+                    preflightScope.RequireSdts,
+                    preflightScope.RequireProcedures,
+                    preflightScope.RequireApiObject,
+                    preflightScope.RequireMetadataFile);
+            }
+            catch (Exception ex) when (ex is not ApiPlanBusyAbortedException)
+            {
+                WriteProbePhase("PreflightAgregado", phaseWatch.ElapsedMilliseconds);
+                WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Preflight agregado bloqueou o wizard antes do primeiro Save(): Transaction='{transaction.Name}', Error='{ex.Message}'");
+                if (!report.HasInterrupted)
+                {
+                    report.AddBlocked("Preflight", "B063/B064/B067", ex.Message);
+                }
+
+                stopwatch.Stop();
+                WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
+                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                return true;
+            }
+
+            WriteProbePhase("PreflightAgregado", phaseWatch.ElapsedMilliseconds);
+            WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Preflight agregado aprovado antes do primeiro Save(): Transaction='{transaction.Name}', ConflictMode='{apiPlan.ConflictMode}', ReexecutionMode='{apiPlan.ReexecutionMode}'.");
 
             phaseWatch.Restart();
             var sdtsReady = true;

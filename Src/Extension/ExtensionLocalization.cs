@@ -228,6 +228,92 @@ internal sealed class ExtensionTexts
         _ => "Last item: {0} ms",
     };
 
+    public string BusyProgressStageLabel(string stage)
+    {
+        if (string.IsNullOrWhiteSpace(stage))
+        {
+            return stage;
+        }
+
+        const string removingPrefix = "Removendo ";
+        if (stage.StartsWith(removingPrefix, StringComparison.Ordinal))
+        {
+            var kind = BusyProgressStageLabel(stage.Substring(removingPrefix.Length));
+            return Language switch
+            {
+                ExtensionLanguage.PortugueseBrazil => "Removendo " + kind,
+                ExtensionLanguage.Spanish => "Eliminando " + kind,
+                _ => "Removing " + kind,
+            };
+        }
+
+        return stage switch
+        {
+            "Preferências" => Language switch
+            {
+                ExtensionLanguage.Spanish => "Preferencias",
+                ExtensionLanguage.English => "Preferences",
+                _ => stage,
+            },
+            "Contrato" => Language == ExtensionLanguage.English ? "Contract" : stage,
+            "Interface" => Language switch
+            {
+                ExtensionLanguage.Spanish => "Interfaz",
+                ExtensionLanguage.English => "Interface",
+                _ => stage,
+            },
+            "Validando" => Language == ExtensionLanguage.English ? "Validating" : stage,
+            _ => stage,
+        };
+    }
+
+    public string BusyProgressItemLabel(string itemName)
+    {
+        if (string.IsNullOrWhiteSpace(itemName))
+        {
+            return itemName;
+        }
+
+        if (string.Equals(itemName, "Indexando objetos", StringComparison.Ordinal))
+        {
+            return Language switch
+            {
+                ExtensionLanguage.Spanish => "Indexando objetos",
+                ExtensionLanguage.English => "Indexing objects",
+                _ => itemName,
+            };
+        }
+
+        if (string.Equals(itemName, "Preparando", StringComparison.Ordinal))
+        {
+            return Language == ExtensionLanguage.English ? "Preparing" : itemName;
+        }
+
+        if (string.Equals(itemName, "Preflight", StringComparison.Ordinal))
+        {
+            return Language switch
+            {
+                ExtensionLanguage.PortugueseBrazil => "Pré-verificação",
+                ExtensionLanguage.Spanish => "Comprobación previa",
+                _ => "Preflight",
+            };
+        }
+
+        const string preflightPrefix = "Preflight ";
+        if (itemName.StartsWith(preflightPrefix, StringComparison.Ordinal))
+        {
+            var rest = itemName.Substring(preflightPrefix.Length);
+            return Language switch
+            {
+                ExtensionLanguage.PortugueseBrazil => "Pré-verificação " + rest,
+                ExtensionLanguage.Spanish => "Comprobación previa " + rest,
+                _ => "Preflight " + rest,
+            };
+        }
+
+        return itemName;
+    }
+
     public string RoleLabel(string role)
     {
         return ExtensionUiTerms.RoleLabel(Language, role);

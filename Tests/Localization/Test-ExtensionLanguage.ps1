@@ -74,5 +74,10 @@ Assert-Contains $localization 'A marked Delete requires Get, Create, and Update 
 Assert-Contains $localization 'Delete marcado exige Get, Create y Update en los servicios predeterminados. Marque los tres o desmarque Delete.' 'O catálogo deve recusar Delete sozinho nas preferências em espanhol.'
 Assert-Contains $finalReport '_texts.Translate("Objeto principal ''{0}'' não foi encontrado na KB.")' 'O erro de objeto ausente deve passar pelo catálogo.'
 Assert-Contains $finalReport '_texts.Translate("Não foi possível abrir o objeto principal: {0}")' 'O erro de abertura deve passar pelo catálogo.'
+Assert-Contains $localization 'BusyProgressStageLabel' 'A casca B082 deve localizar o rótulo de etapa.'
+Assert-Contains $localization 'BusyProgressItemLabel' 'A casca B082 deve localizar o item de progresso.'
+Assert-Contains $localization 'Indexing objects' 'A casca B082 em inglês não deve mostrar Indexando objetos.'
+Assert-Contains $localization 'Preferences' 'A casca B082 em inglês deve traduzir Preferências.'
+Assert-Contains $localization 'Eliminando ' 'A casca B082 em espanhol deve traduzir Removendo.'
 
 Write-Output 'PASS: ExtensionLanguage'

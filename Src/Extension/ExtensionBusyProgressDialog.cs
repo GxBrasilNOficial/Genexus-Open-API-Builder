@@ -29,12 +29,14 @@ internal sealed class ExtensionBusyProgressDialog : Form
     private readonly ProgressBar _bar;
     private readonly Button _abortButton;
     private readonly ApiPlanBusyProgressSession _session;
+    private readonly ExtensionTexts _texts;
     private readonly string _lastItemMsFormat;
     private bool _abortArmed;
 
     public ExtensionBusyProgressDialog(string title, ExtensionTexts texts, ApiPlanBusyProgressSession session)
     {
         _session = session ?? throw new ArgumentNullException(nameof(session));
+        _texts = texts ?? throw new ArgumentNullException(nameof(texts));
         _lastItemMsFormat = texts.BusyProgressLastItemMs;
 
         Text = title ?? "Genexus Open API Builder";
@@ -155,21 +157,23 @@ internal sealed class ExtensionBusyProgressDialog : Form
             return;
         }
 
-        _stageLabel.Text = string.IsNullOrWhiteSpace(update.Stage)
+        var stageText = _texts.BusyProgressStageLabel(update.Stage);
+        var itemText = _texts.BusyProgressItemLabel(update.ItemName);
+        _stageLabel.Text = string.IsNullOrWhiteSpace(stageText)
             ? string.Empty
-            : update.Stage;
+            : stageText;
 
         if (update.Total > 0)
         {
             _bar.Style = ProgressBarStyle.Continuous;
             _bar.Maximum = Math.Max(update.Total, 1);
             _bar.Value = Math.Max(0, Math.Min(update.Current, _bar.Maximum));
-            _itemLabel.Text = $"{update.Current}/{update.Total}  {update.ItemName}";
+            _itemLabel.Text = $"{update.Current}/{update.Total}  {itemText}";
         }
         else
         {
             _bar.Style = ProgressBarStyle.Marquee;
-            _itemLabel.Text = update.ItemName;
+            _itemLabel.Text = itemText;
         }
 
         _timingLabel.Text = update.ElapsedMs >= 0

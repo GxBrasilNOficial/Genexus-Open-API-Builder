@@ -69,7 +69,13 @@ Assert-Contains $stateSource 'ApiPlanTransactionFolder.CreateReuseWarning(apiPla
 Assert-Contains $stateSource 'TransactionFolderWarning' 'O estado deve transportar o aviso para o relatorio final.'
 
 Assert-Contains $packageSource 'AppendTransactionFolderWarning(report, generationState);' 'Wizard/Sync devem propagar o aviso ao relatorio B081.'
-Assert-Contains $packageSource 'ReadForSyncWithIndex(knowledgeBase.DesignModel, transaction, apiPlan)' 'Sync deve validar o Folder no contenedor da Transaction.'
+Assert-Contains $packageSource 'ReadForSyncWithIndex(' 'Sync deve validar o Folder no contenedor da Transaction.'
+$packageNorm = $packageSource.Replace("`r`n", "`n")
+$syncShell = $packageNorm.IndexOf('BusyProgressTitleSync', [StringComparison]::Ordinal)
+$syncIndex = $packageNorm.IndexOf('ReadForSyncWithIndex(', [StringComparison]::Ordinal)
+if ($syncShell -lt 0 -or $syncIndex -lt 0 -or $syncShell -gt $syncIndex) {
+    throw 'ASSERT_FAILED: a casca do Sync deve abrir antes do índice da KB.'
+}
 Assert-Contains $metadataSource '"wasCreated"] = apiPlan.TransactionFolderWasCreated' 'Metadata deve continuar persistindo wasCreated.'
 
 Write-Output 'PASS: ApiPlanTransactionFolderReusePolicy'

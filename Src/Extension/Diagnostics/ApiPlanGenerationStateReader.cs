@@ -31,9 +31,10 @@ internal static class ApiPlanGenerationStateReader
     public static (ApiPlanGenerationState State, ApiPlanKbObjectNameIndex Index) ReadForIntentionalChangeWithIndex(
         KBModel designModel,
         Transaction transaction,
-        ApiPlan apiPlan)
+        ApiPlan apiPlan,
+        ApiPlanBusyProgressSession? progress = null)
     {
-        var index = ApiPlanKbObjectNameIndex.Create(designModel);
+        var index = ApiPlanKbObjectNameIndex.Create(designModel, progress);
         var state = Read(designModel, transaction, apiPlan, forSyncContractRefresh: true, index);
         return (state, index);
     }
@@ -41,9 +42,10 @@ internal static class ApiPlanGenerationStateReader
     public static (ApiPlanGenerationState State, ApiPlanKbObjectNameIndex Index) ReadForSyncWithIndex(
         KBModel designModel,
         Transaction transaction,
-        ApiPlan apiPlan)
+        ApiPlan apiPlan,
+        ApiPlanBusyProgressSession? progress = null)
     {
-        return ReadForIntentionalChangeWithIndex(designModel, transaction, apiPlan);
+        return ReadForIntentionalChangeWithIndex(designModel, transaction, apiPlan, progress);
     }
 
     private static ApiPlanGenerationState Read(KBModel designModel, Transaction transaction, ApiPlan apiPlan, bool forSyncContractRefresh)
