@@ -648,7 +648,30 @@ public sealed class Package : AbstractPackageUI
 
         try
         {
-            var preview = ApiPlanTransactionSyncOrchestrator.Preview(knowledgeBase.DesignModel, transaction);
+            var owner = ResolveFinalReportOwner();
+            ApiPlanTransactionSyncPreview preview;
+            using (var loading = ExtensionBusyProgressScope.Show(owner, texts.BusyProgressTitleLoadingSync, texts))
+            {
+                var previewWatch = Stopwatch.StartNew();
+                try
+                {
+                    var kbIndex = ApiPlanKbObjectNameIndex.Create(knowledgeBase.DesignModel, loading.Session);
+                    preview = ApiPlanTransactionSyncOrchestrator.Preview(
+                        knowledgeBase.DesignModel,
+                        transaction,
+                        loading.Session,
+                        kbIndex);
+                }
+                catch (ApiPlanBusyAbortedException abortEx)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B082] Sync preview abortado: Transaction='{transaction.Name}', Error='{abortEx.Message}'");
+                    return true;
+                }
+
+                previewWatch.Stop();
+                WriteOutput($"[Genexus Open API Builder][B082] Sync PreviewMs={previewWatch.ElapsedMilliseconds}.");
+            }
+
             WriteOutput($"[Genexus Open API Builder][B085] Diff para Transaction='{transaction.Name}':{Environment.NewLine}{preview.Diff.BuildSummary()}");
             if (preview.SdtConflicts.Count > 0)
             {
@@ -668,7 +691,9 @@ public sealed class Package : AbstractPackageUI
             }
 
             using var dialog = new ApiPlanTransactionSyncDialog(preview, texts);
-            var dialogResult = dialog.ShowDialog();
+            var dialogResult = owner is null
+                ? dialog.ShowDialog()
+                : dialog.ShowDialog(owner);
             if (dialogResult != System.Windows.Forms.DialogResult.OK || dialog.Choices is null || dialog.Choices.Cancel)
             {
                 WriteOutput($"[Genexus Open API Builder][B085] Sincronizacao cancelada pelo usuario para Transaction='{transaction.Name}'. Nenhuma alteracao foi feita na KB.");

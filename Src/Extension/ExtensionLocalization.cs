@@ -221,6 +221,13 @@ internal sealed class ExtensionTexts
         _ => "Genexus Open API Builder — Preparing removal",
     };
 
+    public string BusyProgressTitleLoadingSync => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Genexus Open API Builder — Preparando sincronização",
+        ExtensionLanguage.Spanish => "Genexus Open API Builder — Preparando sincronización",
+        _ => "Genexus Open API Builder — Preparing synchronization",
+    };
+
     public string BusyProgressLastItemMs => Language switch
     {
         ExtensionLanguage.PortugueseBrazil => "Último item: {0} ms",
@@ -263,6 +270,18 @@ internal sealed class ExtensionTexts
                 _ => stage,
             },
             "Validando" => Language == ExtensionLanguage.English ? "Validating" : stage,
+            "Metadata" => Language switch
+            {
+                ExtensionLanguage.Spanish => "Metadatos",
+                ExtensionLanguage.English => "Metadata",
+                _ => stage,
+            },
+            "Diff" => Language switch
+            {
+                ExtensionLanguage.PortugueseBrazil => "Comparação",
+                ExtensionLanguage.Spanish => "Comparación",
+                _ => stage,
+            },
             _ => stage,
         };
     }
@@ -308,6 +327,16 @@ internal sealed class ExtensionTexts
                 ExtensionLanguage.PortugueseBrazil => "Pré-verificação " + rest,
                 ExtensionLanguage.Spanish => "Comprobación previa " + rest,
                 _ => "Preflight " + rest,
+            };
+        }
+
+        if (string.Equals(itemName, "Conflitos", StringComparison.Ordinal))
+        {
+            return Language switch
+            {
+                ExtensionLanguage.Spanish => "Conflictos",
+                ExtensionLanguage.English => "Conflicts",
+                _ => itemName,
             };
         }
 

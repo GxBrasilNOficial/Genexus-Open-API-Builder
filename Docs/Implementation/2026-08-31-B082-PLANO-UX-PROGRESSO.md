@@ -52,13 +52,13 @@ Fora de escopo imediato: multi-threading de escrita; cancelar um `Save()` SDK no
 
 **Validação `Tributacao` / FabricaBrasil18Test (2026-08-31):** Apply completo após índice: criar 27 SDTs ~17 s; reencontro ~21 s; BC+List ~110 s (regrava SDTs). Remover: Preview ~10 s sem casca (corrigido nesta DLL); Delete 33 itens ~33,5 s. Abort no preflight: KB intacta.
 
-**Smoke `Empresa` / `Gx_FabricaBrasil` (2026-08-31, Output da IDE):** abertura `total ate ShowDialog=6401` ms (`PrefsMs=24`, `ContratoMs=1404`, `InterfaceMs=4770`). Apply Wizard List/Get/Create/Update + List + BC, sem Delete: `IndiceKb=2394`, `PreflightAgregado=2160`, `SDTs=35436` (Created=44, Reencountered=3), `Procedures=3224` (Created=4), `ApiObject=10483`, `BusinessComponent=78891`, `List=95867`, `Metadata=22733`, `TotalAposConcluir=251459`. B081: `SuccessWithWarnings`, Criados=51, Atualizados=3, Bloqueados=0, `DuraçãoMs=249062` (~4,2 min; o apply mudo de 2026-08-29 na mesma Transaction tinha sido ~107 min). Aviso único: fallback de descrições em inglês.
+**Smoke `Empresa` / `Gx_FabricaBrasil` (2026-08-31 Apply; 2026-09-01 Sync e Remover Preview):** abertura `6401` ms; Apply ~4,2 min (`DuraçãoMs=249062`, Criados=51, Bloqueados=0). Sync: casca **Preparando sincronização** antes do relatório; `PreviewMs=5089`; diff `Inalterados: 221`; KB intacta; B081 `Nenhuma sincronizacao necessaria`. Remover: casca **Preparando remoção**; `PreviewMs=2525`; plano 4 Procedures + 44 SDTs; usuário **Não**; `Remocao cancelada`; KB intacta.
 
 ### Fora da fila operacional
 
-Abertura ainda passa de 5 s. Na `Empresa`, a maior fatia foi `InterfaceMs=4770` (montagem do diálogo); `ContratoMs=1404` lê o contrato existente (`PrototypeWizardContractReader` / `GetAll` próprios da abertura). **Não** há `ApiPlanKbObjectNameIndex` nesse caminho — o índice único começa no Apply (`IndiceKb`) e no Preview do Remover.
+Abertura ainda passa de 5 s. Na `Empresa`, a maior fatia foi `InterfaceMs=4770` (montagem do diálogo); `ContratoMs=1404` lê o contrato existente (`PrototypeWizardContractReader` / `GetAll` próprios da abertura). O índice único começa no Apply (`IndiceKb`), no Preview do Remover e no Preview do Sync. A abertura do Wizard continua sem esse índice (`ContratoMs` / `InterfaceMs`).
 
-`GetAll` residual depois do índice (não é a próxima ação): `ApiPlanApiObjectWriter`, `ApiPlanMetadataFileWriter`, writers BC/List, e o `Remove()` efetivo (`kbIndex: null` + `GetAll` por `Delete` e checagem pós-`Delete`). Preview do Remover e preflight/Apply de SDT/Procedure já reutilizam o índice.
+`GetAll` residual depois do índice (não é a próxima ação): `ApiPlanApiObjectWriter`, `ApiPlanMetadataFileWriter`, writers BC/List, e o `Remove()` efetivo (`kbIndex: null` + `GetAll` por `Delete` e checagem pós-`Delete`). Preview do Remover, Preview do Sync e preflight/Apply de SDT/Procedure já reutilizam o índice.
 
 Isso **não** é a próxima ação de código (`B108`).
 
@@ -100,7 +100,7 @@ O Remover exige `api{Transaction}_Metadata`. Abort no meio dos SDTs deixa objeto
 
 ### 4.6 Rodapé dos diálogos
 
-`Dock.Fill` ignora `Form.Padding`. O quadro de progresso usa um `Panel` com padding; Wizard e relatório B081 têm margem inferior na faixa de botões. O Preview do Remover abre a mesma casca de progresso **antes** do Sim (índice da KB + validação), com `PreviewMs` no Output.
+`Dock.Fill` ignora `Form.Padding`. O quadro de progresso usa um `Panel` com padding; Wizard e relatório B081 têm margem inferior na faixa de botões. O Preview do Remover e o Preview do Sync abrem a mesma casca de progresso **antes** da confirmação (índice da KB + validação), com `PreviewMs` no Output.
 
 ---
 
@@ -124,7 +124,7 @@ O Remover exige `api{Transaction}_Metadata`. Abort no meio dos SDTs deixa objeto
 3. Abortar interrompe antes do próximo objeto (com aviso de inconsistência).
 4. Abertura do Wizard > 5 s mostra “carregando” (Fase B).
 5. Relatório final B081/B063 mantém duração total; Output registra ms por item da sonda até consolidar.
-6. Preview do Remover mostra casca de progresso antes do Sim; Cancelar/Abortar/Fechar não colam no bordo da janela.
+6. Preview do Remover e Preview do Sync mostram casca de progresso antes da confirmação; Cancelar/Abortar/Fechar não colam no bordo da janela.
 
 ---
 

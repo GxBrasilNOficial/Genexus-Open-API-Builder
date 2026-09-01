@@ -71,6 +71,12 @@ Assert-Contains $stateSource 'TransactionFolderWarning' 'O estado deve transport
 Assert-Contains $packageSource 'AppendTransactionFolderWarning(report, generationState);' 'Wizard/Sync devem propagar o aviso ao relatorio B081.'
 Assert-Contains $packageSource 'ReadForSyncWithIndex(' 'Sync deve validar o Folder no contenedor da Transaction.'
 $packageNorm = $packageSource.Replace("`r`n", "`n")
+$syncPreviewShell = $packageNorm.IndexOf('BusyProgressTitleLoadingSync', [StringComparison]::Ordinal)
+$syncPreview = $packageNorm.IndexOf('ApiPlanTransactionSyncOrchestrator.Preview(', [StringComparison]::Ordinal)
+if ($syncPreviewShell -lt 0 -or $syncPreview -lt 0 -or $syncPreviewShell -gt $syncPreview) {
+    throw 'ASSERT_FAILED: a casca do Preview do Sync deve abrir antes de montar o diff.'
+}
+Assert-Contains $packageSource 'Sync PreviewMs=' 'O Preview do Sync deve registrar duracao na Output.'
 $syncShell = $packageNorm.IndexOf('BusyProgressTitleSync', [StringComparison]::Ordinal)
 $syncIndex = $packageNorm.IndexOf('ReadForSyncWithIndex(', [StringComparison]::Ordinal)
 if ($syncShell -lt 0 -or $syncIndex -lt 0 -or $syncShell -gt $syncIndex) {

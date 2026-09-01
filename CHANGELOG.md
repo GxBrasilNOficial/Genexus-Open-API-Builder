@@ -14,7 +14,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 - `B082` (Fases A+B, 2026-08-31): quadro de progresso na abertura do Wizard, Apply, Sync e Remover (Preview antes do Sim); Abortar cooperativo; índice da KB; tempos `[B082] Fase` na Output; aviso de escala no Resumo. Smoke `Tributacao` e, no mesmo dia, `Empresa` (`Gx_FabricaBrasil`): abertura `6401` ms (`InterfaceMs=4770`); Apply `SuccessWithWarnings`, Criados=51, Atualizados=3, Bloqueados=0, `DuraçãoMs=249062` (~4,2 min; BC `78891` ms, List `95867` ms). Registro: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`. Fora da próxima ação (`B108`).
 - Casca B082: etapas internas (`Preferências`, `Indexando objetos`, `Removendo`, `Pré-verificação`) passam a seguir o idioma da IDE; writers e Output `[B082]` inalterados.
-- Casca B082 no Apply/Sync: o quadro abre **antes** do índice da KB e do preflight agregado; o primeiro `Save()` continua só depois do preflight.
+- Casca B082 no Preview do Sync (2026-09-01): quadro **antes** do diálogo/relatório, índice da KB, `Sync PreviewMs` na Output. Smoke `Empresa`: `PreviewMs=5089`, diff vazio, KB intacta. Remover Preview na mesma Transaction: `PreviewMs=2525`, cancelado com Não.
 
 ### Planned
 

@@ -16,7 +16,14 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanTransactionSyncOrchestrator
 {
-    public static ApiPlanTransactionSyncPreview Preview(KBModel designModel, Transaction transaction)
+    public static ApiPlanTransactionSyncPreview Preview(KBModel designModel, Transaction transaction) =>
+        Preview(designModel, transaction, progress: null, kbIndex: null);
+
+    public static ApiPlanTransactionSyncPreview Preview(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlanBusyProgressSession? progress,
+        ApiPlanKbObjectNameIndex? kbIndex)
     {
         if (designModel is null)
         {
@@ -28,10 +35,16 @@ internal static class ApiPlanTransactionSyncOrchestrator
             throw new ArgumentNullException(nameof(transaction));
         }
 
-        var metadataFile = FindOwnedMetadataFile(designModel, $"api{transaction.Name}_Metadata", transaction.Name);
+        var metadataFileName = $"api{transaction.Name}_Metadata";
+        progress?.Report("Metadata", 0, 0, metadataFileName);
+        progress?.PumpAndThrowIfAbortRequested();
+        var metadataFile = FindOwnedMetadataFile(designModel, metadataFileName, transaction.Name, kbIndex);
         var metadata = ParseMetadata(metadataFile);
         RequireOwnership(metadata, transaction);
         var metadataStructure = ReadMetadataStructure(metadata);
+        progress?.ThrowIfAbortRequested();
+        progress?.Report("Contrato", 0, 0, transaction.Name);
+        progress?.Pump();
         var snapshot = PrototypeWizardContractReader.Read(transaction);
         ApiPlanLevel? currentHierarchicalRoot = null;
         if (ApiPlanMetadataLevelsCodec.HasHierarchicalLevels(metadata))
@@ -39,9 +52,15 @@ internal static class ApiPlanTransactionSyncOrchestrator
             currentHierarchicalRoot = TransactionStructureReader.Read(transaction).RootLevel;
         }
 
+        progress?.ThrowIfAbortRequested();
+        progress?.Report("Diff", 0, 0, transaction.Name);
+        progress?.Pump();
         var currentStructure = BuildCurrentStructure(currentHierarchicalRoot, metadata, snapshot);
         var diff = ApiPlanTransactionSyncComparer.Compare(metadataStructure, currentStructure);
-        var sdtConflicts = DetectSdtConflicts(designModel, metadata);
+        progress?.ThrowIfAbortRequested();
+        progress?.Report("SDT", 0, 0, "Conflitos");
+        progress?.Pump();
+        var sdtConflicts = DetectSdtConflicts(designModel, metadata, kbIndex);
         return new ApiPlanTransactionSyncPreview(
             transaction.Name,
             metadata,
@@ -374,7 +393,10 @@ internal static class ApiPlanTransactionSyncOrchestrator
         return resolved;
     }
 
-    private static IReadOnlyList<ApiPlanTransactionSyncSdtConflict> DetectSdtConflicts(KBModel designModel, JObject metadata)
+    private static IReadOnlyList<ApiPlanTransactionSyncSdtConflict> DetectSdtConflicts(
+        KBModel designModel,
+        JObject metadata,
+        ApiPlanKbObjectNameIndex? kbIndex)
     {
         // B099b/Fase 7: metadata hierárquica grava campos flat no cabeçalho; comparar
         // membros do SDT raiz contra esse snapshot produz falso positivo nos três contratos.
@@ -384,15 +406,16 @@ internal static class ApiPlanTransactionSyncOrchestrator
         }
 
         var conflicts = new List<ApiPlanTransactionSyncSdtConflict>();
-        AddConflictIfDiverged(designModel, conflicts, metadata.SelectToken("objects.sdts.createRequest")?.Value<string>(), ReadFieldNames(metadata, "fields.createRequest"));
-        AddConflictIfDiverged(designModel, conflicts, metadata.SelectToken("objects.sdts.updateRequest")?.Value<string>(), ReadFieldNames(metadata, "fields.updateRequest"));
-        AddConflictIfDiverged(designModel, conflicts, metadata.SelectToken("objects.sdts.response")?.Value<string>(), ReadFieldNames(metadata, "fields.response"));
-        AddConflictIfDiverged(designModel, conflicts, metadata.SelectToken("objects.sdts.listFilters")?.Value<string>(), ReadExpectedListFilterMemberNames(metadata));
+        AddConflictIfDiverged(designModel, kbIndex, conflicts, metadata.SelectToken("objects.sdts.createRequest")?.Value<string>(), ReadFieldNames(metadata, "fields.createRequest"));
+        AddConflictIfDiverged(designModel, kbIndex, conflicts, metadata.SelectToken("objects.sdts.updateRequest")?.Value<string>(), ReadFieldNames(metadata, "fields.updateRequest"));
+        AddConflictIfDiverged(designModel, kbIndex, conflicts, metadata.SelectToken("objects.sdts.response")?.Value<string>(), ReadFieldNames(metadata, "fields.response"));
+        AddConflictIfDiverged(designModel, kbIndex, conflicts, metadata.SelectToken("objects.sdts.listFilters")?.Value<string>(), ReadExpectedListFilterMemberNames(metadata));
         return conflicts;
     }
 
     private static void AddConflictIfDiverged(
         KBModel designModel,
+        ApiPlanKbObjectNameIndex? kbIndex,
         List<ApiPlanTransactionSyncSdtConflict> conflicts,
         string? sdtName,
         IReadOnlyCollection<string> expectedNames)
@@ -403,9 +426,11 @@ internal static class ApiPlanTransactionSyncOrchestrator
         }
 
         var ownedSdtName = sdtName!;
-        var matches = SDT.GetAll(designModel)
-            .Where(item => string.Equals(item.Name, ownedSdtName, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
+        var matches = kbIndex is null
+            ? SDT.GetAll(designModel)
+                .Where(item => string.Equals(item.Name, ownedSdtName, StringComparison.OrdinalIgnoreCase))
+                .ToArray()
+            : kbIndex.FindSdts(ownedSdtName).ToArray();
         if (matches.Length != 1)
         {
             return;
@@ -495,11 +520,17 @@ internal static class ApiPlanTransactionSyncOrchestrator
         }
     }
 
-    private static WikiFileKBObject FindOwnedMetadataFile(KBModel designModel, string metadataFileName, string transactionName)
+    private static WikiFileKBObject FindOwnedMetadataFile(
+        KBModel designModel,
+        string metadataFileName,
+        string transactionName,
+        ApiPlanKbObjectNameIndex? kbIndex)
     {
-        var matches = WikiFileKBObject.GetAll(designModel)
-            .Where(file => string.Equals(file.Name, metadataFileName, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
+        var matches = kbIndex is null
+            ? WikiFileKBObject.GetAll(designModel)
+                .Where(file => string.Equals(file.Name, metadataFileName, StringComparison.OrdinalIgnoreCase))
+                .ToArray()
+            : kbIndex.FindFiles(metadataFileName).ToArray();
 
         if (matches.Length == 0)
         {
