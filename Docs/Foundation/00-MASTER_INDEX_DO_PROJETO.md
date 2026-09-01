@@ -4,11 +4,11 @@
 
 **Projeto:** Genexus Open API Builder
 **Status documental:** Coleção Foundation consolidada; checkpoint operacional em `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`
-**Status técnico:** Extensão em linha Alpha; Sprint 9 com `Delete` opt-in publicado em `0.1.0-alpha.6`; próxima ação no [checkpoint](../STATUS_ATUAL_E_PROXIMO_PASSO.md)
-**Status público:** Repositório público; releases Alpha no GitHub (corte vigente `0.1.0-alpha.6`)
+**Status técnico:** Extensão em linha Alpha; Sprint 9 com UX de progresso e cancelamento (`B082`) preparado em `0.1.0-alpha.7`; próxima ação no [checkpoint](../STATUS_ATUAL_E_PROXIMO_PASSO.md)
+**Status público:** Repositório público; releases Alpha no GitHub (corte preparado `0.1.0-alpha.7`)
 **Idioma:** Português BR
 **Público principal:** mantenedor principal, futuros colaboradores técnicos e comunidade interessada
-**Data:** 2026-08-31
+**Data:** 2026-09-01
 
 ---
 

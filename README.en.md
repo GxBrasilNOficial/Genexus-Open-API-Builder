@@ -4,7 +4,7 @@
 
 Open source tool to accelerate REST API generation from **GeneXus Transactions**.
 
-Public alpha: **[`0.1.0-alpha.6`](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.6)** — choose the DLL matching your GeneXus version in the Release.
+Public alpha: **[`0.1.0-alpha.7`](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.7)** — choose the DLL matching your GeneXus version in the Release.
 
 Less repetition. More delivery. More value for the GeneXus community.
 
@@ -36,7 +36,7 @@ From a Transaction:
 
 ### HTTP error contract (since `0.1.0-alpha.4`)
 
-When the Business Component rejects a rule, `Create` and `Update` respond with **HTTP 422**, `ErrorResponse.Code = validation_error`, the rule text in `Message`, and the `Messages[]` collection (error messages only). Opt-in `Delete`, when enabled, responds with **HTTP 422** on referential-integrity refusal, using the same SDT. Each API's Source changes only when you reopen the Wizard on it; the shared `sdt_API_ErrorResponse` SDT is unique per KB, so regenerating any API updates the error schema published by all of them. Callers that compared the fixed string `"Business rules rejected the request."` should switch to `Code`. Details and the opt-out: [0.1.0-alpha.4 notes](Docs/Releases/0.1.0-alpha.4.en.md). Sublevels and the `<Sublevel>Replace` marker: [0.1.0-alpha.5 notes](Docs/Releases/0.1.0-alpha.5.en.md). Opt-in `Delete`: [0.1.0-alpha.6 notes](Docs/Releases/0.1.0-alpha.6.en.md).
+When the Business Component rejects a rule, `Create` and `Update` respond with **HTTP 422**, `ErrorResponse.Code = validation_error`, the rule text in `Message`, and the `Messages[]` collection (error messages only). Opt-in `Delete`, when enabled, responds with **HTTP 422** on referential-integrity refusal, using the same SDT. Each API's Source changes only when you reopen the Wizard on it; the shared `sdt_API_ErrorResponse` SDT is unique per KB, so regenerating any API updates the error schema published by all of them. Callers that compared the fixed string `"Business rules rejected the request."` should switch to `Code`. Details and the opt-out: [0.1.0-alpha.4 notes](Docs/Releases/0.1.0-alpha.4.en.md). Sublevels and the `<Sublevel>Replace` marker: [0.1.0-alpha.5 notes](Docs/Releases/0.1.0-alpha.5.en.md). Opt-in `Delete`: [0.1.0-alpha.6 notes](Docs/Releases/0.1.0-alpha.6.en.md). Progress B082: [0.1.0-alpha.7 notes](Docs/Releases/0.1.0-alpha.7.en.md).
 
 ## Current status
 
@@ -44,14 +44,14 @@ When the Business Component rejects a rule, `Create` and `Update` respond with *
 |------|--------|
 | Functional MVP wizard | Completed (GeneXus 18 U15) |
 | Lifecycle (ownership, sync, removal, report) | Completed |
-| Public alpha `0.1.0-alpha.6` | Release package (opt-in `Delete`) with U14+ and U13 assets |
+| Public alpha `0.1.0-alpha.7` | Release package (progress B082) with U14+ and U13 assets |
 | Upgrade 13 | Satellite DLL `GenexusOpenApiBuilder.Extension-gx18u13.dll` validated on U13 |
 | Upgrade 14 | Confirmed by an external user (Alpha `0.1.0-alpha.1`; loading + generation) |
 | Upgrade 15 | Development baseline; use confirmed by an external user through the maintainer path (local build + `Install-ExtensionForGeneXus18.bat`) |
 
 ### Which DLL to download
 
-Release `0.1.0-alpha.6` contains two DLLs. Install only the one corresponding to your installation:
+Release `0.1.0-alpha.7` contains two DLLs. Install only the one corresponding to your installation:
 
 | File in the GitHub Release | Intended for | Note |
 |---|---|---|
@@ -72,7 +72,7 @@ The `-gx18u13` suffix only identifies the download asset. Do not rename the file
 
 1. [Install the extension](Docs/Public/INSTALL.md)
 2. [Follow the quick demo](Docs/Public/DEMO.md)
-3. Read the [Alpha notes](Docs/Releases/0.1.0-alpha.6.en.md)
+3. Read the [Alpha notes](Docs/Releases/0.1.0-alpha.7.en.md)
 
 ## Screenshots
 
@@ -138,7 +138,7 @@ Details: [Docs/Public/INSTALL.md](Docs/Public/INSTALL.md).
 | [INSTALL](Docs/Public/INSTALL.md) | Installation |
 | [DEMO](Docs/Public/DEMO.md) | Short walkthrough |
 | [CHANGELOG](CHANGELOG.md) | Change history |
-| [0.1.0-alpha.6](Docs/Releases/0.1.0-alpha.6.en.md) | EN notes; [PT-BR](Docs/Releases/0.1.0-alpha.6.md); [ES](Docs/Releases/0.1.0-alpha.6.es.md) — DLL selection |
+| [0.1.0-alpha.7](Docs/Releases/0.1.0-alpha.7.en.md) | EN notes; [PT-BR](Docs/Releases/0.1.0-alpha.7.md); [ES](Docs/Releases/0.1.0-alpha.7.es.md) — DLL selection |
 | [MVP decisions](Docs/Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md) | Functional primary source |
 | [Foundation](Docs/Foundation/00-MASTER_INDEX_DO_PROJETO.md) | Contracts and planning |
 | [Operational checkpoint](Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md) | Internal project status |

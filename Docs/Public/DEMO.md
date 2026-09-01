@@ -1,6 +1,6 @@
 # Demo rápida — Genexus Open API Builder
 
-Roteiro visual da Alpha `0.1.0-alpha.6` (Transaction de exemplo: `NotaFiscal`).
+Roteiro visual da Alpha `0.1.0-alpha.7` (Transaction de exemplo: `NotaFiscal`).
 
 Use sempre uma **KB de teste**, com backup. Não execute na KB de produção.
 
@@ -139,19 +139,25 @@ Decisões acumuladas, endpoints e garantias — depois **Concluir e aplicar**.
 
 ![Resumo](../Images/alpha-wizard-resumo.png)
 
-## 21. Relatório final
+## 21. Progresso visível e cancelamento seguro (desde `0.1.0-alpha.7`)
+
+Ao clicar em **Concluir e aplicar** (e também na abertura do Wizard, no Preview do Sync e no Preview do Remover), um diálogo modal exibe o progresso em tempo real das etapas (`Preferências`, `Indexando objetos`, `Pré-verificação`, `Criando SDTs`, etc.).
+
+Durante essas fases é possível clicar em **Abortar** para cancelar a operação com segurança antes de qualquer gravação na KB.
+
+## 22. Relatório final
 
 Após aplicar, o relatório lista criados, atualizados, bloqueados e avisos. No caminho feliz: `Blocked=0` e metadata criada.
 
 ![Relatório final](../Images/alpha-relatorio-final.png)
 
-## 22. Objetos gerados
+## 23. Objetos gerados
 
 Folder `<Transaction>OpenApi` com API Object, Procedures e SDTs próprios.
 
 ![Folder NotaFiscalOpenApi](../Images/alpha-folder.png)
 
-## 23. Build e checagem
+## 24. Build e checagem
 
 Execute Build na API (ou Build All). Se o environment estiver publicado, teste `List`/`Get`/`Create`/`Update` conforme a segurança escolhida, e `Delete` só se o serviço tiver sido marcado.
 
@@ -185,7 +191,7 @@ Confirmação com o plano: objetos próprios a apagar, SDTs compartilhados e Fol
 - Classificação de campos sensíveis/auditoria ainda usa política default
 - Validação prática principal no Upgrade 15
 
-Detalhes: [notas 0.1.0-alpha.6](../Releases/0.1.0-alpha.6.md).
+Detalhes: [notas 0.1.0-alpha.7](../Releases/0.1.0-alpha.7.md).
 
 ## Índice das capturas
 

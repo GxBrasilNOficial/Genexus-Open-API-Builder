@@ -10,22 +10,40 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
-### Added
+### Planned
+
+- `B108` (pendência, plano aprovado 2026-08-31, código adiado): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Checkpoint e documento 06.
+
+---
+
+# [0.1.0-alpha.7] - 2026-09-01
+
+Release focada em feedback visual de progresso, cancelamento cooperativo e indexação de objetos da KB (`B082`). Preparado em 2026-09-01 (tag `v0.1.0-alpha.7` + GitHub Release pre-release, dois assets DLL).
+
+## Added
 
 - `B082` (Fases A+B, 2026-08-31): quadro de progresso na abertura do Wizard, Apply, Sync e Remover (Preview antes do Sim); Abortar cooperativo; índice da KB; tempos `[B082] Fase` na Output; aviso de escala no Resumo. Smoke `Tributacao` e, no mesmo dia, `Empresa` (`Gx_FabricaBrasil`): abertura `6401` ms (`InterfaceMs=4770`); Apply `SuccessWithWarnings`, Criados=51, Atualizados=3, Bloqueados=0, `DuraçãoMs=249062` (~4,2 min; BC `78891` ms, List `95867` ms). Registro: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`. Fora da próxima ação (`B108`).
 - Casca B082: etapas internas (`Preferências`, `Indexando objetos`, `Removendo`, `Pré-verificação`) passam a seguir o idioma da IDE; writers e Output `[B082]` inalterados.
 - Casca B082 no Preview do Sync (2026-09-01): quadro **antes** do diálogo/relatório, índice da KB, `Sync PreviewMs` na Output. Smoke `Empresa`: `PreviewMs=5089`, diff vazio, KB intacta. Remover Preview na mesma Transaction: `PreviewMs=2525`, cancelado com Não.
 
-### Changed
+## Changed
 
 - Índice da KB: `RefreshFolders` após criar `GxOpenAPI`, para o segundo `CreateOrReencounter` no mesmo Apply (REST via BC) não tentar `CreateSharedFolder` de novo. Smoke `ShowcaseUnanimo` / `Company` (2026-09-01): primeiro Apply, Criados=16 (inclui Folder `GxOpenAPI`), Bloqueados=0.
 - Registro B082: medição por item na casca (`ElapsedMs`); Output fica com totais de fase, sem dump de ms por objeto.
 - Registro B082 (2026-09-01): polimento de outra sessão anotado — casca × B081 no Apply/Sync; `progress` na revalidação do `Remove()` efetivo — junto com o `GetAll` residual já previsto. Não é a próxima ação (`B108`).
 - Registro B082 (2026-09-01): inventário «Fora da fila operacional» ampliado (itens 3–5) — `DoEvents`/reentrância, writers Procedure/List no residual de índice, higiene doc da sequência operacional.
 
-### Planned
+## Validated
 
-- `B108` (pendência, plano aprovado 2026-08-31, código adiado): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Checkpoint e documento 06.
+- Smoke U15 na Transaction `Empresa` com 13 subníveis (`Gx_FabricaBrasil`): Apply com sinal de vida contínuo (~4,2 min), Preview do Sync (~5 s) e Preview do Remover (~2,5 s).
+- Smoke U15 no primeiro Apply com criação de pasta compartilhada `GxOpenAPI` na `Company` (`ShowcaseUnanimo`): 16 objetos criados sem colisão.
+- Cancelamentos validados antes da escrita sem efeitos colaterais na KB.
+- Linhas U14+ (canônica) e U13 (satélite) compiladas em Release para este corte.
+
+## Assets
+
+- `GenexusOpenApiBuilder.Extension.dll` — GeneXus 18 U14, U15 e posteriores U14+. SHA-256 `E7E462E4D47BE9140D7E1A70484266B9868081CB4B9D6BC6B415966F99CE2D8D`.
+- `GenexusOpenApiBuilder.Extension-gx18u13.dll` — GeneXus 18 U13. SHA-256 `72B476F7C089005EDFFD8418634FA26D6B67FD03ED0BC41B267603BF0D794088`.
 
 ---
 
