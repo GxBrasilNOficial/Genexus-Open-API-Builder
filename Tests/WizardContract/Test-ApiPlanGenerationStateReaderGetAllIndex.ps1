@@ -3,7 +3,8 @@ $ErrorActionPreference = 'Stop'
 
 $sourcePath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanGenerationStateReader.cs'
 $indexPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanKbObjectNameIndex.cs'
-foreach ($path in @($sourcePath, $indexPath)) {
+$sdtWriterPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanSdtWriter.cs'
+foreach ($path in @($sourcePath, $indexPath, $sdtWriterPath)) {
     if (-not (Test-Path -LiteralPath $path)) {
         throw "SOURCE_MISSING: $path"
     }
@@ -11,6 +12,7 @@ foreach ($path in @($sourcePath, $indexPath)) {
 
 $source = [IO.File]::ReadAllText($sourcePath)
 $indexSource = [IO.File]::ReadAllText($indexPath)
+$sdtWriter = [IO.File]::ReadAllText($sdtWriterPath)
 
 function Assert-Contains {
     param([string]$Text, [string]$Needle, [string]$Message)
@@ -29,6 +31,9 @@ function Assert-NotContains {
 Assert-Contains $source 'ApiPlanKbObjectNameIndex.Create' 'Read deve construir indice unico por tipo.'
 Assert-Contains $indexSource 'SDT.GetAll(designModel).ToLookup' 'SDT.GetAll deve ocorrer uma vez no indice.'
 Assert-Contains $indexSource 'Procedure.GetAll(designModel).ToLookup' 'Procedure.GetAll deve ocorrer uma vez no indice.'
+Assert-Contains $indexSource 'internal void RefreshFolders' 'Indice deve reindexar pastas apos criar GxOpenAPI.'
+Assert-Contains $indexSource 'internal void RefreshSdts' 'Indice deve reindexar SDTs apos gravacao.'
+Assert-Contains $sdtWriter 'kbIndex.RefreshFolders(designModel)' 'Apos CreateSharedFolder o indice de pastas nao pode ficar stale.'
 Assert-Contains $source 'index.FindSdts(definition.Name)' 'Inspecao de SDT deve usar o indice.'
 Assert-Contains $source 'index.FindProcedures(name)' 'Inspecao de Procedure deve usar o indice.'
 

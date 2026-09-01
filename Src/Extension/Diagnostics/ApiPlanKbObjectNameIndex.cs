@@ -14,7 +14,7 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// </summary>
 internal sealed class ApiPlanKbObjectNameIndex
 {
-    private readonly ILookup<string, Folder> _folders;
+    private ILookup<string, Folder> _folders;
     private ILookup<string, SDT> _sdts;
     private readonly ILookup<string, Procedure> _procedures;
     private readonly ILookup<string, API> _apis;
@@ -56,6 +56,20 @@ internal sealed class ApiPlanKbObjectNameIndex
 
         progress?.PumpAndThrowIfAbortRequested();
         return index;
+    }
+
+    /// <summary>
+    /// Reindexa só pastas após Save() — o índice pré-Apply não contém GxOpenAPI recém-criada.
+    /// Sem isto, um segundo CreateOrReencounter no mesmo índice (BC/List) pode tentar CreateSharedFolder de novo.
+    /// </summary>
+    internal void RefreshFolders(KBModel designModel)
+    {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        _folders = Folder.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>

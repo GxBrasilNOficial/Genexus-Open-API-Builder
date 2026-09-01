@@ -1,7 +1,7 @@
 # B082 — Plano: sinal de vida no Wizard (abertura e Apply), Sync e Remover
 
 Data: 2026-08-31.
-Estado: **registro das Fases A+B já entregues**, com smoke `Empresa` em 2026-08-31. Não reabrir este desenho. A próxima ação de código continua `B108`.
+Estado: **registro das Fases A+B já entregues**, com smoke `Empresa` e `ShowcaseUnanimo`/`Company` (2026-09-01). Não reabrir este desenho. A próxima ação de código continua `B108`.
 Correlato de backlog: `B082` em `Docs/Foundation/06-BACKLOG_v0.1.md`.
 Recado original: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
 
@@ -24,7 +24,7 @@ Restrição técnica: `KBModel.Save()` / `Delete()` no SDK exigem afinidade STA/
 1. **Casca sempre visível** durante abertura lenta do Wizard, Apply, Sync e Remover.
 2. **Progresso por objeto** (ou etapa) com contagem quando conhecida.
 3. **Abortar cooperativo** entre objetos (Save/Delete em curso termina; KB pode ficar inconsistente — melhor que matar a IDE).
-4. **Medição** (ms por item) na Output para calibrar UX e plano de escala.
+4. **Medição:** ms **por item** na casca (`ElapsedMs`); totais de **fase** na Output (`Fase SDTs=…`, `PreviewMs=…`) para calibrar UX e plano de escala. Sem dump de ms por objeto na Output.
 5. **Aviso honesto** no Resumo quando `planejados` for alto.
 
 Fora de escopo imediato: multi-threading de escrita; cancelar um `Save()` SDK no meio.
@@ -47,12 +47,16 @@ Fora de escopo imediato: multi-threading de escrita; cancelar um `Save()` SDK no
 | Preflight SDT com progresso 1/N (sem `GetAll` repetido de SDT) | Feito nesta sessão |
 | Índice de **Attributes** no mesmo índice (preflight ainda fazia `Attribute.GetAll` por membro — gargalo em `Tributacao` 26/30) | Feito nesta sessão |
 | Tempos por fase no Output após Concluir e aplicar | Feito (`Fase …=N ms`) |
+| Ms por item na casca (`ElapsedMs`); nomes `[B082] SDT Created` na Output, sem ms por objeto | Feito (alinhado ao critério 5) |
+| `RefreshFolders` após criar `GxOpenAPI` no mesmo índice (BC não chama `CreateSharedFolder` de novo) | Feito 2026-09-01 |
 | Casca “carregando” no Preview do Remover + índice (sem `GetAll` por alvo) | Feito nesta sessão |
 | Margem inferior nos botões Cancelar / Abortar / Fechar | Feito nesta sessão |
 
 **Validação `Tributacao` / FabricaBrasil18Test (2026-08-31):** Apply completo após índice: criar 27 SDTs ~17 s; reencontro ~21 s; BC+List ~110 s (regrava SDTs). Remover: Preview ~10 s sem casca (corrigido nesta DLL); Delete 33 itens ~33,5 s. Abort no preflight: KB intacta.
 
 **Smoke `Empresa` / `Gx_FabricaBrasil` (2026-08-31 Apply; 2026-09-01 Sync e Remover Preview):** abertura `6401` ms; Apply ~4,2 min (`DuraçãoMs=249062`, Criados=51, Bloqueados=0). Sync: casca **Preparando sincronização** antes do relatório; `PreviewMs=5089`; diff `Inalterados: 221`; KB intacta; B081 `Nenhuma sincronizacao necessaria`. Remover: casca **Preparando remoção**; `PreviewMs=2525`; plano 4 Procedures + 44 SDTs; usuário **Não**; `Remocao cancelada`; KB intacta.
+
+**Smoke `ShowcaseUnanimo` / `Company` (2026-09-01):** KB sem Folder `GxOpenAPI` e sem `sdt_API_*`. Primeiro Apply: SDTs Created=8 / Reencountered=0; B081 lista Folders `GxOpenAPI` e `CompanyOpenApi` em Criados; REST via BC `3940` ms e List `3307` ms no mesmo índice; `SuccessWithWarnings`, Criados=16, Bloqueados=0, `DuraçãoMs=11334`. Um Folder `GxOpenAPI` na KB. Exercita `RefreshFolders` no segundo `CreateOrReencounter`.
 
 ### Fora da fila operacional
 
@@ -78,7 +82,7 @@ Não reabrir fases de performance/corte neste arquivo como fila.
 
 ### 4.1 Por que indexar a KB?
 
-Não é para “usar todos os SDTs”. É para **resolver por nome** (~30 nomes do plano): colisão, duplicata, SDT externo, tipos referenciados. O SDK expõe `GetAll` + filtro; o wizard já faz uma varredura em `ApiPlanGenerationStateReader`. O Apply **reutiliza** esse índice (`ReadForIntentionalChangeWithIndex`) em vez de repetir `GetAll` por SDT do plano.
+Não é para “usar todos os SDTs”. É para **resolver por nome** (~30 nomes do plano): colisão, duplicata, SDT externo, tipos referenciados. O SDK expõe `GetAll` + filtro; o wizard já faz uma varredura em `ApiPlanGenerationStateReader`. O Apply **reutiliza** esse índice (`ReadForIntentionalChangeWithIndex`) em vez de repetir `GetAll` por SDT do plano. Depois de criar a pasta compartilhada `GxOpenAPI`, `RefreshFolders` espelha o `RefreshSdts`: o segundo `CreateOrReencounter` no mesmo índice (REST via BC) não tenta `CreateSharedFolder` de novo.
 
 ### 4.2 Abort
 
@@ -123,7 +127,7 @@ O Remover exige `api{Transaction}_Metadata`. Abort no meio dos SDTs deixa objeto
 2. Remover mostra progresso por objeto deletado.
 3. Abortar interrompe antes do próximo objeto (com aviso de inconsistência).
 4. Abertura do Wizard > 5 s mostra “carregando” (Fase B).
-5. Relatório final B081/B063 mantém duração total; Output registra ms por item da sonda até consolidar.
+5. Relatório final B081/B063 mantém duração total; Output registra totais de fase (`Fase …=N ms`); ms por item ficam na casca.
 6. Preview do Remover e Preview do Sync mostram casca de progresso antes da confirmação; Cancelar/Abortar/Fechar não colam no bordo da janela.
 
 ---

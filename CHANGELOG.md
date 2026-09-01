@@ -16,6 +16,11 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Casca B082: etapas internas (`Preferências`, `Indexando objetos`, `Removendo`, `Pré-verificação`) passam a seguir o idioma da IDE; writers e Output `[B082]` inalterados.
 - Casca B082 no Preview do Sync (2026-09-01): quadro **antes** do diálogo/relatório, índice da KB, `Sync PreviewMs` na Output. Smoke `Empresa`: `PreviewMs=5089`, diff vazio, KB intacta. Remover Preview na mesma Transaction: `PreviewMs=2525`, cancelado com Não.
 
+### Changed
+
+- Índice da KB: `RefreshFolders` após criar `GxOpenAPI`, para o segundo `CreateOrReencounter` no mesmo Apply (REST via BC) não tentar `CreateSharedFolder` de novo. Smoke `ShowcaseUnanimo` / `Company` (2026-09-01): primeiro Apply, Criados=16 (inclui Folder `GxOpenAPI`), Bloqueados=0.
+- Registro B082: medição por item na casca (`ElapsedMs`); Output fica com totais de fase, sem dump de ms por objeto.
+
 ### Planned
 
 - `B108` (pendência, plano aprovado 2026-08-31, código adiado): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Checkpoint e documento 06.

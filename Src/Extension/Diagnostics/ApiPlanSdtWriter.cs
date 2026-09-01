@@ -63,6 +63,7 @@ internal static class ApiPlanSdtWriter
         if (sharedFolderWasCreated)
         {
             apiPlan.SharedSdtFolderWasCreated = true;
+            kbIndex.RefreshFolders(designModel);
         }
 
         progress?.PumpAndThrowIfAbortRequested();
