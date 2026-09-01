@@ -1,7 +1,7 @@
 # B082 — Plano: sinal de vida no Wizard (abertura e Apply), Sync e Remover
 
 Data: 2026-08-31.
-Estado: **registro das Fases A+B já entregues** (progresso, abort, índice, tempos, aviso de escala, Preview do Remover). Não reabrir este desenho. Fase C/D só com pedido explícito; a próxima ação de código continua `B108`.
+Estado: **registro das Fases A+B já entregues**, com smoke `Empresa` em 2026-08-31. Não reabrir este desenho. A próxima ação de código continua `B108`.
 Correlato de backlog: `B082` em `Docs/Foundation/06-BACKLOG_v0.1.md`.
 Recado original: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
 
@@ -52,6 +52,12 @@ Fora de escopo imediato: multi-threading de escrita; cancelar um `Save()` SDK no
 
 **Validação `Tributacao` / FabricaBrasil18Test (2026-08-31):** Apply completo após índice: criar 27 SDTs ~17 s; reencontro ~21 s; BC+List ~110 s (regrava SDTs). Remover: Preview ~10 s sem casca (corrigido nesta DLL); Delete 33 itens ~33,5 s. Abort no preflight: KB intacta.
 
+**Smoke `Empresa` / `Gx_FabricaBrasil` (2026-08-31, Output da IDE):** abertura `total ate ShowDialog=6401` ms (`PrefsMs=24`, `ContratoMs=1404`, `InterfaceMs=4770`). Apply Wizard List/Get/Create/Update + List + BC, sem Delete: `IndiceKb=2394`, `PreflightAgregado=2160`, `SDTs=35436` (Created=44, Reencountered=3), `Procedures=3224` (Created=4), `ApiObject=10483`, `BusinessComponent=78891`, `List=95867`, `Metadata=22733`, `TotalAposConcluir=251459`. B081: `SuccessWithWarnings`, Criados=51, Atualizados=3, Bloqueados=0, `DuraçãoMs=249062` (~4,2 min; o apply mudo de 2026-08-29 na mesma Transaction tinha sido ~107 min). Aviso único: fallback de descrições em inglês.
+
+### Fora da fila operacional
+
+Abertura ainda passa de 5 s, com a maior fatia em `InterfaceMs` (montagem do diálogo), não no índice do Apply. Isso **não** é a próxima ação de código (`B108`).
+
 ### Fase B — Consolidar sonda em B082 produtivo
 
 1. Remover sufixo `[B082-PROBE]` dos títulos — **feito** (Output de tempos permanece `[B082]`).
@@ -60,16 +66,7 @@ Fora de escopo imediato: multi-threading de escrita; cancelar um `Save()` SDK no
 4. Cursor de espera no owner da IDE durante Apply/Remover/Sync/abertura — **feito**.
 5. Limitação documentada no aviso de escala e no hint do Abortar: durante um único `Save()` a IDE pode congelar; Abort para no próximo objeto.
 
-### Fase C — Performance de abertura (relacionada, não substitui B082)
-
-- Reutilizar `ApiPlanKbObjectNameIndex` também na **abertura** do Wizard (hoje `Read` já indexa; abertura mede Load + contrato + `ShowDialog`).
-- Avaliar cache de índice por sessão de KB se múltiplos comandos seguidos forem comuns.
-
-### Fase D — Fechamento
-
-- `CHANGELOG.md` `[Unreleased]` já descreve Fases A+B; backlog `B082` **ainda não** está concluído (faltam C/D e corte).
-- Evidência média: FabricaBrasil18Test / `Tributacao` (2026-08-31). Smoke em KB pequena ainda útil no corte.
-- **Não** misturar corte de release com `B108`; DLL de teste manual até autorização de corte.
+Não reabrir fases de performance/corte neste arquivo como fila.
 
 ---
 
