@@ -336,7 +336,7 @@ Ordem acordada de execução:
 
 - `B088`: investigar/documentar limitações do template nativo `Swagger.Yaml.stg` (respostas declaradas só `200`/`404`; não emissão de `required:` nos schemas) — **concluído** (2026-08-10; limitação intransponível; evidência `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`)
 - `B089`: evidência HTTP `403` com role GAM não-administradora — **concluído** (2026-08-10; GAM Backoffice + HTTP Get 200 / Create 403 nos dois environments; evidência `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D)
-- `B082`: sinal de vida no Wizard, Sync e Remover — **Fases A+B em código**; Preview do Sync (2026-09-01); integrando o corte `0.1.0-alpha.7`; estacionado; residual P2 no registro (casca × B081; `progress` no Remove); registro `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`
+- `B082`: sinal de vida no Wizard, Sync e Remover — **Fases A+B em código**; Preview do Sync (2026-09-01); corte `0.1.0-alpha.7` **publicado em 2026-09-01**; estacionado; residual P2 no registro (casca × B081; `progress` no Remove); registro `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`
 
 ## Gate
 
@@ -420,15 +420,16 @@ Adoção é **sinal observado** no checkpoint, não condição de fechamento: el
 
 ## Publicação
 
-Três cortes de release, e não dois:
+Quatro cortes de release, e não dois:
 
 - `0.1.0-alpha.4`, logo após `B102`. As notas trazem seção própria de **mudança de comportamento**, e não um item na lista de melhorias: quem hoje compara a string `"Business rules rejected the request."` para detectar recusa de regra passa a receber o texto real do Business Component; o schema do corpo de erro muda para toda API regenerada; e API já gerada só muda quando o Wizard for reaberto sobre ela. As mesmas notas declaram que a geração cobre apenas o primeiro nível da Transaction (**expectativa deste plano em 2026-08-23:** a documentação pública ainda não registrava essa limitação; na prática ela já constava dos três `README` e do `DEMO` desde `ecef3a6`, anterior a esta frente).
 - `0.1.0-alpha.5`, ao fim da Fase 7, com os subníveis (**este corte**, 2026-08-30). As notas destacam o marcador `<Subnível>Replace`, ponto onde um consumidor desatento perde dados, e substituem a limitação de primeiro nível pela descrição do suporte com as limitações remanescentes: sem endpoints próprios de subnível, contadores só para subníveis diretos, profundidade acima de 4 avisa sem bloquear (escala `Empresa` com 13 subníveis passou no `Build All`) e impossibilidade de alterar netos sem substituir o nível pai.
 - `0.1.0-alpha.6`, com `B100` (**publicado em 2026-08-31**; tag `v0.1.0-alpha.6` + GitHub Release pre-release). Corte próprio para desacoplar: amarrado ao mesmo corte dos subníveis, um atraso no `Delete` atrasaria a publicação de tudo; separado, ele desliza para a Sprint 10 sem renegociar o release anterior nem reabrir gate. Os três `README` e o `DEMO` deixaram de afirmar "Sem serviço `DELETE` no MVP" no fechamento de 2026-08-30.
+- `0.1.0-alpha.7`, com `B082` (**publicado em 2026-09-01**; tag `v0.1.0-alpha.7` + GitHub Release pre-release). Corte próprio para UX de progresso, cancelamento cooperativo e indexação da KB, sem reabrir gate de subníveis nem `Delete`. O `DEMO` passa a descrever o diálogo de progresso e o botão Abortar.
 
-Cada corte mantém o rito já estabelecido: CHANGELOG, notas de release nos três idiomas, `README`/`INSTALL`/`DEMO` alinhados, tag e GitHub Release pre-release. Desde o `0.1.0-alpha.3` o Release publica **dois assets DLL** — a canônica U14+ e a satélite `-gx18u13` —, com tabela de escolha e SHA-256 por asset; os três cortes mantêm os dois. Publicar um release só com a DLL canônica seria lido como abandono da linha U13, ou levaria alguém a instalar a errada.
+Cada corte mantém o rito já estabelecido: CHANGELOG, notas de release nos três idiomas, `README`/`INSTALL`/`DEMO` alinhados, tag e GitHub Release pre-release. Desde o `0.1.0-alpha.3` o Release publica **dois assets DLL** — a canônica U14+ e a satélite `-gx18u13` —, com tabela de escolha e SHA-256 por asset; os quatro cortes mantêm os dois. Publicar um release só com a DLL canônica seria lido como abandono da linha U13, ou levaria alguém a instalar a errada.
 
-O custo é honesto: três cortes são três vezes o rito completo. O ganho é que nenhum atraso de um item segura a publicação do anterior.
+O custo é honesto: quatro cortes são quatro vezes o rito completo. O ganho é que nenhum atraso de um item segura a publicação do anterior.
 
 [SPR-F24]
 

@@ -285,6 +285,7 @@ Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/t
 88. Em 2026-08-31 o pacote do corte `0.1.0-alpha.6` foi preparado (CHANGELOG, notas PT/ES/EN, versão, README/`INSTALL`/`DEMO`, builds Release canônico e satélite). ~~Próxima ação única = autorização humana para publicar (tag + GitHub Release pre-release + dois assets DLL).~~ **Superada** pelo item 89. `B108` permanece fora deste corte.
 89. Em 2026-08-31 o corte `0.1.0-alpha.6` foi publicado (tag `v0.1.0-alpha.6` + GitHub Release pre-release, dois assets DLL). Próxima ação única = `B108`.
 90. Em 2026-08-31 o plano de `B108` foi discutido, aprovado e gravado (preferências só na criação; checkboxes espelham KB; desmarcar confirma e rebaixa/remove; Delete some com BC). **Implementação adiada** de propósito para nova sessão. Próxima ação única permanece `B108` (código). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`.
+91. Em 2026-09-01 o corte `0.1.0-alpha.7` foi publicado (tag `v0.1.0-alpha.7` + GitHub Release pre-release, dois assets DLL). Próxima ação única = `B108`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -340,6 +341,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [Release 0.1.0-alpha.4](Releases/0.1.0-alpha.4.md)
 - [Release 0.1.0-alpha.5](Releases/0.1.0-alpha.5.md)
 - [Release 0.1.0-alpha.6](Releases/0.1.0-alpha.6.md)
+- [Release 0.1.0-alpha.7](Releases/0.1.0-alpha.7.md)
 
 ## Marcos ainda não iniciados
 

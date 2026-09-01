@@ -18,7 +18,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 # [0.1.0-alpha.7] - 2026-09-01
 
-Release focada em feedback visual de progresso, cancelamento cooperativo e indexação de objetos da KB (`B082`). Preparado em 2026-09-01 (tag `v0.1.0-alpha.7` + GitHub Release pre-release, dois assets DLL).
+Release focada em feedback visual de progresso, cancelamento cooperativo e indexação de objetos da KB (`B082`). Publicado em 2026-09-01 (tag `v0.1.0-alpha.7` + GitHub Release pre-release, dois assets DLL).
 
 ## Added
 
