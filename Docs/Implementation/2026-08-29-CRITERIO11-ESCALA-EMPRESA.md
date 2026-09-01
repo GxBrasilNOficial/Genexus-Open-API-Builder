@@ -74,7 +74,7 @@ Permaneceram (previsto): `sdt_API_ErrorMessage`, `sdt_API_ErrorResponse`, `sdt_A
 
 - HTTP na `Empresa` (critério 7 já fechou na `Teste`).
 - Sync na `Empresa` (Fase 7 já fechou na `Teste`).
-- Sinal de vida no apply/Remover (`B082`) — Fases A+B em código (2026-08-31); smoke `Empresa` ~4,2 min no mesmo dia; fora do corte `0.1.0-alpha.5`. Registro: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
+- Sinal de vida no apply/Sync/Remover (`B082`) — Fases A+B; Preview do Sync e do Remover na `Empresa` em 2026-09-01 (`PreviewMs=5089` / `2525`). Fora do corte `0.1.0-alpha.5`. Registro: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
 
 ## Status
 

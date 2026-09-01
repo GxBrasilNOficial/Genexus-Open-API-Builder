@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-08-31.
+2026-09-01.
 
 ## Último marco concluído
 
@@ -125,7 +125,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - Critério 10 (smoke `Gx18u13` multinível) concluído em 2026-08-29: DLL satélite instalada e hash batendo (`GxLine=Gx18u13`, `PackageCompatibility=143920`); Wizard reencontro na `Teste`/`apiTeste` (`Updated=27`, `Blocked=0`); `Build All` nos environments `NETFrameworkSQLServer004` e `NETPostgreSQL155` sem `spc0018`. HTTP fora de escopo (U15). Evidência: `Docs/Implementation/2026-08-29-CRITERIO10-SMOKE-GX18U13.md`.
 - Critério 11 (escala, 13 subníveis) concluído em 2026-08-29 na `Empresa` (`Gx_FabricaBrasil`): apply `SuccessWithWarnings`, OwnSdts=44 (skip Create vazio de `ExclusivoEmVenda`), `Build All` Success nos dois environments, critério 8, Remover `Deleted=50` sem órfão, BC preservado, pasta reutilizada vazia de propósito. Alertas de tempo (abertura ~7 s; apply 107 min; Remover ~32 s). Evidência: `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`.
 - `B100` concluído em 2026-08-30: serviço `Delete` opt-in na `apiNotaFiscal`; 401/404/200 nos dois environments; 422 de integridade no Framework (PostgreSQL dispensado). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
-- `B082` Fases A+B gravadas em 2026-08-31: progresso visível, abort, índice, tempos por fase. Smoke `Tributacao`; smoke `Empresa` no mesmo dia (abertura `6401` ms; Apply ~4,2 min, `Criados=51`, `Blocked=0`). Registro: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
+- `B082` Fases A+B gravadas em 2026-08-31; Preview do Sync alinhado ao Remover em 2026-09-01. Smoke `Empresa`: Apply ~4,2 min; Sync `PreviewMs=5089` (diff vazio); Remover Preview `PreviewMs=2525` (Não). Registro: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
 
 ## Frente atual
 
@@ -145,7 +145,7 @@ Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/t
 
 ## Missão estacionada (outra sessão)
 
-`B082` — Fases A+B entregues (progresso, abort, índice, tempos, aviso de escala, Preview do Remover). Registro: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`. **Não reabrir este desenho** nem misturar com `B108`. Recado original: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
+`B082` — Fases A+B entregues; Preview do Sync com a mesma casca do Remover (2026-09-01, `Empresa`). Registro: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`. **Não reabrir este desenho** nem misturar com `B108`. Recado original: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
 
 ## Pendência urgente (próxima sessão de código)
 
@@ -297,7 +297,7 @@ Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/t
 - Gap B099a (2026-08-26): required de linha aparece na UI e **não** alimenta o writer BC (validação 400 com caminho `Parcelas[0].Campo` fica para frente posterior, para não recapturar o ouro B097).
 - Residual B099b (Sync flat vs SDT raiz hierárquico): **encerrado na Fase 7** (`DetectSdtConflicts` vazio em metadata hierárquica; smoke Sync 2026-08-28 sem conflito).
 - Sync hierárquico — falso `Added` por campo de subnível omitido de propósito no Wizard: **corrigido e smoke U15 2026-08-28** (`TesteItemObs2` desmarcado → Sync `Adicionados=0`, `Inalterados=17`). Metadata antiga só melhora após regravação de `levels`.
-- UX de espera do Wizard (abertura e apply) e do Remover — `B082` Fases A+B em código (2026-08-31); smoke `Empresa` ~4,2 min; **não misturar com `B108`.** Recado: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`. Registro: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
+- UX de espera do Wizard, Sync e Remover — `B082` Fases A+B em código; Preview do Sync na `Empresa` (`PreviewMs=5089`); Remover Preview cancelado (`PreviewMs=2525`); Apply ~4,2 min. **Não misturar com `B108`.** Registro: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 
 ## Documentos governantes
