@@ -372,7 +372,7 @@ internal static class ApiPlanBusinessComponentWriter
     private static Procedure FindProcedure(KBModel model, ApiPlan plan, string service, string backlog)
     {
         var name = $"proc{plan.TransactionName}_API_{service}";
-        var matches = Procedure.GetAll(model).Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase)).ToArray();
+        var matches = ApiPlanScanProbe.Scan("Procedure", "bc-find-procedure", () => Procedure.GetAll(model).Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase)).ToArray());
         if (matches.Length != 1 || !ApiPlanOwnedObjectDescription.IsOwnedProcedure(matches.Single().Description, name))
             throw new InvalidOperationException($"B055 bloqueado: Procedure propria '{name}' nao foi reencontrada com seguranca. Gere as Procedures pelo Wizard antes. Nenhuma alteracao foi feita.");
         return matches.Single();
@@ -383,7 +383,7 @@ internal static class ApiPlanBusinessComponentWriter
         var definitions = ApiPlanSdtGenerationPlanBuilder.Create(plan);
         foreach (var definition in definitions.SharedSdts.Concat(definitions.OwnSdts))
         {
-            var matches = SDT.GetAll(model).Where(item => string.Equals(item.Name, definition.Name, StringComparison.OrdinalIgnoreCase)).ToArray();
+            var matches = ApiPlanScanProbe.Scan("SDT", "bc-ensure-sdt", () => SDT.GetAll(model).Where(item => string.Equals(item.Name, definition.Name, StringComparison.OrdinalIgnoreCase)).ToArray());
             if (matches.Length != 1 || !ApiPlanOwnedObjectDescription.IsOwnedSdt(matches.Single().Description, definition.Name))
                 throw new InvalidOperationException($"B055 bloqueado: SDT proprio requerido '{definition.Name}' nao foi reencontrado com seguranca. Nenhuma alteracao foi feita.");
         }
@@ -872,9 +872,9 @@ internal static class ApiPlanBusinessComponentWriter
         var attributeName = dataType.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
             ? dataType.Substring(prefix.Length).Trim()
             : dataType.Trim();
-        var matches = Artech.Genexus.Common.Objects.Attribute.GetAll(model)
+        var matches = ApiPlanScanProbe.Scan("Attribute", "bc-find-attribute", () => Artech.Genexus.Common.Objects.Attribute.GetAll(model)
             .Where(attribute => string.Equals(attribute.Name, attributeName, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
+            .ToArray());
         if (matches.Length != 1)
         {
             throw new InvalidOperationException($"B055 bloqueado: atributo base da variavel '&{variableName}' nao foi reencontrado com seguranca: '{attributeName}'. Nenhuma alteracao foi feita.");

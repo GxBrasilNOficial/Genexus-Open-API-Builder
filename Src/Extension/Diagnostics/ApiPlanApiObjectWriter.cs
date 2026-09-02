@@ -529,9 +529,9 @@ internal static class ApiPlanApiObjectWriter
         var resolved = new List<Guid>();
         foreach (var definition in generationPlan.SharedSdts.Concat(generationPlan.OwnSdts))
         {
-            var matches = SDT.GetAll(designModel)
+            var matches = ApiPlanScanProbe.Scan("SDT", "apiobject-preflight-sdt", () => SDT.GetAll(designModel)
                 .Where(sdt => string.Equals(sdt.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
+                .ToArray());
 
             if (matches.Length == 0)
             {
@@ -561,9 +561,9 @@ internal static class ApiPlanApiObjectWriter
         var resolved = new List<ApiPlanApiObjectProcedureDependency>();
         foreach (var definition in definitions)
         {
-            var matches = Procedure.GetAll(designModel)
+            var matches = ApiPlanScanProbe.Scan("Procedure", "apiobject-preflight-procedure", () => Procedure.GetAll(designModel)
                 .Where(procedure => string.Equals(procedure.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
+                .ToArray());
 
             if (matches.Length == 0)
             {

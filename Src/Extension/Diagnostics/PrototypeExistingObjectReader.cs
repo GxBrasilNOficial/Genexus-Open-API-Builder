@@ -47,19 +47,19 @@ internal static class PrototypeExistingObjectReader
         foreach (var suffix in ProcedureSuffixes)
         {
             var name = $"proc{baseName}_API_{suffix}";
-            results.Add(CreateResult("Procedure", name, CountByName(Procedure.GetAll(designModel), name)));
+            results.Add(CreateResult("Procedure", name, CountByName(ApiPlanScanProbe.Scan("Procedure", "inventario-existente", () => Procedure.GetAll(designModel).ToArray()), name)));
         }
 
         foreach (var suffix in SdtSuffixes)
         {
             var name = $"sdt{baseName}_API_{suffix}";
-            results.Add(CreateResult("SDT", name, CountByName(SDT.GetAll(designModel), name)));
+            results.Add(CreateResult("SDT", name, CountByName(ApiPlanScanProbe.Scan("SDT", "inventario-existente", () => SDT.GetAll(designModel).ToArray()), name)));
         }
 
         results.Add(CreateResult("Folder", "GxOpenAPI", CountByName(Folder.GetAll(designModel), "GxOpenAPI")));
-        results.Add(CreateResult("SDT", "sdt_API_ErrorMessage", CountByName(SDT.GetAll(designModel), "sdt_API_ErrorMessage")));
-        results.Add(CreateResult("SDT", "sdt_API_ErrorResponse", CountByName(SDT.GetAll(designModel), "sdt_API_ErrorResponse")));
-        results.Add(CreateResult("SDT", "sdt_API_Pagination", CountByName(SDT.GetAll(designModel), "sdt_API_Pagination")));
+        results.Add(CreateResult("SDT", "sdt_API_ErrorMessage", CountByName(ApiPlanScanProbe.Scan("SDT", "inventario-existente", () => SDT.GetAll(designModel).ToArray()), "sdt_API_ErrorMessage")));
+        results.Add(CreateResult("SDT", "sdt_API_ErrorResponse", CountByName(ApiPlanScanProbe.Scan("SDT", "inventario-existente", () => SDT.GetAll(designModel).ToArray()), "sdt_API_ErrorResponse")));
+        results.Add(CreateResult("SDT", "sdt_API_Pagination", CountByName(ApiPlanScanProbe.Scan("SDT", "inventario-existente", () => SDT.GetAll(designModel).ToArray()), "sdt_API_Pagination")));
 
         return new PrototypeExistingObjectsSnapshot(baseName, $"api{baseName}_Metadata", results);
     }

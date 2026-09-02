@@ -167,9 +167,9 @@ internal static class ApiPlanProcedureWriter
         var existingByName = new Dictionary<string, Procedure>(StringComparer.OrdinalIgnoreCase);
         foreach (var definition in definitions)
         {
-            var existing = Procedure.GetAll(designModel)
+            var existing = ApiPlanScanProbe.Scan("Procedure", "procedure-preflight", () => Procedure.GetAll(designModel)
                 .Where(procedure => string.Equals(procedure.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
+                .ToArray());
 
             if (existing.Length > 1)
             {

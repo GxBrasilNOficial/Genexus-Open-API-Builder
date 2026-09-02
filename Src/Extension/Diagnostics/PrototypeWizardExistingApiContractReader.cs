@@ -315,9 +315,9 @@ internal static class PrototypeWizardExistingApiContractReader
 
     private static PrototypeWizardExistingFieldSelection ReadOwnedSdtFields(KBModel designModel, string sdtName)
     {
-        var matches = SDT.GetAll(designModel)
+        var matches = ApiPlanScanProbe.Scan("SDT", "contrato-existente", () => SDT.GetAll(designModel)
             .Where(item => string.Equals(item.Name, sdtName, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
+            .ToArray());
         if (matches.Length != 1 || !ApiPlanOwnedObjectDescription.IsOwnedSdt(matches[0].Description, sdtName))
         {
             return PrototypeWizardExistingFieldSelection.Unavailable;

@@ -46,13 +46,13 @@ internal sealed class ApiPlanKbObjectNameIndex
         progress?.PumpAndThrowIfAbortRequested();
 
         var index = new ApiPlanKbObjectNameIndex(
-            Folder.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase),
-            SDT.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase),
-            Procedure.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase),
-            API.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase),
-            WikiFileKBObject.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase),
-            Transaction.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase),
-            GxAttribute.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase));
+            ApiPlanScanProbe.Scan("Folder", "indice-create", () => Folder.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase)),
+            ApiPlanScanProbe.Scan("SDT", "indice-create", () => SDT.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase)),
+            ApiPlanScanProbe.Scan("Procedure", "indice-create", () => Procedure.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase)),
+            ApiPlanScanProbe.Scan("API", "indice-create", () => API.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase)),
+            ApiPlanScanProbe.Scan("File", "indice-create", () => WikiFileKBObject.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase)),
+            ApiPlanScanProbe.Scan("Transaction", "indice-create", () => Transaction.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase)),
+            ApiPlanScanProbe.Scan("Attribute", "indice-create", () => GxAttribute.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase)));
 
         progress?.PumpAndThrowIfAbortRequested();
         return index;
@@ -69,7 +69,7 @@ internal sealed class ApiPlanKbObjectNameIndex
             throw new ArgumentNullException(nameof(designModel));
         }
 
-        _folders = Folder.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase);
+        _folders = ApiPlanScanProbe.Scan("Folder", "indice-refresh", () => Folder.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase));
     }
 
     /// <summary>
@@ -82,7 +82,7 @@ internal sealed class ApiPlanKbObjectNameIndex
             throw new ArgumentNullException(nameof(designModel));
         }
 
-        _sdts = SDT.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase);
+        _sdts = ApiPlanScanProbe.Scan("SDT", "indice-refresh", () => SDT.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase));
     }
 
     internal IReadOnlyList<Folder> FindFolders(string name) => _folders[name].ToArray();

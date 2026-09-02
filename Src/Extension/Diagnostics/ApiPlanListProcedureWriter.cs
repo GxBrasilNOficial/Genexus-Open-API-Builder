@@ -196,7 +196,7 @@ internal static class ApiPlanListProcedureWriter
     private static Procedure FindListProcedure(KBModel model, ApiPlan plan)
     {
         var name = $"proc{plan.TransactionName}_API_List";
-        var matches = Procedure.GetAll(model).Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase)).ToArray();
+        var matches = ApiPlanScanProbe.Scan("Procedure", "list-find-procedure", () => Procedure.GetAll(model).Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase)).ToArray());
         if (matches.Length != 1 || !ApiPlanOwnedObjectDescription.IsOwnedProcedure(matches.Single().Description, name))
             throw new InvalidOperationException($"B070 bloqueado: Procedure propria '{name}' nao foi reencontrada com seguranca. Gere as Procedures pelo Wizard antes. Nenhuma alteracao foi feita.");
         return matches.Single();
@@ -1087,7 +1087,7 @@ internal static class ApiPlanListProcedureWriter
     {
         const string prefix = "Attribute:";
         var attributeName = dataType.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ? dataType.Substring(prefix.Length).Trim() : dataType.Trim();
-        var matches = Artech.Genexus.Common.Objects.Attribute.GetAll(model).Where(attribute => string.Equals(attribute.Name, attributeName, StringComparison.OrdinalIgnoreCase)).ToArray();
+        var matches = ApiPlanScanProbe.Scan("Attribute", "list-find-attribute", () => Artech.Genexus.Common.Objects.Attribute.GetAll(model).Where(attribute => string.Equals(attribute.Name, attributeName, StringComparison.OrdinalIgnoreCase)).ToArray());
         if (matches.Length != 1)
         {
             throw new InvalidOperationException($"B070 bloqueado: atributo base da variavel '&{variableName}' nao foi reencontrado com seguranca: '{attributeName}'. Nenhuma alteracao foi feita.");

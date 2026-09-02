@@ -1298,6 +1298,9 @@ public sealed class Package : AbstractPackageUI
         var applyOwner = ResolveFinalReportOwner();
         var report = new ApiPlanApplicationFinalReportCollector("Wizard", transaction.Name, apiPlan.ApiName);
         var stopwatch = Stopwatch.StartNew();
+        // B082: mede o custo das varreduras de catalogo ao longo de todo o Apply.
+        var scanTelemetry = new ApiPlanScanTelemetry();
+        using var scanScope = ApiPlanScanProbe.Begin(scanTelemetry);
         try
         {
             using var busy = ExtensionBusyProgressScope.Show(applyOwner, texts.BusyProgressTitleApply, texts);
@@ -1388,7 +1391,7 @@ public sealed class Package : AbstractPackageUI
                 }
 
                 stopwatch.Stop();
-                WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
+                WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 return true;
             }
@@ -1443,7 +1446,7 @@ public sealed class Package : AbstractPackageUI
                 }
 
                 stopwatch.Stop();
-                WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
+                WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 return true;
             }
@@ -1483,7 +1486,7 @@ public sealed class Package : AbstractPackageUI
                 }
 
                 stopwatch.Stop();
-                WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
+                WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 return true;
             }
@@ -1552,7 +1555,7 @@ public sealed class Package : AbstractPackageUI
                 }
 
                 stopwatch.Stop();
-                WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
+                WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 return true;
             }
@@ -1582,7 +1585,7 @@ public sealed class Package : AbstractPackageUI
                 }
 
                 stopwatch.Stop();
-                WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
+                WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 return true;
             }
@@ -1611,7 +1614,7 @@ public sealed class Package : AbstractPackageUI
                 }
 
                 stopwatch.Stop();
-                WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
+                WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 return true;
             }
@@ -1643,13 +1646,13 @@ public sealed class Package : AbstractPackageUI
             report.AddWarning(abortEx.Message);
             report.AddBlocked("Apply", transaction.Name, "Abortado [B082]");
             stopwatch.Stop();
-            WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
+            WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
             ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
             return true;
         }
 
         stopwatch.Stop();
-        WriteProbePhase("TotalAposConcluir", applyFromConfirm.ElapsedMilliseconds);
+        WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
         ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
         return true;
         } // using dialog [B082]
@@ -2189,6 +2192,24 @@ public sealed class Package : AbstractPackageUI
     private static void WriteProbePhase(string phaseName, long elapsedMs)
     {
         WriteOutput($"[Genexus Open API Builder][B082] Fase {phaseName}={elapsedMs} ms.");
+    }
+
+    /// <summary>
+    /// B082: fecha a fase total do Apply e publica o custo das varreduras de catálogo.
+    /// Diagnóstico apenas; não participa de nenhuma decisão de escrita.
+    /// </summary>
+    private static void WriteApplyScanTelemetry(ApiPlanScanTelemetry telemetry, long elapsedMs)
+    {
+        WriteProbePhase("TotalAposConcluir", elapsedMs);
+        if (telemetry is null)
+        {
+            return;
+        }
+
+        foreach (var line in telemetry.BuildOutputLines())
+        {
+            WriteOutput($"[Genexus Open API Builder][B082] Apply {line}");
+        }
     }
 
     private static void WriteOutput(string message)

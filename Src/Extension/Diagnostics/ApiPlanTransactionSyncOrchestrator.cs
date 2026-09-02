@@ -427,9 +427,9 @@ internal static class ApiPlanTransactionSyncOrchestrator
 
         var ownedSdtName = sdtName!;
         var matches = kbIndex is null
-            ? SDT.GetAll(designModel)
+            ? ApiPlanScanProbe.Scan("SDT", "sync-diverged", () => SDT.GetAll(designModel)
                 .Where(item => string.Equals(item.Name, ownedSdtName, StringComparison.OrdinalIgnoreCase))
-                .ToArray()
+                .ToArray())
             : kbIndex.FindSdts(ownedSdtName).ToArray();
         if (matches.Length != 1)
         {
