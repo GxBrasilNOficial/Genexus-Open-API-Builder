@@ -11,6 +11,14 @@ prioridade da frente, cortou cerca de um terço do que estava planejado e corrig
 que a `v20` dava como fechadas. Este documento registra o que ficou de pé, com o número que
 sustenta cada escolha.
 
+**Revisão do mesmo dia.** A primeira redação deste plano foi submetida a revisão externa e
+corrigida em três pontos, todos na mesma direção: ela havia enfraquecido garantias que já
+existiam no código. A ordem terminal do Remover e as confirmações individuais pós-`Delete`
+voltaram ao comportamento atual, e a falta de verificação de contêiner no `MaybeDeleteFolder`,
+antes descartada com base num fato errado, virou item da Etapa 2. Onde a `v20` errava por excesso
+de aparato, a primeira redação errou por remoção. As reversões estão marcadas nas decisões 3 e 4
+e na dor D10.
+
 `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md` permanece válido como registro da
 entrega do `0.1.0-alpha.7`. Deste plano, **revoga-se apenas o item 4 da sua seção «Fora da fila
 operacional»**, que classificava o índice compartilhado incompleto como resíduo de performance
@@ -87,11 +95,22 @@ distinta das demais: montagem de UI, não varredura.
 resistir a ser arrastada. Sintoma de trabalho pesado na thread da UI, com `DoEvents()` só entre
 operações.
 
-### Hipotética — sem caso observado
+### Estreita, mas real — comprovada no código
 
-**D10 — Remoção indevida do Folder.** A `v20` dedicou espaço extenso a endurecer a regra de
-posse. Não foi encontrado caso concreto: o código já exige nome único, descrição canônica ou
-legada da extensão, e pasta comprovadamente vazia. Endurecimento preventivo, não dor observada.
+**D10 — O Remover não verifica o contêiner do Folder.**
+`ApiPlanGeneratedApiRemover.MaybeDeleteFolder` exige cardinalidade única na KB inteira, descrição
+canônica ou legada da extensão, e pasta vazia — mas **não** verifica se o Folder está no contêiner
+esperado da Transaction. A regra de contêiner existe apenas em
+`ApiPlanTransactionFolder.IsInExpectedContainer`, usada por `IsReusable` no fluxo de Apply.
+
+O cenário exposto é estreito: exige exatamente um Folder com aquele nome em toda a KB, situado em
+contêiner diferente do esperado, com a descrição canônica da extensão e vazio. É plausível com
+transações homônimas em módulos distintos. A `v20` propunha um predicado normativo extenso e novo;
+o necessário é bem menor — reaproveitar no Remover a regra de contêiner que o Apply já tem.
+
+**Correção de rumo registrada:** a primeira versão deste plano classificou a D10 como hipotética,
+afirmando que "o predicado atual já exige contêiner". Isso é falso para o Remover, e o erro foi
+apontado por revisão externa em 2026-09-02. O corte estava justificado por um fato errado.
 
 ## Medições
 
@@ -145,27 +164,52 @@ localização, revalidação e confirmação pós-`Delete`.
 ### Fato colateral medido
 
 `MetadataFile Parent='Root Module'` nas três transações. O metadata File **não** fica dentro do
-Folder da Transaction. Isso responde, sem smoke separado, o gate que a `v20` exigia antes de
-aceitar a ordem Folder → File.
+Folder da Transaction, e por isso o `WikiFileKBObject.GetAll` de `IsFolderEmpty` nunca o conta.
+
+Isso respondia ao gate que a `v20` exigia antes de inverter a ordem para Folder → File. Como a
+inversão foi abandonada (decisão 4), o dado permanece apenas como observação: **três transações
+de uma KB não provam o comportamento de toda instalação**, e a ordem atual não depende disso.
 
 ## Decisões fechadas
 
-1. **O índice é construído uma vez e mantido**, ajustado conforme a própria extensão apaga ou
-   cria. Revoga a regra da `v20` que proibia usar o índice depois da primeira exclusão. Base: a
-   IDE não expõe edição de File; alterá-lo exige manipulá-lo fora da IDE e reimportar por um
-   fluxo manual de vários cliques, incompatível com o intervalo de uma operação — e a guarda de
-   operação única fecha o caminho pelo qual a própria extensão poderia interferir.
+1. **O índice é construído uma vez por operação**, e passa a ser reaproveitado em dois níveis de
+   risco deliberadamente distintos, que não devem ser confundidos nem entregues juntos:
+
+   - **Nível A — não atravessa mutação.** Usar o mapa de atributos existente; criar o índice uma
+     vez em vez de quatro; consumir o índice recém-criado nos preflights que rodam **antes de
+     qualquer `Save()`**. Nada aqui depende de o índice continuar fiel após uma escrita. Risco
+     praticamente nulo, e é onde está a maior parte do ganho do Apply.
+   - **Nível B — atravessa mutação.** Manter o índice coerente enquanto a extensão cria e apaga,
+     em vez de reconstruí-lo. É o que o Remove precisa, e exige contrato explícito: invariantes,
+     momento da atualização em relação ao sucesso da mutação, comportamento após exceção,
+     duplicidade e mudança de contêiner. **Não é "baixo risco" e não deve ser tratado como tal.**
+
+   Revoga a regra da `v20` que proibia usar o índice depois da primeira exclusão. Base: a IDE não
+   expõe edição de File; alterá-lo exige manipulá-lo fora da IDE e reimportar por um fluxo manual
+   de vários cliques, incompatível com o intervalo de uma operação — e a guarda de operação única
+   fecha o caminho pelo qual a própria extensão poderia interferir. **A guarda não cobre comandos
+   nativos da IDE durante o `DoEvents()`**, e é por isso que o Nível B precisa de contrato em vez
+   de confiança.
 2. **Os writers passam a usar o mapa de atributos que já existe.** `ApiPlanKbObjectNameIndex` já
    constrói o mapa (`GxAttribute` é alias de `Artech.Genexus.Common.Objects.Attribute`) e expõe
    `FindAttributes` e `TryGetSingleAttribute`, sem nenhum consumidor.
-3. **As confirmações pós-`Delete` passam a ser agregadas ao fim**, uma varredura por tipo em vez
-   de uma por objeto. Perde-se a parada precoce, que protege pouco: os objetos já apagados não
-   voltam, e nenhuma falha silenciosa de `Delete()` foi observada em 75 exclusões medidas.
-4. **A ordem terminal do Remover passa a ser API → Procedures → SDTs → Folder → metadata File**,
-   com o File como última mutação, disponível para revalidação de identidade até o fim. Medido
-   como seguro: o File está no `Root Module`, então `IsFolderEmpty` não o conta.
-   Cláusula pré-escrita, caso alguma instalação histórica difira: `IsFolderEmpty` desconsidera
-   **o GUID do File terminal autorizado** — nunca Files como classe.
+3. **As confirmações pós-`Delete` permanecem individuais.** Uma versão anterior deste plano as
+   agregava ao fim; a decisão foi revertida após revisão externa. Refeita a conta com os dados
+   medidos, elas custam 18,8% do Remove em `Empresa`, 21,4% em `Setor` e 18,6% em
+   `DocumentoFiscal`, enquanto as outras três varreduras por objeto — validação agregada,
+   localização e revalidação — somam 60%. Agregar trocaria a única verificação que constata a
+   realidade após a mutação por um quinto do ganho. Um `Delete()` sem efeito passaria despercebido
+   e o processo seguiria apagando os demais. **Investigar** se o SDK oferece consulta direta por
+   GUID, que daria a mesma garantia sem varredura completa.
+4. **A ordem terminal do Remover permanece API → Procedures → SDTs → metadata File → Folder.**
+   Uma versão anterior deste plano invertia os dois últimos; a decisão foi revertida após revisão
+   externa. A inversão era resíduo da `v20`, que a queria para manter o File disponível à
+   revalidação **por item** até o fim — revalidação que a decisão 7 cortou. Sem ela, inverter não
+   compra nada e exigiria uma exceção no `IsFolderEmpty` para ignorar o File terminal, exceção
+   capaz de liberar um Folder que ainda contenha outro File. Mantida a ordem atual, some a
+   exceção e some o risco.
+   O fato medido continua registrado, agora como observação e não como premissa: nas três
+   transações o metadata File ficou no `Root Module`, fora do Folder.
 5. **A sessão de progresso expõe três primitivos**, não dois:
    `ReportAndCheckBeforeWork`, `ReportAndCheckBeforeMutation` e `ReportCompleted(..., elapsedMs)`.
    O terceiro não verifica abort: um abort observado após um `Delete()` concluído não desfaz
@@ -174,10 +218,20 @@ aceitar a ordem Folder → File.
 6. **A guarda de operação única é a correção real da reentrância.** Aumentar a janela de
    progresso é reforço visual, não proteção: não impede Alt+Tab, atalhos de teclado da IDE, nem
    o processamento de eventos, que é o mecanismo da reentrada.
-7. **O vínculo Preview → Remove fica enxuto.** O Remove recebe o plano do Preview em memória e,
-   antes da primeira exclusão, valida uma vez: Transaction por GUID, metadata File único com
-   mesmo GUID e ownership, e SHA-256 dos bytes igual ao capturado no Preview. Divergência
+7. **O vínculo Preview → Remove fica enxuto.** O Remove recebe o plano do Preview **por
+   referência, em memória**, e não reconstrói plano nenhum a partir do File corrente. A instância
+   que alimenta a renderização da confirmação é **a mesma** que alimenta a fila executada e o
+   contador de planejados; nenhum call site recalcula um total ou uma lista por caminho próprio.
+
+   Antes da primeira exclusão, valida-se, além do que `ValidateRemovalTargets` já faz hoje por
+   alvo — API por GUID, Procedure e SDT por descrição de posse, com bloqueio em cardinalidade
+   ambígua —, a identidade da Transaction por GUID, o metadata File único com mesmo GUID e
+   ownership, e o SHA-256 dos bytes igual ao capturado no Preview. Divergência em qualquer um
    bloqueia com zero exclusões. Daí em diante, a lista confirmada é a autorização.
+
+   O que **não** entra: revalidação de identidade repetida a cada alvo intermediário. Ela é o
+   aparato que a `v20` construía para o cenário de alteração externa durante a exclusão, cortado
+   pelas razões da tabela abaixo.
 8. **Diálogos passam a se ancorar na tela do owner.** Posicionamento calculado a partir do
    retângulo da janela dona, incluindo o caso de owner nativo; `CenterScreen` e `CenterParent`
    deixam de ser usados onde não funcionam.
@@ -192,50 +246,102 @@ aceitar a ordem Folder → File.
 | `ApiPlanGeneratedApiRemovalPartialResult` com motivos terminais | Sem exclusão parcial planejada, não há resultado parcial a modelar. Permanece apenas o item estruturado de Folder preservado (D7) |
 | Chave `RemovalConfirmationPartialWarning` e variantes PT/ES/EN | Advertia sobre a política cortada |
 | Gate de decisão humana com `human-decision.md` e `manuscriptSha256` | Existia unicamente para autorizar a política de bytes. Como efeito colateral, some o problema de o registro viver em `Temp/`, que é ignorado pelo git |
-| Predicado normativo estrito de ownership de Folder | Endurecimento da D10, hipotética. O predicado atual já exige contêiner, descrição canônica ou legada, e pasta vazia |
+| Predicado normativo **novo** de ownership de Folder, com dimensões separadas de presença, procedência e disposição | **Corte parcial, revisto.** A falta de verificação de contêiner no Remover é real (D10) e entra na Etapa 2, mas resolvida por reúso da regra que o Apply já tem, não por um predicado normativo novo |
 | Manifesto `Tests/B082/GetAllManifest.json` com lint bidirecional | Inventário de `GetAll` como artefato versionado, quando a instrumentação já mede os mesmos call sites em runtime e com custo. Reavaliar depois da otimização, se ainda fizer sentido |
 
 ## Ordem de execução
 
-**Etapa 1 — desempenho.** Índice criado uma vez por operação; writers de Business Component e
-List consumindo o mapa de atributos; preflights de API Object, Procedure e SDT consumindo o
-índice em vez de varrer em laço; no Remover, índice mantido e confirmações agregadas.
-Nenhuma regra de escrita ou exclusão muda.
+**Etapa 1A — desempenho sem atravessar mutação.** Writers de Business Component e List
+consumindo o mapa de atributos; índice criado uma vez por operação, eliminando os dois
+`kbIndex ??= Create(...)` e a criação direta; preflights de API Object, Procedure e SDT
+consumindo o índice já construído, todos eles anteriores ao primeiro `Save()`. Nenhuma regra de
+escrita ou exclusão muda, e nenhum mapa precisa continuar fiel depois de uma mutação.
+
+**Etapa 1B — desempenho atravessando mutação.** Índice mantido coerente conforme a extensão cria
+e apaga, com o contrato exigido pelo Nível B da decisão 1 escrito antes do código. Cobre a
+validação agregada, a localização e a revalidação do Remover. **Não** cobre as confirmações
+pós-`Delete`, que permanecem individuais e por leitura corrente.
 
 **Etapa 2 — segurança.** Guarda de operação única nos quatro handlers (`ExecuteOpenWizardStepOne`,
 `ExecuteSynchronizeWithTransaction`, `ExecuteRemoveGeneratedApi`, `ExecuteConfigureWizardPreferences`),
 viva até o retorno do handler, inclusive durante o relatório final; remoção do `DoEvents()`
-aninhado em `OnAbortClicked`; verificação de abort entre o report e a mutação; plano do Preview
-entregue ao Remove com validação única; ordem terminal Folder → File.
+aninhado em `OnAbortClicked`; protocolo de abort escrito como sequência explícita — reportar,
+processar eventos, verificar abort, revalidar o alvo, só então mutar — e não apenas "verificar
+entre o report e a mutação"; plano do Preview entregue ao Remove como instância única, conforme
+a decisão 7; e **verificação de contêiner no `MaybeDeleteFolder`**, reaproveitando a regra de
+`ApiPlanTransactionFolder.IsInExpectedContainer` em vez de duplicá-la.
 
 **Etapa 3 — comunicação e UX.** Fechamento da casca antes do relatório final em todos os
 caminhos; correção do `DEMO.md:144-146` e do trecho correspondente do plano de 2026-08-31;
-Folder preservado como item estruturado; ancoragem das janelas na tela do owner.
+ancoragem das janelas na tela do owner; e Folder preservado como item estruturado — o que exige
+tocar, no mesmo passo, toda a cadeia que hoje transporta a informação como texto:
+`ApiPlanGeneratedApiRemover` produz a string `Folder:{nome}:PreservedNonEmpty`,
+`ApiPlanApplicationFinalReport.AddDeletedItems` a recebe, `TryParsePreservedFolder` a interpreta,
+e `BuildOutputSummary` a publica em `Package.cs`. Trocar apenas o produtor quebra o consumidor.
 
 **Fora desta frente, registrado:** a abertura do Wizard (D8) e a responsividade da IDE (D11)
 têm causa distinta — montagem de interface e trabalho na thread da UI. Merecem frente própria.
 
-A Etapa 1 vem primeiro por três razões medidas: é a maior melhoria isolada disponível; é a de
+A Etapa 1A vem primeiro por três razões medidas: é a maior melhoria isolada disponível; é a de
 menor risco, porque trocar uma varredura por consulta a um mapa de objetos que a extensão nunca
 modifica não altera comportamento e um erro quebra o build, não a KB; e ela reduz a janela de
 exposição que a D1 explora — cada Apply passa cerca de um minuto a menos dentro do `DoEvents()`.
 
+A 1B **não herda** esse argumento de risco e pode ser adiada sem prejuízo da 1A: o Apply melhora
+quase tudo que tem para melhorar já na 1A, e o ganho restante do Remove não justifica entregar um
+índice mutável sem contrato. Se a 1B for adiada, o Remover continua com leitura corrente em todos
+os pontos, exatamente como hoje.
+
 ## Critérios de aceite
 
-**Etapa 1.** Medir de novo `Setor`, `Empresa` e `DocumentoFiscal`, nas três operações, com a
-instrumentação ligada, e comparar com a tabela acima. Metas derivadas dos números:
+**Etapa 1A.** Medir de novo `Setor`, `Empresa` e `DocumentoFiscal` nas três operações — Apply,
+Sincronizar e Remover — com a instrumentação ligada.
 
-| Operação | Hoje | Meta |
+| Operação | Hoje | Meta 1A |
 |---|---|---|
 | Apply `Setor` | 84,3 s | ≤ 25 s |
 | Apply `Empresa` | 161,5 s | ≤ 120 s |
 | Apply `DocumentoFiscal` | 187,5 s | ≤ 130 s |
-| Remove `Setor` | 12,8 s | ≤ 5 s |
-| Remove `Empresa` | 41,2 s | ≤ 12 s |
+| Remove `Setor` | 12,8 s | ≤ 12 s |
+| Remove `Empresa` | 41,2 s | ≤ 36 s |
+| Remove `DocumentoFiscal` | 14,5 s | ≤ 13 s |
 
-Além dos tempos: `indice-create` aparece **uma vez** por tipo, não quatro; `bc-find-attribute` e
-`list-find-attribute` desaparecem do relatório de varreduras; e os artefatos gerados são
-idênticos aos de antes — mesmos nomes, mesma quantidade, mesmo trio API/Procedure/SDT.
+O ganho do Remove na 1A é modesto de propósito: só a validação agregada — que roda antes de
+qualquer exclusão e portanto é Nível A — passa a usar o índice. Localização e revalidação
+pertencem à 1B.
+
+**Etapa 1B**, se e quando for executada:
+
+| Operação | Meta 1B |
+|---|---|
+| Remove `Setor` | ≤ 7 s |
+| Remove `Empresa` | ≤ 20 s |
+| Remove `DocumentoFiscal` | ≤ 9 s |
+
+**Marcas estruturais, em ambas:** `indice-create` aparece **uma vez** por tipo, não quatro;
+`bc-find-attribute` e `list-find-attribute` desaparecem do relatório de varreduras; e as
+confirmações `confirmacao-pos-delete` **continuam presentes**, uma por objeto — se sumirem, a
+decisão 3 foi violada.
+
+**Disciplina de medição.** As tabelas da seção «Medições» vêm de **uma execução única por
+transação**, sem repetição, sem variância e sem distinção entre KB fria e quente. Elas servem
+como ordem de grandeza, não como linha de base estatística. Para o aceite:
+
+- executar **três vezes** cada combinação e registrar as três, não só a melhor;
+- declarar se a KB estava recém-aberta ou já em uso, e manter a mesma condição no antes e no
+  depois;
+- considerar aprovado quando as três execuções ficarem abaixo da meta, não a média.
+
+O **overhead da própria instrumentação não foi medido**. Por construção é um `Stopwatch` e uma
+inserção em lista por varredura de 100 a 1300 ms, o que o torna desprezível — mas isso é
+argumento, não medição, e ambos os lados da comparação o carregam igualmente.
+
+**Equivalência dos artefatos.** Comparar nomes e quantidades **não** prova equivalência. Conforme
+o `AGENTS.md` deste repositório, conferir também o trio: `Procedure.Rules.Source` com o `parm(...)`,
+a chamada gerada em `API.ServiceGroupSource.Source`, e as variáveis em
+`API.Variables.Content.Content` e `Procedure.Variables`. Acrescentar descrições de serviço,
+hierarquia de SDTs e o conteúdo do File de metadata — cujo SHA-256 é publicado no Output
+`[B060]` e serve de comparação direta entre antes e depois.
 
 **Etapa 2.** Uma segunda entrada durante uma operação longa é recusada, com mensagem localizada
 no Output quando ele estiver disponível e sem abrir UI nova quando não estiver. O teste
@@ -243,11 +349,15 @@ vinculante é reentrada aninhada na mesma thread. Abortar durante a exclusão n�
 nenhum objeto após o clique. O Remove executa exatamente a lista exibida na confirmação, e uma
 divergência de identidade ou de SHA bloqueia com zero exclusões.
 
+**Etapa 2, adicional.** Um Folder homônimo situado em contêiner diferente do esperado **não** é
+apagado, mesmo com descrição canônica e vazio; o teste cobre esse caso explicitamente.
+
 **Etapa 3.** O relatório final abre com a casca já fechada em sucesso, erro, bloqueio e abort.
 O `DEMO.md` descreve a casca como modeless e afirma que Abortar após o primeiro `Save()` pode
-deixar estado parcial. Folder preservado aparece como item preservado, não entre os removidos.
-Wizard, progresso, confirmação e relatório abrem na mesma tela da IDE, com a IDE em monitor
-secundário.
+deixar estado parcial. Folder preservado aparece como item preservado, não entre os removidos —
+com produtor e consumidores atualizados no mesmo passo, e `TryParsePreservedFolder` removido ou
+reescrito, nunca deixado a interpretar uma string que já não é produzida. Wizard, progresso,
+confirmação e relatório abrem na mesma tela da IDE, com a IDE em monitor secundário.
 
 **Em todas:** build Release pelo procedimento do repositório, reinstalação manual da DLL, e
 smoke na IDE. Lint e teste unitário não substituem o smoke.
@@ -343,19 +453,27 @@ assinatura**: ali a propagação começa do zero.
 `ApiPlanGeneratedApiRemover` faz quatro varreduras por objeto, hoje todas com `kbIndex: null`
 depois da validação agregada:
 
-- validação agregada (`ValidateRemovalTargets`) — pode usar o índice;
+- validação agregada (`ValidateRemovalTargets`) — roda **antes de qualquer exclusão**, portanto é
+  Nível A: pode usar o índice já na Etapa 1A;
 - localização antes do `Delete` (`DeleteSingleProcedure`, `DeleteApiObject`, `DeleteSingleOwnSdt`,
-  `MaybeDeleteFolder`) — pode usar o índice mantido;
-- revalidação de identidade imediatamente antes do `Delete` — pode usar o índice mantido;
-- confirmação depois do `Delete` — **decisão 3**: passa a ser agregada ao fim, uma varredura por
-  tipo conferindo todos os GUIDs.
+  `MaybeDeleteFolder`) — Nível B, exige índice mantido;
+- revalidação de identidade imediatamente antes do `Delete` — Nível B, idem;
+- confirmação depois do `Delete` — **permanece individual e por leitura corrente**. Ela existe
+  para constatar que o `Delete()` do SDK surtiu efeito; um índice, mantido ou não, não responde a
+  essa pergunta. Não otimizar por agregação (ver decisão 3).
 
 `IsFolderEmpty` faz cinco varreduras completas de uma vez, e com as de localização e confirmação
-do Folder a exclusão de um único Folder custa sete. Mede 1,4 a 1,7 s — não é o gargalo, mas é
-gratuito eliminar quando o índice já estiver mantido.
+do Folder a exclusão de um único Folder custa sete. Mede 1,4 a 1,7 s — não é o gargalo. As de
+localização podem usar o índice mantido na 1B; a de confirmação, não.
 
 O parâmetro booleano `beforeAnyDelete`, usado para variar a mensagem de bloqueio, é o ponto onde
 a distinção entre "antes de qualquer exclusão" e "durante" está codificada hoje.
+
+`MaybeDeleteFolder` é também onde entra a correção da D10 (Etapa 2): hoje ele não verifica
+contêiner, e a regra a reaproveitar é `ApiPlanTransactionFolder.IsInExpectedContainer`, hoje
+privada e usada só por `IsReusable`. Note que a permissividade de `IsReusable` para Description
+vazia serve à reutilização durante o Apply e **não** deve ser transportada para autorizar um
+`Delete`.
 
 ### A5 — Testes que reprovam por casamento textual
 
@@ -412,8 +530,16 @@ Trocar de transação invalida a comparação com as tabelas deste documento.
 
 - **O ganho real.** Todas as projeções deste plano são aritmética sobre os tempos medidos, não
   resultado observado. Trate-as como hipótese a confirmar no aceite da Etapa 1.
-- **Se `Delete()` do SDK pode falhar em silêncio.** A decisão 3 assume que não, com base em 75
-  exclusões sem nenhuma falha. Não é prova.
+- **Variância, estado frio/quente e overhead da instrumentação.** Cada combinação foi executada
+  **uma vez**. As metas de aceite exigem três execuções justamente porque a linha de base não as
+  tem.
+- **Se `Delete()` do SDK pode falhar em silêncio.** Não sabemos. Foi por assumir que não que uma
+  versão anterior deste plano agregava as confirmações; a decisão foi revertida, e é essa
+  ignorância que justifica manter a verificação individual.
+- **Cobertura da instrumentação.** Ela foi aplicada seletivamente, aos tipos caros e aos laços
+  conhecidos — não a todos os `GetAll` do repositório. Um call site não instrumentado não aparece
+  no relatório de varreduras e pode passar por inexistente. Ao investigar um tempo que não fecha,
+  suspeite primeiro de varredura não instrumentada.
 - **O custo do `Save()` por tipo de objeto.** Sabemos que em `Empresa` a criação de 44 SDTs
   levou 30 s — cerca de 685 ms cada — mas não instrumentamos as mutações individualmente.
 - **A causa dos 7 s de montagem de interface** na abertura do Wizard de `DocumentoFiscal`.
