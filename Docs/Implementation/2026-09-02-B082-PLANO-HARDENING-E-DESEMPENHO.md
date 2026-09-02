@@ -565,11 +565,16 @@ Demais marcas: `indice-create` aparece **uma vez** por tipo, não quatro; e as c
 `confirmacao-pos-delete` **continuam presentes**, uma por objeto — se sumirem, a decisão 3 foi
 violada.
 
-A marca do `indice-create` é a que fecha o buraco deixado pelo lint. Como a lista de permitidos
-libera o `Create` do `Read` privado — necessário para a abertura do Wizard —, o lint sozinho não
-prova que `ValidateForIntentionalChange` deixou de consumi-lo. **Se `indice-create` aparecer mais
-de uma vez com o lint verde, o primeiro suspeito é o preflight ainda chamando
-`ReadForIntentionalChange`.** Ver o item A2 do apêndice.
+A marca do `indice-create` cobre o que **nenhuma regra textual alcança**. O lint tem duas: a lista
+de `Create` permitidos e a proibição de `ApiPlanWritePreflight` chamar `ReadForIntentionalChange`
+ou `ReadForSync` — juntas, elas pegam o preflight consumindo o `Read` privado. O que escapa é o
+caminho imprevisto: se `ApiPlanWritePreflight` passar a chamar
+`ReadForIntentionalChangeWithIndex`, por exemplo, as duas regras aprovam — o método é permitido e
+não está na proibição — e ainda assim nasce um segundo índice.
+
+**Se `indice-create` aparecer mais de uma vez por tipo com o lint verde, procure uma criação que a
+lista de permitidos cobre indevidamente**, não o caso já fechado pelas regras. Ver o item A2 do
+apêndice.
 
 **O Sync entra por marcas estruturais, não por tempo.** Ele foi medido apenas na KB pequena, onde
 a varredura é 22% do total; não há linha de base dele na KB grande, e inventar uma meta de tempo
@@ -773,10 +778,11 @@ não pode conter chamada a `ReadForIntentionalChange` nem a `ReadForSync`**. Os 
 legítimos desses métodos ficam fora dessa classe.
 
 Mesmo com as duas regras, os gates são complementares e nenhum substitui o outro. O **lint** pega
-o que é estático: os `??=`, o `Create` direto do SdtWriter e o call site proibido no preflight. A
-**telemetria** pega o que é dinâmico: se `indice-create` aparecer mais de uma vez por tipo com o
-lint verde, há uma origem que a lista de permitidos cobre indevidamente — o primeiro suspeito é o
-preflight ainda consumindo o `Read` privado por um caminho que o texto não previu.
+o que é estático e previsto: os `??=`, o `Create` direto do SdtWriter e o call site proibido no
+preflight. A **telemetria** pega o que nenhuma regra textual alcança — a criação por um caminho
+que a lista de permitidos autoriza sem que se pretendesse. O exemplo mais provável: um consumidor
+novo de `ReadForIntentionalChangeWithIndex`, que é permitido por ser a origem legítima do Apply, e
+que num segundo call site produziria um índice a mais sem violar nenhuma das duas regras.
 
 ### A3 — Símbolos que varrem o catálogo em laço
 
