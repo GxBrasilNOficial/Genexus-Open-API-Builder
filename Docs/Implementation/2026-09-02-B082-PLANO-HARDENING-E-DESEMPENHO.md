@@ -446,7 +446,7 @@ apenas o `ThrowIfAbortRequested` entre o `Report` — que já executa `DoEvents`
 o clique — e o `Delete()`. A localização por GUID que já existe no fluxo permanece como está;
 nenhuma verificação nova por item entra aqui.
 
-Esta última exige três mudanças concretas, não uma menção: `ApiPlanTransactionFolder.IsInExpectedContainer`
+**A verificação do Folder** exige três mudanças concretas, não uma menção: `ApiPlanTransactionFolder.IsInExpectedContainer`
 é privado e recebe o objeto `Transaction`, então precisa ser tornado compartilhável; `MaybeDeleteFolder`
 recebe hoje apenas `plan`, e precisa passar a receber a `Transaction` que `Remove` já tem em mãos; e o
 Folder passa a ser conferido também por **GUID capturado no Preview**, já que o metadata grava dele
@@ -522,10 +522,34 @@ pertencem à 1B.
 | Remove `Empresa` | ≤ 20 s |
 | Remove `DocumentoFiscal` | ≤ 9 s |
 
-**Marcas estruturais, em ambas:** `indice-create` aparece **uma vez** por tipo, não quatro;
-`bc-find-attribute` e `list-find-attribute` desaparecem do relatório de varreduras; e as
-confirmações `confirmacao-pos-delete` **continuam presentes**, uma por objeto — se sumirem, a
-decisão 3 foi violada.
+**Marcas estruturais.** Elas cobrem exatamente o que a coluna «Projetado» soma, para que passar
+nas marcas e falhar no relógio seja impossível — e para que, se o tempo não bater, as marcas digam
+qual conversão faltou.
+
+Devem **desaparecer** do relatório de varreduras:
+
+| Linha | Vale, na KB grande |
+|---|---|
+| `Attribute/bc-find-attribute` | 14,9 s em `Empresa`, 28,9 s em `Setor` |
+| `Attribute/list-find-attribute` | 11,6 s em `Empresa`, 23,0 s em `Setor` |
+| `Procedure/procedure-preflight` | ~2,0 s |
+| `SDT/apiobject-preflight-sdt` | 6,1 s em `Empresa` |
+| `SDT/bc-ensure-sdt` | 5,9 s em `Empresa` |
+
+Devem **permanecer**, e sua ausência é sinal de que a conversão perigosa foi feita:
+
+| Linha | Por quê |
+|---|---|
+| `Procedure/apiobject-preflight-procedure` | Roda depois de gravar Procedures, sem `RefreshProcedures` |
+| `Procedure/bc-find-procedure` | Idem |
+| `Procedure/list-find-procedure` | Idem |
+
+Só somem se um `RefreshProcedures` for criado **e chamado** — e nesse caso a linha
+`Procedure/indice-refresh` passa a aparecer, do mesmo modo que `SDT/indice-refresh` hoje.
+
+Demais marcas: `indice-create` aparece **uma vez** por tipo, não quatro; e as confirmações
+`confirmacao-pos-delete` **continuam presentes**, uma por objeto — se sumirem, a decisão 3 foi
+violada.
 
 **O Sync entra por marcas estruturais, não por tempo.** Ele foi medido apenas na KB pequena, onde
 a varredura é 22% do total; não há linha de base dele na KB grande, e inventar uma meta de tempo
@@ -642,6 +666,13 @@ mutações. Enquanto ela não existir, todo lookup posterior a uma gravação de
 legítima **dentro da 1A**, e liberaria `PreflightRequiredProcedures`, `FindProcedure` e
 `FindListProcedure`. As metas deste plano não dependem disso; é ganho adicional de cerca de 3,6 s
 por Apply na KB grande.
+
+São três passos, e **os três são obrigatórios juntos**: tirar o `readonly` de `_procedures`;
+acrescentar o método; e **chamá-lo em `Package.cs` logo após a fase de Procedures**, exatamente
+como `kbIndexForApply.RefreshSdts(...)` é chamado após a fase de SDTs. Criar o método sem o call
+site é o erro natural aqui — e o mais perigoso, porque as buscas passariam a consultar um mapa
+que continua sem as Procedures recém-criadas, com o mesmo efeito de não ter refresh nenhum. Se
+optar por não fazer os três, mantenha as três buscas em leitura corrente.
 
 ### A2 — As cinco origens de criação do índice, e as quatro criações observadas
 
