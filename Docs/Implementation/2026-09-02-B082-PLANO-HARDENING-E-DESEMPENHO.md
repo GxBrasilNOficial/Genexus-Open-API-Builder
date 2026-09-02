@@ -478,6 +478,15 @@ pertencem à 1B.
 confirmações `confirmacao-pos-delete` **continuam presentes**, uma por objeto — se sumirem, a
 decisão 3 foi violada.
 
+**O Sync entra por marcas estruturais, não por tempo.** Ele foi medido apenas na KB pequena, onde
+a varredura é 22% do total; não há linha de base dele na KB grande, e inventar uma meta de tempo
+sem número anterior seria arbitrário. O que se exige do Sync que grava, na KB grande, é o mesmo
+que do Apply: `indice-create` **uma vez** por tipo em vez de quatro, e as chamadas
+`bc-find-attribute` e `list-find-attribute` ausentes. Como ele repete o padrão do Apply, essas
+marcas bastam para provar que a correção o alcançou. Se quiser meta de tempo para o Sync numa
+frente futura, **colete antes a linha de base na KB grande** — provocando a diferença com um
+atributo novo — e só então defina o alvo.
+
 **Disciplina de medição.** As tabelas da seção «Medições» vêm de **uma execução única por
 transação**, sem repetição, sem variância e sem distinção entre KB fria e quente. Elas servem
 como ordem de grandeza, não como linha de base estatística. Para o aceite:
@@ -717,12 +726,14 @@ ter o custo somado ao da escrita. No Remover, a exclusão continua com telemetri
 por parâmetro; o helper interno cai no probe de escopo ambiente apenas quando não a recebe, que é
 justamente o caminho do Preview.
 
-**Sobre o Sync:** até 2026-09-02 ele não era instrumentado — `ApiPlanScanProbe.Begin` existia
-apenas no fluxo do Wizard, e por isso as medições registradas neste documento **não têm linha de
-varredura para Sync**. O escopo foi acrescentado, publicando ao encerrar para cobrir os vários
-pontos de retorno do handler. Um Sync sem diferenças retorna cedo e produz poucas varreduras; a
-medição que interessa é a de um Sync que **de fato escreve**, ainda não coletada. Provocá-la exige
-alterar a Transaction depois de gerada a API — acrescentar um atributo, por exemplo.
+**Sobre o Sync:** ele não era instrumentado até 2026-09-02 — `ApiPlanScanProbe.Begin` existia
+apenas no fluxo do Wizard. O escopo foi acrescentado, publicando ao encerrar para cobrir os vários
+pontos de retorno do handler, e o Sync **que de fato escreve já foi medido** no mesmo dia, na KB
+pequena: 84 varreduras, 1,9 s. Ver «O Sync que grava» na seção «Medições».
+
+Um Sync sem diferenças retorna antes da fase de escrita e produz apenas as sete varreduras do
+Preview. Para exercitar o caminho que grava, altere a Transaction depois de gerada a API —
+acrescentar um atributo basta.
 
 **Reinstalar não é opcional.** Medição vale para a DLL que a produziu: sem reinstalar, ou os
 números são do código antigo, ou as linhas novas simplesmente não aparecem — e ausência de linha
@@ -747,9 +758,10 @@ Trocar de transação invalida a comparação com as tabelas deste documento.
   conhecidos — não a todos os `GetAll` do repositório. Um call site não instrumentado não aparece
   no relatório de varreduras e pode passar por inexistente. Ao investigar um tempo que não fecha,
   suspeite primeiro de varredura não instrumentada.
-- **O Sync que escreve.** Nas três transações medidas o Sync não encontrou diferenças e retornou
-  cedo, então o caminho que realmente aplica mudanças nunca foi medido. As metas de aceite não
-  incluem tempo de Sync por essa razão: não há linha de base para comparar.
+- **O Sync que escreve na KB grande.** Ele foi medido na KB pequena (84 varreduras, 1,9 s de
+  8,6 s), o que basta para confirmar que repete o padrão do Apply, mas **não há linha de base dele
+  na `Fabrica Brasil Test`** — e é lá que as metas valem. Ver a regra de aceite do Sync na seção
+  «Critérios de aceite».
 - **O custo do `Save()` por tipo de objeto.** Sabemos que em `Empresa` a criação de 44 SDTs
   levou 30 s — cerca de 685 ms cada — mas não instrumentamos as mutações individualmente.
 - **A causa dos 7 s de montagem de interface** na abertura do Wizard de `DocumentoFiscal`.
