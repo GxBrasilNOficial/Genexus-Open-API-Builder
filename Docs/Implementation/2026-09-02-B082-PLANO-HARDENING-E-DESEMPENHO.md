@@ -422,7 +422,10 @@ decisão 1:
   `ApiPlanGenerationStateReader.ReadForIntentionalChange`, alcançada por
   `ApiPlanWritePreflight.ValidateForIntentionalChange` **sem `progress`**. Esta última é a razão de
   `Fase IndiceKb` e `Fase PreflightAgregado` medirem quase o mesmo tempo. A origem legítima é
-  `ReadForIntentionalChangeWithIndex`. Ver o inventário completo no item A2 do apêndice;
+  `ReadForIntentionalChangeWithIndex`. **Elimina-se o consumo, não o método:**
+  `ValidateForIntentionalChange` e `ValidateForSync` passam a receber o índice já criado, enquanto
+  `ReadForIntentionalChange` continua existindo para a abertura do Wizard, que é a D8 e está fora
+  desta frente. Ver o inventário completo no item A2 do apêndice;
 - `PreflightProcedures` pelo índice inicial; `PreflightRequiredSdts` e `EnsureSdts` pelo índice
   **depois do `RefreshSdts` que já existe**;
 - no Remover, apenas a validação agregada, que roda antes de qualquer exclusão.
@@ -711,7 +714,7 @@ dispara em toda execução. O alvo da correção são as origens, não a contage
 | Origem | Natureza |
 |---|---|
 | `ApiPlanGenerationStateReader.ReadForIntentionalChangeWithIndex` | A criação legítima do Apply, com `progress` |
-| `ApiPlanGenerationStateReader.ReadForIntentionalChange` | **Sem `progress`**, alcançada por `ApiPlanWritePreflight.ValidateForIntentionalChange`. É por isso que `Fase IndiceKb` e `Fase PreflightAgregado` medem quase o mesmo tempo |
+| `ApiPlanGenerationStateReader.ReadForIntentionalChange` | **Sem `progress`**. Dois consumidores: `ApiPlanWritePreflight.ValidateForIntentionalChange` — o supérfluo, e a razão de `Fase IndiceKb` e `Fase PreflightAgregado` medirem quase o mesmo tempo — e `PrototypeWizardDialog.cs:2531`, a recalculação read-only da abertura, que é **D8 e fica**. Elimina-se o primeiro consumo; o método permanece |
 | `ApiPlanProcedureWriter` (`kbIndex ??= ApiPlanKbObjectNameIndex.Create(...)`) | Fallback oculto quando o índice não chega |
 | `ApiPlanSdtWriter` (`kbIndex ??= ApiPlanKbObjectNameIndex.Create(...)`) | Fallback oculto, mesmo padrão |
 | `ApiPlanSdtWriter` (`ApiPlanKbObjectNameIndex.Create(designModel)` direto) | Criação direta, sem sequer tentar receber um índice |
@@ -731,10 +734,30 @@ que este plano cortou: verifica uma única chamada, não uma matriz.
 
 **A lista tem de ser por símbolo, não por arquivo.** Liberar «qualquer `Create` dentro de
 `ApiPlanGenerationStateReader`» não serviria: **há dois** ali — o de
-`ReadForIntentionalChangeWithIndex`, que é a origem legítima, e o de `ReadForIntentionalChange`,
-que é justamente a criação supérflua a eliminar. Um lint por classe passaria com a duplicação
-intacta. Os permitidos são, nominalmente: `ReadForIntentionalChangeWithIndex` e os dois Previews
-de `Package.cs` (Sync e Remover), que são fases distintas por decisão explícita.
+`ReadForIntentionalChangeWithIndex`, que é a origem legítima do Apply/Sync, e o do `Read` privado
+sem índice, alcançado por `ReadForIntentionalChange`. Um lint por classe passaria com a duplicação
+intacta.
+
+**Mas o `Create` do `Read` privado não pode ser proibido pela 1A**, e é aqui que a lista de
+permitidos precisa de cuidado. `ReadForIntentionalChange` tem **dois** consumidores:
+`ApiPlanWritePreflight.ValidateForIntentionalChange`, que é o supérfluo a eliminar, e
+`PrototypeWizardDialog` (`PrototypeWizardDialog.cs:2531`), que é a recalculação read-only da
+**abertura do Wizard** — a D8, explicitamente fora desta frente. Se o lint proibir esse `Create`,
+ou a 1A invade a abertura, ou o teste reprova com o Wizard intacto.
+
+O caminho correto na 1A: `ValidateForIntentionalChange` e `ValidateForSync` passam a **receber** o
+índice já criado (`kbIndexForApply` no Apply, `syncKbIndex` no Sincronizar), e o `Read` privado
+continua existindo com seu `Create` para servir à abertura. A lista de permitidos fica:
+
+- `ApiPlanGenerationStateReader.ReadForIntentionalChangeWithIndex` — origem do Apply e do Sync;
+- o `Create` do `Read` privado — **enquanto a abertura do Wizard o usar**, com esta justificativa
+  registrada no próprio lint;
+- os dois Previews em `Package.cs`, Sync e Remover, que são fases distintas por decisão explícita.
+
+Alternativa, se preferir uma lista mais curta: fazer a abertura do Wizard chamar
+`ReadForIntentionalChangeWithIndex` e descartar o índice. É só troca de chamada, sem mexer na UI,
+e aí o `Create` do `Read` privado pode sair de vez. **Não é exigência da 1A** — a abertura
+pertence à D8 —, mas é a única forma de o lint ter apenas três entradas.
 
 ### A3 — Símbolos que varrem o catálogo em laço
 
