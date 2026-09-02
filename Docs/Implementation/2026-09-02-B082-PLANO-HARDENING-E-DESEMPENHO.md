@@ -265,3 +265,157 @@ smoke na IDE. Lint e teste unitário não substituem o smoke.
 - **As notas de release do `0.1.0-alpha.7` são histórico publicado** e não fazem parte da
   correção documental. Alterá-las exige decisão própria ou errata posterior.
 - **Nenhuma medição aqui vale para uma DLL diferente** das dos commits `7fd4a0d` e `c4d62ee`.
+
+## Apêndice — mapa para quem for implementar
+
+Este apêndice entrega o inventário levantado durante a medição e as armadilhas já
+encontradas. **Ele não desenha a solução:** que estrutura usar no lugar de `ILookup`, como
+propagar o índice e se vale extrair um contexto explícito são decisões de quem implementa, com
+o código à frente. O que segue é o mapa, não o caminho.
+
+Todas as referências são por **arquivo e símbolo**. Números de linha aparecem só como auxílio
+de navegação e podem ter mudado; confirme pelo símbolo.
+
+### A1 — O índice hoje é imutável
+
+`ApiPlanKbObjectNameIndex` guarda os sete mapas como `ILookup<string, T>`, que **não permite
+inserção nem remoção**. Cinco dos sete campos são `readonly` — `_procedures`, `_apis`,
+`_files`, `_transactions` e `_attributes` — e por isso nem podem ser reatribuídos. Apenas
+`_folders` e `_sdts` não são `readonly`, o que é exatamente a razão de só eles terem
+`RefreshFolders` e `RefreshSdts`, ambos reconstruindo o mapa inteiro com um novo `GetAll`.
+
+**A decisão 1 deste plano — índice construído uma vez e ajustado conforme a extensão apaga ou
+cria — não é implementável sobre `ILookup`.** Ela exige uma estrutura mutável. Essa é a
+primeira decisão técnica da Etapa 1, e vem antes de qualquer outra alteração.
+
+Consequência a considerar: `RefreshFolders` e `RefreshSdts`, que hoje custam uma varredura
+completa cada, tornam-se desnecessários se o índice passar a registrar as próprias criações.
+No Apply de `Empresa` o `indice-refresh` de SDT custou 173 ms; é pequeno, mas some de graça.
+
+### A2 — Onde o índice é criado quatro vezes
+
+| Origem | Natureza |
+|---|---|
+| `ApiPlanGenerationStateReader.ReadForIntentionalChangeWithIndex` | A criação legítima do Apply, com `progress` |
+| `ApiPlanGenerationStateReader.ReadForIntentionalChange` | **Sem `progress`**, alcançada por `ApiPlanWritePreflight.ValidateForIntentionalChange`. É por isso que `Fase IndiceKb` e `Fase PreflightAgregado` medem quase o mesmo tempo |
+| `ApiPlanProcedureWriter` (`kbIndex ??= ApiPlanKbObjectNameIndex.Create(...)`) | Fallback oculto quando o índice não chega |
+| `ApiPlanSdtWriter` (`kbIndex ??= ApiPlanKbObjectNameIndex.Create(...)`) | Fallback oculto, mesmo padrão |
+| `ApiPlanSdtWriter` (`ApiPlanKbObjectNameIndex.Create(designModel)` direto) | Criação direta, sem sequer tentar receber um índice |
+
+Fora do Apply há mais duas, legítimas por serem fases distintas: `Package.cs` no Preview do
+Sync e no Preview do Remover. Não confundir com as acima.
+
+Os dois `kbIndex ??=` são o mecanismo pelo qual um índice deixa de chegar sem que ninguém
+perceba — o código continua correto e fica lento em silêncio. Enquanto existirem, nenhum lint
+consegue provar que o índice foi propagado.
+
+### A3 — Símbolos que varrem o catálogo em laço
+
+**Atributos** — a maior fatia, cerca de 50 s por Apply quando a PK tem 2 partes e há 2 filtros:
+
+- `ApiPlanBusinessComponentWriter.EnsureAttributeExists`, chamado por `TrySetAttributeBasedOn`
+- `ApiPlanListProcedureWriter.EnsureAttributeExists`
+
+Ambos recebem apenas `KBModel model`. O índice **já expõe** `FindAttributes(string)` e
+`TryGetSingleAttribute(string, out GxAttribute)`, sem nenhum consumidor hoje.
+
+**Preflights que varrem uma vez por objeto:**
+
+| Símbolo | Varre |
+|---|---|
+| `ApiPlanApiObjectWriter.PreflightRequiredSdts` | `SDT.GetAll` por SDT do plano |
+| `ApiPlanApiObjectWriter.PreflightRequiredProcedures` | `Procedure.GetAll` por Procedure |
+| `ApiPlanProcedureWriter.PreflightProcedures` | `Procedure.GetAll` por definição |
+| `ApiPlanBusinessComponentWriter.EnsureSdts` | `SDT.GetAll` por SDT |
+| `ApiPlanBusinessComponentWriter.FindProcedure` | `Procedure.GetAll` por serviço |
+| `ApiPlanListProcedureWriter.FindListProcedure` | `Procedure.GetAll` |
+
+Em `Empresa`, `PreflightRequiredSdts` e `EnsureSdts` fizeram 47 varreduras cada.
+
+**O índice chega até a porta, mas não entra.** `ApiPlanBusinessComponentWriter.Apply` e
+`ApiPlanListProcedureWriter.Apply` já recebem `kbIndex` nas assinaturas públicas e o repassam a
+`ApiPlanSdtWriter.CreateOrReencounter` — mas **não** aos métodos privados acima, que continuam
+recebendo só `KBModel`. Já `ApiPlanApiObjectWriter` **não tem parâmetro `kbIndex` em nenhuma
+assinatura**: ali a propagação começa do zero.
+
+### A4 — No Remover
+
+`ApiPlanGeneratedApiRemover` faz quatro varreduras por objeto, hoje todas com `kbIndex: null`
+depois da validação agregada:
+
+- validação agregada (`ValidateRemovalTargets`) — pode usar o índice;
+- localização antes do `Delete` (`DeleteSingleProcedure`, `DeleteApiObject`, `DeleteSingleOwnSdt`,
+  `MaybeDeleteFolder`) — pode usar o índice mantido;
+- revalidação de identidade imediatamente antes do `Delete` — pode usar o índice mantido;
+- confirmação depois do `Delete` — **decisão 3**: passa a ser agregada ao fim, uma varredura por
+  tipo conferindo todos os GUIDs.
+
+`IsFolderEmpty` faz cinco varreduras completas de uma vez, e com as de localização e confirmação
+do Folder a exclusão de um único Folder custa sete. Mede 1,4 a 1,7 s — não é o gargalo, mas é
+gratuito eliminar quando o índice já estiver mantido.
+
+O parâmetro booleano `beforeAnyDelete`, usado para variar a mensagem de bloqueio, é o ponto onde
+a distinção entre "antes de qualquer exclusão" e "durante" está codificada hoje.
+
+### A5 — Testes que reprovam por casamento textual
+
+Vários lints do repositório leem o fonte como texto e comparam assinaturas literais. **Uma
+reprovação desses testes após mudança de assinatura não é regressão de comportamento** — é o
+lint precisando ser atualizado junto.
+
+Precedente desta sessão: `Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPreflight.ps1`
+reprovou ao acrescentarmos um parâmetro, porque procurava `DeleteApiObject(designModel, plan,
+deleted)` com o parêntese final. Foi corrigido para casar por prefixo, preservando a intenção da
+asserção — que é provar que o preflight ocorre antes da primeira exclusão, não congelar a lista
+de parâmetros. Ao encontrar caso semelhante, **preserve a intenção da asserção**; não a remova.
+
+O mesmo arquivo também exige que `ValidateRemovalTargets(designModel, plan` apareça exatamente
+três vezes. Alterar o número de pontos de entrada do preflight exige atualizar essa contagem
+conscientemente.
+
+Rodar sempre, na raiz do repositório:
+
+```powershell
+pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
+```
+
+`exit 0` mecânico não substitui a revisão semântica exigida pelo `AGENTS.md`.
+
+### A6 — Como medir o depois
+
+A instrumentação **já está instalada e deve permanecer**: `ApiPlanScanTelemetry` e
+`ApiPlanScanProbe`, ligados no Remover e no Apply/Sync. Sem escopo ativo, `ApiPlanScanProbe.Scan`
+apenas executa o delegate — custo zero fora da medição. Ao envolver uma varredura nova, inclua
+no delegate **o pipeline inteiro até a materialização** (`ToArray`, `Any`, `ToLookup`), porque
+`GetAll` é preguiçoso e cronometrar só a chamada não mede nada.
+
+Procedimento, na ordem:
+
+1. `dotnet build-server shutdown` e build Release pelo procedimento do repositório;
+2. fechar a IDE por completo;
+3. `Install-ExtensionForGeneXus18.bat` como administrador, na raiz — sem `genexus /install`,
+   a menos que o manifesto ou o registro tenham mudado;
+4. reabrir a IDE e executar, em cada uma das três transações, Apply, Sincronizar e Remover;
+5. coletar do Output as linhas `[B082] Apply ...` e `[B082] Remover ...` e comparar com as
+   tabelas da seção «Medições».
+
+**Reinstalar não é opcional.** Medição vale para a DLL que a produziu: sem reinstalar, ou os
+números são do código antigo, ou as linhas novas simplesmente não aparecem — e ausência de linha
+parece resultado.
+
+As três transações são `Setor`, `Empresa` e `DocumentoFiscal`, na KB `Fabrica Brasil Test`. Elas
+foram escolhidas para isolar variáveis distintas: `Setor` e `DocumentoFiscal` têm a mesma PK de
+2 partes e 2 filtros com 6 e 171 campos, e `Empresa` tem PK de 1 parte, 1 filtro e 14 níveis.
+Trocar de transação invalida a comparação com as tabelas deste documento.
+
+### A7 — O que não medimos
+
+- **O ganho real.** Todas as projeções deste plano são aritmética sobre os tempos medidos, não
+  resultado observado. Trate-as como hipótese a confirmar no aceite da Etapa 1.
+- **Se `Delete()` do SDK pode falhar em silêncio.** A decisão 3 assume que não, com base em 75
+  exclusões sem nenhuma falha. Não é prova.
+- **O custo do `Save()` por tipo de objeto.** Sabemos que em `Empresa` a criação de 44 SDTs
+  levou 30 s — cerca de 685 ms cada — mas não instrumentamos as mutações individualmente.
+- **A causa dos 7 s de montagem de interface** na abertura do Wizard de `DocumentoFiscal`.
+- **A reentrância acontecendo de fato.** A D1 é comprovada por leitura de código e pela
+  possibilidade de mexer no menu durante a operação; nunca foi reproduzida até a corrupção.
