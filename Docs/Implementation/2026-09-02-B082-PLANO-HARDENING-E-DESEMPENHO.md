@@ -57,12 +57,31 @@ novo, nas mesmas três transações.
 primeira coleta. A linha de base desta seção está confirmada; as mudanças de instrumentação não
 alteraram o que é medido.
 
-**A variância entre execuções é de cerca de 6%, e não é ruído desprezível.** Na reconferência, com
-exatamente as mesmas varreduras, o Apply de `Empresa` foi de 161,5 s para **171,9 s** (+6,4%) e o
-Remover, de 41,2 s para **38,7 s** (−6%). A diferença está no tempo de escrita do SDK, não na
-varredura. É por isso que o aceite exige três execuções: comparar uma única medição antes e depois
-pode fabricar um ganho ou uma regressão de 6% que não existe. **Toda diferença observada abaixo de
-10% deve ser tratada como empate** até que três execuções digam o contrário.
+**Três execuções de `Empresa`, e a variância separa-se em duas naturezas:**
+
+| Execução | Apply total | Apply varredura | Remove total | Remove varredura |
+|---|---|---|---|---|
+| 1 | 161,5 s | 52,2 s | 41,2 s | 33,6 s |
+| 2 | 171,9 s | 52,5 s | 38,7 s | 30,9 s |
+| 3 | 175,2 s | 52,9 s | 39,5 s | 31,5 s |
+| **Amplitude** | **8,5%** | **1,4%** | **6,5%** | **8,5%** |
+
+As **contagens** repetiram exatamente nas três: 155 varreduras no Apply, 205 no Remover, com o
+mesmo número por categoria. O que oscila é tempo, não trabalho.
+
+A varredura do **Apply** é o número mais confiável que temos: 52,2, 52,5 e 52,9 s — amplitude de
+1,4%. Nele, uma diferença de 3% já é sinal. A do **Remover** oscila mais (8,5%), o que é
+coerente: o catálogo encolhe a cada exclusão, então cada varredura seguinte é sobre um conjunto
+menor. Os **totais** carregam o tempo de escrita do SDK e variam de 6,5% a 8,5%.
+
+Regra para o aceite, derivada disso:
+
+- comparar **primeiro a contagem** de varreduras — ela é determinística e qualquer mudança é sinal;
+- na **varredura do Apply**, tratar diferença acima de 3% como real;
+- em **totais** e na varredura do Remover, exigir 10% para afirmar ganho ou regressão.
+
+Comparar uma execução única antes e depois pode fabricar um ganho de 8% que não existe — ou
+esconder um real.
 
 **O que ainda não foi medido em execução real:** o Sync que efetivamente grava. Nas coletas ele não
 encontrou diferenças e retornou antes da fase de escrita — caminho que, por isso, não emite linha
@@ -117,8 +136,9 @@ tela onde a IDE está. Observado em uso; causa identificada por leitura.
 distinta das demais: montagem de UI, não varredura.
 
 **D11 — A IDE fica pouco responsiva durante a operação**, a ponto de a janela de progresso
-resistir a ser arrastada. Sintoma de trabalho pesado na thread da UI, com `DoEvents()` só entre
-operações.
+resistir a ser arrastada. **Causa medida:** o processo consome 0,94 de uma thread lógica — um
+núcleo saturado — e essa thread é a da interface, devolvida apenas pelo `DoEvents()` entre
+operações. Não é I/O nem contenção: é CPU ocupada. Ver «O gargalo é CPU numa única thread».
 
 ### Estreita, mas real — comprovada no código
 
@@ -185,6 +205,44 @@ mesmo tempo justamente porque o preflight refaz o índice inteiro.
 
 Escala linearmente com o número de objetos: quatro varreduras por objeto — validação agregada,
 localização, revalidação e confirmação pós-`Delete`.
+
+### Previews de Sync e Remover
+
+Medidos em 2026-09-02, depois de ganharem escopo próprio:
+
+| | Varreduras | Tempo |
+|---|---|---|
+| Sync Preview | 7 | 2,0 s |
+| Remover Preview | 7 | 2,1 s |
+
+As sete são exatamente uma criação de índice por tipo de objeto — o Preview cria o índice **uma
+vez**, ao contrário do Apply. E a distribuição confirma onde está o custo: `Attribute` responde
+por **1,3 s dos 2,0 s**, contra 0,47 s de `Procedure`, 0,13 s de `SDT` e menos de 0,1 s para os
+demais.
+
+Isso expõe um desperdício que hoje não tem contrapartida: o índice constrói o mapa de atributos,
+pagando 1,3 s, e **nenhum consumidor o usa**. Nas quatro criações por Apply são cerca de 5,4 s
+gastos montando um mapa descartado. Depois da Etapa 1A o mesmo mapa passa a substituir as ~50 s de
+varredura dos writers — o custo deixa de ser desperdício e vira investimento.
+
+### O gargalo é CPU numa única thread
+
+Medido em 2026-09-02, na máquina de desenvolvimento — **AMD Ryzen 7 3800X**, 8 núcleos físicos e
+**16 threads lógicas** —, com o Gerenciador de Tarefas durante Apply e Remover de `Empresa`: o
+processo do GeneXus (32 bits) ficou em **5,9% de CPU**, com pico de 9,6%. Uma thread saturada
+equivale a 6,25% do total, então 5,9% são **0,94 thread** — praticamente um núcleo a 100% e quinze
+ociosos. O disco ficou em 0,5 MB/s.
+
+Três conclusões, todas com efeito sobre este plano:
+
+- **Não é I/O.** O tempo de `GetAll` é processamento, não espera. Eliminar varreduras converte-se
+  diretamente em tempo economizado, e as projeções deste plano não dependem de suposição sobre
+  disco ou rede.
+- **A D11 tem causa provada.** A IDE fica irresponsiva porque essa thread saturada é a thread da
+  interface — o `DoEvents()` só a devolve entre operações.
+- **Paralelizar não é alternativa.** O SDK do GeneXus não é thread-safe e as mutações exigem a
+  thread da UI. Com quinze núcleos ociosos, a tentação é distribuir o trabalho; o caminho viável é
+  o oposto — **fazer menos trabalho**, que é o que a Etapa 1A faz.
 
 ### Fato colateral medido
 
@@ -383,10 +441,14 @@ como ordem de grandeza, não como linha de base estatística. Para o aceite:
 - declarar se a KB estava recém-aberta ou já em uso, e manter a mesma condição no antes e no
   depois;
 - considerar aprovado quando as três execuções ficarem abaixo da meta, não a média;
-- **tratar diferença menor que 10% como empate**, pela variância de ~6% medida na reconferência;
-- conferir primeiro as **contagens** de varredura, que são estáveis: elas repetiram exatamente
-  entre execuções, enquanto os tempos oscilaram. Uma contagem que muda é sinal real; um tempo que
-  muda 6% não é.
+- aplicar os limiares por natureza de número, medidos em três execuções: **contagem** de varreduras
+  é determinística e qualquer mudança é sinal; **varredura do Apply** tem amplitude de 1,4%, então
+  3% já é real; **totais** e **varredura do Remover** oscilam até 8,5%, e exigem 10% para afirmar
+  ganho ou regressão;
+- conferir a CPU durante a execução: se continuar em torno de 6% — uma thread saturada num
+  processador de 16 threads — o trabalho segue ligado a CPU e single-thread, e a comparação de
+  tempos é válida. Uma queda expressiva de CPU com tempo igual indicaria que o gargalo mudou de
+  natureza, e aí a comparação deixa de valer.
 
 O **overhead da própria instrumentação não foi medido**. Por construção é um `Stopwatch` e uma
 inserção em lista por varredura de 100 a 1300 ms, o que o torna desprezível — mas isso é
