@@ -553,12 +553,18 @@ violada.
 
 **O Sync entra por marcas estruturais, não por tempo.** Ele foi medido apenas na KB pequena, onde
 a varredura é 22% do total; não há linha de base dele na KB grande, e inventar uma meta de tempo
-sem número anterior seria arbitrário. O que se exige do Sync que grava, na KB grande, é o mesmo
-que do Apply: `indice-create` **uma vez** por tipo em vez de quatro, e as chamadas
-`bc-find-attribute` e `list-find-attribute` ausentes. Como ele repete o padrão do Apply, essas
-marcas bastam para provar que a correção o alcançou. Se quiser meta de tempo para o Sync numa
-frente futura, **colete antes a linha de base na KB grande** — provocando a diferença com um
-atributo novo — e só então defina o alvo.
+sem número anterior seria arbitrário.
+
+O que se exige do Sync que grava, na KB grande, são **as mesmas duas tabelas acima, sem exceção**:
+as cinco linhas que devem desaparecer e as três que devem permanecer. Ele atravessa exatamente os
+mesmos writers do Apply — `EnsureAttributeExists`, `PreflightProcedures`, `PreflightRequiredSdts`,
+`EnsureSdts`, `FindProcedure`, `FindListProcedure` — e a coleta na KB pequena confirmou o padrão
+idêntico, incluindo as quatro criações de índice. Uma 1A bem feita o cobre sem trabalho próprio; se
+alguma das cinco linhas persistir só no Sync, é porque um call site do fluxo de Sincronizar ficou
+para trás.
+
+Se quiser meta de tempo para o Sync numa frente futura, **colete antes a linha de base na KB
+grande** — provocando a diferença com um atributo novo — e só então defina o alvo.
 
 **Disciplina de medição.** As tabelas da seção «Medições» vêm de **uma execução única por
 transação**, sem repetição, sem variância e sem distinção entre KB fria e quente. Elas servem
@@ -668,11 +674,15 @@ legítima **dentro da 1A**, e liberaria `PreflightRequiredProcedures`, `FindProc
 por Apply na KB grande.
 
 São três passos, e **os três são obrigatórios juntos**: tirar o `readonly` de `_procedures`;
-acrescentar o método; e **chamá-lo em `Package.cs` logo após a fase de Procedures**, exatamente
-como `kbIndexForApply.RefreshSdts(...)` é chamado após a fase de SDTs. Criar o método sem o call
-site é o erro natural aqui — e o mais perigoso, porque as buscas passariam a consultar um mapa
-que continua sem as Procedures recém-criadas, com o mesmo efeito de não ter refresh nenhum. Se
-optar por não fazer os três, mantenha as três buscas em leitura corrente.
+acrescentar o método; e **chamá-lo nos dois fluxos**, logo após a respectiva fase de Procedures,
+exatamente como `RefreshSdts` já é chamado após a fase de SDTs — `kbIndexForApply.RefreshSdts(...)`
+no Apply e `syncKbIndex.RefreshSdts(...)` no Sincronizar. São os dois únicos call sites de refresh
+que existem hoje; um `RefreshProcedures` só no Apply deixaria o Sync com mapa desatualizado.
+
+Criar o método sem os call sites é o erro natural aqui — e o mais perigoso, porque as buscas
+passariam a consultar um mapa que continua sem as Procedures recém-criadas, com o mesmo efeito de
+não ter refresh nenhum, mas com aparência de resolvido. Se optar por não fazer os três, mantenha
+as três buscas em leitura corrente.
 
 ### A2 — As cinco origens de criação do índice, e as quatro criações observadas
 
