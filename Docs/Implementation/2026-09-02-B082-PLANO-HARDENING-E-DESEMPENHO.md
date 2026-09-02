@@ -263,10 +263,15 @@ vez**, ao contrário do Apply. E a distribuição confirma onde está o custo: `
 por **1,3 s dos 2,0 s**, contra 0,47 s de `Procedure`, 0,13 s de `SDT` e menos de 0,1 s para os
 demais.
 
-Isso expõe um desperdício que hoje não tem contrapartida: o índice constrói o mapa de atributos,
-pagando 1,3 s, e **nenhum consumidor o usa**. Nas quatro criações por Apply são cerca de 5,4 s
-gastos montando um mapa descartado. Depois da Etapa 1A o mesmo mapa passa a substituir as ~50 s de
-varredura dos writers — o custo deixa de ser desperdício e vira investimento.
+O índice paga 1,3 s para montar o mapa de atributos, e ele **já tem um consumidor**:
+`ApiPlanSdtWriter.EnsureAttributeExists` usa `kbIndex.TryGetSingleAttribute`. O que falta é os
+outros dois `EnsureAttributeExists` — de Business Component e de List — fazerem o mesmo, em vez
+de varrer o catálogo. Depois da Etapa 1A o mapa passa a substituir também as ~50 s de varredura
+desses dois, e as três criações extras de índice (~4 s) deixam de existir.
+
+**Isso é uma boa notícia para o risco da 1A:** existe precedente funcionando no repositório. O
+`ApiPlanSdtWriter` prova que consumir o mapa de atributos é correto e seguro; a 1A copia o padrão
+dele para os outros dois writers, em vez de inventar um.
 
 ### O gargalo é CPU numa única thread
 
@@ -335,7 +340,8 @@ de uma KB não provam o comportamento de toda instalação**, e a ordem atual n�
    de confiança.
 2. **Os writers passam a usar o mapa de atributos que já existe.** `ApiPlanKbObjectNameIndex` já
    constrói o mapa (`GxAttribute` é alias de `Artech.Genexus.Common.Objects.Attribute`) e expõe
-   `FindAttributes` e `TryGetSingleAttribute`, sem nenhum consumidor.
+   `FindAttributes` e `TryGetSingleAttribute` — este último **já usado** por
+   `ApiPlanSdtWriter.EnsureAttributeExists`, que serve de modelo a copiar.
 3. **As confirmações pós-`Delete` permanecem individuais.** Uma versão anterior deste plano as
    agregava ao fim; a decisão foi revertida após revisão externa. Refeita a conta com os dados
    medidos, elas custam 18,8% do Remove em `Empresa`, 21,4% em `Setor` e 18,6% em
@@ -410,8 +416,13 @@ de uma KB não provam o comportamento de toda instalação**, e a ordem atual n�
 decisão 1:
 
 - `Attribute` pelo mapa que o índice já constrói, nos dois `EnsureAttributeExists`;
-- índice criado **uma vez** por operação, eliminando os dois `kbIndex ??= Create(...)` e a criação
-  direta em `ApiPlanSdtWriter`;
+- índice criado **uma vez** por operação, eliminando as **quatro** origens supérfluas: os dois
+  `kbIndex ??= Create(...)` de `ApiPlanProcedureWriter` e `ApiPlanSdtWriter`, a criação direta em
+  `ApiPlanSdtWriter`, e — a que é fácil esquecer — a de
+  `ApiPlanGenerationStateReader.ReadForIntentionalChange`, alcançada por
+  `ApiPlanWritePreflight.ValidateForIntentionalChange` **sem `progress`**. Esta última é a razão de
+  `Fase IndiceKb` e `Fase PreflightAgregado` medirem quase o mesmo tempo. A origem legítima é
+  `ReadForIntentionalChangeWithIndex`. Ver o inventário completo no item A2 do apêndice;
 - `PreflightProcedures` pelo índice inicial; `PreflightRequiredSdts` e `EnsureSdts` pelo índice
   **depois do `RefreshSdts` que já existe**;
 - no Remover, apenas a validação agregada, que roda antes de qualquer exclusão.
@@ -714,10 +725,16 @@ consegue provar que o índice foi propagado.
 
 **A telemetria não substitui verificação estática.** Ela mostra o que executou, não o que deixou
 de ser alcançado numa execução específica. Ao fim da Etapa 1A deve existir um teste que leia o
-fonte e falhe se `ApiPlanKbObjectNameIndex.Create` aparecer fora das fronteiras declaradas —
-`ApiPlanGenerationStateReader` e os Previews de Sync e Remove em `Package.cs`. É um lint pequeno,
-com uma lista fechada de call sites permitidos, e não é o manifesto de todos os `GetAll` que este
-plano cortou: verifica uma única chamada, não uma matriz.
+fonte e falhe se `ApiPlanKbObjectNameIndex.Create` aparecer fora das fronteiras declaradas. É um
+lint pequeno, com lista fechada de call sites permitidos, e não é o manifesto de todos os `GetAll`
+que este plano cortou: verifica uma única chamada, não uma matriz.
+
+**A lista tem de ser por símbolo, não por arquivo.** Liberar «qualquer `Create` dentro de
+`ApiPlanGenerationStateReader`» não serviria: **há dois** ali — o de
+`ReadForIntentionalChangeWithIndex`, que é a origem legítima, e o de `ReadForIntentionalChange`,
+que é justamente a criação supérflua a eliminar. Um lint por classe passaria com a duplicação
+intacta. Os permitidos são, nominalmente: `ReadForIntentionalChangeWithIndex` e os dois Previews
+de `Package.cs` (Sync e Remover), que são fases distintas por decisão explícita.
 
 ### A3 — Símbolos que varrem o catálogo em laço
 
@@ -727,7 +744,10 @@ plano cortou: verifica uma única chamada, não uma matriz.
 - `ApiPlanListProcedureWriter.EnsureAttributeExists`
 
 Ambos recebem apenas `KBModel model`. O índice **já expõe** `FindAttributes(string)` e
-`TryGetSingleAttribute(string, out GxAttribute)`, sem nenhum consumidor hoje.
+`TryGetSingleAttribute(string, out GxAttribute)`. **`TryGetSingleAttribute` já tem consumidor:**
+`ApiPlanSdtWriter.EnsureAttributeExists` o usa. Os dois `EnsureAttributeExists` de Business
+Component e de List é que ainda varrem — são esses os alvos da 1A, e o do SdtWriter é o modelo
+pronto a copiar, não algo a mexer.
 
 **Preflights que varrem uma vez por objeto, separados pelo que importa — se o tipo já foi mutado
 quando eles rodam:**
