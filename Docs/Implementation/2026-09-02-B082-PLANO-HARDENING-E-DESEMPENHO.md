@@ -83,9 +83,9 @@ Regra para o aceite, derivada disso:
 Comparar uma execução única antes e depois pode fabricar um ganho de 8% que não existe — ou
 esconder um real.
 
-**O que ainda não foi medido em execução real:** o Sync que efetivamente grava. Nas coletas ele não
-encontrou diferenças e retornou antes da fase de escrita — caminho que, por isso, não emite linha
-de varredura. Provocá-lo exige alterar a Transaction depois de gerada a API.
+**O Sync que grava foi medido em 2026-09-02** na KB pequena, provocado por um atributo acrescentado
+à Transaction depois de gerada a API. Ver a seção própria abaixo. Não há mais fluxo sem linha de
+base.
 
 ## As dores, classificadas
 
@@ -205,6 +205,49 @@ mesmo tempo justamente porque o preflight refaz o índice inteiro.
 
 Escala linearmente com o número de objetos: quatro varreduras por objeto — validação agregada,
 localização, revalidação e confirmação pós-`Delete`.
+
+### O ganho é proporcional ao tamanho da KB
+
+Medido em 2026-09-02 na KB pequena `wsEducacaoSpTeste`, transação `NotaFiscal`. **O custo de uma
+varredura depende do tamanho da KB, não da operação:**
+
+| Varredura | `wsEducacaoSpTeste` | `Fabrica Brasil Test` | Razão |
+|---|---|---|---|
+| `Attribute.GetAll` | ~30 ms | ~1300 ms | **44×** |
+| `Procedure.GetAll` | ~27 ms | ~500 ms | 19× |
+| `SDT.GetAll` | ~18 ms | ~125 ms | 7× |
+
+E o peso da varredura no total muda de figura:
+
+| Caso | Objetos | Total | Varredura |
+|---|---|---|---|
+| `Setor` (KB grande) | 12 | 84,3 s | 68,1 s — **81%** |
+| `Empresa` (KB grande) | 51 | 171,9 s | 52,5 s — 31% |
+| `NotaFiscal` (KB pequena) | 12 | 9,8 s | 2,1 s — **21%** |
+| Sync que grava (KB pequena) | 15 atualizados | 8,6 s | 1,9 s — 22% |
+
+**Na KB pequena a varredura não é o gargalo:** 79% do tempo é escrita no SDK, e a Etapa 1A levaria
+o Apply de `NotaFiscal` de 9,8 s para talvez 8,3 s — 15%, não 4×.
+
+Isso não enfraquece a frente, mas delimita o que ela promete: **as metas de aceite deste documento
+valem para a KB grande.** Numa KB pequena a extensão já é rápida o bastante, e o ganho será
+modesto. O caso que justifica a frente é o do usuário com KB grande — que é também o usuário cuja
+adoção depende do desempenho.
+
+### O Sync que grava
+
+Medido em 2026-09-02 (`NotaFiscal`, atributo acrescentado à Transaction depois de gerada a API):
+**84 varreduras, 1,9 s, 22% de um total de 8,6 s**. Encerra a lacuna registrada nas versões
+anteriores deste documento.
+
+O Sync repete o padrão do Apply e **não precisa de tratamento próprio na Etapa 1A**: cria o índice
+**quatro vezes** e chama `Attribute.GetAll` em laço — 24 vezes no writer de List e 13 no de
+Business Component. A correlação com filtros aparece de novo: o Sync tinha 3 filtros contra 2 do
+Apply, e as chamadas do List subiram de 18 para 24.
+
+Também validou dois caminhos na prática: o Folder **preexistente** foi preservado corretamente
+(`FolderWasCreated=False`, exibido como «reutilizado; nunca apagar», e o Remover não o incluiu na
+fila), e o serviço `Delete` do `B100` participou de todas as fases.
 
 ### Previews de Sync e Remover
 
@@ -405,7 +448,9 @@ os pontos, exatamente como hoje.
 ## Critérios de aceite
 
 **Etapa 1A.** Medir de novo `Setor`, `Empresa` e `DocumentoFiscal` nas três operações — Apply,
-Sincronizar e Remover — com a instrumentação ligada.
+Sincronizar e Remover — com a instrumentação ligada, **na KB grande `Fabrica Brasil Test`**. As
+metas abaixo valem só para ela: na KB pequena a varredura é 21% do tempo e o ganho esperado fica
+em torno de 15%, o que não serve de critério.
 
 | Operação | Hoje | Meta 1A |
 |---|---|---|
@@ -486,6 +531,11 @@ smoke na IDE. Lint e teste unitário não substituem o smoke.
   `DocumentoFiscal`, cerca de 110 e 120 segundos são o SDK gravando objetos, fora do alcance de
   qualquer decisão sobre índice. O ganho é de aproximadamente um minuto fixo por Apply: decisivo
   nas transações medianas, que são a maioria da KB, e modesto nas gigantes.
+- **Nem resolve nada relevante em KB pequena.** Medido em `wsEducacaoSpTeste`: a varredura é 21%
+  do tempo, contra 81% na KB grande, porque o custo de um `GetAll` acompanha o tamanho da KB —
+  `Attribute.GetAll` custa 30 ms lá e 1300 ms aqui. O Apply de `NotaFiscal` sairia de 9,8 s para
+  cerca de 8,3 s. **A frente se justifica pelo usuário de KB grande**, e prometer ganho geral
+  seria falso.
 - **A guarda não promete exclusividade contra comandos nativos da IDE** executados durante o
   `DoEvents()`. Risco residual, a declarar no smoke.
 - **A guarda é global ao processo**, não por KB: uma operação em uma KB recusa uma segunda em
