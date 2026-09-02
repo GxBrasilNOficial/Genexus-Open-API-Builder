@@ -51,15 +51,22 @@ distintas: `Setor` (10 KB, 1 nível), `Empresa` (82 KB, 14 níveis) e `Documento
 posterior nos writers ou no removedor invalida a comparação; a aferição do ganho exige medir de
 novo, nas mesmas três transações.
 
-**O que ainda não rodou na IDE.** Os números foram colhidos com a DLL de `c4d62ee`. Depois dela,
-a instrumentação recebeu três mudanças que **nunca foram exercidas em execução real**: o escopo de
-medição do Sync, o callback de encerramento de `ApiPlanScanProbe.Begin` e a suspensão em
-`ShowFinalReport`. Nenhuma altera o que já foi medido — Apply e Remover contam as mesmas
-varreduras de antes —, mas a instrumentação do Sync nunca produziu uma linha sequer em execução
-real, e o comportamento do `Suspend` só foi verificado por teste unitário. **Antes de usar este
-documento como linha de base, reinstale a DLL atual e confira que Apply e Remover continuam
-emitindo as mesmas linhas, e que o Sync passa a emitir as suas.** Se os números do Apply e do
-Remover divergirem dos daqui, a linha de base é que precisa ser refeita — não as metas.
+**Reconferido na IDE em 2026-09-02**, com a DLL posterior às mudanças de instrumentação
+(escopo do Sync, callback de encerramento e `Suspend` no relatório). O Apply de `Empresa` repetiu
+**155 varreduras** e o Remover, **205**, com todas as contagens por categoria idênticas às da
+primeira coleta. A linha de base desta seção está confirmada; as mudanças de instrumentação não
+alteraram o que é medido.
+
+**A variância entre execuções é de cerca de 6%, e não é ruído desprezível.** Na reconferência, com
+exatamente as mesmas varreduras, o Apply de `Empresa` foi de 161,5 s para **171,9 s** (+6,4%) e o
+Remover, de 41,2 s para **38,7 s** (−6%). A diferença está no tempo de escrita do SDK, não na
+varredura. É por isso que o aceite exige três execuções: comparar uma única medição antes e depois
+pode fabricar um ganho ou uma regressão de 6% que não existe. **Toda diferença observada abaixo de
+10% deve ser tratada como empate** até que três execuções digam o contrário.
+
+**O que ainda não foi medido em execução real:** o Sync que efetivamente grava. Nas coletas ele não
+encontrou diferenças e retornou antes da fase de escrita — caminho que, por isso, não emite linha
+de varredura. Provocá-lo exige alterar a Transaction depois de gerada a API.
 
 ## As dores, classificadas
 
@@ -375,7 +382,11 @@ como ordem de grandeza, não como linha de base estatística. Para o aceite:
 - executar **três vezes** cada combinação e registrar as três, não só a melhor;
 - declarar se a KB estava recém-aberta ou já em uso, e manter a mesma condição no antes e no
   depois;
-- considerar aprovado quando as três execuções ficarem abaixo da meta, não a média.
+- considerar aprovado quando as três execuções ficarem abaixo da meta, não a média;
+- **tratar diferença menor que 10% como empate**, pela variância de ~6% medida na reconferência;
+- conferir primeiro as **contagens** de varredura, que são estáveis: elas repetiram exatamente
+  entre execuções, enquanto os tempos oscilaram. Uma contagem que muda é sinal real; um tempo que
+  muda 6% não é.
 
 O **overhead da própria instrumentação não foi medido**. Por construção é um `Stopwatch` e uma
 inserção em lista por varredura de 100 a 1300 ms, o que o torna desprezível — mas isso é
@@ -584,8 +595,15 @@ Procedimento, na ordem:
 3. `Install-ExtensionForGeneXus18.bat` como administrador, na raiz — sem `genexus /install`,
    a menos que o manifesto ou o registro tenham mudado;
 4. reabrir a IDE e executar, em cada uma das três transações, Apply, Sincronizar e Remover;
-5. coletar do Output as linhas `[B082] Apply ...`, `[B082] Sync ...` e `[B082] Remover ...`, e
-   comparar com as tabelas da seção «Medições».
+5. coletar do Output as linhas `[B082] Apply ...`, `[B082] Sync ...`, `[B082] Sync Preview ...`,
+   `[B082] Remover ...` e `[B082] Remover Preview ...`, e comparar com as tabelas da seção
+   «Medições».
+
+Os Previews de Sync e Remover têm **escopo de medição próprio**, aberto no handler antes da casca
+de progresso e fechado antes da confirmação. São fase distinta: criam o próprio índice e não devem
+ter o custo somado ao da escrita. No Remover, a exclusão continua com telemetria própria, passada
+por parâmetro; o helper interno cai no probe de escopo ambiente apenas quando não a recebe, que é
+justamente o caminho do Preview.
 
 **Sobre o Sync:** até 2026-09-02 ele não era instrumentado — `ApiPlanScanProbe.Begin` existia
 apenas no fluxo do Wizard, e por isso as medições registradas neste documento **não têm linha de

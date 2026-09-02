@@ -185,7 +185,11 @@ internal static class ApiPlanGeneratedApiRemover
         string phase,
         Func<T> scan)
     {
-        return telemetry is null ? scan() : telemetry.MeasureScan(objectType, phase, scan);
+        // Sem telemetria propria (caminho do Preview), cai no probe de escopo ambiente,
+        // que o handler abre para medir a fase de Preview separadamente da exclusao.
+        return telemetry is null
+            ? ApiPlanScanProbe.Scan(objectType, phase, scan)
+            : telemetry.MeasureScan(objectType, phase, scan);
     }
 
     /// <summary>

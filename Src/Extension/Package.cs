@@ -650,6 +650,10 @@ public sealed class Package : AbstractPackageUI
         {
             var owner = ResolveFinalReportOwner();
             ApiPlanTransactionSyncPreview preview;
+            // B082: o Preview e fase distinta do Apply/Sync e cria o proprio indice.
+            // Escopo separado para que seu custo nao se misture ao da escrita.
+            var syncPreviewTelemetry = new ApiPlanScanTelemetry();
+            using (ApiPlanScanProbe.Begin(syncPreviewTelemetry, t => WriteScanTelemetry("Sync Preview", t)))
             using (var loading = ExtensionBusyProgressScope.Show(owner, texts.BusyProgressTitleLoadingSync, texts))
             {
                 var previewWatch = Stopwatch.StartNew();
@@ -936,6 +940,10 @@ public sealed class Package : AbstractPackageUI
         {
             var owner = ResolveFinalReportOwner();
             ApiPlanGeneratedApiRemovalPlan plan;
+            // B082: mesma separação do Sync — o Preview do Remover cria o próprio índice
+            // e é medido à parte da exclusão, que tem telemetria própria.
+            var removePreviewTelemetry = new ApiPlanScanTelemetry();
+            using (ApiPlanScanProbe.Begin(removePreviewTelemetry, t => WriteScanTelemetry("Remover Preview", t)))
             using (var loading = ExtensionBusyProgressScope.Show(owner, texts.BusyProgressTitleLoadingRemove, texts))
             {
                 var previewWatch = Stopwatch.StartNew();
