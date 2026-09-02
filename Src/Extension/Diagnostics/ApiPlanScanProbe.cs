@@ -15,7 +15,7 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// O estado é <c>[ThreadStatic]</c> porque todo o fluxo da extensão roda na thread da UI;
 /// uma eventual execução em outra thread simplesmente não é medida, nunca medida errado.
 /// </summary>
-internal static class ApiPlanScanProbe
+public static class ApiPlanScanProbe
 {
     [ThreadStatic]
     private static ApiPlanScanTelemetry? _current;

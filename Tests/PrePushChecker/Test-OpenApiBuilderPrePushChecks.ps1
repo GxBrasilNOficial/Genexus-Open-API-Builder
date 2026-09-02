@@ -93,6 +93,7 @@ try {
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ApiObjectOwnership'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\OwnershipDescriptions'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\GeneratedApiRemoval'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ScanProbe'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\TransactionSync'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ApplicationFinalReport'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\CollisionUx'))
@@ -139,6 +140,7 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\OwnershipDescriptions\Test-ApiPlanOwnedObjectDescription.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Owned Object Description'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GeneratedApiRemoval\Test-ApiPlanGeneratedApiRemovalPlan.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generated Api Removal Plan'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GeneratedApiRemoval\Test-ApiPlanGeneratedApiRemovalPreflight.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generated Api Removal Preflight'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ScanProbe\Test-ApiPlanScanProbe.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Scan Probe'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\TransactionSync\Test-ApiPlanTransactionSyncComparer.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Transaction Sync Comparer'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\TransactionSync\Test-ApiPlanTransactionSyncFieldSelection.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Transaction Sync Field Selection'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ApplicationFinalReport\Test-ApiPlanApplicationFinalReport.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Application Final Report'`n", [System.Text.UTF8Encoding]::new($false))
@@ -191,6 +193,7 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.ownedObjectDescription' }).status -eq 'passed') 'O teste unitário das descrições de ownership deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.generatedApiRemovalPlan' }).status -eq 'passed') 'O teste unitário do plano de remoção B086 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.generatedApiRemovalPreflight' }).status -eq 'passed') 'O teste unitário do preflight B086 deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.scanProbe' }).status -eq 'passed') 'O teste unitário do probe de medição B082 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.transactionSyncComparer' }).status -eq 'passed') 'O teste unitário do diff B085 de sincronização deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.transactionSyncFieldSelection' }).status -eq 'passed') 'O teste unitário da seleção ordenada de campos B085 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.applicationFinalReport' }).status -eq 'passed') 'O teste unitário do relatório final B081 deveria passar na fixture.'
@@ -231,6 +234,7 @@ try {
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/OwnershipDescriptions/Test-ApiPlanOwnedObjectDescription.ps1' }).Count -eq 1) 'O comando do teste Owned Object Description deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPlan.ps1' }).Count -eq 1) 'O comando do teste Generated Api Removal Plan deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPreflight.ps1' }).Count -eq 1) 'O comando do teste Generated Api Removal Preflight deve aparecer no JSON.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ScanProbe/Test-ApiPlanScanProbe.ps1' }).Count -eq 1) 'O comando do teste do probe de medição B082 deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/TransactionSync/Test-ApiPlanTransactionSyncComparer.ps1' }).Count -eq 1) 'O comando do teste Transaction Sync Comparer deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/TransactionSync/Test-ApiPlanTransactionSyncFieldSelection.ps1' }).Count -eq 1) 'O comando do teste Transaction Sync Field Selection deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport.ps1' }).Count -eq 1) 'O comando do teste Application Final Report deve aparecer no JSON.'

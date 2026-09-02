@@ -13,7 +13,7 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// (<c>GetAll</c>) e mede o tempo por tipo de objeto e por fase.
 /// Apenas observa: não altera ordem, condição ou resultado de nenhuma operação.
 /// </summary>
-internal sealed class ApiPlanScanTelemetry
+public sealed class ApiPlanScanTelemetry
 {
     /// <summary>Instância inerte, para escopos que apenas suspendem a medição.</summary>
     public static readonly ApiPlanScanTelemetry Empty = new ApiPlanScanTelemetry();

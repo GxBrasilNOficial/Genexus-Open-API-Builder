@@ -559,6 +559,14 @@ consulta a KB dali. Sem a suspensão, uma leitura de relatório seria contada co
 Ao acrescentar consulta nova em qualquer ponto de apresentação, verifique se ela cai dentro de um
 escopo de medição que não lhe pertence.
 
+**O instrumento tem teste próprio:** `Tests/ScanProbe/Test-ApiPlanScanProbe.ps1`, registrado no
+orquestrador como `tests.scanProbe`. Cobre valor devolvido com e sem escopo, callback de
+encerramento exatamente uma vez sob `Dispose` repetido, escopos aninhados restaurando o anterior,
+`Suspend` zerando e restaurando a medição, e exceção no callback sem derrubar o fluxo nem
+inutilizar a medição seguinte. Ele existe porque um vazamento de escopo atribuiria a uma operação
+o custo de outra **em silêncio**, contaminando justamente os números que sustentam este plano.
+Foi validado por mutação: quebrar o `Suspend` faz a asserção correspondente falhar.
+
 Procedimento, na ordem:
 
 1. `dotnet build-server shutdown` e build Release pelo procedimento do repositório;
