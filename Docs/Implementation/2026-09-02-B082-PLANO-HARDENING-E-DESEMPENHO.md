@@ -815,11 +815,20 @@ Não há terceira via: ou o parâmetro é obrigatório, ou o motivo do nulo est�
 dividem-se em **três destinos diferentes**, e confundi-los levaria a remover o que deve ganhar
 parâmetro, ou o contrário.
 
-**Destino 1 — remover: dez órfãs hoje, mais uma por cascata.** Encaminhadores de conveniência e
-órfãos puros. As dez primeiras não têm chamador em `Src/` nem em `Tests/`, e nenhum lint casa suas
-assinaturas. A décima primeira — `ApiPlanGenerationStateReader.Read(3 args)` — **ainda tem
-chamador hoje** e só fica órfã depois que `ApiPlanWritePreflight.Validate(7 args)` sair; removê-la
-antes quebra o build.
+**Destino 1 — remover: nove órfãs hoje, mais duas reveladas em cascata.** Encaminhadores de
+conveniência e órfãos puros. As nove primeiras não têm chamador em `Src/` nem em `Tests/`, e
+nenhum lint casa suas assinaturas.
+
+As outras duas **ainda têm chamador hoje** e formam uma cadeia de dois níveis dentro do preflight:
+
+```
+Validate(3 args)  →  Validate(7 args)  →  ApiPlanGenerationStateReader.Read(3 args)
+   órfã hoje          órfã ao sair 1º       órfã ao sair 2º
+```
+
+**A ordem de remoção é obrigatória:** as nove em qualquer ordem, depois `Validate(7 args)`, depois
+`Read(3 args)`. Remover fora dessa sequência quebra o build — o que, aqui, é a única coisa que a
+compilação de fato prova.
 
 | Assinatura | Args | Observação |
 |---|---|---|
@@ -827,10 +836,11 @@ antes quebra o build.
 | `ApiPlanSdtWriter.CreateOrReencounter` | 3 | encaminha para a versão de **7** parâmetros |
 | `ApiPlanListProcedureWriter.Apply` | 3 e 4 | encaminham para a de **8** |
 | `ApiPlanBusinessComponentWriter.Apply` | 3 e 4 | encaminham para a de **8** |
-| `ApiPlanWritePreflight.Validate` | 3 e 7 | órfãos |
-| `ApiPlanWritePreflight.ValidateForIntentionalChange` | 3 | órfão |
-| `ApiPlanGenerationStateReader.ReadForSync` | 3 | órfão hoje, sem nenhum chamador |
-| `ApiPlanGenerationStateReader.Read` | 3 | **ainda tem chamador**: `ApiPlanWritePreflight.cs:48`, dentro do `Validate(7)` acima. **Remover por último**, depois dele |
+| `ApiPlanWritePreflight.Validate` | 3 | órfã hoje |
+| `ApiPlanWritePreflight.ValidateForIntentionalChange` | 3 | órfã hoje |
+| `ApiPlanGenerationStateReader.ReadForSync` | 3 | órfã hoje, sem nenhum chamador |
+| `ApiPlanWritePreflight.Validate` | 7 | **tem chamador**: `Validate(3 args)`, linha 14. Órfã **depois** que ele sair |
+| `ApiPlanGenerationStateReader.Read` | 3 | **tem chamador**: `ApiPlanWritePreflight.cs:48`, dentro do `Validate(7 args)`. Órfã **por último** |
 
 Note a contagem de parâmetros da versão completa: sete no `ApiPlanSdtWriter`, **oito** no List e no
 Business Component. Não existe «a versão de sete parâmetros» como frase geral.
