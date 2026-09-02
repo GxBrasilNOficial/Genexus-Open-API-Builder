@@ -12,6 +12,12 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// B082 — instrumentação de custo do Remover: conta as varreduras completas de catálogo
 /// (<c>GetAll</c>) e mede o tempo por tipo de objeto e por fase.
 /// Apenas observa: não altera ordem, condição ou resultado de nenhuma operação.
+///
+/// <para>
+/// <b>Visibilidade.</b> Pública apenas para o teste offline por <c>Add-Type</c> em
+/// <c>Tests/ScanProbe/</c>. É instrumentação de diagnóstico e <b>não é contrato para
+/// consumidores</b> da assembly: pode mudar ou desaparecer sem aviso.
+/// </para>
 /// </summary>
 public sealed class ApiPlanScanTelemetry
 {

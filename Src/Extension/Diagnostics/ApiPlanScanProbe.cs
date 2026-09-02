@@ -14,6 +14,14 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 ///
 /// O estado é <c>[ThreadStatic]</c> porque todo o fluxo da extensão roda na thread da UI;
 /// uma eventual execução em outra thread simplesmente não é medida, nunca medida errado.
+///
+/// <para>
+/// <b>Visibilidade.</b> Esta classe é pública apenas para permitir o teste offline por
+/// <c>Add-Type</c> em <c>Tests/ScanProbe/</c>, seguindo a convenção já usada por
+/// <see cref="ApiPlanServiceSourceContract"/> e <see cref="ApiPlanApplicationFinalReport"/>.
+/// Ela é instrumentação de diagnóstico e <b>não é contrato para consumidores</b> da assembly:
+/// pode mudar ou desaparecer sem aviso, e nada fora da extensão deve depender dela.
+/// </para>
 /// </summary>
 public static class ApiPlanScanProbe
 {

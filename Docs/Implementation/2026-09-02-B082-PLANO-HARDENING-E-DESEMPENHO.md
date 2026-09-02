@@ -51,6 +51,16 @@ distintas: `Setor` (10 KB, 1 nível), `Empresa` (82 KB, 14 níveis) e `Documento
 posterior nos writers ou no removedor invalida a comparação; a aferição do ganho exige medir de
 novo, nas mesmas três transações.
 
+**O que ainda não rodou na IDE.** Os números foram colhidos com a DLL de `c4d62ee`. Depois dela,
+a instrumentação recebeu três mudanças que **nunca foram exercidas em execução real**: o escopo de
+medição do Sync, o callback de encerramento de `ApiPlanScanProbe.Begin` e a suspensão em
+`ShowFinalReport`. Nenhuma altera o que já foi medido — Apply e Remover contam as mesmas
+varreduras de antes —, mas a instrumentação do Sync nunca produziu uma linha sequer em execução
+real, e o comportamento do `Suspend` só foi verificado por teste unitário. **Antes de usar este
+documento como linha de base, reinstale a DLL atual e confira que Apply e Remover continuam
+emitindo as mesmas linhas, e que o Sync passa a emitir as suas.** Se os números do Apply e do
+Remover divergirem dos daqui, a linha de base é que precisa ser refeita — não as metas.
+
 ## As dores, classificadas
 
 ### Destrutivas — comprovadas no código
