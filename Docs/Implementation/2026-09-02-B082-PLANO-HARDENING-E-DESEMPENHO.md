@@ -913,7 +913,20 @@ Um teste registrado no orquestrador, com três asserções:
 
 1. **Remoção efetiva** — para cada assinatura do destino 1, zero ocorrências no fonte. É a lista
    fechada acima, e é o que impede a cascata de parar no meio.
-2. **Propagação efetiva** — cada helper e wrapper do destino 2 declara o parâmetro de índice.
+2. **Propagação efetiva** — declaram o parâmetro de índice **apenas as linhas marcadas «Sim» na
+   coluna «Entra na 1A?»**, que são doze: os seis públicos e wrappers — `CreateOrReencounter`
+   completa do API Object, `ApiPlanSdtWriter.Preflight`, `ValidateForSync`,
+   `ValidateForIntentionalChange` (7 args), `Package.TryApplyList` e `Package.TryCreateApiObject` —
+   e os seis helpers privados: os dois `EnsureAttributeExists` de Business Component e List,
+   `PreflightProcedures`, `PreflightRequiredSdts`, `EnsureSdts` e o `ValidateForIntentionalChange`
+   privado de 8 args.
+
+   **Os três «Só com `RefreshProcedures`» ficam fora desta asserção** — `PreflightRequiredProcedures`,
+   `FindProcedure` e `FindListProcedure`. Na 1A padrão eles permanecem em leitura corrente, e
+   exigir que declarem o parâmetro obrigaria a acrescentar argumento morto ou reprovaria o teste
+   com a implementação correta. Se a extensão opcional for feita, acrescente os três à lista do
+   lint **no mesmo passo** em que ganharem o parâmetro.
+
    Casar a assinatura, não a chamada: um helper que receba o índice e não o use continua sendo
    defeito, mas esse a telemetria pega, porque a varredura apareceria no relatório.
 3. **Origem única** — as duas regras já descritas: lista fechada de `ApiPlanKbObjectNameIndex.Create`
