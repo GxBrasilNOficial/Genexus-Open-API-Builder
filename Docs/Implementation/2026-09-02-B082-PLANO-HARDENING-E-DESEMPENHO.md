@@ -521,7 +521,7 @@ em torno de 15%, o que não serve de critério.
 | Apply `DocumentoFiscal` | 187,5 s | 127,3 s | 138,1 s | ≤ 139 s |
 | Remove `Setor` | 12,8 s | 10,4 s | 11,3 s | ≤ 12 s |
 | Remove `Empresa` | 39,8 s (média de 3) | 32,2 s | 34,9 s | ≤ 35 s |
-| Remove `DocumentoFiscal` | 14,5 s | 12,0 s | 13,0 s | ≤ 13 s |
+| Remove `DocumentoFiscal` | 14,5 s | 12,0 s | 13,02 s | ≤ 14 s |
 
 A coluna **Projetado** soma apenas o que o escopo da 1A converte: os dois `Attribute` em laço,
 três das quatro criações de índice, `PreflightProcedures`, e `PreflightRequiredSdts` /
@@ -529,14 +529,16 @@ três das quatro criações de índice, `PreflightProcedures`, e `PreflightRequi
 gravação — se um `RefreshProcedures` for criado, sobram ainda 3,6 s em `Empresa` e 3,7 s em
 `Setor`, que viram folga adicional.
 
-A coluna **+8,5%** aplica ao projetado a variância medida e é apresentada com **uma casa decimal**,
-porque o aceite exige que as **três** execuções fiquem abaixo, não a média. A **Meta** é o teto
-dessa coluna — arredondamento para cima à unidade, sobre o valor de uma casa. Regra única para
-todas as linhas, sem folga discricionária: 24,1 → 25; 133,2 → 134; 138,1 → 139; 11,3 → 12;
-34,9 → 35; 13,0 → 13.
+A coluna **+8,5%** aplica ao projetado a variância medida, porque o aceite exige que as **três**
+execuções fiquem abaixo, não a média. A **Meta** é o **teto do valor exato** dessa coluna, sem
+arredondamento intermediário: 24,087 → 25; 133,238 → 134; 138,121 → 139; 11,284 → 12; 34,937 → 35;
+13,02 → **14**.
 
-Redações anteriores traziam 28 s para `Setor` e um arredondamento ao múltiplo de 5 que as próprias
-metas de Remove não seguiam; nenhum dos dois decorria de conta.
+Regra única, sem exceção nem folga discricionária. Três redações anteriores erraram aqui: 28 s
+para `Setor`, que não decorria de conta; arredondamento ao múltiplo de 5, que as próprias metas de
+Remove não seguiam; e o teto sobre o valor de uma casa decimal, que dava 13 s em
+`Remove DocumentoFiscal` — convenção adotada **depois** de ver o resultado, que é escolher a regra
+pelo número que ela produz.
 
 **Ressalva de confiança desigual:** `Empresa` tem três execuções medidas; `Setor` e
 `DocumentoFiscal` têm **uma**. As metas dessas duas carregam, portanto, incerteza que a coluna
@@ -773,19 +775,41 @@ Os call sites a alterar, na ordem da cadeia:
 | 5 | `Package.TryCreateApiObject` | Não tem `kbIndex` **nem `progress`**. Precisa dos dois |
 | 6 | Chamadas de `TryCreateApiObject` em `Package.cs` | Apply e Sincronizar |
 | 7 | `ApiPlanApiObjectWriter.CreateOrReencounter` | Precisa aceitar o índice para repassá-lo ao **preflight de SDT**. O de Procedure permanece em leitura corrente (ver a política do `RefreshProcedures`) |
-| 8 | `ApiPlanBusinessComponentWriter.EnsureSdts` | A cadeia externa **já está completa** — `TryApplyBusinessComponent` recebe e repassa `kbIndex`, e os dois call sites o passam. Falta só o método privado consumi-lo |
+| 8 | `ApiPlanBusinessComponentWriter.EnsureSdts` | A cadeia **externa** já está completa — `TryApplyBusinessComponent` recebe e repassa `kbIndex`, e os dois call sites o passam. Falta o trecho **interno**: `EnsureSdts` é `static` e recebe apenas `(KBModel model, ApiPlan plan)`, então precisa de parâmetro novo. O mesmo vale para `FindProcedure`, quando entrar pela extensão opcional |
 | 9 | `ApiPlanWritePreflight.ValidateForIntentionalChange` e `ValidateForSync` | Precisam **receber** o índice já criado, em vez de chamar `ReadForIntentionalChange`. Call sites: `Package.cs` no Apply e no Sincronizar |
 
 Sem os pontos 1 a 4, o caminho do List continua criando índice próprio e a marca «`indice-create`
 uma vez por tipo» não fecha. Sem 5 a 7, o preflight de SDT do API Object continua varrendo. Sem 9,
 a criação supérflua do preflight agregado permanece — é a quarta origem do inventário acima.
 
-O ponto 8 é o mais barato de todos e ilustra a diferença entre os casos: ali **nada precisa mudar
-de assinatura**, porque `TryApplyBusinessComponent` já tem o parâmetro e os dois call sites já o
-passam; basta o método privado usar o índice que a classe já recebeu.
+O ponto 8 é o mais barato **da metade externa**: `TryApplyBusinessComponent` já tem o parâmetro e
+os dois call sites já o passam, então nada muda em `Package.cs`. Mas a métodos privados `static`
+não chega índice por osmose — `EnsureSdts` recebe só `(KBModel, ApiPlan)` e precisa de parâmetro
+novo, como todos os outros da tabela. **Uma redação anterior dizia que ali nada mudaria de
+assinatura; é falso.**
 
 **Essa propagação é parte do escopo mínimo da 1A, não trabalho opcional** — é a condição para que
 a eliminação das origens supérfluas seja possível.
+
+### Os `kbIndex = null` que sobram
+
+Nove assinaturas hoje declaram `ApiPlanKbObjectNameIndex? kbIndex = null` — em `Package.cs`, nos
+writers de Business Component, List, Procedure e SDT, e no Remover. **O default nulo é o que
+permite uma rota ficar fora da otimização em silêncio:** o código compila, roda e varre, e nenhum
+gate acusa.
+
+Política para a 1A, por categoria:
+
+- **Nos caminhos que a 1A converte** — os pontos 1 a 9 da tabela — o parâmetro passa a ser
+  **obrigatório**, sem valor default. Um call site esquecido vira erro de compilação, que é o
+  gate mais barato que existe.
+- **No Remover**, os três `kbIndex = null` continuam, porque ali o nulo é **contrato deliberado**:
+  significa leitura corrente depois que a KB começou a mudar. Não são rotas esquecidas.
+- **Onde o nulo for legítimo por outra razão** — a abertura do Wizard, por exemplo — mantenha o
+  default e registre a razão em comentário, para que a próxima leitura não o confunda com
+  descuido.
+
+Não há terceira via: ou o parâmetro é obrigatório, ou o motivo do nulo está escrito ao lado dele.
 
 **A telemetria não substitui verificação estática.** Ela mostra o que executou, não o que deixou
 de ser alcançado numa execução específica. Ao fim da Etapa 1A deve existir um teste que leia o
