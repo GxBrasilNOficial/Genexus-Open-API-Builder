@@ -517,10 +517,10 @@ em torno de 15%, o que não serve de critério.
 | Operação | Hoje | Projetado | +8,5% | Meta 1A |
 |---|---|---|---|---|
 | Apply `Setor` | 84,3 s | 22,2 s | 24,1 s | ≤ 25 s |
-| Apply `Empresa` | 169,5 s (média de 3) | 122,8 s | 133,2 s | ≤ 135 s |
-| Apply `DocumentoFiscal` | 187,5 s | 127,3 s | 138,1 s | ≤ 140 s |
+| Apply `Empresa` | 169,5 s (média de 3) | 122,8 s | 133,2 s | ≤ 134 s |
+| Apply `DocumentoFiscal` | 187,5 s | 127,3 s | 138,1 s | ≤ 139 s |
 | Remove `Setor` | 12,8 s | 10,4 s | 11,3 s | ≤ 12 s |
-| Remove `Empresa` | 39,8 s (média de 3) | 32,2 s | 34,9 s | ≤ 36 s |
+| Remove `Empresa` | 39,8 s (média de 3) | 32,2 s | 34,9 s | ≤ 35 s |
 | Remove `DocumentoFiscal` | 14,5 s | 12,0 s | 13,0 s | ≤ 13 s |
 
 A coluna **Projetado** soma apenas o que o escopo da 1A converte: os dois `Attribute` em laço,
@@ -529,10 +529,14 @@ três das quatro criações de índice, `PreflightProcedures`, e `PreflightRequi
 gravação — se um `RefreshProcedures` for criado, sobram ainda 3,6 s em `Empresa` e 3,7 s em
 `Setor`, que viram folga adicional.
 
-A coluna **+8,5%** aplica ao projetado a variância medida, porque o aceite exige que as **três**
-execuções fiquem abaixo, não a média. A **Meta** é esse valor arredondado para cima ao múltiplo de
-5 — regra única para todas as linhas, sem folga discricionária. Uma redação anterior trazia 28 s
-para `Setor`, que não decorria de nenhuma conta.
+A coluna **+8,5%** aplica ao projetado a variância medida e é apresentada com **uma casa decimal**,
+porque o aceite exige que as **três** execuções fiquem abaixo, não a média. A **Meta** é o teto
+dessa coluna — arredondamento para cima à unidade, sobre o valor de uma casa. Regra única para
+todas as linhas, sem folga discricionária: 24,1 → 25; 133,2 → 134; 138,1 → 139; 11,3 → 12;
+34,9 → 35; 13,0 → 13.
+
+Redações anteriores traziam 28 s para `Setor` e um arredondamento ao múltiplo de 5 que as próprias
+metas de Remove não seguiam; nenhum dos dois decorria de conta.
 
 **Ressalva de confiança desigual:** `Empresa` tem três execuções medidas; `Setor` e
 `DocumentoFiscal` têm **uma**. As metas dessas duas carregam, portanto, incerteza que a coluna
@@ -768,12 +772,20 @@ Os call sites a alterar, na ordem da cadeia:
 | 4 | `ApiPlanSdtWriter.Preflight` | Tem **um único overload**, sem índice. Precisa de um que o receba |
 | 5 | `Package.TryCreateApiObject` | Não tem `kbIndex` **nem `progress`**. Precisa dos dois |
 | 6 | Chamadas de `TryCreateApiObject` em `Package.cs` | Apply e Sincronizar |
-| 7 | `ApiPlanApiObjectWriter.CreateOrReencounter` | Precisa aceitar o índice para repassá-lo aos preflights de SDT e Procedure |
+| 7 | `ApiPlanApiObjectWriter.CreateOrReencounter` | Precisa aceitar o índice para repassá-lo ao **preflight de SDT**. O de Procedure permanece em leitura corrente (ver a política do `RefreshProcedures`) |
+| 8 | `ApiPlanBusinessComponentWriter.EnsureSdts` | A cadeia externa **já está completa** — `TryApplyBusinessComponent` recebe e repassa `kbIndex`, e os dois call sites o passam. Falta só o método privado consumi-lo |
+| 9 | `ApiPlanWritePreflight.ValidateForIntentionalChange` e `ValidateForSync` | Precisam **receber** o índice já criado, em vez de chamar `ReadForIntentionalChange`. Call sites: `Package.cs` no Apply e no Sincronizar |
 
 Sem os pontos 1 a 4, o caminho do List continua criando índice próprio e a marca «`indice-create`
-uma vez por tipo» não fecha. Sem 5 a 7, os preflights do API Object continuam varrendo. **Essa
-propagação é parte do escopo mínimo da 1A, não trabalho opcional** — é a condição para que a
-eliminação das origens supérfluas seja possível.
+uma vez por tipo» não fecha. Sem 5 a 7, o preflight de SDT do API Object continua varrendo. Sem 9,
+a criação supérflua do preflight agregado permanece — é a quarta origem do inventário acima.
+
+O ponto 8 é o mais barato de todos e ilustra a diferença entre os casos: ali **nada precisa mudar
+de assinatura**, porque `TryApplyBusinessComponent` já tem o parâmetro e os dois call sites já o
+passam; basta o método privado usar o índice que a classe já recebeu.
+
+**Essa propagação é parte do escopo mínimo da 1A, não trabalho opcional** — é a condição para que
+a eliminação das origens supérfluas seja possível.
 
 **A telemetria não substitui verificação estática.** Ela mostra o que executou, não o que deixou
 de ser alcançado numa execução específica. Ao fim da Etapa 1A deve existir um teste que leia o
