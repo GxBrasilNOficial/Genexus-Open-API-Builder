@@ -776,7 +776,7 @@ Os call sites a alterar, na ordem da cadeia:
 | 6 | Chamadas de `TryCreateApiObject` em `Package.cs` | Apply e Sincronizar |
 | 7 | `ApiPlanApiObjectWriter.CreateOrReencounter` | Precisa aceitar o índice para repassá-lo ao **preflight de SDT**. O de Procedure permanece em leitura corrente (ver a política do `RefreshProcedures`) |
 | 8 | `ApiPlanBusinessComponentWriter.EnsureSdts` | A cadeia **externa** já está completa — `TryApplyBusinessComponent` recebe e repassa `kbIndex`, e os dois call sites o passam. Falta o trecho **interno**: `EnsureSdts` é `static` e recebe apenas `(KBModel model, ApiPlan plan)`, então precisa de parâmetro novo. O mesmo vale para `FindProcedure`, quando entrar pela extensão opcional |
-| 9 | `ApiPlanWritePreflight.ValidateForIntentionalChange` e `ValidateForSync` | Precisam **receber** o índice já criado, em vez de chamar `ReadForIntentionalChange`. Call sites: `Package.cs` no Apply e no Sincronizar |
+| 9 | `ApiPlanWritePreflight.ValidateForSync` (3 args) e `ValidateForIntentionalChange` (7 args) | Os dois únicos com chamador. Precisam **receber** o índice já criado, com o parâmetro obrigatório, em vez de alcançar `ReadForIntentionalChange`. Call sites: `Package.cs` no Sincronizar e no Apply. Os outros três overloads da classe são órfãos e saem — ver «Os `kbIndex = null` que sobram» |
 
 Sem os pontos 1 a 4, o caminho do List continua criando índice próprio e a marca «`indice-create`
 uma vez por tipo» não fecha. Sem 5 a 7, o preflight de SDT do API Object continua varrendo. Sem 9,
@@ -811,29 +811,47 @@ Política para a 1A, por categoria:
 
 Não há terceira via: ou o parâmetro é obrigatório, ou o motivo do nulo está escrito ao lado dele.
 
-**Os overloads curtos são o caso mais perigoso, e o mais fácil de resolver.** Três métodos públicos
-de três argumentos encaminham para a versão completa sem índice e sem `progress`:
+**Tornar o parâmetro obrigatório na versão completa não basta:** existem **nove portas de entrada
+sem índice**, e elas se dividem em duas naturezas opostas. Confundi-las levaria a remover o que
+deve ganhar parâmetro, ou o contrário.
 
-| Overload | Encaminha para |
-|---|---|
-| `ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan)` | a versão de sete parâmetros, com `kbIndex` implícito nulo |
-| `ApiPlanListProcedureWriter.Apply(model, transaction, plan)` | idem |
-| `ApiPlanBusinessComponentWriter.Apply(model, transaction, plan)` | idem |
+**Grupo 1 — encaminhadores, a remover.** Overloads de conveniência que chamam a versão completa
+com `kbIndex` implicitamente nulo. Nenhum tem chamador em `Src/` nem em `Tests/`:
 
-Tornar o parâmetro obrigatório na versão completa **não os alcança**: eles continuariam existindo
-como porta de entrada sem índice, e um call site novo que os usasse ficaria fora da otimização sem
-que nada acusasse.
+| Overload | Args | Versão completa que encaminha |
+|---|---|---|
+| `ApiPlanApiObjectWriter.CreateOrReencounter` | 3 | — |
+| `ApiPlanSdtWriter.CreateOrReencounter` | 3 | **7 parâmetros** |
+| `ApiPlanListProcedureWriter.Apply` | 3 e 4 | **8 parâmetros** |
+| `ApiPlanBusinessComponentWriter.Apply` | 3 e 4 | **8 parâmetros** |
 
-**Nenhum dos três tem chamador em produção** — os call sites reais de `Package.cs` e dos writers
-usam as versões completas, passando `kbIndex` nominalmente. Portanto: **remova os três**. Se
-decidir mantê-los por alguma razão que apareça na implementação, a razão vai escrita ao lado da
-assinatura, pela mesma regra dos demais nulos.
+São seis assinaturas. Note a contagem: o `ApiPlanSdtWriter` completo tem sete parâmetros, mas os
+de List e Business Component têm **oito** — não existe «a versão de sete parâmetros» como frase
+geral.
 
-Os testes que tocam esses três arquivos — em `ApiObjectOwnership`, `ApplicationFinalReport` e
-`BusinessComponentHierarchical` — leem o **fonte como texto**, não invocam os métodos. Removê-los
-não quebra nenhuma chamada, mas pode reprovar um lint que case a assinatura curta. Vale a regra do
-item A5: reprovação de lint textual após mudança de assinatura é o lint a atualizar, não regressão
-de comportamento.
+**Grupo 2 — `ApiPlanWritePreflight`, três assinaturas, tratamento próprio.** A cadeia afunila em
+`ValidateForIntentionalChange(7 args)`, que alcança `ReadForIntentionalChange` e cria a quarta
+origem supérflua do inventário. Só dois pontos têm chamador: `ValidateForSync(3 args)` em
+`Package.cs` (Sincronizar) e `ValidateForIntentionalChange(7 args)` em `Package.cs` (Apply). Os
+outros três — `Validate(3)`, `Validate(7)` e `ValidateForIntentionalChange(3)` — **não têm
+chamador em `Src/` nem em `Tests/`, e nenhum lint casa suas assinaturas**; o lint textual que lê
+esse arquivo verifica apenas `ValidateStructuralSublevelNames`.
+
+Decisão registrada, tomada em 2026-09-02 com essa verificação em mãos: **remover os três órfãos** e
+tornar o índice obrigatório nos dois que ficam. É apagar código morto, não alterar lógica de
+preflight — se houver engano, o compilador acusa. Deixá-los seria abrir exceção justamente na
+classe onde a criação supérflua nasce.
+
+**Fora dos dois grupos, e é o caso oposto:** `ApiPlanSdtWriter.Preflight` **não é encaminhador**.
+É o único overload que existe, é chamado de verdade por `ApiPlanListProcedureWriter`, e precisa
+**ganhar** um parâmetro de índice — nunca ser removido. É o ponto 4 da tabela de propagação.
+
+Os testes que tocam esses arquivos leem o **fonte como texto** e não invocam os métodos. As
+remoções não quebram chamada alguma; no máximo reprovam um lint que case assinatura antiga, e
+vale a regra do item A5: isso é o lint a atualizar, não regressão de comportamento.
+
+**Este é o fecho do inventário de assinaturas.** O que restar de contagem exata de overloads fica
+para quem implementar, com o código à frente e o compilador como gate.
 
 **A telemetria não substitui verificação estática.** Ela mostra o que executou, não o que deixou
 de ser alcançado numa execução específica. Ao fim da Etapa 1A deve existir um teste que leia o
