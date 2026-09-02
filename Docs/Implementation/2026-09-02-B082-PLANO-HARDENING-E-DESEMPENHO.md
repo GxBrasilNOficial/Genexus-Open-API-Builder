@@ -811,47 +811,54 @@ Política para a 1A, por categoria:
 
 Não há terceira via: ou o parâmetro é obrigatório, ou o motivo do nulo está escrito ao lado dele.
 
-**Tornar o parâmetro obrigatório na versão completa não basta:** existem **nove portas de entrada
-sem índice**, e elas se dividem em duas naturezas opostas. Confundi-las levaria a remover o que
-deve ganhar parâmetro, ou o contrário.
+**Tornar o parâmetro obrigatório na versão completa não basta.** As assinaturas hoje sem índice
+dividem-se em **três destinos diferentes**, e confundi-los levaria a remover o que deve ganhar
+parâmetro, ou o contrário.
 
-**Grupo 1 — encaminhadores, a remover.** Overloads de conveniência que chamam a versão completa
-com `kbIndex` implicitamente nulo. Nenhum tem chamador em `Src/` nem em `Tests/`:
+**Destino 1 — remover: onze assinaturas sem chamador.** Encaminhadores de conveniência e órfãos
+puros. Nenhum tem chamador em `Src/` nem em `Tests/`, e nenhum lint casa suas assinaturas.
 
-| Overload | Args | Versão completa que encaminha |
+| Assinatura | Args | Observação |
 |---|---|---|
-| `ApiPlanApiObjectWriter.CreateOrReencounter` | 3 | — |
-| `ApiPlanSdtWriter.CreateOrReencounter` | 3 | **7 parâmetros** |
-| `ApiPlanListProcedureWriter.Apply` | 3 e 4 | **8 parâmetros** |
-| `ApiPlanBusinessComponentWriter.Apply` | 3 e 4 | **8 parâmetros** |
+| `ApiPlanApiObjectWriter.CreateOrReencounter` | 3 | encaminhador |
+| `ApiPlanSdtWriter.CreateOrReencounter` | 3 | encaminha para a versão de **7** parâmetros |
+| `ApiPlanListProcedureWriter.Apply` | 3 e 4 | encaminham para a de **8** |
+| `ApiPlanBusinessComponentWriter.Apply` | 3 e 4 | encaminham para a de **8** |
+| `ApiPlanWritePreflight.Validate` | 3 e 7 | órfãos |
+| `ApiPlanWritePreflight.ValidateForIntentionalChange` | 3 | órfão |
+| `ApiPlanGenerationStateReader.ReadForSync` | 3 | **órfão hoje**, sem nenhum chamador |
+| `ApiPlanGenerationStateReader.Read` | 3 | chamado **só** por `ApiPlanWritePreflight.cs:48`, dentro do `Validate(7)` acima — **fica órfão quando ele sair** |
 
-São seis assinaturas. Note a contagem: o `ApiPlanSdtWriter` completo tem sete parâmetros, mas os
-de List e Business Component têm **oito** — não existe «a versão de sete parâmetros» como frase
-geral.
+Note a contagem de parâmetros da versão completa: sete no `ApiPlanSdtWriter`, **oito** no List e no
+Business Component. Não existe «a versão de sete parâmetros» como frase geral.
 
-**Grupo 2 — `ApiPlanWritePreflight`, três assinaturas, tratamento próprio.** A cadeia afunila em
-`ValidateForIntentionalChange(7 args)`, que alcança `ReadForIntentionalChange` e cria a quarta
-origem supérflua do inventário. Só dois pontos têm chamador: `ValidateForSync(3 args)` em
-`Package.cs` (Sincronizar) e `ValidateForIntentionalChange(7 args)` em `Package.cs` (Apply). Os
-outros três — `Validate(3)`, `Validate(7)` e `ValidateForIntentionalChange(3)` — **não têm
-chamador em `Src/` nem em `Tests/`, e nenhum lint casa suas assinaturas**; o lint textual que lê
-esse arquivo verifica apenas `ValidateStructuralSublevelNames`.
+**Destino 2 — ganhar índice obrigatório: quatro assinaturas ativas.** Estas **não** se removem;
+recebem o parâmetro, sem valor default:
 
-Decisão registrada, tomada em 2026-09-02 com essa verificação em mãos: **remover os três órfãos** e
-tornar o índice obrigatório nos dois que ficam. É apagar código morto, não alterar lógica de
-preflight — se houver engano, o compilador acusa. Deixá-los seria abrir exceção justamente na
-classe onde a criação supérflua nasce.
+| Assinatura | Onde |
+|---|---|
+| `ApiPlanApiObjectWriter.CreateOrReencounter` (completa) | ponto 7 da tabela de propagação |
+| `ApiPlanSdtWriter.Preflight` | **único overload que existe**, chamado por `ApiPlanListProcedureWriter` — ponto 4 |
+| `ApiPlanWritePreflight.ValidateForSync` (3 args) | chamado no Sincronizar — ponto 9 |
+| `ApiPlanWritePreflight.ValidateForIntentionalChange` (7 args) | chamado no Apply — ponto 9 |
 
-**Fora dos dois grupos, e é o caso oposto:** `ApiPlanSdtWriter.Preflight` **não é encaminhador**.
-É o único overload que existe, é chamado de verdade por `ApiPlanListProcedureWriter`, e precisa
-**ganhar** um parâmetro de índice — nunca ser removido. É o ponto 4 da tabela de propagação.
+**Destino 3 — manter o nulo, com razão escrita:** os três do Remover, onde o nulo é contrato
+deliberado de leitura corrente; e `ReadForIntentionalChange` com o `Read` privado, que servem à
+abertura do Wizard (D8, fora desta frente).
+
+Decisão humana registrada em 2026-09-02, com a verificação em mãos: **remover as onze do destino 1**.
+É apagar código morto, não alterar lógica — se houver engano, o compilador acusa. Deixá-las seria
+abrir exceção justamente onde a criação supérflua nasce.
 
 Os testes que tocam esses arquivos leem o **fonte como texto** e não invocam os métodos. As
 remoções não quebram chamada alguma; no máximo reprovam um lint que case assinatura antiga, e
 vale a regra do item A5: isso é o lint a atualizar, não regressão de comportamento.
 
-**Este é o fecho do inventário de assinaturas.** O que restar de contagem exata de overloads fica
-para quem implementar, com o código à frente e o compilador como gate.
+**Sobre a completude deste inventário.** Ele foi levantado por busca de chamadores, classe a
+classe, e a linha do `Read(3 args)` mostra por que a lista pode ainda crescer: **remover um órfão
+revela o próximo**. A prova final não é textual — é a compilação. Ao remover as onze, compile e
+procure o que ficou sem uso; repita até estabilizar. Qualquer assinatura que apareça nesse
+processo pertence ao destino 1 pelo mesmo critério, sem precisar de nova decisão.
 
 **A telemetria não substitui verificação estática.** Ela mostra o que executou, não o que deixou
 de ser alcançado numa execução específica. Ao fim da Etapa 1A deve existir um teste que leia o
