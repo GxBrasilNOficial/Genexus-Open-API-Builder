@@ -320,8 +320,9 @@ de uma KB não provam o comportamento de toda instalação**, e a ordem atual n�
      Os três rodam **depois** de as Procedures serem gravadas, e **não existe `RefreshProcedures`** —
      `_procedures` é um `ILookup` `readonly`. Ligá-los ao índice inicial faria o Apply de geração
      nova falhar com «Procedure requerida não foi reencontrada», justamente nos casos que este
-     plano usa como aceite. Ou ganham um `RefreshProcedures` no molde do `RefreshSdts` (uma
-     varredura, sem índice mutável), ou permanecem em leitura corrente até a 1B.
+     plano usa como aceite. **Por padrão permanecem em leitura corrente**; um `RefreshProcedures`
+     no molde do `RefreshSdts` (uma varredura, sem índice mutável) é extensão **opcional da 1A**
+     que as libera. Não é assunto da 1B — não depende de índice mutável.
    - **Nível B — atravessa mutação.** Manter o índice coerente enquanto a extensão cria e apaga,
      em vez de reconstruí-lo. É o que o Remove precisa, e exige contrato explícito: invariantes,
      momento da atualização em relação ao sucesso da mutação, comportamento após exceção,
@@ -416,6 +417,11 @@ de uma KB não provam o comportamento de toda instalação**, e a ordem atual n�
 decisão 1:
 
 - `Attribute` pelo mapa que o índice já constrói, nos dois `EnsureAttributeExists`;
+- **propagar o índice** por `TryApplyList` → `ApiPlanListProcedureWriter.Apply` →
+  `ApiPlanSdtWriter.Preflight`, e por `TryCreateApiObject` → `ApiPlanApiObjectWriter`. Hoje
+  `TryApplyList` não tem o parâmetro e `TryCreateApiObject` não tem nem índice nem `progress`; sem
+  essa propagação, remover os fallbacks quebra o código em vez de otimizá-lo. Cadeia completa no
+  item A2;
 - índice criado **uma vez** por operação, eliminando as **quatro** origens supérfluas: os dois
   `kbIndex ??= Create(...)` de `ApiPlanProcedureWriter` e `ApiPlanSdtWriter`, a criação direta em
   `ApiPlanSdtWriter`, e — a que é fácil esquecer — a de
@@ -435,11 +441,15 @@ decisão 1:
 segundo `CreateOrReencounter` no mesmo Apply tentava criar `GxOpenAPI` de novo, e há teste textual
 que exige essas chamadas.
 
-**Fora da 1A:** as buscas de Procedure posteriores à gravação delas (`PreflightRequiredProcedures`,
-`FindProcedure`, `FindListProcedure`). Elas exigem um `RefreshProcedures` no molde do `RefreshSdts`
-— uma varredura só, sem tornar o índice mutável. Se esse método for criado, elas entram; se não,
-permanecem em leitura corrente. **As metas de aceite abaixo não dependem delas**, e valem sem esse
-refresh.
+**Fora do escopo mínimo da 1A:** as buscas de Procedure posteriores à gravação delas
+(`PreflightRequiredProcedures`, `FindProcedure`, `FindListProcedure`).
+
+**A política é uma só, para não haver dúvida:** elas ficam **fora por padrão**, em leitura
+corrente, e as metas e a coluna «Projetado» pressupõem isso. Criar um `RefreshProcedures` no molde
+do `RefreshSdts` — uma varredura, sem tornar o índice mutável — é **extensão opcional da 1A**: se
+for feita, as três entram e rendem cerca de 3,6 s a mais por Apply na KB grande, e a marca
+estrutural muda junto (as três linhas somem e `Procedure/indice-refresh` aparece). Se não for
+feita, nada muda no aceite. O item A1 do apêndice descreve os três passos que ela exige.
 
 **Etapa 1B — desempenho atravessando mutação.** Índice mantido coerente conforme a extensão cria
 e apaga, com o contrato exigido pelo Nível B da decisão 1 escrito antes do código. Cobre a
@@ -504,14 +514,14 @@ Sincronizar e Remover — com a instrumentação ligada, **na KB grande `Fabrica
 metas abaixo valem só para ela: na KB pequena a varredura é 21% do tempo e o ganho esperado fica
 em torno de 15%, o que não serve de critério.
 
-| Operação | Hoje | Projetado | Meta 1A |
-|---|---|---|---|
-| Apply `Setor` | 84,3 s | 22,2 s | ≤ 28 s |
-| Apply `Empresa` | 169,5 s (média de 3) | 122,8 s | ≤ 135 s |
-| Apply `DocumentoFiscal` | 187,5 s | 127,3 s | ≤ 140 s |
-| Remove `Setor` | 12,8 s | 10,4 s | ≤ 12 s |
-| Remove `Empresa` | 39,8 s (média de 3) | 32,2 s | ≤ 36 s |
-| Remove `DocumentoFiscal` | 14,5 s | 12,0 s | ≤ 13 s |
+| Operação | Hoje | Projetado | +8,5% | Meta 1A |
+|---|---|---|---|---|
+| Apply `Setor` | 84,3 s | 22,2 s | 24,1 s | ≤ 25 s |
+| Apply `Empresa` | 169,5 s (média de 3) | 122,8 s | 133,2 s | ≤ 135 s |
+| Apply `DocumentoFiscal` | 187,5 s | 127,3 s | 138,1 s | ≤ 140 s |
+| Remove `Setor` | 12,8 s | 10,4 s | 11,3 s | ≤ 12 s |
+| Remove `Empresa` | 39,8 s (média de 3) | 32,2 s | 34,9 s | ≤ 36 s |
+| Remove `DocumentoFiscal` | 14,5 s | 12,0 s | 13,0 s | ≤ 13 s |
 
 A coluna **Projetado** soma apenas o que o escopo da 1A converte: os dois `Attribute` em laço,
 três das quatro criações de índice, `PreflightProcedures`, e `PreflightRequiredSdts` /
@@ -519,10 +529,18 @@ três das quatro criações de índice, `PreflightProcedures`, e `PreflightRequi
 gravação — se um `RefreshProcedures` for criado, sobram ainda 3,6 s em `Empresa` e 3,7 s em
 `Setor`, que viram folga adicional.
 
-A **Meta** acrescenta ao projetado a folga da variância medida (8,5%), porque o aceite exige que
-as **três** execuções fiquem abaixo, não a média. Uma redação anterior deste plano trazia metas
-de 25 s, 120 s e 130 s: elas pressupunham converter também as buscas de Procedure pós-gravação,
-o que faria o Apply de geração nova falhar.
+A coluna **+8,5%** aplica ao projetado a variância medida, porque o aceite exige que as **três**
+execuções fiquem abaixo, não a média. A **Meta** é esse valor arredondado para cima ao múltiplo de
+5 — regra única para todas as linhas, sem folga discricionária. Uma redação anterior trazia 28 s
+para `Setor`, que não decorria de nenhuma conta.
+
+**Ressalva de confiança desigual:** `Empresa` tem três execuções medidas; `Setor` e
+`DocumentoFiscal` têm **uma**. As metas dessas duas carregam, portanto, incerteza que a coluna
++8,5% não representa — ela usa a variância observada em `Empresa` como proxy. Se alguma delas
+ficar marginalmente acima da meta, meça as três execuções antes de tratar como falha.
+
+Metas de uma redação anterior — 120 s e 130 s — pressupunham converter também as buscas de
+Procedure pós-gravação, o que faria o Apply de geração nova falhar.
 
 O ganho do Remove na 1A é modesto de propósito: só a validação agregada — que roda antes de
 qualquer exclusão e portanto é Nível A — passa a usar o índice. Localização e revalidação
@@ -693,10 +711,11 @@ mutações. Enquanto ela não existir, todo lookup posterior a uma gravação de
 
 **A ausência de `RefreshProcedures` é a consequência prática mais importante.** `_procedures` é
 `readonly`, então nem reatribuir é possível hoje. Criar um `RefreshProcedures` no molde exato do
-`RefreshSdts` — uma varredura, reatribuindo o campo, sem tornar o índice incremental — é opção
-legítima **dentro da 1A**, e liberaria `PreflightRequiredProcedures`, `FindProcedure` e
-`FindListProcedure`. As metas deste plano não dependem disso; é ganho adicional de cerca de 3,6 s
-por Apply na KB grande.
+`RefreshSdts` — uma varredura, reatribuindo o campo, sem tornar o índice incremental — é
+**extensão opcional da 1A**, não parte do escopo mínimo. A política está fixada na seção «Ordem de
+execução»: as três buscas ficam **fora por padrão**, e as metas pressupõem isso. Se a extensão for
+feita, ela libera `PreflightRequiredProcedures`, `FindProcedure` e `FindListProcedure`, rendendo
+cerca de 3,6 s a mais por Apply na KB grande — ganho adicional, nunca requisito.
 
 São três passos, e **os três são obrigatórios juntos**: tirar o `readonly` de `_procedures`;
 acrescentar o método; e **chamá-lo nos dois fluxos que gravam Procedures**, logo após a respectiva
@@ -736,6 +755,25 @@ Sync e no Preview do Remover. Não confundir com as acima.
 Os dois `kbIndex ??=` são o mecanismo pelo qual um índice deixa de chegar sem que ninguém
 perceba — o código continua correto e fica lento em silêncio. Enquanto existirem, nenhum lint
 consegue provar que o índice foi propagado.
+
+**Remover os `??=` exige propagar o índice antes, e a cadeia hoje está cortada em dois pontos.**
+Tirá-los sem isso não deixa o código lento: deixa-o quebrado, com índice nulo onde havia fallback.
+Os call sites a alterar, na ordem da cadeia:
+
+| # | Símbolo | Situação hoje |
+|---|---|---|
+| 1 | `Package.TryApplyList` | **Não tem parâmetro `kbIndex`** — só `progress`. Precisa recebê-lo e repassá-lo |
+| 2 | Chamadas de `TryApplyList` em `Package.cs` | Apply e Sincronizar; passam `kbIndexForApply` e `syncKbIndex`, que já existem no escopo |
+| 3 | `ApiPlanListProcedureWriter.Apply` | **Já recebe** `kbIndex` e o repassa a `ApiPlanSdtWriter.CreateOrReencounter`, mas **não** ao `Preflight` |
+| 4 | `ApiPlanSdtWriter.Preflight` | Tem **um único overload**, sem índice. Precisa de um que o receba |
+| 5 | `Package.TryCreateApiObject` | Não tem `kbIndex` **nem `progress`**. Precisa dos dois |
+| 6 | Chamadas de `TryCreateApiObject` em `Package.cs` | Apply e Sincronizar |
+| 7 | `ApiPlanApiObjectWriter.CreateOrReencounter` | Precisa aceitar o índice para repassá-lo aos preflights de SDT e Procedure |
+
+Sem os pontos 1 a 4, o caminho do List continua criando índice próprio e a marca «`indice-create`
+uma vez por tipo» não fecha. Sem 5 a 7, os preflights do API Object continuam varrendo. **Essa
+propagação é parte do escopo mínimo da 1A, não trabalho opcional** — é a condição para que a
+eliminação das origens supérfluas seja possível.
 
 **A telemetria não substitui verificação estática.** Ela mostra o que executou, não o que deixou
 de ser alcançado numa execução específica. Ao fim da Etapa 1A deve existir um teste que leia o
