@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Artech.Architecture.Common.Objects;
@@ -32,11 +33,30 @@ internal static class ApiPlanGeneratedApiRemover
             throw new ArgumentNullException(nameof(transaction));
         }
 
+        // B082: instrumentacao de custo. So observa; nao altera ordem nem condicao.
+        var telemetry = new ApiPlanRemovalTelemetry();
+        var phaseWatch = Stopwatch.StartNew();
+
         var metadataFileName = $"api{transaction.Name}_Metadata";
-        var metadataFile = FindOwnedMetadataFile(designModel, metadataFileName, transaction.Name, kbIndex: null);
+        var metadataFile = FindOwnedMetadataFile(designModel, metadataFileName, transaction.Name, kbIndex: null, telemetry);
         var metadata = ParseMetadata(metadataFile);
         var plan = ApiPlanGeneratedApiRemovalPlan.FromMetadata(metadata, transaction.Name, transaction.Guid.ToString());
-        ValidateRemovalTargets(designModel, plan, progress: null, kbIndex: null);
+        telemetry.MarkPhase("ResolucaoMetadata", phaseWatch.ElapsedMilliseconds);
+
+        // B082: mede o contenedor real do metadata File. IsFolderEmpty conta Files,
+        // entao saber se o File esta dentro do Folder decide se a ordem Folder->File e viavel.
+        telemetry.AddNote(string.Format(
+            System.Globalization.CultureInfo.InvariantCulture,
+            "MetadataFile Parent='{0}' ParentGuid='{1}' Module='{2}' FolderPlanejado='{3}' FolderWasCreated={4}",
+            metadataFile.Parent is null ? "<null>" : metadataFile.Parent.Name,
+            metadataFile.Parent is null ? "<null>" : metadataFile.Parent.Guid.ToString(),
+            metadataFile.Module is null ? "<null>" : metadataFile.Module.Name,
+            plan.FolderName ?? "<null>",
+            plan.FolderWasCreated));
+
+        phaseWatch.Restart();
+        ValidateRemovalTargets(designModel, plan, progress: null, kbIndex: null, telemetry);
+        telemetry.MarkPhase("ValidacaoAgregada", phaseWatch.ElapsedMilliseconds);
 
         var total = CountPlannedDeletes(plan);
         var current = 0;
@@ -46,36 +66,48 @@ internal static class ApiPlanGeneratedApiRemover
         // 1) API Object (referencia Procedures)
         // 2) Procedures (tipam SDTs)
         // 3) SDTs proprios na ordem do plano (ListResponse antes de Response)
+        phaseWatch.Restart();
         progress?.ThrowIfAbortRequested();
         current = ReportDelete(progress, current, total, "API Object", plan.ApiName, () =>
-            DeleteApiObject(designModel, plan, deleted));
+            DeleteApiObject(designModel, plan, deleted, telemetry));
+        telemetry.MarkPhase("ApiObject", phaseWatch.ElapsedMilliseconds);
 
+        phaseWatch.Restart();
         foreach (var name in plan.ProcedureNames)
         {
             progress?.ThrowIfAbortRequested();
             current = ReportDelete(progress, current, total, "Procedure", name, () =>
-                DeleteSingleProcedure(designModel, name, deleted));
+                DeleteSingleProcedure(designModel, name, deleted, telemetry));
         }
 
+        telemetry.MarkPhase("Procedures", phaseWatch.ElapsedMilliseconds);
+
+        phaseWatch.Restart();
         foreach (var name in plan.OwnSdtNames)
         {
             progress?.ThrowIfAbortRequested();
             current = ReportDelete(progress, current, total, "SDT", name, () =>
-                DeleteSingleOwnSdt(designModel, plan, name, deleted));
+                DeleteSingleOwnSdt(designModel, plan, name, deleted, telemetry));
         }
 
+        telemetry.MarkPhase("Sdts", phaseWatch.ElapsedMilliseconds);
+
+        phaseWatch.Restart();
         progress?.ThrowIfAbortRequested();
         current = ReportDelete(progress, current, total, "File", metadataFile.Name, () =>
-            DeleteMetadataFile(designModel, metadataFile, deleted));
+            DeleteMetadataFile(designModel, metadataFile, deleted, telemetry));
+        telemetry.MarkPhase("MetadataFile", phaseWatch.ElapsedMilliseconds);
 
         if (plan.FolderWasCreated && !string.IsNullOrWhiteSpace(plan.FolderName))
         {
+            phaseWatch.Restart();
             progress?.ThrowIfAbortRequested();
             ReportDelete(progress, current, total, "Folder", plan.FolderName!, () =>
-                MaybeDeleteFolder(designModel, plan, deleted));
+                MaybeDeleteFolder(designModel, plan, deleted, telemetry));
+            telemetry.MarkPhase("Folder", phaseWatch.ElapsedMilliseconds);
         }
 
-        return new ApiPlanGeneratedApiRemovalResult(plan, deleted);
+        return new ApiPlanGeneratedApiRemovalResult(plan, deleted, telemetry.BuildOutputLines());
     }
 
     public static int CountPlannedDeletes(ApiPlanGeneratedApiRemovalPlan plan)
@@ -135,11 +167,25 @@ internal static class ApiPlanGeneratedApiRemover
         var metadataFileName = $"api{transaction.Name}_Metadata";
         progress?.Report("Metadata", 0, 0, metadataFileName);
         progress?.PumpAndThrowIfAbortRequested();
-        var metadataFile = FindOwnedMetadataFile(designModel, metadataFileName, transaction.Name, kbIndex);
+        var metadataFile = FindOwnedMetadataFile(designModel, metadataFileName, transaction.Name, kbIndex, telemetry: null);
         var metadata = ParseMetadata(metadataFile);
         var plan = ApiPlanGeneratedApiRemovalPlan.FromMetadata(metadata, transaction.Name, transaction.Guid.ToString());
         ValidateRemovalTargets(designModel, plan, progress, kbIndex);
         return plan;
+    }
+
+    /// <summary>
+    /// B082: executa a varredura sob medicao quando ha instrumentacao ativa.
+    /// O delegate precisa conter o pipeline inteiro, ate a materializacao, porque
+    /// <c>GetAll</c> e preguicoso e o custo esta na enumeracao.
+    /// </summary>
+    private static T Scan<T>(
+        ApiPlanRemovalTelemetry? telemetry,
+        string objectType,
+        string phase,
+        Func<T> scan)
+    {
+        return telemetry is null ? scan() : telemetry.MeasureScan(objectType, phase, scan);
     }
 
     /// <summary>
@@ -155,7 +201,8 @@ internal static class ApiPlanGeneratedApiRemover
         KBModel designModel,
         ApiPlanGeneratedApiRemovalPlan plan,
         ApiPlanBusyProgressSession? progress,
-        ApiPlanKbObjectNameIndex? kbIndex)
+        ApiPlanKbObjectNameIndex? kbIndex,
+        ApiPlanRemovalTelemetry? telemetry = null)
     {
         if (designModel is null)
         {
@@ -173,14 +220,14 @@ internal static class ApiPlanGeneratedApiRemover
         current++;
         progress?.Report("Validando", current, total, plan.ApiName);
         progress?.Pump();
-        ValidateApiObjectTarget(designModel, plan, beforeAnyDelete: true, kbIndex);
+        ValidateApiObjectTarget(designModel, plan, beforeAnyDelete: true, kbIndex, telemetry);
         foreach (var name in plan.ProcedureNames)
         {
             progress?.ThrowIfAbortRequested();
             current++;
             progress?.Report("Validando", current, total, name);
             progress?.Pump();
-            ValidateProcedureTarget(designModel, name, beforeAnyDelete: true, kbIndex);
+            ValidateProcedureTarget(designModel, name, beforeAnyDelete: true, kbIndex, telemetry);
         }
 
         foreach (var name in plan.OwnSdtNames)
@@ -189,7 +236,7 @@ internal static class ApiPlanGeneratedApiRemover
             current++;
             progress?.Report("Validando", current, total, name);
             progress?.Pump();
-            ValidateOwnSdtTarget(designModel, plan, name, beforeAnyDelete: true, kbIndex);
+            ValidateOwnSdtTarget(designModel, plan, name, beforeAnyDelete: true, kbIndex, telemetry);
         }
     }
 
@@ -197,12 +244,13 @@ internal static class ApiPlanGeneratedApiRemover
         KBModel designModel,
         string metadataFileName,
         string transactionName,
-        ApiPlanKbObjectNameIndex? kbIndex)
+        ApiPlanKbObjectNameIndex? kbIndex,
+        ApiPlanRemovalTelemetry? telemetry)
     {
         var matches = kbIndex is null
-            ? WikiFileKBObject.GetAll(designModel)
+            ? Scan(telemetry, "File", "resolucao-metadata", () => WikiFileKBObject.GetAll(designModel)
                 .Where(file => string.Equals(file.Name, metadataFileName, StringComparison.OrdinalIgnoreCase))
-                .ToArray()
+                .ToArray())
             : kbIndex.FindFiles(metadataFileName).ToArray();
 
         if (matches.Length == 0)
@@ -246,12 +294,13 @@ internal static class ApiPlanGeneratedApiRemover
         KBModel designModel,
         ApiPlanGeneratedApiRemovalPlan plan,
         bool beforeAnyDelete,
-        ApiPlanKbObjectNameIndex? kbIndex = null)
+        ApiPlanKbObjectNameIndex? kbIndex = null,
+        ApiPlanRemovalTelemetry? telemetry = null)
     {
         var matches = kbIndex is null
-            ? API.GetAll(designModel)
+            ? Scan(telemetry, "API", beforeAnyDelete ? "validacao-agregada" : "revalidacao-pre-delete", () => API.GetAll(designModel)
                 .Where(item => string.Equals(item.Name, plan.ApiName, StringComparison.OrdinalIgnoreCase))
-                .ToArray()
+                .ToArray())
             : kbIndex.FindApis(plan.ApiName).ToArray();
         if (matches.Length == 0)
         {
@@ -278,12 +327,13 @@ internal static class ApiPlanGeneratedApiRemover
         KBModel designModel,
         string name,
         bool beforeAnyDelete,
-        ApiPlanKbObjectNameIndex? kbIndex = null)
+        ApiPlanKbObjectNameIndex? kbIndex = null,
+        ApiPlanRemovalTelemetry? telemetry = null)
     {
         var matches = kbIndex is null
-            ? Procedure.GetAll(designModel)
+            ? Scan(telemetry, "Procedure", beforeAnyDelete ? "validacao-agregada" : "revalidacao-pre-delete", () => Procedure.GetAll(designModel)
                 .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
-                .ToArray()
+                .ToArray())
             : kbIndex.FindProcedures(name).ToArray();
         if (matches.Length == 0)
         {
@@ -311,7 +361,8 @@ internal static class ApiPlanGeneratedApiRemover
         ApiPlanGeneratedApiRemovalPlan plan,
         string name,
         bool beforeAnyDelete,
-        ApiPlanKbObjectNameIndex? kbIndex = null)
+        ApiPlanKbObjectNameIndex? kbIndex = null,
+        ApiPlanRemovalTelemetry? telemetry = null)
     {
         if (plan.SharedSdtNamesPreserved.Contains(name, StringComparer.Ordinal))
         {
@@ -321,9 +372,9 @@ internal static class ApiPlanGeneratedApiRemover
         }
 
         var matches = kbIndex is null
-            ? SDT.GetAll(designModel)
+            ? Scan(telemetry, "SDT", beforeAnyDelete ? "validacao-agregada" : "revalidacao-pre-delete", () => SDT.GetAll(designModel)
                 .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
-                .ToArray()
+                .ToArray())
             : kbIndex.FindSdts(name).ToArray();
         if (matches.Length == 0)
         {
@@ -364,13 +415,17 @@ internal static class ApiPlanGeneratedApiRemover
         }
     }
 
-    private static void DeleteSingleProcedure(KBModel designModel, string name, List<string> deleted)
+    private static void DeleteSingleProcedure(
+        KBModel designModel,
+        string name,
+        List<string> deleted,
+        ApiPlanRemovalTelemetry? telemetry = null)
     {
-        ValidateProcedureTarget(designModel, name, beforeAnyDelete: false);
+        ValidateProcedureTarget(designModel, name, beforeAnyDelete: false, kbIndex: null, telemetry);
 
-        var matches = Procedure.GetAll(designModel)
+        var matches = Scan(telemetry, "Procedure", "localizacao-delete", () => Procedure.GetAll(designModel)
             .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
+            .ToArray());
         if (matches.Length == 0)
         {
             return;
@@ -379,7 +434,7 @@ internal static class ApiPlanGeneratedApiRemover
         var procedure = matches[0];
         var guid = procedure.Guid;
         procedure.Delete();
-        if (Procedure.GetAll(designModel).Any(item => item.Guid == guid))
+        if (Scan(telemetry, "Procedure", "confirmacao-pos-delete", () => Procedure.GetAll(designModel).Any(item => item.Guid == guid)))
         {
             throw new InvalidOperationException($"Remocao falhou: Procedure '{name}' ainda existe apos Delete().");
         }
@@ -387,13 +442,17 @@ internal static class ApiPlanGeneratedApiRemover
         deleted.Add($"Procedure:{name}");
     }
 
-    private static void DeleteApiObject(KBModel designModel, ApiPlanGeneratedApiRemovalPlan plan, List<string> deleted)
+    private static void DeleteApiObject(
+        KBModel designModel,
+        ApiPlanGeneratedApiRemovalPlan plan,
+        List<string> deleted,
+        ApiPlanRemovalTelemetry? telemetry = null)
     {
-        ValidateApiObjectTarget(designModel, plan, beforeAnyDelete: false);
+        ValidateApiObjectTarget(designModel, plan, beforeAnyDelete: false, kbIndex: null, telemetry);
 
-        var matches = API.GetAll(designModel)
+        var matches = Scan(telemetry, "API", "localizacao-delete", () => API.GetAll(designModel)
             .Where(item => string.Equals(item.Name, plan.ApiName, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
+            .ToArray());
         if (matches.Length == 0)
         {
             return;
@@ -402,7 +461,7 @@ internal static class ApiPlanGeneratedApiRemover
         var api = matches[0];
         var guid = api.Guid;
         api.Delete();
-        if (API.GetAll(designModel).Any(item => item.Guid == guid))
+        if (Scan(telemetry, "API", "confirmacao-pos-delete", () => API.GetAll(designModel).Any(item => item.Guid == guid)))
         {
             throw new InvalidOperationException($"Remocao falhou: API Object '{plan.ApiName}' ainda existe apos Delete().");
         }
@@ -418,13 +477,18 @@ internal static class ApiPlanGeneratedApiRemover
         }
     }
 
-    private static void DeleteSingleOwnSdt(KBModel designModel, ApiPlanGeneratedApiRemovalPlan plan, string name, List<string> deleted)
+    private static void DeleteSingleOwnSdt(
+        KBModel designModel,
+        ApiPlanGeneratedApiRemovalPlan plan,
+        string name,
+        List<string> deleted,
+        ApiPlanRemovalTelemetry? telemetry = null)
     {
-        ValidateOwnSdtTarget(designModel, plan, name, beforeAnyDelete: false);
+        ValidateOwnSdtTarget(designModel, plan, name, beforeAnyDelete: false, kbIndex: null, telemetry);
 
-        var matches = SDT.GetAll(designModel)
+        var matches = Scan(telemetry, "SDT", "localizacao-delete", () => SDT.GetAll(designModel)
             .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
+            .ToArray());
         if (matches.Length == 0)
         {
             return;
@@ -433,7 +497,7 @@ internal static class ApiPlanGeneratedApiRemover
         var sdt = matches[0];
         var guid = sdt.Guid;
         sdt.Delete();
-        if (SDT.GetAll(designModel).Any(item => item.Guid == guid))
+        if (Scan(telemetry, "SDT", "confirmacao-pos-delete", () => SDT.GetAll(designModel).Any(item => item.Guid == guid)))
         {
             throw new InvalidOperationException($"Remocao falhou: SDT '{name}' ainda existe apos Delete().");
         }
@@ -441,12 +505,16 @@ internal static class ApiPlanGeneratedApiRemover
         deleted.Add($"SDT:{name}");
     }
 
-    private static void DeleteMetadataFile(KBModel designModel, WikiFileKBObject metadataFile, List<string> deleted)
+    private static void DeleteMetadataFile(
+        KBModel designModel,
+        WikiFileKBObject metadataFile,
+        List<string> deleted,
+        ApiPlanRemovalTelemetry? telemetry = null)
     {
         var name = metadataFile.Name;
         var guid = metadataFile.Guid;
         metadataFile.Delete();
-        if (WikiFileKBObject.GetAll(designModel).Any(item => item.Guid == guid))
+        if (Scan(telemetry, "File", "confirmacao-pos-delete", () => WikiFileKBObject.GetAll(designModel).Any(item => item.Guid == guid)))
         {
             throw new InvalidOperationException($"Remocao falhou: File '{name}' ainda existe apos Delete().");
         }
@@ -454,16 +522,20 @@ internal static class ApiPlanGeneratedApiRemover
         deleted.Add($"File:{name}");
     }
 
-    private static void MaybeDeleteFolder(KBModel designModel, ApiPlanGeneratedApiRemovalPlan plan, List<string> deleted)
+    private static void MaybeDeleteFolder(
+        KBModel designModel,
+        ApiPlanGeneratedApiRemovalPlan plan,
+        List<string> deleted,
+        ApiPlanRemovalTelemetry? telemetry = null)
     {
         if (!plan.FolderWasCreated || string.IsNullOrWhiteSpace(plan.FolderName))
         {
             return;
         }
 
-        var matches = Folder.GetAll(designModel)
+        var matches = Scan(telemetry, "Folder", "localizacao-delete", () => Folder.GetAll(designModel)
             .Where(item => string.Equals(item.Name, plan.FolderName, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
+            .ToArray());
         if (matches.Length != 1)
         {
             return;
@@ -478,7 +550,7 @@ internal static class ApiPlanGeneratedApiRemover
             return;
         }
 
-        if (!IsFolderEmpty(designModel, folder))
+        if (!IsFolderEmpty(designModel, folder, telemetry))
         {
             deleted.Add($"Folder:{plan.FolderName}:PreservedNonEmpty");
             return;
@@ -486,7 +558,7 @@ internal static class ApiPlanGeneratedApiRemover
 
         var guid = folder.Guid;
         folder.Delete();
-        if (Folder.GetAll(designModel).Any(item => item.Guid == guid))
+        if (Scan(telemetry, "Folder", "confirmacao-pos-delete", () => Folder.GetAll(designModel).Any(item => item.Guid == guid)))
         {
             throw new InvalidOperationException($"Remocao falhou: Folder '{plan.FolderName}' ainda existe apos Delete().");
         }
@@ -494,24 +566,33 @@ internal static class ApiPlanGeneratedApiRemover
         deleted.Add($"Folder:{plan.FolderName}");
     }
 
-    private static bool IsFolderEmpty(KBModel designModel, Folder folder)
+    // O curto-circuito de && e preservado: a instrumentacao envolve cada operando
+    // isoladamente, entao uma varredura so e medida quando de fato executa.
+    private static bool IsFolderEmpty(KBModel designModel, Folder folder, ApiPlanRemovalTelemetry? telemetry = null)
     {
-        return !API.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid)
-            && !Procedure.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid)
-            && !SDT.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid)
-            && !WikiFileKBObject.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid)
-            && !Folder.GetAll(designModel).Any(item => item.Guid != folder.Guid && item.Parent is not null && item.Parent.Guid == folder.Guid);
+        return !Scan(telemetry, "API", "folder-vazio", () => API.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid))
+            && !Scan(telemetry, "Procedure", "folder-vazio", () => Procedure.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid))
+            && !Scan(telemetry, "SDT", "folder-vazio", () => SDT.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid))
+            && !Scan(telemetry, "File", "folder-vazio", () => WikiFileKBObject.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid))
+            && !Scan(telemetry, "Folder", "folder-vazio", () => Folder.GetAll(designModel).Any(item => item.Guid != folder.Guid && item.Parent is not null && item.Parent.Guid == folder.Guid));
     }
 }
 
 internal sealed class ApiPlanGeneratedApiRemovalResult
 {
-    public ApiPlanGeneratedApiRemovalResult(ApiPlanGeneratedApiRemovalPlan plan, IReadOnlyList<string> deletedItems)
+    public ApiPlanGeneratedApiRemovalResult(
+        ApiPlanGeneratedApiRemovalPlan plan,
+        IReadOnlyList<string> deletedItems,
+        IReadOnlyList<string>? telemetryLines = null)
     {
         Plan = plan ?? throw new ArgumentNullException(nameof(plan));
         DeletedItems = deletedItems ?? throw new ArgumentNullException(nameof(deletedItems));
+        TelemetryLines = telemetryLines ?? Array.Empty<string>();
     }
 
     public ApiPlanGeneratedApiRemovalPlan Plan { get; }
     public IReadOnlyList<string> DeletedItems { get; }
+
+    /// <summary>B082: linhas de medição de custo, para a janela Output. Diagnóstico apenas.</summary>
+    public IReadOnlyList<string> TelemetryLines { get; }
 }

@@ -995,6 +995,11 @@ public sealed class Package : AbstractPackageUI
 
             stopwatch.Stop();
             WriteOutput($"[Genexus Open API Builder][B086] Remocao concluida: Transaction='{transaction.Name}', ApiName='{result.Plan.ApiName}', Deleted={result.DeletedItems.Count}, Items='{string.Join("; ", result.DeletedItems)}'. SDTs compartilhados e Business Component da Transaction nao foram alterados.");
+            WriteOutput($"[Genexus Open API Builder][B082] Remover TotalMs={stopwatch.ElapsedMilliseconds}.");
+            foreach (var telemetryLine in result.TelemetryLines)
+            {
+                WriteOutput($"[Genexus Open API Builder][B082] Remover {telemetryLine}");
+            }
             var report = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, result.Plan.ApiName);
             report.SetApiName(result.Plan.ApiName);
             report.AddDeletedItems(result.DeletedItems.ToArray());

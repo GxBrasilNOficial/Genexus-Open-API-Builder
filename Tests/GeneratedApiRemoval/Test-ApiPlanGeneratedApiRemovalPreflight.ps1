@@ -33,7 +33,9 @@ if ($removeStart -lt 0 -or $previewStart -lt 0 -or $previewStart -le $removeStar
 $removeBlock = $source.Substring($removeStart, $previewStart - $removeStart)
 Assert-Contains $removeBlock 'ValidateRemovalTargets(designModel, plan' 'Remove deve executar o preflight antes de qualquer Delete.'
 $validationIndex = $removeBlock.IndexOf('ValidateRemovalTargets(designModel, plan', [StringComparison]::Ordinal)
-$deleteIndex = $removeBlock.IndexOf('DeleteApiObject(designModel, plan, deleted)', [StringComparison]::Ordinal)
+# Prefixo, nao assinatura completa: parametros adicionais (ex.: instrumentacao) nao
+# devem quebrar a assercao de ordem, que e sobre preflight vir antes do primeiro Delete.
+$deleteIndex = $removeBlock.IndexOf('DeleteApiObject(designModel, plan, deleted', [StringComparison]::Ordinal)
 if ($validationIndex -lt 0 -or $deleteIndex -lt 0 -or $validationIndex -ge $deleteIndex) {
     throw 'ASSERT_ORDER_FAILED: preflight deve ocorrer antes da primeira exclusão.'
 }
