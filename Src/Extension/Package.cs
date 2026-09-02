@@ -706,6 +706,11 @@ public sealed class Package : AbstractPackageUI
             var report = new ApiPlanApplicationFinalReportCollector("Sincronizar", transaction.Name, apiPlan.ApiName);
             var stopwatch = Stopwatch.StartNew();
             AppendPlanWarnings(report, apiPlan);
+            // B082: mede o custo das varreduras de catalogo ao longo do Sync que escreve.
+            var syncScanTelemetry = new ApiPlanScanTelemetry();
+            using var syncScanScope = ApiPlanScanProbe.Begin(
+                syncScanTelemetry,
+                telemetry => WriteScanTelemetry("Sync", telemetry));
 
             try
             {
@@ -2201,14 +2206,22 @@ public sealed class Package : AbstractPackageUI
     private static void WriteApplyScanTelemetry(ApiPlanScanTelemetry telemetry, long elapsedMs)
     {
         WriteProbePhase("TotalAposConcluir", elapsedMs);
-        if (telemetry is null)
+        WriteScanTelemetry("Apply", telemetry);
+    }
+
+    /// <summary>
+    /// B082: publica o custo das varreduras de catálogo de uma operação. Diagnóstico apenas.
+    /// </summary>
+    private static void WriteScanTelemetry(string operation, ApiPlanScanTelemetry telemetry)
+    {
+        if (telemetry is null || telemetry.ScanCount == 0)
         {
             return;
         }
 
         foreach (var line in telemetry.BuildOutputLines())
         {
-            WriteOutput($"[Genexus Open API Builder][B082] Apply {line}");
+            WriteOutput($"[Genexus Open API Builder][B082] {operation} {line}");
         }
     }
 

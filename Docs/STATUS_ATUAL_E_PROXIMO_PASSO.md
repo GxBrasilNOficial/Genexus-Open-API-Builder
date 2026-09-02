@@ -137,15 +137,19 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Implementar `B108`** — plano aprovado e gravado; **código ainda não iniciado** (adiado de propósito). Preferências da KB só na criação; no reencontro checkboxes espelham a KB; desmarcar confirma (default Não) e o Apply rebaixa/remove; Delete some com BC. Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. O corte `0.1.0-alpha.7` está publicado. `B082` Fases A+B ficam registradas; **não reabrir o desenho do B082** nesta linha. `B105` permanece folga/Sprint 10.
+**Implementar a Etapa 1A do hardening `B082`** — desempenho sem atravessar mutação: writers de Business Component e List consumindo o mapa de atributos que o índice já constrói; índice criado uma vez por operação; preflights de API Object, Procedure e SDT consumindo o índice já construído. Nenhuma regra de escrita ou exclusão muda nesta etapa. Plano: `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md` (ler também o apêndice; começar pelo item A1, a estrutura do índice). Metas de aceite e procedimento de medição estão no próprio plano.
 
-Evidência do B082: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
+**Esta linha reabre o `B082` deliberadamente**, por decisão humana de 2026-09-02, depois de a extensão ser instrumentada e medida: `Attribute.GetAll` custa ~1300 ms e é a varredura mais cara da KB, embora a extensão nunca crie, altere ou apague atributos; o mapa de atributos já existe no índice e não tem consumidor; e o índice é criado quatro vezes por Apply. A instrução anterior — «não reabrir o desenho do B082» — valia para a linha do corte `0.1.0-alpha.7`, já publicado, e fica substituída por esta frente.
+
+**`B108` recua para a ação seguinte**, com plano aprovado e gravado, código ainda não iniciado: preferências da KB só na criação; no reencontro checkboxes espelham a KB; desmarcar confirma (default Não) e o Apply rebaixa/remove; Delete some com BC. Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. O corte `0.1.0-alpha.7` está publicado. `B105` permanece folga/Sprint 10.
+
+Evidência do B082: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md` (entrega do alpha.7; o item 4 da sua seção «Fora da fila operacional» está revogado pelo plano de 2026-09-02).
 Notas do corte: `Docs/Releases/0.1.0-alpha.7.md`.
 Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.7
 
 ## Missão estacionada (outra sessão)
 
-`B082` — Fases A+B entregues; Preview do Sync com a mesma casca do Remover (2026-09-01, `Empresa`). `RefreshFolders` exercido no primeiro Apply da `Company` em `ShowcaseUnanimo`. Residual de outra sessão (não é a próxima ação): checklist numerado 1–5 em `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md` («Fora da fila operacional») — casca × B081; `progress` no Remove efetivo; `DoEvents`/reentrância (P1 aceito no corte); índice/`GetAll` incompleto (Procedure/List/BC/API/metadata/Remove); higiene doc opcional (itens 91+ na sequência operacional). **Não reabrir o desenho** nem misturar com `B108`. Recado original: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
+**Desestacionada em 2026-09-02.** O residual do `B082` deixou de ser missão de outra sessão e virou a próxima ação única, acima. O checklist 1–5 de «Fora da fila operacional» em `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md` está absorvido pelo plano de 2026-09-02, que o reclassifica com medição: o item 4 (índice/`GetAll` incompleto) era P2 de performance e passou a ser a primeira ação de código; casca × B081, `progress` no Remove efetivo e `DoEvents`/reentrância viraram as Etapas 2 e 3 daquele plano. Contexto histórico da entrega: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md` e o registro do Preview do Sync com a mesma casca do Remover (2026-09-01, `Empresa`), com `RefreshFolders` exercido no primeiro Apply da `Company` em `ShowcaseUnanimo`.
 
 ## Pendência urgente (próxima sessão de código)
 
@@ -190,7 +194,7 @@ Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/t
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única é `B108` (plano aprovado; código adiado — `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é a Etapa 1A do hardening `B082` (`Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`), com `B108` recuado para a ação seguinte (plano aprovado; código adiado — `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
@@ -285,7 +289,8 @@ Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/t
 88. Em 2026-08-31 o pacote do corte `0.1.0-alpha.6` foi preparado (CHANGELOG, notas PT/ES/EN, versão, README/`INSTALL`/`DEMO`, builds Release canônico e satélite). ~~Próxima ação única = autorização humana para publicar (tag + GitHub Release pre-release + dois assets DLL).~~ **Superada** pelo item 89. `B108` permanece fora deste corte.
 89. Em 2026-08-31 o corte `0.1.0-alpha.6` foi publicado (tag `v0.1.0-alpha.6` + GitHub Release pre-release, dois assets DLL). Próxima ação única = `B108`.
 90. Em 2026-08-31 o plano de `B108` foi discutido, aprovado e gravado (preferências só na criação; checkboxes espelham KB; desmarcar confirma e rebaixa/remove; Delete some com BC). **Implementação adiada** de propósito para nova sessão. Próxima ação única permanece `B108` (código). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`.
-91. Em 2026-09-01 o corte `0.1.0-alpha.7` foi publicado (tag `v0.1.0-alpha.7` + GitHub Release pre-release, dois assets DLL). Próxima ação única = `B108`.
+91. Em 2026-09-01 o corte `0.1.0-alpha.7` foi publicado (tag `v0.1.0-alpha.7` + GitHub Release pre-release, dois assets DLL). ~~Próxima ação única = `B108`.~~ **Superada** pelo item 92.
+92. Em 2026-09-02 a extensão foi instrumentada (`ApiPlanScanTelemetry`, `ApiPlanScanProbe`) e medida na KB `Fabrica Brasil Test` em três transações — `Setor`, `Empresa` e `DocumentoFiscal` — nas três operações. A medição inverteu a prioridade do residual `B082`: `Attribute.GetAll` custa ~1300 ms e é a varredura mais cara da KB, embora a extensão nunca crie, altere ou apague atributos; o mapa de atributos já existe em `ApiPlanKbObjectNameIndex` e não tem consumidor; o índice é criado quatro vezes por Apply; e o custo de varredura por Apply é praticamente constante em torno de 60 s, porque depende das partes da chave primária e dos filtros, não do tamanho da transação — `Setor` e `DocumentoFiscal` fazem as mesmas 97 varreduras com 6 e 171 campos. O residual `B082` foi desestacionado e reaberto por decisão humana. Próxima ação única = Etapa 1A do plano `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`; `B108` recua para a ação seguinte.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -331,7 +336,8 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [2026-08-29 — UX progresso Wizard/apply (missão B082, recado)](Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md)
 - [2026-08-30 — B100 Delete opt-in](Implementation/2026-08-30-B100-DELETE-OPT-IN.md)
 - [2026-08-31 — B082 plano UX progresso (Fases A+B)](Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md)
-- [2026-08-31 — B108 plano preferências e retração (próxima ação)](Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md)
+- [2026-09-02 — B082 plano de hardening e desempenho medido (próxima ação)](Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md)
+- [2026-08-31 — B108 plano preferências e retração (ação seguinte)](Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md)
 - [B085 — Sincronizar com a Transaction](Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
@@ -345,7 +351,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 10 — Beta estável (`B108` é a próxima ação de código, plano gravado; `B082` Fases A+B registradas, sem reabrir desenho).
+- Sprint 10 — Beta estável (Etapa 1A do hardening `B082` é a próxima ação de código, plano medido e gravado em 2026-09-02; `B108` é a ação seguinte, plano gravado).
 
 ## Protocolo de atualização
 

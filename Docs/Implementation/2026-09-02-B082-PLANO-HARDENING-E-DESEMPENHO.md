@@ -25,8 +25,16 @@ operacional»**, que classificava o índice compartilhado incompleto como resíd
 de prioridade P2. A medição mostra que é a maior fatia isolada de custo da extensão inteira, e
 ele passa a ser a primeira ação de código desta frente.
 
-`Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` não muda por este documento: `B108` continua sendo a
-próxima frente do checkpoint.
+**Esta frente passa a ser ativa**, por decisão humana de 2026-09-02, e
+`Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` foi atualizado no mesmo passo: a próxima ação única passa
+a ser a Etapa 1A deste plano, e o `B108` — cujo plano continua aprovado e gravado — recua para a
+posição seguinte. A instrução anterior de «não reabrir o desenho do B082» valia para a linha do
+corte `0.1.0-alpha.7`, já publicado; ela é substituída por esta frente, que reabre o B082
+deliberadamente, com escopo e medição próprios.
+
+A primeira redação deste documento afirmava que o checkpoint não mudaria. Isso se sustentava
+enquanto ele fosse planejamento; deixou de valer quando a implementação foi autorizada, e a
+contradição entre os dois documentos canônicos foi apontada por revisão externa.
 
 ## Como foi medido
 
@@ -223,11 +231,23 @@ de uma KB não provam o comportamento de toda instalação**, e a ordem atual n�
    que alimenta a renderização da confirmação é **a mesma** que alimenta a fila executada e o
    contador de planejados; nenhum call site recalcula um total ou uma lista por caminho próprio.
 
+   **O Preview captura a identidade de cada alvo destrutivo:** GUID e contêiner de cada API
+   Object, Procedure, SDT próprio e Folder, além do GUID e ownership do metadata File e do GUID
+   da Transaction. Hoje o metadata guarda GUID apenas da API; Procedures, SDTs e Folder existem
+   no plano só como nome. Sem GUID capturado, a promessa de "executar exatamente a lista exibida"
+   é **nominal**: nome, descrição de posse e cardinalidade não distinguem um objeto de outro
+   homônimo que tenha ocupado seu lugar. A captura é barata porque o Preview **já enumera** esses
+   objetos em `ValidateRemovalTargets` — o GUID está em `matches[0]` e hoje é descartado.
+
    Antes da primeira exclusão, valida-se, além do que `ValidateRemovalTargets` já faz hoje por
-   alvo — API por GUID, Procedure e SDT por descrição de posse, com bloqueio em cardinalidade
-   ambígua —, a identidade da Transaction por GUID, o metadata File único com mesmo GUID e
-   ownership, e o SHA-256 dos bytes igual ao capturado no Preview. Divergência em qualquer um
-   bloqueia com zero exclusões. Daí em diante, a lista confirmada é a autorização.
+   alvo — cardinalidade e descrição de posse —, o **GUID capturado de cada alvo**, a identidade da
+   Transaction por GUID, o metadata File único com mesmo GUID e ownership, e o SHA-256 dos bytes
+   igual ao capturado no Preview. Divergência em qualquer um bloqueia com zero exclusões. Daí em
+   diante, a lista confirmada é a autorização.
+
+   Isto **não** reintroduz a `v20`: continuam fora os seis estados derivados, a revalidação de
+   identidade repetida a cada alvo e o segundo checkpoint de SHA. É um campo a mais no que já se
+   captura, comparado uma única vez.
 
    O que **não** entra: revalidação de identidade repetida a cada alvo intermediário. Ela é o
    aparato que a `v20` construía para o cenário de alteração externa durante a exclusão, cortado
@@ -268,16 +288,31 @@ viva até o retorno do handler, inclusive durante o relatório final; remoção 
 aninhado em `OnAbortClicked`; protocolo de abort escrito como sequência explícita — reportar,
 processar eventos, verificar abort, revalidar o alvo, só então mutar — e não apenas "verificar
 entre o report e a mutação"; plano do Preview entregue ao Remove como instância única, conforme
-a decisão 7; e **verificação de contêiner no `MaybeDeleteFolder`**, reaproveitando a regra de
-`ApiPlanTransactionFolder.IsInExpectedContainer` em vez de duplicá-la.
+a decisão 7; e **verificação de contêiner e GUID no `MaybeDeleteFolder`**.
+
+Esta última exige três mudanças concretas, não uma menção: `ApiPlanTransactionFolder.IsInExpectedContainer`
+é privado e recebe o objeto `Transaction`, então precisa ser tornado compartilhável; `MaybeDeleteFolder`
+recebe hoje apenas `plan`, e precisa passar a receber a `Transaction` que `Remove` já tem em mãos; e o
+Folder passa a ser conferido também por **GUID capturado no Preview**, já que o metadata grava dele
+apenas `name` e `wasCreated`. A permissividade de `IsReusable` para Description vazia serve à
+reutilização durante o Apply e **não** pode ser transportada para autorizar um `Delete`.
 
 **Etapa 3 — comunicação e UX.** Fechamento da casca antes do relatório final em todos os
 caminhos; correção do `DEMO.md:144-146` e do trecho correspondente do plano de 2026-08-31;
 ancoragem das janelas na tela do owner; e Folder preservado como item estruturado — o que exige
 tocar, no mesmo passo, toda a cadeia que hoje transporta a informação como texto:
-`ApiPlanGeneratedApiRemover` produz a string `Folder:{nome}:PreservedNonEmpty`,
-`ApiPlanApplicationFinalReport.AddDeletedItems` a recebe, `TryParsePreservedFolder` a interpreta,
-e `BuildOutputSummary` a publica em `Package.cs`. Trocar apenas o produtor quebra o consumidor.
+
+1. `ApiPlanGeneratedApiRemover.MaybeDeleteFolder` produz `Folder:{nome}:PreservedNonEmpty` e a
+   insere na lista de **removidos**;
+2. `Package.cs` a entrega por `report.AddDeletedItems(result.DeletedItems.ToArray())`;
+3. `ApiPlanApplicationFinalReport.AddDeletedItems` chama `TryParsePreservedFolder`, que faz o
+   *parsing* da string e a reclassifica;
+4. `BuildOutputSummary` e `BuildReadableBody` renderizam o resultado — o primeiro publicado por
+   `WriteOutput` em `Package.cs`, o segundo pelo diálogo do relatório final via `ShowFinalReport`.
+
+Trocar apenas o produtor deixa `TryParsePreservedFolder` interpretando uma string que já não é
+produzida. Os testes de `Tests/ApplicationFinalReport/` cobrem esse caminho e precisam afirmar a
+forma nova, não apenas perder as asserções antigas.
 
 **Fora desta frente, registrado:** a abertura do Wizard (D8) e a responsividade da IDE (D11)
 têm causa distinta — montagem de interface e trabalho na thread da UI. Merecem frente própria.
@@ -402,7 +437,11 @@ Consequência a considerar: `RefreshFolders` e `RefreshSdts`, que hoje custam um
 completa cada, tornam-se desnecessários se o índice passar a registrar as próprias criações.
 No Apply de `Empresa` o `indice-refresh` de SDT custou 173 ms; é pequeno, mas some de graça.
 
-### A2 — Onde o índice é criado quatro vezes
+### A2 — As cinco origens de criação do índice, e as quatro criações observadas
+
+Distinção que a redação anterior confundia: abaixo estão **cinco pontos de código** capazes de
+criar um índice; a telemetria observou **quatro criações** por Apply, porque nem toda origem
+dispara em toda execução. O alvo da correção são as origens, não a contagem.
 
 | Origem | Natureza |
 |---|---|
@@ -418,6 +457,13 @@ Sync e no Preview do Remover. Não confundir com as acima.
 Os dois `kbIndex ??=` são o mecanismo pelo qual um índice deixa de chegar sem que ninguém
 perceba — o código continua correto e fica lento em silêncio. Enquanto existirem, nenhum lint
 consegue provar que o índice foi propagado.
+
+**A telemetria não substitui verificação estática.** Ela mostra o que executou, não o que deixou
+de ser alcançado numa execução específica. Ao fim da Etapa 1A deve existir um teste que leia o
+fonte e falhe se `ApiPlanKbObjectNameIndex.Create` aparecer fora das fronteiras declaradas —
+`ApiPlanGenerationStateReader` e os Previews de Sync e Remove em `Package.cs`. É um lint pequeno,
+com uma lista fechada de call sites permitidos, e não é o manifesto de todos os `GetAll` que este
+plano cortou: verifica uma única chamada, não uma matriz.
 
 ### A3 — Símbolos que varrem o catálogo em laço
 
@@ -514,8 +560,15 @@ Procedimento, na ordem:
 3. `Install-ExtensionForGeneXus18.bat` como administrador, na raiz — sem `genexus /install`,
    a menos que o manifesto ou o registro tenham mudado;
 4. reabrir a IDE e executar, em cada uma das três transações, Apply, Sincronizar e Remover;
-5. coletar do Output as linhas `[B082] Apply ...` e `[B082] Remover ...` e comparar com as
-   tabelas da seção «Medições».
+5. coletar do Output as linhas `[B082] Apply ...`, `[B082] Sync ...` e `[B082] Remover ...`, e
+   comparar com as tabelas da seção «Medições».
+
+**Sobre o Sync:** até 2026-09-02 ele não era instrumentado — `ApiPlanScanProbe.Begin` existia
+apenas no fluxo do Wizard, e por isso as medições registradas neste documento **não têm linha de
+varredura para Sync**. O escopo foi acrescentado, publicando ao encerrar para cobrir os vários
+pontos de retorno do handler. Um Sync sem diferenças retorna cedo e produz poucas varreduras; a
+medição que interessa é a de um Sync que **de fato escreve**, ainda não coletada. Provocá-la exige
+alterar a Transaction depois de gerada a API — acrescentar um atributo, por exemplo.
 
 **Reinstalar não é opcional.** Medição vale para a DLL que a produziu: sem reinstalar, ou os
 números são do código antigo, ou as linhas novas simplesmente não aparecem — e ausência de linha
@@ -540,6 +593,9 @@ Trocar de transação invalida a comparação com as tabelas deste documento.
   conhecidos — não a todos os `GetAll` do repositório. Um call site não instrumentado não aparece
   no relatório de varreduras e pode passar por inexistente. Ao investigar um tempo que não fecha,
   suspeite primeiro de varredura não instrumentada.
+- **O Sync que escreve.** Nas três transações medidas o Sync não encontrou diferenças e retornou
+  cedo, então o caminho que realmente aplica mudanças nunca foi medido. As metas de aceite não
+  incluem tempo de Sync por essa razão: não há linha de base para comparar.
 - **O custo do `Save()` por tipo de objeto.** Sabemos que em `Empresa` a criação de 44 SDTs
   levou 30 s — cerca de 685 ms cada — mas não instrumentamos as mutações individualmente.
 - **A causa dos 7 s de montagem de interface** na abertura do Wizard de `DocumentoFiscal`.

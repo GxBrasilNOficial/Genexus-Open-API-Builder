@@ -1,7 +1,9 @@
 # B082 — Plano: sinal de vida no Wizard (abertura e Apply), Sync e Remover
 
 Data: 2026-08-31.
-Estado: **registro das Fases A+B já entregues**, com smoke `Empresa` e `ShowcaseUnanimo`/`Company` (2026-09-01). Não reabrir este desenho. A próxima ação de código continua `B108`.
+Estado: **registro das Fases A+B já entregues**, com smoke `Empresa` e `ShowcaseUnanimo`/`Company` (2026-09-01). Este documento permanece como histórico da entrega do corte `0.1.0-alpha.7`.
+
+**Superado em parte por `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`.** Aquele plano reabre o `B082` deliberadamente e é a próxima ação de código; o **item 4** da seção «Fora da fila operacional» abaixo (índice/`GetAll` incompleto, classificado ali como P2 de performance) está **revogado**: a medição de 2026-09-02 mostrou que é a maior fatia isolada de custo da extensão. Os itens 1, 2 e 3 foram absorvidos como Etapas 2 e 3 daquele plano.
 Correlato de backlog: `B082` em `Docs/Foundation/06-BACKLOG_v0.1.md`.
 Recado original: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
 
@@ -72,7 +74,7 @@ Polimento B082 para **outra sessão** (junto com o residual acima; **não** mist
 4. **Índice compartilhado incompleto (P2, performance).** Além do parágrafo genérico de `GetAll`: `ApiPlanApiObjectWriter`, `ApiPlanMetadataFileWriter`, writers BC/List, `Remove()` efetivo (`kbIndex: null` + `GetAll` por `Delete` e checagem pós-`Delete`). Detalhe por classe: `ApiPlanProcedureWriter.cs` (~170) ainda usa `Procedure.GetAll`; `ApiPlanListProcedureWriter.cs` (~53) cria índice próprio em vez do compartilhado; `ApiPlanBusinessComponentWriter` mantém chamadas `GetAll` apesar de receber `kbIndex`. Origem: painel Codex/Claude 2026-09-01. Fechar quando: writers acima recebem/reutilizam `kbIndex` e smoke de escala documentado.
 5. **Higiene doc checkpoint (P3, opcional).** Itens 91+ na «Sequência operacional vigente» do checkpoint para trabalho 2026-09-01 (Preview Sync com casca; `RefreshFolders` após `GxOpenAPI`). Origem: painel Claude 2026-09-01. Fechar quando: sequência numerada reflete marcos pós-item 90 sem contradizer a próxima ação (`B108`).
 
-Isso **não** é a próxima ação de código (`B108`).
+Isso deixou de ser fila parada em 2026-09-02: virou a próxima ação de código, pelo plano `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`.
 
 ### Fase B — Consolidar sonda em B082 produtivo
 
@@ -144,4 +146,4 @@ O Remover exige `api{Transaction}_Metadata`. Abort no meio dos SDTs deixa objeto
 
 - Recado: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`
 - Escala (critério 11 encerrado): `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`
-- Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` (`B108` = próxima ação de código; este arquivo é registro, não pauta)
+- Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` (próxima ação de código = Etapa 1A do plano de 2026-09-02; este arquivo é registro, não pauta)

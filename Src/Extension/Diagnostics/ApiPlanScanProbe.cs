@@ -24,7 +24,11 @@ internal static class ApiPlanScanProbe
     /// Ativa a medição até o <c>Dispose</c>. Escopos aninhados restauram o anterior,
     /// então um escopo interno nunca desliga a medição de quem o chamou.
     /// </summary>
-    public static IDisposable Begin(ApiPlanScanTelemetry telemetry)
+    /// <param name="onDispose">
+    /// Publicação opcional ao encerrar o escopo. Útil em fluxos com vários pontos de retorno,
+    /// onde repetir a publicação em cada um deixaria algum caminho sem medição.
+    /// </param>
+    public static IDisposable Begin(ApiPlanScanTelemetry telemetry, Action<ApiPlanScanTelemetry>? onDispose = null)
     {
         if (telemetry is null)
         {
@@ -33,7 +37,7 @@ internal static class ApiPlanScanProbe
 
         var previous = _current;
         _current = telemetry;
-        return new Scope(previous);
+        return new Scope(previous, telemetry, onDispose);
     }
 
     /// <summary>
@@ -59,11 +63,18 @@ internal static class ApiPlanScanProbe
     private sealed class Scope : IDisposable
     {
         private readonly ApiPlanScanTelemetry? _previous;
+        private readonly ApiPlanScanTelemetry _telemetry;
+        private readonly Action<ApiPlanScanTelemetry>? _onDispose;
         private bool _disposed;
 
-        public Scope(ApiPlanScanTelemetry? previous)
+        public Scope(
+            ApiPlanScanTelemetry? previous,
+            ApiPlanScanTelemetry telemetry,
+            Action<ApiPlanScanTelemetry>? onDispose)
         {
             _previous = previous;
+            _telemetry = telemetry;
+            _onDispose = onDispose;
         }
 
         public void Dispose()
@@ -75,6 +86,15 @@ internal static class ApiPlanScanProbe
 
             _disposed = true;
             _current = _previous;
+
+            // A publicacao nunca pode derrubar o fluxo que esta sendo medido.
+            try
+            {
+                _onDispose?.Invoke(_telemetry);
+            }
+            catch
+            {
+            }
         }
     }
 }
