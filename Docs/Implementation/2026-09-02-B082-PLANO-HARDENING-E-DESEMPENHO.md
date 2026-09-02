@@ -553,6 +553,12 @@ apenas executa o delegate — custo zero fora da medição. Ao envolver uma varr
 no delegate **o pipeline inteiro até a materialização** (`ToArray`, `Any`, `ToLookup`), porque
 `GetAll` é preguiçoso e cronometrar só a chamada não mede nada.
 
+`ShowFinalReport` abre `ApiPlanScanProbe.Suspend()` no início: a apresentação do relatório roda
+dentro do escopo do Sync, mas não faz parte da operação medida, e `TryResolveMainObjectFromKb`
+consulta a KB dali. Sem a suspensão, uma leitura de relatório seria contada como custo do Sync.
+Ao acrescentar consulta nova em qualquer ponto de apresentação, verifique se ela cai dentro de um
+escopo de medição que não lhe pertence.
+
 Procedimento, na ordem:
 
 1. `dotnet build-server shutdown` e build Release pelo procedimento do repositório;

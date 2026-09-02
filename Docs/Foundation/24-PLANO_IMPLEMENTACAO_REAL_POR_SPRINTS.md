@@ -336,7 +336,7 @@ Ordem acordada de execução:
 
 - `B088`: investigar/documentar limitações do template nativo `Swagger.Yaml.stg` (respostas declaradas só `200`/`404`; não emissão de `required:` nos schemas) — **concluído** (2026-08-10; limitação intransponível; evidência `Docs/Implementation/2026-08-10-B088-LIMITACOES-YAML-NATIVO.md`)
 - `B089`: evidência HTTP `403` com role GAM não-administradora — **concluído** (2026-08-10; GAM Backoffice + HTTP Get 200 / Create 403 nos dois environments; evidência `Docs/Implementation/B093-SECURITY-LEVEL-APIPLAN-OBJETO.md` §4.A.3.D)
-- `B082`: sinal de vida no Wizard, Sync e Remover — **Fases A+B em código**; Preview do Sync (2026-09-01); corte `0.1.0-alpha.7` **publicado em 2026-09-01**; estacionado; residual P2 no registro (casca × B081; `progress` no Remove); registro `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`
+- `B082`: sinal de vida no Wizard, Sync e Remover — **Fases A+B em código**; Preview do Sync (2026-09-01); corte `0.1.0-alpha.7` **publicado em 2026-09-01**; registro `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`. ~~estacionado; residual P2 no registro~~ **Desestacionado em 2026-09-02:** a extensão foi instrumentada e medida, o residual foi reclassificado com número e a Etapa 1A do hardening virou a próxima ação única do checkpoint. O que ali era P2 de performance é a maior fatia isolada de custo da extensão. Plano vigente: `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`
 
 ## Gate
 

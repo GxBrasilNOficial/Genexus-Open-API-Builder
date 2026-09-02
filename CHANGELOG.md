@@ -30,8 +30,11 @@ Release focada em feedback visual de progresso, cancelamento cooperativo e index
 
 - Índice da KB: `RefreshFolders` após criar `GxOpenAPI`, para o segundo `CreateOrReencounter` no mesmo Apply (REST via BC) não tentar `CreateSharedFolder` de novo. Smoke `ShowcaseUnanimo` / `Company` (2026-09-01): primeiro Apply, Criados=16 (inclui Folder `GxOpenAPI`), Bloqueados=0.
 - Registro B082: medição por item na casca (`ElapsedMs`); Output fica com totais de fase, sem dump de ms por objeto.
-- Registro B082 (2026-09-01): polimento de outra sessão anotado — casca × B081 no Apply/Sync; `progress` na revalidação do `Remove()` efetivo — junto com o `GetAll` residual já previsto. Não é a próxima ação (`B108`).
+- Registro B082 (2026-09-01): polimento de outra sessão anotado — casca × B081 no Apply/Sync; `progress` na revalidação do `Remove()` efetivo — junto com o `GetAll` residual já previsto. ~~Não é a próxima ação (`B108`).~~ Superado em 2026-09-02.
 - Registro B082 (2026-09-01): inventário «Fora da fila operacional» ampliado (itens 3–5) — `DoEvents`/reentrância, writers Procedure/List no residual de índice, higiene doc da sequência operacional.
+- Instrumentação B082 (2026-09-02): `ApiPlanScanTelemetry` e `ApiPlanScanProbe` contam e cronometram as varreduras de catálogo do Apply, do Sync e do Remover, publicando no Output em `[B082]`. Só observam: sem escopo ativo o delegate executa igual ao código não instrumentado, e a apresentação do relatório final suspende a medição para não se atribuir à operação que terminou.
+- Medição B082 (2026-09-02) na KB `Fabrica Brasil Test`, três transações: `Attribute.GetAll` custa ~1300 ms e é a varredura mais cara, embora a extensão nunca crie, altere ou apague atributos; o mapa de atributos já existe em `ApiPlanKbObjectNameIndex` e não tem consumidor; o índice é criado quatro vezes por Apply; o custo de varredura por Apply é praticamente constante em torno de 60 s, porque depende das partes da chave primária e dos filtros, não do tamanho da transação. Apply de `Setor` (12 objetos) leva 84 s; de `DocumentoFiscal` (171 campos), 187 s — com as mesmas 97 varreduras.
+- Promoção de frente (2026-09-02): o residual `B082` foi desestacionado e é a próxima ação única, pela Etapa 1A de `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`; `B108` recua para a ação seguinte, com plano intacto.
 
 ## Validated
 

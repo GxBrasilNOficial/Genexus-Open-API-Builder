@@ -240,7 +240,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 |---|---|---|
 | B080 | Integrar menu/contexto IDE | Alta — atendido em substância (Wizard + preferências); residual cosmético de nome/rótulo |
 | B081 | Exibir relatório final interno | Alta — concluído (código + U15 2026-08-08/09; efeitos colaterais, Folder criado, reuso e dimensões da UI) |
-| B082 | Mostrar tempo execução / sinal de vida | Média — **Fases A+B em código** (2026-08-31); Preview do Sync como o Remover (2026-09-01), integrando o corte `0.1.0-alpha.7`. Estacionado, **não é a próxima ação**. Residual P2 no registro (casca × B081 no Apply/Sync; `progress` na revalidação do Remove; `GetAll` no Remove efetivo). Smoke `Empresa`: Apply ~4,2 min; Sync `PreviewMs=5089`; Remover Preview `PreviewMs=2525` (Não). Registro `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`. Não misturar com `B108` |
+| B082 | Mostrar tempo execução / sinal de vida | Média — **Fases A+B em código** (2026-08-31); Preview do Sync como o Remover (2026-09-01), integrando o corte `0.1.0-alpha.7`. **Desestacionado em 2026-09-02** e promovido a próxima ação única: o residual foi medido e reclassificado, e a Etapa 1A do plano `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md` é a frente ativa. O que era residual P2 (casca × B081 no Apply/Sync; `progress` na revalidação do Remove; `GetAll` no Remove efetivo) virou, na parte de índice, a maior fatia isolada de custo da extensão. Smoke `Empresa`: Apply ~4,2 min; Sync `PreviewMs=5089`; Remover Preview `PreviewMs=2525` (Não). Registro `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`. Não misturar com `B108` |
 | B083 | Detectar conflito antes salvar | Alta — concluído (núcleo no preflight; residual UX nome/tipo/módulo/Folder validado U15 2026-08-08) |
 | B084 | Bloquear overwrite silencioso | Alta — atendido (sem `_v2`) |
 | B085 | Sincronizar com a Transaction usando metadata | Alta — concluído (código + validação U15 2026-08-08; SecurityLevel do Delete no Sync, U15 2026-08-31) |
@@ -445,7 +445,7 @@ Os itens e intervalos abaixo formam a linha de corte exaustiva do MVP. Um item o
 - Fase 7: B080, B081 e B083–B087 (B088 e B089 saem do gate obrigatório da Sprint 7 e ficam pré-Alpha separados; ver nota de 2026-08-07)
 - Fase 8: B090–B093
 
-`B082` Fases A+B estão em código desde 2026-08-31, integrando o corte `0.1.0-alpha.7` (estacionado; próxima ação é `B108`). Residual P2 no registro (casca × B081 no Apply/Sync; `progress` na revalidação do Remove). A `Empresa` em 2026-08-29 motivou o sinal de vida; Apply ~4,2 min em 2026-08-31; Preview do Sync (`5089` ms) e do Remover (`2525` ms, Não) em 2026-09-01.
+`B082` Fases A+B estão em código desde 2026-08-31, integrando o corte `0.1.0-alpha.7`. Desde 2026-09-02 a frente foi **desestacionada** e é a próxima ação: o residual (casca × B081 no Apply/Sync; `progress` na revalidação do Remove; índice incompleto) foi medido e virou o plano `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`; `B108` recua para a ação seguinte. A `Empresa` em 2026-08-29 motivou o sinal de vida; Apply ~4,2 min em 2026-08-31; Preview do Sync (`5089` ms) e do Remover (`2525` ms, Não) em 2026-09-01.
 
 `B088` e `B089` foram concluídos em 2026-08-10 e não bloqueiam o marco **wizard funcional do MVP** da Sprint 7 revisada.
 

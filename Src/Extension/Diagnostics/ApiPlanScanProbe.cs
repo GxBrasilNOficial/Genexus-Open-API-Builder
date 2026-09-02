@@ -55,6 +55,19 @@ internal static class ApiPlanScanProbe
         return telemetry is null ? scan() : telemetry.MeasureScan(objectType, phase, scan);
     }
 
+    /// <summary>
+    /// Suspende a medição até o <c>Dispose</c>, sem encerrar o escopo ativo.
+    /// Serve para trechos que rodam dentro da operação mas não fazem parte dela — a
+    /// apresentação do relatório final, por exemplo, cujas leituras não devem ser
+    /// atribuídas ao Apply, ao Sync ou ao Remover que acabou de terminar.
+    /// </summary>
+    public static IDisposable Suspend()
+    {
+        var previous = _current;
+        _current = null;
+        return new Scope(previous, ApiPlanScanTelemetry.Empty, onDispose: null);
+    }
+
     public static void Note(string note)
     {
         _current?.AddNote(note);

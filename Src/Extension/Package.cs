@@ -2056,6 +2056,10 @@ public sealed class Package : AbstractPackageUI
         KBModel? designModel,
         ApiPlan? apiPlan = null)
     {
+        // B082: a apresentacao do relatorio roda dentro do escopo de medicao do Sync,
+        // mas nao faz parte da operacao medida. Suspender evita atribuir a ela as
+        // leituras de TryResolveMainObjectFromKb e de qualquer consulta futura daqui.
+        using var scanSuspension = ApiPlanScanProbe.Suspend();
         AppendPlanSideEffects(collector, apiPlan);
         TryResolveMainObjectFromKb(collector, designModel);
         var report = collector.Build(elapsed);

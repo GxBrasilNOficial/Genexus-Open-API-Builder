@@ -15,6 +15,9 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// </summary>
 internal sealed class ApiPlanScanTelemetry
 {
+    /// <summary>Instância inerte, para escopos que apenas suspendem a medição.</summary>
+    public static readonly ApiPlanScanTelemetry Empty = new ApiPlanScanTelemetry();
+
     private readonly List<ScanEntry> _scans = new List<ScanEntry>();
     private readonly List<PhaseEntry> _phases = new List<PhaseEntry>();
     private readonly List<string> _notes = new List<string>();
