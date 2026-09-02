@@ -565,6 +565,12 @@ Demais marcas: `indice-create` aparece **uma vez** por tipo, não quatro; e as c
 `confirmacao-pos-delete` **continuam presentes**, uma por objeto — se sumirem, a decisão 3 foi
 violada.
 
+A marca do `indice-create` é a que fecha o buraco deixado pelo lint. Como a lista de permitidos
+libera o `Create` do `Read` privado — necessário para a abertura do Wizard —, o lint sozinho não
+prova que `ValidateForIntentionalChange` deixou de consumi-lo. **Se `indice-create` aparecer mais
+de uma vez com o lint verde, o primeiro suspeito é o preflight ainda chamando
+`ReadForIntentionalChange`.** Ver o item A2 do apêndice.
+
 **O Sync entra por marcas estruturais, não por tempo.** Ele foi medido apenas na KB pequena, onde
 a varredura é 22% do total; não há linha de base dele na KB grande, e inventar uma meta de tempo
 sem número anterior seria arbitrário.
@@ -758,6 +764,19 @@ Alternativa, se preferir uma lista mais curta: fazer a abertura do Wizard chamar
 `ReadForIntentionalChangeWithIndex` e descartar o índice. É só troca de chamada, sem mexer na UI,
 e aí o `Create` do `Read` privado pode sair de vez. **Não é exigência da 1A** — a abertura
 pertence à D8 —, mas é a única forma de o lint ter apenas três entradas.
+
+**Liberar esse `Create` abre um buraco que o lint precisa fechar por outro lado.** Com ele
+permitido, quem esquecer de trocar `ValidateForIntentionalChange` para receber o índice continua
+chamando `ReadForIntentionalChange` → `Read` privado → `Create` **permitido**, e o lint passa.
+Por isso o mesmo teste deve ter uma segunda regra, igualmente textual: **`ApiPlanWritePreflight`
+não pode conter chamada a `ReadForIntentionalChange` nem a `ReadForSync`**. Os dois consumidores
+legítimos desses métodos ficam fora dessa classe.
+
+Mesmo com as duas regras, os gates são complementares e nenhum substitui o outro. O **lint** pega
+o que é estático: os `??=`, o `Create` direto do SdtWriter e o call site proibido no preflight. A
+**telemetria** pega o que é dinâmico: se `indice-create` aparecer mais de uma vez por tipo com o
+lint verde, há uma origem que a lista de permitidos cobre indevidamente — o primeiro suspeito é o
+preflight ainda consumindo o `Read` privado por um caminho que o texto não previu.
 
 ### A3 — Símbolos que varrem o catálogo em laço
 
