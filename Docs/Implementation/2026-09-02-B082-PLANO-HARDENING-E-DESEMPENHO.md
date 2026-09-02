@@ -793,10 +793,10 @@ a eliminação das origens supérfluas seja possível.
 
 ### Os `kbIndex = null` que sobram
 
-Nove assinaturas hoje declaram `ApiPlanKbObjectNameIndex? kbIndex = null` — em `Package.cs`, nos
-writers de Business Component, List, Procedure e SDT, e no Remover. **O default nulo é o que
-permite uma rota ficar fora da otimização em silêncio:** o código compila, roda e varre, e nenhum
-gate acusa.
+**Dez** assinaturas hoje declaram `ApiPlanKbObjectNameIndex? kbIndex = null`: três em `Package.cs`,
+quatro nos writers — Business Component, List, Procedure e SDT, uma cada — e três no Remover.
+**O default nulo é o que permite uma rota ficar fora da otimização em silêncio:** o código compila,
+roda e varre, e nenhum gate acusa.
 
 Política para a 1A, por categoria:
 
@@ -810,6 +810,30 @@ Política para a 1A, por categoria:
   descuido.
 
 Não há terceira via: ou o parâmetro é obrigatório, ou o motivo do nulo está escrito ao lado dele.
+
+**Os overloads curtos são o caso mais perigoso, e o mais fácil de resolver.** Três métodos públicos
+de três argumentos encaminham para a versão completa sem índice e sem `progress`:
+
+| Overload | Encaminha para |
+|---|---|
+| `ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan)` | a versão de sete parâmetros, com `kbIndex` implícito nulo |
+| `ApiPlanListProcedureWriter.Apply(model, transaction, plan)` | idem |
+| `ApiPlanBusinessComponentWriter.Apply(model, transaction, plan)` | idem |
+
+Tornar o parâmetro obrigatório na versão completa **não os alcança**: eles continuariam existindo
+como porta de entrada sem índice, e um call site novo que os usasse ficaria fora da otimização sem
+que nada acusasse.
+
+**Nenhum dos três tem chamador em produção** — os call sites reais de `Package.cs` e dos writers
+usam as versões completas, passando `kbIndex` nominalmente. Portanto: **remova os três**. Se
+decidir mantê-los por alguma razão que apareça na implementação, a razão vai escrita ao lado da
+assinatura, pela mesma regra dos demais nulos.
+
+Os testes que tocam esses três arquivos — em `ApiObjectOwnership`, `ApplicationFinalReport` e
+`BusinessComponentHierarchical` — leem o **fonte como texto**, não invocam os métodos. Removê-los
+não quebra nenhuma chamada, mas pode reprovar um lint que case a assinatura curta. Vale a regra do
+item A5: reprovação de lint textual após mudança de assinatura é o lint a atualizar, não regressão
+de comportamento.
 
 **A telemetria não substitui verificação estática.** Ela mostra o que executou, não o que deixou
 de ser alcançado numa execução específica. Ao fim da Etapa 1A deve existir um teste que leia o
