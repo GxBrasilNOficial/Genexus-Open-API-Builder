@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-01.
+2026-09-02.
 
 ## Último marco concluído
 
@@ -137,7 +137,7 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Implementar a Etapa 1A do hardening `B082`** — desempenho sem atravessar mutação: writers de Business Component e List consumindo o mapa de atributos que o índice já constrói; índice criado uma vez por operação; preflights de API Object, Procedure e SDT consumindo o índice já construído. Nenhuma regra de escrita ou exclusão muda nesta etapa. Plano: `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md` (ler também o apêndice; começar pelo item A1, a estrutura do índice). Metas de aceite e procedimento de medição estão no próprio plano.
+**Implementar a Etapa 1A do hardening `B082`** — desempenho com o índice como está hoje: writers de Business Component e List consumindo o mapa de atributos que o índice já constrói; índice criado uma vez por operação; e os lookups cujo tipo não foi mutado desde a última visão do índice (`PreflightProcedures`, e `PreflightRequiredSdts`/`EnsureSdts` após o `RefreshSdts` existente). **A 1A não altera a estrutura do índice e não remove `RefreshFolders`/`RefreshSdts`.** Nenhuma regra de escrita ou exclusão muda nesta etapa. Plano: `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`, com o apêndice — ler a decisão 1 e a tabela do item A3 **antes** de tocar em qualquer writer: as buscas de Procedure posteriores à gravação delas ficam fora da 1A, porque não existe `RefreshProcedures`, e ligá-las ao índice inicial quebra o Apply de geração nova. Metas de aceite e procedimento de medição estão no próprio plano.
 
 **Esta linha reabre o `B082` deliberadamente**, por decisão humana de 2026-09-02, depois de a extensão ser instrumentada e medida: `Attribute.GetAll` custa ~1300 ms e é a varredura mais cara da KB, embora a extensão nunca crie, altere ou apague atributos; o mapa de atributos já existe no índice e não tem consumidor; e o índice é criado quatro vezes por Apply. A instrução anterior — «não reabrir o desenho do B082» — valia para a linha do corte `0.1.0-alpha.7`, já publicado, e fica substituída por esta frente.
 

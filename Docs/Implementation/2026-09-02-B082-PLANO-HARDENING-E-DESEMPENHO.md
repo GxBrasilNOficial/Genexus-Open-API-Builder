@@ -301,14 +301,31 @@ de uma KB não provam o comportamento de toda instalação**, e a ordem atual n�
 1. **O índice é construído uma vez por operação**, e passa a ser reaproveitado em dois níveis de
    risco deliberadamente distintos, que não devem ser confundidos nem entregues juntos:
 
-   - **Nível A — não atravessa mutação.** Usar o mapa de atributos existente; criar o índice uma
-     vez em vez de quatro; consumir o índice recém-criado nos preflights que rodam **antes de
-     qualquer `Save()`**. Nada aqui depende de o índice continuar fiel após uma escrita. Risco
-     praticamente nulo, e é onde está a maior parte do ganho do Apply.
+   - **Nível A — seguro com o índice como está hoje.** Três coisas, e só estas:
+     (a) os `Attribute.GetAll` de `ApiPlanBusinessComponentWriter.EnsureAttributeExists` e
+     `ApiPlanListProcedureWriter.EnsureAttributeExists`, porque a extensão **nunca** cria, altera
+     ou apaga atributos — são seguros em qualquer ponto do fluxo;
+     (b) criar o índice **uma vez** por operação em vez de quatro;
+     (c) os lookups cujo tipo **não foi mutado desde a última visão do índice**:
+     `ApiPlanProcedureWriter.PreflightProcedures` (roda antes de as Procedures serem criadas) e,
+     **depois do `RefreshSdts` que já existe**, `ApiPlanApiObjectWriter.PreflightRequiredSdts` e
+     `ApiPlanBusinessComponentWriter.EnsureSdts`.
+   - **Fora do Nível A, mesmo parecendo simples:** `ApiPlanApiObjectWriter.PreflightRequiredProcedures`,
+     `ApiPlanBusinessComponentWriter.FindProcedure` e `ApiPlanListProcedureWriter.FindListProcedure`.
+     Os três rodam **depois** de as Procedures serem gravadas, e **não existe `RefreshProcedures`** —
+     `_procedures` é um `ILookup` `readonly`. Ligá-los ao índice inicial faria o Apply de geração
+     nova falhar com «Procedure requerida não foi reencontrada», justamente nos casos que este
+     plano usa como aceite. Ou ganham um `RefreshProcedures` no molde do `RefreshSdts` (uma
+     varredura, sem índice mutável), ou permanecem em leitura corrente até a 1B.
    - **Nível B — atravessa mutação.** Manter o índice coerente enquanto a extensão cria e apaga,
      em vez de reconstruí-lo. É o que o Remove precisa, e exige contrato explícito: invariantes,
      momento da atualização em relação ao sucesso da mutação, comportamento após exceção,
      duplicidade e mudança de contêiner. **Não é "baixo risco" e não deve ser tratado como tal.**
+
+   **A ordem real do Apply**, que torna essa distinção obrigatória e que a primeira redação deste
+   plano descreveu errado: índice → preflight agregado → grava SDTs → `RefreshSdts` → grava
+   Procedures → fase API Object → fase Business Component → fase List. Os preflights das três
+   últimas fases correm **depois** de mutações, não antes.
 
    Revoga a regra da `v20` que proibia usar o índice depois da primeira exclusão. Base: a IDE não
    expõe edição de File; alterá-lo exige manipulá-lo fora da IDE e reimportar por um fluxo manual
@@ -389,11 +406,26 @@ de uma KB não provam o comportamento de toda instalação**, e a ordem atual n�
 
 ## Ordem de execução
 
-**Etapa 1A — desempenho sem atravessar mutação.** Writers de Business Component e List
-consumindo o mapa de atributos; índice criado uma vez por operação, eliminando os dois
-`kbIndex ??= Create(...)` e a criação direta; preflights de API Object, Procedure e SDT
-consumindo o índice já construído, todos eles anteriores ao primeiro `Save()`. Nenhuma regra de
-escrita ou exclusão muda, e nenhum mapa precisa continuar fiel depois de uma mutação.
+**Etapa 1A — desempenho com o índice como está hoje.** Escopo exato, conforme o Nível A da
+decisão 1:
+
+- `Attribute` pelo mapa que o índice já constrói, nos dois `EnsureAttributeExists`;
+- índice criado **uma vez** por operação, eliminando os dois `kbIndex ??= Create(...)` e a criação
+  direta em `ApiPlanSdtWriter`;
+- `PreflightProcedures` pelo índice inicial; `PreflightRequiredSdts` e `EnsureSdts` pelo índice
+  **depois do `RefreshSdts` que já existe**;
+- no Remover, apenas a validação agregada, que roda antes de qualquer exclusão.
+
+**A Etapa 1A não altera a estrutura do índice.** Ele continua `ILookup`, e `RefreshFolders` e
+`RefreshSdts` **continuam existindo** — removê-los reabriria o defeito já corrigido em que um
+segundo `CreateOrReencounter` no mesmo Apply tentava criar `GxOpenAPI` de novo, e há teste textual
+que exige essas chamadas.
+
+**Fora da 1A:** as buscas de Procedure posteriores à gravação delas (`PreflightRequiredProcedures`,
+`FindProcedure`, `FindListProcedure`). Elas exigem um `RefreshProcedures` no molde do `RefreshSdts`
+— uma varredura só, sem tornar o índice mutável. Se esse método for criado, elas entram; se não,
+permanecem em leitura corrente. **As metas de aceite abaixo não dependem delas**, e valem sem esse
+refresh.
 
 **Etapa 1B — desempenho atravessando mutação.** Índice mantido coerente conforme a extensão cria
 e apaga, com o contrato exigido pelo Nível B da decisão 1 escrito antes do código. Cobre a
@@ -403,10 +435,16 @@ pós-`Delete`, que permanecem individuais e por leitura corrente.
 **Etapa 2 — segurança.** Guarda de operação única nos quatro handlers (`ExecuteOpenWizardStepOne`,
 `ExecuteSynchronizeWithTransaction`, `ExecuteRemoveGeneratedApi`, `ExecuteConfigureWizardPreferences`),
 viva até o retorno do handler, inclusive durante o relatório final; remoção do `DoEvents()`
-aninhado em `OnAbortClicked`; protocolo de abort escrito como sequência explícita — reportar,
-processar eventos, verificar abort, revalidar o alvo, só então mutar — e não apenas "verificar
-entre o report e a mutação"; plano do Preview entregue ao Remove como instância única, conforme
-a decisão 7; e **verificação de contêiner e GUID no `MaybeDeleteFolder`**.
+aninhado em `OnAbortClicked`; protocolo de abort escrito como sequência explícita — **reportar,
+processar eventos, verificar abort, e só então mutar**; plano do Preview entregue ao Remove como
+instância única, conforme a decisão 7; e **verificação de contêiner e GUID no `MaybeDeleteFolder`**.
+
+**A sequência de abort não acrescenta revalidação de identidade por alvo.** Uma redação anterior
+dizia «verificar abort, revalidar o alvo, só então mutar», o que contradizia a decisão 7 e
+reintroduziria pela porta dos fundos o aparato da `v20`. O que falta hoje no `ReportDelete` é
+apenas o `ThrowIfAbortRequested` entre o `Report` — que já executa `DoEvents` e portanto processa
+o clique — e o `Delete()`. A localização por GUID que já existe no fluxo permanece como está;
+nenhuma verificação nova por item entra aqui.
 
 Esta última exige três mudanças concretas, não uma menção: `ApiPlanTransactionFolder.IsInExpectedContainer`
 é privado e recebe o objeto `Transaction`, então precisa ser tornado compartilhável; `MaybeDeleteFolder`
@@ -452,14 +490,25 @@ Sincronizar e Remover — com a instrumentação ligada, **na KB grande `Fabrica
 metas abaixo valem só para ela: na KB pequena a varredura é 21% do tempo e o ganho esperado fica
 em torno de 15%, o que não serve de critério.
 
-| Operação | Hoje | Meta 1A |
-|---|---|---|
-| Apply `Setor` | 84,3 s | ≤ 25 s |
-| Apply `Empresa` | 161,5 s | ≤ 120 s |
-| Apply `DocumentoFiscal` | 187,5 s | ≤ 130 s |
-| Remove `Setor` | 12,8 s | ≤ 12 s |
-| Remove `Empresa` | 41,2 s | ≤ 36 s |
-| Remove `DocumentoFiscal` | 14,5 s | ≤ 13 s |
+| Operação | Hoje | Projetado | Meta 1A |
+|---|---|---|---|
+| Apply `Setor` | 84,3 s | 22,2 s | ≤ 28 s |
+| Apply `Empresa` | 169,5 s (média de 3) | 122,8 s | ≤ 135 s |
+| Apply `DocumentoFiscal` | 187,5 s | 127,3 s | ≤ 140 s |
+| Remove `Setor` | 12,8 s | 10,4 s | ≤ 12 s |
+| Remove `Empresa` | 39,8 s (média de 3) | 32,2 s | ≤ 36 s |
+| Remove `DocumentoFiscal` | 14,5 s | 12,0 s | ≤ 13 s |
+
+A coluna **Projetado** soma apenas o que o escopo da 1A converte: os dois `Attribute` em laço,
+três das quatro criações de índice, `PreflightProcedures`, e `PreflightRequiredSdts` /
+`EnsureSdts` após o `RefreshSdts` existente. **Não** inclui as buscas de Procedure posteriores à
+gravação — se um `RefreshProcedures` for criado, sobram ainda 3,6 s em `Empresa` e 3,7 s em
+`Setor`, que viram folga adicional.
+
+A **Meta** acrescenta ao projetado a folga da variância medida (8,5%), porque o aceite exige que
+as **três** execuções fiquem abaixo, não a média. Uma redação anterior deste plano trazia metas
+de 25 s, 120 s e 130 s: elas pressupunham converter também as buscas de Procedure pós-gravação,
+o que faria o Apply de geração nova falhar.
 
 O ganho do Remove na 1A é modesto de propósito: só a validação agregada — que roda antes de
 qualquer exclusão e portanto é Nível A — passa a usar o índice. Localização e revalidação
@@ -534,6 +583,12 @@ confirmação e relatório abrem na mesma tela da IDE, com a IDE em monitor secu
 **Em todas:** build Release pelo procedimento do repositório, reinstalação manual da DLL, e
 smoke na IDE. Lint e teste unitário não substituem o smoke.
 
+**A linha satélite `gx18u13` não é dispensada.** Nada nesta frente é específico de versão — são
+lookups e escopo de medição —, mas o rito do repositório exige as duas DLLs sempre que a canônica
+U14+ mudar, e um corte publicado só com a canônica seria lido como abandono da linha U13. Ao
+fechar cada etapa, gerar também o artefato satélite; a medição pode ficar só na canônica, já que
+a diferença é de compilação, não de comportamento.
+
 ## Riscos e limites declarados
 
 - **A otimização não resolve o Apply de transações muito grandes.** Em `Empresa` e
@@ -563,7 +618,7 @@ o código à frente. O que segue é o mapa, não o caminho.
 Todas as referências são por **arquivo e símbolo**. Números de linha aparecem só como auxílio
 de navegação e podem ter mudado; confirme pelo símbolo.
 
-### A1 — O índice hoje é imutável
+### A1 — O índice hoje é imutável, e a 1A não muda isso
 
 `ApiPlanKbObjectNameIndex` guarda os sete mapas como `ILookup<string, T>`, que **não permite
 inserção nem remoção**. Cinco dos sete campos são `readonly` — `_procedures`, `_apis`,
@@ -571,13 +626,22 @@ inserção nem remoção**. Cinco dos sete campos são `readonly` — `_procedur
 `_folders` e `_sdts` não são `readonly`, o que é exatamente a razão de só eles terem
 `RefreshFolders` e `RefreshSdts`, ambos reconstruindo o mapa inteiro com um novo `GetAll`.
 
-**A decisão 1 deste plano — índice construído uma vez e ajustado conforme a extensão apaga ou
-cria — não é implementável sobre `ILookup`.** Ela exige uma estrutura mutável. Essa é a
-primeira decisão técnica da Etapa 1, e vem antes de qualquer outra alteração.
+**Isso é assunto da Etapa 1B, não da 1A.** Uma redação anterior deste apêndice mandava tornar o
+índice mutável como primeira decisão técnica da Etapa 1 — está revogada. A 1A **não altera a
+estrutura do índice**: ele continua `ILookup`, e `RefreshFolders` e `RefreshSdts` continuam
+existindo e sendo chamados. Removê-los reabriria o defeito em que um segundo `CreateOrReencounter`
+no mesmo Apply tentava criar `GxOpenAPI` de novo, e há teste textual que exige essas chamadas.
 
-Consequência a considerar: `RefreshFolders` e `RefreshSdts`, que hoje custam uma varredura
-completa cada, tornam-se desnecessários se o índice passar a registrar as próprias criações.
-No Apply de `Empresa` o `indice-refresh` de SDT custou 173 ms; é pequeno, mas some de graça.
+O que a imutabilidade impede, e que por isso fica na 1B: manter o índice fiel **através** das
+mutações. Enquanto ela não existir, todo lookup posterior a uma gravação depende de um
+`Refresh<Tipo>` daquele tipo — que só existe para Folder e SDT — ou permanece em leitura corrente.
+
+**A ausência de `RefreshProcedures` é a consequência prática mais importante.** `_procedures` é
+`readonly`, então nem reatribuir é possível hoje. Criar um `RefreshProcedures` no molde exato do
+`RefreshSdts` — uma varredura, reatribuindo o campo, sem tornar o índice incremental — é opção
+legítima **dentro da 1A**, e liberaria `PreflightRequiredProcedures`, `FindProcedure` e
+`FindListProcedure`. As metas deste plano não dependem disso; é ganho adicional de cerca de 3,6 s
+por Apply na KB grande.
 
 ### A2 — As cinco origens de criação do índice, e as quatro criações observadas
 
@@ -617,18 +681,26 @@ plano cortou: verifica uma única chamada, não uma matriz.
 Ambos recebem apenas `KBModel model`. O índice **já expõe** `FindAttributes(string)` e
 `TryGetSingleAttribute(string, out GxAttribute)`, sem nenhum consumidor hoje.
 
-**Preflights que varrem uma vez por objeto:**
+**Preflights que varrem uma vez por objeto, separados pelo que importa — se o tipo já foi mutado
+quando eles rodam:**
 
-| Símbolo | Varre |
-|---|---|
-| `ApiPlanApiObjectWriter.PreflightRequiredSdts` | `SDT.GetAll` por SDT do plano |
-| `ApiPlanApiObjectWriter.PreflightRequiredProcedures` | `Procedure.GetAll` por Procedure |
-| `ApiPlanProcedureWriter.PreflightProcedures` | `Procedure.GetAll` por definição |
-| `ApiPlanBusinessComponentWriter.EnsureSdts` | `SDT.GetAll` por SDT |
-| `ApiPlanBusinessComponentWriter.FindProcedure` | `Procedure.GetAll` por serviço |
-| `ApiPlanListProcedureWriter.FindListProcedure` | `Procedure.GetAll` |
+| Símbolo | Fase | Varre | Cabe na 1A? |
+|---|---|---|---|
+| `ApiPlanProcedureWriter.PreflightProcedures` | Procedures, **antes** de criá-las | `Procedure.GetAll` | **Sim**, índice inicial serve |
+| `ApiPlanApiObjectWriter.PreflightRequiredSdts` | API Object | `SDT.GetAll` | **Sim**, após o `RefreshSdts` existente |
+| `ApiPlanBusinessComponentWriter.EnsureSdts` | Business Component | `SDT.GetAll` | **Sim**, idem |
+| `ApiPlanApiObjectWriter.PreflightRequiredProcedures` | API Object | `Procedure.GetAll` | **Não** — Procedures já gravadas, sem refresh |
+| `ApiPlanBusinessComponentWriter.FindProcedure` | Business Component | `Procedure.GetAll` | **Não** — idem |
+| `ApiPlanListProcedureWriter.FindListProcedure` | List | `Procedure.GetAll` | **Não** — idem |
 
-Em `Empresa`, `PreflightRequiredSdts` e `EnsureSdts` fizeram 47 varreduras cada.
+Em `Empresa`, `PreflightRequiredSdts` e `EnsureSdts` fizeram 47 varreduras cada — são o maior
+ganho desta tabela, e são seguros porque o `RefreshSdts` já roda entre a gravação dos SDTs e essas
+fases.
+
+Os três «Não» só entram se um `RefreshProcedures` for criado (ver A1). Ligá-los ao índice sem esse
+refresh **quebra o Apply de geração nova**: as Procedures acabaram de ser criadas e não estão no
+mapa, e o writer aborta com «Procedure requerida não foi reencontrada». O reencontro — reaplicar
+sobre API existente — mascararia o defeito, porque aí as Procedures já constam do índice inicial.
 
 **O índice chega até a porta, mas não entra.** `ApiPlanBusinessComponentWriter.Apply` e
 `ApiPlanListProcedureWriter.Apply` já recebem `kbIndex` nas assinaturas públicas e o repassam a
