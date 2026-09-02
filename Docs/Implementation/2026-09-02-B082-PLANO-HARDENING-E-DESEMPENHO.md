@@ -674,10 +674,17 @@ legítima **dentro da 1A**, e liberaria `PreflightRequiredProcedures`, `FindProc
 por Apply na KB grande.
 
 São três passos, e **os três são obrigatórios juntos**: tirar o `readonly` de `_procedures`;
-acrescentar o método; e **chamá-lo nos dois fluxos**, logo após a respectiva fase de Procedures,
-exatamente como `RefreshSdts` já é chamado após a fase de SDTs — `kbIndexForApply.RefreshSdts(...)`
-no Apply e `syncKbIndex.RefreshSdts(...)` no Sincronizar. São os dois únicos call sites de refresh
-que existem hoje; um `RefreshProcedures` só no Apply deixaria o Sync com mapa desatualizado.
+acrescentar o método; e **chamá-lo nos dois fluxos que gravam Procedures**, logo após a respectiva
+fase, exatamente como `RefreshSdts` já é chamado após a fase de SDTs —
+`kbIndexForApply.RefreshSdts(...)` em `Package.cs:1430` no Apply e `syncKbIndex.RefreshSdts(...)`
+em `Package.cs:767` no Sincronizar. Um `RefreshProcedures` só no Apply deixaria o Sync com mapa
+desatualizado.
+
+O repositório tem **três** call sites de refresh, não dois: além desses dois de `RefreshSdts`,
+há `kbIndex.RefreshFolders(designModel)` dentro de `ApiPlanSdtWriter` — chamado pelo writer, não
+pelo handler, e é ele que impede o segundo `CreateOrReencounter` de tentar criar `GxOpenAPI` de
+novo. Ao procurar os refreshes, varra `Src/` inteiro: limitar a busca a `Package.cs` esconde esse
+terceiro, que é justamente o que a 1A não pode remover.
 
 Criar o método sem os call sites é o erro natural aqui — e o mais perigoso, porque as buscas
 passariam a consultar um mapa que continua sem as Procedures recém-criadas, com o mesmo efeito de
