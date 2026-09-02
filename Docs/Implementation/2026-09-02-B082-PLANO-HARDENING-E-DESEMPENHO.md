@@ -815,8 +815,11 @@ Não há terceira via: ou o parâmetro é obrigatório, ou o motivo do nulo est�
 dividem-se em **três destinos diferentes**, e confundi-los levaria a remover o que deve ganhar
 parâmetro, ou o contrário.
 
-**Destino 1 — remover: onze assinaturas sem chamador.** Encaminhadores de conveniência e órfãos
-puros. Nenhum tem chamador em `Src/` nem em `Tests/`, e nenhum lint casa suas assinaturas.
+**Destino 1 — remover: dez órfãs hoje, mais uma por cascata.** Encaminhadores de conveniência e
+órfãos puros. As dez primeiras não têm chamador em `Src/` nem em `Tests/`, e nenhum lint casa suas
+assinaturas. A décima primeira — `ApiPlanGenerationStateReader.Read(3 args)` — **ainda tem
+chamador hoje** e só fica órfã depois que `ApiPlanWritePreflight.Validate(7 args)` sair; removê-la
+antes quebra o build.
 
 | Assinatura | Args | Observação |
 |---|---|---|
@@ -826,14 +829,18 @@ puros. Nenhum tem chamador em `Src/` nem em `Tests/`, e nenhum lint casa suas as
 | `ApiPlanBusinessComponentWriter.Apply` | 3 e 4 | encaminham para a de **8** |
 | `ApiPlanWritePreflight.Validate` | 3 e 7 | órfãos |
 | `ApiPlanWritePreflight.ValidateForIntentionalChange` | 3 | órfão |
-| `ApiPlanGenerationStateReader.ReadForSync` | 3 | **órfão hoje**, sem nenhum chamador |
-| `ApiPlanGenerationStateReader.Read` | 3 | chamado **só** por `ApiPlanWritePreflight.cs:48`, dentro do `Validate(7)` acima — **fica órfão quando ele sair** |
+| `ApiPlanGenerationStateReader.ReadForSync` | 3 | órfão hoje, sem nenhum chamador |
+| `ApiPlanGenerationStateReader.Read` | 3 | **ainda tem chamador**: `ApiPlanWritePreflight.cs:48`, dentro do `Validate(7)` acima. **Remover por último**, depois dele |
 
 Note a contagem de parâmetros da versão completa: sete no `ApiPlanSdtWriter`, **oito** no List e no
 Business Component. Não existe «a versão de sete parâmetros» como frase geral.
 
-**Destino 2 — ganhar índice obrigatório: quatro assinaturas ativas.** Estas **não** se removem;
-recebem o parâmetro, sem valor default:
+**Destino 2 — ganhar índice obrigatório.** Estas **não** se removem; recebem o parâmetro, sem
+valor default. São de duas camadas, e **a de fora não basta**: se o método público receber o
+índice e o helper privado continuar com `(KBModel, ApiPlan)`, a varredura permanece exatamente
+onde estava.
+
+Camada pública e wrappers de `Package.cs`:
 
 | Assinatura | Onde |
 |---|---|
@@ -841,6 +848,17 @@ recebem o parâmetro, sem valor default:
 | `ApiPlanSdtWriter.Preflight` | **único overload que existe**, chamado por `ApiPlanListProcedureWriter` — ponto 4 |
 | `ApiPlanWritePreflight.ValidateForSync` (3 args) | chamado no Sincronizar — ponto 9 |
 | `ApiPlanWritePreflight.ValidateForIntentionalChange` (7 args) | chamado no Apply — ponto 9 |
+| `Package.TryApplyList` e `Package.TryCreateApiObject` | pontos 1 e 5 |
+
+Helpers privados, todos hoje com assinatura sem índice:
+
+| Helper | Assinatura atual | Entra na 1A? |
+|---|---|---|
+| `ApiPlanApiObjectWriter.PreflightRequiredSdts` | `(KBModel, ApiPlan)` | **Sim** |
+| `ApiPlanBusinessComponentWriter.EnsureSdts` | `(KBModel, ApiPlan)` | **Sim** |
+| `ApiPlanApiObjectWriter.PreflightRequiredProcedures` | `(KBModel, ApiPlan)` | Só com `RefreshProcedures` |
+| `ApiPlanBusinessComponentWriter.FindProcedure` | `(KBModel, ApiPlan, string, string)` | Só com `RefreshProcedures` |
+| `ApiPlanListProcedureWriter.FindListProcedure` | `(KBModel, ApiPlan)` | Só com `RefreshProcedures` |
 
 **Destino 3 — manter o nulo, com razão escrita:** os três do Remover, onde o nulo é contrato
 deliberado de leitura corrente; e `ReadForIntentionalChange` com o `Read` privado, que servem à
@@ -855,10 +873,29 @@ remoções não quebram chamada alguma; no máximo reprovam um lint que case ass
 vale a regra do item A5: isso é o lint a atualizar, não regressão de comportamento.
 
 **Sobre a completude deste inventário.** Ele foi levantado por busca de chamadores, classe a
-classe, e a linha do `Read(3 args)` mostra por que a lista pode ainda crescer: **remover um órfão
-revela o próximo**. A prova final não é textual — é a compilação. Ao remover as onze, compile e
-procure o que ficou sem uso; repita até estabilizar. Qualquer assinatura que apareça nesse
-processo pertence ao destino 1 pelo mesmo critério, sem precisar de nova decisão.
+classe, e a linha do `Read(3 args)` mostra por que a lista cresce em cascata: **remover um órfão
+revela o próximo**.
+
+**A compilação não serve de prova aqui.** Uma redação anterior mandava «compilar e procurar o que
+ficou sem uso»; isso não funciona, e a evidência é direta: o build atual **já contém as onze
+assinaturas** e passa com **zero avisos** de não-uso. O compilador C# não acusa método público ou
+`internal` sem chamador, e o `Directory.Build.props` deste repositório não liga analisador que o
+faça. O que a compilação prova é o inverso — se alguém remover `Read(3 args)` **antes** de
+`Validate(7)`, aí sim o build quebra, porque a referência ainda existe.
+
+A verificação tem de ser **textual e automatizada**, no padrão dos lints que o repositório já usa.
+Um teste registrado no orquestrador, com três asserções:
+
+1. **Remoção efetiva** — para cada assinatura do destino 1, zero ocorrências no fonte. É a lista
+   fechada acima, e é o que impede a cascata de parar no meio.
+2. **Propagação efetiva** — cada helper e wrapper do destino 2 declara o parâmetro de índice.
+   Casar a assinatura, não a chamada: um helper que receba o índice e não o use continua sendo
+   defeito, mas esse a telemetria pega, porque a varredura apareceria no relatório.
+3. **Origem única** — as duas regras já descritas: lista fechada de `ApiPlanKbObjectNameIndex.Create`
+   por símbolo, e `ApiPlanWritePreflight` sem chamada a `ReadForIntentionalChange`/`ReadForSync`.
+
+Se durante a implementação aparecer assinatura órfã fora da lista, ela pertence ao destino 1 pelo
+mesmo critério — sem precisar de nova decisão — e entra também na asserção 1.
 
 **A telemetria não substitui verificação estática.** Ela mostra o que executou, não o que deixou
 de ser alcançado numa execução específica. Ao fim da Etapa 1A deve existir um teste que leia o
