@@ -860,15 +860,30 @@ Camada pública e wrappers de `Package.cs`:
 | `ApiPlanWritePreflight.ValidateForIntentionalChange` (7 args) | chamado no Apply — ponto 9 |
 | `Package.TryApplyList` e `Package.TryCreateApiObject` | pontos 1 e 5 |
 
-Helpers privados, todos hoje com assinatura sem índice:
+Helpers privados, todos hoje com assinatura sem índice. **A coluna da marca é o que fecha o
+aceite:** cada linha que deve desaparecer do relatório de varreduras tem aqui o helper responsável
+por ela, e converter só parte desta tabela reprova o aceite mesmo sem quebrar nada.
 
-| Helper | Assinatura atual | Entra na 1A? |
-|---|---|---|
-| `ApiPlanApiObjectWriter.PreflightRequiredSdts` | `(KBModel, ApiPlan)` | **Sim** |
-| `ApiPlanBusinessComponentWriter.EnsureSdts` | `(KBModel, ApiPlan)` | **Sim** |
-| `ApiPlanApiObjectWriter.PreflightRequiredProcedures` | `(KBModel, ApiPlan)` | Só com `RefreshProcedures` |
-| `ApiPlanBusinessComponentWriter.FindProcedure` | `(KBModel, ApiPlan, string, string)` | Só com `RefreshProcedures` |
-| `ApiPlanListProcedureWriter.FindListProcedure` | `(KBModel, ApiPlan)` | Só com `RefreshProcedures` |
+| Helper | Assinatura atual | Marca que some | Entra na 1A? |
+|---|---|---|---|
+| `ApiPlanBusinessComponentWriter.EnsureAttributeExists` | `(KBModel, string, string)` | `Attribute/bc-find-attribute` | **Sim** — a maior fatia |
+| `ApiPlanListProcedureWriter.EnsureAttributeExists` | `(KBModel, string, string)` | `Attribute/list-find-attribute` | **Sim** — a segunda maior |
+| `ApiPlanProcedureWriter.PreflightProcedures` | `(KBModel, IReadOnlyList<…Definition>)` | `Procedure/procedure-preflight` | **Sim** |
+| `ApiPlanApiObjectWriter.PreflightRequiredSdts` | `(KBModel, ApiPlan)` | `SDT/apiobject-preflight-sdt` | **Sim** |
+| `ApiPlanBusinessComponentWriter.EnsureSdts` | `(KBModel, ApiPlan)` | `SDT/bc-ensure-sdt` | **Sim** |
+| `ApiPlanWritePreflight.ValidateForIntentionalChange` (privado, 8 args) | `(…, string operationCode)` | uma das quatro `indice-create` | **Sim** — é quem chama `ReadForIntentionalChange` na linha 137 |
+| `ApiPlanApiObjectWriter.PreflightRequiredProcedures` | `(KBModel, ApiPlan)` | `Procedure/apiobject-preflight-procedure` | Só com `RefreshProcedures` |
+| `ApiPlanBusinessComponentWriter.FindProcedure` | `(KBModel, ApiPlan, string, string)` | `Procedure/bc-find-procedure` | Só com `RefreshProcedures` |
+| `ApiPlanListProcedureWriter.FindListProcedure` | `(KBModel, ApiPlan)` | `Procedure/list-find-procedure` | Só com `RefreshProcedures` |
+
+Os dois `EnsureAttributeExists` acima são os do Business Component e do List. O terceiro,
+`ApiPlanSdtWriter.EnsureAttributeExists`, **já recebe e usa o índice** — é o modelo a copiar, não
+um alvo.
+
+Repare que os públicos `ValidateForSync(3 args)` e `ValidateForIntentionalChange(7 args)` recebem
+o índice para **repassá-lo**; quem de fato o consome é o privado de 8 args. Converter só os
+públicos deixa a criação supérflua no lugar — e é esse esquecimento que a segunda regra do lint
+pega, ao proibir `ApiPlanWritePreflight` de chamar `ReadForIntentionalChange`.
 
 **Destino 3 — manter o nulo, com razão escrita:** os três do Remover, onde o nulo é contrato
 deliberado de leitura corrente; e `ReadForIntentionalChange` com o `Read` privado, que servem à
