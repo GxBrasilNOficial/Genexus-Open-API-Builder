@@ -126,7 +126,8 @@ internal sealed class PrototypeWizardDialog : Form
         _writeBusinessComponentOutput = writeBusinessComponentOutput ?? throw new ArgumentNullException(nameof(writeBusinessComponentOutput));
 
         Text = _texts.WizardTitle;
-        StartPosition = FormStartPosition.CenterParent;
+        // CenterParent com HWND da IDE (não Form) cai no monitor primário.
+        StartPosition = FormStartPosition.Manual;
         Width = 1200;
         Height = 912;
         MinimumSize = new Size(900, 640);

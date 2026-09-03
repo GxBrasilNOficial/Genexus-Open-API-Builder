@@ -3,7 +3,7 @@
 Data: 2026-08-31.
 Estado: **planejado e aprovado em conversa; implementação adiada** (retomar em nova sessão).
 Correlato de backlog: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
-Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. Este plano é a **ação seguinte**: desde 2026-09-02 a próxima ação única é a Etapa 1A do hardening `B082` (`Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`). Este plano permanece aprovado e gravado, sem alteração de escopo.
+Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. Desde 2026-09-03 este plano é a **próxima ação única** (a Etapa 1A do `B082` foi aceita). Escopo inalterado.
 
 Não misturar com `B082` (sinal de vida no Wizard/Remover).
 

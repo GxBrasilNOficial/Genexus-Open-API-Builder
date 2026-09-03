@@ -146,4 +146,4 @@ O Remover exige `api{Transaction}_Metadata`. Abort no meio dos SDTs deixa objeto
 
 - Recado: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`
 - Escala (critério 11 encerrado): `Docs/Implementation/2026-08-29-CRITERIO11-ESCALA-EMPRESA.md`
-- Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` (próxima ação de código = Etapa 1A do plano de 2026-09-02; este arquivo é registro, não pauta)
+- Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` (próxima ação de código = `B108`; Etapa 1A do plano de 2026-09-02 **aceita** em 2026-09-03 — `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`; este arquivo é registro, não pauta)

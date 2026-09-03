@@ -51,13 +51,15 @@ internal sealed class ExtensionBusyProgressScope : IDisposable
 
         dialog.UseWaitCursor = true;
         Cursor.Current = Cursors.WaitCursor;
-        if (owner is null)
+        var placementOwner = owner ?? ExtensionIdeScreenPlacement.ResolveOwner();
+        ExtensionIdeScreenPlacement.CenterOnIdeScreen(dialog, placementOwner);
+        if (placementOwner is null)
         {
             dialog.Show();
         }
         else
         {
-            dialog.Show(owner);
+            dialog.Show(placementOwner);
         }
 
         session.Report(texts.BusyProgressStarting, 0, 0, string.Empty);

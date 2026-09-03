@@ -98,15 +98,25 @@ $listWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\.
 Assert-True ($packageSource -match 'AppendPlanSideEffects\(collector, apiPlan\)') 'B081 deve anexar efeitos de Folder e Transaction ao relatorio final.'
 Assert-True ($packageSource -match 'conflict\.DiagnosticDetails') 'B081 deve preservar o diagnóstico detalhado de colisões no Output.'
 Assert-True ($packageSource -match 'onSdtWrite: item => AppendSdtWriteItemToReport') 'B081 deve receber SDTs escritos internamente por B055/B070.'
-Assert-True ($packageSource -match 'Form\.ActiveForm') 'B081 deve capturar a janela ativa do GeneXus como owner.'
-Assert-True ($packageSource -match 'activeForm\.Visible') 'B081 nao deve usar ActiveForm oculto (Wizard ja fechado) como owner.'
 Assert-True ($packageSource -match 'ResolveFinalReportOwner') 'B081 deve resolver o owner do relatório em um único ponto.'
-Assert-True ($packageSource -match 'Process\.GetCurrentProcess\(\)\.MainWindowHandle') 'B081 deve usar a janela principal do processo quando ActiveForm for nulo ou nao visivel.'
+Assert-True ($packageSource -match 'ExtensionIdeScreenPlacement.ResolveOwner') 'Owner da IDE vem do handle principal do GeneXus, nao de ActiveForm.'
 Assert-True ($packageSource -notmatch 'OpenForms') 'B081 não deve escolher owner pela primeira janela visível de OpenForms.'
 Assert-True ($packageSource -match 'dialog\.ShowDialog\(owner\)') 'B081 deve abrir o relatório como diálogo da janela owner.'
+Assert-True ($packageSource -match 'CenterOnIdeScreen\(dialog, wizardOwner\)') 'Wizard deve centralizar no monitor da IDE antes do ShowDialog.'
 Assert-True ($apiPlanSource -match 'SharedSdtFolderWasCreated') 'ApiPlan deve transportar a criacao do Folder compartilhado.'
 Assert-True ($sdtWriterSource -match 'SharedSdtFolderWasCreated = true') 'Writer de SDT deve marcar o Folder compartilhado criado.'
 Assert-True ($businessComponentWriterSource -match 'onSdtWrite') 'Writer de Business Component deve propagar SDTs escritos.'
 Assert-True ($listWriterSource -match 'onSdtWrite') 'Writer de List deve propagar SDTs escritos.'
+
+$placementSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\ExtensionIdeScreenPlacement.cs')
+$wizardSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\PrototypeWizardDialog.cs')
+$busySource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\ExtensionBusyProgressDialog.cs')
+Assert-True ($placementSource -match 'Process\.GetCurrentProcess\(\)\.MainWindowHandle') 'Placement deve preferir a janela principal do GeneXus.'
+Assert-True ($placementSource -match 'Screen\.FromHandle\(owner\.Handle\)') 'Placement deve usar o monitor do handle da IDE.'
+Assert-True ($placementSource -notmatch 'Screen\.FromPoint\(Cursor\.Position\)') 'Placement nao deve seguir o cursor.'
+Assert-True ($wizardSource -match 'StartPosition = FormStartPosition\.Manual') 'Wizard deve posicionar-se manualmente no monitor da IDE.'
+Assert-True ($wizardSource -notmatch 'FormStartPosition\.CenterParent') 'CenterParent nao posiciona HWND da IDE.'
+Assert-True ($busySource -match 'StartPosition = FormStartPosition\.Manual') 'Quadro de progresso deve posicionar-se no monitor da IDE.'
+Assert-True ($busySource -notmatch 'FormStartPosition\.CenterScreen') 'CenterScreen abre no monitor primário.'
 
 Write-Host 'Test-ApiPlanApplicationFinalReport.ps1 OK'

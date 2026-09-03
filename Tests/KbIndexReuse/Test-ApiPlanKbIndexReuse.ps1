@@ -91,6 +91,30 @@ Assert-Contains $package 'private static bool TryApplyList(
         ApiPlan apiPlan,
         string triggerSource,
         ApiPlanKbObjectNameIndex kbIndex,' 'Package.TryApplyList deve exigir kbIndex.'
+Assert-Contains $package 'private static bool TryCreateSdts(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        string triggerSource,
+        ApiPlanKbObjectNameIndex kbIndex,' 'Package.TryCreateSdts deve exigir kbIndex sem default nulo.'
+Assert-Contains $package 'private static bool TryCreateProcedures(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        string triggerSource,
+        ApiPlanKbObjectNameIndex kbIndex,' 'Package.TryCreateProcedures deve exigir kbIndex sem default nulo.'
+Assert-Contains $package 'private static bool TryApplyBusinessComponent(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        string triggerSource,
+        ApiPlanKbObjectNameIndex kbIndex,' 'Package.TryApplyBusinessComponent deve exigir kbIndex sem default nulo.'
+Assert-NotContains $package 'ApiPlanKbObjectNameIndex? kbIndex = null' 'Package nao pode declarar kbIndex opcional nulo nos caminhos convertidos da 1A.'
+Assert-NotContains $package 'ApiPlanSdtSpecifier' 'Especificacao sincrona de SDTs no meio do Apply nao faz parte da 1A.'
+Assert-NotContains $sdtWriter 'SkipValidation' 'Save de SDT no Apply nao usa SkipValidation; o reencontro idempotente evita regravar.'
+Assert-Contains $sdtWriter 'MatchesPlannedSdtStructure' 'Reencontro de SDT deve comparar a estrutura persistida antes de Save.'
+Assert-Contains $sdtWriter 'canSkipRewrite' 'Reencontro de SDT deve pular Save quando preserve ou estrutura ja bate.'
+Assert-Contains $package 'preserveSdtNames: ApiPlanSdtWriter.PlannedSdtNames(apiPlan)' 'Wizard deve preservar SDTs ja gravados nas fases Business Component e List.'
 Assert-Contains $package 'private static bool TryCreateApiObject(
         KBModel designModel,
         Transaction transaction,

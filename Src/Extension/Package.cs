@@ -351,10 +351,10 @@ public sealed class Package : AbstractPackageUI
         Transaction transaction,
         ApiPlan apiPlan,
         string triggerSource,
+        ApiPlanKbObjectNameIndex kbIndex,
         IReadOnlyCollection<string>? preserveSdtNames = null,
         ApiPlanApplicationFinalReportCollector? report = null,
-        ApiPlanBusyProgressSession? progress = null,
-        ApiPlanKbObjectNameIndex? kbIndex = null)
+        ApiPlanBusyProgressSession? progress = null)
     {
         if (kbIndex is null)
         {
@@ -396,9 +396,9 @@ public sealed class Package : AbstractPackageUI
         Transaction transaction,
         ApiPlan apiPlan,
         string triggerSource,
+        ApiPlanKbObjectNameIndex kbIndex,
         ApiPlanApplicationFinalReportCollector? report = null,
-        ApiPlanBusyProgressSession? progress = null,
-        ApiPlanKbObjectNameIndex? kbIndex = null)
+        ApiPlanBusyProgressSession? progress = null)
     {
         if (kbIndex is null)
         {
@@ -515,11 +515,11 @@ public sealed class Package : AbstractPackageUI
         Transaction transaction,
         ApiPlan apiPlan,
         string triggerSource,
+        ApiPlanKbObjectNameIndex kbIndex,
         bool allowIntentionalContractRefresh = false,
         IReadOnlyCollection<string>? preserveSdtNames = null,
         ApiPlanApplicationFinalReportCollector? report = null,
-        ApiPlanBusyProgressSession? progress = null,
-        ApiPlanKbObjectNameIndex? kbIndex = null)
+        ApiPlanBusyProgressSession? progress = null)
     {
         if (kbIndex is null)
         {
@@ -723,6 +723,7 @@ public sealed class Package : AbstractPackageUI
             }
 
             using var dialog = new ApiPlanTransactionSyncDialog(preview, texts);
+            ExtensionIdeScreenPlacement.CenterOnIdeScreen(dialog, owner);
             var dialogResult = owner is null
                 ? dialog.ShowDialog()
                 : dialog.ShowDialog(owner);
@@ -785,7 +786,7 @@ public sealed class Package : AbstractPackageUI
 
                 WriteOutput($"[Genexus Open API Builder][B085] Preflight de sincronizacao aprovado. Aplicando para Transaction='{transaction.Name}', ApiName='{apiPlan.ApiName}'.");
 
-                if (!TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", preserveSdts, report, busy.Session, syncKbIndex))
+                if (!TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", syncKbIndex, preserveSdts, report, busy.Session))
                 {
                     stopwatch.Stop();
                     ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
@@ -794,7 +795,7 @@ public sealed class Package : AbstractPackageUI
 
                 syncKbIndex.RefreshSdts(knowledgeBase.DesignModel);
 
-                if (!TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", report, busy.Session, syncKbIndex))
+                if (!TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", syncKbIndex, report, busy.Session))
                 {
                     stopwatch.Stop();
                     ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
@@ -1273,7 +1274,11 @@ public sealed class Package : AbstractPackageUI
 
         using (dialog!)
         {
-        var result = dialog.ShowDialog();
+        var wizardOwner = ResolveFinalReportOwner();
+        ExtensionIdeScreenPlacement.CenterOnIdeScreen(dialog, wizardOwner);
+        var result = wizardOwner is null
+            ? dialog.ShowDialog()
+            : dialog.ShowDialog(wizardOwner);
         var businessComponentExitStatus = dialog.BusinessComponentEnabledDuringWizard
             ? "Business Component foi habilitado por confirmacao explicita antes da saida; essa alteracao foi gravada na KB e nao foi revertida automaticamente."
             : "Nenhuma alteracao foi feita na KB.";
@@ -1503,7 +1508,7 @@ public sealed class Package : AbstractPackageUI
             var proceduresReady = true;
             if (selection.GenerateProcedures)
             {
-                proceduresReady = TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard", report, busy.Session, kbIndexForApply);
+                proceduresReady = TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "Wizard", kbIndexForApply, report, busy.Session);
             }
             else if (selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyList || selection.ApplyBusinessComponent)
             {
@@ -1623,6 +1628,7 @@ public sealed class Package : AbstractPackageUI
                     apiPlan,
                     "Wizard",
                     allowIntentionalContractRefresh: true,
+                    preserveSdtNames: ApiPlanSdtWriter.PlannedSdtNames(apiPlan),
                     report: report,
                     progress: busy.Session,
                     kbIndex: kbIndexForApply);
@@ -1654,6 +1660,7 @@ public sealed class Package : AbstractPackageUI
                     "Wizard",
                     kbIndexForApply,
                     allowIntentionalContractRefresh: true,
+                    preserveSdtNames: ApiPlanSdtWriter.PlannedSdtNames(apiPlan),
                     report: report,
                     progress: busy.Session);
             }
@@ -2218,33 +2225,10 @@ public sealed class Package : AbstractPackageUI
 
     private static System.Windows.Forms.IWin32Window? ResolveFinalReportOwner()
     {
-        // Depois de Concluir e aplicar o Wizard fecha, mas permanece no `using`
-        // até o fim do método. ActiveForm pode ser essa janela oculta; ShowDialog
-        // com owner invisível abre o relatório sem o usuário ver.
-        if (System.Windows.Forms.Form.ActiveForm is { } activeForm
-            && activeForm.Visible
-            && !activeForm.IsDisposed)
-        {
-            return activeForm;
-        }
-
-        var mainWindowHandle = Process.GetCurrentProcess().MainWindowHandle;
-        if (mainWindowHandle != IntPtr.Zero)
-        {
-            return new NativeWindowHandle(mainWindowHandle);
-        }
-
-        return null;
-    }
-
-    private sealed class NativeWindowHandle : System.Windows.Forms.IWin32Window
-    {
-        public NativeWindowHandle(IntPtr handle)
-        {
-            Handle = handle;
-        }
-
-        public IntPtr Handle { get; }
+        // Prefere a janela principal do processo GeneXus (monitor da IDE).
+        // ActiveForm primeiro posicionava o Wizard no monitor primário quando o
+        // owner não era um Form WinForms.
+        return ExtensionIdeScreenPlacement.ResolveOwner();
     }
 
     private static void WriteProbePhase(string phaseName, long elapsedMs)

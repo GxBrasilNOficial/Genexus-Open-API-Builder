@@ -25,12 +25,9 @@ operacional»**, que classificava o índice compartilhado incompleto como resíd
 de prioridade P2. A medição mostra que é a maior fatia isolada de custo da extensão inteira, e
 ele passa a ser a primeira ação de código desta frente.
 
-**Esta frente passa a ser ativa**, por decisão humana de 2026-09-02, e
-`Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` foi atualizado no mesmo passo: a próxima ação única passa
-a ser a Etapa 1A deste plano, e o `B108` — cujo plano continua aprovado e gravado — recua para a
-posição seguinte. A instrução anterior de «não reabrir o desenho do B082» valia para a linha do
-corte `0.1.0-alpha.7`, já publicado; ela é substituída por esta frente, que reabre o B082
-deliberadamente, com escopo e medição próprios.
+**Esta frente passou a ser ativa** em 2026-09-02 (Etapa 1A). Em 2026-09-03 a 1A foi **aceita**;
+o checkpoint promove `B108` à próxima ação única. Residual 1B/2/3 permanece neste plano, sem
+ser a pauta imediata. Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`.
 
 A primeira redação deste documento afirmava que o checkpoint não mudaria. Isso se sustentava
 enquanto ele fosse planejamento; deixou de valer quando a implementação foi autorizada, e a
@@ -552,6 +549,12 @@ Procedure pós-gravação, o que faria o Apply de geração nova falhar.
 O ganho do Remove na 1A é modesto de propósito: só a validação agregada — que roda antes de
 qualquer exclusão e portanto é Nível A — passa a usar o índice. Localização e revalidação
 pertencem à 1B.
+
+**Aceite da Etapa 1A (2026-09-03).** Medição na KB grande `FabricaBrasil18Test` e Sync que grava
+na `NotaFiscal` (KB pequena). Apply abaixo das metas nas três transações; marcas estruturais
+cumpridas no Apply e no Sync; reencontro de SDT sem segundo `Save()`. Remover da `DocumentoFiscal`
+a 15,5 s contra teto 14 s ficou na oscilação admitida; 155 scans na `Empresa` são 1B. Detalhe e
+Build All: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`.
 
 **Etapa 1B**, se e quando for executada:
 

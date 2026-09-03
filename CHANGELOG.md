@@ -10,9 +10,14 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
+### Fixed
+
+- Wizard, quadro de progresso e Sync abrem no monitor da janela principal do GeneXus (`Screen.FromHandle`), não no monitor primário. `CenterParent` não posiciona owner que não é `Form`.
+- Apply/Sync: reencontro de SDT não chama `Save()` quando a estrutura e a pasta já batem com o plano; o Wizard passa os nomes já gravados para Business Component e List. Sem `SpecifyObjects` no meio da operação.
+
 ### Changed
 
-- `B082` Etapa 1A: o índice da KB passa a ser criado uma vez por operação de escrita (Apply, Sync e validação agregada do Remover) e propagado por parâmetro; `EnsureAttributeExists` de Business Component e List usa o mapa de atributos do índice em vez de `Attribute.GetAll`. A medição de aceite nas três transações da KB grande ainda é pendente.
+- `B082` Etapa 1A **aceita** (2026-09-03): índice uma vez por operação; atributos de BC/List pelo mapa. Apply na KB `FabricaBrasil18Test` abaixo das metas (`Setor` ~18 s, `Empresa` ~61 s, `DocumentoFiscal` 65 s recrear / 29 s reaplicar). Sync que grava medido na `NotaFiscal` (KB pequena) por marcas de varredura. Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`. `B108` volta a ser a próxima ação única.
 
 ### Planned
 

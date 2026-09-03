@@ -40,7 +40,7 @@ internal sealed class ExtensionBusyProgressDialog : Form
         _lastItemMsFormat = texts.BusyProgressLastItemMs;
 
         Text = title ?? "Genexus Open API Builder";
-        StartPosition = FormStartPosition.CenterScreen;
+        StartPosition = FormStartPosition.Manual;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MinimizeBox = false;
         MaximizeBox = false;

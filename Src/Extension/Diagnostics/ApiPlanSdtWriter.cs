@@ -111,6 +111,20 @@ internal static class ApiPlanSdtWriter
     internal static string CreateOwnedDescriptionFor(string objectName) =>
         ApiPlanOwnedObjectDescription.Create(objectName);
 
+    internal static IReadOnlyList<string> PlannedSdtNames(ApiPlan apiPlan)
+    {
+        if (apiPlan is null)
+        {
+            throw new ArgumentNullException(nameof(apiPlan));
+        }
+
+        var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
+        return generationPlan.SharedSdts
+            .Concat(generationPlan.OwnSdts)
+            .Select(item => item.Name)
+            .ToArray();
+    }
+
     internal static void Preflight(
         KBModel designModel,
         Transaction transaction,
@@ -240,18 +254,24 @@ internal static class ApiPlanSdtWriter
     {
         if (preflight.ExistingSdtsByName.TryGetValue(definition.Name, out var existingSdt))
         {
-            if (targetFolder is not null)
+            var preserveThis = preserveSdtNames.Contains(definition.Name);
+            var needsParentMove = NeedsParentMove(existingSdt, targetFolder);
+            if (needsParentMove && targetFolder is not null)
             {
                 existingSdt.Parent = targetFolder;
             }
 
-            if (!preserveSdtNames.Contains(definition.Name))
+            var canSkipRewrite = preserveThis || MatchesPlannedSdtStructure(existingSdt, definition, kbIndex);
+            if (!canSkipRewrite)
             {
                 ConfigureSdt(designModel, existingSdt, definition, kbIndex);
             }
 
-            progress?.PumpAndThrowIfAbortRequested();
-            existingSdt.Save();
+            progress?.ThrowIfAbortRequested();
+            if (!canSkipRewrite || needsParentMove)
+            {
+                existingSdt.Save();
+            }
 
             return new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, ApiPlanSdtWriteStatus.Reencountered, existingSdt.Guid);
         }
@@ -272,7 +292,7 @@ internal static class ApiPlanSdtWriter
         }
 
         ConfigureSdt(designModel, sdt, definition, kbIndex);
-        progress?.PumpAndThrowIfAbortRequested();
+        progress?.ThrowIfAbortRequested();
         sdt.Save();
 
         var persisted = SDT.Get(designModel, sdt.Guid);
@@ -289,6 +309,148 @@ internal static class ApiPlanSdtWriter
         {
             AddMember(designModel, root, member, kbIndex);
         }
+    }
+
+    private static bool NeedsParentMove(SDT sdt, Folder? targetFolder)
+    {
+        if (targetFolder is null)
+        {
+            return false;
+        }
+
+        return sdt.Parent is null || sdt.Parent.Guid != targetFolder.Guid;
+    }
+
+    /// <summary>
+    /// Compara o SDT persistido com o plano. Não exige Length/Decimals/Type
+    /// em membro AttributeBasedOn: o especificador da IDE troca o seed CHARACTER
+    /// pelo tipo do atributo sem isso ser divergência de contrato.
+    /// </summary>
+    private static bool MatchesPlannedSdtStructure(
+        SDT sdt,
+        ApiPlanSdtDefinition definition,
+        ApiPlanKbObjectNameIndex kbIndex)
+    {
+        if (!string.Equals(sdt.SDTStructure.Root.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var planned = definition.Members
+            .Where(item => item.Name.IndexOf(".", StringComparison.Ordinal) < 0)
+            .ToArray();
+        var actualByName = new Dictionary<string, SDTItem>(StringComparer.OrdinalIgnoreCase);
+        foreach (SDTItem item in sdt.SDTStructure.Root.Items)
+        {
+            if (string.IsNullOrWhiteSpace(item.Name) || actualByName.ContainsKey(item.Name))
+            {
+                continue;
+            }
+
+            actualByName.Add(item.Name, item);
+        }
+
+        if (actualByName.Count != planned.Length)
+        {
+            return false;
+        }
+
+        foreach (var member in planned)
+        {
+            if (!actualByName.TryGetValue(member.Name, out var item))
+            {
+                return false;
+            }
+
+            if (!MemberMatchesItem(item, member, kbIndex))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool MemberMatchesItem(SDTItem item, ApiPlanSdtMember member, ApiPlanKbObjectNameIndex kbIndex)
+    {
+        if (item.IsCollection != member.IsCollection)
+        {
+            return false;
+        }
+
+        if (ShouldSerializeAsJsonNull(member))
+        {
+            if (!string.Equals(ReadPropertyString(item, "idJsonInclude"), "idJsonJsonNull", StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        if (member.IsCollection || IsSdtReference(member.DataType))
+        {
+            if (item.Type != eDBType.GX_SDT)
+            {
+                return false;
+            }
+
+            if (!SameSdtTypeName(ReadSdtItemTypeName(item), member.DataType))
+            {
+                return false;
+            }
+
+            if (member.IsCollection && !string.IsNullOrWhiteSpace(member.CollectionItemType) &&
+                !string.Equals(item.CollectionItemName, member.CollectionItemType, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        if (IsAttributeReference(member.DataType))
+        {
+            var expectedName = ExtractAttributeName(member.DataType);
+            return item.AttributeBasedOn is not null &&
+                string.Equals(item.AttributeBasedOn.Name, expectedName, StringComparison.OrdinalIgnoreCase) &&
+                kbIndex.TryGetSingleAttribute(expectedName, out _);
+        }
+
+        return item.AttributeBasedOn is null &&
+            item.Type == ResolveDbType(member.DataType) &&
+            item.Length == Math.Max(member.Length, 0) &&
+            item.Decimals == Math.Max(member.Decimals, 0);
+    }
+
+    private static string ReadSdtItemTypeName(SDTItem item)
+    {
+        var customType = ReadPropertyString(item, "ATTCUSTOMTYPE");
+        if (!string.IsNullOrWhiteSpace(customType))
+        {
+            return customType.Trim();
+        }
+
+        return item.BasedOn?.Name?.ToString() ?? string.Empty;
+    }
+
+    private static string ReadPropertyString(SDTItem item, string propertyName)
+    {
+        var value = item.GetPropertyValue(propertyName);
+        return value?.ToString() ?? string.Empty;
+    }
+
+    private static bool SameSdtTypeName(string actual, string planned)
+    {
+        if (string.IsNullOrWhiteSpace(actual) || string.IsNullOrWhiteSpace(planned))
+        {
+            return false;
+        }
+
+        if (string.Equals(actual, planned, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return actual.EndsWith("." + planned, StringComparison.OrdinalIgnoreCase);
     }
 
     private static void AddMember(KBModel designModel, SDTLevel root, ApiPlanSdtMember member, ApiPlanKbObjectNameIndex kbIndex)
@@ -359,16 +521,21 @@ internal static class ApiPlanSdtWriter
         string memberName,
         string dataType)
     {
-        const string prefix = "Attribute:";
-        var attributeName = dataType.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-            ? dataType.Substring(prefix.Length).Trim()
-            : dataType.Trim();
+        var attributeName = ExtractAttributeName(dataType);
         if (!kbIndex.TryGetSingleAttribute(attributeName, out var attribute))
         {
             throw new InvalidOperationException($"Criacao de SDT bloqueada: atributo base requerido para membro '{memberName}' nao foi reencontrado com seguranca: '{attributeName}'. Nenhuma alteracao foi feita.");
         }
 
         return attribute;
+    }
+
+    private static string ExtractAttributeName(string dataType)
+    {
+        const string prefix = "Attribute:";
+        return dataType.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+            ? dataType.Substring(prefix.Length).Trim()
+            : dataType.Trim();
     }
 
     private static eDBType ResolveDbType(string dataType)
