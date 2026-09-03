@@ -417,7 +417,7 @@ de uma KB não provam o comportamento de toda instalação**, e a ordem atual n�
 decisão 1:
 
 - `Attribute` pelo mapa que o índice já constrói, nos dois `EnsureAttributeExists` de Business
-  Component e List — **fatia 1A-ii**, cinco níveis de propagação, maior ganho isolado;
+  Component e List — **fatia 1A-ii**, alcançados por vários ramos convergentes, maior ganho isolado;
 - **propagar o índice** por `TryApplyList` → `ApiPlanListProcedureWriter.Apply` →
   `ApiPlanSdtWriter.Preflight`, e por `TryCreateApiObject` → `ApiPlanApiObjectWriter`. Hoje
   `TryApplyList` não tem o parâmetro e `TryCreateApiObject` não tem nem índice nem `progress`; sem
@@ -871,18 +871,45 @@ de `ApiPlanApiObjectWriter.CreateOrReencounter`, `EnsureSdts` na linha 58 de
 `ApiPlanBusinessComponentWriter.Apply`, e `PreflightProcedures` na linha 47 de
 `ApiPlanProcedureWriter.CreateOrReencounter`. Acrescentar o parâmetro é uma assinatura cada.
 
-**Os dois `EnsureAttributeExists` estão a cinco níveis**, e é onde mora o grosso do ganho. No List:
+**Os dois `EnsureAttributeExists` são alcançados por vários ramos que convergem**, e é onde mora o
+grosso do ganho. Não é uma cadeia linear: `Apply` chama `ValidateVariableSpecs` (linhas 71-72) e,
+**em seguida e separadamente**, `SaveApi`/`SaveProcedure` pela lista `saveSteps` (81-82). São ramos
+irmãos. No List:
 
 ```
-Apply → ValidateVariableSpecs (×2) → SaveApi / SaveProcedure → ReplaceVariables (×2)
-      → HasExpectedVariables (×2) → MatchesVariableSpec (×2) → TrySetAttributeBasedOn
-      → EnsureAttributeExists
+Apply ─┬─ ValidateVariableSpecs(procedure) ──────────────────────────┐
+       ├─ ValidateVariableSpecs(api) ─────────────────────────────────┤
+       ├─ SaveProcedure ─┬─ ReplaceVariables(procedure) ──────────────┤
+       │                 └─ HasExpectedVariables(procedure) ─┐        │
+       └─ SaveApi ───────┬─ ReplaceVariables(api) ───────────┼────────┤
+                         └─ HasExpectedVariables(api) ───────┤        │
+                                                              ▼        ▼
+                                          MatchesVariableSpec(×2) → TrySetAttributeBasedOn
+                                                                          ▼
+                                                                 EnsureAttributeExists
 ```
 
-O Business Component tem cadeia equivalente. São cerca de dez assinaturas por writer, contando
-overloads, e `HasExpectedVariables` é chamado em mais de dez pontos. Os métodos precisam de
-`kbIndex` **além** de `KBModel`, não no lugar dele, porque `model` continua sendo usado por
-`DataType.ParseInto`.
+O Business Component tem grafo equivalente, com um nó a mais — `TrySetVariableType`, que envolve
+`TrySetAttributeBasedOn`. Os métodos precisam de `kbIndex` **além** de `KBModel`, não no lugar
+dele, porque `model` continua sendo usado por `DataType.ParseInto`.
+
+**Inventário exato das assinaturas da 1A-ii**, levantado por busca de `private static … (KBModel
+model` em cada writer:
+
+| List — 12 | Business Component — 10 |
+|---|---|
+| `ValidateVariableSpecs` (procedure e api) | `SaveProcedure` |
+| `SaveProcedure`, `SaveApi` | `SaveApi` |
+| `ReplaceVariables` (procedure e api) | `ReplaceVariables` (api) |
+| `HasExpectedVariables` (procedure e api) | `HasExpectedVariables` (procedure e api) |
+| `MatchesVariableSpec` (procedure e api) | `MatchesVariableSpec` (procedure e api) |
+| `TrySetAttributeBasedOn` | `TrySetVariableType`, `TrySetAttributeBasedOn` |
+| `EnsureAttributeExists` | `EnsureAttributeExists` |
+
+**Vinte e duas assinaturas.** O overload `MatchesVariableSpec(Variable current, Variable expected)`
+não entra: não recebe `KBModel` e compara duas variáveis já resolvidas. Esta lista é o ponto de
+partida verificável; acrescentado o parâmetro, o compilador aponta qualquer chamador que ela não
+tenha previsto.
 
 **O padrão é propagação explícita por parâmetro**, e há precedente no próprio repositório:
 `ApiPlanSdtWriter` já fez isso — `ConfigureSdt` e `AddMember` recebem `ApiPlanKbObjectNameIndex`, e
@@ -900,8 +927,12 @@ Daí o corte em duas fatias, ambas com o mesmo padrão explícito:
 
 | Fatia | Escopo | Assinaturas | Ganho estimado |
 |---|---|---|---|
-| **1A-i** | Índice único, wrappers e os quatro helpers rasos | ~12 | ~14 s |
-| **1A-ii** | Os dois `EnsureAttributeExists` e sua cadeia | ~20 | ~50 s |
+| **1A-i** | Índice único, wrappers e os quatro helpers rasos | **10** | ~14 s |
+| **1A-ii** | Os dois `EnsureAttributeExists` e os ramos que os alcançam | **22** | ~50 s |
+
+A contagem da 1A-i é a mesma lista que a asserção 2 do lint enumera: seis públicos e wrappers,
+mais quatro helpers rasos. A da 1A-ii vem do inventário acima — doze no List e dez no Business
+Component.
 
 A 1A-i entrega o índice único, que é pré-requisito de tudo, e pode ser validada sozinha. A 1A-ii é
 mecânica e profunda, mas o compilador guia cada passo: acrescentado o parâmetro, ele aponta todos
@@ -919,8 +950,8 @@ parte desta tabela reprova o aceite mesmo sem quebrar nada.
 | `ApiPlanApiObjectWriter.PreflightRequiredSdts` | `(KBModel, ApiPlan)` | `SDT/apiobject-preflight-sdt` | **1A-i** — raso |
 | `ApiPlanBusinessComponentWriter.EnsureSdts` | `(KBModel, ApiPlan)` | `SDT/bc-ensure-sdt` | **1A-i** — raso |
 | `ApiPlanWritePreflight.ValidateForIntentionalChange` (privado, 8 args) | `(…, string operationCode)` | uma das quatro `indice-create` | **1A-i** — é quem chama `ReadForIntentionalChange` na linha 137 |
-| `ApiPlanBusinessComponentWriter.EnsureAttributeExists` | `(KBModel, string, string)` | `Attribute/bc-find-attribute` | **1A-ii** — cinco níveis; maior ganho |
-| `ApiPlanListProcedureWriter.EnsureAttributeExists` | `(KBModel, string, string)` | `Attribute/list-find-attribute` | **1A-ii** — cinco níveis |
+| `ApiPlanBusinessComponentWriter.EnsureAttributeExists` | `(KBModel, string, string)` | `Attribute/bc-find-attribute` | **1A-ii** — 10 assinaturas no grafo; maior ganho |
+| `ApiPlanListProcedureWriter.EnsureAttributeExists` | `(KBModel, string, string)` | `Attribute/list-find-attribute` | **1A-ii** — 12 assinaturas no grafo |
 | `ApiPlanApiObjectWriter.PreflightRequiredProcedures` | `(KBModel, ApiPlan)` | `Procedure/apiobject-preflight-procedure` | Só com `RefreshProcedures` |
 | `ApiPlanBusinessComponentWriter.FindProcedure` | `(KBModel, ApiPlan, string, string)` | `Procedure/bc-find-procedure` | Só com `RefreshProcedures` |
 | `ApiPlanListProcedureWriter.FindListProcedure` | `(KBModel, ApiPlan)` | `Procedure/list-find-procedure` | Só com `RefreshProcedures` |
