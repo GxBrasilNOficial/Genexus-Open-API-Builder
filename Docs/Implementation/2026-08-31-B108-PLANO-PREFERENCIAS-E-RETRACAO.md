@@ -1,7 +1,7 @@
 # B108 — Plano: preferências só na criação + checkboxes alinhados à KB (com retração)
 
 Data: 2026-08-31.
-Estado: **planejado e aprovado em conversa; implementação adiada** (retomar em nova sessão).
+Estado: **próxima ação única** desde 2026-09-03 (plano aprovado em 2026-08-31).
 Correlato de backlog: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
 Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. Desde 2026-09-03 este plano é a **próxima ação única** (a Etapa 1A do `B082` foi aceita). Escopo inalterado.
 

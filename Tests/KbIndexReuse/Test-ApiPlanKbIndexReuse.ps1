@@ -114,6 +114,7 @@ Assert-NotContains $package 'ApiPlanSdtSpecifier' 'Especificacao sincrona de SDT
 Assert-NotContains $sdtWriter 'SkipValidation' 'Save de SDT no Apply nao usa SkipValidation; o reencontro idempotente evita regravar.'
 Assert-Contains $sdtWriter 'MatchesPlannedSdtStructure' 'Reencontro de SDT deve comparar a estrutura persistida antes de Save.'
 Assert-Contains $sdtWriter 'canSkipRewrite' 'Reencontro de SDT deve pular Save quando preserve ou estrutura ja bate.'
+Assert-Contains $sdtWriter 'ApiPlanSdtWriteStatus.Unchanged' 'Reencontro sem Save deve publicar Unchanged, nao Reencountered.'
 Assert-Contains $package 'preserveSdtNames: ApiPlanSdtWriter.PlannedSdtNames(apiPlan)' 'Wizard deve preservar SDTs ja gravados nas fases Business Component e List.'
 Assert-Contains $package 'private static bool TryCreateApiObject(
         KBModel designModel,

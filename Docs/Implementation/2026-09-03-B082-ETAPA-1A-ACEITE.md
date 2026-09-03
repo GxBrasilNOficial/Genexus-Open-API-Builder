@@ -18,7 +18,7 @@ Código de índice: commit `c646ed9`. Este registro fecha a medição e o reenco
 
 O Apply gravava o mesmo SDT na fase de SDTs e de novo em Business Component e List. Com o intervalo da 1A mais curto, o SpecifierDaemon da IDE emitia `error: Error specifying SDT` falso no Output durante o Apply (B081 `SuccessWithWarnings`). `SpecifyObjects` no meio do Apply e `Save(SkipValidation)` foram tentados e **revertidos**.
 
-O reencontro passou a pular `ConfigureSdt`/`Save()` quando a estrutura e a pasta já batem com o plano (`MatchesPlannedSdtStructure`); o Wizard encaminha `PlannedSdtNames` a BC e List. Comparação de membro `AttributeBasedOn` não exige Length/Decimals/Type do seed CHARACTER. B081 ainda lista SDTs como «Atualizado» no relatório; isso não prova segundo `Save()`.
+O reencontro passou a pular `ConfigureSdt`/`Save()` quando a estrutura e a pasta já batem com o plano (`MatchesPlannedSdtStructure`); o Wizard encaminha `PlannedSdtNames` a BC e List. Comparação de membro `AttributeBasedOn` não exige Length/Decimals/Type do seed CHARACTER. Sem `Save()`, o status do item é `Unchanged` e o B081 não o lista como «Atualizado».
 
 ## Marcas estruturais (Apply e Sync)
 

@@ -102,7 +102,7 @@ internal static class ApiPlanSdtWriter
             generationPlan.OwnSdts.Count,
             generationPlan.SharedSdts.Count,
             results.Count(item => item.Status == ApiPlanSdtWriteStatus.Created),
-            results.Count(item => item.Status == ApiPlanSdtWriteStatus.Reencountered),
+            results.Count(item => item.Status == ApiPlanSdtWriteStatus.Reencountered || item.Status == ApiPlanSdtWriteStatus.Unchanged),
             transactionFolder.Name,
             transactionFolder.Guid,
             results);
@@ -268,12 +268,14 @@ internal static class ApiPlanSdtWriter
             }
 
             progress?.ThrowIfAbortRequested();
-            if (!canSkipRewrite || needsParentMove)
+            var wroteKb = !canSkipRewrite || needsParentMove;
+            if (wroteKb)
             {
                 existingSdt.Save();
             }
 
-            return new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, ApiPlanSdtWriteStatus.Reencountered, existingSdt.Guid);
+            var status = wroteKb ? ApiPlanSdtWriteStatus.Reencountered : ApiPlanSdtWriteStatus.Unchanged;
+            return new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, status, existingSdt.Guid);
         }
 
         var sdt = new SDT(designModel)
@@ -650,6 +652,7 @@ internal static class ApiPlanSdtWriteStatus
 {
     public const string Created = "Created";
     public const string Reencountered = "Reencountered";
+    public const string Unchanged = "Unchanged";
 }
 
 internal sealed class ApiPlanSdtPreflightResult

@@ -344,6 +344,11 @@ public sealed class ApiPlanApplicationFinalReportCollector
             return;
         }
 
+        if (string.Equals(status, "Unchanged", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         if (string.Equals(status, "Reencountered", StringComparison.OrdinalIgnoreCase)
             || string.Equals(status, "Updated", StringComparison.OrdinalIgnoreCase))
         {

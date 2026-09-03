@@ -13,7 +13,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 ### Fixed
 
 - Wizard, quadro de progresso e Sync abrem no monitor da janela principal do GeneXus (`Screen.FromHandle`), não no monitor primário. `CenterParent` não posiciona owner que não é `Form`.
-- Apply/Sync: reencontro de SDT não chama `Save()` quando a estrutura e a pasta já batem com o plano; o Wizard passa os nomes já gravados para Business Component e List. Sem `SpecifyObjects` no meio da operação.
+- Apply/Sync: reencontro de SDT não chama `Save()` quando a estrutura e a pasta já batem com o plano; o Wizard passa os nomes já gravados para Business Component e List. Sem `SpecifyObjects` no meio da operação. B081 não lista esse reencontro como «Atualizado».
 
 ### Changed
 
@@ -21,7 +21,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Planned
 
-- `B108` (pendência, plano aprovado 2026-08-31, código adiado): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Checkpoint e documento 06.
+- `B108` (próxima ação única desde 2026-09-03, plano aprovado 2026-08-31): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Checkpoint e documento 06.
 
 ---
 
@@ -43,7 +43,7 @@ Release focada em feedback visual de progresso, cancelamento cooperativo e index
 - Registro B082 (2026-09-01): inventário «Fora da fila operacional» ampliado (itens 3–5) — `DoEvents`/reentrância, writers Procedure/List no residual de índice, higiene doc da sequência operacional.
 - Instrumentação B082 (2026-09-02): `ApiPlanScanTelemetry` e `ApiPlanScanProbe` contam e cronometram as varreduras de catálogo do Apply, do Sync e do Remover, publicando no Output em `[B082]`. Só observam: sem escopo ativo o delegate executa igual ao código não instrumentado, e a apresentação do relatório final suspende a medição para não se atribuir à operação que terminou.
 - Medição B082 (2026-09-02) na KB `Fabrica Brasil Test`, três transações: `Attribute.GetAll` custa ~1300 ms e é a varredura mais cara, embora a extensão nunca crie, altere ou apague atributos; o mapa de atributos já existe em `ApiPlanKbObjectNameIndex` e é usado por `ApiPlanSdtWriter`, mas os writers de Business Component e de List ainda varrem o catálogo; o índice é criado quatro vezes por Apply; o custo de varredura por Apply é praticamente constante em torno de 60 s, porque depende das partes da chave primária e dos filtros, não do tamanho da transação. Apply de `Setor` (12 objetos) leva 84 s; de `DocumentoFiscal` (171 campos), 187 s — com as mesmas 97 varreduras.
-- Promoção de frente (2026-09-02): o residual `B082` foi desestacionado e é a próxima ação única, pela Etapa 1A de `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`; `B108` recua para a ação seguinte, com plano intacto.
+- ~~Promoção de frente (2026-09-02): o residual `B082` foi desestacionado e é a próxima ação única, pela Etapa 1A de `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`; `B108` recua para a ação seguinte, com plano intacto.~~ Superado em 2026-09-03: Etapa 1A aceita; `B108` é a próxima ação única.
 - Imagens promocionais do corte `0.1.0-alpha.7` versionadas em `Docs/Images/` (`release-0.1.0-alpha.7-promo.jpg` e `release-0.1.0-alpha.7-promo-es.jpg`). Entraram junto do commit `7008a90`, cuja mensagem trata de outro assunto; ficam registradas aqui para não constarem apenas de forma implícita no histórico.
 - Teste do instrumento (2026-09-02): `Tests/ScanProbe/Test-ApiPlanScanProbe.ps1`, registrado como `tests.scanProbe` no orquestrador e no seu teste vinculante. Cobre callback único sob `Dispose` repetido, escopos aninhados, `Suspend`/restauração e tolerância a exceção no callback; validado por mutação. `ApiPlanScanProbe` e `ApiPlanScanTelemetry` passam a ser públicas, seguindo a convenção já usada pelas demais classes testadas por `Add-Type`.
 

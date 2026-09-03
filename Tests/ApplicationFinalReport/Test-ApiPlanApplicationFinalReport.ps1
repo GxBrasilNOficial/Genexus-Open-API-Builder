@@ -64,6 +64,14 @@ $sync.AddFromWriteStatus('SDT', 'sdtTeste_API_Response', 'Reencountered')
 $syncReport = $sync.Build([timespan]::FromSeconds(2))
 Assert-Equal 'API sincronizada com sucesso.' $syncReport.Headline 'Headline de Sync sem avisos.'
 
+$unchanged = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalReportCollector]::new('Wizard', 'DocumentoFiscal', 'apiDocumentoFiscal')
+$unchanged.AddFromWriteStatus('SDT', 'sdtDocumentoFiscal_API_Response', 'Unchanged')
+$unchanged.AddFromWriteStatus('Procedure', 'procDocumentoFiscal_API_List', 'Reencountered')
+$unchangedReport = $unchanged.Build([timespan]::FromMilliseconds(100))
+Assert-Equal 0 $unchangedReport.CreatedCount 'Unchanged nao conta como criado.'
+Assert-Equal 1 $unchangedReport.UpdatedCount 'Unchanged de SDT nao entra em Atualizados; Procedure reencontrada entra.'
+Assert-True ($unchangedReport.BuildReadableBody() -notmatch 'sdtDocumentoFiscal_API_Response') 'B081 nao lista SDT Unchanged.'
+
 $remove = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalReportCollector]::new('Remover', 'Teste', 'apiTeste')
 $remove.AddDeletedItems(@('API:apiTeste', 'Procedure:procTeste_API_List', 'SDT:sdtTeste_API_Response', 'File:apiTeste_Metadata', 'Folder:TesteOpenApi', 'Folder:OtherOpenApi:PreservedNonEmpty'))
 $removeReport = $remove.Build([timespan]::Zero)
