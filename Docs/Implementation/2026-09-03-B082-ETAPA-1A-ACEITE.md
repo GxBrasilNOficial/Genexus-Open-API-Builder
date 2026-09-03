@@ -1,7 +1,7 @@
 # B082 Etapa 1A — aceite de desempenho e medição
 
 Data: 2026-09-03.
-KB grande: `FabricaBrasil18Test` (`Fabrica Brasil Test`), GeneXus 18 U15, DLL canônica desta frente (índice único + reencontro idempotente de SDT).
+KB grande: `FabricaBrasil18Test` (`Fabrica Brasil Test`), GeneXus 18 U15. A tabela Apply abaixo é da DLL `ce30374` (índice único + skip de SDT no reencontro). Commits posteriores no emissor (`0568677`, `cfb73b0`) não reabriram essa medição.
 KB pequena (Sync que grava): Transaction `NotaFiscal` (Delete opt-in ligado).
 
 Plano: `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`.
@@ -14,11 +14,11 @@ Código de índice: commit `c646ed9`. Este registro fecha a medição e o reenco
 - Fora da 1A, de propósito: `PreflightRequiredProcedures`, `FindProcedure`, `FindListProcedure` (sem `RefreshProcedures`).
 - `RefreshFolders` / `RefreshSdts` permanecem.
 
-## Correção de reencontro (mesma DLL da medição)
+## Correção de reencontro (DLL `ce30374`, mesma da tabela Apply)
 
 O Apply gravava o mesmo SDT na fase de SDTs e de novo em Business Component e List. Com o intervalo da 1A mais curto, o SpecifierDaemon da IDE emitia `error: Error specifying SDT` falso no Output durante o Apply (B081 `SuccessWithWarnings`). `SpecifyObjects` no meio do Apply e `Save(SkipValidation)` foram tentados e **revertidos**.
 
-O reencontro passou a pular `ConfigureSdt`/`Save()` quando a estrutura **e a ordem física** dos membros já batem com o plano (`MatchesPlannedSdtStructure`). O skip mecânico por lista (`PlannedSdtNames`) nas fases Business Component e List do Wizard foi removido; o Sync continua a honrar resolução **Keep** explícita por SDT. Comparação de membro `AttributeBasedOn` não exige Length/Decimals/Type do seed CHARACTER. Sem `Save()`, o status do item é `Unchanged` e o B081 não o lista como «Atualizado».
+O reencontro passou a pular `ConfigureSdt`/`Save()` quando a estrutura persistida já bate com o plano. Na DLL da medição (`ce30374`) o skip ainda era por nomes, sem ordem física nem coleção/`StructureTypeReference`. `0568677` passou a comparar a **ordem física** dos membros de primeiro nível; `cfb73b0` fechou coleções e `ATTCUSTOMTYPE` por Id. O skip mecânico por lista (`PlannedSdtNames`) nas fases Business Component e List do Wizard foi removido; o Sync continua a honrar resolução **Keep** explícita por SDT. Comparação de membro `AttributeBasedOn` não exige Length/Decimals/Type do seed CHARACTER. Sem `Save()`, o status do item é `Unchanged` e o B081 não o lista como «Atualizado».
 
 ## Marcas estruturais (Apply e Sync)
 
@@ -35,6 +35,8 @@ Permanecem (1A padrão): `Procedure/bc-find-procedure`, `Procedure/list-find-pro
 | `DocumentoFiscal` | ≤ 139 s | 64680 ms | 29919 ms; terceira corrida 29069 ms | 16 / 12 |
 
 `DocumentoFiscal`: GUIDs estáveis no reaplicar (`apiDocumentoFiscal` `740c85fe…`, Response `94fe3d3b…`); `PlannedContractHash` `05F719B3…`; Criados=0 nas duas reaplicações. Sem `error: Error specifying SDT` no Apply após o skip de `Save()`.
+
+**Defasagem do gerador (regra 5).** Esta tabela e o «sem specifying SDT» valem para a DLL `ce30374` (2026-09-03 ~01:32). Depois, `0568677` e `cfb73b0` alteraram `ApiPlanSdtWriter` e aumentam o skip de `Save()` em SDT; não reabrem a KB grande. Os números medidos são conservadores em relação ao gerador vigente. Não reusar artefatos dessa captura como linha de base de medição nova sem reinstalar a DLL atual e reaplicar. O PASS 8/8 `Unchanged` na `NotaFiscal` está datado em `cfb73b0`, abaixo.
 
 ## Remover — KB grande
 

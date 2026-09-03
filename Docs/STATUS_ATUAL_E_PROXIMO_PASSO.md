@@ -147,7 +147,7 @@ Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/t
 
 ## Missão estacionada (outra sessão)
 
-Residual `B082` após a 1A (Etapas 1B índice mutável no Remover; 2 segurança/abort/Folder; 3 casca × B081 e UX). Não é a próxima ação única. Plano: `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`. **Anotado no plano (pós-push):** P1 escrita parcial do BC — gravar API Object por último em `ApiPlanBusinessComponentWriter.Apply` (detalhe no B085 §2026-09-03); higiene do probe `SdtReencounter` (absorver no `tests.kbIndexReuse`, sem gate novo); matcher `idJsonInclude` unidirecional (pendência 4).
+Residual `B082` após a 1A (Etapas 1B índice mutável no Remover; 2 segurança/abort/Folder; 3 casca × B081 e UX). Não é a próxima ação única. Plano: `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`. **Anotado no plano (pós-push):** P1 escrita parcial do BC — gravar API Object por último em `ApiPlanBusinessComponentWriter.Apply` (detalhe no B085 §2026-09-03); higiene do probe `SdtReencounter` (absorver no `tests.kbIndexReuse`, sem gate novo); matcher `idJsonInclude` unidirecional (pendência 4). **Aceite 1A:** tabela Apply da KB grande é DLL `ce30374`; emissor de SDT mudou em `0568677`/`cfb73b0` (números conservadores; não reusar como linha de base atual).
 
 ## Pendência urgente (próxima sessão de código)
 
