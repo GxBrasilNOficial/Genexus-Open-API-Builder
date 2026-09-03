@@ -69,7 +69,7 @@ Classificação: geração C# inconsistente após crash do especificador, não t
 
 ## Validação manual — ordem física e Sync Keep/Replace (2026-09-03)
 
-KB `wsEducacaoSpTeste`, Transaction `NotaFiscal` / `apiNotaFiscal`, DLL desta correção (pós-`ce30374`).
+KB `wsEducacaoSpTeste`, Transaction `NotaFiscal` / `apiNotaFiscal`. Itens 1–4: DLL `0568677` (ordem física + Keep/Replace). Observação lateral 8/8 `Unchanged`: DLL `cfb73b0`.
 
 ### Wizard — permuta Obs/Obs2 e controle
 
@@ -83,7 +83,7 @@ KB `wsEducacaoSpTeste`, Transaction `NotaFiscal` / `apiNotaFiscal`, DLL desta co
 
 ### Observação lateral — reencontro de coleções (fechada)
 
-- **Fechado na IDE (2026-09-03):** Apply idêntico na `NotaFiscal` — 8/8 SDTs **`Unchanged`** (`ErrorResponse` e `ListResponse` inclusos); B081 sem SDT em Atualizados; `Fase SDTs=339 ms`. Causas: `CollectionItemName` pós-specifier + `StructureTypeReference`/`Id` em `ATTCUSTOMTYPE` (ex.: `Pagination`).
+- **Fechado na IDE (2026-09-03, DLL `cfb73b0`):** Apply idêntico na `NotaFiscal` — 8/8 SDTs **`Unchanged`** (`ErrorResponse` e `ListResponse` inclusos); B081 sem SDT em Atualizados; `Fase SDTs=339 ms`. Causas: `CollectionItemName` pós-specifier + `StructureTypeReference`/`Id` em `ATTCUSTOMTYPE` (ex.: `Pagination`).
 - Sync Keep interrompido pode deixar drift API Object ↔ metadata (BC grava API antes das Procedures; ver `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`, seção «Escrita parcial do BC»).
 
 ## Descartado nesta frente
