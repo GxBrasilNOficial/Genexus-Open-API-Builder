@@ -25,6 +25,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - `B108` (próxima ação única desde 2026-09-03, plano aprovado 2026-08-31): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Checkpoint e documento 06.
 - Escrita parcial do BC (`ApiPlanBusinessComponentWriter.Apply` grava API Object antes das Procedures): drift API↔metadata B067 se o Sync/Apply aborta no meio. Recuperação: Remover + Wizard. Correção recomendada (P1): gravar API por último. Detalhe: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md` (seção 2026-09-03).
 - Higiene de teste: absorver `Tests/SdtReencounter/Test-SdtCollectionItemNameProbe.ps1` em `Tests/KbIndexReuse/Test-ApiPlanKbIndexReuse.ps1` e remover a pasta; não criar gate no orquestrador. Anotado no plano B082 (pendência 3).
+- Matcher SDT: `idJsonInclude=idJsonJsonNull` só é conferido no sentido plano→KB; propriedade obsoleta na KB pode passar `Unchanged`. Anotado no plano B082 (pendência 4).
 
 ---
 
