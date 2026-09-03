@@ -111,20 +111,6 @@ internal static class ApiPlanSdtWriter
     internal static string CreateOwnedDescriptionFor(string objectName) =>
         ApiPlanOwnedObjectDescription.Create(objectName);
 
-    internal static IReadOnlyList<string> PlannedSdtNames(ApiPlan apiPlan)
-    {
-        if (apiPlan is null)
-        {
-            throw new ArgumentNullException(nameof(apiPlan));
-        }
-
-        var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
-        return generationPlan.SharedSdts
-            .Concat(generationPlan.OwnSdts)
-            .Select(item => item.Name)
-            .ToArray();
-    }
-
     internal static void Preflight(
         KBModel designModel,
         Transaction transaction,
@@ -248,20 +234,20 @@ internal static class ApiPlanSdtWriter
         Folder? targetFolder,
         ApiPlanSdtDefinition definition,
         ApiPlanSdtPreflightResult preflight,
-        ISet<string> preserveSdtNames,
+        ISet<string> explicitPreserveSdtNames,
         ApiPlanBusyProgressSession? progress,
         ApiPlanKbObjectNameIndex kbIndex)
     {
         if (preflight.ExistingSdtsByName.TryGetValue(definition.Name, out var existingSdt))
         {
-            var preserveThis = preserveSdtNames.Contains(definition.Name);
+            var explicitPreserve = explicitPreserveSdtNames.Contains(definition.Name);
             var needsParentMove = NeedsParentMove(existingSdt, targetFolder);
             if (needsParentMove && targetFolder is not null)
             {
                 existingSdt.Parent = targetFolder;
             }
 
-            var canSkipRewrite = preserveThis || MatchesPlannedSdtStructure(existingSdt, definition, kbIndex);
+            var canSkipRewrite = explicitPreserve || MatchesPlannedSdtStructure(existingSdt, definition, kbIndex);
             if (!canSkipRewrite)
             {
                 ConfigureSdt(designModel, existingSdt, definition, kbIndex);
@@ -324,9 +310,10 @@ internal static class ApiPlanSdtWriter
     }
 
     /// <summary>
-    /// Compara o SDT persistido com o plano. Não exige Length/Decimals/Type
-    /// em membro AttributeBasedOn: o especificador da IDE troca o seed CHARACTER
-    /// pelo tipo do atributo sem isso ser divergência de contrato.
+    /// Compara o SDT persistido com o plano, incluindo a ordem física dos membros
+    /// de primeiro nível. Não exige Length/Decimals/Type em membro AttributeBasedOn:
+    /// o especificador da IDE troca o seed CHARACTER pelo tipo do atributo sem isso
+    /// ser divergência de contrato.
     /// </summary>
     private static bool MatchesPlannedSdtStructure(
         SDT sdt,
@@ -341,25 +328,33 @@ internal static class ApiPlanSdtWriter
         var planned = definition.Members
             .Where(item => item.Name.IndexOf(".", StringComparison.Ordinal) < 0)
             .ToArray();
-        var actualByName = new Dictionary<string, SDTItem>(StringComparer.OrdinalIgnoreCase);
+        var actualItems = new List<SDTItem>();
+        var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (SDTItem item in sdt.SDTStructure.Root.Items)
         {
-            if (string.IsNullOrWhiteSpace(item.Name) || actualByName.ContainsKey(item.Name))
+            if (string.IsNullOrWhiteSpace(item.Name))
             {
                 continue;
             }
 
-            actualByName.Add(item.Name, item);
+            if (!seenNames.Add(item.Name))
+            {
+                return false;
+            }
+
+            actualItems.Add(item);
         }
 
-        if (actualByName.Count != planned.Length)
+        if (actualItems.Count != planned.Length)
         {
             return false;
         }
 
-        foreach (var member in planned)
+        for (var index = 0; index < planned.Length; index++)
         {
-            if (!actualByName.TryGetValue(member.Name, out var item))
+            var member = planned[index];
+            var item = actualItems[index];
+            if (!string.Equals(item.Name, member.Name, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }

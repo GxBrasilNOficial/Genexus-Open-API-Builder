@@ -78,3 +78,35 @@ KB `wsEducacaoSpTeste`, Transaction `NotaFiscal` / `apiNotaFiscal`, DLL Release 
 Ensaio: o Length 41 ficou na Transaction; o operador pode reverter para 40 e sincronizar de novo se quiser limpar o delta.
 
 Status: **concluído** (preservação do SecurityLevel do Delete no Sync validada no U15).
+
+## Escrita parcial do BC — drift API Object ↔ metadata (2026-09-03)
+
+### Sintoma
+
+Se o Sync (ou o Apply com BC) **aborta depois** de `ApiPlanBusinessComponentWriter.Apply` ter gravado o API Object mas **antes** de concluir Procedures e/ou metadata, o Service Source do `api<Nome>` fica à frente do hash B067 em `api<Nome>_Metadata`. O preflight seguinte bloqueia Wizard e Sync com `BaselineServiceSourceHashMismatch` até a KB ser realinhada.
+
+Evidência: Sync Keep em `wsEducacaoSpTeste` / `NotaFiscal` (2026-09-03) — BC falhou em `procNotaFiscal_API_Get`; tentativa de Replace imediata bloqueou no preflight; **Remover API gerada** + Wizard restaurou baseline.
+
+### Causa no código
+
+Em `ApiPlanBusinessComponentWriter.Apply`, `saveSteps` grava o **API Object primeiro** e as Procedures depois (`SaveApi` → `SaveProcedure` Get/Create/Update/Delete). A metadata B060/B067 só é escrita no **final** do Sync/Apply. Qualquer falha no meio deixa API atualizado e metadata antiga.
+
+### Recuperação operacional (hoje)
+
+1. **Remover API gerada** na Transaction + **Wizard** completo (recomendado em KB de teste).
+2. Não editar manualmente o hash em `api<Nome>_Metadata` salvo decisão consciente de auditoria.
+
+### Correções possíveis (código — pendente)
+
+| Prioridade | Ação | Efeito |
+|---|---|---|
+| **P1 (recomendada)** | Reordenar `saveSteps` para gravar o API Object **por último**, após todas as Procedures passarem em `Save()`. | Se Get/Create/Update/Delete falhar, API e metadata permanecem alinhados; preflight não trava. |
+| P2 | Na falha do Sync/Apply, detectar drift API↔metadata e orientar no B081 («Remover + Wizard») com mensagem explícita. | Não evita escrita parcial; melhora diagnóstico. |
+| P3 | Rollback do Service Source do API Object em `catch` quando Procedures falham depois de `SaveApi`. | Mais frágil (estado GeneXus, Events, variáveis). |
+| Fora de escopo imediato | Transação atômica multi-objeto na IDE. | SDK não oferece commit/rollback transacional real. |
+
+**Próximo passo sugerido:** P1 na Etapa 1B residual do `B082` ou frente dedicada pequena, com teste que simule falha em `SaveProcedure` e confirme API inalterado.
+
+### Validação Keep/Replace (2026-09-03)
+
+KB `wsEducacaoSpTeste`, `NotaFiscal`: edição manual `NotaFiscalObs3` → `NotaFiscalObs3Manual` → conflito de SDT. **Keep** preservou estrutura (`Unchanged` + aviso); BC interrompido (tensão esperada). Após recuperação, **Replace** (`PreservedSdts=0`, Response `Reencountered`) concluiu Sync com `Blocked=0`.

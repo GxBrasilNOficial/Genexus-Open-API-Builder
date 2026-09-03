@@ -1627,11 +1627,10 @@ public sealed class Package : AbstractPackageUI
                     transaction,
                     apiPlan,
                     "Wizard",
+                    kbIndexForApply,
                     allowIntentionalContractRefresh: true,
-                    preserveSdtNames: ApiPlanSdtWriter.PlannedSdtNames(apiPlan),
                     report: report,
-                    progress: busy.Session,
-                    kbIndex: kbIndexForApply);
+                    progress: busy.Session);
             }
 
             WriteProbePhase("BusinessComponent", phaseWatch.ElapsedMilliseconds);
@@ -1660,7 +1659,6 @@ public sealed class Package : AbstractPackageUI
                     "Wizard",
                     kbIndexForApply,
                     allowIntentionalContractRefresh: true,
-                    preserveSdtNames: ApiPlanSdtWriter.PlannedSdtNames(apiPlan),
                     report: report,
                     progress: busy.Session);
             }

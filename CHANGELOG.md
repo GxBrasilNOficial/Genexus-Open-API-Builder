@@ -13,7 +13,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 ### Fixed
 
 - Wizard, quadro de progresso e Sync abrem no monitor da janela principal do GeneXus (`Screen.FromHandle`), não no monitor primário. `CenterParent` não posiciona owner que não é `Form`. Smoke U15 em 2026-09-03 (KB pequena, IDE no secundário): Wizard, Sincronizar e Remover na frente da IDE. Preferências do Wizard fora deste recorte.
-- Apply/Sync: reencontro de SDT não chama `Save()` quando a estrutura e a pasta já batem com o plano; o Wizard passa os nomes já gravados para Business Component e List. Sem `SpecifyObjects` no meio da operação. B081 não lista esse reencontro como «Atualizado».
+- `MatchesPlannedSdtStructure` compara a **ordem física** dos membros de primeiro nível; permutação com mesmos nomes deixa de marcar `Unchanged` e passa a corrigir com `Save()`. Removido skip mecânico `PlannedSdtNames` no Wizard BC/List; Sync mantém `explicitPreserve` só para resolução **Keep**. Evidência IDE: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md` (seção validação manual 2026-09-03).
 
 ### Changed
 
@@ -22,6 +22,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 ### Planned
 
 - `B108` (próxima ação única desde 2026-09-03, plano aprovado 2026-08-31): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Checkpoint e documento 06.
+- Escrita parcial do BC (`ApiPlanBusinessComponentWriter.Apply` grava API Object antes das Procedures): drift API↔metadata B067 se o Sync/Apply aborta no meio. Recuperação: Remover + Wizard. Correção recomendada (P1): gravar API por último. Detalhe: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md` (seção 2026-09-03).
+- Reencontro de SDT em coleções (`sdt_API_ErrorResponse`, `ListResponse`): `MemberMatchesItem` pode não estabilizar `Unchanged` (hipótese `CollectionItemName`). Investigação adiada.
 
 ---
 

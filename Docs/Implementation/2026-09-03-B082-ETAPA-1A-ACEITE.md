@@ -18,7 +18,7 @@ Código de índice: commit `c646ed9`. Este registro fecha a medição e o reenco
 
 O Apply gravava o mesmo SDT na fase de SDTs e de novo em Business Component e List. Com o intervalo da 1A mais curto, o SpecifierDaemon da IDE emitia `error: Error specifying SDT` falso no Output durante o Apply (B081 `SuccessWithWarnings`). `SpecifyObjects` no meio do Apply e `Save(SkipValidation)` foram tentados e **revertidos**.
 
-O reencontro passou a pular `ConfigureSdt`/`Save()` quando a estrutura e a pasta já batem com o plano (`MatchesPlannedSdtStructure`); o Wizard encaminha `PlannedSdtNames` a BC e List. Comparação de membro `AttributeBasedOn` não exige Length/Decimals/Type do seed CHARACTER. Sem `Save()`, o status do item é `Unchanged` e o B081 não o lista como «Atualizado».
+O reencontro passou a pular `ConfigureSdt`/`Save()` quando a estrutura **e a ordem física** dos membros já batem com o plano (`MatchesPlannedSdtStructure`). O skip mecânico por lista (`PlannedSdtNames`) nas fases Business Component e List do Wizard foi removido; o Sync continua a honrar resolução **Keep** explícita por SDT. Comparação de membro `AttributeBasedOn` não exige Length/Decimals/Type do seed CHARACTER. Sem `Save()`, o status do item é `Unchanged` e o B081 não o lista como «Atualizado».
 
 ## Marcas estruturais (Apply e Sync)
 
@@ -64,6 +64,25 @@ Classificação: geração C# inconsistente após crash do especificador, não t
 ## Monitor da IDE (D12, carona nesta DLL)
 
 `ExtensionIdeScreenPlacement` entrou no commit de aceite da 1A (`ce30374`). É pauta da Etapa 3 do plano de 2026-09-02 (âncora no monitor da IDE), não do índice. Smoke U15 em 2026-09-03, KB pequena, GeneXus no monitor secundário: Wizard, Sincronizar e Remover abriram nesse monitor, na frente da IDE (janelas de comando, não o relatório B081 pós-Apply). Preferências do Wizard (`CenterParent`) e o restante da Etapa 3 (casca atrás do relatório, Folder preservado, DEMO) ficam fora.
+
+## Validação manual — ordem física e Sync Keep/Replace (2026-09-03)
+
+KB `wsEducacaoSpTeste`, Transaction `NotaFiscal` / `apiNotaFiscal`, DLL desta correção (pós-`ce30374`).
+
+### Wizard — permuta Obs/Obs2 e controle
+
+1. Permuta manual `NotaFiscalObs` ↔ `NotaFiscalObs2` na Transaction; Wizard Apply → `sdtNotaFiscal_API_Response` **Reencountered**, ordem corrigida no SDT, GUID `08dd0a7d-ef05-4f85-87f4-6f575419b655` estável, sem `error: Error specifying SDT`.
+2. Segundo Apply idêntico → Response/Create/Update/ListFilters **Unchanged**; B081 sem esses SDTs em Atualizados; `Fase SDTs` ~595 ms vs ~1486 ms na rodada anterior.
+
+### Sync — conflito de SDT (edição manual `NotaFiscalObs3` → `NotaFiscalObs3Manual`)
+
+3. **Keep:** conflito listado; resolução Keep → aviso `SDT preservado (Keep): sdtNotaFiscal_API_Response`; Response **Unchanged** na fase SDTs; membro manual preservado; Sync **interrompido** na fase BC (`procNotaFiscal_API_Get` — Source do plano referencia `NotaFiscalObs3`, membro manual diverge). Comportamento esperado da tensão Keep + Procedures canônicas.
+4. Após **Remover API gerada** + Wizard (recuperação de baseline B067), novo ensaio com **Replace** → `PreservedSdts=0`; Response **Reencountered**; BC, List e metadata concluídos; B081 `SuccessWithWarnings`, `Blocked=0`.
+
+### Residual observado (não bloqueia este aceite)
+
+- `sdt_API_ErrorResponse` e `sdtNotaFiscal_API_ListResponse` permanecem `Reencountered` em Applies estáveis (hipótese: match de coleção / `CollectionItemName`). Investigação adiada.
+- Sync Keep interrompido pode deixar drift API Object ↔ metadata (BC grava API antes das Procedures; ver `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`, seção «Escrita parcial do BC»).
 
 ## Descartado nesta frente
 
