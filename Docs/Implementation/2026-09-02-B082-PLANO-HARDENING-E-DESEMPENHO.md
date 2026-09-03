@@ -416,7 +416,8 @@ de uma KB não provam o comportamento de toda instalação**, e a ordem atual n�
 **Etapa 1A — desempenho com o índice como está hoje.** Escopo exato, conforme o Nível A da
 decisão 1:
 
-- `Attribute` pelo mapa que o índice já constrói, nos dois `EnsureAttributeExists`;
+- `Attribute` pelo mapa que o índice já constrói, nos dois `EnsureAttributeExists` de Business
+  Component e List — **fatia 1A-ii**, cinco níveis de propagação, maior ganho isolado;
 - **propagar o índice** por `TryApplyList` → `ApiPlanListProcedureWriter.Apply` →
   `ApiPlanSdtWriter.Preflight`, e por `TryCreateApiObject` → `ApiPlanApiObjectWriter`. Hoje
   `TryApplyList` não tem o parâmetro e `TryCreateApiObject` não tem nem índice nem `progress`; sem
@@ -860,18 +861,66 @@ Camada pública e wrappers de `Package.cs`:
 | `ApiPlanWritePreflight.ValidateForIntentionalChange` (7 args) | chamado no Apply — ponto 9 |
 | `Package.TryApplyList` e `Package.TryCreateApiObject` | pontos 1 e 5 |
 
-Helpers privados, todos hoje com assinatura sem índice. **A coluna da marca é o que fecha o
-aceite:** cada linha que deve desaparecer do relatório de varreduras tem aqui o helper responsável
-por ela, e converter só parte desta tabela reprova o aceite mesmo sem quebrar nada.
+### A profundidade da cadeia divide a 1A em duas fatias
 
-| Helper | Assinatura atual | Marca que some | Entra na 1A? |
+Nem todos os helpers estão à mesma distância do método público, e a diferença define o tamanho do
+trabalho.
+
+**Quatro estão a um salto** — `PreflightRequiredSdts` e `PreflightRequiredProcedures` na linha 47-48
+de `ApiPlanApiObjectWriter.CreateOrReencounter`, `EnsureSdts` na linha 58 de
+`ApiPlanBusinessComponentWriter.Apply`, e `PreflightProcedures` na linha 47 de
+`ApiPlanProcedureWriter.CreateOrReencounter`. Acrescentar o parâmetro é uma assinatura cada.
+
+**Os dois `EnsureAttributeExists` estão a cinco níveis**, e é onde mora o grosso do ganho. No List:
+
+```
+Apply → ValidateVariableSpecs (×2) → SaveApi / SaveProcedure → ReplaceVariables (×2)
+      → HasExpectedVariables (×2) → MatchesVariableSpec (×2) → TrySetAttributeBasedOn
+      → EnsureAttributeExists
+```
+
+O Business Component tem cadeia equivalente. São cerca de dez assinaturas por writer, contando
+overloads, e `HasExpectedVariables` é chamado em mais de dez pontos. Os métodos precisam de
+`kbIndex` **além** de `KBModel`, não no lugar dele, porque `model` continua sendo usado por
+`DataType.ParseInto`.
+
+**O padrão é propagação explícita por parâmetro**, e há precedente no próprio repositório:
+`ApiPlanSdtWriter` já fez isso — `ConfigureSdt` e `AddMember` recebem `ApiPlanKbObjectNameIndex`, e
+seu `EnsureAttributeExists` consome `TryGetSingleAttribute`. Copie esse padrão.
+
+**Descartado deliberadamente: escopo ambiente para o mapa de atributos.** Foi considerado porque
+atributos são imutáveis durante a operação — não haveria risco de mapa obsoleto — e porque
+`ApiPlanScanProbe` usa esse formato. Foi recusado por duas razões. A telemetria é diagnóstico: se
+o escopo falhar, perde-se medição; um índice ambiente é caminho de decisão, e sua ausência faria
+`EnsureAttributeExists` bloquear a gravação. E precisaria de fallback para quando o escopo não
+estivesse aberto — um `GetAll` silencioso, que é exatamente o `kbIndex ??= Create(...)` que esta
+etapa existe para eliminar.
+
+Daí o corte em duas fatias, ambas com o mesmo padrão explícito:
+
+| Fatia | Escopo | Assinaturas | Ganho estimado |
 |---|---|---|---|
-| `ApiPlanBusinessComponentWriter.EnsureAttributeExists` | `(KBModel, string, string)` | `Attribute/bc-find-attribute` | **Sim** — a maior fatia |
-| `ApiPlanListProcedureWriter.EnsureAttributeExists` | `(KBModel, string, string)` | `Attribute/list-find-attribute` | **Sim** — a segunda maior |
-| `ApiPlanProcedureWriter.PreflightProcedures` | `(KBModel, IReadOnlyList<…Definition>)` | `Procedure/procedure-preflight` | **Sim** |
-| `ApiPlanApiObjectWriter.PreflightRequiredSdts` | `(KBModel, ApiPlan)` | `SDT/apiobject-preflight-sdt` | **Sim** |
-| `ApiPlanBusinessComponentWriter.EnsureSdts` | `(KBModel, ApiPlan)` | `SDT/bc-ensure-sdt` | **Sim** |
-| `ApiPlanWritePreflight.ValidateForIntentionalChange` (privado, 8 args) | `(…, string operationCode)` | uma das quatro `indice-create` | **Sim** — é quem chama `ReadForIntentionalChange` na linha 137 |
+| **1A-i** | Índice único, wrappers e os quatro helpers rasos | ~12 | ~14 s |
+| **1A-ii** | Os dois `EnsureAttributeExists` e sua cadeia | ~20 | ~50 s |
+
+A 1A-i entrega o índice único, que é pré-requisito de tudo, e pode ser validada sozinha. A 1A-ii é
+mecânica e profunda, mas o compilador guia cada passo: acrescentado o parâmetro, ele aponta todos
+os chamadores. **As metas de tempo deste plano pressupõem as duas.**
+
+### Helpers, por marca e por fatia
+
+Todos hoje com assinatura sem índice. **A coluna da marca é o que fecha o aceite:** cada linha que
+deve desaparecer do relatório de varreduras tem aqui o helper responsável por ela, e converter só
+parte desta tabela reprova o aceite mesmo sem quebrar nada.
+
+| Helper | Assinatura atual | Marca que some | Fatia |
+|---|---|---|---|
+| `ApiPlanProcedureWriter.PreflightProcedures` | `(KBModel, IReadOnlyList<…Definition>)` | `Procedure/procedure-preflight` | **1A-i** — raso |
+| `ApiPlanApiObjectWriter.PreflightRequiredSdts` | `(KBModel, ApiPlan)` | `SDT/apiobject-preflight-sdt` | **1A-i** — raso |
+| `ApiPlanBusinessComponentWriter.EnsureSdts` | `(KBModel, ApiPlan)` | `SDT/bc-ensure-sdt` | **1A-i** — raso |
+| `ApiPlanWritePreflight.ValidateForIntentionalChange` (privado, 8 args) | `(…, string operationCode)` | uma das quatro `indice-create` | **1A-i** — é quem chama `ReadForIntentionalChange` na linha 137 |
+| `ApiPlanBusinessComponentWriter.EnsureAttributeExists` | `(KBModel, string, string)` | `Attribute/bc-find-attribute` | **1A-ii** — cinco níveis; maior ganho |
+| `ApiPlanListProcedureWriter.EnsureAttributeExists` | `(KBModel, string, string)` | `Attribute/list-find-attribute` | **1A-ii** — cinco níveis |
 | `ApiPlanApiObjectWriter.PreflightRequiredProcedures` | `(KBModel, ApiPlan)` | `Procedure/apiobject-preflight-procedure` | Só com `RefreshProcedures` |
 | `ApiPlanBusinessComponentWriter.FindProcedure` | `(KBModel, ApiPlan, string, string)` | `Procedure/bc-find-procedure` | Só com `RefreshProcedures` |
 | `ApiPlanListProcedureWriter.FindListProcedure` | `(KBModel, ApiPlan)` | `Procedure/list-find-procedure` | Só com `RefreshProcedures` |
@@ -913,19 +962,28 @@ Um teste registrado no orquestrador, com três asserções:
 
 1. **Remoção efetiva** — para cada assinatura do destino 1, zero ocorrências no fonte. É a lista
    fechada acima, e é o que impede a cascata de parar no meio.
-2. **Propagação efetiva** — declaram o parâmetro de índice **apenas as linhas marcadas «Sim» na
-   coluna «Entra na 1A?»**, que são doze: os seis públicos e wrappers — `CreateOrReencounter`
-   completa do API Object, `ApiPlanSdtWriter.Preflight`, `ValidateForSync`,
-   `ValidateForIntentionalChange` (7 args), `Package.TryApplyList` e `Package.TryCreateApiObject` —
-   e os seis helpers privados: os dois `EnsureAttributeExists` de Business Component e List,
+2. **Propagação efetiva** — declaram o parâmetro de índice as linhas cuja coluna **Fatia** traz
+   `1A-i` ou `1A-ii`, conforme o que já foi entregue.
+
+   **1A-i, dez pontos:** os seis públicos e wrappers — `CreateOrReencounter` completa do API
+   Object, `ApiPlanSdtWriter.Preflight`, `ValidateForSync`, `ValidateForIntentionalChange` (7 args),
+   `Package.TryApplyList` e `Package.TryCreateApiObject` — e os quatro helpers rasos:
    `PreflightProcedures`, `PreflightRequiredSdts`, `EnsureSdts` e o `ValidateForIntentionalChange`
    privado de 8 args.
 
-   **Os três «Só com `RefreshProcedures`» ficam fora desta asserção** — `PreflightRequiredProcedures`,
-   `FindProcedure` e `FindListProcedure`. Na 1A padrão eles permanecem em leitura corrente, e
-   exigir que declarem o parâmetro obrigaria a acrescentar argumento morto ou reprovaria o teste
-   com a implementação correta. Se a extensão opcional for feita, acrescente os três à lista do
-   lint **no mesmo passo** em que ganharem o parâmetro.
+   **1A-ii, os dois `EnsureAttributeExists`** de Business Component e List, mais a cadeia de
+   intermediários que os alcança.
+
+   **Os três marcados «Só com `RefreshProcedures`» ficam fora** — `PreflightRequiredProcedures`,
+   `FindProcedure` e `FindListProcedure`. Na 1A padrão permanecem em leitura corrente, e exigir que
+   declarem o parâmetro obrigaria a acrescentar argumento morto ou reprovaria o teste com a
+   implementação correta. Se a extensão opcional for feita, acrescente os três à lista do lint **no
+   mesmo passo** em que ganharem o parâmetro.
+
+   **A asserção acompanha a fatia entregue.** Se só a 1A-i estiver pronta, ela casa os dez pontos
+   dela — os seis públicos e wrappers mais os quatro helpers rasos; os dois `EnsureAttributeExists`
+   e sua cadeia entram quando a 1A-ii for feita. Um lint que exija tudo desde o começo reprova uma
+   1A-i correta.
 
    Casar a assinatura, não a chamada: um helper que receba o índice e não o use continua sendo
    defeito, mas esse a telemetria pega, porque a varredura apareceria no relatório.
