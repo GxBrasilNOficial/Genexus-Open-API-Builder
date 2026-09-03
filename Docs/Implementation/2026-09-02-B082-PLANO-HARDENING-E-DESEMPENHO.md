@@ -118,14 +118,15 @@ Apply e Sync e no abort do Remover (`Package.cs:991`, dentro do `using`).
 **D7 — O relatório comunica resultado por texto solto.** Folder preservado por não estar vazio
 entra na lista de itens *apagados* como a string `Folder:{nome}:PreservedNonEmpty`.
 
-**D12 — Diálogos abrem no monitor errado.** `PrototypeWizardDialog` usa `CenterParent`, que o
-WinForms ignora quando o owner não é um `Control` — e `ResolveFinalReportOwner` devolve um
-`NativeWindowHandle` sempre que `Form.ActiveForm` é nulo, o caso normal nesta IDE.
-`ExtensionBusyProgressDialog` usa `CenterScreen`, que centraliza na tela **primária**, não na
-tela onde a IDE está. Observado em uso; causa identificada por leitura. **Atualização 2026-09-03:**
-a âncora Wizard / progresso / Sync / Remover foi fumada na IDE (KB pequena, GeneXus no monitor
-secundário, janelas na frente da IDE). Preferências do Wizard ainda usam `CenterParent`. Isso **não**
-fecha a Etapa 3.
+**D12 — Diálogos abrem no monitor errado.** Diagnóstico de 2026-09-02: `PrototypeWizardDialog`
+usava `CenterParent`, que o WinForms ignora quando o owner não é um `Control` — e
+`ResolveFinalReportOwner` devolvia um `NativeWindowHandle` sempre que `Form.ActiveForm` é nulo,
+o caso normal nesta IDE. `ExtensionBusyProgressDialog` usava `CenterScreen`, que centraliza na
+tela **primária**, não na tela onde a IDE está. Observado em uso; causa identificada por leitura.
+**Atualização 2026-09-03:** Wizard, progresso, Sync e Remover passam por
+`ExtensionIdeScreenPlacement` (Wizard em `StartPosition = Manual`). Smoke U15 na KB pequena, com
+o GeneXus no monitor secundário: essas janelas abriram na frente da IDE. Preferências do Wizard
+ainda usam `CenterParent`. Isso **não** fecha a Etapa 3.
 
 ### Desempenho — medidas
 

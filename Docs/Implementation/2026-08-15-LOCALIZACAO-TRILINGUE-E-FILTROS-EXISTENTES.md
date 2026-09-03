@@ -176,6 +176,8 @@ Código e testes mecânicos, sem evidência U15 desta leva:
 - Confirmação B035 de habilitar Business Component, fallback `<não definido>` no resumo de path e MessageBoxes do relatório final (objeto principal ausente / falha ao abrir) passam por `ExtensionLocalization` (es/en).
 - Relatório B081: owner = `Form.ActiveForm` visível, fallback `Process.MainWindowHandle`; `ShowDialog(owner)`; monitor pela janela da IDE, não pelo cursor. Sem `Application.OpenForms.FirstOrDefault`. ActiveForm oculto (Wizard já fechado) é ignorado — evidência U15 em 2026-08-26 na `Teste`.
 
-Pendente de validação manual: relatório no monitor da IDE em multi-monitor; confirmação B035 em espanhol e inglês (nos testes anteriores `NotaFiscal` já tinha Business Component habilitado).
+Pendente de validação manual naquela data: relatório no monitor da IDE em multi-monitor; confirmação B035 em espanhol e inglês (nos testes anteriores `NotaFiscal` já tinha Business Component habilitado).
+
+**Atualização 2026-09-03.** Smoke U15, KB pequena, GeneXus no monitor secundário: Wizard, Sincronizar e Remover abriram nesse monitor, na frente da IDE. Recorte: janelas de comando, não o relatório B081 pós-Apply. Preferências do Wizard (`CenterParent`) e B035 em espanhol/inglês permanecem pendentes. Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md` (seção Monitor da IDE).
 
 Testes: `Tests/Localization/Test-ExtensionLanguage.ps1`, `Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport.ps1`. Manifesto inalterado.
