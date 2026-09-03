@@ -122,6 +122,24 @@ internal sealed class ApiPlanKbObjectNameIndex
         }
     }
 
+    /// <summary>
+    /// Resolve SDT pelo Id numérico da KB (ex.: &lt;Id&gt; em StructureTypeReference do ATTCUSTOMTYPE).
+    /// </summary>
+    internal bool TryGetSdtById(int id, out SDT sdt)
+    {
+        foreach (var candidate in _sdts.SelectMany(group => group))
+        {
+            if (candidate.Id == id)
+            {
+                sdt = candidate;
+                return true;
+            }
+        }
+
+        sdt = null!;
+        return false;
+    }
+
     internal bool TryGetSingleAttribute(string name, out GxAttribute attribute)
     {
         using (var enumerator = _attributes[name].GetEnumerator())

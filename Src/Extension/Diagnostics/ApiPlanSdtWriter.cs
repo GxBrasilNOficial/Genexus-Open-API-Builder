@@ -247,7 +247,9 @@ internal static class ApiPlanSdtWriter
                 existingSdt.Parent = targetFolder;
             }
 
-            var canSkipRewrite = explicitPreserve || MatchesPlannedSdtStructure(existingSdt, definition, kbIndex);
+            string? mismatch = null;
+            var canSkipRewrite = explicitPreserve ||
+                TryMatchPlannedSdtStructure(existingSdt, definition, kbIndex, out mismatch);
             if (!canSkipRewrite)
             {
                 ConfigureSdt(designModel, existingSdt, definition, kbIndex);
@@ -261,7 +263,14 @@ internal static class ApiPlanSdtWriter
             }
 
             var status = wroteKb ? ApiPlanSdtWriteStatus.Reencountered : ApiPlanSdtWriteStatus.Unchanged;
-            return new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, status, existingSdt.Guid);
+            return new ApiPlanSdtWriteItemResult(
+                definition.BacklogId,
+                definition.Kind,
+                definition.Name,
+                definition.Scope,
+                status,
+                existingSdt.Guid,
+                wroteKb && !explicitPreserve ? mismatch : null);
         }
 
         var sdt = new SDT(designModel)
@@ -315,21 +324,28 @@ internal static class ApiPlanSdtWriter
     /// o especificador da IDE troca o seed CHARACTER pelo tipo do atributo sem isso
     /// ser divergência de contrato.
     /// </summary>
-    private static bool MatchesPlannedSdtStructure(
+    private static bool TryMatchPlannedSdtStructure(
         SDT sdt,
         ApiPlanSdtDefinition definition,
-        ApiPlanKbObjectNameIndex kbIndex)
+        ApiPlanKbObjectNameIndex kbIndex,
+        out string? mismatch)
     {
-        if (!string.Equals(sdt.SDTStructure.Root.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
+        mismatch = null;
+        var rootName = sdt.SDTStructure.Root.Name ?? string.Empty;
+        if (!string.Equals(rootName, definition.Name, StringComparison.OrdinalIgnoreCase) &&
+            !SameSdtTypeName(rootName, definition.Name))
         {
+            mismatch = "Root.Name='" + rootName + "' != '" + definition.Name + "'";
             return false;
         }
 
         var planned = definition.Members
             .Where(item => item.Name.IndexOf(".", StringComparison.Ordinal) < 0)
             .ToArray();
+        var plannedNames = new HashSet<string>(planned.Select(item => item.Name), StringComparer.OrdinalIgnoreCase);
         var actualItems = new List<SDTItem>();
         var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var extraNames = new List<string>();
         foreach (SDTItem item in sdt.SDTStructure.Root.Items)
         {
             if (string.IsNullOrWhiteSpace(item.Name))
@@ -337,16 +353,35 @@ internal static class ApiPlanSdtWriter
                 continue;
             }
 
+            if (!plannedNames.Contains(item.Name))
+            {
+                if (!IsSpecifierCollectionItemAlias(item.Name, planned))
+                {
+                    extraNames.Add(item.Name);
+                }
+
+                continue;
+            }
+
             if (!seenNames.Add(item.Name))
             {
+                mismatch = "membro duplicado '" + item.Name + "'";
                 return false;
             }
 
             actualItems.Add(item);
         }
 
+        if (extraNames.Count > 0)
+        {
+            mismatch = "membros extras '" + string.Join(",", extraNames) + "'";
+            return false;
+        }
+
         if (actualItems.Count != planned.Length)
         {
+            mismatch = "qtd=" + actualItems.Count + " (esperada " + planned.Length +
+                "); nomes='" + string.Join(",", actualItems.Select(item => item.Name)) + "'";
             return false;
         }
 
@@ -356,16 +391,57 @@ internal static class ApiPlanSdtWriter
             var item = actualItems[index];
             if (!string.Equals(item.Name, member.Name, StringComparison.OrdinalIgnoreCase))
             {
+                mismatch = "ordem '" + item.Name + "' != '" + member.Name + "' @ " + index;
                 return false;
             }
 
             if (!MemberMatchesItem(item, member, kbIndex))
             {
+                mismatch = DescribeMemberMismatch(item, member);
                 return false;
             }
         }
 
         return true;
+    }
+
+    private static string DescribeMemberMismatch(SDTItem item, ApiPlanSdtMember member)
+    {
+        return "membro '" + member.Name +
+            "' IsCollection=" + item.IsCollection + "/" + member.IsCollection +
+            " Type=" + item.Type +
+            " CollectionItemName='" + (item.CollectionItemName ?? string.Empty) +
+            "' ATTCUSTOMTYPE='" + ReadPropertyString(item, "ATTCUSTOMTYPE") +
+            "' BasedOn='" + (item.BasedOn?.Name?.ToString() ?? string.Empty) +
+            "' idJsonInclude='" + ReadPropertyString(item, "idJsonInclude") + "'";
+    }
+
+    private static bool IsSpecifierCollectionItemAlias(string itemName, IReadOnlyList<ApiPlanSdtMember> planned)
+    {
+        foreach (var member in planned)
+        {
+            if (member.IsCollection && IsEnglishSingularOf(itemName, member.Name))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsEnglishSingularOf(string candidate, string pluralName)
+    {
+        if (string.IsNullOrWhiteSpace(candidate) || string.IsNullOrWhiteSpace(pluralName) || pluralName.Length < 2)
+        {
+            return false;
+        }
+
+        if (!pluralName.EndsWith("s", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return string.Equals(candidate, pluralName.Substring(0, pluralName.Length - 1), StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool MemberMatchesItem(SDTItem item, ApiPlanSdtMember member, ApiPlanKbObjectNameIndex kbIndex)
@@ -390,13 +466,12 @@ internal static class ApiPlanSdtWriter
                 return false;
             }
 
-            if (!SameSdtTypeName(ReadSdtItemTypeName(item), member.DataType))
+            if (!SdtReferenceMatches(item, member.DataType, kbIndex))
             {
                 return false;
             }
 
-            if (member.IsCollection && !string.IsNullOrWhiteSpace(member.CollectionItemType) &&
-                !string.Equals(item.CollectionItemName, member.CollectionItemType, StringComparison.OrdinalIgnoreCase))
+            if (!CollectionItemNameMatches(item, member, kbIndex))
             {
                 return false;
             }
@@ -418,20 +493,126 @@ internal static class ApiPlanSdtWriter
             item.Decimals == Math.Max(member.Decimals, 0);
     }
 
-    private static string ReadSdtItemTypeName(SDTItem item)
+    private static bool CollectionItemNameMatches(SDTItem item, ApiPlanSdtMember member, ApiPlanKbObjectNameIndex kbIndex)
+    {
+        if (!member.IsCollection || string.IsNullOrWhiteSpace(member.CollectionItemType))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(item.CollectionItemName))
+        {
+            return SdtReferenceMatches(item, member.CollectionItemType, kbIndex);
+        }
+
+        // Após o specifier, CollectionItemName costuma ser o nome do item da coleção
+        // (Messages, Items) ou o singular inglês (Item).
+        if (string.Equals(item.CollectionItemName, member.Name, StringComparison.OrdinalIgnoreCase) ||
+            IsEnglishSingularOf(item.CollectionItemName, member.Name))
+        {
+            return true;
+        }
+
+        return SameSdtTypeName(item.CollectionItemName, member.CollectionItemType) ||
+            SameSdtTypeName(item.CollectionItemName, member.DataType);
+    }
+
+    private static bool SdtReferenceMatches(SDTItem item, string plannedType, ApiPlanKbObjectNameIndex kbIndex)
+    {
+        foreach (var candidate in EnumerateSdtTypeNameCandidates(item, kbIndex))
+        {
+            if (SameSdtTypeName(candidate, plannedType))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static IEnumerable<string> EnumerateSdtTypeNameCandidates(SDTItem item, ApiPlanKbObjectNameIndex kbIndex)
     {
         var customType = ReadPropertyString(item, "ATTCUSTOMTYPE");
         if (!string.IsNullOrWhiteSpace(customType))
         {
-            return customType.Trim();
+            if (TryResolveStructureTypeReferenceName(customType, kbIndex, out var resolvedName))
+            {
+                yield return resolvedName!;
+            }
+            else
+            {
+                yield return customType;
+            }
         }
 
-        return item.BasedOn?.Name?.ToString() ?? string.Empty;
+        if (item.GetPropertyValue("ATTCUSTOMTYPE") is KBObject customObject)
+        {
+            var customObjectName = customObject.Name?.ToString();
+            if (!string.IsNullOrWhiteSpace(customObjectName))
+            {
+                yield return customObjectName!;
+            }
+        }
+
+        var basedOnName = item.BasedOn?.Name?.ToString();
+        if (!string.IsNullOrWhiteSpace(basedOnName))
+        {
+            yield return basedOnName!;
+        }
+
+        var basedOnProperty = ReadPropertyString(item, "idBasedOn");
+        if (!string.IsNullOrWhiteSpace(basedOnProperty))
+        {
+            yield return basedOnProperty;
+        }
+
+        if (item.IsCollection &&
+            !string.IsNullOrWhiteSpace(item.CollectionItemName) &&
+            item.CollectionItemName.StartsWith("sdt", StringComparison.OrdinalIgnoreCase))
+        {
+            yield return item.CollectionItemName.Trim();
+        }
+    }
+
+    /// <summary>
+    /// Após Save()/specifier, ATTCUSTOMTYPE de referência SDT pode vir como
+    /// "254:&lt;StructureTypeReference&gt;&lt;Type&gt;…&lt;/Type&gt;&lt;Id&gt;192&lt;/Id&gt;&lt;/StructureTypeReference&gt;"
+    /// onde Id é o Id do objeto na KB (não o nome).
+    /// </summary>
+    private static bool TryResolveStructureTypeReferenceName(
+        string attCustomType,
+        ApiPlanKbObjectNameIndex kbIndex,
+        out string? resolvedName)
+    {
+        resolvedName = null;
+        if (attCustomType.IndexOf("StructureTypeReference", StringComparison.OrdinalIgnoreCase) < 0)
+        {
+            return false;
+        }
+
+        var idMatch = System.Text.RegularExpressions.Regex.Match(
+            attCustomType,
+            @"<Id>\s*(\d+)\s*</Id>",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (!idMatch.Success ||
+            !int.TryParse(idMatch.Groups[1].Value, out var objectId) ||
+            !kbIndex.TryGetSdtById(objectId, out var sdt))
+        {
+            return false;
+        }
+
+        resolvedName = sdt.Name;
+        return !string.IsNullOrWhiteSpace(resolvedName);
     }
 
     private static string ReadPropertyString(SDTItem item, string propertyName)
     {
         var value = item.GetPropertyValue(propertyName);
+        if (value is KBObject kbObject)
+        {
+            return kbObject.Name?.ToString() ?? string.Empty;
+        }
+
         return value?.ToString() ?? string.Empty;
     }
 
@@ -442,12 +623,36 @@ internal static class ApiPlanSdtWriter
             return false;
         }
 
-        if (string.Equals(actual, planned, StringComparison.OrdinalIgnoreCase))
+        var actualName = NormalizeSdtTypeName(actual);
+        var plannedName = NormalizeSdtTypeName(planned);
+        if (string.IsNullOrWhiteSpace(actualName) || string.IsNullOrWhiteSpace(plannedName))
+        {
+            return false;
+        }
+
+        if (string.Equals(actualName, plannedName, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
-        return actual.EndsWith("." + planned, StringComparison.OrdinalIgnoreCase);
+        return actualName.EndsWith("." + plannedName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeSdtTypeName(string value)
+    {
+        var trimmed = value.Trim();
+        if (trimmed.StartsWith("sdt:", StringComparison.OrdinalIgnoreCase))
+        {
+            trimmed = trimmed.Substring(4).Trim();
+        }
+
+        var comma = trimmed.IndexOf(',');
+        if (comma >= 0)
+        {
+            trimmed = trimmed.Substring(0, comma).Trim();
+        }
+
+        return trimmed;
     }
 
     private static void AddMember(KBModel designModel, SDTLevel root, ApiPlanSdtMember member, ApiPlanKbObjectNameIndex kbIndex)
@@ -687,7 +892,14 @@ internal sealed class ApiPlanSdtWriteResult
 
 internal sealed class ApiPlanSdtWriteItemResult
 {
-    public ApiPlanSdtWriteItemResult(string backlogId, string kind, string name, string scope, string status, Guid guid)
+    public ApiPlanSdtWriteItemResult(
+        string backlogId,
+        string kind,
+        string name,
+        string scope,
+        string status,
+        Guid guid,
+        string? structureMismatch = null)
     {
         BacklogId = backlogId ?? throw new ArgumentNullException(nameof(backlogId));
         Kind = kind ?? throw new ArgumentNullException(nameof(kind));
@@ -695,6 +907,7 @@ internal sealed class ApiPlanSdtWriteItemResult
         Scope = scope ?? throw new ArgumentNullException(nameof(scope));
         Status = status ?? throw new ArgumentNullException(nameof(status));
         Guid = guid;
+        StructureMismatch = structureMismatch;
     }
 
     public string BacklogId { get; }
@@ -703,4 +916,5 @@ internal sealed class ApiPlanSdtWriteItemResult
     public string Scope { get; }
     public string Status { get; }
     public Guid Guid { get; }
+    public string? StructureMismatch { get; }
 }

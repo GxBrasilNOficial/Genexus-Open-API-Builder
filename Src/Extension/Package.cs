@@ -367,6 +367,10 @@ public sealed class Package : AbstractPackageUI
             {
                 AppendSdtWriteItemToReport(report, item);
                 WriteOutput($"[Genexus Open API Builder][B082] SDT {item.Status}: Name='{item.Name}', Scope='{item.Scope}'.");
+                if (!string.IsNullOrWhiteSpace(item.StructureMismatch))
+                {
+                    WriteOutput($"[Genexus Open API Builder][B082] SDT diverge: Name='{item.Name}', Motivo='{item.StructureMismatch}'.");
+                }
             };
             var result = preserveSdtNames is null
                 ? ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames: null, kbIndex: kbIndex, onSdtWrite: onSdtWrite, progress: progress)

@@ -79,9 +79,9 @@ KB `wsEducacaoSpTeste`, Transaction `NotaFiscal` / `apiNotaFiscal`, DLL desta co
 3. **Keep:** conflito listado; resolução Keep → aviso `SDT preservado (Keep): sdtNotaFiscal_API_Response`; Response **Unchanged** na fase SDTs; membro manual preservado; Sync **interrompido** na fase BC (`procNotaFiscal_API_Get` — Source do plano referencia `NotaFiscalObs3`, membro manual diverge). Comportamento esperado da tensão Keep + Procedures canônicas.
 4. Após **Remover API gerada** + Wizard (recuperação de baseline B067), novo ensaio com **Replace** → `PreservedSdts=0`; Response **Reencountered**; BC, List e metadata concluídos; B081 `SuccessWithWarnings`, `Blocked=0`.
 
-### Residual observado (não bloqueia este aceite)
+### Observação lateral — reencontro de coleções (fechada)
 
-- `sdt_API_ErrorResponse` e `sdtNotaFiscal_API_ListResponse` permanecem `Reencountered` em Applies estáveis (hipótese: match de coleção / `CollectionItemName`). Investigação adiada.
+- **Fechado na IDE (2026-09-03):** Apply idêntico na `NotaFiscal` — 8/8 SDTs **`Unchanged`** (`ErrorResponse` e `ListResponse` inclusos); B081 sem SDT em Atualizados; `Fase SDTs=339 ms`. Causas: `CollectionItemName` pós-specifier + `StructureTypeReference`/`Id` em `ATTCUSTOMTYPE` (ex.: `Pagination`).
 - Sync Keep interrompido pode deixar drift API Object ↔ metadata (BC grava API antes das Procedures; ver `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`, seção «Escrita parcial do BC»).
 
 ## Descartado nesta frente

@@ -563,7 +563,7 @@ Build All: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`.
 **Pendências anotadas para outra sessão (pós-push da 1A; não bloqueiam este corte).**
 
 1. **Escrita parcial do BC (P1 — consistência B067).** Em `ApiPlanBusinessComponentWriter.Apply`, `saveSteps` grava o API Object **antes** das Procedures (`SaveApi` → `SaveProcedure` Get/Create/Update/Delete). Se o Sync ou o Apply com BC aborta no meio, o Service Source do `api<Nome>` fica à frente do hash em `api<Nome>_Metadata`; o preflight seguinte bloqueia Wizard e Sync com `BaselineServiceSourceHashMismatch` até **Remover API gerada + Wizard**. Evidência: Sync Keep interrompido em `wsEducacaoSpTeste` / `NotaFiscal` (2026-09-03). **Correção recomendada:** reordenar `saveSteps` para gravar o API Object **por último**, após todas as Procedures passarem em `Save()`. Normativo: `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md` (seção «Escrita parcial do BC»). **Escopo sugerido:** Etapa 2 deste plano (segurança/consistência), sessão dedicada **depois** do push da 1A e **depois** de `B108`, salvo repriorização humana.
-2. **Reencontro de SDT em coleções (observação lateral).** `sdt_API_ErrorResponse` e `*_API_ListResponse` permanecem `Reencountered` em Applies estáveis; hipótese `CollectionItemName` em `MemberMatchesItem`. Investigação adiada; não bloqueia a 1A.
+2. **Reencontro de SDT em coleções / referências.** **Fechado na IDE (2026-09-03):** 8/8 SDTs `Unchanged` na `NotaFiscal` (inclui `ErrorResponse`/`ListResponse`). Causas: `CollectionItemName` pós-specifier; `ATTCUSTOMTYPE` `StructureTypeReference` resolvido por Id.
 
 **Etapa 1B**, se e quando for executada:
 

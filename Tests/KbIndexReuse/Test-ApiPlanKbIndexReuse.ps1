@@ -24,6 +24,7 @@ $stateReader = Read-LfText (Join-Path $srcRoot 'Diagnostics\ApiPlanGenerationSta
 $procedureWriter = Read-LfText (Join-Path $srcRoot 'Diagnostics\ApiPlanProcedureWriter.cs')
 $package = Read-LfText (Join-Path $srcRoot 'Package.cs')
 $remover = Read-LfText (Join-Path $srcRoot 'Diagnostics\ApiPlanGeneratedApiRemover.cs')
+$kbIndex = Read-LfText (Join-Path $srcRoot 'Diagnostics\ApiPlanKbObjectNameIndex.cs')
 
 function Assert-True {
     param([bool]$Condition, [string]$Message)
@@ -112,11 +113,16 @@ Assert-Contains $package 'private static bool TryApplyBusinessComponent(
 Assert-NotContains $package 'ApiPlanKbObjectNameIndex? kbIndex = null' 'Package nao pode declarar kbIndex opcional nulo nos caminhos convertidos da 1A.'
 Assert-NotContains $package 'ApiPlanSdtSpecifier' 'Especificacao sincrona de SDTs no meio do Apply nao faz parte da 1A.'
 Assert-NotContains $sdtWriter 'SkipValidation' 'Save de SDT no Apply nao usa SkipValidation; o reencontro idempotente evita regravar.'
-Assert-Contains $sdtWriter 'MatchesPlannedSdtStructure' 'Reencontro de SDT deve comparar a estrutura persistida antes de Save.'
-Assert-Contains $sdtWriter 'for (var index = 0; index < planned.Length; index++)' 'MatchesPlannedSdtStructure deve comparar a ordem fisica dos membros de primeiro nivel.'
-Assert-Contains $sdtWriter 'explicitPreserve || MatchesPlannedSdtStructure' 'Skip de Save aceita Keep explicito do Sync ou estrutura e ordem iguais ao plano.'
+Assert-Contains $sdtWriter 'TryMatchPlannedSdtStructure' 'Reencontro de SDT deve comparar a estrutura persistida antes de Save.'
+Assert-Contains $sdtWriter 'for (var index = 0; index < planned.Length; index++)' 'TryMatchPlannedSdtStructure deve comparar a ordem fisica dos membros de primeiro nivel.'
+Assert-Contains $sdtWriter 'explicitPreserve ||' 'Skip de Save aceita Keep explicito do Sync ou estrutura e ordem iguais ao plano.'
 Assert-Contains $sdtWriter 'canSkipRewrite' 'Reencontro de SDT deve pular Save quando Keep explicito ou estrutura ja bate.'
 Assert-Contains $sdtWriter 'ApiPlanSdtWriteStatus.Unchanged' 'Reencontro sem Save deve publicar Unchanged, nao Reencountered.'
+Assert-Contains $sdtWriter 'CollectionItemNameMatches' 'Reencontro de SDT deve tratar CollectionItemName de colecao sem exigir igualdade com o tipo.'
+Assert-Contains $sdtWriter 'IsEnglishSingularOf' 'Specifier pode gravar CollectionItemName no singular ingles (Item para Items).'
+Assert-Contains $sdtWriter 'TryResolveStructureTypeReferenceName' 'Reencontro deve resolver ATTCUSTOMTYPE StructureTypeReference para o nome do SDT.'
+Assert-Contains $kbIndex 'TryGetSdtById' 'Indice deve resolver SDT pelo Id numerico da KB.'
+Assert-Contains $package 'SDT diverge' 'Reencontro deve publicar Motivo na Output quando a estrutura nao bate.'
 Assert-NotContains $package 'preserveSdtNames: ApiPlanSdtWriter.PlannedSdtNames(apiPlan)' 'Wizard nao deve pular SDT por lista mecanica nas fases Business Component e List.'
 Assert-Contains $package 'preserveSdtNames: preserveSdts' 'Sync deve repassar apenas SDTs com resolucao Keep explicita.'
 Assert-Contains $package 'private static bool TryCreateApiObject(
