@@ -14,19 +14,14 @@ internal static class ApiPlanSdtWriter
 {
     internal const string SharedFolderName = "GxOpenAPI";
 
-    public static ApiPlanSdtWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
-    {
-        return CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames: null);
-    }
-
     public static ApiPlanSdtWriteResult CreateOrReencounter(
         KBModel designModel,
         Transaction transaction,
         ApiPlan apiPlan,
         IReadOnlyCollection<string>? preserveSdtNames,
+        ApiPlanKbObjectNameIndex kbIndex,
         System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite = null,
-        ApiPlanBusyProgressSession? progress = null,
-        ApiPlanKbObjectNameIndex? kbIndex = null)
+        ApiPlanBusyProgressSession? progress = null)
     {
         if (designModel is null)
         {
@@ -43,6 +38,11 @@ internal static class ApiPlanSdtWriter
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
+        }
+
         if (!string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.Ordinal))
         {
             throw new InvalidOperationException("Criacao de SDTs bloqueada: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
@@ -51,7 +51,6 @@ internal static class ApiPlanSdtWriter
         var preserve = new HashSet<string>(preserveSdtNames ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
         var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var planned = generationPlan.SharedSdts.Count + generationPlan.OwnSdts.Count;
-        kbIndex ??= ApiPlanKbObjectNameIndex.Create(designModel, progress);
         progress?.Report("SDTs", 0, planned, "Preflight");
         progress?.PumpAndThrowIfAbortRequested();
         var preflight = CreatePreflightResult(designModel, generationPlan, kbIndex, progress);
@@ -112,7 +111,11 @@ internal static class ApiPlanSdtWriter
     internal static string CreateOwnedDescriptionFor(string objectName) =>
         ApiPlanOwnedObjectDescription.Create(objectName);
 
-    internal static void Preflight(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
+    internal static void Preflight(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        ApiPlanKbObjectNameIndex kbIndex)
     {
         if (designModel is null)
         {
@@ -124,10 +127,15 @@ internal static class ApiPlanSdtWriter
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
+        }
+
         CreatePreflightResult(
             designModel,
             ApiPlanSdtGenerationPlanBuilder.Create(apiPlan),
-            ApiPlanKbObjectNameIndex.Create(designModel));
+            kbIndex);
         ApiPlanTransactionFolder.Preflight(designModel, transaction, apiPlan);
     }
 

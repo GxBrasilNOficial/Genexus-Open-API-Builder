@@ -37,8 +37,12 @@ internal static class ApiPlanGeneratedApiRemover
         var telemetry = new ApiPlanScanTelemetry();
         var phaseWatch = Stopwatch.StartNew();
 
+        // Nível A: um índice só para a validação agregada, antes de qualquer exclusão.
+        // Localização, revalidação e confirmação pós-Delete permanecem em leitura corrente.
+        var kbIndex = ApiPlanKbObjectNameIndex.Create(designModel, progress);
+
         var metadataFileName = $"api{transaction.Name}_Metadata";
-        var metadataFile = FindOwnedMetadataFile(designModel, metadataFileName, transaction.Name, kbIndex: null, telemetry);
+        var metadataFile = FindOwnedMetadataFile(designModel, metadataFileName, transaction.Name, kbIndex, telemetry);
         var metadata = ParseMetadata(metadataFile);
         var plan = ApiPlanGeneratedApiRemovalPlan.FromMetadata(metadata, transaction.Name, transaction.Guid.ToString());
         telemetry.MarkPhase("ResolucaoMetadata", phaseWatch.ElapsedMilliseconds);
@@ -55,7 +59,7 @@ internal static class ApiPlanGeneratedApiRemover
             plan.FolderWasCreated));
 
         phaseWatch.Restart();
-        ValidateRemovalTargets(designModel, plan, progress: null, kbIndex: null, telemetry);
+        ValidateRemovalTargets(designModel, plan, progress: null, kbIndex, telemetry);
         telemetry.MarkPhase("ValidacaoAgregada", phaseWatch.ElapsedMilliseconds);
 
         var total = CountPlannedDeletes(plan);
@@ -198,6 +202,8 @@ internal static class ApiPlanGeneratedApiRemover
     /// </summary>
     internal static void ValidateRemovalTargets(KBModel designModel, ApiPlanGeneratedApiRemovalPlan plan)
     {
+        // kbIndex nulo e contrato deliberado: leitura corrente. O wrapper de 2 args
+        // existe para testes textuais; o Remove efetivo passa o indice da validacao agregada.
         ValidateRemovalTargets(designModel, plan, progress: null, kbIndex: null);
     }
 
@@ -294,6 +300,9 @@ internal static class ApiPlanGeneratedApiRemover
         }
     }
 
+    // kbIndex nulo e contrato deliberado de leitura corrente: localizacao e revalidacao
+    // apos o catalogo ter comecado a mudar (Nível B / confirmacao pos-Delete). A validacao
+    // agregada, antes de qualquer exclusao, passa o indice criado no Remove.
     private static void ValidateApiObjectTarget(
         KBModel designModel,
         ApiPlanGeneratedApiRemovalPlan plan,

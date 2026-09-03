@@ -13,16 +13,10 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanGenerationStateReader
 {
-    public static ApiPlanGenerationState Read(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
-    {
-        return Read(designModel, transaction, apiPlan, forSyncContractRefresh: false);
-    }
-
-    public static ApiPlanGenerationState ReadForSync(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
-    {
-        return ReadForIntentionalChange(designModel, transaction, apiPlan);
-    }
-
+    /// <summary>
+    /// Recalculo read-only da abertura do Wizard (D8). Cria o proprio indice.
+    /// Apply/Sync nao podem chamar este metodo: usam <see cref="ReadForIntentionalChangeWithIndex"/>.
+    /// </summary>
     public static ApiPlanGenerationState ReadForIntentionalChange(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
     {
         return Read(designModel, transaction, apiPlan, forSyncContractRefresh: true);
@@ -46,6 +40,25 @@ internal static class ApiPlanGenerationStateReader
         ApiPlanBusyProgressSession? progress = null)
     {
         return ReadForIntentionalChangeWithIndex(designModel, transaction, apiPlan, progress);
+    }
+
+    /// <summary>
+    /// Le o estado com um indice ja criado. Usado pelo preflight agregado do Apply/Sync
+    /// para nao reconstruir o indice.
+    /// </summary>
+    internal static ApiPlanGenerationState ReadUsingExistingIndex(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        bool forSyncContractRefresh,
+        ApiPlanKbObjectNameIndex index)
+    {
+        if (index is null)
+        {
+            throw new ArgumentNullException(nameof(index));
+        }
+
+        return Read(designModel, transaction, apiPlan, forSyncContractRefresh, index);
     }
 
     private static ApiPlanGenerationState Read(KBModel designModel, Transaction transaction, ApiPlan apiPlan, bool forSyncContractRefresh)
@@ -226,7 +239,7 @@ internal static class ApiPlanGenerationStateReader
         }
         else if (matches.Count == 1)
         {
-            ownershipDiagnostic = ApiPlanApiObjectWriter.DiagnoseOwnership(designModel, apiPlan, matches[0]);
+            ownershipDiagnostic = ApiPlanApiObjectWriter.DiagnoseOwnership(designModel, index, apiPlan, matches[0]);
             owned = ownershipDiagnostic.IsOwned;
         }
 
@@ -360,12 +373,12 @@ internal static class ApiPlanGenerationStateReader
             return ApiPlanMetadataFileWriter.HasCompatibleGeneratedBaseline(metadata, apiObject);
         }
 
-        if (!ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject))
+        if (!ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, index, apiPlan, apiObject))
         {
             return false;
         }
 
-        return ApiPlanMetadataFileWriter.HasCompatibleB067Integrity(metadata, apiPlan, apiObject);
+        return ApiPlanMetadataFileWriter.HasCompatibleB067Integrity(metadata, index, apiPlan, apiObject);
     }
 
     private static bool HasString(JToken? token, string expectedValue)

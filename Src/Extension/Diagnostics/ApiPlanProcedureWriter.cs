@@ -14,8 +14,8 @@ internal static class ApiPlanProcedureWriter
         KBModel designModel,
         Transaction transaction,
         ApiPlan apiPlan,
-        ApiPlanBusyProgressSession? progress = null,
-        ApiPlanKbObjectNameIndex? kbIndex = null)
+        ApiPlanKbObjectNameIndex kbIndex,
+        ApiPlanBusyProgressSession? progress = null)
     {
         if (designModel is null)
         {
@@ -32,6 +32,11 @@ internal static class ApiPlanProcedureWriter
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
+        }
+
         if (!string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.Ordinal))
         {
             throw new InvalidOperationException("Criacao de Procedures bloqueada: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
@@ -40,11 +45,10 @@ internal static class ApiPlanProcedureWriter
         var sdtGenerationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         progress?.Report("Procedures", 0, 0, "Preflight");
         progress?.PumpAndThrowIfAbortRequested();
-        kbIndex ??= ApiPlanKbObjectNameIndex.Create(designModel, progress);
         var resolvedSdts = PreflightRequiredSdts(sdtGenerationPlan, kbIndex, progress);
         var definitions = CreateProcedureDefinitions(apiPlan);
         progress?.PumpAndThrowIfAbortRequested();
-        var preflight = PreflightProcedures(designModel, definitions);
+        var preflight = PreflightProcedures(designModel, definitions, kbIndex);
         progress?.PumpAndThrowIfAbortRequested();
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan);
         var results = new List<ApiPlanProcedureWriteItemResult>();
@@ -162,21 +166,32 @@ internal static class ApiPlanProcedureWriter
             : "B050-B053";
     }
 
-    private static ApiPlanProcedurePreflightResult PreflightProcedures(KBModel designModel, IReadOnlyList<ApiPlanProcedureDefinition> definitions)
+    private static ApiPlanProcedurePreflightResult PreflightProcedures(
+        KBModel designModel,
+        IReadOnlyList<ApiPlanProcedureDefinition> definitions,
+        ApiPlanKbObjectNameIndex kbIndex)
     {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
+        }
+
         var existingByName = new Dictionary<string, Procedure>(StringComparer.OrdinalIgnoreCase);
         foreach (var definition in definitions)
         {
-            var existing = ApiPlanScanProbe.Scan("Procedure", "procedure-preflight", () => Procedure.GetAll(designModel)
-                .Where(procedure => string.Equals(procedure.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
-                .ToArray());
+            var existing = kbIndex.FindProcedures(definition.Name);
 
-            if (existing.Length > 1)
+            if (existing.Count > 1)
             {
-                throw new InvalidOperationException($"Criacao de Procedure bloqueada: foram encontradas {existing.Length} Procedures chamadas '{definition.Name}'. Nenhuma alteracao foi feita.");
+                throw new InvalidOperationException($"Criacao de Procedure bloqueada: foram encontradas {existing.Count} Procedures chamadas '{definition.Name}'. Nenhuma alteracao foi feita.");
             }
 
-            if (existing.Length == 1)
+            if (existing.Count == 1)
             {
                 var existingProcedure = existing[0];
                 if (!ApiPlanOwnedObjectDescription.IsOwnedProcedure(existingProcedure.Description, definition.Name))

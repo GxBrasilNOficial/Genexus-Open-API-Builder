@@ -13,16 +13,13 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanApiObjectWriter
 {
-    public static ApiPlanApiObjectWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
-    {
-        return CreateOrReencounter(designModel, transaction, apiPlan, allowIntentionalContractRefresh: false);
-    }
-
     public static ApiPlanApiObjectWriteResult CreateOrReencounter(
         KBModel designModel,
         Transaction transaction,
         ApiPlan apiPlan,
-        bool allowIntentionalContractRefresh)
+        bool allowIntentionalContractRefresh,
+        ApiPlanKbObjectNameIndex kbIndex,
+        ApiPlanBusyProgressSession? progress = null)
     {
         if (designModel is null)
         {
@@ -39,16 +36,22 @@ internal static class ApiPlanApiObjectWriter
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
+        }
+
         if (!string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.Ordinal))
         {
             throw new InvalidOperationException("Criacao de API Object bloqueada: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
         }
 
-        var reencounteredSdts = PreflightRequiredSdts(designModel, apiPlan);
+        progress?.PumpAndThrowIfAbortRequested();
+        var reencounteredSdts = PreflightRequiredSdts(designModel, apiPlan, kbIndex);
         var reencounteredProcedures = PreflightRequiredProcedures(designModel, apiPlan);
-        var preflight = PreflightApiObject(designModel, apiPlan, allowIntentionalContractRefresh);
+        var preflight = PreflightApiObject(designModel, apiPlan, allowIntentionalContractRefresh, kbIndex);
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan);
-        var result = CreateOrReencounterApiObject(designModel, transactionFolder, apiPlan, preflight);
+        var result = CreateOrReencounterApiObject(designModel, transactionFolder, apiPlan, preflight, kbIndex);
 
         return new ApiPlanApiObjectWriteResult(
             apiPlan.ApiName,
@@ -89,11 +92,16 @@ internal static class ApiPlanApiObjectWriter
     /// <summary>
     /// B087: reconhece API Object próprio pela metadata; Description só como fallback sem File.
     /// </summary>
-    internal static bool IsOwnedApiObject(KBModel designModel, ApiPlan apiPlan, API apiObject)
+    internal static bool IsOwnedApiObject(KBModel designModel, ApiPlanKbObjectNameIndex kbIndex, ApiPlan apiPlan, API apiObject)
     {
         if (designModel is null)
         {
             throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
         }
 
         if (apiPlan is null)
@@ -106,7 +114,7 @@ internal static class ApiPlanApiObjectWriter
             throw new ArgumentNullException(nameof(apiObject));
         }
 
-        var kind = ResolveOwnership(designModel, apiPlan, apiObject);
+        var kind = ResolveOwnership(designModel, kbIndex, apiPlan, apiObject);
         return ApiPlanApiObjectOwnership.IsOwned(kind);
     }
 
@@ -156,11 +164,16 @@ internal static class ApiPlanApiObjectWriter
     /// Na primeira geracao o File ainda nao foi gravado — o List roda antes do B060 —,
     /// entao a posse cai no fallback historico pela Description e pelo contrato gerenciado.
     /// </summary>
-    internal static bool IsOwnedApiObjectForIntentionalWrite(KBModel designModel, ApiPlan apiPlan, API apiObject)
+    internal static bool IsOwnedApiObjectForIntentionalWrite(KBModel designModel, ApiPlanKbObjectNameIndex kbIndex, ApiPlan apiPlan, API apiObject)
     {
         if (designModel is null)
         {
             throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
         }
 
         if (apiPlan is null)
@@ -179,7 +192,7 @@ internal static class ApiPlanApiObjectWriter
             metadataLookup.FilePresent))
         {
             case ApiPlanApiObjectOwnership.IntentionalWriteOwnership.DescriptionFallback:
-                return IsOwnedApiObject(designModel, apiPlan, apiObject);
+                return IsOwnedApiObject(designModel, kbIndex, apiPlan, apiObject);
             case ApiPlanApiObjectOwnership.IntentionalWriteOwnership.MetadataOwnership:
                 return IsOwnedApiObjectForSync(designModel, apiPlan, apiObject);
             default:
@@ -193,9 +206,9 @@ internal static class ApiPlanApiObjectWriter
     /// contrato gerado. A protecao contra edicao direta e feita pelo estado
     /// do baseline antes do primeiro Save().
     /// </summary>
-    internal static bool IsOwnedApiObjectForIntentionalChange(KBModel designModel, ApiPlan apiPlan, API apiObject)
+    internal static bool IsOwnedApiObjectForIntentionalChange(KBModel designModel, ApiPlanKbObjectNameIndex kbIndex, ApiPlan apiPlan, API apiObject)
     {
-        if (!IsOwnedApiObjectForIntentionalWrite(designModel, apiPlan, apiObject))
+        if (!IsOwnedApiObjectForIntentionalWrite(designModel, kbIndex, apiPlan, apiObject))
         {
             return false;
         }
@@ -391,16 +404,21 @@ internal static class ApiPlanApiObjectWriter
             baseline);
     }
 
-    internal static ApiPlanApiObjectOwnership.OwnershipKind ResolveOwnership(KBModel designModel, ApiPlan apiPlan, API apiObject)
+    internal static ApiPlanApiObjectOwnership.OwnershipKind ResolveOwnership(KBModel designModel, ApiPlanKbObjectNameIndex kbIndex, ApiPlan apiPlan, API apiObject)
     {
-        return DiagnoseOwnership(designModel, apiPlan, apiObject).OwnershipKind;
+        return DiagnoseOwnership(designModel, kbIndex, apiPlan, apiObject).OwnershipKind;
     }
 
-    internal static ApiPlanApiObjectOwnership.Diagnostic DiagnoseOwnership(KBModel designModel, ApiPlan apiPlan, API apiObject)
+    internal static ApiPlanApiObjectOwnership.Diagnostic DiagnoseOwnership(KBModel designModel, ApiPlanKbObjectNameIndex kbIndex, ApiPlan apiPlan, API apiObject)
     {
         if (designModel is null)
         {
             throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
         }
 
         if (apiPlan is null)
@@ -413,7 +431,7 @@ internal static class ApiPlanApiObjectWriter
             throw new ArgumentNullException(nameof(apiObject));
         }
 
-        var serviceSourceManaged = ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, apiPlan, apiObject);
+        var serviceSourceManaged = ApiPlanBusinessComponentWriter.IsManagedApiObject(designModel, kbIndex, apiPlan, apiObject);
         var metadataLookup = FindMetadataFile(designModel, apiPlan);
         JObject? metadata = null;
         var metadataParsed = false;
@@ -434,7 +452,7 @@ internal static class ApiPlanApiObjectWriter
                     apiObject.Guid.ToString());
                 if (metadataOwnershipMatches)
                 {
-                    integrityCompatible = ApiPlanMetadataFileWriter.HasCompatibleB067Integrity(metadata, apiPlan, apiObject);
+                    integrityCompatible = ApiPlanMetadataFileWriter.HasCompatibleB067Integrity(metadata, kbIndex, apiPlan, apiObject);
                 }
             }
         }
@@ -523,24 +541,35 @@ internal static class ApiPlanApiObjectWriter
         }
     }
 
-    private static IReadOnlyList<Guid> PreflightRequiredSdts(KBModel designModel, ApiPlan apiPlan)
+    private static IReadOnlyList<Guid> PreflightRequiredSdts(
+        KBModel designModel,
+        ApiPlan apiPlan,
+        ApiPlanKbObjectNameIndex kbIndex)
     {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
+        }
+
         var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var resolved = new List<Guid>();
         foreach (var definition in generationPlan.SharedSdts.Concat(generationPlan.OwnSdts))
         {
-            var matches = ApiPlanScanProbe.Scan("SDT", "apiobject-preflight-sdt", () => SDT.GetAll(designModel)
-                .Where(sdt => string.Equals(sdt.Name, definition.Name, StringComparison.OrdinalIgnoreCase))
-                .ToArray());
+            var matches = kbIndex.FindSdts(definition.Name);
 
-            if (matches.Length == 0)
+            if (matches.Count == 0)
             {
                 throw new InvalidOperationException($"Criacao de API Object bloqueada: SDT requerido nao foi reencontrado: '{definition.Name}'. Gere os SDTs pelo Wizard antes. Nenhuma alteracao foi feita.");
             }
 
-            if (matches.Length > 1)
+            if (matches.Count > 1)
             {
-                throw new InvalidOperationException($"Criacao de API Object bloqueada: foram encontrados {matches.Length} SDTs chamados '{definition.Name}'. Nenhuma alteracao foi feita.");
+                throw new InvalidOperationException($"Criacao de API Object bloqueada: foram encontrados {matches.Count} SDTs chamados '{definition.Name}'. Nenhuma alteracao foi feita.");
             }
 
             var sdt = matches[0];
@@ -627,7 +656,8 @@ internal static class ApiPlanApiObjectWriter
     private static ApiPlanApiObjectPreflightResult PreflightApiObject(
         KBModel designModel,
         ApiPlan apiPlan,
-        bool allowIntentionalContractRefresh)
+        bool allowIntentionalContractRefresh,
+        ApiPlanKbObjectNameIndex kbIndex)
     {
         var existing = API.GetAll(designModel)
             .Where(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase))
@@ -645,8 +675,8 @@ internal static class ApiPlanApiObjectWriter
 
         var apiObject = existing[0];
         var owned = allowIntentionalContractRefresh
-            ? IsOwnedApiObjectForIntentionalWrite(designModel, apiPlan, apiObject)
-            : IsOwnedApiObject(designModel, apiPlan, apiObject);
+            ? IsOwnedApiObjectForIntentionalWrite(designModel, kbIndex, apiPlan, apiObject)
+            : IsOwnedApiObject(designModel, kbIndex, apiPlan, apiObject);
         if (!owned)
         {
             throw new InvalidOperationException($"Criacao de API Object bloqueada: ja existe API Object externo ou incompativel chamado '{apiPlan.ApiName}'. Nenhuma alteracao foi feita.");
@@ -656,14 +686,14 @@ internal static class ApiPlanApiObjectWriter
     }
 
 
-    private static ApiPlanApiObjectWriteCoreResult CreateOrReencounterApiObject(KBModel designModel, Folder transactionFolder, ApiPlan apiPlan, ApiPlanApiObjectPreflightResult preflight)
+    private static ApiPlanApiObjectWriteCoreResult CreateOrReencounterApiObject(KBModel designModel, Folder transactionFolder, ApiPlan apiPlan, ApiPlanApiObjectPreflightResult preflight, ApiPlanKbObjectNameIndex kbIndex)
     {
         if (preflight.ExistingApiObject is not null)
         {
             preflight.ExistingApiObject.Parent = transactionFolder;
-            if (ApiPlanBusinessComponentWriter.IsB055ApiObject(designModel, apiPlan, preflight.ExistingApiObject))
+            if (ApiPlanBusinessComponentWriter.IsB055ApiObject(designModel, kbIndex, apiPlan, preflight.ExistingApiObject))
             {
-                if (!ApiPlanBusinessComponentWriter.IsCurrentB055ApiObject(designModel, apiPlan, preflight.ExistingApiObject))
+                if (!ApiPlanBusinessComponentWriter.IsCurrentB055ApiObject(designModel, kbIndex, apiPlan, preflight.ExistingApiObject))
                 {
                     preflight.ExistingApiObject.ServiceGroupSource.Source = ApiPlanBusinessComponentWriter.CreateB055ServiceGroupSource(apiPlan);
                 }

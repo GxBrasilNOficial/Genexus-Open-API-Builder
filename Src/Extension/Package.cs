@@ -356,6 +356,11 @@ public sealed class Package : AbstractPackageUI
         ApiPlanBusyProgressSession? progress = null,
         ApiPlanKbObjectNameIndex? kbIndex = null)
     {
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
+        }
+
         try
         {
             Action<ApiPlanSdtWriteItemResult> onSdtWrite = item =>
@@ -364,8 +369,8 @@ public sealed class Package : AbstractPackageUI
                 WriteOutput($"[Genexus Open API Builder][B082] SDT {item.Status}: Name='{item.Name}', Scope='{item.Scope}'.");
             };
             var result = preserveSdtNames is null
-                ? ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames: null, onSdtWrite: onSdtWrite, progress: progress, kbIndex: kbIndex)
-                : ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames, onSdtWrite: onSdtWrite, progress: progress, kbIndex: kbIndex);
+                ? ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames: null, kbIndex: kbIndex, onSdtWrite: onSdtWrite, progress: progress)
+                : ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames, kbIndex, onSdtWrite, progress);
             WriteOutput($"[Genexus Open API Builder][B040-B046] Escrita de SDTs concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedOwnSdts={result.PlannedOwnSdts}, PlannedSharedSdts={result.PlannedSharedSdts}, Created={result.CreatedSdts}, Reencountered={result.ReencounteredSdts}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhuma Procedure, API Object ou metadata persistente definitiva foi criada.");
             foreach (var item in result.Items)
             {
@@ -395,9 +400,14 @@ public sealed class Package : AbstractPackageUI
         ApiPlanBusyProgressSession? progress = null,
         ApiPlanKbObjectNameIndex? kbIndex = null)
     {
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
+        }
+
         try
         {
-            var result = ApiPlanProcedureWriter.CreateOrReencounter(designModel, transaction, apiPlan, progress, kbIndex);
+            var result = ApiPlanProcedureWriter.CreateOrReencounter(designModel, transaction, apiPlan, kbIndex, progress);
             var procedureStage = ApiPlanProcedureWriter.FormatOutputStage(apiPlan);
             WriteOutput($"[Genexus Open API Builder][{procedureStage}] Escrita de Procedures concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedProcedures={result.PlannedProcedures}, ReencounteredSdts={result.ReencounteredSdts}, Created={result.CreatedProcedures}, Reencountered={result.ReencounteredProcedures}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhum API Object, REST completo ou metadata persistente definitiva foi criado.");
             foreach (var item in result.Items)
@@ -426,6 +436,8 @@ public sealed class Package : AbstractPackageUI
         Transaction transaction,
         ApiPlan apiPlan,
         string triggerSource,
+        ApiPlanKbObjectNameIndex kbIndex,
+        ApiPlanBusyProgressSession? progress,
         ApiPlanApplicationFinalReportCollector? report = null,
         bool allowIntentionalContractRefresh = false)
     {
@@ -435,7 +447,9 @@ public sealed class Package : AbstractPackageUI
                 designModel,
                 transaction,
                 apiPlan,
-                allowIntentionalContractRefresh);
+                allowIntentionalContractRefresh,
+                kbIndex,
+                progress);
             WriteOutput($"[Genexus Open API Builder][B054] Escrita de API Object concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiName='{result.ApiName}', Status='{result.Status}', ReencounteredSdts={result.ReencounteredSdts}, ReencounteredProcedures={result.ReencounteredProcedures}, PlannedServices={result.PlannedServices}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhum REST completo, seguranca definitiva ou metadata persistente definitiva foi criado.");
             foreach (var procedure in result.Procedures)
             {
@@ -462,16 +476,23 @@ public sealed class Package : AbstractPackageUI
         Transaction transaction,
         ApiPlan apiPlan,
         string triggerSource,
+        ApiPlanKbObjectNameIndex kbIndex,
         bool allowIntentionalContractRefresh = false,
         ApiPlanApplicationFinalReportCollector? report = null)
     {
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
+        }
+
         try
         {
             var result = ApiPlanMetadataFileWriter.CreateOrReencounter(
                 designModel,
                 transaction,
                 apiPlan,
-                allowIntentionalContractRefresh);
+                allowIntentionalContractRefresh,
+                kbIndex);
             WriteOutput($"[Genexus Open API Builder][B060] Metadata persistente inicial gravada: Transaction='{transaction.Name}', Trigger='{triggerSource}', File='{result.FileName}', Status='{result.Status}', Guid='{result.Guid}', SchemaVersion='{result.SchemaVersion}', Bytes={result.Bytes}, Sha256='{result.Sha256}'. A metadata registra o snapshot do ApiPlan e dos artefatos ja aplicados; seguranca definitiva permanece fora desta etapa.");
             var baselineMessage = allowIntentionalContractRefresh
                 ? "Alteracoes deliberadas pelo Wizard/Sincronizar atualizam esse baseline; alteracoes diretas nos objetos continuam bloqueadas antes de qualquer Save()."
@@ -500,6 +521,11 @@ public sealed class Package : AbstractPackageUI
         ApiPlanBusyProgressSession? progress = null,
         ApiPlanKbObjectNameIndex? kbIndex = null)
     {
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
+        }
+
         try
         {
             var result = ApiPlanBusinessComponentWriter.Apply(
@@ -508,9 +534,9 @@ public sealed class Package : AbstractPackageUI
                 apiPlan,
                 allowIntentionalContractRefresh,
                 preserveSdtNames,
+                kbIndex,
                 onSdtWrite: item => AppendSdtWriteItemToReport(report, item),
-                progress: progress,
-                kbIndex: kbIndex);
+                progress: progress);
             var deleteGuidPart = result.DeleteProcedureGuid == Guid.Empty
                 ? string.Empty
                 : $", DeleteProcedureGuid='{result.DeleteProcedureGuid}'";
@@ -548,6 +574,7 @@ public sealed class Package : AbstractPackageUI
         Transaction transaction,
         ApiPlan apiPlan,
         string triggerSource,
+        ApiPlanKbObjectNameIndex kbIndex,
         bool allowIntentionalContractRefresh = false,
         IReadOnlyCollection<string>? preserveSdtNames = null,
         ApiPlanApplicationFinalReportCollector? report = null,
@@ -561,6 +588,7 @@ public sealed class Package : AbstractPackageUI
                 apiPlan,
                 allowIntentionalContractRefresh,
                 preserveSdtNames,
+                kbIndex,
                 onSdtWrite: item => AppendSdtWriteItemToReport(report, item),
                 progress: progress);
             WriteOutput($"[Genexus Open API Builder][B070] List aplicado e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', ListProcedureGuid='{result.ListProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', Filters={result.Filters}, OrderParts={result.OrderParts}, DefaultPageSize={result.DefaultPageSize}, MaximumPageSize={result.MaximumPageSize}. B076 e validacao runtime do List permanecem pendentes.");
@@ -738,7 +766,7 @@ public sealed class Package : AbstractPackageUI
                     PrototypeWizardBusinessComponentNavigationPolicy.ThrowIfDeleteWithoutBusinessComponent(
                         apiPlan.Services.Select(service => service.Name),
                         selection.ApplyBusinessComponent);
-                    ApiPlanWritePreflight.ValidateForSync(knowledgeBase.DesignModel, transaction, apiPlan);
+                    ApiPlanWritePreflight.ValidateForSync(knowledgeBase.DesignModel, transaction, apiPlan, syncKbIndex);
                 }
                 catch (Exception ex) when (ex is not ApiPlanBusyAbortedException)
                 {
@@ -784,6 +812,8 @@ public sealed class Package : AbstractPackageUI
                             transaction,
                             apiPlan,
                             "SyncB085",
+                            syncKbIndex,
+                            busy.Session,
                             report,
                             allowIntentionalContractRefresh: true))
                         {
@@ -804,6 +834,8 @@ public sealed class Package : AbstractPackageUI
                                 transaction,
                                 apiPlan,
                                 "SyncB085",
+                                syncKbIndex,
+                                busy.Session,
                                 report,
                                 allowIntentionalContractRefresh: true))
                             {
@@ -843,6 +875,7 @@ public sealed class Package : AbstractPackageUI
                         transaction,
                         apiPlan,
                         "SyncB085",
+                        syncKbIndex,
                         allowIntentionalContractRefresh: true,
                         preserveSdtNames: preserveSdts,
                         report: report,
@@ -866,6 +899,7 @@ public sealed class Package : AbstractPackageUI
                             transaction,
                             apiPlan,
                             "SyncB085",
+                            syncKbIndex,
                             allowIntentionalContractRefresh: true,
                             report: report))
                         {
@@ -1392,7 +1426,8 @@ public sealed class Package : AbstractPackageUI
                     preflightScope.RequireSdts,
                     preflightScope.RequireProcedures,
                     preflightScope.RequireApiObject,
-                    preflightScope.RequireMetadataFile);
+                    preflightScope.RequireMetadataFile,
+                    kbIndexForApply);
             }
             catch (Exception ex) when (ex is not ApiPlanBusyAbortedException)
             {
@@ -1517,6 +1552,8 @@ public sealed class Package : AbstractPackageUI
                         transaction,
                         apiPlan,
                         "Wizard",
+                        kbIndexForApply,
+                        busy.Session,
                         report,
                         allowIntentionalContractRefresh: true);
                 });
@@ -1538,6 +1575,8 @@ public sealed class Package : AbstractPackageUI
                             transaction,
                             apiPlan,
                             "Wizard",
+                            kbIndexForApply,
+                            busy.Session,
                             report,
                             allowIntentionalContractRefresh: true);
                     });
@@ -1613,6 +1652,7 @@ public sealed class Package : AbstractPackageUI
                     transaction,
                     apiPlan,
                     "Wizard",
+                    kbIndexForApply,
                     allowIntentionalContractRefresh: true,
                     report: report,
                     progress: busy.Session);
@@ -1644,6 +1684,7 @@ public sealed class Package : AbstractPackageUI
                         transaction,
                         apiPlan,
                         "Wizard",
+                        kbIndexForApply,
                         allowIntentionalContractRefresh: true,
                         report: report);
                 });

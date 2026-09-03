@@ -10,6 +10,10 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
+### Changed
+
+- `B082` Etapa 1A: o índice da KB passa a ser criado uma vez por operação de escrita (Apply, Sync e validação agregada do Remover) e propagado por parâmetro; `EnsureAttributeExists` de Business Component e List usa o mapa de atributos do índice em vez de `Attribute.GetAll`. A medição de aceite nas três transações da KB grande ainda é pendente.
+
 ### Planned
 
 - `B108` (pendência, plano aprovado 2026-08-31, código adiado): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Checkpoint e documento 06.

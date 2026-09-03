@@ -61,7 +61,7 @@ Assert-Contains $listProcedureWriterSource 'variables.Add(new VariableSpec("Upda
 foreach ($writer in @(
     @{ Name = 'Business Component'; Source = $businessComponentWriterSource },
     @{ Name = 'List'; Source = $listProcedureWriterSource })) {
-    $replaceApiVariablesSource = Get-SectionSource $writer.Source 'private static void ReplaceVariables(KBModel model, API api, IReadOnlyList<VariableSpec> variables)' 'private static bool HasExpectedVariables' "nao foi possivel isolar ReplaceVariables de API no writer $($writer.Name)."
+    $replaceApiVariablesSource = Get-SectionSource $writer.Source 'private static void ReplaceVariables(KBModel model, ApiPlanKbObjectNameIndex kbIndex, API api, IReadOnlyList<VariableSpec> variables)' 'private static bool HasExpectedVariables' "nao foi possivel isolar ReplaceVariables de API no writer $($writer.Name)."
     Assert-Contains $replaceApiVariablesSource 'ConfigureServiceRequired(item, variable);' "Writer $($writer.Name) deve aplicar a propriedade Required ao recriar variaveis do API Object."
 }
 

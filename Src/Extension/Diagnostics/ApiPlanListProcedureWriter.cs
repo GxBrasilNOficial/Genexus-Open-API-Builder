@@ -16,33 +16,20 @@ internal static class ApiPlanListProcedureWriter
     private const string PageParameterName = "pApiPage";
     private const string PageSizeParameterName = "pApiPageSize";
 
-    public static ApiPlanListProcedureWriteResult Apply(KBModel model, Transaction transaction, ApiPlan plan)
-    {
-        return Apply(model, transaction, plan, allowIntentionalContractRefresh: false, preserveSdtNames: null);
-    }
-
-    public static ApiPlanListProcedureWriteResult Apply(
-        KBModel model,
-        Transaction transaction,
-        ApiPlan plan,
-        bool allowIntentionalContractRefresh)
-    {
-        return Apply(model, transaction, plan, allowIntentionalContractRefresh, preserveSdtNames: null);
-    }
-
     public static ApiPlanListProcedureWriteResult Apply(
         KBModel model,
         Transaction transaction,
         ApiPlan plan,
         bool allowIntentionalContractRefresh,
         IReadOnlyCollection<string>? preserveSdtNames,
+        ApiPlanKbObjectNameIndex kbIndex,
         System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite = null,
-        ApiPlanBusyProgressSession? progress = null,
-        ApiPlanKbObjectNameIndex? kbIndex = null)
+        ApiPlanBusyProgressSession? progress = null)
     {
         if (model is null) throw new ArgumentNullException(nameof(model));
         if (transaction is null) throw new ArgumentNullException(nameof(transaction));
         if (plan is null) throw new ArgumentNullException(nameof(plan));
+        if (kbIndex is null) throw new ArgumentNullException(nameof(kbIndex));
         if (!string.Equals(transaction.Name, plan.TransactionName, StringComparison.Ordinal))
             throw new InvalidOperationException("B070 bloqueado: o ApiPlan nao pertence a Transaction atual. Nenhuma alteracao foi feita.");
         if (!HasService(plan, "List"))
@@ -50,36 +37,36 @@ internal static class ApiPlanListProcedureWriter
 
         progress?.Report("List", 0, 0, "Preparando");
         progress?.PumpAndThrowIfAbortRequested();
-        ApiPlanSdtWriter.Preflight(model, transaction, plan);
+        ApiPlanSdtWriter.Preflight(model, transaction, plan, kbIndex);
         var procedure = FindListProcedure(model, plan);
-        var api = FindApi(model, plan, allowIntentionalContractRefresh);
+        var api = FindApi(model, kbIndex, plan, allowIntentionalContractRefresh);
         var source = CreateListSource(plan);
         var rules = CreateListRules(plan);
         var procedureVariables = ProcedureVariableSpecs(plan);
         var includeBusinessComponentParameters =
-            ApiPlanBusinessComponentWriter.IsB055ApiObject(model, plan, api) ||
-            IsB070ApiObjectWithBusinessComponentParameters(model, plan, api);
+            ApiPlanBusinessComponentWriter.IsB055ApiObject(model, kbIndex, plan, api) ||
+            IsB070ApiObjectWithBusinessComponentParameters(model, kbIndex, plan, api);
         var apiSource = CreateB070ServiceGroupSource(plan, includeBusinessComponentParameters);
         var apiVariables = CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters));
 
         ValidateGeneratedVariableNames(procedureVariables.Concat(apiVariables));
-        EnsureProcedure(procedure, plan, source, rules, procedureVariables, allowIntentionalContractRefresh);
+        EnsureProcedure(kbIndex, procedure, plan, source, rules, procedureVariables, allowIntentionalContractRefresh);
         if (!allowIntentionalContractRefresh)
         {
-            EnsureApi(model, api, plan);
+            EnsureApi(model, kbIndex, api, plan);
         }
-        ValidateVariableSpecs(model, procedure, procedureVariables);
-        ValidateVariableSpecs(model, api, apiVariables);
+        ValidateVariableSpecs(model, kbIndex, procedure, procedureVariables);
+        ValidateVariableSpecs(model, kbIndex, api, apiVariables);
 
         progress?.PumpAndThrowIfAbortRequested();
-        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan, preserveSdtNames, onSdtWrite, progress, kbIndex);
+        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan, preserveSdtNames, kbIndex, onSdtWrite, progress);
         progress?.PumpAndThrowIfAbortRequested();
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
 
         var saveSteps = new (string Label, System.Action Save)[]
         {
-            (api.Name, () => SaveApi(model, api, transactionFolder, plan, apiSource, apiVariables)),
-            (procedure.Name, () => SaveProcedure(model, procedure, source, procedureVariables, rules)),
+            (api.Name, () => SaveApi(model, kbIndex, api, transactionFolder, plan, apiSource, apiVariables)),
+            (procedure.Name, () => SaveProcedure(model, kbIndex, procedure, source, procedureVariables, rules)),
         };
         var saveIndex = 0;
         foreach (var step in saveSteps)
@@ -103,7 +90,7 @@ internal static class ApiPlanListProcedureWriter
             plan.MaximumPageSize);
     }
 
-    internal static bool IsB070ApiObject(KBModel model, ApiPlan plan, API api)
+    internal static bool IsB070ApiObject(KBModel model, ApiPlanKbObjectNameIndex kbIndex, ApiPlan plan, API api)
     {
         if (api is null)
         {
@@ -111,15 +98,15 @@ internal static class ApiPlanListProcedureWriter
         }
 
         return (IsB070ServiceGroupSource(plan, api.ServiceGroupSource.Source, includeBusinessComponentParameters: false) &&
-                (HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: false))) ||
-                 HasExpectedVariables(model, api, CoalesceVariableSpecs(PreviousB070ApiVariableSpecs(plan, includeBusinessComponentParameters: false)))))
+                (HasExpectedVariables(model, kbIndex, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: false))) ||
+                 HasExpectedVariables(model, kbIndex, api, CoalesceVariableSpecs(PreviousB070ApiVariableSpecs(plan, includeBusinessComponentParameters: false)))))
             || (IsB070ServiceGroupSource(plan, api.ServiceGroupSource.Source, includeBusinessComponentParameters: true) &&
-                (HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: true))) ||
-                 HasExpectedVariables(model, api, CoalesceVariableSpecs(PreviousB070ApiVariableSpecs(plan, includeBusinessComponentParameters: true)))) &&
+                (HasExpectedVariables(model, kbIndex, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: true))) ||
+                 HasExpectedVariables(model, kbIndex, api, CoalesceVariableSpecs(PreviousB070ApiVariableSpecs(plan, includeBusinessComponentParameters: true)))) &&
                 ApiPlanBusinessComponentWriter.HasManagedApiEvents(api, plan));
     }
 
-    private static bool IsB070ApiObjectWithBusinessComponentParameters(KBModel model, ApiPlan plan, API api)
+    private static bool IsB070ApiObjectWithBusinessComponentParameters(KBModel model, ApiPlanKbObjectNameIndex kbIndex, ApiPlan plan, API api)
     {
         if (api is null)
         {
@@ -127,7 +114,7 @@ internal static class ApiPlanListProcedureWriter
         }
 
         return IsB070ServiceGroupSource(plan, api.ServiceGroupSource.Source, includeBusinessComponentParameters: true) &&
-            HasExpectedVariables(model, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: true)));
+            HasExpectedVariables(model, kbIndex, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: true)));
     }
 
     private static bool IsB070ServiceGroupSource(ApiPlan plan, string source, bool includeBusinessComponentParameters)
@@ -202,19 +189,20 @@ internal static class ApiPlanListProcedureWriter
         return matches.Single();
     }
 
-    private static API FindApi(KBModel model, ApiPlan plan, bool allowIntentionalContractRefresh = false)
+    private static API FindApi(KBModel model, ApiPlanKbObjectNameIndex kbIndex, ApiPlan plan, bool allowIntentionalContractRefresh = false)
     {
         var matches = API.GetAll(model).Where(item => string.Equals(item.Name, plan.ApiName, StringComparison.OrdinalIgnoreCase)).ToArray();
         var owned = matches.Length == 1 &&
             (allowIntentionalContractRefresh
-                ? ApiPlanApiObjectWriter.IsOwnedApiObjectForIntentionalWrite(model, plan, matches.Single())
-                : ApiPlanApiObjectWriter.IsOwnedApiObject(model, plan, matches.Single()));
+                ? ApiPlanApiObjectWriter.IsOwnedApiObjectForIntentionalWrite(model, kbIndex, plan, matches.Single())
+                : ApiPlanApiObjectWriter.IsOwnedApiObject(model, kbIndex, plan, matches.Single()));
         if (!owned)
             throw new InvalidOperationException($"B070 bloqueado: API Object proprio '{plan.ApiName}' nao foi reencontrado com seguranca. Gere o API Object pelo Wizard antes. Nenhuma alteracao foi feita.");
         return matches.Single();
     }
 
     private static void EnsureProcedure(
+        ApiPlanKbObjectNameIndex kbIndex,
         Procedure procedure,
         ApiPlan plan,
         string source,
@@ -270,20 +258,20 @@ internal static class ApiPlanListProcedureWriter
         var variablesAllowed = currentVariables.Length == 0 ||
             ApiPlanListProcedureReencounterPolicy.AreVariablesAllowed(
                 true,
-                HasExpectedVariables(procedure.Model, procedure, variables),
-                HasExpectedVariables(procedure.Model, procedure, PreviousConditionalB077ProcedureVariableSpecs(plan)),
-                HasExpectedVariables(procedure.Model, procedure, InvalidB077ProcedureVariableSpecs(plan)),
-                HasExpectedVariables(procedure.Model, procedure, PreviousB070ProcedureVariableSpecs(plan)),
-                HasExpectedVariables(procedure.Model, procedure, LegacyProcedureVariableSpecs(plan)));
+                HasExpectedVariables(procedure.Model, kbIndex, procedure, variables),
+                HasExpectedVariables(procedure.Model, kbIndex, procedure, PreviousConditionalB077ProcedureVariableSpecs(plan)),
+                HasExpectedVariables(procedure.Model, kbIndex, procedure, InvalidB077ProcedureVariableSpecs(plan)),
+                HasExpectedVariables(procedure.Model, kbIndex, procedure, PreviousB070ProcedureVariableSpecs(plan)),
+                HasExpectedVariables(procedure.Model, kbIndex, procedure, LegacyProcedureVariableSpecs(plan)));
         if (!variablesAllowed)
         {
             throw new InvalidOperationException($"B070 bloqueado: Procedure propria '{procedure.Name}' possui variaveis divergentes da geracao B070. Nenhuma alteracao foi feita.");
         }
     }
 
-    private static void EnsureApi(KBModel model, API api, ApiPlan plan)
+    private static void EnsureApi(KBModel model, ApiPlanKbObjectNameIndex kbIndex, API api, ApiPlan plan)
     {
-        if (!ApiPlanBusinessComponentWriter.IsManagedApiObject(model, plan, api))
+        if (!ApiPlanBusinessComponentWriter.IsManagedApiObject(model, kbIndex, plan, api))
         {
             throw new InvalidOperationException($"B070 bloqueado: API Object proprio '{api.Name}' possui fonte ou variaveis divergentes da geracao B054/B055/B070. Nenhuma alteracao foi feita.");
         }
@@ -914,33 +902,33 @@ internal static class ApiPlanListProcedureWriter
             name.StartsWith("Http", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static void ValidateVariableSpecs(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)
+    private static void ValidateVariableSpecs(KBModel model, ApiPlanKbObjectNameIndex kbIndex, Procedure procedure, IReadOnlyList<VariableSpec> variables)
     {
         var index = 0;
         foreach (var variable in variables)
         {
             var item = new Variable("GOABB070TypeProbe" + index, procedure.Variables);
-            if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            if (!TrySetAttributeBasedOn(kbIndex, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
                 throw new InvalidOperationException($"B070 bloqueado: tipo da variavel '&{variable.Name}' nao foi resolvido antes da escrita: '{variable.DataType}'. Nenhuma alteracao foi feita.");
             index++;
         }
     }
 
-    private static void ValidateVariableSpecs(KBModel model, API api, IReadOnlyList<VariableSpec> variables)
+    private static void ValidateVariableSpecs(KBModel model, ApiPlanKbObjectNameIndex kbIndex, API api, IReadOnlyList<VariableSpec> variables)
     {
         var index = 0;
         foreach (var variable in variables)
         {
             var item = new Variable("GOABB070ApiTypeProbe" + index, api.Variables);
-            if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            if (!TrySetAttributeBasedOn(kbIndex, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
                 throw new InvalidOperationException($"B070 bloqueado: tipo da variavel de API '&{variable.Name}' nao foi resolvido antes da escrita: '{variable.DataType}'. Nenhuma alteracao foi feita.");
             index++;
         }
     }
 
-    private static void SaveProcedure(KBModel model, Procedure procedure, string source, IReadOnlyList<VariableSpec> variables, string rules)
+    private static void SaveProcedure(KBModel model, ApiPlanKbObjectNameIndex kbIndex, Procedure procedure, string source, IReadOnlyList<VariableSpec> variables, string rules)
     {
-        ReplaceVariables(model, procedure, variables);
+        ReplaceVariables(model, kbIndex, procedure, variables);
         procedure.Rules.Source = rules;
         procedure.ProcedurePart.Source = source;
         procedure.Save();
@@ -948,13 +936,13 @@ internal static class ApiPlanListProcedureWriter
         var persisted = Procedure.Get(model, procedure.Guid);
         if (!string.Equals(NormalizeForComparison(persisted.ProcedurePart.Source), NormalizeForComparison(source), StringComparison.Ordinal) ||
             !string.Equals(NormalizeForComparison(persisted.Rules.Source), NormalizeForComparison(rules), StringComparison.Ordinal) ||
-            !HasExpectedVariables(model, persisted, variables))
+            !HasExpectedVariables(model, kbIndex, persisted, variables))
         {
             throw new InvalidOperationException($"B070 bloqueado: a Procedure '{procedure.Name}' foi salva, mas o contrato persistido nao corresponde ao List planejado. Nenhuma outra alteracao sera feita.");
         }
     }
 
-    private static void SaveApi(KBModel model, API api, Folder transactionFolder, ApiPlan plan, string source, IReadOnlyList<VariableSpec> variables)
+    private static void SaveApi(KBModel model, ApiPlanKbObjectNameIndex kbIndex, API api, Folder transactionFolder, ApiPlan plan, string source, IReadOnlyList<VariableSpec> variables)
     {
         api.Parent = transactionFolder;
         api.ServiceGroupSource.Source = source;
@@ -963,17 +951,17 @@ internal static class ApiPlanListProcedureWriter
             api.Events.Source = ApiPlanBusinessComponentWriter.CreateB079ApiEventsForPlan(plan);
         }
 
-        ReplaceVariables(model, api, variables);
+        ReplaceVariables(model, kbIndex, api, variables);
         api.Save();
 
         var persisted = API.Get(model, api.Guid);
-        if (!IsB070ApiObject(model, plan, persisted))
+        if (!IsB070ApiObject(model, kbIndex, plan, persisted))
         {
             throw new InvalidOperationException($"B070 bloqueado: o API Object '{api.Name}' foi salvo, mas o Service Source persistido nao corresponde ao contrato List planejado. Nenhuma outra alteracao sera feita.");
         }
     }
 
-    private static void ReplaceVariables(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)
+    private static void ReplaceVariables(KBModel model, ApiPlanKbObjectNameIndex kbIndex, Procedure procedure, IReadOnlyList<VariableSpec> variables)
     {
         foreach (var existing in procedure.Variables.Variables.Where(variable => !variable.IsStandard).ToArray())
         {
@@ -983,14 +971,14 @@ internal static class ApiPlanListProcedureWriter
         foreach (var variable in variables)
         {
             var item = new Variable(variable.Name, procedure.Variables);
-            if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            if (!TrySetAttributeBasedOn(kbIndex, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
                 throw new InvalidOperationException($"B070 bloqueado: tipo da variavel '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
 
             procedure.Variables.Variables.Add(item);
         }
     }
 
-    private static void ReplaceVariables(KBModel model, API api, IReadOnlyList<VariableSpec> variables)
+    private static void ReplaceVariables(KBModel model, ApiPlanKbObjectNameIndex kbIndex, API api, IReadOnlyList<VariableSpec> variables)
     {
         foreach (var existing in api.Variables.Variables.Where(variable => !variable.IsStandard).ToArray())
         {
@@ -1000,7 +988,7 @@ internal static class ApiPlanListProcedureWriter
         foreach (var variable in variables)
         {
             var item = new Variable(variable.Name, api.Variables);
-            if (!TrySetAttributeBasedOn(model, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            if (!TrySetAttributeBasedOn(kbIndex, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
                 throw new InvalidOperationException($"B070 bloqueado: tipo da variavel de API '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
 
             ConfigureServiceRequired(item, variable);
@@ -1018,39 +1006,39 @@ internal static class ApiPlanListProcedureWriter
         variable.SetPropertyValue(ApiPlanBusinessComponentWriter.ServiceRequiredPropertyId, true);
     }
 
-    private static bool HasExpectedVariables(KBModel model, Procedure procedure, IReadOnlyList<VariableSpec> variables)
+    private static bool HasExpectedVariables(KBModel model, ApiPlanKbObjectNameIndex kbIndex, Procedure procedure, IReadOnlyList<VariableSpec> variables)
     {
         var currentVariables = procedure.Variables.Variables.Where(variable => !variable.IsStandard).Select(variable => variable.Name).ToArray();
         var expectedVariables = new HashSet<string>(variables.Select(variable => variable.Name), StringComparer.OrdinalIgnoreCase);
         return currentVariables.Length == expectedVariables.Count &&
             currentVariables.All(variable => expectedVariables.Contains(variable)) &&
-            variables.All(variable => MatchesVariableSpec(model, procedure, variable));
+            variables.All(variable => MatchesVariableSpec(model, kbIndex, procedure, variable));
     }
 
-    private static bool HasExpectedVariables(KBModel model, API api, IReadOnlyList<VariableSpec> variables)
+    private static bool HasExpectedVariables(KBModel model, ApiPlanKbObjectNameIndex kbIndex, API api, IReadOnlyList<VariableSpec> variables)
     {
         var currentVariables = api.Variables.Variables.Where(variable => !variable.IsStandard).Select(variable => variable.Name).ToArray();
         var expectedVariables = new HashSet<string>(variables.Select(variable => variable.Name), StringComparer.OrdinalIgnoreCase);
         return currentVariables.Length == expectedVariables.Count &&
             currentVariables.All(variable => expectedVariables.Contains(variable)) &&
-            variables.All(variable => MatchesVariableSpec(model, api, variable));
+            variables.All(variable => MatchesVariableSpec(model, kbIndex, api, variable));
     }
 
-    private static bool MatchesVariableSpec(KBModel model, Procedure procedure, VariableSpec variable)
+    private static bool MatchesVariableSpec(KBModel model, ApiPlanKbObjectNameIndex kbIndex, Procedure procedure, VariableSpec variable)
     {
         var current = procedure.Variables.GetVariable(variable.Name, false);
         if (current is null) return false;
         var expected = new Variable(variable.Name, procedure.Variables);
-        if (!TrySetAttributeBasedOn(model, expected, variable.DataType) && !DataType.ParseInto(model, variable.DataType, expected)) return false;
+        if (!TrySetAttributeBasedOn(kbIndex, expected, variable.DataType) && !DataType.ParseInto(model, variable.DataType, expected)) return false;
         return MatchesVariableSpec(current, expected);
     }
 
-    private static bool MatchesVariableSpec(KBModel model, API api, VariableSpec variable)
+    private static bool MatchesVariableSpec(KBModel model, ApiPlanKbObjectNameIndex kbIndex, API api, VariableSpec variable)
     {
         var current = api.Variables.GetVariable(variable.Name, false);
         if (current is null) return false;
         var expected = new Variable(variable.Name, api.Variables);
-        if (!TrySetAttributeBasedOn(model, expected, variable.DataType) && !DataType.ParseInto(model, variable.DataType, expected)) return false;
+        if (!TrySetAttributeBasedOn(kbIndex, expected, variable.DataType) && !DataType.ParseInto(model, variable.DataType, expected)) return false;
         return MatchesVariableSpec(current, expected);
     }
 
@@ -1071,7 +1059,7 @@ internal static class ApiPlanListProcedureWriter
         return current.Guid == expected.Guid && string.Equals(current.Name, expected.Name, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool TrySetAttributeBasedOn(KBModel model, Variable variable, string dataType)
+    private static bool TrySetAttributeBasedOn(ApiPlanKbObjectNameIndex kbIndex, Variable variable, string dataType)
     {
         const string prefix = "Attribute:";
         if (!dataType.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
@@ -1079,21 +1067,23 @@ internal static class ApiPlanListProcedureWriter
             return false;
         }
 
-        variable.AttributeBasedOn = EnsureAttributeExists(model, variable.Name, dataType);
+        variable.AttributeBasedOn = EnsureAttributeExists(kbIndex, variable.Name, dataType);
         return true;
     }
 
-    private static Artech.Genexus.Common.Objects.Attribute EnsureAttributeExists(KBModel model, string variableName, string dataType)
+    private static Artech.Genexus.Common.Objects.Attribute EnsureAttributeExists(
+        ApiPlanKbObjectNameIndex kbIndex,
+        string variableName,
+        string dataType)
     {
         const string prefix = "Attribute:";
         var attributeName = dataType.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ? dataType.Substring(prefix.Length).Trim() : dataType.Trim();
-        var matches = ApiPlanScanProbe.Scan("Attribute", "list-find-attribute", () => Artech.Genexus.Common.Objects.Attribute.GetAll(model).Where(attribute => string.Equals(attribute.Name, attributeName, StringComparison.OrdinalIgnoreCase)).ToArray());
-        if (matches.Length != 1)
+        if (!kbIndex.TryGetSingleAttribute(attributeName, out var attribute))
         {
             throw new InvalidOperationException($"B070 bloqueado: atributo base da variavel '&{variableName}' nao foi reencontrado com seguranca: '{attributeName}'. Nenhuma alteracao foi feita.");
         }
 
-        return matches[0];
+        return attribute;
     }
 
     private static string ExpectedProcedureReference(ApiPlan plan, string procedure)

@@ -42,16 +42,17 @@ internal static class ApiPlanMetadataFileWriter
         return false;
     }
 
-    public static ApiPlanMetadataFileWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
+    public static ApiPlanMetadataFileWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan, ApiPlanKbObjectNameIndex kbIndex)
     {
-        return CreateOrReencounter(designModel, transaction, apiPlan, allowIntentionalContractRefresh: false);
+        return CreateOrReencounter(designModel, transaction, apiPlan, allowIntentionalContractRefresh: false, kbIndex);
     }
 
     public static ApiPlanMetadataFileWriteResult CreateOrReencounter(
         KBModel designModel,
         Transaction transaction,
         ApiPlan apiPlan,
-        bool allowIntentionalContractRefresh)
+        bool allowIntentionalContractRefresh,
+        ApiPlanKbObjectNameIndex kbIndex)
     {
         if (designModel is null)
         {
@@ -68,14 +69,19 @@ internal static class ApiPlanMetadataFileWriter
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
+        }
+
         if (!string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.Ordinal))
         {
             throw new InvalidOperationException("Gravacao de metadata B060 bloqueada: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
         }
 
-        var apiObject = PreflightApiObject(designModel, apiPlan, allowIntentionalContractRefresh);
-        var preflight = PreflightMetadataFile(designModel, transaction, apiPlan, apiObject, allowIntentionalContractRefresh);
-        var json = CreateMetadataJson(transaction, apiPlan, apiObject);
+        var apiObject = PreflightApiObject(designModel, apiPlan, allowIntentionalContractRefresh, kbIndex);
+        var preflight = PreflightMetadataFile(designModel, transaction, apiPlan, apiObject, allowIntentionalContractRefresh, kbIndex);
+        var json = CreateMetadataJson(transaction, apiPlan, apiObject, kbIndex);
         var bytes = Encoding.UTF8.GetBytes(json);
         var file = preflight.ExistingFile ?? new WikiFileKBObject(designModel);
         if (preflight.ExistingFile is null)
@@ -134,7 +140,7 @@ internal static class ApiPlanMetadataFileWriter
         }
     }
 
-    private static API PreflightApiObject(KBModel designModel, ApiPlan apiPlan, bool allowIntentionalContractRefresh)
+    private static API PreflightApiObject(KBModel designModel, ApiPlan apiPlan, bool allowIntentionalContractRefresh, ApiPlanKbObjectNameIndex kbIndex)
     {
         var matches = API.GetAll(designModel)
             .Where(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase))
@@ -152,8 +158,8 @@ internal static class ApiPlanMetadataFileWriter
 
         var apiObject = matches[0];
         var owned = allowIntentionalContractRefresh
-            ? ApiPlanApiObjectWriter.IsOwnedApiObjectForIntentionalWrite(designModel, apiPlan, apiObject)
-            : ApiPlanApiObjectWriter.IsOwnedApiObject(designModel, apiPlan, apiObject);
+            ? ApiPlanApiObjectWriter.IsOwnedApiObjectForIntentionalWrite(designModel, kbIndex, apiPlan, apiObject)
+            : ApiPlanApiObjectWriter.IsOwnedApiObject(designModel, kbIndex, apiPlan, apiObject);
         if (!owned)
         {
             throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: API Object externo ou incompativel chamado '{apiPlan.ApiName}'. Nenhuma alteracao foi feita.");
@@ -167,7 +173,8 @@ internal static class ApiPlanMetadataFileWriter
         Transaction transaction,
         ApiPlan apiPlan,
         API apiObject,
-        bool allowIntentionalContractRefresh)
+        bool allowIntentionalContractRefresh,
+        ApiPlanKbObjectNameIndex kbIndex)
     {
         var matches = WikiFileKBObject.GetAll(designModel)
             .Where(file => string.Equals(file.Name, apiPlan.MetadataFileName, StringComparison.OrdinalIgnoreCase))
@@ -194,7 +201,7 @@ internal static class ApiPlanMetadataFileWriter
             throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: ja existe File externo ou incompativel chamado '{apiPlan.MetadataFileName}'. Nenhuma alteracao foi feita.");
         }
 
-        ValidateExistingMetadata(file, transaction, apiPlan, apiObject, allowIntentionalContractRefresh);
+        ValidateExistingMetadata(file, transaction, apiPlan, apiObject, allowIntentionalContractRefresh, kbIndex);
         return new ApiPlanMetadataFilePreflightResult(file);
     }
 
@@ -203,7 +210,8 @@ internal static class ApiPlanMetadataFileWriter
         Transaction transaction,
         ApiPlan apiPlan,
         API apiObject,
-        bool allowIntentionalContractRefresh)
+        bool allowIntentionalContractRefresh,
+        ApiPlanKbObjectNameIndex kbIndex)
     {
         var bytes = file.BlobPart?.Data?.GetBytes();
         if (bytes is null || bytes.Length == 0)
@@ -229,15 +237,20 @@ internal static class ApiPlanMetadataFileWriter
         RequireString(metadata.SelectToken("ownership.metadataFileName"), apiPlan.MetadataFileName, "ownership.metadataFileName", apiPlan.MetadataFileName);
         if (!allowIntentionalContractRefresh)
         {
-            ValidateB067IntegrityIfPresent(metadata, apiPlan, apiObject);
+            ValidateB067IntegrityIfPresent(metadata, apiPlan, apiObject, kbIndex);
         }
     }
 
-    internal static bool HasCompatibleB067Integrity(JObject metadata, ApiPlan apiPlan, API apiObject)
+    internal static bool HasCompatibleB067Integrity(JObject metadata, ApiPlanKbObjectNameIndex kbIndex, ApiPlan apiPlan, API apiObject)
     {
         if (metadata is null)
         {
             throw new ArgumentNullException(nameof(metadata));
+        }
+
+        if (kbIndex is null)
+        {
+            throw new ArgumentNullException(nameof(kbIndex));
         }
 
         if (apiPlan is null)
@@ -257,7 +270,7 @@ internal static class ApiPlanMetadataFileWriter
             ComputeActualServiceDescriptionsHash(apiPlan, apiObject.ServiceGroupSource.Source),
             ApiPlanApiObjectWriter.CreateOwnedDescriptionCandidates(apiPlan),
             ComputeCompatibleExpectedServiceSources(apiPlan),
-            ApiPlanBusinessComponentWriter.IsManagedApiObject(apiObject.Model, apiPlan, apiObject));
+            ApiPlanBusinessComponentWriter.IsManagedApiObject(apiObject.Model, kbIndex, apiPlan, apiObject));
     }
 
     /// <summary>
@@ -310,9 +323,9 @@ internal static class ApiPlanMetadataFileWriter
             apiObject.Guid.ToString());
     }
 
-    private static void ValidateB067IntegrityIfPresent(JObject metadata, ApiPlan apiPlan, API apiObject)
+    private static void ValidateB067IntegrityIfPresent(JObject metadata, ApiPlan apiPlan, API apiObject, ApiPlanKbObjectNameIndex kbIndex)
     {
-        if (!HasCompatibleB067Integrity(metadata, apiPlan, apiObject))
+        if (!HasCompatibleB067Integrity(metadata, kbIndex, apiPlan, apiObject))
         {
             throw new InvalidOperationException($"Gravacao de metadata B067 bloqueada: File proprio '{apiPlan.MetadataFileName}' indica alteracao manual posterior em descricoes, ownership ou contrato essencial. Nenhuma alteracao foi feita.");
         }
@@ -323,7 +336,7 @@ internal static class ApiPlanMetadataFileWriter
         return ApiPlanMetadataIntegrity.DiagnoseMetadataFingerprint(metadata).IsCompatible;
     }
 
-    private static string CreateMetadataJson(Transaction transaction, ApiPlan apiPlan, API apiObject)
+    private static string CreateMetadataJson(Transaction transaction, ApiPlan apiPlan, API apiObject, ApiPlanKbObjectNameIndex kbIndex)
     {
         var transactionStructure = BuildTransactionStructure(transaction);
         var metadata = new JObject
@@ -435,7 +448,7 @@ internal static class ApiPlanMetadataFileWriter
                     ["description"] = description.Description,
                 })),
             },
-            ["integrity"] = CreateB067IntegrityObject(apiPlan, apiObject, transactionStructure),
+            ["integrity"] = CreateB067IntegrityObject(apiPlan, apiObject, kbIndex, transactionStructure),
             ["classification"] = CreateClassificationObject(apiPlan.FieldClassificationConfiguration),
             ["businessComponent"] = new JObject
             {
@@ -470,16 +483,16 @@ internal static class ApiPlanMetadataFileWriter
         return metadata.ToString(Formatting.Indented) + "\n";
     }
 
-    private static JObject CreateB067IntegrityObject(ApiPlan apiPlan, API apiObject, IReadOnlyList<ApiPlanField>? transactionStructure = null)
+    private static JObject CreateB067IntegrityObject(ApiPlan apiPlan, API apiObject, ApiPlanKbObjectNameIndex kbIndex, IReadOnlyList<ApiPlanField>? transactionStructure = null)
     {
         return ApiPlanMetadataIntegrity.Create(
             CreateServiceDescriptionsContract(apiPlan),
             CreatePlannedContract(apiPlan, transactionStructure: transactionStructure, includePagination: false),
             ApiPlanApiObjectWriter.CreateOwnedDescription(apiPlan),
             apiObject.Guid.ToString(),
-            ResolveServiceSourceMode(apiPlan, apiObject),
+            ResolveServiceSourceMode(apiPlan, apiObject, kbIndex),
             apiObject.ServiceGroupSource.Source,
-            ComputeExpectedServiceSource(apiPlan, apiObject));
+            ComputeExpectedServiceSource(apiPlan, apiObject, kbIndex));
     }
 
     private static JArray CreateServiceDescriptionsContract(ApiPlan apiPlan)
@@ -759,16 +772,16 @@ internal static class ApiPlanMetadataFileWriter
         return ApiPlanMetadataIntegrity.ComputeJsonSha256(ApiPlanMetadataIntegrity.CreateServiceDescriptionsContractFromSource(source, apiPlan.Services.Select(service => service.Name)));
     }
 
-    private static string ComputeExpectedServiceSource(ApiPlan apiPlan, API apiObject)
+    private static string ComputeExpectedServiceSource(ApiPlan apiPlan, API apiObject, ApiPlanKbObjectNameIndex kbIndex)
     {
-        if (ApiPlanListProcedureWriter.IsB070ApiObject(apiObject.Model, apiPlan, apiObject))
+        if (ApiPlanListProcedureWriter.IsB070ApiObject(apiObject.Model, kbIndex, apiPlan, apiObject))
         {
             return ApiPlanListProcedureWriter.CreateB070ServiceGroupSource(
                 apiPlan,
                 includeBusinessComponentParameters: IsActualB070WithBusinessComponent(apiPlan, apiObject));
         }
 
-        return ApiPlanBusinessComponentWriter.IsB055ApiObject(apiObject.Model, apiPlan, apiObject)
+        return ApiPlanBusinessComponentWriter.IsB055ApiObject(apiObject.Model, kbIndex, apiPlan, apiObject)
             ? ApiPlanBusinessComponentWriter.CreateB055ServiceGroupSource(apiPlan)
             : ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan);
     }
@@ -907,14 +920,14 @@ internal static class ApiPlanMetadataFileWriter
             StringComparison.Ordinal);
     }
 
-    private static string ResolveServiceSourceMode(ApiPlan apiPlan, API apiObject)
+    private static string ResolveServiceSourceMode(ApiPlan apiPlan, API apiObject, ApiPlanKbObjectNameIndex kbIndex)
     {
-        if (ApiPlanListProcedureWriter.IsB070ApiObject(apiObject.Model, apiPlan, apiObject))
+        if (ApiPlanListProcedureWriter.IsB070ApiObject(apiObject.Model, kbIndex, apiPlan, apiObject))
         {
             return "B070";
         }
 
-        return ApiPlanBusinessComponentWriter.IsB055ApiObject(apiObject.Model, apiPlan, apiObject) ? "B055" : "B054";
+        return ApiPlanBusinessComponentWriter.IsB055ApiObject(apiObject.Model, kbIndex, apiPlan, apiObject) ? "B055" : "B054";
     }
 
     private static string NormalizeForComparison(string? value) => (value ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n").Trim();
