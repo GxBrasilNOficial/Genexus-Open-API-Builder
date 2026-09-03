@@ -23,7 +23,7 @@ e na dor D10.
 entrega do `0.1.0-alpha.7`. Deste plano, **revoga-se apenas o item 4 da sua seção «Fora da fila
 operacional»**, que classificava o índice compartilhado incompleto como resíduo de performance
 de prioridade P2. A medição mostra que é a maior fatia isolada de custo da extensão inteira, e
-ele passa a ser a primeira ação de código desta frente.
+foi a primeira ação de código desta frente entre 2026-09-02 e o aceite da Etapa 1A em 2026-09-03.
 
 **Esta frente passou a ser ativa** em 2026-09-02 (Etapa 1A). Em 2026-09-03 a 1A foi **aceita**;
 o checkpoint promove `B108` à próxima ação única. Residual 1B/2/3 permanece neste plano, sem
@@ -767,38 +767,41 @@ dispara em toda execução. O alvo da correção são as origens, não a contage
 Fora do Apply há mais duas, legítimas por serem fases distintas: `Package.cs` no Preview do
 Sync e no Preview do Remover. Não confundir com as acima.
 
-Os dois `kbIndex ??=` são o mecanismo pelo qual um índice deixa de chegar sem que ninguém
-perceba — o código continua correto e fica lento em silêncio. Enquanto existirem, nenhum lint
-consegue provar que o índice foi propagado.
+Os dois `kbIndex ??=` eram o mecanismo pelo qual um índice deixava de chegar sem que ninguém
+percebesse — o código continuava correto e ficava lento em silêncio. **Foram removidos na Etapa 1A.**
 
-**Remover os `??=` exige propagar o índice antes, e a cadeia hoje está cortada em dois pontos.**
-Tirá-los sem isso não deixa o código lento: deixa-o quebrado, com índice nulo onde havia fallback.
-Os call sites a alterar, na ordem da cadeia:
+**Baseline pré-1A (medida 2026-09-02).** Remover os `??=` exigia propagar o índice antes, e a
+cadeia estava cortada em dois pontos. Tirá-los sem isso não deixava o código lento: deixava-o
+quebrado, com índice nulo onde havia fallback. Os call sites a alterar, na ordem da cadeia:
 
-| # | Símbolo | Situação hoje |
+| # | Símbolo | Situação na baseline pré-1A |
 |---|---|---|
-| 1 | `Package.TryApplyList` | **Não tem parâmetro `kbIndex`** — só `progress`. Precisa recebê-lo e repassá-lo |
+| 1 | `Package.TryApplyList` | **Não tinha** parâmetro `kbIndex` — só `progress`. Precisava recebê-lo e repassá-lo |
 | 2 | Chamadas de `TryApplyList` em `Package.cs` | Apply e Sincronizar; passam `kbIndexForApply` e `syncKbIndex`, que já existem no escopo |
-| 3 | `ApiPlanListProcedureWriter.Apply` | **Já recebe** `kbIndex` e o repassa a `ApiPlanSdtWriter.CreateOrReencounter`, mas **não** ao `Preflight` |
-| 4 | `ApiPlanSdtWriter.Preflight` | Tem **um único overload**, sem índice. Precisa de um que o receba |
-| 5 | `Package.TryCreateApiObject` | Não tem `kbIndex` **nem `progress`**. Precisa dos dois |
+| 3 | `ApiPlanListProcedureWriter.Apply` | **Já recebia** `kbIndex` e o repassava a `ApiPlanSdtWriter.CreateOrReencounter`, mas **não** ao `Preflight` |
+| 4 | `ApiPlanSdtWriter.Preflight` | Tinha **um único overload**, sem índice. Precisava de um que o recebesse |
+| 5 | `Package.TryCreateApiObject` | Não tinha `kbIndex` **nem `progress`**. Precisava dos dois |
 | 6 | Chamadas de `TryCreateApiObject` em `Package.cs` | Apply e Sincronizar |
-| 7 | `ApiPlanApiObjectWriter.CreateOrReencounter` | Precisa aceitar o índice para repassá-lo ao **preflight de SDT**. O de Procedure permanece em leitura corrente (ver a política do `RefreshProcedures`) |
-| 8 | `ApiPlanBusinessComponentWriter.EnsureSdts` | A cadeia **externa** já está completa — `TryApplyBusinessComponent` recebe e repassa `kbIndex`, e os dois call sites o passam. Falta o trecho **interno**: `EnsureSdts` é `static` e recebe apenas `(KBModel model, ApiPlan plan)`, então precisa de parâmetro novo. O mesmo vale para `FindProcedure`, quando entrar pela extensão opcional |
-| 9 | `ApiPlanWritePreflight.ValidateForSync` (3 args) e `ValidateForIntentionalChange` (7 args) | Os dois únicos com chamador. Precisam **receber** o índice já criado, com o parâmetro obrigatório, em vez de alcançar `ReadForIntentionalChange`. Call sites: `Package.cs` no Sincronizar e no Apply. Os outros três overloads da classe são órfãos e saem — ver «Os `kbIndex = null` que sobram» |
+| 7 | `ApiPlanApiObjectWriter.CreateOrReencounter` | Precisava aceitar o índice para repassá-lo ao **preflight de SDT**. O de Procedure permanece em leitura corrente (ver a política do `RefreshProcedures`) |
+| 8 | `ApiPlanBusinessComponentWriter.EnsureSdts` | A cadeia **externa** já estava completa — `TryApplyBusinessComponent` recebia e repassava `kbIndex`, e os dois call sites o passavam. Faltava o trecho **interno**: `EnsureSdts` era `static` e recebia apenas `(KBModel model, ApiPlan plan)`, então precisava de parâmetro novo. O mesmo valia para `FindProcedure`, quando entrasse pela extensão opcional |
+| 9 | `ApiPlanWritePreflight.ValidateForSync` (3 args) e `ValidateForIntentionalChange` (7 args) | Os dois únicos com chamador. Precisavam **receber** o índice já criado, com o parâmetro obrigatório, em vez de alcançar `ReadForIntentionalChange`. Call sites: `Package.cs` no Sincronizar e no Apply. Os outros três overloads da classe eram órfãos e saíam — ver «Os `kbIndex = null` que sobram» |
 
-Sem os pontos 1 a 4, o caminho do List continua criando índice próprio e a marca «`indice-create`
-uma vez por tipo» não fecha. Sem 5 a 7, o preflight de SDT do API Object continua varrendo. Sem 9,
-a criação supérflua do preflight agregado permanece — é a quarta origem do inventário acima.
+Sem os pontos 1 a 4, o caminho do List continuaria criando índice próprio e a marca «`indice-create`
+uma vez por tipo» não fecharia. Sem 5 a 7, o preflight de SDT do API Object continuaria varrendo.
+Sem 9, a criação supérflua do preflight agregado permaneceria — era a quarta origem do inventário
+acima.
 
-O ponto 8 é o mais barato **da metade externa**: `TryApplyBusinessComponent` já tem o parâmetro e
-os dois call sites já o passam, então nada muda em `Package.cs`. Mas a métodos privados `static`
-não chega índice por osmose — `EnsureSdts` recebe só `(KBModel, ApiPlan)` e precisa de parâmetro
-novo, como todos os outros da tabela. **Uma redação anterior dizia que ali nada mudaria de
-assinatura; é falso.**
+O ponto 8 era o mais barato **da metade externa**: `TryApplyBusinessComponent` já tinha o parâmetro e
+os dois call sites já o passavam, então nada mudaria em `Package.cs`. Mas a métodos privados `static`
+não chegava índice por osmose — `EnsureSdts` recebia só `(KBModel, ApiPlan)` e precisava de parâmetro
+novo, como todos os outros da tabela.
 
-**Essa propagação é parte do escopo mínimo da 1A, não trabalho opcional** — é a condição para que
-a eliminação das origens supérfluas seja possível.
+**Essa propagação era parte do escopo mínimo da 1A, não trabalho opcional** — era a condição para
+que a eliminação das origens supérfluas fosse possível.
+
+**Entregue na Etapa 1A (aceite 2026-09-03).** Os pontos 1–9 foram implementados; os `??=` saíram.
+Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md` e lint
+`Tests/KbIndexReuse/Test-ApiPlanKbIndexReuse.ps1`.
 
 ### Os `kbIndex = null` que sobram
 
@@ -1099,16 +1102,18 @@ que num segundo call site produziria um índice a mais sem violar nenhuma das du
 
 ### A3 — Símbolos que varrem o catálogo em laço
 
-**Atributos** — a maior fatia, cerca de 50 s por Apply quando a PK tem 2 partes e há 2 filtros:
+**Atributos** — na baseline pré-1A, a maior fatia isolada (cerca de 50 s por Apply quando a PK
+tem 2 partes e há 2 filtros):
 
 - `ApiPlanBusinessComponentWriter.EnsureAttributeExists`, chamado por `TrySetAttributeBasedOn`
 - `ApiPlanListProcedureWriter.EnsureAttributeExists`
 
-Ambos recebem apenas `KBModel model`. O índice **já expõe** `FindAttributes(string)` e
-`TryGetSingleAttribute(string, out GxAttribute)`. **`TryGetSingleAttribute` já tem consumidor:**
-`ApiPlanSdtWriter.EnsureAttributeExists` o usa. Os dois `EnsureAttributeExists` de Business
-Component e de List é que ainda varrem — são esses os alvos da 1A, e o do SdtWriter é o modelo
-pronto a copiar, não algo a mexer.
+Na baseline, ambos recebiam apenas `KBModel` e varriam o catálogo. O índice já expunha
+`TryGetSingleAttribute`, consumido por `ApiPlanSdtWriter.EnsureAttributeExists` — era o modelo
+copiado na fatia 1A-ii.
+
+**Pós-1A (aceite 2026-09-03).** Os dois `EnsureAttributeExists` de Business Component e de List
+passaram a receber `ApiPlanKbObjectNameIndex` e usam `TryGetSingleAttribute`.
 
 **Preflights que varrem uma vez por objeto, separados pelo que importa — se o tipo já foi mutado
 quando eles rodam:**
@@ -1131,11 +1136,17 @@ refresh **quebra o Apply de geração nova**: as Procedures acabaram de ser cria
 mapa, e o writer aborta com «Procedure requerida não foi reencontrada». O reencontro — reaplicar
 sobre API existente — mascararia o defeito, porque aí as Procedures já constam do índice inicial.
 
-**O índice chega até a porta, mas não entra.** `ApiPlanBusinessComponentWriter.Apply` e
-`ApiPlanListProcedureWriter.Apply` já recebem `kbIndex` nas assinaturas públicas e o repassam a
-`ApiPlanSdtWriter.CreateOrReencounter` — mas **não** aos métodos privados acima, que continuam
-recebendo só `KBModel`. Já `ApiPlanApiObjectWriter` **não tem parâmetro `kbIndex` em nenhuma
-assinatura**: ali a propagação começa do zero.
+**Baseline pré-1A.** O índice chegava até a porta, mas não entrava: `ApiPlanBusinessComponentWriter.Apply`
+e `ApiPlanListProcedureWriter.Apply` já recebiam `kbIndex` nas assinaturas públicas e o repassavam
+a `ApiPlanSdtWriter.CreateOrReencounter` — mas **não** aos métodos privados acima, que continuavam
+recebendo só `KBModel`. Já `ApiPlanApiObjectWriter` **não tinha** parâmetro `kbIndex` em nenhuma
+assinatura: ali a propagação começava do zero.
+
+**Pós-1A (aceite 2026-09-03).** A propagação interna foi entregue: `EnsureSdts`,
+`PreflightRequiredSdts`, `Preflight` do List e `CreateOrReencounter` do API Object consomem o
+índice compartilhado. Os três «Não» da tabela (`PreflightRequiredProcedures`, `FindProcedure`,
+`FindListProcedure`) **permanecem** em leitura corrente por decisão documentada — não são defeito
+da 1A.
 
 ### A4 — No Remover
 

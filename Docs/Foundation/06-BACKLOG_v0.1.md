@@ -445,7 +445,7 @@ Os itens e intervalos abaixo formam a linha de corte exaustiva do MVP. Um item o
 - Fase 7: B080, B081 e B083–B087 (B088 e B089 saem do gate obrigatório da Sprint 7 e ficam pré-Alpha separados; ver nota de 2026-08-07)
 - Fase 8: B090–B093
 
-`B082` Fases A+B estão em código desde 2026-08-31, integrando o corte `0.1.0-alpha.7`. Desde 2026-09-02 a frente foi **desestacionada** e é a próxima ação: o residual (casca × B081 no Apply/Sync; `progress` na revalidação do Remove; índice incompleto) foi medido e virou o plano `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`; `B108` recua para a ação seguinte. A `Empresa` em 2026-08-29 motivou o sinal de vida; Apply ~4,2 min em 2026-08-31; Preview do Sync (`5089` ms) e do Remover (`2525` ms, Não) em 2026-09-01.
+`B082` Fases A+B estão em código desde 2026-08-31, integrando o corte `0.1.0-alpha.7`. Desde 2026-09-02 o residual (casca × B081 no Apply/Sync; `progress` na revalidação do Remove; índice incompleto) foi medido no plano `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`; a Etapa 1A foi **aceita** em 2026-09-03 (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`). Residual 1B/2/3 permanece nesse plano, sem ser a próxima ação única (`B108`). A `Empresa` em 2026-08-29 motivou o sinal de vida; Apply ~4,2 min em 2026-08-31; Preview do Sync (`5089` ms) e do Remover (`2525` ms, Não) em 2026-09-01.
 
 `B088` e `B089` foram concluídos em 2026-08-10 e não bloqueiam o marco **wizard funcional do MVP** da Sprint 7 revisada.
 

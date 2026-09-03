@@ -126,7 +126,7 @@ Três correções no mesmo recorte, fumadas no U15 em `NotaFiscal` / `apiNotaFis
 ## 8. Fora deste recorte
 
 - Corte GitHub `0.1.0-alpha.6` (tag, notas trilíngues, dois assets DLL): **publicado** em 2026-08-31. HTTP de contrato e nível próprio do Delete no C#/IIS fechados em 2026-08-31 (§3).
-- `B082` (progresso na UI): Fases A+B em código (2026-08-31) — `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`. Desde 2026-09-02 o residual foi medido, desestacionado e virou a próxima ação de código: `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`, Etapa 1A.
+- `B082` (progresso na UI): Fases A+B em código (2026-08-31) — `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`. Desde 2026-09-02 o residual foi medido no plano `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`; a Etapa 1A foi **aceita** em 2026-09-03 (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`). Próxima ação única do checkpoint: `B108`.
 - `B105` (teto de detalhe de erro pelo chamador): Sprint 9 se houver folga, senão Sprint 10.
 - Regenerar `apiGuiaPed` só para o 422 do PostgreSQL: cancelado.
 

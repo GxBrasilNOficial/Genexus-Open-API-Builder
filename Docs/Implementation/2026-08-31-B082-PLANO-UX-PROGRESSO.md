@@ -3,7 +3,7 @@
 Data: 2026-08-31.
 Estado: **registro das Fases A+B já entregues**, com smoke `Empresa` e `ShowcaseUnanimo`/`Company` (2026-09-01). Este documento permanece como histórico da entrega do corte `0.1.0-alpha.7`.
 
-**Superado em parte por `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`.** Aquele plano reabre o `B082` deliberadamente e é a próxima ação de código; o **item 4** da seção «Fora da fila operacional» abaixo (índice/`GetAll` incompleto, classificado ali como P2 de performance) está **revogado**: a medição de 2026-09-02 mostrou que é a maior fatia isolada de custo da extensão. Os itens 1, 2 e 3 foram absorvidos como Etapas 2 e 3 daquele plano.
+**Superado em parte por `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`.** Aquele plano reabriu o `B082` deliberadamente entre 2026-09-02 e a aceite da Etapa 1A em 2026-09-03; desde então a próxima ação de código é `B108` (`Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`). O **item 4** da seção «Fora da fila operacional» abaixo (índice/`GetAll` incompleto, classificado ali como P2 de performance) está **revogado**: a medição de 2026-09-02 mostrou que é a maior fatia isolada de custo da extensão. Os itens 1, 2 e 3 foram absorvidos como Etapas 2 e 3 daquele plano.
 Correlato de backlog: `B082` em `Docs/Foundation/06-BACKLOG_v0.1.md`.
 Recado original: `Docs/Implementation/2026-08-29-UX-PROGRESSO-WIZARD-APPLY.md`.
 
@@ -74,7 +74,7 @@ Polimento B082 para **outra sessão** (junto com o residual acima; **não** mist
 4. **Índice compartilhado incompleto (P2, performance).** Além do parágrafo genérico de `GetAll`: `ApiPlanApiObjectWriter`, `ApiPlanMetadataFileWriter`, writers BC/List, `Remove()` efetivo (`kbIndex: null` + `GetAll` por `Delete` e checagem pós-`Delete`). Detalhe por classe: `ApiPlanProcedureWriter.cs` (~170) ainda usa `Procedure.GetAll`; `ApiPlanListProcedureWriter.cs` (~53) cria índice próprio em vez do compartilhado; `ApiPlanBusinessComponentWriter` mantém chamadas `GetAll` apesar de receber `kbIndex`. Origem: painel Codex/Claude 2026-09-01. Fechar quando: writers acima recebem/reutilizam `kbIndex` e smoke de escala documentado.
 5. **Higiene doc checkpoint (P3, opcional).** Itens 91+ na «Sequência operacional vigente» do checkpoint para trabalho 2026-09-01 (Preview Sync com casca; `RefreshFolders` após `GxOpenAPI`). Origem: painel Claude 2026-09-01. Fechar quando: sequência numerada reflete marcos pós-item 90 sem contradizer a próxima ação (`B108`).
 
-Isso deixou de ser fila parada em 2026-09-02: virou a próxima ação de código, pelo plano `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`.
+Isso deixou de ser fila parada em 2026-09-02 e virou pauta de código até a aceite da Etapa 1A em 2026-09-03 (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`); o residual 1B/2/3 permanece no plano `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`, sem ser a próxima ação única.
 
 ### Fase B — Consolidar sonda em B082 produtivo
 
