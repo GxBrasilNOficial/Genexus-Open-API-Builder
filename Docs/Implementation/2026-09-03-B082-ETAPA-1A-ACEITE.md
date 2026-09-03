@@ -61,6 +61,10 @@ Mesmas APIs (`apiSetor`, `apiEmpresa` `1768ef26…`, `apiDocumentoFiscal` `740c8
 
 Classificação: geração C# inconsistente após crash do especificador, não tipo errado na KB. Isolar a API grande (Empresa) reespecifica os `type_Sdt*` e limpa o projeto comum.
 
+## Monitor da IDE (D12, carona nesta DLL)
+
+`ExtensionIdeScreenPlacement` entrou no commit de aceite da 1A (`ce30374`). É pauta da Etapa 3 do plano de 2026-09-02 (âncora no monitor da IDE), não do índice. Smoke U15 em 2026-09-03, KB pequena, GeneXus no monitor secundário: Wizard, Sincronizar e Remover abriram nesse monitor, na frente da IDE. Preferências do Wizard (`CenterParent`) e o restante da Etapa 3 (casca atrás do relatório, Folder preservado, DEMO) ficam fora.
+
 ## Descartado nesta frente
 
 - `SpecifyObjects` / `ISpecifierService` no meio do Apply.

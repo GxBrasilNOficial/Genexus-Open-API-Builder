@@ -12,7 +12,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Fixed
 
-- Wizard, quadro de progresso e Sync abrem no monitor da janela principal do GeneXus (`Screen.FromHandle`), não no monitor primário. `CenterParent` não posiciona owner que não é `Form`.
+- Wizard, quadro de progresso e Sync abrem no monitor da janela principal do GeneXus (`Screen.FromHandle`), não no monitor primário. `CenterParent` não posiciona owner que não é `Form`. Smoke U15 em 2026-09-03 (KB pequena, IDE no secundário): Wizard, Sincronizar e Remover na frente da IDE. Preferências do Wizard fora deste recorte.
 - Apply/Sync: reencontro de SDT não chama `Save()` quando a estrutura e a pasta já batem com o plano; o Wizard passa os nomes já gravados para Business Component e List. Sem `SpecifyObjects` no meio da operação. B081 não lista esse reencontro como «Atualizado».
 
 ### Changed

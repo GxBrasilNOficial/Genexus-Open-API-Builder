@@ -122,7 +122,10 @@ entra na lista de itens *apagados* como a string `Folder:{nome}:PreservedNonEmpt
 WinForms ignora quando o owner não é um `Control` — e `ResolveFinalReportOwner` devolve um
 `NativeWindowHandle` sempre que `Form.ActiveForm` é nulo, o caso normal nesta IDE.
 `ExtensionBusyProgressDialog` usa `CenterScreen`, que centraliza na tela **primária**, não na
-tela onde a IDE está. Observado em uso; causa identificada por leitura.
+tela onde a IDE está. Observado em uso; causa identificada por leitura. **Atualização 2026-09-03:**
+a âncora Wizard / progresso / Sync / Remover foi fumada na IDE (KB pequena, GeneXus no monitor
+secundário, janelas na frente da IDE). Preferências do Wizard ainda usam `CenterParent`. Isso **não**
+fecha a Etapa 3.
 
 ### Desempenho — medidas
 
@@ -661,7 +664,8 @@ O `DEMO.md` descreve a casca como modeless e afirma que Abortar após o primeiro
 deixar estado parcial. Folder preservado aparece como item preservado, não entre os removidos —
 com produtor e consumidores atualizados no mesmo passo, e `TryParsePreservedFolder` removido ou
 reescrito, nunca deixado a interpretar uma string que já não é produzida. Wizard, progresso,
-confirmação e relatório abrem na mesma tela da IDE, com a IDE em monitor secundário.
+confirmação e relatório abrem na mesma tela da IDE, com a IDE em monitor secundário. A âncora
+Wizard / Sync / Remover foi fumada em 2026-09-03; casca, Folder preservado e DEMO permanecem.
 
 **Em todas:** build Release pelo procedimento do repositório, reinstalação manual da DLL, e
 smoke na IDE. Lint e teste unitário não substituem o smoke.
