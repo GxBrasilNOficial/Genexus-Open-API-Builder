@@ -10,6 +10,10 @@ por sete rodadas de revisão em papel e por uma bateria de medição na IDE em 2
 
 Evidência de linha de base: [`2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`](2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md).
 
+Estado da revisão por pares — quem revisou qual versão, o que falta fechar:
+[`2026-09-04-B111-ESTADO-DA-REVISAO-POR-PARES.md`](2026-09-04-B111-ESTADO-DA-REVISAO-POR-PARES.md).
+**A versão atual deste plano ainda não foi submetida a revisão.**
+
 Antecedente do diagnóstico: seção «Escrita parcial do BC — drift API Object ↔ metadata» em
 [`B085-SINCRONIZAR-COM-TRANSACTION.md`](B085-SINCRONIZAR-COM-TRANSACTION.md).
 
