@@ -1,6 +1,8 @@
-# Plano — API Object gravado uma única vez, ao fim do pipeline
+# Plano — API Object gravado uma única vez, ao fim do pipeline (`B111`)
 
 ## Situação
+
+Item de backlog: `B111` (`Docs/Foundation/06-BACKLOG_v0.1.md`).
 
 Plano aprovado para implementação, ainda **não implementado**. Nasceu do incidente de 2026-09-03
 na `NotaFiscal` (Sync com resolução Keep interrompido, seguido de bloqueio por baseline), passou
