@@ -140,7 +140,7 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 **Revisar por pares os três planos da sprint `S-B111`** — F1 (ordem de gravação e writer final único), F2 (seam de persistência e recibos) e F3 (durabilidade da intenção e remoção segura). Nenhum dos três foi lido por ninguém além do autor. Objeto, orientação ao painel e o que **não** reabrir estão na seção 8 de `Docs/Implementation/2026-09-04-B111-ESTADO-DA-REVISAO-POR-PARES.md`. Item: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B111`).
 
-O v24 (`Docs/Implementation/2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md`) **não deve ser submetido**: ele foi fatiado, e quatro das suas afirmações foram desmentidas por medição. As correções estão na seção 7 do plano da F3.
+Dois documentos anteriores estão **superados** e não devem ser submetidos nem implementados: `Docs/Implementation/2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md` (plano aprovado em 2026-09-04, escopo enxuto — suas mudanças 1 a 7 estão preservadas na F1) e `Docs/Implementation/2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md` (expansão nunca aprovada, com quatro afirmações desmentidas por medição — ver seção 7 da F3). O segundo vivia fora do controle de versão, em `Temp/`, e foi promovido ao repositório em 2026-09-05 para que as referências dos planos de fase tenham alvo rastreável.
 
 `B108` volta para missão estacionada, com plano aprovado e sem trabalho perdido.
 
@@ -159,7 +159,7 @@ O P1 daquele plano — escrita parcial do BC, gravar o API Object por último �
 
 ## Estado da sprint `S-B111` (2026-09-05)
 
-Planejamento concluído; **nenhuma linha de código de produção alterada**. Três planos de fase escritos e commitados, todos aguardando revisão e decisão:
+Planejamento concluído; **nenhuma linha do pipeline `B111` alterada** — writers, seam, recibos, diário e remoção seguem como estavam. O que mudou em código foi apenas instrumentação temporária: as três sondas em `Src/Extension/Diagnostics/B111*Probe.cs`, mais o registro do comando `Sonda B111` em `Package.cs` e no manifesto. Três planos de fase escritos e commitados, todos aguardando revisão e decisão:
 
 | Fase | Plano | Depende de |
 |---|---|---|

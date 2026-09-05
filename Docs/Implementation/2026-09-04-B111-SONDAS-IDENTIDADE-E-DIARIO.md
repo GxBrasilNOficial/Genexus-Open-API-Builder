@@ -186,11 +186,11 @@ Orçamento para o modo A na KB grande, a ~1,1 s por gravação de diário:
 
 | Política de atualização do diário | Gravações | Custo acrescido ao Apply |
 |---|---|---|
-| uma por etapa confirmada, como no v24 | ~10 | **~11 s** |
+| uma por etapa confirmada, como no manuscrito expandido v24 | ~10 | **~11 s** |
 | três checkpoints (início, pós-API, conclusão) | 4 | ~4,4 s |
 | mínimo defensável (criação + conclusão) | 2 | ~2,2 s |
 
-Sobre os ~49 s de Apply observados em campo, a política do v24 acrescentaria da ordem de
+Sobre os ~49 s de Apply observados em campo, a política do manuscrito expandido acrescentaria da ordem de
 20% do tempo total apenas em bookkeeping. **O plano precisa trocar “atualizar o diário
 após cada Save confirmado” por checkpoints agrupados**, e declarar o orçamento medido.
 A escolha entre modo A e modo B tem preço: o modo A custa entre 2,2 s e 11 s de Apply na

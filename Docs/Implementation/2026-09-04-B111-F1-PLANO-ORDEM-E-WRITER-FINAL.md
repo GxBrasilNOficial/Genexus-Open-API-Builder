@@ -7,16 +7,28 @@
 **Status:** plano para decisão humana. **Não** autoriza implementação, alteração de
 código, instalação, commit ou push.
 
-Este plano substitui, **para o escopo da F1**, o manuscrito v24
-(`2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md`). O v24 continua sendo a referência das
-fases F2 e F3, com as correções que as sondas impuseram e que estão registradas em
-`2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`.
+### Documentos que este plano substitui, e como
+
+Há **dois** documentos anteriores, com escopos diferentes. Confundi-los é fácil e foi o que
+ocorreu na redação inicial deste plano, corrigido em 2026-09-05.
+
+| Documento | O que é | Situação |
+|---|---|---|
+| [`2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md`](2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md) | plano **aprovado** em 2026-09-04, escopo enxuto: reordenar os passos, `deferApiSave`, guarda de parâmetros, relatório e trilha na Output | superado como execução; **as mudanças 1 a 7 da sua seção 4 estão preservadas nesta F1**, ver 4.8 e 4.9 |
+| [`2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md`](2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md) | expansão **nunca aprovada**, produzida na revisão por pares: diário, seam, três dimensões de estado, remoção legada | superado; origem das exigências herdadas por F2 e F3, com quatro afirmações desmentidas por medição |
+
+O plano aprovado **refuta explicitamente** o seam de persistência, por não haver projeto de
+testes .NET onde exercitá-lo. A F2 reabre esse ponto por um caminho que ele não considerou —
+escopo ambiente e teste offline por `Add-Type`, ambos já usados no repositório —, e isso está
+declarado no plano da F2. Não é reintrodução silenciosa de ponto refutado.
+
+O apêndice de refutações do plano aprovado (seção 10) **continua valendo** para as três fases.
 
 ---
 
 ## 1. Por que existe uma F1 separada
 
-O v24 tratava numa única frente quatro coisas de tamanhos muito diferentes: a ordem de
+O manuscrito expandido v24 tratava numa única frente quatro coisas de tamanhos muito diferentes: a ordem de
 gravação, um seam de persistência transversal, um diário durável com máquina de estados
 de três dimensões, e a remoção de APIs legadas. Aplicadas juntas, o risco de introduzir a
 degradação que a frente quer evitar fica maior que o risco atual.
@@ -66,7 +78,7 @@ Confirmado por leitura em 2026-09-04:
    (`API.GetAll(...).Any(api => string.Equals(api.Name, apiPlan.ApiName, ...))`), tanto
    no Sync quanto no Wizard.
 
-O diagnóstico do v24 se confirma, e fica mais preciso: o deferimento não é inexistente —
+O diagnóstico dos dois documentos anteriores se confirma, e fica mais preciso: o deferimento não é inexistente —
 é **incompleto**. Ele cobre BC com API preexistente e ignora List por inteiro.
 
 ### 2.2 O que as sondas mediram
@@ -83,7 +95,7 @@ KBs:
 
 **Consequência direta para a F1:** a identidade planejada do API é o `Guid` **lido** do
 `Create`. Não se atribui `Guid`, não se grava marcador na `Description`, não existe chave
-alternativa. Essa é a maior simplificação em relação ao v24.
+alternativa. Essa é a maior simplificação em relação ao manuscrito expandido.
 
 ---
 
@@ -193,7 +205,7 @@ vai para a F2.
 
 ### 4.5 Gate reduzido
 
-O gate do v24 tinha dezesseis validações, várias dependentes de diário e receipts. A F1
+O gate do manuscrito expandido tinha dezesseis validações, várias dependentes de diário e recibos. A F1
 mantém as que não dependem de F2/F3:
 
 1. Transaction resolvida por identidade estável, não apenas por nome;
@@ -243,6 +255,61 @@ O relatório deve distinguir:
 confirmado por releitura. Busca por nome fica como diagnóstico secundário e precisa
 reportar ambiguidade.
 
+Além disso, o relatório deve **atribuir a atualização do API Object à etapa que de fato o
+gravou**. Move-se apenas a autoria; a designação do API Object como objeto principal
+permanece, porque usa o identificador do objeto reencontrado. (Item 6 da seção 4 do plano
+aprovado.)
+
+### 4.8 Guarda dos parâmetros de Business Component no writer de List
+
+Este é o ponto mais sutil herdado do plano aprovado — item 5 da sua seção 4 — e o que mais
+facilmente quebra em silêncio se for implementado por aproximação.
+
+O writer de List decide `includeBusinessComponentParameters` lendo o API persistido. Com o
+API adiado, essa leitura deixa de ser possível e o valor precisa ser passado explicitamente.
+A regra:
+
+> Passar `includeBusinessComponentParameters = true` **somente quando a etapa de Business
+> Component tiver rodado** — nunca amarrado ao booleano de "List será aplicado".
+
+A condição de guarda é **“a etapa de Business Component rodou”**, não “a etapa de List será
+aplicada”. Amarrar o valor forçado ao booleano do List produziria, no caminho legítimo
+“List sem Business Component”, um API Object declarando serviços que delegam a Procedures
+inexistentes e referenciando SDTs que só a etapa de Business Component cria.
+
+Em qualquer outro caso — inclusive “List sem Business Component” — o writer continua
+deduzindo o valor do API Object persistido, como hoje.
+
+Uma sentinela e um fluxo executável devem cobrir especificamente “List sem Business
+Component”; é o cenário que a guarda protege.
+
+### 4.9 Trilha de gravação na Output
+
+O plano aprovado especificou, em sete alíneas, uma linha por objeto gravado nos dois
+writers, para que a ordem efetiva fique registrada — hoje ela é observável ao vivo na janela
+de andamento, mas não chega à Output. A especificação é preservada integralmente:
+
+- **a.** o molde é o callback de escrita de SDT da **etapa dedicada de SDTs**, que emite na
+  Output e alimenta o relatório — não o homônimo das etapas de BC e de List, que só alimenta
+  o relatório;
+- **b.** a emissão é por callback **dentro do laço**, não por lista devolvida ao
+  orquestrador: quando o writer lança no meio, não haveria lista, e é nas interrupções que a
+  evidência importa;
+- **c.** a linha sai **depois** de a gravação retornar; não emitir linha “gravando” antes;
+- **d.** a linha carrega o **rótulo da etapa**, para que autoria no relatório e trilha contem
+  a mesma história;
+- **e.** alimenta **somente** a Output, nunca o relatório final, sob pena de duplicar as
+  Procedures;
+- **f.** usa a variante de escrita que **não força a exibição** do painel — várias chamadas
+  de dentro do laço, com o diálogo modal aberto, disputariam primeiro plano;
+- **g.** limitação aceita: os SDTs gravados dentro dessas duas etapas continuam sem aparecer
+  na Output; a trilha terá um intervalo sem SDTs, e quem ler a captura precisa saber que é
+  esperado.
+
+Esta trilha é diagnóstico, não recibo. Ela não substitui o seam da F2, e a F2 não a torna
+supérflua: uma vive na Output para leitura humana, o outro vive em memória para verificação
+executável.
+
 ---
 
 ## 5. Mudanças previstas por arquivo
@@ -252,7 +319,8 @@ reportar ambiguidade.
 | `Src/Extension/Package.cs` | predicado nos dois blocos; deferimento de B054 estendido a List e a BC com API ausente; ordem física; resolução final por identidade |
 | `Diagnostics/ApiPlanApiObjectWriter.cs` | separar preparação de persistência; devolver contexto transient; manter o Save só no caminho API-only |
 | `Diagnostics/ApiPlanBusinessComponentWriter.cs` | aceitar o contexto transient; mover o passo do API para o **fim** de `saveSteps`; não salvar o API quando List participa; salvar uma vez quando for o writer final |
-| `Diagnostics/ApiPlanListProcedureWriter.cs` | aceitar o contexto transient; mover o passo do API para o **fim** de `saveSteps`; executar o único `API.Save()` quando participar |
+| `Diagnostics/ApiPlanListProcedureWriter.cs` | aceitar o contexto transient; mover o passo do API para o **fim** de `saveSteps`; receber `includeBusinessComponentParameters` explícito conforme a guarda de 4.8; executar o único `API.Save()` quando participar |
+| ambos os writers de consumidor | callback de trilha na Output conforme 4.9 |
 | `Diagnostics/ApiPlanWritePreflight.cs` | gate reduzido da seção 4.5 |
 | `Diagnostics/ApiPlanApplicationFinalReport.*` | campos planejado × persistido e contador de `API.Save()` |
 | `Tests/` | sentinelas e fluxos da seção 6 |
@@ -274,7 +342,17 @@ quando `ApplyBusinessComponent` ou `ApplyList` for verdadeiro.
 6. os writers não chamam `API.GetAll`/`FindApi` para validar um API novo vindo do contexto;
 7. `PlannedApiName` e `PersistedMainObjectName` são campos distintos;
 8. não existe resolução final por nome isolado;
-9. o Sync declara o perfil fixo e não anuncia flags que a UI não oferece.
+9. o Sync declara o perfil fixo e não anuncia flags que a UI não oferece;
+10. a guarda de 4.8 depende de a etapa de Business Component ter rodado, e não do booleano
+    de List;
+11. a trilha de 4.9 emite depois da gravação, com rótulo de etapa, sem alimentar o relatório
+    e sem forçar a exibição do painel;
+12. a **quantidade** de gravações do API Object em cada writer, não só a presença dos
+    trechos.
+
+As sentinelas 10 a 12 vêm do plano aprovado e devem ser hospedadas onde ele indicou: no
+teste do relatório final de aplicação, que já lê os três arquivos e já está registrado no
+checker pré-push. **Sem criar gate novo**, e com eficácia verificada por mutação.
 
 Sentinelas são necessárias e insuficientes: elas provam forma, não comportamento.
 
@@ -294,6 +372,13 @@ Sentinelas são necessárias e insuficientes: elas provam forma, não comportame
 | Wizard | `GenerateApiObject=false`, API ausente | bloqueio antes do primeiro Save |
 | Wizard | SDT/Procedure `false` | nenhuma gravação da etapa desmarcada |
 | Sync | BC sem habilitação na Transaction | bloqueio antes de qualquer Save |
+| Wizard | **List sem Business Component** | o Source declara os serviços corretos, sem parâmetros de BC — o cenário que a guarda de 4.8 protege |
+| Wizard | API preexistente na variante de List sem parâmetros de BC, reaplicado com as duas etapas | os parâmetros de BC aparecem, provando que a guarda é necessária |
+
+Os dois últimos são os cenários D e G do plano aprovado, e a receita do G está na seção 6
+daquele documento: gerar com Business Component desabilitado marcando Get/Create/Update e
+List; habilitar Business Component na Transaction; reaplicar com as duas etapas. O estado
+final do cenário D é o inicial do G — encadeie os dois.
 
 A contagem de `API.Save()` é o critério central. Sem o seam da F2, ela é verificada por
 instrumentação simples do caminho de gravação, e não por interceptação injetada — o que a
@@ -335,6 +420,13 @@ F1 não é frente de desempenho, mas a ordem física muda e a medição é barat
 8. `GenerateApiObject=false` com API ausente bloqueia antes do primeiro Save.
 9. Flags de SDT e Procedure em `false` não produzem gravação oculta.
 10. Nenhuma regressão nos fluxos existentes de Sync, Wizard e relatório.
+11. A guarda de 4.8 depende de a etapa de Business Component ter rodado; “List sem Business
+    Component” continua produzindo um Source correto.
+12. A trilha de 4.9 registra a ordem efetiva na Output, conforme as sete alíneas.
+13. O relatório atribui a atualização do API Object à etapa que de fato o gravou.
+
+Os critérios 11 a 13 vêm do plano aprovado de 2026-09-04 e não são novidade desta fase:
+estão aqui para que o fatiamento não os perca.
 
 Falhando qualquer critério, a F1 não está pronta para aceite.
 
@@ -353,7 +445,8 @@ Falhando qualquer critério, a F1 não está pronta para aceite.
 
 ## 10. Fontes
 
-- `Docs/Implementation/2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md` (v24, referência de F2/F3)
+- `Docs/Implementation/2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md` (plano aprovado em 2026-09-04; suas mudanças 1 a 7 estão preservadas em 4.8 e 4.9)
+- `Docs/Implementation/2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md` (expansão nunca aprovada; referência de F2 e F3)
 - `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md` (medições)
 - `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md` (linha de base de campo)
 - `Src/Extension/Package.cs`, blocos de Sync e de Wizard

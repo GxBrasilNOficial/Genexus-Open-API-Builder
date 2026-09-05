@@ -19,8 +19,8 @@ adivinhação.
 
 A ordem natural seria escrever a F3 depois de decidir o modo e depois de a F1 estar em
 campo. Ela foi escrita antes por um motivo concreto: sem este documento, o único plano
-disponível para o conteúdo da F3 é o manuscrito v24 — e **quatro pontos do v24 foram
-desmentidos pelas medições de 2026-09-04**. Quem retomasse a frente lendo o v24
+disponível para o conteúdo da F3 é o manuscrito expandido v24 — e **quatro pontos dele foram
+desmentidos pelas medições de 2026-09-04**. Quem retomasse a frente lendo esse manuscrito
 implementaria quatro coisas erradas, e a correção existe apenas no registro de evidência,
 que não é leitura obrigatória de quem procura “o plano da F3”.
 
@@ -47,7 +47,7 @@ recibos em memória não dão: eles morrem com o processo.
 
 ### 2.2 O que o remover já faz hoje
 
-Ao contrário do que o v24 sugere, `ApiPlanGeneratedApiRemover.Remove` **não** apaga às
+Ao contrário do que o manuscrito expandido sugere, `ApiPlanGeneratedApiRemover.Remove` **não** apaga às
 cegas. Ele já:
 
 1. cria o índice da KB (`ApiPlanGeneratedApiRemover.cs:42`);
@@ -179,13 +179,13 @@ detalhe:
 
 | Política | Gravações | Acréscimo ao Apply, KB grande |
 |---|---|---|
-| uma por etapa confirmada, como no v24 | ~10 | ~11 s |
+| uma por etapa confirmada, como no manuscrito expandido | ~10 | ~11 s |
 | três checkpoints: início, pós-API, conclusão | 4 | ~4,4 s |
 | mínimo: criação e conclusão | 2 | ~2,2 s |
 
 O plano deve escolher e declarar a política. A recomendação é a de três checkpoints: ela
 cobre as fronteiras que importam — antes de qualquer gravação, no momento em que o API
-passa a existir, e na conclusão — a um quarto do custo da política do v24.
+passa a existir, e na conclusão — a um quarto do custo da política do manuscrito expandido.
 
 ### 4.5 Mensagens
 
@@ -261,7 +261,7 @@ como resultados distintos; concluir ausência só após consulta suficiente e re
 bloquear em conflito. **Nunca criar um novo API por nome porque a primeira chamada
 “pareceu falhar”.**
 
-Comparado ao v24, esta recuperação é curta justamente porque a identidade é conhecida
+Comparado ao manuscrito expandido, esta recuperação é curta justamente porque a identidade é conhecida
 antes da gravação.
 
 **Diário com durabilidade desconhecida.** Não continuar a sequência; reler pelo `Id`;
@@ -295,19 +295,29 @@ automática, não o rigor.
 
 ---
 
-## 7. Correções obrigatórias ao v24
+## 7. Correções obrigatórias ao manuscrito expandido v24
 
-Esta seção é a razão de o documento existir agora. O v24 continua útil como origem das
-exigências, mas os quatro pontos abaixo **estão errados nele** e foram medidos em campo:
+Esta seção é a razão de o documento existir agora.
 
-| v24 diz | Medição de 2026-09-04 | O que vale |
+**A qual documento estas correções se aplicam.** Existem dois documentos anteriores, e só um
+deles contém o material corrigido aqui:
+
+| Documento | Contém diário, seam, três dimensões? | Corrigido por esta seção? |
+|---|---|---|
+| [`2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md`](2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md) — plano aprovado em 2026-09-04 | **não**; escopo enxuto de reordenação | **não** — nada nele é desmentido aqui |
+| [`2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md`](2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md) — expansão nunca aprovada | sim | **sim** |
+
+O manuscrito expandido continua útil como origem das exigências de diário, recuperação e
+remoção, mas os quatro pontos abaixo **estão errados nele** e foram medidos em campo:
+
+| o manuscrito expandido diz | Medição de 2026-09-04 | O que vale |
 |---|---|---|
 | identidade por `PlannedApiGuid` **ou** `NewApiIdentityKey`, com marcador `GOAB-B111-IDENTITY` na `Description` | o `Guid` existe desde o `API.Create`, sobrevive ao `Save()` e reencontra o objeto | só `PlannedApiGuid`, **lido** e nunca atribuído; sem marcador, sem chave alternativa, sem helper de identidade |
 | “ao abrir um fluxo, enumerar todos os diários B111” | localizar pelo nome no índice já montado custa 0 ms; remontar o índice custa ~3,1 s | resolver pelo nome no índice na abertura; enumerar por prefixo só em recuperação |
 | reler o diário por GUID | `WikiFileKBObject.Get` aceita `int`, não `Guid` | guardar o **`Id`** na criação e reler por ele |
 | “atualizar e reler o diário a cada etapa confirmada” | gravar um File custa ~1,1 s na KB grande; ~10 gravações somam ~11 s | checkpoints agrupados, com a política declarada (4.4) |
 
-Some, junto com o marcador, a exigência do v24 de validar truncamento da `Description` —
+Some, junto com o marcador, a exigência do manuscrito de validar truncamento da `Description` —
 que existe (256 caracteres, em silêncio) mas deixa de afetar esta frente e está registrada
 como `B112`.
 
@@ -394,7 +404,8 @@ humana; a UI não sugere recuperação automática.
 - `Docs/Implementation/2026-09-04-B111-F1-PLANO-ORDEM-E-WRITER-FINAL.md`
 - `Docs/Implementation/2026-09-04-B111-F2-PLANO-SEAM-E-RECIBOS.md`
 - `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md` (medições que impõem a seção 7)
-- `Docs/Implementation/2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md` (v24, origem das exigências — ler junto com a seção 7)
+- `Docs/Implementation/2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md` (plano aprovado em 2026-09-04, escopo enxuto; superado como execução)
+- `Docs/Implementation/2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md` (expansão nunca aprovada, origem das exigências desta fase — ler junto com a seção 7)
 - `Src/Extension/Diagnostics/ApiPlanGeneratedApiRemover.cs`
 - `Src/Extension/Diagnostics/ApiPlanOwnedObjectDescription.cs`
 - `Src/Extension/Diagnostics/ApiPlanKbObjectNameIndex.cs`

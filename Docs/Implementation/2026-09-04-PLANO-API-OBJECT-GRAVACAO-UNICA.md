@@ -2,9 +2,24 @@
 
 ## Situação
 
+> **Status em 2026-09-05: SUPERADO como plano de execução.** Continua sendo a melhor descrição
+> do mecanismo atual e do diagnóstico, e o seu apêndice de refutações (seção 10) segue valendo.
+> A execução, porém, passou a ser regida pela sprint `S-B111`, em três documentos de fase:
+> [F1](2026-09-04-B111-F1-PLANO-ORDEM-E-WRITER-FINAL.md),
+> [F2](2026-09-04-B111-F2-PLANO-SEAM-E-RECIBOS.md) e
+> [F3](2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md).
+>
+> A F1 **incorpora e preserva** as mudanças 1 a 7 da seção 4 deste plano, inclusive a guarda do
+> item 5 e a especificação 7a–7g da trilha na Output. Nada aqui foi descartado por engano.
+>
+> Não confundir este documento com
+> [`2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md`](2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md),
+> que é uma expansão de escopo nunca aprovada, produzida na revisão por pares e também superada.
+
 Item de backlog: `B111` (`Docs/Foundation/06-BACKLOG_v0.1.md`).
 
-Plano aprovado para implementação, ainda **não implementado**. Nasceu do incidente de 2026-09-03
+Plano aprovado para implementação em 2026-09-04 e **não implementado**; superado em 2026-09-05
+pelo fatiamento descrito acima. Nasceu do incidente de 2026-09-03
 na `NotaFiscal` (Sync com resolução Keep interrompido, seguido de bloqueio por baseline), passou
 por sete rodadas de revisão em papel e por uma bateria de medição na IDE em 2026-09-03/04.
 

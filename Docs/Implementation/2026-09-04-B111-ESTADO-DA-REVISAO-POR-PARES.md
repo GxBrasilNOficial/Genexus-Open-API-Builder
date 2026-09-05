@@ -6,11 +6,13 @@ Permitir retomar a revisão do plano do `B111` em sessão nova, sem repetir roda
 reabrir pontos já refutados. Registra quem revisou o quê, com que veredito, e o que falta para
 fechar.
 
-Plano revisado nas rodadas de 2026-09-03/04: [`2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md`](2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md) (v24).
+Plano aprovado, base das rodadas: [`2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md`](2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md).
+Manuscrito expandido produzido nas rodadas, nunca aprovado e por muito tempo fora do controle de versao: [`2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md`](2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md) (a 'v24' citada abaixo).
 Linha de base de campo: [`2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`](2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md).
 
-> **O objeto da revisão mudou em 2026-09-05.** O v24 foi fatiado na sprint `S-B111`, com três
-> planos de fase, e deixou de ser o alvo da próxima rodada. Ver a seção 8.
+> **O objeto da revisão mudou em 2026-09-05.** Os dois documentos acima foram superados pela
+> sprint `S-B111`, com três planos de fase, e deixaram de ser alvo da próxima rodada.
+> Ver a seção 8.
 
 ## 1. Estado em uma linha
 
@@ -103,7 +105,7 @@ antes de sustentar qualquer um deles de novo.
 
 ## 8. Atualização de 2026-09-05 — novo objeto de revisão
 
-A v24 **não deve ser submetida**. Ela foi fatiada, e quatro das suas afirmações foram
+Nem o plano aprovado nem o manuscrito expandido v24 **devem ser submetidos**. O escopo foi fatiado, e quatro afirmações do manuscrito foram
 desmentidas por medição.
 
 ### 8.1 O que mudou
@@ -119,9 +121,9 @@ A partir dela, o `B111` virou a sprint `S-B111` com três fases, cada uma com pl
 | F2 | [`...-B111-F2-PLANO-SEAM-E-RECIBOS.md`](2026-09-04-B111-F2-PLANO-SEAM-E-RECIBOS.md) | seam de persistência e recibos |
 | F3 | [`...-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md`](2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md) | durabilidade da intenção e remoção segura |
 
-**Esses três documentos são o objeto da próxima rodada.** O v24 permanece como origem das
+**Esses três documentos são o objeto da próxima rodada.** O manuscrito permanece como origem das
 exigências e como registro do que já foi refutado (seção 5 deste documento e o apêndice do
-próprio v24), mas a seção 7 da F3 lista as quatro correções que a medição impôs a ele.
+próprio manuscrito), mas a seção 7 da F3 lista as quatro correções que a medição impôs a ele.
 
 ### 8.2 O que a próxima rodada não precisa reabrir
 
@@ -141,7 +143,7 @@ reexecutar a sonda, que continua registrada no comando `Sonda B111`.
 
 ### 8.3 O que pedir ao painel
 
-O risco desta rodada é diferente do da anterior. A v24 sofria de excesso: o problema era
+O risco desta rodada é diferente do da anterior. O manuscrito expandido sofria de excesso: o problema era
 inchaço e contradição interna. Os três planos sofrem do risco oposto — **fatiar pode ter
 deixado buraco**. Vale pedir explicitamente:
 
@@ -149,9 +151,21 @@ deixado buraco**. Vale pedir explicitamente:
 2. a fronteira F1/F2 está no lugar certo, dado que a F1 verifica a contagem de Saves por
    instrumentação e só a F2 a prova por execução?
 3. a F3 pode ser implementada sem revisitar decisões da F1 e da F2?
-4. algum requisito do v24 se perdeu no fatiamento sem ter sido conscientemente descartado?
+4. algum requisito do **plano aprovado** ou do manuscrito se perdeu no fatiamento sem ter sido conscientemente descartado? (a F1 declara, em 4.8 e 4.9, o que preservou do plano aprovado)
 
-### 8.4 A recomendação da seção 7 se confirmou
+### 8.4 Um documento fora do controle de versão custou uma sessão inteira de confusão
+
+O manuscrito expandido viveu de 2026-09-04 a 2026-09-05 apenas em `Temp/`, que o
+`.gitignore` exclui. A sessão de sondagem trabalhou sobre ele acreditando estar sobre o plano
+aprovado, e os três planos de fase nasceram citando o caminho do plano aprovado quando
+descreviam o manuscrito. Uma auditoria externa apontou a divergência; a reconciliação está
+registrada nos cabeçalhos dos dois documentos.
+
+A regra que sai daí, e que a recomendação “submeta o documento commitado” da seção 7 já
+antecipava sem prever este modo de falha: **um artefato que orienta trabalho não pode viver
+em `Temp/`.** Se merece ser revisado, merece ser versionado.
+
+### 8.5 A recomendação da seção 7 se confirmou
 
 A última recomendação daquela seção — de que a primeira hora de teste real produziu mais
 correções do que as três últimas rodadas de revisão somadas — voltou a se confirmar, e com

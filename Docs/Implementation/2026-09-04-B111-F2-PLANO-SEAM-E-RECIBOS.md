@@ -109,6 +109,26 @@ A F2 **não** promete recuperação. Ela promete que, quando algo falhar, o rela
 com precisão o que foi gravado, o que não foi e o que ficou indeterminado. Decidir o que
 fazer com isso é a F3.
 
+### 3.3 Um ponto refutado que esta fase reabre, e por quê
+
+O plano aprovado de 2026-09-04 **refutou** a extração de um seam testável, com este motivo:
+não existe projeto de testes .NET onde exercitá-lo, e criar essa infraestrutura seria outra
+frente. A refutação está no apêndice daquele plano e continua correta **nos termos em que
+foi feita**.
+
+A F2 reabre o ponto por um caminho que aquela análise não considerou, e que já existe no
+repositório:
+
+- o seam não exige refactor de assinaturas, porque usa escopo ambiente, como
+  `ApiPlanScanProbe` (2.2);
+- o teste não exige projeto .NET, porque compila o arquivo de produção com `Add-Type`, como
+  `Tests/ScanProbe/Test-ApiPlanScanProbe.ps1`.
+
+Isto está declarado aqui para que a reabertura seja **consciente e verificável**, não uma
+reintrodução silenciosa de ponto já descartado. Se o painel de revisão discordar de que
+esses dois precedentes bastam, a refutação original prevalece e a F2 precisa ser
+redesenhada.
+
 ---
 
 ## 4. Contrato-alvo
@@ -239,9 +259,15 @@ Com o seam injetado, cada fluxo da matriz da F1 passa a ter prova executável:
 | BC-only | exatamente um recibo de API, no BC, **depois** dos recibos das Procedures |
 | List-only | exatamente um recibo de API, no List, depois do recibo da Procedure |
 | BC + List | exatamente um recibo de API, no List; nenhum recibo de API no BC |
-| Sync, todas as combinações | mesma sequência do Wizard equivalente |
-| `GenerateApiObject=false` | nenhum recibo de API |
-| SDT/Procedure `false` | nenhum recibo da etapa desmarcada |
+| Sync, todas as combinações **alcançáveis** | mesma sequência do Wizard equivalente |
+| `GenerateApiObject=false` — **Wizard-only** | nenhum recibo de API |
+| SDT/Procedure `false` — **Wizard-only** | nenhum recibo da etapa desmarcada |
+
+As duas últimas linhas são **exclusivas do Wizard**. O `BuildSelection` do Sync monta um
+perfil fixo com `GenerateApiObject`, `GenerateSdts`, `GenerateProcedures` e
+`GenerateMetadata` sempre verdadeiras, de modo que “todas as combinações” do Sync são apenas
+as quatro de BC/List. Ver a seção 4.6 da F1, que é a fonte desta regra: não criar falsa
+paridade copiando testes do Wizard para uma UI que não oferece esses toggles.
 
 Isto substitui, com execução, a instrumentação frágil que a F1 declarou como limitação.
 
@@ -311,7 +337,8 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
 
 - `Docs/Implementation/2026-09-04-B111-F1-PLANO-ORDEM-E-WRITER-FINAL.md` (pré-requisito)
 - `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md` (contagem real de `Save()`)
-- `Docs/Implementation/2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md` (v24, origem das exigências de seam e de falhas C/D/E)
+- `Docs/Implementation/2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md` (plano aprovado em 2026-09-04; **refuta** o seam por não haver projeto de testes .NET — ver 3.3)
+- `Docs/Implementation/2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md` (expansão nunca aprovada; origem das exigências de seam e de falhas C/D/E)
 - `Src/Extension/Diagnostics/ApiPlanScanProbe.cs` e `ApiPlanScanTelemetry.cs` (padrão a seguir)
 - `Tests/ScanProbe/Test-ApiPlanScanProbe.ps1` (padrão de teste executável offline)
 - os 16 pontos de gravação da seção 2.1
