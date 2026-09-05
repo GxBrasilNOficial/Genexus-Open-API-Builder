@@ -32,13 +32,36 @@ internal sealed class ExtensionBusyProgressScope : IDisposable
     public static ExtensionBusyProgressScope Show(IWin32Window? owner, string title, ExtensionTexts texts)
     {
         ExtensionBusyProgressDialog? dialog = null;
+
+        // B109: sonda temporaria. A hipotese sob teste e que os Application.DoEvents() entre
+        // os Saves reentram no loop de mensagens da IDE, permitindo que um handler dela
+        // modifique uma colecao do modelo em uso e produza
+        // "Collection was modified; enumeration operation may not execute".
+        //
+        // Com GOAB_B109_SUPPRESS_PUMP=1 no ambiente, os DoEvents sao suprimidos: se a falha
+        // desaparecer, a hipotese se sustenta. O custo do experimento e a UI congelar durante
+        // a operacao e o botao Abortar nao responder — por isso e opt-in e nunca o default.
+        var suppressPump = string.Equals(
+            Environment.GetEnvironmentVariable("GOAB_B109_SUPPRESS_PUMP"),
+            "1",
+            StringComparison.Ordinal);
+
         var session = new ApiPlanBusyProgressSession(
             update =>
             {
                 dialog?.ApplyUpdate(update);
-                Application.DoEvents();
+                if (!suppressPump)
+                {
+                    Application.DoEvents();
+                }
             },
-            () => Application.DoEvents());
+            () =>
+            {
+                if (!suppressPump)
+                {
+                    Application.DoEvents();
+                }
+            });
 
         dialog = new ExtensionBusyProgressDialog(title, texts, session);
         Control? ownerControl = owner as Control;
