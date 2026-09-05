@@ -37,6 +37,8 @@ public sealed class PrototypeWizardPreferenceValues
     public int MaximumPageSizeByDefault { get; set; } = PrototypeWizardPreferencesCodec.MaximumPageSizeFallback;
 
     public bool IncludeBusinessComponentErrorMessagesByDefault { get; set; } = true;
+
+    public bool OfferOrphanMetadataRecovery { get; set; }
 }
 
 public static class PrototypeWizardPreferencesCodec
@@ -97,6 +99,7 @@ public static class PrototypeWizardPreferencesCodec
             DefaultPageSizeByDefault = ReadOptionalPositiveInt(defaults["pagination"] as JObject, "defaultPageSize", DefaultPageSizeFallback),
             MaximumPageSizeByDefault = ReadOptionalPositiveInt(defaults["pagination"] as JObject, "maximumPageSize", MaximumPageSizeFallback),
             IncludeBusinessComponentErrorMessagesByDefault = ReadOptionalBool(defaults, "includeBusinessComponentErrorMessages", true),
+            OfferOrphanMetadataRecovery = ReadOptionalBool(defaults, "offerOrphanMetadataRecovery", false),
         };
 
         Validate(preferences);
@@ -134,6 +137,7 @@ public static class PrototypeWizardPreferencesCodec
                 },
                 ["securityLevel"] = NormalizeSecurityLevel(preferences.SecurityLevelByDefault),
                 ["includeBusinessComponentErrorMessages"] = preferences.IncludeBusinessComponentErrorMessagesByDefault,
+                ["offerOrphanMetadataRecovery"] = preferences.OfferOrphanMetadataRecovery,
                 ["pagination"] = new JObject
                 {
                     ["defaultPageSize"] = preferences.DefaultPageSizeByDefault,

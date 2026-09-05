@@ -95,16 +95,16 @@ internal static class ApiPlanBusinessComponentWriter
         progress?.PumpAndThrowIfAbortRequested();
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
 
-        var saveSteps = new List<(string Label, System.Action Save)>
+        var saveSteps = new List<(string Label, System.Action Save, Func<string> Snapshot)>
         {
-            (api.Name, () => SaveApi(model, kbIndex, api, transactionFolder, plan, apiSource, apiVariables)),
-            (get.Name, () => SaveProcedure(model, kbIndex, get, getContent, getVariables, getRules)),
-            (create.Name, () => SaveProcedure(model, kbIndex, create, createContent, createVariables, createRules)),
-            (update.Name, () => SaveProcedure(model, kbIndex, update, updateContent, updateVariables, updateRules)),
+            (api.Name, () => SaveApi(model, kbIndex, api, transactionFolder, plan, apiSource, apiVariables), () => B112SaveBoundaryProbe.Snapshot(api)),
+            (get.Name, () => SaveProcedure(model, kbIndex, get, getContent, getVariables, getRules), () => B112SaveBoundaryProbe.Snapshot(get)),
+            (create.Name, () => SaveProcedure(model, kbIndex, create, createContent, createVariables, createRules), () => B112SaveBoundaryProbe.Snapshot(create)),
+            (update.Name, () => SaveProcedure(model, kbIndex, update, updateContent, updateVariables, updateRules), () => B112SaveBoundaryProbe.Snapshot(update)),
         };
         if (delete is not null && deleteContent is not null && deleteRules is not null && deleteVariables is not null)
         {
-            saveSteps.Add((delete.Name, () => SaveProcedure(model, kbIndex, delete, deleteContent, deleteVariables, deleteRules)));
+            saveSteps.Add((delete.Name, () => SaveProcedure(model, kbIndex, delete, deleteContent, deleteVariables, deleteRules), () => B112SaveBoundaryProbe.Snapshot(delete)));
         }
 
         var saveIndex = 0;
@@ -112,10 +112,23 @@ internal static class ApiPlanBusinessComponentWriter
         {
             progress?.ThrowIfAbortRequested();
             saveIndex++;
+            var beforePumpSnapshot = step.Item3();
             progress?.Report("Business Component", saveIndex, saveSteps.Count, step.Label);
             progress?.Pump();
+            var afterPumpSnapshot = step.Item3();
+            B112SaveBoundaryProbe.PumpBoundary("Business Component", step.Label, beforePumpSnapshot, afterPumpSnapshot);
+            B112SaveBoundaryProbe.BeforeSave("Business Component", step.Label, afterPumpSnapshot);
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            step.Save();
+            try
+            {
+                step.Save();
+                B112SaveBoundaryProbe.Saved("Business Component", step.Label, step.Snapshot());
+            }
+            catch (Exception exception)
+            {
+                B112SaveBoundaryProbe.Failed("Business Component", step.Label, exception, step.Snapshot());
+                throw;
+            }
             sw.Stop();
             progress?.Report("Business Component", saveIndex, saveSteps.Count, step.Label, sw.ElapsedMilliseconds);
         }
@@ -536,6 +549,10 @@ internal static class ApiPlanBusinessComponentWriter
         ReplaceVariables(model, kbIndex, procedure, variables);
         procedure.Rules.Source = rules;
         procedure.ProcedurePart.Source = content;
+        B112SaveBoundaryProbe.PreparedProcedure(
+            "Business Component",
+            procedure,
+            variables.Select(variable => variable.Name + ":" + variable.DataType));
         try
         {
             procedure.Save();
@@ -603,6 +620,7 @@ internal static class ApiPlanBusinessComponentWriter
         api.ServiceGroupSource.Source = source;
         api.Events.Source = CreateB079ApiEventsForPlan(plan);
         ReplaceVariables(model, kbIndex, api, variables);
+        B112SaveBoundaryProbe.PreparedApi("Business Component", api);
         api.Save();
 
         var persisted = API.Get(model, api.Guid);

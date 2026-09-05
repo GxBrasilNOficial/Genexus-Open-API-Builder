@@ -179,26 +179,19 @@ Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-
 
 A DLL instalada nas KBs de teste contém as sondas.
 
-## Investigação aberta em 2026-09-05 — falha da etapa de Business Component na KB grande
+## Investigação encerrada em 2026-09-05 — falha da etapa de Business Component na KB grande
 
-Aberta ao fim da sessão de sondagem, **sem conclusão**, e é o fio mais quente do momento.
+A investigação da `Empresa` de `fabricabrasil18test` foi encerrada após remoção limpa, `Build All` nos dois environments, reaplicação limpa e novo `Build All` no environment de referência `CSharpModel`.
 
-Na `Empresa` de `fabricabrasil18test`, a etapa de Business Component ou de List falhou em **todas as execuções** que a alcançaram — cinco no total. A primeira execução com stack trace capturada mostrou que **não é um bug único**: quatro ocorrências foram `Collection was modified; enumeration operation may not execute` e a quinta foi `Artech.Common.Diagnostics.ValidationException` em `KBObjectManager.PrepareSave`, ao validar `procEmpresa_API_Create`. Detalhe em `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md` §10.7 e §10.8.
+O resultado B081 da reaplicação foi `SuccessWithWarnings`, com `Criados=50`, `Atualizados=0`, `Bloqueados=0`. A etapa de Business Component levou `29759 ms`; `procEmpresa_API_Create` foi salvo com `&HttpResponse` e `&LocationUrl` (`VarChar(1K)`). Não houve `ValidationException` nem `Collection was modified`. A causa provável do ramo B é estado parcial/inconsistente entre API Object, Procedures, SDTs e metadata da KB, e não os tipos de `HttpResponse` ou `LocationUrl`.
 
-Consequência: **o item `B109` precisa ser reescrito** como família de falhas, com um ramo por causa, em vez de "bug intermitente na etapa de Business Component".
+O experimento também fechou o baseline: o `Build All` sem API passou nos dois environments; após a reaplicação, o `CSharpModel` passou novamente com os objetos recém-gerados. O `NETFrameworkPostgreSQL` ainda falhou na compilação C# dos SDTs com conversões `bool`/`decimal`/`short`; essa frente é específica do environment e fica fora do encerramento do caso BC. Evidência completa: `Docs/Implementation/2026-09-05-ENCERRAMENTO-BC-EMPRESA.md`.
 
-Instrumentação instalada e disponível para retomar (sondas temporárias, ver o checklist de reversão):
-
-- `B109ExceptionProbe` publica na Output a cadeia completa de exceções — tipo, mensagem, `Source`, `TargetSite` e stack de cada nível —, além de Rules, `ExpectedVariables` × `CurrentVariables` e `SourceLines` da Procedure recusada;
-- interruptor `GOAB_B109_SUPPRESS_PUMP=1` suprime os `Application.DoEvents()` entre os Saves, para testar a hipótese de que a reentrância no loop de mensagens da IDE causa o `Collection was modified`. **Não testado ainda.**
-
-Próximos passos sugeridos, na ordem: salvar `procEmpresa_API_Create` manualmente pela IDE e ler a mensagem de validação, que costuma ser mais específica que a da API; e rodar o Apply com o interruptor para o ramo `Collection was modified`.
-
-Estado da KB de teste: `apiEmpresa` existe sem metadata, com 44 SDTs e 4 Procedures — estas com Source apenas de esqueleto, porque as etapas que o escrevem nunca completaram. Para reproduzir, apagar **apenas** o API Object antes de cada tentativa; com ele presente e sem metadata, o Wizard desliga as etapas de consumidor e a falha não ocorre.
+O ramo A não foi reproduzido na sequência limpa. A hipótese de que `Application.DoEvents()`/`Pump` causa reentrância continua não confirmada; as sondas permanecem temporárias conforme o checklist de reversão.
 
 ## Pendência urgente (próxima sessão de código)
 
-A pauta formal é a revisão por pares da `S-B111`, acima. A investigação de `B109` acima pode preceder, por ser bloqueio prático de uso da extensão na KB grande. `B108` e o residual `B082` 1B/2/3 não competem com essas linhas.
+A pauta formal continua sendo a revisão por pares da `S-B111`, acima. A investigação de `B109` foi encerrada; o `Rebuild All` futuro do `NETFrameworkPostgreSQL` é uma pendência separada de environment e não bloqueia o encerramento deste caso. `B108` e o residual `B082` 1B/2/3 não competem com essas linhas.
 
 ## Evidência da frente encerrada
 
@@ -340,6 +333,7 @@ A pauta formal é a revisão por pares da `S-B111`, acima. A investigação de `
 92. Em 2026-09-02 a extensão foi instrumentada (`ApiPlanScanTelemetry`, `ApiPlanScanProbe`) e medida na KB `Fabrica Brasil Test` em três transações — `Setor`, `Empresa` e `DocumentoFiscal` — nas três operações. A medição inverteu a prioridade do residual `B082`: `Attribute.GetAll` custa ~1300 ms e é a varredura mais cara da KB, embora a extensão nunca crie, altere ou apague atributos; o mapa de atributos já existe em `ApiPlanKbObjectNameIndex` e é usado por `ApiPlanSdtWriter`, mas os writers de Business Component e de List ainda varrem o catálogo; o índice é criado quatro vezes por Apply; e o custo de varredura por Apply é praticamente constante em torno de 60 s, porque depende das partes da chave primária e dos filtros, não do tamanho da transação — `Setor` e `DocumentoFiscal` fazem as mesmas 97 varreduras com 6 e 171 campos. O residual `B082` foi desestacionado e reaberto por decisão humana. ~~Próxima ação única = Etapa 1A do plano `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`; `B108` recua para a ação seguinte.~~ **Superada** pelo item 93.
 93. Em 2026-09-03 a Etapa 1A fechou: Apply abaixo das metas nas três transações da KB grande; Sync que grava na `NotaFiscal` sem as cinco varreduras convertidas; reencontro de SDT sem segundo `Save()`; Build All nos dois environments da `FabricaBrasil18Test` (PostgreSQL após reespecificar `apiEmpresa` quando o Specifier Daemon reiniciou). Próxima ação única = `B108`. Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`.
 94. Em 2026-09-03 o D12 (âncora no monitor da IDE) foi fumado na U15, KB pequena, GeneXus no monitor secundário: Wizard, Sincronizar e Remover abriram na frente da IDE. Código veio de carona no aceite da 1A; Preferências e o restante da Etapa 3 ficam fora. Evidência: o mesmo aceite, seção «Monitor da IDE».
+95. Em 2026-09-05 a investigação da falha BC da `Empresa` foi encerrada: Remover `Deleted=50`; `Build All` limpo nos dois environments; reaplicação `Created=50`, `Blocked=0`, BC e `procEmpresa_API_Create` salvos; `Build All` pós-reaplicação aprovado no `CSharpModel`. O erro do `NETFrameworkPostgreSQL` ficou separado como falha de geração/compilação C# do environment. Evidência: `Implementation/2026-09-05-ENCERRAMENTO-BC-EMPRESA.md`.
 
 ## Bloqueios e fatos ainda não validados
 

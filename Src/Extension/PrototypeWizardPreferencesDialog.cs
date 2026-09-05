@@ -21,6 +21,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
     private readonly CheckBox _deleteServiceCheck = CreateCheckBox("Delete");
     private readonly ComboBox _securityLevelCombo = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 180 };
     private readonly CheckBox _includeBcErrorMessagesCheck = CreateCheckBox(string.Empty);
+    private readonly CheckBox _offerOrphanMetadataRecoveryCheck = CreateCheckBox(string.Empty);
     private readonly NumericUpDown _defaultPageSizeInput = CreateNumericInput();
     private readonly NumericUpDown _maximumPageSizeInput = CreateNumericInput();
 
@@ -114,6 +115,8 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         checks.Controls.Add(_applyBusinessComponentCheck, 1, 1);
         checks.Controls.Add(_applyListCheck, 0, 2);
         checks.Controls.Add(_generateMetadataCheck, 1, 2);
+        checks.Controls.Add(_offerOrphanMetadataRecoveryCheck, 0, 3);
+        checks.SetColumnSpan(_offerOrphanMetadataRecoveryCheck, 2);
         optionsGroup.Controls.Add(checks);
         root.Controls.Add(optionsGroup, 0, 2);
 
@@ -204,6 +207,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         _generateProceduresCheck.Checked = preferences.GenerateProceduresByDefault;
         _generateApiObjectCheck.Checked = preferences.GenerateApiObjectByDefault;
         _generateMetadataCheck.Checked = preferences.GenerateMetadataByDefault;
+        _offerOrphanMetadataRecoveryCheck.Checked = preferences.OfferOrphanMetadataRecovery;
         _applyListCheck.Checked = preferences.ApplyListByDefault;
         _applyBusinessComponentCheck.Checked = preferences.ApplyBusinessComponentByDefault;
         _listServiceCheck.Checked = preferences.ListServiceByDefault;
@@ -257,6 +261,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             DeleteServiceByDefault = _deleteServiceCheck.Checked,
             SecurityLevelByDefault = PrototypeWizardPreferences.NormalizeSecurityLevel(_securityLevelCombo.SelectedItem as string),
             IncludeBusinessComponentErrorMessagesByDefault = _includeBcErrorMessagesCheck.Checked,
+            OfferOrphanMetadataRecovery = _offerOrphanMetadataRecoveryCheck.Checked,
             DefaultPageSizeByDefault = (int)_defaultPageSizeInput.Value,
             MaximumPageSizeByDefault = (int)_maximumPageSizeInput.Value,
         };
@@ -278,6 +283,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         _generateProceduresCheck.Text = _texts.Translate("Marcar Procedures por padrao");
         _generateApiObjectCheck.Text = _texts.Translate("Marcar API Object por padrao");
         _generateMetadataCheck.Text = _texts.Translate("Marcar metadata da API por padrao");
+        _offerOrphanMetadataRecoveryCheck.Text = _texts.Translate("Oferecer recuperação de metadata órfã no Wizard");
         _applyListCheck.Text = _texts.Translate("Marcar listagem por padrao");
         _applyBusinessComponentCheck.Text = _texts.Translate("Marcar REST via Business Component por padrao");
         _includeBcErrorMessagesCheck.Text = _texts.Translate("Incluir mensagens de erro do Business Component no corpo HTTP 422");

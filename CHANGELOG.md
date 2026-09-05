@@ -10,6 +10,10 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
+### Added
+
+- Opção explícita, desligada por padrão, para recuperar o File de metadata de uma API própria que ficou órfã após aplicação parcial. A recuperação valida posse, cria somente a metadata e exige reabertura do Wizard; não altera API Object, Procedures ou SDTs. Evidência e limite do recurso: `Docs/Implementation/2026-09-05-ENCERRAMENTO-BC-EMPRESA.md`.
+
 ### Fixed
 
 - Wizard, quadro de progresso e Sync abrem no monitor da janela principal do GeneXus (`Screen.FromHandle`), não no monitor primário. `CenterParent` não posiciona owner que não é `Form`. Smoke U15 em 2026-09-03 (KB pequena, IDE no secundário): Wizard, Sincronizar e Remover na frente da IDE. Preferências do Wizard fora deste recorte.
@@ -18,6 +22,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Changed
 
+- Investigação da falha de Business Component na `Empresa` encerrada em 2026-09-05: remoção limpa, `Build All` nos dois environments, reaplicação com `procEmpresa_API_Create` salvo e `Build All` aprovado no `CSharpModel`. A falha de conversão `bool`/`decimal`/`short` no `NETFrameworkPostgreSQL` permanece separada como problema daquele environment. Evidência: `Docs/Implementation/2026-09-05-ENCERRAMENTO-BC-EMPRESA.md`.
 - `B082` Etapa 1A **aceita** (2026-09-03): índice uma vez por operação; atributos de BC/List pelo mapa. Apply na KB `FabricaBrasil18Test` abaixo das metas (`Setor` ~18 s, `Empresa` ~61 s, `DocumentoFiscal` 65 s recrear / 29 s reaplicar). Sync que grava medido na `NotaFiscal` (KB pequena) por marcas de varredura. Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`. `B108` volta a ser a próxima ação única.
 
 ### Planned

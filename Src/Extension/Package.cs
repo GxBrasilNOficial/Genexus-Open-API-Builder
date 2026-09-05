@@ -1293,6 +1293,10 @@ public sealed class Package : AbstractPackageUI
                 snapshot = PrototypeWizardContractReader.Read(knowledgeBase.DesignModel, transaction);
                 contractWatch.Stop();
                 WriteOutput($"[Genexus Open API Builder][B082] Abertura ContratoMs={contractWatch.ElapsedMilliseconds}.");
+                foreach (var line in B113MetadataVisibilityProbe.Run(knowledgeBase.DesignModel, transaction))
+                {
+                    WriteOutput($"[Genexus Open API Builder]{line}");
+                }
                 loading.Report("Contrato", 1, 1, transaction.Name, contractWatch.ElapsedMilliseconds);
 
                 var duplicateServices = snapshot.ExistingApiContract.DuplicateServiceNames;
@@ -1381,6 +1385,19 @@ public sealed class Package : AbstractPackageUI
         var classifiedSensitiveCount = snapshot.Attributes.Count(item => item.IsSensitive);
         var classifiedAuditCount = snapshot.Attributes.Count(item => item.IsAudit);
         var apiPlan = ApiPlanBuilder.Build(knowledgeBase.DesignModel, transaction, selection);
+        var recoveryOutcome = OfferOrphanMetadataRecoveryIfEnabled(
+            dialog,
+            knowledgeBase.DesignModel,
+            transaction,
+            apiPlan,
+            preferencesLoadResult!.Preferences,
+            texts);
+        if (recoveryOutcome is OrphanMetadataRecoveryOutcome.Recovered or OrphanMetadataRecoveryOutcome.Failed)
+        {
+            ClearPrototypeWizardMemory(clearTransaction: false);
+            return true;
+        }
+
         var sdtGenerationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var classificationConfiguration = apiPlan.FieldClassificationConfiguration;
         var classificationMetadataContract = classificationConfiguration.MetadataContract;
@@ -1424,6 +1441,9 @@ public sealed class Package : AbstractPackageUI
         var callSiteLog = new B111CallSiteLog();
         using var callSiteScope = B111CallSiteProbe.Begin(callSiteLog);
         using var callSitePublisher = new B111CallSitePublisher(callSiteLog, "Wizard");
+        var saveBoundaryLog = new B112SaveBoundaryLog();
+        using var saveBoundaryScope = B112SaveBoundaryProbe.Begin(saveBoundaryLog);
+        using var saveBoundaryPublisher = new B112SaveBoundaryPublisher(saveBoundaryLog, "Wizard");
         try
         {
             using var busy = ExtensionBusyProgressScope.Show(applyOwner, texts.BusyProgressTitleApply, texts);
@@ -2077,6 +2097,96 @@ public sealed class Package : AbstractPackageUI
         }
     }
 
+    private enum OrphanMetadataRecoveryOutcome
+    {
+        NotOffered,
+        Declined,
+        Recovered,
+        Failed,
+    }
+
+    private static OrphanMetadataRecoveryOutcome OfferOrphanMetadataRecoveryIfEnabled(
+        System.Windows.Forms.IWin32Window owner,
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        PrototypeWizardPreferences preferences,
+        ExtensionTexts texts)
+    {
+        if (!preferences.OfferOrphanMetadataRecovery)
+        {
+            return OrphanMetadataRecoveryOutcome.NotOffered;
+        }
+
+        ApiPlanKbObjectNameIndex index;
+        string eligibilityDetail;
+        try
+        {
+            if (!ApiPlanOrphanMetadataRecovery.TryPrepare(designModel, apiPlan, out index, out eligibilityDetail))
+            {
+                WriteOutput($"[Genexus Open API Builder][B114] Recuperação não oferecida: {eligibilityDetail}");
+                return OrphanMetadataRecoveryOutcome.NotOffered;
+            }
+        }
+        catch (Exception ex)
+        {
+            WriteOutput($"[Genexus Open API Builder][B114] Não foi possível avaliar recuperação de metadata: {DescribeException(ex)}");
+            return OrphanMetadataRecoveryOutcome.NotOffered;
+        }
+
+        var metadataName = apiPlan.MetadataFileName;
+        var message = string.Format(
+            texts.Translate("Foi encontrada uma API gerada pela extensão sem o File de metadata '{0}'. A recuperação criará somente esse File, não alterará API Object, Procedures ou SDTs, e encerrará esta aplicação para uma nova leitura limpa. Deseja recuperar agora?"),
+            metadataName);
+        var answer = System.Windows.Forms.MessageBox.Show(
+            owner,
+            message,
+            texts.Wizard,
+            System.Windows.Forms.MessageBoxButtons.YesNo,
+            System.Windows.Forms.MessageBoxIcon.Warning,
+            System.Windows.Forms.MessageBoxDefaultButton.Button2);
+        if (answer != System.Windows.Forms.DialogResult.Yes)
+        {
+            WriteOutput($"[Genexus Open API Builder][B114] Recuperação recusada pelo usuário para File='{metadataName}'. Nenhuma alteração foi feita por B114.");
+            return OrphanMetadataRecoveryOutcome.Declined;
+        }
+
+        try
+        {
+            var result = ApiPlanOrphanMetadataRecovery.Recover(designModel, transaction, apiPlan, index);
+            WriteOutput($"[Genexus Open API Builder][B114] Metadata órfã recuperada: File='{result.FileName}', Status='{result.Status}', Guid='{result.Guid}', Bytes={result.Bytes}, Sha256='{result.Sha256}'. Nenhum API Object, Procedure ou SDT foi alterado por B114.");
+            System.Windows.Forms.MessageBox.Show(
+                owner,
+                string.Format(
+                    texts.Translate("A metadata '{0}' foi recuperada. Reabra o Wizard para continuar; nenhuma outra etapa foi executada nesta aplicação."),
+                    result.FileName),
+                texts.Wizard,
+                System.Windows.Forms.MessageBoxButtons.OK,
+                System.Windows.Forms.MessageBoxIcon.Information);
+            return OrphanMetadataRecoveryOutcome.Recovered;
+        }
+        catch (Exception ex)
+        {
+            var detail = DescribeException(ex);
+            WriteOutput($"[Genexus Open API Builder][B114] Recuperação de metadata falhou: File='{metadataName}', Error='{detail}'. Nenhuma etapa posterior foi executada.");
+            System.Windows.Forms.MessageBox.Show(
+                owner,
+                string.Format(texts.Translate("A recuperação da metadata '{0}' falhou: {1}"), metadataName, detail),
+                texts.Wizard,
+                System.Windows.Forms.MessageBoxButtons.OK,
+                System.Windows.Forms.MessageBoxIcon.Error);
+            return OrphanMetadataRecoveryOutcome.Failed;
+        }
+    }
+
+    private static string DescribeException(Exception exception)
+    {
+        var inner = exception.InnerException;
+        return inner is null
+            ? exception.GetType().Name + ": " + exception.Message
+            : exception.GetType().Name + ": " + exception.Message + " | Inner=" + inner.GetType().Name + ": " + inner.Message;
+    }
+
     private static Transaction? TryResolveTransactionFromContext(CommandData data)
     {
         return KBObjectSelectionHelper.TryGetOnlyOneKBObjectFrom(data.Context) as Transaction;
@@ -2332,6 +2442,43 @@ public sealed class Package : AbstractPackageUI
                 foreach (var line in _log.Render())
                 {
                     WriteOutput($"[Genexus Open API Builder][B111][{_operation}] {line}");
+                }
+            }
+            catch
+            {
+            }
+        }
+    }
+
+    /// <summary>
+    /// B112 — publica a sonda temporária das fronteiras Pump/Save no final do Apply.
+    /// A publicação nunca pode alterar o resultado da operação medida.
+    /// </summary>
+    private sealed class B112SaveBoundaryPublisher : IDisposable
+    {
+        private readonly B112SaveBoundaryLog _log;
+        private readonly string _operation;
+        private bool _disposed;
+
+        public B112SaveBoundaryPublisher(B112SaveBoundaryLog log, string operation)
+        {
+            _log = log;
+            _operation = operation;
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            try
+            {
+                foreach (var line in _log.Render())
+                {
+                    WriteOutput($"[Genexus Open API Builder][B112][{_operation}] {line}");
                 }
             }
             catch

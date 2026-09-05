@@ -63,20 +63,33 @@ internal static class ApiPlanListProcedureWriter
         progress?.PumpAndThrowIfAbortRequested();
         var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
 
-        var saveSteps = new (string Label, System.Action Save)[]
+        var saveSteps = new (string Label, System.Action Save, Func<string> Snapshot)[]
         {
-            (api.Name, () => SaveApi(model, kbIndex, api, transactionFolder, plan, apiSource, apiVariables)),
-            (procedure.Name, () => SaveProcedure(model, kbIndex, procedure, source, procedureVariables, rules)),
+            (api.Name, () => SaveApi(model, kbIndex, api, transactionFolder, plan, apiSource, apiVariables), () => B112SaveBoundaryProbe.Snapshot(api)),
+            (procedure.Name, () => SaveProcedure(model, kbIndex, procedure, source, procedureVariables, rules), () => B112SaveBoundaryProbe.Snapshot(procedure)),
         };
         var saveIndex = 0;
         foreach (var step in saveSteps)
         {
             progress?.ThrowIfAbortRequested();
             saveIndex++;
+            var beforePumpSnapshot = step.Snapshot();
             progress?.Report("List", saveIndex, saveSteps.Length, step.Label);
             progress?.Pump();
+            var afterPumpSnapshot = step.Snapshot();
+            B112SaveBoundaryProbe.PumpBoundary("List", step.Label, beforePumpSnapshot, afterPumpSnapshot);
+            B112SaveBoundaryProbe.BeforeSave("List", step.Label, afterPumpSnapshot);
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            step.Save();
+            try
+            {
+                step.Save();
+                B112SaveBoundaryProbe.Saved("List", step.Label, step.Snapshot());
+            }
+            catch (Exception exception)
+            {
+                B112SaveBoundaryProbe.Failed("List", step.Label, exception, step.Snapshot());
+                throw;
+            }
             sw.Stop();
             progress?.Report("List", saveIndex, saveSteps.Length, step.Label, sw.ElapsedMilliseconds);
         }
@@ -931,6 +944,10 @@ internal static class ApiPlanListProcedureWriter
         ReplaceVariables(model, kbIndex, procedure, variables);
         procedure.Rules.Source = rules;
         procedure.ProcedurePart.Source = source;
+        B112SaveBoundaryProbe.PreparedProcedure(
+            "List",
+            procedure,
+            variables.Select(variable => variable.Name + ":" + variable.DataType));
         procedure.Save();
 
         var persisted = Procedure.Get(model, procedure.Guid);
@@ -952,6 +969,7 @@ internal static class ApiPlanListProcedureWriter
         }
 
         ReplaceVariables(model, kbIndex, api, variables);
+        B112SaveBoundaryProbe.PreparedApi("List", api);
         api.Save();
 
         var persisted = API.Get(model, api.Guid);
