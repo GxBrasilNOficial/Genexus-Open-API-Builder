@@ -84,8 +84,12 @@ antes de sustentar qualquer um deles de novo.
    fase, e o objeto da próxima rodada passou a ser esses três documentos. Ver a seção 8.
 2. **Emitir o recibo de fechamento** da revisão, com o estado final de cada revisor da curadoria —
    inclusive os dois que não participaram, com o motivo.
-3. **Cenário J** (Sincronizar a partir do estado divergente) segue sem linha de base; não é
-   bloqueio da revisão, mas altera a seção de recuperação se o resultado surpreender.
+3. ~~**Cenário J** (Sincronizar a partir do estado divergente) segue sem linha de base~~ —
+   **medido em 2026-09-05**: o Sincronizar **bloqueia** antes de qualquer gravação, com
+   `Interrupted` e zero objetos tocados, porque suas seleções derivam de uma metadata que o
+   estado divergente não tem. Não degrada. Dos três caminhos que a mensagem de aborto
+   recomenda, apenas o Wizard piora a situação. Ver
+   [`…-SONDAS-IDENTIDADE-E-DIARIO.md`](2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md) §10.5.
 
 ## 7. Recomendações para a próxima rodada
 

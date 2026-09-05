@@ -514,3 +514,35 @@ sem o membro `EmpresaId` e as quatro Procedures regravadas com o contrato reduzi
 estado é evidência útil e pode ser usado para exercitar o cenário J (Sincronizar a partir do
 estado divergente), que segue sem linha de base. Se for descartado, o caminho medido como
 seguro é o comando de remoção (fato 3.2.6 do plano original).
+
+### 10.5 Cenário J fechado — o Sincronizar bloqueia, não degrada
+
+Aproveitando o estado divergente de 10.4, executou-se o `Sincronizar` sobre a mesma
+Transaction. Era a última pendência de linha de base do plano original (seção 8) e do estado
+da revisão por pares.
+
+```
+[B085] Sincronizacao bloqueada ou falhou: Transaction='Empresa',
+       Error='Sincronizacao bloqueada: File de metadata 'apiEmpresa_Metadata' nao foi
+       encontrado. Nenhuma alteracao foi feita.'
+Resultado='Interrupted', Criados=0, Atualizados=0, Removidos=0, Bloqueados=1
+```
+
+**O Sincronizar não degrada.** Ele bloqueia antes de qualquer gravação, porque suas seleções
+derivam da metadata e a metadata não existe. Zero objetos tocados.
+
+Os três caminhos que a mensagem de aborto recomenda ficam assim, todos medidos:
+
+| Caminho | Comportamento sobre estado divergente |
+|---|---|
+| **Remover** | repara — 50 objetos removidos, zero bloqueados (fato 3.2.6) |
+| **Sincronizar** | **bloqueia com segurança**, sem tocar em nada — não repara |
+| **Wizard** | **degrada** — remove membro de SDT e regrava Procedures empobrecidas (§10.2) |
+
+O defeito de orientação existe, mas é menor do que se temia: em vez de dois caminhos que
+pioram, há **um** que piora — o Wizard. O Sincronizar é inócuo, ainda que deixe o usuário
+sem saída, já que bloqueia sem reparar.
+
+Consequência prática para a mensagem: ela não deveria oferecer o Wizard como caminho de
+reparo sobre estado sem metadata, e deveria dizer que o Sincronizar bloqueia nesse estado.
+Isso é orientação de UI e pertence a `B110`, não ao `B111`.
