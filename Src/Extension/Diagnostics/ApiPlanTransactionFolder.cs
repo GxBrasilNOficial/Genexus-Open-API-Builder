@@ -25,9 +25,13 @@ internal static class ApiPlanTransactionFolder
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
+        // B111/F1: instrumentacao temporaria. So conta; nao altera fluxo nem resultado.
+        B111CallSiteProbe.Enter("TransactionFolder.CreateOrReencounter");
+
         var existingFolder = Preflight(designModel, transaction, apiPlan);
         if (existingFolder is not null)
         {
+            B111CallSiteProbe.Skipped("TransactionFolder.CreateOrReencounter", existingFolder.Name);
             return existingFolder;
         }
 
@@ -39,6 +43,7 @@ internal static class ApiPlanTransactionFolder
         AlignWithTransactionContainer(folder, transaction);
 
         folder.Save();
+        B111CallSiteProbe.Wrote("TransactionFolder.CreateOrReencounter", folder.Name);
         apiPlan.TransactionFolderWasCreated = true;
         return folder;
     }

@@ -48,6 +48,9 @@ internal static class ApiPlanSdtWriter
             throw new InvalidOperationException("Criacao de SDTs bloqueada: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
         }
 
+        // B111/F1: instrumentacao temporaria. So conta; nao altera fluxo nem resultado.
+        B111CallSiteProbe.Enter("SdtWriter.CreateOrReencounter");
+
         var preserve = new HashSet<string>(preserveSdtNames ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
         var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var planned = generationPlan.SharedSdts.Count + generationPlan.OwnSdts.Count;
@@ -225,6 +228,7 @@ internal static class ApiPlanSdtWriter
             Description = ApiPlanOwnedObjectDescription.Create(SharedFolderName),
         };
         folder.Save();
+        B111CallSiteProbe.Wrote("SdtWriter.SharedFolder", SharedFolderName);
         return folder;
     }
 
@@ -260,6 +264,11 @@ internal static class ApiPlanSdtWriter
             if (wroteKb)
             {
                 existingSdt.Save();
+                B111CallSiteProbe.Wrote("SdtWriter.SdtReencontrado", definition.Name);
+            }
+            else
+            {
+                B111CallSiteProbe.Skipped("SdtWriter.SdtReencontrado", definition.Name);
             }
 
             var status = wroteKb ? ApiPlanSdtWriteStatus.Reencountered : ApiPlanSdtWriteStatus.Unchanged;
@@ -291,6 +300,7 @@ internal static class ApiPlanSdtWriter
         ConfigureSdt(designModel, sdt, definition, kbIndex);
         progress?.ThrowIfAbortRequested();
         sdt.Save();
+        B111CallSiteProbe.Wrote("SdtWriter.SdtNovo", definition.Name);
 
         var persisted = SDT.Get(designModel, sdt.Guid);
         return new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, ApiPlanSdtWriteStatus.Created, persisted.Guid);
