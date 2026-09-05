@@ -181,12 +181,47 @@ recibo dentro da F2.
 | **D** | `Save()` lançou, expirou, foi cancelado ou devolveu resposta não determinável | `OutcomeUnknown` |
 | **E** | `Save()` concluiu, mas a leitura de confirmação falhou ou divergiu | `OutcomeUnknown`, com a divergência registrada |
 
-A distinção entre C e D é o ponto delicado: exige que o seam saiba se a chamada chegou a
-ser feita. Por isso o delegate de gravação precisa ser a **única** coisa dentro do trecho
-medido — preparação de conteúdo fica fora.
+Um `Save()` que lançou **não** pode ser classificado como “não gravou”. Essa é a regra de
+que a F3 vai depender.
 
-Um `Save()` que lançou **não** pode ser classificado como “não gravou”. Essa é a regra que
-a F3 vai depender.
+#### Como cada classe é produzida, concretamente
+
+Um delegate `Action save` sozinho **não** distingue as três classes. O contrato precisa ser
+explícito, senão os testes da seção 6.3 não têm o que exercitar.
+
+**Ciclo de vida do recibo dentro de `Persist`:**
+
+1. o recibo é criado e registrado no log **antes** de o delegate ser invocado, com resultado
+   `Started` e a ordem monotônica já atribuída;
+2. o delegate é invocado;
+3. se lançar — inclusive `OperationCanceledException` —, o recibo passa a `OutcomeUnknown`,
+   com a exceção registrada, e a exceção é **relançada** sem alteração;
+4. se retornar, roda a leitura de confirmação, quando o ponto tiver uma;
+5. confirmação bem-sucedida e coerente → `Confirmed`; ausente ou divergente →
+   `OutcomeUnknown`, com a divergência registrada.
+
+Um recibo que permaneça em `Started` ao fim da operação é, por si, um sinal: significa que o
+processo morreu dentro daquela gravação.
+
+**A classe C não é observável pelo seam** — se a falha ocorre antes de chamar `Persist`, o
+seam não é invocado e não há recibo. Ela é registrada pelo **orquestrador**, com um método
+próprio do log, do tipo `NoteStageFailed(stage, reason)`, chamado onde hoje já existe o
+teste de resultado de cada etapa. Sem isso, “etapa falhou antes de gravar” seria
+indistinguível de “etapa nunca foi selecionada”, que é uma distinção que o relatório precisa
+fazer.
+
+**Correção herdada: “timeout” não é observável.** O manuscrito expandido falava em timeout
+como uma das origens de resultado indeterminado. O SDK não expõe timeout nas operações de
+gravação; o que existe, e é observável, é **exceção** e **cancelamento**. A classe D fica
+definida por esses dois mais “confirmação impossível de ler”. Os testes injetam exceção e
+cancelamento — não simulam um timeout que a API não produz.
+
+**Ponto de injeção da classe C nos testes:** o log expõe `NoteStageFailed`, então o teste
+chama o orquestrador com uma etapa configurada para falhar na preparação, antes de qualquer
+`Persist`, e verifica que o relatório distingue as três classes.
+
+A distinção C × D também exige que o delegate contenha **somente** a gravação: preparação de
+conteúdo fica fora do trecho medido, ponto a ponto.
 
 ### 4.4 Granularidade — evitar contagem dupla
 
@@ -203,7 +238,29 @@ num executor único, existe um só lugar que chama `Persist(...)` para esses wri
 Uma sentinela deve falhar se um `Save()` de produção aparecer fora de um `Persist(...)`,
 e outra deve falhar se um ponto for instrumentado nos dois níveis.
 
-### 4.5 Habilitação de BC diferida no Wizard
+### 4.5 O log sobrevive aos retornos antecipados
+
+`Package.cs` tem **22** chamadas a `ShowFinalReport` e, só no Apply do Wizard, **8** pontos
+de `return` após falha ou bloqueio de etapa. Se a sequência de recibos dependesse do
+`Dispose` do escopo para ser publicada, o relatório sairia sem os últimos recibos em
+exatamente os casos que mais importam — os de falha.
+
+Contrato:
+
+1. o `ApiPlanPersistenceLog` é instanciado **antes** de abrir o escopo, e é uma variável
+   local do Apply;
+2. `Begin(log)` só ativa a captura; o log não pertence ao escopo e não é publicado por ele;
+3. `ShowFinalReport` recebe o log **diretamente**, em todos os 22 pontos de chamada, e por
+   isso funciona em qualquer retorno antecipado;
+4. o escopo continua sendo `using`, para garantir restauração do estado `[ThreadStatic]`
+   mesmo em exceção;
+5. a apresentação do relatório roda dentro de `Suspend()`, como já faz a telemetria de
+   varredura, para que as leituras do próprio relatório não entrem na sequência medida.
+
+Uma sentinela deve falhar se algum `ShowFinalReport` de um fluxo gerenciado pela frente for
+chamado sem o log.
+
+### 4.6 Habilitação de BC diferida no Wizard
 
 A F1 manteve, no Sync, o bloqueio de preflight quando BC é pedido sem a Transaction
 habilitada, e adiou o caso do Wizard. Com recibo disponível, a F2 fecha:

@@ -117,6 +117,29 @@ Recomendação: decidir **depois** de a F1 estar em campo. Com a ordem corrigida
 frequência real de estado parcial pode ser baixa o bastante para que o modo B baste — e
 essa informação não existe hoje.
 
+### 3.1 O que fica em aberto até a decisão, e por quê
+
+Uma revisão de 2026-09-05 observou, corretamente, que a F3 **não é implementável hoje**. É
+por construção, e vale registrar o limite com precisão, para que ninguém tente fechar tudo
+antes da hora nem descubra os buracos durante a implementação.
+
+Fica em aberto **de propósito**, e só se fecha depois da decisão:
+
+| Aberto | Depende de |
+|---|---|
+| formato, local, versão, dono e correlação do checkpoint manual | escolher o modo B; especificar ambos os modos por completo seria escrever duas implementações, e foi assim que o manuscrito expandido inchou |
+| ciclo de vida do diário depois de `Removed` — hoje ele é preservado e a KB acumularia | escolher o modo A; sem ele a pergunta não existe |
+
+Fica em aberto **por lacuna**, e precisa ser fechado no plano de execução do modo escolhido,
+seja ele qual for:
+
+| Lacuna | O que falta decidir |
+|---|---|
+| **critério de desempate entre candidatos** na varredura por prefixo | a recuperação diz “bloquear se houver mais de um candidato próprio”, o que é seguro mas pode ser paralisante numa KB com diários antigos da mesma Transaction. Falta definir se há critério legítimo de escolha — por exemplo, o mais recente com `ApplicationId` ativo — ou se o bloqueio é sempre a resposta e a saída é uma limpeza manual |
+| **qual comando inicia a recuperação** | está dito que reabrir o Wizard pelo caminho normal não é recuperação. Não está dito o que é. Isso implica um comando ou modo de entrada próprio, com UI, mensagens e permissões — e é trabalho que nenhuma das três fases orçou |
+
+A segunda lacuna é a mais relevante: ela pode ser uma fase F4, não um detalhe da F3.
+
 ---
 
 ## 4. Núcleo comum aos dois modos

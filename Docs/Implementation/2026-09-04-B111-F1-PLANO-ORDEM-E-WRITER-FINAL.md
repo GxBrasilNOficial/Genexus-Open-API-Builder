@@ -148,7 +148,11 @@ O predicado deve existir nos **dois blocos** de `Package.cs`, com a mesma defini
 
 ### 4.2 Writer final por seleção
 
-| Seleção | Preparação B054 | Writer final | `API.Save()` físicos |
+**A tabela abaixo vale exclusivamente para `GenerateApiObject=true`.** Com a flag falsa não
+existe writer final de API e nenhuma linha desta tabela se aplica; o caso está na matriz de
+4.6, que é a única fonte para ele.
+
+| Seleção, com `GenerateApiObject=true` | Preparação B054 | Writer final | `API.Save()` físicos |
 |---|---|---|---|
 | API-only | prepara e persiste | B054 | 1 |
 | BC-only | prepara sem salvar | BC | 1 |
@@ -200,6 +204,51 @@ Depois do gate:
 Nenhum consumidor pode salvar o API antes de seu Source, Rules e Variables estarem
 finalizados. A metadata nunca precede o API fisicamente confirmado. Etapa não selecionada
 é omitida, e omiti-la não autoriza gravação oculta.
+
+#### 4.4.1 Responsabilidade única por Folder e SDT
+
+A ordem acima **só é verdadeira se uma etapa for dona de cada tipo de objeto**. Hoje não é o
+caso, e isso precisa ser resolvido nesta fase, sob pena de a ordem declarada não descrever a
+execução real.
+
+Medido por leitura em 2026-09-05:
+
+| Chamada | Onde ocorre |
+|---|---|
+| `ApiPlanTransactionFolder.CreateOrReencounter` | **seis** pontos: `ApiPlanSdtWriter.cs:69`, `ApiPlanProcedureWriter.cs:53`, `ApiPlanApiObjectWriter.cs:53`, `ApiPlanBusinessComponentWriter.cs:96`, `ApiPlanListProcedureWriter.cs:64` — mais o interno do próprio SdtWriter |
+| `ApiPlanSdtWriter.CreateOrReencounter` | **quatro** pontos: a fase dedicada em `Package.cs:420-421`, `ApiPlanBusinessComponentWriter.cs:94` e `ApiPlanListProcedureWriter.cs:62` |
+
+Numa aplicação com SDTs, Procedures, API, BC e List, o writer de SDT roda três vezes e o de
+Folder mais de cinco. Isso não é acidente — é o motivo de existirem `RefreshSdts` e
+`RefreshFolders` no índice, cujo comentário registra que “um segundo `CreateOrReencounter`
+no mesmo índice (BC/List) pode tentar `CreateSharedFolder` de novo”.
+
+Sem uma regra, três consequências decorrem, e a terceira é a mais séria:
+
+1. a ordem física declarada em 4.4 não corresponde à execução, porque Folder e SDT são
+   tocados fora das suas posições;
+2. a atribuição de autoria no relatório fica ambígua entre a fase dedicada e o consumidor;
+3. na F2, cada passagem vira um ponto de gravação instrumentado, e a sequência de recibos
+   passa a mostrar o mesmo objeto várias vezes — arruinando o instrumento que deveria provar
+   a ordem.
+
+**Regra desta fase:**
+
+> As **fases dedicadas** do `Package` são as únicas autorizadas a **criar** Folder e SDT. As
+> chamadas dentro dos writers de consumidor operam em **reencontro estrito**: reencontram e
+> validam, e **falham** se precisarem criar ou alterar.
+
+Isto não é regra nova, é coerência com o que a F1 já exige em 4.6: “o writer pode exigir que
+dependências já existam e estejam coerentes, mas não pode salvá-las ocultamente”. A 4.4.1
+apenas torna a exigência verificável.
+
+Consequência prática a validar: com `GenerateSdts=false` e BC selecionado, o SDT que só a
+etapa de BC usaria precisa **já existir**; se não existir, o gate bloqueia — em vez de o
+writer criá-lo em silêncio, como pode ocorrer hoje.
+
+Cobertura exigida: sentinela de que nenhum writer de consumidor cria Folder ou SDT; fluxo
+executável com `GenerateSdts=false` + BC sobre KB sem os SDTs, esperando bloqueio; e
+contagem de gravações de Folder e SDT por aplicação, que deve corresponder à ordem de 4.4.
 
 A habilitação de BC por `transaction.Save()` **não** entra na F1: no Sync ela permanece
 bloqueio de preflight, como já é; no Wizard, o diferimento com recibo depende do seam e
@@ -393,6 +442,8 @@ Sentinelas são necessárias e insuficientes: elas provam forma, não comportame
 
 ### 6.2 Fluxos executáveis
 
+Nas oito primeiras linhas, `GenerateApiObject=true`; nas seguintes, o que a coluna disser.
+
 | Entrada | Seleção | Resultado exigido |
 |---|---|---|
 | Wizard | API-only | um `API.Save()`, em B054 |
@@ -403,6 +454,10 @@ Sentinelas são necessárias e insuficientes: elas provam forma, não comportame
 | Sync | com BC | um `API.Save()`, no BC |
 | Sync | com List | um `API.Save()`, no List |
 | Sync | com BC + List | um `API.Save()`, no List |
+| Wizard | `GenerateApiObject=false` + BC, API próprio existente | Procedures de BC atualizadas; **zero** `API.Save()` |
+| Wizard | `GenerateApiObject=false` + List, API próprio existente | Procedure de List atualizada; **zero** `API.Save()` |
+| Wizard | `GenerateApiObject=false` + BC + List + metadata, API próprio | todos os consumidores usam o mesmo API existente; **zero** `API.Save()`; metadata gravada por último |
+| Wizard | `GenerateApiObject=false` + qualquer combinação, API ausente | bloqueio antes do primeiro Save de qualquer objeto |
 | Wizard | `GenerateApiObject=false`, API próprio | consumidores atualizados sem `API.Save()` |
 | Wizard | `GenerateApiObject=false`, API ausente | bloqueio antes do primeiro Save |
 | Wizard | SDT/Procedure `false` | nenhuma gravação da etapa desmarcada |
