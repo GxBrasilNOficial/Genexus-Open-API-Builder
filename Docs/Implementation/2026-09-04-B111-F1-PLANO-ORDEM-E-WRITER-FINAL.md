@@ -232,6 +232,27 @@ Sem uma regra, três consequências decorrem, e a terceira é a mais séria:
    passa a mostrar o mesmo objeto várias vezes — arruinando o instrumento que deveria provar
    a ordem.
 
+**Medição de 2026-09-05 — a regra é declarativa, não muda comportamento.** Sonda de call
+sites sobre dois Applies reais na KB `wseducacaospteste`, Transaction `Teste` com subníveis,
+seleção completa (SDTs, Procedures, API, BC, List, metadata):
+
+| Ponto | Primeira geração | Reaplicação |
+|---|---|---|
+| `SdtWriter.CreateOrReencounter` — entradas | 3 | 3 |
+| SDT criado (gravação) | 18, **todas na fase dedicada** | 0 |
+| SDT reencontrado — gravações | **0** | **0** |
+| SDT reencontrado — skips | 45 | 63 |
+| `TransactionFolder.CreateOrReencounter` — entradas | 7 | 6 |
+| Folder — gravações | **0** | **0** |
+
+**Nenhuma das passagens extras grava.** As 18 criações de SDT ocorreram todas na primeira
+passagem, dentro da fase dedicada, e as passagens de BC e de List só reencontraram. O Folder
+foi reencontrado em todas as sete entradas.
+
+Portanto a regra abaixo **descreve o comportamento que já existe**: torná-la explícita é
+barato, verificável e sem efeito observável. O risco que motivou a medição não se
+materializou.
+
 **Regra desta fase:**
 
 > As **fases dedicadas** do `Package` são as únicas autorizadas a **criar** Folder e SDT. As
@@ -249,6 +270,12 @@ writer criá-lo em silêncio, como pode ocorrer hoje.
 Cobertura exigida: sentinela de que nenhum writer de consumidor cria Folder ou SDT; fluxo
 executável com `GenerateSdts=false` + BC sobre KB sem os SDTs, esperando bloqueio; e
 contagem de gravações de Folder e SDT por aplicação, que deve corresponder à ordem de 4.4.
+
+**Custo das passagens redundantes — fica fora desta frente.** A medição mostrou que, mesmo
+sem gravar, as passagens extras percorrem todos os SDTs comparando estrutura para decidir o
+skip: **42 comparações por Apply** na primeira geração e **42** na reaplicação, além das 21
+da fase dedicada. Isso é desperdício mensurável, mas é otimização de desempenho — pertence a
+`B082`, não a `B111`. A F1 declara a responsabilidade; não muda quem chama quem.
 
 A habilitação de BC por `transaction.Save()` **não** entra na F1: no Sync ela permanece
 bloqueio de preflight, como já é; no Wizard, o diferimento com recibo depende do seam e

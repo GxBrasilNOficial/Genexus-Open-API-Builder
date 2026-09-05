@@ -320,3 +320,85 @@ nenhuma otimização de média o elimina. A causa não foi investigada.
 - Não foi medido se o setter de `Guid` é público em tempo de compilação: a sonda usou
   reflexão com `BindingFlags.Public | NonPublic`. Isso não afeta o desenho recomendado,
   que é ler o `Guid` do `Create` e nunca atribuí-lo.
+
+---
+
+## 9. S6 — call sites de Folder e SDT numa aplicação real (2026-09-05)
+
+Sonda distinta das anteriores: em vez de criar objetos próprios, instrumenta caminhos de
+produção e observa um Apply real. DLL
+`2C95521EDF586D862922A1A149939210B1FE106EBBCFC126E34B5D199313059A`.
+
+**Pergunta.** A leitura de código mostrou `ApiPlanTransactionFolder.CreateOrReencounter` em
+seis pontos e `ApiPlanSdtWriter.CreateOrReencounter` em quatro. Quantas dessas passagens
+efetivamente **gravam**? A resposta decide o risco da regra de responsabilidade única
+proposta na seção 4.4.1 do plano da F1.
+
+**Cenário.** KB `wseducacaospteste`, Transaction `Teste` com subníveis (18 SDTs próprios,
+3 compartilhados, 5 Procedures), seleção completa: SDTs, Procedures, API Object, Business
+Component, List e metadata. Duas execuções: primeira geração e reaplicação imediata.
+
+### 9.1 Resultado
+
+| Ponto | Primeira geração | Reaplicação |
+|---|---|---|
+| `SdtWriter.CreateOrReencounter` — entradas | 3 | 3 |
+| SDT criado — gravações | 18 | 0 |
+| SDT reencontrado — **gravações** | **0** | **0** |
+| SDT reencontrado — skips | 45 | 63 |
+| `TransactionFolder.CreateOrReencounter` — entradas | 7 | 6 |
+| Folder — **gravações** | **0** | **0** |
+| Folder — skips | 7 | 6 |
+
+**Nenhuma passagem extra grava.** As 18 criações de SDT ocorreram todas na primeira
+passagem, dentro da fase dedicada; BC e List apenas reencontraram. O Folder já existia e foi
+reencontrado em todas as entradas.
+
+Consequência para o plano: a regra de responsabilidade única **descreve o comportamento
+atual**. Declará-la é barato e sem efeito observável — o risco que motivou a medição não se
+materializou.
+
+### 9.2 A instrumentação se validou sozinha
+
+O Folder foi tocado **sete** vezes na primeira geração e **seis** na reaplicação. A
+diferença é exatamente a fase de API Object, que na reaplicação não executou — o log registra
+`API Object ja existe […] sera absorvida pelo preflight de Business Component`, e a fase
+custou 3 ms.
+
+Ou seja: a contagem reflete o deferimento parcial de B054 que a F1 documenta na seção 2.1,
+observado em execução e não apenas por leitura.
+
+### 9.3 Ordem física observada
+
+A sequência numerada confirma o que a F1 previu: SDTs e Folder são tocados **dentro** das
+etapas de BC e de List, fora das suas posições na ordem declarada. Na primeira geração:
+
+```
+SdtWriter(fase) → Folder → 18 SDTs criados → Folder(Procedures) → Folder(ApiObject)
+→ SdtWriter(BC) → Folder → 21 skips → Folder(BC) → SdtWriter(List) → Folder → 21 skips → Folder(List)
+```
+
+Nada disso grava, mas a ordem declarada só descreve a execução depois que a regra de 4.4.1
+tornar essas passagens explicitamente de leitura.
+
+### 9.4 Desperdício mensurável, fora do escopo desta frente
+
+Mesmo sem gravar, cada passagem extra percorre todos os SDTs comparando estrutura para
+decidir o skip: **42 comparações redundantes por Apply**, além das 21 da fase dedicada, nos
+dois cenários. É otimização de desempenho e pertence a `B082`; a F1 declara responsabilidade,
+não muda quem chama quem.
+
+### 9.5 Tempos das duas execuções
+
+| Fase | Primeira geração | Reaplicação |
+|---|---|---|
+| SDTs | 2.688 ms | 752 ms |
+| Procedures | 745 ms | 232 ms |
+| API Object | 372 ms | **3 ms** (absorvida pelo BC) |
+| Business Component | 5.026 ms | 3.670 ms |
+| List | 1.679 ms | 1.596 ms |
+| metadata | 526 ms | 352 ms |
+| **total** | **11.236 ms** | **6.907 ms** |
+
+Na reaplicação, BC e List somam 5,3 s de 6,9 s — e são justamente as duas etapas que hoje
+gravam o API Object uma vez cada. É o alvo direto da F1.
