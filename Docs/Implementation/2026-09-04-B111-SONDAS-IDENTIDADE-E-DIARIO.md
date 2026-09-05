@@ -578,3 +578,81 @@ dependa da metadata, ancorado em posse verificável por outra via.
 Consequência para a mensagem de aborto: ela recomenda três caminhos e, neste estado, **os
 três estão errados** — dois bloqueiam e um degrada. Isso é `B110`, mas com gravidade maior
 do que o item descrevia.
+
+### 10.7 O workaround destrava o Wizard, mas a falha volta
+
+Testada a hipótese de saída: apagar manualmente **apenas** o API Object `apiEmpresa` e
+reaplicar o Wizard.
+
+**Funcionou como previsto na primeira metade.** Sem o API sem metadata, o diagnóstico de
+posse deixou de bloquear e o Wizard voltou a oferecer o fluxo completo:
+
+```
+GenerateSdts=True, GenerateProcedures=True, GenerateApiObject=True,
+GenerateMetadata=True, ApplyList=True, ApplyBusinessComponent=True
+```
+
+O contrato também voltou íntegro — `ListFilters=1`, contra `ListFilters=0` da reaplicação
+degradada —, porque o Wizard passou a derivar o plano da Transaction em vez de um API
+inutilizável.
+
+**E então a mesma falha ocorreu de novo**, agora na etapa de Business Component:
+
+```
+[B071-B073/B079] Aplicacao REST via Business Component bloqueada […]
+  Error='Unable to Deserialize Data. | Inner='Collection was modified; enumeration
+  operation may not execute.''
+[B060] Metadata nao foi gravada […]
+Resultado='Interrupted', Criados=1 (API Object), Atualizados=4, Bloqueados=1
+```
+
+O resultado é o **mesmo estado sem saída** de §10.6, com um API Object novo
+(`353b6269-…`) sem metadata. **O workaround não resolve o problema: ele apenas recria as
+condições em que o problema reaparece.**
+
+#### Quarta ocorrência do sintoma de `B109`, com uma pista de causa
+
+A mensagem trouxe uma camada externa que as três anteriores não tinham:
+**`Unable to Deserialize Data`**, com o `Collection was modified` como exceção interna.
+Isso situa a falha dentro de uma **desserialização** do SDK, e é a primeira indicação
+concreta de onde procurar.
+
+O quadro das quatro ocorrências:
+
+| # | Data | Onde | Mensagem |
+|---|---|---|---|
+| 1 | 2026-09-04 | etapa de Business Component | `Collection was modified` |
+| 2 | 2026-09-04 | primeiro `Save()` de API em sonda | `Collection was modified` |
+| 3 | 2026-09-05 | etapa de List | `Collection was modified` |
+| 4 | 2026-09-05 | etapa de Business Component | `Unable to Deserialize Data` + inner |
+
+**As quatro ocorreram na `fabricabrasil18test`, sempre na `Empresa`** — 44 SDTs próprios,
+102 campos de Create, 162 de Response. Nas duas execuções desta sessão que chegaram às
+etapas de consumidor, **as duas falharam**. Nenhuma ocorrência na `wseducacaospteste`, cuja
+`Teste` tem 21 SDTs e completou os dois Applies sem erro.
+
+Isso reenquadra `B109`: descrito como intermitente e aleatório, o sintoma parece
+**correlacionado com escala** e, na Transaction grande, tem taxa de falha alta — 2 de 2 aqui.
+Registros anteriores mostram Applies bem-sucedidos na `Empresa`, então não é determinístico;
+mas “intermitente” subestima o que se observa.
+
+#### Pendência de verificação — o membro `EmpresaId`
+
+Há uma inconsistência que **não** se resolve com os logs disponíveis, e que afeta a
+conclusão de §10.2.
+
+Nesta execução, o plano trouxe `sdtEmpresa_API_ListFilters` com `Members=1` e o writer
+classificou o SDT como **`Unchanged`**. Se a reaplicação de §10.2 tivesse de fato removido o
+membro `EmpresaId`, o SDT teria 0 membros e um plano de 1 membro **divergiria** — deveria
+aparecer como `Reencountered`, não `Unchanged`.
+
+Duas leituras possíveis, e os logs não decidem entre elas:
+
+1. a gravação de §10.2 **não** removeu o membro, e a degradação foi menor do que registrado;
+2. a gravação removeu, e algo posterior repôs o membro.
+
+**Ação necessária:** abrir `sdtEmpresa_API_ListFilters` na IDE e conferir se `EmpresaId`
+está presente. Enquanto isso não for verificado, a afirmação de §10.2 de que o membro foi
+removido fica **marcada como não confirmada**. O que permanece certo em §10.2, e não depende
+disso, é que o contrato em memória degradou de `ListFilters=1` para `0` e que o SDT foi
+gravado sob `SuccessWithWarnings`.
