@@ -402,3 +402,115 @@ não muda quem chama quem.
 
 Na reaplicação, BC e List somam 5,3 s de 6,9 s — e são justamente as duas etapas que hoje
 gravam o API Object uma vez cada. É o alvo direto da F1.
+
+---
+
+## 10. S6 na KB grande — a cascata de degradação medida ao vivo (2026-09-05)
+
+Mesma sonda de call sites, KB `fabricabrasil18test`, Transaction `Empresa` (44 SDTs
+próprios, 102 campos de Create, 162 de Response). Duas execuções: primeira geração e
+reaplicação imediata.
+
+**O que se pretendia medir** — gravações nas passagens extras de Folder e SDT — foi medido e
+confirma a seção 9. Mas a execução capturou, por acidente, algo de valor muito maior: o
+incidente completo que motiva `B111`, `B109` e `B110`, do começo ao fim, com o objeto
+degradado nomeado.
+
+### 10.1 Primeira geração — o incidente B111 ocorreu
+
+| Fase | Tempo |
+|---|---|
+| SDTs | 40.840 ms |
+| Procedures | 1.184 ms |
+| API Object | 2.848 ms |
+| Business Component | 32.855 ms |
+| List | 6.292 ms — **falhou** |
+| metadata | **não executou** |
+| **total** | **87.062 ms** |
+
+```
+[B070] Aplicacao do List bloqueada […] Error='Collection was modified; enumeration operation may not execute.'
+[B060] Metadata nao foi gravada […] porque B070 falhou ou foi bloqueado neste fluxo.
+Resultado='Interrupted', Criados=49, Bloqueados=1
+```
+
+Este é **exatamente** o estado que `B111` existe para evitar: o API Object foi gravado — uma
+vez por B054 e outra pela etapa de Business Component —, o consumidor final falhou, e a
+metadata nunca foi escrita. A janela de 49 s descrita no plano original mediu, aqui, 87 s.
+
+A falha é o sintoma de `B109`, agora observado pela terceira vez, e a segunda **fora** de uma
+sonda: na etapa de List, não na de Business Component.
+
+### 10.2 Reaplicação — a cascata de `B110`, com o objeto degradado nomeado
+
+A reabertura diagnosticou `MetadataMissing` e o Wizard **desligou sozinho** quatro etapas:
+
+```
+GenerateApiObject=False, GenerateMetadata=False, ApplyList=False, ApplyBusinessComponent=False
+```
+
+E, com elas desligadas, **as etapas restantes gravaram assim mesmo**:
+
+```
+Resultado='SuccessWithWarnings', Criados=0, Atualizados=5, Bloqueados=0
+Atualizado: SDT 'sdtEmpresa_API_ListFilters'
+Atualizado: Procedure procEmpresa_API_List / _Get / _Create / _Update
+```
+
+O objeto degradado é identificável linha a linha:
+
+| Execução | Contrato em memória | SDT `sdtEmpresa_API_ListFilters` |
+|---|---|---|
+| primeira geração | `ListFilters=1` | `Members=1` |
+| reaplicação | `ListFilters=0` | `Members=0` |
+
+```
+[B082] SDT diverge: Name='sdtEmpresa_API_ListFilters', Motivo='membros extras 'EmpresaId''
+[B111] 48. GRAVA  SdtWriter.SdtReencontrado -> sdtEmpresa_API_ListFilters
+```
+
+O Wizard monta o contrato **lendo o API Object** para descobrir os filtros; o API estava
+inutilizável, o plano veio sem filtros, o writer de SDT tratou o membro real `EmpresaId`
+como sobra e **o removeu**. As quatro Procedures foram regravadas com o contrato
+empobrecido. Tudo isso sob `SuccessWithWarnings`, com **zero bloqueados**.
+
+É a confirmação direta, com o objeto nomeado, do fato 3.2.4 do plano original e do item
+`B110` — que a evidência de campo anterior havia descrito, mas sem apontar qual objeto
+perdeu o quê.
+
+**A F1 não resolve isso.** A F1 impede que o API seja persistido antes dos consumidores; ela
+não impede que um Apply com etapa bloqueada continue gravando as demais a partir de um plano
+derivado do estado bloqueado. `B110` continua sendo item próprio e independente.
+
+### 10.3 O que a medição original respondeu, com a qualificação necessária
+
+| Ponto | Primeira geração | Reaplicação |
+|---|---|---|
+| `SdtWriter.CreateOrReencounter` — entradas | 3 | 1 |
+| SDT criado — gravações | 44, **todas na fase dedicada** | 0 |
+| SDT reencontrado — gravações | **0** | **1** |
+| SDT reencontrado — skips | 97 | 46 |
+| `TransactionFolder` — entradas | 7 | 2 |
+| Folder — gravações | **0** | **0** |
+
+A conclusão da seção 9 se mantém: **nenhuma passagem extra gravou** — nas três execuções que
+tiveram passagens extras (duas na `Teste`, a primeira geração aqui), foram 0 gravações em
+mais de 200 reencontros.
+
+Duas qualificações honestas:
+
+1. Na reaplicação da `Empresa` houve **1 gravação** em `SdtReencontrado`. Ela ocorreu na
+   **fase dedicada** — a única que executou —, não numa passagem extra. A regra de 4.4.1
+   autoriza a fase dedicada a gravar, então essa gravação continuaria permitida sob a regra,
+   e a regra **não** teria impedido a degradação de 10.2.
+2. Essa gravação prova que `SdtReencontrado` **pode** gravar quando o plano diverge do
+   persistido. Nas execuções da `Teste` nunca gravou porque nada divergia. Logo, a afirmação
+   correta não é “o reencontro nunca grava”, e sim “**as passagens de BC e List não gravam**”.
+
+### 10.4 Estado deixado na KB de teste
+
+A KB `fabricabrasil18test` ficou com `apiEmpresa` sem metadata, `sdtEmpresa_API_ListFilters`
+sem o membro `EmpresaId` e as quatro Procedures regravadas com o contrato reduzido. Esse
+estado é evidência útil e pode ser usado para exercitar o cenário J (Sincronizar a partir do
+estado divergente), que segue sem linha de base. Se for descartado, o caminho medido como
+seguro é o comando de remoção (fato 3.2.6 do plano original).

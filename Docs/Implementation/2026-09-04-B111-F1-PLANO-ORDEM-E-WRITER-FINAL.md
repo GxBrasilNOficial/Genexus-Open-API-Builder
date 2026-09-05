@@ -249,6 +249,18 @@ seleção completa (SDTs, Procedures, API, BC, List, metadata):
 passagem, dentro da fase dedicada, e as passagens de BC e de List só reencontraram. O Folder
 foi reencontrado em todas as sete entradas.
 
+Confirmado também na KB grande, Transaction `Empresa` com 44 SDTs próprios: 44 criações,
+todas na fase dedicada; **97 reencontros nas passagens de BC e de List, zero gravações**;
+Folder reencontrado em sete entradas, zero gravações. Somando as execuções, são mais de 200
+reencontros em passagens extras sem uma única gravação.
+
+**Qualificação necessária.** Numa reaplicação sobre estado divergente, o reencontro **pode**
+gravar: o `wroteKb` do writer grava quando o plano diverge do persistido. Isso foi observado
+uma vez, em `sdtEmpresa_API_ListFilters`, e ocorreu na **fase dedicada** — a única que
+executou naquele fluxo —, portanto continuaria autorizado sob a regra. A afirmação correta
+não é “o reencontro nunca grava”, e sim “**as passagens de BC e de List não gravam**”. Ver
+`2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md` §10.3.
+
 Portanto a regra abaixo **descreve o comportamento que já existe**: torná-la explícita é
 barato, verificável e sem efeito observável. O risco que motivou a medição não se
 materializou.
