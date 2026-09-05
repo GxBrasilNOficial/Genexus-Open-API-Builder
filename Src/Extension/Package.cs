@@ -42,6 +42,50 @@ public sealed class Package : AbstractPackageUI
         AddCommand(new CommandKey(Id, "Remover API gerada"), ExecuteRemoveGeneratedApi, QueryRemoveGeneratedApiPortuguese);
         AddCommand(new CommandKey(Id, "Eliminar API generada"), ExecuteRemoveGeneratedApi, QueryRemoveGeneratedApiSpanish);
         AddCommand(new CommandKey(Id, "Remove generated API"), ExecuteRemoveGeneratedApi, QueryRemoveGeneratedApiEnglish);
+
+        // B111 — sonda temporária de planejamento. Remover das três camadas no fechamento da frente.
+        AddCommand(new CommandKey(Id, "Sonda B111"), ExecuteB111Probe, QueryB111Probe);
+    }
+
+    private static bool QueryB111Probe(CommandData data, ref CommandStatus status)
+    {
+        status.Visible(true);
+        return true;
+    }
+
+    /// <summary>
+    /// B111 — executa as sondas de identidade e de diário e publica o resultado no Output.
+    /// Diagnóstico de planejamento: cria e exclui seus próprios objetos de teste e não
+    /// participa de nenhum fluxo de Apply, Sync ou remoção.
+    /// </summary>
+    private static bool ExecuteB111Probe(CommandData data)
+    {
+        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
+        if (knowledgeBase is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B111] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
+            return true;
+        }
+
+        WriteOutput("[Genexus Open API Builder][B111] Sonda iniciada. Nenhum objeto pré-existente da KB é alterado.");
+
+        foreach (var line in B111IdentityProbe.Run(knowledgeBase.DesignModel))
+        {
+            WriteOutput("[Genexus Open API Builder][B111] " + line);
+        }
+
+        foreach (var line in B111JournalProbe.Run(knowledgeBase.DesignModel))
+        {
+            WriteOutput("[Genexus Open API Builder][B111] " + line);
+        }
+
+        foreach (var line in B111SaveCostProbe.Run(knowledgeBase.DesignModel))
+        {
+            WriteOutput("[Genexus Open API Builder][B111] " + line);
+        }
+
+        WriteOutput("[Genexus Open API Builder][B111] Sonda concluída.");
+        return true;
     }
 
     private static bool QueryConfigureWizardPreferencesPortuguese(CommandData data, ref CommandStatus status)
