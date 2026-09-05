@@ -531,18 +531,50 @@ Resultado='Interrupted', Criados=0, Atualizados=0, Removidos=0, Bloqueados=1
 **O Sincronizar não degrada.** Ele bloqueia antes de qualquer gravação, porque suas seleções
 derivam da metadata e a metadata não existe. Zero objetos tocados.
 
-Os três caminhos que a mensagem de aborto recomenda ficam assim, todos medidos:
+O Sincronizar é inócuo, ainda que deixe o usuário sem saída, já que bloqueia sem reparar.
 
-| Caminho | Comportamento sobre estado divergente |
-|---|---|
-| **Remover** | repara — 50 objetos removidos, zero bloqueados (fato 3.2.6) |
-| **Sincronizar** | **bloqueia com segurança**, sem tocar em nada — não repara |
-| **Wizard** | **degrada** — remove membro de SDT e regrava Procedures empobrecidas (§10.2) |
+### 10.6 Nenhum dos três caminhos limpa um API órfão sem metadata
 
-O defeito de orientação existe, mas é menor do que se temia: em vez de dois caminhos que
-pioram, há **um** que piora — o Wizard. O Sincronizar é inócuo, ainda que deixe o usuário
-sem saída, já que bloqueia sem reparar.
+Executado em seguida o `Remover` sobre o mesmo estado:
 
-Consequência prática para a mensagem: ela não deveria oferecer o Wizard como caminho de
-reparo sobre estado sem metadata, e deveria dizer que o Sincronizar bloqueia nesse estado.
-Isso é orientação de UI e pertence a `B110`, não ao `B111`.
+```
+[B086] Remocao bloqueada ou falhou: Transaction='Empresa',
+       Error='Remocao bloqueada: File de metadata 'apiEmpresa_Metadata' nao foi
+       encontrado. Nenhuma alteracao foi feita.'
+Resultado='Interrupted', Removidos=0, Bloqueados=1
+```
+
+**O Remover também bloqueia**, pelo mesmo motivo do Sincronizar: ele reconstrói o plano de
+remoção a partir da metadata, e a metadata nunca foi criada.
+
+Isto obriga a distinguir **dois estados divergentes diferentes**, que até aqui estavam
+tratados como um só:
+
+| Estado | Como se chega | Remover | Sincronizar | Wizard |
+|---|---|---|---|---|
+| divergente **com** metadata | interrupção depois da metadata, ou edição posterior | **repara** (fato 3.2.6: 50 objetos removidos) | bloqueia | degrada |
+| divergente **sem** metadata | interrupção **antes** da metadata — o incidente de §10.1 | **bloqueia** | **bloqueia** | **degrada** |
+
+**Correção de um registro feito minutos antes.** A tabela original de 10.5 afirmava que o
+Remover repara o estado divergente. Isso vale para o primeiro caso; **não** vale para o
+segundo. O fato 3.2.6 foi medido sobre um estado degradado em que a metadata existia. Aqui
+ela não existe, e a conclusão se inverte.
+
+No segundo estado, **a ferramenta não oferece saída alguma**: os 49 objetos criados em §10.1
+— 44 SDTs, 4 Procedures e o API Object — ficam órfãos, e a única limpeza possível é manual,
+objeto a objeto, na IDE.
+
+E é o próprio pipeline que produz esse estado: basta a interrupção cair na janela entre a
+gravação do API Object e a da metadata, que é precisamente a janela residual descrita na
+seção 7 do plano original.
+
+**Consequência de desenho para a F3.** A seção 5.6.2 do plano da F3 trata “API legado sem
+diário” como algo herdado de antes da frente, e oferece duas saídas: reconstruir a intenção
+a partir de metadata válida, ou bloquear. A medição mostra que o pipeline **cria**, sozinho,
+APIs indistinguíveis de legado — sem metadata e sem intenção registrada. Para essas, as duas
+saídas da F3 colapsam numa só: bloquear. A F3 precisa de um caminho de remoção que não
+dependa da metadata, ancorado em posse verificável por outra via.
+
+Consequência para a mensagem de aborto: ela recomenda três caminhos e, neste estado, **os
+três estão errados** — dois bloqueiam e um degrada. Isso é `B110`, mas com gravidade maior
+do que o item descrevia.
