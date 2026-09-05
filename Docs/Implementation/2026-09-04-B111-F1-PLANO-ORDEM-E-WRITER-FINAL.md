@@ -172,7 +172,9 @@ Conteúdo mínimo:
 - hash do contrato planejado;
 - flags da seleção;
 - writer final esperado;
-- se o API é novo ou reencontrado.
+- se o API é novo ou reencontrado;
+- **se a etapa de Business Component contribuiu para o contrato** — campo distinto do
+  anterior e exigido pelo terceiro ramo de 4.8; “API novo” e “BC rodou” são independentes.
 
 Regras:
 
@@ -277,11 +279,44 @@ aplicada”. Amarrar o valor forçado ao booleano do List produziria, no caminho
 “List sem Business Component”, um API Object declarando serviços que delegam a Procedures
 inexistentes e referenciando SDTs que só a etapa de Business Component cria.
 
-Em qualquer outro caso — inclusive “List sem Business Component” — o writer continua
-deduzindo o valor do API Object persistido, como hoje.
+#### O caso `List-only` com API novo — o buraco que o adiamento abre
 
-Uma sentinela e um fluxo executável devem cobrir especificamente “List sem Business
-Component”; é o cenário que a guarda protege.
+O plano aprovado dizia: fora do caso “BC rodou”, o writer **continua deduzindo o valor do
+API Object persistido**. Isso funcionava porque, naquele desenho, B054 já tinha persistido
+o API antes de a etapa de List rodar.
+
+**Nesta F1 isso deixa de valer.** Na seleção `List-only`, B054 prepara sem salvar e o List é
+o writer final: no momento em que ele precisa do valor, o API novo **ainda não existe na
+KB**. Não há o que ler. Manter a redação do plano aprovado aqui produziria uma leitura de
+objeto inexistente — falha imediata, ou pior, dedução a partir de um objeto homônimo alheio.
+
+A regra completa, em três ramos, avaliados nesta ordem:
+
+| Situação | `includeBusinessComponentParameters` | Origem do valor |
+|---|---|---|
+| a etapa de Business Component rodou nesta aplicação | **`true`** | explícito, pela guarda acima |
+| BC não rodou **e** existe API persistido e próprio | dedução, como hoje | leitura do API persistido |
+| BC não rodou **e** o API é novo (contexto transient) | **`false`** | o contexto transient, que sabe que nenhuma etapa de BC contribuiu com o contrato |
+
+O terceiro ramo é a novidade desta fase, e é correto por construção: um API que está sendo
+criado agora, numa aplicação em que a etapa de Business Component não participou, não tem —
+nem poderia ter — parâmetros de Business Component no contrato.
+
+Por isso o `ApiPlanTransientApiContext` de 4.3 precisa carregar explicitamente **se a etapa
+de Business Component contribuiu para o contrato**. Não basta o writer de List saber que
+recebeu um contexto transient: “API novo” e “BC rodou” são independentes, e a combinação
+BC+List cai no primeiro ramo mesmo com API novo.
+
+#### Cobertura exigida
+
+- sentinela: o writer de List não lê o API persistido para decidir o valor quando recebe
+  contexto transient;
+- fluxo executável **`List-only` com API novo**: o Source resultante não declara parâmetros
+  de Business Component, e nenhuma leitura de API persistido ocorre no caminho;
+- fluxo executável **“List sem Business Component” sobre API preexistente**: segundo ramo,
+  comportamento preservado;
+- fluxo executável **BC+List com API novo**: primeiro ramo, valor `true` mesmo sem API
+  persistido.
 
 ### 4.9 Trilha de gravação na Output
 
@@ -372,7 +407,9 @@ Sentinelas são necessárias e insuficientes: elas provam forma, não comportame
 | Wizard | `GenerateApiObject=false`, API ausente | bloqueio antes do primeiro Save |
 | Wizard | SDT/Procedure `false` | nenhuma gravação da etapa desmarcada |
 | Sync | BC sem habilitação na Transaction | bloqueio antes de qualquer Save |
-| Wizard | **List sem Business Component** | o Source declara os serviços corretos, sem parâmetros de BC — o cenário que a guarda de 4.8 protege |
+| Wizard | **List-only com API novo** | `includeBusinessComponentParameters=false` vindo do contexto transient; **nenhuma leitura de API persistido** no caminho — terceiro ramo de 4.8 |
+| Wizard | **List sem Business Component**, sobre API preexistente | segundo ramo de 4.8: dedução pelo API persistido, comportamento preservado |
+| Wizard | **BC+List com API novo** | primeiro ramo de 4.8: valor `true` mesmo sem API persistido |
 | Wizard | API preexistente na variante de List sem parâmetros de BC, reaplicado com as duas etapas | os parâmetros de BC aparecem, provando que a guarda é necessária |
 
 Os dois últimos são os cenários D e G do plano aprovado, e a receita do G está na seção 6
@@ -421,7 +458,8 @@ F1 não é frente de desempenho, mas a ordem física muda e a medição é barat
 9. Flags de SDT e Procedure em `false` não produzem gravação oculta.
 10. Nenhuma regressão nos fluxos existentes de Sync, Wizard e relatório.
 11. A guarda de 4.8 depende de a etapa de Business Component ter rodado; “List sem Business
-    Component” continua produzindo um Source correto.
+    Component” continua produzindo um Source correto, e `List-only` com API novo resolve o
+    valor pelo contexto transient, sem ler API persistido.
 12. A trilha de 4.9 registra a ordem efetiva na Output, conforme as sete alíneas.
 13. O relatório atribui a atualização do API Object à etapa que de fato o gravou.
 
@@ -436,7 +474,7 @@ Falhando qualquer critério, a F1 não está pronta para aceite.
 
 | Risco | Mitigação prevista |
 |---|---|
-| o writer de List deriva parâmetros do contrato **persistido** do API; com o API ainda em memória, essa derivação precisa passar a usar o contexto transient | tratar como o ponto mais delicado da F1; cobrir com fluxo executável BC+List e List-only antes de tocar em qualquer outra coisa |
+| o writer de List deriva parâmetros do contrato **persistido** do API; com o API ainda em memória, essa derivação quebra — em `List-only` com API novo não há objeto a ler | **endereçado na seção 4.8**, com a regra de três ramos e um campo novo no contexto transient. Segue sendo o ponto mais delicado da F1: cobrir os três fluxos executáveis de 4.8 antes de tocar em qualquer outra coisa |
 | dois blocos de Apply divergirem de novo | sentinela que compara o predicado e a ordem entre os dois blocos |
 | o deferimento parcial existente mascarar regressão em BC com API preexistente | fluxo executável específico para “BC com API já existente”, comparado ao comportamento atual |
 | ausência de seam tornar a contagem de Saves frágil | declarada como limitação; a F2 substitui a instrumentação por interceptação |

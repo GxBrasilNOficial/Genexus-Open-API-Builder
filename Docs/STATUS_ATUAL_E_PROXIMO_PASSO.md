@@ -171,7 +171,13 @@ Planejamento concluído; **nenhuma linha do pipeline `B111` alterada** — write
 
 Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md` — seis execuções sobre `wseducacaospteste` e `fabricabrasil18test`. Três defeitos independentes saíram dessa sondagem e foram numerados: `B112`, `B113` e `B114`; o escopo de `B109` foi ampliado (o sintoma ocorre fora da etapa de Business Component).
 
-**Sonda temporária instalada.** O comando `Sonda B111` está registrado nas três camadas e presente na DLL instalada nas KBs de teste. Ele **deve sair das três camadas no fechamento da sprint**, com `Tools/Test-ExtensionCommandRegistration.ps1` executado em seguida, conforme o checklist do `AGENTS.md`.
+**Sonda temporária instalada — checklist de reversão no fechamento da sprint.** Três itens, todos obrigatórios:
+
+1. remover o comando `Sonda B111` das três camadas de registro (`Package.cs`, `CommandDefinition` e grupo no manifesto) e executar `Tools/Test-ExtensionCommandRegistration.ps1`;
+2. remover `Src/Extension/Diagnostics/B111IdentityProbe.cs`, `B111JournalProbe.cs` e `B111SaveCostProbe.cs`;
+3. remover, em `Tests/KbIndexReuse/Test-ApiPlanKbIndexReuse.ps1`, o bloco `$temporaryProbeCreateSymbols` — exceção por (símbolo, arquivo) aberta em 2026-09-05 para `MeasureScans` e `MeasureLookup` em `B111JournalProbe.cs`, que medem o custo do índice e não teriam como fazê-lo sem chamar `Create`. A regra de origem única **não** foi enfraquecida para produção, e o teste continua barrando esses mesmos símbolos em qualquer outro arquivo.
+
+A DLL instalada nas KBs de teste contém as sondas.
 
 ## Pendência urgente (próxima sessão de código)
 
