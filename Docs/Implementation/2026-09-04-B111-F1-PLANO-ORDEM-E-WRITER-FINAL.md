@@ -45,6 +45,11 @@ Confirmado por leitura em 2026-09-04:
    `ApiPlanBusinessComponentWriter.cs:606`.
 3. `ApiPlanListProcedureWriter` tem três `Save()` reais; o da Procedure em
    `ApiPlanListProcedureWriter.cs:934` e o do API em `ApiPlanListProcedureWriter.cs:955`.
+3.1. Os dois writers montam uma lista `saveSteps` de pares `(Label, Action Save)` e a
+   executam em laço com progresso e cronômetro — `ApiPlanBusinessComponentWriter.cs:98` e
+   `ApiPlanListProcedureWriter.cs:66`. **Em ambos, o primeiro passo da lista é o API.**
+   A inversão de ordem exigida por esta frente não está só em `Package.cs`: dentro de cada
+   writer, o passo do API precisa passar de primeiro a último.
 4. O Apply existe em **dois blocos** no mesmo `Package.cs`: o do Sync, em torno de
    `Package.cs:855`, e o do Wizard, em torno de `Package.cs:1600`.
 5. Os dois blocos já contêm um deferimento **parcial** de B054, com a mesma regra:
@@ -246,8 +251,8 @@ reportar ambiguidade.
 |---|---|
 | `Src/Extension/Package.cs` | predicado nos dois blocos; deferimento de B054 estendido a List e a BC com API ausente; ordem física; resolução final por identidade |
 | `Diagnostics/ApiPlanApiObjectWriter.cs` | separar preparação de persistência; devolver contexto transient; manter o Save só no caminho API-only |
-| `Diagnostics/ApiPlanBusinessComponentWriter.cs` | aceitar o contexto transient; não salvar o API quando List participa; salvar uma vez quando for o writer final |
-| `Diagnostics/ApiPlanListProcedureWriter.cs` | aceitar o contexto transient; executar o único `API.Save()` quando participar |
+| `Diagnostics/ApiPlanBusinessComponentWriter.cs` | aceitar o contexto transient; mover o passo do API para o **fim** de `saveSteps`; não salvar o API quando List participa; salvar uma vez quando for o writer final |
+| `Diagnostics/ApiPlanListProcedureWriter.cs` | aceitar o contexto transient; mover o passo do API para o **fim** de `saveSteps`; executar o único `API.Save()` quando participar |
 | `Diagnostics/ApiPlanWritePreflight.cs` | gate reduzido da seção 4.5 |
 | `Diagnostics/ApiPlanApplicationFinalReport.*` | campos planejado × persistido e contador de `API.Save()` |
 | `Tests/` | sentinelas e fluxos da seção 6 |
