@@ -179,9 +179,26 @@ Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-
 
 A DLL instalada nas KBs de teste contém as sondas.
 
+## Investigação aberta em 2026-09-05 — falha da etapa de Business Component na KB grande
+
+Aberta ao fim da sessão de sondagem, **sem conclusão**, e é o fio mais quente do momento.
+
+Na `Empresa` de `fabricabrasil18test`, a etapa de Business Component ou de List falhou em **todas as execuções** que a alcançaram — cinco no total. A primeira execução com stack trace capturada mostrou que **não é um bug único**: quatro ocorrências foram `Collection was modified; enumeration operation may not execute` e a quinta foi `Artech.Common.Diagnostics.ValidationException` em `KBObjectManager.PrepareSave`, ao validar `procEmpresa_API_Create`. Detalhe em `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md` §10.7 e §10.8.
+
+Consequência: **o item `B109` precisa ser reescrito** como família de falhas, com um ramo por causa, em vez de "bug intermitente na etapa de Business Component".
+
+Instrumentação instalada e disponível para retomar (sondas temporárias, ver o checklist de reversão):
+
+- `B109ExceptionProbe` publica na Output a cadeia completa de exceções — tipo, mensagem, `Source`, `TargetSite` e stack de cada nível —, além de Rules, `ExpectedVariables` × `CurrentVariables` e `SourceLines` da Procedure recusada;
+- interruptor `GOAB_B109_SUPPRESS_PUMP=1` suprime os `Application.DoEvents()` entre os Saves, para testar a hipótese de que a reentrância no loop de mensagens da IDE causa o `Collection was modified`. **Não testado ainda.**
+
+Próximos passos sugeridos, na ordem: salvar `procEmpresa_API_Create` manualmente pela IDE e ler a mensagem de validação, que costuma ser mais específica que a da API; e rodar o Apply com o interruptor para o ramo `Collection was modified`.
+
+Estado da KB de teste: `apiEmpresa` existe sem metadata, com 44 SDTs e 4 Procedures — estas com Source apenas de esqueleto, porque as etapas que o escrevem nunca completaram. Para reproduzir, apagar **apenas** o API Object antes de cada tentativa; com ele presente e sem metadata, o Wizard desliga as etapas de consumidor e a falha não ocorre.
+
 ## Pendência urgente (próxima sessão de código)
 
-A pauta imediata é a revisão por pares da `S-B111`, acima. `B108` e o residual `B082` 1B/2/3 não competem com essa linha.
+A pauta formal é a revisão por pares da `S-B111`, acima. A investigação de `B109` acima pode preceder, por ser bloqueio prático de uso da extensão na KB grande. `B108` e o residual `B082` 1B/2/3 não competem com essas linhas.
 
 ## Evidência da frente encerrada
 

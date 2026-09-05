@@ -675,3 +675,56 @@ Duas leituras possíveis, e os logs não decidem entre elas:
 SDT. Vale a leitura 1 — a gravação de §10.2 **não** removeu o membro, e a `§10.2` foi
 corrigida. A inferência original era plausível e errada: “gravou” mais “diverge por membros
 extras” não implica “apagou o membro”.
+
+### 10.8 A stack mudou o entendimento: a falha do BC tem mais de uma causa
+
+Primeira execução com `B109ExceptionProbe`, na `Empresa`, sem o interruptor. A etapa de
+Business Component falhou de novo — mas **não** com `Collection was modified`:
+
+```
+exceção : System.InvalidOperationException
+  Site  : ApiPlanBusinessComponentWriter.SaveProcedure
+  Message: falhou ao salvar a Procedure 'procEmpresa_API_Create':
+           Validation of Procedure 'procEmpresa_API_Create' failed.
+inner 1 : Artech.Common.Diagnostics.ValidationException
+  Site  : Artech.Layers.BL.Managers.KBObjectManager.PrepareSave
+  Stack : KBObjectManager.PrepareSave → InternalSave → Perform → Save
+          → KBObject.Save() → ApiPlanBusinessComponentWriter.SaveProcedure
+```
+
+**Conclusão que só a stack permitiu.** O que vinha sendo tratado como um bug único e
+intermitente é, na verdade, **uma família de falhas na etapa de Business Component da
+`Empresa`**, com pelo menos duas causas distintas:
+
+| Causa | Onde nasce | Ocorrências |
+|---|---|---|
+| `Collection was modified; enumeration operation may not execute` | não identificado — as três primeiras não tinham stack | 4 |
+| `ValidationException` na validação da Procedure | `KBObjectManager.PrepareSave`, durante `KBObject.Save()` | 1 |
+
+A segunda **não é** um problema de reentrância nem de coleção: é o SDK recusando a Procedure
+na validação de pré-gravação. O `B109` como está redigido — um único bug intermitente —
+não descreve mais o que se observa.
+
+**A hipótese do `DoEvents` segue não testada.** O interruptor
+`GOAB_B109_SUPPRESS_PUMP=1` não foi usado nesta rodada, e esta falha não é do tipo que ele
+endereçaria. A hipótese continua aberta para as quatro ocorrências de `Collection was
+modified`.
+
+#### O que o diagnóstico passou a capturar, e serve à próxima sessão
+
+Além da stack, a mensagem agora traz o contexto completo da Procedure recusada: as `Rules`
+emitidas, `ExpectedVariables` contra `CurrentVariables` — 52 variáveis, com tipo,
+`ATTCUSTOMTYPE`, domínio e atributo de cada — e as `SourceLines`. Isso é o material para
+descobrir **por que** a validação recusou, o que o SDK não informa: ele diz apenas
+`Validation of Procedure failed`.
+
+Dois pontos de partida visíveis nos dados capturados, ambos **não** verificados:
+
+- `&LocationUrl` é esperada como `VarChar(1K)` e aparece como `Type=VARCHAR;ATTCUSTOMTYPE=VarChar`
+  sem o comprimento — pode ser só formatação do log, ou divergência real;
+- `&HttpResponse` é `GX_USRDEFTYP;ATTCUSTOMTYPE=HttpResponse`, um External Object cuja
+  presença e acessibilidade na KB não foram confirmadas.
+
+A validação do SDK não expõe qual cláusula falhou. Um caminho para a próxima sessão é
+salvar a mesma Procedure pela IDE, manualmente, e ler a mensagem que a IDE exibe — ela
+costuma ser mais específica que a da API.
