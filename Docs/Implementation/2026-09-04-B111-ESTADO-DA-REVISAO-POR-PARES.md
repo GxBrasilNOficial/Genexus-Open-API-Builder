@@ -6,8 +6,11 @@ Permitir retomar a revisão do plano do `B111` em sessão nova, sem repetir roda
 reabrir pontos já refutados. Registra quem revisou o quê, com que veredito, e o que falta para
 fechar.
 
-Plano revisado: [`2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md`](2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md).
+Plano revisado nas rodadas de 2026-09-03/04: [`2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md`](2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md) (v24).
 Linha de base de campo: [`2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`](2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md).
+
+> **O objeto da revisão mudou em 2026-09-05.** O v24 foi fatiado na sprint `S-B111`, com três
+> planos de fase, e deixou de ser o alvo da próxima rodada. Ver a seção 8.
 
 ## 1. Estado em uma linha
 
@@ -75,8 +78,8 @@ antes de sustentar qualquer um deles de novo.
 
 ## 6. O que falta
 
-1. **Submeter a v10** — a versão atual nunca foi revisada, e é a que mais mudou de substância: ela
-   reenuncia a dor a partir da cascata de degradação medida em campo.
+1. ~~**Submeter a v10**~~ — **superado em 2026-09-05**: essa versão foi fatiada em três planos de
+   fase, e o objeto da próxima rodada passou a ser esses três documentos. Ver a seção 8.
 2. **Emitir o recibo de fechamento** da revisão, com o estado final de cada revisor da curadoria —
    inclusive os dois que não participaram, com o motivo.
 3. **Cenário J** (Sincronizar a partir do estado divergente) segue sem linha de base; não é
@@ -97,3 +100,65 @@ antes de sustentar qualquer um deles de novo.
   zerou — e a primeira hora de teste real produziu mais correções do que as três últimas rodadas
   de revisão somadas. Se a v10 passar sem achados relevantes, isso é sinal de maturidade do
   papel, não de que a implementação está livre de surpresas.
+
+## 8. Atualização de 2026-09-05 — novo objeto de revisão
+
+A v24 **não deve ser submetida**. Ela foi fatiada, e quatro das suas afirmações foram
+desmentidas por medição.
+
+### 8.1 O que mudou
+
+Uma sessão de sondagem na IDE, com instrumentação própria e seis execuções sobre duas KBs
+(`wseducacaospteste` e `fabricabrasil18test`), produziu
+[`2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`](2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md).
+A partir dela, o `B111` virou a sprint `S-B111` com três fases, cada uma com plano próprio:
+
+| Fase | Plano | Escopo |
+|---|---|---|
+| F1 | [`...-B111-F1-PLANO-ORDEM-E-WRITER-FINAL.md`](2026-09-04-B111-F1-PLANO-ORDEM-E-WRITER-FINAL.md) | ordem de gravação e writer final único |
+| F2 | [`...-B111-F2-PLANO-SEAM-E-RECIBOS.md`](2026-09-04-B111-F2-PLANO-SEAM-E-RECIBOS.md) | seam de persistência e recibos |
+| F3 | [`...-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md`](2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md) | durabilidade da intenção e remoção segura |
+
+**Esses três documentos são o objeto da próxima rodada.** O v24 permanece como origem das
+exigências e como registro do que já foi refutado (seção 5 deste documento e o apêndice do
+próprio v24), mas a seção 7 da F3 lista as quatro correções que a medição impôs a ele.
+
+### 8.2 O que a próxima rodada não precisa reabrir
+
+Além do que a seção 5 já lista, estes pontos passaram de opinião a medição e não são mais
+matéria de revisão de papel:
+
+- identidade do API Object antes do Save — o `Guid` existe desde o `API.Create`, sobrevive
+  ao `Save()` e reencontra o objeto, em seis execuções;
+- limite da `Description` — 256 caracteres, truncando em silêncio;
+- custo de gravação por tipo — `File` custa ~1,1 s na KB grande contra dezenas de ms nos
+  demais tipos;
+- custo de varredura e de remonte de índice;
+- contagem real de pontos de `Save()` no pipeline.
+
+Um revisor pode contestar a **interpretação** desses números. Contestar os números exige
+reexecutar a sonda, que continua registrada no comando `Sonda B111`.
+
+### 8.3 O que pedir ao painel
+
+O risco desta rodada é diferente do da anterior. A v24 sofria de excesso: o problema era
+inchaço e contradição interna. Os três planos sofrem do risco oposto — **fatiar pode ter
+deixado buraco**. Vale pedir explicitamente:
+
+1. a F1 sozinha entrega benefício real, ou deixa o sistema num meio-termo pior que hoje?
+2. a fronteira F1/F2 está no lugar certo, dado que a F1 verifica a contagem de Saves por
+   instrumentação e só a F2 a prova por execução?
+3. a F3 pode ser implementada sem revisitar decisões da F1 e da F2?
+4. algum requisito do v24 se perdeu no fatiamento sem ter sido conscientemente descartado?
+
+### 8.4 A recomendação da seção 7 se confirmou
+
+A última recomendação daquela seção — de que a primeira hora de teste real produziu mais
+correções do que as três últimas rodadas de revisão somadas — voltou a se confirmar, e com
+margem maior: uma sessão de sondagem eliminou uma seção inteira do plano, inverteu duas
+conclusões do próprio autor e revelou três defeitos independentes, hoje numerados como
+`B112`, `B113` e `B114`.
+
+Isso não desqualifica a revisão por pares; qualifica **o que pedir a ela**. Peça avaliação
+de desenho, coerência e escopo — e trate qualquer afirmação sobre comportamento do SDK como
+hipótese a medir, não como ponto a debater.

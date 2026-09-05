@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-04.
+2026-09-05.
 
 ## Último marco concluído
 
@@ -138,7 +138,11 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Implementar `B108`** — preferências da KB só na criação; no reencontro os checkboxes espelham a KB; desmarcar confirma (default Não) e o Apply rebaixa/remove; Delete some com BC. Plano aprovado: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Item: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
+**Revisar por pares os três planos da sprint `S-B111`** — F1 (ordem de gravação e writer final único), F2 (seam de persistência e recibos) e F3 (durabilidade da intenção e remoção segura). Nenhum dos três foi lido por ninguém além do autor. Objeto, orientação ao painel e o que **não** reabrir estão na seção 8 de `Docs/Implementation/2026-09-04-B111-ESTADO-DA-REVISAO-POR-PARES.md`. Item: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B111`).
+
+O v24 (`Docs/Implementation/2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md`) **não deve ser submetido**: ele foi fatiado, e quatro das suas afirmações foram desmentidas por medição. As correções estão na seção 7 do plano da F3.
+
+`B108` volta para missão estacionada, com plano aprovado e sem trabalho perdido.
 
 A Etapa 1A do hardening `B082` **fechou em 2026-09-03**. Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`. Plano (Etapas 1B, 2 e 3 restantes, sem ser a pauta imediata): `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`. Entrega do alpha.7: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
 Notas do corte: `Docs/Releases/0.1.0-alpha.7.md`.
@@ -149,11 +153,29 @@ Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/t
 
 Residual `B082` após a 1A (Etapas 1B índice mutável no Remover; 2 segurança/abort/Folder; 3 casca × B081 e UX). Não é a próxima ação única. Plano: `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`. **Anotado no plano (pós-push):** higiene do probe `SdtReencounter` (absorver no `tests.kbIndexReuse`, sem gate novo); matcher `idJsonInclude` unidirecional (pendência 4). **Aceite 1A:** tabela Apply da KB grande é DLL `ce30374`; emissor de SDT mudou em `0568677`/`cfb73b0` (números conservadores; não reusar como linha de base atual).
 
-O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — **saiu da anotação e virou frente própria (`B111`), com plano em construção**: `Docs/Implementation/2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md`. O escopo cresceu para "API Object gravado uma única vez ao fim do pipeline". Estado em 2026-09-04: plano escrito, **ainda em revisão por pares**, não implementado; sem código alterado. Linha de base de campo medida na IDE e commitada em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`, que corrigiu quatro afirmações do plano e revelou a cascata de degradação. Dois defeitos independentes descobertos nessa medição foram numerados: `B109` (bug intermitente na etapa de Business Component) e `B110` (bloqueio parcial que propaga corrupção). Pendências da frente: cenário J (Sincronizar a partir do estado divergente, ainda sem linha de base) e o fechamento da revisão por pares.
+O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou frente própria (`B111`), hoje a **sprint `S-B111`** e a pauta imediata (ver `Próxima ação única`). Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`.
+
+**`B108` fica estacionado desde 2026-09-05**, com plano aprovado e sem trabalho perdido: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Item: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
+
+## Estado da sprint `S-B111` (2026-09-05)
+
+Planejamento concluído; **nenhuma linha de código de produção alterada**. Três planos de fase escritos e commitados, todos aguardando revisão e decisão:
+
+| Fase | Plano | Depende de |
+|---|---|---|
+| F1 — ordem e writer final único | `Docs/Implementation/2026-09-04-B111-F1-PLANO-ORDEM-E-WRITER-FINAL.md` | — |
+| F2 — seam de persistência e recibos | `Docs/Implementation/2026-09-04-B111-F2-PLANO-SEAM-E-RECIBOS.md` | F1 |
+| F3 — durabilidade e remoção | `Docs/Implementation/2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md` | F2 e a decisão modo A/B |
+
+**Decisão humana pendente:** modo A (diário durável, 2,2 s a 11 s de Apply na KB grande, um File por aplicação) ou modo B (checkpoint manual, custo nulo, recuperação humana). Bloqueia só a F3. Tabela comparativa na seção 3 do plano da F3. Recomendação registrada: decidir depois de a F1 estar em campo.
+
+Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md` — seis execuções sobre `wseducacaospteste` e `fabricabrasil18test`. Três defeitos independentes saíram dessa sondagem e foram numerados: `B112`, `B113` e `B114`; o escopo de `B109` foi ampliado (o sintoma ocorre fora da etapa de Business Component).
+
+**Sonda temporária instalada.** O comando `Sonda B111` está registrado nas três camadas e presente na DLL instalada nas KBs de teste. Ele **deve sair das três camadas no fechamento da sprint**, com `Tools/Test-ExtensionCommandRegistration.ps1` executado em seguida, conforme o checklist do `AGENTS.md`.
 
 ## Pendência urgente (próxima sessão de código)
 
-A pauta imediata é o `B108`, acima. Residual `B082` 1B/2/3 não compete com essa linha.
+A pauta imediata é a revisão por pares da `S-B111`, acima. `B108` e o residual `B082` 1B/2/3 não competem com essa linha.
 
 ## Evidência da frente encerrada
 
