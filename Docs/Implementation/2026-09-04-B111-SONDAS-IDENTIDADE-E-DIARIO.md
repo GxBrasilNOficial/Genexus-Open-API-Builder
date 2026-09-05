@@ -441,7 +441,14 @@ metadata nunca foi escrita. A janela de 49 s descrita no plano original mediu, a
 A falha é o sintoma de `B109`, agora observado pela terceira vez, e a segunda **fora** de uma
 sonda: na etapa de List, não na de Business Component.
 
-### 10.2 Reaplicação — a cascata de `B110`, com o objeto degradado nomeado
+### 10.2 Reaplicação — a cascata de `B110` degrada o plano, não o objeto
+
+> **Correção de 2026-09-05, por inspeção na IDE.** A primeira redação desta seção afirmava
+> que o writer **removeu** o membro `EmpresaId` do SDT. **Não removeu.** A inspeção de
+> `sdtEmpresa_API_ListFilters` mostra `EmpresaId Numeric(10.0)` presente. O que degradou foi
+> o **plano em memória**; o objeto persistido sobreviveu. A seção abaixo está reescrita, e o
+> erro fica registrado porque a inferência era plausível e errada: “gravou” mais “diverge por
+> membros extras” não implica “apagou o membro”.
 
 A reabertura diagnosticou `MetadataMissing` e o Wizard **desligou sozinho** quatro etapas:
 
@@ -457,9 +464,9 @@ Atualizado: SDT 'sdtEmpresa_API_ListFilters'
 Atualizado: Procedure procEmpresa_API_List / _Get / _Create / _Update
 ```
 
-O objeto degradado é identificável linha a linha:
+A degradação do **plano** é identificável linha a linha:
 
-| Execução | Contrato em memória | SDT `sdtEmpresa_API_ListFilters` |
+| Execução | Contrato em memória | SDT planejado |
 |---|---|---|
 | primeira geração | `ListFilters=1` | `Members=1` |
 | reaplicação | `ListFilters=0` | `Members=0` |
@@ -470,13 +477,26 @@ O objeto degradado é identificável linha a linha:
 ```
 
 O Wizard monta o contrato **lendo o API Object** para descobrir os filtros; o API estava
-inutilizável, o plano veio sem filtros, o writer de SDT tratou o membro real `EmpresaId`
-como sobra e **o removeu**. As quatro Procedures foram regravadas com o contrato
-empobrecido. Tudo isso sob `SuccessWithWarnings`, com **zero bloqueados**.
+inutilizável, e o plano veio sem filtros. Isso confirma o fato 3.2.4 do plano original: a
+reabertura sobre estado divergente **deriva um plano empobrecido**.
 
-É a confirmação direta, com o objeto nomeado, do fato 3.2.4 do plano original e do item
-`B110` — que a evidência de campo anterior havia descrito, mas sem apontar qual objeto
-perdeu o quê.
+**O que a inspeção na IDE mostrou, e limita o dano.** O SDT foi gravado — a sonda registra
+`GRAVA` e o relatório registra `Atualizado` —, mas o membro `EmpresaId` **continua presente**
+(`Numeric(10.0)`). O writer classificou o SDT como divergente “por membros extras” e o
+gravou, sem que a estrutura persistida perdesse o membro. Corroboração independente: na
+execução seguinte (§10.7), com o plano de volta a `Members=1`, o mesmo SDT saiu `Unchanged`
+— o que só é possível se o membro nunca tiver saído.
+
+Logo, no que foi medido, **`B110` degrada o plano em memória, não o objeto persistido**.
+Isso é menos grave do que a primeira leitura sugeria, mas não inócuo: o plano empobrecido é
+o que alimenta as demais etapas, e é ele que produz gravações sob `SuccessWithWarnings` com
+zero bloqueados — um relatório que afirma sucesso sobre uma intenção derivada de estado
+corrompido.
+
+**Pendência.** As quatro Procedures também foram marcadas como `Atualizado` na mesma
+execução. Não foram inspecionadas. Se o Source delas foi regravado a partir do plano sem
+filtros, o dano existiria ali e não no SDT. Verificar `procEmpresa_API_List` fecharia essa
+lacuna.
 
 **A F1 não resolve isso.** A F1 impede que o API seja persistido antes dos consumidores; ela
 não impede que um Apply com etapa bloqueada continue gravando as demais a partir de um plano
@@ -651,8 +671,7 @@ Duas leituras possíveis, e os logs não decidem entre elas:
 1. a gravação de §10.2 **não** removeu o membro, e a degradação foi menor do que registrado;
 2. a gravação removeu, e algo posterior repôs o membro.
 
-**Ação necessária:** abrir `sdtEmpresa_API_ListFilters` na IDE e conferir se `EmpresaId`
-está presente. Enquanto isso não for verificado, a afirmação de §10.2 de que o membro foi
-removido fica **marcada como não confirmada**. O que permanece certo em §10.2, e não depende
-disso, é que o contrato em memória degradou de `ListFilters=1` para `0` e que o SDT foi
-gravado sob `SuccessWithWarnings`.
+**Resolvido em 2026-09-05 por inspeção na IDE:** `EmpresaId Numeric(10.0)` está presente no
+SDT. Vale a leitura 1 — a gravação de §10.2 **não** removeu o membro, e a `§10.2` foi
+corrigida. A inferência original era plausível e errada: “gravou” mais “diverge por membros
+extras” não implica “apagou o membro”.
