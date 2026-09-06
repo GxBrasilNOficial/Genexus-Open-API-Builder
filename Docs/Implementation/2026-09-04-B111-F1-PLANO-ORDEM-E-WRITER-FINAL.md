@@ -54,9 +54,9 @@ Confirmado por leitura em 2026-09-04:
    criado (`ApiPlanApiObjectWriter.cs:718`), relendo por `API.Get(designModel, guid)` em
    seguida.
 2. `ApiPlanBusinessComponentWriter` tem três `Save()` reais, e o do API está em
-   `ApiPlanBusinessComponentWriter.cs:617`.
+   `ApiPlanBusinessComponentWriter.cs:624`.
 3. `ApiPlanListProcedureWriter` tem três `Save()` reais; o da Procedure em
-   `ApiPlanListProcedureWriter.cs:942` e o do API em `ApiPlanListProcedureWriter.cs:962`.
+   `ApiPlanListProcedureWriter.cs:951` e o do API em `ApiPlanListProcedureWriter.cs:973`.
 3.1. Os dois writers montam uma lista `saveSteps` de pares `(Label, Action Save)` e a
    executam em laço com progresso e cronômetro — `ApiPlanBusinessComponentWriter.cs:98` e
    `ApiPlanListProcedureWriter.cs:66`. **Em ambos, o primeiro passo da lista é o API.**
