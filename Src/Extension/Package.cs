@@ -1626,13 +1626,13 @@ public sealed class Package : AbstractPackageUI
         {
             if (!ApiPlanOrphanMetadataRecovery.TryPrepareOrphanMetadataRecovery(designModel, apiPlan, out index, out eligibilityDetail))
             {
-                WriteOutput($"[Genexus Open API Builder][B114] Recuperação não oferecida: {eligibilityDetail}");
+                WriteOutput($"[Genexus Open API Builder][B115] Recuperação não oferecida: {eligibilityDetail}");
                 return OrphanMetadataRecoveryOutcome.NotOffered;
             }
         }
         catch (Exception ex)
         {
-            WriteOutput($"[Genexus Open API Builder][B114] Não foi possível avaliar recuperação de metadata: {DescribeException(ex)}");
+            WriteOutput($"[Genexus Open API Builder][B115] Não foi possível avaliar recuperação de metadata: {DescribeException(ex)}");
             return OrphanMetadataRecoveryOutcome.NotOffered;
         }
 
@@ -1649,14 +1649,14 @@ public sealed class Package : AbstractPackageUI
             System.Windows.Forms.MessageBoxDefaultButton.Button2);
         if (answer != System.Windows.Forms.DialogResult.Yes)
         {
-            WriteOutput($"[Genexus Open API Builder][B114] Recuperação recusada pelo usuário para File='{metadataName}'. Nenhuma alteração foi feita por B114.");
+            WriteOutput($"[Genexus Open API Builder][B115] Recuperação recusada pelo usuário para File='{metadataName}'. Nenhuma alteração foi feita por B115.");
             return OrphanMetadataRecoveryOutcome.Declined;
         }
 
         try
         {
             var result = ApiPlanOrphanMetadataRecovery.Recover(designModel, transaction, apiPlan, index);
-            WriteOutput($"[Genexus Open API Builder][B114] Metadata órfã recuperada: File='{result.FileName}', Status='{result.Status}', Guid='{result.Guid}', Bytes={result.Bytes}, Sha256='{result.Sha256}'. Nenhum API Object, Procedure ou SDT foi alterado por B114.");
+            WriteOutput($"[Genexus Open API Builder][B115] Metadata órfã recuperada: File='{result.FileName}', Status='{result.Status}', Guid='{result.Guid}', Bytes={result.Bytes}, Sha256='{result.Sha256}'. Nenhum API Object, Procedure ou SDT foi alterado por B115.");
             System.Windows.Forms.MessageBox.Show(
                 owner,
                 string.Format(
@@ -1670,7 +1670,7 @@ public sealed class Package : AbstractPackageUI
         catch (Exception ex)
         {
             var detail = DescribeException(ex);
-            WriteOutput($"[Genexus Open API Builder][B114] Recuperação de metadata falhou: File='{metadataName}', Error='{detail}'. Nenhuma etapa posterior foi executada.");
+            WriteOutput($"[Genexus Open API Builder][B115] Recuperação de metadata falhou: File='{metadataName}', Error='{detail}'. Nenhuma etapa posterior foi executada.");
             System.Windows.Forms.MessageBox.Show(
                 owner,
                 string.Format(texts.Translate("A recuperação da metadata '{0}' falhou: {1}"), metadataName, detail),
