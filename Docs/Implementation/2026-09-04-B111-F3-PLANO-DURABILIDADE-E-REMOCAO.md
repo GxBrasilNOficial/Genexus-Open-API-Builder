@@ -600,6 +600,15 @@ validação as aceitou por Description, sem depender de GUID.
 **O `B115` está atendido:** a recuperação devolve a capacidade de remover uma API gerada cuja
 metadata se perdeu. O que ela não devolve — e continua não devolvendo — é o contrato (13.3).
 
+**Fechamento do ciclo.** Reaplicada a API pelo Wizard, o `PlannedContractHash` voltou a
+`16DF0B0A0572C17A6D0462594060693E71214A47DE978B8239CFDDCDEF3BFA6C` — **o mesmo de antes de
+todo o experimento**, provando que o contrato foi restaurado sem perda. O `Build All`
+concluiu com `Success` nos dois environments da KB, `NETPostgreSQL155` e
+`NETFrameworkSQLServer004`: as 5 Procedures, o API Object e os 18 SDTs hierárquicos foram
+especificados e gerados nos dois, com documentação REST. Nas permissões GAM o `apiTeste`
+aparece com o GUID gravado pela última aplicação. Os avisos do build são todos preexistentes
+e de outros objetos da KB.
+
 ### 13.8 Custo
 
 Uma gravação de `WikiFileKBObject` por recuperação: ~130 ms na KB pequena, **~1,1 s** na
