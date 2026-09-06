@@ -19,7 +19,7 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// índice do MCP e o <see cref="WikiFileKBObject.GetAll(KBModel)"/> da IDE for
 /// explicada.
 /// </summary>
-internal static class B113MetadataVisibilityProbe
+internal static class ApiPlanMetadataVisibilityProbe
 {
     public static IReadOnlyList<string> Run(KBModel designModel, Transaction transaction)
     {

@@ -19,7 +19,7 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// </summary>
 internal static class ApiPlanOrphanMetadataRecovery
 {
-    public static bool TryPrepare(
+    public static bool TryPrepareOrphanMetadataRecovery(
         KBModel designModel,
         ApiPlan apiPlan,
         out ApiPlanKbObjectNameIndex index,

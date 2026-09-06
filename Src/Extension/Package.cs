@@ -1293,7 +1293,7 @@ public sealed class Package : AbstractPackageUI
                 snapshot = PrototypeWizardContractReader.Read(knowledgeBase.DesignModel, transaction);
                 contractWatch.Stop();
                 WriteOutput($"[Genexus Open API Builder][B082] Abertura ContratoMs={contractWatch.ElapsedMilliseconds}.");
-                foreach (var line in B113MetadataVisibilityProbe.Run(knowledgeBase.DesignModel, transaction))
+                foreach (var line in ApiPlanMetadataVisibilityProbe.Run(knowledgeBase.DesignModel, transaction))
                 {
                     WriteOutput($"[Genexus Open API Builder]{line}");
                 }
@@ -1441,9 +1441,9 @@ public sealed class Package : AbstractPackageUI
         var callSiteLog = new B111CallSiteLog();
         using var callSiteScope = B111CallSiteProbe.Begin(callSiteLog);
         using var callSitePublisher = new B111CallSitePublisher(callSiteLog, "Wizard");
-        var saveBoundaryLog = new B112SaveBoundaryLog();
-        using var saveBoundaryScope = B112SaveBoundaryProbe.Begin(saveBoundaryLog);
-        using var saveBoundaryPublisher = new B112SaveBoundaryPublisher(saveBoundaryLog, "Wizard");
+        var saveBoundaryLog = new ApiPlanSaveBoundaryLog();
+        using var saveBoundaryScope = ApiPlanSaveBoundaryProbe.Begin(saveBoundaryLog);
+        using var saveBoundaryPublisher = new ApiPlanSaveBoundaryPublisher(saveBoundaryLog, "Wizard");
         try
         {
             using var busy = ExtensionBusyProgressScope.Show(applyOwner, texts.BusyProgressTitleApply, texts);
@@ -2122,7 +2122,7 @@ public sealed class Package : AbstractPackageUI
         string eligibilityDetail;
         try
         {
-            if (!ApiPlanOrphanMetadataRecovery.TryPrepare(designModel, apiPlan, out index, out eligibilityDetail))
+            if (!ApiPlanOrphanMetadataRecovery.TryPrepareOrphanMetadataRecovery(designModel, apiPlan, out index, out eligibilityDetail))
             {
                 WriteOutput($"[Genexus Open API Builder][B114] Recuperação não oferecida: {eligibilityDetail}");
                 return OrphanMetadataRecoveryOutcome.NotOffered;
@@ -2454,13 +2454,13 @@ public sealed class Package : AbstractPackageUI
     /// B112 — publica a sonda temporária das fronteiras Pump/Save no final do Apply.
     /// A publicação nunca pode alterar o resultado da operação medida.
     /// </summary>
-    private sealed class B112SaveBoundaryPublisher : IDisposable
+    private sealed class ApiPlanSaveBoundaryPublisher : IDisposable
     {
-        private readonly B112SaveBoundaryLog _log;
+        private readonly ApiPlanSaveBoundaryLog _log;
         private readonly string _operation;
         private bool _disposed;
 
-        public B112SaveBoundaryPublisher(B112SaveBoundaryLog log, string operation)
+        public ApiPlanSaveBoundaryPublisher(ApiPlanSaveBoundaryLog log, string operation)
         {
             _log = log;
             _operation = operation;

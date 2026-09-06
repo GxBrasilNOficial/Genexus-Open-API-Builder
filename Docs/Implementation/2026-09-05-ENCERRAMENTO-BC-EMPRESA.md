@@ -88,10 +88,36 @@ Os erros `bool`/`decimal`/`short` do `NETFrameworkPostgreSQL` pertencem à gera�
 
 ## Estado das sondas e do código
 
-- `B109ExceptionProbe`, `B111*Probe`, `B112SaveBoundaryProbe` e `B113MetadataVisibilityProbe` continuam instrumentação temporária conforme o checklist do checkpoint;
-- a opção explícita de oferecer recuperação de metadata órfã permanece no Wizard, desligada por padrão; ela cria somente o File de metadata e não altera API Object, Procedures ou SDTs;
-- nenhuma correção de produção foi derivada desta investigação;
+- `B109ExceptionProbe`, `B111*Probe`, `ApiPlanSaveBoundaryProbe` e
+  `ApiPlanMetadataVisibilityProbe` continuam instrumentação temporária conforme o checklist do
+  checkpoint;
 - a revisão por pares da sprint `S-B111` continua sendo a próxima frente formal do projeto.
+
+**Funcionalidade de produção acrescentada na mesma rodada.** Além da instrumentação, entrou no
+Wizard a **recuperação explícita de metadata órfã** (`ApiPlanOrphanMetadataRecovery`), com
+preferência persistida, diálogo de confirmação e string localizada. Ela é **desligada por
+padrão**, cria somente o File de metadata e não altera API Object, Procedures ou SDTs.
+
+Isso **não** foi derivado da investigação: foi decisão do responsável humano, tomada ao ver que
+`B115` — a ausência de qualquer caminho de limpeza para API gerada sem metadata — deixa o
+usuário sem saída pela ferramenta. É entrega parcial daquele item: devolve a metadata ausente e,
+com isso, reabilita `Remover` e `Sincronizar`, que hoje bloqueiam por metadata não encontrada.
+
+A redação anterior desta seção afirmava que “nenhuma correção de produção foi derivada desta
+investigação”. A frase era verdadeira no sentido estrito — a funcionalidade não saiu da
+investigação —, mas omitia que uma funcionalidade havia entrado, o que induzia a leitura errada
+do commit. Corrigido em 2026-09-05.
+
+**Reparos aplicados após revisão do commit**, na mesma data:
+
+- as duas sondas novas usavam os prefixos `B112`/`B113`, que no backlog designam outros itens —
+  truncamento de `Description` e stall esporádico de gravação. Renomeadas para
+  `ApiPlanSaveBoundaryProbe` e `ApiPlanMetadataVisibilityProbe`;
+- `ApiPlanOrphanMetadataRecovery` chamava `ApiPlanKbObjectNameIndex.Create` fora da allowlist da
+  regra de origem única, quebrando `tests.kbIndexReuse` e bloqueando o gate mecânico. O método
+  foi renomeado para `TryPrepareOrphanMetadataRecovery` — `TryPrepare` seria genérico demais
+  para uma allowlist por símbolo — e incluído na lista, como fluxo legítimo equivalente ao do
+  Remover e ao do Sincronizar.
 
 ## Evidências relacionadas
 

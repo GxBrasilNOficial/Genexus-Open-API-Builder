@@ -175,6 +175,11 @@ $allowedCreateSymbols = [System.Collections.Generic.HashSet[string]]::new([Strin
 [void]$allowedCreateSymbols.Add('ExecuteRemoveGeneratedApi')
 # Validacao agregada do Remover, antes de qualquer Delete (Nivel A).
 [void]$allowedCreateSymbols.Add('Remove')
+# Recuperacao de metadata orfa (2026-09-05): fluxo opt-in, disparado antes do Apply e com
+# confirmacao do usuario, quando ainda nao existe indice da operacao. Mesmo caso do Remover
+# e do Sincronizar. Nome especifico de proposito: 'TryPrepare' seria generico demais para
+# uma allowlist por simbolo.
+[void]$allowedCreateSymbols.Add('TryPrepareOrphanMetadataRecovery')
 
 # --- Excecao TEMPORARIA da sonda B111 (2026-09-05) ---
 # B111JournalProbe mede exatamente o custo do indice: quanto custa cria-lo (S3.3) e

@@ -22,12 +22,12 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// SHA-256 de Source/Rules, assinatura na ordem enumerada das variáveis e propriedades expandidas das
 /// variáveis relevantes para o caso B109.
 /// </summary>
-internal static class B112SaveBoundaryProbe
+internal static class ApiPlanSaveBoundaryProbe
 {
     [ThreadStatic]
-    private static B112SaveBoundaryLog? _current;
+    private static ApiPlanSaveBoundaryLog? _current;
 
-    public static IDisposable Begin(B112SaveBoundaryLog log)
+    public static IDisposable Begin(ApiPlanSaveBoundaryLog log)
     {
         if (log is null)
         {
@@ -230,10 +230,10 @@ internal static class B112SaveBoundaryProbe
 
     private sealed class Scope : IDisposable
     {
-        private readonly B112SaveBoundaryLog? _previous;
+        private readonly ApiPlanSaveBoundaryLog? _previous;
         private bool _disposed;
 
-        public Scope(B112SaveBoundaryLog? previous) => _previous = previous;
+        public Scope(ApiPlanSaveBoundaryLog? previous) => _previous = previous;
 
         public void Dispose()
         {
@@ -248,7 +248,7 @@ internal static class B112SaveBoundaryProbe
     }
 }
 
-internal sealed class B112SaveBoundaryLog
+internal sealed class ApiPlanSaveBoundaryLog
 {
     private readonly List<string> _lines = new List<string>();
 
@@ -266,11 +266,11 @@ internal sealed class B112SaveBoundaryLog
     {
         var expected = string.Join(" | ", expectedVariables ?? Enumerable.Empty<string>());
         _lines.Add(
-            $"PreparedProcedure Stage='{Clean(stage)}' Step='{Clean(procedure.Name)}' Expected=[{expected}] State=[{B112SaveBoundaryProbe.Snapshot(procedure)}]");
+            $"PreparedProcedure Stage='{Clean(stage)}' Step='{Clean(procedure.Name)}' Expected=[{expected}] State=[{ApiPlanSaveBoundaryProbe.Snapshot(procedure)}]");
     }
 
     public void PreparedApi(string stage, API api) =>
-        _lines.Add($"PreparedApi Stage='{Clean(stage)}' Step='{Clean(api.Name)}' State=[{B112SaveBoundaryProbe.Snapshot(api)}]");
+        _lines.Add($"PreparedApi Stage='{Clean(stage)}' Step='{Clean(api.Name)}' State=[{ApiPlanSaveBoundaryProbe.Snapshot(api)}]");
 
     public void Saved(string stage, string label, string snapshot) =>
         _lines.Add($"Saved Stage='{Clean(stage)}' Step='{Clean(label)}' State=[{snapshot}]");
