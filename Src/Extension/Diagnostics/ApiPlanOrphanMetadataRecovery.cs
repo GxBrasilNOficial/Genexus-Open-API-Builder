@@ -94,18 +94,40 @@ internal static class ApiPlanOrphanMetadataRecovery
             return false;
         }
 
-        var metadataMatchCount = ApiPlanScanProbe.Scan(
+        var metadataMatches = ApiPlanScanProbe.Scan(
             "File",
             "orphan-recovery-preflight",
             () => WikiFileKBObject.GetAll(designModel)
-                .Count(item => string.Equals(item.Name, metadataFileName, StringComparison.OrdinalIgnoreCase)));
-        if (metadataMatchCount != 0)
+                .Where(item => string.Equals(item.Name, metadataFileName, StringComparison.OrdinalIgnoreCase))
+                .ToArray());
+        var apiObject = apiMatches[0];
+
+        WikiFileKBObject? staleFile = null;
+        if (metadataMatches.Length > 1)
         {
-            detail = $"File '{metadataFileName}' encontrado {metadataMatchCount} vez(es); recuperação órfã não se aplica.";
+            detail = $"File '{metadataFileName}' encontrado {metadataMatches.Length} vez(es); recuperação não se aplica com metadata ambígua.";
             return false;
         }
 
-        var apiObject = apiMatches[0];
+        if (metadataMatches.Length == 1)
+        {
+            // O File existe. Só há um caso recuperável: ele foi produzido por uma recuperação
+            // anterior e o API Object que ele registra deixou de existir — tipicamente porque
+            // foi removido e o Wizard criou outro com o mesmo nome. Aí a metadata aponta para
+            // um GUID morto, o Wizard trava em OwnershipSchemaApiNameOrGuidMismatch, o Remover
+            // recusa, e a recuperação não se oferecia porque o File estava lá. Beco sem saída.
+            //
+            // Numa metadata **completa** o mesmo descompasso não é recuperável aqui: o
+            // fingerprint B067 cobre o conteúdo inteiro, e corrigir só o apiGuid trocaria um
+            // bloqueio por outro. Esse caso continua exigindo decisão humana.
+            if (!TryReadStaleRecoveredMetadata(metadataMatches[0], apiObject, out var mismatchDetail))
+            {
+                detail = mismatchDetail;
+                return false;
+            }
+
+            staleFile = metadataMatches[0];
+        }
 
         // Posse por dois sinais independentes, os mesmos que sustentam o ramo
         // OwnedByDescriptionFallback de ApiPlanApiObjectOwnership: a Description sentinela que
@@ -137,10 +159,57 @@ internal static class ApiPlanOrphanMetadataRecovery
             FindTransactionFolderName(designModel, transaction),
             procedures,
             FindOwnedSdts(designModel, "sdt" + transaction.Name + "_API_"),
-            FindSharedSdts(designModel));
+            FindSharedSdts(designModel),
+            staleFile);
 
-        detail = $"API Object próprio confirmado por Description e Service Source; metadata '{metadataFileName}' ausente. "
+        var situation = staleFile is null
+            ? $"metadata '{metadataFileName}' ausente"
+            : $"metadata '{metadataFileName}' registra um API Object que não existe mais";
+        detail = $"API Object próprio confirmado por Description e Service Source; {situation}. "
             + $"Inventário: Procedures={plan.ProcedureNames.Count}, SdtsProprios={plan.OwnSdtNames.Count}, SdtsCompartilhados={plan.SharedSdtNames.Count}.";
+        return true;
+    }
+
+    /// <summary>
+    /// Decide se uma metadata existente pode ser regravada pela recuperação. Só o caso da
+    /// intenção importada com API Object trocado é recuperável — ver o comentário no chamador.
+    /// </summary>
+    private static bool TryReadStaleRecoveredMetadata(WikiFileKBObject file, API apiObject, out string detail)
+    {
+        JObject? metadata;
+        try
+        {
+            var bytes = file.BlobPart?.Data?.GetBytes();
+            metadata = bytes is null || bytes.Length == 0
+                ? null
+                : JObject.Parse(Encoding.UTF8.GetString(bytes));
+        }
+        catch (Exception exception)
+        {
+            detail = $"File '{file.Name}' existe mas não pôde ser lido ({exception.GetType().Name}); recuperação não se aplica.";
+            return false;
+        }
+
+        if (metadata is null)
+        {
+            detail = $"File '{file.Name}' existe e está vazio; recuperação não se aplica.";
+            return false;
+        }
+
+        if (!IsImportedRecovery(metadata))
+        {
+            detail = $"File '{file.Name}' existe e não foi produzido pela recuperação; recuperação não se aplica.";
+            return false;
+        }
+
+        var recordedApiGuid = metadata.SelectToken("ownership.apiGuid")?.Value<string>();
+        if (string.Equals(recordedApiGuid, apiObject.Guid.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            detail = $"File '{file.Name}' existe e já registra o API Object atual; recuperação não se aplica.";
+            return false;
+        }
+
+        detail = $"File '{file.Name}' registra o API Object '{recordedApiGuid}', e o que existe é '{apiObject.Guid}'.";
         return true;
     }
 
@@ -170,11 +239,16 @@ internal static class ApiPlanOrphanMetadataRecovery
         var json = CreateRecoveryJson(transaction, plan);
         var bytes = Encoding.UTF8.GetBytes(json);
 
-        var file = new WikiFileKBObject(designModel)
+        // Reusa o File quando a recuperação está corrigindo uma metadata importada cujo API
+        // Object foi trocado; criar um segundo com o mesmo nome deixaria a KB ambígua e
+        // bloquearia Remover e Sincronizar por metadata duplicada.
+        var file = plan.StaleFile ?? new WikiFileKBObject(designModel);
+        if (plan.StaleFile is null)
         {
-            Name = plan.MetadataFileName,
-            Description = ApiPlanOwnedObjectDescription.Create(plan.MetadataFileName),
-        };
+            file.Name = plan.MetadataFileName;
+        }
+
+        file.Description = ApiPlanOwnedObjectDescription.Create(plan.MetadataFileName);
         if (transaction.Module is not null)
         {
             file.Module = transaction.Module;
@@ -341,7 +415,8 @@ internal sealed class OrphanMetadataRecoveryPlan
         string transactionFolderName,
         IReadOnlyList<string> procedureNames,
         IReadOnlyList<string> ownSdtNames,
-        IReadOnlyList<string> sharedSdtNames)
+        IReadOnlyList<string> sharedSdtNames,
+        WikiFileKBObject? staleFile = null)
     {
         ApiName = apiName;
         MetadataFileName = metadataFileName;
@@ -350,7 +425,14 @@ internal sealed class OrphanMetadataRecoveryPlan
         ProcedureNames = procedureNames;
         OwnSdtNames = ownSdtNames;
         SharedSdtNames = sharedSdtNames;
+        StaleFile = staleFile;
     }
+
+    /// <summary>
+    /// Metadata importada a ser regravada, quando a recuperação corrige um API Object trocado.
+    /// Nula no caso comum, em que o File não existe.
+    /// </summary>
+    public WikiFileKBObject? StaleFile { get; }
 
     public string ApiName { get; }
 

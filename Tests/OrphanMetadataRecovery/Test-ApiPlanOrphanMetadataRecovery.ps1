@@ -100,6 +100,20 @@ Assert-False ($recovery -match '(?m)^\s*(?!//).*\b(apiObject|procedure|sdt)\.Sav
 $saveCount = ([regex]::Matches($recovery, '\.Save\(\)')).Count
 Assert-True ($saveCount -eq 1) "A recuperação deve conter exatamente um Save(), o do File de metadata; encontrados $saveCount."
 
+# --- 9b. Metadata existente: só a importada com API Object trocado é regravável ------------
+# Em 2026-09-06 a metadata recuperada guardou o apiGuid do momento; o API Object foi removido
+# e outro criado com o mesmo nome. A metadata passou a apontar para um GUID morto, o Wizard
+# travou em OwnershipSchemaApiNameOrGuidMismatch e a recuperação não se oferecia — o File
+# existia. Só se sai disso apagando o File à mão.
+Assert-True ($recovery -match 'TryReadStaleRecoveredMetadata') 'Deve existir a avaliação da metadata existente.'
+Assert-True ($recovery -match 'if \(!IsImportedRecovery\(metadata\)\)') 'Só metadata marcada como importada pode ser regravada: numa metadata completa o fingerprint B067 cobre o conteúdo inteiro, e corrigir só o apiGuid trocaria um bloqueio por outro.'
+Assert-True ($recovery -match 'ownership\.apiGuid') 'A avaliação deve comparar o apiGuid gravado com o do API Object real.'
+Assert-True ($recovery -match 'metadataMatches\.Length > 1') 'Metadata ambígua deve recusar a recuperação.'
+
+# Regravar o File existente, nunca criar um segundo com o mesmo nome — dois Files homônimos
+# bloqueiam Remover e Sincronizar por ambiguidade.
+Assert-True ($recovery -match 'plan\.StaleFile \?\? new WikiFileKBObject') 'A recuperação deve reusar o File existente quando estiver corrigindo uma metadata importada.'
+
 # --- 10. O que a remoção consome não pode divergir sem ninguém perceber --------------------
 foreach ($token in @('ownership.transactionName', 'ownership.apiGuid', 'objects.procedures', 'objects.sdts.shared')) {
     Assert-True ($remover -match [regex]::Escape($token)) "O teste está desatualizado: ApiPlanGeneratedApiRemovalPlan não lê mais '$token'. Reveja o que a metadata recuperada precisa gravar."

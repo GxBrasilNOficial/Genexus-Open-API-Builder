@@ -1618,8 +1618,11 @@ public sealed class Package : AbstractPackageUI
 
         WriteOutput($"[Genexus Open API Builder][B115] Recuperação disponível: {eligibilityDetail}");
         var metadataName = plan.MetadataFileName;
+        var messageKey = plan.StaleFile is null
+            ? "Foi encontrada uma API gerada pela extensao sem o File de metadata '{0}'. A recuperacao criara somente esse File, com o inventario dos objetos encontrados na KB ({1} Procedures, {2} SDTs proprios, {3} compartilhados). Ela devolve a possibilidade de remover a API gerada, mas nao recupera o contrato original: paginacao, ordenacao, campos obrigatorios e a estrutura hierarquica nao existem fora da metadata perdida, e o Sincronizar seguira bloqueado ate uma nova aplicacao completa. Nada mais sera alterado. Deseja recuperar agora?"
+            : "O File de metadata '{0}' existe, mas registra um API Object que nao esta mais na KB — tipicamente porque ele foi removido e outro foi gerado com o mesmo nome. Nesse estado o Wizard e o Remover ficam bloqueados. A recuperacao regravara esse File com o inventario atual ({1} Procedures, {2} SDTs proprios, {3} compartilhados) e o API Object que existe agora. O File ja era uma metadata reconstruida, sem o contrato original, entao nada de contrato se perde e o Sincronizar segue bloqueado ate uma nova aplicacao completa. Nenhum API Object, Procedure ou SDT sera alterado. Deseja recuperar agora?";
         var message = string.Format(
-            texts.Translate("Foi encontrada uma API gerada pela extensao sem o File de metadata '{0}'. A recuperacao criara somente esse File, com o inventario dos objetos encontrados na KB ({1} Procedures, {2} SDTs proprios, {3} compartilhados). Ela devolve a possibilidade de remover a API gerada, mas nao recupera o contrato original: paginacao, ordenacao, campos obrigatorios e a estrutura hierarquica nao existem fora da metadata perdida, e o Sincronizar seguira bloqueado ate uma nova aplicacao completa. Nada mais sera alterado. Deseja recuperar agora?"),
+            texts.Translate(messageKey),
             metadataName,
             plan.ProcedureNames.Count,
             plan.OwnSdtNames.Count,
