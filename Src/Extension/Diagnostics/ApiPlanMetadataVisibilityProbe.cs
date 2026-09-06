@@ -11,13 +11,17 @@ using Artech.Genexus.Common.Wiki;
 namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 /// <summary>
-/// B115 — compara a visibilidade dos Files no KBModel usado pela IDE com a
-/// referência que o wizard acabou de ler.
+/// B115 — mede a visibilidade dos Files pelo <see cref="WikiFileKBObject.GetAll(KBModel)"/>
+/// do KBModel usado pela IDE, em duas passagens consecutivas, e tenta a leitura direta por
+/// <c>Id</c> do File de metadata e do de preferências.
 ///
-/// A sonda é somente leitura. Ela não cria, salva, atualiza ou exclui objetos.
-/// Sai junto com as demais sondas temporárias depois que a divergência entre o
-/// índice do MCP e o <see cref="WikiFileKBObject.GetAll(KBModel)"/> da IDE for
-/// explicada.
+/// **O que ela não faz:** não compara contra o índice do MCP nem contra qualquer outra
+/// referência externa. A redação anterior prometia essa comparação, que o código nunca
+/// executou. O que ela permite concluir é se o próprio `GetAll` da IDE é estável entre
+/// passagens e se o File existe para a leitura direta — o suficiente para separar “o File
+/// não existe” de “o File existe e o `GetAll` não o mostra”.
+///
+/// A sonda é somente leitura. Não cria, salva, atualiza ou exclui objetos.
 /// </summary>
 internal static class ApiPlanMetadataVisibilityProbe
 {

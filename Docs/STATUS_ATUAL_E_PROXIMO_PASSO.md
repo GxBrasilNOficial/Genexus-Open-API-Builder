@@ -159,7 +159,7 @@ O P1 daquele plano — escrita parcial do BC, gravar o API Object por último �
 
 ## Estado da sprint `S-B111` (2026-09-05)
 
-Planejamento concluído; **nenhuma linha do pipeline `B111` alterada** — writers, seam, recibos, diário e remoção seguem como estavam. O que mudou em código foi apenas instrumentação temporária: as três sondas em `Src/Extension/Diagnostics/B111*Probe.cs`, mais o registro do comando `Sonda B111` em `Package.cs` e no manifesto. Três planos de fase escritos e commitados, todos aguardando revisão e decisão:
+Planejamento concluído; **nenhuma linha do pipeline `B111` alterada** — writers, seam, recibos, diário e remoção seguem como estavam. Três planos de fase escritos e commitados, todos aguardando revisão e decisão:
 
 | Fase | Plano | Depende de |
 |---|---|---|
@@ -171,13 +171,23 @@ Planejamento concluído; **nenhuma linha do pipeline `B111` alterada** — write
 
 Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md` — seis execuções sobre `wseducacaospteste` e `fabricabrasil18test`. Três defeitos independentes saíram dessa sondagem e foram numerados: `B112`, `B113` e `B114`; o escopo de `B109` foi ampliado (o sintoma ocorre fora da etapa de Business Component).
 
-**Sonda temporária instalada — checklist de reversão no fechamento da sprint.** Três itens, todos obrigatórios:
+### Instrumentação temporária — o que já saiu e o que continua instalado
 
-1. remover o comando `Sonda B111` das três camadas de registro (`Package.cs`, `CommandDefinition` e grupo no manifesto) e executar `Tools/Test-ExtensionCommandRegistration.ps1`;
-2. remover `Src/Extension/Diagnostics/B111IdentityProbe.cs`, `B111JournalProbe.cs` e `B111SaveCostProbe.cs`;
-3. remover, em `Tests/KbIndexReuse/Test-ApiPlanKbIndexReuse.ps1`, o bloco `$temporaryProbeCreateSymbols` — exceção por (símbolo, arquivo) aberta em 2026-09-05 para `MeasureScans` e `MeasureLookup` em `B111JournalProbe.cs`, que medem o custo do índice e não teriam como fazê-lo sem chamar `Create`. A regra de origem única **não** foi enfraquecida para produção, e o teste continua barrando esses mesmos símbolos em qualquer outro arquivo.
+**Retirado em 2026-09-05**, com as perguntas respondidas e os resultados registrados em `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`: o comando `Sonda B111` das três camadas, as sondas `B111IdentityProbe`, `B111JournalProbe` e `B111SaveCostProbe`, e a exceção `$temporaryProbeCreateSymbols` que a sonda do diário exigia no teste de origem única do índice. **O manifesto mudou**, então a próxima instalação exige `genexus /install`.
 
-A DLL instalada nas KBs de teste contém as sondas.
+**Continua instalado**, com o motivo e o momento de sair:
+
+| Instrumento | Por que continua | Sai quando |
+|---|---|---|
+| `B109ExceptionProbe` | sem ela, uma reincidência volta a chegar como uma linha de mensagem, sem stack | `B109` fechado nos dois ramos |
+| `ApiPlanSaveBoundaryProbe` (rótulo `[B109]`) | é o instrumento do ramo A: separa mutação entre Pump e Save de falha intrínseca | idem |
+| interruptor `GOAB_B109_SUPPRESS_PUMP` | é o experimento do ramo A, e nunca foi acionado | idem |
+| `ApiPlanMetadataVisibilityProbe` (rótulo `[B115]`) | diagnóstico de metadata órfã | `B115` fechado |
+| `B111CallSiteProbe` | é a cobertura que a F1 exige — contagem de gravações de Folder e SDT por aplicação — e serve para provar que a regra 4.4.1 se manteve **depois** da implementação | aceite da F1 |
+
+Ao retirar qualquer um: executar `Tools/Test-ExtensionCommandRegistration.ps1` se o manifesto for tocado, e o gate mecânico em seguida.
+
+`ApiPlanScanProbe` **não** é temporária: é instrumentação de produção do `B082`, usada por vários writers.
 
 ## Investigação da falha do Business Component na KB grande — ramo B encerrado, ramo A aberto (2026-09-05)
 

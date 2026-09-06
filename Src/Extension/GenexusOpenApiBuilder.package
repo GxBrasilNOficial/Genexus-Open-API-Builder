@@ -13,7 +13,6 @@
     <CommandDefinition id="Remover API gerada" context="selection" />
     <CommandDefinition id="Eliminar API generada" context="selection" />
     <CommandDefinition id="Remove generated API" context="selection" />
-    <CommandDefinition id="Sonda B111" context="selection" />
   </Commands>
   <Groups>
     <Group id="GenexusOpenApiBuilderMainMenuGroup">
@@ -27,7 +26,6 @@
       <Command refid="Remover API gerada" />
       <Command refid="Eliminar API generada" />
       <Command refid="Remove generated API" />
-      <Command refid="Sonda B111" />
     </Group>
     <Group id="GenexusOpenApiBuilderContextMenuGroup">
       <Command refid="Wizard" />

@@ -43,49 +43,6 @@ public sealed class Package : AbstractPackageUI
         AddCommand(new CommandKey(Id, "Eliminar API generada"), ExecuteRemoveGeneratedApi, QueryRemoveGeneratedApiSpanish);
         AddCommand(new CommandKey(Id, "Remove generated API"), ExecuteRemoveGeneratedApi, QueryRemoveGeneratedApiEnglish);
 
-        // B111 — sonda temporária de planejamento. Remover das três camadas no fechamento da frente.
-        AddCommand(new CommandKey(Id, "Sonda B111"), ExecuteB111Probe, QueryB111Probe);
-    }
-
-    private static bool QueryB111Probe(CommandData data, ref CommandStatus status)
-    {
-        status.Visible(true);
-        return true;
-    }
-
-    /// <summary>
-    /// B111 — executa as sondas de identidade e de diário e publica o resultado no Output.
-    /// Diagnóstico de planejamento: cria e exclui seus próprios objetos de teste e não
-    /// participa de nenhum fluxo de Apply, Sync ou remoção.
-    /// </summary>
-    private static bool ExecuteB111Probe(CommandData data)
-    {
-        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
-        if (knowledgeBase is null)
-        {
-            WriteOutput("[Genexus Open API Builder][B111] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
-            return true;
-        }
-
-        WriteOutput("[Genexus Open API Builder][B111] Sonda iniciada. Nenhum objeto pré-existente da KB é alterado.");
-
-        foreach (var line in B111IdentityProbe.Run(knowledgeBase.DesignModel))
-        {
-            WriteOutput("[Genexus Open API Builder][B111] " + line);
-        }
-
-        foreach (var line in B111JournalProbe.Run(knowledgeBase.DesignModel))
-        {
-            WriteOutput("[Genexus Open API Builder][B111] " + line);
-        }
-
-        foreach (var line in B111SaveCostProbe.Run(knowledgeBase.DesignModel))
-        {
-            WriteOutput("[Genexus Open API Builder][B111] " + line);
-        }
-
-        WriteOutput("[Genexus Open API Builder][B111] Sonda concluída.");
-        return true;
     }
 
     private static bool QueryConfigureWizardPreferencesPortuguese(CommandData data, ref CommandStatus status)
@@ -138,255 +95,8 @@ public sealed class Package : AbstractPackageUI
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
             // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
-            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Apply")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
+            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Preferências do Wizard")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][Prefs] Gravacao de preferencias bloqueada ou falhou antes de concluir: Error='{errorDetail}'");
-        }
-
-        return true;
-    }
-
-    private static bool QueryDetectActiveKnowledgeBase(CommandData data, ref CommandStatus status)
-    {
-        status.Visible(true);
-        return true;
-    }
-
-    private static bool ExecuteDetectActiveKnowledgeBase(CommandData data)
-    {
-        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
-        var snapshot = ActiveKnowledgeBaseProbe.TryRead(knowledgeBase);
-
-        WriteOutput(
-            snapshot is null
-                ? "[Genexus Open API Builder][B020] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente."
-                : $"[Genexus Open API Builder][B020] Knowledge Base ativa detectada: Name='{snapshot.Name}', Guid='{snapshot.Guid}', Location='{snapshot.Location}'.");
-
-        return true;
-    }
-
-    private static bool QueryListEligibleTransactions(CommandData data, ref CommandStatus status)
-    {
-        status.Visible(true);
-        return true;
-    }
-
-    private static bool ExecuteListEligibleTransactions(CommandData data)
-    {
-        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
-        if (knowledgeBase is null)
-        {
-            WriteOutput("[Genexus Open API Builder][B021] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
-            return true;
-        }
-
-        var transactionNames = EligibleTransactionReader.ReadNames(knowledgeBase);
-        if (transactionNames.Count == 0)
-        {
-            WriteOutput("[Genexus Open API Builder][B021] Nenhuma Transaction elegível foi encontrada na Knowledge Base ativa.");
-            return true;
-        }
-
-        WriteOutput($"[Genexus Open API Builder][B021] Transactions elegíveis encontradas: Total={transactionNames.Count}.");
-        foreach (var transactionName in transactionNames)
-        {
-            WriteOutput($"[Genexus Open API Builder][B021] Transaction elegível: Name='{transactionName}'.");
-        }
-
-        return true;
-    }
-
-    private static bool QuerySelectTransactionAndReadModule(CommandData data, ref CommandStatus status)
-    {
-        status.Visible(true);
-        return true;
-    }
-
-    private static bool ExecuteSelectTransactionAndReadModule(CommandData data)
-    {
-        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
-        if (knowledgeBase is null)
-        {
-            WriteOutput("[Genexus Open API Builder][B022] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
-            return true;
-        }
-
-        PrototypeTransactionSelectionState.ClearIfKnowledgeBaseChanged(knowledgeBase);
-
-        if (!UIServices.IsSelectObjectDialogAvailable)
-        {
-            WriteOutput("[Genexus Open API Builder][B022] O diálogo público de seleção não está disponível nesta IDE.");
-            return true;
-        }
-
-        var options = new SelectObjectOptions
-        {
-            MultipleSelection = false,
-            DialogTitle = "Selecionar Transaction para ler módulo (B022)",
-            SupportCreateAction = false
-        };
-        options.ObjectTypes.Add(KBObjectDescriptor.Get<Transaction>());
-
-        var selectedObject = UIServices.SelectObjectDialog.SelectObject(options);
-        if (selectedObject is null)
-        {
-            WriteOutput("[Genexus Open API Builder][B022] Nenhuma Transaction foi selecionada.");
-            return true;
-        }
-
-        if (selectedObject is not Transaction transaction)
-        {
-            WriteOutput("[Genexus Open API Builder][B022] A seleção retornada não é uma Transaction. Nenhuma escolha foi mantida.");
-            return true;
-        }
-
-        var module = transaction.Module;
-        if (module is null)
-        {
-            WriteOutput($"[Genexus Open API Builder][B022] A Transaction selecionada não possui módulo disponível: Name='{transaction.Name}'.");
-            return true;
-        }
-
-        PrototypeTransactionSelectionState.Store(knowledgeBase, transaction);
-        WriteOutput($"[Genexus Open API Builder][B022] Transaction selecionada: Name='{transaction.Name}'.");
-        WriteOutput($"[Genexus Open API Builder][B022] Módulo da Transaction: Name='{module.Name}'.");
-
-        return true;
-    }
-
-    private static bool QueryDetectExistingObjects(CommandData data, ref CommandStatus status)
-    {
-        status.Visible(true);
-        return true;
-    }
-
-    private static bool ExecuteDetectExistingObjects(CommandData data)
-    {
-        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
-        if (knowledgeBase is null)
-        {
-            WriteOutput("[Genexus Open API Builder][B023] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
-            return true;
-        }
-
-        PrototypeTransactionSelectionState.ClearIfKnowledgeBaseChanged(knowledgeBase);
-        var selectedTransaction = PrototypeTransactionSelectionState.Current;
-        if (selectedTransaction is null)
-        {
-            WriteOutput("[Genexus Open API Builder][B023] Nenhuma Transaction selecionada em memória. Execute primeiro o comando B022.");
-            return true;
-        }
-
-        var transaction = Transaction.GetAll(knowledgeBase.DesignModel)
-            .SingleOrDefault(item => item.Guid == selectedTransaction.TransactionGuid);
-        if (transaction is null)
-        {
-            WriteOutput($"[Genexus Open API Builder][B023] A Transaction selecionada em memória não foi reencontrada: Name='{selectedTransaction.TransactionName}', Guid='{selectedTransaction.TransactionGuid}'. Nenhuma escolha foi persistida.");
-            return true;
-        }
-
-        var snapshot = PrototypeExistingObjectReader.Read(knowledgeBase.DesignModel, transaction);
-        WriteOutput($"[Genexus Open API Builder][B023] Transaction selecionada: Name='{snapshot.TransactionName}', MetadataFile='{snapshot.MetadataFileName}'.");
-        WriteOutput($"[Genexus Open API Builder][B023] Objetos planejados verificados: Total={snapshot.Results.Count}, Existentes={snapshot.ExistingCount}, Ausentes={snapshot.MissingCount}.");
-        foreach (var result in snapshot.Results)
-        {
-            WriteOutput($"[Genexus Open API Builder][B023] {result.ObjectType}: Name='{result.Name}', Count={result.Count}, Status='{result.Status}'.");
-        }
-
-        return true;
-    }
-
-    private static bool QueryCheckBusinessComponent(CommandData data, ref CommandStatus status)
-    {
-        status.Visible(true);
-        return true;
-    }
-
-    private static bool ExecuteCheckBusinessComponent(CommandData data)
-    {
-        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
-        if (knowledgeBase is null)
-        {
-            WriteOutput("[Genexus Open API Builder][B024] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
-            return true;
-        }
-
-        PrototypeTransactionSelectionState.ClearIfKnowledgeBaseChanged(knowledgeBase);
-        var selectedTransaction = PrototypeTransactionSelectionState.Current;
-        if (selectedTransaction is null)
-        {
-            WriteOutput("[Genexus Open API Builder][B024] Nenhuma Transaction selecionada em memória. Execute primeiro o comando B022.");
-            return true;
-        }
-
-        var transaction = Transaction.GetAll(knowledgeBase.DesignModel)
-            .SingleOrDefault(item => item.Guid == selectedTransaction.TransactionGuid);
-        if (transaction is null)
-        {
-            WriteOutput($"[Genexus Open API Builder][B024] A Transaction selecionada em memória não foi reencontrada: Name='{selectedTransaction.TransactionName}', Guid='{selectedTransaction.TransactionGuid}'. Nenhuma escolha foi persistida.");
-            return true;
-        }
-
-        var snapshot = PrototypeBusinessComponentReader.Read(transaction);
-        WriteOutput($"[Genexus Open API Builder][B024] Transaction selecionada: Name='{snapshot.TransactionName}', IsBusinessComponent={snapshot.IsBusinessComponent}.");
-        WriteOutput($"[Genexus Open API Builder][B024] Resultado da verificação: Status='{snapshot.Status}'.");
-
-        return true;
-    }
-
-    private static bool QueryReadPrimaryKey(CommandData data, ref CommandStatus status)
-    {
-        status.Visible(true);
-        return true;
-    }
-
-    private static bool ExecuteReadPrimaryKey(CommandData data)
-    {
-        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
-        if (knowledgeBase is null)
-        {
-            WriteOutput("[Genexus Open API Builder][B025] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
-            return true;
-        }
-
-        PrototypeTransactionSelectionState.ClearIfKnowledgeBaseChanged(knowledgeBase);
-
-        var transaction = TryResolveTransactionFromContext(data);
-        if (transaction is not null)
-        {
-            var transactionGuid = transaction.Guid;
-            transaction = Transaction.GetAll(knowledgeBase.DesignModel)
-                .SingleOrDefault(item => item.Guid == transactionGuid);
-            if (transaction is null)
-            {
-                WriteOutput("[Genexus Open API Builder][B025] A Transaction do menu de contexto não foi reencontrada na Knowledge Base ativa. Nenhuma escolha foi persistida.");
-                return true;
-            }
-
-            PrototypeTransactionSelectionState.Store(knowledgeBase, transaction);
-        }
-        else
-        {
-            var selectedTransaction = PrototypeTransactionSelectionState.Current;
-            if (selectedTransaction is null)
-            {
-                WriteOutput("[Genexus Open API Builder][B025] Nenhuma Transaction selecionada. Use o menu de contexto de uma Transaction ou execute primeiro o comando B022.");
-                return true;
-            }
-
-            transaction = Transaction.GetAll(knowledgeBase.DesignModel)
-                .SingleOrDefault(item => item.Guid == selectedTransaction.TransactionGuid);
-            if (transaction is null)
-            {
-                WriteOutput($"[Genexus Open API Builder][B025] A Transaction selecionada em memória não foi reencontrada: Name='{selectedTransaction.TransactionName}', Guid='{selectedTransaction.TransactionGuid}'. Nenhuma escolha foi persistida.");
-                return true;
-            }
-        }
-
-        var snapshot = PrototypePrimaryKeyReader.Read(transaction);
-        WriteOutput($"[Genexus Open API Builder][B025] Transaction selecionada: Name='{snapshot.TransactionName}', PrimaryKeyParts={snapshot.Count}, HasCompositeKey={snapshot.HasCompositeKey}.");
-        foreach (var part in snapshot.Parts)
-        {
-            WriteOutput($"[Genexus Open API Builder][B025] KeyPart: Order={part.Order}, Name='{part.Name}', Type='{part.Type}', Length={part.Length}, Decimals={part.Decimals}.");
         }
 
         return true;
@@ -555,7 +265,7 @@ public sealed class Package : AbstractPackageUI
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
             // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
-            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Apply")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
+            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Metadata File")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B060] Gravacao de metadata bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{errorDetail}'");
             report?.AddBlocked("File", apiPlan.MetadataFileName, errorDetail);
             return false;
@@ -616,7 +326,7 @@ public sealed class Package : AbstractPackageUI
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
             // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
-            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Apply")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
+            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Business Component")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Aplicacao REST via Business Component bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{errorDetail}'");
             report?.AddBlocked("Business Component", "REST", errorDetail);
             return false;
@@ -666,7 +376,7 @@ public sealed class Package : AbstractPackageUI
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
             // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
-            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Apply")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
+            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "List")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B070] Aplicacao do List bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{errorDetail}'");
             report?.AddBlocked("List", "B070", errorDetail);
             return false;
@@ -833,7 +543,7 @@ public sealed class Package : AbstractPackageUI
                 {
                     var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
                     // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
-                    foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Apply")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
+                    foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Sync")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
                     WriteOutput($"[Genexus Open API Builder][B085] Sincronizacao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}'");
                     AppendCollisionConflictsToReport(report, syncState.CollectCollisionConflicts());
                     if (!report.HasInterrupted)
@@ -998,7 +708,7 @@ public sealed class Package : AbstractPackageUI
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
             // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
-            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Apply")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
+            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Sync")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B085] Sincronizacao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}'");
             var report = new ApiPlanApplicationFinalReportCollector("Sincronizar", transaction.Name, null);
             report.AddBlocked("Sincronizar", transaction.Name, errorDetail);
@@ -1121,7 +831,7 @@ public sealed class Package : AbstractPackageUI
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
             // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
-            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Apply")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
+            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Remover")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B086] Remocao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}'");
             var report = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, null);
             report.AddBlocked("Remover", transaction.Name, errorDetail);
@@ -1806,214 +1516,6 @@ public sealed class Package : AbstractPackageUI
         ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
         return true;
         } // using dialog [B082]
-    }
-
-    private static bool QueryConfigureWizardContract(CommandData data, ref CommandStatus status)
-    {
-        status.Visible(true);
-        return true;
-    }
-
-    private static bool ExecuteConfigureWizardContract(CommandData data)
-    {
-        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
-        if (knowledgeBase is null)
-        {
-            PrototypeWizardSessionState.ClearContractSelection();
-            PrototypeWizardReviewSessionState.ClearReviewSelection();
-            WriteOutput("[Genexus Open API Builder][B031] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
-            return true;
-        }
-
-        PrototypeTransactionSelectionState.ClearIfKnowledgeBaseChanged(knowledgeBase);
-        var selectedTransaction = PrototypeTransactionSelectionState.Current;
-        if (selectedTransaction is null)
-        {
-            PrototypeWizardSessionState.ClearContractSelection();
-            PrototypeWizardReviewSessionState.ClearReviewSelection();
-            WriteOutput("[Genexus Open API Builder][B031] Nenhuma Transaction selecionada em memoria. Execute primeiro o comando Abrir Wizard (B030).");
-            return true;
-        }
-
-        var transaction = Transaction.GetAll(knowledgeBase.DesignModel)
-            .SingleOrDefault(item => item.Guid == selectedTransaction.TransactionGuid);
-        if (transaction is null)
-        {
-            PrototypeWizardSessionState.ClearContractSelection();
-            PrototypeWizardReviewSessionState.ClearReviewSelection();
-            WriteOutput($"[Genexus Open API Builder][B031] A Transaction selecionada em memoria nao foi reencontrada: Name='{selectedTransaction.TransactionName}', Guid='{selectedTransaction.TransactionGuid}'. Nenhuma escolha foi persistida.");
-            return true;
-        }
-
-        var snapshot = PrototypeWizardContractReader.Read(transaction);
-        using var dialog = new PrototypeWizardContractDialog(snapshot, ExtensionLocalization.For(knowledgeBase));
-        var result = dialog.ShowDialog();
-
-        if (result == System.Windows.Forms.DialogResult.Retry)
-        {
-            PrototypeWizardSessionState.ClearContractSelection();
-            PrototypeWizardReviewSessionState.ClearReviewSelection();
-            WriteOutput($"[Genexus Open API Builder][B031] Voltar acionado no Passo 2. Transaction='{transaction.Name}' permaneceu selecionada em memoria; nenhuma escolha de contrato foi persistida.");
-            return true;
-        }
-
-        if (result == System.Windows.Forms.DialogResult.Cancel)
-        {
-            PrototypeWizardSessionState.ClearContractSelection();
-            PrototypeWizardReviewSessionState.ClearReviewSelection();
-            PrototypeTransactionSelectionState.Clear();
-            WriteOutput($"[Genexus Open API Builder][B031] Wizard cancelado no Passo 2 para Transaction='{transaction.Name}'. Escolhas em memoria descartadas; nenhuma alteracao foi feita na KB.");
-            return true;
-        }
-
-        if (result != System.Windows.Forms.DialogResult.OK || dialog.Selection is null)
-        {
-            PrototypeWizardSessionState.ClearContractSelection();
-            PrototypeWizardReviewSessionState.ClearReviewSelection();
-            WriteOutput($"[Genexus Open API Builder][B031] Passo 2 fechado sem conclusao para Transaction='{transaction.Name}'. Nenhuma escolha foi persistida.");
-            return true;
-        }
-
-        var selection = dialog.Selection;
-        PrototypeWizardSessionState.StoreContractSelection(selection);
-        PrototypeWizardReviewSessionState.ClearReviewSelection();
-        WriteOutput($"[Genexus Open API Builder][B031] Wizard Passo 2 concluido em memoria: Transaction='{selection.TransactionName}', Services='{string.Join(",", selection.SelectedServices)}'.");
-        WriteOutput($"[Genexus Open API Builder][B031] Campos selecionados: Create={selection.CreateFields.Count}, Update={selection.UpdateFields.Count}, Response={selection.ResponseFields.Count}, ListFilters={selection.ListFilters.Count}.");
-        WriteOutput("[Genexus Open API Builder][B031] Proximo passo habilitado para B032. Nenhum ApiPlan foi criado, nenhuma escolha foi persistida e nenhum objeto foi criado, alterado ou excluido.");
-
-        return true;
-    }
-
-    private static bool QueryReviewWizardPathsAndSecurity(CommandData data, ref CommandStatus status)
-    {
-        status.Visible(true);
-        return true;
-    }
-
-    private static bool ExecuteReviewWizardPathsAndSecurity(CommandData data)
-    {
-        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
-        if (knowledgeBase is null)
-        {
-            PrototypeWizardReviewSessionState.ClearReviewSelection();
-            PrototypeWizardSessionState.ClearContractSelection();
-            WriteOutput("[Genexus Open API Builder][B032] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
-            return true;
-        }
-
-        PrototypeTransactionSelectionState.ClearIfKnowledgeBaseChanged(knowledgeBase);
-        var transaction = TryResolveTransactionFromContext(data);
-        var selectionSource = "Contexto";
-        if (transaction is not null)
-        {
-            var transactionGuid = transaction.Guid;
-            transaction = Transaction.GetAll(knowledgeBase.DesignModel)
-                .SingleOrDefault(item => item.Guid == transactionGuid);
-            if (transaction is null)
-            {
-                PrototypeWizardReviewSessionState.ClearReviewSelection();
-                PrototypeWizardSessionState.ClearContractSelection();
-                WriteOutput("[Genexus Open API Builder][B032] A Transaction do menu de contexto nao foi reencontrada na Knowledge Base ativa. Nenhuma escolha foi persistida.");
-                return true;
-            }
-
-            var current = PrototypeTransactionSelectionState.Current;
-            if (current is null || current.TransactionGuid != transaction.Guid)
-            {
-                PrototypeWizardReviewSessionState.ClearReviewSelection();
-                PrototypeWizardSessionState.ClearContractSelection();
-            }
-
-            PrototypeTransactionSelectionState.Store(knowledgeBase, transaction);
-        }
-        else
-        {
-            selectionSource = "Memoria";
-            var selectedTransaction = PrototypeTransactionSelectionState.Current;
-            if (selectedTransaction is null)
-            {
-                PrototypeWizardReviewSessionState.ClearReviewSelection();
-                PrototypeWizardSessionState.ClearContractSelection();
-                WriteOutput("[Genexus Open API Builder][B032] Nenhuma Transaction selecionada. Use o menu de contexto de uma Transaction ou execute primeiro o comando Abrir Wizard (B030).");
-                return true;
-            }
-
-            transaction = Transaction.GetAll(knowledgeBase.DesignModel)
-                .SingleOrDefault(item => item.Guid == selectedTransaction.TransactionGuid);
-            if (transaction is null)
-            {
-                PrototypeWizardReviewSessionState.ClearReviewSelection();
-                PrototypeWizardSessionState.ClearContractSelection();
-                WriteOutput($"[Genexus Open API Builder][B032] A Transaction selecionada em memoria nao foi reencontrada: Name='{selectedTransaction.TransactionName}', Guid='{selectedTransaction.TransactionGuid}'. Nenhuma escolha foi persistida.");
-                return true;
-            }
-        }
-
-        var module = transaction.Module;
-        if (module is null)
-        {
-            PrototypeWizardReviewSessionState.ClearReviewSelection();
-            PrototypeWizardSessionState.ClearContractSelection();
-            WriteOutput($"[Genexus Open API Builder][B032] A Transaction selecionada nao possui modulo disponivel: Name='{transaction.Name}'. Nenhuma escolha foi persistida.");
-            return true;
-        }
-
-        WriteOutput($"[Genexus Open API Builder][B032] Transaction resolvida para o wizard: Name='{transaction.Name}', Module='{module.Name}', SelectionSource='{selectionSource}'.");
-
-        if (!EnsureContractSelectionForB032(transaction))
-        {
-            return true;
-        }
-
-        while (true)
-        {
-            var contractSelection = PrototypeWizardSessionState.ContractSelection;
-            if (contractSelection is null)
-            {
-                PrototypeWizardReviewSessionState.ClearReviewSelection();
-                WriteOutput($"[Genexus Open API Builder][B032] Contrato B031 ausente para Transaction='{transaction.Name}'. Nenhuma escolha foi persistida.");
-                return true;
-            }
-
-            var snapshot = PrototypeWizardReviewReader.Read(transaction, contractSelection);
-            using var dialog = new PrototypeWizardReviewDialog(snapshot, ExtensionLocalization.For(knowledgeBase));
-            var result = dialog.ShowDialog();
-
-            if (result == System.Windows.Forms.DialogResult.Retry)
-            {
-                PrototypeWizardReviewSessionState.ClearReviewSelection();
-                WriteOutput($"[Genexus Open API Builder][B032] Voltar acionado no Passo 3. Reabrindo B031 para Transaction='{transaction.Name}' sem persistir escolhas.");
-                if (!RunContractDialogForB032(transaction))
-                {
-                    return true;
-                }
-
-                continue;
-            }
-
-            if (result == System.Windows.Forms.DialogResult.Cancel)
-            {
-                PrototypeWizardReviewSessionState.ClearReviewSelection();
-                PrototypeWizardSessionState.ClearContractSelection();
-                PrototypeTransactionSelectionState.Clear();
-                WriteOutput($"[Genexus Open API Builder][B032] Wizard cancelado no Passo 3 para Transaction='{transaction.Name}'. Escolhas em memoria descartadas; nenhuma alteracao foi feita na KB.");
-                return true;
-            }
-
-            if (result != System.Windows.Forms.DialogResult.OK || dialog.Selection is null)
-            {
-                PrototypeWizardReviewSessionState.ClearReviewSelection();
-                WriteOutput($"[Genexus Open API Builder][B032] Passo 3 fechado sem conclusao para Transaction='{transaction.Name}'. Nenhuma escolha foi persistida.");
-                return true;
-            }
-
-            var selection = dialog.Selection;
-            PrototypeWizardReviewSessionState.StoreReviewSelection(selection);
-            WriteOutput($"[Genexus Open API Builder][B032] Wizard Passo 3 concluido em memoria: Transaction='{selection.TransactionName}', ApiName='{selection.ApiName}', ServicesBasePath='{selection.ServicesBasePath}', RestPath='{selection.RestPath}', SecurityLevel='{selection.SecurityLevel}'.");
-            WriteOutput($"[Genexus Open API Builder][B032] Paginacao e ordenacao: DefaultPageSize={selection.DefaultPageSize}, MaximumPageSize={selection.MaximumPageSize}, StaticOrder='{string.Join(",", selection.StaticOrder.Select(item => item.AttributeName + " " + item.Direction))}'.");
-            WriteOutput("[Genexus Open API Builder][B032] Proximo passo habilitado para B033. Nenhum ApiPlan foi criado, nenhuma escolha foi persistida e nenhum objeto foi criado, alterado ou excluido.");
-            return true;
-        }
     }
 
     private static bool EnsureContractSelectionForB032(Transaction transaction)
