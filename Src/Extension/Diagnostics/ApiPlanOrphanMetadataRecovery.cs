@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Linq;
 using Artech.Architecture.Common.Objects;
 using Artech.Genexus.Common.Objects;
 using Artech.Genexus.Common.Wiki;
@@ -35,21 +36,36 @@ internal static class ApiPlanOrphanMetadataRecovery
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
+        // B082: as duas perguntas de elegibilidade custam duas varreduras; o índice completo
+        // custa sete, entre elas o Attribute.GetAll de ~1300 ms na KB grande. No caso comum
+        // — não há órfã — o índice seria montado e descartado, então ele só nasce depois de
+        // as duas perguntas passarem.
+        var apiMatches = ApiPlanScanProbe.Scan(
+            "API",
+            "orphan-recovery-preflight",
+            () => API.GetAll(designModel)
+                .Where(item => string.Equals(item.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase))
+                .ToArray());
+        if (apiMatches.Length != 1)
+        {
+            index = null!;
+            detail = $"API Object '{apiPlan.ApiName}' encontrado {apiMatches.Length} vez(es); esperado exatamente 1.";
+            return false;
+        }
+
+        var metadataMatchCount = ApiPlanScanProbe.Scan(
+            "File",
+            "orphan-recovery-preflight",
+            () => WikiFileKBObject.GetAll(designModel)
+                .Count(item => string.Equals(item.Name, apiPlan.MetadataFileName, StringComparison.OrdinalIgnoreCase)));
+        if (metadataMatchCount != 0)
+        {
+            index = null!;
+            detail = $"File '{apiPlan.MetadataFileName}' encontrado {metadataMatchCount} vez(es); recuperação órfã não se aplica.";
+            return false;
+        }
+
         index = ApiPlanKbObjectNameIndex.Create(designModel);
-        var apiMatches = index.FindApis(apiPlan.ApiName);
-        if (apiMatches.Count != 1)
-        {
-            detail = $"API Object '{apiPlan.ApiName}' encontrado {apiMatches.Count} vez(es); esperado exatamente 1.";
-            return false;
-        }
-
-        var metadataMatches = index.FindFiles(apiPlan.MetadataFileName);
-        if (metadataMatches.Count != 0)
-        {
-            detail = $"File '{apiPlan.MetadataFileName}' encontrado {metadataMatches.Count} vez(es); recuperação órfã não se aplica.";
-            return false;
-        }
-
         var apiObject = apiMatches[0];
         var ownership = ApiPlanApiObjectWriter.DiagnoseOwnership(designModel, index, apiPlan, apiObject);
         if (!ownership.IsOwned)
