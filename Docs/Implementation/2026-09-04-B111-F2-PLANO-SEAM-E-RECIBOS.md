@@ -41,20 +41,20 @@ executa mais que 16 Saves.
 
 | Arquivo:linha | O que grava |
 |---|---|
-| `ApiPlanTransactionFolder.cs:41` | Folder da Transaction |
-| `ApiPlanSdtWriter.cs:227` | Folder compartilhado |
-| `ApiPlanSdtWriter.cs:262` | SDT reencontrado |
-| `ApiPlanSdtWriter.cs:293` | SDT novo |
+| `ApiPlanTransactionFolder.cs:45` | Folder da Transaction |
+| `ApiPlanSdtWriter.cs:230` | Folder compartilhado |
+| `ApiPlanSdtWriter.cs:266` | SDT reencontrado |
+| `ApiPlanSdtWriter.cs:302` | SDT novo |
 | `ApiPlanProcedureWriter.cs:221` | Procedure reencontrada |
 | `ApiPlanProcedureWriter.cs:235` | Procedure nova |
 | `ApiPlanApiObjectWriter.cs:707` | API reencontrado |
 | `ApiPlanApiObjectWriter.cs:718` | API novo |
-| `ApiPlanBusinessComponentWriter.cs:118` | laço de `saveSteps` |
-| `ApiPlanBusinessComponentWriter.cs:541` | `SaveProcedure` |
-| `ApiPlanBusinessComponentWriter.cs:606` | `SaveApi` |
-| `ApiPlanListProcedureWriter.cs:79` | laço de `saveSteps` |
-| `ApiPlanListProcedureWriter.cs:934` | `SaveProcedure` |
-| `ApiPlanListProcedureWriter.cs:955` | `SaveApi` |
+| `ApiPlanBusinessComponentWriter.cs:111` | laço de `saveSteps` |
+| `ApiPlanBusinessComponentWriter.cs:547` | `SaveProcedure` |
+| `ApiPlanBusinessComponentWriter.cs:617` | `SaveApi` |
+| `ApiPlanListProcedureWriter.cs:72` | laço de `saveSteps` |
+| `ApiPlanListProcedureWriter.cs:942` | `SaveProcedure` |
+| `ApiPlanListProcedureWriter.cs:962` | `SaveApi` |
 | `ApiPlanMetadataFileWriter.cs:98` | metadata B060 |
 | `Package.cs:1584` | `transaction.Save()` para habilitar BC |
 

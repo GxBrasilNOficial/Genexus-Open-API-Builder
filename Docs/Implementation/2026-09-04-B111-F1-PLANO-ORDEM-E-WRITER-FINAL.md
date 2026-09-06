@@ -54,9 +54,9 @@ Confirmado por leitura em 2026-09-04:
    criado (`ApiPlanApiObjectWriter.cs:718`), relendo por `API.Get(designModel, guid)` em
    seguida.
 2. `ApiPlanBusinessComponentWriter` tem três `Save()` reais, e o do API está em
-   `ApiPlanBusinessComponentWriter.cs:606`.
+   `ApiPlanBusinessComponentWriter.cs:617`.
 3. `ApiPlanListProcedureWriter` tem três `Save()` reais; o da Procedure em
-   `ApiPlanListProcedureWriter.cs:934` e o do API em `ApiPlanListProcedureWriter.cs:955`.
+   `ApiPlanListProcedureWriter.cs:942` e o do API em `ApiPlanListProcedureWriter.cs:962`.
 3.1. Os dois writers montam uma lista `saveSteps` de pares `(Label, Action Save)` e a
    executam em laço com progresso e cronômetro — `ApiPlanBusinessComponentWriter.cs:98` e
    `ApiPlanListProcedureWriter.cs:66`. **Em ambos, o primeiro passo da lista é o API.**
@@ -216,7 +216,7 @@ Medido por leitura em 2026-09-05:
 
 | Chamada | Onde ocorre |
 |---|---|
-| `ApiPlanTransactionFolder.CreateOrReencounter` | **seis** pontos: `ApiPlanSdtWriter.cs:69`, `ApiPlanProcedureWriter.cs:53`, `ApiPlanApiObjectWriter.cs:53`, `ApiPlanBusinessComponentWriter.cs:96`, `ApiPlanListProcedureWriter.cs:64` — mais o interno do próprio SdtWriter |
+| `ApiPlanTransactionFolder.CreateOrReencounter` | **seis** pontos: `ApiPlanSdtWriter.cs:72`, `ApiPlanProcedureWriter.cs:53`, `ApiPlanApiObjectWriter.cs:53`, `ApiPlanBusinessComponentWriter.cs:96`, `ApiPlanListProcedureWriter.cs:64` — mais o interno do próprio SdtWriter |
 | `ApiPlanSdtWriter.CreateOrReencounter` | **quatro** pontos: a fase dedicada em `Package.cs:132-133`, `ApiPlanBusinessComponentWriter.cs:94` e `ApiPlanListProcedureWriter.cs:62` |
 
 Numa aplicação com SDTs, Procedures, API, BC e List, o writer de SDT roda três vezes e o de
