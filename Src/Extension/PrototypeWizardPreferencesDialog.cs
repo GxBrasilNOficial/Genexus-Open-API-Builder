@@ -81,7 +81,10 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         // A medição sai justa; a folga cobre o arredondamento do escalonamento por DPI, que de
         // outro modo pode comer o último pixel de um controle.
         const int SafetyMargin = 8;
-        var working = Screen.FromControl(this).WorkingArea;
+        // A tela da IDE, não a primária: aqui o form ainda não tem handle, e `Screen.FromControl`
+        // devolveria a primária. `GetWorkingArea` cai na janela principal do processo GeneXus,
+        // que é o mesmo monitor onde `CenterOnIdeScreen` vai posicionar o diálogo.
+        var working = ExtensionIdeScreenPlacement.GetWorkingArea(this, null);
         var chromeHeight = Height - ClientSize.Height;
         var desiredHeight = contentHeight + chromeHeight + SafetyMargin;
 

@@ -77,8 +77,15 @@ public sealed class Package : AbstractPackageUI
 
         var texts = ExtensionLocalization.For(knowledgeBase);
         var loadResult = PrototypeWizardPreferencesStore.Load(knowledgeBase.DesignModel);
+        // Sem owner, o CenterParent do diálogo não tem pai e o WinForms centraliza na tela
+        // primária — a janela abria em outro monitor que não o da IDE. O Wizard, o quadro de
+        // progresso e o Sync já ancoravam; só as Preferências tinham ficado de fora.
+        var preferencesOwner = ExtensionIdeScreenPlacement.ResolveOwner();
         using var dialog = new PrototypeWizardPreferencesDialog(loadResult.Preferences, loadResult.Status, texts);
-        var result = dialog.ShowDialog();
+        ExtensionIdeScreenPlacement.CenterOnIdeScreen(dialog, preferencesOwner);
+        var result = preferencesOwner is null
+            ? dialog.ShowDialog()
+            : dialog.ShowDialog(preferencesOwner);
         if (result != System.Windows.Forms.DialogResult.OK || dialog.Preferences is null)
         {
             WriteOutput("[Genexus Open API Builder][Prefs] Configuracao de preferencias do wizard cancelada. Nenhuma alteracao foi feita na KB.");
