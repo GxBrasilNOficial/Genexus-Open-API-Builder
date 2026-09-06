@@ -17,6 +17,11 @@
 > resolução de todas as falhas de `B109`. O ramo A é frente condicionada à reprodução: se o
 > sintoma reaparecer, o experimento mínimo é repetir a mesma operação com o Pump suprimido e
 > comparar.
+>
+> **Atualização de 2026-09-06.** O interruptor deixou de ser a variável de ambiente e passou a
+> ser a preferência «Suprimir a atualização da tela durante as gravações», em Preferências do
+> Wizard → Diagnóstico e recuperação. O experimento continua não executado; o resto deste
+> documento é o registro do dia 2026-09-05 e não foi alterado.
 
 ## Pergunta inicial
 

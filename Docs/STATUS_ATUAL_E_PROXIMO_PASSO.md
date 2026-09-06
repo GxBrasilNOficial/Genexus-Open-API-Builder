@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-05.
+2026-09-06.
 
 ## Último marco concluído
 
@@ -181,7 +181,7 @@ Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-
 |---|---|---|
 | `B109ExceptionProbe` | sem ela, uma reincidência volta a chegar como uma linha de mensagem, sem stack | `B109` fechado nos dois ramos |
 | `ApiPlanSaveBoundaryProbe` (rótulo `[B109]`) | é o instrumento do ramo A: separa mutação entre Pump e Save de falha intrínseca | idem |
-| interruptor `GOAB_B109_SUPPRESS_PUMP` | é o experimento do ramo A, e nunca foi acionado | idem |
+| preferência «Suprimir a atualização da tela durante as gravações» | é o experimento do ramo A, e nunca foi acionado | idem |
 | `ApiPlanMetadataVisibilityProbe` (rótulo `[B115]`) | diagnóstico de metadata órfã | `B115` fechado |
 | `B111CallSiteProbe` | é a cobertura que a F1 exige — contagem de gravações de Folder e SDT por aplicação — e serve para provar que a regra 4.4.1 se manteve **depois** da implementação | aceite da F1 |
 
@@ -193,7 +193,7 @@ Ao retirar qualquer um: executar `Tools/Test-ExtensionCommandRegistration.ps1` s
 
 **Só um dos dois ramos foi fechado.** `B109` reúne duas causas distintas sob a mesma etapa, e o encerramento vale apenas para a segunda.
 
-O **ramo A** — `Collection was modified; enumeration operation may not execute`, quatro ocorrências — **permanece sem causa confirmada**. Ele não voltou a ocorrer na sequência limpa, o que é ausência de reprodução, não explicação. A hipótese da reentrância por `Application.DoEvents()` segue **não testada**: o interruptor `GOAB_B109_SUPPRESS_PUMP=1` está instalado e nunca foi acionado. É frente condicionada à reprodução — se o sintoma reaparecer, o experimento mínimo é repetir a mesma operação com o Pump suprimido e comparar.
+O **ramo A** — `Collection was modified; enumeration operation may not execute`, quatro ocorrências — **permanece sem causa confirmada**. Ele não voltou a ocorrer na sequência limpa, o que é ausência de reprodução, não explicação. A hipótese da reentrância por `Application.DoEvents()` segue **não testada**: o interruptor está instalado e nunca foi acionado. Desde 2026-09-06 ele é a preferência **«Suprimir a atualização da tela durante as gravações»**, em Preferências do Wizard → Diagnóstico e recuperação, desligada por padrão e gravada na KB; antes disso era a variável de ambiente `GOAB_B109_SUPPRESS_PUMP`, que dependia do Windows e não tinha onde avisar o efeito colateral. Vale no Apply do Wizard, onde estão as quatro ocorrências. É frente condicionada à reprodução — se o sintoma reaparecer, o experimento mínimo é repetir a mesma operação com o Pump suprimido e comparar.
 
 O **ramo B** — `ValidationException` em `KBObjectManager.PrepareSave`, uma ocorrência — foi encerrado após remoção limpa, `Build All` nos dois environments, reaplicação limpa e novo `Build All` no environment de referência `CSharpModel`.
 
@@ -205,8 +205,8 @@ O experimento também fechou o baseline: o `Build All` sem API passou nos dois e
 
 - `B109ExceptionProbe` publica na Output a cadeia completa de exceções — tipo, mensagem, `Source`, `TargetSite` e stack de cada nível —, além de Rules, `ExpectedVariables` × `CurrentVariables` e `SourceLines` da Procedure recusada;
 - `ApiPlanSaveBoundaryProbe` registra as fronteiras Pump/Save com fingerprint do estado em memória antes e depois de cada uma, para separar mutação externa de falha intrínseca de validação — publica sob o rótulo `[B109]`;
-- `ApiPlanMetadataVisibilityProbe` mede a estabilidade do `GetAll` de Files em duas passagens e tenta a leitura direta por `Id` — rótulo `[B115]`;
-- interruptor `GOAB_B109_SUPPRESS_PUMP=1` suprime os `Application.DoEvents()` entre os Saves.
+- `ApiPlanMetadataVisibilityProbe` varre os Files e tenta a leitura direta por `Id` da metadata — rótulo `[B115]`. Desde 2026-09-06 a segunda passagem, que mede a estabilidade do `GetAll`, e o detalhamento dos Files só rodam quando a metadata está **ausente** na primeira: no caminho normal a sonda custa uma varredura e uma leitura pontual;
+- a preferência «Suprimir a atualização da tela durante as gravações» suprime os `Application.DoEvents()` entre os Saves no Apply do Wizard; enquanto ativa, a janela congela e o botão Abortar não responde, e o Apply publica uma linha `[B109]` dizendo isso.
 
 **Como reproduzir o cenário**, se o ramo A voltar: apagar **apenas** o API Object antes de cada tentativa. Com ele presente e sem metadata, o Wizard desliga as etapas de consumidor e a falha não ocorre — ou, agora, aceitar a recuperação de metadata órfã, que devolve o File e reabilita `Remover` e `Sincronizar`.
 

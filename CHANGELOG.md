@@ -13,6 +13,12 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 ### Added
 
 - Opção explícita, desligada por padrão, para recuperar o File de metadata de uma API própria que ficou órfã após aplicação parcial. A recuperação valida posse, cria somente a metadata e exige reabertura do Wizard; não altera API Object, Procedures ou SDTs. Evidência e limite do recurso: `Docs/Implementation/2026-09-05-ENCERRAMENTO-BC-EMPRESA.md`.
+- Quadro **Diagnóstico e recuperação** nas Preferências do Wizard, reunindo as opções que não pertencem ao uso normal: a recuperação de metadata órfã acima, que antes ficava em «Defaults de geração», e a supressão da atualização da tela descrita em Experimental. A janela cresceu para acomodá-lo.
+- Instrumentação de diagnóstico temporária, ativa por padrão, publicada na Output: `[B109]` (cadeia completa de exceções e fronteiras Pump/Save nas gravações), `[B111]` (contagem de gravações de Folder e SDT por aplicação) e `[B115]` (visibilidade do File de metadata na abertura do Wizard). São sondas de investigação das frentes `B109`, `B111` e `B115` e saem quando cada uma fechar; a tabela com o motivo e o momento de saída de cada uma está em `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. Nenhuma delas altera o que é gravado na KB.
+
+### Experimental
+
+- Preferência **«Suprimir a atualização da tela durante as gravações»**, desligada por padrão, em Preferências do Wizard → Diagnóstico e recuperação. Suprime os `Application.DoEvents()` entre as gravações do Apply do Wizard, para testar a hipótese de reentrância do `B109`. **Enquanto ativa, a janela congela durante toda a operação e o botão Abortar não responde**; o Apply registra uma linha `[B109]` na Output avisando disso. Não ligue fora de uma sessão de diagnóstico. Substitui a variável de ambiente `GOAB_B109_SUPPRESS_PUMP`, que deixou de ser lida. Nunca foi acionada até 2026-09-06.
 
 ### Fixed
 
