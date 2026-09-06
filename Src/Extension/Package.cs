@@ -2451,7 +2451,7 @@ public sealed class Package : AbstractPackageUI
     }
 
     /// <summary>
-    /// B112 — publica a sonda temporária das fronteiras Pump/Save no final do Apply.
+    /// B109 — publica a sonda temporária das fronteiras Pump/Save no final do Apply.
     /// A publicação nunca pode alterar o resultado da operação medida.
     /// </summary>
     private sealed class ApiPlanSaveBoundaryPublisher : IDisposable
@@ -2478,7 +2478,7 @@ public sealed class Package : AbstractPackageUI
             {
                 foreach (var line in _log.Render())
                 {
-                    WriteOutput($"[Genexus Open API Builder][B112][{_operation}] {line}");
+                    WriteOutput($"[Genexus Open API Builder][B109][{_operation}] {line}");
                 }
             }
             catch

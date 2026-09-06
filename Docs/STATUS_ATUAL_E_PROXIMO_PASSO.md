@@ -179,19 +179,32 @@ Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-
 
 A DLL instalada nas KBs de teste contém as sondas.
 
-## Investigação encerrada em 2026-09-05 — falha da etapa de Business Component na KB grande
+## Investigação da falha do Business Component na KB grande — ramo B encerrado, ramo A aberto (2026-09-05)
 
-A investigação da `Empresa` de `fabricabrasil18test` foi encerrada após remoção limpa, `Build All` nos dois environments, reaplicação limpa e novo `Build All` no environment de referência `CSharpModel`.
+**Só um dos dois ramos foi fechado.** `B109` reúne duas causas distintas sob a mesma etapa, e o encerramento vale apenas para a segunda.
+
+O **ramo A** — `Collection was modified; enumeration operation may not execute`, quatro ocorrências — **permanece sem causa confirmada**. Ele não voltou a ocorrer na sequência limpa, o que é ausência de reprodução, não explicação. A hipótese da reentrância por `Application.DoEvents()` segue **não testada**: o interruptor `GOAB_B109_SUPPRESS_PUMP=1` está instalado e nunca foi acionado. É frente condicionada à reprodução — se o sintoma reaparecer, o experimento mínimo é repetir a mesma operação com o Pump suprimido e comparar.
+
+O **ramo B** — `ValidationException` em `KBObjectManager.PrepareSave`, uma ocorrência — foi encerrado após remoção limpa, `Build All` nos dois environments, reaplicação limpa e novo `Build All` no environment de referência `CSharpModel`.
 
 O resultado B081 da reaplicação foi `SuccessWithWarnings`, com `Criados=50`, `Atualizados=0`, `Bloqueados=0`. A etapa de Business Component levou `29759 ms`; `procEmpresa_API_Create` foi salvo com `&HttpResponse` e `&LocationUrl` (`VarChar(1K)`). Não houve `ValidationException` nem `Collection was modified`. A causa provável do ramo B é estado parcial/inconsistente entre API Object, Procedures, SDTs e metadata da KB, e não os tipos de `HttpResponse` ou `LocationUrl`.
 
 O experimento também fechou o baseline: o `Build All` sem API passou nos dois environments; após a reaplicação, o `CSharpModel` passou novamente com os objetos recém-gerados. O `NETFrameworkPostgreSQL` ainda falhou na compilação C# dos SDTs com conversões `bool`/`decimal`/`short`; essa frente é específica do environment e fica fora do encerramento do caso BC. Evidência completa: `Docs/Implementation/2026-09-05-ENCERRAMENTO-BC-EMPRESA.md`.
 
-O ramo A não foi reproduzido na sequência limpa. A hipótese de que `Application.DoEvents()`/`Pump` causa reentrância continua não confirmada; as sondas permanecem temporárias conforme o checklist de reversão.
+**Instrumentação instalada, para retomar o ramo A** (sondas temporárias; ver o checklist de reversão):
+
+- `B109ExceptionProbe` publica na Output a cadeia completa de exceções — tipo, mensagem, `Source`, `TargetSite` e stack de cada nível —, além de Rules, `ExpectedVariables` × `CurrentVariables` e `SourceLines` da Procedure recusada;
+- `ApiPlanSaveBoundaryProbe` registra as fronteiras Pump/Save com fingerprint do estado em memória antes e depois de cada uma, para separar mutação externa de falha intrínseca de validação — publica sob o rótulo `[B109]`;
+- `ApiPlanMetadataVisibilityProbe` compara a visibilidade de Files entre o índice e o `GetAll` da IDE — rótulo `[B115]`;
+- interruptor `GOAB_B109_SUPPRESS_PUMP=1` suprime os `Application.DoEvents()` entre os Saves.
+
+**Como reproduzir o cenário**, se o ramo A voltar: apagar **apenas** o API Object antes de cada tentativa. Com ele presente e sem metadata, o Wizard desliga as etapas de consumidor e a falha não ocorre — ou, agora, aceitar a recuperação de metadata órfã, que devolve o File e reabilita `Remover` e `Sincronizar`.
+
+**`B109` precisa ser reescrito** como família de falhas, com um ramo por causa, em vez de "bug intermitente na etapa de Business Component". O enunciado atual não descreve o que se observou.
 
 ## Pendência urgente (próxima sessão de código)
 
-A pauta formal continua sendo a revisão por pares da `S-B111`, acima. A investigação de `B109` foi encerrada; o `Rebuild All` futuro do `NETFrameworkPostgreSQL` é uma pendência separada de environment e não bloqueia o encerramento deste caso. `B108` e o residual `B082` 1B/2/3 não competem com essas linhas.
+A pauta formal continua sendo a revisão por pares da `S-B111`, acima. De `B109`, apenas o ramo B foi encerrado; o ramo A não tem pauta própria, por depender de reprodução — se o sintoma voltar, ele passa à frente. O `Rebuild All` do `NETFrameworkPostgreSQL` é pendência separada de environment e não bloqueia nada aqui. `B108` e o residual `B082` 1B/2/3 não competem com essas linhas.
 
 ## Evidência da frente encerrada
 

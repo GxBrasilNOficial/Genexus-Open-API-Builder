@@ -11,7 +11,7 @@ using Artech.Genexus.Common.Wiki;
 namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 /// <summary>
-/// B113 — compara a visibilidade dos Files no KBModel usado pela IDE com a
+/// B115 — compara a visibilidade dos Files no KBModel usado pela IDE com a
 /// referência que o wizard acabou de ler.
 ///
 /// A sonda é somente leitura. Ela não cria, salva, atualiza ou exclui objetos.
@@ -37,7 +37,7 @@ internal static class ApiPlanMetadataVisibilityProbe
         var settingsName = "GxOpenApiBuilder_Settings";
         var lines = new List<string>
         {
-            $"[B113] Transaction='{transaction.Name}', Metadata='{metadataName}', Settings='{settingsName}'. Somente leitura.",
+            $"[B115] Transaction='{transaction.Name}', Metadata='{metadataName}', Settings='{settingsName}'. Somente leitura.",
         };
 
         try
@@ -51,7 +51,7 @@ internal static class ApiPlanMetadataVisibilityProbe
             secondWatch.Stop();
 
             lines.Add(
-                $"[B113] GetAll Files: primeira={first.Length} em {firstWatch.ElapsedMilliseconds} ms; "
+                $"[B115] GetAll Files: primeira={first.Length} em {firstWatch.ElapsedMilliseconds} ms; "
                 + $"segunda={second.Length} em {secondWatch.ElapsedMilliseconds} ms.");
             AppendMatches(lines, "Metadata", metadataName, first);
             AppendMatches(lines, "Settings", settingsName, first);
@@ -65,18 +65,18 @@ internal static class ApiPlanMetadataVisibilityProbe
                 {
                     var direct = WikiFileKBObject.Get(designModel, file.Id);
                     lines.Add(direct is null
-                        ? $"[B113] Metadata direct-Get: Id={file.Id} NÃO reencontrado."
-                        : $"[B113] Metadata direct-Get: Id={file.Id} reencontrado Name='{direct.Name}', Guid='{direct.Guid}', Bytes={GetByteCount(direct)}.");
+                        ? $"[B115] Metadata direct-Get: Id={file.Id} NÃO reencontrado."
+                        : $"[B115] Metadata direct-Get: Id={file.Id} reencontrado Name='{direct.Name}', Guid='{direct.Guid}', Bytes={GetByteCount(direct)}.");
                 }
                 catch (Exception ex)
                 {
-                    lines.Add($"[B113] Metadata direct-Get: Id={file.Id} falhou: {Describe(ex)}.");
+                    lines.Add($"[B115] Metadata direct-Get: Id={file.Id} falhou: {Describe(ex)}.");
                 }
             }
         }
         catch (Exception ex)
         {
-            lines.Add($"[B113] GetAll Files falhou: {Describe(ex)}.");
+            lines.Add($"[B115] GetAll Files falhou: {Describe(ex)}.");
         }
 
         return lines;
@@ -91,11 +91,11 @@ internal static class ApiPlanMetadataVisibilityProbe
         var matches = files
             .Where(file => string.Equals(file.Name, expectedName, StringComparison.OrdinalIgnoreCase))
             .ToArray();
-        lines.Add($"[B113] {label}: nome esperado='{expectedName}', correspondências={matches.Length}.");
+        lines.Add($"[B115] {label}: nome esperado='{expectedName}', correspondências={matches.Length}.");
         foreach (var file in matches)
         {
             lines.Add(
-                $"[B113] {label} File: Name='{file.Name}', Id={file.Id}, Guid='{file.Guid}', "
+                $"[B115] {label} File: Name='{file.Name}', Id={file.Id}, Guid='{file.Guid}', "
                 + $"Parent='{file.Parent?.Name ?? "<null>"}', Description='{Clean(file.Description)}', Bytes={GetByteCount(file)}.");
         }
     }

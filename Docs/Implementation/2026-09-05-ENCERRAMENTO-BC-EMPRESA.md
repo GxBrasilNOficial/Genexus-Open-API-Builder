@@ -1,10 +1,22 @@
-# Encerramento da investigação do Business Component da `Empresa`
+# Investigação do Business Component da `Empresa` — ramo B encerrado, ramo A em aberto
 
 **Data:** 2026-09-05
 **KB:** `FabricaBrasil18Test` (`fabricabrasil18test`)
 **Transaction:** `Empresa`
 **GeneXus:** 18 U15
 **Escopo:** investigação da falha da etapa Business Component; não é correção do gerador C# do GeneXus.
+
+> **Alcance do encerramento.** Este documento fecha **apenas o ramo B** — a
+> `ValidationException` —, com causa provável identificada e confirmada por experimento. O
+> **ramo A**, `Collection was modified`, **permanece sem causa confirmada**: ele não voltou a
+> ocorrer na remoção e reaplicação limpas, e a hipótese da reentrância por
+> `Application.DoEvents()` segue não testada, porque o interruptor
+> `GOAB_B109_SUPPRESS_PUMP=1` está instalado mas nunca foi acionado.
+>
+> Leia isto como “o incidente da `Empresa` está explicado quanto ao ramo B”, **não** como
+> resolução de todas as falhas de `B109`. O ramo A é frente condicionada à reprodução: se o
+> sintoma reaparecer, o experimento mínimo é repetir a mesma operação com o Pump suprimido e
+> comparar.
 
 ## Pergunta inicial
 
@@ -56,7 +68,7 @@ Resultado B081:
 
 Os dois avisos foram o fallback das descrições para inglês e a reutilização da pasta preexistente. Não houve `Collection was modified`, `ValidationException` ou bloqueio.
 
-O diagnóstico B112 registrou que `procEmpresa_API_Create` foi preparado e salvo com:
+O diagnóstico de fronteira Pump/Save registrou que `procEmpresa_API_Create` foi preparado e salvo com:
 
 - `&HttpResponse`: tipo SDK `GX_USRDEFTYP`, `ATTCUSTOMTYPE=HttpResponse`;
 - `&LocationUrl`: tipo `VARCHAR`, `ATTCUSTOMTYPE=VarChar`, comprimento `1024`;
@@ -76,7 +88,7 @@ A causa provável é um estado parcial ou inconsistente dos objetos gerados na K
 
 O experimento mínimo confirmou a hipótese operacional: remover os 50 objetos, compilar a KB limpa nos environments, reaplicar a API e compilar novamente. A reaplicação limpa salvou `procEmpresa_API_Create` e o Build All do `CSharpModel` passou.
 
-A causa exata da primeira `ValidationException` não pode ser reconstruída retroativamente, porque aquela execução terminou com fechamento forçado da IDE e não deixou um diagnóstico persistido equivalente ao B112. Portanto, esta conclusão é causalmente forte, mas permanece classificada como **causa provável**, não como reprodução determinística da exceção histórica.
+A causa exata da primeira `ValidationException` não pode ser reconstruída retroativamente, porque aquela execução terminou com fechamento forçado da IDE e não deixou um diagnóstico persistido equivalente ao da sonda de fronteira Pump/Save. Portanto, esta conclusão é causalmente forte, mas permanece classificada como **causa provável**, não como reprodução determinística da exceção histórica.
 
 ### Ramo A — `Collection was modified`
 
@@ -112,7 +124,11 @@ do commit. Corrigido em 2026-09-05.
 
 - as duas sondas novas usavam os prefixos `B112`/`B113`, que no backlog designam outros itens —
   truncamento de `Description` e stall esporádico de gravação. Renomeadas para
-  `ApiPlanSaveBoundaryProbe` e `ApiPlanMetadataVisibilityProbe`;
+  `ApiPlanSaveBoundaryProbe` e `ApiPlanMetadataVisibilityProbe`. Os **rótulos de Output** também
+  carregavam `[B112]`/`[B113]`; como a convenção do repositório é rotular pelo item do backlog,
+  a correção não foi abandonar o rótulo e sim usar o item certo: `[B109]` para a fronteira
+  Pump/Save, que investiga a falha do Business Component, e `[B115]` para a visibilidade de
+  metadata, que investiga a metadata órfã;
 - `ApiPlanOrphanMetadataRecovery` chamava `ApiPlanKbObjectNameIndex.Create` fora da allowlist da
   regra de origem única, quebrando `tests.kbIndexReuse` e bloqueando o gate mecânico. O método
   foi renomeado para `TryPrepareOrphanMetadataRecovery` — `TryPrepare` seria genérico demais

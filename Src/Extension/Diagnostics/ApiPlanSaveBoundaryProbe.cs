@@ -14,7 +14,7 @@ using Artech.Genexus.Common.Types;
 namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 /// <summary>
-/// B112 — sonda temporária para separar mutação entre o Pump e o Save de uma falha
+/// B109 — sonda temporária para separar mutação entre o Pump e o Save de uma falha
 /// intrínseca de validação do objeto GeneXus.
 ///
 /// A sonda registra apenas fingerprints do estado em memória. Não altera Source, Rules,
@@ -286,7 +286,7 @@ internal sealed class ApiPlanSaveBoundaryLog
             return Array.Empty<string>();
         }
 
-        var result = new List<string> { "== B112 — fronteiras Pump/Save ==" };
+        var result = new List<string> { "== B109 — fronteiras Pump/Save ==" };
         result.AddRange(_lines);
         return result;
     }
