@@ -15,7 +15,8 @@ adivinhação.
 
 **Código já em campo neste território (2026-09-06):** a recuperação de metadata órfã foi
 implementada fora desta fase, por necessidade de campo, e ocupa parte do que a seção 4.3
-normatiza. A seção 13 registra o que ela grava, o que ela deliberadamente não grava e o que
+normatiza. Validada na IDE no mesmo dia (13.6), exceto o `Remover` sob a metadata
+recuperada. A seção 13 registra o que ela grava, o que ela deliberadamente não grava e o que
 a revisão por pares precisa decidir a respeito. **Ler a 13 antes de revisar a 4.2 e a 4.3.**
 
 ---
@@ -534,7 +535,23 @@ Três pontos em que este código e o plano se tocam, e que a revisão deve resol
    vira uma segunda fonte para a mesma coisa — o que a seção 3 proíbe («não é aceitável uma
    mistura silenciosa»). A decisão precisa dizer qual das duas prevalece, ou retirar esta.
 
-### 13.6 Custo
+### 13.6 Evidência de campo — 2026-09-06, KB `wsEducacaoSpTeste`, Transaction `Teste`
+
+Primeira execução real do caminho. O File `apiTeste_Metadata` foi apagado à mão.
+
+| Passo | Resultado |
+|---|---|
+| Abrir o Wizard, recusar a oferta | `Recuperação recusada pelo usuário. Nenhuma alteração foi feita por B115.` O Wizard seguiu abrindo, bloqueado, e o usuário cancelou. Nada gravado. |
+| Abrir de novo, aceitar | `Metadata órfã recuperada: File='apiTeste_Metadata', Guid='43be3a1b…', Bytes=2290, Procedures=5, SdtsProprios=18, SdtsCompartilhados=3.` |
+| `Sincronizar` | Bloqueou. Relatório final `Interrupted`, `Bloqueados=1`, com a mensagem da 13.4. |
+| Reabrir o Wizard | Abriu **destravado** — «Estado: teste de reencontro», `Concluir e aplicar` habilitado. A oferta não reapareceu: `File 'apiTeste_Metadata' encontrado 1 vez(es); recuperação órfã não se aplica.` |
+| Apply completo | `SuccessWithWarnings`, `Criados=0`, `Atualizados=7`, `Bloqueados=0`. A metadata foi reescrita **no mesmo File** (`Guid='43be3a1b…'`), passando de 2290 para `Bytes=117926`. A marca desapareceu com a substituição do JSON. |
+
+Dois números confirmam o desenho: **2290 bytes** contra os **117926** da metadata completa — a diferença é exatamente o contrato que a 13.3 diz não recuperar —, e o **mesmo GUID** nas duas pontas, provando que o Apply reencontra e sobrescreve o File da recuperação em vez de criar um segundo.
+
+**O que ainda não foi verificado:** `Remover API gerada` **sobre a metadata recuperada**. É o objetivo declarado do `B115`, e o Apply do último passo já reescreveu a metadata — testá-lo exige refazer o cenário e não aplicar no meio. Enquanto isso não for feito, o que está provado é que a recuperação destrava o Wizard e que o Sync recusa; que ela destrava o `Remover` continua sendo inferência a partir do que `FromMetadata` consome.
+
+### 13.7 Custo
 
 Uma gravação de `WikiFileKBObject` por recuperação: ~130 ms na KB pequena, **~1,1 s** na
 grande (seção 2.3, e item `B114` do backlog). A recuperação é opt-in, ocorre uma vez por
