@@ -22,13 +22,10 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
     private readonly ComboBox _securityLevelCombo = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 180 };
     private readonly CheckBox _includeBcErrorMessagesCheck = CreateCheckBox(string.Empty);
     private readonly CheckBox _offerOrphanMetadataRecoveryCheck = CreateCheckBox(string.Empty);
-    // Altura dobrada: o rótulo descreve o efeito colateral e é longo — 592 px em espanhol,
-    // contra 710 px úteis com a janela no tamanho mínimo. Cabe em uma linha a 100% de DPI,
-    // mas não a 125% ou 150%, onde AutoScaleMode.Font amplia a fonte. Com AutoSize=false o
-    // CheckBox quebra o texto, e corta o que passar da altura declarada.
-    private readonly CheckBox _suppressProgressPumpCheck = CreateCheckBox(string.Empty, height: 56);
+    private readonly CheckBox _suppressProgressPumpCheck = CreateCheckBox(string.Empty);
     private readonly NumericUpDown _defaultPageSizeInput = CreateNumericInput();
     private readonly NumericUpDown _maximumPageSizeInput = CreateNumericInput();
+    private TableLayoutPanel? _root;
 
     public PrototypeWizardPreferencesDialog(PrototypeWizardPreferences preferences, string status, ExtensionTexts texts)
     {
@@ -41,9 +38,12 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         Text = _texts.PreferencesDialogTitle;
         StartPosition = FormStartPosition.CenterParent;
         AutoScaleMode = AutoScaleMode.Font;
-        Width = 860;
+        // Duas colunas de quadros pedem o dobro da largura de antes. Medidas provisórias:
+        // FitToContent, no fim deste construtor, ajusta a altura ao que o conteúdo mede e
+        // limita ambas ao que cabe na tela.
+        Width = 1280;
         Height = 780;
-        MinimumSize = new Size(780, 680);
+        MinimumSize = new Size(1000, 560);
         ShowIcon = false;
         ShowInTaskbar = false;
         FormBorderStyle = FormBorderStyle.Sizable;
@@ -51,29 +51,81 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         ApplyLocalizedText();
         BuildLayout(status ?? string.Empty);
         LoadPreferences(preferences);
+        FitToContent();
+    }
+
+    /// <summary>
+    /// Altura inicial e mínima medidas do conteúdo, não fixadas em código: com rótulos que
+    /// mudam de tamanho por idioma e por DPI, qualquer número escolhido a mão acaba escondendo
+    /// algum quadro em alguma combinação. O mínimo passa a ser a altura que cabe tudo, então
+    /// nem arrastando a borda o usuário consegue esconder um controle.
+    ///
+    /// Largura e altura ficam limitadas à área útil da tela: numa tela pequena a janela para
+    /// de crescer e o <c>AutoScroll</c> do painel raiz assume, em vez de a janela nascer maior
+    /// que o monitor.
+    /// </summary>
+    private void FitToContent()
+    {
+        if (_root is null)
+        {
+            return;
+        }
+
+        _root.PerformLayout();
+        var contentHeight = _root.PreferredSize.Height;
+        if (contentHeight <= 0)
+        {
+            return;
+        }
+
+        // A medição sai justa; a folga cobre o arredondamento do escalonamento por DPI, que de
+        // outro modo pode comer o último pixel de um controle.
+        const int SafetyMargin = 8;
+        var working = Screen.FromControl(this).WorkingArea;
+        var chromeHeight = Height - ClientSize.Height;
+        var desiredHeight = contentHeight + chromeHeight + SafetyMargin;
+
+        var cappedWidth = Math.Min(Width, working.Width);
+        var cappedHeight = Math.Min(desiredHeight, working.Height);
+
+        MinimumSize = new Size(Math.Min(MinimumSize.Width, cappedWidth), cappedHeight);
+        Size = new Size(cappedWidth, cappedHeight);
     }
 
     public PrototypeWizardPreferences? Preferences { get; private set; }
 
     private void BuildLayout(string status)
     {
+        // Duas colunas: os quatro quadros ficam lado a lado em duas faixas, em vez de
+        // empilhados. Encurta a janela quase pela metade e dá largura suficiente para os
+        // rótulos longos do diagnóstico caberem em uma linha.
+        //
+        // Todas as linhas de conteúdo são AutoSize: elas medem o que cada quadro precisa, em
+        // vez de repartir a altura disponível por porcentagem. Com porcentagem, um quadro cujo
+        // conteúdo não coube era cortado em silêncio — foi o que aconteceu com «Tamanho máximo
+        // da página» e com o segundo checkbox do diagnóstico —, e a única saída era o usuário
+        // adivinhar que devia arrastar a borda da janela. A folga vai para a linha espaçadora,
+        // e o AutoScroll cobre o resto (DPI alto, textos mais longos em outro idioma).
         var root = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 7,
+            ColumnCount = 2,
+            RowCount = 6,
             Padding = new Padding(12),
+            AutoScroll = true,
         };
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 35));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 18));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 27));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         Controls.Add(root);
+        _root = root;
 
-        root.Controls.Add(new Label
+        var headerLabel = new Label
         {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -81,9 +133,11 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             MinimumSize = new Size(0, 28),
             Text = _texts.Translate("Preferencias gerais do wizard na KB ativa"),
             Padding = new Padding(0, 0, 0, 8),
-        }, 0, 0);
+        };
+        root.Controls.Add(headerLabel, 0, 0);
+        root.SetColumnSpan(headerLabel, 2);
 
-        root.Controls.Add(new TextBox
+        var statusBox = new TextBox
         {
             Dock = DockStyle.Fill,
             Multiline = true,
@@ -91,21 +145,19 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             ScrollBars = ScrollBars.Vertical,
             Text = status,
             MinimumSize = new Size(0, 70),
-        }, 0, 1);
-
-        var optionsGroup = new GroupBox
-        {
-            Text = _texts.Translate("Defaults de geracao"),
-            Dock = DockStyle.Fill,
-            Padding = new Padding(12),
         };
+        root.Controls.Add(statusBox, 0, 1);
+        root.SetColumnSpan(statusBox, 2);
+
+        var optionsGroup = CreateContentGroup(_texts.Translate("Defaults de geracao"));
 
         var checks = new TableLayoutPanel
         {
-            Dock = DockStyle.Fill,
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             ColumnCount = 2,
-            RowCount = 4,
-            AutoScroll = true,
+            RowCount = 3,
         };
         checks.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         checks.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
@@ -114,7 +166,6 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             checks.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         }
 
-        checks.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         checks.Controls.Add(_generateSdtsCheck, 0, 0);
         checks.Controls.Add(_generateProceduresCheck, 1, 0);
         checks.Controls.Add(_generateApiObjectCheck, 0, 1);
@@ -122,18 +173,16 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         checks.Controls.Add(_applyListCheck, 0, 2);
         checks.Controls.Add(_generateMetadataCheck, 1, 2);
         optionsGroup.Controls.Add(checks);
+        // Faixa de cima, à esquerda.
         root.Controls.Add(optionsGroup, 0, 2);
 
-        var servicesGroup = new GroupBox
-        {
-            Text = _texts.Translate("Servicos marcados por padrao"),
-            Dock = DockStyle.Fill,
-            Padding = new Padding(12),
-        };
+        var servicesGroup = CreateContentGroup(_texts.Translate("Servicos marcados por padrao"));
 
         var services = new FlowLayoutPanel
         {
-            Dock = DockStyle.Fill,
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             FlowDirection = FlowDirection.LeftToRight,
             WrapContents = true,
         };
@@ -143,14 +192,10 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         services.Controls.Add(_updateServiceCheck);
         services.Controls.Add(_deleteServiceCheck);
         servicesGroup.Controls.Add(services);
+        // Faixa de baixo, à esquerda.
         root.Controls.Add(servicesGroup, 0, 3);
 
-        var executionGroup = new GroupBox
-        {
-            Text = _texts.Translate("Seguranca e paginacao"),
-            Dock = DockStyle.Fill,
-            Padding = new Padding(12),
-        };
+        var executionGroup = CreateContentGroup(_texts.Translate("Seguranca e paginacao"));
 
         _securityLevelCombo.Items.Add(PrototypeWizardPreferences.SecurityLevelAuthentication);
         _securityLevelCombo.Items.Add(PrototypeWizardPreferences.SecurityLevelAuthorization);
@@ -171,42 +216,44 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         AddField(execution, 2, _texts.Translate("Default Page Size"), _defaultPageSizeInput);
         AddField(execution, 3, _texts.Translate("Maximum Page Size"), _maximumPageSizeInput);
         executionGroup.Controls.Add(execution);
-        root.Controls.Add(executionGroup, 0, 4);
+        // Faixa de cima, à direita.
+        root.Controls.Add(executionGroup, 1, 2);
 
         // Quadro próprio, e por último: nenhuma destas opções pertence ao uso normal. A de
         // recuperação nasceu ocupando a linha de folga do quadro de geração, onde não é um
         // default de geração; a de supressão do Pump substitui a variável de ambiente
         // GOAB_B109_SUPPRESS_PUMP, que dependia do Windows e não tinha onde ser avisada.
-        var diagnosticsGroup = new GroupBox
-        {
-            Text = _texts.Translate("Diagnostico e recuperacao"),
-            Dock = DockStyle.Fill,
-            Padding = new Padding(12),
-        };
+        var diagnosticsGroup = CreateContentGroup(_texts.Translate("Diagnostico e recuperacao"));
 
         var diagnostics = new TableLayoutPanel
         {
-            Dock = DockStyle.Fill,
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             ColumnCount = 1,
-            RowCount = 4,
-            AutoScroll = true,
+            RowCount = 3,
         };
         diagnostics.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         diagnostics.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         diagnostics.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         diagnostics.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        diagnostics.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        diagnostics.Controls.Add(new Label
-        {
-            AutoSize = true,
-            Dock = DockStyle.Fill,
-            Text = _texts.Translate("Opcoes de investigacao. Nao sao necessarias no uso normal da extensao."),
-            Padding = new Padding(0, 0, 0, 6),
-        }, 0, 0);
+        diagnostics.Controls.Add(
+            CreateWrappingLabel(
+                _texts.Translate("Opcoes de investigacao. Nao sao necessarias no uso normal da extensao."),
+                new Padding(0, 0, 0, 6)),
+            0,
+            0);
         diagnostics.Controls.Add(_offerOrphanMetadataRecoveryCheck, 0, 1);
         diagnostics.Controls.Add(_suppressProgressPumpCheck, 0, 2);
         diagnosticsGroup.Controls.Add(diagnostics);
-        root.Controls.Add(diagnosticsGroup, 0, 5);
+        // Faixa de baixo, à direita.
+        root.Controls.Add(diagnosticsGroup, 1, 3);
+
+        // Linha vazia que absorve a folga quando a janela é maior que o conteúdo. Sem ela, a
+        // sobra iria para a última linha AutoSize e afastaria os botões do rodapé.
+        var spacer = new Panel { Dock = DockStyle.Fill, Height = 0 };
+        root.Controls.Add(spacer, 0, 4);
+        root.SetColumnSpan(spacer, 2);
 
         var buttonsHost = new Panel
         {
@@ -234,7 +281,8 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         {
             buttons.Left = Math.Max(0, buttonsHost.ClientSize.Width - buttons.Width);
         };
-        root.Controls.Add(buttonsHost, 0, 6);
+        root.Controls.Add(buttonsHost, 0, 5);
+        root.SetColumnSpan(buttonsHost, 2);
 
         AcceptButton = save;
         CancelButton = cancel;
@@ -331,16 +379,102 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         _includeBcErrorMessagesCheck.Text = _texts.Translate("Incluir mensagens de erro do Business Component no corpo HTTP 422");
     }
 
-    private static CheckBox CreateCheckBox(string text, int height = 30)
+    /// <summary>
+    /// GroupBox que reporta a altura do próprio conteúdo, para a linha AutoSize do painel raiz
+    /// poder reservá-la. O conteúdo precisa estar ancorado ao topo e também ser AutoSize.
+    /// </summary>
+    private static GroupBox CreateContentGroup(string text)
     {
-        return new CheckBox
+        return new GroupBox
+        {
+            Text = text,
+            Dock = DockStyle.Fill,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Padding = new Padding(12),
+        };
+    }
+
+    /// <summary>
+    /// CheckBox cuja altura acompanha o texto. <c>AutoSize</c> não serve aqui: ele mede o
+    /// rótulo em uma linha só e ignora a largura da célula, então o texto sairia do quadro.
+    /// Com altura fixa, o rótulo que não cabe é quebrado em duas linhas e cortado — foi o que
+    /// aconteceu com «Marcar REST via Business Component por padrão» a 125% de DPI, depois que
+    /// as duas colunas estreitaram cada célula. Aqui a altura é medida a cada Resize, com a
+    /// largura real disponível, e <paramref name="minimumHeight"/> é só o piso.
+    /// </summary>
+    private static CheckBox CreateCheckBox(string text, int minimumHeight = 30)
+    {
+        var check = new CheckBox
         {
             AutoSize = false,
             Dock = DockStyle.Top,
-            Height = height,
+            Height = minimumHeight,
             Text = text,
             Margin = new Padding(0, 4, 0, 4),
         };
+
+        // 26 px reservados para o quadrado do checkbox e o respiro até o texto.
+        EnableAutoHeight(check, minimumHeight, reservedWidth: 26);
+        return check;
+    }
+
+    /// <summary>
+    /// Rótulo que ocupa a largura da célula e cresce em altura conforme o texto quebra.
+    /// </summary>
+    private static Label CreateWrappingLabel(string text, Padding padding, int minimumHeight = 24)
+    {
+        var label = new Label
+        {
+            AutoSize = false,
+            Dock = DockStyle.Top,
+            Height = minimumHeight,
+            Text = text,
+            Padding = padding,
+        };
+
+        EnableAutoHeight(label, minimumHeight, reservedWidth: padding.Horizontal);
+        return label;
+    }
+
+    /// <summary>
+    /// Faz o controle recalcular a própria altura sempre que a largura, o texto ou a fonte
+    /// mudarem. <c>AutoSize</c> não resolve: ele mede o texto em uma linha só e ignora a
+    /// largura da célula, então o rótulo transborda o quadro em vez de quebrar. Com altura
+    /// fixa acontece o oposto — o texto quebra e é cortado, como ocorreu com «Marcar REST via
+    /// Business Component por padrão» a 125% de DPI, depois que as duas colunas estreitaram
+    /// cada célula.
+    /// </summary>
+    private static void EnableAutoHeight(Control control, int minimumHeight, int reservedWidth)
+    {
+        void Adjust(object? sender, EventArgs e)
+        {
+            if (control.Width <= 0 || string.IsNullOrEmpty(control.Text))
+            {
+                return;
+            }
+
+            const int VerticalPadding = 10;
+            var availableWidth = Math.Max(control.Width - reservedWidth, 1);
+            var measured = TextRenderer.MeasureText(
+                control.Text,
+                control.Font,
+                new Size(availableWidth, int.MaxValue),
+                TextFormatFlags.WordBreak);
+            var desiredHeight = Math.Max(
+                minimumHeight,
+                measured.Height + VerticalPadding + control.Padding.Vertical);
+
+            // A guarda encerra a recursão: atribuir Height dispara Resize de novo.
+            if (control.Height != desiredHeight)
+            {
+                control.Height = desiredHeight;
+            }
+        }
+
+        control.Resize += Adjust;
+        control.TextChanged += Adjust;
+        control.FontChanged += Adjust;
     }
 
     private static NumericUpDown CreateNumericInput()
