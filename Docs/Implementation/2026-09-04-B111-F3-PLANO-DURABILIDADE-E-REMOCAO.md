@@ -549,9 +549,58 @@ Primeira execução real do caminho. O File `apiTeste_Metadata` foi apagado à m
 
 Dois números confirmam o desenho: **2290 bytes** contra os **117926** da metadata completa — a diferença é exatamente o contrato que a 13.3 diz não recuperar —, e o **mesmo GUID** nas duas pontas, provando que o Apply reencontra e sobrescreve o File da recuperação em vez de criar um segundo.
 
-**O que ainda não foi verificado:** `Remover API gerada` **sobre a metadata recuperada**. É o objetivo declarado do `B115`, e o Apply do último passo já reescreveu a metadata — testá-lo exige refazer o cenário e não aplicar no meio. Enquanto isso não for feito, o que está provado é que a recuperação destrava o Wizard e que o Sync recusa; que ela destrava o `Remover` continua sendo inferência a partir do que `FromMetadata` consome.
+### 13.7 O `Remover` sobre a metadata recuperada — e o defeito que ele expôs
 
-### 13.7 Custo
+Testado no mesmo dia, e **falhou na primeira tentativa**. A remoção parou no meio com o API
+Object, 5 Procedures e 5 SDTs já apagados:
+
+```
+'sdtTeste_API_ListFilters' is referenced at least by 'sdtTeste_API_ListResponse'
+```
+
+A causa não era o inventário — estava completo — e sim a **ordem**. `ResolveOwnSdtNames` usa
+`objects.sdts.own` como está, e essa ordem carrega as dependências entre SDTs; a recuperação
+a gravava em ordem alfabética, que não é ordem de dependência nenhuma. O teste que
+acompanhava a recuperação verificava *o quê* era gravado, nunca *em que ordem*, e por isso
+passava.
+
+Dois defeitos colaterais apareceram junto:
+
+1. o relatório final informou `Removidos: (nenhum)` com onze objetos fora da KB — a lista era
+   local ao remover e a exceção subia antes de ela chegar ao relatório;
+2. a metadata recuperada guarda o `apiGuid` do API Object daquele momento. Removido esse
+   objeto e recriado outro pelo Wizard, a metadata passou a apontar para um GUID inexistente,
+   o Wizard travou em `OwnershipSchemaApiNameOrGuidMismatch` e a recuperação **não se
+   oferecia** — o File existia. Saída: apagar o File à mão e recuperar de novo.
+
+A correção escolhida não foi acertar a ordem na recuperação, e sim **tornar a remoção
+resiliente a ela**: o que a IDE recusa volta para a fila e é tentado na passada seguinte;
+enquanto cada passada apagar ao menos um objeto há progresso; uma passada inteira sem
+progresso encerra e reporta os pendentes. Resolve para qualquer metadata, não só a
+recuperada. A recusa não é interpretada pela mensagem da exceção — só o abort do usuário é
+relançado na hora.
+
+**Segunda execução, com a correção:**
+
+```
+Remocao de SDTs passada 1: apagados=17, adiados=1.
+Remocao de SDTs passada 2: apagados=1,  adiados=0.
+Relatório final: Resultado='Success', Removidos=24, Bloqueados=0, DuraçãoMs=4110.
+```
+
+O adiado foi o `sdtTeste_API_ListFilters` — o mesmo que travara a primeira tentativa —, e ele
+sai como penúltimo da lista de removidos, depois que `ListResponse` deixou de referenciá-lo.
+O Folder `TesteOpenApi` ficou vazio e **não foi apagado** (`wasCreated=false`, 13.2), e os três
+SDTs compartilhados foram preservados.
+
+A execução também confirmou o que a 13.2 promete sobre o inventário: a metadata recuperada
+listou **4** Procedures, não 5, porque o `procTeste_API_Delete` não existia mais na KB, e a
+validação as aceitou por Description, sem depender de GUID.
+
+**O `B115` está atendido:** a recuperação devolve a capacidade de remover uma API gerada cuja
+metadata se perdeu. O que ela não devolve — e continua não devolvendo — é o contrato (13.3).
+
+### 13.8 Custo
 
 Uma gravação de `WikiFileKBObject` por recuperação: ~130 ms na KB pequena, **~1,1 s** na
 grande (seção 2.3, e item `B114` do backlog). A recuperação é opt-in, ocorre uma vez por
