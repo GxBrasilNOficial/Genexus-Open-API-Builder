@@ -593,6 +593,13 @@ sai como penúltimo da lista de removidos, depois que `ListResponse` deixou de r
 O Folder `TesteOpenApi` ficou vazio e **não foi apagado** (`wasCreated=false`, 13.2), e os três
 SDTs compartilhados foram preservados.
 
+O ciclo foi repetido logo depois sobre a API **completa** — 5 Procedures, com o `Delete` que
+faltava na primeira —, e o resultado foi `Removidos=25` com o mesmo `passada 1: apagados=17,
+adiados=1` e `passada 2: apagados=1, adiados=0`. O inventário mudou de 24 para 25 objetos e o
+número de adiados não: com a lista em ordem alfabética o adiamento é **determinístico**, não
+acidental — `ListFilters` sempre precede o `ListResponse` que o referencia, e sempre exige
+exatamente uma segunda passada.
+
 A execução também confirmou o que a 13.2 promete sobre o inventário: a metadata recuperada
 listou **4** Procedures, não 5, porque o `procTeste_API_Delete` não existia mais na KB, e a
 validação as aceitou por Description, sem depender de GUID.
