@@ -175,11 +175,6 @@ $allowedCreateSymbols = [System.Collections.Generic.HashSet[string]]::new([Strin
 [void]$allowedCreateSymbols.Add('ExecuteRemoveGeneratedApi')
 # Validacao agregada do Remover, antes de qualquer Delete (Nivel A).
 [void]$allowedCreateSymbols.Add('Remove')
-# Recuperacao de metadata orfa (2026-09-05): fluxo opt-in, disparado antes do Apply e com
-# confirmacao do usuario, quando ainda nao existe indice da operacao. Mesmo caso do Remover
-# e do Sincronizar. Nome especifico de proposito: 'TryPrepare' seria generico demais para
-# uma allowlist por simbolo.
-[void]$allowedCreateSymbols.Add('TryPrepareOrphanMetadataRecovery')
 
 # Excecao por (simbolo, arquivo) para sondas temporarias. Vazia desde 2026-09-05, quando
 # B111JournalProbe.cs foi retirado; a estrutura permanece porque o mecanismo e util e o
@@ -188,6 +183,7 @@ $temporaryProbeCreateSymbols = @{}
 
 $methodDeclaration = [regex]::new('(?:public|internal|private)\s+static\s+[^{;=]+?\s+(\w+)\s*\(', [System.Text.RegularExpressions.RegexOptions]::Singleline)
 $createCall = [regex]::new('ApiPlanKbObjectNameIndex\.Create\s*\(')
+$observedCreateSymbols = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 $csFiles = Get-ChildItem -LiteralPath $srcRoot -Filter '*.cs' -Recurse -File
 foreach ($file in $csFiles) {
     $text = Read-LfText $file.FullName
@@ -196,12 +192,34 @@ foreach ($file in $csFiles) {
         $declared = $methodDeclaration.Matches($before)
         Assert-True ($declared.Count -gt 0) "Create sem metodo envolvente em $($file.Name)."
         $symbol = $declared[$declared.Count - 1].Groups[1].Value
+        [void]$observedCreateSymbols.Add($symbol)
         $allowedHere = $allowedCreateSymbols.Contains($symbol)
         if (-not $allowedHere -and $temporaryProbeCreateSymbols.ContainsKey($file.Name)) {
             $allowedHere = $temporaryProbeCreateSymbols[$file.Name] -contains $symbol
         }
 
         Assert-True $allowedHere "Create fora da lista permitida: simbolo='$symbol' arquivo='$($file.Name)'."
+    }
+}
+
+# --- 3b. A allowlist se verifica: nenhuma autorizacao pode sobreviver a chamada que a
+# justificava.
+#
+# Em 2026-09-06 a recuperacao de metadata orfa foi reescrita e deixou de usar o indice: a
+# elegibilidade passou a varreduras diretas e a posse a Description mais Service Source. A
+# chamada sumiu; a entrada 'TryPrepareOrphanMetadataRecovery' ficou na lista, autorizando algo
+# que nao existe mais. Nao havia dano — ninguem chama Create daquele nome —, mas a lista
+# passou a afirmar que aquele fluxo monta um indice, e foi lendo essa afirmacao que o custo do
+# B082 foi descrito errado num commit.
+#
+# Um gate vale pelo que ele afirma. Aqui a lista tem de descrever o codigo, nao a memoria de
+# quem a escreveu: uma entrada morta quebra o teste em vez de dormir nele.
+$staleAllowedSymbols = @($allowedCreateSymbols | Where-Object { -not $observedCreateSymbols.Contains($_) } | Sort-Object)
+Assert-True ($staleAllowedSymbols.Count -eq 0) ("Allowlist com autorizacao sem chamada correspondente: '" + ($staleAllowedSymbols -join "', '") + "'. Se o Create foi removido, retire tambem a entrada; a lista precisa descrever o codigo atual.")
+
+foreach ($probeFile in $temporaryProbeCreateSymbols.Keys) {
+    foreach ($probeSymbol in $temporaryProbeCreateSymbols[$probeFile]) {
+        Assert-True ($observedCreateSymbols.Contains($probeSymbol)) "Excecao temporaria sem chamada correspondente: simbolo='$probeSymbol' arquivo='$probeFile'. A sonda saiu; retire a excecao."
     }
 }
 
