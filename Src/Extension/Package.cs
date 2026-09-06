@@ -1535,59 +1535,6 @@ public sealed class Package : AbstractPackageUI
         } // using dialog [B082]
     }
 
-    private static bool EnsureContractSelectionForB032(Transaction transaction)
-    {
-        var contractSelection = PrototypeWizardSessionState.ContractSelection;
-        if (contractSelection is not null && string.Equals(contractSelection.TransactionName, transaction.Name, StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        WriteOutput($"[Genexus Open API Builder][B032] Contrato B031 ausente ou incompativel para Transaction='{transaction.Name}'. Abrindo B031 automaticamente.");
-        return RunContractDialogForB032(transaction);
-    }
-
-    private static bool RunContractDialogForB032(Transaction transaction)
-    {
-        var snapshot = PrototypeWizardContractReader.Read(transaction);
-        using var dialog = new PrototypeWizardContractDialog(
-            snapshot,
-            ExtensionLocalization.For(UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null));
-        var result = dialog.ShowDialog();
-
-        if (result == System.Windows.Forms.DialogResult.Retry)
-        {
-            PrototypeWizardSessionState.ClearContractSelection();
-            PrototypeWizardReviewSessionState.ClearReviewSelection();
-            WriteOutput($"[Genexus Open API Builder][B031] Voltar acionado durante o fluxo B032. Transaction='{transaction.Name}' permaneceu selecionada em memoria; nenhuma escolha de contrato foi persistida.");
-            return false;
-        }
-
-        if (result == System.Windows.Forms.DialogResult.Cancel)
-        {
-            PrototypeWizardSessionState.ClearContractSelection();
-            PrototypeWizardReviewSessionState.ClearReviewSelection();
-            PrototypeTransactionSelectionState.Clear();
-            WriteOutput($"[Genexus Open API Builder][B031] Wizard cancelado durante o fluxo B032 para Transaction='{transaction.Name}'. Escolhas em memoria descartadas; nenhuma alteracao foi feita na KB.");
-            return false;
-        }
-
-        if (result != System.Windows.Forms.DialogResult.OK || dialog.Selection is null)
-        {
-            PrototypeWizardSessionState.ClearContractSelection();
-            PrototypeWizardReviewSessionState.ClearReviewSelection();
-            WriteOutput($"[Genexus Open API Builder][B031] Passo 2 fechado sem conclusao durante o fluxo B032 para Transaction='{transaction.Name}'. Nenhuma escolha foi persistida.");
-            return false;
-        }
-
-        var selection = dialog.Selection;
-        PrototypeWizardSessionState.StoreContractSelection(selection);
-        PrototypeWizardReviewSessionState.ClearReviewSelection();
-        WriteOutput($"[Genexus Open API Builder][B031] Wizard Passo 2 concluido em memoria durante o fluxo B032: Transaction='{selection.TransactionName}', Services='{string.Join(",", selection.SelectedServices)}'.");
-        WriteOutput($"[Genexus Open API Builder][B031] Campos selecionados: Create={selection.CreateFields.Count}, Update={selection.UpdateFields.Count}, Response={selection.ResponseFields.Count}, ListFilters={selection.ListFilters.Count}.");
-        return true;
-    }
-
     private static bool EnableBusinessComponentForWizard(Transaction transaction)
     {
         if (transaction is null)
