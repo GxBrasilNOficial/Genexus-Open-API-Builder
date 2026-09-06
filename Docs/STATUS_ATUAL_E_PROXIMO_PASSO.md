@@ -173,7 +173,7 @@ Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-
 
 ### Instrumentação temporária — o que já saiu e o que continua instalado
 
-**Retirado em 2026-09-05**, com as perguntas respondidas e os resultados registrados em `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`: o comando `Sonda B111` das três camadas, as sondas `B111IdentityProbe`, `B111JournalProbe` e `B111SaveCostProbe`, e a exceção `$temporaryProbeCreateSymbols` que a sonda do diário exigia no teste de origem única do índice. **O manifesto mudou**, então a próxima instalação exige `genexus /install`.
+**Retirado em 2026-09-05**, com as perguntas respondidas e os resultados registrados em `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`: o comando `Sonda B111` das três camadas, as sondas `B111IdentityProbe`, `B111JournalProbe` e `B111SaveCostProbe`, e a exceção `$temporaryProbeCreateSymbols` que a sonda do diário exigia no teste de origem única do índice. O manifesto voltou ao estado publicado: o comando entrou e saiu dentro do mesmo bloco de commits, e contra `origin/main` o arquivo está idêntico. Quem instalar a partir do publicado não precisa de nada além da DLL. **Nesta máquina, sim**: a DLL instalada ainda registra `Sonda B111`, e desregistrá-lo exige `genexus /install`.
 
 **Continua instalado**, com o motivo e o momento de sair:
 
