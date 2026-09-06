@@ -53,6 +53,8 @@ internal sealed class PrototypeWizardPreferences
 
     public bool OfferOrphanMetadataRecovery { get; set; }
 
+    public bool SuppressProgressPumpDuringSaves { get; set; }
+
     public static PrototypeWizardPreferences CreateDefault()
     {
         return FromPreferenceValues(PrototypeWizardPreferencesCodec.CreateDefault());
@@ -78,6 +80,7 @@ internal sealed class PrototypeWizardPreferences
             MaximumPageSizeByDefault = MaximumPageSizeByDefault,
             IncludeBusinessComponentErrorMessagesByDefault = IncludeBusinessComponentErrorMessagesByDefault,
             OfferOrphanMetadataRecovery = OfferOrphanMetadataRecovery,
+            SuppressProgressPumpDuringSaves = SuppressProgressPumpDuringSaves,
         };
     }
 
@@ -111,6 +114,7 @@ internal sealed class PrototypeWizardPreferences
             MaximumPageSizeByDefault = values.MaximumPageSizeByDefault,
             IncludeBusinessComponentErrorMessagesByDefault = values.IncludeBusinessComponentErrorMessagesByDefault,
             OfferOrphanMetadataRecovery = values.OfferOrphanMetadataRecovery,
+            SuppressProgressPumpDuringSaves = values.SuppressProgressPumpDuringSaves,
         };
     }
 
@@ -134,6 +138,7 @@ internal sealed class PrototypeWizardPreferences
             MaximumPageSizeByDefault = MaximumPageSizeByDefault,
             IncludeBusinessComponentErrorMessagesByDefault = IncludeBusinessComponentErrorMessagesByDefault,
             OfferOrphanMetadataRecovery = OfferOrphanMetadataRecovery,
+            SuppressProgressPumpDuringSaves = SuppressProgressPumpDuringSaves,
         };
     }
 }

@@ -29,22 +29,24 @@ internal sealed class ExtensionBusyProgressScope : IDisposable
 
     public ApiPlanBusyProgressSession Session => _dialog.Session;
 
-    public static ExtensionBusyProgressScope Show(IWin32Window? owner, string title, ExtensionTexts texts)
+    /// <param name="suppressPump">
+    /// B109: experimento opt-in. A hipotese sob teste e que os Application.DoEvents() entre
+    /// os Saves reentram no loop de mensagens da IDE, permitindo que um handler dela
+    /// modifique uma colecao do modelo em uso e produza
+    /// "Collection was modified; enumeration operation may not execute".
+    ///
+    /// Com o valor true, os DoEvents sao suprimidos: se a falha desaparecer, a hipotese se
+    /// sustenta. O custo do experimento e a UI congelar durante a operacao e o botao Abortar
+    /// nao responder — por isso vem da preferencia "Suprimir a atualizacao da tela durante as
+    /// gravacoes", desligada por padrao, e nunca de um default de codigo.
+    /// </param>
+    public static ExtensionBusyProgressScope Show(
+        IWin32Window? owner,
+        string title,
+        ExtensionTexts texts,
+        bool suppressPump = false)
     {
         ExtensionBusyProgressDialog? dialog = null;
-
-        // B109: sonda temporaria. A hipotese sob teste e que os Application.DoEvents() entre
-        // os Saves reentram no loop de mensagens da IDE, permitindo que um handler dela
-        // modifique uma colecao do modelo em uso e produza
-        // "Collection was modified; enumeration operation may not execute".
-        //
-        // Com GOAB_B109_SUPPRESS_PUMP=1 no ambiente, os DoEvents sao suprimidos: se a falha
-        // desaparecer, a hipotese se sustenta. O custo do experimento e a UI congelar durante
-        // a operacao e o botao Abortar nao responder — por isso e opt-in e nunca o default.
-        var suppressPump = string.Equals(
-            Environment.GetEnvironmentVariable("GOAB_B109_SUPPRESS_PUMP"),
-            "1",
-            StringComparison.Ordinal);
 
         var session = new ApiPlanBusyProgressSession(
             update =>

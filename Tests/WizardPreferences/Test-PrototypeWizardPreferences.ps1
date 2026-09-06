@@ -72,6 +72,7 @@ Assert-Equal 50 $defaults.DefaultPageSizeByDefault 'Paginação default deve ini
 Assert-Equal 200 $defaults.MaximumPageSizeByDefault 'Paginação máxima default deve iniciar em 200.'
 Assert-True $defaults.IncludeBusinessComponentErrorMessagesByDefault 'Default deve incluir mensagens de erro do Business Component.'
 Assert-False $defaults.OfferOrphanMetadataRecovery 'Recuperação de metadata órfã deve iniciar desligada.'
+Assert-False $defaults.SuppressProgressPumpDuringSaves 'Supressão do Pump durante as gravações deve iniciar desligada.'
 
 $values = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferenceValues]::new()
 $values.GenerateSdtsByDefault = $true
@@ -89,6 +90,7 @@ $values.SecurityLevelByDefault = 'authorization'
 $values.DefaultPageSizeByDefault = 40
 $values.MaximumPageSizeByDefault = 100
 $values.OfferOrphanMetadataRecovery = $true
+$values.SuppressProgressPumpDuringSaves = $true
 
 $json = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Serialize($values)
 $parsed = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Parse($json)
@@ -109,6 +111,7 @@ Assert-Equal 40 $parsed.DefaultPageSizeByDefault 'Serialização deve preservar 
 Assert-Equal 100 $parsed.MaximumPageSizeByDefault 'Serialização deve preservar MaximumPageSize.'
 Assert-True $parsed.IncludeBusinessComponentErrorMessagesByDefault 'Serialização deve preservar o default ligado do repasse de mensagens do BC.'
 Assert-True $parsed.OfferOrphanMetadataRecovery 'Serialização deve preservar a oferta de recuperação de metadata órfã.'
+Assert-True $parsed.SuppressProgressPumpDuringSaves 'Serialização deve preservar a supressão do Pump durante as gravações.'
 
 $legacyJson = @'
 {

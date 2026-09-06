@@ -22,6 +22,11 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
     private readonly ComboBox _securityLevelCombo = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 180 };
     private readonly CheckBox _includeBcErrorMessagesCheck = CreateCheckBox(string.Empty);
     private readonly CheckBox _offerOrphanMetadataRecoveryCheck = CreateCheckBox(string.Empty);
+    // Altura dobrada: o rótulo descreve o efeito colateral e é longo — 592 px em espanhol,
+    // contra 710 px úteis com a janela no tamanho mínimo. Cabe em uma linha a 100% de DPI,
+    // mas não a 125% ou 150%, onde AutoScaleMode.Font amplia a fonte. Com AutoSize=false o
+    // CheckBox quebra o texto, e corta o que passar da altura declarada.
+    private readonly CheckBox _suppressProgressPumpCheck = CreateCheckBox(string.Empty, height: 56);
     private readonly NumericUpDown _defaultPageSizeInput = CreateNumericInput();
     private readonly NumericUpDown _maximumPageSizeInput = CreateNumericInput();
 
@@ -37,8 +42,8 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         StartPosition = FormStartPosition.CenterParent;
         AutoScaleMode = AutoScaleMode.Font;
         Width = 860;
-        Height = 680;
-        MinimumSize = new Size(780, 580);
+        Height = 780;
+        MinimumSize = new Size(780, 680);
         ShowIcon = false;
         ShowInTaskbar = false;
         FormBorderStyle = FormBorderStyle.Sizable;
@@ -56,14 +61,15 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 6,
+            RowCount = 7,
             Padding = new Padding(12),
         };
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 45));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 30));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 35));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 18));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 27));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         Controls.Add(root);
 
@@ -115,8 +121,6 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         checks.Controls.Add(_applyBusinessComponentCheck, 1, 1);
         checks.Controls.Add(_applyListCheck, 0, 2);
         checks.Controls.Add(_generateMetadataCheck, 1, 2);
-        checks.Controls.Add(_offerOrphanMetadataRecoveryCheck, 0, 3);
-        checks.SetColumnSpan(_offerOrphanMetadataRecoveryCheck, 2);
         optionsGroup.Controls.Add(checks);
         root.Controls.Add(optionsGroup, 0, 2);
 
@@ -169,6 +173,41 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         executionGroup.Controls.Add(execution);
         root.Controls.Add(executionGroup, 0, 4);
 
+        // Quadro próprio, e por último: nenhuma destas opções pertence ao uso normal. A de
+        // recuperação nasceu ocupando a linha de folga do quadro de geração, onde não é um
+        // default de geração; a de supressão do Pump substitui a variável de ambiente
+        // GOAB_B109_SUPPRESS_PUMP, que dependia do Windows e não tinha onde ser avisada.
+        var diagnosticsGroup = new GroupBox
+        {
+            Text = _texts.Translate("Diagnostico e recuperacao"),
+            Dock = DockStyle.Fill,
+            Padding = new Padding(12),
+        };
+
+        var diagnostics = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 4,
+            AutoScroll = true,
+        };
+        diagnostics.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        diagnostics.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        diagnostics.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        diagnostics.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        diagnostics.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        diagnostics.Controls.Add(new Label
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            Text = _texts.Translate("Opcoes de investigacao. Nao sao necessarias no uso normal da extensao."),
+            Padding = new Padding(0, 0, 0, 6),
+        }, 0, 0);
+        diagnostics.Controls.Add(_offerOrphanMetadataRecoveryCheck, 0, 1);
+        diagnostics.Controls.Add(_suppressProgressPumpCheck, 0, 2);
+        diagnosticsGroup.Controls.Add(diagnostics);
+        root.Controls.Add(diagnosticsGroup, 0, 5);
+
         var buttonsHost = new Panel
         {
             Dock = DockStyle.Fill,
@@ -195,7 +234,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         {
             buttons.Left = Math.Max(0, buttonsHost.ClientSize.Width - buttons.Width);
         };
-        root.Controls.Add(buttonsHost, 0, 5);
+        root.Controls.Add(buttonsHost, 0, 6);
 
         AcceptButton = save;
         CancelButton = cancel;
@@ -208,6 +247,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         _generateApiObjectCheck.Checked = preferences.GenerateApiObjectByDefault;
         _generateMetadataCheck.Checked = preferences.GenerateMetadataByDefault;
         _offerOrphanMetadataRecoveryCheck.Checked = preferences.OfferOrphanMetadataRecovery;
+        _suppressProgressPumpCheck.Checked = preferences.SuppressProgressPumpDuringSaves;
         _applyListCheck.Checked = preferences.ApplyListByDefault;
         _applyBusinessComponentCheck.Checked = preferences.ApplyBusinessComponentByDefault;
         _listServiceCheck.Checked = preferences.ListServiceByDefault;
@@ -262,6 +302,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             SecurityLevelByDefault = PrototypeWizardPreferences.NormalizeSecurityLevel(_securityLevelCombo.SelectedItem as string),
             IncludeBusinessComponentErrorMessagesByDefault = _includeBcErrorMessagesCheck.Checked,
             OfferOrphanMetadataRecovery = _offerOrphanMetadataRecoveryCheck.Checked,
+            SuppressProgressPumpDuringSaves = _suppressProgressPumpCheck.Checked,
             DefaultPageSizeByDefault = (int)_defaultPageSizeInput.Value,
             MaximumPageSizeByDefault = (int)_maximumPageSizeInput.Value,
         };
@@ -283,19 +324,20 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         _generateProceduresCheck.Text = _texts.Translate("Marcar Procedures por padrao");
         _generateApiObjectCheck.Text = _texts.Translate("Marcar API Object por padrao");
         _generateMetadataCheck.Text = _texts.Translate("Marcar metadata da API por padrao");
-        _offerOrphanMetadataRecoveryCheck.Text = _texts.Translate("Oferecer recuperação de metadata órfã no Wizard");
+        _offerOrphanMetadataRecoveryCheck.Text = _texts.Translate("Oferecer recuperacao de metadata orfa no Wizard");
+        _suppressProgressPumpCheck.Text = _texts.Translate("Suprimir a atualizacao da tela durante as gravacoes - a janela congela e Abortar nao responde (B109)");
         _applyListCheck.Text = _texts.Translate("Marcar listagem por padrao");
         _applyBusinessComponentCheck.Text = _texts.Translate("Marcar REST via Business Component por padrao");
         _includeBcErrorMessagesCheck.Text = _texts.Translate("Incluir mensagens de erro do Business Component no corpo HTTP 422");
     }
 
-    private static CheckBox CreateCheckBox(string text)
+    private static CheckBox CreateCheckBox(string text, int height = 30)
     {
         return new CheckBox
         {
             AutoSize = false,
             Dock = DockStyle.Top,
-            Height = 30,
+            Height = height,
             Text = text,
             Margin = new Padding(0, 4, 0, 4),
         };

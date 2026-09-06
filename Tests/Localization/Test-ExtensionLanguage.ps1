@@ -56,6 +56,9 @@ Assert-Equal 'Nível de segurança' ($uiTerms::PortugueseChrome('Security Level'
 Assert-Equal 'Tamanho padrão da página' ($uiTerms::PortugueseChrome('Default Page Size')) 'PT-BR deve traduzir o tamanho padrão da página.'
 Assert-Equal 'Tamanho máximo da página' ($uiTerms::PortugueseChrome('Maximum Page Size')) 'PT-BR deve traduzir o tamanho máximo da página.'
 Assert-Equal 'Segurança e paginação' ($uiTerms::PortugueseChrome('Seguranca e paginacao')) 'PT-BR deve acentuação no grupo de segurança.'
+Assert-Equal 'Diagnóstico e recuperação' ($uiTerms::PortugueseChrome('Diagnostico e recuperacao')) 'PT-BR deve acentuar o grupo de diagnóstico.'
+Assert-Equal 'Oferecer recuperação de metadata órfã no Wizard' ($uiTerms::PortugueseChrome('Oferecer recuperacao de metadata orfa no Wizard')) 'PT-BR deve acentuar a opção de recuperação de metadata órfã.'
+Assert-Equal 'Suprimir a atualização da tela durante as gravações — a janela congela e Abortar não responde (B109)' ($uiTerms::PortugueseChrome('Suprimir a atualizacao da tela durante as gravacoes - a janela congela e Abortar nao responde (B109)')) 'PT-BR deve acentuar a opção de supressão do Pump.'
 
 $localization = Get-Content -LiteralPath $localizationPath -Raw
 $wizard = Get-Content -LiteralPath $wizardPath -Raw

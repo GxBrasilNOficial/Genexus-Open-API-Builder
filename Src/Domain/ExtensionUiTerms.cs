@@ -46,6 +46,13 @@ public static class ExtensionUiTerms
             "Marcar REST via Business Component por padrao" => "Marcar REST via Business Component por padrão",
             "Marque ao menos um servico padrao." => "Marque ao menos um serviço padrão.",
             "Delete marcado exige Get, Create e Update nos servicos padrao. Marque os tres ou desmarque Delete." => "Delete marcado exige Get, Create e Update nos serviços padrão. Marque os três ou desmarque Delete.",
+            "Diagnostico e recuperacao" => "Diagnóstico e recuperação",
+            "Opcoes de investigacao. Nao sao necessarias no uso normal da extensao." => "Opções de investigação. Não são necessárias no uso normal da extensão.",
+            "Oferecer recuperacao de metadata orfa no Wizard" => "Oferecer recuperação de metadata órfã no Wizard",
+            "Suprimir a atualizacao da tela durante as gravacoes - a janela congela e Abortar nao responde (B109)" => "Suprimir a atualização da tela durante as gravações — a janela congela e Abortar não responde (B109)",
+            "Foi encontrada uma API gerada pela extensao sem o File de metadata '{0}'. A recuperacao criara somente esse File, nao alterara API Object, Procedures ou SDTs, e encerrara esta aplicacao para uma nova leitura limpa. Deseja recuperar agora?" => "Foi encontrada uma API gerada pela extensão sem o File de metadata '{0}'. A recuperação criará somente esse File, não alterará API Object, Procedures ou SDTs, e encerrará esta aplicação para uma nova leitura limpa. Deseja recuperar agora?",
+            "A metadata '{0}' foi recuperada. Reabra o Wizard para continuar; nenhuma outra etapa foi executada nesta aplicacao." => "A metadata '{0}' foi recuperada. Reabra o Wizard para continuar; nenhuma outra etapa foi executada nesta aplicação.",
+            "A recuperacao da metadata '{0}' falhou: {1}" => "A recuperação da metadata '{0}' falhou: {1}",
             _ => source,
         };
     }

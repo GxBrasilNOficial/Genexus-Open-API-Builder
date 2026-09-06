@@ -1154,10 +1154,17 @@ public sealed class Package : AbstractPackageUI
         var saveBoundaryLog = new ApiPlanSaveBoundaryLog();
         using var saveBoundaryScope = ApiPlanSaveBoundaryProbe.Begin(saveBoundaryLog);
         using var saveBoundaryPublisher = new ApiPlanSaveBoundaryPublisher(saveBoundaryLog, "Wizard");
+        var suppressProgressPump = preferencesLoadResult!.Preferences.SuppressProgressPumpDuringSaves;
         try
         {
-            using var busy = ExtensionBusyProgressScope.Show(applyOwner, texts.BusyProgressTitleApply, texts);
+            using var busy = ExtensionBusyProgressScope.Show(applyOwner, texts.BusyProgressTitleApply, texts, suppressProgressPump);
             WriteOutput($"[Genexus Open API Builder][B082] Apply Wizard iniciado: Transaction='{transaction.Name}'.");
+            if (suppressProgressPump)
+            {
+                // Sem esta linha, um Apply com a tela congelada chega ao log indistinguivel
+                // de um Apply travado.
+                WriteOutput("[Genexus Open API Builder][B109] Atualizacao da tela suprimida por preferencia durante as gravacoes: a janela nao responde ate o fim, e o botao Abortar fica inativo. Experimento da hipotese de reentrancia do Pump.");
+            }
             var (generationState, kbIndexForApply) = ApiPlanGenerationStateReader.ReadForIntentionalChangeWithIndex(
                 knowledgeBase.DesignModel,
                 transaction,
@@ -1638,7 +1645,7 @@ public sealed class Package : AbstractPackageUI
 
         var metadataName = apiPlan.MetadataFileName;
         var message = string.Format(
-            texts.Translate("Foi encontrada uma API gerada pela extensão sem o File de metadata '{0}'. A recuperação criará somente esse File, não alterará API Object, Procedures ou SDTs, e encerrará esta aplicação para uma nova leitura limpa. Deseja recuperar agora?"),
+            texts.Translate("Foi encontrada uma API gerada pela extensao sem o File de metadata '{0}'. A recuperacao criara somente esse File, nao alterara API Object, Procedures ou SDTs, e encerrara esta aplicacao para uma nova leitura limpa. Deseja recuperar agora?"),
             metadataName);
         var answer = System.Windows.Forms.MessageBox.Show(
             owner,
@@ -1660,7 +1667,7 @@ public sealed class Package : AbstractPackageUI
             System.Windows.Forms.MessageBox.Show(
                 owner,
                 string.Format(
-                    texts.Translate("A metadata '{0}' foi recuperada. Reabra o Wizard para continuar; nenhuma outra etapa foi executada nesta aplicação."),
+                    texts.Translate("A metadata '{0}' foi recuperada. Reabra o Wizard para continuar; nenhuma outra etapa foi executada nesta aplicacao."),
                     result.FileName),
                 texts.Wizard,
                 System.Windows.Forms.MessageBoxButtons.OK,
@@ -1673,7 +1680,7 @@ public sealed class Package : AbstractPackageUI
             WriteOutput($"[Genexus Open API Builder][B115] Recuperação de metadata falhou: File='{metadataName}', Error='{detail}'. Nenhuma etapa posterior foi executada.");
             System.Windows.Forms.MessageBox.Show(
                 owner,
-                string.Format(texts.Translate("A recuperação da metadata '{0}' falhou: {1}"), metadataName, detail),
+                string.Format(texts.Translate("A recuperacao da metadata '{0}' falhou: {1}"), metadataName, detail),
                 texts.Wizard,
                 System.Windows.Forms.MessageBoxButtons.OK,
                 System.Windows.Forms.MessageBoxIcon.Error);
