@@ -83,6 +83,8 @@ internal static class ApiPlanListProcedureWriter
             try
             {
                 step.Save();
+                // O relogio para aqui: o fingerprint da sonda nao pode entrar no tempo do Save.
+                sw.Stop();
                 ApiPlanSaveBoundaryProbe.Saved("List", step.Label, step.Snapshot());
             }
             catch (Exception exception)
@@ -90,7 +92,7 @@ internal static class ApiPlanListProcedureWriter
                 ApiPlanSaveBoundaryProbe.Failed("List", step.Label, exception, step.Snapshot());
                 throw;
             }
-            sw.Stop();
+
             progress?.Report("List", saveIndex, saveSteps.Length, step.Label, sw.ElapsedMilliseconds);
         }
 

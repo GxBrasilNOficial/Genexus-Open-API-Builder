@@ -122,6 +122,8 @@ internal static class ApiPlanBusinessComponentWriter
             try
             {
                 step.Save();
+                // O relogio para aqui: o fingerprint da sonda nao pode entrar no tempo do Save.
+                sw.Stop();
                 ApiPlanSaveBoundaryProbe.Saved("Business Component", step.Label, step.Snapshot());
             }
             catch (Exception exception)
@@ -129,7 +131,7 @@ internal static class ApiPlanBusinessComponentWriter
                 ApiPlanSaveBoundaryProbe.Failed("Business Component", step.Label, exception, step.Snapshot());
                 throw;
             }
-            sw.Stop();
+
             progress?.Report("Business Component", saveIndex, saveSteps.Count, step.Label, sw.ElapsedMilliseconds);
         }
 
