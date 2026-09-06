@@ -142,8 +142,9 @@ matéria de revisão de papel:
 - custo de varredura e de remonte de índice;
 - contagem real de pontos de `Save()` no pipeline.
 
-Um revisor pode contestar a **interpretação** desses números. Contestar os números exige
-reexecutar a sonda, que continua registrada no comando `Sonda B111`.
+Um revisor pode contestar a **interpretação** desses números. A sonda e o comando temporários
+foram retirados em 2026-09-05, portanto não há reexecução disponível no estado atual.
+Qualquer nova medição deve partir dos registros versionados ou de uma sonda específica explicitamente autorizada.
 
 ### 8.3 O que pedir ao painel
 

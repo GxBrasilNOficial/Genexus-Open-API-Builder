@@ -63,7 +63,8 @@ Confirmado por leitura em 2026-09-04:
    A inversão de ordem exigida por esta frente não está só em `Package.cs`: dentro de cada
    writer, o passo do API precisa passar de primeiro a último.
 4. O Apply existe em **dois blocos** no mesmo `Package.cs`: o do Sync, em torno de
-   `Package.cs:855`, e o do Wizard, em torno de `Package.cs:1600`.
+   `Package.cs:416` (execução após o preflight em `Package.cs:561`), e o do Wizard, em torno
+   de `Package.cs:1144`.
 5. Os dois blocos já contêm um deferimento **parcial** de B054, com a mesma regra:
 
    | Seleção | Comportamento atual | Consequência |
@@ -216,7 +217,7 @@ Medido por leitura em 2026-09-05:
 | Chamada | Onde ocorre |
 |---|---|
 | `ApiPlanTransactionFolder.CreateOrReencounter` | **seis** pontos: `ApiPlanSdtWriter.cs:69`, `ApiPlanProcedureWriter.cs:53`, `ApiPlanApiObjectWriter.cs:53`, `ApiPlanBusinessComponentWriter.cs:96`, `ApiPlanListProcedureWriter.cs:64` — mais o interno do próprio SdtWriter |
-| `ApiPlanSdtWriter.CreateOrReencounter` | **quatro** pontos: a fase dedicada em `Package.cs:420-421`, `ApiPlanBusinessComponentWriter.cs:94` e `ApiPlanListProcedureWriter.cs:62` |
+| `ApiPlanSdtWriter.CreateOrReencounter` | **quatro** pontos: a fase dedicada em `Package.cs:132-133`, `ApiPlanBusinessComponentWriter.cs:94` e `ApiPlanListProcedureWriter.cs:62` |
 
 Numa aplicação com SDTs, Procedures, API, BC e List, o writer de SDT roda três vezes e o de
 Folder mais de cinco. Isso não é acidente — é o motivo de existirem `RefreshSdts` e

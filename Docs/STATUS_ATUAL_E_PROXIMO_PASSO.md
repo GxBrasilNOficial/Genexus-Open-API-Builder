@@ -205,7 +205,7 @@ O experimento também fechou o baseline: o `Build All` sem API passou nos dois e
 
 - `B109ExceptionProbe` publica na Output a cadeia completa de exceções — tipo, mensagem, `Source`, `TargetSite` e stack de cada nível —, além de Rules, `ExpectedVariables` × `CurrentVariables` e `SourceLines` da Procedure recusada;
 - `ApiPlanSaveBoundaryProbe` registra as fronteiras Pump/Save com fingerprint do estado em memória antes e depois de cada uma, para separar mutação externa de falha intrínseca de validação — publica sob o rótulo `[B109]`;
-- `ApiPlanMetadataVisibilityProbe` compara a visibilidade de Files entre o índice e o `GetAll` da IDE — rótulo `[B115]`;
+- `ApiPlanMetadataVisibilityProbe` mede a estabilidade do `GetAll` de Files em duas passagens e tenta a leitura direta por `Id` — rótulo `[B115]`;
 - interruptor `GOAB_B109_SUPPRESS_PUMP=1` suprime os `Application.DoEvents()` entre os Saves.
 
 **Como reproduzir o cenário**, se o ramo A voltar: apagar **apenas** o API Object antes de cada tentativa. Com ele presente e sem metadata, o Wizard desliga as etapas de consumidor e a falha não ocorre — ou, agora, aceitar a recuperação de metadata órfã, que devolve o File e reabilita `Remover` e `Sincronizar`.
@@ -257,7 +257,7 @@ A pauta formal continua sendo a revisão por pares da `S-B111`, acima. De `B109`
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única é `B108` (`Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); a Etapa 1A do hardening `B082` está aceita (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é a revisão por pares da sprint `S-B111`; `B108` está estacionado (`Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); a Etapa 1A do hardening `B082` está aceita (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
@@ -403,7 +403,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [2026-08-30 — B100 Delete opt-in](Implementation/2026-08-30-B100-DELETE-OPT-IN.md)
 - [2026-08-31 — B082 plano UX progresso (Fases A+B)](Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md)
 - [2026-09-02 — B082 plano de hardening e desempenho medido (Etapa 1A aceita)](Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md)
-- [2026-08-31 — B108 plano preferências e retração (próxima ação única)](Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md)
+- [2026-08-31 — B108 plano preferências e retração (estacionado desde 2026-09-05)](Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md)
 - [B085 — Sincronizar com a Transaction](Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
@@ -417,7 +417,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 10 — Beta estável (`B108` é a próxima ação de código; Etapa 1A do `B082` aceita em 2026-09-03; residual 1B/2/3 no plano de hardening).
+- Sprint 10 — Beta estável (`B108` está estacionado; a próxima ação é a revisão por pares da sprint `S-B111`; Etapa 1A do `B082` aceita em 2026-09-03; residual 1B/2/3 no plano de hardening).
 
 ## Protocolo de atualização
 

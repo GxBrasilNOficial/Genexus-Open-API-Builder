@@ -100,7 +100,7 @@ Os erros `bool`/`decimal`/`short` do `NETFrameworkPostgreSQL` pertencem à gera�
 
 ## Estado das sondas e do código
 
-- `B109ExceptionProbe`, `B111*Probe`, `ApiPlanSaveBoundaryProbe` e
+- `B109ExceptionProbe`, `B111CallSiteProbe`, `ApiPlanSaveBoundaryProbe` e
   `ApiPlanMetadataVisibilityProbe` continuam instrumentação temporária conforme o checklist do
   checkpoint;
 - a revisão por pares da sprint `S-B111` continua sendo a próxima frente formal do projeto.
