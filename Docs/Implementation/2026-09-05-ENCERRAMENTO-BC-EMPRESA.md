@@ -140,6 +140,20 @@ do commit. Corrigido em 2026-09-05.
   para uma allowlist por símbolo — e incluído na lista, como fluxo legítimo equivalente ao do
   Remover e ao do Sincronizar.
 
+**Atualização de 2026-09-06.** Duas afirmações desta seção deixaram de valer, e o registro do
+dia 2026-09-05 fica como está:
+
+- **A recuperação reabilita `Remover`, não `Sincronizar`.** Validada em campo em 2026-09-06,
+  ela grava ownership e o inventário de objetos, sem o contrato — paginação, ordenação,
+  obrigatórios e estrutura hierárquica existem só na metadata perdida. Sincronizar sobre isso
+  compararia a API real contra uma descrição vazia, então o Sincronizar é **deliberadamente
+  bloqueado** até uma aplicação completa reescrever a metadata. Seções 13.3 e 13.4 do plano da
+  F3.
+- **O método voltou a se chamar `TryPrepare`.** A classe foi reescrita em 2026-09-06 e deixou
+  de depender de `ApiPlanKbObjectNameIndex.Create`: a elegibilidade passou a usar varreduras
+  diretas, e a posse a ser confirmada por Description e Service Source, sem o índice. Some com
+  isso o motivo do nome longo e da entrada na allowlist da regra de origem única.
+
 ## Evidências relacionadas
 
 - [`2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`](2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md), §§10.7–10.8 — sintomas originais e stack da `ValidationException`;

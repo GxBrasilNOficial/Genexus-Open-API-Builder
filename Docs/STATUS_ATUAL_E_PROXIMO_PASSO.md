@@ -157,9 +157,18 @@ O P1 daquele plano — escrita parcial do BC, gravar o API Object por último �
 
 **`B108` fica estacionado desde 2026-09-05**, com plano aprovado e sem trabalho perdido: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Item: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
 
-## Estado da sprint `S-B111` (2026-09-05)
+## Estado da sprint `S-B111` (planejada em 2026-09-05; território atualizado em 2026-09-06)
 
-Planejamento concluído; **nenhuma linha do pipeline `B111` alterada** — writers, seam, recibos, diário e remoção seguem como estavam. Três planos de fase escritos e commitados, todos aguardando revisão e decisão:
+Planejamento concluído, e **nenhuma das três fases foi implementada**: o seam de persistência, os recibos, o diário e a ordem de gravação do API Object seguem como estavam, e continuam sendo o que a revisão por pares precisa decidir.
+
+**O que mudou no território da sprint depois de 2026-09-05**, por necessidade de campo e fora das fases — registrado na seção 13 do plano da F3:
+
+- os writers de Business Component e de List ganharam a instrumentação `ApiPlanSaveBoundaryProbe` e `B111CallSiteProbe`, e o cronômetro por objeto passou a parar antes do fingerprint da sonda, que ele antes contabilizava;
+- a **remoção** deixou de depender de a lista de SDTs vir na ordem de dependência: o que a IDE recusa volta para a fila e é tentado na passada seguinte;
+- uma remoção interrompida passou a listar no relatório final o que já saiu da KB;
+- nasceu a recuperação de metadata órfã (`B115`), que ocupa parte do que a seção 4.3 da F3 normatiza.
+
+Três planos de fase escritos e commitados, todos aguardando revisão e decisão:
 
 | Fase | Plano | Depende de |
 |---|---|---|
