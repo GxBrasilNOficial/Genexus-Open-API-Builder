@@ -1,88 +1,70 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using Artech.Architecture.Common.Objects;
+using Artech.Common;
 using Artech.Genexus.Common.Objects;
 using Artech.Genexus.Common.Wiki;
-using GenexusOpenApiBuilder.Extension.Domain;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 /// <summary>
-/// Recuperação explícita de um API Object próprio que ficou sem o File de metadata
-/// depois de uma aplicação parcial.
+/// Recuperação de um API Object próprio que ficou sem o File de metadata depois de uma
+/// aplicação parcial — o caso `B115`.
 ///
-/// A recuperação não altera o API Object, Procedures ou SDTs. Ela só é elegível quando
-/// o SDK encontra exatamente um API Object, nenhum File com o nome planejado e confirma
-/// a posse pelo contrato gerenciado e pela Description própria. A confirmação visual ao
-/// usuário é responsabilidade do chamador.
+/// **O que ela grava:** ownership e o inventário de objetos verificado na KB, que é tudo o
+/// que <c>ApiPlanGeneratedApiRemovalPlan.FromMetadata</c> consome. Devolve ao usuário a
+/// capacidade de remover a API gerada.
+///
+/// **O que ela não grava, de propósito:** `fields`, `pagination`, `order`, `services`,
+/// `levels` e `transactionStructure`. Esses dados existem somente na metadata original e não
+/// são reconstruíveis a partir da KB — inventá-los faria o Sincronizar comparar a API real
+/// contra uma descrição falsa. As chaves ficam **ausentes**, não vazias, porque o leitor de
+/// contrato existente só cai no fallback da KB quando a chave falta.
+///
+/// A metadata resultante carrega a marca <c>recovery.imported</c>, que libera o Remover e
+/// bloqueia o Sincronizar até um Apply completo reescrevê-la.
+///
+/// Desenho e pontos em aberto registrados na seção 13 de
+/// `Docs/Implementation/2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md`.
 /// </summary>
 internal static class ApiPlanOrphanMetadataRecovery
 {
-    public static bool TryPrepareOrphanMetadataRecovery(
-        KBModel designModel,
-        ApiPlan apiPlan,
-        out ApiPlanKbObjectNameIndex index,
-        out string detail)
+    internal const string RecoverySource = "KbInventory";
+
+    private static readonly string[] ServiceSuffixes = { "List", "Get", "Create", "Update", "Delete" };
+
+    private static readonly string[] SharedSdtNames =
     {
-        if (designModel is null)
-        {
-            throw new ArgumentNullException(nameof(designModel));
-        }
+        "sdt_API_ErrorMessage",
+        "sdt_API_ErrorResponse",
+        "sdt_API_Pagination",
+    };
 
-        if (apiPlan is null)
-        {
-            throw new ArgumentNullException(nameof(apiPlan));
-        }
+    private static readonly string[] NotRecoveredSections =
+    {
+        "fields",
+        "pagination",
+        "order",
+        "services",
+        "levels",
+        "transactionStructure",
+    };
 
-        // B082: as duas perguntas de elegibilidade custam duas varreduras; o índice completo
-        // custa sete, entre elas o Attribute.GetAll de ~1300 ms na KB grande. No caso comum
-        // — não há órfã — o índice seria montado e descartado, então ele só nasce depois de
-        // as duas perguntas passarem.
-        var apiMatches = ApiPlanScanProbe.Scan(
-            "API",
-            "orphan-recovery-preflight",
-            () => API.GetAll(designModel)
-                .Where(item => string.Equals(item.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase))
-                .ToArray());
-        if (apiMatches.Length != 1)
-        {
-            index = null!;
-            detail = $"API Object '{apiPlan.ApiName}' encontrado {apiMatches.Length} vez(es); esperado exatamente 1.";
-            return false;
-        }
-
-        var metadataMatchCount = ApiPlanScanProbe.Scan(
-            "File",
-            "orphan-recovery-preflight",
-            () => WikiFileKBObject.GetAll(designModel)
-                .Count(item => string.Equals(item.Name, apiPlan.MetadataFileName, StringComparison.OrdinalIgnoreCase)));
-        if (metadataMatchCount != 0)
-        {
-            index = null!;
-            detail = $"File '{apiPlan.MetadataFileName}' encontrado {metadataMatchCount} vez(es); recuperação órfã não se aplica.";
-            return false;
-        }
-
-        index = ApiPlanKbObjectNameIndex.Create(designModel);
-        var apiObject = apiMatches[0];
-        var ownership = ApiPlanApiObjectWriter.DiagnoseOwnership(designModel, index, apiPlan, apiObject);
-        if (!ownership.IsOwned)
-        {
-            detail = $"API Object '{apiPlan.ApiName}' não foi confirmado como próprio: {ownership.ReasonText}";
-            return false;
-        }
-
-        detail = $"API Object próprio confirmado por Description/contrato; metadata '{apiPlan.MetadataFileName}' ausente.";
-        return true;
-    }
-
-    public static ApiPlanMetadataFileWriteResult Recover(
+    /// <summary>
+    /// Verifica se há uma metadata órfã recuperável e monta o inventário. Não grava nada.
+    /// </summary>
+    public static bool TryPrepare(
         KBModel designModel,
         Transaction transaction,
-        ApiPlan apiPlan,
-        ApiPlanKbObjectNameIndex index)
+        out OrphanMetadataRecoveryPlan plan,
+        out string detail)
     {
         if (designModel is null)
         {
@@ -94,27 +76,324 @@ internal static class ApiPlanOrphanMetadataRecovery
             throw new ArgumentNullException(nameof(transaction));
         }
 
-        if (apiPlan is null)
+        plan = null!;
+        var apiName = "api" + transaction.Name;
+        var metadataFileName = apiName + "_Metadata";
+
+        // B082: duas varreduras respondem à elegibilidade. O índice completo custa sete, e no
+        // caso comum — não há órfã — seria montado e descartado.
+        var apiMatches = ApiPlanScanProbe.Scan(
+            "API",
+            "orphan-recovery-preflight",
+            () => API.GetAll(designModel)
+                .Where(item => string.Equals(item.Name, apiName, StringComparison.OrdinalIgnoreCase))
+                .ToArray());
+        if (apiMatches.Length != 1)
         {
-            throw new ArgumentNullException(nameof(apiPlan));
+            detail = $"API Object '{apiName}' encontrado {apiMatches.Length} vez(es); esperado exatamente 1.";
+            return false;
         }
 
-        if (index is null)
+        var metadataMatchCount = ApiPlanScanProbe.Scan(
+            "File",
+            "orphan-recovery-preflight",
+            () => WikiFileKBObject.GetAll(designModel)
+                .Count(item => string.Equals(item.Name, metadataFileName, StringComparison.OrdinalIgnoreCase)));
+        if (metadataMatchCount != 0)
         {
-            throw new ArgumentNullException(nameof(index));
+            detail = $"File '{metadataFileName}' encontrado {metadataMatchCount} vez(es); recuperação órfã não se aplica.";
+            return false;
         }
 
-        var result = ApiPlanMetadataFileWriter.CreateOrReencounter(
-            designModel,
-            transaction,
-            apiPlan,
-            allowIntentionalContractRefresh: false,
-            index);
-        if (!string.Equals(result.Status, ApiPlanMetadataFileWriteStatus.Created, StringComparison.Ordinal))
+        var apiObject = apiMatches[0];
+
+        // Posse por dois sinais independentes, os mesmos que sustentam o ramo
+        // OwnedByDescriptionFallback de ApiPlanApiObjectOwnership: a Description sentinela que
+        // a extensão grava, e o Service Source chamando as Procedures geradas. Sem a metadata
+        // não há como usar DiagnoseOwnership, que depende de um ApiPlan.
+        if (!ApiPlanOwnedObjectDescription.IsCanonical(apiObject.Description, apiName))
         {
-            throw new InvalidOperationException($"Recuperação esperava criar metadata, mas o status foi '{result.Status}'.");
+            detail = $"API Object '{apiName}' não tem a Description própria da extensão; recuperação recusada.";
+            return false;
         }
 
-        return result;
+        if (!CallsGeneratedProcedures(apiObject, transaction.Name))
+        {
+            detail = $"API Object '{apiName}' não chama Procedures 'proc{transaction.Name}_API_*'; recuperação recusada.";
+            return false;
+        }
+
+        var procedures = FindOwnedProcedures(designModel, transaction.Name);
+        if (procedures.Count == 0)
+        {
+            detail = $"Nenhuma Procedure própria 'proc{transaction.Name}_API_*' foi encontrada; não há inventário para registrar.";
+            return false;
+        }
+
+        plan = new OrphanMetadataRecoveryPlan(
+            apiName,
+            metadataFileName,
+            apiObject,
+            FindTransactionFolderName(designModel, transaction),
+            procedures,
+            FindOwnedSdts(designModel, "sdt" + transaction.Name + "_API_"),
+            FindSharedSdts(designModel));
+
+        detail = $"API Object próprio confirmado por Description e Service Source; metadata '{metadataFileName}' ausente. "
+            + $"Inventário: Procedures={plan.ProcedureNames.Count}, SdtsProprios={plan.OwnSdtNames.Count}, SdtsCompartilhados={plan.SharedSdtNames.Count}.";
+        return true;
     }
+
+    /// <summary>
+    /// Grava a metadata de recuperação. Só cria o File; não altera API Object, Procedures ou SDTs.
+    /// </summary>
+    public static OrphanMetadataRecoveryResult Recover(
+        KBModel designModel,
+        Transaction transaction,
+        OrphanMetadataRecoveryPlan plan)
+    {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (transaction is null)
+        {
+            throw new ArgumentNullException(nameof(transaction));
+        }
+
+        if (plan is null)
+        {
+            throw new ArgumentNullException(nameof(plan));
+        }
+
+        var json = CreateRecoveryJson(transaction, plan);
+        var bytes = Encoding.UTF8.GetBytes(json);
+
+        var file = new WikiFileKBObject(designModel)
+        {
+            Name = plan.MetadataFileName,
+            Description = ApiPlanOwnedObjectDescription.Create(plan.MetadataFileName),
+        };
+        if (transaction.Module is not null)
+        {
+            file.Module = transaction.Module;
+        }
+
+        file.SetPropertyValue("JavaExtract", false);
+        file.SetPropertyValue("NetExtract", false);
+        file.BlobPart.SetPropertyValue("FileName", plan.MetadataFileName + ".json");
+        file.BlobPart.Data = BinaryStream.FromBytes(bytes);
+        file.Save();
+
+        var persisted = WikiFileKBObject.GetAll(designModel)
+            .Single(item => string.Equals(item.Name, plan.MetadataFileName, StringComparison.OrdinalIgnoreCase));
+        var persistedBytes = persisted.BlobPart?.Data?.GetBytes();
+        if (persistedBytes is null || !persistedBytes.SequenceEqual(bytes))
+        {
+            throw new InvalidOperationException(
+                $"Recuperação de metadata falhou: o File '{plan.MetadataFileName}' não preservou os bytes UTF-8 esperados.");
+        }
+
+        return new OrphanMetadataRecoveryResult(
+            persisted.Name,
+            persisted.Guid,
+            bytes.Length,
+            plan.ProcedureNames.Count,
+            plan.OwnSdtNames.Count,
+            plan.SharedSdtNames.Count);
+    }
+
+    /// <summary>
+    /// Diz se uma metadata já lida foi produzida pela recuperação e ainda não foi reescrita
+    /// por um Apply completo. Usado para bloquear o Sincronizar, que não tem contrato com que
+    /// comparar.
+    /// </summary>
+    public static bool IsImportedRecovery(JObject? metadata) =>
+        metadata?.SelectToken("recovery.imported")?.Value<bool>() == true;
+
+    internal static string CreateRecoveryJson(Transaction transaction, OrphanMetadataRecoveryPlan plan)
+    {
+        // Só os blocos que a remoção consome, mais a marca. As demais seções ficam ausentes:
+        // ver o comentário da classe e a seção 13.3 do plano da F3.
+        var metadata = new JObject
+        {
+            ["schemaVersion"] = ApiPlanMetadataFileWriter.SchemaVersion,
+            ["generator"] = "Genexus Open API Builder",
+            ["generatedAtUtc"] = DateTime.UtcNow.ToString("O"),
+            ["ownership"] = new JObject
+            {
+                ["descriptionSentinel"] = ApiPlanOwnedObjectDescription.Create(plan.MetadataFileName),
+                ["transactionName"] = transaction.Name,
+                ["transactionGuid"] = transaction.Guid.ToString(),
+                ["apiName"] = plan.ApiName,
+                ["apiGuid"] = plan.ApiObject.Guid.ToString(),
+                ["metadataFileName"] = plan.MetadataFileName,
+            },
+            ["objects"] = new JObject
+            {
+                // wasCreated=false é conservador e deliberado: não há como saber se o Folder
+                // foi criado pela extensão, e a remoção não deve apagar Folder de terceiro.
+                ["transactionFolder"] = new JObject
+                {
+                    ["name"] = plan.TransactionFolderName,
+                    ["wasCreated"] = false,
+                },
+                ["apiObject"] = new JObject
+                {
+                    ["name"] = plan.ApiName,
+                    ["guid"] = plan.ApiObject.Guid.ToString(),
+                },
+                ["procedures"] = new JArray(plan.ProcedureNames),
+                ["sdts"] = new JObject
+                {
+                    ["own"] = new JArray(plan.OwnSdtNames),
+                    ["shared"] = new JArray(plan.SharedSdtNames),
+                },
+            },
+            ["recovery"] = new JObject
+            {
+                ["imported"] = true,
+                ["importedAtUtc"] = DateTime.UtcNow.ToString("O"),
+                ["source"] = RecoverySource,
+                ["notRecovered"] = new JArray(NotRecoveredSections),
+            },
+        };
+
+        return metadata.ToString(Formatting.Indented);
+    }
+
+    private static bool CallsGeneratedProcedures(API apiObject, string transactionName)
+    {
+        var source = apiObject.ServiceGroupSource?.Source;
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return false;
+        }
+
+        var pattern = new Regex(
+            @"\bproc" + Regex.Escape(transactionName) + @"_API_(?:List|Get|Create|Update|Delete)\s*\(",
+            RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+        return pattern.IsMatch(source!);
+    }
+
+    private static IReadOnlyList<string> FindOwnedProcedures(KBModel designModel, string transactionName)
+    {
+        var expected = ServiceSuffixes
+            .Select(suffix => "proc" + transactionName + "_API_" + suffix)
+            .ToArray();
+
+        return ApiPlanScanProbe.Scan(
+            "Procedure",
+            "orphan-recovery-inventory",
+            () => Procedure.GetAll(designModel)
+                .Where(item => expected.Contains(item.Name, StringComparer.OrdinalIgnoreCase))
+                .Where(item => ApiPlanOwnedObjectDescription.IsOwnedProcedure(item.Description, item.Name))
+                .Select(item => item.Name)
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToArray());
+    }
+
+    private static IReadOnlyList<string> FindOwnedSdts(KBModel designModel, string ownPrefix)
+    {
+        return ApiPlanScanProbe.Scan(
+            "SDT",
+            "orphan-recovery-inventory",
+            () => SDT.GetAll(designModel)
+                .Where(item => item.Name.StartsWith(ownPrefix, StringComparison.OrdinalIgnoreCase))
+                .Where(item => ApiPlanOwnedObjectDescription.IsOwnedSdt(item.Description, item.Name))
+                .Select(item => item.Name)
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToArray());
+    }
+
+    private static IReadOnlyList<string> FindSharedSdts(KBModel designModel)
+    {
+        return ApiPlanScanProbe.Scan(
+            "SDT",
+            "orphan-recovery-inventory",
+            () => SDT.GetAll(designModel)
+                .Where(item => SharedSdtNames.Contains(item.Name, StringComparer.OrdinalIgnoreCase))
+                .Where(item => ApiPlanOwnedObjectDescription.IsOwnedSdt(item.Description, item.Name))
+                .Select(item => item.Name)
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToArray());
+    }
+
+    private static string FindTransactionFolderName(KBModel designModel, Transaction transaction)
+    {
+        var expected = transaction.Name + "OpenApi";
+        var found = ApiPlanScanProbe.Scan(
+            "Folder",
+            "orphan-recovery-inventory",
+            () => Folder.GetAll(designModel)
+                .Any(item => string.Equals(item.Name, expected, StringComparison.OrdinalIgnoreCase)));
+        return found ? expected : string.Empty;
+    }
+}
+
+internal sealed class OrphanMetadataRecoveryPlan
+{
+    public OrphanMetadataRecoveryPlan(
+        string apiName,
+        string metadataFileName,
+        API apiObject,
+        string transactionFolderName,
+        IReadOnlyList<string> procedureNames,
+        IReadOnlyList<string> ownSdtNames,
+        IReadOnlyList<string> sharedSdtNames)
+    {
+        ApiName = apiName;
+        MetadataFileName = metadataFileName;
+        ApiObject = apiObject;
+        TransactionFolderName = transactionFolderName;
+        ProcedureNames = procedureNames;
+        OwnSdtNames = ownSdtNames;
+        SharedSdtNames = sharedSdtNames;
+    }
+
+    public string ApiName { get; }
+
+    public string MetadataFileName { get; }
+
+    public API ApiObject { get; }
+
+    public string TransactionFolderName { get; }
+
+    public IReadOnlyList<string> ProcedureNames { get; }
+
+    public IReadOnlyList<string> OwnSdtNames { get; }
+
+    public IReadOnlyList<string> SharedSdtNames { get; }
+}
+
+internal sealed class OrphanMetadataRecoveryResult
+{
+    public OrphanMetadataRecoveryResult(
+        string fileName,
+        Guid guid,
+        int bytes,
+        int procedureCount,
+        int ownSdtCount,
+        int sharedSdtCount)
+    {
+        FileName = fileName;
+        Guid = guid;
+        Bytes = bytes;
+        ProcedureCount = procedureCount;
+        OwnSdtCount = ownSdtCount;
+        SharedSdtCount = sharedSdtCount;
+    }
+
+    public string FileName { get; }
+
+    public Guid Guid { get; }
+
+    public int Bytes { get; }
+
+    public int ProcedureCount { get; }
+
+    public int OwnSdtCount { get; }
+
+    public int SharedSdtCount { get; }
 }

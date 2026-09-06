@@ -1059,6 +1059,22 @@ public sealed class Package : AbstractPackageUI
         openingWatch.Stop();
         WriteOutput($"[Genexus Open API Builder][B082] Abertura total ate ShowDialog={openingWatch.ElapsedMilliseconds} ms.");
 
+        // B115: a oferta vem ANTES do diálogo, e não depois de ele concluir. Sem a metadata o
+        // Wizard abre bloqueado, e a única ação disponível é Cancelar — o que fazia a oferta,
+        // posicionada após a conclusão, nunca ser alcançada no único cenário que ela resolve.
+        var recoveryOutcome = OfferOrphanMetadataRecoveryIfEnabled(
+            ResolveFinalReportOwner(),
+            knowledgeBase.DesignModel,
+            transaction,
+            preferencesLoadResult!.Preferences,
+            texts);
+        if (recoveryOutcome is OrphanMetadataRecoveryOutcome.Recovered or OrphanMetadataRecoveryOutcome.Failed)
+        {
+            ClearPrototypeWizardMemory(clearTransaction: false);
+            dialog!.Dispose();
+            return true;
+        }
+
         using (dialog!)
         {
         var wizardOwner = ResolveFinalReportOwner();
@@ -1102,23 +1118,7 @@ public sealed class Package : AbstractPackageUI
         var classifiedSensitiveCount = snapshot.Attributes.Count(item => item.IsSensitive);
         var classifiedAuditCount = snapshot.Attributes.Count(item => item.IsAudit);
         var apiPlan = ApiPlanBuilder.Build(knowledgeBase.DesignModel, transaction, selection);
-        // Resolvido aqui, e não junto ao Apply: a recuperação de metadata órfã pergunta antes
-        // dele e precisa da mesma âncora. Ancorar no `dialog`, já fechado neste ponto, deixava
-        // essa única caixa fora da regra de monitor que todo o resto da operação segue.
         var applyOwner = ResolveFinalReportOwner();
-        var recoveryOutcome = OfferOrphanMetadataRecoveryIfEnabled(
-            applyOwner,
-            knowledgeBase.DesignModel,
-            transaction,
-            apiPlan,
-            preferencesLoadResult!.Preferences,
-            texts);
-        if (recoveryOutcome is OrphanMetadataRecoveryOutcome.Recovered or OrphanMetadataRecoveryOutcome.Failed)
-        {
-            ClearPrototypeWizardMemory(clearTransaction: false);
-            return true;
-        }
-
         var sdtGenerationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var classificationConfiguration = apiPlan.FieldClassificationConfiguration;
         var classificationMetadataContract = classificationConfiguration.MetadataContract;
@@ -1575,7 +1575,6 @@ public sealed class Package : AbstractPackageUI
         System.Windows.Forms.IWin32Window? owner,
         KBModel designModel,
         Transaction transaction,
-        ApiPlan apiPlan,
         PrototypeWizardPreferences preferences,
         ExtensionTexts texts)
     {
@@ -1584,11 +1583,11 @@ public sealed class Package : AbstractPackageUI
             return OrphanMetadataRecoveryOutcome.NotOffered;
         }
 
-        ApiPlanKbObjectNameIndex index;
+        OrphanMetadataRecoveryPlan plan;
         string eligibilityDetail;
         try
         {
-            if (!ApiPlanOrphanMetadataRecovery.TryPrepareOrphanMetadataRecovery(designModel, apiPlan, out index, out eligibilityDetail))
+            if (!ApiPlanOrphanMetadataRecovery.TryPrepare(designModel, transaction, out plan, out eligibilityDetail))
             {
                 WriteOutput($"[Genexus Open API Builder][B115] Recuperação não oferecida: {eligibilityDetail}");
                 return OrphanMetadataRecoveryOutcome.NotOffered;
@@ -1600,10 +1599,14 @@ public sealed class Package : AbstractPackageUI
             return OrphanMetadataRecoveryOutcome.NotOffered;
         }
 
-        var metadataName = apiPlan.MetadataFileName;
+        WriteOutput($"[Genexus Open API Builder][B115] Recuperação disponível: {eligibilityDetail}");
+        var metadataName = plan.MetadataFileName;
         var message = string.Format(
-            texts.Translate("Foi encontrada uma API gerada pela extensao sem o File de metadata '{0}'. A recuperacao criara somente esse File, nao alterara API Object, Procedures ou SDTs, e encerrara esta aplicacao para uma nova leitura limpa. Deseja recuperar agora?"),
-            metadataName);
+            texts.Translate("Foi encontrada uma API gerada pela extensao sem o File de metadata '{0}'. A recuperacao criara somente esse File, com o inventario dos objetos encontrados na KB ({1} Procedures, {2} SDTs proprios, {3} compartilhados). Ela devolve a possibilidade de remover a API gerada, mas nao recupera o contrato original: paginacao, ordenacao, campos obrigatorios e a estrutura hierarquica nao existem fora da metadata perdida, e o Sincronizar seguira bloqueado ate uma nova aplicacao completa. Nada mais sera alterado. Deseja recuperar agora?"),
+            metadataName,
+            plan.ProcedureNames.Count,
+            plan.OwnSdtNames.Count,
+            plan.SharedSdtNames.Count);
         var answer = System.Windows.Forms.MessageBox.Show(
             owner,
             message,
@@ -1619,8 +1622,8 @@ public sealed class Package : AbstractPackageUI
 
         try
         {
-            var result = ApiPlanOrphanMetadataRecovery.Recover(designModel, transaction, apiPlan, index);
-            WriteOutput($"[Genexus Open API Builder][B115] Metadata órfã recuperada: File='{result.FileName}', Status='{result.Status}', Guid='{result.Guid}', Bytes={result.Bytes}, Sha256='{result.Sha256}'. Nenhum API Object, Procedure ou SDT foi alterado por B115.");
+            var result = ApiPlanOrphanMetadataRecovery.Recover(designModel, transaction, plan);
+            WriteOutput($"[Genexus Open API Builder][B115] Metadata órfã recuperada: File='{result.FileName}', Guid='{result.Guid}', Bytes={result.Bytes}, Procedures={result.ProcedureCount}, SdtsProprios={result.OwnSdtCount}, SdtsCompartilhados={result.SharedSdtCount}. Marcada como intenção importada: 'Remover API gerada' volta a funcionar e 'Sincronizar' permanece bloqueado ate uma aplicacao completa reescrever a metadata. Nenhum API Object, Procedure ou SDT foi alterado por B115.");
             System.Windows.Forms.MessageBox.Show(
                 owner,
                 string.Format(

@@ -13,6 +13,11 @@ adivinhação.
 
 **Decisão pendente:** modo A ou modo B, seção 3. O restante do plano vale nos dois modos.
 
+**Código já em campo neste território (2026-09-06):** a recuperação de metadata órfã foi
+implementada fora desta fase, por necessidade de campo, e ocupa parte do que a seção 4.3
+normatiza. A seção 13 registra o que ela grava, o que ela deliberadamente não grava e o que
+a revisão por pares precisa decidir a respeito. **Ler a 13 antes de revisar a 4.2 e a 4.3.**
+
 ---
 
 ## 1. Por que a F3 foi escrita antes da decisão
@@ -433,3 +438,104 @@ humana; a UI não sugere recuperação automática.
 - `Src/Extension/Diagnostics/ApiPlanOwnedObjectDescription.cs`
 - `Src/Extension/Diagnostics/ApiPlanKbObjectNameIndex.cs`
 - `Docs/Foundation/06-BACKLOG_v0.1.md` — `B111`, e os colaterais `B112`, `B113`, `B114`
+
+---
+
+## 13. Anexo — recuperação de metadata órfã implementada em 2026-09-06
+
+Este anexo não altera o plano. Ele registra código que **já existe** e que ocupa parte do
+território da seção 4.3, para que a revisão por pares não desenhe por cima sem saber.
+
+### 13.1 Por que foi implementado fora da fase
+
+O caso da seção 2.2 — «metadata ausente» — deixou de ser hipótese. Em 2026-09-06, numa KB de
+teste, o File de metadata foi apagado à mão e a ferramenta ficou sem saída: `Remover` e
+`Sincronizar` bloqueiam por metadata ausente, e o `Wizard` abre bloqueado, com a única ação
+disponível sendo Cancelar. É o `B115`.
+
+Havia uma opção de recuperação no código desde 2026-09-05, mas **inalcançável**: ela era
+oferecida depois de o Wizard concluir com sucesso, e o estado que ela resolve impede a
+conclusão. O teste de campo de 2026-09-06 provou isso. A correção move a oferta para a
+abertura do Wizard, antes do diálogo.
+
+Esperar a F3 significaria manter a KB sem saída até a decisão modo A/B, que a seção 3
+recomenda tomar **depois** de a F1 estar em campo.
+
+### 13.2 O que a recuperação grava
+
+Uma metadata com o `schemaVersion` corrente e **apenas** o que a remoção consome, conforme
+`ApiPlanGeneratedApiRemovalPlan.FromMetadata`:
+
+| Bloco | Origem |
+|---|---|
+| `ownership.transactionName` / `transactionGuid` | a Transaction selecionada |
+| `ownership.apiName` / `apiGuid` | o API Object encontrado e confirmado como próprio |
+| `ownership.metadataFileName` | nome canônico |
+| `objects.transactionFolder` | Folder canônico da Transaction, sempre com `wasCreated=false` |
+| `objects.procedures` | as Procedures `proc<T>_API_*` **encontradas na KB** |
+| `objects.sdts.own` / `.shared` | os SDTs **encontrados na KB**, por posse verificada |
+| `recovery` | marca de intenção importada, seção 13.3 |
+
+`wasCreated=false` é deliberado e conservador: não há como saber se o Folder foi criado pela
+extensão, e a remoção não deve apagar um Folder que talvez seja do usuário.
+
+### 13.3 O que ela deliberadamente **não** grava
+
+Os blocos `fields`, `pagination`, `order`, `services`, `levels` e `transactionStructure`
+ficam **ausentes** — não vazios. A diferença importa: o leitor de contrato existente
+(`PrototypeWizardExistingApiContractReader`) tem fallback para a KB quando a chave falta, e
+não tem quando ela está presente e vazia.
+
+O motivo é que esses dados **não são recuperáveis**. Medido em 2026-09-06: o reader
+reconstrói serviços, campos de Create/Update/Response, filtros, RestPath e SecurityLevel a
+partir do API Object e dos SDTs; mas `servicesBasePath`, `defaultPageSize`,
+`maximumPageSize`, ordenação estática, campos obrigatórios e a estrutura hierárquica
+persistida existem **somente** na metadata. Reconstruí-los seria inventar.
+
+É o mesmo empobrecimento que o `B110` mediu por outro caminho. Uma metadata que os
+inventasse faria o `Sincronizar` comparar a API real contra uma descrição falsa e propor
+mudanças destrutivas. Por isso a marca da seção 13.4 bloqueia o Sync.
+
+### 13.4 A marca
+
+```json
+"recovery": {
+  "imported": true,
+  "importedAtUtc": "…",
+  "source": "KbInventory",
+  "notRecovered": ["fields", "pagination", "order", "services", "levels", "transactionStructure"]
+}
+```
+
+O nome `imported` vem da seção 4.3 deste plano — «marcá-la como importada» —, não de
+vocabulário novo. Enquanto a marca existir:
+
+- **`Remover` funciona.** Tem o inventário completo de alvos, que é tudo o que consome.
+- **`Sincronizar` recusa**, com mensagem própria: não há contrato com que comparar.
+- Um `Wizard` + Apply completo reescreve a metadata inteira e a marca desaparece.
+
+### 13.5 O que a revisão por pares precisa decidir
+
+Três pontos em que este código e o plano se tocam, e que a revisão deve resolver:
+
+1. **O gate da seção 4.2** bloqueia quando há «intenção anterior em estado parcial,
+   indeterminado ou ambíguo». Uma intenção **importada e completa quanto aos alvos** não é
+   nenhum dos três, e bloqueá-la desfaria a saída que este código cria. O gate precisa
+   distinguir os casos explicitamente.
+
+2. **A proibição de inferência por nome**, na seção 4.3, é respeitada apenas em parte: o
+   inventário reconstruído combina nome canônico **com** Description canônica e contêiner
+   esperado, mas não há como provar que o conjunto encontrado é o conjunto completo do que
+   foi gerado um dia. A mitigação em vigor é o diálogo de confirmação do `Remover`, que
+   lista os alvos antes de apagar. Se a revisão julgar insuficiente, o caminho é bloquear a
+   remoção sob marca `imported` e exigir um Apply completo antes.
+
+3. **Se o modo A vencer**, o diário passa a ser a fonte durável da intenção, e esta metadata
+   vira uma segunda fonte para a mesma coisa — o que a seção 3 proíbe («não é aceitável uma
+   mistura silenciosa»). A decisão precisa dizer qual das duas prevalece, ou retirar esta.
+
+### 13.6 Custo
+
+Uma gravação de `WikiFileKBObject` por recuperação: ~130 ms na KB pequena, **~1,1 s** na
+grande (seção 2.3, e item `B114` do backlog). A recuperação é opt-in, ocorre uma vez por
+incidente e não entra no orçamento de gravação da seção 4.4.

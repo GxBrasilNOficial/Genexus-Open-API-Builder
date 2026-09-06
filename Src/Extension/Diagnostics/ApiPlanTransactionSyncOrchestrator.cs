@@ -41,6 +41,17 @@ internal static class ApiPlanTransactionSyncOrchestrator
         var metadataFile = FindOwnedMetadataFile(designModel, metadataFileName, transaction.Name, kbIndex);
         var metadata = ParseMetadata(metadataFile);
         RequireOwnership(metadata, transaction);
+        // B115: metadata reconstruída pela recuperação de órfã traz ownership e inventário,
+        // mas não o contrato — paginação, ordenação, obrigatórios e níveis não existem fora
+        // da metadata perdida. Sincronizar sobre ela compararia a API real contra uma
+        // descrição vazia e proporia remover o que está correto.
+        if (ApiPlanOrphanMetadataRecovery.IsImportedRecovery(metadata))
+        {
+            throw new InvalidOperationException(
+                $"Sincronizacao bloqueada: a metadata '{metadataFileName}' foi reconstruida pela recuperacao de metadata orfa e registra apenas a posse e o inventario de objetos, sem o contrato. "
+                + "Aplique a API pelo Wizard para reescrever a metadata completa; depois disso o Sincronizar volta a funcionar. Nenhuma alteracao foi feita.");
+        }
+
         var metadataStructure = ReadMetadataStructure(metadata);
         progress?.ThrowIfAbortRequested();
         progress?.Report("Contrato", 0, 0, transaction.Name);
