@@ -1095,8 +1095,12 @@ public sealed class Package : AbstractPackageUI
         var classifiedSensitiveCount = snapshot.Attributes.Count(item => item.IsSensitive);
         var classifiedAuditCount = snapshot.Attributes.Count(item => item.IsAudit);
         var apiPlan = ApiPlanBuilder.Build(knowledgeBase.DesignModel, transaction, selection);
+        // Resolvido aqui, e não junto ao Apply: a recuperação de metadata órfã pergunta antes
+        // dele e precisa da mesma âncora. Ancorar no `dialog`, já fechado neste ponto, deixava
+        // essa única caixa fora da regra de monitor que todo o resto da operação segue.
+        var applyOwner = ResolveFinalReportOwner();
         var recoveryOutcome = OfferOrphanMetadataRecoveryIfEnabled(
-            dialog,
+            applyOwner,
             knowledgeBase.DesignModel,
             transaction,
             apiPlan,
@@ -1140,7 +1144,6 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria. GenerateSdts={selection.GenerateSdts}, GenerateProcedures={selection.GenerateProcedures}, GenerateApiObject={selection.GenerateApiObject}, GenerateMetadata={selection.GenerateMetadata}, ApplyList={selection.ApplyList}, ApplyBusinessComponent={selection.ApplyBusinessComponent}; escritas confirmadas no wizard exigem preflight completo antes de qualquer Save().");
         var applyFromConfirm = Stopwatch.StartNew();
         var phaseWatch = Stopwatch.StartNew();
-        var applyOwner = ResolveFinalReportOwner();
         var report = new ApiPlanApplicationFinalReportCollector("Wizard", transaction.Name, apiPlan.ApiName);
         var stopwatch = Stopwatch.StartNew();
         // B082: mede o custo das varreduras de catalogo ao longo de todo o Apply.
@@ -1615,7 +1618,7 @@ public sealed class Package : AbstractPackageUI
     }
 
     private static OrphanMetadataRecoveryOutcome OfferOrphanMetadataRecoveryIfEnabled(
-        System.Windows.Forms.IWin32Window owner,
+        System.Windows.Forms.IWin32Window? owner,
         KBModel designModel,
         Transaction transaction,
         ApiPlan apiPlan,
