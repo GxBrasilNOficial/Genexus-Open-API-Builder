@@ -18,10 +18,17 @@ internal static class ApiPlanGeneratedApiRemover
     public static ApiPlanGeneratedApiRemovalResult Remove(KBModel designModel, Transaction transaction) =>
         Remove(designModel, transaction, progress: null);
 
+    /// <param name="deletedSink">
+    /// Coletor opcional preenchido **durante** a remoção. Sem ele, uma interrupção no meio
+    /// leva embora a lista do que já saiu, e o relatório final informa «Removidos: nenhum»
+    /// com objetos apagados — foi o que aconteceu em 2026-09-06, com o API Object, cinco
+    /// Procedures e cinco SDTs já excluídos. Quem chama passa a própria lista e a lê no catch.
+    /// </param>
     public static ApiPlanGeneratedApiRemovalResult Remove(
         KBModel designModel,
         Transaction transaction,
-        ApiPlanBusyProgressSession? progress)
+        ApiPlanBusyProgressSession? progress,
+        List<string>? deletedSink = null)
     {
         if (designModel is null)
         {
@@ -64,7 +71,8 @@ internal static class ApiPlanGeneratedApiRemover
 
         var total = CountPlannedDeletes(plan);
         var current = 0;
-        var deleted = new List<string>();
+        var deleted = deletedSink ?? new List<string>();
+        deleted.Clear();
 
         // Ordem obrigatoria na IDE:
         // 1) API Object (referencia Procedures)
@@ -87,13 +95,7 @@ internal static class ApiPlanGeneratedApiRemover
         telemetry.MarkPhase("Procedures", phaseWatch.ElapsedMilliseconds);
 
         phaseWatch.Restart();
-        foreach (var name in plan.OwnSdtNames)
-        {
-            progress?.ThrowIfAbortRequested();
-            current = ReportDelete(progress, current, total, "SDT", name, () =>
-                DeleteSingleOwnSdt(designModel, plan, name, deleted, telemetry));
-        }
-
+        current = DeleteOwnSdtsResilientToOrder(designModel, plan, deleted, telemetry, progress, current, total);
         telemetry.MarkPhase("Sdts", phaseWatch.ElapsedMilliseconds);
 
         phaseWatch.Restart();
@@ -128,6 +130,116 @@ internal static class ApiPlanGeneratedApiRemover
         }
 
         return total;
+    }
+
+    /// <summary>
+    /// Apaga os SDTs próprios sem depender de a lista vir na ordem de dependência.
+    ///
+    /// A ordem gravada em <c>objects.sdts.own</c> respeita as referências entre SDTs — quem
+    /// referencia sai antes de quem é referenciado —, mas nem toda metadata a preserva: a
+    /// recuperação de metadata órfã (`B115`) reconstrói o inventário da KB e não tem como
+    /// reproduzir a árvore original. Em 2026-09-06, na `Teste` de `wsEducacaoSpTeste`, uma
+    /// lista em ordem alfabética parou a remoção no meio, com o API Object, as Procedures e
+    /// cinco SDTs já apagados: `'sdtTeste_API_ListFilters' is referenced at least by
+    /// 'sdtTeste_API_ListResponse'`.
+    ///
+    /// Aqui o que a IDE recusa volta para a fila e é tentado na passada seguinte. Enquanto
+    /// cada passada apagar ao menos um objeto, há progresso e a próxima acontece; quando uma
+    /// passada inteira falha, a operação para e reporta o que sobrou, com o motivo de cada um.
+    ///
+    /// A recusa **não** é interpretada pela mensagem: qualquer falha adia o objeto. Um erro
+    /// que não seja de dependência reaparece na última passada e é reportado igual — mais
+    /// tarde, porém sem que a heurística de texto decida o que é adiável.
+    ///
+    /// O laço termina sempre: cada passada exige ao menos uma exclusão para haver a seguinte,
+    /// então são no máximo N passadas para N objetos.
+    /// </summary>
+    private static int DeleteOwnSdtsResilientToOrder(
+        KBModel designModel,
+        ApiPlanGeneratedApiRemovalPlan plan,
+        List<string> deleted,
+        ApiPlanScanTelemetry telemetry,
+        ApiPlanBusyProgressSession? progress,
+        int current,
+        int total)
+    {
+        var pending = new List<string>(plan.OwnSdtNames);
+        var lastErrors = new Dictionary<string, string>(StringComparer.Ordinal);
+        var pass = 0;
+
+        while (pending.Count > 0)
+        {
+            pass++;
+            var stillPending = new List<string>();
+            var deletedInPass = 0;
+
+            foreach (var name in pending)
+            {
+                progress?.ThrowIfAbortRequested();
+                try
+                {
+                    current = ReportDelete(progress, current, total, "SDT", name, () =>
+                        DeleteSingleOwnSdt(designModel, plan, name, deleted, telemetry));
+                    deletedInPass++;
+                    lastErrors.Remove(name);
+                }
+                catch (ApiPlanBusyAbortedException)
+                {
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    // Adiado: pode ser dependência de outro SDT ainda não apagado.
+                    stillPending.Add(name);
+                    lastErrors[name] = exception.Message;
+                }
+            }
+
+            if (deletedInPass == 0)
+            {
+                telemetry.AddNote(string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "Remocao de SDTs parou na passada {0} sem progresso: {1} pendente(s).",
+                    pass,
+                    stillPending.Count));
+                throw new InvalidOperationException(BuildStalledRemovalMessage(stillPending, lastErrors));
+            }
+
+            if (pass > 1 || stillPending.Count > 0)
+            {
+                telemetry.AddNote(string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "Remocao de SDTs passada {0}: apagados={1}, adiados={2}.",
+                    pass,
+                    deletedInPass,
+                    stillPending.Count));
+            }
+
+            pending = stillPending;
+        }
+
+        return current;
+    }
+
+    private static string BuildStalledRemovalMessage(
+        IReadOnlyList<string> stillPending,
+        IReadOnlyDictionary<string, string> lastErrors)
+    {
+        var builder = new StringBuilder();
+        builder.Append("Remocao interrompida: ")
+            .Append(stillPending.Count)
+            .Append(" SDT(s) proprio(s) nao puderam ser apagados e uma passada inteira nao fez progresso. ")
+            .Append("Os objetos ja apagados nesta operacao estao listados no relatorio final. Pendentes:");
+        foreach (var name in stillPending)
+        {
+            builder.Append(Environment.NewLine).Append("  - ").Append(name);
+            if (lastErrors.TryGetValue(name, out var reason) && !string.IsNullOrWhiteSpace(reason))
+            {
+                builder.Append(": ").Append(reason.Replace("\r", " ").Replace("\n", " "));
+            }
+        }
+
+        return builder.ToString();
     }
 
     private static int ReportDelete(
@@ -480,14 +592,6 @@ internal static class ApiPlanGeneratedApiRemover
         }
 
         deleted.Add($"API:{plan.ApiName}");
-    }
-
-    private static void DeleteOwnSdts(KBModel designModel, ApiPlanGeneratedApiRemovalPlan plan, List<string> deleted)
-    {
-        foreach (var name in plan.OwnSdtNames)
-        {
-            DeleteSingleOwnSdt(designModel, plan, name, deleted);
-        }
     }
 
     private static void DeleteSingleOwnSdt(

@@ -752,6 +752,9 @@ public sealed class Package : AbstractPackageUI
             return true;
         }
 
+        // Declarado fora do try para o catch enxergar o que já saiu da KB quando a remoção
+        // é interrompida no meio.
+        var deletedBeforeFailure = new List<string>();
         try
         {
             var owner = ResolveFinalReportOwner();
@@ -801,21 +804,29 @@ public sealed class Package : AbstractPackageUI
 
             var stopwatch = Stopwatch.StartNew();
             ApiPlanGeneratedApiRemovalResult result;
+            // `deletedBeforeFailure` é preenchido durante a remoção: numa interrupção, é a
+            // única forma de o relatório dizer o que já saiu da KB.
             using (var busy = ExtensionBusyProgressScope.Show(owner, texts.BusyProgressTitleRemove, texts))
             {
                 WriteOutput($"[Genexus Open API Builder][B082] Remover iniciado: Transaction='{transaction.Name}', PlannedDeletes={ApiPlanGeneratedApiRemover.CountPlannedDeletes(plan)}.");
                 try
                 {
-                    result = ApiPlanGeneratedApiRemover.Remove(knowledgeBase.DesignModel, transaction, busy.Session);
+                    result = ApiPlanGeneratedApiRemover.Remove(knowledgeBase.DesignModel, transaction, busy.Session, deletedBeforeFailure);
                 }
                 catch (ApiPlanBusyAbortedException abortEx)
                 {
                     stopwatch.Stop();
-                    WriteOutput($"[Genexus Open API Builder][B082] Remover abortado: Transaction='{transaction.Name}', Error='{abortEx.Message}'");
+                    WriteOutput($"[Genexus Open API Builder][B082] Remover abortado: Transaction='{transaction.Name}', Error='{abortEx.Message}', JaRemovidos={deletedBeforeFailure.Count}, Items='{string.Join("; ", deletedBeforeFailure)}'");
                     var abortReport = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, plan.ApiName);
                     abortReport.SetApiName(plan.ApiName);
                     abortReport.HeadlineOverride = "Remoção abortada pelo usuário.";
+                    abortReport.AddDeletedItems(deletedBeforeFailure.ToArray());
                     abortReport.AddWarning(abortEx.Message);
+                    if (deletedBeforeFailure.Count > 0)
+                    {
+                        abortReport.AddWarning($"Remocao parcial: {deletedBeforeFailure.Count} objeto(s) ja foram excluidos e estao listados como removidos. A API ficou incompleta; reaplique pelo Wizard ou repita a remocao.");
+                    }
+
                     abortReport.AddBlocked("Remover", transaction.Name, "Abortado [B082]");
                     ShowFinalReport(abortReport, stopwatch.Elapsed, knowledgeBase.DesignModel);
                     return true;
@@ -839,8 +850,14 @@ public sealed class Package : AbstractPackageUI
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
             // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
             foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Remover")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
-            WriteOutput($"[Genexus Open API Builder][B086] Remocao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}'");
+            WriteOutput($"[Genexus Open API Builder][B086] Remocao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}', JaRemovidos={deletedBeforeFailure.Count}, Items='{string.Join("; ", deletedBeforeFailure)}'");
             var report = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, null);
+            report.AddDeletedItems(deletedBeforeFailure.ToArray());
+            if (deletedBeforeFailure.Count > 0)
+            {
+                report.AddWarning($"Remocao parcial: {deletedBeforeFailure.Count} objeto(s) ja foram excluidos e estao listados como removidos. A API ficou incompleta; reaplique pelo Wizard ou repita a remocao.");
+            }
+
             report.AddBlocked("Remover", transaction.Name, errorDetail);
             ShowFinalReport(report, TimeSpan.Zero, knowledgeBase.DesignModel);
         }
