@@ -208,7 +208,7 @@ O experimento também fechou o baseline: o `Build All` sem API passou nos dois e
 - `ApiPlanMetadataVisibilityProbe` varre os Files e tenta a leitura direta por `Id` da metadata — rótulo `[B115]`. Desde 2026-09-06 a segunda passagem, que mede a estabilidade do `GetAll`, e o detalhamento dos Files só rodam quando a metadata está **ausente** na primeira: no caminho normal a sonda custa uma varredura e uma leitura pontual;
 - a preferência «Suprimir a atualização da tela durante as gravações» suprime os `Application.DoEvents()` entre os Saves no Apply do Wizard; enquanto ativa, a janela congela e o botão Abortar não responde, e o Apply publica uma linha `[B109]` dizendo isso.
 
-**Como reproduzir o cenário**, se o ramo A voltar: apagar **apenas** o API Object antes de cada tentativa. Com ele presente e sem metadata, o Wizard desliga as etapas de consumidor e a falha não ocorre — ou, agora, aceitar a recuperação de metadata órfã, que devolve o File e reabilita `Remover` e `Sincronizar`.
+**Como reproduzir o cenário**, se o ramo A voltar: apagar **apenas** o API Object antes de cada tentativa. Com ele presente e sem metadata, o Wizard desliga as etapas de consumidor e a falha não ocorre — ou aceitar a recuperação de metadata órfã, que devolve o File e reabilita `Remover`. Desde 2026-09-06 ela é oferecida na **abertura** do Wizard, e o `Sincronizar` continua bloqueado depois dela: a metadata recuperada registra posse e inventário, não o contrato. Ver a seção 13 do plano da F3.
 
 **`B109` precisa ser reescrito** como família de falhas, com um ramo por causa, em vez de "bug intermitente na etapa de Business Component". O enunciado atual não descreve o que se observou.
 
