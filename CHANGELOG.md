@@ -31,7 +31,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 ### Changed
 
 - Investigação da falha de Business Component na `Empresa` encerrada em 2026-09-05: remoção limpa, `Build All` nos dois environments, reaplicação com `procEmpresa_API_Create` salvo e `Build All` aprovado no `CSharpModel`. A falha de conversão `bool`/`decimal`/`short` no `NETFrameworkPostgreSQL` permanece separada como problema daquele environment. Evidência: `Docs/Implementation/2026-09-05-ENCERRAMENTO-BC-EMPRESA.md`.
-- `B082` Etapa 1A **aceita** (2026-09-03): índice uma vez por operação; atributos de BC/List pelo mapa. Apply na KB `FabricaBrasil18Test` abaixo das metas (`Setor` ~18 s, `Empresa` ~61 s, `DocumentoFiscal` 65 s recrear / 29 s reaplicar). Sync que grava medido na `NotaFiscal` (KB pequena) por marcas de varredura. Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`. `B108` volta a ser a próxima ação única.
+- `B082` Etapa 1A **aceita** (2026-09-03): índice uma vez por operação; atributos de BC/List pelo mapa. Apply na KB `FabricaBrasil18Test` abaixo das metas (`Setor` ~18 s, `Empresa` ~61 s, `DocumentoFiscal` 65 s recrear / 29 s reaplicar). Sync que grava medido na `NotaFiscal` (KB pequena) por marcas de varredura. Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`. Na data deste registro, a próxima ação única voltou a ser `B108`; **superada em 2026-09-05**, quando `B108` foi estacionado e a pauta passou à revisão por pares da sprint `S-B111` — ver a seção `Planned` abaixo.
 
 ### Planned
 
