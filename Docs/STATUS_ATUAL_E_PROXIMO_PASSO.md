@@ -166,7 +166,7 @@ Planejamento concluído, e **nenhuma das três fases foi implementada**: o seam 
 - os writers de Business Component e de List ganharam a instrumentação `ApiPlanSaveBoundaryProbe` e `B111CallSiteProbe`, e o cronômetro por objeto passou a parar antes do fingerprint da sonda, que ele antes contabilizava;
 - a **remoção** deixou de depender de a lista de SDTs vir na ordem de dependência: o que a IDE recusa volta para a fila e é tentado na passada seguinte;
 - uma remoção interrompida passou a listar no relatório final o que já saiu da KB;
-- nasceu a recuperação de metadata órfã (`B115`), que ocupa parte do que a seção 4.3 da F3 normatiza.
+- nasceu a recuperação de metadata órfã (`B115`), que ocupa parte do que a seção 4.3 da F3 normatiza. Ela cobre dois estados: o File ausente, e o File presente que ficou apontando para um API Object removido — este último travava o Wizard em `OwnershipSchemaApiNameOrGuidMismatch` sem saída pela ferramenta. Metadata **completa** com esse mesmo descompasso segue exigindo intervenção humana.
 
 Três planos de fase escritos e commitados, todos aguardando revisão e decisão:
 

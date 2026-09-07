@@ -573,6 +573,18 @@ Dois defeitos colaterais apareceram junto:
    o Wizard travou em `OwnershipSchemaApiNameOrGuidMismatch` e a recuperação **não se
    oferecia** — o File existia. Saída: apagar o File à mão e recuperar de novo.
 
+O segundo deles foi corrigido no mesmo dia: a recuperação passou a se oferecer também com o
+File presente, sob três condições — ele é único, está marcado como intenção importada, e o
+`apiGuid` que registra não é o do API Object que existe. Nesse caso ela regrava o inventário
+**sobre o mesmo File**; criar um segundo homônimo apenas trocaria o bloqueio por ambiguidade
+de metadata. Metadata **completa** com o mesmo descompasso continua fora do alcance, e é
+deliberado: o fingerprint `B067` cobre o conteúdo inteiro, então corrigir só o `apiGuid`
+levaria de `OwnershipSchemaApiNameOrGuidMismatch` a `FingerprintHashMismatch`, sem sair do
+lugar. Recalcular o fingerprint significaria revalidar o contrato — outra frente.
+
+Essa modalidade está coberta por teste de contrato e **nunca foi executada na IDE**: recriar o
+cenário exige remover a API e gerá-la de novo por cima da metadata recuperada.
+
 A correção escolhida não foi acertar a ordem na recuperação, e sim **tornar a remoção
 resiliente a ela**: o que a IDE recusa volta para a fila e é tentado na passada seguinte;
 enquanto cada passada apagar ao menos um objeto há progresso; uma passada inteira sem
