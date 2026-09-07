@@ -56,12 +56,12 @@ recibos em memória não dão: eles morrem com o processo.
 Ao contrário do que o manuscrito expandido sugere, `ApiPlanGeneratedApiRemover.Remove` **não** apaga às
 cegas. Ele já:
 
-1. cria o índice da KB (`ApiPlanGeneratedApiRemover.cs:42`);
+1. cria o índice da KB (`ApiPlanGeneratedApiRemover.cs:49`);
 2. localiza a metadata própria por nome canônico e posse;
 3. reconstrói o plano de remoção a partir da metadata (`FromMetadata`, com nome e GUID da
    Transaction);
 4. valida ambiguidade e posse de API, Procedures e SDTs **antes de qualquer `Delete()`**
-   (`ValidateRemovalTargets`, `ApiPlanGeneratedApiRemover.cs:203`);
+   (`ValidateRemovalTargets`, `ApiPlanGeneratedApiRemover.cs:315`);
 5. confirma a ausência de cada objeto depois do `Delete()`, lançando se ainda existir.
 
 Ou seja: a intenção de remoção já é reconstruída a partir de uma fonte durável — a

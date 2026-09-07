@@ -1,5 +1,10 @@
 # B006 — Persistência de metadata em File após reabrir a KB
 
+> **Registro histórico.** `MetadataFilePersistenceProbe.cs` e o handler que o acionava **foram
+> removidos em 2026-09-05**, junto com o resíduo dos spikes cujos comandos já haviam saído do
+> menu. Este documento permanece como registro do que foi medido e validado na época; os
+> caminhos de arquivo citados abaixo não existem mais na árvore.
+
 ## Estado
 
 Validação funcional concluída no GeneXus 18 Upgrade 15 contra a KB de teste `wsEducacaoSpTeste`. Um objeto `File` JSON temporário foi criado, relido antes do fechamento, relido após fechar e reabrir a KB e excluído ao final com ausência confirmada.

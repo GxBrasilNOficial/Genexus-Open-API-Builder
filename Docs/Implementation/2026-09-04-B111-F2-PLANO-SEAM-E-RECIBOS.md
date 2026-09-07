@@ -51,10 +51,10 @@ executa mais que 16 Saves.
 | `ApiPlanApiObjectWriter.cs:718` | API novo |
 | `ApiPlanBusinessComponentWriter.cs:111` | laço de `saveSteps` |
 | `ApiPlanBusinessComponentWriter.cs:558` | `SaveProcedure` |
-| `ApiPlanBusinessComponentWriter.cs:624` | `SaveApi` |
+| `ApiPlanBusinessComponentWriter.cs:626` | `SaveApi` |
 | `ApiPlanListProcedureWriter.cs:72` | laço de `saveSteps` |
-| `ApiPlanListProcedureWriter.cs:951` | `SaveProcedure` |
-| `ApiPlanListProcedureWriter.cs:973` | `SaveApi` |
+| `ApiPlanListProcedureWriter.cs:953` | `SaveProcedure` |
+| `ApiPlanListProcedureWriter.cs:975` | `SaveApi` |
 | `ApiPlanMetadataFileWriter.cs:98` | metadata B060 |
 | `Package.cs:1584` | `transaction.Save()` para habilitar BC |
 

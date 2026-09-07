@@ -54,17 +54,17 @@ Confirmado por leitura em 2026-09-04:
    criado (`ApiPlanApiObjectWriter.cs:718`), relendo por `API.Get(designModel, guid)` em
    seguida.
 2. `ApiPlanBusinessComponentWriter` tem três `Save()` reais, e o do API está em
-   `ApiPlanBusinessComponentWriter.cs:624`.
+   `ApiPlanBusinessComponentWriter.cs:626`.
 3. `ApiPlanListProcedureWriter` tem três `Save()` reais; o da Procedure em
-   `ApiPlanListProcedureWriter.cs:951` e o do API em `ApiPlanListProcedureWriter.cs:973`.
+   `ApiPlanListProcedureWriter.cs:953` e o do API em `ApiPlanListProcedureWriter.cs:975`.
 3.1. Os dois writers montam uma lista `saveSteps` de pares `(Label, Action Save)` e a
    executam em laço com progresso e cronômetro — `ApiPlanBusinessComponentWriter.cs:98` e
    `ApiPlanListProcedureWriter.cs:66`. **Em ambos, o primeiro passo da lista é o API.**
    A inversão de ordem exigida por esta frente não está só em `Package.cs`: dentro de cada
    writer, o passo do API precisa passar de primeiro a último.
 4. O Apply existe em **dois blocos** no mesmo `Package.cs`: o do Sync, em torno de
-   `Package.cs:416` (execução após o preflight em `Package.cs:561`), e o do Wizard, em torno
-   de `Package.cs:1144`.
+   `Package.cs:139-140` (execução após o preflight em `Package.cs:528`), e o do Wizard, em torno
+   de `Package.cs:1189`.
 5. Os dois blocos já contêm um deferimento **parcial** de B054, com a mesma regra:
 
    | Seleção | Comportamento atual | Consequência |

@@ -1,5 +1,10 @@
 # B005 — Ciclo de vida de Procedure, SDT, Folder e File
 
+> **Registro histórico.** `B005LifecycleProbe.cs` e o handler que o acionava **foram removidos
+> em 2026-09-05**, junto com o resíduo dos spikes cujos comandos já haviam saído do menu. Este
+> documento permanece como registro do que foi medido e validado na época; os caminhos de
+> arquivo citados abaixo não existem mais na árvore.
+
 ## Estado
 
 B005 concluído no U15 contra a KB de teste `wsEducacaoSpTeste`. O ciclo de vida de `Procedure`, `SDT`, `Folder` e `File` foi comprovado por APIs públicas com criação, alteração, releitura e exclusão confirmada, sempre com autorização explícita antes das fases de escrita.
