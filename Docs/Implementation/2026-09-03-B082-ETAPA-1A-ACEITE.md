@@ -95,4 +95,4 @@ KB `wsEducacaoSpTeste`, Transaction `NotaFiscal` / `apiNotaFiscal`. Itens 1–4:
 
 ## Status
 
-Etapa 1A **aceita**. Próxima ação única: `B108` (plano aprovado). Residual `B082` (Etapas 1B, 2 e 3) permanece no plano de 2026-09-02, sem ser a pauta imediata.
+Etapa 1A **aceita**. Naquele momento, a próxima ação única era `B108` (plano aprovado). Essa promoção foi superada em 2026-09-05: `B108` foi estacionado e a pauta imediata passou a ser a revisão por pares da sprint `S-B111`. Residual `B082` (Etapas 1B, 2 e 3) permanece no plano de 2026-09-02 e deverá ser reavaliado após a `S-B111`.
