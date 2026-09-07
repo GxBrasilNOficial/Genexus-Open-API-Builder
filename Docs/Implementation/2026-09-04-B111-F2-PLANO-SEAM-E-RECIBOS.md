@@ -50,13 +50,13 @@ executa mais que 16 Saves.
 | `ApiPlanApiObjectWriter.cs:707` | API reencontrado |
 | `ApiPlanApiObjectWriter.cs:718` | API novo |
 | `ApiPlanBusinessComponentWriter.cs:111` | laço de `saveSteps` |
-| `ApiPlanBusinessComponentWriter.cs:558` | `SaveProcedure` |
+| `ApiPlanBusinessComponentWriter.cs:560` | `SaveProcedure` |
 | `ApiPlanBusinessComponentWriter.cs:626` | `SaveApi` |
 | `ApiPlanListProcedureWriter.cs:72` | laço de `saveSteps` |
 | `ApiPlanListProcedureWriter.cs:953` | `SaveProcedure` |
 | `ApiPlanListProcedureWriter.cs:975` | `SaveApi` |
 | `ApiPlanMetadataFileWriter.cs:98` | metadata B060 |
-| `Package.cs:1584` | `transaction.Save()` para habilitar BC |
+| `Package.cs:1566` | `transaction.Save()` para habilitar BC, em `EnableBusinessComponentForWizard` |
 
 ### 2.2 Dois padrões que o repositório já resolveu
 

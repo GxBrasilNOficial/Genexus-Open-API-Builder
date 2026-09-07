@@ -62,9 +62,12 @@ Confirmado por leitura em 2026-09-04:
    `ApiPlanListProcedureWriter.cs:66`. **Em ambos, o primeiro passo da lista é o API.**
    A inversão de ordem exigida por esta frente não está só em `Package.cs`: dentro de cada
    writer, o passo do API precisa passar de primeiro a último.
-4. O Apply existe em **dois blocos** no mesmo `Package.cs`: o do Sync, em torno de
-   `Package.cs:139-140` (execução após o preflight em `Package.cs:528`), e o do Wizard, em torno
-   de `Package.cs:1189`.
+4. O Apply existe em **dois blocos** no mesmo `Package.cs`: o do Sync, em
+   `ExecuteSynchronizeWithTransaction` (`Package.cs:423`), cuja escrita de SDTs só ocorre depois
+   do preflight aprovado em `Package.cs:566`, na chamada de `Package.cs:568`; e o do Wizard, em
+   torno de `Package.cs:1189`. Os dois desembocam no mesmo helper `TryCreateSdts`, onde está a
+   chamada efetiva ao writer (`Package.cs:139-140`) — por isso a linha do helper **não**
+   identifica de qual dos dois blocos veio a execução.
 5. Os dois blocos já contêm um deferimento **parcial** de B054, com a mesma regra:
 
    | Seleção | Comportamento atual | Consequência |
@@ -216,8 +219,8 @@ Medido por leitura em 2026-09-05:
 
 | Chamada | Onde ocorre |
 |---|---|
-| `ApiPlanTransactionFolder.CreateOrReencounter` | **seis** pontos: `ApiPlanSdtWriter.cs:72`, `ApiPlanProcedureWriter.cs:53`, `ApiPlanApiObjectWriter.cs:53`, `ApiPlanBusinessComponentWriter.cs:96`, `ApiPlanListProcedureWriter.cs:64` — mais o interno do próprio SdtWriter |
-| `ApiPlanSdtWriter.CreateOrReencounter` | **quatro** pontos: a fase dedicada em `Package.cs:132-133`, `ApiPlanBusinessComponentWriter.cs:94` e `ApiPlanListProcedureWriter.cs:62` |
+| `ApiPlanTransactionFolder.CreateOrReencounter` | **cinco** pontos: `ApiPlanSdtWriter.cs:72` (o interno do próprio SdtWriter), `ApiPlanProcedureWriter.cs:53`, `ApiPlanApiObjectWriter.cs:53`, `ApiPlanBusinessComponentWriter.cs:96` e `ApiPlanListProcedureWriter.cs:64` |
+| `ApiPlanSdtWriter.CreateOrReencounter` | **quatro** ocorrências em três lugares: os dois ramos do ternário no helper `TryCreateSdts` (`Package.cs:139-140`), `ApiPlanBusinessComponentWriter.cs:94` e `ApiPlanListProcedureWriter.cs:62` |
 
 Numa aplicação com SDTs, Procedures, API, BC e List, o writer de SDT roda três vezes e o de
 Folder mais de cinco. Isso não é acidente — é o motivo de existirem `RefreshSdts` e

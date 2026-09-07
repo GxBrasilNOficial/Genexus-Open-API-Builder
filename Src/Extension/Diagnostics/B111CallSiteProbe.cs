@@ -12,7 +12,9 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// da regra de responsabilidade única por Folder e SDT (seção 4.4.1 do plano da F1).
 ///
 /// A leitura de código mostrou que <c>ApiPlanTransactionFolder.CreateOrReencounter</c> é
-/// chamado em seis pontos e <c>ApiPlanSdtWriter.CreateOrReencounter</c> em quatro. O que a
+/// chamado em cinco pontos e <c>ApiPlanSdtWriter.CreateOrReencounter</c> em quatro
+/// ocorrências, distribuídas em três lugares — os dois ramos do ternário em
+/// <c>TryCreateSdts</c> contam como um só lugar. O que a
 /// leitura **não** diz é quantas dessas passagens efetivamente **gravam** numa aplicação
 /// real. A diferença decide o risco da regra:
 ///
