@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-06.
+2026-09-07.
 
 ## Último marco concluído
 
@@ -159,9 +159,9 @@ A conclusão da `S-B111` não fecha automaticamente o `B082`: ao encerrar a spri
 
 **`B108` fica estacionado desde 2026-09-05**, com plano aprovado e sem trabalho perdido: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Item: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
 
-## Estado da sprint `S-B111` (planejada em 2026-09-05; território atualizado em 2026-09-06)
+## Estado da sprint `S-B111` (planejada em 2026-09-05; território atualizado em 2026-09-07)
 
-Planejamento concluído, e **nenhuma das três fases foi implementada**: o seam de persistência, os recibos, o diário e a ordem de gravação do API Object seguem como estavam, e continuam sendo o que a revisão por pares precisa decidir.
+Planejamento concluído, avaliação técnica inicial realizada e **nenhuma das três fases foi implementada**: o seam de persistência, os recibos, o diário e a ordem de gravação do API Object seguem como estavam. A revisão por pares permanece em aberto; as decisões já aprovadas para a consolidação estão registradas em `Temp/2026-09-07-S-B111-DECISOES-APROVADAS.md`.
 
 **O que mudou no território da sprint depois de 2026-09-05**, por necessidade de campo e fora das fases — registrado na seção 13 do plano da F3:
 
@@ -170,15 +170,15 @@ Planejamento concluído, e **nenhuma das três fases foi implementada**: o seam 
 - uma remoção interrompida passou a listar no relatório final o que já saiu da KB;
 - nasceu a recuperação de metadata órfã (`B115`), que ocupa parte do que a seção 4.3 da F3 normatiza. Ela cobre dois estados: o File ausente, e o File presente que ficou apontando para um API Object removido — este último travava o Wizard em `OwnershipSchemaApiNameOrGuidMismatch` sem saída pela ferramenta. Metadata **completa** com esse mesmo descompasso segue exigindo intervenção humana.
 
-Três planos de fase escritos e commitados, todos aguardando revisão e decisão:
+Três planos de fase escritos e commitados, avaliados na revisão técnica inicial e com gaps em tratamento; a revisão por pares permanece em aberto antes da consolidação final e da implementação na ordem F1 → F2 → F3:
 
 | Fase | Plano | Depende de |
 |---|---|---|
 | F1 — ordem e writer final único | `Docs/Implementation/2026-09-04-B111-F1-PLANO-ORDEM-E-WRITER-FINAL.md` | — |
 | F2 — seam de persistência e recibos | `Docs/Implementation/2026-09-04-B111-F2-PLANO-SEAM-E-RECIBOS.md` | F1 |
-| F3 — durabilidade e remoção | `Docs/Implementation/2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md` | F2 e a decisão modo A/B |
+| F3 — durabilidade e remoção | `Docs/Implementation/2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md` | F2 e as decisões consolidadas |
 
-**Decisão humana pendente:** modo A (diário durável, 2,2 s a 11 s de Apply na KB grande, um File por aplicação) ou modo B (checkpoint manual, custo nulo, recuperação humana). Bloqueia só a F3. Tabela comparativa na seção 3 do plano da F3. Recomendação registrada: decidir depois de a F1 estar em campo.
+**Decisão registrada em 2026-09-07:** Modo A — diário durável — foi selecionado. O contrato é um único `File` por KB, com nome lógico fixo `GxOpenApiBuilder_OperationJournal`, preservado após operação terminal confirmada, e recuperação explícita no menu principal da F3. O Modo B permanece apenas como comparação histórica na seção 3 da F3; não bloqueia mais a definição do contrato.
 
 Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md` — seis execuções sobre `wseducacaospteste` e `fabricabrasil18test`. Três defeitos independentes saíram dessa sondagem e foram numerados: `B112`, `B113` e `B114`; o escopo de `B109` foi ampliado (o sintoma ocorre fora da etapa de Business Component).
 
@@ -191,7 +191,7 @@ Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-
 | Instrumento | Por que continua | Sai quando |
 |---|---|---|
 | `B109ExceptionProbe` | sem ela, uma reincidência volta a chegar como uma linha de mensagem, sem stack | `B109` fechado nos dois ramos |
-| `ApiPlanSaveBoundaryProbe` (rótulo `[B109]`) | é o instrumento do ramo A: separa mutação entre Pump e Save de falha intrínseca | idem |
+| `ApiPlanSaveBoundaryProbe` (rótulo `[B109]`) | é a base observável para o seam da F2: separa mutação entre Pump e Save de falha intrínseca | absorção no seam/executor da F2, com os eventos preservados nos testes; só então retirar o rótulo de sonda |
 | preferência «Suprimir a atualização da tela durante as gravações» | é o experimento do ramo A, e nunca foi acionado | idem |
 | `ApiPlanMetadataVisibilityProbe` (rótulo `[B115]`) | diagnóstico de metadata órfã | `B115` fechado |
 | `B111CallSiteProbe` | é a cobertura que a F1 exige — contagem de gravações de Folder e SDT por aplicação — e serve para provar que a regra 4.4.1 se manteve **depois** da implementação | aceite da F1 |

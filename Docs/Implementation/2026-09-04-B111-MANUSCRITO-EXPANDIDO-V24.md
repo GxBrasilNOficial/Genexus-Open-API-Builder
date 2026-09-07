@@ -388,7 +388,12 @@ contexto transient chamando FindApi, API.GetAll ou equivalente como condição d
 validação. Para um API existente, a busca deve usar identidade validada. Para um API
 novo, o objeto transitório é a fonte autorizada até o único Save final.
 
-### 4.6 Diário B111 durável no modo A
+### 4.6 Diário B111 durável no modo A — alternativa histórica
+
+> **Registro histórico, superado em 2026-09-07:** esta seção documenta a alternativa de
+> diário com nome derivado por hash. Ela foi preservada como origem do manuscrito, mas não
+> é contrato operacional. O contrato aprovado usa um único File por KB, com o nome fixo
+> `GxOpenApiBuilder_OperationJournal`, sem módulo, e recuperação explícita na F3.
 
 O diário B111 é um objeto File próprio da KB, distinto da metadata de negócio. Seu
 nome determinístico é:

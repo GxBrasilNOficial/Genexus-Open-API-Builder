@@ -158,6 +158,11 @@ tipos.
 S1 e S2 deram resultado idêntico em todas as seis execuções — GUID estável desde o
 `Create`, `Description` truncada em 256.
 
+> **Registro histórico, superado em 2026-09-07:** o nome com prefixo `B111_J_` e hash
+> abaixo foi uma alternativa de sonda/desenho. O contrato aprovado passou a ser um único
+> File por KB, com o nome fixo `GxOpenApiBuilder_OperationJournal`; este trecho preserva
+> a evidência da medição e não é contrato operacional.
+
 Nome determinístico produzido pela fórmula da seção 4.6 do plano:
 `B111_J_b7de9b06e117b361ff59c0df` (31 caracteres), idêntico nas duas KBs, como esperado
 de uma fórmula determinística sobre entradas fixas.
@@ -193,8 +198,10 @@ Orçamento para o modo A na KB grande, a ~1,1 s por gravação de diário:
 Sobre os ~49 s de Apply observados em campo, a política do manuscrito expandido acrescentaria da ordem de
 20% do tempo total apenas em bookkeeping. **O plano precisa trocar “atualizar o diário
 após cada Save confirmado” por checkpoints agrupados**, e declarar o orçamento medido.
-A escolha entre modo A e modo B tem preço: o modo A custa entre 2,2 s e 11 s de Apply na
-KB real, conforme a granularidade, mais um File por aplicação.
+A alternativa histórica entre modo A e modo B tinha preço: o modo A custava entre 2,2 s e
+11 s de Apply na KB real, conforme a granularidade, e previa mais um File por aplicação.
+O contrato aprovado posteriormente usa um único File por KB; esta estimativa permanece como
+medição de custo da escrita de File, não como definição da quantidade de objetos.
 
 Há ainda uma consequência fora do diário: **a metadata B060 também é um `WikiFileKBObject`**.
 Se o custo medido valer para ela, o pipeline já paga cerca de 1,1 s por gravação de

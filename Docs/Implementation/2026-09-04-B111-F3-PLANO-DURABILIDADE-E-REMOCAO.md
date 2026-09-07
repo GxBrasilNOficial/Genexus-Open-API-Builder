@@ -4,31 +4,38 @@
 **Fase:** F3 de 3 (F1 ordem e writer final · F2 seam e recibos · **F3 durabilidade e remoção**).
 **Data:** 2026-09-04. **Item:** `B111` em `Docs/Foundation/06-BACKLOG_v0.1.md`.
 
-**Status:** plano para decisão humana. **Não** autoriza implementação, alteração de
-código, instalação, commit ou push.
+**Status:** Modo A selecionado para consolidação após a avaliação técnica inicial; a
+revisão por pares permanece em aberto. **Não** autoriza implementação, alteração de código,
+instalação, commit ou push.
 
 **Pré-requisito:** F1 e F2 aceitas. A F3 consome os recibos da F2; sem eles, não há como
 distinguir o que foi gravado do que ficou indeterminado, e qualquer recuperação seria
 adivinhação.
 
-**Decisão pendente:** modo A ou modo B, seção 3. O restante do plano vale nos dois modos.
+**Decisão registrada:** o Modo A — diário durável — foi escolhido. A comparação com o
+Modo B permanece apenas como histórico de alternativas; o contrato vigente desta F3 é o
+diário único por KB, com recuperação explícita.
 
 **Código já em campo neste território (2026-09-06):** a recuperação de metadata órfã foi
 implementada fora desta fase, por necessidade de campo, e ocupa parte do que a seção 4.3
 normatiza. Validada na IDE no mesmo dia (13.6), exceto o `Remover` sob a metadata
-recuperada. A seção 13 registra o que ela grava, o que ela deliberadamente não grava e o que
-a revisão por pares precisa decidir a respeito. **Ler a 13 antes de revisar a 4.2 e a 4.3.**
+recuperada. A seção 13 registra o que ela grava e o que ela deliberadamente não grava;
+essas decisões agora são absorvidas pelo contrato vigente da F3. **Ler a 13 antes de
+revisar a 4.2 e a 4.3.**
 
 ---
 
-## 1. Por que a F3 foi escrita antes da decisão
+## 1. Histórico da elaboração da F3
 
-A ordem natural seria escrever a F3 depois de decidir o modo e depois de a F1 estar em
-campo. Ela foi escrita antes por um motivo concreto: sem este documento, o único plano
-disponível para o conteúdo da F3 é o manuscrito expandido v24 — e **quatro pontos dele foram
-desmentidos pelas medições de 2026-09-04**. Quem retomasse a frente lendo esse manuscrito
-implementaria quatro coisas erradas, e a correção existe apenas no registro de evidência,
-que não é leitura obrigatória de quem procura “o plano da F3”.
+A F3 foi escrita antes da decisão do modo por um motivo concreto: sem este documento, o
+único plano disponível para o conteúdo da F3 era o manuscrito expandido v24 — e **quatro
+pontos dele foram desmentidos pelas medições de 2026-09-04**. Quem retomasse a frente lendo
+esse manuscrito implementaria quatro coisas erradas, e a correção existia apenas no registro
+de evidência, que não é leitura obrigatória de quem procura “o plano da F3”.
+
+O Modo A foi escolhido posteriormente e está consolidado no contrato vigente desta F3. As
+referências abaixo à alternativa B devem ser lidas como histórico comparativo, não como
+decisão pendente.
 
 A seção 7 lista essas quatro correções de forma explícita, e é a parte deste documento que
 mais importa preservar.
@@ -88,7 +95,7 @@ Do registro `2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`, seis execuções so
 | reler File por `Id` | 0 ms | 0 ms |
 | localizar por nome no índice já montado | 0 ms | 0 ms |
 | remontar o índice | ~100 ms | **~3,1 s** |
-| varrer Files por prefixo | 5 ms | 22–28 ms |
+| varrer Files por prefixo (medição histórica) | 5 ms | 22–28 ms |
 
 Três restrições saem daí, e valem para qualquer desenho de diário:
 
@@ -98,68 +105,57 @@ Três restrições saem daí, e valem para qualquer desenho de diário:
 
 ---
 
-## 3. A decisão: modo A ou modo B
+## 3. Decisão adotada: Modo A — diário durável
 
-Esta é a única bifurcação da F3. Ela não se espalha pelo documento: as seções 4, 7, 8 e 9
-valem nos dois modos; a 5 é só do A; a 6 é só do B.
+O Modo A foi selecionado em 2026-09-07. A tabela abaixo preserva a comparação que orientou
+a decisão, mas somente a coluna do Modo A é contrato vigente. O Modo B é histórico e não
+pode reaparecer como implementação parcial ou como decisão ainda pendente.
 
 | | **Modo A — diário durável** | **Modo B — checkpoint manual** |
 |---|---|---|
 | onde a intenção vive | um `File` próprio na KB | fora da KB, registrado pelo operador |
 | custo no Apply, KB grande | 2,2 s a 11 s, conforme granularidade (4.4) | ~zero |
-| resíduo na KB | um File por aplicação, preservado após remoção | nenhum |
-| recuperação | automática e condicionada; bloqueia em qualquer ambiguidade | humana e bloqueante |
+| resíduo na KB | um `File` único por KB, preservado após a operação terminal | nenhum |
+| recuperação | explícita, no comando próprio da F3; bloqueia em qualquer ambiguidade | humana e bloqueante |
 | complexidade acrescentada | alta: máquina de estados, reconciliação, ciclo de vida do diário | baixa |
 | o que promete | reconstruir intenção e ponto de falha sem intervenção | tornar impossível reaplicar às cegas |
 
-Nenhum dos dois entrega atomicidade ou rollback. A diferença é **quem** reconstrói a
-intenção depois de uma falha: o código ou a pessoa.
+Nenhum dos dois entrega atomicidade ou rollback. A diferença histórica é **quem** reconstrói
+a intenção depois de uma falha: o código ou a pessoa. No contrato vigente, a recuperação é
+explícita e pertence à F3.
 
-**A decisão precisa ser registrada antes da implementação.** Não é aceitável uma mistura
-silenciosa em que o diário existe em algumas execuções mas critérios de recuperação
-automática são alegados quando ele não foi confirmado.
+### 3.1 Decisões fechadas e detalhes de execução
 
-Recomendação: decidir **depois** de a F1 estar em campo. Com a ordem corrigida, a
-frequência real de estado parcial pode ser baixa o bastante para que o modo B baste — e
-essa informação não existe hoje.
+- há um único diário por KB, no objeto técnico `File`/`WikiFileKBObject`, sem módulo;
+- o nome lógico fixo é `GxOpenApiBuilder_OperationJournal` e o arquivo externo é
+  `GxOpenApiBuilder_OperationJournal.json`;
+- o diário é preservado durante a vida da KB e só é reutilizado ou substituído quando a
+  operação anterior estiver em estado terminal confirmado (`Completed` ou `Removed`) e
+  com `journalDurability=Confirmed`;
+- o comando de recuperação é próprio, fica no menu principal, atua sobre a KB inteira e
+  só libera nova operação depois de confirmar um estado terminal;
+- falha, divergência, leitura ambígua ou mais de um candidato válido bloqueiam; não há
+  desempate por nome, prefixo, data ou “mais recente”;
+- a implementação deve manter separadas a identidade da operação, a intenção, o estado
+  físico, a durabilidade do diário e os recibos definidos na decisão registrada.
 
-### 3.1 O que fica em aberto até a decisão, e por quê
-
-Uma revisão de 2026-09-05 observou, corretamente, que a F3 **não é implementável hoje**. É
-por construção, e vale registrar o limite com precisão, para que ninguém tente fechar tudo
-antes da hora nem descubra os buracos durante a implementação.
-
-Fica em aberto **de propósito**, e só se fecha depois da decisão:
-
-| Aberto | Depende de |
-|---|---|
-| formato, local, versão, dono e correlação do checkpoint manual | escolher o modo B; especificar ambos os modos por completo seria escrever duas implementações, e foi assim que o manuscrito expandido inchou |
-| ciclo de vida do diário depois de `Removed` — hoje ele é preservado e a KB acumularia | escolher o modo A; sem ele a pergunta não existe |
-
-Fica em aberto **por lacuna**, e precisa ser fechado no plano de execução do modo escolhido,
-seja ele qual for:
-
-| Lacuna | O que falta decidir |
-|---|---|
-| **critério de desempate entre candidatos** na varredura por prefixo | a recuperação diz “bloquear se houver mais de um candidato próprio”, o que é seguro mas pode ser paralisante numa KB com diários antigos da mesma Transaction. Falta definir se há critério legítimo de escolha — por exemplo, o mais recente com `ApplicationId` ativo — ou se o bloqueio é sempre a resposta e a saída é uma limpeza manual |
-| **qual comando inicia a recuperação** | está dito que reabrir o Wizard pelo caminho normal não é recuperação. Não está dito o que é. Isso implica um comando ou modo de entrada próprio, com UI, mensagens e permissões — e é trabalho que nenhuma das três fases orçou |
-
-A segunda lacuna é a mais relevante: ela pode ser uma fase F4, não um detalhe da F3.
+As comparações com o Modo B permanecem neste documento apenas para explicar a decisão
+histórica. Não há uma segunda implementação a especificar nem uma decisão A/B pendente.
 
 ---
 
-## 4. Núcleo comum aos dois modos
+## 4. Núcleo do Modo A — estados e gate
 
 ### 4.1 Estados
 
-Dois eixos, sempre registrados separadamente e nunca colapsados num enum só:
+Os eixos abaixo são sempre registrados separadamente e nunca colapsados num enum só:
 
 - **estado físico do objeto**: ausente, confirmado, divergente, indeterminado — vem dos
   recibos da F2 mais leitura da KB;
 - **estágio lógico da aplicação**: o ponto do pipeline em que a operação está.
 
-O modo A acrescenta um terceiro eixo, a durabilidade da própria intenção (5.3). No modo B
-esse eixo não existe e **não pode ser simulado**.
+- **durabilidade da intenção**: confirmada ou desconhecida, conforme o diário possa ser
+  relido e validado.
 
 Estágios mínimos: `NotStarted`, `GateBlocked`, `IntentionRecorded`, `TransactionPending`,
 `FolderPending`, `SdtsPending`, `ProceduresPending`, `ApiPending`, `ApiSaveOutcomeUnknown`,
@@ -174,8 +170,8 @@ Regra que atravessa tudo: **um `Save()` que lançou, expirou ou foi cancelado é
 O gate reduzido da F1 ganha as validações que dependem de intenção durável:
 
 1. ausência de intenção anterior em estado parcial, indeterminado ou ambíguo;
-2. disponibilidade e integridade do mecanismo de registro de intenção do modo escolhido;
-3. no modo A, ausência de mais de um diário candidato para a mesma Transaction.
+2. disponibilidade e integridade do diário único da KB;
+3. identidade, versão e durabilidade confirmadas do diário, sem divergência física.
 
 Falhando qualquer uma, o resultado é bloqueio antes da primeira gravação.
 
@@ -203,7 +199,7 @@ autorizam exclusão sozinhos.
 
 ### 4.4 Orçamento de gravação
 
-Vale para o modo A, e é o motivo de a granularidade ser uma decisão de projeto e não um
+Vale para o Modo A, e é o motivo de a granularidade ser uma decisão de projeto e não um
 detalhe:
 
 | Política | Gravações | Acréscimo ao Apply, KB grande |
@@ -228,29 +224,26 @@ além do necessário ao diagnóstico.
 
 ---
 
-## 5. Modo A — diário durável
+## 5. Modo A — diário durável e único por KB
 
 ### 5.1 Identidade e localização do diário
 
-O diário é um `WikiFileKBObject` próprio, distinto da metadata de negócio. Nome
-determinístico:
+O diário é um `File` próprio (`WikiFileKBObject` é o tipo técnico do SDK), distinto da
+metadata de negócio e sem módulo. Há exatamente um por KB:
 
-```
-B111_J_ + 24 primeiros hex de SHA-256(TransactionGuid minúsculo invariant + separador + PlannedApiName)
-```
-
-A fórmula foi exercitada em sonda e produz, por exemplo,
-`B111_J_b7de9b06e117b361ff59c0df` — 31 caracteres, idêntico entre KBs, como esperado de
-função determinística sobre entradas fixas.
-
-O nome identifica o File; **não prova posse nem identidade**. Transaction GUID,
-ApplicationId, contrato e identidade continuam obrigatórios no conteúdo e na validação.
+- nome do objeto na KB: `GxOpenApiBuilder_OperationJournal`;
+- nome do arquivo externo: `GxOpenApiBuilder_OperationJournal.json`;
+- conteúdo: schema, identidade da KB e da operação, intenção, estado, durabilidade,
+  inventário e recibos;
+- o nome fixo apenas localiza o candidato; posse, identidade e validade continuam sendo
+  confirmadas pelo conteúdo e pela releitura por `FileId`.
 
 Localização, medida e não suposta:
 
-1. **ao abrir o fluxo**: buscar o nome determinístico no índice já montado — 0 ms;
+1. **ao abrir o fluxo**: buscar o nome fixo no índice já montado — 0 ms;
 2. **durante o fluxo**: guardar o `Id` do File na criação e reler por `Id` — 0 ms;
-3. **em recuperação**: varrer Files por prefixo `B111_J_` — 22 a 28 ms na KB grande;
+3. **em recuperação**: resolver o nome fixo no índice; qualquer ausência, duplicidade,
+   colisão externa ou conteúdo inválido bloqueia;
 4. **nunca**: remontar o índice para reencontrar o diário — ~3,1 s.
 
 ### 5.2 Conteúdo
@@ -294,10 +287,10 @@ Comparado ao manuscrito expandido, esta recuperação é curta justamente porque
 antes da gravação.
 
 **Diário com durabilidade desconhecida.** Não continuar a sequência; reler pelo `Id`;
-varrer por prefixo procurando o Transaction GUID; comparar ApplicationId, contrato,
-recibos e estados; corrigir apenas se houver exatamente um diário próprio e uma versão
-recuperável; bloquear em zero, mais de um, conflito ou leitura ambígua; **nunca criar um
-segundo diário para ocultar a incerteza**.
+resolver o nome fixo no índice; comparar ApplicationId, contrato, recibos e estados;
+corrigir apenas se houver exatamente um diário próprio e uma versão recuperável; bloquear
+em ausência, duplicidade, colisão, conflito ou leitura ambígua; **nunca criar um segundo
+diário para ocultar a incerteza**.
 
 **Falha antes do API final.** Ler o diário e os recibos; inventariar cada alvo por
 identidade e hash; separar ausente, confirmado, divergente e desconhecido; comparar com a
@@ -307,7 +300,10 @@ confirmado ou desconhecido. **Reabrir o Wizard pelo caminho normal não é recup
 
 ---
 
-## 6. Modo B — checkpoint manual
+## 6. Modo B — checkpoint manual (histórico)
+
+> **Histórico:** o Modo B não foi selecionado. Esta seção preserva a alternativa que foi
+> comparada durante a decisão, mas não define comportamento da implementação S-B111.
 
 O checkpoint registra, antes da primeira gravação e antes de qualquer reaplicação: a
 seleção, a ordem prevista, nomes e identidades planejadas, e o próximo passo autorizado.
@@ -342,7 +338,7 @@ remoção, mas os quatro pontos abaixo **estão errados nele** e foram medidos e
 | o manuscrito expandido diz | Medição de 2026-09-04 | O que vale |
 |---|---|---|
 | identidade por `PlannedApiGuid` **ou** `NewApiIdentityKey`, com marcador `GOAB-B111-IDENTITY` na `Description` | o `Guid` existe desde o `API.Create`, sobrevive ao `Save()` e reencontra o objeto | só `PlannedApiGuid`, **lido** e nunca atribuído; sem marcador, sem chave alternativa, sem helper de identidade |
-| “ao abrir um fluxo, enumerar todos os diários B111” | localizar pelo nome no índice já montado custa 0 ms; remontar o índice custa ~3,1 s | resolver pelo nome no índice na abertura; enumerar por prefixo só em recuperação |
+| “ao abrir um fluxo, enumerar todos os diários B111” | localizar pelo nome no índice já montado custa 0 ms; remontar o índice custa ~3,1 s | resolver pelo nome fixo no índice na abertura e na recuperação; não enumerar por prefixo |
 | reler o diário por GUID | `WikiFileKBObject.Get` aceita `int`, não `Guid` | guardar o **`Id`** na criação e reler por ele |
 | “atualizar e reler o diário a cada etapa confirmada” | gravar um File custa ~1,1 s na KB grande; ~10 gravações somam ~11 s | checkpoints agrupados, com a política declarada (4.4) |
 
@@ -361,8 +357,9 @@ Sobre o seam da F2, que permite injetar falha em qualquer fronteira:
    independentes;
 3. `API.Save()` com resultado ambíguo → `OutcomeUnknown` e **nenhum** segundo
    `API.Save()`;
-4. no modo A: atualização do diário não confirmada → durabilidade desconhecida e bloqueio;
-   zero, um e múltiplos diários candidatos tratados como casos distintos;
+4. atualização do diário não confirmada → durabilidade desconhecida e bloqueio; ausência,
+   duplicidade, colisão externa e conteúdo inválido no nome fixo tratados como casos
+   distintos;
 5. reaplicação sobre estado parcial → só etapas não confirmadas; nunca API duplicado;
    nunca intenção parcial sobrescrita em silêncio;
 6. remoção com intenção própria → intenção registrada antes do primeiro `Delete()`,
@@ -387,8 +384,11 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
 4. remoção de API gerada por esta frente;
 5. remoção de API legado, com metadata válida e com metadata insuficiente;
 6. interrupção no meio da remoção;
-7. no modo A: medir o acréscimo real ao tempo de Apply na KB grande e comparar com o
-   orçamento de 4.4.
+7. medir o acréscimo real ao tempo de Apply na KB grande e comparar com o orçamento de 4.4;
+8. executar o comando de recuperação explícita sobre a KB inteira, incluindo um caso
+   recuperável e casos de divergência ou ambiguidade que permaneçam bloqueados;
+9. iniciar uma nova operação depois da recuperação e confirmar que somente um diário fixo
+   por KB é reutilizado.
 
 ---
 
@@ -405,14 +405,13 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
    `Delete()`;
 7. nome, Description canônica ou prefixo nunca autorizam exclusão sozinhos.
 
-**Modo A, adicionalmente:** durabilidade do diário é uma terceira dimensão registrada;
+**Contrato ativo do Modo A:** a durabilidade do diário é uma terceira dimensão registrada;
 recuperação compara intenção durável com inventário físico; a política de checkpoints está
-declarada e o custo medido bate com o orçamento; nunca existe um segundo diário para a
-mesma intenção.
+declarada e o custo medido bate com o orçamento; nunca existe um segundo diário para a KB;
+recuperação ambígua ou divergente continua bloqueada para correção humana.
 
-**Modo B, adicionalmente:** nenhum critério de diário é alegado; o checkpoint precede a
-primeira gravação e qualquer reaplicação; cada falha deixa o fluxo bloqueado para inspeção
-humana; a UI não sugere recuperação automática.
+As condições do antigo Modo B não são critérios de aceite: permanecem apenas na seção 6
+como comparação histórica.
 
 ---
 
@@ -420,11 +419,11 @@ humana; a UI não sugere recuperação automática.
 
 | Risco | Mitigação prevista |
 |---|---|
-| o modo A acrescentar segundos ao Apply de forma percebida como regressão | política de checkpoints declarada e medida (4.4); comparar com o Apply pós-F1 |
-| diários acumularem na KB, já que a remoção os preserva | decidir e documentar o ciclo de vida do diário após `Removed`; hoje é questão aberta |
-| implementar “um pouco de A e um pouco de B” | critério explícito: a decisão é registrada antes da implementação, e o modo B não pode alegar critérios do A |
+| o Modo A acrescentar segundos ao Apply de forma percebida como regressão | política de checkpoints declarada e medida (4.4); comparar com o Apply pós-F1 |
+| o diário acumular registros na KB | manter um único File por KB; reutilizar ou substituir somente após estado terminal confirmado e `journalDurability=Confirmed` |
+| reintroduzir “um pouco de A e um pouco de B” | o Modo A é o contrato selecionado; a comparação com B é histórica e não autoriza comportamento alternativo |
 | a remoção de legado bloquear casos que hoje funcionam | o remover já reconstrói plano a partir da metadata (2.2); a F3 acrescenta registro de intenção, não restringe o que já valida |
-| planejar sobre um sistema que ainda vai mudar | este plano é menos detalhado onde depende de campo, e diz onde; rever a F3 depois de a F1 rodar |
+| planejar sobre um sistema que ainda vai mudar | este plano mantém dependências explícitas de F1 e F2; a implementação deve revalidar os contratos contra o código vigente |
 
 ---
 
@@ -459,8 +458,10 @@ oferecida depois de o Wizard concluir com sucesso, e o estado que ela resolve im
 conclusão. O teste de campo de 2026-09-06 provou isso. A correção move a oferta para a
 abertura do Wizard, antes do diálogo.
 
-Esperar a F3 significaria manter a KB sem saída até a decisão modo A/B, que a seção 3
-recomenda tomar **depois** de a F1 estar em campo.
+Esperar a F3 significaria manter a KB sem saída até a decisão do modo, que ainda estava
+pendente quando este anexo foi escrito. O Modo A foi selecionado em 2026-09-07; portanto,
+esta recuperação passa a ser uma capacidade absorvida pelo comando explícito da F3, sem
+criar um contrato paralelo.
 
 ### 13.2 O que a recuperação grava
 
@@ -515,25 +516,34 @@ vocabulário novo. Enquanto a marca existir:
 - **`Sincronizar` recusa**, com mensagem própria: não há contrato com que comparar.
 - Um `Wizard` + Apply completo reescreve a metadata inteira e a marca desaparece.
 
-### 13.5 O que a revisão por pares precisa decidir
+### 13.5 Decisões aprovadas para a consolidação
 
-Três pontos em que este código e o plano se tocam, e que a revisão deve resolver:
+As três decisões abaixo fecham a interação entre a recuperação de metadata órfã e o
+contrato do Modo A. Elas não encerram a revisão por pares: ainda precisam ser refletidas
+na implementação e validadas na matriz da F3.
 
-1. **O gate da seção 4.2** bloqueia quando há «intenção anterior em estado parcial,
-   indeterminado ou ambíguo». Uma intenção **importada e completa quanto aos alvos** não é
-   nenhum dos três, e bloqueá-la desfaria a saída que este código cria. O gate precisa
-   distinguir os casos explicitamente.
+1. **Gate e metadata importada:** metadata importada completa quanto aos alvos não é
+   `Partial` nem `OutcomeUnknown`. Um diário da S-B111 em estado não terminal (`Pending`,
+   `Running`, `Partial` ou `OutcomeUnknown`) bloqueia novas operações e a recuperação de
+   metadata. Metadata importada validada pode liberar somente `Remove`, com confirmação
+   explícita; `Apply` completo pode substituir sua marca, e `Sync` não pode usá-la como
+   contrato completo.
 
-2. **A proibição de inferência por nome**, na seção 4.3, é respeitada apenas em parte: o
-   inventário reconstruído combina nome canônico **com** Description canônica e contêiner
-   esperado, mas não há como provar que o conjunto encontrado é o conjunto completo do que
-   foi gerado um dia. A mitigação em vigor é o diálogo de confirmação do `Remover`, que
-   lista os alvos antes de apagar. Se a revisão julgar insuficiente, o caminho é bloquear a
-   remoção sob marca `imported` e exigir um Apply completo antes.
+2. **Suficiência do inventário:** a recuperação produz explicitamente
+   `InventorySufficient` ou `InventoryInsufficient`. O primeiro exige schema, Transaction
+   GUID, ApplicationId, API GUID, referências completas, distinção entre SDTs próprios e
+   compartilhados e revalidação sem ambiguidade de todos os alvos; só ele permite `Remove`,
+   ainda com confirmação explícita. Campo ausente, referência desconhecida, conflito,
+   múltiplos candidatos ou identificação baseada apenas em nome produz
+   `InventoryInsufficient` e bloqueia. `InventorySufficient` é suficiente para a remoção,
+   mas não prova que nenhum objeto histórico ficou fora do inventário.
 
-3. **Se o modo A vencer**, o diário passa a ser a fonte durável da intenção, e esta metadata
-   vira uma segunda fonte para a mesma coisa — o que a seção 3 proíbe («não é aceitável uma
-   mistura silenciosa»). A decisão precisa dizer qual das duas prevalece, ou retirar esta.
+3. **Precedência entre diário e metadata:** o diário é autoritativo para estado da
+   operação, recibos e intenção atual; a metadata é a fonte do último contrato completo
+   conhecido da API. Diário não terminal sempre bloqueia. Diário terminal e metadata podem
+   coexistir somente quando identidade e contrato forem compatíveis; qualquer divergência
+   bloqueia e exige reconciliação explícita. Nenhuma fonte substitui silenciosamente a
+   outra, e a precedência do diário não transforma metadata incompatível em contrato válido.
 
 ### 13.6 Evidência de campo — 2026-09-06, KB `wsEducacaoSpTeste`, Transaction `Teste`
 
