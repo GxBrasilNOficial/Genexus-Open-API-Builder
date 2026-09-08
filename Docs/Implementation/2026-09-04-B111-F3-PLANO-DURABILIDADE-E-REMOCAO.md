@@ -188,11 +188,27 @@ Regra que atravessa tudo: **um `Save()` que lançou, expirou ou foi cancelado é
 
 ### 4.1.1 Envelope corrente e abandono explícito
 
-Cada operação recebe um `OperationId` novo, distinto do `ApplicationId` da geração. Antes
-de qualquer `Save()` de negócio, o File do diário é gravado como fase de envelope
+Cada operação nova recebe um `OperationId` novo, distinto do `ApplicationId` da geração
+ou do ownership importado. A regra para gerar, reutilizar e preservar o `applicationId`
+é a da matriz abaixo. Antes de qualquer `Save()` de negócio, o File do diário é gravado como fase de envelope
 `Prepared` e relido por `FileId`/hash. Só depois é promovido à fase `Active`, com nova
 gravação e confirmação. Os dois passos precisam ser confirmados antes da primeira
 gravação de Transaction, Folder, SDT, Procedure, API ou metadata.
+
+O ciclo de identidade é fechado pela operação, não apenas pelo ponto do pipeline:
+
+| Fluxo | `operationId` | `applicationId` | Relação com metadata |
+|---|---|---|---|
+| Apply ou Sync novos | novo | novo | a metadata V3 emitida recebe o mesmo valor em `ownership.applicationId` |
+| Continuação ou Recovery de envelope existente | preservado | preservado | não substituir a identidade do envelope |
+| Remove sobre metadata V3 | novo | reutiliza `ownership.applicationId` | não regravar metadata apenas para registrar o Remove |
+| Remove sobre metadata legada sem `ApplicationId` | novo | novo, somente no diário, como adoção tardia | não regravar metadata legada para preencher o campo |
+| B115 autônomo sem envelope a continuar | novo | novo | emitir V3 com o valor quando a operação gravar metadata |
+
+Assim, “novo por tentativa” aplica-se a uma nova geração ou adoção sem identidade, não
+a um Remove que já possui ownership V3 confirmado. Um `Recovery` que continua Apply,
+Sync ou Remove preserva os dois identificadores do envelope; somente uma operação nova
+após estado terminal pode iniciar outro ciclo.
 
 `Prepared` pode ser continuado explicitamente com os mesmos identificadores ou abandonado.
 O abandono não apaga o File nem cria um novo `operationState`: grava uma disposição
@@ -435,7 +451,8 @@ próprio campo `fingerprint`). Portanto, um `applicationId` novo altera o finger
 definição; V2 pode ser lida e normalizada, mas não é equivalente a V3 nem pode ser
 regravada silenciosamente como se o fingerprint permanecesse igual. Antes de qualquer
 writer emitir V3, a F3 precisa atualizar, em conjunto, os consumidores do contrato:
-`ApiPlanMetadataFileWriter` (constantes, lista aceita, validação, geração e fingerprint),
+`ApiPlanMetadataFileWriter` (constantes, lista aceita, validação e geração),
+`ApiPlanMetadataIntegrity` (serialização canônica, cálculo e diagnóstico do fingerprint),
 `ApiPlanGeneratedApiRemovalPlan` (V3 e mensagem de erro),
 `ApiPlanGenerationStateReader` (leitura da versão), `ApiPlanApiObjectOwnership`
 (comparação de ownership) e `ApiPlanApiObjectWriter` (leitura/validação da metadata).
@@ -443,7 +460,7 @@ O estado atual desses consumidores ainda aceita V1/V2, e `ownership.applicationI
 não existe no `Src/`; isso é uma pré-condição P1 da implementação da F3, não trabalho
 antecipado nesta rodada.
 
-Esses cinco são os consumidores obrigatórios que validam versão, ownership ou fingerprint;
+Esses seis são os componentes obrigatórios que validam versão, ownership ou fingerprint;
 a lista não exclui leitores como `ApiPlanGeneratedApiRemovalInventory`,
 `ApiPlanTransactionSyncOrchestrator`, `PrototypeWizardExistingApiContractReader` e
 `Package`, que consomem campos de ownership estáveis sem validar `schemaVersion`. Esses
@@ -628,6 +645,7 @@ indeterminado.
 | `Src/Extension/GenexusOpenApiBuilder.package` e `Groups` | `CommandDefinition` e `refid` de cada variante localizada do comando nas duas superfícies de menu, sem ID neutro compartilhado |
 | `Src/Extension/Diagnostics/PrototypeWizardPreferences.cs`, `PrototypeWizardPreferencesCodec.cs`, `PrototypeWizardPreferencesDialog.cs` | compatibilidade de `OfferOrphanMetadataRecovery` e nova preferência `ShowRecoveryOptionProactively` |
 | `Src/Extension/Diagnostics/ApiPlanOrphanMetadataRecovery.cs` e writers de metadata | leitura/normalização V1/V2 e gravação V3 em Apply, Sync e B115, sem regravar metadata legada apenas para preencher `ApplicationId` durante Remove; a promoção só ocorre depois de atualizar os consumidores de versão e fingerprint |
+| `Src/Extension/Diagnostics/ApiPlanMetadataIntegrity.cs` | serializer/canonização do snapshot V3, cálculo e diagnóstico do fingerprint, incluindo `ownership.applicationId` no material hash e excluindo somente o próprio campo `fingerprint` |
 | `Src/Extension/Diagnostics/ApiPlanMetadataFileWriter.cs`, `ApiPlanGeneratedApiRemovalPlan.cs`, `ApiPlanGenerationStateReader.cs`, `ApiPlanApiObjectOwnership.cs` e `ApiPlanApiObjectWriter.cs` | consumidores obrigatórios da promoção V2→V3: aceitar V3, ler `ownership.applicationId`, validar o fingerprint V3 e manter a leitura legada V1/V2 sem regravação implícita |
 | `Src/Extension/ExtensionLocalization.cs`, `Src/Domain/ExtensionOutputLocalization.cs`, `Tests/Localization/` | mensagens pt-BR, espanhol e inglês para bloqueio, recuperação, inventário e estado indeterminado |
 | `Tools/Test-ExtensionCommandRegistration.ps1` e `Tests/` | sincronização do comando, schema, checkpoints, reidratação, inventário e validação IDE |
@@ -702,6 +720,20 @@ Sobre o seam da F2, que permite injetar falha em qualquer fronteira:
 8. remoção de legado com metadata válida → intenção importada antes do primeiro `Delete()`;
 9. remoção de legado com metadata ausente, corrompida ou insuficiente → bloqueio, sem
    nenhum `Delete()`;
+
+A matriz adicional de identidade deve verificar:
+
+- Apply/Sync novos gravam o mesmo `applicationId` no diário e em
+  `ownership.applicationId` da metadata V3;
+- Remove sobre metadata V3 cria `operationId` novo, reutiliza o `applicationId` de
+  ownership e não regrava a metadata;
+- Remove sobre metadata legada sem `ApplicationId` registra adoção tardia somente no
+  diário, sem preencher o File legado;
+- continuação/Recovery preserva `operationId` e `applicationId`, enquanto uma operação
+  nova após estado terminal cria o ciclo correspondente;
+- qualquer alteração em `ownership.applicationId` sem recálculo válido produz
+  `FingerprintHashMismatch` e bloqueia a operação.
+
 10. `Delete()` que lança, mas cuja releitura imediata comprova que o objeto ainda existe
    → recibo `Failed` retryable de ordem de dependência e nova tentativa somente na
    passada seguinte do mesmo `Remove`;
@@ -749,6 +781,8 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
 6. remoção de legado importa a intenção da metadata ou bloqueia antes do primeiro
    `Delete()`;
 7. nome, Description canônica ou prefixo nunca autorizam exclusão sozinhos.
+8. o ciclo de `operationId`/`applicationId` segue a matriz da seção 4.1.1, e o fingerprint
+   V3 cobre `ownership.applicationId` com serialização canônica.
 
 **Contrato ativo do Modo A:** a durabilidade do diário é uma terceira dimensão registrada;
 recuperação compara intenção durável com inventário físico; a política de checkpoints está

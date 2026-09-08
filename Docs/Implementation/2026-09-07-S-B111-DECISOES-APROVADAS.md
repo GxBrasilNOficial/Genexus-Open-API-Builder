@@ -399,7 +399,7 @@ nomes serializados.
 | `transactionGuid` | GUID obrigatório | identidade autoritativa da Transaction |
 | `transactionName` | string não vazia | exibição e conferência, nunca identidade isolada |
 | `operationId` | GUID obrigatório | correlação da operação; distinto de `applicationId` |
-| `applicationId` | GUID obrigatório | novo por tentativa; preservado ao continuar a mesma operação |
+| `applicationId` | GUID obrigatório | novo ao iniciar Apply/Sync, B115 autônomo ou adoção de metadata sem ID; em Remove V3 reutiliza o `ownership.applicationId`; preservado ao continuar a mesma operação |
 | `operationKind` | enum obrigatório | `Apply`, `Sync`, `Remove` ou `Recovery` |
 | `generatorVersion` | string não vazia | versão do gerador que criou ou atualizou o diário |
 | `createdUtc`, `updatedUtc` | `date-time` UTC obrigatórios | ISO-8601 com deslocamento `Z` |
@@ -540,8 +540,9 @@ A relação entre a metadata de negócio e o diário também fica fechada:
   fingerprint, portanto um valor novo muda o fingerprint por definição. V2 pode ser lida
   e normalizada, mas não é equivalente a V3 nem deve ser regravada silenciosamente como
   se a integridade permanecesse igual. Antes de qualquer writer emitir V3, devem ser
-  atualizados em conjunto os consumidores de versão e ownership:
-  `ApiPlanMetadataFileWriter`, `ApiPlanGeneratedApiRemovalPlan`,
+atualizados em conjunto os consumidores de versão e ownership:
+  `ApiPlanMetadataFileWriter`, `ApiPlanMetadataIntegrity`,
+  `ApiPlanGeneratedApiRemovalPlan`,
   `ApiPlanGenerationStateReader`, `ApiPlanApiObjectOwnership` e
   `ApiPlanApiObjectWriter`. Enquanto isso não ocorrer, `ownership.applicationId` é uma
   pré-condição de implementação da F3, não uma capacidade já disponível no `Src/`.
@@ -576,7 +577,15 @@ Regras do grupo:
 
 - `transactionGuid` é a identidade autoritativa;
 - `transactionName` serve para exibição e validação;
-- `applicationId` é um GUID novo para cada tentativa de operação;
+- Apply e Sync novos recebem um `applicationId` novo; B115 autônomo também recebe um
+  valor novo quando não continua um envelope existente;
+- Remove sobre metadata V3 reutiliza o `ownership.applicationId` já persistido e recebe
+  um `operationId` novo; Remove não troca a identidade de ownership nem regrava a
+  metadata apenas por causa do diário;
+- Remove sobre metadata legada sem `ApplicationId` registra no diário um novo valor de
+  adoção tardia, sem regravar a metadata legada;
+- uma continuação ou recuperação de envelope existente preserva o par
+  `operationId`/`applicationId` do envelope;
 - `applicationId` não é o `operationId` dos serviços OpenAPI;
 - `knowledgeBaseGuid` participa da validação contra diário copiado ou de outra
   KB;
@@ -976,18 +985,22 @@ Decisão aprovada após os pareceres nativos e DeepSeek da v3:
 - o teste da F2 cobrirá a recuperação com File novo e com File reutilizado, além das
   falhas e resultados indeterminados desse `Save()`.
 
-### 40. Adoção tardia de `ApplicationId` para metadata legada
+### 40. Ciclo de vida e adoção tardia de `ApplicationId`
 
 Decisão aprovada após a discussão do gap de compatibilidade:
 
-- `ApplicationId` continua sendo um GUID novo para cada tentativa de operação S-B111;
-- metadata nova, gravada pela S-B111, deve conter esse campo e mantê-lo compatível com
-  o diário;
+- `ApplicationId` é um GUID novo para cada nova geração de Apply/Sync ou adoção autônoma;
+  não é substituído quando Remove reutiliza metadata V3 existente;
+- metadata nova, gravada pela S-B111 em Apply, Sync ou B115, deve conter esse campo e
+  mantê-lo igual ao `applicationId` do diário da geração que a produziu;
+- Remove sobre metadata V3 usa o `ownership.applicationId` existente no diário, com
+  `operationId` novo, e não regrava a metadata para refletir a operação de remoção;
 - metadata legada sem `ApplicationId` não será automaticamente classificada como
   `InventoryInsufficient` quando os demais requisitos de identidade, posse, unicidade e
   inventário forem suficientes;
 - ao iniciar a primeira operação S-B111 sobre essa metadata, a extensão gerará um novo
-  `ApplicationId` para a tentativa atual e o registrará no diário como adoção tardia;
+  `ApplicationId` para a tentativa de geração ou, no caso de Remove, para a adoção
+  tardia registrada somente no diário;
 - durante `Remove`, a metadata legada não será regravada apenas para preencher o campo;
 - a ausência de `ApplicationId` não dispensa as demais validações nem autoriza
   identificação por nome.
