@@ -421,8 +421,13 @@ tenha `journalDurability=Confirmed`. Quando o diário não existe, está inváli
 quando o `Save()`/a releitura não permitem confirmar o novo snapshot, não há campo
 JSON novo a emitir: o resultado usa `GateDiagnostic` somente no relatório. Esse
 diagnóstico tem os códigos `GateBlocked`, `JournalUnavailable`, `DurabilityUnknown`
-e `PreconditionFailed`; os detalhes da pré-condição permanecem na mensagem
-estruturada do gate. `GateBlocked` também não é um `logicalStage` persistido.
+e `PreconditionFailed`; o payload também carrega uma `reasonCode` estável e os detalhes
+da pré-condição em estrutura própria, não apenas em texto livre. Para `GateBlocked` com
+journal legível, as subcausas previstas são `JournalNonTerminal`, `JournalIdentityDivergent`,
+`PreparedContinuationNotAuthorized`, `UnreconciledOutcome` e `PreconditionFailed`;
+`JournalUnavailable` e `DurabilityUnknown` continuam sendo códigos de alto nível quando a
+indisponibilidade ou a durabilidade desconhecida impedirem confirmar o journal.
+`GateBlocked` também não é um `logicalStage` persistido.
 
 O mapeamento normativo de `blockReason` persistido é fechado por cenário:
 
@@ -434,7 +439,7 @@ O mapeamento normativo de `blockReason` persistido é fechado por cenário:
 | `IdentityDivergent` | identidade, posse, GUID, `FileId` ou hash observado diverge do plano ou do diário |
 | `UnreconciledNotAttempted` | item `NotAttempted` com estado físico desconhecido ou continuação sem reconciliação determinística |
 | `TargetAbsentBeforeDelete` | item ausente antes do primeiro `Delete()`, sem recibo durável anterior `Confirmed` para a mesma identidade |
-| `StageFailed` | falha conhecida e não retryable registrada por `NoteStageFailed` depois de existir um envelope confirmado, antes de uma nova chamada física; não cria `PersistenceReceipt` |
+| `StageFailed` | falha conhecida e não retryable registrada pelo orquestrador por `NoteStageFailed` depois de existir um envelope confirmado, antes de uma nova chamada física; o próprio orquestrador confirma o snapshot `Partial` com esse `blockReason`; não cria `PersistenceReceipt` |
 | `RetryBudgetExhausted` | o limite `maxPasses` foi atingido enquanto permanecem itens `StillPresentAfterDelete` pendentes |
 
 Quando houver mais de uma descrição possível, a decisão segue esta ordem: (1) falta
@@ -633,7 +638,8 @@ Decisão aprovada:
 Cada `PersistenceReceipt` conterá:
 
 - `sequence` e `attempt`; `sequence` é global, positivo, monotônico e append-only
-  dentro do envelope, começando em `1` e nunca sendo reutilizado; `attempt` começa
+  dentro da operação identificada pelo mesmo `OperationId`, começando em `1` e nunca sendo
+  reutilizado; `attempt` começa
   em `1` para a primeira tentativa física daquele alvo dentro da operação e só é
   incrementado quando o mesmo alvo é reencaminhado na mesma operação;
 - `retryOfSequence`, quando houver retry, aponta para o recibo imediatamente
@@ -659,9 +665,9 @@ Cada `PersistenceReceipt` conterá:
 Regras do recibo:
 
 - cada tentativa de `Delete` terá recibo próprio;
-- a continuação do mesmo envelope mantém o maior `attempt` já persistido, usa o
-  próximo valor e acrescenta os novos `sequence` ao mesmo `receipts`; uma operação
-  nova, depois de `Completed` ou `Removed`, começa `sequence` e `attempt` em `1`;
+- a continuação do mesmo envelope e do mesmo `OperationId` mantém o maior `attempt` já
+  persistido, usa o próximo valor e acrescenta os novos `sequence` ao mesmo `receipts`; uma
+  operação nova, depois de `Completed` ou `Removed`, começa `sequence` e `attempt` em `1`;
 - cada item de `inventory.receiptSequences` recebe os `sequence` correspondentes
   em ordem de registro, sem substituir nem remover referências anteriores;
 - retry não transforma recibo anterior em sucesso;
@@ -1168,3 +1174,23 @@ instalação, commit ou push:
 - testes offline, testes do seam e validação posterior na IDE serão obrigatórios;
 - os planos e documentos serão consolidados antes da implementação para remover referências
   contraditórias.
+
+### 53. Clarificações após parecer solo do MiMo V2.5 Pro — 2026-09-08
+
+O parecer externo foi tratado como insumo de revisão, não como autoridade para alterar o
+repositório. Após conferência cruzada dos planos e deste registro, ficam incorporadas somente
+estas clarificações:
+
+- `StageFailed` é produzido pelo orquestrador: depois de um envelope `Active` confirmado e
+  antes de qualquer nova chamada física, `NoteStageFailed` deve levar ao snapshot durável
+  `Partial` + `blockReason=StageFailed`, sem `PersistenceReceipt`; sem confirmação do novo
+  snapshot, o resultado é `GateDiagnostic=DurabilityUnknown` e não se afirma que a razão foi
+  persistida;
+- `GateDiagnostic` mantém seus códigos de alto nível, mas o payload deve identificar a
+  precondição que falhou por `reasonCode` estável e contexto estruturado; isso não cria campo
+  persistido nem transforma `GateBlocked` em estado da operação;
+- `sequence` é monotônica e append-only dentro do mesmo `OperationId`; uma continuação não
+  abre outra cadeia de recibos, e `OutcomeUnknown` continua sem autorização de retry;
+- a vinculação de `RecoveryAuthorization` a `journalFileId`, `updatedUtc` e hash é uma defesa
+  de frescor/integridade contra alteração concorrente entre leitura e ação (TOCTOU), não um
+  mecanismo de histórico.

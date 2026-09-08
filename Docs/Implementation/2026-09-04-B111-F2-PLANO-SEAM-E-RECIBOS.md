@@ -224,7 +224,8 @@ confunda falha de preparação com ausência de tentativa.
 
 Cada `PersistenceReceipt` carrega:
 
-- `sequence` monotônica global dentro da operação, positiva, única e append-only;
+- `sequence` monotônica global dentro da operação (isto é, dentro do mesmo `OperationId`),
+  positiva, única e append-only;
 - operação (`Save` ou `Delete`), etapa e tipo de objeto;
 - `PersistenceIdentity` planejada, além do nome para exibição;
 - identidade persistida observada, ou ausência confirmada no caso de `Delete`;
@@ -247,8 +248,9 @@ Cada `PersistenceReceipt` carrega:
 
 O recibo é registro, não decisão. Nada no código deve mudar de caminho por causa de um
 recibo dentro da F2. Cada retry recebe seu próprio recibo; a continuação do mesmo envelope
-mantém o maior `attempt` já persistido, usa o próximo valor e acrescenta novos `sequence`
-ao mesmo log. Uma operação nova, depois de `Completed` ou `Removed`, começa `sequence` e
+e do mesmo `OperationId` mantém o maior `attempt` já persistido, usa o próximo valor e
+acrescenta novos `sequence` ao mesmo log. Uma operação nova, depois de `Completed` ou
+`Removed`, começa `sequence` e
 `attempt` em `1`; referências anteriores de `inventory.receiptSequences` nunca são
 substituídas.
 
@@ -303,6 +305,16 @@ de falha de etapa do tipo `NoteStageFailed(stage, reason)`, chamado onde hoje j�
 teste de resultado de cada etapa. Sem isso, “etapa falhou antes de gravar” seria
 indistinguível de “etapa nunca foi selecionada”, que é uma distinção que o relatório precisa
 fazer.
+
+Quando já houver um envelope `Active` confirmado e o orquestrador concluir que a etapa não
+terá nova chamada física, ele também é o produtor do fechamento `StageFailed`: deve atualizar
+o snapshot do journal para `operationState=Partial`, `blockReason=StageFailed` e o
+`logicalStage` correspondente, preservando o item no inventário e sem criar
+`PersistenceReceipt`. Esse fechamento acontece fora de `Persist(...)`; `NoteStageFailed` é o
+evento que o transporta, não um recibo. O novo snapshot só pode ser anunciado como
+`StageFailed` depois de `journalDurability=Confirmed`. Se a gravação ou a releitura do
+journal não puder ser confirmada, o executor preserva o último snapshot durável e expõe
+`GateDiagnostic=DurabilityUnknown`, sem alegar que `StageFailed` foi persistido.
 
 Quando o alvo previsto não for encontrado antes de chamar `Delete()`, o remover não pode
 retornar em silêncio. Deve registrar uma ocorrência de tentativa não realizada, com

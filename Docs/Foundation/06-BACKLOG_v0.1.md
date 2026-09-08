@@ -281,8 +281,9 @@ como estados não terminais, `OperationId` separado de `ApplicationId`, B115 den
 escopo gerenciado, `OutcomeUnknown`, `StillPresentAfterDelete`, fila de remoção por
 passadas e comando unificado de recuperação. O painel CLI de quatro revisores respondeu
 `REVISAR` em todos os pareceres, com diversidade de três famílias de modelo; os ajustes
-documentais da segunda rodada foram aplicados na working tree e o Cursor ficou como
-próxima rodada manual. Nenhuma fase foi implementada, a revisão por pares não foi
+documentais da segunda rodada e as clarificações úteis do parecer solo posterior do MiMo
+V2.5 Pro foram incorporados e commitados; o Cursor ficou como próxima rodada manual.
+Nenhuma fase foi implementada, a revisão por pares não foi
 encerrada e B109, B110, B112, B113 e B114
 permanecem fora da S-B111.
 

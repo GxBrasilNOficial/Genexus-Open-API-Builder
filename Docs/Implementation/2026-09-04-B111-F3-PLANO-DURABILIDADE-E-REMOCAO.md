@@ -218,7 +218,15 @@ O gate reduzido da F1 ganha as validações que dependem de intenção durável:
 Falhando qualquer uma, o resultado é `GateDiagnostic=GateBlocked` antes da primeira
 gravação. O gate não cria `Prepared`, não grava `blockReason` e não inventa um
 `logicalStage`; se houver envelope confirmado anterior, o relatório referencia o snapshot
-existente sem alterá-lo.
+existente sem alterá-lo. O payload estruturado do diagnóstico deve carregar uma `reasonCode`
+estável e a precondição que falhou, além da mensagem para leitura humana; não basta reduzir
+causas diferentes ao texto livre `GateBlocked`. Quando o journal está legível, os códigos de
+subcausa previstos são `JournalNonTerminal`, `JournalIdentityDivergent`,
+`PreparedContinuationNotAuthorized`, `UnreconciledOutcome` e `PreconditionFailed`. Se a
+indisponibilidade ou a durabilidade desconhecida impedirem confirmar o journal, o código de
+alto nível permanece `JournalUnavailable` ou `DurabilityUnknown`, conforme o caso. Esses
+detalhes são efêmeros do diagnóstico, não valores novos do journal nem substitutos de
+`blockReason`.
 
 ### 4.3 Remoção com intenção confirmada
 
@@ -514,6 +522,8 @@ aplicável, `physicalState` e `confirmation`. `NextStep` é fechado em
 `Block`. `RecoveryAuthorization` exige `humanConfirmed=true`, os IDs do envelope, o
 `journalFileId`, `updatedUtc` e o hash do snapshot validado, além da confirmação de que
 a etapa indicada é exatamente a `NextStep` autorizada e pode produzir a próxima gravação.
+Essa vinculação é uma defesa de frescor e integridade contra alteração concorrente entre a
+leitura e a ação (TOCTOU); não cria histórico nem uma segunda identidade para o journal.
 O executor rejeita a autorização se qualquer parte dessa vinculação divergir do diário
 revalidado, evitando continuar sobre um snapshot substituído entre a leitura e a ação.
 
