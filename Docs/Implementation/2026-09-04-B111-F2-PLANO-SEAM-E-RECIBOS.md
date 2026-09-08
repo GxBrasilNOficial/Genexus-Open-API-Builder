@@ -115,9 +115,9 @@ IDE. O mesmo caminho serve para o seam.
 |---|---|
 | diário B111 durável | F3 |
 | três dimensões de estado, `JournalDurabilityUnknown` | F3 |
-| recuperação automática e inventário físico | F3 |
+| recuperação explícita, reconciliação e inventário físico | F3 |
 | remoção de API legado | F3 |
-| decisão entre modo A e modo B | F3 |
+| implementação do Modo A selecionado e ciclo de vida do diário | F3 |
 | mudança de ordem física ou de writer final | já feita na F1 |
 
 A F2 **não** promete recuperação. Ela promete que, quando algo falhar, o relatório dirá

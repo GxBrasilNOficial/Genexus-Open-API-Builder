@@ -124,9 +124,9 @@ alternativa. Essa é a maior simplificação em relação ao manuscrito expandid
 | classes de falha C, D e E distinguíveis | F2 |
 | diário B111 durável, `LegacyImported` | F3 |
 | três dimensões de estado, `JournalDurabilityUnknown` | F3 |
-| recuperação automática, inventário físico | F3 |
+| recuperação explícita, reconciliação e inventário físico | F3 |
 | remoção de API legado com diário importado | F3 |
-| decisão entre modo A e modo B | F3 |
+| implementação do Modo A selecionado e ciclo de vida do diário | F3 |
 | habilitação de BC diferida no Wizard com Save recibado | F2 (depende de receipt) |
 | expansão da UI do Sync para a matriz do Wizard | fora da sprint |
 
