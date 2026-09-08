@@ -248,9 +248,11 @@ O DeepSeek V4 Pro revisou o estado commitado no `main` em `3246440` e respondeu 
 RESSALVAS`. Foi uma segunda opinião individual, não uma nova rodada do painel e não uma
 autoridade para editar ou concluir a revisão.
 
-Os apontamentos úteis foram: esclarecer que os cinco consumidores da promoção V2→V3 são os
-consumidores obrigatórios de versão, ownership ou fingerprint, não todos os leitores de campos
-estáveis; fixar o serializer e suas configurações antes de implementar o `snapshotHash`; e
-remeter a lista de “Estágios mínimos” ao enum completo de `logicalStage` da decisão 31. Após
-conferência no código e nos planos, os três pontos foram incorporados como clarificações P3;
+Os apontamentos úteis foram: esclarecer que os cinco consumidores então listados na rodada do
+parecer eram os consumidores obrigatórios de versão, ownership ou fingerprint, não todos os
+leitores de campos estáveis; fixar o serializer e suas configurações antes de implementar o
+`snapshotHash`; e remeter a lista de “Estágios mínimos” ao enum completo de `logicalStage` da
+decisão 31. Após conferência no código e nos planos, os três pontos foram incorporados como
+clarificações P3; a lista canônica posterior passou a explicitar também
+`ApiPlanMetadataIntegrity`, totalizando seis componentes da promoção V2→V3;
 nenhum encontrou P1 ou P2.

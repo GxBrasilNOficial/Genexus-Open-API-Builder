@@ -491,10 +491,11 @@ Com o seam integrado na IDE, cada fluxo da matriz da F1 passa a ter prova execut
 | List-only | exatamente um recibo de API, no List, depois do recibo da Procedure |
 | BC + List | exatamente um recibo de API, no List; nenhum recibo de API no BC |
 | Sync, todas as combinações **alcançáveis** | mesma sequência do Wizard equivalente |
-| `GenerateApiObject=false` — **Wizard-only** | nenhum recibo de API |
-| SDT/Procedure `false` — **Wizard-only** | nenhum recibo da etapa desmarcada |
+| `GenerateApiObject=false` — **Wizard-only** | nenhum recibo de API; se BC/List estiver selecionado, os recibos de suas Procedures continuam pertencendo ao consumidor selecionado |
+| `GenerateApiObject=false` + BC/List — **Wizard-only** | nenhum recibo de API; recibos de Folder, SDT e Procedure seguem a matriz de dependências e flags da F1 |
+| SDT/Procedure `false` — **Wizard-only** | nenhum recibo da **fase dedicada** desmarcada; um recibo de atualização da Procedure própria pelo BC/List explicitamente selecionado continua permitido |
 
-As duas últimas linhas são **exclusivas do Wizard**. O `BuildSelection` do Sync monta um
+As três últimas linhas são **exclusivas do Wizard**. O `BuildSelection` do Sync monta um
 perfil fixo com `GenerateApiObject`, `GenerateSdts`, `GenerateProcedures` e
 `GenerateMetadata` sempre verdadeiras, de modo que “todas as combinações” do Sync são apenas
 as quatro de BC/List. Ver a seção 4.6 da F1, que é a fonte desta regra: não criar falsa

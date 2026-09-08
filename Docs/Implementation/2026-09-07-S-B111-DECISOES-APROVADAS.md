@@ -1310,10 +1310,10 @@ O DeepSeek V4 Pro respondeu `APROVAR COM RESSALVAS`. Foi tratado como segunda op
 insumo para conferência local e não autoridade para editar o repositório ou autorizar a
 implementação. Após validação no código e nos planos, foram aproveitados estes pontos P3:
 
-- os cinco consumidores listados para a promoção V2→V3 são os consumidores obrigatórios que
-  validam versão, ownership ou fingerprint, não uma lista exaustiva de leitores; leitores que
-  só consomem campos de ownership estáveis devem continuar compatíveis com V3 sem ganhar lógica
-  própria de promoção;
+- os seis componentes listados para a promoção V2→V3 — incluindo `ApiPlanMetadataIntegrity` —
+  são os componentes obrigatórios que validam versão, ownership ou fingerprint, não uma lista
+  exaustiva de leitores; leitores que só consomem campos de ownership estáveis devem continuar
+  compatíveis com V3 sem ganhar lógica própria de promoção;
 - a canonização do `snapshotHash` precisa fixar o serializer e suas configurações, ou usar
   writer canônico próprio, antes da implementação da F3; defaults não nomeados não fazem parte
   do contrato;

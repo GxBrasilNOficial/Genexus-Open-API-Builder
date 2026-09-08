@@ -295,6 +295,13 @@ em 4.6 — “o writer pode exigir que dependências já existam e estejam coere
 pode salvá-las ocultamente” —, mas não deve ser descrito como mera declaração sem efeito
 observável.
 
+`ApiPlanApiObjectWriter` também não é exceção. Embora não seja um writer consumidor de
+BC/List, sua chamada a `ApiPlanTransactionFolder.CreateOrReencounter` deve operar em
+reencontro estrito. As fases dedicadas de SDT ou Procedure podem criar o Folder antes
+dele; quando ambas estiverem desmarcadas, o preflight deve exigir Folder existente,
+próprio e coerente. Folder ausente, ambíguo ou divergente bloqueia antes do `API.Save()`;
+o API writer nunca cria o Folder como efeito colateral da preparação do API.
+
 Consequência prática a validar: com `GenerateSdts=false` e BC selecionado, o SDT que só a
 etapa de BC usaria precisa **já existir**; se não existir, o gate bloqueia — em vez de o
 writer criá-lo em silêncio, como pode ocorrer hoje.
@@ -504,7 +511,7 @@ executável.
 |---|---|
 | `Src/Extension/Package.cs` | predicado nos dois blocos; deferimento de B054 estendido a List e a BC com API ausente; ordem física; resolução final por identidade |
 | `Src/Domain/ApiPlan.cs` | transportar `TransactionGuid`, `ApplicationId`, `OperationId`, identidade planejada e fatos resolvidos no contrato do plano |
-| `Diagnostics/ApiPlanApiObjectWriter.cs` | separar preparação de persistência; devolver contexto transient; manter o Save só no caminho API-only |
+| `Diagnostics/ApiPlanApiObjectWriter.cs` | separar preparação de persistência; devolver contexto transient; manter o Save só no caminho API-only; reencontrar Folder em modo estrito e nunca criá-lo como efeito colateral |
 | `Diagnostics/ApiPlanSdtWriter.cs` | separar o modo da fase dedicada, que pode criar ou corrigir SDTs, do reencontro estrito usado por consumidores; nenhum caminho de consumidor pode gravar Folder ou SDT |
 | `Diagnostics/ApiPlanTransactionFolder.cs` | oferecer uma distinção explícita entre criação autorizada por fase dedicada e reencontro estrito; o modo estrito bloqueia ausência ou divergência em vez de salvar |
 | `Diagnostics/ApiPlanProcedureWriter.cs` | permanecer como dono da fase dedicada de Procedures; sua chamada de Folder é classificada como dedicada e não pode ser reutilizada por BC/List para criação implícita |
@@ -576,11 +583,28 @@ Nas oito primeiras linhas, `GenerateApiObject=true`; nas seguintes, o que a colu
 | Wizard | BC-only ou List-only, `GenerateSdts=false`, Folder/SDT ausente, ambíguo ou divergente | bloqueio antes do primeiro Save; nenhum consumidor cria ou corrige Folder/SDT |
 | Wizard | BC-only ou List-only, `GenerateProcedures=false`, Procedure própria ausente, ambígua ou externa | bloqueio antes do primeiro Save; nenhum consumidor cria Procedure para suprir a dependência |
 | Wizard | BC + List, `GenerateProcedures=false`, qualquer Procedure necessária ausente, ambígua ou externa | bloqueio antes do primeiro Save; nenhum consumidor cria Procedure para suprir a dependência |
+| Wizard | `GenerateApiObject=false`, BC-only/List-only/BC+List, API próprio, combinação de flags abaixo | ver matriz explícita de dependências a seguir; em todos os casos, **zero** `API.Save()` |
 | Sync | BC sem habilitação na Transaction | bloqueio antes de qualquer Save |
 | Wizard | **List-only com API novo** | `includeBusinessComponentParameters=false` vindo do contexto transient; **nenhuma leitura de API persistido** no caminho — terceiro ramo de 4.8 |
 | Wizard | **List sem Business Component**, sobre API preexistente | segundo ramo de 4.8: dedução pelo API persistido, comportamento preservado |
 | Wizard | **BC+List com API novo** | primeiro ramo de 4.8: valor `true` mesmo sem API persistido |
 | Wizard | API preexistente na variante de List sem parâmetros de BC, reaplicado com as duas etapas | os parâmetros de BC aparecem, provando que a guarda é necessária |
+
+Para `GenerateApiObject=false`, API próprio existente e qualquer uma das seleções
+BC-only, List-only ou BC+List, as quatro combinações das flags dedicadas têm este
+resultado obrigatório:
+
+| `GenerateSdts` | `GenerateProcedures` | Resultado exigido |
+|---|---|---|
+| false | false | Folder e SDTs precisam existir e ser coerentes; Procedures próprias precisam existir; o consumidor pode atualizar suas Procedures, sem gravação de Folder/SDT e sem `API.Save()` |
+| false | true | a fase dedicada de Procedures pode criar/reencontrar Procedure e Folder; SDTs precisam existir e ser coerentes; consumidor atualiza suas Procedures, sem `API.Save()` |
+| true | false | a fase dedicada de SDTs pode criar/reencontrar Folder e SDTs; Procedures próprias precisam existir; consumidor atualiza suas Procedures, sem `API.Save()` |
+| true | true | as fases dedicadas podem preparar Folder, SDTs e Procedures; consumidores atualizam suas Procedures, sem `API.Save()` |
+
+Em qualquer uma das quatro linhas, ausência, ambiguidade ou posse externa de uma
+dependência que a flag falsa exige reencontrar bloqueia antes do primeiro `Save()`.
+Divergência de Folder/SDT também bloqueia o reencontro estrito; divergência de Source de
+Procedure própria pode ser corrigida pelo consumidor explicitamente selecionado.
 
 Os dois últimos são os cenários D e G do plano aprovado, e a receita do G está na seção 6
 daquele documento: gerar com Business Component desabilitado marcando Get/Create/Update e
