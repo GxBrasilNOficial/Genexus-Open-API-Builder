@@ -229,7 +229,9 @@ Cada `PersistenceReceipt` carrega:
 - `PersistenceIdentity` planejada, além do nome para exibição;
 - identidade persistida observada, ou ausência confirmada no caso de `Delete`;
 - início, fim e duração;
-- `attempt` e, quando aplicável, `retryOfSequence`;
+- `attempt`, começando em `1` para a primeira tentativa física de um alvo na operação e
+  incrementado somente quando esse mesmo alvo é reencaminhado, e, quando aplicável,
+  `retryOfSequence`;
 - estado da tentativa (`Started`, `Finished` ou `Interrupted`), separado do resultado;
 - resultado: `Confirmed`, `Failed` ou `OutcomeUnknown`;
 - `confirmation`, com enum fechado `NotAttempted`, `Confirmed`, `Absent`, `Divergent` ou
@@ -243,7 +245,9 @@ Cada `PersistenceReceipt` carrega:
 - se houve leitura de confirmação e qual foi seu resultado.
 
 O recibo é registro, não decisão. Nada no código deve mudar de caminho por causa de um
-recibo dentro da F2.
+recibo dentro da F2. Cada retry recebe seu próprio recibo; a continuação do mesmo envelope
+mantém o maior `attempt` já persistido e usa o próximo valor. Uma operação nova, depois de
+`Completed` ou `Removed`, começa em `1`.
 
 ### 4.3 As três classes de falha
 
@@ -300,7 +304,7 @@ retornar em silêncio. Deve registrar uma ocorrência de tentativa não realizad
 localização. Essa ocorrência permite à F3 distinguir ausência comprovada de alvo não
 localizado e decidir se o inventário está completo. `NotAttempted` nunca equivale a
 `Confirmed`: salvo recibo durável anterior que já confirme a mesma identidade, a
-remoção termina em `Partial` com motivo `TargetAbsentBeforeDelete` e exige
+remoção termina em `Partial`, com `blockReason=TargetAbsentBeforeDelete`, e exige
 reconciliação explícita. A localização deve ser feita pela
 identidade validada; nome isolado não pode transformar um API renomeado em ausência aparente.
 

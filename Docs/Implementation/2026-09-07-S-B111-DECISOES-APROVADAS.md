@@ -413,7 +413,7 @@ nomes serializados.
 | `inventory` | array obrigatório, possivelmente vazio | cada alvo e preservação aparecem uma vez |
 | `receipts` | array obrigatório, possivelmente vazio | sequência monotônica dentro da operação |
 | `abandonment` | objeto anulável | obrigatório somente quando `logicalStage=Abandoned` |
-| `blockReason` | string anulável | obrigatória em bloqueio, `OutcomeUnknown` ou reconciliação pendente |
+| `blockReason` | enum anulável | obrigatória em bloqueio, `OutcomeUnknown` ou reconciliação pendente; valores V1: `JournalUnavailable`, `OperationNotTerminal`, `DurabilityUnknown`, `OutcomeUnknown`, `InventoryInsufficient`, `IdentityAmbiguous`, `IdentityDivergent`, `UnreconciledNotAttempted`, `TargetAbsentBeforeDelete`, `NonRetryableDeleteFailure` ou `RetryBudgetExhausted` |
 
 `journalFileId` não é um campo JSON: é a vinculação externa entre o envelope e o
 `WikiFileKBObject.Id`. O runtime deve guardá-lo após a criação e conferir o mesmo ID em
@@ -592,7 +592,9 @@ Decisão aprovada:
 
 Cada `PersistenceReceipt` conterá:
 
-- `sequence` e `attempt`;
+- `sequence` e `attempt`; `attempt` começa em `1` para a primeira tentativa física
+  daquele alvo dentro da operação e só é incrementado quando o mesmo alvo é
+  reencaminhado na mesma operação;
 - `retryOfSequence`, quando houver retry;
 - `operation`, com `Save` ou `Delete`;
 - `objectType`, com `ApiObject`, `Procedure`, `Sdt`, `MetadataFile`, `Folder` ou
@@ -614,6 +616,8 @@ Cada `PersistenceReceipt` conterá:
 Regras do recibo:
 
 - cada tentativa de `Delete` terá recibo próprio;
+- a continuação do mesmo envelope mantém o maior `attempt` já persistido e usa o
+  próximo valor; uma operação nova, depois de `Completed` ou `Removed`, começa em `1`;
 - retry não transforma recibo anterior em sucesso;
 - `OutcomeUnknown` nunca autoriza retry posterior;
 - somente `Delete` pode produzir `retryEligible=true`, e isso exige
@@ -1027,9 +1031,10 @@ e termina quando uma passada inteira não apagar nada. `OutcomeUnknown` interrom
 requeue.
 
 O orçamento é `maxPasses = max(1, número de itens Delete do inventário)`. Ao atingir o
-limite com itens `StillPresentAfterDelete` pendentes, o estado é `Partial` com
-`RetryBudgetExhausted`; não há loop infinito nem nova operação automática. Continuação
-posterior exige o mesmo envelope, confirmação humana e novo orçamento. `NotAttempted`,
+limite com itens `StillPresentAfterDelete` pendentes, o estado é `Partial` e
+`blockReason=RetryBudgetExhausted`; não há loop infinito nem nova operação automática.
+Continuação posterior exige o mesmo envelope, confirmação humana e novo orçamento.
+`NotAttempted`,
 falha não retryable e alvo ausente antes da primeira tentativa também impedem `Removed`,
 salvo recibo durável anterior `Confirmed` para a mesma identidade. Transaction, diário,
 preferências, SDTs compartilhados e Folders não próprios nunca entram na fila destrutiva.

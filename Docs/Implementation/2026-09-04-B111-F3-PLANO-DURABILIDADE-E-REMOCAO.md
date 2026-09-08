@@ -260,13 +260,15 @@ O ciclo de vida da fila é fechado assim:
   da tentativa e recebe um recibo, inclusive quando não chega a chamar `Delete()`;
 - `NotAttempted`/`Absent` antes do primeiro Delete não é sucesso implícito. Sem recibo
   durável anterior `Confirmed` para a mesma identidade, encerra a operação em `Partial`
-  com `TargetAbsentBeforeDelete`. Uma falha `Failed` não retryable também encerra em
-  `Partial`, com o item preservado e sem nova passada;
+  com `blockReason=TargetAbsentBeforeDelete`. Uma falha `Failed` não retryable também
+  encerra em `Partial`, com `blockReason=NonRetryableDeleteFailure`, o item preservado e
+  sem nova passada;
 - no início da operação, `maxPasses = max(1, número de itens Delete do inventário)`.
   Uma passada só pode reencaminhar `StillPresentAfterDelete`. Se o limite for atingido
-  com itens pendentes, o diário termina em `Partial` com `RetryBudgetExhausted`; não há
-  loop infinito nem retry silencioso em outra operação. Uma continuação explícita do
-  mesmo envelope pode receber novo orçamento depois de confirmação humana;
+  com itens pendentes, o diário termina com `operationState=Partial` e
+  `blockReason=RetryBudgetExhausted`; não há loop infinito nem retry silencioso em outra
+  operação. Uma continuação explícita do mesmo envelope pode receber novo orçamento depois
+  de confirmação humana;
 - somente quando todos os itens `Delete` tiverem recibo `Confirmed` ou um recibo
   anterior equivalente e durável, sem `NotAttempted`, `Failed` ou `OutcomeUnknown`,
   a operação pode terminar em `Removed`.
@@ -309,6 +311,18 @@ célula seguinte, não grava objeto de negócio e expõe bloqueio para reconcili
 física não é contada como checkpoint confirmado e não pode ser repetida em silêncio. A
 implementação não poderá reduzir a quantidade para economizar I/O nem misturar `Prepared`/
 `Active` ao enum de estado global.
+
+Para tornar explícita a fronteira entre o comando de recuperação e a operação persistida,
+as transições são estas:
+
+| Situação | `operationKind` persistido | Identidade e intenção | Estados terminais possíveis |
+|---|---|---|---|
+| B115 autônomo, sem envelope de negócio a continuar | `Recovery` | novos `operationId`/`applicationId`, `intentKind=Imported` | `Completed` ou `OutcomeUnknown` |
+| Recuperação explícita de `Apply` ou `Sync` | `Apply` ou `Sync` original | mesmos IDs, `applicationId` e `plan` do envelope | terminal previsto pela operação original, inclusive `Completed`, `Partial` ou `OutcomeUnknown` |
+| Recuperação explícita de `Remove` | `Remove` original | mesmos IDs, `applicationId` e inventário do envelope | `Removed`, `Partial` ou `OutcomeUnknown` |
+
+O rótulo do comando (`Recovery`) não é gravado como substituto de uma operação de
+negócio. Ele apenas seleciona a reidratação e a confirmação humana da continuação.
 
 A linha `Recovery` descreve o comando que reidrata um envelope existente; ela não autoriza
 criar uma segunda operação nem trocar silenciosamente `operationKind`. Ao continuar
@@ -463,7 +477,7 @@ Os contratos ficam nomeados e fechados assim:
   IReadOnlyList<RecoveryTargetObservation> observations)` devolve
   `ApiPlanRehydratedOperation`, contendo `operationKind`, `operationId`,
   `applicationId`, inventário classificado, recibos já relacionados e a única
-  `NextStep` autorizada ou um `BlockReason`;
+  `NextStep` autorizada ou um `BlockReason` do enum fechado da decisão 24;
 - `ApiPlanRecoveryExecutor.Continue(ApiPlanRehydratedOperation operation,
   RecoveryAuthorization authorization)` devolve `ApiPlanRecoveryResult`, com recibos
   novos, checkpoint durável, estado terminal ou bloqueio. `authorization` é obrigatória
