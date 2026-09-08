@@ -70,9 +70,10 @@ independente. O invólucro de relatório não substitui a instrumentação do `D
 
 **Proto-seam nos writers de consumidor.** `ApiPlanBusinessComponentWriter.cs:98` e
 `ApiPlanListProcedureWriter.cs:66` já montam `saveSteps` como lista de
-`(Label, Action Save)` e a executam em laço com progresso e cronômetro por passo. Falta
+`(Label, Action Save, Snapshot)` e a executam em laço com progresso e cronômetro por passo. Falta
 pouco para um seam: identidade e tipo do objeto, resultado da operação, ordem monotônica
-global e um único laço em vez de dois duplicados.
+global e um único laço em vez de dois duplicados. O executor unificado deve transportar o
+`Snapshot` sem descartá-lo, porque os eventos B109 dependem desse estado de comparação.
 
 **Escopo ambiente em vez de parâmetro propagado.** `ApiPlanScanProbe` resolveu, para a
 telemetria de varredura, exatamente o problema que um seam enfrentaria: instrumentar
@@ -91,7 +92,8 @@ da sprint.
 
 **Teste executável offline já tem precedente.** `Tests/ScanProbe/Test-ApiPlanScanProbe.ps1`
 compila o próprio arquivo de produção com `Add-Type -Path` e exercita a classe fora da
-IDE. O mesmo caminho serve para o seam.
+IDE. O mesmo padrão será usado para o núcleo SDK-free extraído do seam; o adaptador
+acoplado ao SDK continua dependente da validação na IDE.
 
 ---
 
@@ -99,8 +101,8 @@ IDE. O mesmo caminho serve para o seam.
 
 ### 3.1 O que entra
 
-1. um seam de persistência de escopo ambiente, no padrão de `ApiPlanScanProbe`, promovendo
-   `ApiPlanSaveBoundaryProbe`;
+1. um seam de persistência de escopo ambiente, no padrão de `ApiPlanScanProbe`, fatorando
+   `ApiPlanSaveBoundaryProbe` em núcleo SDK-free e adaptador único do SDK;
 2. `PersistenceReceipt`, com o conteúdo da seção 4.2;
 3. a classificação de falha em C, D e E da seção 4.3;
 4. unificação dos dois laços de `saveSteps` num único executor;
@@ -136,13 +138,14 @@ repositório:
 
 - o seam não exige refactor de assinaturas, porque usa escopo ambiente, como
   `ApiPlanScanProbe` (2.2);
-- o teste não exige projeto .NET, porque compila o arquivo de produção com `Add-Type`, como
-  `Tests/ScanProbe/Test-ApiPlanScanProbe.ps1`.
+- o teste não exige projeto .NET para o núcleo SDK-free, porque compila esse arquivo de
+  produção com `Add-Type`, como `Tests/ScanProbe/Test-ApiPlanScanProbe.ps1`; a integração
+  do adaptador GeneXus é provada separadamente na IDE.
 
 Isto está declarado aqui para que a reabertura seja **consciente e verificável**, não uma
-reintrodução silenciosa de ponto já descartado. Se o painel de revisão discordar de que
-esses dois precedentes bastam, a refutação original prevalece e a F2 precisa ser
-redesenhada.
+reintrodução silenciosa de ponto já descartado. Sem a fatoração SDK-free, a refutação
+original prevalece; com ela, o precedente de escopo ambiente sustenta o mecanismo e o
+precedente de `Add-Type` sustenta somente o núcleo testável, não o pipeline completo.
 
 ---
 
@@ -150,26 +153,43 @@ redesenhada.
 
 ### 4.1 O ponto comum de persistência
 
-O único ponto comum será a classe existente `ApiPlanSaveBoundaryProbe`. Aqui, “ponto
-comum” é a fronteira técnica por onde passam as operações reais de persistência para
-serem registradas e confirmadas; não é um objeto da KB nem um novo tipo GeneXus.
+O único ponto comum continuará sendo a fronteira existente
+`ApiPlanSaveBoundaryProbe`, mas ela será fatorada em duas camadas, sem criar um segundo
+probe paralelo:
 
-A F2 amplia essa classe, em vez de criar um `ApiPlanPersistenceProbe` paralelo. Ela
-preserva os eventos atuais de Pump/Save e passa a ser também a dona dos recibos de
-`Save` e `Delete`.
+- um núcleo SDK-free, público e testável por `Add-Type`, responsável por recibos,
+  confirmação delegada, ordem monotônica, escopo e publicação do resultado;
+- um adaptador SDK-acoplado, preservando os eventos atuais de Pump/Save, os snapshots
+  B109 e a integração com `API`, `Procedure` e demais objetos GeneXus.
+
+O ponto comum é a fronteira técnica por onde passam as operações reais de persistência
+para serem registradas e confirmadas; não é um objeto da KB nem um novo tipo GeneXus.
 
 Contrato mínimo:
 
 - `Begin(ApiPlanPersistenceLog log)` abre escopo `[ThreadStatic]` e devolve `IDisposable`;
   escopos aninhados restauram o anterior;
 - `Persist(string operationKind, string objectType, string stage, string plannedName,
-  Guid? plannedGuid, Action persist, Func<PersistenceConfirmation> confirm)` executa
+  PersistenceIdentity identity, Action persist, Func<PersistenceConfirmation> confirm)` executa
   `Save` ou `Delete`, mede a operação e registra o recibo quando há escopo ativo;
 - a confirmação é obrigatória para todo ponto de produção. Não existe sobrecarga sem
-  `confirm`: para `Save`, ela relê o objeto esperado; para `Delete`, confirma a ausência
-  do objeto pelo `Guid` planejado;
+  `confirm`: para `Save`, ela relê o objeto esperado; para `Delete`, ela confirma a
+  ausência pela identidade validada do alvo. API usa `PlannedApiGuid`; File usa
+  `FileId`, GUID, nome canônico e hash conforme o inventário; Procedure e SDT legados
+  podem usar a identidade histórica composta aprovada no B115; Folder exige nome,
+  posse e condição de vazio. Identidade que não selecione exatamente um alvo produz
+  `OutcomeUnknown`, nunca um retry;
 - `Suspend()` interrompe apenas a captura de trechos que rodam dentro da operação mas
   não pertencem a ela, como a apresentação do relatório final.
+
+`PersistenceIdentity` é obrigatória e tem variantes fechadas: `GuidIdentity(guid)` para
+API; `FileIdentity(fileId, canonicalName, expectedSha256)` para metadata;
+`CompositeIdentity(exactName, objectType, role, canonicalDescription, transactionGuid,
+apiGuid)` para Procedure/SDT legado; `FolderIdentity(exactName, owned, emptyConfirmed)`
+para Folder; e `None` somente para itens `Preserve`. O `plannedName` continua sendo
+exibição e não substitui a identidade. Assim, o seam não fica restrito a uma identidade
+GUID e a confirmação usa o mesmo contrato de identidade em Save, Delete, inventário e
+recibo.
 
 Regras:
 
@@ -180,11 +200,25 @@ Regras:
 4. o ponto comum não decide nada: não bloqueia, não repete, não escolhe writer;
 5. a tentativa sem confirmação não é um sucesso: o ponto não pode ser considerado
    coberto pela F2 até que sua leitura de confirmação exista.
-6. o recibo final de cada tentativa deve ser devolvido ou exposto ao chamador,
-   inclusive quando o delegate lança e a exceção original é relançada; a F3 não pode
-   deduzir o resultado pela mensagem da exceção. O canal pode ser um resultado ou um
-   handle associado à tentativa no log, mas deve permitir que o executor de `Remove`
-   leia `Confirmed`, `Failed` retryable ou `OutcomeUnknown`.
+6. o recibo final de cada tentativa deve ser registrado antes de relançar a exceção
+   original, inclusive quando o delegate lança. A tentativa recebe uma sequência monotônica
+   antes do delegate e o chamador recupera o resultado final pelo log usando essa sequência;
+   a F3 não pode deduzir o resultado pela mensagem da exceção. O contrato deve permitir que
+   o executor de `Remove` leia `Confirmed`, `Failed` retryable ou `OutcomeUnknown` sem canal
+   alternativo indefinido.
+7. o `Save()` do próprio diário não passa por este `Persist(...)`: usa uma rotina separada
+   de durabilidade do diário, confirmada por `FileId`, bytes e hash, para não criar recibo
+   autorreferente nem recursão no protocolo `Prepared`/`Active`.
+
+O seam não pode deixar o executor de `Remove` dependente de uma exceção ou de sua
+mensagem para descobrir o resultado final. O contrato do log deverá expor, por meio da
+sequência monotônica atribuída antes do delegate, a consulta do recibo final da tentativa
+(`TryGetReceipt(sequence, out receipt)` ou equivalente). Essa consulta precisa funcionar
+depois que o `Persist(...)` relançar a exceção original. O executor será o único consumidor
+que transforma `Failed` com `retryableReason=StillPresentAfterDelete` em item da passada
+seguinte; `Confirmed` remove o item da fila e `OutcomeUnknown` bloqueia. O mesmo contrato
+deve expor o evento `NoteStageFailed` produzido pelo orquestrador para que a F2 não
+confunda falha de preparação com ausência de tentativa.
 
 ### 4.2 O recibo
 
@@ -192,10 +226,15 @@ Cada `PersistenceReceipt` carrega:
 
 - ordem monotônica global dentro da operação;
 - operação (`Save` ou `Delete`), etapa e tipo de objeto;
-- nome planejado e, quando houver, `Guid` planejado;
-- nome e `Guid` persistidos, ou ausência confirmada no caso de `Delete`;
+- `PersistenceIdentity` planejada, além do nome para exibição;
+- identidade persistida observada, ou ausência confirmada no caso de `Delete`;
 - início, fim e duração;
+- `attempt` e, quando aplicável, `retryOfSequence`;
+- estado da tentativa (`Started`, `Finished` ou `Interrupted`), separado do resultado;
 - resultado: `Confirmed`, `Failed` ou `OutcomeUnknown`;
+- `confirmation`, com enum fechado `NotAttempted`, `Confirmed`, `Absent`, `Divergent` ou
+  `Unreadable`;
+- `physicalState`, com o estado observado do alvo (`Present`, `Absent` ou `Unknown`);
 - `retryEligible`, booleano que só pode ser verdadeiro para uma falha retryable de
   `Delete`;
 - `retryableReason`, enum fechado, inicialmente `StillPresentAfterDelete`, ou ausente quando
@@ -210,7 +249,7 @@ recibo dentro da F2.
 
 | Classe | Situação | Resultado do recibo |
 |---|---|---|
-| **C** | falhou **antes** de chamar `Save()` ou `Delete()` | `Failed`, sem efeito produzido |
+| **C** | falhou **antes** de chamar `Save()` ou `Delete()` | falha de etapa registrada pelo orquestrador, sem `PersistenceReceipt` |
 | **D** | `Save()` ou `Delete()` lançou ou foi cancelado; em `Delete`, uma releitura imediata ainda pode provar o objeto presente ou a ausência | `OutcomeUnknown`, exceto por `Failed` retryable quando presente ou `Confirmed` quando ausente |
 | **E** | a operação retornou; em `Delete`, a confirmação pode provar ausência, provar que o objeto ainda está presente, ou ser ilegível, divergente ou ambígua | `Confirmed` quando ausente; `Failed` retryable quando presente; caso contrário, `OutcomeUnknown` |
 
@@ -230,8 +269,8 @@ explícito, senão os testes da seção 6.3 não têm o que exercitar.
 
 **Ciclo de vida do recibo dentro de `Persist`:**
 
-1. o recibo é criado e registrado no log **antes** de o delegate ser invocado, com resultado
-   `Started` e a ordem monotônica já atribuída;
+1. o recibo é criado e registrado no log **antes** de o delegate ser invocado, com estado da
+   tentativa `Started` e a ordem monotônica já atribuída; `Started` não é valor de `outcome`;
 2. o delegate é invocado;
 3. se lançar — inclusive `OperationCanceledException` —, registra a exceção e relança sem
    alteração. Para `Delete`, uma releitura imediata por identidade pode classificar o
@@ -249,11 +288,21 @@ Um recibo que permaneça em `Started` ao fim da operação é, por si, um sinal:
 processo morreu dentro daquela gravação.
 
 **A classe C não é observável pelo seam** — se a falha ocorre antes de chamar `Persist`, o
-seam não é invocado e não há recibo. Ela é registrada pelo **orquestrador**, com um método
-próprio do log, do tipo `NoteStageFailed(stage, reason)`, chamado onde hoje já existe o
+seam não é invocado e não há recibo. Ela é registrada pelo **orquestrador**, com um evento
+de falha de etapa do tipo `NoteStageFailed(stage, reason)`, chamado onde hoje já existe o
 teste de resultado de cada etapa. Sem isso, “etapa falhou antes de gravar” seria
 indistinguível de “etapa nunca foi selecionada”, que é uma distinção que o relatório precisa
 fazer.
+
+Quando o alvo previsto não for encontrado antes de chamar `Delete()`, o remover não pode
+retornar em silêncio. Deve registrar uma ocorrência de tentativa não realizada, com
+`confirmation=NotAttempted` e `physicalState=Absent` ou `Unknown`, conforme a qualidade da
+localização. Essa ocorrência permite à F3 distinguir ausência comprovada de alvo não
+localizado e decidir se o inventário está completo. `NotAttempted` nunca equivale a
+`Confirmed`: salvo recibo durável anterior que já confirme a mesma identidade, a
+remoção termina em `Partial` com motivo `TargetAbsentBeforeDelete` e exige
+reconciliação explícita. A localização deve ser feita pela
+identidade validada; nome isolado não pode transformar um API renomeado em ausência aparente.
 
 **Correção herdada: “timeout” não é observável.** O manuscrito expandido falava em timeout
 como uma das origens de resultado indeterminado. O SDK não expõe timeout nas operações de
@@ -288,8 +337,9 @@ e outra deve falhar se um ponto for instrumentado nos dois níveis.
 
 ### 4.5 O log sobrevive aos retornos antecipados
 
-`Package.cs` tem **22** chamadas a `ShowFinalReport` e, só no Apply do Wizard, **8** pontos
-de `return` após falha ou bloqueio de etapa. Se a sequência de recibos dependesse do
+`Package.cs` tem atualmente **21** chamadas a `ShowFinalReport` — a declaração do método
+não é uma chamada — e o número de retornos antecipados deve ser mantido por enumeração ou
+checker, não como contrato fixo. Se a sequência de recibos dependesse do
 `Dispose` do escopo para ser publicada, o relatório sairia sem os últimos recibos em
 exatamente os casos que mais importam — os de falha.
 
@@ -298,7 +348,7 @@ Contrato:
 1. o `ApiPlanPersistenceLog` é instanciado **antes** de abrir o escopo, e é uma variável
    local do Apply;
 2. `Begin(log)` só ativa a captura; o log não pertence ao escopo e não é publicado por ele;
-3. `ShowFinalReport` recebe o log **diretamente**, em todos os 22 pontos de chamada, e por
+3. `ShowFinalReport` recebe o log **diretamente**, em todos os pontos de chamada, e por
    isso funciona em qualquer retorno antecipado;
 4. o escopo continua sendo `using`, para garantir restauração do estado `[ThreadStatic]`
    mesmo em exceção;
@@ -327,7 +377,8 @@ No Sync nada muda: continua bloqueando antes de qualquer gravação.
 
 | Arquivo | Mudança |
 |---|---|
-| `Diagnostics/ApiPlanSaveBoundaryProbe.cs` (existente) | único ponto comum; preservar eventos B109 e absorver recibos de `Save` e `Delete` |
+| `Diagnostics/ApiPlanPersistenceCore.cs` (novo, SDK-free) | núcleo público do seam; recibos, confirmação delegada, ordem monotônica, escopo e resultado final por sequência |
+| `Diagnostics/ApiPlanSaveBoundaryProbe.cs` (existente) | adaptador único do SDK; preservar eventos B109 e encaminhar `Save` e `Delete` ao núcleo |
 | `Diagnostics/ApiPlanPersistenceLog.cs` (novo) | coleção ordenada de recibos, no espírito de `ApiPlanScanTelemetry` |
 | `Diagnostics/ApiPlanSaveStepExecutor.cs` (novo) | executor único dos `saveSteps`, hoje duplicado |
 | `ApiPlanBusinessComponentWriter.cs`, `ApiPlanListProcedureWriter.cs` | passar a usar o executor único |
@@ -335,6 +386,7 @@ No Sync nada muda: continua bloqueando antes de qualquer gravação.
 | `ApiPlanOrphanMetadataRecovery.cs` | envolver o `file.Save()` da recuperação B115 em `Persist(...)`, com confirmação de identidade e bytes |
 | `ApiPlanGeneratedApiRemover.cs` | envolver cada `Delete()` físico em `Persist(...)`, com confirmação obrigatória de ausência |
 | `Package.cs` | abrir o escopo por operação; `transaction.Save()` recibado; habilitação de BC diferida no Wizard; sequência de recibos no relatório |
+| `PrototypeWizardDialog.cs` | deixar de executar `transaction.Save()` durante o diálogo; registrar somente a habilitação pendente para o Apply planejado |
 | `ApiPlanApplicationFinalReport.*` | sequência de recibos e contagem por tipo |
 | `Tests/PersistenceProbe/` (novo) | teste executável do seam, no padrão de `Tests/ScanProbe/` |
 
@@ -344,8 +396,10 @@ No Sync nada muda: continua bloqueando antes de qualquer gravação.
 
 ### 6.1 Teste executável do ponto comum
 
-No padrão de `Tests/ScanProbe/Test-ApiPlanScanProbe.ps1`, compilando os arquivos de
-produção com `Add-Type -Path` e exercitando fora da IDE:
+No padrão de `Tests/ScanProbe/Test-ApiPlanScanProbe.ps1`, compilando o núcleo SDK-free de
+produção com `Add-Type -Path` e exercitando fora da IDE. Esse teste prova a semântica do
+seam, não o pipeline GeneXus completo; a integração do adaptador, a quantidade real de
+`API.Save()` e a ordem física exigem validação posterior na IDE:
 
 1. sem escopo ativo, `Persist` apenas executa o delegate e não registra nada;
 2. com escopo, registra ordem monotônica, tipo, nome e duração;
@@ -356,17 +410,20 @@ produção com `Add-Type -Path` e exercitando fora da IDE:
    ausência (`Confirmed`, `retryEligible=false`) e releitura indeterminada
    (`OutcomeUnknown`, `retryEligible=false`), sempre relançando a exceção original
    quando houver;
-4. falha antes da chamada é registrada como `Failed`;
+4. falha antes da chamada é registrada pelo orquestrador como evento de falha de etapa,
+   sem ser confundida com um `PersistenceReceipt`;
 5. leitura de confirmação divergente produz `OutcomeUnknown` com a divergência;
 6. confirmação ausente não possui sobrecarga válida e não passa no contrato;
 7. `Delete` confirmado pela ausência produz `Confirmed`;
-8. escopos aninhados restauram o anterior;
-9. `Suspend()` não encerra o escopo ativo;
-10. falha na publicação do log não derruba o fluxo medido.
+8. um alvo não localizado antes de `Delete` produz `NotAttempted`, sem ser tratado como
+   remoção confirmada;
+9. escopos aninhados restauram o anterior;
+10. `Suspend()` não encerra o escopo ativo;
+11. falha na publicação do log não derruba o fluxo medido.
 
 ### 6.2 Contagem e ordem por fluxo
 
-Com o seam injetado, cada fluxo da matriz da F1 passa a ter prova executável:
+Com o seam integrado na IDE, cada fluxo da matriz da F1 passa a ter prova executável:
 
 | Fluxo | Exigido |
 |---|---|
@@ -384,7 +441,8 @@ perfil fixo com `GenerateApiObject`, `GenerateSdts`, `GenerateProcedures` e
 as quatro de BC/List. Ver a seção 4.6 da F1, que é a fonte desta regra: não criar falsa
 paridade copiando testes do Wizard para uma UI que não oferece esses toggles.
 
-Isto substitui, com execução, a instrumentação frágil que a F1 declarou como limitação.
+Isto substitui, na validação de integração, a instrumentação frágil que a F1 declarou como
+limitação. O teste offline do núcleo não substitui essa etapa.
 
 ### 6.3 Falha em cada fronteira
 
@@ -399,6 +457,28 @@ recibos resultante:
 6. recuperação B115 com File novo e File reutilizado, confirmando identidade e bytes;
 7. ausência de confirmação em qualquer ponto é rejeitada pelo contrato;
 8. falha e resultado ambíguo no `transaction.Save()` da habilitação de BC.
+
+A forma de injeção deve ser determinística e ficar fechada antes da implementação:
+
+- o ponto de injeção usa os identificadores fechados
+  `TransactionSave`, `FolderSave`, `SdtSave`, `ProcedureSave`, `ApiSave`,
+  `MetadataSave`, `B115MetadataSave`, `BusinessComponentEnablementSave`,
+  `ApiDelete`, `ProcedureDelete`, `SdtDelete`, `MetadataDelete` e `FolderDelete`;
+- a API de teste é `IApiPlanPersistenceFaultInjector`, com
+  `Before(PersistenceFaultPoint point, int attempt)` e
+  `After(PersistenceFaultPoint point, int attempt)`, devolvendo uma ação fechada:
+  `None`, `Throw`, `Cancel`, `ReturnWithoutMutation`,
+  `DivergentConfirmation` ou `UnreadableConfirmation`;
+- `Before` cobre a classe C e `After` cobre as classes D/E. O núcleo SDK-free recebe
+  o injetor por dependência de teste; o adaptador SDK recebe o mesmo contrato por um
+  hook interno exclusivo da assembly de testes. Produção usa sempre o injetor nulo,
+  sem configuração por arquivo, variável de ambiente ou preferência da KB;
+- cada escopo de teste instala o injetor por `IDisposable`, restaura o injetor nulo no
+  `Dispose` e falha se qualquer ponto esperado não for visitado. Não há ativação
+  persistente entre testes nem interpretação de texto de exceção;
+- a validação na IDE deverá identificar quais fronteiras são exercitadas pelo hook e quais
+  são apenas observadas em fluxo real. Não basta listar “falha em cada Save”: cada ponto
+  físico e cada `Delete` do plano deve ter uma prova ou uma limitação registrada.
 
 O que se valida aqui é **descrição**, não recuperação: que o relatório diga corretamente o
 que foi gravado, o que não foi e o que ficou indeterminado. Nenhum teste da F2 exige que o
@@ -416,8 +496,9 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
    Transaction é salva depois do gate, com recibo;
 3. cancelar um Apply no meio e conferir que o relatório distingue o que foi gravado do que
    não foi tentado;
-4. comparar o tempo de Apply na KB grande antes e depois: o seam não deve acrescentar
-   custo mensurável, já que não faz I/O.
+4. comparar o tempo de Apply na KB grande antes e depois, medindo separadamente o custo das
+   confirmações obrigatórias; o seam não deve acrescentar leituras redundantes além do
+   orçamento definido para cada tipo de objeto.
 
 ---
 
@@ -429,8 +510,10 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
    dupla.
 3. Sem escopo ativo, o comportamento é idêntico ao anterior.
 4. O ponto comum nunca engole exceção nem altera o resultado de uma persistência.
-5. As classes C, D e E são distinguíveis no recibo e no relatório, e testadas por injeção.
-6. A contagem de um único `API.Save()` por fluxo é provada por execução, não por texto.
+5. As classes C, D e E são distinguíveis no relatório; D e E possuem `PersistenceReceipt`,
+   enquanto C possui evento de falha de etapa, e todas são testadas por injeção.
+6. A contagem de um único `API.Save()` por fluxo é provada por execução na IDE, não por
+   `Add-Type` nem somente por texto.
 7. Os dois laços de `saveSteps` foram unificados num executor único.
 8. No Wizard, abrir o diálogo não salva a Transaction, e a habilitação ocorre depois do
    gate, com recibo.
@@ -454,7 +537,9 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
 ### 9.1 Consolidação de 2026-09-07
 
 - O seam cobre todo `Save()` e `Delete()` gerenciado pela S-B111, inclusive o `file.Save()`
-  do B115; o `Save()` do File de preferências da KB fica fora do escopo operacional.
+  do B115; o `Save()` do File de preferências da KB e os `Save()` do próprio journal ficam
+  fora do `Persist(...)` operacional. A durabilidade do journal usa a rotina separada
+  definida na F3, com confirmação por `FileId`, bytes e hash.
 - Cada recibo expõe o `OperationId` da operação corrente. O recibo é observação: a F2 não
   decide requeue, recuperação ou continuação.
 - `StillPresentAfterDelete` é o único motivo retryable aprovado para `Delete`: a releitura

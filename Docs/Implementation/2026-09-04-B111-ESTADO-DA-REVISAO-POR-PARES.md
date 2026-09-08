@@ -1,5 +1,11 @@
 # `B111` — estado da revisão por pares (2026-09-03/04)
 
+> **Registro histórico.** Este arquivo preserva o estado das rodadas anteriores à
+> consolidação da `S-B111`. As seções abaixo não são a fonte atual de verdade: a rodada
+> CLI de 2026-09-08 já ocorreu, o Cursor ainda não foi acionado e não há implementação
+> autorizada. Para o estado corrente, use `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`, os
+> planos F1/F2/F3 e os artefatos da rodada em `Temp/revisao-por-pares/`.
+
 ## Propósito
 
 Permitir retomar a revisão do plano do `B111` em sessão nova, sem repetir rodadas já feitas nem
@@ -17,8 +23,9 @@ Linha de base de campo: [`2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`](2026-09
 ## 1. Estado em uma linha
 
 Nove versões de manuscrito, sete rodadas de revisão, painel com duas famílias de criador
-efetivamente respondendo. **A versão atual do plano — a que está commitada — nunca foi
-submetida a revisão.** Não há recibo de fechamento emitido.
+efetivamente respondendo. **Na data deste registro, a versão então vigente do plano ainda
+não havia sido submetida a revisão.** O recibo de fechamento daquela sequência não foi
+emitido.
 
 ## 2. Composição do painel
 

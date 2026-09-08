@@ -160,13 +160,16 @@ Os eixos abaixo são sempre registrados separadamente e nunca colapsados num enu
 - **durabilidade da intenção**: confirmada ou desconhecida, conforme o diário possa ser
   relido e validado.
 
-Estados da operação: `Ready`, `Prepared`, `Active`, `Partial`, `FailedBeforeWrite`,
-`Completed`, `Removed` e `OutcomeUnknown`. `JournalUnavailable` é um resultado de gate e
-diagnóstico, não um estado que autorize prosseguir.
+Estados da operação: `Pending`, `Running`, `Partial`, `OutcomeUnknown`, `Completed` e
+`Removed`, exatamente como na decisão canônica 27. `Prepared` e `Active` são fases do
+envelope do diário; `RemovalPartial` e `ApiSaveOutcomeUnknown` são `logicalStage`;
+`Failed` é resultado de recibo ou falha de etapa. `JournalUnavailable` é um resultado de
+gate e diagnóstico, não um estado que autorize prosseguir.
 
 Estágios mínimos: `NotStarted`, `GateBlocked`, `IntentionRecorded`, `TransactionPending`,
 `FolderPending`, `SdtsPending`, `ProceduresPending`, `ApiPending`, `ApiSaveOutcomeUnknown`,
-`ApiPhysicallySaved`, `MetadataPending`, `RemovalInProgress` e `RemovalPartial`.
+`ApiPhysicallySaved`, `MetadataPending`, `MetadataRecovered`, `RemovalInProgress` e
+`RemovalPartial`.
 
 `Partial` pertence somente a `operationState`; durante remoção ele deve ser acompanhado de
 `logicalStage=RemovalPartial`. Nunca usar `Partial` como `logicalStage`.
@@ -177,23 +180,24 @@ Regra que atravessa tudo: **um `Save()` que lançou, expirou ou foi cancelado é
 ### 4.1.1 Envelope corrente e abandono explícito
 
 Cada operação recebe um `OperationId` novo, distinto do `ApplicationId` da geração. Antes
-de qualquer `Save()` de negócio, o File do diário é gravado como `Prepared` e relido por
-`FileId`/hash. Só depois é promovido a `Active`, com nova gravação e confirmação. Os dois
-passos precisam ser confirmados antes da primeira gravação de Transaction, Folder, SDT,
-Procedure, API ou metadata.
+de qualquer `Save()` de negócio, o File do diário é gravado como fase de envelope
+`Prepared` e relido por `FileId`/hash. Só depois é promovido à fase `Active`, com nova
+gravação e confirmação. Os dois passos precisam ser confirmados antes da primeira
+gravação de Transaction, Folder, SDT, Procedure, API ou metadata.
 
 `Prepared` pode ser continuado explicitamente com os mesmos identificadores ou abandonado.
-O abandono não apaga o File: grava um envelope neutro `Ready`, removendo a operação
-corrente, seus alvos e recibos. `FailedBeforeWrite` tem a mesma saída somente quando for
-provado que nenhum `Save()` de negócio foi chamado. `Active`, `Partial` ou
-`OutcomeUnknown` não podem ser abandonados como se nada tivesse ocorrido: exigem
-reconciliação ou continuação explícita com os mesmos IDs.
+O abandono não apaga o File nem cria um novo `operationState`: grava uma disposição
+explícita de abandono, confirmada pela durabilidade do journal, removendo a intenção ativa
+antes de permitir nova operação. `Pending` sem `Save()` de negócio é a única situação que
+pode seguir esse caminho. `Active`, `Partial` ou `OutcomeUnknown` não podem ser abandonados
+como se nada tivesse ocorrido: exigem reconciliação ou continuação explícita com os mesmos IDs.
 
 Após `Completed` ou `Removed`, a próxima operação substitui o envelope corrente pelo novo
 `Prepared`; não há arquivo, campo ou coleção de histórico. Se o diário estiver ausente,
 corrompido, duplicado ou não puder ser confirmado, o resultado é `JournalUnavailable`:
 bloqueia Apply, Sync e Remove, permite apenas diagnóstico de leitura e só admite voltar a
-`Ready` mediante confirmação humana de que nenhuma operação ativa ou parcial foi provada.
+uma situação sem intenção ativa mediante confirmação humana de que nenhuma operação ativa
+ou parcial foi provada.
 
 ### 4.2 Gate estendido
 
@@ -202,7 +206,7 @@ O gate reduzido da F1 ganha as validações que dependem de intenção durável:
 1. ausência de intenção anterior em estado parcial, indeterminado ou ambíguo;
 2. disponibilidade e integridade do diário único da KB;
 3. identidade, versão e durabilidade confirmadas do diário, sem divergência física;
-4. operação corrente em `Ready`, ou transição explicitamente autorizada de `Prepared`;
+4. ausência de intenção ativa, ou transição explicitamente autorizada de `Prepared`;
 5. ausência de `JournalUnavailable` e de `OutcomeUnknown` não reconciliado.
 
 Falhando qualquer uma, o resultado é bloqueio antes da primeira gravação.
@@ -235,10 +239,43 @@ aceita quando houver nome exato, tipo e papel esperados, `Description` canônica
 à Transaction/API, unicidade na KB e inventário completo sem conflito. Nome isolado,
 Description isolada ou prefixo isolado **nunca** autorizam exclusão.
 
+A fila de remoção não é exclusiva de SDTs. Ela deve abranger todos os tipos removíveis
+que o plano tenha validado — API Object, Procedures, SDTs, File de metadata e Folder
+quando a posse permitir sua exclusão. `P` na matriz de checkpoints é o número de
+passadas da fila completa, não apenas do laço de SDTs. Em cada passada, somente uma
+falha `Failed` com `StillPresentAfterDelete` pode recolocar um alvo comprovadamente
+presente; `Confirmed` o retira e `OutcomeUnknown` bloqueia a operação. A implementação
+atual, que reencaminha exceções apenas em `DeleteOwnSdtsResilientToOrder`, é comportamento
+histórico a ser substituído pelo contrato da F2/F3, não o contrato final.
+
+O ciclo de vida da fila é fechado assim:
+
+- a fila destrutiva contém somente `ApiObject`, `Procedure`, `Sdt`, `MetadataFile` e
+  `Folder` próprio criado pela extensão e vazio depois dos filhos. Transaction, o
+  próprio diário, o File de preferências, SDTs compartilhados, Folder reutilizado e
+  qualquer objeto sem posse validada ficam fora da fila e aparecem somente como
+  `Preserve` no inventário;
+- a ordem é API Object, Procedures, SDTs na ordem de dependência, metadata File e,
+  por último, Folder próprio vazio. Cada item é relido pela identidade validada antes
+  da tentativa e recebe um recibo, inclusive quando não chega a chamar `Delete()`;
+- `NotAttempted`/`Absent` antes do primeiro Delete não é sucesso implícito. Sem recibo
+  durável anterior `Confirmed` para a mesma identidade, encerra a operação em `Partial`
+  com `TargetAbsentBeforeDelete`. Uma falha `Failed` não retryable também encerra em
+  `Partial`, com o item preservado e sem nova passada;
+- no início da operação, `maxPasses = max(1, número de itens Delete do inventário)`.
+  Uma passada só pode reencaminhar `StillPresentAfterDelete`. Se o limite for atingido
+  com itens pendentes, o diário termina em `Partial` com `RetryBudgetExhausted`; não há
+  loop infinito nem retry silencioso em outra operação. Uma continuação explícita do
+  mesmo envelope pode receber novo orçamento depois de confirmação humana;
+- somente quando todos os itens `Delete` tiverem recibo `Confirmed` ou um recibo
+  anterior equivalente e durável, sem `NotAttempted`, `Failed` ou `OutcomeUnknown`,
+  a operação pode terminar em `Removed`.
+
 ### 4.4 Orçamento de gravação
 
 Vale para o Modo A, e é o motivo de a granularidade ser uma decisão de projeto e não um
-detalhe:
+detalhe. As três linhas abaixo são apenas referência histórica das alternativas medidas;
+não definem a política de implementação e não substituem a matriz fechada logo abaixo:
 
 | Política | Gravações | Acréscimo ao Apply, KB grande |
 |---|---|---|
@@ -247,12 +284,38 @@ detalhe:
 | mínimo: criação e conclusão | 2 | ~2,2 s |
 
 O diário deve ser atualizado e confirmado ao longo da operação e no estado terminal, mas
-isso não significa um `File.Save()` para cada recibo individual. A política vigente agrupa
-recibos dentro de cada fronteira que muda a capacidade de continuar ou reconciliar:
-`Prepared`, `Active`, conclusão da etapa que torna o API existente, conclusão da metadata ou
-remoção e estado terminal. O custo real dessa política deve ser medido na KB grande; a
-implementação não pode escolher o mínimo de duas gravações apenas para economizar I/O se
-isso deixar uma fronteira sem estado durável.
+isso não significa um `File.Save()` para cada recibo individual. A política normativa
+agrupa recibos nas fronteiras que mudam a capacidade de continuar ou reconciliar:
+`Prepared`, `Active`, confirmação física do API, cada passada de `Remove` e estado
+terminal. A implementação não pode escolher o mínimo de duas gravações apenas para
+economizar I/O se isso deixar uma fronteira sem estado durável.
+
+Antes da implementação, a matriz abaixo fecha a política por operação, sem aproximações
+como “~4”. Cada checkpoint corresponde a exatamente um `File.Save()` do diário, seguido de
+releitura e validação; não há outro `File.Save()` implícito entre os pontos. O `Save()` do
+diário não entra na contagem de persistências de negócio da F2.
+
+| Operação | Checkpoint 1 | Checkpoint 2 | Checkpoint 3 | Checkpoint 4 | Contagem física |
+|---|---|---|---|---|---|
+| Apply | `Prepared` + `Pending/IntentionRecorded` | `Active` + `Running/NotStarted` | recibos até API confirmado + `Running/ApiPhysicallySaved` | `Completed`, `Partial` ou `OutcomeUnknown` + estágio final | exatamente 4 |
+| Sync | `Prepared` + `Pending/IntentionRecorded` | `Active` + `Running/NotStarted` | recibos até API confirmado + `Running/ApiPhysicallySaved` | `Completed`, `Partial` ou `OutcomeUnknown` + estágio final | exatamente 4 |
+| Remove | `Prepared` + `Pending/IntentionRecorded` | `Active` + `Running/RemovalInProgress` | inventário atualizado ao fim de cada passada | `Removed`, `Partial` ou `OutcomeUnknown` + estágio final | `3 + P`, sendo `P` o número de passadas executadas |
+| Recovery | intenção de continuação + `Pending` | `Active` + `Running` | próxima etapa segura confirmada | estado terminal ou bloqueio explícito confirmado | exatamente 4, além de checkpoints extras de passadas de `Remove` pela regra acima |
+
+Cada célula inclui o snapshot do plano/inventário, a transição de `operationState` e
+`logicalStage`, e o resultado de durabilidade. Se qualquer `Save()` ou releitura produzir
+`journalDurability=Unknown`, o executor conserva o último estado durável, não avança para a
+célula seguinte, não grava objeto de negócio e expõe bloqueio para reconciliação. A tentativa
+física não é contada como checkpoint confirmado e não pode ser repetida em silêncio. A
+implementação não poderá reduzir a quantidade para economizar I/O nem misturar `Prepared`/
+`Active` ao enum de estado global.
+
+A linha `Recovery` descreve o comando que reidrata um envelope existente; ela não autoriza
+criar uma segunda operação nem trocar silenciosamente `operationKind`. Ao continuar
+`Apply` ou `Sync`, aplicam-se as fronteiras e o estado terminal dessas operações. Ao
+continuar `Remove`, aplicam-se as passadas da linha `Remove` e o terminal possível é
+`Removed`, `Partial` ou `OutcomeUnknown`. Uma recuperação autônoma, sem operação de negócio
+a continuar, é o único caso em que `operationKind=Recovery` pode ser persistido.
 
 ### 4.5 Mensagens
 
@@ -293,16 +356,25 @@ Localização, medida e não suposta:
 
 ### 5.2 Conteúdo
 
-Schema version; Transaction GUID e nome; `OperationId`; `ApplicationId` da operação corrente;
-API planejado e,
-quando confirmado, API persistido; `PlannedApiGuid`; `PersistedMainObjectName` e GUID;
-hash do contrato; flags da seleção; serviços BC/List; Folder, SDTs, Procedures e metadata
-planejados; estado físico do API; estágio lógico; durabilidade do próprio diário; recibos;
-sequência de gravações; versão do gerador; marca de intenção importada, quando reconstruída
-para remoção; timestamps e mensagens de bloqueio.
+O diário adota integralmente o schema executável da decisão 24: `schemaVersion=1`
+(inteiro), `journalKind=GOAB_OPERATION_JOURNAL`, identidade/correlação, envelope,
+estado, inventário, recibos, abandono e bloqueio com tipos, nulabilidade e enums
+fechados. A F3 não pode criar uma segunda nomenclatura nem aceitar campos livres para
+substituir `Guid`, `FileId`, identidade composta ou hash.
 
 O conteúdo pode crescer sem custo mensurável: a sonda mediu 247 bytes e 20 KB com o mesmo
-tempo de gravação.
+tempo de gravação. O serializer deve rejeitar, antes do `File.Save()`, qualquer violação
+da tabela da decisão 24, inclusive `retryEligible` incompatível, combinação inválida de
+identidade e campo obrigatório ausente para o `operationKind`.
+
+A metadata mantém os valores literais `GOAB_API_METADATA_B060_V1`,
+`GOAB_API_METADATA_B060_V2` e `GOAB_API_METADATA_B060_V3`. V1/V2 entram somente por
+leitura; Apply, Sync e B115 emitem V3. A normalização V1/V2→V3 preserva o contrato
+completo existente, trata `levels` ausente como plano, materializa
+`objects.sdts.own` somente quando o inventário puder ser validado e registra
+`ownership.applicationId`. B115 é a exceção inventory-only explicitamente marcada por
+`recovery.imported=true`; os caminhos não recuperados permanecem ausentes, e não
+vazios. Remove legado não regrava a metadata só para preencher `applicationId`.
 
 ### 5.3 Ciclo de vida
 
@@ -320,6 +392,10 @@ Deletes pelo recibo; atualizar e reler o diário; se a atualização não for co
 preservar o último estado durável e marcar durabilidade desconhecida. Nunca transformar
 estado desconhecido em `Completed`; nunca iniciar uma segunda persistência de API para
 “corrigir” um estado desconhecido.
+
+As gravações do próprio journal não passam pelo `Persist(...)` da F2: usam a rotina de
+durabilidade do diário, com confirmação por `FileId`, bytes e hash, e atualizam
+`journalDurability` separadamente dos `PersistenceReceipt` dos objetos de negócio.
 
 ### 5.4 Recuperação
 
@@ -345,7 +421,85 @@ intenção durável; então continuar apenas etapas ainda não executadas, recon
 manualmente ou bloquear. Nunca repetir a persistência do API havendo estado físico
 confirmado ou desconhecido. **Reabrir o Wizard pelo caminho normal não é recuperação.**
 
+Essa recuperação durável não substitui o B115. O B115 reconstrói metadata suficiente para
+um `Remove` legado quando a metadata de negócio está ausente ou marcada como importada;
+ele não reidrata consumidores parcialmente gravados por uma falha da F1 nem inventa um
+contrato completo. Para esse caso, somente o diário com inventário e recibos da operação
+atual pode autorizar continuação; se a intenção não for determinística, o resultado é
+bloqueio e intervenção humana.
+
 ---
+
+#### 5.4.1 Reidratação do plano e do inventário
+
+A recuperação não reabre o Wizard nem depende de reconstruir um plano apenas por nomes. O
+executor deverá:
+
+1. ler e validar o envelope do diário (`schemaVersion=1`), `knowledgeBaseGuid`, `FileId`, hash, Transaction,
+   `ApplicationId`, `OperationId` e `operationKind`;
+2. reidratar o inventário persistido, associando cada alvo à identidade validada, à posse,
+   à ação esperada, ao estado físico e aos recibos da tentativa;
+3. reler cada alvo por GUID/FileId e classificar `Confirmed`, `Absent`, `Divergent`,
+   `Unknown` ou `NotAttempted`;
+4. selecionar somente a próxima etapa explicitamente autorizada pelo par
+   `operationState`/`logicalStage`, sem repetir uma persistência confirmada ou
+   `OutcomeUnknown`;
+5. gravar e confirmar o novo checkpoint antes de continuar, ou produzir diagnóstico
+   somente leitura e bloqueio quando a reconciliação não for determinística.
+
+O contrato abaixo nomeia o serviço de reidratação, o executor de continuação e o
+relatório que os consome, além de declarar a entrada e a saída de cada um: envelope
+validado, inventário reidratado, próxima etapa autorizada, recibos novos e estado
+terminal ou bloqueio. O executor não pode reabrir o Wizard nem resolver um alvo somente
+por nome.
+
+Os contratos ficam nomeados e fechados assim:
+
+- `ApiPlanRecoveryReader.ReadAndValidate(WikiFileKBObject journalFile, Guid knowledgeBaseGuid)`
+  recebe o File único e a identidade da KB e devolve `ValidatedJournal` ou
+  `JournalUnavailable`; valida schema, FileId externo, bytes, hash, identidade,
+  durabilidade e a compatibilidade do envelope;
+- `ApiPlanRecoveryRehydrator.Rehydrate(ValidatedJournal journal,
+  IReadOnlyList<RecoveryTargetObservation> observations)` devolve
+  `ApiPlanRehydratedOperation`, contendo `operationKind`, `operationId`,
+  `applicationId`, inventário classificado, recibos já relacionados e a única
+  `NextStep` autorizada ou um `BlockReason`;
+- `ApiPlanRecoveryExecutor.Continue(ApiPlanRehydratedOperation operation,
+  RecoveryAuthorization authorization)` devolve `ApiPlanRecoveryResult`, com recibos
+  novos, checkpoint durável, estado terminal ou bloqueio. `authorization` é obrigatória
+  antes da primeira gravação de negócio da continuação;
+- `ApiPlanRecoveryReport.FromResult(ApiPlanRecoveryResult result)` produz o relatório
+  somente de apresentação. O relatório não grava, não decide e não cria recibos.
+
+`RecoveryTargetObservation` carrega `objectType`, `identityKind`, GUID/FileId ou
+identidade composta validada, nome apenas para diagnóstico, hash esperado quando
+aplicável, `physicalState` e `confirmation`. `NextStep` é fechado em
+`ContinueTransaction`, `ContinueFolder`, `ContinueSdts`, `ContinueProcedures`,
+`ContinueApi`, `ContinueMetadata`, `ContinueRemovePass`, `Complete`, `Abandon` ou
+`Block`. `RecoveryAuthorization` exige `humanConfirmed=true`, os IDs do envelope e a
+confirmação de que a etapa indicada pode produzir a próxima gravação.
+
+As transições permitidas são fechadas: `Prepared/Pending` pode continuar com os mesmos
+IDs ou ser abandonado; `Active/Running` pode continuar somente a próxima etapa ainda não
+confirmada; `Partial` de Remove pode continuar apenas itens `Failed` retryable; qualquer
+`OutcomeUnknown`, `NotAttempted` sem reconciliação, identidade divergente, leitura
+ilegível ou `journalDurability=Unknown` bloqueia sem novo `Save`/`Delete`; `Completed` e
+`Removed` são terminais e exigem uma nova operação. Apply/Sync nunca repetem um API com
+estado confirmado ou indeterminado.
+
+### 5.5 Mudanças previstas por arquivo
+
+| Arquivo ou área | Responsabilidade documental da F3 |
+|---|---|
+| `Src/Extension/Diagnostics/ApiPlanOperationJournal.*` | schema V1, serializer, `FileId`, hash, fases do envelope, checkpoints e confirmação de durabilidade |
+| `Src/Extension/Diagnostics/ApiPlanRecoveryReader.*`, `ApiPlanRecoveryRehydrator.*`, `ApiPlanRecoveryExecutor.*` | leitura/validação do diário, reidratação do plano/inventário, seleção da próxima etapa segura e bloqueio explícito |
+| `Src/Extension/Diagnostics/ApiPlanGeneratedApiRemovalPlan.cs` e `ApiPlanGeneratedApiRemover.cs` | inventário por identidade de todos os tipos removíveis, intenção antes do primeiro `Delete()`, `NotAttempted`, `StillPresentAfterDelete`, fila por passadas e ausência de retry para `OutcomeUnknown` |
+| `Src/Extension/Package.cs` | comando contextual e fallback principal, gate do diário, recuperação explícita e retirada da oferta automática B115; literais conforme a matriz da decisão 33 |
+| `Src/Extension/GenexusOpenApiBuilder.package` e `Groups` | `CommandDefinition` e `refid` de cada variante localizada do comando nas duas superfícies de menu, sem ID neutro compartilhado |
+| `Src/Extension/Diagnostics/PrototypeWizardPreferences.cs`, `PrototypeWizardPreferencesCodec.cs`, `PrototypeWizardPreferencesDialog.cs` | compatibilidade de `OfferOrphanMetadataRecovery` e nova preferência `ShowRecoveryOptionProactively` |
+| `Src/Extension/Diagnostics/ApiPlanOrphanMetadataRecovery.cs` e writers de metadata | leitura/normalização V1/V2 e gravação V3 em Apply, Sync e B115, sem regravar metadata legada apenas para preencher `ApplicationId` durante Remove |
+| `Src/Extension/ExtensionLocalization.cs`, `Src/Domain/ExtensionOutputLocalization.cs`, `Tests/Localization/` | mensagens pt-BR, espanhol e inglês para bloqueio, recuperação, inventário e estado indeterminado |
+| `Tools/Test-ExtensionCommandRegistration.ps1` e `Tests/` | sincronização do comando, schema, checkpoints, reidratação, inventário e validação IDE |
 
 ## 6. Modo B — checkpoint manual (histórico)
 
@@ -411,19 +565,23 @@ Sobre o seam da F2, que permite injetar falha em qualquer fronteira:
    nunca intenção parcial sobrescrita em silêncio;
 6. remoção com intenção própria → intenção registrada antes do primeiro `Delete()`,
    recibo por exclusão, `Removed` só com todos os alvos ausentes;
-7. remoção de legado com metadata válida → intenção importada antes do primeiro `Delete()`;
-8. remoção de legado com metadata ausente, corrompida ou insuficiente → bloqueio, sem
+7. alvo previsto não localizado antes de `Delete()` → `NotAttempted`, nunca sucesso
+   silencioso; a operação só pode ser `Removed` se o inventário completo confirmar a
+   ausência de todos os alvos;
+8. remoção de legado com metadata válida → intenção importada antes do primeiro `Delete()`;
+9. remoção de legado com metadata ausente, corrompida ou insuficiente → bloqueio, sem
    nenhum `Delete()`;
-9. `Delete()` que lança, mas cuja releitura imediata comprova que o objeto ainda existe
+10. `Delete()` que lança, mas cuja releitura imediata comprova que o objeto ainda existe
    → recibo `Failed` retryable de ordem de dependência e nova tentativa somente na
    passada seguinte do mesmo `Remove`;
-10. `Delete()` que retorna, mas cuja confirmação imediata comprova que o objeto ainda
+11. `Delete()` que retorna, mas cuja confirmação imediata comprova que o objeto ainda
    existe → o mesmo recibo `Failed` retryable e a mesma regra de nova passada;
-11. `Delete()` que lança ou retorna e cuja releitura comprova ausência → `Confirmed`,
+12. `Delete()` que lança ou retorna e cuja releitura comprova ausência → `Confirmed`,
    sem requeue;
-12. `Delete()` que lança ou retorna com releitura ilegível, divergente ou ambígua →
+13. `Delete()` que lança ou retorna com releitura ilegível, divergente ou ambígua →
    `OutcomeUnknown`, bloqueio e nenhum retry automático ou por recuperação;
-13. interrupção durante a remoção → `RemovalPartial`, com a intenção preservada.
+14. interrupção durante a remoção → `operationState=Partial` e
+    `logicalStage=RemovalPartial`, com a intenção preservada.
 
 Um teste que apenas chama `Apply` de novo pelo caminho normal **não** comprova
 recuperação.
@@ -579,8 +737,9 @@ contrato do Modo A. Elas não encerram a revisão por pares: ainda precisam ser 
 na implementação e validadas na matriz da F3.
 
 1. **Gate e metadata importada:** metadata importada completa quanto aos alvos não é
-   `Partial` nem `OutcomeUnknown`. Um diário da S-B111 em estado não terminal (`Prepared`,
-   `Active`, `Partial`, `FailedBeforeWrite` ou `OutcomeUnknown`) bloqueia novas operações e a recuperação de
+   `Partial` nem `OutcomeUnknown`. Um diário da S-B111 em fase de envelope `Prepared` ou
+   `Active`, com `operationState` `Pending`, `Running`, `Partial` ou `OutcomeUnknown`,
+   bloqueia novas operações e a recuperação de
    metadata. Metadata importada validada pode liberar somente `Remove`, com confirmação
    explícita; `Apply` completo pode substituir sua marca, e `Sync` não pode usá-la como
    contrato completo.
@@ -606,6 +765,19 @@ na implementação e validadas na matriz da F3.
    coexistir somente quando identidade e contrato forem compatíveis; qualquer divergência
    bloqueia e exige reconciliação explícita. Nenhuma fonte substitui silenciosamente a
    outra, e a precedência do diário não transforma metadata incompatível em contrato válido.
+
+Para não deixar o B115 fora do protocolo durável, sua execução também é fechada. Quando
+não estiver continuando um envelope de negócio existente, ela usa `operationKind=Recovery`,
+`intentKind=Imported` e novos `operationId`/`applicationId`. O diário segue exatamente
+quatro checkpoints: (1) `Prepared/Pending/IntentionRecorded`, antes de tocar a metadata;
+(2) `Active/Running/MetadataPending`, confirmado antes do `File.Save()`;
+(3) recibo F2 do File confirmado por `FileId`, bytes e hash, com
+`Running/ApiPhysicallySaved` substituído pelo estágio `MetadataRecovered`; e (4)
+`Completed/Completed`, com `journalDurability=Confirmed`. Se o Save ou sua confirmação
+for indeterminado, o diário termina em `OutcomeUnknown`/bloqueio e o File não é regravado
+de novo. Se o File for reutilizado, a confirmação continua sendo pelo mesmo `FileId`, não
+por enumeração de nome. O resultado de B115 é somente inventário para Remove; não autoriza
+Sync nem uma reidratação de consumidores parciais da F1.
 
 ### 13.6 Evidência de campo — 2026-09-06, KB `wsEducacaoSpTeste`, Transaction `Teste`
 

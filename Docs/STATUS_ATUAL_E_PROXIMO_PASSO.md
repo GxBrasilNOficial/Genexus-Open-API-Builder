@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-07.
+2026-09-08.
 
 ## Último marco concluído
 
@@ -138,12 +138,14 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Decidir com o usuário a retomada da revisão por pares da sprint `S-B111`** — F1 (ordem
-de gravação e writer final único), F2 (seam de persistência e recibos) e F3 (durabilidade
-da intenção e remoção segura). A consolidação documental e as decisões de contrato foram
-registradas em 2026-09-07; os três planos continuam sendo o objeto da próxima rodada quando
-ela for autorizada. Nenhuma consulta adicional foi disparada nesta etapa. Registro da
-revisão: `Docs/Implementation/2026-09-04-B111-ESTADO-DA-REVISAO-POR-PARES.md`. Item:
+**Submeter ao Cursor a rodada revisada da revisão por pares da sprint `S-B111`** — F1
+(ordem de gravação e writer final único), F2 (seam de persistência e recibos) e F3
+(durabilidade da intenção e remoção segura). Em 2026-09-08, o painel CLI com quatro
+revisores respondeu `REVISAR` em todos os pareceres, com diversidade de três famílias de
+modelo; os ajustes documentais decorrentes foram aplicados nos planos, nas decisões e no
+backlog. O Cursor permanece como revisor manual da próxima rodada. Ainda não houve
+implementação, build, instalação, commit ou push. Registro da revisão:
+`Docs/Implementation/2026-09-04-B111-ESTADO-DA-REVISAO-POR-PARES.md`. Item:
 `Docs/Foundation/06-BACKLOG_v0.1.md` (`B111`).
 
 Dois documentos anteriores estão **superados** e não devem ser submetidos nem implementados: `Docs/Implementation/2026-09-04-PLANO-API-OBJECT-GRAVACAO-UNICA.md` (plano aprovado em 2026-09-04, escopo enxuto — suas mudanças 1 a 7 estão preservadas na F1) e `Docs/Implementation/2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md` (expansão nunca aprovada, com quatro afirmações desmentidas por medição — ver seção 7 da F3). O segundo vivia fora do controle de versão, em `Temp/`, e foi promovido ao repositório em 2026-09-05 para que as referências dos planos de fase tenham alvo rastreável.
@@ -165,9 +167,9 @@ A conclusão da `S-B111` não fecha automaticamente o `B082`: ao encerrar a spri
 
 **`B108` fica estacionado desde 2026-09-05**, com plano aprovado e sem trabalho perdido: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Item: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
 
-## Estado da sprint `S-B111` (planejada em 2026-09-05; território atualizado em 2026-09-07)
+## Estado da sprint `S-B111` (planejada em 2026-09-05; território atualizado em 2026-09-08)
 
-Planejamento concluído, avaliação técnica inicial realizada e **nenhuma das três fases foi implementada**: o seam de persistência, os recibos, o diário e a ordem de gravação do API Object seguem como estavam. A consolidação documental foi registrada em 2026-09-07; a revisão por pares permanece em aberto e aguarda decisão de retomada. As decisões aprovadas estão preservadas no registro versionado `Docs/Implementation/2026-09-07-S-B111-DECISOES-APROVADAS.md`.
+Planejamento concluído, avaliação técnica inicial realizada e **nenhuma das três fases foi implementada**: o seam de persistência, os recibos, o diário e a ordem de gravação do API Object seguem como estavam. A consolidação documental foi revisada em 2026-09-08 após um painel CLI de quatro revisores; todos responderam `REVISAR`, e o Cursor permanece pendente para a rodada manual seguinte. As decisões aprovadas estão preservadas no registro versionado `Docs/Implementation/2026-09-07-S-B111-DECISOES-APROVADAS.md`.
 
 **O que mudou no território da sprint depois de 2026-09-05**, por necessidade de campo e fora das fases — registrado na seção 13 do plano da F3:
 
@@ -176,9 +178,10 @@ Planejamento concluído, avaliação técnica inicial realizada e **nenhuma das 
 - uma remoção interrompida passou a listar no relatório final o que já saiu da KB;
 - nasceu a recuperação de metadata órfã (`B115`), que ocupa parte do que a seção 4.3 da F3 normatiza. Ela cobre dois estados: o File ausente, e o File presente que ficou apontando para um API Object removido — este último travava o Wizard em `OwnershipSchemaApiNameOrGuidMismatch` sem saída pela ferramenta. Metadata **completa** com esse mesmo descompasso segue exigindo intervenção humana.
 
-Três planos de fase escritos e commitados, avaliados na revisão técnica inicial e consolidados
-documentalmente em 2026-09-07; a revisão por pares permanece em aberto antes da
-implementação na ordem F1 → F2 → F3:
+Três planos de fase preparados e modificados na working tree, avaliados na revisão técnica
+inicial e consolidados documentalmente em 2026-09-08 após o painel CLI; ainda não estão
+commitados. A revisão por pares permanece em aberto antes da implementação na ordem
+F1 → F2 → F3, aguardando a rodada manual com o Cursor:
 
 | Fase | Plano | Depende de |
 |---|---|---|
@@ -275,12 +278,16 @@ nada aqui. `B108` e o residual `B082` 1B/2/3 não competem com essas linhas.
 
 ## Critério de conclusão da revisão pré-push
 
-- alinhamento documental da promoção à Sprint 9 já commitado, em `main`, com working tree limpa;
+> O primeiro item abaixo e a promoção à Sprint 9 descrita nele são registro histórico do
+> fechamento daquela frente. Não descrevem o estado atual da `S-B111`: os ajustes desta
+> sprint permanecem na working tree até autorização explícita de commit.
+
+- **[Histórico — Sprint 9]** alinhamento documental da promoção à Sprint 9 já commitado, em `main`, com working tree limpa;
 - `origin/main` atualizada, sem commits remotos à frente da frente local;
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única é decidir com o usuário a retomada da revisão por pares da sprint `S-B111`; a consolidação documental de 2026-09-07 está registrada nos três planos e no registro operacional; `B108` está estacionado (`Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); a Etapa 1A do hardening `B082` está aceita (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é submeter ao Cursor a rodada revisada da revisão por pares da sprint `S-B111`; o painel CLI de 2026-09-08 teve quatro respostas `REVISAR` e diversidade de três famílias de modelo, e os ajustes documentais estão registrados nos três planos, no registro operacional e no backlog; `B108` está estacionado (`Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); a Etapa 1A do hardening `B082` está aceita (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente

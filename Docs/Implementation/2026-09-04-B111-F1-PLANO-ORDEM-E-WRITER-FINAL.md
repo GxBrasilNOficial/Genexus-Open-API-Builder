@@ -58,7 +58,7 @@ Confirmado por leitura em 2026-09-04:
    `ApiPlanBusinessComponentWriter.cs:626`.
 3. `ApiPlanListProcedureWriter` tem três `Save()` reais; o da Procedure em
    `ApiPlanListProcedureWriter.cs:953` e o do API em `ApiPlanListProcedureWriter.cs:975`.
-3.1. Os dois writers montam uma lista `saveSteps` de pares `(Label, Action Save)` e a
+3.1. Os dois writers montam uma lista `saveSteps` de triplas `(Label, Action Save, Snapshot)` e a
    executam em laço com progresso e cronômetro — `ApiPlanBusinessComponentWriter.cs:98` e
    `ApiPlanListProcedureWriter.cs:66`. **Em ambos, o primeiro passo da lista é o API.**
    A inversão de ordem exigida por esta frente não está só em `Package.cs`: dentro de cada
@@ -131,9 +131,12 @@ alternativa. Essa é a maior simplificação em relação ao manuscrito expandid
 | expansão da UI do Sync para a matriz do Wizard | fora da sprint |
 
 A F1 **não promete** atomicidade, rollback, recuperação de estado parcial nem detecção de
-Save com resultado indeterminado. Uma interrupção no meio da F1 deixa objetos parciais,
-como hoje. O que ela garante é que o API Object não será persistido antes dos seus
-consumidores — que é a causa da degradação observada em campo.
+Save com resultado indeterminado. Uma interrupção no meio da F1 ainda deixa objetos
+parciais, mas a forma esperada muda: consumidores podem existir enquanto o API Object
+ainda não foi persistido. Essa forma é deliberada, deve ser diagnosticada como estado
+parcial e será responsabilidade da F3 quando houver diário. O que a F1 garante é que o
+API Object não será persistido antes dos seus consumidores — que é a causa da
+degradação observada em campo.
 
 ---
 
@@ -179,12 +182,16 @@ Conteúdo mínimo:
 - `PlannedApiGuid` — o `Guid` **lido** do objeto, nunca atribuído;
 - `PlannedApiName`;
 - `TransactionGuid` e nome da Transaction;
+- `ApplicationId` e `OperationId` da aplicação corrente;
 - hash do contrato planejado;
 - flags da seleção;
 - writer final esperado;
 - se o API é novo ou reencontrado;
-- **se a etapa de Business Component contribuiu para o contrato** — campo distinto do
-  anterior e exigido pelo terceiro ramo de 4.8; “API novo” e “BC rodou” são independentes.
+- **se a etapa de Business Component contribuiu para o contrato** — fato resolvido no
+  preflight e capturado antes de qualquer mutação do `ServiceGroupSource`; campo distinto
+  do anterior e exigido pelo terceiro ramo de 4.8; “API novo” e “BC rodou” são independentes;
+- quando o API for reencontrado, o snapshot de identidade, posse e Source persistido usado
+  para o preflight, antes da mutação em memória.
 
 Regras:
 
@@ -193,7 +200,9 @@ Regras:
 3. os writers de BC e List **não podem** validar o contexto chamando `API.GetAll`,
    `FindApi` ou equivalente para um API novo — o objeto transitório é a fonte autorizada
    até o único Save final;
-4. para um API que já existe, a resolução é por identidade validada, não por nome.
+4. para um API que já existe, a resolução é por identidade validada, não por nome;
+5. o writer de List não reavalia posse ou variante do contrato contra um API já mutado em
+   memória: usa os fatos validados no preflight e o contexto transitório.
 
 ### 4.4 Ordem física
 
@@ -238,8 +247,9 @@ Sem uma regra, três consequências decorrem, e a terceira é a mais séria:
    passa a mostrar o mesmo objeto várias vezes — arruinando o instrumento que deveria provar
    a ordem.
 
-**Medição de 2026-09-05 — a regra é declarativa, não muda comportamento.** Sonda de call
-sites sobre dois Applies reais na KB `wseducacaospteste`, Transaction `Teste` com subníveis,
+**Medição de 2026-09-05 — o comportamento medido não registra gravações extras nos casos
+cobertos.** Sonda de call sites sobre dois Applies reais na KB `wseducacaospteste`,
+Transaction `Teste` com subníveis,
 seleção completa (SDTs, Procedures, API, BC, List, metadata):
 
 | Ponto | Primeira geração | Reaplicação |
@@ -267,9 +277,11 @@ executou naquele fluxo —, portanto continuaria autorizado sob a regra. A afirm
 não é “o reencontro nunca grava”, e sim “**as passagens de BC e de List não gravam**”. Ver
 `2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md` §10.3.
 
-Portanto a regra abaixo **descreve o comportamento que já existe**: torná-la explícita é
-barato, verificável e sem efeito observável. O risco que motivou a medição não se
-materializou.
+Portanto, nos estados cobertos pela medição, a regra abaixo **descreve o comportamento
+observado**: torná-la explícita preserva as gravações que já ocorrem na fase dedicada e
+evita gravação oculta nos writers consumidores. Nos estados de dependência ausente ou
+divergente, o reencontro estrito é uma mudança de comportamento intencional; o risco de
+gravação extra nos casos medidos não se materializou.
 
 **Regra desta fase:**
 
@@ -277,9 +289,11 @@ materializou.
 > chamadas dentro dos writers de consumidor operam em **reencontro estrito**: reencontram e
 > validam, e **falham** se precisarem criar ou alterar.
 
-Isto não é regra nova, é coerência com o que a F1 já exige em 4.6: “o writer pode exigir que
-dependências já existam e estejam coerentes, mas não pode salvá-las ocultamente”. A 4.4.1
-apenas torna a exigência verificável.
+O reencontro estrito é uma mudança de comportamento intencional nos caminhos em que hoje
+um writer poderia criar ou alterar uma dependência. Ele é coerente com o que a F1 já exige
+em 4.6 — “o writer pode exigir que dependências já existam e estejam coerentes, mas não
+pode salvá-las ocultamente” —, mas não deve ser descrito como mera declaração sem efeito
+observável.
 
 Consequência prática a validar: com `GenerateSdts=false` e BC selecionado, o SDT que só a
 etapa de BC usaria precisa **já existir**; se não existir, o gate bloqueia — em vez de o
@@ -289,6 +303,18 @@ Cobertura exigida: sentinela de que nenhum writer de consumidor cria Folder ou S
 executável com `GenerateSdts=false` + BC sobre KB sem os SDTs, esperando bloqueio; e
 contagem de gravações de Folder e SDT por aplicação, que deve corresponder à ordem de 4.4.
 
+#### 4.4.2 Reencontro e posse sob contexto transitório
+
+Quando o API for reencontrado, `EnsureApi`, `FindApi`, `IsB055ApiObject` e equivalentes não
+podem observar um `ServiceGroupSource` já reescrito em memória pelo B054 e tratá-lo como
+prova de posse ou de variante do contrato. O preflight deve resolver a identidade, a posse
+e o Source persistido antes da mutação; os writers consumidores recebem esses fatos pelo
+contexto transitório. A busca por nome pode aparecer somente como diagnóstico de ambiguidade,
+nunca como fallback autoritativo.
+
+O teste de reencontro estrito deve incluir Folder ou SDT existente, porém divergente, e
+comprovar zero gravações ocultas nos writers de BC e List.
+
 **Custo das passagens redundantes — fica fora desta frente.** A medição mostrou que, mesmo
 sem gravar, as passagens extras percorrem todos os SDTs comparando estrutura para decidir o
 skip: **42 comparações por Apply** na primeira geração e **42** na reaplicação, além das 21
@@ -296,8 +322,10 @@ da fase dedicada. Isso é desperdício mensurável, mas é otimização de desem
 `B082`, não a `B111`. A F1 declara a responsabilidade; não muda quem chama quem.
 
 A habilitação de BC por `transaction.Save()` **não** entra na F1: no Sync ela permanece
-bloqueio de preflight, como já é; no Wizard, o diferimento com recibo depende do seam e
-vai para a F2.
+bloqueio de preflight, como já é; no Wizard, o callback continua sendo uma dependência
+explicitamente não coberta pela garantia isolada da F1 até a F2 transformar a habilitação
+em etapa planejada, posterior ao gate e com recibo. A F1 não deve ser declarada segura para
+esse cenário Wizard antes da F2.
 
 ### 4.5 Gate reduzido
 
@@ -361,8 +389,10 @@ aprovado.)
 Este é o ponto mais sutil herdado do plano aprovado — item 5 da sua seção 4 — e o que mais
 facilmente quebra em silêncio se for implementado por aproximação.
 
-O writer de List decide `includeBusinessComponentParameters` lendo o API persistido. Com o
-API adiado, essa leitura deixa de ser possível e o valor precisa ser passado explicitamente.
+O writer de List decide `includeBusinessComponentParameters` a partir de um fato resolvido
+no preflight. A leitura do API persistido ainda pode ser a fonte do fato para um API
+reencontrado, mas deve ocorrer antes da mutação em memória; depois que o API for adiado,
+o writer não pode deduzir o valor lendo uma instância possivelmente já reescrita.
 A regra:
 
 > Passar `includeBusinessComponentParameters = true` **somente quando a etapa de Business
@@ -389,17 +419,18 @@ A regra completa, em três ramos, avaliados nesta ordem:
 | Situação | `includeBusinessComponentParameters` | Origem do valor |
 |---|---|---|
 | a etapa de Business Component rodou nesta aplicação | **`true`** | explícito, pela guarda acima |
-| BC não rodou **e** existe API persistido e próprio | dedução, como hoje | leitura do API persistido |
-| BC não rodou **e** o API é novo (contexto transient) | **`false`** | o contexto transient, que sabe que nenhuma etapa de BC contribuiu com o contrato |
+| BC não rodou **e** existe API persistido e próprio | dedução, como hoje | fato capturado no preflight a partir do API persistido, antes da mutação |
+| BC não rodou **e** o API é novo (contexto transient) | **`false`** | fato capturado no preflight e transportado no contexto transient |
 
 O terceiro ramo é a novidade desta fase, e é correto por construção: um API que está sendo
 criado agora, numa aplicação em que a etapa de Business Component não participou, não tem —
 nem poderia ter — parâmetros de Business Component no contrato.
 
 Por isso o `ApiPlanTransientApiContext` de 4.3 precisa carregar explicitamente **se a etapa
-de Business Component contribuiu para o contrato**. Não basta o writer de List saber que
-recebeu um contexto transient: “API novo” e “BC rodou” são independentes, e a combinação
-BC+List cai no primeiro ramo mesmo com API novo.
+de Business Component contribuiu para o contrato** e, quando aplicável, o fato capturado
+do Source persistido antes da mutação. Não basta o writer de List saber que recebeu um
+contexto transient: “API novo” e “BC rodou” são independentes, e a combinação BC+List cai
+no primeiro ramo mesmo com API novo.
 
 #### Cobertura exigida
 
@@ -408,9 +439,11 @@ BC+List cai no primeiro ramo mesmo com API novo.
 - fluxo executável **`List-only` com API novo**: o Source resultante não declara parâmetros
   de Business Component, e nenhuma leitura de API persistido ocorre no caminho;
 - fluxo executável **“List sem Business Component” sobre API preexistente**: segundo ramo,
-  comportamento preservado;
+  fato capturado antes da mutação, sem leitura posterior do API já reescrito;
 - fluxo executável **BC+List com API novo**: primeiro ramo, valor `true` mesmo sem API
   persistido.
+- fluxo executável **BC+List sobre API preexistente na variante B055**: o valor e a posse
+  são resolvidos antes da mutação e não dependem do Source transitório já alterado.
 
 ### 4.9 Trilha de gravação na Output
 
@@ -446,7 +479,9 @@ executável.
 | Arquivo | Mudança |
 |---|---|
 | `Src/Extension/Package.cs` | predicado nos dois blocos; deferimento de B054 estendido a List e a BC com API ausente; ordem física; resolução final por identidade |
+| `Src/Domain/ApiPlan.cs` | transportar `TransactionGuid`, `ApplicationId`, `OperationId`, identidade planejada e fatos resolvidos no contrato do plano |
 | `Diagnostics/ApiPlanApiObjectWriter.cs` | separar preparação de persistência; devolver contexto transient; manter o Save só no caminho API-only |
+| `Diagnostics/ApiPlanGenerationStateReader.cs` | fornecer identidade e estado persistido ao preflight sem substituir a identidade planejada por nome |
 | `Diagnostics/ApiPlanBusinessComponentWriter.cs` | aceitar o contexto transient; mover o passo do API para o **fim** de `saveSteps`; não salvar o API quando List participa; salvar uma vez quando for o writer final |
 | `Diagnostics/ApiPlanListProcedureWriter.cs` | aceitar o contexto transient; mover o passo do API para o **fim** de `saveSteps`; receber `includeBusinessComponentParameters` explícito conforme a guarda de 4.8; executar o único `API.Save()` quando participar |
 | ambos os writers de consumidor | callback de trilha na Output conforme 4.9 |
@@ -476,10 +511,11 @@ quando `ApplyBusinessComponent` ou `ApplyList` for verdadeiro.
     de List;
 11. a trilha de 4.9 emite depois da gravação, com rótulo de etapa, sem alimentar o relatório
     e sem forçar a exibição do painel;
-12. a **quantidade** de gravações do API Object em cada writer, não só a presença dos
-    trechos.
+12. a guarda de 4.8 usa somente fatos capturados antes da mutação do API reencontrado;
+13. a **quantidade** de gravações do API Object em cada writer, não só a presença dos
+     trechos.
 
-As sentinelas 10 a 12 vêm do plano aprovado e devem ser hospedadas onde ele indicou: no
+As sentinelas 10 a 13 vêm do plano aprovado e devem ser hospedadas onde ele indicou: no
 teste do relatório final de aplicação, que já lê os três arquivos e já está registrado no
 checker pré-push. **Sem criar gate novo**, e com eficácia verificada por mutação.
 
