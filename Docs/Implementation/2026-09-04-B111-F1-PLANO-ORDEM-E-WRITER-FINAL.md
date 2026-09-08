@@ -638,7 +638,10 @@ e List:
    depois com uma dependência ausente ou divergente;
 5. Wizard com `GenerateApiObject=false`, com API próprio e com API ausente;
 6. Wizard com SDT e Procedure desmarcados;
-7. em todos: o API aparece uma vez, e o relatório traz `Guid` persistido e writer final.
+7. nos fluxos aprovados com `GenerateApiObject=true`, há uma única gravação do API, e o
+   relatório traz `Guid` persistido e writer final; nos fluxos aprovados com
+   `GenerateApiObject=false`, não há nova gravação do API; nos fluxos bloqueados, não há
+   gravação de API nem `Guid` persistido novo.
 
 Registrar, na mesma passagem, o tempo de Apply antes e depois da mudança na KB grande. A
 F1 não é frente de desempenho, mas a ordem física muda e a medição é barata.
