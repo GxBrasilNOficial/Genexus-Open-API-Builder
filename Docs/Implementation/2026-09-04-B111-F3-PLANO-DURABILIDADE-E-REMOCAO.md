@@ -176,6 +176,10 @@ Estágios mínimos: `NotStarted`, `IntentionRecorded`, `TransactionPending`,
 `ApiPhysicallySaved`, `MetadataPending`, `MetadataRecovered`, `RemovalInProgress`,
 `RemovalPartial` e `RecoveryInProgress`.
 
+A palavra “mínimos” é deliberada: o conjunto completo de valores de `logicalStage` é o enum
+da decisão 31, que também rege os estágios terminais `Abandoned`, `Completed` e `Removed`;
+esta lista não é um contrato fechado.
+
 `Partial` pertence somente a `operationState`; durante remoção ele deve ser acompanhado de
 `logicalStage=RemovalPartial`. Nunca usar `Partial` como `logicalStage`.
 
@@ -439,6 +443,13 @@ O estado atual desses consumidores ainda aceita V1/V2, e `ownership.applicationI
 não existe no `Src/`; isso é uma pré-condição P1 da implementação da F3, não trabalho
 antecipado nesta rodada.
 
+Esses cinco são os consumidores obrigatórios que validam versão, ownership ou fingerprint;
+a lista não exclui leitores como `ApiPlanGeneratedApiRemovalInventory`,
+`ApiPlanTransactionSyncOrchestrator`, `PrototypeWizardExistingApiContractReader` e
+`Package`, que consomem campos de ownership estáveis sem validar `schemaVersion`. Esses
+leitores também devem permanecer compatíveis com V3, mas não ganham lógica própria de
+promoção por esse motivo.
+
 ### 5.3 Ciclo de vida
 
 Antes da primeira gravação de Transaction, Folder, SDT, Procedure, API ou metadata: criar
@@ -568,6 +579,13 @@ strings são codificadas em UTF-8 com apenas os escapes obrigatórios do JSON, n
 representação decimal invariável sem zeros ou expoente supérfluos e booleanos usam os
 literais JSON `true`/`false`. O digest dos bytes crus do File é uma verificação separada de
 durabilidade; ele não entra no `snapshotHash` nem o substitui.
+
+A implementação deve fixar o serializer e suas configurações, ou implementar writer canônico
+próprio; não pode depender dos defaults de um serializer não nomeado. Se reutilizar Json.NET,
+deve declarar explicitamente as opções de escaping, `nulls`, formatação e ordem; qualquer
+mudança dessa configuração é alteração de contrato e exige vetor de compatibilidade antes da
+F3.
+
 Imediatamente antes do primeiro `Save()` ou `Delete()` de negócio, o executor relê o
 mesmo `journalFileId` e compara `journalFileId`, `OperationId`, `ApplicationId`,
 `updatedUtc`, hash canônico e `NextStep`; qualquer divergência retorna

@@ -283,8 +283,8 @@ passadas e comando unificado de recuperação. O painel CLI de quatro revisores 
 `REVISAR` em todos os pareceres, com diversidade de três famílias de modelo; os ajustes
 documentais da segunda rodada e as clarificações úteis dos pareceres solo posteriores do
 MiMo V2.5 Pro e do Codex GPT-5.6-luna foram incorporados e commitados; a rodada manual do
-Cursor e o parecer solo do Claude Code Opus 5 responderam `APROVAR COM RESSALVAS`, suas
-ressalvas úteis foram aplicadas e a decisão
+Cursor, o parecer solo do Claude Code Opus 5 e o parecer solo do OpenCode Go DeepSeek V4 Pro
+responderam `APROVAR COM RESSALVAS`, suas ressalvas úteis foram aplicadas e a decisão
 humana de encerramento da revisão e autorização da F1 permanece pendente.
 Nenhuma fase foi implementada, a revisão por pares não foi
 encerrada e B109, B110, B112, B113 e B114

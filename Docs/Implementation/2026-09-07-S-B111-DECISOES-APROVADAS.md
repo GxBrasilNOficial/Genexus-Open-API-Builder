@@ -1290,3 +1290,22 @@ foram incorporadas estas clarificações:
 - a canonização do hash agora fecha `null`, `[]`, GUID `D` minúsculo, timestamps UTC com
   milissegundos fixos, escapes JSON obrigatórios, números invariáveis, booleanos JSON e a
   separação entre o hash semântico do snapshot e o digest dos bytes crus do File.
+
+### 56. Clarificações após parecer solo do OpenCode Go DeepSeek V4 Pro — 2026-09-08
+
+O DeepSeek V4 Pro respondeu `APROVAR COM RESSALVAS`. Foi tratado como segunda opinião solo,
+insumo para conferência local e não autoridade para editar o repositório ou autorizar a
+implementação. Após validação no código e nos planos, foram aproveitados estes pontos P3:
+
+- os cinco consumidores listados para a promoção V2→V3 são os consumidores obrigatórios que
+  validam versão, ownership ou fingerprint, não uma lista exaustiva de leitores; leitores que
+  só consomem campos de ownership estáveis devem continuar compatíveis com V3 sem ganhar lógica
+  própria de promoção;
+- a canonização do `snapshotHash` precisa fixar o serializer e suas configurações, ou usar
+  writer canônico próprio, antes da implementação da F3; defaults não nomeados não fazem parte
+  do contrato;
+- a lista de “Estágios mínimos” da F3 é deliberadamente não exaustiva; o conjunto completo de
+  `logicalStage`, inclusive `Abandoned`, `Completed` e `Removed`, continua sendo o da decisão
+  31.
+
+Nenhum desses apontamentos altera o veredito local sobre a F1 ou cria um bloqueio P1/P2.

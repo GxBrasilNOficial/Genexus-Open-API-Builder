@@ -241,3 +241,16 @@ Os apontamentos aproveitados foram:
 Após conferência no código e nos planos, esses pontos foram aplicados na F2, F3, no registro
 de decisões, no status e no backlog. A ressalva P1 de compatibilidade V2→V3 permanece uma
 pré-condição da implementação da F3 e não bloqueia a decisão humana de autorizar a F1.
+
+## 12. Parecer solo do OpenCode Go DeepSeek V4 Pro — 2026-09-08
+
+O DeepSeek V4 Pro revisou o estado commitado no `main` em `3246440` e respondeu `APROVAR COM
+RESSALVAS`. Foi uma segunda opinião individual, não uma nova rodada do painel e não uma
+autoridade para editar ou concluir a revisão.
+
+Os apontamentos úteis foram: esclarecer que os cinco consumidores da promoção V2→V3 são os
+consumidores obrigatórios de versão, ownership ou fingerprint, não todos os leitores de campos
+estáveis; fixar o serializer e suas configurações antes de implementar o `snapshotHash`; e
+remeter a lista de “Estágios mínimos” ao enum completo de `logicalStage` da decisão 31. Após
+conferência no código e nos planos, os três pontos foram incorporados como clarificações P3;
+nenhum encontrou P1 ou P2.
