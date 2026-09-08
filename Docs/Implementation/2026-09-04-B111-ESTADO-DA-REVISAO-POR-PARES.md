@@ -2,7 +2,8 @@
 
 > **Registro histórico.** Este arquivo preserva o estado das rodadas anteriores à
 > consolidação da `S-B111`. As seções abaixo não são a fonte atual de verdade: a rodada
-> CLI de 2026-09-08 já ocorreu, o Cursor ainda não foi acionado e não há implementação
+> CLI de 2026-09-08 já ocorreu e, no momento histórico retratado, o Cursor ainda não havia
+> sido acionado; não há implementação
 > autorizada. Para o estado corrente, use `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`, os
 > planos F1/F2/F3 e os artefatos da rodada em `Temp/revisao-por-pares/`.
 
@@ -203,3 +204,14 @@ Isso **não** emite o recibo de fechamento da revisão por pares. A revisão per
 quando retomada, deverá consultar os três planos consolidados e reagir a cada parecer antes
 de decidir se algum gap exige nova conversa humana. Nenhuma implementação, commit, push,
 instalação ou consulta adicional foi autorizada por esta atualização documental.
+
+## 10. Rodada manual do Cursor — 2026-09-08
+
+O Cursor revisou somente o estado commitado em `main`, com foco no commit `f8b1e9a`, e
+respondeu `APROVAR COM RESSALVAS`. A ausência de implementação não foi tratada como defeito.
+Os pontos úteis identificados foram: definir o hash da `RecoveryAuthorization` sobre o
+envelope do journal `schemaVersion=1` (sem confundi-lo com a metadata V3); separar sequência
+atribuída em memória de compromisso durável; fechar o canal comum de `NotAttempted`; alinhar
+`StageFailed` à persistência exclusiva da F3; e completar a especificação do lock local e
+dos namespaces de diagnóstico. Esses ajustes foram incorporados aos planos, decisões,
+status e backlog; a decisão humana de encerrar a revisão e autorizar a F1 permanece pendente.

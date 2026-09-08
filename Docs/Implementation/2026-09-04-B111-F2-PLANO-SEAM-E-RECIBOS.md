@@ -173,6 +173,12 @@ Contrato mínimo:
 - `Persist(string operationKind, string objectType, string stage, string plannedName,
   PersistenceIdentity identity, Action persist, Func<PersistenceConfirmation> confirm)` executa
   `Save` ou `Delete`, mede a operação e registra o recibo quando há escopo ativo;
+- `RecordNotAttempted(string operationKind, string objectType, string stage, string plannedName,
+  PersistenceIdentity identity, PersistenceConfirmation observation)` registra no mesmo log
+  uma tentativa de `Delete` que não chegou a chamar o SDK. `observation` deve ser
+  `confirmation=NotAttempted` e `physicalState=Absent` ou `Unknown`; o método não executa
+  mutação física, mas usa o mesmo alocador de `sequence`, a mesma cadeia de `attempt` e as
+  mesmas referências `inventory.receiptSequences` de `Persist`;
 - a confirmação é obrigatória para todo ponto de produção. Não existe sobrecarga sem
   `confirm`: para `Save`, ela relê o objeto esperado; para `Delete`, ela confirma a
   ausência pela identidade validada do alvo. API usa `PlannedApiGuid`; File usa
@@ -202,10 +208,14 @@ Regras:
 5. a tentativa sem confirmação não é um sucesso: o ponto não pode ser considerado
    coberto pela F2 até que sua leitura de confirmação exista.
 6. o recibo final de cada tentativa deve ser registrado antes de relançar a exceção
-   original, inclusive quando o delegate lança. A tentativa recebe uma sequência monotônica
-   antes do delegate e o chamador recupera o resultado final pelo log usando essa sequência;
-   a F3 não pode deduzir o resultado pela mensagem da exceção. O contrato deve permitir que
-   o executor de `Remove` leia `Confirmed`, `Failed` retryable ou `OutcomeUnknown` sem canal
+   original, inclusive quando o delegate lança. A tentativa recebe uma sequência atribuída
+   em memória antes do delegate e o chamador recupera o resultado final pelo log usando essa
+   sequência; essa atribuição não compromete a sequência no journal. O compromisso durável
+   só ocorre quando o checkpoint que contém o receipt é salvo e relido com
+   `journalDurability=Confirmed`; uma reserva perdida antes disso pode ser reutilizada após
+   crash, mas nenhuma sequência presente em checkpoint confirmado pode ser reutilizada. A
+   F3 não pode deduzir o resultado pela mensagem da exceção. O contrato deve permitir que o
+   executor de `Remove` leia `Confirmed`, `Failed` retryable ou `OutcomeUnknown` sem canal
    alternativo indefinido.
 7. o `Save()` do próprio diário não passa por este `Persist(...)`: usa uma rotina separada
    de durabilidade do diário, confirmada por `FileId`, bytes e hash, para não criar recibo
@@ -225,9 +235,11 @@ confunda falha de preparação com ausência de tentativa.
 
 Cada `PersistenceReceipt` carrega:
 
-- `sequence` monotônica global entre os recibos **duravelmente persistidos** da operação
-  (isto é, dentro do mesmo `OperationId`), positiva e append-only; uma sequência só fica
-  reservada quando o checkpoint que a contém é confirmado;
+- `sequence` positiva, atribuída em memória pelo alocador único do log e monotônica entre os
+  receipts **duravelmente persistidos** da operação (isto é, dentro do mesmo `OperationId`);
+  o compromisso durável só existe quando o checkpoint que a contém é confirmado. Uma
+  atribuição perdida antes desse checkpoint pode ser reutilizada após crash; nenhuma
+  sequência já presente em checkpoint confirmado pode ser reutilizada;
 - operação (`Save` ou `Delete`), etapa e tipo de objeto;
 - `PersistenceIdentity` planejada, além do nome para exibição;
 - identidade persistida observada, ou ausência confirmada no caso de `Delete`;
@@ -315,8 +327,9 @@ A F2 somente emite e expõe esse evento; não grava o journal nem decide `blockR
 é a dona do fechamento durável: quando recebe `NoteStageFailed` para um envelope `Active`
 confirmado e o orquestrador conclui que a etapa não terá nova chamada física, atualiza o
 snapshot para `operationState=Partial`, `blockReason=StageFailed` e o `logicalStage`
-correspondente, preservando o item no inventário e sem criar `PersistenceReceipt`. O novo
-snapshot só pode ser anunciado como `StageFailed` depois de `journalDurability=Confirmed`.
+correspondente, preservando o item no inventário e sem criar `PersistenceReceipt`. O snapshot
+`Partial` com `blockReason=StageFailed` só pode ser anunciado depois de
+`journalDurability=Confirmed`.
 Se não houver `Active` confirmado, o evento permanece somente diagnóstico e não cria
 `blockReason=StageFailed`. Se a gravação ou a releitura do journal não puder ser confirmada,
 a F3 preserva o último snapshot durável e expõe `GateDiagnostic=DurabilityUnknown`, sem
@@ -326,16 +339,20 @@ Quando o alvo previsto não for encontrado antes de chamar `Delete()`, o remover
 retornar em silêncio. Deve registrar uma ocorrência de tentativa não realizada, com
 `confirmation=NotAttempted` e `physicalState=Absent` ou `Unknown`, conforme a qualidade da
 localização. Essa ocorrência permite à F3 distinguir ausência comprovada de alvo não
-localizado e decidir se o inventário está completo. `NotAttempted` nunca equivale a
+localizado e decidir se o inventário está completo. O registro deve passar por
+`RecordNotAttempted`, no mesmo log e alocador de `Persist`, com `operation=Delete`,
+`attemptState=Finished` e checkpoint de journal da F3; não pode ser criado por uma estrutura
+paralela de recibo. `NotAttempted` nunca equivale a
 `Confirmed`: salvo recibo durável anterior que já confirme a mesma identidade, a
 remoção termina em `Partial`, com `blockReason=TargetAbsentBeforeDelete`, e exige
 reconciliação explícita. A localização deve ser feita pela
 identidade validada; nome isolado não pode transformar um API renomeado em ausência aparente.
 
-Essa ausência antes do `Delete()` não é a classe C: a F3 registra uma ocorrência de tentativa
-não realizada como `PersistenceReceipt`, com `attemptState=Finished`, `result=OutcomeUnknown`,
-`confirmation=NotAttempted`, `retryEligible=false` e a próxima `sequence` durável. Ela não
-chama `Delete()`, não conta como sucesso físico e não autoriza retry; o `blockReason` específico
+Essa ausência antes do `Delete()` não é a classe C: a F3 chama `RecordNotAttempted` e registra
+uma ocorrência como `PersistenceReceipt`, com `operation=Delete`, `attemptState=Finished`,
+`result=OutcomeUnknown`, `confirmation=NotAttempted`, `retryEligible=false` e a sequência
+atribuída pelo mesmo alocador. Ela não chama `Delete()`, não conta como sucesso físico e não
+autoriza retry; o `blockReason` específico
 continua sendo `TargetAbsentBeforeDelete` quando não houver recibo anterior `Confirmed`.
 
 **Correção herdada: “timeout” não é observável.** O manuscrito expandido falava em timeout
@@ -418,7 +435,7 @@ No Sync nada muda: continua bloqueando antes de qualquer gravação.
 | `ApiPlanBusinessComponentWriter.cs`, `ApiPlanListProcedureWriter.cs` | passar a usar o executor único |
 | `ApiPlanSdtWriter.cs`, `ApiPlanProcedureWriter.cs`, `ApiPlanApiObjectWriter.cs`, `ApiPlanTransactionFolder.cs`, `ApiPlanMetadataFileWriter.cs` | envolver cada `Save()` em `Persist(...)` |
 | `ApiPlanOrphanMetadataRecovery.cs` | envolver o `file.Save()` da recuperação B115 em `Persist(...)`, com confirmação de identidade e bytes |
-| `ApiPlanGeneratedApiRemover.cs` | envolver cada `Delete()` físico em `Persist(...)`, com confirmação obrigatória de ausência |
+| `ApiPlanGeneratedApiRemover.cs` | envolver cada `Delete()` físico em `Persist(...)`, com confirmação obrigatória de ausência, e registrar alvo ausente antes do `Delete()` por `RecordNotAttempted` |
 | `Package.cs` | abrir o escopo por operação; `transaction.Save()` recibado; habilitação de BC diferida no Wizard; sequência de recibos no relatório |
 | `PrototypeWizardDialog.cs` | deixar de executar `transaction.Save()` durante o diálogo; registrar somente a habilitação pendente para o Apply planejado |
 | `ApiPlanApplicationFinalReport.*` | sequência de recibos e contagem por tipo |
@@ -444,13 +461,14 @@ seam, não o pipeline GeneXus completo; a integração do adaptador, a quantidad
    ausência (`Confirmed`, `retryEligible=false`) e releitura indeterminada
    (`OutcomeUnknown`, `retryEligible=false`), sempre relançando a exceção original
    quando houver;
-4. falha antes da chamada é registrada pelo orquestrador como evento de falha de etapa,
-   sem ser confundida com um `PersistenceReceipt`;
+4. falha antes da chamada física é registrada pelo orquestrador como evento de falha de
+   etapa, sem ser confundida com um `PersistenceReceipt`; a ausência de alvo antes de
+   `Delete` usa `RecordNotAttempted` e recebe receipt próprio;
 5. leitura de confirmação divergente produz `OutcomeUnknown` com a divergência;
 6. confirmação ausente não possui sobrecarga válida e não passa no contrato;
 7. `Delete` confirmado pela ausência produz `Confirmed`;
-8. um alvo não localizado antes de `Delete` produz `NotAttempted`, sem ser tratado como
-   remoção confirmada;
+8. um alvo não localizado antes de `Delete` passa por `RecordNotAttempted`, produz
+   `NotAttempted` no log comum e não é tratado como remoção confirmada;
 9. escopos aninhados restauram o anterior;
 10. `Suspend()` não encerra o escopo ativo;
 11. falha na publicação do log não derruba o fluxo medido.
@@ -539,13 +557,15 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
 ## 8. Critérios de aceite
 
 1. Todo `Save()` e `Delete()` de produção do pipeline passa por `Persist(...)`; uma
-   sentinela falha se algum ficar fora.
+   ausência observada antes de `Delete()` passa por `RecordNotAttempted`; uma sentinela
+   falha se algum caminho ficar fora desses dois pontos comuns.
 2. Nenhum ponto é instrumentado em dois níveis; uma sentinela falha se houver contagem
    dupla.
 3. Sem escopo ativo, o comportamento é idêntico ao anterior.
 4. O ponto comum nunca engole exceção nem altera o resultado de uma persistência.
 5. As classes C, D e E são distinguíveis no relatório; D e E possuem `PersistenceReceipt`,
-   enquanto C possui evento de falha de etapa, e todas são testadas por injeção.
+   enquanto C possui evento de falha de etapa; `NotAttempted` possui receipt pelo log comum
+   sem chamada física, e todas são testadas por injeção.
 6. A contagem de um único `API.Save()` por fluxo é provada por execução na IDE, não por
    `Add-Type` nem somente por texto.
 7. Os dois laços de `saveSteps` foram unificados num executor único.

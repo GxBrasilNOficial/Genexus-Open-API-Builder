@@ -435,12 +435,14 @@ O mapeamento de diagnóstico é fechado e segue esta precedência:
 |---|---|---|---|
 | `JournalUnavailable` | o diário está ausente, inválido, duplicado ou não pode ter identidade, schema ou hash validados antes de uma nova intenção | `JournalMissing`, `JournalInvalid`, `JournalDuplicate`, `JournalIdentityDivergent` | somente relatório; não cria `blockReason` novo |
 | `DurabilityUnknown` | o `Save()` ou a releitura do diário foi tentado, mas o snapshot novo não pôde ser confirmado | `JournalSaveUnconfirmed`, `JournalReloadDivergent` | preserva o último snapshot durável; não afirma o motivo novo |
-| `GateBlocked` | o diário é legível, válido e durável, mas o estado global impede a operação solicitada | `JournalNonTerminal`, `PreparedContinuationNotAuthorized`, `UnreconciledOutcome`, `RecoveryAuthorizationStale` | não cria nova operação nem altera o envelope |
+| `GateBlocked` | o diário é legível, válido e durável, mas o estado global impede a operação solicitada | `JournalNonTerminal`, `PreparedContinuationNotAuthorized`, `UnreconciledOutcome`, `RecoveryAuthorizationStale`, `RecoveryAuthorizationLockUnavailable` | não cria nova operação nem altera o envelope |
 | `PreconditionFailed` | uma pré-condição específica da operação falha antes da primeira mutação, com o diário ainda utilizável | `IdentityAmbiguous`, `IdentityDivergent`, `InventoryInsufficient`, `AuthorizationMismatch` | somente relatório; não cria `blockReason` novo |
 
 `reasonCode` é estável e destinado a máquinas; `message` e `context` carregam a
 explicação humana e os dados estruturados (`operationId`, `journalFileId`, fase,
 `logicalStage`, `journalDurability` e, quando já existente, `blockReason`).
+`reasonCode` e `blockReason` são namespaces distintos: uma coincidência textual entre
+eles nunca autoriza copiar um diagnóstico efêmero para o envelope persistido.
 
 O mapeamento normativo de `blockReason` persistido é fechado por cenário:
 
@@ -452,7 +454,7 @@ O mapeamento normativo de `blockReason` persistido é fechado por cenário:
 | `IdentityDivergent` | identidade, posse, GUID, `FileId` ou hash observado diverge do plano ou do diário |
 | `UnreconciledNotAttempted` | item `NotAttempted` com estado físico desconhecido ou continuação sem reconciliação determinística |
 | `TargetAbsentBeforeDelete` | item ausente antes do primeiro `Delete()`, sem recibo durável anterior `Confirmed` para a mesma identidade |
-| `StageFailed` | falha conhecida e não retryable registrada pelo orquestrador por `NoteStageFailed` depois de existir um envelope confirmado, antes de uma nova chamada física; o próprio orquestrador confirma o snapshot `Partial` com esse `blockReason`; não cria `PersistenceReceipt` |
+| `StageFailed` | falha conhecida e não retryable comunicada pelo orquestrador por `NoteStageFailed` depois de existir um envelope `Active` confirmado, antes de uma nova chamada física; somente a F3 confirma o snapshot `Partial` com esse `blockReason`; sem `Active` confirmado, permanece diagnóstico; não cria `PersistenceReceipt` |
 | `RetryBudgetExhausted` | o limite `maxPasses` foi atingido enquanto permanecem itens `StillPresentAfterDelete` pendentes |
 
 Quando houver mais de uma descrição possível, a decisão segue esta ordem: (1) falta
@@ -652,8 +654,10 @@ Decisão aprovada:
 
 Cada `PersistenceReceipt` conterá:
 
-- `sequence` e `attempt`; `sequence` é global, positivo, monotônico e append-only
-  dentro da operação identificada pelo mesmo `OperationId`, começando em `1`. A
+- `sequence` e `attempt`; `sequence` é atribuída em memória antes do delegate para permitir
+  `TryGetReceipt`, mas só se torna compromisso durável quando o checkpoint que a contém é
+  confirmado. Entre receipts duravelmente persistidos, é global, positivo, monotônico e
+  append-only dentro da operação identificada pelo mesmo `OperationId`, começando em `1`. A
   unicidade exigida é a dos valores já presentes em receipts duravelmente persistidos:
   um número reservado em memória e perdido antes do checkpoint confirmado pode ser
   reutilizado após crash; nenhum número presente em snapshot confirmado pode ser
@@ -1207,11 +1211,11 @@ O parecer externo foi tratado como insumo de revisão, não como autoridade para
 repositório. Após conferência cruzada dos planos e deste registro, ficam incorporadas somente
 estas clarificações:
 
-- `StageFailed` é produzido pelo orquestrador: depois de um envelope `Active` confirmado e
-  antes de qualquer nova chamada física, `NoteStageFailed` deve levar ao snapshot durável
-  `Partial` + `blockReason=StageFailed`, sem `PersistenceReceipt`; sem confirmação do novo
-  snapshot, o resultado é `GateDiagnostic=DurabilityUnknown` e não se afirma que a razão foi
-  persistida;
+- `StageFailed` é sinalizado pelo orquestrador: depois de um envelope `Active` confirmado e
+  antes de qualquer nova chamada física, `NoteStageFailed` deve ser processado pela F3,
+  que grava o snapshot durável `Partial` + `blockReason=StageFailed`, sem
+  `PersistenceReceipt`; sem confirmação do novo snapshot, o resultado é
+  `GateDiagnostic=DurabilityUnknown` e não se afirma que a razão foi persistida;
 - `GateDiagnostic` mantém seus códigos de alto nível, mas o payload deve identificar a
   precondição que falhou por `reasonCode` estável e contexto estruturado; isso não cria campo
   persistido nem transforma `GateBlocked` em estado da operação;
@@ -1237,10 +1241,14 @@ estas clarificações:
   `PreconditionFailed` para pré-condição específica antes da primeira mutação. O último não
   é subcausa de `GateBlocked`;
 - a unicidade de `sequence` é exigida entre receipts duravelmente persistidos no mesmo
-  `OperationId`; uma reserva perdida antes do checkpoint confirmado pode ser reutilizada após
-  crash. Alvo ausente antes de `Delete` recebe receipt `NotAttempted` com
-  `OutcomeUnknown` e sem retry, quando esse checkpoint puder ser confirmado;
-- `RecoveryAuthorization` usa o SHA-256 do JSON canônico V3 e exige revalidação imediata de
-  FileId, IDs, `updatedUtc`, hash e `NextStep` antes da primeira mutação. Sem CAS do SDK,
-  a garantia é otimista, com lock local quando possível e classificação explícita de qualquer
-  corrida residual como `OutcomeUnknown` ou `DurabilityUnknown`.
+  `OperationId`; a sequência é atribuída em memória antes do delegate, mas uma reserva
+  perdida antes do checkpoint confirmado pode ser reutilizada após crash. Alvo ausente antes
+  de `Delete` passa por `RecordNotAttempted` no log comum, com `operation=Delete`,
+  `OutcomeUnknown`, `confirmation=NotAttempted` e sem retry, quando esse checkpoint puder
+  ser confirmado;
+- `RecoveryAuthorization` usa o SHA-256 do JSON canônico do envelope do journal com
+  `schemaVersion=1` — não da metadata V3 — e exige revalidação imediata de
+  `journalFileId`, IDs, `updatedUtc`, hash e `NextStep` antes da primeira mutação. Sem CAS do
+  SDK, a garantia é otimista; o lock local por KB deve cobrir a revalidação e a primeira
+  mutação, e a indisponibilidade do lock bloqueia antes da mutação. Qualquer corrida residual
+  é classificada explicitamente como `OutcomeUnknown` ou `DurabilityUnknown`.

@@ -226,8 +226,9 @@ pré-condição específica falha antes da primeira mutação. O payload estrutu
 uma `reasonCode` estável, a precondição que falhou e a mensagem para leitura humana; não
 basta reduzir causas diferentes ao texto livre `GateBlocked`. As subcausas de
 `GateBlocked` incluem `JournalNonTerminal`, `PreparedContinuationNotAuthorized`,
-`UnreconciledOutcome` e `RecoveryAuthorizationStale`; `JournalIdentityDivergent` pertence
-a `JournalUnavailable`, não a `GateBlocked`. Esses detalhes são efêmeros do diagnóstico,
+`UnreconciledOutcome`, `RecoveryAuthorizationStale` e
+`RecoveryAuthorizationLockUnavailable`; `JournalIdentityDivergent` pertence a
+`JournalUnavailable`, não a `GateBlocked`. Esses detalhes são efêmeros do diagnóstico,
 não valores novos do journal nem substitutos de `blockReason`.
 
 ### 4.3 Remoção com intenção confirmada
@@ -277,12 +278,15 @@ O ciclo de vida da fila é fechado assim:
 - a ordem é API Object, Procedures, SDTs na ordem de dependência, metadata File e,
   por último, Folder próprio vazio. Cada item é relido pela identidade validada antes
   da tentativa e recebe um recibo, inclusive quando não chega a chamar `Delete()`;
-- `NotAttempted`/`Absent` antes do primeiro Delete não é sucesso implícito. Sem recibo
-  durável anterior `Confirmed` para a mesma identidade, encerra a operação em `Partial`
-  com `blockReason=TargetAbsentBeforeDelete`. Uma falha de etapa não retryable,
-  registrada por `NoteStageFailed`, também encerra em `Partial`, com
-  `blockReason=StageFailed`, o item preservado e
-  sem nova passada;
+- `NotAttempted`/`Absent` antes do primeiro Delete não é sucesso implícito. A F3 chama
+  `RecordNotAttempted` no log comum, sem chamar `Delete()`, e grava o receipt com
+  `operation=Delete`, `attemptState=Finished`, `result=OutcomeUnknown`,
+  `confirmation=NotAttempted` e `retryEligible=false`. Sem recibo durável anterior
+  `Confirmed` para a mesma identidade, encerra a operação em `Partial` com
+  `blockReason=TargetAbsentBeforeDelete`. Uma falha de etapa não retryable, registrada por
+  `NoteStageFailed`, somente encerra em `Partial` com `blockReason=StageFailed` quando já
+  existe envelope `Active` confirmado e não haverá nova chamada física; o item é preservado,
+  não há nova passada e, sem `Active` confirmado, o sinal permanece apenas diagnóstico;
 - no início da operação, `maxPasses = max(1, número de itens Delete do inventário)`.
   Uma passada só pode reencaminhar `StillPresentAfterDelete`. Se o limite for atingido
   com itens pendentes, o diário termina com `operationState=Partial` e
@@ -530,10 +534,18 @@ O executor rejeita a autorização se qualquer parte dessa vinculação divergir
 revalidado, evitando continuar sobre um snapshot substituído entre a leitura e a ação.
 
 O hash usado nessa autorização é o SHA-256, em hexadecimal minúsculo, do JSON canônico
-UTF-8 do envelope V3: sem espaços supérfluos, propriedades na ordem do schema,
-`updatedUtc` serializado em UTC com sufixo `Z` e o próprio campo de autorização/hash
-externo excluído do material hasheado. `updatedUtc` faz parte do snapshot e ajuda a
-diagnosticar a versão observada, mas não substitui o hash como comparação de integridade.
+UTF-8 do envelope do journal com `schemaVersion=1`, não da metadata V3. O material inclui,
+na ordem do schema e com arrays na ordem persistida, `schemaVersion`, `journalKind`,
+`knowledgeBaseGuid`, `transactionGuid`, `transactionName`, `operationId`, `applicationId`,
+`operationKind`, `generatorVersion`, `createdUtc`, `updatedUtc`, `envelopePhase`,
+`operationState`, `logicalStage`, `journalDurability`, `intentKind`,
+`metadataSchemaVersion`, `plan`, `inventory`, `receipts`, `abandonment` e `blockReason`.
+Não inclui `journalFileId`/`WikiFileKBObject.Id` ou outra metadata de armazenamento externo,
+nem `RecoveryAuthorization`, `snapshotHash` ou qualquer outro campo derivado de autorização;
+o próprio hash nunca é incluído no material que ele resume. Não há espaços supérfluos,
+propriedades seguem a ordem do schema, e `updatedUtc` é serializado em UTC com sufixo `Z`.
+`updatedUtc` faz parte do snapshot e ajuda a diagnosticar a versão observada, mas não
+substitui o hash como comparação de integridade.
 Imediatamente antes do primeiro `Save()` ou `Delete()` de negócio, o executor relê o
 mesmo `journalFileId` e compara `journalFileId`, `OperationId`, `ApplicationId`,
 `updatedUtc`, hash canônico e `NextStep`; qualquer divergência retorna
@@ -541,10 +553,13 @@ mesmo `journalFileId` e compara `journalFileId`, `OperationId`, `ApplicationId`,
 mutação.
 
 Se o SDK não oferecer CAS transacional para o File, esse contrato é uma verificação
-otimista, não uma promessa de atomicidade entre processos. O executor deve usar, quando
-disponível, um lock local por KB envolvendo a revalidação e a primeira mutação; uma corrida
-que ocorrer depois da revalidação continua residual e deve ser detectada no checkpoint
-seguinte. Nesse caso não há retry silencioso: a classificação volta a ser
+otimista, não uma promessa de atomicidade entre processos. `lock local por KB` significa
+uma exclusão mantida pela extensão, indexada por `knowledgeBaseGuid`, desde a revalidação
+final até a primeira mutação. Se o lock não puder ser obtido, o executor bloqueia antes da
+mutação com `GateDiagnostic=GateBlocked` e `reasonCode=RecoveryAuthorizationLockUnavailable`;
+não prossegue como se houvesse atomicidade. Uma corrida que ocorrer depois da revalidação
+continua residual e deve ser detectada no checkpoint seguinte. Nesse caso não há retry
+silencioso: a classificação volta a ser
 `OutcomeUnknown` quando a mutação física for ambígua ou `DurabilityUnknown` quando o
 snapshot do journal não puder ser confirmado.
 
