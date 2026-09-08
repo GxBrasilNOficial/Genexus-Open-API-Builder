@@ -186,7 +186,7 @@ implementação na ordem F1 → F2 → F3:
 | F2 — seam de persistência e recibos | `Docs/Implementation/2026-09-04-B111-F2-PLANO-SEAM-E-RECIBOS.md` | F1 |
 | F3 — durabilidade e remoção | `Docs/Implementation/2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md` | F2 e as decisões consolidadas |
 
-**Decisão registrada em 2026-09-07:** Modo A — diário durável — foi selecionado. O contrato é um único `File` por KB, com nome lógico fixo `GxOpenApiBuilder_OperationJournal`, preservado após operação terminal confirmada, e recuperação explícita no menu principal da F3. O Modo B permanece apenas como comparação histórica na seção 3 da F3; não bloqueia mais a definição do contrato.
+**Decisão registrada em 2026-09-07:** Modo A — diário durável — foi selecionado. O contrato é um único `File` por KB, com nome lógico fixo `GxOpenApiBuilder_OperationJournal`, preservado após operação terminal confirmada, e recuperação explícita na F3: primariamente no menu de contexto da Transaction, com fallback no menu principal para diagnóstico e recuperação da KB inteira. O Modo B permanece apenas como comparação histórica na seção 3 da F3; não bloqueia mais a definição do contrato.
 
 Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md` — seis execuções sobre `wseducacaospteste` e `fabricabrasil18test`. Três defeitos independentes saíram dessa sondagem e foram numerados: `B112`, `B113` e `B114`; o escopo de `B109` foi ampliado (o sintoma ocorre fora da etapa de Business Component).
 

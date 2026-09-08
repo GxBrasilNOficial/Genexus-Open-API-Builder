@@ -114,7 +114,9 @@ A recuperação será iniciada exclusivamente pelo comando:
 Recuperar operação interrompida
 ```
 
-O comando ficará no menu principal `Genexus Open API Builder`, não no menu de contexto da Transaction.
+O comando ficará primariamente no menu de contexto da Transaction. O menu principal
+`Genexus Open API Builder` oferecerá o mesmo comando como fallback para diagnosticar e
+recuperar a KB inteira, sem exigir uma Transaction selecionada.
 
 Abrir o Wizard ou executar Sync não iniciará recuperação automaticamente.
 
@@ -264,10 +266,11 @@ promete que a ferramenta possa resolver automaticamente toda ambiguidade.
 Decisão aprovada:
 
 - o comando de recuperação fará parte da F3, não de uma futura F4;
-- ficará no menu principal da extensão, e não no menu contextual de uma
-  Transaction;
+- ficará primariamente no menu de contexto da Transaction, usando a Transaction
+  selecionada;
+- terá fallback no menu principal da extensão para diagnosticar e recuperar a KB inteira;
 - atuará sobre o diário e o estado da KB atual;
-- não exigirá uma Transaction selecionada;
+- no fallback do menu principal, não exigirá uma Transaction selecionada;
 - bloqueará diante de diário ausente, múltiplos candidatos ou identidade
   ambígua;
 - validará o diário e os recibos antes de executar qualquer continuação;
@@ -678,8 +681,8 @@ Decisão aprovada:
   como pendente;
 - o Modo A é o contrato selecionado em 2026-09-07: um diário `File` único por
   KB, com nome lógico fixo `GxOpenApiBuilder_OperationJournal`, sem módulo;
-- a recuperação é explícita, fica na F3, aparece no menu principal e atua sobre
-  a KB inteira;
+- a recuperação é explícita, fica na F3, aparece primariamente no menu de contexto da
+  Transaction e tem fallback no menu principal para atuar sobre a KB inteira;
 - o Modo B permanece apenas como comparação histórica;
 - a dependência ativa da F3 é F2 mais as decisões consolidadas, e não uma nova
   escolha entre modos.
