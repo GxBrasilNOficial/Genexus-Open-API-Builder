@@ -146,8 +146,10 @@ modelo. Os pareceres solo do MiMo V2.5 Pro e do Codex GPT-5.6-luna foram avaliad
 rodada manual do Cursor respondeu `APROVAR COM RESSALVAS`; suas ressalvas úteis foram
 incorporadas nos planos, nas decisões e no backlog. O parecer solo do Claude Code Opus 5
 também respondeu `APROVAR COM RESSALVAS`; suas ressalvas úteis foram incorporadas como
-pré-condições e clarificações do contrato V2→V3, do diário e dos receipts. Ainda não houve implementação, build,
-instalação ou push. O parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR
+pré-condições e clarificações do contrato V2→V3, do diário e dos receipts. Ainda não houve
+implementação, instalação ou push; a rotina pré-push executou apenas restore, testes e build
+do estado atual.
+O parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR
 COM RESSALVAS`; suas observações P3 úteis foram incorporadas como clarificações de escopo,
 canonização e estágios. A revisão documental desta rodada foi commitada separadamente. A
 revisão só deve ser encerrada e a F1 autorizada por decisão humana explícita. Registro da revisão:
@@ -245,8 +247,8 @@ O experimento também fechou o baseline: o `Build All` sem API passou nos dois e
 
 ## Pendência urgente (próxima sessão de código)
 
-A pauta que aguarda decisão é a retomada da revisão por pares da `S-B111`, acima; ainda não
-é uma autorização para implementar. De `B109`, apenas o ramo B foi encerrado; o ramo A não
+A pauta que aguarda decisão é o encerramento da revisão por pares e a autorização da F1 da
+`S-B111`, acima; isso ainda não é uma autorização para implementar. De `B109`, apenas o ramo B foi encerrado; o ramo A não
 tem pauta própria, por depender de reprodução — se o sintoma voltar, ele passa à frente. O
 `Rebuild All` do `NETFrameworkPostgreSQL` é pendência separada de environment e não bloqueia
 nada aqui. `B108` e o residual `B082` 1B/2/3 não competem com essas linhas.
@@ -457,7 +459,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 10 — Beta estável (`B108` está estacionado; a próxima ação é a revisão por pares da sprint `S-B111`; Etapa 1A do `B082` aceita em 2026-09-03; residual 1B/2/3 no plano de hardening).
+- Sprint 10 — Beta estável (`B108` está estacionado; a próxima ação é decidir o encerramento da revisão por pares e autorizar a F1 da sprint `S-B111`; Etapa 1A do `B082` aceita em 2026-09-03; residual 1B/2/3 no plano de hardening).
 
 ## Protocolo de atualização
 
