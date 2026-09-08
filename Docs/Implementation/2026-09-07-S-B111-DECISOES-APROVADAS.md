@@ -782,7 +782,9 @@ Decisão aprovada após a revisão do Cursor Auto:
 
 ## Itens ainda não implementados
 
-As decisões acima ainda precisam ser consolidadas nos planos F1, F2 e F3 restantes antes da implementação. O plano F3 e o checkpoint já receberam a consolidação documental do Modo A. Ainda não foram alterados código, manifesto ou testes.
+As decisões acima já foram consolidadas documentalmente nos planos F1, F2 e F3 e no
+checkpoint operacional. Ainda não foram alterados código, manifesto ou testes; a revisão
+por pares da sprint permanece em aberto.
 
 Permanecem como detalhamento técnico posterior:
 
@@ -790,7 +792,8 @@ Permanecem como detalhamento técnico posterior:
 - nomes exatos dos campos de estado e recibo;
 - sincronização do novo comando nas camadas de runtime e manifesto;
 - testes offline, testes de contrato e validação funcional na IDE;
-- fechamento das referências operacionais restantes nos planos F1 e F2.
+- eventuais ajustes adicionais de referências operacionais identificados durante a revisão
+  por pares ou a implementação.
 
 ## Consolidação adicional das decisões posteriores
 
