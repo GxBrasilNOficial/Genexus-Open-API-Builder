@@ -1290,11 +1290,12 @@ O parecer externo foi tratado como insumo de revisão, não como autoridade para
 repositório. O veredito foi `APROVAR COM RESSALVAS`; após conferência no código e nos planos,
 foram incorporadas estas clarificações:
 
-- a promoção V2→V3 da metadata é aditiva, mas ainda exige atualizar os consumidores
-  `ApiPlanMetadataFileWriter`, `ApiPlanGeneratedApiRemovalPlan`,
-  `ApiPlanGenerationStateReader`, `ApiPlanApiObjectOwnership` e
-  `ApiPlanApiObjectWriter` antes de qualquer writer emitir V3; `ownership.applicationId`
-  ainda não existe no `Src/`, e seu valor entra no fingerprint V3;
+- a promoção V2→V3 da metadata é aditiva e exige atualizar, antes de qualquer writer emitir
+  V3, os cinco consumidores de versão/ownership (`ApiPlanMetadataFileWriter`,
+  `ApiPlanGeneratedApiRemovalPlan`, `ApiPlanGenerationStateReader`,
+  `ApiPlanApiObjectOwnership` e `ApiPlanApiObjectWriter`) e o componente de integridade
+  `ApiPlanMetadataIntegrity` — seis componentes obrigatórios no conjunto canônico;
+  `ownership.applicationId` ainda não existe no `Src/`, e seu valor entra no fingerprint V3;
 - o remover chama `RecordNotAttempted` pelo seam entregue na F2; o receipt usa `attempt=1`,
   não consome `maxPasses`, fica disponível em memória e só é relacionado ao checkpoint
   durável pela F3;

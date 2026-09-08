@@ -558,7 +558,9 @@ Sentinelas são necessárias e insuficientes: elas provam forma, não comportame
 
 ### 6.2 Fluxos executáveis
 
-Nas oito primeiras linhas, `GenerateApiObject=true`; nas seguintes, o que a coluna disser.
+As oito primeiras linhas usam `GenerateApiObject=true`; a linha adicional de API-only com as
+flags dedicadas falsas também usa `GenerateApiObject=true`. Nas demais, o valor aparece na
+coluna e deve ser respeitado.
 
 | Entrada | Seleção | Resultado exigido |
 |---|---|---|
@@ -570,6 +572,8 @@ Nas oito primeiras linhas, `GenerateApiObject=true`; nas seguintes, o que a colu
 | Sync | com BC | um `API.Save()`, no BC |
 | Sync | com List | um `API.Save()`, no List |
 | Sync | com BC + List | um `API.Save()`, no List |
+| Wizard | API-only, `GenerateApiObject=true`, `GenerateSdts=false`, `GenerateProcedures=false`, Folder/SDTs/Procedures existentes, próprios e coerentes | fases dedicadas omitidas; API writer reencontra Folder, SDTs e Procedures em modo estrito; um `API.Save()` em B054 |
+| Wizard | API-only, `GenerateApiObject=true`, `GenerateSdts=false`, `GenerateProcedures=false`, alguma dependência ausente, ambígua, divergente ou externa | bloqueio antes do primeiro Save; o API writer não cria nem corrige Folder, SDT ou Procedure |
 | Wizard | `GenerateApiObject=false` + BC, API próprio existente | Procedures de BC atualizadas; **zero** `API.Save()` |
 | Wizard | `GenerateApiObject=false` + List, API próprio existente | Procedure de List atualizada; **zero** `API.Save()` |
 | Wizard | `GenerateApiObject=false` + BC + List + metadata, API próprio | todos os consumidores usam o mesmo API existente; **zero** `API.Save()`; metadata gravada por último |
@@ -629,9 +633,12 @@ e List:
 2. Sync com BC selecionado numa Transaction sem BC habilitado — deve bloquear antes de
    qualquer gravação;
 3. Wizard em API-only, BC-only, List-only, BC+List;
-4. Wizard com `GenerateApiObject=false`, com API próprio e com API ausente;
-5. Wizard com SDT e Procedure desmarcados;
-6. em todos: o API aparece uma vez, e o relatório traz `Guid` persistido e writer final.
+4. Wizard API-only com `GenerateApiObject=true`, `GenerateSdts=false` e
+   `GenerateProcedures=false`, primeiro com Folder/SDTs/Procedures existentes e próprios,
+   depois com uma dependência ausente ou divergente;
+5. Wizard com `GenerateApiObject=false`, com API próprio e com API ausente;
+6. Wizard com SDT e Procedure desmarcados;
+7. em todos: o API aparece uma vez, e o relatório traz `Guid` persistido e writer final.
 
 Registrar, na mesma passagem, o tempo de Apply antes e depois da mudança na KB grande. A
 F1 não é frente de desempenho, mas a ordem física muda e a medição é barata.
