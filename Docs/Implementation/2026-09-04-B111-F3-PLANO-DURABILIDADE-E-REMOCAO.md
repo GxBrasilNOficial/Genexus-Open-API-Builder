@@ -657,24 +657,31 @@ lugar. Recalcular o fingerprint significaria revalidar o contrato — outra fren
 Essa modalidade está coberta por teste de contrato e **nunca foi executada na IDE**: recriar o
 cenário exige remover a API e gerá-la de novo por cima da metadata recuperada.
 
-A correção escolhida não foi acertar a ordem na recuperação, e sim **tornar a remoção
-resiliente a ela**: depois de cada `Delete()`, tenha ele lançado ou retornado, a
-implementação faz uma releitura imediata pela identidade validada. Somente se essa
-releitura comprovar que o objeto ainda existe a falha é classificada como conhecida e
-retryable por ordem de dependência; esse item volta para a fila e é tentado na passada
-seguinte da mesma operação. Se a releitura comprovar ausência, a exclusão está confirmada
-e o item não volta para a fila. Se a releitura for ilegível, divergente ou ambígua, o
-resultado é `OutcomeUnknown`, a operação fica bloqueada e não há retry automático nem
-recuperação posterior desse item.
+**Comportamento implementado e medido em campo em 2026-09-06:** a correção tornou a
+remoção resiliente à ordem dos SDTs por meio de requeue entre passadas. Quando `Delete()`
+retorna, o código faz uma releitura imediata pela identidade validada: ausência confirma a
+exclusão; presença lança uma falha comum que o laço externo reencaminha para a fila. Quando
+`Delete()` lança, a exceção sobe diretamente ao laço externo, que também faz requeue
+incondicional, sem uma releitura nesse caminho. Esse comportamento não produz
+`OutcomeUnknown` nem distingue ainda falha retryable de resultado indeterminado por um
+recibo do seam.
 
 Enquanto cada passada apagar ao menos um objeto há progresso; uma passada inteira sem
 progresso encerra e reporta os pendentes. A recusa não é interpretada pela mensagem da
-exceção — só o abort do usuário é relançado na hora. A política de retry não se aplica a
-`Save()` nem permite repetir o objeto em uma operação posterior. O executor de `Remove`
-decide o requeue lendo o recibo final exposto pelo seam para cada tentativa, inclusive
-quando a exceção original de um `Delete()` é relançada; não depende de uma exceção
-artificial nem da mensagem da exceção. A F2 classifica e expõe o resultado, mas somente
-a F3 transforma `Failed` retryable em item da passada seguinte.
+exceção — só o abort do usuário é relançado na hora. Essa é a implementação observada no
+campo, não o contrato final da S-B111.
+
+**Contrato-alvo ainda não implementado da F2/F3:** depois de cada `Delete()`, tenha ele
+lançado ou retornado, o seam deverá publicar um recibo com a confirmação possível pela
+identidade validada. Somente se a releitura comprovar que o objeto ainda existe a falha
+será classificada como conhecida e retryable por ordem de dependência; esse item voltará
+para a fila e será tentado na passada seguinte da mesma operação. Se a releitura comprovar
+ausência, a exclusão estará confirmada e o item não voltará para a fila. Se a releitura for
+ilegível, divergente ou ambígua, o resultado será `OutcomeUnknown`, a operação ficará
+bloqueada e não haverá retry automático nem recuperação posterior desse item. A política de
+retry não se aplica a `Save()` nem permite repetir o objeto em uma operação posterior. A
+F2 classificará e exporá o resultado, mas somente a F3 transformará `Failed` retryable em
+item da passada seguinte.
 
 **Segunda execução, com a correção:**
 

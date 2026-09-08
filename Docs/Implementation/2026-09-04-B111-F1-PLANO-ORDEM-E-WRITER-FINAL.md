@@ -35,8 +35,8 @@ de três dimensões, e a remoção de APIs legadas. Aplicadas juntas, o risco de
 degradação que a frente quer evitar fica maior que o risco atual.
 
 A F1 isola o **benefício central de `B111`** — o API Object gravado uma única vez, pelo
-consumidor final — e nada mais. Ela não depende da decisão entre modo A e modo B, que
-passa a pesar apenas na F3.
+consumidor final — e nada mais. Ela não depende do modo do diário, decidido em 2026-09-07
+e vigente na F3.
 
 As sondas de 2026-09-04 encolheram a F1 ainda mais do que o previsto: com identidade
 estável disponível desde o `API.Create`, o aparato de marcador na `Description`, chave
