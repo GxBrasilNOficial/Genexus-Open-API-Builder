@@ -1,11 +1,11 @@
 # `B111` — estado da revisão por pares (2026-09-03/04)
 
-> **Registro histórico.** Este arquivo preserva o estado das rodadas anteriores à
-> consolidação da `S-B111`. As seções abaixo não são a fonte atual de verdade: a rodada
-> CLI de 2026-09-08 já ocorreu e, no momento histórico retratado, o Cursor ainda não havia
-> sido acionado; não há implementação
-> autorizada. Para o estado corrente, use `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`, os
-> planos F1/F2/F3 e os artefatos da rodada em `Temp/revisao-por-pares/`.
+> **Registro versionado da revisão.** Este arquivo conserva o histórico das rodadas,
+> inclusive a evolução após a consolidação da `S-B111` até os pareceres de 2026-09-08.
+> As seções 1–8 registram as rodadas iniciais; as seções 9–12 registram a consolidação e
+> os pareceres posteriores. O arquivo não é fonte atual de contrato, próximo passo ou
+> autorização da F1. Para o estado corrente, use `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`,
+> os planos F1/F2/F3 e os artefatos da rodada em `Temp/revisao-por-pares/`.
 
 ## Propósito
 
