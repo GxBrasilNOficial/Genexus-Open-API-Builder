@@ -4,8 +4,9 @@
 **Fase:** F1 de 3 (F1 ordem e writer final · F2 seam e receipts · F3 durabilidade e remoção).
 **Data:** 2026-09-04. **Item:** `B111` em `Docs/Foundation/06-BACKLOG_v0.1.md`.
 
-**Status:** plano para decisão humana. **Não** autoriza implementação, alteração de
-código, instalação, commit ou push.
+**Status:** decisões de escopo e contrato da F1 consolidadas em 2026-09-07; o plano ainda
+não foi implementado. A revisão por pares da sprint não está encerrada. **Não** autoriza
+alteração de código, instalação, commit ou push.
 
 ### Documentos que este plano substitui, e como
 
@@ -95,7 +96,8 @@ KBs:
 - a `Description` preserva 256 caracteres e trunca o excedente em silêncio (`B112`);
 - `Save()` sem alteração pendente custa ~0 ms; com alteração, Folder, SDT, Procedure e API
   custam dezenas de milissegundos, inclusive na KB grande;
-- os `Save()` reais do pipeline são 16 pontos de código, alguns em laço.
+- a contagem consolidada dos pontos físicos e a fronteira de instrumentação ficam na F2;
+  para a F1, o requisito determinante é a ordem dos writers e do único `API.Save()` final.
 
 **Consequência direta para a F1:** a identidade planejada do API é o `Guid` **lido** do
 `Create`. Não se atribui `Guid`, não se grava marcador na `Description`, não existe chave
@@ -578,6 +580,17 @@ Falhando qualquer critério, a F1 não está pronta para aceite.
 | ausência de seam tornar a contagem de Saves frágil | declarada como limitação; a F2 substitui a instrumentação por interceptação |
 
 ---
+
+### 9.1 Consolidação de 2026-09-07
+
+- A F1 permanece independente da escolha do diário: ela define preflight, ordem e writer
+  final, enquanto F2 e F3 definem observabilidade e durabilidade.
+- Cada aplicação recebe um `OperationId` novo; o `ApplicationId` nasce antes da primeira
+  gravação gerenciada e segue no contexto transient. A F1 não mantém histórico e não cria
+  um objeto adicional da KB para isso.
+- API existente é associado por `PlannedApiGuid` validado; nome é apenas diagnóstico. API
+  novo sem identidade estável bloqueia antes da primeira gravação.
+- B109 e B110 permanecem fora da S-B111; esta seção não os transforma em pré-requisitos.
 
 ## 10. Fontes
 

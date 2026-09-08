@@ -429,7 +429,7 @@ O diário deve conter:
 - versão da DLL/gerador, quando disponível;
 - modo A;
 - LegacyImported para diário reconstruído durante remoção;
-- histórico de ApplicationId e reaplicações;
+- (proposta histórica, não vigente) histórico de ApplicationId e reaplicações;
 - timestamps e mensagens de bloqueio.
 
 Antes da primeira gravação de Transaction, Folder, SDT, Procedure, API ou metadata:

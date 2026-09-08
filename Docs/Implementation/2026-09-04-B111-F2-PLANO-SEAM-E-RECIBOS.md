@@ -4,8 +4,9 @@
 **Fase:** F2 de 3 (F1 ordem e writer final · **F2 seam e recibos** · F3 durabilidade e remoção).
 **Data:** 2026-09-04. **Item:** `B111` em `Docs/Foundation/06-BACKLOG_v0.1.md`.
 
-**Status:** plano para decisão humana. **Não** autoriza implementação, alteração de
-código, instalação, commit ou push.
+**Status:** decisões de escopo e contrato da F2 consolidadas em 2026-09-07; o plano ainda
+não foi implementado. A revisão por pares da sprint não está encerrada. **Não** autoriza
+alteração de código, instalação, commit ou push.
 
 **Pré-requisito:** F1 aceita
 (`Docs/Implementation/2026-09-04-B111-F1-PLANO-ORDEM-E-WRITER-FINAL.md`). A F2 não
@@ -35,9 +36,10 @@ A F2 fecha as duas coisas e para aí.
 
 ### 2.1 Os pontos de gravação reais
 
-Excluídas as sondas e o código GeneXus emitido como string, o pipeline tem **16 pontos**
-de gravação em código de produção. Vários rodam em laço, de modo que uma aplicação
-executa mais que 16 Saves.
+Excluídas as sondas e o código GeneXus emitido como string, o mapa consolidado tem
+**15 chamadas físicas de `Save()`** e dois pontos de execução de laço que transportam
+essas chamadas em BC e List. Os laços não são Saves adicionais e não podem ser somados
+às chamadas físicas.
 
 | Arquivo:linha | O que grava |
 |---|---|
@@ -56,7 +58,13 @@ executa mais que 16 Saves.
 | `ApiPlanListProcedureWriter.cs:953` | `SaveProcedure` |
 | `ApiPlanListProcedureWriter.cs:975` | `SaveApi` |
 | `ApiPlanMetadataFileWriter.cs:98` | metadata B060 |
+| `ApiPlanOrphanMetadataRecovery.cs:261` | File de metadata reconstituído pela recuperação B115 |
 | `Package.cs:1566` | `transaction.Save()` para habilitar BC, em `EnableBusinessComponentForWizard` |
+
+Além das 15 chamadas físicas de `Save()`, o remover possui hoje cinco pontos físicos de
+`Delete()`: API Object, Procedure, SDT, File de metadata e Folder. O `Delete()` do SDT
+é chamado dentro da fila de passadas; cada tentativa física continua sendo um recibo
+independente. O invólucro de relatório não substitui a instrumentação do `Delete()`.
 
 ### 2.2 Dois padrões que o repositório já resolveu
 
@@ -76,6 +84,11 @@ quando não há escopo ativo, porque todo o fluxo roda na thread da UI.
 assinaturas que atravessaria os writers inteiros — que é justamente o tipo de mudança
 ampla que motivou fatiar esta sprint.
 
+O `file.Save()` da recuperação B115 também está no escopo gerenciado da S-B111. A
+confirmação desse ponto deve validar a identidade persistida do File e os bytes esperados;
+uma releitura que selecione apenas pelo nome não é confirmação suficiente para o contrato
+da sprint.
+
 **Teste executável offline já tem precedente.** `Tests/ScanProbe/Test-ApiPlanScanProbe.ps1`
 compila o próprio arquivo de produção com `Add-Type -Path` e exercita a classe fora da
 IDE. O mesmo caminho serve para o seam.
@@ -86,12 +99,14 @@ IDE. O mesmo caminho serve para o seam.
 
 ### 3.1 O que entra
 
-1. um seam de persistência de escopo ambiente, no padrão de `ApiPlanScanProbe`;
+1. um seam de persistência de escopo ambiente, no padrão de `ApiPlanScanProbe`, promovendo
+   `ApiPlanSaveBoundaryProbe`;
 2. `PersistenceReceipt`, com o conteúdo da seção 4.2;
 3. a classificação de falha em C, D e E da seção 4.3;
 4. unificação dos dois laços de `saveSteps` num único executor;
 5. a habilitação de BC diferida no Wizard, que a F1 adiou por depender de recibo;
-6. testes executáveis que injetam falha antes, falha depois e resultado ambíguo;
+6. testes executáveis que injetam falha antes, falha depois e resultado ambíguo em todos os
+   `Save()` e `Delete()` gerenciados, incluindo a recuperação B115;
 7. exposição da sequência de recibos no relatório final e na trilha da Output.
 
 ### 3.2 O que **não** entra
@@ -133,21 +148,28 @@ redesenhada.
 
 ## 4. Contrato-alvo
 
-### 4.1 O seam
+### 4.1 O ponto comum de persistência
 
-Nome sugerido: `ApiPlanPersistenceProbe`, deliberadamente paralelo a `ApiPlanScanProbe`.
+O único ponto comum será a classe existente `ApiPlanSaveBoundaryProbe`. Aqui, “ponto
+comum” é a fronteira técnica por onde passam as operações reais de persistência para
+serem registradas e confirmadas; não é um objeto da KB nem um novo tipo GeneXus.
+
+A F2 amplia essa classe, em vez de criar um `ApiPlanPersistenceProbe` paralelo. Ela
+preserva os eventos atuais de Pump/Save e passa a ser também a dona dos recibos de
+`Save` e `Delete`.
 
 Contrato mínimo:
 
 - `Begin(ApiPlanPersistenceLog log)` abre escopo `[ThreadStatic]` e devolve `IDisposable`;
   escopos aninhados restauram o anterior;
-- `Persist(string objectType, string stage, string plannedName, Guid? plannedGuid, Action save)`
-  executa a gravação, medindo-a e registrando o recibo quando há escopo ativo, e apenas
-  executa o delegate quando não há;
-- uma sobrecarga com função de leitura de confirmação, para os pontos que já releem o
-  objeto depois do Save;
-- `Suspend()` para trechos que rodam dentro da operação mas não pertencem a ela, como a
-  apresentação do relatório final.
+- `Persist(string operationKind, string objectType, string stage, string plannedName,
+  Guid? plannedGuid, Action persist, Func<PersistenceConfirmation> confirm)` executa
+  `Save` ou `Delete`, mede a operação e registra o recibo quando há escopo ativo;
+- a confirmação é obrigatória para todo ponto de produção. Não existe sobrecarga sem
+  `confirm`: para `Save`, ela relê o objeto esperado; para `Delete`, confirma a ausência
+  do objeto pelo `Guid` planejado;
+- `Suspend()` interrompe apenas a captura de trechos que rodam dentro da operação mas
+  não pertencem a ela, como a apresentação do relatório final.
 
 Regras:
 
@@ -155,18 +177,29 @@ Regras:
 2. o seam nunca altera o resultado da gravação nem engole exceção — ele registra e
    relança;
 3. a publicação do log nunca pode derrubar o fluxo medido;
-4. o seam não decide nada: não bloqueia, não repete, não escolhe writer.
+4. o ponto comum não decide nada: não bloqueia, não repete, não escolhe writer;
+5. a tentativa sem confirmação não é um sucesso: o ponto não pode ser considerado
+   coberto pela F2 até que sua leitura de confirmação exista.
+6. o recibo final de cada tentativa deve ser devolvido ou exposto ao chamador,
+   inclusive quando o delegate lança e a exceção original é relançada; a F3 não pode
+   deduzir o resultado pela mensagem da exceção. O canal pode ser um resultado ou um
+   handle associado à tentativa no log, mas deve permitir que o executor de `Remove`
+   leia `Confirmed`, `Failed` retryable ou `OutcomeUnknown`.
 
 ### 4.2 O recibo
 
 Cada `PersistenceReceipt` carrega:
 
 - ordem monotônica global dentro da operação;
-- etapa e tipo de objeto;
+- operação (`Save` ou `Delete`), etapa e tipo de objeto;
 - nome planejado e, quando houver, `Guid` planejado;
-- nome e `Guid` persistidos, quando a leitura de confirmação ocorreu;
+- nome e `Guid` persistidos, ou ausência confirmada no caso de `Delete`;
 - início, fim e duração;
 - resultado: `Confirmed`, `Failed` ou `OutcomeUnknown`;
+- `retryEligible`, booleano que só pode ser verdadeiro para uma falha retryable de
+  `Delete`;
+- `retryableReason`, enum fechado, inicialmente `StillPresentAfterDelete`, ou ausente quando
+  `retryEligible` for falso;
 - exceção ou cancelamento, quando houver;
 - se houve leitura de confirmação e qual foi seu resultado.
 
@@ -177,12 +210,18 @@ recibo dentro da F2.
 
 | Classe | Situação | Resultado do recibo |
 |---|---|---|
-| **C** | falhou **antes** de chamar `Save()` | `Failed`, sem efeito produzido |
-| **D** | `Save()` lançou, expirou, foi cancelado ou devolveu resposta não determinável | `OutcomeUnknown` |
-| **E** | `Save()` concluiu, mas a leitura de confirmação falhou ou divergiu | `OutcomeUnknown`, com a divergência registrada |
+| **C** | falhou **antes** de chamar `Save()` ou `Delete()` | `Failed`, sem efeito produzido |
+| **D** | `Save()` ou `Delete()` lançou ou foi cancelado; em `Delete`, uma releitura imediata ainda pode provar o objeto presente ou a ausência | `OutcomeUnknown`, exceto por `Failed` retryable quando presente ou `Confirmed` quando ausente |
+| **E** | a operação retornou; em `Delete`, a confirmação pode provar ausência, provar que o objeto ainda está presente, ou ser ilegível, divergente ou ambígua | `Confirmed` quando ausente; `Failed` retryable quando presente; caso contrário, `OutcomeUnknown` |
 
-Um `Save()` que lançou **não** pode ser classificado como “não gravou”. Essa é a regra de
-que a F3 vai depender.
+Um `Save()` ou `Delete()` que lançou **não** pode ser classificado como “não produziu
+efeito” sem confirmação. Há uma exceção controlada para `Delete`: se a releitura imediata
+por identidade comprovar que o objeto ainda existe, seja porque o `Delete()` lançou ou
+porque retornou sem removê-lo, o recibo será `Failed` com
+`retryableReason=StillPresentAfterDelete`; isso é falha conhecida, não `OutcomeUnknown`, e só
+autoriza nova tentativa dentro do mesmo `Remove`. Se a releitura confirmar ausência, o
+`Delete` é `Confirmed`; se for ilegível, divergente ou ambígua, permanece
+`OutcomeUnknown` e não pode ser repetido.
 
 #### Como cada classe é produzida, concretamente
 
@@ -194,11 +233,17 @@ explícito, senão os testes da seção 6.3 não têm o que exercitar.
 1. o recibo é criado e registrado no log **antes** de o delegate ser invocado, com resultado
    `Started` e a ordem monotônica já atribuída;
 2. o delegate é invocado;
-3. se lançar — inclusive `OperationCanceledException` —, o recibo passa a `OutcomeUnknown`,
-   com a exceção registrada, e a exceção é **relançada** sem alteração;
-4. se retornar, roda a leitura de confirmação, quando o ponto tiver uma;
-5. confirmação bem-sucedida e coerente → `Confirmed`; ausente ou divergente →
-   `OutcomeUnknown`, com a divergência registrada.
+3. se lançar — inclusive `OperationCanceledException` —, registra a exceção e relança sem
+   alteração. Para `Delete`, uma releitura imediata por identidade pode classificar o
+   resultado como `Failed` retryable quando o objeto ainda existir, tenha o delegate
+   lançado ou retornado sem removê-lo, ou `Confirmed` quando estiver ausente; releitura
+   ilegível ou divergente produz `OutcomeUnknown` sem retry.
+   Para `Save`, lançamento ou cancelamento permanece `OutcomeUnknown`;
+4. se retornar, roda a leitura de confirmação obrigatória do ponto;
+5. confirmação bem-sucedida e coerente → `Confirmed`; para `Delete`, ausência comprovada
+   → `Confirmed`, presença comprovada do alvo → `Failed` retryable, e releitura ilegível,
+   divergente ou ambígua → `OutcomeUnknown`, com a divergência registrada. Para `Save`,
+   confirmação ausente, divergente ou ilegível permanece `OutcomeUnknown`.
 
 Um recibo que permaneça em `Started` ao fim da operação é, por si, um sinal: significa que o
 processo morreu dentro daquela gravação.
@@ -229,13 +274,16 @@ Em BC e List, `SaveApi` e `SaveProcedure` são chamados **de dentro** dos `saveS
 Instrumentar os dois níveis contaria cada gravação duas vezes e produziria uma sequência
 de recibos falsa.
 
-Regra: **o seam envolve o passo, não a função interna.** Depois de unificar os dois laços
-num executor único, existe um só lugar que chama `Persist(...)` para esses writers.
+Regra: **o ponto comum envolve o passo, não a função interna.** Depois de unificar os dois
+laços num executor único, existe um só lugar que chama `Persist(...)` para esses writers.
 `ApiPlanSdtWriter`, `ApiPlanProcedureWriter`, `ApiPlanApiObjectWriter`,
 `ApiPlanTransactionFolder`, `ApiPlanMetadataFileWriter` e o `transaction.Save()` de
-`Package.cs` são instrumentados no próprio ponto.
+`Package.cs` são instrumentados no próprio ponto. Os cinco `Delete()` físicos de
+`ApiPlanGeneratedApiRemover` seguem a mesma regra, inclusive a tentativa de cada passada
+do SDT.
 
-Uma sentinela deve falhar se um `Save()` de produção aparecer fora de um `Persist(...)`,
+Uma sentinela deve falhar se um `Save()` ou `Delete()` de produção aparecer fora de um
+`Persist(...)`,
 e outra deve falhar se um ponto for instrumentado nos dois níveis.
 
 ### 4.5 O log sobrevive aos retornos antecipados
@@ -279,11 +327,13 @@ No Sync nada muda: continua bloqueando antes de qualquer gravação.
 
 | Arquivo | Mudança |
 |---|---|
-| `Diagnostics/ApiPlanPersistenceProbe.cs` (novo) | seam de escopo ambiente |
+| `Diagnostics/ApiPlanSaveBoundaryProbe.cs` (existente) | único ponto comum; preservar eventos B109 e absorver recibos de `Save` e `Delete` |
 | `Diagnostics/ApiPlanPersistenceLog.cs` (novo) | coleção ordenada de recibos, no espírito de `ApiPlanScanTelemetry` |
 | `Diagnostics/ApiPlanSaveStepExecutor.cs` (novo) | executor único dos `saveSteps`, hoje duplicado |
 | `ApiPlanBusinessComponentWriter.cs`, `ApiPlanListProcedureWriter.cs` | passar a usar o executor único |
 | `ApiPlanSdtWriter.cs`, `ApiPlanProcedureWriter.cs`, `ApiPlanApiObjectWriter.cs`, `ApiPlanTransactionFolder.cs`, `ApiPlanMetadataFileWriter.cs` | envolver cada `Save()` em `Persist(...)` |
+| `ApiPlanOrphanMetadataRecovery.cs` | envolver o `file.Save()` da recuperação B115 em `Persist(...)`, com confirmação de identidade e bytes |
+| `ApiPlanGeneratedApiRemover.cs` | envolver cada `Delete()` físico em `Persist(...)`, com confirmação obrigatória de ausência |
 | `Package.cs` | abrir o escopo por operação; `transaction.Save()` recibado; habilitação de BC diferida no Wizard; sequência de recibos no relatório |
 | `ApiPlanApplicationFinalReport.*` | sequência de recibos e contagem por tipo |
 | `Tests/PersistenceProbe/` (novo) | teste executável do seam, no padrão de `Tests/ScanProbe/` |
@@ -292,19 +342,27 @@ No Sync nada muda: continua bloqueando antes de qualquer gravação.
 
 ## 6. Testes da F2
 
-### 6.1 Teste executável do seam
+### 6.1 Teste executável do ponto comum
 
 No padrão de `Tests/ScanProbe/Test-ApiPlanScanProbe.ps1`, compilando os arquivos de
 produção com `Add-Type -Path` e exercitando fora da IDE:
 
 1. sem escopo ativo, `Persist` apenas executa o delegate e não registra nada;
 2. com escopo, registra ordem monotônica, tipo, nome e duração;
-3. exceção dentro do delegate é registrada como `OutcomeUnknown` e **relançada**;
+3. exceção dentro do delegate de `Save` é registrada como `OutcomeUnknown`, com
+   `retryEligible=false`, e
+   **relançada**; em `Delete`, a confirmação pós-tentativa exercita presença
+   (`Failed` retryable, `retryEligible=true`, `retryableReason=StillPresentAfterDelete`),
+   ausência (`Confirmed`, `retryEligible=false`) e releitura indeterminada
+   (`OutcomeUnknown`, `retryEligible=false`), sempre relançando a exceção original
+   quando houver;
 4. falha antes da chamada é registrada como `Failed`;
 5. leitura de confirmação divergente produz `OutcomeUnknown` com a divergência;
-6. escopos aninhados restauram o anterior;
-7. `Suspend()` não encerra o escopo ativo;
-8. falha na publicação do log não derruba o fluxo medido.
+6. confirmação ausente não possui sobrecarga válida e não passa no contrato;
+7. `Delete` confirmado pela ausência produz `Confirmed`;
+8. escopos aninhados restauram o anterior;
+9. `Suspend()` não encerra o escopo ativo;
+10. falha na publicação do log não derruba o fluxo medido.
 
 ### 6.2 Contagem e ordem por fluxo
 
@@ -330,14 +388,17 @@ Isto substitui, com execução, a instrumentação frágil que a F1 declarou com
 
 ### 6.3 Falha em cada fronteira
 
-Para cada ponto de gravação, injetar as três classes e validar a sequência de recibos
-resultante:
+Para cada ponto de `Save` e `Delete`, injetar as três classes e validar a sequência de
+recibos resultante:
 
-1. falha antes de Folder, SDT, Procedure, API e metadata;
-2. falha depois de cada um;
-3. resultado ambíguo em cada um;
-4. cancelamento durante cada um;
-5. falha e resultado ambíguo no `transaction.Save()` da habilitação de BC.
+1. falha antes de Folder, SDT, Procedure, API, metadata e recuperação B115;
+2. falha depois de cada `Save` físico, inclusive `ApiPlanOrphanMetadataRecovery`;
+3. resultado ambíguo em cada `Save` físico;
+4. cancelamento durante cada `Save` físico;
+5. falha, cancelamento e confirmação divergente em cada `Delete` do remover;
+6. recuperação B115 com File novo e File reutilizado, confirmando identidade e bytes;
+7. ausência de confirmação em qualquer ponto é rejeitada pelo contrato;
+8. falha e resultado ambíguo no `transaction.Save()` da habilitação de BC.
 
 O que se valida aqui é **descrição**, não recuperação: que o relatório diga corretamente o
 que foi gravado, o que não foi e o que ficou indeterminado. Nenhum teste da F2 exige que o
@@ -362,12 +423,12 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
 
 ## 8. Critérios de aceite
 
-1. Todo `Save()` de produção do pipeline passa por `Persist(...)`; uma sentinela falha se
-   algum ficar fora.
+1. Todo `Save()` e `Delete()` de produção do pipeline passa por `Persist(...)`; uma
+   sentinela falha se algum ficar fora.
 2. Nenhum ponto é instrumentado em dois níveis; uma sentinela falha se houver contagem
    dupla.
 3. Sem escopo ativo, o comportamento é idêntico ao anterior.
-4. O seam nunca engole exceção nem altera o resultado de uma gravação.
+4. O ponto comum nunca engole exceção nem altera o resultado de uma persistência.
 5. As classes C, D e E são distinguíveis no recibo e no relatório, e testadas por injeção.
 6. A contagem de um único `API.Save()` por fluxo é provada por execução, não por texto.
 7. Os dois laços de `saveSteps` foram unificados num executor único.
@@ -390,6 +451,18 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
 
 ---
 
+### 9.1 Consolidação de 2026-09-07
+
+- O seam cobre todo `Save()` e `Delete()` gerenciado pela S-B111, inclusive o `file.Save()`
+  do B115; o `Save()` do File de preferências da KB fica fora do escopo operacional.
+- Cada recibo expõe o `OperationId` da operação corrente. O recibo é observação: a F2 não
+  decide requeue, recuperação ou continuação.
+- `StillPresentAfterDelete` é o único motivo retryable aprovado para `Delete`: a releitura
+  por identidade comprovou que o alvo continua presente. Ausência confirmada é sucesso;
+  leitura ambígua é `OutcomeUnknown` e não autoriza retry.
+- A exceção original continua sendo relançada. A F3 consome o recibo final pelo canal
+  exposto pelo seam, sem interpretar texto de exceção.
+
 ## 10. Fontes
 
 - `Docs/Implementation/2026-09-04-B111-F1-PLANO-ORDEM-E-WRITER-FINAL.md` (pré-requisito)
@@ -398,4 +471,4 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
 - `Docs/Implementation/2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md` (expansão nunca aprovada; origem das exigências de seam e de falhas C/D/E)
 - `Src/Extension/Diagnostics/ApiPlanScanProbe.cs` e `ApiPlanScanTelemetry.cs` (padrão a seguir)
 - `Tests/ScanProbe/Test-ApiPlanScanProbe.ps1` (padrão de teste executável offline)
-- os 16 pontos de gravação da seção 2.1
+- as 15 chamadas físicas e os dois laços de gravação descritos na seção 2.1

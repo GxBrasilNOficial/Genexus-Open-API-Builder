@@ -4,9 +4,9 @@
 **Fase:** F3 de 3 (F1 ordem e writer final · F2 seam e recibos · **F3 durabilidade e remoção**).
 **Data:** 2026-09-04. **Item:** `B111` em `Docs/Foundation/06-BACKLOG_v0.1.md`.
 
-**Status:** Modo A selecionado para consolidação após a avaliação técnica inicial; a
-revisão por pares permanece em aberto. **Não** autoriza implementação, alteração de código,
-instalação, commit ou push.
+**Status:** Modo A selecionado; decisões de escopo e contrato consolidadas em 2026-09-07.
+O plano ainda não foi implementado e a revisão por pares da sprint não está encerrada.
+**Não** autoriza alteração de código, instalação, commit ou push.
 
 **Pré-requisito:** F1 e F2 aceitas. A F3 consome os recibos da F2; sem eles, não há como
 distinguir o que foi gravado do que ficou indeterminado, e qualquer recuperação seria
@@ -129,11 +129,14 @@ explícita e pertence à F3.
 - há um único diário por KB, no objeto técnico `File`/`WikiFileKBObject`, sem módulo;
 - o nome lógico fixo é `GxOpenApiBuilder_OperationJournal` e o arquivo externo é
   `GxOpenApiBuilder_OperationJournal.json`;
-- o diário é preservado durante a vida da KB e só é reutilizado ou substituído quando a
-  operação anterior estiver em estado terminal confirmado (`Completed` ou `Removed`) e
-  com `journalDurability=Confirmed`;
-- o comando de recuperação é próprio, fica no menu principal, atua sobre a KB inteira e
-  só libera nova operação depois de confirmar um estado terminal;
+- o diário guarda somente a operação corrente, sem histórico de operações; o mesmo File é
+  reutilizado depois de um estado terminal confirmado (`Completed` ou `Removed`) e de
+  `journalDurability=Confirmed`;
+- o comando unificado de recuperação/reconciliação cobre B115 e `OutcomeUnknown`: aparece
+  preventivamente conforme `ShowRecoveryOptionProactively`, sempre aparece quando há
+  pendência, fica primariamente no menu de contexto da Transaction e tem fallback no menu
+  principal para a KB inteira; o diagnóstico é somente leitura até confirmação explícita;
+  Transaction selecionada que não coincide com a intenção bloqueia;
 - falha, divergência, leitura ambígua ou mais de um candidato válido bloqueiam; não há
   desempate por nome, prefixo, data ou “mais recente”;
 - a implementação deve manter separadas a identidade da operação, a intenção, o estado
@@ -157,13 +160,40 @@ Os eixos abaixo são sempre registrados separadamente e nunca colapsados num enu
 - **durabilidade da intenção**: confirmada ou desconhecida, conforme o diário possa ser
   relido e validado.
 
+Estados da operação: `Ready`, `Prepared`, `Active`, `Partial`, `FailedBeforeWrite`,
+`Completed`, `Removed` e `OutcomeUnknown`. `JournalUnavailable` é um resultado de gate e
+diagnóstico, não um estado que autorize prosseguir.
+
 Estágios mínimos: `NotStarted`, `GateBlocked`, `IntentionRecorded`, `TransactionPending`,
 `FolderPending`, `SdtsPending`, `ProceduresPending`, `ApiPending`, `ApiSaveOutcomeUnknown`,
-`ApiPhysicallySaved`, `MetadataPending`, `Partial`, `Completed`, `RemovalInProgress`,
-`RemovalPartial`, `Removed`.
+`ApiPhysicallySaved`, `MetadataPending`, `RemovalInProgress` e `RemovalPartial`.
+
+`Partial` pertence somente a `operationState`; durante remoção ele deve ser acompanhado de
+`logicalStage=RemovalPartial`. Nunca usar `Partial` como `logicalStage`.
 
 Regra que atravessa tudo: **um `Save()` que lançou, expirou ou foi cancelado é
 `OutcomeUnknown` até consulta por identidade.** Nunca “não gravou”.
+
+### 4.1.1 Envelope corrente e abandono explícito
+
+Cada operação recebe um `OperationId` novo, distinto do `ApplicationId` da geração. Antes
+de qualquer `Save()` de negócio, o File do diário é gravado como `Prepared` e relido por
+`FileId`/hash. Só depois é promovido a `Active`, com nova gravação e confirmação. Os dois
+passos precisam ser confirmados antes da primeira gravação de Transaction, Folder, SDT,
+Procedure, API ou metadata.
+
+`Prepared` pode ser continuado explicitamente com os mesmos identificadores ou abandonado.
+O abandono não apaga o File: grava um envelope neutro `Ready`, removendo a operação
+corrente, seus alvos e recibos. `FailedBeforeWrite` tem a mesma saída somente quando for
+provado que nenhum `Save()` de negócio foi chamado. `Active`, `Partial` ou
+`OutcomeUnknown` não podem ser abandonados como se nada tivesse ocorrido: exigem
+reconciliação ou continuação explícita com os mesmos IDs.
+
+Após `Completed` ou `Removed`, a próxima operação substitui o envelope corrente pelo novo
+`Prepared`; não há arquivo, campo ou coleção de histórico. Se o diário estiver ausente,
+corrompido, duplicado ou não puder ser confirmado, o resultado é `JournalUnavailable`:
+bloqueia Apply, Sync e Remove, permite apenas diagnóstico de leitura e só admite voltar a
+`Ready` mediante confirmação humana de que nenhuma operação ativa ou parcial foi provada.
 
 ### 4.2 Gate estendido
 
@@ -171,7 +201,9 @@ O gate reduzido da F1 ganha as validações que dependem de intenção durável:
 
 1. ausência de intenção anterior em estado parcial, indeterminado ou ambíguo;
 2. disponibilidade e integridade do diário único da KB;
-3. identidade, versão e durabilidade confirmadas do diário, sem divergência física.
+3. identidade, versão e durabilidade confirmadas do diário, sem divergência física;
+4. operação corrente em `Ready`, ou transição explicitamente autorizada de `Prepared`;
+5. ausência de `JournalUnavailable` e de `OutcomeUnknown` não reconciliado.
 
 Falhando qualquer uma, o resultado é bloqueio antes da primeira gravação.
 
@@ -189,13 +221,19 @@ Antes do primeiro `Delete()`, e além do que o remover já faz hoje (2.2):
 Para API criada antes desta frente, sem intenção registrada, duas saídas — e só essas:
 
 - reconstruir a intenção a partir de metadata válida, validando Transaction GUID,
-  ApplicationId, contrato, nomes e todas as referências, e marcá-la como importada; ou
+  contrato, nomes e todas as referências, e marcá-la como importada. Se a metadata
+  legada não tiver `ApplicationId`, a operação S-B111 gera um GUID novo para a tentativa
+  atual e o registra no diário como adoção tardia; não regrava a metadata legada apenas
+  para preencher esse campo; ou
 - **bloquear antes do primeiro `Delete()`**, com instrução de recuperação manual.
 
 Se a metadata não permitir reconstruir o conjunto **completo** de alvos, não apagar
 parcialmente por inferência. `ApiPlanOwnedObjectDescription.IsCanonical` continua útil
-para reconhecer posse histórica, mas nome, Description canônica ou prefixo **nunca**
-autorizam exclusão sozinhos.
+para reconhecer posse histórica. Para o API Object, o `apiGuid` confirmado continua
+obrigatório. Para Procedures e SDTs legados, a identidade histórica composta poderá ser
+aceita quando houver nome exato, tipo e papel esperados, `Description` canônica vinculada
+à Transaction/API, unicidade na KB e inventário completo sem conflito. Nome isolado,
+Description isolada ou prefixo isolado **nunca** autorizam exclusão.
 
 ### 4.4 Orçamento de gravação
 
@@ -205,12 +243,16 @@ detalhe:
 | Política | Gravações | Acréscimo ao Apply, KB grande |
 |---|---|---|
 | uma por etapa confirmada, como no manuscrito expandido | ~10 | ~11 s |
-| três checkpoints: início, pós-API, conclusão | 4 | ~4,4 s |
+| três checkpoints agrupados: início, pós-API, conclusão | 4 | ~4,4 s |
 | mínimo: criação e conclusão | 2 | ~2,2 s |
 
-O plano deve escolher e declarar a política. A recomendação é a de três checkpoints: ela
-cobre as fronteiras que importam — antes de qualquer gravação, no momento em que o API
-passa a existir, e na conclusão — a um quarto do custo da política do manuscrito expandido.
+O diário deve ser atualizado e confirmado ao longo da operação e no estado terminal, mas
+isso não significa um `File.Save()` para cada recibo individual. A política vigente agrupa
+recibos dentro de cada fronteira que muda a capacidade de continuar ou reconciliar:
+`Prepared`, `Active`, conclusão da etapa que torna o API existente, conclusão da metadata ou
+remoção e estado terminal. O custo real dessa política deve ser medido na KB grande; a
+implementação não pode escolher o mínimo de duas gravações apenas para economizar I/O se
+isso deixar uma fronteira sem estado durável.
 
 ### 4.5 Mensagens
 
@@ -218,6 +260,9 @@ Devem distinguir, no mínimo: gate bloqueado; Sync sem BC habilitado; Wizard com
 habilitação de BC pendente; intenção não confirmada; API inexistente com
 `GenerateApiObject=false`; API com identidade ambígua; API gravado; resultado
 indeterminado; recuperação bloqueada; API legado sem metadata suficiente; remoção parcial.
+Também devem existir mensagens distintas para diário indisponível (`JournalUnavailable`),
+`Prepared` aguardando `Continue` ou `Abandon`, e `Active`/`Partial` exigindo
+reconciliação explícita.
 
 Seguem o mecanismo de internacionalização vigente e não expõem hashes ou identificadores
 além do necessário ao diagnóstico.
@@ -248,7 +293,8 @@ Localização, medida e não suposta:
 
 ### 5.2 Conteúdo
 
-Schema version; Transaction GUID e nome; ApplicationId, ativo e histórico; API planejado e,
+Schema version; Transaction GUID e nome; `OperationId`; `ApplicationId` da operação corrente;
+API planejado e,
 quando confirmado, API persistido; `PlannedApiGuid`; `PersistedMainObjectName` e GUID;
 hash do contrato; flags da seleção; serviços BC/List; Folder, SDTs, Procedures e metadata
 planejados; estado físico do API; estágio lógico; durabilidade do próprio diário; recibos;
@@ -261,15 +307,16 @@ tempo de gravação.
 ### 5.3 Ciclo de vida
 
 Antes da primeira gravação de Transaction, Folder, SDT, Procedure, API ou metadata: criar
-o diário, salvá-lo, reler **pelo `Id`**, confirmar Transaction GUID, ApplicationId, hash e
-intenção. Só então começar o pipeline.
+o envelope `Prepared`, salvá-lo, reler **pelo `Id`**, confirmar Transaction GUID,
+OperationId, ApplicationId, hash e intenção; depois gravar e confirmar a transição para
+`Active`. Só então começar o pipeline.
 
 Se a criação ou a confirmação falhar, abortar antes de gravar qualquer objeto. Um diário
 que existe mas não pôde ser confirmado fica com durabilidade desconhecida: não prosseguir,
 e **não criar um segundo diário**.
 
-Nas transições seguintes, conforme a política de checkpoints de 4.4: confirmar o Save do
-objeto pelo recibo; depois atualizar e reler o diário; se a atualização não for confirmada,
+Nas transições seguintes, conforme as fronteiras agrupadas de 4.4: confirmar os Saves e
+Deletes pelo recibo; atualizar e reler o diário; se a atualização não for confirmada,
 preservar o último estado durável e marcar durabilidade desconhecida. Nunca transformar
 estado desconhecido em `Completed`; nunca iniciar uma segunda persistência de API para
 “corrigir” um estado desconhecido.
@@ -367,7 +414,16 @@ Sobre o seam da F2, que permite injetar falha em qualquer fronteira:
 7. remoção de legado com metadata válida → intenção importada antes do primeiro `Delete()`;
 8. remoção de legado com metadata ausente, corrompida ou insuficiente → bloqueio, sem
    nenhum `Delete()`;
-9. interrupção durante a remoção → `RemovalPartial`, com a intenção preservada.
+9. `Delete()` que lança, mas cuja releitura imediata comprova que o objeto ainda existe
+   → recibo `Failed` retryable de ordem de dependência e nova tentativa somente na
+   passada seguinte do mesmo `Remove`;
+10. `Delete()` que retorna, mas cuja confirmação imediata comprova que o objeto ainda
+   existe → o mesmo recibo `Failed` retryable e a mesma regra de nova passada;
+11. `Delete()` que lança ou retorna e cuja releitura comprova ausência → `Confirmed`,
+   sem requeue;
+12. `Delete()` que lança ou retorna com releitura ilegível, divergente ou ambígua →
+   `OutcomeUnknown`, bloqueio e nenhum retry automático ou por recuperação;
+13. interrupção durante a remoção → `RemovalPartial`, com a intenção preservada.
 
 Um teste que apenas chama `Apply` de novo pelo caminho normal **não** comprova
 recuperação.
@@ -523,20 +579,26 @@ contrato do Modo A. Elas não encerram a revisão por pares: ainda precisam ser 
 na implementação e validadas na matriz da F3.
 
 1. **Gate e metadata importada:** metadata importada completa quanto aos alvos não é
-   `Partial` nem `OutcomeUnknown`. Um diário da S-B111 em estado não terminal (`Pending`,
-   `Running`, `Partial` ou `OutcomeUnknown`) bloqueia novas operações e a recuperação de
+   `Partial` nem `OutcomeUnknown`. Um diário da S-B111 em estado não terminal (`Prepared`,
+   `Active`, `Partial`, `FailedBeforeWrite` ou `OutcomeUnknown`) bloqueia novas operações e a recuperação de
    metadata. Metadata importada validada pode liberar somente `Remove`, com confirmação
    explícita; `Apply` completo pode substituir sua marca, e `Sync` não pode usá-la como
    contrato completo.
 
 2. **Suficiência do inventário:** a recuperação produz explicitamente
    `InventorySufficient` ou `InventoryInsufficient`. O primeiro exige schema, Transaction
-   GUID, ApplicationId, API GUID, referências completas, distinção entre SDTs próprios e
-   compartilhados e revalidação sem ambiguidade de todos os alvos; só ele permite `Remove`,
-   ainda com confirmação explícita. Campo ausente, referência desconhecida, conflito,
-   múltiplos candidatos ou identificação baseada apenas em nome produz
-   `InventoryInsufficient` e bloqueia. `InventorySufficient` é suficiente para a remoção,
-   mas não prova que nenhum objeto histórico ficou fora do inventário.
+   GUID, API GUID confirmado, referências completas, distinção entre SDTs próprios e
+   compartilhados e revalidação sem ambiguidade de todos os alvos; só ele permite
+   `Remove`, ainda com confirmação explícita. Para Procedures e SDTs legados, a
+   revalidação pode usar identidade histórica composta por nome exato, tipo, papel,
+   `Description` canônica vinculada à Transaction/API, unicidade e ausência de conflito;
+   nome isolado não basta. Metadata produzida pela S-B111 deve conter `ApplicationId` e
+   mantê-lo compatível com o diário. Metadata legada sem esse campo pode ser suficiente:
+   nesse caso, a primeira operação S-B111 gera um `ApplicationId` novo e o registra no
+   diário, sem regravar o File legado durante `Remove`. Campo ausente além desse caso,
+   referência desconhecida, conflito, múltiplos candidatos ou identificação insuficiente
+   produz `InventoryInsufficient` e bloqueia. `InventorySufficient` é suficiente para a
+   remoção, mas não prova que nenhum objeto histórico ficou fora do inventário.
 
 3. **Precedência entre diário e metadata:** o diário é autoritativo para estado da
    operação, recibos e intenção atual; a metadata é a fonte do último contrato completo
@@ -596,11 +658,23 @@ Essa modalidade está coberta por teste de contrato e **nunca foi executada na I
 cenário exige remover a API e gerá-la de novo por cima da metadata recuperada.
 
 A correção escolhida não foi acertar a ordem na recuperação, e sim **tornar a remoção
-resiliente a ela**: o que a IDE recusa volta para a fila e é tentado na passada seguinte;
-enquanto cada passada apagar ao menos um objeto há progresso; uma passada inteira sem
-progresso encerra e reporta os pendentes. Resolve para qualquer metadata, não só a
-recuperada. A recusa não é interpretada pela mensagem da exceção — só o abort do usuário é
-relançado na hora.
+resiliente a ela**: depois de cada `Delete()`, tenha ele lançado ou retornado, a
+implementação faz uma releitura imediata pela identidade validada. Somente se essa
+releitura comprovar que o objeto ainda existe a falha é classificada como conhecida e
+retryable por ordem de dependência; esse item volta para a fila e é tentado na passada
+seguinte da mesma operação. Se a releitura comprovar ausência, a exclusão está confirmada
+e o item não volta para a fila. Se a releitura for ilegível, divergente ou ambígua, o
+resultado é `OutcomeUnknown`, a operação fica bloqueada e não há retry automático nem
+recuperação posterior desse item.
+
+Enquanto cada passada apagar ao menos um objeto há progresso; uma passada inteira sem
+progresso encerra e reporta os pendentes. A recusa não é interpretada pela mensagem da
+exceção — só o abort do usuário é relançado na hora. A política de retry não se aplica a
+`Save()` nem permite repetir o objeto em uma operação posterior. O executor de `Remove`
+decide o requeue lendo o recibo final exposto pelo seam para cada tentativa, inclusive
+quando a exceção original de um `Delete()` é relançada; não depende de uma exceção
+artificial nem da mensagem da exceção. A F2 classifica e expõe o resultado, mas somente
+a F3 transforma `Failed` retryable em item da passada seguinte.
 
 **Segunda execução, com a correção:**
 

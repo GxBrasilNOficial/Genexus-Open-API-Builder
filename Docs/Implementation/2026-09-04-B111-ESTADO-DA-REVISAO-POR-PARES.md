@@ -125,9 +125,11 @@ A partir dela, o `B111` virou a sprint `S-B111` com três fases, cada uma com pl
 | F2 | [`...-B111-F2-PLANO-SEAM-E-RECIBOS.md`](2026-09-04-B111-F2-PLANO-SEAM-E-RECIBOS.md) | seam de persistência e recibos |
 | F3 | [`...-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md`](2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md) | durabilidade da intenção e remoção segura |
 
-**Esses três documentos são o objeto da próxima rodada.** O manuscrito permanece como origem das
-exigências e como registro do que já foi refutado (seção 5 deste documento e o apêndice do
-próprio manuscrito), mas a seção 7 da F3 lista as quatro correções que a medição impôs a ele.
+**Esses três documentos continuam sendo o objeto da próxima rodada, quando ela for retomada.**
+O manuscrito permanece como origem das exigências e como registro do que já foi refutado
+(seção 5 deste documento e o apêndice do próprio manuscrito), mas a seção 7 da F3 lista as
+quatro correções que a medição impôs a ele. A consolidação de decisões de 2026-09-07 deve
+ser lida antes de qualquer nova consulta.
 
 ### 8.2 O que a próxima rodada não precisa reabrir
 
@@ -181,3 +183,16 @@ conclusões do próprio autor e revelou três defeitos independentes, hoje numer
 Isso não desqualifica a revisão por pares; qualifica **o que pedir a ela**. Peça avaliação
 de desenho, coerência e escopo — e trate qualquer afirmação sobre comportamento do SDK como
 hipótese a medir, não como ponto a debater.
+
+## 9. Estado após a consolidação de 2026-09-07
+
+As decisões funcionais e de escopo da S-B111 foram discutidas e registradas no arquivo de
+segurança `Temp/2026-09-07-S-B111-DECISOES-APROVADAS.md`. Os planos F1, F2 e F3 agora
+refletem, entre outros pontos, o diário único sem histórico, o protocolo `Prepared`/`Active`,
+o `OperationId`, o `ApplicationId` da operação corrente, `OutcomeUnknown`, a classificação
+`StillPresentAfterDelete`, o B115 dentro do seam e o comando unificado de recuperação.
+
+Isso **não** emite o recibo de fechamento da revisão por pares. A revisão permanece pendente:
+quando retomada, deverá consultar os três planos consolidados e reagir a cada parecer antes
+de decidir se algum gap exige nova conversa humana. Nenhuma implementação, commit, push,
+instalação ou consulta adicional foi autorizada por esta atualização documental.
