@@ -167,7 +167,7 @@ A conclusão da `S-B111` não fecha automaticamente o `B082`: ao encerrar a spri
 
 ## Estado da sprint `S-B111` (planejada em 2026-09-05; território atualizado em 2026-09-07)
 
-Planejamento concluído, avaliação técnica inicial realizada e **nenhuma das três fases foi implementada**: o seam de persistência, os recibos, o diário e a ordem de gravação do API Object seguem como estavam. A consolidação documental foi registrada em 2026-09-07; a revisão por pares permanece em aberto e aguarda decisão de retomada. As decisões aprovadas estão preservadas em `Temp/2026-09-07-S-B111-DECISOES-APROVADAS.md`.
+Planejamento concluído, avaliação técnica inicial realizada e **nenhuma das três fases foi implementada**: o seam de persistência, os recibos, o diário e a ordem de gravação do API Object seguem como estavam. A consolidação documental foi registrada em 2026-09-07; a revisão por pares permanece em aberto e aguarda decisão de retomada. As decisões aprovadas estão preservadas no registro versionado `Docs/Implementation/2026-09-07-S-B111-DECISOES-APROVADAS.md`.
 
 **O que mudou no território da sprint depois de 2026-09-05**, por necessidade de campo e fora das fases — registrado na seção 13 do plano da F3:
 

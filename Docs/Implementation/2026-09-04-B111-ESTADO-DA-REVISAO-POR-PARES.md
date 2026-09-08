@@ -186,8 +186,8 @@ hipótese a medir, não como ponto a debater.
 
 ## 9. Estado após a consolidação de 2026-09-07
 
-As decisões funcionais e de escopo da S-B111 foram discutidas e registradas no arquivo de
-segurança `Temp/2026-09-07-S-B111-DECISOES-APROVADAS.md`. Os planos F1, F2 e F3 agora
+As decisões funcionais e de escopo da S-B111 foram discutidas e registradas no documento
+canônico `Docs/Implementation/2026-09-07-S-B111-DECISOES-APROVADAS.md`. Os planos F1, F2 e F3 agora
 refletem, entre outros pontos, o diário único sem histórico, o protocolo `Prepared`/`Active`,
 o `OperationId`, o `ApplicationId` da operação corrente, `OutcomeUnknown`, a classificação
 `StillPresentAfterDelete`, o B115 dentro do seam e o comando unificado de recuperação.
