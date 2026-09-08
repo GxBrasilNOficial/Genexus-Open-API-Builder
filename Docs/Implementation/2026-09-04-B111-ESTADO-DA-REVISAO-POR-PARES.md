@@ -215,3 +215,29 @@ atribuída em memória de compromisso durável; fechar o canal comum de `NotAtte
 `StageFailed` à persistência exclusiva da F3; e completar a especificação do lock local e
 dos namespaces de diagnóstico. Esses ajustes foram incorporados aos planos, decisões,
 status e backlog; a decisão humana de encerrar a revisão e autorizar a F1 permanece pendente.
+
+## 11. Parecer solo do Claude Code Opus 5 — 2026-09-08
+
+O Claude Code Opus 5 revisou o estado commitado em `main` após a rodada do Cursor e
+respondeu `APROVAR COM RESSALVAS`. O parecer foi uma segunda opinião individual, não uma
+nova rodada do painel nem autoridade para editar o repositório.
+
+Os apontamentos aproveitados foram:
+
+- o contrato documental de metadata V3 precisava confrontar os consumidores reais ainda
+  restritos a V1/V2 (`ApiPlanMetadataFileWriter`, `ApiPlanGeneratedApiRemovalPlan`,
+  `ApiPlanGenerationStateReader`, `ApiPlanApiObjectOwnership` e
+  `ApiPlanApiObjectWriter`); `ownership.applicationId` ainda não existe no `Src/`, e a
+  promoção muda o fingerprint;
+- o seam da F2 entrega `RecordNotAttempted` ao remover, com `attempt=1` e sem consumo de
+  `maxPasses`; a F3 recebe o receipt e persiste o checkpoint;
+- `NoteStageFailed` usa namespace estável `stage.*`, sem copiar o diagnóstico para
+  `blockReason`, e o lock por KB é explicitamente processo-local, não uma garantia entre
+  processos;
+- a canonização do hash fecha valores nulos, arrays vazios, formato de GUID, precisão de
+  timestamps, escapes JSON, números, booleanos e a separação entre hash semântico do
+  snapshot e digest dos bytes crus do File.
+
+Após conferência no código e nos planos, esses pontos foram aplicados na F2, F3, no registro
+de decisões, no status e no backlog. A ressalva P1 de compatibilidade V2→V3 permanece uma
+pré-condição da implementação da F3 e não bloqueia a decisão humana de autorizar a F1.

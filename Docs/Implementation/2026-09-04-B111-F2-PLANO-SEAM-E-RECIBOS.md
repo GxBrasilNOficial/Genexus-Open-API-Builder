@@ -178,7 +178,8 @@ Contrato mínimo:
   uma tentativa de `Delete` que não chegou a chamar o SDK. `observation` deve ser
   `confirmation=NotAttempted` e `physicalState=Absent` ou `Unknown`; o método não executa
   mutação física, mas usa o mesmo alocador de `sequence`, a mesma cadeia de `attempt` e as
-  mesmas referências `inventory.receiptSequences` de `Persist`;
+  mesmas referências `inventory.receiptSequences` de `Persist`. Para essa ocorrência,
+  `attempt=1` por definição e ela não consome uma passada de `maxPasses`;
 - a confirmação é obrigatória para todo ponto de produção. Não existe sobrecarga sem
   `confirm`: para `Save`, ela relê o objeto esperado; para `Delete`, ela confirma a
   ausência pela identidade validada do alvo. API usa `PlannedApiGuid`; File usa
@@ -245,7 +246,9 @@ Cada `PersistenceReceipt` carrega:
 - identidade persistida observada, ou ausência confirmada no caso de `Delete`;
 - início, fim e duração;
 - `attempt`, começando em `1` para a primeira tentativa física de um alvo na operação e
-  incrementado somente quando esse mesmo alvo é reencaminhado; quando aplicável,
+  incrementado somente quando esse mesmo alvo é reencaminhado; a exceção é
+  `RecordNotAttempted`, que usa `attempt=1` sem representar tentativa física nem consumir
+  `maxPasses`; quando aplicável,
   `retryOfSequence` aponta para o recibo imediatamente anterior da mesma cadeia, no
   mesmo envelope;
 - estado da tentativa (`Started`, `Finished` ou `Interrupted`), separado do resultado;
@@ -318,8 +321,9 @@ afirmar que o `Started` foi persistido nem inferir sucesso a partir dele.
 **A classe C não é observável pelo seam** — se a falha ocorre antes de chamar `Persist`, o
 seam não é invocado e não há recibo. Ela é registrada pelo **orquestrador**, com um evento
 de falha de etapa do tipo `NoteStageFailed(OperationId, stage, reasonCode, detail)`, chamado
-onde hoje já existe o teste de resultado de cada etapa. `reasonCode` é estável e legível por
-máquina; `detail` é apenas explicação humana. Sem isso, “etapa falhou antes de gravar” seria
+onde hoje já existe o teste de resultado de cada etapa. `reasonCode` usa o namespace estável
+`stage.*`, é legível por máquina e não é copiado para `blockReason`; `detail` é apenas
+explicação humana. Sem isso, “etapa falhou antes de gravar” seria
 indistinguível de “etapa nunca foi selecionada”, que é uma distinção que o relatório precisa
 fazer.
 
@@ -341,18 +345,20 @@ retornar em silêncio. Deve registrar uma ocorrência de tentativa não realizad
 localização. Essa ocorrência permite à F3 distinguir ausência comprovada de alvo não
 localizado e decidir se o inventário está completo. O registro deve passar por
 `RecordNotAttempted`, no mesmo log e alocador de `Persist`, com `operation=Delete`,
-`attemptState=Finished` e checkpoint de journal da F3; não pode ser criado por uma estrutura
+`attempt=1`, `attemptState=Finished` e checkpoint de journal da F3; não pode ser criado por uma estrutura
 paralela de recibo. `NotAttempted` nunca equivale a
 `Confirmed`: salvo recibo durável anterior que já confirme a mesma identidade, a
 remoção termina em `Partial`, com `blockReason=TargetAbsentBeforeDelete`, e exige
 reconciliação explícita. A localização deve ser feita pela
 identidade validada; nome isolado não pode transformar um API renomeado em ausência aparente.
 
-Essa ausência antes do `Delete()` não é a classe C: a F3 chama `RecordNotAttempted` e registra
-uma ocorrência como `PersistenceReceipt`, com `operation=Delete`, `attemptState=Finished`,
-`result=OutcomeUnknown`, `confirmation=NotAttempted`, `retryEligible=false` e a sequência
-atribuída pelo mesmo alocador. Ela não chama `Delete()`, não conta como sucesso físico e não
-autoriza retry; o `blockReason` específico
+Essa ausência antes do `Delete()` não é a classe C: o remover, usando o método entregue pela
+F2, chama `RecordNotAttempted` e registra uma ocorrência como `PersistenceReceipt`, com
+`operation=Delete`, `attempt=1`, `attemptState=Finished`, `result=OutcomeUnknown`,
+`confirmation=NotAttempted`, `retryEligible=false` e a sequência atribuída pelo mesmo
+alocador. A F2 mantém o receipt em memória para o consumidor; a F3 apenas relaciona essa
+ocorrência ao checkpoint durável e ao `blockReason`. Ela não chama `Delete()`, não conta
+como sucesso físico, não consome `maxPasses` e não autoriza retry; o `blockReason` específico
 continua sendo `TargetAbsentBeforeDelete` quando não houver recibo anterior `Confirmed`.
 
 **Correção herdada: “timeout” não é observável.** O manuscrito expandido falava em timeout
@@ -468,7 +474,8 @@ seam, não o pipeline GeneXus completo; a integração do adaptador, a quantidad
 6. confirmação ausente não possui sobrecarga válida e não passa no contrato;
 7. `Delete` confirmado pela ausência produz `Confirmed`;
 8. um alvo não localizado antes de `Delete` passa por `RecordNotAttempted`, produz
-   `NotAttempted` no log comum e não é tratado como remoção confirmada;
+   `NotAttempted` no log comum com `attempt=1`, não consome `maxPasses` e não é tratado como
+   remoção confirmada;
 9. escopos aninhados restauram o anterior;
 10. `Suspend()` não encerra o escopo ativo;
 11. falha na publicação do log não derruba o fluxo medido.
@@ -557,7 +564,8 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
 ## 8. Critérios de aceite
 
 1. Todo `Save()` e `Delete()` de produção do pipeline passa por `Persist(...)`; uma
-   ausência observada antes de `Delete()` passa por `RecordNotAttempted`; uma sentinela
+   ausência observada antes de `Delete()` passa por `RecordNotAttempted`, com `attempt=1`
+   sem consumir `maxPasses`; uma sentinela
    falha se algum caminho ficar fora desses dois pontos comuns.
 2. Nenhum ponto é instrumentado em dois níveis; uma sentinela falha se houver contagem
    dupla.

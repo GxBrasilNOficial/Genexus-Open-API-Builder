@@ -443,6 +443,10 @@ explicação humana e os dados estruturados (`operationId`, `journalFileId`, fas
 `logicalStage`, `journalDurability` e, quando já existente, `blockReason`).
 `reasonCode` e `blockReason` são namespaces distintos: uma coincidência textual entre
 eles nunca autoriza copiar um diagnóstico efêmero para o envelope persistido.
+O evento `NoteStageFailed` usa `reasonCode` no namespace estável `stage.*`; o identificador
+da etapa é contrato de máquina, enquanto `detail` permanece explicação humana. A F3 pode
+mapear o evento para `blockReason=StageFailed` somente pelas condições da tabela abaixo,
+nunca pela coincidência textual entre os dois namespaces.
 
 O mapeamento normativo de `blockReason` persistido é fechado por cenário:
 
@@ -532,6 +536,15 @@ A relação entre a metadata de negócio e o diário também fica fechada:
   `classification`, `businessComponent`, `engine`, `scope`, `fingerprint` e
   `ownership.applicationId`. O fingerprint cobre esses dados, exceto o próprio
   campo `fingerprint`, usando UTF-8 e SHA-256.
+- A promoção V2→V3 é aditiva: `ownership.applicationId` passa a integrar o payload e o
+  fingerprint, portanto um valor novo muda o fingerprint por definição. V2 pode ser lida
+  e normalizada, mas não é equivalente a V3 nem deve ser regravada silenciosamente como
+  se a integridade permanecesse igual. Antes de qualquer writer emitir V3, devem ser
+  atualizados em conjunto os consumidores de versão e ownership:
+  `ApiPlanMetadataFileWriter`, `ApiPlanGeneratedApiRemovalPlan`,
+  `ApiPlanGenerationStateReader`, `ApiPlanApiObjectOwnership` e
+  `ApiPlanApiObjectWriter`. Enquanto isso não ocorrer, `ownership.applicationId` é uma
+  pré-condição de implementação da F3, não uma capacidade já disponível no `Src/`.
 - A forma V3 importada de B115 mantém `recovery.imported=true` e a lista fechada
   `notRecovered=[fields,pagination,order,services,levels,transactionStructure]`;
   esses seis caminhos ficam ausentes, não vazios. Ela exige, em contrapartida,
@@ -663,10 +676,14 @@ Cada `PersistenceReceipt` conterá:
   reutilizado após crash; nenhum número presente em snapshot confirmado pode ser
   reutilizado. `attempt` começa
   em `1` para a primeira tentativa física daquele alvo dentro da operação e só é
-  incrementado quando o mesmo alvo é reencaminhado na mesma operação;
+  incrementado quando o mesmo alvo é reencaminhado na mesma operação. A exceção é
+  `RecordNotAttempted`, que usa `attempt=1` sem tentativa física e sem consumir
+  `maxPasses`;
 - `retryOfSequence`, quando houver retry, aponta para o recibo imediatamente
   anterior da mesma cadeia de tentativas; a cadeia não pode apontar para outro
-  envelope;
+  envelope. `inventory.receiptSequences` só pode apontar para receipts presentes no
+  mesmo snapshot confirmado, e `retryOfSequence` só pode apontar para receipt confirmado
+  anterior da mesma cadeia;
 - `operation`, com `Save` ou `Delete`;
 - `objectType`, com `ApiObject`, `Procedure`, `Sdt`, `MetadataFile`, `Folder` ou
   `Transaction`;
@@ -701,11 +718,12 @@ Regras do recibo:
 - `Save`, falha de preparação e `OutcomeUnknown` sempre produzem
   `retryEligible=false`;
 - um alvo que se tornou ausente antes do primeiro `Delete()` não é uma falha física de
-  `Delete`: a F3 registra um receipt `Finished` com `result=OutcomeUnknown`,
-  `confirmation=NotAttempted`, `retryEligible=false` e o próximo `sequence` durável;
-  não há chamada física nem retry implícito. Se não houver receipt anterior `Confirmed`,
-  o envelope usa `blockReason=TargetAbsentBeforeDelete` quando esse snapshot puder ser
-  confirmado;
+  `Delete`: o remover usa o `RecordNotAttempted` da F2 para registrar um receipt
+  `Finished` com `attempt=1`, `result=OutcomeUnknown`, `confirmation=NotAttempted`,
+  `retryEligible=false` e o próximo `sequence` durável; a F3 só persiste o checkpoint e
+  o bloqueio. Não há chamada física, consumo de `maxPasses` nem retry implícito. Se não
+  houver receipt anterior `Confirmed`, o envelope usa
+  `blockReason=TargetAbsentBeforeDelete` quando esse snapshot puder ser confirmado;
 - `Absent` pode confirmar `Delete`, mas não `Save`;
 - `Divergent` ou `Unreadable` produz `OutcomeUnknown`.
 
@@ -1252,3 +1270,23 @@ estas clarificações:
   SDK, a garantia é otimista; o lock local por KB deve cobrir a revalidação e a primeira
   mutação, e a indisponibilidade do lock bloqueia antes da mutação. Qualquer corrida residual
   é classificada explicitamente como `OutcomeUnknown` ou `DurabilityUnknown`.
+
+### 55. Clarificações após parecer solo do Claude Code Opus 5 — 2026-09-08
+
+O parecer externo foi tratado como insumo de revisão, não como autoridade para alterar o
+repositório. O veredito foi `APROVAR COM RESSALVAS`; após conferência no código e nos planos,
+foram incorporadas estas clarificações:
+
+- a promoção V2→V3 da metadata é aditiva, mas ainda exige atualizar os consumidores
+  `ApiPlanMetadataFileWriter`, `ApiPlanGeneratedApiRemovalPlan`,
+  `ApiPlanGenerationStateReader`, `ApiPlanApiObjectOwnership` e
+  `ApiPlanApiObjectWriter` antes de qualquer writer emitir V3; `ownership.applicationId`
+  ainda não existe no `Src/`, e seu valor entra no fingerprint V3;
+- o remover chama `RecordNotAttempted` pelo seam entregue na F2; o receipt usa `attempt=1`,
+  não consome `maxPasses`, fica disponível em memória e só é relacionado ao checkpoint
+  durável pela F3;
+- `NoteStageFailed` usa `reasonCode` no namespace `stage.*`, sem cópia automática para
+  `blockReason`; o lock por KB é processo-local e não coordena duas IDEs ou processos;
+- a canonização do hash agora fecha `null`, `[]`, GUID `D` minúsculo, timestamps UTC com
+  milissegundos fixos, escapes JSON obrigatórios, números invariáveis, booleanos JSON e a
+  separação entre o hash semântico do snapshot e o digest dos bytes crus do File.

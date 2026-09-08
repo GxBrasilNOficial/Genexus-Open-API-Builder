@@ -278,11 +278,12 @@ O ciclo de vida da fila é fechado assim:
 - a ordem é API Object, Procedures, SDTs na ordem de dependência, metadata File e,
   por último, Folder próprio vazio. Cada item é relido pela identidade validada antes
   da tentativa e recebe um recibo, inclusive quando não chega a chamar `Delete()`;
-- `NotAttempted`/`Absent` antes do primeiro Delete não é sucesso implícito. A F3 chama
-  `RecordNotAttempted` no log comum, sem chamar `Delete()`, e grava o receipt com
-  `operation=Delete`, `attemptState=Finished`, `result=OutcomeUnknown`,
-  `confirmation=NotAttempted` e `retryEligible=false`. Sem recibo durável anterior
-  `Confirmed` para a mesma identidade, encerra a operação em `Partial` com
+- `NotAttempted`/`Absent` antes do primeiro Delete não é sucesso implícito. O remover, usando
+  `RecordNotAttempted` entregue pela F2, registra a ocorrência no log comum, sem chamar
+  `Delete()`, com `attempt=1`, `attemptState=Finished`, `result=OutcomeUnknown`,
+  `confirmation=NotAttempted` e `retryEligible=false`; `attempt=1` não consome
+  `maxPasses`. A F3 recebe esse receipt em memória e grava o checkpoint durável. Sem recibo
+  durável anterior `Confirmed` para a mesma identidade, encerra a operação em `Partial` com
   `blockReason=TargetAbsentBeforeDelete`. Uma falha de etapa não retryable, registrada por
   `NoteStageFailed`, somente encerra em `Partial` com `blockReason=StageFailed` quando já
   existe envelope `Active` confirmado e não haverá nova chamada física; o item é preservado,
@@ -324,10 +325,10 @@ O `Save()` do diário não entra na contagem de persistências de negócio da F2
 
 | Operação | Checkpoint 1 | Checkpoint 2 | Checkpoint 3 | Checkpoint 4 | Contagem física |
 |---|---|---|---|---|---|
-| Apply | `Prepared` + `Pending/IntentionRecorded` | `Active` + `Running/NotStarted` | recibos até API confirmado + `Running/ApiPhysicallySaved` | `Completed`, `Partial` ou `OutcomeUnknown` + estágio final | exatamente 4 |
-| Sync | `Prepared` + `Pending/IntentionRecorded` | `Active` + `Running/NotStarted` | recibos até API confirmado + `Running/ApiPhysicallySaved` | `Completed`, `Partial` ou `OutcomeUnknown` + estágio final | exatamente 4 |
+| Apply | `Prepared` + `Pending/IntentionRecorded` | `Active` + `Running/NotStarted` | recibos até API confirmado + `Running/ApiPhysicallySaved` | `Completed`, `Partial` ou `OutcomeUnknown` + estágio final | exatamente 4 no caminho completo e ininterrupto |
+| Sync | `Prepared` + `Pending/IntentionRecorded` | `Active` + `Running/NotStarted` | recibos até API confirmado + `Running/ApiPhysicallySaved` | `Completed`, `Partial` ou `OutcomeUnknown` + estágio final | exatamente 4 no caminho completo e ininterrupto |
 | Remove | `Prepared` + `Pending/IntentionRecorded` | `Active` + `Running/RemovalInProgress` | inventário atualizado ao fim de cada passada | `Removed`, `Partial` ou `OutcomeUnknown` + estágio final | `3 + P`, sendo `P` o número de passadas executadas |
-| Recovery autônomo de B115, sem envelope de negócio | `Prepared` + `Pending/IntentionRecorded` | `Active` + `Running/MetadataPending` | recibo de metadata confirmado + `Running/MetadataRecovered` | `Completed` ou `OutcomeUnknown` + estágio final | exatamente 4 |
+| Recovery autônomo de B115, sem envelope de negócio | `Prepared` + `Pending/IntentionRecorded` | `Active` + `Running/MetadataPending` | recibo de metadata confirmado + `Running/MetadataRecovered` | `Completed` ou `OutcomeUnknown` + estágio final | exatamente 4 no caminho completo e ininterrupto |
 | Recovery de continuação de envelope existente | reidratação somente leitura do snapshot, sem novo `Prepared`/`Active` | `RecoveryInProgress` somente se houver checkpoint confirmado de reidratação | próxima etapa segura da operação original | estado terminal ou bloqueio explícito confirmado | checkpoints físicos restantes da operação original, além de passadas de `Remove` |
 
 Cada célula inclui o snapshot do plano/inventário, a transição de `operationState` e
@@ -423,6 +424,20 @@ completo existente, trata `levels` ausente como plano, materializa
 `ownership.applicationId`. B115 é a exceção inventory-only explicitamente marcada por
 `recovery.imported=true`; os caminhos não recuperados permanecem ausentes, e não
 vazios. Remove legado não regrava a metadata só para preencher `applicationId`.
+
+A promoção V2→V3 é aditiva e muda o material de integridade: a forma V3 acrescenta
+`ownership.applicationId` ao payload completo, e esse valor entra no fingerprint (exceto o
+próprio campo `fingerprint`). Portanto, um `applicationId` novo altera o fingerprint por
+definição; V2 pode ser lida e normalizada, mas não é equivalente a V3 nem pode ser
+regravada silenciosamente como se o fingerprint permanecesse igual. Antes de qualquer
+writer emitir V3, a F3 precisa atualizar, em conjunto, os consumidores do contrato:
+`ApiPlanMetadataFileWriter` (constantes, lista aceita, validação, geração e fingerprint),
+`ApiPlanGeneratedApiRemovalPlan` (V3 e mensagem de erro),
+`ApiPlanGenerationStateReader` (leitura da versão), `ApiPlanApiObjectOwnership`
+(comparação de ownership) e `ApiPlanApiObjectWriter` (leitura/validação da metadata).
+O estado atual desses consumidores ainda aceita V1/V2, e `ownership.applicationId` ainda
+não existe no `Src/`; isso é uma pré-condição P1 da implementação da F3, não trabalho
+antecipado nesta rodada.
 
 ### 5.3 Ciclo de vida
 
@@ -546,6 +561,13 @@ o próprio hash nunca é incluído no material que ele resume. Não há espaços
 propriedades seguem a ordem do schema, e `updatedUtc` é serializado em UTC com sufixo `Z`.
 `updatedUtc` faz parte do snapshot e ajuda a diagnosticar a versão observada, mas não
 substitui o hash como comparação de integridade.
+Para que duas implementações produzam o mesmo material, campos anuláveis permanecem
+presentes como `null`, arrays vazios permanecem como `[]`, GUIDs usam o formato `D` em
+minúsculas, timestamps UTC usam precisão fixa de milissegundos (`yyyy-MM-dd'T'HH:mm:ss.fff'Z'`),
+strings são codificadas em UTF-8 com apenas os escapes obrigatórios do JSON, números usam
+representação decimal invariável sem zeros ou expoente supérfluos e booleanos usam os
+literais JSON `true`/`false`. O digest dos bytes crus do File é uma verificação separada de
+durabilidade; ele não entra no `snapshotHash` nem o substitui.
 Imediatamente antes do primeiro `Save()` ou `Delete()` de negócio, o executor relê o
 mesmo `journalFileId` e compara `journalFileId`, `OperationId`, `ApplicationId`,
 `updatedUtc`, hash canônico e `NextStep`; qualquer divergência retorna
@@ -554,9 +576,13 @@ mutação.
 
 Se o SDK não oferecer CAS transacional para o File, esse contrato é uma verificação
 otimista, não uma promessa de atomicidade entre processos. `lock local por KB` significa
-uma exclusão mantida pela extensão, indexada por `knowledgeBaseGuid`, desde a revalidação
-final até a primeira mutação. Se o lock não puder ser obtido, o executor bloqueia antes da
-mutação com `GateDiagnostic=GateBlocked` e `reasonCode=RecoveryAuthorizationLockUnavailable`;
+uma exclusão mantida pela extensão **no processo corrente**, indexada por
+`knowledgeBaseGuid`, desde a revalidação final até a primeira mutação. Ele coordena
+continuações concorrentes dentro da mesma instância da extensão, mas não cobre duas IDEs
+ou dois processos distintos; nesse caso, a revalidação otimista continua sendo a defesa
+disponível. Se o lock não puder ser obtido antes do timeout de aquisição ou a infraestrutura
+de sincronização estiver indisponível, o executor bloqueia antes da mutação com
+`GateDiagnostic=GateBlocked` e `reasonCode=RecoveryAuthorizationLockUnavailable`;
 não prossegue como se houvesse atomicidade. Uma corrida que ocorrer depois da revalidação
 continua residual e deve ser detectada no checkpoint seguinte. Nesse caso não há retry
 silencioso: a classificação volta a ser
@@ -583,7 +609,8 @@ indeterminado.
 | `Src/Extension/Package.cs` | comando contextual e fallback principal, gate do diário, recuperação explícita e retirada da oferta automática B115; literais conforme a matriz da decisão 33 |
 | `Src/Extension/GenexusOpenApiBuilder.package` e `Groups` | `CommandDefinition` e `refid` de cada variante localizada do comando nas duas superfícies de menu, sem ID neutro compartilhado |
 | `Src/Extension/Diagnostics/PrototypeWizardPreferences.cs`, `PrototypeWizardPreferencesCodec.cs`, `PrototypeWizardPreferencesDialog.cs` | compatibilidade de `OfferOrphanMetadataRecovery` e nova preferência `ShowRecoveryOptionProactively` |
-| `Src/Extension/Diagnostics/ApiPlanOrphanMetadataRecovery.cs` e writers de metadata | leitura/normalização V1/V2 e gravação V3 em Apply, Sync e B115, sem regravar metadata legada apenas para preencher `ApplicationId` durante Remove |
+| `Src/Extension/Diagnostics/ApiPlanOrphanMetadataRecovery.cs` e writers de metadata | leitura/normalização V1/V2 e gravação V3 em Apply, Sync e B115, sem regravar metadata legada apenas para preencher `ApplicationId` durante Remove; a promoção só ocorre depois de atualizar os consumidores de versão e fingerprint |
+| `Src/Extension/Diagnostics/ApiPlanMetadataFileWriter.cs`, `ApiPlanGeneratedApiRemovalPlan.cs`, `ApiPlanGenerationStateReader.cs`, `ApiPlanApiObjectOwnership.cs` e `ApiPlanApiObjectWriter.cs` | consumidores obrigatórios da promoção V2→V3: aceitar V3, ler `ownership.applicationId`, validar o fingerprint V3 e manter a leitura legada V1/V2 sem regravação implícita |
 | `Src/Extension/ExtensionLocalization.cs`, `Src/Domain/ExtensionOutputLocalization.cs`, `Tests/Localization/` | mensagens pt-BR, espanhol e inglês para bloqueio, recuperação, inventário e estado indeterminado |
 | `Tools/Test-ExtensionCommandRegistration.ps1` e `Tests/` | sincronização do comando, schema, checkpoints, reidratação, inventário e validação IDE |
 
