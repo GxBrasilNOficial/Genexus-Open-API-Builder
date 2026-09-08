@@ -118,6 +118,7 @@ acoplado ao SDK continua dependente da validação na IDE.
 | diário B111 durável | F3 |
 | quatro dimensões de estado, incluindo `journalDurability=Unknown` | F3 |
 | recuperação explícita, reconciliação e inventário físico | F3 |
+| persistência do snapshot `StageFailed` e confirmação de durabilidade do journal | F3; a F2 somente emite o sinal da falha |
 | remoção de API legado | F3 |
 | implementação do Modo A selecionado e ciclo de vida do diário | F3 |
 | mudança de ordem física ou de writer final | já feita na F1 |
@@ -224,8 +225,9 @@ confunda falha de preparação com ausência de tentativa.
 
 Cada `PersistenceReceipt` carrega:
 
-- `sequence` monotônica global dentro da operação (isto é, dentro do mesmo `OperationId`),
-  positiva, única e append-only;
+- `sequence` monotônica global entre os recibos **duravelmente persistidos** da operação
+  (isto é, dentro do mesmo `OperationId`), positiva e append-only; uma sequência só fica
+  reservada quando o checkpoint que a contém é confirmado;
 - operação (`Save` ou `Delete`), etapa e tipo de objeto;
 - `PersistenceIdentity` planejada, além do nome para exibição;
 - identidade persistida observada, ou ausência confirmada no caso de `Delete`;
@@ -249,8 +251,10 @@ Cada `PersistenceReceipt` carrega:
 O recibo é registro, não decisão. Nada no código deve mudar de caminho por causa de um
 recibo dentro da F2. Cada retry recebe seu próprio recibo; a continuação do mesmo envelope
 e do mesmo `OperationId` mantém o maior `attempt` já persistido, usa o próximo valor e
-acrescenta novos `sequence` ao mesmo log. Uma operação nova, depois de `Completed` ou
-`Removed`, começa `sequence` e
+acrescenta novos `sequence` ao mesmo log. Depois de um crash, a continuação lê o maior
+`sequence` confirmado no snapshot corrente e pode reutilizar um número que nunca chegou a
+ser persistido; nenhum número presente em um checkpoint confirmado pode ser reutilizado.
+Uma operação nova, depois de `Completed` ou `Removed`, começa `sequence` e
 `attempt` em `1`; referências anteriores de `inventory.receiptSequences` nunca são
 substituídas.
 
@@ -301,20 +305,22 @@ afirmar que o `Started` foi persistido nem inferir sucesso a partir dele.
 
 **A classe C não é observável pelo seam** — se a falha ocorre antes de chamar `Persist`, o
 seam não é invocado e não há recibo. Ela é registrada pelo **orquestrador**, com um evento
-de falha de etapa do tipo `NoteStageFailed(stage, reason)`, chamado onde hoje já existe o
-teste de resultado de cada etapa. Sem isso, “etapa falhou antes de gravar” seria
+de falha de etapa do tipo `NoteStageFailed(OperationId, stage, reasonCode, detail)`, chamado
+onde hoje já existe o teste de resultado de cada etapa. `reasonCode` é estável e legível por
+máquina; `detail` é apenas explicação humana. Sem isso, “etapa falhou antes de gravar” seria
 indistinguível de “etapa nunca foi selecionada”, que é uma distinção que o relatório precisa
 fazer.
 
-Quando já houver um envelope `Active` confirmado e o orquestrador concluir que a etapa não
-terá nova chamada física, ele também é o produtor do fechamento `StageFailed`: deve atualizar
-o snapshot do journal para `operationState=Partial`, `blockReason=StageFailed` e o
-`logicalStage` correspondente, preservando o item no inventário e sem criar
-`PersistenceReceipt`. Esse fechamento acontece fora de `Persist(...)`; `NoteStageFailed` é o
-evento que o transporta, não um recibo. O novo snapshot só pode ser anunciado como
-`StageFailed` depois de `journalDurability=Confirmed`. Se a gravação ou a releitura do
-journal não puder ser confirmada, o executor preserva o último snapshot durável e expõe
-`GateDiagnostic=DurabilityUnknown`, sem alegar que `StageFailed` foi persistido.
+A F2 somente emite e expõe esse evento; não grava o journal nem decide `blockReason`. A F3
+é a dona do fechamento durável: quando recebe `NoteStageFailed` para um envelope `Active`
+confirmado e o orquestrador conclui que a etapa não terá nova chamada física, atualiza o
+snapshot para `operationState=Partial`, `blockReason=StageFailed` e o `logicalStage`
+correspondente, preservando o item no inventário e sem criar `PersistenceReceipt`. O novo
+snapshot só pode ser anunciado como `StageFailed` depois de `journalDurability=Confirmed`.
+Se não houver `Active` confirmado, o evento permanece somente diagnóstico e não cria
+`blockReason=StageFailed`. Se a gravação ou a releitura do journal não puder ser confirmada,
+a F3 preserva o último snapshot durável e expõe `GateDiagnostic=DurabilityUnknown`, sem
+alegar que `StageFailed` foi persistido.
 
 Quando o alvo previsto não for encontrado antes de chamar `Delete()`, o remover não pode
 retornar em silêncio. Deve registrar uma ocorrência de tentativa não realizada, com
@@ -325,6 +331,12 @@ localizado e decidir se o inventário está completo. `NotAttempted` nunca equiv
 remoção termina em `Partial`, com `blockReason=TargetAbsentBeforeDelete`, e exige
 reconciliação explícita. A localização deve ser feita pela
 identidade validada; nome isolado não pode transformar um API renomeado em ausência aparente.
+
+Essa ausência antes do `Delete()` não é a classe C: a F3 registra uma ocorrência de tentativa
+não realizada como `PersistenceReceipt`, com `attemptState=Finished`, `result=OutcomeUnknown`,
+`confirmation=NotAttempted`, `retryEligible=false` e a próxima `sequence` durável. Ela não
+chama `Delete()`, não conta como sucesso físico e não autoriza retry; o `blockReason` específico
+continua sendo `TargetAbsentBeforeDelete` quando não houver recibo anterior `Confirmed`.
 
 **Correção herdada: “timeout” não é observável.** O manuscrito expandido falava em timeout
 como uma das origens de resultado indeterminado. O SDK não expõe timeout nas operações de

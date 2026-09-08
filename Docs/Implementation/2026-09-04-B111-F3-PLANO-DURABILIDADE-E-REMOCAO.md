@@ -215,18 +215,20 @@ O gate reduzido da F1 ganha as validações que dependem de intenção durável:
 4. ausência de intenção ativa, ou transição explicitamente autorizada de `Prepared`;
 5. ausência de `GateDiagnostic` irremediado e de `OutcomeUnknown` não reconciliado.
 
-Falhando qualquer uma, o resultado é `GateDiagnostic=GateBlocked` antes da primeira
-gravação. O gate não cria `Prepared`, não grava `blockReason` e não inventa um
-`logicalStage`; se houver envelope confirmado anterior, o relatório referencia o snapshot
-existente sem alterá-lo. O payload estruturado do diagnóstico deve carregar uma `reasonCode`
-estável e a precondição que falhou, além da mensagem para leitura humana; não basta reduzir
-causas diferentes ao texto livre `GateBlocked`. Quando o journal está legível, os códigos de
-subcausa previstos são `JournalNonTerminal`, `JournalIdentityDivergent`,
-`PreparedContinuationNotAuthorized`, `UnreconciledOutcome` e `PreconditionFailed`. Se a
-indisponibilidade ou a durabilidade desconhecida impedirem confirmar o journal, o código de
-alto nível permanece `JournalUnavailable` ou `DurabilityUnknown`, conforme o caso. Esses
-detalhes são efêmeros do diagnóstico, não valores novos do journal nem substitutos de
-`blockReason`.
+Falhando qualquer uma, o resultado é um diagnóstico antes da primeira gravação, sem
+criar `Prepared`, gravar `blockReason` ou inventar um `logicalStage`. Se houver envelope
+confirmado anterior, o relatório referencia o snapshot existente sem alterá-lo. O
+diagnóstico segue a precedência normativa do registro de decisões: `JournalUnavailable`
+quando o journal não é legível ou validável; `DurabilityUnknown` quando o `Save()` ou a
+releitura não confirmam o snapshot novo; `GateBlocked` quando o journal é legível, válido
+e durável, mas o estado global impede a operação; e `PreconditionFailed` quando uma
+pré-condição específica falha antes da primeira mutação. O payload estruturado carrega
+uma `reasonCode` estável, a precondição que falhou e a mensagem para leitura humana; não
+basta reduzir causas diferentes ao texto livre `GateBlocked`. As subcausas de
+`GateBlocked` incluem `JournalNonTerminal`, `PreparedContinuationNotAuthorized`,
+`UnreconciledOutcome` e `RecoveryAuthorizationStale`; `JournalIdentityDivergent` pertence
+a `JournalUnavailable`, não a `GateBlocked`. Esses detalhes são efêmeros do diagnóstico,
+não valores novos do journal nem substitutos de `blockReason`.
 
 ### 4.3 Remoção com intenção confirmada
 
@@ -526,6 +528,25 @@ Essa vinculação é uma defesa de frescor e integridade contra alteração conc
 leitura e a ação (TOCTOU); não cria histórico nem uma segunda identidade para o journal.
 O executor rejeita a autorização se qualquer parte dessa vinculação divergir do diário
 revalidado, evitando continuar sobre um snapshot substituído entre a leitura e a ação.
+
+O hash usado nessa autorização é o SHA-256, em hexadecimal minúsculo, do JSON canônico
+UTF-8 do envelope V3: sem espaços supérfluos, propriedades na ordem do schema,
+`updatedUtc` serializado em UTC com sufixo `Z` e o próprio campo de autorização/hash
+externo excluído do material hasheado. `updatedUtc` faz parte do snapshot e ajuda a
+diagnosticar a versão observada, mas não substitui o hash como comparação de integridade.
+Imediatamente antes do primeiro `Save()` ou `Delete()` de negócio, o executor relê o
+mesmo `journalFileId` e compara `journalFileId`, `OperationId`, `ApplicationId`,
+`updatedUtc`, hash canônico e `NextStep`; qualquer divergência retorna
+`GateDiagnostic=GateBlocked` com `reasonCode=RecoveryAuthorizationStale` antes da
+mutação.
+
+Se o SDK não oferecer CAS transacional para o File, esse contrato é uma verificação
+otimista, não uma promessa de atomicidade entre processos. O executor deve usar, quando
+disponível, um lock local por KB envolvendo a revalidação e a primeira mutação; uma corrida
+que ocorrer depois da revalidação continua residual e deve ser detectada no checkpoint
+seguinte. Nesse caso não há retry silencioso: a classificação volta a ser
+`OutcomeUnknown` quando a mutação física for ambígua ou `DurabilityUnknown` quando o
+snapshot do journal não puder ser confirmado.
 
 As transições permitidas são fechadas: `Prepared/Pending` pode continuar com os mesmos
 IDs ou ser abandonado; `Active/Running` pode continuar somente a próxima etapa ainda não

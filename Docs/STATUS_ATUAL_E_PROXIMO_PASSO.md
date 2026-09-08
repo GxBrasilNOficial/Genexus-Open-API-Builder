@@ -143,8 +143,8 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 (durabilidade da intenção e remoção segura). Em 2026-09-08, o painel CLI com quatro
 revisores respondeu `REVISAR` em todos os pareceres, com diversidade de três famílias de
 modelo; os ajustes documentais decorrentes foram aplicados nos planos, nas decisões e no
-backlog. O parecer solo posterior do MiMo V2.5 Pro também foi avaliado, e somente suas
-clarificações úteis foram incorporadas. O Cursor permanece como revisor manual da próxima
+backlog. Os pareceres solo posteriores do MiMo V2.5 Pro e do Codex GPT-5.6-luna também foram
+avaliados, e somente suas clarificações úteis foram incorporadas. O Cursor permanece como revisor manual da próxima
 rodada. Ainda não houve implementação, build, instalação ou push; esta consolidação
 documental foi commitada separadamente. Registro da revisão:
 `Docs/Implementation/2026-09-04-B111-ESTADO-DA-REVISAO-POR-PARES.md`. Item:
@@ -181,8 +181,8 @@ Planejamento concluído, avaliação técnica inicial realizada e **nenhuma das 
 - nasceu a recuperação de metadata órfã (`B115`), que ocupa parte do que a seção 4.3 da F3 normatiza. Ela cobre dois estados: o File ausente, e o File presente que ficou apontando para um API Object removido — este último travava o Wizard em `OwnershipSchemaApiNameOrGuidMismatch` sem saída pela ferramenta. Metadata **completa** com esse mesmo descompasso segue exigindo intervenção humana.
 
 Três planos de fase preparados, avaliados na revisão técnica inicial e consolidados
-documentalmente em 2026-09-08 após o painel CLI e a avaliação do parecer solo do MiMo V2.5
-Pro. As clarificações aprovadas foram commitadas; a revisão por pares permanece em aberto
+documentalmente em 2026-09-08 após o painel CLI e a avaliação dos pareceres solo do MiMo V2.5
+Pro e do Codex GPT-5.6-luna. As clarificações aprovadas foram commitadas; a revisão por pares permanece em aberto
 antes da implementação na ordem
 F1 → F2 → F3, aguardando a rodada manual com o Cursor:
 
@@ -291,7 +291,7 @@ nada aqui. `B108` e o residual `B082` 1B/2/3 não competem com essas linhas.
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única é submeter ao Cursor a rodada revisada da revisão por pares da sprint `S-B111`; o painel CLI de 2026-09-08 teve quatro respostas `REVISAR` e diversidade de três famílias de modelo, e as clarificações documentais posteriores do parecer solo do MiMo V2.5 Pro foram incorporadas e commitadas nos planos, no registro operacional e no backlog; `B108` está estacionado (`Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); a Etapa 1A do hardening `B082` está aceita (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é submeter ao Cursor a rodada revisada da revisão por pares da sprint `S-B111`; o painel CLI de 2026-09-08 teve quatro respostas `REVISAR` e diversidade de três famílias de modelo, e as clarificações documentais posteriores dos pareceres solo do MiMo V2.5 Pro e do Codex GPT-5.6-luna foram incorporadas e commitadas nos planos, no registro operacional e no backlog; `B108` está estacionado (`Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); a Etapa 1A do hardening `B082` está aceita (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente

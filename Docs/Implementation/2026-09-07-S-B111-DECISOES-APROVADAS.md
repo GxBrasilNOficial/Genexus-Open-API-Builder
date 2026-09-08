@@ -422,12 +422,25 @@ quando o `Save()`/a releitura não permitem confirmar o novo snapshot, não há 
 JSON novo a emitir: o resultado usa `GateDiagnostic` somente no relatório. Esse
 diagnóstico tem os códigos `GateBlocked`, `JournalUnavailable`, `DurabilityUnknown`
 e `PreconditionFailed`; o payload também carrega uma `reasonCode` estável e os detalhes
-da pré-condição em estrutura própria, não apenas em texto livre. Para `GateBlocked` com
-journal legível, as subcausas previstas são `JournalNonTerminal`, `JournalIdentityDivergent`,
-`PreparedContinuationNotAuthorized`, `UnreconciledOutcome` e `PreconditionFailed`;
-`JournalUnavailable` e `DurabilityUnknown` continuam sendo códigos de alto nível quando a
-indisponibilidade ou a durabilidade desconhecida impedirem confirmar o journal.
+da pré-condição em estrutura própria, não apenas em texto livre. `GateBlocked` exige
+que o journal já esteja legível, válido e com durabilidade confirmada; portanto,
+`JournalUnavailable` e `DurabilityUnknown` prevalecem quando a indisponibilidade ou a
+durabilidade desconhecida impedirem confirmar o journal. `PreconditionFailed` é um
+diagnóstico de pré-condição da operação e não uma subcausa de `GateBlocked`.
 `GateBlocked` também não é um `logicalStage` persistido.
+
+O mapeamento de diagnóstico é fechado e segue esta precedência:
+
+| Código | Quando é usado | Exemplos de `reasonCode` | Efeito de persistência |
+|---|---|---|---|
+| `JournalUnavailable` | o diário está ausente, inválido, duplicado ou não pode ter identidade, schema ou hash validados antes de uma nova intenção | `JournalMissing`, `JournalInvalid`, `JournalDuplicate`, `JournalIdentityDivergent` | somente relatório; não cria `blockReason` novo |
+| `DurabilityUnknown` | o `Save()` ou a releitura do diário foi tentado, mas o snapshot novo não pôde ser confirmado | `JournalSaveUnconfirmed`, `JournalReloadDivergent` | preserva o último snapshot durável; não afirma o motivo novo |
+| `GateBlocked` | o diário é legível, válido e durável, mas o estado global impede a operação solicitada | `JournalNonTerminal`, `PreparedContinuationNotAuthorized`, `UnreconciledOutcome`, `RecoveryAuthorizationStale` | não cria nova operação nem altera o envelope |
+| `PreconditionFailed` | uma pré-condição específica da operação falha antes da primeira mutação, com o diário ainda utilizável | `IdentityAmbiguous`, `IdentityDivergent`, `InventoryInsufficient`, `AuthorizationMismatch` | somente relatório; não cria `blockReason` novo |
+
+`reasonCode` é estável e destinado a máquinas; `message` e `context` carregam a
+explicação humana e os dados estruturados (`operationId`, `journalFileId`, fase,
+`logicalStage`, `journalDurability` e, quando já existente, `blockReason`).
 
 O mapeamento normativo de `blockReason` persistido é fechado por cenário:
 
@@ -477,8 +490,10 @@ exige `fileId` e `expectedHash`; `Composite` exige a identidade histórica
 completa registrada no item; `Folder` exige posse própria e `emptyConfirmed=true`;
 `None` só é permitido para um item `Preserve`.
 
-Cada `receipt` tem `sequence` inteiro positivo único, `operation` (`Save` ou
-`Delete`), `stage` não vazio, `objectType`, `attempt` inteiro positivo,
+Cada `receipt` tem `sequence` inteiro positivo, único entre os receipts duravelmente
+persistidos do mesmo `OperationId` (uma reserva perdida antes do checkpoint confirmado
+pode ser reutilizada após crash), `operation` (`Save` ou `Delete`), `stage` não vazio,
+`objectType`, `attempt` inteiro positivo,
 `retryOfSequence` inteiro anulável, `attemptState` (`Started`, `Finished` ou
 `Interrupted`), `result` (`Confirmed`, `Failed` ou `OutcomeUnknown`),
 `confirmation`, `physicalState`, `retryEligible` booleano e
@@ -638,8 +653,11 @@ Decisão aprovada:
 Cada `PersistenceReceipt` conterá:
 
 - `sequence` e `attempt`; `sequence` é global, positivo, monotônico e append-only
-  dentro da operação identificada pelo mesmo `OperationId`, começando em `1` e nunca sendo
-  reutilizado; `attempt` começa
+  dentro da operação identificada pelo mesmo `OperationId`, começando em `1`. A
+  unicidade exigida é a dos valores já presentes em receipts duravelmente persistidos:
+  um número reservado em memória e perdido antes do checkpoint confirmado pode ser
+  reutilizado após crash; nenhum número presente em snapshot confirmado pode ser
+  reutilizado. `attempt` começa
   em `1` para a primeira tentativa física daquele alvo dentro da operação e só é
   incrementado quando o mesmo alvo é reencaminhado na mesma operação;
 - `retryOfSequence`, quando houver retry, aponta para o recibo imediatamente
@@ -665,9 +683,11 @@ Cada `PersistenceReceipt` conterá:
 Regras do recibo:
 
 - cada tentativa de `Delete` terá recibo próprio;
-- a continuação do mesmo envelope e do mesmo `OperationId` mantém o maior `attempt` já
-  persistido, usa o próximo valor e acrescenta os novos `sequence` ao mesmo `receipts`; uma
-  operação nova, depois de `Completed` ou `Removed`, começa `sequence` e `attempt` em `1`;
+- a continuação do mesmo envelope e do mesmo `OperationId` lê o maior `sequence` e o maior
+  `attempt` confirmados no último snapshot durável, usa os próximos valores e acrescenta
+  os novos receipts ao mesmo array; se houve crash antes desse checkpoint, uma reserva
+  perdida pode ser reutilizada. Uma operação nova, depois de `Completed` ou `Removed`,
+  começa `sequence` e `attempt` em `1`;
 - cada item de `inventory.receiptSequences` recebe os `sequence` correspondentes
   em ordem de registro, sem substituir nem remover referências anteriores;
 - retry não transforma recibo anterior em sucesso;
@@ -676,6 +696,12 @@ Regras do recibo:
   `retryableReason=StillPresentAfterDelete`;
 - `Save`, falha de preparação e `OutcomeUnknown` sempre produzem
   `retryEligible=false`;
+- um alvo que se tornou ausente antes do primeiro `Delete()` não é uma falha física de
+  `Delete`: a F3 registra um receipt `Finished` com `result=OutcomeUnknown`,
+  `confirmation=NotAttempted`, `retryEligible=false` e o próximo `sequence` durável;
+  não há chamada física nem retry implícito. Se não houver receipt anterior `Confirmed`,
+  o envelope usa `blockReason=TargetAbsentBeforeDelete` quando esse snapshot puder ser
+  confirmado;
 - `Absent` pode confirmar `Delete`, mas não `Save`;
 - `Divergent` ou `Unreadable` produz `OutcomeUnknown`.
 
@@ -1194,3 +1220,27 @@ estas clarificações:
 - a vinculação de `RecoveryAuthorization` a `journalFileId`, `updatedUtc` e hash é uma defesa
   de frescor/integridade contra alteração concorrente entre leitura e ação (TOCTOU), não um
   mecanismo de histórico.
+
+### 54. Clarificações após parecer solo do Codex GPT-5.6-luna — 2026-09-08
+
+O parecer externo foi tratado como insumo de revisão, não como autoridade para alterar o
+repositório. Após conferência cruzada dos planos e deste registro, ficam incorporadas somente
+estas clarificações:
+
+- F2 emite `NoteStageFailed(OperationId, stage, reasonCode, detail)` como sinal de falha;
+  F3 é responsável por persistir o encerramento `Partial` com `blockReason=StageFailed`
+  somente quando houver envelope `Active` confirmado. Sem `Active` confirmado, o sinal é
+  diagnóstico e não cria `blockReason=StageFailed`;
+- `GateDiagnostic` agora tem precedência e taxonomia fechadas: `JournalUnavailable` para
+  journal ausente ou não validável, `DurabilityUnknown` para snapshot novo não confirmado,
+  `GateBlocked` para estado global bloqueante com journal legível e durável, e
+  `PreconditionFailed` para pré-condição específica antes da primeira mutação. O último não
+  é subcausa de `GateBlocked`;
+- a unicidade de `sequence` é exigida entre receipts duravelmente persistidos no mesmo
+  `OperationId`; uma reserva perdida antes do checkpoint confirmado pode ser reutilizada após
+  crash. Alvo ausente antes de `Delete` recebe receipt `NotAttempted` com
+  `OutcomeUnknown` e sem retry, quando esse checkpoint puder ser confirmado;
+- `RecoveryAuthorization` usa o SHA-256 do JSON canônico V3 e exige revalidação imediata de
+  FileId, IDs, `updatedUtc`, hash e `NextStep` antes da primeira mutação. Sem CAS do SDK,
+  a garantia é otimista, com lock local quando possível e classificação explícita de qualquer
+  corrida residual como `OutcomeUnknown` ou `DurabilityUnknown`.
