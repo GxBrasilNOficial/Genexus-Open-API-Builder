@@ -405,7 +405,7 @@ nomes serializados.
 | `createdUtc`, `updatedUtc` | `date-time` UTC obrigatórios | ISO-8601 com deslocamento `Z` |
 | `envelopePhase` | enum obrigatório | `Prepared` ou `Active` |
 | `operationState` | enum obrigatório | `Pending`, `Running`, `Partial`, `OutcomeUnknown`, `Completed` ou `Removed` |
-| `logicalStage` | enum obrigatório | `GateBlocked`, `NotStarted`, `IntentionRecorded`, `TransactionPending`, `FolderPending`, `SdtsPending`, `ProceduresPending`, `ApiPending`, `ApiSaveOutcomeUnknown`, `ApiPhysicallySaved`, `MetadataPending`, `MetadataRecovered`, `RemovalInProgress`, `RemovalPartial`, `RecoveryInProgress`, `Abandoned`, `Completed` ou `Removed` |
+| `logicalStage` | enum obrigatório | `NotStarted`, `IntentionRecorded`, `TransactionPending`, `FolderPending`, `SdtsPending`, `ProceduresPending`, `ApiPending`, `ApiSaveOutcomeUnknown`, `ApiPhysicallySaved`, `MetadataPending`, `MetadataRecovered`, `RemovalInProgress`, `RemovalPartial`, `RecoveryInProgress`, `Abandoned`, `Completed` ou `Removed` |
 | `journalDurability` | enum obrigatório | `Confirmed` ou `Unknown` |
 | `intentKind` | enum obrigatório | `Current` ou `Imported` |
 | `metadataSchemaVersion` | enum anulável | `GOAB_API_METADATA_B060_V1`, `GOAB_API_METADATA_B060_V2` ou `GOAB_API_METADATA_B060_V3`; obrigatório quando houver metadata |
@@ -413,27 +413,47 @@ nomes serializados.
 | `inventory` | array obrigatório, possivelmente vazio | cada alvo e preservação aparecem uma vez |
 | `receipts` | array obrigatório, possivelmente vazio | sequência monotônica dentro da operação |
 | `abandonment` | objeto anulável | obrigatório somente quando `logicalStage=Abandoned` |
-| `blockReason` | enum anulável | obrigatória em bloqueio, `OutcomeUnknown` ou reconciliação pendente; valores V1: `JournalUnavailable`, `DurabilityUnknown`, `OutcomeUnknown`, `InventoryInsufficient`, `IdentityAmbiguous`, `IdentityDivergent`, `UnreconciledNotAttempted`, `TargetAbsentBeforeDelete`, `NonRetryableDeleteFailure` ou `RetryBudgetExhausted` |
+| `blockReason` | enum anulável | obrigatória em um checkpoint confirmado que registre bloqueio, `OutcomeUnknown` ou reconciliação pendente; valores V1 persistíveis: `OutcomeUnknown`, `InventoryInsufficient`, `IdentityAmbiguous`, `IdentityDivergent`, `UnreconciledNotAttempted`, `TargetAbsentBeforeDelete`, `StageFailed` ou `RetryBudgetExhausted` |
 
-O mapeamento normativo de `blockReason` é fechado por cenário:
+O contrato separa o motivo persistido no envelope do diagnóstico que impede uma
+gravação. `blockReason` só pode ser alterado junto de um snapshot de diário que
+tenha `journalDurability=Confirmed`. Quando o diário não existe, está inválido ou
+quando o `Save()`/a releitura não permitem confirmar o novo snapshot, não há campo
+JSON novo a emitir: o resultado usa `GateDiagnostic` somente no relatório. Esse
+diagnóstico tem os códigos `GateBlocked`, `JournalUnavailable`, `DurabilityUnknown`
+e `PreconditionFailed`; os detalhes da pré-condição permanecem na mensagem
+estruturada do gate. `GateBlocked` também não é um `logicalStage` persistido.
+
+O mapeamento normativo de `blockReason` persistido é fechado por cenário:
 
 | Valor | Cenário que o produz |
 |---|---|
-| `JournalUnavailable` | diário ausente, duplicado, inválido, em colisão externa ou sem validação possível por `FileId`/hash |
-| `DurabilityUnknown` | o `Save()` ou a releitura do próprio diário não permite provar qual snapshot está persistido (`journalDurability=Unknown`) |
 | `OutcomeUnknown` | persistência de negócio ou releitura física sem determinação segura, quando não houver motivo mais específico nesta tabela |
 | `InventoryInsufficient` | metadata importada ou legado sem inventário completo, inequívoco e validável para `Remove` |
 | `IdentityAmbiguous` | zero ou múltiplos candidatos quando a operação exige uma identidade única e a ausência não puder ser classificada como `TargetAbsentBeforeDelete` |
 | `IdentityDivergent` | identidade, posse, GUID, `FileId` ou hash observado diverge do plano ou do diário |
 | `UnreconciledNotAttempted` | item `NotAttempted` com estado físico desconhecido ou continuação sem reconciliação determinística |
 | `TargetAbsentBeforeDelete` | item ausente antes do primeiro `Delete()`, sem recibo durável anterior `Confirmed` para a mesma identidade |
-| `NonRetryableDeleteFailure` | `Delete()` terminou em `Failed` sem `retryEligible=true`, sem `OutcomeUnknown` e sem autorização para nova passada |
+| `StageFailed` | falha conhecida e não retryable registrada por `NoteStageFailed` depois de existir um envelope confirmado, antes de uma nova chamada física; não cria `PersistenceReceipt` |
 | `RetryBudgetExhausted` | o limite `maxPasses` foi atingido enquanto permanecem itens `StillPresentAfterDelete` pendentes |
 
-Quando houver mais de uma descrição possível, prevalece o motivo mais específico. A
-tentativa de iniciar nova operação enquanto o diário corrente está em estado não terminal
-é bloqueada pelo gate antes de criar um novo envelope; ela não persiste um
-`blockReason=OperationNotTerminal`, que não faz parte do enum V1.
+Quando houver mais de uma descrição possível, a decisão segue esta ordem: (1) falta
+de diário ou de durabilidade confirmável produz somente `GateDiagnostic`; (2) uma
+identidade única divergente produz `IdentityDivergent`, enquanto zero ou múltiplos
+candidatos produzem `IdentityAmbiguous`; (3) ausência antes do primeiro `Delete()`
+produz `TargetAbsentBeforeDelete`, e estado desconhecido ou continuação sem
+reconciliação produz `UnreconciledNotAttempted`; (4) somente então a incerteza
+física ou de persistência cai em `OutcomeUnknown`; (5) falha conhecida de etapa
+depois de um envelope confirmado usa `StageFailed`. A tentativa de iniciar nova
+operação enquanto o diário corrente está em estado não terminal é bloqueada pelo
+gate antes de criar um novo envelope e gera apenas `GateDiagnostic=GateBlocked`.
+
+A classificação do recibo/da releitura em §41 é anterior a esse mapeamento. Assim,
+`OutcomeUnknown` no recibo não impede uma razão mais específica no envelope quando
+a observação também prova identidade ambígua, ausência prévia ou divergência; sem
+essa prova adicional, permanece `blockReason=OutcomeUnknown`. `IdentityDivergent`
+é reservado para uma identidade única que não corresponde ao plano/diário, não para
+a simples impossibilidade de localizar um alvo.
 
 `journalFileId` não é um campo JSON: é a vinculação externa entre o envelope e o
 `WikiFileKBObject.Id`. O runtime deve guardá-lo após a criação e conferir o mesmo ID em
@@ -570,10 +590,10 @@ Decisão aprovada:
 | `Completed` | Apply, Sync ou Recovery concluído | não |
 | `Removed` | Remove concluído | não |
 
-`GateBlocked` não será um `operationState`; será apenas um `logicalStage` de
-diagnóstico. Falha de gate antes de qualquer mutação não criará uma nova
-operação recuperável nem um bloqueio operacional. Uma operação anterior, se
-existir, continuará governando a KB até atingir estado terminal.
+`GateBlocked` não será um `operationState` nem um `logicalStage` persistido; será
+apenas um `GateDiagnostic` do relatório. Falha de gate antes de qualquer mutação
+não criará uma nova operação recuperável nem um bloqueio operacional. Uma operação
+anterior, se existir, continuará governando a KB até atingir estado terminal.
 
 Para evitar que estados do envelope, estágios e resultados de recibo sejam
 misturados, vale também a seguinte separação canônica:
@@ -612,10 +632,13 @@ Decisão aprovada:
 
 Cada `PersistenceReceipt` conterá:
 
-- `sequence` e `attempt`; `attempt` começa em `1` para a primeira tentativa física
-  daquele alvo dentro da operação e só é incrementado quando o mesmo alvo é
-  reencaminhado na mesma operação;
-- `retryOfSequence`, quando houver retry;
+- `sequence` e `attempt`; `sequence` é global, positivo, monotônico e append-only
+  dentro do envelope, começando em `1` e nunca sendo reutilizado; `attempt` começa
+  em `1` para a primeira tentativa física daquele alvo dentro da operação e só é
+  incrementado quando o mesmo alvo é reencaminhado na mesma operação;
+- `retryOfSequence`, quando houver retry, aponta para o recibo imediatamente
+  anterior da mesma cadeia de tentativas; a cadeia não pode apontar para outro
+  envelope;
 - `operation`, com `Save` ou `Delete`;
 - `objectType`, com `ApiObject`, `Procedure`, `Sdt`, `MetadataFile`, `Folder` ou
   `Transaction`;
@@ -636,8 +659,11 @@ Cada `PersistenceReceipt` conterá:
 Regras do recibo:
 
 - cada tentativa de `Delete` terá recibo próprio;
-- a continuação do mesmo envelope mantém o maior `attempt` já persistido e usa o
-  próximo valor; uma operação nova, depois de `Completed` ou `Removed`, começa em `1`;
+- a continuação do mesmo envelope mantém o maior `attempt` já persistido, usa o
+  próximo valor e acrescenta os novos `sequence` ao mesmo `receipts`; uma operação
+  nova, depois de `Completed` ou `Removed`, começa `sequence` e `attempt` em `1`;
+- cada item de `inventory.receiptSequences` recebe os `sequence` correspondentes
+  em ordem de registro, sem substituir nem remover referências anteriores;
 - retry não transforma recibo anterior em sucesso;
 - `OutcomeUnknown` nunca autoriza retry posterior;
 - somente `Delete` pode produzir `retryEligible=true`, e isso exige
@@ -683,7 +709,6 @@ Decisão aprovada:
 Os valores de `logicalStage` serão:
 
 - `NotStarted`;
-- `GateBlocked`;
 - `IntentionRecorded`;
 - `TransactionPending`;
 - `FolderPending`;
@@ -700,6 +725,9 @@ Os valores de `logicalStage` serão:
 - `Abandoned`;
 - `Completed`;
 - `Removed`.
+
+`GateBlocked` fica fora deste enum: é o diagnóstico efêmero produzido quando o gate
+impede a primeira gravação.
 
 Regras de estágio:
 
@@ -1037,7 +1065,10 @@ commit ou push.
   explicitamente;
 - se uma operação `Active` for interrompida, o diagnóstico é somente leitura; só depois
   de confirmação humana pode ser continuada com `Running`/`Partial`, conforme os
-  recibos, ou marcada como terminal.
+  recibos. Se não houver continuação determinística e segura, ela permanece bloqueada:
+  a recuperação não pode abandoná-la, limpá-la, marcá-la como terminal ou criar novos
+  IDs silenciosamente. A correção externa e a disposição escolhida pelo humano devem
+  ser explicitamente registradas antes de qualquer nova operação.
 
 ### 46. Falha na finalização
 

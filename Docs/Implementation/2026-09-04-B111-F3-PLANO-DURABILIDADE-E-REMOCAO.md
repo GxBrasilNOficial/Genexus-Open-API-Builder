@@ -151,22 +151,27 @@ histórica. Não há uma segunda implementação a especificar nem uma decisão 
 
 ### 4.1 Estados
 
-Os eixos abaixo são sempre registrados separadamente e nunca colapsados num enum só:
+As quatro dimensões do JSON são sempre registradas separadamente e nunca colapsadas
+num enum só:
 
-- **estado físico do objeto**: ausente, confirmado, divergente, indeterminado — vem dos
-  recibos da F2 mais leitura da KB;
-- **estágio lógico da aplicação**: o ponto do pipeline em que a operação está.
+- **`operationState`**: resultado global da operação;
+- **`logicalStage`**: ponto do pipeline em que a operação está;
+- **`journalDurability`**: confirmação ou indeterminação da última atualização do diário;
+- **`intentKind`**: `Current` para intenção criada pela operação atual ou `Imported` para
+  intenção reconstruída de metadata órfã.
 
-- **durabilidade da intenção**: confirmada ou desconhecida, conforme o diário possa ser
-  relido e validado.
+O **estado físico do objeto** (`Absent`, `Confirmed`, `Divergent` ou `Unknown`) não é uma
+quinta dimensão do envelope: é observação por item, derivada dos recibos da F2 e da leitura
+da KB.
 
 Estados da operação: `Pending`, `Running`, `Partial`, `OutcomeUnknown`, `Completed` e
 `Removed`, exatamente como na decisão canônica 27. `Prepared` e `Active` são fases do
 envelope do diário; `RemovalPartial` e `ApiSaveOutcomeUnknown` são `logicalStage`;
-`Failed` é resultado de recibo ou falha de etapa. `JournalUnavailable` é um resultado de
-gate e diagnóstico, não um estado que autorize prosseguir.
+`Failed` é resultado de recibo ou falha de etapa. `JournalUnavailable` é um
+`GateDiagnostic`, não um estado que autorize prosseguir nem um `blockReason` persistido
+sem snapshot confirmado.
 
-Estágios mínimos: `NotStarted`, `GateBlocked`, `IntentionRecorded`, `TransactionPending`,
+Estágios mínimos: `NotStarted`, `IntentionRecorded`, `TransactionPending`,
 `FolderPending`, `SdtsPending`, `ProceduresPending`, `ApiPending`, `ApiSaveOutcomeUnknown`,
 `ApiPhysicallySaved`, `MetadataPending`, `MetadataRecovered`, `RemovalInProgress`,
 `RemovalPartial` e `RecoveryInProgress`.
@@ -194,10 +199,11 @@ como se nada tivesse ocorrido: exigem reconciliação ou continuação explícit
 
 Após `Completed` ou `Removed`, a próxima operação substitui o envelope corrente pelo novo
 `Prepared`; não há arquivo, campo ou coleção de histórico. Se o diário estiver ausente,
-corrompido, duplicado ou não puder ser confirmado, o resultado é `JournalUnavailable`:
-bloqueia Apply, Sync e Remove, permite apenas diagnóstico de leitura e só admite voltar a
-uma situação sem intenção ativa mediante confirmação humana de que nenhuma operação ativa
-ou parcial foi provada.
+corrompido, duplicado ou não puder ser confirmado, o resultado é
+`GateDiagnostic=JournalUnavailable`: bloqueia Apply, Sync e Remove, permite apenas
+diagnóstico de leitura e não cria um novo envelope. Só admite voltar a uma situação sem
+intenção ativa mediante confirmação humana de que nenhuma operação ativa ou parcial foi
+provada.
 
 ### 4.2 Gate estendido
 
@@ -207,9 +213,12 @@ O gate reduzido da F1 ganha as validações que dependem de intenção durável:
 2. disponibilidade e integridade do diário único da KB;
 3. identidade, versão e durabilidade confirmadas do diário, sem divergência física;
 4. ausência de intenção ativa, ou transição explicitamente autorizada de `Prepared`;
-5. ausência de `JournalUnavailable` e de `OutcomeUnknown` não reconciliado.
+5. ausência de `GateDiagnostic` irremediado e de `OutcomeUnknown` não reconciliado.
 
-Falhando qualquer uma, o resultado é bloqueio antes da primeira gravação.
+Falhando qualquer uma, o resultado é `GateDiagnostic=GateBlocked` antes da primeira
+gravação. O gate não cria `Prepared`, não grava `blockReason` e não inventa um
+`logicalStage`; se houver envelope confirmado anterior, o relatório referencia o snapshot
+existente sem alterá-lo.
 
 ### 4.3 Remoção com intenção confirmada
 
@@ -260,8 +269,9 @@ O ciclo de vida da fila é fechado assim:
   da tentativa e recebe um recibo, inclusive quando não chega a chamar `Delete()`;
 - `NotAttempted`/`Absent` antes do primeiro Delete não é sucesso implícito. Sem recibo
   durável anterior `Confirmed` para a mesma identidade, encerra a operação em `Partial`
-  com `blockReason=TargetAbsentBeforeDelete`. Uma falha `Failed` não retryable também
-  encerra em `Partial`, com `blockReason=NonRetryableDeleteFailure`, o item preservado e
+  com `blockReason=TargetAbsentBeforeDelete`. Uma falha de etapa não retryable,
+  registrada por `NoteStageFailed`, também encerra em `Partial`, com
+  `blockReason=StageFailed`, o item preservado e
   sem nova passada;
 - no início da operação, `maxPasses = max(1, número de itens Delete do inventário)`.
   Uma passada só pode reencaminhar `StillPresentAfterDelete`. Se o limite for atingido
@@ -293,16 +303,18 @@ terminal. A implementação não pode escolher o mínimo de duas gravações ape
 economizar I/O se isso deixar uma fronteira sem estado durável.
 
 Antes da implementação, a matriz abaixo fecha a política por operação, sem aproximações
-como “~4”. Cada checkpoint corresponde a exatamente um `File.Save()` do diário, seguido de
-releitura e validação; não há outro `File.Save()` implícito entre os pontos. O `Save()` do
-diário não entra na contagem de persistências de negócio da F2.
+como “~4”. Cada checkpoint físico corresponde a exatamente um `File.Save()` do diário,
+seguido de releitura e validação; não há outro `File.Save()` implícito entre os pontos. A
+reidratação inicial da continuação é somente leitura e não conta como checkpoint físico.
+O `Save()` do diário não entra na contagem de persistências de negócio da F2.
 
 | Operação | Checkpoint 1 | Checkpoint 2 | Checkpoint 3 | Checkpoint 4 | Contagem física |
 |---|---|---|---|---|---|
 | Apply | `Prepared` + `Pending/IntentionRecorded` | `Active` + `Running/NotStarted` | recibos até API confirmado + `Running/ApiPhysicallySaved` | `Completed`, `Partial` ou `OutcomeUnknown` + estágio final | exatamente 4 |
 | Sync | `Prepared` + `Pending/IntentionRecorded` | `Active` + `Running/NotStarted` | recibos até API confirmado + `Running/ApiPhysicallySaved` | `Completed`, `Partial` ou `OutcomeUnknown` + estágio final | exatamente 4 |
 | Remove | `Prepared` + `Pending/IntentionRecorded` | `Active` + `Running/RemovalInProgress` | inventário atualizado ao fim de cada passada | `Removed`, `Partial` ou `OutcomeUnknown` + estágio final | `3 + P`, sendo `P` o número de passadas executadas |
-| Recovery | intenção de continuação + `Pending` | `Active` + `Running` | próxima etapa segura confirmada | estado terminal ou bloqueio explícito confirmado | exatamente 4, além de checkpoints extras de passadas de `Remove` pela regra acima |
+| Recovery autônomo de B115, sem envelope de negócio | `Prepared` + `Pending/IntentionRecorded` | `Active` + `Running/MetadataPending` | recibo de metadata confirmado + `Running/MetadataRecovered` | `Completed` ou `OutcomeUnknown` + estágio final | exatamente 4 |
+| Recovery de continuação de envelope existente | reidratação somente leitura do snapshot, sem novo `Prepared`/`Active` | `RecoveryInProgress` somente se houver checkpoint confirmado de reidratação | próxima etapa segura da operação original | estado terminal ou bloqueio explícito confirmado | checkpoints físicos restantes da operação original, além de passadas de `Remove` |
 
 Cada célula inclui o snapshot do plano/inventário, a transição de `operationState` e
 `logicalStage`, e o resultado de durabilidade. Se qualquer `Save()` ou releitura produzir
@@ -324,7 +336,15 @@ as transições são estas:
 O rótulo do comando (`Recovery`) não é gravado como substituto de uma operação de
 negócio. Ele apenas seleciona a reidratação e a confirmação humana da continuação.
 
-A linha `Recovery` descreve o comando que reidrata um envelope existente; ela não autoriza
+As duas linhas de `Recovery` não significam quatro gravações novas em qualquer recuperação.
+Somente o B115 autônomo tem quatro checkpoints fixos. A continuação de envelope existente
+não cria novas fases `Prepared`/`Active`, preserva `operationKind`, `operationId`,
+`applicationId` e `plan`, e conta apenas os checkpoints ainda necessários na operação
+original. `RecoveryInProgress` só é persistido quando esse novo checkpoint puder ser
+confirmado; se a durabilidade for desconhecida, permanece diagnóstico efêmero e não há
+novo `Save()`.
+
+A linha de continuação descreve o comando que reidrata um envelope existente; ela não autoriza
 criar uma segunda operação nem trocar silenciosamente `operationKind`. Ao continuar
 `Apply` ou `Sync`, aplicam-se as fronteiras e o estado terminal dessas operações. Ao
 continuar `Remove`, aplicam-se as passadas da linha `Remove` e o terminal possível é
@@ -471,13 +491,14 @@ Os contratos ficam nomeados e fechados assim:
 
 - `ApiPlanRecoveryReader.ReadAndValidate(WikiFileKBObject journalFile, Guid knowledgeBaseGuid)`
   recebe o File único e a identidade da KB e devolve `ValidatedJournal` ou
-  `JournalUnavailable`; valida schema, FileId externo, bytes, hash, identidade,
-  durabilidade e a compatibilidade do envelope;
+  `GateDiagnostic=JournalUnavailable`; valida schema, FileId externo, bytes, hash,
+  identidade, durabilidade e a compatibilidade do envelope;
 - `ApiPlanRecoveryRehydrator.Rehydrate(ValidatedJournal journal,
   IReadOnlyList<RecoveryTargetObservation> observations)` devolve
   `ApiPlanRehydratedOperation`, contendo `operationKind`, `operationId`,
   `applicationId`, inventário classificado, recibos já relacionados e a única
-  `NextStep` autorizada ou um `BlockReason` do enum fechado da decisão 24;
+  `NextStep` autorizada, um `blockReason` persistível do enum fechado da decisão 24
+  ou um `GateDiagnostic` quando não houver snapshot confirmável;
 - `ApiPlanRecoveryExecutor.Continue(ApiPlanRehydratedOperation operation,
   RecoveryAuthorization authorization)` devolve `ApiPlanRecoveryResult`, com recibos
   novos, checkpoint durável, estado terminal ou bloqueio. `authorization` é obrigatória
@@ -490,16 +511,21 @@ identidade composta validada, nome apenas para diagnóstico, hash esperado quand
 aplicável, `physicalState` e `confirmation`. `NextStep` é fechado em
 `ContinueTransaction`, `ContinueFolder`, `ContinueSdts`, `ContinueProcedures`,
 `ContinueApi`, `ContinueMetadata`, `ContinueRemovePass`, `Complete`, `Abandon` ou
-`Block`. `RecoveryAuthorization` exige `humanConfirmed=true`, os IDs do envelope e a
-confirmação de que a etapa indicada pode produzir a próxima gravação.
+`Block`. `RecoveryAuthorization` exige `humanConfirmed=true`, os IDs do envelope, o
+`journalFileId`, `updatedUtc` e o hash do snapshot validado, além da confirmação de que
+a etapa indicada é exatamente a `NextStep` autorizada e pode produzir a próxima gravação.
+O executor rejeita a autorização se qualquer parte dessa vinculação divergir do diário
+revalidado, evitando continuar sobre um snapshot substituído entre a leitura e a ação.
 
 As transições permitidas são fechadas: `Prepared/Pending` pode continuar com os mesmos
 IDs ou ser abandonado; `Active/Running` pode continuar somente a próxima etapa ainda não
 confirmada; `Partial` de Remove pode continuar apenas itens `Failed` retryable; qualquer
 `OutcomeUnknown`, `NotAttempted` sem reconciliação, identidade divergente, leitura
-ilegível ou `journalDurability=Unknown` bloqueia sem novo `Save`/`Delete`; `Completed` e
-`Removed` são terminais e exigem uma nova operação. Apply/Sync nunca repetem um API com
-estado confirmado ou indeterminado.
+ilegível ou `journalDurability=Unknown` bloqueia sem novo `Save`/`Delete`; se a
+reconciliação não for determinística, o envelope permanece bloqueado e a recuperação não
+abandona, limpa, terminaliza nem cria novos IDs. `Completed` e `Removed` são terminais e
+exigem uma nova operação. Apply/Sync nunca repetem um API com estado confirmado ou
+indeterminado.
 
 ### 5.5 Mudanças previstas por arquivo
 

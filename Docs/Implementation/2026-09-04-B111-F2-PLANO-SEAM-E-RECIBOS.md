@@ -116,7 +116,7 @@ acoplado ao SDK continua dependente da validação na IDE.
 | Fora da F2 | Vai para |
 |---|---|
 | diário B111 durável | F3 |
-| três dimensões de estado, `JournalDurabilityUnknown` | F3 |
+| quatro dimensões de estado, incluindo `journalDurability=Unknown` | F3 |
 | recuperação explícita, reconciliação e inventário físico | F3 |
 | remoção de API legado | F3 |
 | implementação do Modo A selecionado e ciclo de vida do diário | F3 |
@@ -224,14 +224,15 @@ confunda falha de preparação com ausência de tentativa.
 
 Cada `PersistenceReceipt` carrega:
 
-- ordem monotônica global dentro da operação;
+- `sequence` monotônica global dentro da operação, positiva, única e append-only;
 - operação (`Save` ou `Delete`), etapa e tipo de objeto;
 - `PersistenceIdentity` planejada, além do nome para exibição;
 - identidade persistida observada, ou ausência confirmada no caso de `Delete`;
 - início, fim e duração;
 - `attempt`, começando em `1` para a primeira tentativa física de um alvo na operação e
-  incrementado somente quando esse mesmo alvo é reencaminhado, e, quando aplicável,
-  `retryOfSequence`;
+  incrementado somente quando esse mesmo alvo é reencaminhado; quando aplicável,
+  `retryOfSequence` aponta para o recibo imediatamente anterior da mesma cadeia, no
+  mesmo envelope;
 - estado da tentativa (`Started`, `Finished` ou `Interrupted`), separado do resultado;
 - resultado: `Confirmed`, `Failed` ou `OutcomeUnknown`;
 - `confirmation`, com enum fechado `NotAttempted`, `Confirmed`, `Absent`, `Divergent` ou
@@ -246,8 +247,10 @@ Cada `PersistenceReceipt` carrega:
 
 O recibo é registro, não decisão. Nada no código deve mudar de caminho por causa de um
 recibo dentro da F2. Cada retry recebe seu próprio recibo; a continuação do mesmo envelope
-mantém o maior `attempt` já persistido e usa o próximo valor. Uma operação nova, depois de
-`Completed` ou `Removed`, começa em `1`.
+mantém o maior `attempt` já persistido, usa o próximo valor e acrescenta novos `sequence`
+ao mesmo log. Uma operação nova, depois de `Completed` ou `Removed`, começa `sequence` e
+`attempt` em `1`; referências anteriores de `inventory.receiptSequences` nunca são
+substituídas.
 
 ### 4.3 As três classes de falha
 
@@ -288,8 +291,11 @@ explícito, senão os testes da seção 6.3 não têm o que exercitar.
    divergente ou ambígua → `OutcomeUnknown`, com a divergência registrada. Para `Save`,
    confirmação ausente, divergente ou ilegível permanece `OutcomeUnknown`.
 
-Um recibo que permaneça em `Started` ao fim da operação é, por si, um sinal: significa que o
-processo morreu dentro daquela gravação.
+`Started` é o estado inicial do recibo no log da tentativa, não um resultado. Se esse log
+for durável e sobreviver ao processo, um `Started` sem recibo final é evidência de morte
+dentro da gravação. Se o processo morrer antes de o log da F2 ficar durável, a recuperação
+observará apenas a ausência do recibo final no último checkpoint do diário; não poderá
+afirmar que o `Started` foi persistido nem inferir sucesso a partir dele.
 
 **A classe C não é observável pelo seam** — se a falha ocorre antes de chamar `Persist`, o
 seam não é invocado e não há recibo. Ela é registrada pelo **orquestrador**, com um evento

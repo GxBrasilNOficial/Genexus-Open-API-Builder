@@ -122,8 +122,8 @@ alternativa. Essa é a maior simplificação em relação ao manuscrito expandid
 |---|---|
 | seam de persistência injetável, `PersistenceReceipt` | F2 |
 | classes de falha C, D e E distinguíveis | F2 |
-| diário B111 durável, `LegacyImported` | F3 |
-| três dimensões de estado, `JournalDurabilityUnknown` | F3 |
+| diário B111 durável, intenção importada (`intentKind=Imported`) | F3 |
+| quatro dimensões de estado, incluindo `journalDurability=Unknown` | F3 |
 | recuperação explícita, reconciliação e inventário físico | F3 |
 | remoção de API legado com diário importado | F3 |
 | implementação do Modo A selecionado e ciclo de vida do diário | F3 |
