@@ -168,8 +168,8 @@ gate e diagnóstico, não um estado que autorize prosseguir.
 
 Estágios mínimos: `NotStarted`, `GateBlocked`, `IntentionRecorded`, `TransactionPending`,
 `FolderPending`, `SdtsPending`, `ProceduresPending`, `ApiPending`, `ApiSaveOutcomeUnknown`,
-`ApiPhysicallySaved`, `MetadataPending`, `MetadataRecovered`, `RemovalInProgress` e
-`RemovalPartial`.
+`ApiPhysicallySaved`, `MetadataPending`, `MetadataRecovered`, `RemovalInProgress`,
+`RemovalPartial` e `RecoveryInProgress`.
 
 `Partial` pertence somente a `operationState`; durante remoção ele deve ser acompanhado de
 `logicalStage=RemovalPartial`. Nunca usar `Partial` como `logicalStage`.
@@ -315,11 +315,11 @@ implementação não poderá reduzir a quantidade para economizar I/O nem mistur
 Para tornar explícita a fronteira entre o comando de recuperação e a operação persistida,
 as transições são estas:
 
-| Situação | `operationKind` persistido | Identidade e intenção | Estados terminais possíveis |
-|---|---|---|---|
-| B115 autônomo, sem envelope de negócio a continuar | `Recovery` | novos `operationId`/`applicationId`, `intentKind=Imported` | `Completed` ou `OutcomeUnknown` |
-| Recuperação explícita de `Apply` ou `Sync` | `Apply` ou `Sync` original | mesmos IDs, `applicationId` e `plan` do envelope | terminal previsto pela operação original, inclusive `Completed`, `Partial` ou `OutcomeUnknown` |
-| Recuperação explícita de `Remove` | `Remove` original | mesmos IDs, `applicationId` e inventário do envelope | `Removed`, `Partial` ou `OutcomeUnknown` |
+| Situação | `operationKind` persistido | Identidade e intenção | `logicalStage` da recuperação | Estados terminais possíveis |
+|---|---|---|---|---|
+| B115 autônomo, sem envelope de negócio a continuar | `Recovery` | novos `operationId`/`applicationId`, `intentKind=Imported` | `IntentionRecorded` → `MetadataPending` → `MetadataRecovered` → `Completed` | `Completed` ou `OutcomeUnknown` |
+| Recuperação explícita de `Apply` ou `Sync` | `Apply` ou `Sync` original | mesmos IDs, `applicationId` e `plan` do envelope | `RecoveryInProgress` durante a reidratação; depois, o próximo estágio original ainda não confirmado | terminal previsto pela operação original, inclusive `Completed`, `Partial` ou `OutcomeUnknown` |
+| Recuperação explícita de `Remove` | `Remove` original | mesmos IDs, `applicationId` e inventário do envelope | `RecoveryInProgress` → `RemovalInProgress` ou `RemovalPartial` conforme a passada | `Removed`, `Partial` ou `OutcomeUnknown` |
 
 O rótulo do comando (`Recovery`) não é gravado como substituto de uma operação de
 negócio. Ele apenas seleciona a reidratação e a confirmação humana da continuação.

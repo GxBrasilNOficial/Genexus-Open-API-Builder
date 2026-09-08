@@ -413,7 +413,27 @@ nomes serializados.
 | `inventory` | array obrigatório, possivelmente vazio | cada alvo e preservação aparecem uma vez |
 | `receipts` | array obrigatório, possivelmente vazio | sequência monotônica dentro da operação |
 | `abandonment` | objeto anulável | obrigatório somente quando `logicalStage=Abandoned` |
-| `blockReason` | enum anulável | obrigatória em bloqueio, `OutcomeUnknown` ou reconciliação pendente; valores V1: `JournalUnavailable`, `OperationNotTerminal`, `DurabilityUnknown`, `OutcomeUnknown`, `InventoryInsufficient`, `IdentityAmbiguous`, `IdentityDivergent`, `UnreconciledNotAttempted`, `TargetAbsentBeforeDelete`, `NonRetryableDeleteFailure` ou `RetryBudgetExhausted` |
+| `blockReason` | enum anulável | obrigatória em bloqueio, `OutcomeUnknown` ou reconciliação pendente; valores V1: `JournalUnavailable`, `DurabilityUnknown`, `OutcomeUnknown`, `InventoryInsufficient`, `IdentityAmbiguous`, `IdentityDivergent`, `UnreconciledNotAttempted`, `TargetAbsentBeforeDelete`, `NonRetryableDeleteFailure` ou `RetryBudgetExhausted` |
+
+O mapeamento normativo de `blockReason` é fechado por cenário:
+
+| Valor | Cenário que o produz |
+|---|---|
+| `JournalUnavailable` | diário ausente, duplicado, inválido, em colisão externa ou sem validação possível por `FileId`/hash |
+| `DurabilityUnknown` | o `Save()` ou a releitura do próprio diário não permite provar qual snapshot está persistido (`journalDurability=Unknown`) |
+| `OutcomeUnknown` | persistência de negócio ou releitura física sem determinação segura, quando não houver motivo mais específico nesta tabela |
+| `InventoryInsufficient` | metadata importada ou legado sem inventário completo, inequívoco e validável para `Remove` |
+| `IdentityAmbiguous` | zero ou múltiplos candidatos quando a operação exige uma identidade única e a ausência não puder ser classificada como `TargetAbsentBeforeDelete` |
+| `IdentityDivergent` | identidade, posse, GUID, `FileId` ou hash observado diverge do plano ou do diário |
+| `UnreconciledNotAttempted` | item `NotAttempted` com estado físico desconhecido ou continuação sem reconciliação determinística |
+| `TargetAbsentBeforeDelete` | item ausente antes do primeiro `Delete()`, sem recibo durável anterior `Confirmed` para a mesma identidade |
+| `NonRetryableDeleteFailure` | `Delete()` terminou em `Failed` sem `retryEligible=true`, sem `OutcomeUnknown` e sem autorização para nova passada |
+| `RetryBudgetExhausted` | o limite `maxPasses` foi atingido enquanto permanecem itens `StillPresentAfterDelete` pendentes |
+
+Quando houver mais de uma descrição possível, prevalece o motivo mais específico. A
+tentativa de iniciar nova operação enquanto o diário corrente está em estado não terminal
+é bloqueada pelo gate antes de criar um novo envelope; ela não persiste um
+`blockReason=OperationNotTerminal`, que não faz parte do enum V1.
 
 `journalFileId` não é um campo JSON: é a vinculação externa entre o envelope e o
 `WikiFileKBObject.Id`. O runtime deve guardá-lo após a criação e conferir o mesmo ID em
@@ -687,6 +707,10 @@ Regras de estágio:
   checkpoint de diário correspondente confirmado;
 - `ApiSaveOutcomeUnknown` exigirá reconciliação por identidade;
 - `RemovalPartial` preservará alvos e recibos já processados;
+- `RecoveryInProgress` será usado somente enquanto uma recuperação explícita reidrata,
+  aguarda autorização humana ou confirma a transição para a próxima etapa de um envelope
+  existente; depois do checkpoint seguro, o diário volta ao estágio original da operação
+  (`RemovalInProgress`, `RemovalPartial` ou o próximo estágio de `Apply`/`Sync`);
 - a recuperação usará o estágio para continuar somente a próxima etapa segura;
 - `Completed` e `Removed` deverão coincidir com os estados globais homônimos;
 - o estágio nunca autorizará sozinho uma ação sem suporte do inventário e dos
