@@ -200,8 +200,9 @@ $diagnosisContract = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObje
     $apiGuid)
 Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership+DiagnosticReason]::ServiceContractMismatch) $diagnosisContract.Reason 'Diagnóstico deve identificar contrato gerenciado divergente.'
 
-# Escrita intencional (Wizard/Sync): B070 e B060 rodam antes da primeira metadata,
-# então sem File a posse precisa cair no fallback da Description.
+# Escrita intencional (Wizard/Sync): sem File a primeira metadata usa o
+# fallback da Description; com File, o B060 posterior a uma troca de contrato
+# confirma identidade/posse pela metadata sem exigir o baseline antigo.
 $firstGeneration = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership]::ResolveIntentionalWriteOwnership($false, $false)
 Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwnership+IntentionalWriteOwnership]::DescriptionFallback) $firstGeneration 'Sem File de metadata, a escrita intencional usa o fallback da Description.'
 
@@ -214,7 +215,7 @@ Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwner
 $writerPaths = @(
     @{ Path = '..\..\Src\Extension\Diagnostics\ApiPlanListProcedureWriter.cs'; Message = 'B070 deve usar a posse de escrita intencional.' },
     @{ Path = '..\..\Src\Extension\Diagnostics\ApiPlanBusinessComponentWriter.cs'; Message = 'B055 deve usar a posse de escrita intencional.' },
-    @{ Path = '..\..\Src\Extension\Diagnostics\ApiPlanMetadataFileWriter.cs'; Token = 'ApiPlanApiObjectWriter.PreflightExistingApiObjectStrict'; Message = 'B060 deve usar o preflight estrito de posse e identidade.' },
+    @{ Path = '..\..\Src\Extension\Diagnostics\ApiPlanMetadataFileWriter.cs'; Token = 'ApiPlanApiObjectWriter.PreflightExistingApiObjectForMetadataRefresh'; Message = 'B060 posterior ao Save deve usar o preflight de refresh de metadata.' },
     @{ Path = '..\..\Src\Extension\Diagnostics\ApiPlanApiObjectWriter.cs'; Message = 'B054 deve usar a posse de escrita intencional.' }
 )
 foreach ($writer in $writerPaths) {
@@ -222,5 +223,12 @@ foreach ($writer in $writerPaths) {
     $expectedToken = if ($writer.ContainsKey('Token')) { $writer.Token } else { 'IsOwnedApiObjectForIntentionalWrite' }
     Assert-True ($writerText.Contains($expectedToken)) $writer.Message
 }
+
+$metadataWriterText = [IO.File]::ReadAllText((Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanMetadataFileWriter.cs'))
+Assert-True (-not ($metadataWriterText -match '(?s)PreflightExistingApiObjectStrict\(\s*designModel,\s*apiPlan,\s*allowIntentionalContractRefresh,\s*kbIndex\)')) 'B060 nao deve revalidar o baseline antigo depois do Save intencional.'
+
+$apiObjectWriterText = [IO.File]::ReadAllText((Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanApiObjectWriter.cs'))
+Assert-True ($apiObjectWriterText.Contains('PreflightExistingApiObjectForMetadataRefresh')) 'O writer de API deve expor preflight especifico para metadata posterior ao refresh.'
+Assert-True ($apiObjectWriterText.Contains('IsOwnedApiObjectForIntentionalWrite(designModel, kbIndex, apiPlan, apiObject)')) 'O preflight posterior deve confirmar posse sem comparar o baseline antigo.'
 
 Write-Output 'PASS: ApiPlanApiObjectOwnership'

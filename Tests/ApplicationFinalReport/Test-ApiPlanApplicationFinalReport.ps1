@@ -287,6 +287,8 @@ Assert-True ($existingApiReaderSource -match 'metadata\.Document\?\.SelectToken\
 Assert-True ($existingApiReaderSource -match 'public Guid\? ApiGuid') 'O contrato existente deve transportar a identidade do API Object para o ApiPlan.'
 Assert-True ($sdtWriterSource -match 'StrictReencounter') 'F1 deve possuir reencontro estrito de SDTs.'
 Assert-True ($sdtWriterSource -match 'PreflightStrict') 'F1 deve validar SDTs estritamente antes das gravações consumidoras.'
+Assert-True ($sdtWriterSource -match 'PreflightExistingStructures') 'F1 deve validar a estrutura dos SDTs existentes antes da geração normal.'
+Assert-True ($preflightSource -match 'generateSdts && requiresConsumersOrApi') 'F1 deve validar SDTs existentes antes de permitir a geração normal com consumidores.'
 Assert-True ($packageSource -match 'ApiPlanWritePreflight\.ValidateForF1') 'F1 deve executar o gate reduzido antes das fases de escrita.'
 Assert-True ($packageSource -match 'ApiPlanTransientApiSelection') 'F1 deve transportar as flags da seleção no contexto transitório.'
 Assert-True ($transientContextSource -match 'TransactionGuid') 'F1 deve transportar a identidade da Transaction.'

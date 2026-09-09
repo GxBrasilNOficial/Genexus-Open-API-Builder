@@ -21,7 +21,8 @@ Assert-Contains $source '_createRequiredList' 'Aba Obrigatorios Create deve ser 
 Assert-Contains $source 'Chave primária não autonumerada inicia opcional' 'Motivo de PK opcional no Create deve existir.'
 Assert-Contains $source 'RoleLabel("CreateRequest")' 'Rotulo CreateRequest da aba Obrigatorios deve usar RoleLabel.'
 Assert-Contains $source 'Obrigatório no payload (editável)' 'Rotulo da aba deve indicar Create required editavel.'
-Assert-Contains $source 'Height = 912;' 'Wizard principal deve iniciar com altura de 912 pixels.'
+Assert-Contains $source 'Width = 1500;' 'Wizard principal deve iniciar com largura de 1500 pixels.'
+Assert-Contains $source 'Height = 1004;' 'Wizard principal deve iniciar com altura de 1004 pixels.'
 
 # Garante que o default de PK e false (return false apos IsPrimaryKey no DefaultCreateRequired).
 if ($source -notmatch '(?s)private bool DefaultCreateRequired\(string fieldName\).*?if \(attribute\.IsPrimaryKey\)\s*\{\s*return false;') {

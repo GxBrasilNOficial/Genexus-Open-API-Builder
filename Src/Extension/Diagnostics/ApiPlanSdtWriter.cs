@@ -171,21 +171,30 @@ internal static class ApiPlanSdtWriter
             throw new InvalidOperationException($"Reencontro estrito bloqueado: Folder compartilhado '{SharedFolderName}' ausente ou externo. Nenhuma alteracao foi feita.");
         }
 
-        foreach (var definition in generationPlan.SharedSdts.Concat(generationPlan.OwnSdts))
-        {
-            if (!preflight.ExistingSdtsByName.TryGetValue(definition.Name, out var sdt))
-            {
-                throw new InvalidOperationException($"Reencontro estrito bloqueado: SDT requerido '{definition.Name}' nao foi reencontrado. Nenhuma alteracao foi feita.");
-            }
-
-            if (!TryMatchPlannedSdtStructure(sdt, definition, kbIndex, out var mismatch) &&
-                !(preserveSdtNames?.Contains(definition.Name, StringComparer.OrdinalIgnoreCase) ?? false))
-            {
-                throw new InvalidOperationException($"Reencontro estrito bloqueado: SDT '{definition.Name}' diverge do contrato planejado ({mismatch}). Nenhuma alteracao foi feita.");
-            }
-        }
+        ValidateExistingSdtStructures(generationPlan, preflight, kbIndex, preserveSdtNames, requireAll: true);
 
         ApiPlanTransactionFolder.GetOrReencounterStrict(designModel, transaction, apiPlan);
+    }
+
+    /// <summary>
+    /// Valida a estrutura dos SDTs que já existem sem exigir que a primeira
+    /// geração já tenha todos os SDTs persistidos. Isso permite criar os
+    /// ausentes, mas impede que a etapa normal reescreva um SDT divergente
+    /// antes do preflight estrito do consumidor.
+    /// </summary>
+    internal static void PreflightExistingStructures(
+        KBModel designModel,
+        ApiPlan apiPlan,
+        ApiPlanKbObjectNameIndex kbIndex,
+        IReadOnlyCollection<string>? preserveSdtNames = null)
+    {
+        if (designModel is null) throw new ArgumentNullException(nameof(designModel));
+        if (apiPlan is null) throw new ArgumentNullException(nameof(apiPlan));
+        if (kbIndex is null) throw new ArgumentNullException(nameof(kbIndex));
+
+        var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
+        var preflight = CreatePreflightResult(designModel, generationPlan, kbIndex);
+        ValidateExistingSdtStructures(generationPlan, preflight, kbIndex, preserveSdtNames, requireAll: false);
     }
 
     private static ApiPlanSdtWriteResult StrictReencounter(
@@ -282,6 +291,33 @@ internal static class ApiPlanSdtWriter
         }
 
         return new ApiPlanSdtPreflightResult(folders.Count == 1 ? folders[0] : null, existingByName);
+    }
+
+    private static void ValidateExistingSdtStructures(
+        ApiPlanSdtGenerationPlan generationPlan,
+        ApiPlanSdtPreflightResult preflight,
+        ApiPlanKbObjectNameIndex kbIndex,
+        IReadOnlyCollection<string>? preserveSdtNames,
+        bool requireAll)
+    {
+        foreach (var definition in generationPlan.SharedSdts.Concat(generationPlan.OwnSdts))
+        {
+            if (!preflight.ExistingSdtsByName.TryGetValue(definition.Name, out var sdt))
+            {
+                if (requireAll)
+                {
+                    throw new InvalidOperationException($"Reencontro estrito bloqueado: SDT requerido '{definition.Name}' nao foi reencontrado. Nenhuma alteracao foi feita.");
+                }
+
+                continue;
+            }
+
+            if (!TryMatchPlannedSdtStructure(sdt, definition, kbIndex, out var mismatch) &&
+                !(preserveSdtNames?.Contains(definition.Name, StringComparer.OrdinalIgnoreCase) ?? false))
+            {
+                throw new InvalidOperationException($"Reencontro estrito bloqueado: SDT '{definition.Name}' diverge do contrato planejado ({mismatch}). Nenhuma alteracao foi feita.");
+            }
+        }
     }
 
     private static void ValidateSdtDefinitionTypes(

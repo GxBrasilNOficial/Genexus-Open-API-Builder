@@ -153,6 +153,33 @@ internal static class ApiPlanApiObjectWriter
         PreflightRequiredProcedures(designModel, apiPlan);
     }
 
+    /// <summary>
+    /// B060 posterior ao Save intencional do API Object: confirma identidade e
+    /// posse, mas nao exige que o Source atual ainda corresponda ao baseline
+    /// anterior. O baseline ja foi validado por PreflightExistingApiObjectStrict
+    /// antes do primeiro Save; aqui o contrato novo sera materializado na
+    /// metadata desta mesma operacao.
+    /// </summary>
+    internal static API PreflightExistingApiObjectForMetadataRefresh(
+        KBModel designModel,
+        ApiPlan apiPlan,
+        ApiPlanKbObjectNameIndex kbIndex)
+    {
+        if (designModel is null) throw new ArgumentNullException(nameof(designModel));
+        if (apiPlan is null) throw new ArgumentNullException(nameof(apiPlan));
+        if (kbIndex is null) throw new ArgumentNullException(nameof(kbIndex));
+
+        var apiObject = RequirePlannedApiObject(designModel, apiPlan);
+        if (!IsOwnedApiObjectForIntentionalWrite(designModel, kbIndex, apiPlan, apiObject))
+        {
+            throw new InvalidOperationException(
+                $"API Object com GUID planejado '{apiObject.Guid}' e nome '{apiPlan.ApiName}' " +
+                "e externo ou incompativel. Nenhuma alteracao foi feita.");
+        }
+
+        return apiObject;
+    }
+
     internal static API PreflightExistingApiObjectStrict(
         KBModel designModel,
         ApiPlan apiPlan,
@@ -163,6 +190,22 @@ internal static class ApiPlanApiObjectWriter
         if (apiPlan is null) throw new ArgumentNullException(nameof(apiPlan));
         if (kbIndex is null) throw new ArgumentNullException(nameof(kbIndex));
 
+        var apiObject = RequirePlannedApiObject(designModel, apiPlan);
+        var owned = allowIntentionalContractRefresh
+            ? IsOwnedApiObjectForIntentionalChange(designModel, kbIndex, apiPlan, apiObject)
+            : IsOwnedApiObject(designModel, kbIndex, apiPlan, apiObject);
+        if (!owned)
+        {
+            throw new InvalidOperationException(
+                $"API Object com GUID planejado '{apiObject.Guid}' e nome '{apiPlan.ApiName}' " +
+                "e externo ou incompativel. Nenhuma alteracao foi feita.");
+        }
+
+        return apiObject;
+    }
+
+    private static API RequirePlannedApiObject(KBModel designModel, ApiPlan apiPlan)
+    {
         if (!apiPlan.PlannedApiGuid.HasValue || apiPlan.PlannedApiGuid.Value == Guid.Empty)
         {
             throw new InvalidOperationException(
@@ -194,17 +237,6 @@ internal static class ApiPlanApiObjectWriter
             throw new InvalidOperationException(
                 $"API Object bloqueado: {resolution.Diagnostic} Nenhuma alteracao foi feita.");
         }
-
-        var owned = allowIntentionalContractRefresh
-            ? IsOwnedApiObjectForIntentionalChange(designModel, kbIndex, apiPlan, apiObject)
-            : IsOwnedApiObject(designModel, kbIndex, apiPlan, apiObject);
-        if (!owned)
-        {
-            throw new InvalidOperationException(
-                $"API Object com GUID planejado '{apiPlan.PlannedApiGuid.Value}' e nome '{apiPlan.ApiName}' " +
-                "e externo ou incompativel. Nenhuma alteracao foi feita.");
-        }
-
         return apiObject;
     }
 

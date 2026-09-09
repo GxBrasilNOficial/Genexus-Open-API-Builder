@@ -84,7 +84,14 @@ internal static class ApiPlanWritePreflight
                 kbIndex: kbIndex);
         }
 
-        if (!generateSdts && requiresConsumersOrApi)
+        if (generateSdts && requiresConsumersOrApi)
+        {
+            // A etapa normal de SDTs aceita criar os ausentes, mas não pode
+            // reescrever um SDT existente divergente antes do preflight dos
+            // consumidores e do API Object.
+            ApiPlanSdtWriter.PreflightExistingStructures(designModel, apiPlan, kbIndex, preserveSdtNames);
+        }
+        else if (!generateSdts && requiresConsumersOrApi)
         {
             ApiPlanSdtWriter.PreflightStrict(designModel, transaction, apiPlan, kbIndex, preserveSdtNames);
         }

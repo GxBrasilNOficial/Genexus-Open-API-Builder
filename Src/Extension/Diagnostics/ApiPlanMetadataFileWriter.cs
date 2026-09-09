@@ -139,11 +139,16 @@ internal static class ApiPlanMetadataFileWriter
 
     private static API PreflightApiObject(KBModel designModel, ApiPlan apiPlan, bool allowIntentionalContractRefresh, ApiPlanKbObjectNameIndex kbIndex)
     {
-        var apiObject = ApiPlanApiObjectWriter.PreflightExistingApiObjectStrict(
-            designModel,
-            apiPlan,
-            allowIntentionalContractRefresh,
-            kbIndex);
+        var apiObject = allowIntentionalContractRefresh
+            ? ApiPlanApiObjectWriter.PreflightExistingApiObjectForMetadataRefresh(
+                designModel,
+                apiPlan,
+                kbIndex)
+            : ApiPlanApiObjectWriter.PreflightExistingApiObjectStrict(
+                designModel,
+                apiPlan,
+                allowIntentionalContractRefresh: false,
+                kbIndex);
 
         // O GUID ja foi validado antes da leitura/escrita do File; metadata-only nao passa pelo contexto transient.
         apiPlan.PlannedApiGuid = apiObject.Guid;
