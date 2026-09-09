@@ -1,4 +1,4 @@
-# `B111` — estado da revisão por pares (2026-09-03/04)
+# `B111` — estado da revisão por pares (2026-09-03–2026-09-08)
 
 > **Registro versionado da revisão.** Este arquivo conserva o histórico das rodadas,
 > inclusive a evolução após a consolidação da `S-B111` até os pareceres de 2026-09-08.
