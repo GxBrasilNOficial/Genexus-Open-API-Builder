@@ -64,7 +64,18 @@ internal static class ApiPlanWritePreflight
         ValidateTransactionIdentity(transaction, apiPlan, "B111/F1");
 
         var requiresConsumersOrApi = generateApiObject || generateMetadata || applyList || applyBusinessComponent;
-        if (!generateApiObject && (generateMetadata || applyList || applyBusinessComponent))
+        if (generateApiObject && !applyList && !applyBusinessComponent)
+        {
+            // O caminho API-only salva pelo contrato B054. Validar aqui o
+            // reencontro e a compatibilidade do Source evita que SDTs ou
+            // Procedures sejam gravados antes de um bloqueio tardio do API.
+            ApiPlanApiObjectWriter.PreflightB054ApiObjectStrict(
+                designModel,
+                apiPlan,
+                allowIntentionalContractRefresh: true,
+                kbIndex: kbIndex);
+        }
+        else if (!generateApiObject && (generateMetadata || applyList || applyBusinessComponent))
         {
             ApiPlanApiObjectWriter.PreflightExistingApiObjectStrict(
                 designModel,

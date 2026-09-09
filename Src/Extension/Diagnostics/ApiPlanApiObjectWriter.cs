@@ -208,6 +208,36 @@ internal static class ApiPlanApiObjectWriter
         return apiObject;
     }
 
+    /// <summary>
+    /// B111/F1: valida o reencontro e a compatibilidade do caminho B054
+    /// antes das fases que podem gravar SDTs ou Procedures. A defesa no
+    /// SavePreparedApiObject permanece necessaria para chamadas fora do
+    /// preflight agregado.
+    /// </summary>
+    internal static void PreflightB054ApiObjectStrict(
+        KBModel designModel,
+        ApiPlan apiPlan,
+        bool allowIntentionalContractRefresh,
+        ApiPlanKbObjectNameIndex kbIndex)
+    {
+        if (designModel is null) throw new ArgumentNullException(nameof(designModel));
+        if (apiPlan is null) throw new ArgumentNullException(nameof(apiPlan));
+        if (kbIndex is null) throw new ArgumentNullException(nameof(kbIndex));
+
+        var existingApiObject = PreflightApiObject(
+            designModel,
+            apiPlan,
+            allowIntentionalContractRefresh,
+            kbIndex).ExistingApiObject;
+        if (existingApiObject is null ||
+            ApiPlanBusinessComponentWriter.IsB055ApiObject(designModel, kbIndex, apiPlan, existingApiObject))
+        {
+            return;
+        }
+
+        ApiPlanServiceSourceContract.ThrowIfB054WouldDowngradeRestContract(existingApiObject.ServiceGroupSource.Source);
+    }
+
     internal static ApiPlanApiObjectWriteCoreResult SavePreparedApiObject(
         KBModel designModel,
         ApiPlanTransientApiContext context,
