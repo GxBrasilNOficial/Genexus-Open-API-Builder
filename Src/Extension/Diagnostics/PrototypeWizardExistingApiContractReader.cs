@@ -78,9 +78,11 @@ internal static class PrototypeWizardExistingApiContractReader
             ? metadata.ResponseFields
             : ReadOwnedSdtFields(designModel, $"sdt{transaction.Name}_API_Response");
 
-        var filters = source.FiltersAvailable
-            ? source.Filters
-            : metadata.Filters.Values;
+        // O metadata persistido é a fonte autoritativa do contrato salvo; o
+        // Service Source fica como fallback para metadata antiga ou ausente.
+        var filters = metadata.FiltersAvailable
+            ? metadata.Filters.Values
+            : source.Filters;
         var filtersAvailable = source.FiltersAvailable || metadata.FiltersAvailable;
 
         var apiName = ReadString(metadata.Document, "api.name") ?? api?.Name;

@@ -33,6 +33,7 @@ $apiObjectWriter = [IO.File]::ReadAllText($apiObjectWriterPath)
 $procedureWriter = [IO.File]::ReadAllText($procedureWriterPath)
 $orchestrator = [IO.File]::ReadAllText($orchestratorPath)
 $dialogNorm = $dialog.Replace("`r`n", "`n")
+$existingReaderNorm = $existingReader.Replace("`r`n", "`n")
 
 Assert-Contains $reader 'Read(KBModel designModel, Transaction transaction)' 'O snapshot do Wizard deve aceitar a KB ativa para reencounter.'
 Assert-Contains $reader 'existingApiContract.FiltersAvailable ? false : filter.DefaultSelected' 'Com contrato de filtros existente, campos novos nao devem voltar aos defaults de uma API nova.'
@@ -57,6 +58,7 @@ Assert-Contains $existingReader 'item["securityLevel"]?.Value<string>()' 'A meta
 Assert-Contains $existingReader '(?<![\w.])' 'A regex de Service Source deve ignorar chamadas como procX_API_List e Modulo.List.'
 Assert-Contains $existingReader 'DuplicateServiceNames' 'Duplicidade real no Service Source deve ser reportada, nao convertida em excecao.'
 Assert-Contains $existingReader 'fields.listFilters' 'A metadata deve ser fallback para os filtros persistidos.'
+Assert-Contains $existingReaderNorm "var filters = metadata.FiltersAvailable`n            ? metadata.Filters.Values`n            : source.Filters" 'Os filtros persistidos na metadata devem ter prioridade sobre um Service Source sem parâmetros de filtro.'
 Assert-Contains $existingReader 'fields.createRequest' 'A metadata deve restaurar os campos do CreateRequest.'
 Assert-Contains $existingReader 'fields.updateRequest' 'A metadata deve restaurar os campos do UpdateRequest.'
 Assert-Contains $existingReader 'fields.response' 'A metadata deve restaurar os campos do Response.'
