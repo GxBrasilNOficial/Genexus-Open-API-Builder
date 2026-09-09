@@ -29,7 +29,8 @@ public sealed class ApiPlanApplicationFinalReport
         string? persistedMainObjectName = null,
         Guid? persistedMainObjectGuid = null,
         string? finalApiWriter = null,
-        int apiSaveCount = 0)
+        int apiSaveCount = 0,
+        bool apiSaveAttempted = false)
     {
         Operation = operation ?? throw new ArgumentNullException(nameof(operation));
         TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
@@ -49,6 +50,7 @@ public sealed class ApiPlanApplicationFinalReport
         PersistedMainObjectGuid = persistedMainObjectGuid ?? mainObjectGuid;
         FinalApiWriter = finalApiWriter;
         ApiSaveCount = apiSaveCount;
+        ApiSaveAttempted = apiSaveAttempted;
     }
 
     public string Operation { get; }
@@ -87,6 +89,8 @@ public sealed class ApiPlanApplicationFinalReport
 
     public int ApiSaveCount { get; }
 
+    public bool ApiSaveAttempted { get; }
+
     public int CreatedCount => Created.Count;
 
     public int UpdatedCount => Updated.Count;
@@ -103,7 +107,7 @@ public sealed class ApiPlanApplicationFinalReport
         builder.Append("[Genexus Open API Builder][B081] Relatório final: ");
         builder.Append($"Operação='{Operation}', Transaction='{TransactionName}', ApiName='{ApiName ?? string.Empty}', ");
         builder.Append($"PlannedApiName='{PlannedApiName ?? string.Empty}', PersistedMainObjectName='{PersistedMainObjectName ?? string.Empty}', PersistedMainObjectGuid='{PersistedMainObjectGuid?.ToString() ?? string.Empty}', ");
-        builder.Append($"FinalApiWriter='{FinalApiWriter ?? string.Empty}', ApiSaveCount={ApiSaveCount}, ");
+        builder.Append($"FinalApiWriter='{FinalApiWriter ?? string.Empty}', ApiSaveAttempted={ApiSaveAttempted}, ApiSaveCount={ApiSaveCount}, ");
         builder.Append($"Resultado='{Outcome}', Criados={CreatedCount}, Atualizados={UpdatedCount}, Removidos={DeletedCount}, ");
         builder.Append($"Bloqueados={BlockedCount}, Avisos={WarningCount}, DuraçãoMs={(int)Elapsed.TotalMilliseconds}, Título='{Headline}'.");
         return builder.ToString();
@@ -127,7 +131,7 @@ public sealed class ApiPlanApplicationFinalReport
             builder.AppendLine($"API: {ApiName}");
         }
 
-        if (!string.IsNullOrWhiteSpace(PlannedApiName) || !string.IsNullOrWhiteSpace(PersistedMainObjectName))
+        if (ApiSaveAttempted || !string.IsNullOrWhiteSpace(PlannedApiName) || !string.IsNullOrWhiteSpace(PersistedMainObjectName))
         {
             builder.AppendLine($"API planejada: {PlannedApiName ?? string.Empty}");
             builder.AppendLine($"Objeto principal persistido: {PersistedMainObjectName ?? string.Empty}");
@@ -136,6 +140,7 @@ public sealed class ApiPlanApplicationFinalReport
             {
                 builder.AppendLine($"Escritor final do API: {FinalApiWriter}");
             }
+            builder.AppendLine($"Tentativa de salvamento do API Object: {(ApiSaveAttempted ? "sim" : "não")}");
             builder.AppendLine($"Salvamentos do API Object: {ApiSaveCount}");
         }
 
@@ -314,6 +319,10 @@ public sealed class ApiPlanApplicationFinalReportCollector
 
     public int ApiSaveCount { get; private set; }
 
+    public bool ApiSaveAttempted { get; private set; }
+
+    public bool ApiSavePathEntered { get; private set; }
+
     public string? HeadlineOverride { get; set; }
 
     public bool HasInterrupted => _blocked.Length > 0;
@@ -355,6 +364,11 @@ public sealed class ApiPlanApplicationFinalReportCollector
             throw new ArgumentException("Nome do objeto persistido e obrigatorio.", nameof(name));
         }
 
+        if (guid == Guid.Empty)
+        {
+            throw new ArgumentException("O GUID do objeto persistido nao pode ser vazio.", nameof(guid));
+        }
+
         PersistedMainObjectName = name;
         PersistedMainObjectGuid = guid;
         MainObjectName = name;
@@ -372,6 +386,16 @@ public sealed class ApiPlanApplicationFinalReportCollector
     public void RecordApiSave()
     {
         ApiSaveCount++;
+    }
+
+    public void MarkApiSaveAttempted()
+    {
+        ApiSaveAttempted = true;
+    }
+
+    public void MarkApiSavePathEntered()
+    {
+        ApiSavePathEntered = true;
     }
 
     public void AddCreated(string objectKind, string name, string? detail = null)
@@ -489,7 +513,8 @@ public sealed class ApiPlanApplicationFinalReportCollector
             PersistedMainObjectName,
             PersistedMainObjectGuid,
             FinalApiWriter,
-            ApiSaveCount);
+            ApiSaveCount,
+            ApiSaveAttempted);
     }
 
     private ApiPlanApplicationFinalOutcome ResolveOutcome()

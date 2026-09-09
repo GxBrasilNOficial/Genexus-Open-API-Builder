@@ -27,7 +27,9 @@ internal static class ApiPlanListProcedureWriter
         ApiPlanBusyProgressSession? progress = null,
         ApiPlanTransientApiContext? apiContext = null,
         System.Action<string, string, long>? onSaveCompleted = null,
-        System.Action<Guid>? onApiSaveCompleted = null)
+        System.Action<Guid>? onApiSaveCompleted = null,
+        System.Action<Guid>? onApiPhysicalSave = null,
+        System.Action? onApiSaveAttempted = null)
     {
         if (model is null) throw new ArgumentNullException(nameof(model));
         if (transaction is null) throw new ArgumentNullException(nameof(transaction));
@@ -86,7 +88,7 @@ internal static class ApiPlanListProcedureWriter
         };
         if (apiContext is null || (apiContext.PersistApiObject && string.Equals(apiContext.FinalWriter, "List", StringComparison.Ordinal)))
         {
-            saveSteps.Add((api.Name, () => SaveApi(model, kbIndex, api, transactionFolder, plan, apiSource, apiVariables, onApiSaveCompleted), () => ApiPlanSaveBoundaryProbe.Snapshot(api)));
+            saveSteps.Add((api.Name, () => SaveApi(model, kbIndex, api, transactionFolder, plan, apiSource, apiVariables, onApiSaveCompleted, onApiPhysicalSave, onApiSaveAttempted), () => ApiPlanSaveBoundaryProbe.Snapshot(api)));
         }
         var saveIndex = 0;
         foreach (var step in saveSteps)
@@ -982,7 +984,7 @@ internal static class ApiPlanListProcedureWriter
         }
     }
 
-    private static void SaveApi(KBModel model, ApiPlanKbObjectNameIndex kbIndex, API api, Folder transactionFolder, ApiPlan plan, string source, IReadOnlyList<VariableSpec> variables, System.Action<Guid>? onApiSaveCompleted)
+    private static void SaveApi(KBModel model, ApiPlanKbObjectNameIndex kbIndex, API api, Folder transactionFolder, ApiPlan plan, string source, IReadOnlyList<VariableSpec> variables, System.Action<Guid>? onApiSaveCompleted, System.Action<Guid>? onApiPhysicalSave, System.Action? onApiSaveAttempted)
     {
         api.Parent = transactionFolder;
         api.ServiceGroupSource.Source = source;
@@ -993,14 +995,17 @@ internal static class ApiPlanListProcedureWriter
 
         ReplaceVariables(model, kbIndex, api, variables);
         ApiPlanSaveBoundaryProbe.PreparedApi("List", api);
+        onApiSaveAttempted?.Invoke();
         api.Save();
-        onApiSaveCompleted?.Invoke(api.Guid);
+        onApiPhysicalSave?.Invoke(api.Guid);
 
-        var persisted = API.Get(model, api.Guid);
+        var persisted = ApiPlanApiObjectWriter.RequirePersistedApiObject(model, api.Guid, plan.ApiName, "B070");
         if (!IsB070ApiObject(model, kbIndex, plan, persisted))
         {
             throw new InvalidOperationException($"B070 bloqueado: o API Object '{api.Name}' foi salvo, mas o Service Source persistido nao corresponde ao contrato List planejado. Nenhuma outra alteracao sera feita.");
         }
+
+        onApiSaveCompleted?.Invoke(persisted.Guid);
     }
 
     private static void ReplaceVariables(KBModel model, ApiPlanKbObjectNameIndex kbIndex, Procedure procedure, IReadOnlyList<VariableSpec> variables)

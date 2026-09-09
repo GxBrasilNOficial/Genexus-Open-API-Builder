@@ -26,6 +26,10 @@ internal sealed class ApiPlanTransientApiContext
         ApiPlanTransientApiSelection? selection = null)
     {
         Api = api ?? throw new ArgumentNullException(nameof(api));
+        if (api.Guid == Guid.Empty)
+        {
+            throw new InvalidOperationException("Contexto transitório de API Object inválido: o objeto não possui GUID estável.");
+        }
         TransactionFolder = transactionFolder ?? throw new ArgumentNullException(nameof(transactionFolder));
         FinalWriter = finalWriter ?? throw new ArgumentNullException(nameof(finalWriter));
         PersistApiObject = persistApiObject;

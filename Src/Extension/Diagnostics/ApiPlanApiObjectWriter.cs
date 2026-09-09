@@ -20,7 +20,9 @@ internal static class ApiPlanApiObjectWriter
         bool allowIntentionalContractRefresh,
         ApiPlanKbObjectNameIndex kbIndex,
         ApiPlanBusyProgressSession? progress = null,
-        System.Action<Guid>? onApiSaveCompleted = null)
+        System.Action<Guid>? onApiSaveCompleted = null,
+        System.Action<Guid>? onApiPhysicalSave = null,
+        System.Action? onApiSaveAttempted = null)
     {
         if (designModel is null)
         {
@@ -57,7 +59,14 @@ internal static class ApiPlanApiObjectWriter
             businessComponentParticipated: false,
             finalWriter: "B054",
             progress: progress);
-        var result = SavePreparedApiObject(designModel, context, apiPlan, kbIndex, onApiSaveCompleted);
+        var result = SavePreparedApiObject(
+            designModel,
+            context,
+            apiPlan,
+            kbIndex,
+            onApiSaveCompleted,
+            onApiPhysicalSave,
+            onApiSaveAttempted);
 
         return new ApiPlanApiObjectWriteResult(
             apiPlan.ApiName,
@@ -115,6 +124,12 @@ internal static class ApiPlanApiObjectWriter
             api.ServiceGroupSource.Source = ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan);
         }
 
+        if (api.Guid == Guid.Empty)
+        {
+            throw new InvalidOperationException(
+                $"Preparacao de API Object bloqueada: o API Object '{apiPlan.ApiName}' nao recebeu GUID estavel do SDK. Nenhuma alteracao foi feita.");
+        }
+
         var existingApiHasBusinessComponentParameters = !apiWasCreated &&
             (ApiPlanBusinessComponentWriter.IsB055ApiObject(designModel, kbIndex, apiPlan, api) ||
              ApiPlanListProcedureWriter.IsB070ApiObjectWithBusinessComponentParameters(designModel, kbIndex, apiPlan, api));
@@ -163,6 +178,12 @@ internal static class ApiPlanApiObjectWriter
                 "Nenhuma alteracao foi feita.");
         }
 
+        if (apiObject.Guid == Guid.Empty)
+        {
+            throw new InvalidOperationException(
+                $"API Object com GUID planejado '{apiPlan.PlannedApiGuid.Value}' foi reencontrado sem GUID persistido valido. Nenhuma alteracao foi feita.");
+        }
+
         var resolution = ApiPlanMainObjectResolver.Resolve(
             apiPlan.PlannedApiGuid,
             apiPlan.ApiName,
@@ -192,7 +213,9 @@ internal static class ApiPlanApiObjectWriter
         ApiPlanTransientApiContext context,
         ApiPlan apiPlan,
         ApiPlanKbObjectNameIndex kbIndex,
-        System.Action<Guid>? onApiSaveCompleted = null)
+        System.Action<Guid>? onApiSaveCompleted = null,
+        System.Action<Guid>? onApiPhysicalSave = null,
+        System.Action? onApiSaveAttempted = null)
     {
         if (designModel is null) throw new ArgumentNullException(nameof(designModel));
         if (context is null) throw new ArgumentNullException(nameof(context));
@@ -203,9 +226,16 @@ internal static class ApiPlanApiObjectWriter
             throw new InvalidOperationException("Save do API Object solicitado para um contexto que nao permite persistencia.");
         }
 
+        if (context.PlannedApiGuid == Guid.Empty)
+        {
+            throw new InvalidOperationException(
+                $"Save de API Object bloqueado: o API Object '{apiPlan.ApiName}' nao possui GUID planejado estavel. Nenhuma alteracao foi feita.");
+        }
+
         var api = context.Api;
         api.Parent = context.TransactionFolder;
-        if (ApiPlanBusinessComponentWriter.IsB055ApiObject(designModel, kbIndex, apiPlan, api))
+        var isB055ApiObject = ApiPlanBusinessComponentWriter.IsB055ApiObject(designModel, kbIndex, apiPlan, api);
+        if (isB055ApiObject)
         {
             if (!ApiPlanBusinessComponentWriter.IsCurrentB055ApiObject(designModel, kbIndex, apiPlan, api))
             {
@@ -218,12 +248,57 @@ internal static class ApiPlanApiObjectWriter
             api.ServiceGroupSource.Source = ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan);
         }
 
+        onApiSaveAttempted?.Invoke();
         api.Save();
-        onApiSaveCompleted?.Invoke(api.Guid);
-        var persisted = API.Get(designModel, api.Guid);
+        onApiPhysicalSave?.Invoke(api.Guid);
+        var persisted = RequirePersistedApiObject(designModel, api.Guid, apiPlan.ApiName, isB055ApiObject ? "B055" : "B054");
+        var persistedSource = ApiPlanBusinessComponentWriter.NormalizeForComparison(persisted.ServiceGroupSource.Source);
+        var sourceMatchesContract = isB055ApiObject
+            ? ApiPlanBusinessComponentWriter.IsB055ServiceGroupSource(apiPlan, persistedSource)
+            : ApiPlanBusinessComponentWriter.IsB054ServiceGroupSource(apiPlan, persistedSource);
+        if (!sourceMatchesContract)
+        {
+            throw new InvalidOperationException(
+                $"{(isB055ApiObject ? "B055" : "B054")} bloqueado: o API Object '{apiPlan.ApiName}' foi salvo, mas o Service Source persistido nao corresponde ao contrato planejado. Nenhuma outra alteracao sera feita.");
+        }
+
+        onApiSaveCompleted?.Invoke(persisted.Guid);
         return new ApiPlanApiObjectWriteCoreResult(
             context.ApiWasCreated ? ApiPlanApiObjectWriteStatus.Created : ApiPlanApiObjectWriteStatus.Reencountered,
             persisted.Guid);
+    }
+
+    internal static API RequirePersistedApiObject(
+        KBModel designModel,
+        Guid expectedGuid,
+        string expectedName,
+        string operationCode)
+    {
+        if (designModel is null) throw new ArgumentNullException(nameof(designModel));
+        if (expectedGuid == Guid.Empty) throw new ArgumentException("O GUID esperado do API Object nao pode ser vazio.", nameof(expectedGuid));
+        if (string.IsNullOrWhiteSpace(expectedName)) throw new ArgumentException("O nome esperado do API Object e obrigatorio.", nameof(expectedName));
+        if (string.IsNullOrWhiteSpace(operationCode)) throw new ArgumentException("O codigo da operacao e obrigatorio.", nameof(operationCode));
+
+        var persisted = API.Get(designModel, expectedGuid);
+        if (persisted is null)
+        {
+            throw new InvalidOperationException(
+                $"{operationCode} bloqueado: o API Object '{expectedName}' nao foi reencontrado apos o Save pelo GUID '{expectedGuid}'. Nenhuma outra alteracao sera feita.");
+        }
+
+        if (persisted.Guid == Guid.Empty || persisted.Guid != expectedGuid)
+        {
+            throw new InvalidOperationException(
+                $"{operationCode} bloqueado: o API Object '{expectedName}' retornou GUID persistido invalido apos o Save. Esperado='{expectedGuid}', Persistido='{persisted.Guid}'. Nenhuma outra alteracao sera feita.");
+        }
+
+        if (!string.Equals(persisted.Name, expectedName, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"{operationCode} bloqueado: o API Object persistido pelo GUID '{expectedGuid}' possui nome '{persisted.Name}', mas o esperado era '{expectedName}'. Nenhuma outra alteracao sera feita.");
+        }
+
+        return persisted;
     }
 
     internal static string CreateOwnedDescription(ApiPlan apiPlan)
@@ -1174,6 +1249,7 @@ internal sealed class ApiPlanApiObjectWriteCoreResult
     public ApiPlanApiObjectWriteCoreResult(string status, Guid guid)
     {
         Status = status ?? throw new ArgumentNullException(nameof(status));
+        if (guid == Guid.Empty) throw new ArgumentException("O GUID persistido do API Object nao pode ser vazio.", nameof(guid));
         Guid = guid;
     }
     public string Status { get; }

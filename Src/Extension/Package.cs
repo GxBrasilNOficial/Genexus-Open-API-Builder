@@ -210,6 +210,7 @@ public sealed class Package : AbstractPackageUI
     {
         try
         {
+            report?.MarkApiSavePathEntered();
             var result = ApiPlanApiObjectWriter.CreateOrReencounter(
                 designModel,
                 transaction,
@@ -217,12 +218,13 @@ public sealed class Package : AbstractPackageUI
                 allowIntentionalContractRefresh,
                 kbIndex,
                 progress,
-                onApiSaveCompleted: guid =>
+                onApiSaveCompleted: guid => report?.SetPersistedMainObject(apiPlan.ApiName, guid),
+                onApiPhysicalSave: guid =>
                 {
-                    report?.SetPersistedMainObject(apiPlan.ApiName, guid);
                     report?.SetApiWriter("B054");
                     report?.RecordApiSave();
-                });
+                },
+                onApiSaveAttempted: () => report?.MarkApiSaveAttempted());
             WriteOutput($"[Genexus Open API Builder][B054] Escrita de API Object concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiName='{result.ApiName}', Status='{result.Status}', ReencounteredSdts={result.ReencounteredSdts}, ReencounteredProcedures={result.ReencounteredProcedures}, PlannedServices={result.PlannedServices}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhum REST completo, seguranca definitiva ou metadata persistente definitiva foi criado.");
             foreach (var procedure in result.Procedures)
             {
@@ -235,6 +237,10 @@ public sealed class Package : AbstractPackageUI
             report?.SetPlannedApiName(result.ApiName);
             report?.SetApiName(result.ApiName);
             return true;
+        }
+        catch (ApiPlanBusyAbortedException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -279,6 +285,10 @@ public sealed class Package : AbstractPackageUI
             report?.SetApiName(context.PlannedApiName);
             WriteOutput($"[Genexus Open API Builder][B054] API Object preparado: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedApiName='{context.PlannedApiName}', PlannedApiGuid='{context.PlannedApiGuid}', ApiWasCreated={context.ApiWasCreated}, PersistApiObject={context.PersistApiObject}, FinalWriter='{context.FinalWriter}'. Nenhum Save de API Object foi solicitado nesta etapa.");
             return true;
+        }
+        catch (ApiPlanBusyAbortedException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -346,8 +356,15 @@ public sealed class Package : AbstractPackageUI
             throw new ArgumentNullException(nameof(kbIndex));
         }
 
+        var apiObjectSaveExpected = apiContext is null
+            || (apiContext.PersistApiObject && string.Equals(apiContext.FinalWriter, "Business Component", StringComparison.Ordinal));
         try
         {
+            if (apiObjectSaveExpected)
+            {
+                report?.MarkApiSavePathEntered();
+            }
+
             var result = ApiPlanBusinessComponentWriter.Apply(
                 designModel,
                 transaction,
@@ -358,17 +375,18 @@ public sealed class Package : AbstractPackageUI
                 onSdtWrite: item => AppendSdtWriteItemToReport(report, item),
                 progress: progress,
                 apiContext: apiContext,
-                onSaveCompleted: (stage, label, elapsed) => WriteOutput($"[Genexus Open API Builder][B111] Save concluido: Stage='{stage}', Object='{label}', DurationMs={elapsed}."),
-                onApiSaveCompleted: guid =>
+                onSaveCompleted: (stage, label, elapsed) => WriteOutputWithoutShow($"[Genexus Open API Builder][B111] Save concluido: Stage='{stage}', Object='{label}', DurationMs={elapsed}."),
+                onApiSaveCompleted: guid => report?.SetPersistedMainObject(apiPlan.ApiName, guid),
+                onApiPhysicalSave: guid =>
                 {
-                    report?.SetPersistedMainObject(apiPlan.ApiName, guid);
                     report?.SetApiWriter("Business Component");
                     report?.RecordApiSave();
-                });
+                },
+                onApiSaveAttempted: () => report?.MarkApiSaveAttempted());
             var deleteGuidPart = result.DeleteProcedureGuid == Guid.Empty
                 ? string.Empty
                 : $", DeleteProcedureGuid='{result.DeleteProcedureGuid}'";
-            var apiObjectSavedByBusinessComponent = apiContext is null || (apiContext.PersistApiObject && string.Equals(apiContext.FinalWriter, "Business Component", StringComparison.Ordinal));
+            var apiObjectSavedByBusinessComponent = apiObjectSaveExpected;
             var apiObjectStageStatus = apiObjectSavedByBusinessComponent ? "API Object sincronizado" : "API Object nao gravado nesta etapa";
             WriteOutput($"[Genexus Open API Builder][B071-B073/B079] REST via Business Component aplicado; {apiObjectStageStatus}: Transaction='{transaction.Name}', Trigger='{triggerSource}', GetProcedureGuid='{result.GetProcedureGuid}', CreateProcedureGuid='{result.CreateProcedureGuid}', UpdateProcedureGuid='{result.UpdateProcedureGuid}'{deleteGuidPart}, ApiObjectGuid='{result.ApiObjectGuid}', PrimaryKeyParts={result.PrimaryKeyParts}, CreateFields={result.CreateFields}, UpdateFields={result.UpdateFields}, ResponseFields={result.ResponseFields}. Status HTTP controlado por RestCode no API Object; ErrorResponse exposto como saida publica dos servicos; Location de Create emitido nativamente via HttpResponse.");
             var descriptionStageStatus = apiObjectSavedByBusinessComponent ? "Descricoes reaplicadas no API Object real" : "Descricoes do API Object nao reaplicadas nesta etapa";
@@ -418,8 +436,15 @@ public sealed class Package : AbstractPackageUI
         ApiPlanBusyProgressSession? progress = null,
         ApiPlanTransientApiContext? apiContext = null)
     {
+        var apiObjectSaveExpected = apiContext is null
+            || (apiContext.PersistApiObject && string.Equals(apiContext.FinalWriter, "List", StringComparison.Ordinal));
         try
         {
+            if (apiObjectSaveExpected)
+            {
+                report?.MarkApiSavePathEntered();
+            }
+
             var result = ApiPlanListProcedureWriter.Apply(
                 designModel,
                 transaction,
@@ -430,14 +455,15 @@ public sealed class Package : AbstractPackageUI
                 onSdtWrite: item => AppendSdtWriteItemToReport(report, item),
                 progress: progress,
                 apiContext: apiContext,
-                onSaveCompleted: (stage, label, elapsed) => WriteOutput($"[Genexus Open API Builder][B111] Save concluido: Stage='{stage}', Object='{label}', DurationMs={elapsed}."),
-                onApiSaveCompleted: guid =>
+                onSaveCompleted: (stage, label, elapsed) => WriteOutputWithoutShow($"[Genexus Open API Builder][B111] Save concluido: Stage='{stage}', Object='{label}', DurationMs={elapsed}."),
+                onApiSaveCompleted: guid => report?.SetPersistedMainObject(apiPlan.ApiName, guid),
+                onApiPhysicalSave: guid =>
                 {
-                    report?.SetPersistedMainObject(apiPlan.ApiName, guid);
                     report?.SetApiWriter("List");
                     report?.RecordApiSave();
-                });
-            var apiObjectSavedByList = apiContext is null || (apiContext.PersistApiObject && string.Equals(apiContext.FinalWriter, "List", StringComparison.Ordinal));
+                },
+                onApiSaveAttempted: () => report?.MarkApiSaveAttempted());
+            var apiObjectSavedByList = apiObjectSaveExpected;
             var apiObjectStageStatus = apiObjectSavedByList ? "API Object sincronizado" : "API Object nao gravado nesta etapa";
             WriteOutput($"[Genexus Open API Builder][B070] List aplicado; {apiObjectStageStatus}: Transaction='{transaction.Name}', Trigger='{triggerSource}', ListProcedureGuid='{result.ListProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', Filters={result.Filters}, OrderParts={result.OrderParts}, DefaultPageSize={result.DefaultPageSize}, MaximumPageSize={result.MaximumPageSize}. B076 e validacao runtime do List permanecem pendentes.");
             var listProcedure = apiPlan.ProcedureNames.FirstOrDefault(name =>
@@ -1956,6 +1982,7 @@ public sealed class Package : AbstractPackageUI
     {
         if (designModel is null
             || collector.MainObjectGuid.HasValue
+            || (collector.ApiSavePathEntered && !collector.PersistedMainObjectGuid.HasValue)
             || string.Equals(collector.Operation, "Remover", StringComparison.OrdinalIgnoreCase))
         {
             return;
@@ -2198,6 +2225,16 @@ public sealed class Package : AbstractPackageUI
 
     private static void WriteOutput(string message)
     {
+        WriteOutputCore(message, forceShow: true);
+    }
+
+    private static void WriteOutputWithoutShow(string message)
+    {
+        WriteOutputCore(message, forceShow: false);
+    }
+
+    private static void WriteOutputCore(string message, bool forceShow)
+    {
         if (!CommonServices.IsOutputAvailable)
         {
             return;
@@ -2213,7 +2250,10 @@ public sealed class Package : AbstractPackageUI
         var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
         var language = ExtensionLocalization.Resolve(knowledgeBase);
         output.AddLine(outputId, ExtensionOutputLocalization.Translate(message, language));
-        output.Show(outputId);
+        if (forceShow)
+        {
+            output.Show(outputId);
+        }
     }
 
 }

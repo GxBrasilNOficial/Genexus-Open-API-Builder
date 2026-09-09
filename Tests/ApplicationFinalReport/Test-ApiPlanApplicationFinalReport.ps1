@@ -143,6 +143,22 @@ $blockedReport = $blocked.Build([timespan]::FromMilliseconds(40))
 Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalOutcome]::Interrupted) $blockedReport.Outcome 'Bloqueio interrompe.'
 Assert-Equal 'Geracao interrompida.' $blockedReport.Headline 'Headline de interrupcao do Wizard.'
 
+$unconfirmed = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalReportCollector]::new('Wizard', 'Contrato', 'apiContrato')
+$unconfirmed.MarkApiSavePathEntered()
+$unconfirmed.MarkApiSaveAttempted()
+$unconfirmed.AddBlocked('API Object', 'apiContrato', 'releitura pós-Save não confirmou a identidade')
+$unconfirmedReport = $unconfirmed.Build([timespan]::FromMilliseconds(40))
+Assert-True $unconfirmedReport.ApiSaveAttempted 'O relatório deve preservar que houve tentativa de Save.'
+Assert-True $unconfirmed.ApiSavePathEntered 'O coletor deve distinguir a entrada no caminho de Save da chamada física.'
+Assert-Equal $null $unconfirmedReport.PersistedMainObjectGuid 'Tentativa não confirmada não pode produzir GUID persistido.'
+Assert-True ($unconfirmedReport.BuildReadableBody() -match 'Tentativa de salvamento do API Object: sim') 'O corpo deve distinguir tentativa de persistência confirmada.'
+try {
+    $unconfirmed.SetPersistedMainObject('apiContrato', [guid]::Empty)
+    throw 'GUID vazio aceito indevidamente.'
+}
+catch [System.ArgumentException] {
+}
+
 $sync = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalReportCollector]::new('Sincronizar', 'Teste', 'apiTeste')
 $sync.AddFromWriteStatus('SDT', 'sdtTeste_API_Response', 'Reencountered')
 $syncReport = $sync.Build([timespan]::FromSeconds(2))
@@ -212,9 +228,50 @@ Assert-True ($transientContextSource -match 'PlannedApiGuid') 'F1 deve transport
 Assert-True ($apiObjectWriterSource -match 'PrepareOrReencounter') 'F1 deve preparar o API Object antes da gravação final.'
 Assert-True ($apiObjectWriterSource -match 'SavePreparedApiObject') 'F1 deve separar preparação e Save do API Object.'
 Assert-True ($apiObjectWriterSource -match 'apiPlan\.PlannedApiGuid = api\.Guid') 'F1 deve fixar o GUID retornado pela criação, sem atribuí-lo manualmente.'
-Assert-True ($apiObjectWriterSource -match 'api\.Save\(\);\s*onApiSaveCompleted\?\.Invoke\(api\.Guid\)') 'B111 deve registrar o Save do API Object imediatamente após o Save físico.'
-Assert-True ($businessComponentWriterSource -match 'api\.Save\(\);\s*onApiSaveCompleted\?\.Invoke\(api\.Guid\)') 'BC deve registrar o Save do API Object antes da releitura/validacao.'
-Assert-True ($listWriterSource -match 'api\.Save\(\);\s*onApiSaveCompleted\?\.Invoke\(api\.Guid\)') 'List deve registrar o Save do API Object antes da releitura/validacao.'
+Assert-True ($apiObjectWriterSource -match 'api\.Guid == Guid\.Empty') 'B111 deve bloquear API novo ou reencontrado sem identidade GUID estável.'
+Assert-True ($apiObjectWriterSource -match 'RequirePersistedApiObject') 'B111 deve confirmar o API Object por releitura e contrato de identidade após o Save.'
+Assert-True ($businessComponentWriterSource -match 'RequirePersistedApiObject') 'BC deve confirmar o API Object por releitura antes de concluir o callback.'
+Assert-True ($listWriterSource -match 'RequirePersistedApiObject') 'List deve confirmar o API Object por releitura antes de concluir o callback.'
+Assert-True ($apiObjectWriterSource -match 'onApiPhysicalSave\?\.Invoke\(api\.Guid\)') 'B111 deve registrar o Save físico por callback próprio.'
+Assert-True ($businessComponentWriterSource -match 'onApiPhysicalSave\?\.Invoke\(api\.Guid\)') 'BC deve registrar o Save físico por callback próprio.'
+Assert-True ($listWriterSource -match 'onApiPhysicalSave\?\.Invoke\(api\.Guid\)') 'List deve registrar o Save físico por callback próprio.'
+Assert-Equal 3 ([regex]::Matches($packageSource, 'report\?\.MarkApiSavePathEntered\(\)').Count) 'Os tres fluxos gerenciados devem registrar a entrada no caminho de Save antes do writer.'
+Assert-Equal 3 ([regex]::Matches($packageSource, 'onApiSaveAttempted: \(\) => report\?\.MarkApiSaveAttempted\(\)').Count) 'Os tres writers devem marcar a tentativa imediatamente antes da chamada fisica.'
+Assert-Equal 3 ([regex]::Matches($apiObjectWriterSource + $businessComponentWriterSource + $listWriterSource, 'onApiSaveAttempted\?\.Invoke\(\)').Count) 'Cada writer deve notificar a tentativa no ponto da chamada fisica.'
+Assert-Equal 2 ([regex]::Matches($packageSource, 'onSaveCompleted: \(stage, label, elapsed\) => WriteOutputWithoutShow').Count) 'Os callbacks B111 devem usar Output sem exibição forcada.'
+Assert-True ($packageSource -match 'if \(forceShow\)\s*\{\s*output\.Show\(outputId\);\s*\}') 'A exibição do Output deve ser condicional ao modo solicitado.'
+$writeOutputWithoutShowStart = $packageSource.IndexOf('private static void WriteOutputWithoutShow', [System.StringComparison]::Ordinal)
+$writeOutputCoreStart = $packageSource.IndexOf('private static void WriteOutputCore', $writeOutputWithoutShowStart, [System.StringComparison]::Ordinal)
+$writeOutputWithoutShowBlock = $packageSource.Substring($writeOutputWithoutShowStart, $writeOutputCoreStart - $writeOutputWithoutShowStart)
+Assert-True ($writeOutputWithoutShowBlock -match 'WriteOutputCore\(message, forceShow: false\)') 'A variante B111 deve gravar sem pedir exibicao do painel.'
+Assert-True ($writeOutputWithoutShowBlock -notmatch 'output\.Show') 'A variante B111 nao deve chamar Show diretamente.'
+
+$apiSaveIndex = $apiObjectWriterSource.IndexOf('api.Save();', [System.StringComparison]::Ordinal)
+$apiAttemptIndex = $apiObjectWriterSource.IndexOf('onApiSaveAttempted?.Invoke()', [System.StringComparison]::Ordinal)
+$apiPhysicalIndex = $apiObjectWriterSource.IndexOf('onApiPhysicalSave?.Invoke(api.Guid)', [System.StringComparison]::Ordinal)
+$apiReadIndex = $apiObjectWriterSource.IndexOf('var persisted = RequirePersistedApiObject', [System.StringComparison]::Ordinal)
+$apiCompletedIndex = $apiObjectWriterSource.IndexOf('onApiSaveCompleted?.Invoke(persisted.Guid)', [System.StringComparison]::Ordinal)
+Assert-True ($apiSaveIndex -ge 0 -and $apiSaveIndex -lt $apiPhysicalIndex) 'B111 deve registrar o Save físico depois da chamada a API.Save().'
+Assert-True ($apiAttemptIndex -ge 0 -and $apiAttemptIndex -lt $apiSaveIndex) 'B111 deve marcar a tentativa imediatamente antes da chamada a API.Save().'
+Assert-True ($apiPhysicalIndex -lt $apiReadIndex -and $apiReadIndex -lt $apiCompletedIndex) 'B111 só deve confirmar o callback após a releitura do API Object.'
+
+$bcSaveIndex = $businessComponentWriterSource.IndexOf('api.Save();', [System.StringComparison]::Ordinal)
+$bcAttemptIndex = $businessComponentWriterSource.IndexOf('onApiSaveAttempted?.Invoke()', [System.StringComparison]::Ordinal)
+$bcPhysicalIndex = $businessComponentWriterSource.IndexOf('onApiPhysicalSave?.Invoke(api.Guid)', [System.StringComparison]::Ordinal)
+$bcReadIndex = $businessComponentWriterSource.IndexOf('var persisted = ApiPlanApiObjectWriter.RequirePersistedApiObject', [System.StringComparison]::Ordinal)
+$bcCompletedIndex = $businessComponentWriterSource.IndexOf('onApiSaveCompleted?.Invoke(persisted.Guid)', [System.StringComparison]::Ordinal)
+Assert-True ($bcSaveIndex -ge 0 -and $bcSaveIndex -lt $bcPhysicalIndex) 'BC deve registrar o Save físico depois da chamada a API.Save().'
+Assert-True ($bcAttemptIndex -ge 0 -and $bcAttemptIndex -lt $bcSaveIndex) 'BC deve marcar a tentativa imediatamente antes da chamada a API.Save().'
+Assert-True ($bcPhysicalIndex -lt $bcReadIndex -and $bcReadIndex -lt $bcCompletedIndex) 'BC só deve confirmar o callback após a releitura e validação do API Object.'
+
+$listSaveIndex = $listWriterSource.IndexOf('api.Save();', [System.StringComparison]::Ordinal)
+$listAttemptIndex = $listWriterSource.IndexOf('onApiSaveAttempted?.Invoke()', [System.StringComparison]::Ordinal)
+$listPhysicalIndex = $listWriterSource.IndexOf('onApiPhysicalSave?.Invoke(api.Guid)', [System.StringComparison]::Ordinal)
+$listReadIndex = $listWriterSource.IndexOf('var persisted = ApiPlanApiObjectWriter.RequirePersistedApiObject', [System.StringComparison]::Ordinal)
+$listCompletedIndex = $listWriterSource.IndexOf('onApiSaveCompleted?.Invoke(persisted.Guid)', [System.StringComparison]::Ordinal)
+Assert-True ($listSaveIndex -ge 0 -and $listSaveIndex -lt $listPhysicalIndex) 'List deve registrar o Save físico depois da chamada a API.Save().'
+Assert-True ($listAttemptIndex -ge 0 -and $listAttemptIndex -lt $listSaveIndex) 'List deve marcar a tentativa imediatamente antes da chamada a API.Save().'
+Assert-True ($listPhysicalIndex -lt $listReadIndex -and $listReadIndex -lt $listCompletedIndex) 'List só deve confirmar o callback após a releitura e validação do API Object.'
 Assert-True ($metadataWriterSource -match 'apiPlan\.PlannedApiGuid = apiObject\.Guid') 'Metadata-only deve transportar o GUID lido do API Object reencontrado.'
 Assert-True ($apiObjectWriterSource -match 'PreflightExistingApiObjectStrict') 'F1 deve ter um preflight dedicado para API existente, sem criar objeto transitório quando a persistencia esta desabilitada.'
 Assert-True ($apiObjectWriterSource -match 'ApiPlanMainObjectResolver\.Resolve') 'A preparacao do API Object deve validar a identidade com o resolvedor GUID-first.'
@@ -234,6 +291,7 @@ Assert-True ($transientContextSource -match 'ApplicationId') 'F1 deve transporta
 Assert-True ($transientContextSource -match 'ExistingApiServiceGroupSource') 'F1 deve capturar o Source persistido antes da mutação.'
 Assert-True ($packageSource -match 'TryPrepareApiObject') 'Sync/Wizard devem usar preparação transitória do API Object.'
 Assert-True ($packageSource -match 'TryResolveMainObjectFromKb\(collector, designModel, apiPlan\)') 'B081 deve resolver o objeto principal com o ApiPlan gerenciado disponível.'
+Assert-True ($packageSource -match 'collector\.ApiSavePathEntered && !collector\.PersistedMainObjectGuid\.HasValue') 'B081 não deve associar por releitura nominal depois de entrar no caminho de Save sem confirmação.'
 Assert-True ($packageSource -match 'API\.Get\(designModel, apiPlan\.PlannedApiGuid\.Value\)') 'B081 deve confirmar o API Object pelo GUID planejado.'
 Assert-True ($packageSource -match 'ApiPlanMainObjectResolver\.Resolve') 'B081 deve aplicar a decisão central de resolução segura.'
 Assert-True ($packageSource -match 'if \(apiPlan is null\)') 'A compatibilidade nominal deve ficar restrita aos fluxos legados sem ApiPlan.'
@@ -256,6 +314,14 @@ Assert-True ($listWriterSource -match 'apiContext\.ApiWasCreated') 'List deve di
 Assert-True ($businessComponentWriterSource -match 'onSaveCompleted') 'BC deve emitir trace de Output somente após cada Save físico.'
 Assert-True ($listWriterSource -match 'onSaveCompleted') 'List deve emitir trace de Output somente após cada Save físico.'
 
+$createApiStart = $packageSource.IndexOf('private static bool TryCreateApiObject', [System.StringComparison]::Ordinal)
+$prepareApiStart = $packageSource.IndexOf('private static bool TryPrepareApiObject', [System.StringComparison]::Ordinal)
+$metadataStart = $packageSource.IndexOf('private static bool TryWriteMetadataFile', [System.StringComparison]::Ordinal)
+$createApiBlock = $packageSource.Substring($createApiStart, $prepareApiStart - $createApiStart)
+$prepareApiBlock = $packageSource.Substring($prepareApiStart, $metadataStart - $prepareApiStart)
+Assert-True ($createApiBlock -match 'catch \(ApiPlanBusyAbortedException\)') 'Criação de API deve propagar cancelamento do usuário ao fluxo externo.'
+Assert-True ($prepareApiBlock -match 'catch \(ApiPlanBusyAbortedException\)') 'Preparação de API deve propagar cancelamento do usuário ao fluxo externo.'
+
 $bcSaveBlock = [regex]::Match($businessComponentWriterSource, '(?s)var saveSteps = new List<.*?var saveIndex = 0;').Value
 $listSaveBlock = [regex]::Match($listWriterSource, '(?s)var saveSteps = new List<.*?var saveIndex = 0;').Value
 Assert-True ($bcSaveBlock.IndexOf('(get.Name', [System.StringComparison]::Ordinal) -ge 0) 'BC deve salvar Procedures no bloco de etapas.'
@@ -267,6 +333,8 @@ $reportSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Sr
 Assert-True ($reportSource -match 'PlannedApiName') 'B081 deve registrar o nome planejado do API Object.'
 Assert-True ($reportSource -match 'PersistedMainObjectGuid') 'B081 deve registrar o GUID persistido do objeto principal.'
 Assert-True ($reportSource -match 'ApiSaveCount') 'B081 deve registrar a contagem física de Save do API Object.'
+Assert-True ($reportSource -match 'ApiSaveAttempted') 'B081 deve distinguir tentativa de Save físico de persistência confirmada.'
+Assert-True ($transientContextSource -match 'api\.Guid == Guid\.Empty') 'O contexto transitório deve rejeitar API Object sem GUID estável.'
 
 $placementSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\ExtensionIdeScreenPlacement.cs')
 $wizardSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\PrototypeWizardDialog.cs')

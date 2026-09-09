@@ -30,7 +30,9 @@ internal static class ApiPlanBusinessComponentWriter
         ApiPlanBusyProgressSession? progress = null,
         ApiPlanTransientApiContext? apiContext = null,
         System.Action<string, string, long>? onSaveCompleted = null,
-        System.Action<Guid>? onApiSaveCompleted = null)
+        System.Action<Guid>? onApiSaveCompleted = null,
+        System.Action<Guid>? onApiPhysicalSave = null,
+        System.Action? onApiSaveAttempted = null)
     {
         if (model is null) throw new ArgumentNullException(nameof(model));
         if (transaction is null) throw new ArgumentNullException(nameof(transaction));
@@ -122,7 +124,7 @@ internal static class ApiPlanBusinessComponentWriter
         }
         if (apiContext is null || (apiContext.PersistApiObject && string.Equals(apiContext.FinalWriter, "Business Component", StringComparison.Ordinal)))
         {
-            saveSteps.Add((api.Name, () => SaveApi(model, kbIndex, api, transactionFolder, plan, apiSource, apiVariables, onApiSaveCompleted), () => ApiPlanSaveBoundaryProbe.Snapshot(api)));
+            saveSteps.Add((api.Name, () => SaveApi(model, kbIndex, api, transactionFolder, plan, apiSource, apiVariables, onApiSaveCompleted, onApiPhysicalSave, onApiSaveAttempted), () => ApiPlanSaveBoundaryProbe.Snapshot(api)));
         }
 
         var saveIndex = 0;
@@ -189,11 +191,11 @@ internal static class ApiPlanBusinessComponentWriter
 
     internal static string CreateB079InternalErrorOnlyServiceGroupSource(ApiPlan plan) => CreateServiceGroupSource(plan, includeBusinessComponentParameters: true, includeDescriptions: true);
 
-    private static bool IsB054ServiceGroupSource(ApiPlan plan, string normalizedSource) =>
+    internal static bool IsB054ServiceGroupSource(ApiPlan plan, string normalizedSource) =>
         string.Equals(normalizedSource, NormalizeForComparison(CreateB054ServiceGroupSource(plan)), StringComparison.Ordinal) ||
         string.Equals(normalizedSource, NormalizeForComparison(CreateLegacyB054ServiceGroupSource(plan)), StringComparison.Ordinal);
 
-    private static bool IsB055ServiceGroupSource(ApiPlan plan, string normalizedSource) =>
+    internal static bool IsB055ServiceGroupSource(ApiPlan plan, string normalizedSource) =>
         string.Equals(normalizedSource, NormalizeForComparison(CreateB055ServiceGroupSource(plan)), StringComparison.Ordinal) ||
         string.Equals(normalizedSource, NormalizeForComparison(CreateLegacyB055ServiceGroupSource(plan)), StringComparison.Ordinal) ||
         IsSemanticallyB055ServiceGroupSource(plan, normalizedSource);
@@ -502,7 +504,7 @@ internal static class ApiPlanBusinessComponentWriter
         }
     }
 
-    private static string NormalizeForComparison(string? value)
+    internal static string NormalizeForComparison(string? value)
     {
         return (value ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n").Trim();
     }
@@ -635,17 +637,18 @@ internal static class ApiPlanBusinessComponentWriter
             .Take(40));
     }
 
-    private static void SaveApi(KBModel model, ApiPlanKbObjectNameIndex kbIndex, API api, Folder transactionFolder, ApiPlan plan, string source, IReadOnlyList<VariableSpec> variables, System.Action<Guid>? onApiSaveCompleted)
+    private static void SaveApi(KBModel model, ApiPlanKbObjectNameIndex kbIndex, API api, Folder transactionFolder, ApiPlan plan, string source, IReadOnlyList<VariableSpec> variables, System.Action<Guid>? onApiSaveCompleted, System.Action<Guid>? onApiPhysicalSave, System.Action? onApiSaveAttempted)
     {
         api.Parent = transactionFolder;
         api.ServiceGroupSource.Source = source;
         api.Events.Source = CreateB079ApiEventsForPlan(plan);
         ReplaceVariables(model, kbIndex, api, variables);
         ApiPlanSaveBoundaryProbe.PreparedApi("Business Component", api);
+        onApiSaveAttempted?.Invoke();
         api.Save();
-        onApiSaveCompleted?.Invoke(api.Guid);
+        onApiPhysicalSave?.Invoke(api.Guid);
 
-        var persisted = API.Get(model, api.Guid);
+        var persisted = ApiPlanApiObjectWriter.RequirePersistedApiObject(model, api.Guid, plan.ApiName, "B055");
         if (!IsB055ServiceGroupSource(plan, NormalizeForComparison(persisted.ServiceGroupSource.Source)))
         {
             throw new InvalidOperationException($"B055 bloqueado: o API Object '{api.Name}' foi salvo, mas o Service Source persistido nao corresponde ao contrato API/Procedure planejado. Nenhuma outra alteracao sera feita.");
@@ -655,6 +658,8 @@ internal static class ApiPlanBusinessComponentWriter
         {
             throw new InvalidOperationException($"B055 bloqueado: o API Object '{api.Name}' foi salvo, mas eventos ou variaveis persistidas nao correspondem ao contrato API/Procedure planejado. Nenhuma outra alteracao sera feita.");
         }
+
+        onApiSaveCompleted?.Invoke(persisted.Guid);
     }
 
     private static void ValidateProcedureVariableSpecs(KBModel model, ApiPlanKbObjectNameIndex kbIndex, Procedure procedure, IReadOnlyList<VariableSpec> variables)
