@@ -2,9 +2,9 @@
 
 ## Propósito e relação com documentos anteriores
 
-Este plano substitui a série de manuscritos `B082 v1`–`v20`, mantida em `Temp/revisao-por-pares/`
-e nunca versionada. Aquela série cresceu ao longo de vinte rodadas de revisão por leitura de
-código, sem nenhuma medição, até 488 linhas de texto normativo.
+Este plano substitui a série de manuscritos `B082 v1`–`v20`, que circulou localmente em
+`Temp/revisao-por-pares/` e nunca foi versionada. Aquela série cresceu ao longo de vinte rodadas
+de revisão por leitura de código, sem nenhuma medição, até 488 linhas de texto normativo.
 
 Em 2026-09-02 a extensão foi instrumentada e medida em uma KB real. A medição inverteu a
 prioridade da frente, cortou cerca de um terço do que estava planejado e corrigiu três decisões
