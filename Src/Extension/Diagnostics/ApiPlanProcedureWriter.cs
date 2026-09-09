@@ -37,10 +37,7 @@ internal static class ApiPlanProcedureWriter
             throw new ArgumentNullException(nameof(kbIndex));
         }
 
-        if (!string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException("Criacao de Procedures bloqueada: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
-        }
+        ApiPlanWritePreflight.ValidateTransactionIdentity(transaction, apiPlan, "Criacao de Procedures");
 
         var sdtGenerationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         progress?.Report("Procedures", 0, 0, "Preflight");

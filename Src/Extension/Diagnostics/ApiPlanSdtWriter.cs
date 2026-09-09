@@ -14,6 +14,12 @@ internal static class ApiPlanSdtWriter
 {
     internal const string SharedFolderName = "GxOpenAPI";
 
+    internal enum WriteMode
+    {
+        Dedicated = 0,
+        StrictReencounter = 1,
+    }
+
     public static ApiPlanSdtWriteResult CreateOrReencounter(
         KBModel designModel,
         Transaction transaction,
@@ -21,7 +27,8 @@ internal static class ApiPlanSdtWriter
         IReadOnlyCollection<string>? preserveSdtNames,
         ApiPlanKbObjectNameIndex kbIndex,
         System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite = null,
-        ApiPlanBusyProgressSession? progress = null)
+        ApiPlanBusyProgressSession? progress = null,
+        WriteMode mode = WriteMode.Dedicated)
     {
         if (designModel is null)
         {
@@ -43,9 +50,11 @@ internal static class ApiPlanSdtWriter
             throw new ArgumentNullException(nameof(kbIndex));
         }
 
-        if (!string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.Ordinal))
+        ApiPlanWritePreflight.ValidateTransactionIdentity(transaction, apiPlan, "Criacao de SDTs");
+
+        if (mode == WriteMode.StrictReencounter)
         {
-            throw new InvalidOperationException("Criacao de SDTs bloqueada: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
+            return StrictReencounter(designModel, transaction, apiPlan, preserveSdtNames, kbIndex, onSdtWrite, progress);
         }
 
         // B111/F1: instrumentacao temporaria. So conta; nao altera fluxo nem resultado.
@@ -142,6 +151,82 @@ internal static class ApiPlanSdtWriter
         ApiPlanTransactionFolder.Preflight(designModel, transaction, apiPlan);
     }
 
+    internal static void PreflightStrict(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        ApiPlanKbObjectNameIndex kbIndex,
+        IReadOnlyCollection<string>? preserveSdtNames = null)
+    {
+        if (designModel is null) throw new ArgumentNullException(nameof(designModel));
+        if (transaction is null) throw new ArgumentNullException(nameof(transaction));
+        if (apiPlan is null) throw new ArgumentNullException(nameof(apiPlan));
+        if (kbIndex is null) throw new ArgumentNullException(nameof(kbIndex));
+
+        var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
+        var preflight = CreatePreflightResult(designModel, generationPlan, kbIndex);
+        if (generationPlan.SharedSdts.Count > 0 &&
+            (preflight.SharedFolder is null || !ApiPlanOwnedObjectDescription.IsOwnedSharedFolder(preflight.SharedFolder.Description)))
+        {
+            throw new InvalidOperationException($"Reencontro estrito bloqueado: Folder compartilhado '{SharedFolderName}' ausente ou externo. Nenhuma alteracao foi feita.");
+        }
+
+        foreach (var definition in generationPlan.SharedSdts.Concat(generationPlan.OwnSdts))
+        {
+            if (!preflight.ExistingSdtsByName.TryGetValue(definition.Name, out var sdt))
+            {
+                throw new InvalidOperationException($"Reencontro estrito bloqueado: SDT requerido '{definition.Name}' nao foi reencontrado. Nenhuma alteracao foi feita.");
+            }
+
+            if (!TryMatchPlannedSdtStructure(sdt, definition, kbIndex, out var mismatch) &&
+                !(preserveSdtNames?.Contains(definition.Name, StringComparer.OrdinalIgnoreCase) ?? false))
+            {
+                throw new InvalidOperationException($"Reencontro estrito bloqueado: SDT '{definition.Name}' diverge do contrato planejado ({mismatch}). Nenhuma alteracao foi feita.");
+            }
+        }
+
+        ApiPlanTransactionFolder.GetOrReencounterStrict(designModel, transaction, apiPlan);
+    }
+
+    private static ApiPlanSdtWriteResult StrictReencounter(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        IReadOnlyCollection<string>? preserveSdtNames,
+        ApiPlanKbObjectNameIndex kbIndex,
+        System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite,
+        ApiPlanBusyProgressSession? progress)
+    {
+        PreflightStrict(designModel, transaction, apiPlan, kbIndex, preserveSdtNames);
+        var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
+        var transactionFolder = ApiPlanTransactionFolder.GetOrReencounterStrict(designModel, transaction, apiPlan);
+        var allDefinitions = generationPlan.SharedSdts.Concat(generationPlan.OwnSdts).ToArray();
+        var results = new List<ApiPlanSdtWriteItemResult>();
+        var explicitPreserve = new HashSet<string>(preserveSdtNames ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+        foreach (var definition in allDefinitions)
+        {
+            progress?.ThrowIfAbortRequested();
+            var matches = kbIndex.FindSdts(definition.Name);
+            var sdt = matches.Single();
+            var status = explicitPreserve.Contains(definition.Name)
+                ? ApiPlanSdtWriteStatus.Unchanged
+                : ApiPlanSdtWriteStatus.Reencountered;
+            var item = new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, status, sdt.Guid, null);
+            B111CallSiteProbe.Skipped("SdtWriter.StrictReencounter", definition.Name);
+            onSdtWrite?.Invoke(item);
+            results.Add(item);
+        }
+
+        return new ApiPlanSdtWriteResult(
+            generationPlan.OwnSdts.Count,
+            generationPlan.SharedSdts.Count,
+            0,
+            results.Count(item => item.Status == ApiPlanSdtWriteStatus.Reencountered || item.Status == ApiPlanSdtWriteStatus.Unchanged),
+            transactionFolder.Name,
+            transactionFolder.Guid,
+            results);
+    }
+
     private static ApiPlanSdtPreflightResult CreatePreflightResult(
         KBModel designModel,
         ApiPlanSdtGenerationPlan generationPlan,
@@ -157,6 +242,11 @@ internal static class ApiPlanSdtWriter
         if (folders.Count > 1)
         {
             throw new InvalidOperationException($"Criacao de SDTs bloqueada: foram encontrados {folders.Count} Folders chamados '{SharedFolderName}'. Nenhuma alteracao foi feita.");
+        }
+
+        if (generationPlan.SharedSdts.Count > 0 && folders.Count == 1 && !ApiPlanOwnedObjectDescription.IsOwnedSharedFolder(folders[0].Description))
+        {
+            throw new InvalidOperationException($"Criacao de SDTs bloqueada: o Folder compartilhado '{SharedFolderName}' e externo ou incompativel. Nenhuma alteracao foi feita.");
         }
 
         var preflightIndex = 0;

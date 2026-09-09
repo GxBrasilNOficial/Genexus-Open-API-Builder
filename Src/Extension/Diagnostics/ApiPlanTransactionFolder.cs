@@ -48,6 +48,22 @@ internal static class ApiPlanTransactionFolder
         return folder;
     }
 
+    internal static Folder GetOrReencounterStrict(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
+    {
+        if (designModel is null) throw new ArgumentNullException(nameof(designModel));
+        if (transaction is null) throw new ArgumentNullException(nameof(transaction));
+        if (apiPlan is null) throw new ArgumentNullException(nameof(apiPlan));
+
+        var folder = Preflight(designModel, transaction, apiPlan);
+        if (folder is null)
+        {
+            throw new InvalidOperationException($"Reencontro estrito bloqueado: Folder requerido '{apiPlan.TransactionFolderName}' nao existe. Gere os artefatos base antes. Nenhuma alteracao foi feita.");
+        }
+
+        B111CallSiteProbe.Skipped("TransactionFolder.StrictReencounter", folder.Name);
+        return folder;
+    }
+
     private static void AlignWithTransactionContainer(Folder folder, Transaction transaction)
     {
         if (transaction.Parent is not null)
@@ -88,6 +104,8 @@ internal static class ApiPlanTransactionFolder
         {
             throw new ArgumentNullException(nameof(apiPlan));
         }
+
+        ApiPlanWritePreflight.ValidateTransactionIdentity(transaction, apiPlan, "Folder");
 
         var folders = Folder.GetAll(designModel)
             .Where(folder => string.Equals(folder.Name, apiPlan.TransactionFolderName, StringComparison.OrdinalIgnoreCase))

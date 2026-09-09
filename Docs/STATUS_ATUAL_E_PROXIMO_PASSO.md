@@ -138,21 +138,17 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Decidir o encerramento da revisão e a autorização da F1 da sprint `S-B111`** — F1
-(ordem de gravação e writer final único), F2 (seam de persistência e recibos) e F3
-(durabilidade da intenção e remoção segura). Em 2026-09-08, o painel CLI com quatro
-revisores respondeu `REVISAR` em todos os pareceres, com diversidade de três famílias de
-modelo. Os pareceres solo do MiMo V2.5 Pro e do Codex GPT-5.6-luna foram avaliados, e a
-rodada manual do Cursor respondeu `APROVAR COM RESSALVAS`; suas ressalvas úteis foram
-incorporadas nos planos, nas decisões e no backlog. O parecer solo do Claude Code Opus 5
-também respondeu `APROVAR COM RESSALVAS`; suas ressalvas úteis foram incorporadas como
-pré-condições e clarificações do contrato V2→V3, do diário e dos receipts. Ainda não houve
-implementação, instalação ou push; a rotina pré-push executou apenas restore, testes e build
-do estado atual.
+**Validar manualmente na IDE a implementação da F1 da sprint `S-B111`** — a autorização
+humana foi registrada nesta sessão. A F1 (ordem de gravação e writer final único) foi
+implementada localmente em 2026-09-08; build e gates offline passaram. F2 (seam de
+persistência e recibos) e F3 (durabilidade da intenção e remoção segura) continuam pendentes.
+Ainda não houve instalação, commit ou push. A validação manual deve usar a DLL recém-gerada,
+sem `genexus /install`, pois o manifesto não mudou.
 O parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR
 COM RESSALVAS`; suas observações P3 úteis foram incorporadas como clarificações de escopo,
-canonização e estágios. A revisão documental desta rodada foi commitada separadamente. A
-revisão só deve ser encerrada e a F1 autorizada por decisão humana explícita. Registro da revisão:
+canonização e estágios. A decisão humana de implementar a F1 foi registrada nesta sessão;
+a validação manual na IDE e o aceite operacional ainda estão pendentes. A documentação desta
+rodada está aplicada localmente e ainda não foi commitada. Registro da revisão:
 `Docs/Implementation/2026-09-04-B111-ESTADO-DA-REVISAO-POR-PARES.md`. Item:
 `Docs/Foundation/06-BACKLOG_v0.1.md` (`B111`).
 
@@ -177,7 +173,7 @@ A conclusão da `S-B111` não fecha automaticamente o `B082`: ao encerrar a spri
 
 ## Estado da sprint `S-B111` (planejada em 2026-09-05; território atualizado em 2026-09-08)
 
-Planejamento concluído, avaliação técnica inicial realizada e **nenhuma das três fases foi implementada**: o seam de persistência, os recibos, o diário e a ordem de gravação do API Object seguem como estavam. A consolidação documental foi revisada em 2026-09-08 após um painel CLI de quatro revisores; todos responderam `REVISAR`, a rodada manual do Cursor respondeu `APROVAR COM RESSALVAS`, o parecer solo do Claude Code Opus 5 também respondeu `APROVAR COM RESSALVAS` e o parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR COM RESSALVAS`. As ressalvas úteis foram incorporadas; a decisão humana de encerramento da revisão e autorização da F1 permanece pendente. As decisões aprovadas estão preservadas no registro versionado `Docs/Implementation/2026-09-07-S-B111-DECISOES-APROVADAS.md`.
+Planejamento concluído, avaliação técnica inicial realizada e **a F1 foi implementada localmente** em 2026-09-08: o API Object é preparado em contexto transitório, o writer final concentra o único Save e o gate estrito impede criação/correção implícita de dependências pelos consumidores. Build e gates offline passaram. A validação funcional na IDE ainda está pendente; F2 e F3 não foram implementadas. A consolidação documental foi revisada em 2026-09-08 após um painel CLI de quatro revisores; as ressalvas úteis foram incorporadas e a autorização humana da F1 foi registrada nesta sessão. As decisões aprovadas estão preservadas no registro versionado `Docs/Implementation/2026-09-07-S-B111-DECISOES-APROVADAS.md`.
 
 **O que mudou no território da sprint depois de 2026-09-05**, por necessidade de campo e fora das fases — registrado na seção 13 do plano da F3:
 
@@ -186,13 +182,13 @@ Planejamento concluído, avaliação técnica inicial realizada e **nenhuma das 
 - uma remoção interrompida passou a listar no relatório final o que já saiu da KB;
 - nasceu a recuperação de metadata órfã (`B115`), que ocupa parte do que a seção 4.3 da F3 normatiza. Ela cobre dois estados: o File ausente, e o File presente que ficou apontando para um API Object removido — este último travava o Wizard em `OwnershipSchemaApiNameOrGuidMismatch` sem saída pela ferramenta. Metadata **completa** com esse mesmo descompasso segue exigindo intervenção humana.
 
-Três planos de fase preparados, avaliados na revisão técnica inicial e consolidados
+Três planos de fase foram preparados, avaliados na revisão técnica inicial e consolidados
 documentalmente em 2026-09-08 após o painel CLI, os pareceres solo do MiMo V2.5 Pro e do
 Codex GPT-5.6-luna, a rodada manual do Cursor, o parecer solo do Claude Code Opus 5 e o
-parecer solo do OpenCode Go DeepSeek V4 Pro. As
-ressalvas úteis foram incorporadas e
-commitadas; a revisão por pares permanece em aberto até decisão humana de encerramento e
-autorização da implementação na ordem F1 → F2 → F3:
+parecer solo do OpenCode Go DeepSeek V4 Pro. As ressalvas úteis foram incorporadas localmente.
+A decisão humana desta sessão autorizou a implementação da F1; a validação manual da F1 ainda
+está pendente, e F2/F3 continuam condicionadas ao aceite das fases anteriores. Os arquivos desta
+rodada ainda não foram commitados:
 
 | Fase | Plano | Depende de |
 |---|---|---|
@@ -245,13 +241,14 @@ O experimento também fechou o baseline: o `Build All` sem API passou nos dois e
 
 **`B109` precisa ser reescrito** como família de falhas, com um ramo por causa, em vez de "bug intermitente na etapa de Business Component". O enunciado atual não descreve o que se observou.
 
-## Pendência urgente (próxima sessão de código)
+## Pendência imediata após a implementação local da F1
 
-A pauta que aguarda decisão é o encerramento da revisão por pares e a autorização da F1 da
-`S-B111`, acima; isso ainda não é uma autorização para implementar. De `B109`, apenas o ramo B foi encerrado; o ramo A não
-tem pauta própria, por depender de reprodução — se o sintoma voltar, ele passa à frente. O
-`Rebuild All` do `NETFrameworkPostgreSQL` é pendência separada de environment e não bloqueia
-nada aqui. `B108` e o residual `B082` 1B/2/3 não competem com essas linhas.
+A pauta imediata é validar manualmente na IDE a F1 da `S-B111` com a DLL recém-gerada. Não
+houve instalação, `genexus /install`, commit ou push; o manifesto não mudou. De `B109`, apenas
+o ramo B foi encerrado; o ramo A não tem pauta própria, por depender de reprodução — se o
+sintoma voltar, ele passa à frente. O `Rebuild All` do `NETFrameworkPostgreSQL` é pendência
+separada de environment e não bloqueia a F1. `B108` e o residual `B082` 1B/2/3 não competem
+com essa validação.
 
 ## Evidência da frente encerrada
 
@@ -290,16 +287,16 @@ nada aqui. `B108` e o residual `B082` 1B/2/3 não competem com essas linhas.
 ## Critério de conclusão da revisão pré-push
 
 > O primeiro item abaixo e a promoção à Sprint 9 descrita nele são registro histórico do
-> fechamento daquela frente. Não descrevem o estado atual da `S-B111`: os ajustes desta
-> sprint foram consolidados em commit próprio; isso não autoriza implementação, instalação,
-> push ou encerramento da revisão por pares.
+> fechamento daquela frente. Não descrevem o estado atual da `S-B111`: a F1 já foi implementada
+> localmente, sua validação funcional na IDE ainda está pendente e os ajustes desta rodada não
+> foram commitados.
 
 - **[Histórico — Sprint 9]** alinhamento documental da promoção à Sprint 9 já commitado, em `main`, com working tree limpa;
 - `origin/main` atualizada, sem commits remotos à frente da frente local;
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única é decidir o encerramento da revisão e a autorização da F1 da sprint `S-B111`; o painel CLI de 2026-09-08 teve quatro respostas `REVISAR` e diversidade de três famílias de modelo, os pareceres solo do MiMo V2.5 Pro e do Codex GPT-5.6-luna foram avaliados, a rodada manual do Cursor respondeu `APROVAR COM RESSALVAS`, o parecer solo do Claude Code Opus 5 também respondeu `APROVAR COM RESSALVAS` e o parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR COM RESSALVAS`; as ressalvas úteis foram incorporadas e commitadas nos planos, no registro operacional e no backlog; `B108` está estacionado (`Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); a Etapa 1A do hardening `B082` está aceita (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é validar manualmente na IDE a F1 da sprint `S-B111` com a DLL recém-gerada; o painel CLI de 2026-09-08 teve quatro respostas `REVISAR` e diversidade de três famílias de modelo, os pareceres solo do MiMo V2.5 Pro e do Codex GPT-5.6-luna foram avaliados, a rodada manual do Cursor respondeu `APROVAR COM RESSALVAS`, o parecer solo do Claude Code Opus 5 também respondeu `APROVAR COM RESSALVAS` e o parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR COM RESSALVAS`; as ressalvas úteis foram incorporadas localmente e a decisão humana de implementar a F1 foi registrada nesta sessão; ainda não houve instalação, `genexus /install`, commit ou push; `B108` está estacionado (`Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); a Etapa 1A do hardening `B082` está aceita (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
@@ -459,7 +456,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 10 — Beta estável (`B108` está estacionado; a próxima ação é decidir o encerramento da revisão por pares e autorizar a F1 da sprint `S-B111`; Etapa 1A do `B082` aceita em 2026-09-03; residual 1B/2/3 no plano de hardening).
+- Sprint 10 — Beta estável (`B108` está estacionado; a F1 da sprint `S-B111` aguarda validação manual na IDE; F2 e F3 ainda não foram implementadas; Etapa 1A do `B082` aceita em 2026-09-03; residual 1B/2/3 no plano de hardening).
 
 ## Protocolo de atualização
 

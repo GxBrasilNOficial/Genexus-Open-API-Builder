@@ -44,6 +44,37 @@ internal static class ApiPlanWritePreflight
             kbIndex);
     }
 
+    internal static void ValidateForF1(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        bool generateSdts,
+        bool generateProcedures,
+        bool generateApiObject,
+        bool generateMetadata,
+        bool applyList,
+        bool applyBusinessComponent,
+        ApiPlanKbObjectNameIndex kbIndex,
+        IReadOnlyCollection<string>? preserveSdtNames = null)
+    {
+        if (designModel is null) throw new ArgumentNullException(nameof(designModel));
+        if (transaction is null) throw new ArgumentNullException(nameof(transaction));
+        if (apiPlan is null) throw new ArgumentNullException(nameof(apiPlan));
+        if (kbIndex is null) throw new ArgumentNullException(nameof(kbIndex));
+        ValidateTransactionIdentity(transaction, apiPlan, "B111/F1");
+
+        var requiresConsumersOrApi = generateApiObject || generateMetadata || applyList || applyBusinessComponent;
+        if (!generateSdts && requiresConsumersOrApi)
+        {
+            ApiPlanSdtWriter.PreflightStrict(designModel, transaction, apiPlan, kbIndex, preserveSdtNames);
+        }
+
+        if (!generateProcedures && requiresConsumersOrApi)
+        {
+            ApiPlanApiObjectWriter.PreflightRequiredProceduresStrict(designModel, apiPlan);
+        }
+    }
+
     private static void ValidateForIntentionalChange(
         KBModel designModel,
         Transaction transaction,
@@ -75,10 +106,7 @@ internal static class ApiPlanWritePreflight
             throw new ArgumentNullException(nameof(kbIndex));
         }
 
-        if (!string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException($"{operationCode} bloqueado: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
-        }
+        ValidateTransactionIdentity(transaction, apiPlan, operationCode);
 
         ApiPlanHierarchicalContractMapBuilder.ValidateStructuralSublevelNames(apiPlan);
 
@@ -107,6 +135,38 @@ internal static class ApiPlanWritePreflight
             blocked,
             collisions,
             ". Nenhum objeto planejado foi criado ou alterado."));
+    }
+
+    internal static void ValidateTransactionIdentity(Transaction transaction, ApiPlan apiPlan, string operationCode)
+    {
+        if (transaction is null)
+        {
+            throw new ArgumentNullException(nameof(transaction));
+        }
+
+        if (apiPlan is null)
+        {
+            throw new ArgumentNullException(nameof(apiPlan));
+        }
+
+        if (operationCode is null)
+        {
+            throw new ArgumentNullException(nameof(operationCode));
+        }
+
+        if (!ApiPlanTransactionIdentity.Matches(
+                transaction.Guid,
+                transaction.Name,
+                apiPlan.TransactionGuid,
+                apiPlan.TransactionName))
+        {
+            throw new InvalidOperationException(ApiPlanTransactionIdentity.BuildMismatchMessage(
+                operationCode,
+                transaction.Guid,
+                transaction.Name,
+                apiPlan.TransactionGuid,
+                apiPlan.TransactionName));
+        }
     }
 
     private static string BuildBlockedMessage(

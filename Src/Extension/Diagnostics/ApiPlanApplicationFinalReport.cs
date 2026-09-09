@@ -24,7 +24,12 @@ public sealed class ApiPlanApplicationFinalReport
         IReadOnlyList<ApiPlanApplicationFinalReportItem> blocked,
         IReadOnlyList<string> warnings,
         string? mainObjectName,
-        Guid? mainObjectGuid)
+        Guid? mainObjectGuid,
+        string? plannedApiName = null,
+        string? persistedMainObjectName = null,
+        Guid? persistedMainObjectGuid = null,
+        string? finalApiWriter = null,
+        int apiSaveCount = 0)
     {
         Operation = operation ?? throw new ArgumentNullException(nameof(operation));
         TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
@@ -39,6 +44,11 @@ public sealed class ApiPlanApplicationFinalReport
         Warnings = warnings ?? throw new ArgumentNullException(nameof(warnings));
         MainObjectName = mainObjectName;
         MainObjectGuid = mainObjectGuid;
+        PlannedApiName = plannedApiName ?? apiName;
+        PersistedMainObjectName = persistedMainObjectName ?? mainObjectName;
+        PersistedMainObjectGuid = persistedMainObjectGuid ?? mainObjectGuid;
+        FinalApiWriter = finalApiWriter;
+        ApiSaveCount = apiSaveCount;
     }
 
     public string Operation { get; }
@@ -67,6 +77,16 @@ public sealed class ApiPlanApplicationFinalReport
 
     public Guid? MainObjectGuid { get; }
 
+    public string? PlannedApiName { get; }
+
+    public string? PersistedMainObjectName { get; }
+
+    public Guid? PersistedMainObjectGuid { get; }
+
+    public string? FinalApiWriter { get; }
+
+    public int ApiSaveCount { get; }
+
     public int CreatedCount => Created.Count;
 
     public int UpdatedCount => Updated.Count;
@@ -82,6 +102,8 @@ public sealed class ApiPlanApplicationFinalReport
         var builder = new StringBuilder();
         builder.Append("[Genexus Open API Builder][B081] Relatório final: ");
         builder.Append($"Operação='{Operation}', Transaction='{TransactionName}', ApiName='{ApiName ?? string.Empty}', ");
+        builder.Append($"PlannedApiName='{PlannedApiName ?? string.Empty}', PersistedMainObjectName='{PersistedMainObjectName ?? string.Empty}', PersistedMainObjectGuid='{PersistedMainObjectGuid?.ToString() ?? string.Empty}', ");
+        builder.Append($"FinalApiWriter='{FinalApiWriter ?? string.Empty}', ApiSaveCount={ApiSaveCount}, ");
         builder.Append($"Resultado='{Outcome}', Criados={CreatedCount}, Atualizados={UpdatedCount}, Removidos={DeletedCount}, ");
         builder.Append($"Bloqueados={BlockedCount}, Avisos={WarningCount}, DuraçãoMs={(int)Elapsed.TotalMilliseconds}, Título='{Headline}'.");
         return builder.ToString();
@@ -103,6 +125,18 @@ public sealed class ApiPlanApplicationFinalReport
         if (!string.IsNullOrWhiteSpace(ApiName))
         {
             builder.AppendLine($"API: {ApiName}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(PlannedApiName) || !string.IsNullOrWhiteSpace(PersistedMainObjectName))
+        {
+            builder.AppendLine($"API planejada: {PlannedApiName ?? string.Empty}");
+            builder.AppendLine($"Objeto principal persistido: {PersistedMainObjectName ?? string.Empty}");
+            builder.AppendLine($"Guid persistido do objeto principal: {PersistedMainObjectGuid?.ToString() ?? string.Empty}");
+            if (!string.IsNullOrWhiteSpace(FinalApiWriter))
+            {
+                builder.AppendLine($"Escritor final do API: {FinalApiWriter}");
+            }
+            builder.AppendLine($"Salvamentos do API Object: {ApiSaveCount}");
         }
 
         builder.AppendLine(Localize($"Tempo: {FormatElapsed(Elapsed)}"));
@@ -270,6 +304,16 @@ public sealed class ApiPlanApplicationFinalReportCollector
 
     public Guid? MainObjectGuid { get; private set; }
 
+    public string? PlannedApiName { get; private set; }
+
+    public string? PersistedMainObjectName { get; private set; }
+
+    public Guid? PersistedMainObjectGuid { get; private set; }
+
+    public string? FinalApiWriter { get; private set; }
+
+    public int ApiSaveCount { get; private set; }
+
     public string? HeadlineOverride { get; set; }
 
     public bool HasInterrupted => _blocked.Length > 0;
@@ -279,6 +323,16 @@ public sealed class ApiPlanApplicationFinalReportCollector
         if (!string.IsNullOrWhiteSpace(apiName))
         {
             ApiName = apiName;
+            PlannedApiName ??= apiName;
+        }
+    }
+
+    public void SetPlannedApiName(string? apiName)
+    {
+        if (!string.IsNullOrWhiteSpace(apiName))
+        {
+            PlannedApiName = apiName;
+            ApiName ??= apiName;
         }
     }
 
@@ -291,6 +345,33 @@ public sealed class ApiPlanApplicationFinalReportCollector
 
         MainObjectName = name;
         MainObjectGuid = guid;
+        SetPersistedMainObject(name, guid);
+    }
+
+    public void SetPersistedMainObject(string name, Guid guid)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Nome do objeto persistido e obrigatorio.", nameof(name));
+        }
+
+        PersistedMainObjectName = name;
+        PersistedMainObjectGuid = guid;
+        MainObjectName = name;
+        MainObjectGuid = guid;
+    }
+
+    public void SetApiWriter(string? writer)
+    {
+        if (!string.IsNullOrWhiteSpace(writer))
+        {
+            FinalApiWriter = writer;
+        }
+    }
+
+    public void RecordApiSave()
+    {
+        ApiSaveCount++;
     }
 
     public void AddCreated(string objectKind, string name, string? detail = null)
@@ -403,7 +484,12 @@ public sealed class ApiPlanApplicationFinalReportCollector
             _blocked,
             _warnings,
             MainObjectName,
-            MainObjectGuid);
+            MainObjectGuid,
+            PlannedApiName,
+            PersistedMainObjectName,
+            PersistedMainObjectGuid,
+            FinalApiWriter,
+            ApiSaveCount);
     }
 
     private ApiPlanApplicationFinalOutcome ResolveOutcome()

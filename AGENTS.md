@@ -49,6 +49,11 @@ o agente pode consultar um modelo secundário individual via `xpz-llm-delegate`,
 de autorização por destino e rotulando a resposta como parecer solo ou segunda opinião, sem
 exigir painel multi-modelo, piso de diversidade ou convergência.
 
+**Timeout de consultas delegadas.** Para consultas a outros agentes, usar `1200` segundos como
+timeout padrão do adapter, salvo orientação diferente do usuário. O polling e as esperas entre
+atualizações devem continuar em intervalos controlados, sem interpretar ausência de saída parcial
+como conclusão.
+
 **Acionamento sempre humano.** O agente pode sugerir delegar, nunca acionar por conta própria. A
 saída de qualquer modelo ou painel é insumo de avaliação, não autorização para editar, commitar
 ou concluir convergência.

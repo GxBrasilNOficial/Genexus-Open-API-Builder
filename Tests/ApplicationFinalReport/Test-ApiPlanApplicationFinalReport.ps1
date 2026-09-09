@@ -2,6 +2,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $helperPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanApplicationFinalReport.cs'
+$identityPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanTransactionIdentity.cs'
+$resolutionPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanMainObjectResolution.cs'
 $dialogPath = Join-Path $PSScriptRoot '..\..\Src\Extension\ApiPlanApplicationFinalReportDialog.cs'
 $runtimeAssemblies = @([System.AppContext]::GetData('TRUSTED_PLATFORM_ASSEMBLIES') -split [System.IO.Path]::PathSeparator |
     Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
@@ -9,12 +11,19 @@ if ($runtimeAssemblies.Count -eq 0) {
     throw 'Assemblies do runtime PowerShell atual não foram encontrados.'
 }
 
-Add-Type -Path $helperPath -ReferencedAssemblies @($runtimeAssemblies | Sort-Object -Unique)
+Add-Type -Path @($helperPath, $identityPath, $resolutionPath) -ReferencedAssemblies @($runtimeAssemblies | Sort-Object -Unique)
 
 function Assert-True {
     param([bool]$Condition, [string]$Message)
     if (-not $Condition) {
         throw "ASSERT_TRUE_FAILED: $Message"
+    }
+}
+
+function Assert-False {
+    param([bool]$Condition, [string]$Message)
+    if ($Condition) {
+        throw "ASSERT_FALSE_FAILED: $Message"
     }
 }
 
@@ -43,9 +52,84 @@ Assert-Equal 1 $report.UpdatedCount 'Atualizados: ErrorResponse reencontrado.'
 Assert-Equal 0 $report.BlockedCount 'Sem bloqueios.'
 Assert-Equal 1 $report.WarningCount 'Um aviso.'
 Assert-True ($report.BuildOutputSummary() -match "\[B081\] Relatório final") 'Output summary deve citar B081.'
+Assert-True ($report.BuildOutputSummary() -match "PersistedMainObjectGuid='11111111-1111-1111-1111-111111111111'") 'Output summary deve expor o GUID persistido.'
 Assert-True ($report.BuildReadableBody() -match 'Criados \(4\)') 'Corpo legivel lista criados.'
+Assert-True ($report.BuildReadableBody() -match 'Guid persistido do objeto principal: 11111111-1111-1111-1111-111111111111') 'Corpo legivel deve expor o GUID persistido.'
 Assert-True ($report.BuildReadableBody() -match 'Atualizados \(1\)') 'Corpo legivel lista atualizados.'
 Assert-True ($report.BuildReadableBody() -match '\[Folder\] ContratoOpenApi') 'Corpo legivel lista Folder criado.'
+
+# S-B111 F1: exercita as decisões de identidade e resolução sem depender de uma KB/IDE.
+$transactionGuid = [guid]'22222222-2222-2222-2222-222222222222'
+$otherGuid = [guid]'33333333-3333-3333-3333-333333333333'
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanTransactionIdentity]::Matches(
+        $transactionGuid,
+        'Contrato',
+        $transactionGuid,
+        'Contrato')) 'Identidade aceita somente GUID e nome correspondentes.'
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanTransactionIdentity]::Matches(
+        $otherGuid,
+        'Contrato',
+        $transactionGuid,
+        'Contrato')) 'Mesmo nome com GUID diferente deve ser bloqueado.'
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanTransactionIdentity]::Matches(
+        $transactionGuid,
+        'OutraTransaction',
+        $transactionGuid,
+        'Contrato')) 'Mesmo GUID com nome diferente deve ser bloqueado.'
+$identityDiagnostic = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanTransactionIdentity]::BuildMismatchMessage(
+    'B111/F1',
+    $otherGuid,
+    'Contrato',
+    $transactionGuid,
+    'Contrato')
+Assert-True ($identityDiagnostic -match 'TransactionGuid') 'Diagnostico de identidade deve expor GUID esperado e atual.'
+
+$confirmedCandidate = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectCandidate]::new($transactionGuid, 'apiContrato')
+$confirmedResolution = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectResolver]::Resolve(
+    $transactionGuid,
+    'apiContrato',
+    $confirmedCandidate,
+    [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectCandidate[]]@())
+Assert-True $confirmedResolution.IsConfirmed 'API Object lido pelo GUID planejado deve ser confirmado.'
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectResolutionKind]::ConfirmedByGuid) $confirmedResolution.Kind 'Resolucao confirmada deve registrar a origem por GUID.'
+Assert-Equal $transactionGuid $confirmedResolution.Candidate.Guid 'Resolucao confirmada deve conservar o GUID planejado.'
+
+$nominalOnly = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectCandidate[]]@(
+    [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectCandidate]::new($otherGuid, 'apiContrato'))
+$unconfirmedResolution = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectResolver]::Resolve(
+    $transactionGuid,
+    'apiContrato',
+    [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectCandidate]$null,
+    $nominalOnly)
+Assert-False $unconfirmedResolution.IsConfirmed 'Candidato encontrado apenas por nome nao pode criar o link.'
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectResolutionKind]::GuidNotFound) $unconfirmedResolution.Kind 'Ausencia da releitura por GUID deve ser explicitada.'
+
+$ambiguousCandidates = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectCandidate[]]@(
+    [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectCandidate]::new($otherGuid, 'apiContrato'),
+    [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectCandidate]::new([guid]'44444444-4444-4444-4444-444444444444', 'apiContrato'))
+$ambiguousResolution = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectResolver]::Resolve(
+    $transactionGuid,
+    'apiContrato',
+    [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectCandidate]$null,
+    $ambiguousCandidates)
+Assert-False $ambiguousResolution.IsConfirmed 'Ambiguidade nominal nao pode ser resolvida automaticamente.'
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectResolutionKind]::NameAmbiguousWithoutGuid) $ambiguousResolution.Kind 'Ambiguidade deve aparecer como estado de resolucao.'
+
+$missingGuidAmbiguousResolution = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectResolver]::Resolve(
+    [guid]::Empty,
+    'apiContrato',
+    [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectCandidate]$null,
+    $ambiguousCandidates)
+Assert-False $missingGuidAmbiguousResolution.IsConfirmed 'GUID ausente com candidatos multiplos tambem nao pode ser associado.'
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectResolutionKind]::NameAmbiguousWithoutGuid) $missingGuidAmbiguousResolution.Kind 'GUID ausente deve preservar o diagnostico de ambiguidade nominal.'
+
+$mismatchedResolution = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectResolver]::Resolve(
+    $transactionGuid,
+    'apiContrato',
+    [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectCandidate]::new($otherGuid, 'apiContrato'),
+    [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectCandidate[]]@())
+Assert-False $mismatchedResolution.IsConfirmed 'Objeto devolvido com GUID diferente nao pode ser associado.'
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMainObjectResolutionKind]::GuidNameMismatch) $mismatchedResolution.Kind 'Divergencia entre GUID planejado e objeto lido deve ser bloqueada.'
 
 $long = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalReportCollector]::new('Wizard', 'Teste', 'apiTeste')
 $long.AddWarning('Descricoes de servico usaram fallback em ingles (Idioma principal da KB ainda nao validado por API publica; fallback tecnico em ingles registrado no ApiPlan.).')
@@ -100,9 +184,14 @@ Assert-True ($dialogSource -match 'CenterInWorkingArea\(working\)') 'Dialogo B08
 
 $packageSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Package.cs')
 $apiPlanSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Domain\ApiPlan.cs')
+$identitySource = Get-Content -Raw -LiteralPath $identityPath
+$resolutionSource = Get-Content -Raw -LiteralPath $resolutionPath
 $sdtWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanSdtWriter.cs')
 $businessComponentWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanBusinessComponentWriter.cs')
 $listWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanListProcedureWriter.cs')
+$apiObjectWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanApiObjectWriter.cs')
+$metadataWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanMetadataFileWriter.cs')
+$transientContextSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanTransientApiContext.cs')
 Assert-True ($packageSource -match 'AppendPlanSideEffects\(collector, apiPlan\)') 'B081 deve anexar efeitos de Folder e Transaction ao relatorio final.'
 Assert-True ($packageSource -match 'conflict\.DiagnosticDetails') 'B081 deve preservar o diagnóstico detalhado de colisões no Output.'
 Assert-True ($packageSource -match 'onSdtWrite: item => AppendSdtWriteItemToReport') 'B081 deve receber SDTs escritos internamente por B055/B070.'
@@ -115,6 +204,58 @@ Assert-True ($apiPlanSource -match 'SharedSdtFolderWasCreated') 'ApiPlan deve tr
 Assert-True ($sdtWriterSource -match 'SharedSdtFolderWasCreated = true') 'Writer de SDT deve marcar o Folder compartilhado criado.'
 Assert-True ($businessComponentWriterSource -match 'onSdtWrite') 'Writer de Business Component deve propagar SDTs escritos.'
 Assert-True ($listWriterSource -match 'onSdtWrite') 'Writer de List deve propagar SDTs escritos.'
+
+# S-B111 F1: contexto transitório, ordem de gravação e guard de API/List.
+Assert-True ($transientContextSource -match 'PlannedApiGuid') 'F1 deve transportar o GUID planejado no contexto transitório.'
+Assert-True ($apiObjectWriterSource -match 'PrepareOrReencounter') 'F1 deve preparar o API Object antes da gravação final.'
+Assert-True ($apiObjectWriterSource -match 'SavePreparedApiObject') 'F1 deve separar preparação e Save do API Object.'
+Assert-True ($apiObjectWriterSource -match 'apiPlan\.PlannedApiGuid = api\.Guid') 'F1 deve fixar o GUID retornado pela criação, sem atribuí-lo manualmente.'
+Assert-True ($apiObjectWriterSource -match 'api\.Save\(\);\s*onApiSaveCompleted\?\.Invoke\(api\.Guid\)') 'B111 deve registrar o Save do API Object imediatamente após o Save físico.'
+Assert-True ($businessComponentWriterSource -match 'api\.Save\(\);\s*onApiSaveCompleted\?\.Invoke\(api\.Guid\)') 'BC deve registrar o Save do API Object antes da releitura/validacao.'
+Assert-True ($listWriterSource -match 'api\.Save\(\);\s*onApiSaveCompleted\?\.Invoke\(api\.Guid\)') 'List deve registrar o Save do API Object antes da releitura/validacao.'
+Assert-True ($metadataWriterSource -match 'apiPlan\.PlannedApiGuid = apiObject\.Guid') 'Metadata-only deve transportar o GUID lido do API Object reencontrado.'
+Assert-True ($sdtWriterSource -match 'StrictReencounter') 'F1 deve possuir reencontro estrito de SDTs.'
+Assert-True ($sdtWriterSource -match 'PreflightStrict') 'F1 deve validar SDTs estritamente antes das gravações consumidoras.'
+Assert-True ($packageSource -match 'ApiPlanWritePreflight\.ValidateForF1') 'F1 deve executar o gate reduzido antes das fases de escrita.'
+Assert-True ($packageSource -match 'ApiPlanTransientApiSelection') 'F1 deve transportar as flags da seleção no contexto transitório.'
+Assert-True ($transientContextSource -match 'TransactionGuid') 'F1 deve transportar a identidade da Transaction.'
+Assert-True ($transientContextSource -match 'ApplicationId') 'F1 deve transportar a identidade da aplicação.'
+Assert-True ($transientContextSource -match 'ExistingApiServiceGroupSource') 'F1 deve capturar o Source persistido antes da mutação.'
+Assert-True ($packageSource -match 'TryPrepareApiObject') 'Sync/Wizard devem usar preparação transitória do API Object.'
+Assert-True ($packageSource -match 'TryResolveMainObjectFromKb\(collector, designModel, apiPlan\)') 'B081 deve resolver o objeto principal com o ApiPlan gerenciado disponível.'
+Assert-True ($packageSource -match 'API\.Get\(designModel, apiPlan\.PlannedApiGuid\.Value\)') 'B081 deve confirmar o API Object pelo GUID planejado.'
+Assert-True ($packageSource -match 'ApiPlanMainObjectResolver\.Resolve') 'B081 deve aplicar a decisão central de resolução segura.'
+Assert-True ($packageSource -match 'if \(apiPlan is null\)') 'A compatibilidade nominal deve ficar restrita aos fluxos legados sem ApiPlan.'
+Assert-True ($identitySource -match 'actualTransactionGuid == expectedTransactionGuid') 'A guarda de identidade deve comparar GUID real e planejado.'
+Assert-True ($identitySource -match 'StringComparison\.Ordinal') 'A guarda de identidade deve comparar o nome com semantica ordinal.'
+Assert-True ($resolutionSource -match 'NameAmbiguousWithoutGuid') 'A resolução deve possuir estado explícito para ambiguidade nominal.'
+Assert-True ($resolutionSource -match 'associacao por nome nao foi aplicada') 'A resolução deve impedir fallback nominal autoritativo.'
+Assert-Equal 2 ([regex]::Matches($packageSource, 'var b111ManagedApply = selection\.GenerateApiObject \|\| selection\.GenerateMetadata \|\| selection\.ApplyBusinessComponent \|\| selection\.ApplyList;').Count) 'Sync e Wizard devem usar o mesmo predicado de aplicação gerenciada da F1.'
+Assert-True ($packageSource -match 'context: out syncApiContext') 'Sync deve propagar o contexto transitório aos consumidores.'
+Assert-True ($packageSource -match 'context: out wizardApiContext') 'Wizard deve propagar o contexto transitório aos consumidores.'
+Assert-True ($packageSource -notmatch 'selection\.GenerateApiObject && selection\.ApplyBusinessComponent') 'F1 não deve manter a decisão antiga por existência nominal antes do consumidor.'
+Assert-True ($businessComponentWriterSource -match 'ApiPlanSdtWriter\.WriteMode\.StrictReencounter') 'BC deve reencontrar SDTs sem criar/corrigir durante o consumo.'
+Assert-True ($listWriterSource -match 'ApiPlanSdtWriter\.WriteMode\.StrictReencounter') 'List deve reencontrar SDTs sem criar/corrigir durante o consumo.'
+Assert-True ($businessComponentWriterSource -match 'apiContext\.PersistApiObject') 'BC deve decidir o Save do API pelo contexto transitório.'
+Assert-True ($listWriterSource -match 'apiContext\.PersistApiObject') 'List deve decidir o Save do API pelo contexto transitório.'
+Assert-True ($businessComponentWriterSource -match 'if \(apiContext is null \|\| apiContext\.PersistApiObject\)') 'BC sem persistência de API não deve validar variáveis de uma mutação que não ocorrerá.'
+Assert-True ($listWriterSource -match 'if \(apiContext is null \|\| apiContext\.PersistApiObject\)') 'List sem persistência de API não deve validar variáveis de uma mutação que não ocorrerá.'
+Assert-True ($listWriterSource -match 'apiContext\.BusinessComponentParticipated') 'List deve usar o fato da participação do BC no guard de parâmetros.'
+Assert-True ($listWriterSource -match 'apiContext\.ApiWasCreated') 'List deve distinguir API novo de API existente antes da mutação.'
+Assert-True ($businessComponentWriterSource -match 'onSaveCompleted') 'BC deve emitir trace de Output somente após cada Save físico.'
+Assert-True ($listWriterSource -match 'onSaveCompleted') 'List deve emitir trace de Output somente após cada Save físico.'
+
+$bcSaveBlock = [regex]::Match($businessComponentWriterSource, '(?s)var saveSteps = new List<.*?var saveIndex = 0;').Value
+$listSaveBlock = [regex]::Match($listWriterSource, '(?s)var saveSteps = new List<.*?var saveIndex = 0;').Value
+Assert-True ($bcSaveBlock.IndexOf('(get.Name', [System.StringComparison]::Ordinal) -ge 0) 'BC deve salvar Procedures no bloco de etapas.'
+Assert-True ($bcSaveBlock.IndexOf('(api.Name', [System.StringComparison]::Ordinal) -gt $bcSaveBlock.IndexOf('(get.Name', [System.StringComparison]::Ordinal)) 'BC deve colocar o API Save depois das Procedures.'
+Assert-True ($listSaveBlock.IndexOf('(procedure.Name', [System.StringComparison]::Ordinal) -ge 0) 'List deve salvar a Procedure no bloco de etapas.'
+Assert-True ($listSaveBlock.IndexOf('(api.Name', [System.StringComparison]::Ordinal) -gt $listSaveBlock.IndexOf('(procedure.Name', [System.StringComparison]::Ordinal)) 'List deve colocar o API Save depois da Procedure.'
+
+$reportSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanApplicationFinalReport.cs')
+Assert-True ($reportSource -match 'PlannedApiName') 'B081 deve registrar o nome planejado do API Object.'
+Assert-True ($reportSource -match 'PersistedMainObjectGuid') 'B081 deve registrar o GUID persistido do objeto principal.'
+Assert-True ($reportSource -match 'ApiSaveCount') 'B081 deve registrar a contagem física de Save do API Object.'
 
 $placementSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\ExtensionIdeScreenPlacement.cs')
 $wizardSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\PrototypeWizardDialog.cs')

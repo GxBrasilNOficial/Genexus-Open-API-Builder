@@ -216,7 +216,13 @@ public sealed class Package : AbstractPackageUI
                 apiPlan,
                 allowIntentionalContractRefresh,
                 kbIndex,
-                progress);
+                progress,
+                onApiSaveCompleted: guid =>
+                {
+                    report?.SetPersistedMainObject(apiPlan.ApiName, guid);
+                    report?.SetApiWriter("B054");
+                    report?.RecordApiSave();
+                });
             WriteOutput($"[Genexus Open API Builder][B054] Escrita de API Object concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiName='{result.ApiName}', Status='{result.Status}', ReencounteredSdts={result.ReencounteredSdts}, ReencounteredProcedures={result.ReencounteredProcedures}, PlannedServices={result.PlannedServices}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhum REST completo, seguranca definitiva ou metadata persistente definitiva foi criado.");
             foreach (var procedure in result.Procedures)
             {
@@ -226,13 +232,57 @@ public sealed class Package : AbstractPackageUI
             WriteOutput($"[Genexus Open API Builder][B054] API Object {result.Status}: Name='{result.ApiName}', Guid='{result.Guid}'.");
             WriteOutput($"[Genexus Open API Builder][B056] Descricoes aplicadas no API Object real: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiName='{result.ApiName}', DescribedServices={apiPlan.ServiceDescriptions.Count}. Sem antecipar REST completo, codigo HTTP, seguranca definitiva ou metadata persistente.");
             report?.AddFromWriteStatus("API Object", result.ApiName, result.Status);
-            report?.SetMainObject(result.ApiName, result.Guid);
+            report?.SetPlannedApiName(result.ApiName);
             report?.SetApiName(result.ApiName);
             return true;
         }
         catch (Exception ex)
         {
             WriteOutput($"[Genexus Open API Builder][B054] Criacao de API Object bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
+            report?.AddBlocked("API Object", apiPlan.ApiName, ex.Message);
+            return false;
+        }
+    }
+
+    private static bool TryPrepareApiObject(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        string triggerSource,
+        ApiPlanKbObjectNameIndex kbIndex,
+        bool allowIntentionalContractRefresh,
+        bool persistApiObject,
+        bool businessComponentParticipated,
+        string finalWriter,
+        ApiPlanBusyProgressSession? progress,
+        ApiPlanApplicationFinalReportCollector? report,
+        ApiPlanTransientApiSelection? selection,
+        IReadOnlyCollection<string>? preserveSdtNames,
+        out ApiPlanTransientApiContext? context)
+    {
+        context = null;
+        try
+        {
+            context = ApiPlanApiObjectWriter.PrepareOrReencounter(
+                designModel,
+                transaction,
+                apiPlan,
+                allowIntentionalContractRefresh,
+                kbIndex,
+                persistApiObject,
+                businessComponentParticipated,
+                finalWriter,
+                selection,
+                preserveSdtNames,
+                progress);
+            report?.SetPlannedApiName(context.PlannedApiName);
+            report?.SetApiName(context.PlannedApiName);
+            WriteOutput($"[Genexus Open API Builder][B054] API Object preparado: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedApiName='{context.PlannedApiName}', PlannedApiGuid='{context.PlannedApiGuid}', ApiWasCreated={context.ApiWasCreated}, PersistApiObject={context.PersistApiObject}, FinalWriter='{context.FinalWriter}'. Nenhum Save de API Object foi solicitado nesta etapa.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            WriteOutput($"[Genexus Open API Builder][B054] Preparacao de API Object bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
             report?.AddBlocked("API Object", apiPlan.ApiName, ex.Message);
             return false;
         }
@@ -288,7 +338,8 @@ public sealed class Package : AbstractPackageUI
         bool allowIntentionalContractRefresh = false,
         IReadOnlyCollection<string>? preserveSdtNames = null,
         ApiPlanApplicationFinalReportCollector? report = null,
-        ApiPlanBusyProgressSession? progress = null)
+        ApiPlanBusyProgressSession? progress = null,
+        ApiPlanTransientApiContext? apiContext = null)
     {
         if (kbIndex is null)
         {
@@ -305,12 +356,23 @@ public sealed class Package : AbstractPackageUI
                 preserveSdtNames,
                 kbIndex,
                 onSdtWrite: item => AppendSdtWriteItemToReport(report, item),
-                progress: progress);
+                progress: progress,
+                apiContext: apiContext,
+                onSaveCompleted: (stage, label, elapsed) => WriteOutput($"[Genexus Open API Builder][B111] Save concluido: Stage='{stage}', Object='{label}', DurationMs={elapsed}."),
+                onApiSaveCompleted: guid =>
+                {
+                    report?.SetPersistedMainObject(apiPlan.ApiName, guid);
+                    report?.SetApiWriter("Business Component");
+                    report?.RecordApiSave();
+                });
             var deleteGuidPart = result.DeleteProcedureGuid == Guid.Empty
                 ? string.Empty
                 : $", DeleteProcedureGuid='{result.DeleteProcedureGuid}'";
-            WriteOutput($"[Genexus Open API Builder][B071-B073/B079] REST via Business Component aplicado e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', GetProcedureGuid='{result.GetProcedureGuid}', CreateProcedureGuid='{result.CreateProcedureGuid}', UpdateProcedureGuid='{result.UpdateProcedureGuid}'{deleteGuidPart}, ApiObjectGuid='{result.ApiObjectGuid}', PrimaryKeyParts={result.PrimaryKeyParts}, CreateFields={result.CreateFields}, UpdateFields={result.UpdateFields}, ResponseFields={result.ResponseFields}. Status HTTP controlado por RestCode no API Object; ErrorResponse exposto como saida publica dos servicos; Location de Create emitido nativamente via HttpResponse.");
-            WriteOutput($"[Genexus Open API Builder][B056] Descricoes reaplicadas no API Object real durante B071-B073/B079: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiObjectGuid='{result.ApiObjectGuid}', DescribedServices={apiPlan.ServiceDescriptions.Count}. Service Source preserva o contrato Procedure/API Object atual.");
+            var apiObjectSavedByBusinessComponent = apiContext is null || (apiContext.PersistApiObject && string.Equals(apiContext.FinalWriter, "Business Component", StringComparison.Ordinal));
+            var apiObjectStageStatus = apiObjectSavedByBusinessComponent ? "API Object sincronizado" : "API Object nao gravado nesta etapa";
+            WriteOutput($"[Genexus Open API Builder][B071-B073/B079] REST via Business Component aplicado; {apiObjectStageStatus}: Transaction='{transaction.Name}', Trigger='{triggerSource}', GetProcedureGuid='{result.GetProcedureGuid}', CreateProcedureGuid='{result.CreateProcedureGuid}', UpdateProcedureGuid='{result.UpdateProcedureGuid}'{deleteGuidPart}, ApiObjectGuid='{result.ApiObjectGuid}', PrimaryKeyParts={result.PrimaryKeyParts}, CreateFields={result.CreateFields}, UpdateFields={result.UpdateFields}, ResponseFields={result.ResponseFields}. Status HTTP controlado por RestCode no API Object; ErrorResponse exposto como saida publica dos servicos; Location de Create emitido nativamente via HttpResponse.");
+            var descriptionStageStatus = apiObjectSavedByBusinessComponent ? "Descricoes reaplicadas no API Object real" : "Descricoes do API Object nao reaplicadas nesta etapa";
+            WriteOutput($"[Genexus Open API Builder][B056] {descriptionStageStatus} durante B071-B073/B079: Transaction='{transaction.Name}', Trigger='{triggerSource}', ApiObjectGuid='{result.ApiObjectGuid}', DescribedServices={apiPlan.ServiceDescriptions.Count}. Service Source preserva o contrato Procedure/API Object atual.");
             foreach (var procedureName in apiPlan.ProcedureNames.Where(name =>
                          name.EndsWith("_API_Get", StringComparison.OrdinalIgnoreCase)
                          || name.EndsWith("_API_Create", StringComparison.OrdinalIgnoreCase)
@@ -320,8 +382,12 @@ public sealed class Package : AbstractPackageUI
                 report?.AddUpdated("Procedure", procedureName, "Business Component");
             }
 
-            report?.AddUpdated("API Object", apiPlan.ApiName, "Business Component");
-            report?.SetMainObject(apiPlan.ApiName, result.ApiObjectGuid);
+            report?.SetPlannedApiName(apiPlan.ApiName);
+            if (apiContext is null || (apiContext.PersistApiObject && string.Equals(apiContext.FinalWriter, "Business Component", StringComparison.Ordinal)))
+            {
+                var status = apiContext is not null && apiContext.ApiWasCreated ? "Created" : "Updated";
+                report?.AddFromWriteStatus("API Object", apiPlan.ApiName, status, "Business Component");
+            }
             report?.SetApiName(apiPlan.ApiName);
             return true;
         }
@@ -349,7 +415,8 @@ public sealed class Package : AbstractPackageUI
         bool allowIntentionalContractRefresh = false,
         IReadOnlyCollection<string>? preserveSdtNames = null,
         ApiPlanApplicationFinalReportCollector? report = null,
-        ApiPlanBusyProgressSession? progress = null)
+        ApiPlanBusyProgressSession? progress = null,
+        ApiPlanTransientApiContext? apiContext = null)
     {
         try
         {
@@ -361,8 +428,18 @@ public sealed class Package : AbstractPackageUI
                 preserveSdtNames,
                 kbIndex,
                 onSdtWrite: item => AppendSdtWriteItemToReport(report, item),
-                progress: progress);
-            WriteOutput($"[Genexus Open API Builder][B070] List aplicado e API Object sincronizado: Transaction='{transaction.Name}', Trigger='{triggerSource}', ListProcedureGuid='{result.ListProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', Filters={result.Filters}, OrderParts={result.OrderParts}, DefaultPageSize={result.DefaultPageSize}, MaximumPageSize={result.MaximumPageSize}. B076 e validacao runtime do List permanecem pendentes.");
+                progress: progress,
+                apiContext: apiContext,
+                onSaveCompleted: (stage, label, elapsed) => WriteOutput($"[Genexus Open API Builder][B111] Save concluido: Stage='{stage}', Object='{label}', DurationMs={elapsed}."),
+                onApiSaveCompleted: guid =>
+                {
+                    report?.SetPersistedMainObject(apiPlan.ApiName, guid);
+                    report?.SetApiWriter("List");
+                    report?.RecordApiSave();
+                });
+            var apiObjectSavedByList = apiContext is null || (apiContext.PersistApiObject && string.Equals(apiContext.FinalWriter, "List", StringComparison.Ordinal));
+            var apiObjectStageStatus = apiObjectSavedByList ? "API Object sincronizado" : "API Object nao gravado nesta etapa";
+            WriteOutput($"[Genexus Open API Builder][B070] List aplicado; {apiObjectStageStatus}: Transaction='{transaction.Name}', Trigger='{triggerSource}', ListProcedureGuid='{result.ListProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', Filters={result.Filters}, OrderParts={result.OrderParts}, DefaultPageSize={result.DefaultPageSize}, MaximumPageSize={result.MaximumPageSize}. B076 e validacao runtime do List permanecem pendentes.");
             var listProcedure = apiPlan.ProcedureNames.FirstOrDefault(name =>
                 name.EndsWith("_API_List", StringComparison.OrdinalIgnoreCase));
             if (!string.IsNullOrWhiteSpace(listProcedure))
@@ -370,8 +447,12 @@ public sealed class Package : AbstractPackageUI
                 report?.AddUpdated("Procedure", listProcedure, "List");
             }
 
-            report?.AddUpdated("API Object", apiPlan.ApiName, "List");
-            report?.SetMainObject(apiPlan.ApiName, result.ApiObjectGuid);
+            report?.SetPlannedApiName(apiPlan.ApiName);
+            if (apiContext is null || (apiContext.PersistApiObject && string.Equals(apiContext.FinalWriter, "List", StringComparison.Ordinal)))
+            {
+                var status = apiContext is not null && apiContext.ApiWasCreated ? "Created" : "Updated";
+                report?.AddFromWriteStatus("API Object", apiPlan.ApiName, status, "List");
+            }
             report?.SetApiName(apiPlan.ApiName);
             return true;
         }
@@ -509,6 +590,7 @@ public sealed class Package : AbstractPackageUI
             var selection = ApiPlanTransactionSyncOrchestrator.BuildSelection(preview, dialog.Choices);
             var preserveSdts = ApiPlanTransactionSyncOrchestrator.ResolvePreservedSdtNames(preview, dialog.Choices);
             var apiPlan = ApiPlanBuilder.Build(knowledgeBase.DesignModel, transaction, selection);
+            var b111ManagedApply = selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyBusinessComponent || selection.ApplyList;
             var report = new ApiPlanApplicationFinalReportCollector("Sincronizar", transaction.Name, apiPlan.ApiName);
             var stopwatch = Stopwatch.StartNew();
             AppendPlanWarnings(report, apiPlan);
@@ -545,6 +627,18 @@ public sealed class Package : AbstractPackageUI
                         apiPlan.Services.Select(service => service.Name),
                         selection.ApplyBusinessComponent);
                     ApiPlanWritePreflight.ValidateForSync(knowledgeBase.DesignModel, transaction, apiPlan, syncKbIndex);
+                    ApiPlanWritePreflight.ValidateForF1(
+                        knowledgeBase.DesignModel,
+                        transaction,
+                        apiPlan,
+                        selection.GenerateSdts,
+                        selection.GenerateProcedures,
+                        selection.GenerateApiObject,
+                        selection.GenerateMetadata,
+                        selection.ApplyList,
+                        selection.ApplyBusinessComponent,
+                        syncKbIndex,
+                        preserveSdts);
                 }
                 catch (Exception ex) when (ex is not ApiPlanBusyAbortedException)
                 {
@@ -582,7 +676,36 @@ public sealed class Package : AbstractPackageUI
                 }
 
                 busy.ThrowIfAbortRequested();
-                if (selection.GenerateApiObject && !selection.ApplyBusinessComponent)
+                ApiPlanTransientApiContext? syncApiContext = null;
+                var syncHasConsumers = selection.ApplyBusinessComponent || selection.ApplyList;
+                if (syncHasConsumers)
+                {
+                    var syncFinalWriter = selection.ApplyList ? "List" : "Business Component";
+                    busy.Report("API Object", 0, 0, apiPlan.ApiName);
+                    var apiMs = busy.Measure(() =>
+                    {
+                        if (!TryPrepareApiObject(
+                            knowledgeBase.DesignModel,
+                            transaction,
+                            apiPlan,
+                            "SyncB085",
+                            syncKbIndex,
+                            allowIntentionalContractRefresh: true,
+                            persistApiObject: selection.GenerateApiObject,
+                            businessComponentParticipated: selection.ApplyBusinessComponent,
+                            finalWriter: syncFinalWriter,
+                            progress: busy.Session,
+                            report: report,
+                            selection: new ApiPlanTransientApiSelection(selection.GenerateSdts, selection.GenerateProcedures, selection.GenerateApiObject, selection.GenerateMetadata, selection.ApplyList, selection.ApplyBusinessComponent),
+                            preserveSdtNames: preserveSdts,
+                            context: out syncApiContext))
+                        {
+                            throw new InvalidOperationException("SYNC_API_OBJECT_FAILED");
+                        }
+                    });
+                    busy.Report("API Object", 1, 1, apiPlan.ApiName, apiMs);
+                }
+                else if (selection.GenerateApiObject)
                 {
                     busy.Report("API Object", 0, 0, apiPlan.ApiName);
                     var apiMs = busy.Measure(() =>
@@ -602,29 +725,6 @@ public sealed class Package : AbstractPackageUI
                     });
                     busy.Report("API Object", 1, 1, apiPlan.ApiName, apiMs);
                 }
-                else if (selection.GenerateApiObject && selection.ApplyBusinessComponent)
-                {
-                    if (!API.GetAll(knowledgeBase.DesignModel).Any(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        busy.Report("API Object", 0, 0, apiPlan.ApiName);
-                        var apiMs = busy.Measure(() =>
-                        {
-                            if (!TryCreateApiObject(
-                                knowledgeBase.DesignModel,
-                                transaction,
-                                apiPlan,
-                                "SyncB085",
-                                syncKbIndex,
-                                busy.Session,
-                                report,
-                                allowIntentionalContractRefresh: true))
-                            {
-                                throw new InvalidOperationException("SYNC_API_OBJECT_FAILED");
-                            }
-                        });
-                        busy.Report("API Object", 1, 1, apiPlan.ApiName, apiMs);
-                    }
-                }
 
                 busy.ThrowIfAbortRequested();
                 if (selection.ApplyBusinessComponent)
@@ -638,7 +738,8 @@ public sealed class Package : AbstractPackageUI
                         preserveSdtNames: preserveSdts,
                         report: report,
                         progress: busy.Session,
-                        kbIndex: syncKbIndex);
+                        kbIndex: syncKbIndex,
+                        apiContext: syncApiContext);
                     if (bcFailed)
                     {
                         stopwatch.Stop();
@@ -659,7 +760,8 @@ public sealed class Package : AbstractPackageUI
                         allowIntentionalContractRefresh: true,
                         preserveSdtNames: preserveSdts,
                         report: report,
-                        progress: busy.Session);
+                        progress: busy.Session,
+                        apiContext: syncApiContext);
                     if (listFailed)
                     {
                         stopwatch.Stop();
@@ -1136,6 +1238,7 @@ public sealed class Package : AbstractPackageUI
         var classifiedSensitiveCount = snapshot.Attributes.Count(item => item.IsSensitive);
         var classifiedAuditCount = snapshot.Attributes.Count(item => item.IsAudit);
         var apiPlan = ApiPlanBuilder.Build(knowledgeBase.DesignModel, transaction, selection);
+        var b111ManagedApply = selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyBusinessComponent || selection.ApplyList;
         var applyOwner = ResolveFinalReportOwner();
         var sdtGenerationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var classificationConfiguration = apiPlan.FieldClassificationConfiguration;
@@ -1230,7 +1333,7 @@ public sealed class Package : AbstractPackageUI
                     : Environment.NewLine + ApiPlanCollisionConflict.FormatList(collisions);
                 WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Estado bloqueado detectado no wizard antes de confirmar escrita: Transaction='{transaction.Name}', BlockedStages='{string.Join(",", blockedGenerationStages.Select(stage => stage.StageName))}', Details='{string.Join(" | ", blockedGenerationStages.Select(stage => stage.Detail))}'{collisionText}. Nenhum Save foi solicitado.");
             }
-            if (!selection.GenerateSdts && !selection.GenerateProcedures && !selection.GenerateApiObject && !selection.GenerateMetadata && !selection.ApplyList && !selection.ApplyBusinessComponent)
+            if (!b111ManagedApply && !selection.GenerateSdts && !selection.GenerateProcedures)
             {
                 WriteOutput($"[Genexus Open API Builder][B040-B046/B060] Nenhuma etapa de escrita foi confirmada no wizard para Transaction='{transaction.Name}'. Nenhuma escrita foi solicitada.");
                 return true;
@@ -1268,6 +1371,17 @@ public sealed class Package : AbstractPackageUI
                     preflightScope.RequireProcedures,
                     preflightScope.RequireApiObject,
                     preflightScope.RequireMetadataFile,
+                    kbIndexForApply);
+                ApiPlanWritePreflight.ValidateForF1(
+                    knowledgeBase.DesignModel,
+                    transaction,
+                    apiPlan,
+                    selection.GenerateSdts,
+                    selection.GenerateProcedures,
+                    selection.GenerateApiObject,
+                    selection.GenerateMetadata,
+                    selection.ApplyList,
+                    selection.ApplyBusinessComponent,
                     kbIndexForApply);
             }
             catch (Exception ex) when (ex is not ApiPlanBusyAbortedException)
@@ -1383,7 +1497,33 @@ public sealed class Package : AbstractPackageUI
             busy.ThrowIfAbortRequested();
             phaseWatch.Restart();
             var apiObjectReady = true;
-            if (selection.GenerateApiObject && !selection.ApplyBusinessComponent)
+            ApiPlanTransientApiContext? wizardApiContext = null;
+            var wizardHasConsumers = selection.ApplyBusinessComponent || selection.ApplyList;
+            if (wizardHasConsumers)
+            {
+                var wizardFinalWriter = selection.ApplyList ? "List" : "Business Component";
+                busy.Report("API Object", 0, 0, apiPlan.ApiName);
+                var apiMs = busy.Measure(() =>
+                {
+                    apiObjectReady = TryPrepareApiObject(
+                        knowledgeBase.DesignModel,
+                        transaction,
+                        apiPlan,
+                        "Wizard",
+                        kbIndexForApply,
+                        allowIntentionalContractRefresh: true,
+                        persistApiObject: selection.GenerateApiObject,
+                        businessComponentParticipated: selection.ApplyBusinessComponent,
+                        finalWriter: wizardFinalWriter,
+                        progress: busy.Session,
+                        report: report,
+                        selection: new ApiPlanTransientApiSelection(selection.GenerateSdts, selection.GenerateProcedures, selection.GenerateApiObject, selection.GenerateMetadata, selection.ApplyList, selection.ApplyBusinessComponent),
+                        preserveSdtNames: null,
+                        context: out wizardApiContext);
+                });
+                busy.Report("API Object", 1, 1, apiPlan.ApiName, apiMs);
+            }
+            else if (selection.GenerateApiObject)
             {
                 busy.Report("API Object", 0, 0, apiPlan.ApiName);
                 var apiMs = busy.Measure(() =>
@@ -1399,30 +1539,6 @@ public sealed class Package : AbstractPackageUI
                         allowIntentionalContractRefresh: true);
                 });
                 busy.Report("API Object", 1, 1, apiPlan.ApiName, apiMs);
-            }
-            else if (selection.GenerateApiObject && selection.ApplyBusinessComponent)
-            {
-                if (API.GetAll(knowledgeBase.DesignModel).Any(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase)))
-                {
-                    WriteOutput($"[Genexus Open API Builder][B054] API Object ja existe para Transaction='{transaction.Name}'. Como B071-B073/B079 tambem foi confirmado, a atualizacao do API Object sera absorvida pelo preflight de Business Component.");
-                }
-                else
-                {
-                    busy.Report("API Object", 0, 0, apiPlan.ApiName);
-                    var apiMs = busy.Measure(() =>
-                    {
-                        apiObjectReady = TryCreateApiObject(
-                            knowledgeBase.DesignModel,
-                            transaction,
-                            apiPlan,
-                            "Wizard",
-                            kbIndexForApply,
-                            busy.Session,
-                            report,
-                            allowIntentionalContractRefresh: true);
-                    });
-                    busy.Report("API Object", 1, 1, apiPlan.ApiName, apiMs);
-                }
             }
             else if (selection.ApplyBusinessComponent)
             {
@@ -1466,7 +1582,8 @@ public sealed class Package : AbstractPackageUI
                     kbIndexForApply,
                     allowIntentionalContractRefresh: true,
                     report: report,
-                    progress: busy.Session);
+                    progress: busy.Session,
+                    apiContext: wizardApiContext);
             }
 
             WriteProbePhase("BusinessComponent", phaseWatch.ElapsedMilliseconds);
@@ -1496,7 +1613,8 @@ public sealed class Package : AbstractPackageUI
                     kbIndexForApply,
                     allowIntentionalContractRefresh: true,
                     report: report,
-                    progress: busy.Session);
+                    progress: busy.Session,
+                    apiContext: wizardApiContext);
             }
 
             WriteProbePhase("List", phaseWatch.ElapsedMilliseconds);
@@ -1786,7 +1904,7 @@ public sealed class Package : AbstractPackageUI
         // leituras de TryResolveMainObjectFromKb e de qualquer consulta futura daqui.
         using var scanSuspension = ApiPlanScanProbe.Suspend();
         AppendPlanSideEffects(collector, apiPlan);
-        TryResolveMainObjectFromKb(collector, designModel);
+        TryResolveMainObjectFromKb(collector, designModel, apiPlan);
         var report = collector.Build(elapsed);
         WriteOutput(report.BuildOutputSummary());
         foreach (var item in report.Created)
@@ -1831,22 +1949,92 @@ public sealed class Package : AbstractPackageUI
         }
     }
 
-    private static void TryResolveMainObjectFromKb(ApiPlanApplicationFinalReportCollector collector, KBModel? designModel)
+    private static void TryResolveMainObjectFromKb(
+        ApiPlanApplicationFinalReportCollector collector,
+        KBModel? designModel,
+        ApiPlan? apiPlan = null)
     {
         if (designModel is null
             || collector.MainObjectGuid.HasValue
-            || string.IsNullOrWhiteSpace(collector.ApiName)
             || string.Equals(collector.Operation, "Remover", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
-        var apiObject = API.GetAll(designModel)
-            .FirstOrDefault(item => string.Equals(item.Name, collector.ApiName, StringComparison.OrdinalIgnoreCase));
-        if (apiObject is not null)
+        // Fluxos legados que nao carregam ApiPlan mantem a compatibilidade de
+        // exibicao. No fluxo gerenciado da S-B111, o nome nunca e uma prova de
+        // identidade: somente o GUID planejado e confirmado por releitura pode
+        // criar o link para o API Object principal.
+        if (apiPlan is null)
         {
-            collector.SetMainObject(apiObject.Name, apiObject.Guid);
+            if (string.IsNullOrWhiteSpace(collector.ApiName))
+            {
+                return;
+            }
+
+            var legacyApiObject = API.GetAll(designModel)
+                .FirstOrDefault(item => string.Equals(item.Name, collector.ApiName, StringComparison.OrdinalIgnoreCase));
+            if (legacyApiObject is not null)
+            {
+                collector.SetMainObject(legacyApiObject.Name, legacyApiObject.Guid);
+            }
+
+            return;
         }
+
+        ApiPlanMainObjectCandidate? candidateByGuid = null;
+        string? guidLookupError = null;
+        if (apiPlan.PlannedApiGuid.HasValue && apiPlan.PlannedApiGuid.Value != Guid.Empty)
+        {
+            try
+            {
+                var apiObjectByGuid = API.Get(designModel, apiPlan.PlannedApiGuid.Value);
+                if (apiObjectByGuid is not null)
+                {
+                    candidateByGuid = new ApiPlanMainObjectCandidate(apiObjectByGuid.Guid, apiObjectByGuid.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                guidLookupError = ex.Message;
+            }
+        }
+
+        ApiPlanMainObjectCandidate[] nameMatches = Array.Empty<ApiPlanMainObjectCandidate>();
+        if (candidateByGuid is null)
+        {
+            try
+            {
+                nameMatches = API.GetAll(designModel)
+                    .Where(item => string.Equals(item.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase))
+                    .Select(item => new ApiPlanMainObjectCandidate(item.Guid, item.Name))
+                    .ToArray();
+            }
+            catch (Exception ex)
+            {
+                collector.AddWarning($"API Object principal nao foi associado: a consulta secundaria por nome falhou para '{apiPlan.ApiName}' ({ex.Message}). Nenhum link foi criado.");
+                return;
+            }
+        }
+
+        var resolution = ApiPlanMainObjectResolver.Resolve(
+            apiPlan.PlannedApiGuid,
+            apiPlan.ApiName,
+            candidateByGuid,
+            nameMatches);
+        if (resolution.IsConfirmed && resolution.Candidate is not null)
+        {
+            collector.SetMainObject(resolution.Candidate.Name, resolution.Candidate.Guid);
+            return;
+        }
+
+        var warning = $"API Object principal nao foi associado com seguranca: {resolution.Diagnostic}";
+        if (!string.IsNullOrWhiteSpace(guidLookupError))
+        {
+            warning += $" Erro na consulta por GUID: '{guidLookupError}'.";
+        }
+
+        collector.AddWarning(warning);
     }
 
     internal static void WriteApiObjectBaselineDiagnostic(ApiPlanGenerationState generationState)

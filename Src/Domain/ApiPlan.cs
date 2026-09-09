@@ -22,6 +22,11 @@ internal static class ApiPlanBuilder
 
     public static ApiPlan Build(Transaction transaction, PrototypeWizardFlowSelection selection)
     {
+        if (transaction is null)
+        {
+            throw new ArgumentNullException(nameof(transaction));
+        }
+
         return BuildInternal(transaction, selection, null);
     }
 
@@ -137,7 +142,10 @@ internal static class ApiPlanBuilder
             services,
             selection.BusinessComponentSelection,
             review.IncludeBusinessComponentErrorMessages,
-            levels);
+            levels,
+            transactionGuid: transaction.Guid,
+            applicationId: Guid.NewGuid(),
+            operationId: Guid.NewGuid());
     }
 
     private static IReadOnlyList<ApiPlanLevel>? ResolveHierarchicalLevels(PrototypeWizardFlowSelection selection)
@@ -446,7 +454,10 @@ internal sealed class ApiPlan
         IReadOnlyList<ApiPlanService> services,
         PrototypeWizardBusinessComponentSelection businessComponent,
         bool includeBusinessComponentErrorMessages,
-        IReadOnlyList<ApiPlanLevel>? levels = null)
+        IReadOnlyList<ApiPlanLevel>? levels = null,
+        Guid? transactionGuid = null,
+        Guid? applicationId = null,
+        Guid? operationId = null)
     {
         TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
         ModuleTarget = moduleTarget ?? throw new ArgumentNullException(nameof(moduleTarget));
@@ -493,9 +504,22 @@ internal sealed class ApiPlan
         // B095–B099a: árvore hierárquica opcional. O plano de SDT consome Levels (B096+),
         // o List emite ListResponse_Item (B098) e o Wizard popula a árvore podada desde B099a.
         Levels = levels ?? Array.Empty<ApiPlanLevel>();
+        TransactionGuid = transactionGuid.GetValueOrDefault();
+        var resolvedApplicationId = applicationId.GetValueOrDefault();
+        var resolvedOperationId = operationId.GetValueOrDefault();
+        ApplicationId = resolvedApplicationId == Guid.Empty ? Guid.NewGuid() : resolvedApplicationId;
+        OperationId = resolvedOperationId == Guid.Empty ? Guid.NewGuid() : resolvedOperationId;
     }
 
     public string TransactionName { get; }
+
+    public Guid TransactionGuid { get; }
+
+    public Guid ApplicationId { get; }
+
+    public Guid OperationId { get; }
+
+    internal Guid? PlannedApiGuid { get; set; }
 
     public string ModuleTarget { get; }
 

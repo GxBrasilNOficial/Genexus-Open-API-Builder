@@ -74,10 +74,7 @@ internal static class ApiPlanMetadataFileWriter
             throw new ArgumentNullException(nameof(kbIndex));
         }
 
-        if (!string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException("Gravacao de metadata B060 bloqueada: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
-        }
+        ApiPlanWritePreflight.ValidateTransactionIdentity(transaction, apiPlan, "Gravacao de metadata B060");
 
         var apiObject = PreflightApiObject(designModel, apiPlan, allowIntentionalContractRefresh, kbIndex);
         var preflight = PreflightMetadataFile(designModel, transaction, apiPlan, apiObject, allowIntentionalContractRefresh, kbIndex);
@@ -165,6 +162,8 @@ internal static class ApiPlanMetadataFileWriter
             throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: API Object externo ou incompativel chamado '{apiPlan.ApiName}'. Nenhuma alteracao foi feita.");
         }
 
+        // O GUID vem do API Object reencontrado; metadata-only nao passa pelo contexto transient.
+        apiPlan.PlannedApiGuid = apiObject.Guid;
         return apiObject;
     }
 

@@ -27,14 +27,16 @@ internal static class ApiPlanBusinessComponentWriter
         IReadOnlyCollection<string>? preserveSdtNames,
         ApiPlanKbObjectNameIndex kbIndex,
         System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite = null,
-        ApiPlanBusyProgressSession? progress = null)
+        ApiPlanBusyProgressSession? progress = null,
+        ApiPlanTransientApiContext? apiContext = null,
+        System.Action<string, string, long>? onSaveCompleted = null,
+        System.Action<Guid>? onApiSaveCompleted = null)
     {
         if (model is null) throw new ArgumentNullException(nameof(model));
         if (transaction is null) throw new ArgumentNullException(nameof(transaction));
         if (plan is null) throw new ArgumentNullException(nameof(plan));
         if (kbIndex is null) throw new ArgumentNullException(nameof(kbIndex));
-        if (!string.Equals(transaction.Name, plan.TransactionName, StringComparison.Ordinal))
-            throw new InvalidOperationException("B055 bloqueado: o ApiPlan nao pertence a Transaction atual. Nenhuma alteracao foi feita.");
+        ApiPlanWritePreflight.ValidateTransactionIdentity(transaction, plan, "B055");
         if (!transaction.IsBusinessComponent)
             throw new InvalidOperationException($"B055 bloqueado: Transaction='{transaction.Name}' esta com Business Component desabilitado. Nenhuma alteracao foi feita.");
         if (!HasService(plan, "Get") || !HasService(plan, "Create") || !HasService(plan, "Update"))
@@ -64,7 +66,9 @@ internal static class ApiPlanBusinessComponentWriter
         var create = FindProcedure(model, plan, "Create", "B052");
         var update = FindProcedure(model, plan, "Update", "B053");
         var delete = HasService(plan, "Delete") ? FindProcedure(model, plan, "Delete", "B100") : null;
-        var api = FindApi(model, kbIndex, plan, allowIntentionalContractRefresh);
+        var api = apiContext?.Api ?? FindApi(model, kbIndex, plan, allowIntentionalContractRefresh);
+        if (apiContext is not null && apiContext.PlannedApiGuid != api.Guid)
+            throw new InvalidOperationException("B055 bloqueado: o contexto transitório do API Object não corresponde ao GUID planejado. Nenhuma alteracao foi feita.");
         EnsureProcedure(kbIndex, get, plan, "B051", "Get", Skeleton("B051", "Get"), getContent, getVariables, getRules, IsManagedGetSource, allowIntentionalContractRefresh: allowIntentionalContractRefresh);
         EnsureProcedure(kbIndex, create, plan, "B052", "Create", Skeleton("B052", "Create"), createContent, createVariables, createRules, IsManagedCreateSource, LegacyCreateContent(plan), LegacyCreateRules(), LegacyCreateVariables(plan), PreviousB079CreateVariables(plan), allowIntentionalContractRefresh);
         EnsureProcedure(kbIndex, update, plan, "B053", "Update", Skeleton("B053", "Update"), updateContent, updateVariables, updateRules, IsManagedUpdateSource, LegacyUpdateContent(plan), LegacyUpdateRules(plan), LegacyUpdateVariables(plan), PreviousB079UpdateVariables(plan), allowIntentionalContractRefresh);
@@ -88,16 +92,26 @@ internal static class ApiPlanBusinessComponentWriter
         {
             ValidateProcedureVariableSpecs(model, kbIndex, delete, deleteVariables);
         }
-        ValidateApiVariableSpecs(model, kbIndex, api, apiVariables);
+        if (apiContext is null || apiContext.PersistApiObject)
+        {
+            ValidateApiVariableSpecs(model, kbIndex, api, apiVariables);
+        }
 
         progress?.PumpAndThrowIfAbortRequested();
-        ApiPlanSdtWriter.CreateOrReencounter(model, transaction, plan, preserveSdtNames, kbIndex, onSdtWrite, progress);
+        ApiPlanSdtWriter.CreateOrReencounter(
+            model,
+            transaction,
+            plan,
+            preserveSdtNames,
+            kbIndex,
+            onSdtWrite,
+            progress,
+            ApiPlanSdtWriter.WriteMode.StrictReencounter);
         progress?.PumpAndThrowIfAbortRequested();
-        var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(model, transaction, plan);
+        var transactionFolder = apiContext?.TransactionFolder ?? ApiPlanTransactionFolder.GetOrReencounterStrict(model, transaction, plan);
 
         var saveSteps = new List<(string Label, System.Action Save, Func<string> Snapshot)>
         {
-            (api.Name, () => SaveApi(model, kbIndex, api, transactionFolder, plan, apiSource, apiVariables), () => ApiPlanSaveBoundaryProbe.Snapshot(api)),
             (get.Name, () => SaveProcedure(model, kbIndex, get, getContent, getVariables, getRules), () => ApiPlanSaveBoundaryProbe.Snapshot(get)),
             (create.Name, () => SaveProcedure(model, kbIndex, create, createContent, createVariables, createRules), () => ApiPlanSaveBoundaryProbe.Snapshot(create)),
             (update.Name, () => SaveProcedure(model, kbIndex, update, updateContent, updateVariables, updateRules), () => ApiPlanSaveBoundaryProbe.Snapshot(update)),
@@ -105,6 +119,10 @@ internal static class ApiPlanBusinessComponentWriter
         if (delete is not null && deleteContent is not null && deleteRules is not null && deleteVariables is not null)
         {
             saveSteps.Add((delete.Name, () => SaveProcedure(model, kbIndex, delete, deleteContent, deleteVariables, deleteRules), () => ApiPlanSaveBoundaryProbe.Snapshot(delete)));
+        }
+        if (apiContext is null || (apiContext.PersistApiObject && string.Equals(apiContext.FinalWriter, "Business Component", StringComparison.Ordinal)))
+        {
+            saveSteps.Add((api.Name, () => SaveApi(model, kbIndex, api, transactionFolder, plan, apiSource, apiVariables, onApiSaveCompleted), () => ApiPlanSaveBoundaryProbe.Snapshot(api)));
         }
 
         var saveIndex = 0;
@@ -125,6 +143,7 @@ internal static class ApiPlanBusinessComponentWriter
                 // O relogio para aqui: o fingerprint da sonda nao pode entrar no tempo do Save.
                 sw.Stop();
                 ApiPlanSaveBoundaryProbe.Saved("Business Component", step.Label, step.Snapshot());
+                onSaveCompleted?.Invoke("Business Component", step.Label, sw.ElapsedMilliseconds);
             }
             catch (Exception exception)
             {
@@ -616,7 +635,7 @@ internal static class ApiPlanBusinessComponentWriter
             .Take(40));
     }
 
-    private static void SaveApi(KBModel model, ApiPlanKbObjectNameIndex kbIndex, API api, Folder transactionFolder, ApiPlan plan, string source, IReadOnlyList<VariableSpec> variables)
+    private static void SaveApi(KBModel model, ApiPlanKbObjectNameIndex kbIndex, API api, Folder transactionFolder, ApiPlan plan, string source, IReadOnlyList<VariableSpec> variables, System.Action<Guid>? onApiSaveCompleted)
     {
         api.Parent = transactionFolder;
         api.ServiceGroupSource.Source = source;
@@ -624,6 +643,7 @@ internal static class ApiPlanBusinessComponentWriter
         ReplaceVariables(model, kbIndex, api, variables);
         ApiPlanSaveBoundaryProbe.PreparedApi("Business Component", api);
         api.Save();
+        onApiSaveCompleted?.Invoke(api.Guid);
 
         var persisted = API.Get(model, api.Guid);
         if (!IsB055ServiceGroupSource(plan, NormalizeForComparison(persisted.ServiceGroupSource.Source)))

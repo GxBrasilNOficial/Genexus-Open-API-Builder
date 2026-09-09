@@ -4,9 +4,9 @@
 **Fase:** F1 de 3 (F1 ordem e writer final · F2 seam e receipts · F3 durabilidade e remoção).
 **Data:** 2026-09-04. **Item:** `B111` em `Docs/Foundation/06-BACKLOG_v0.1.md`.
 
-**Status:** decisões de escopo e contrato da F1 consolidadas em 2026-09-07; o plano ainda
-não foi implementado. A revisão por pares da sprint não está encerrada. **Não** autoriza
-alteração de código, instalação, commit ou push.
+**Status:** decisões de escopo e contrato consolidadas em 2026-09-07; implementação local da
+F1 concluída em 2026-09-08, com build e gates offline aprovados. A validação funcional na IDE
+ainda está pendente. **Não** autoriza instalação, commit ou push.
 
 ### Documentos que este plano substitui, e como
 

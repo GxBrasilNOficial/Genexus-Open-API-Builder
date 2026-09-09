@@ -19,7 +19,8 @@ internal static class ApiPlanApiObjectWriter
         ApiPlan apiPlan,
         bool allowIntentionalContractRefresh,
         ApiPlanKbObjectNameIndex kbIndex,
-        ApiPlanBusyProgressSession? progress = null)
+        ApiPlanBusyProgressSession? progress = null,
+        System.Action<Guid>? onApiSaveCompleted = null)
     {
         if (designModel is null)
         {
@@ -41,17 +42,22 @@ internal static class ApiPlanApiObjectWriter
             throw new ArgumentNullException(nameof(kbIndex));
         }
 
-        if (!string.Equals(transaction.Name, apiPlan.TransactionName, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException("Criacao de API Object bloqueada: o ApiPlan em memoria nao pertence a Transaction selecionada atual. Nenhuma alteracao foi feita.");
-        }
+        ApiPlanWritePreflight.ValidateTransactionIdentity(transaction, apiPlan, "Criacao de API Object");
 
         progress?.PumpAndThrowIfAbortRequested();
         var reencounteredSdts = PreflightRequiredSdts(designModel, apiPlan, kbIndex);
         var reencounteredProcedures = PreflightRequiredProcedures(designModel, apiPlan);
-        var preflight = PreflightApiObject(designModel, apiPlan, allowIntentionalContractRefresh, kbIndex);
-        var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan);
-        var result = CreateOrReencounterApiObject(designModel, transactionFolder, apiPlan, preflight, kbIndex);
+        var context = PrepareOrReencounter(
+            designModel,
+            transaction,
+            apiPlan,
+            allowIntentionalContractRefresh,
+            kbIndex,
+            persistApiObject: true,
+            businessComponentParticipated: false,
+            finalWriter: "B054",
+            progress: progress);
+        var result = SavePreparedApiObject(designModel, context, apiPlan, kbIndex, onApiSaveCompleted);
 
         return new ApiPlanApiObjectWriteResult(
             apiPlan.ApiName,
@@ -59,10 +65,116 @@ internal static class ApiPlanApiObjectWriter
             result.Guid,
             reencounteredSdts.Count,
             reencounteredProcedures.Count,
-            transactionFolder.Name,
-            transactionFolder.Guid,
+            context.TransactionFolder.Name,
+            context.TransactionFolder.Guid,
             reencounteredProcedures,
             apiPlan.Services.Count);
+    }
+
+    internal static ApiPlanTransientApiContext PrepareOrReencounter(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        bool allowIntentionalContractRefresh,
+        ApiPlanKbObjectNameIndex kbIndex,
+        bool persistApiObject,
+        bool businessComponentParticipated,
+        string finalWriter,
+        ApiPlanTransientApiSelection? selection = null,
+        IReadOnlyCollection<string>? preserveSdtNames = null,
+        ApiPlanBusyProgressSession? progress = null)
+    {
+        if (designModel is null) throw new ArgumentNullException(nameof(designModel));
+        if (transaction is null) throw new ArgumentNullException(nameof(transaction));
+        if (apiPlan is null) throw new ArgumentNullException(nameof(apiPlan));
+        if (kbIndex is null) throw new ArgumentNullException(nameof(kbIndex));
+        if (string.IsNullOrWhiteSpace(finalWriter)) throw new ArgumentException("Final writer e obrigatorio.", nameof(finalWriter));
+        ApiPlanWritePreflight.ValidateTransactionIdentity(transaction, apiPlan, "Preparacao de API Object");
+
+        progress?.PumpAndThrowIfAbortRequested();
+        // Consumidor nunca cria ou corrige dependencias. A validacao de estrutura
+        // ocorre antes de qualquer Save de Procedure/API.
+        ApiPlanSdtWriter.PreflightStrict(designModel, transaction, apiPlan, kbIndex, preserveSdtNames);
+        PreflightRequiredSdts(designModel, apiPlan, kbIndex);
+        PreflightRequiredProcedures(designModel, apiPlan);
+        var preflight = PreflightApiObject(designModel, apiPlan, allowIntentionalContractRefresh, kbIndex);
+        var transactionFolder = ApiPlanTransactionFolder.GetOrReencounterStrict(designModel, transaction, apiPlan);
+
+        API api;
+        var apiWasCreated = preflight.ExistingApiObject is null;
+        if (preflight.ExistingApiObject is not null)
+        {
+            api = preflight.ExistingApiObject;
+        }
+        else
+        {
+            api = API.Create(designModel);
+            api.Name = apiPlan.ApiName;
+            api.Description = CreateOwnedDescription(apiPlan);
+            api.Parent = transactionFolder;
+            api.ServiceGroupSource.Source = ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan);
+        }
+
+        var existingApiHasBusinessComponentParameters = !apiWasCreated &&
+            (ApiPlanBusinessComponentWriter.IsB055ApiObject(designModel, kbIndex, apiPlan, api) ||
+             ApiPlanListProcedureWriter.IsB070ApiObjectWithBusinessComponentParameters(designModel, kbIndex, apiPlan, api));
+        apiPlan.PlannedApiGuid = api.Guid;
+        return new ApiPlanTransientApiContext(
+            api,
+            transactionFolder,
+            persistApiObject,
+            businessComponentParticipated,
+            apiWasCreated,
+            existingApiHasBusinessComponentParameters,
+            finalWriter,
+            apiPlan,
+            selection);
+    }
+
+    internal static void PreflightRequiredProceduresStrict(KBModel designModel, ApiPlan apiPlan)
+    {
+        if (designModel is null) throw new ArgumentNullException(nameof(designModel));
+        if (apiPlan is null) throw new ArgumentNullException(nameof(apiPlan));
+        PreflightRequiredProcedures(designModel, apiPlan);
+    }
+
+    internal static ApiPlanApiObjectWriteCoreResult SavePreparedApiObject(
+        KBModel designModel,
+        ApiPlanTransientApiContext context,
+        ApiPlan apiPlan,
+        ApiPlanKbObjectNameIndex kbIndex,
+        System.Action<Guid>? onApiSaveCompleted = null)
+    {
+        if (designModel is null) throw new ArgumentNullException(nameof(designModel));
+        if (context is null) throw new ArgumentNullException(nameof(context));
+        if (apiPlan is null) throw new ArgumentNullException(nameof(apiPlan));
+        if (kbIndex is null) throw new ArgumentNullException(nameof(kbIndex));
+        if (!context.PersistApiObject)
+        {
+            throw new InvalidOperationException("Save do API Object solicitado para um contexto que nao permite persistencia.");
+        }
+
+        var api = context.Api;
+        api.Parent = context.TransactionFolder;
+        if (ApiPlanBusinessComponentWriter.IsB055ApiObject(designModel, kbIndex, apiPlan, api))
+        {
+            if (!ApiPlanBusinessComponentWriter.IsCurrentB055ApiObject(designModel, kbIndex, apiPlan, api))
+            {
+                api.ServiceGroupSource.Source = ApiPlanBusinessComponentWriter.CreateB055ServiceGroupSource(apiPlan);
+            }
+        }
+        else
+        {
+            ApiPlanServiceSourceContract.ThrowIfB054WouldDowngradeRestContract(api.ServiceGroupSource.Source);
+            api.ServiceGroupSource.Source = ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan);
+        }
+
+        api.Save();
+        onApiSaveCompleted?.Invoke(api.Guid);
+        var persisted = API.Get(designModel, api.Guid);
+        return new ApiPlanApiObjectWriteCoreResult(
+            context.ApiWasCreated ? ApiPlanApiObjectWriteStatus.Created : ApiPlanApiObjectWriteStatus.Reencountered,
+            persisted.Guid);
     }
 
     internal static string CreateOwnedDescription(ApiPlan apiPlan)
@@ -685,41 +797,6 @@ internal static class ApiPlanApiObjectWriter
         return new ApiPlanApiObjectPreflightResult(apiObject);
     }
 
-
-    private static ApiPlanApiObjectWriteCoreResult CreateOrReencounterApiObject(KBModel designModel, Folder transactionFolder, ApiPlan apiPlan, ApiPlanApiObjectPreflightResult preflight, ApiPlanKbObjectNameIndex kbIndex)
-    {
-        if (preflight.ExistingApiObject is not null)
-        {
-            preflight.ExistingApiObject.Parent = transactionFolder;
-            if (ApiPlanBusinessComponentWriter.IsB055ApiObject(designModel, kbIndex, apiPlan, preflight.ExistingApiObject))
-            {
-                if (!ApiPlanBusinessComponentWriter.IsCurrentB055ApiObject(designModel, kbIndex, apiPlan, preflight.ExistingApiObject))
-                {
-                    preflight.ExistingApiObject.ServiceGroupSource.Source = ApiPlanBusinessComponentWriter.CreateB055ServiceGroupSource(apiPlan);
-                }
-            }
-            else
-            {
-                ApiPlanServiceSourceContract.ThrowIfB054WouldDowngradeRestContract(preflight.ExistingApiObject.ServiceGroupSource.Source);
-                preflight.ExistingApiObject.ServiceGroupSource.Source = ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan);
-            }
-
-            preflight.ExistingApiObject.Save();
-            return new ApiPlanApiObjectWriteCoreResult(ApiPlanApiObjectWriteStatus.Reencountered, preflight.ExistingApiObject.Guid);
-        }
-
-        var apiObject = API.Create(designModel);
-        apiObject.Name = apiPlan.ApiName;
-        // Description inicial e documentacao publica; B087 nao a usa mais como cadeado de posse apos metadata.
-        apiObject.Description = CreateOwnedDescription(apiPlan);
-        apiObject.Parent = transactionFolder;
-        apiObject.ServiceGroupSource.Source = ApiPlanBusinessComponentWriter.CreateB054ServiceGroupSource(apiPlan);
-
-        apiObject.Save();
-
-        var persisted = API.Get(designModel, apiObject.Guid);
-        return new ApiPlanApiObjectWriteCoreResult(ApiPlanApiObjectWriteStatus.Created, persisted.Guid);
-    }
 }
 
 internal sealed class ApiPlanIntentionalChangeOwnershipDiagnosis
