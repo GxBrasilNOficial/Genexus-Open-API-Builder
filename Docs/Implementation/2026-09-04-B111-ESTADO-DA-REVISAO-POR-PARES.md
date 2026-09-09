@@ -5,7 +5,9 @@
 > As seções 1–8 registram as rodadas iniciais; as seções 9–12 registram a consolidação e
 > os pareceres posteriores. O arquivo não é fonte atual de contrato, próximo passo ou
 > autorização da F1. Para o estado corrente, use `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`,
-> os planos F1/F2/F3 e os artefatos da rodada em `Temp/revisao-por-pares/`.
+> os planos F1/F2/F3 e `Docs/Implementation/2026-09-07-S-B111-DECISOES-APROVADAS.md`.
+> Os artefatos em `Temp/revisao-por-pares/`, quando presentes, são auxiliares locais e não
+> constituem fonte versionada.
 
 ## Propósito
 

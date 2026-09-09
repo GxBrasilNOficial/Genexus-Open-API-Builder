@@ -784,7 +784,8 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
 8. o ciclo de `operationId`/`applicationId` segue a matriz da seção 4.1.1, e o fingerprint
    V3 cobre `ownership.applicationId` com serialização canônica.
 
-**Contrato ativo do Modo A:** a durabilidade do diário é uma terceira dimensão registrada;
+**Contrato ativo do Modo A:** a durabilidade do diário é uma das quatro dimensões registradas
+separadamente;
 recuperação compara intenção durável com inventário físico; a política de checkpoints está
 declarada e o custo medido bate com o orçamento; nunca existe um segundo diário para a KB;
 recuperação ambígua ou divergente continua bloqueada para correção humana.

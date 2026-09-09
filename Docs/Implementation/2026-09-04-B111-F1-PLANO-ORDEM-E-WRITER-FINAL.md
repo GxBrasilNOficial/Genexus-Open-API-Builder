@@ -558,9 +558,9 @@ Sentinelas são necessárias e insuficientes: elas provam forma, não comportame
 
 ### 6.2 Fluxos executáveis
 
-As oito primeiras linhas usam `GenerateApiObject=true`; a linha adicional de API-only com as
-flags dedicadas falsas também usa `GenerateApiObject=true`. Nas demais, o valor aparece na
-coluna e deve ser respeitado.
+As oito primeiras linhas usam `GenerateApiObject=true`; as duas linhas adicionais de API-only
+com as flags dedicadas falsas também usam `GenerateApiObject=true`. Nas demais, o valor aparece
+na coluna e deve ser respeitado.
 
 | Entrada | Seleção | Resultado exigido |
 |---|---|---|

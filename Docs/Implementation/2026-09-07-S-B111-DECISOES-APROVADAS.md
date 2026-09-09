@@ -488,7 +488,9 @@ Cada item de `inventory` tem `objectType` (`Transaction`, `Folder`, `ApiObject`,
 `Procedure`, `Sdt` ou `MetadataFile`), `identityKind` (`Guid`, `FileId`, `Composite`,
 `Folder` ou `None`), `guid` GUID anulável, `fileId` inteiro positivo anulável, `name`
 não vazio para exibição, `ownershipValidated` booleano obrigatório, `action`
-(`Delete` ou `Preserve`), `physicalState` (`Present`, `Absent` ou `Unknown`),
+com domínio condicionado ao `operationKind` (`Create`, `Update` ou `Preserve` em `Apply`/`Sync`;
+`Delete` ou `Preserve` em `Remove`; o domínio da operação original ao continuar por `Recovery`),
+`physicalState` (`Present`, `Absent` ou `Unknown`),
 `confirmation` (`NotAttempted`, `Confirmed`, `Absent`, `Divergent` ou
 `Unreadable`), `expectedHash` SHA-256 hexadecimal anulável e `receiptSequences`
 array de inteiros. As combinações são fechadas: `Guid` exige `guid`; `FileId`
@@ -749,7 +751,10 @@ Cada objeto planejado no diário conterá:
 - `identityKind`, `guid`, `fileId`, `expectedHash` e `name`, conforme a
   `PersistenceIdentity` fechada na decisão 24;
 - `ownershipValidated`;
-- `action`, com `Delete` ou `Preserve` para o inventário de remoção;
+- `action`, com domínio condicionado ao `operationKind`: `Create`, `Update` ou `Preserve`
+  para `Apply`/`Sync`; `Delete` ou `Preserve` para `Remove`; e o domínio da operação
+  original quando `Recovery` continuar um envelope existente. O `Recovery` autônomo de B115
+  usa `Delete` ou `Preserve`;
 - `physicalState`, com `Present`, `Absent` ou `Unknown`;
 - `confirmation`, com `NotAttempted`, `Confirmed`, `Absent`, `Divergent` ou
   `Unreadable`;
@@ -872,7 +877,7 @@ literal localizado no `CommandKey`, cada linha é um ID completo, não apenas um
 | en | `Recover Open API Builder operation` | o mesmo literal | o mesmo literal | o mesmo literal | o mesmo literal |
 
 Não haverá um ID neutro compartilhado nem tradução em tempo de execução para substituir
-essa matriz. O teste deve conferir as doze ocorrências esperadas: cada literal em
+essa matriz. O teste deve conferir os três literais nas doze ocorrências esperadas: cada literal em
 `Package.cs`, no `CommandDefinition` e nos dois `Groups`.
 
 ### 34. Matriz obrigatória de validação da F3
@@ -1093,7 +1098,7 @@ implementação e evidência, não uma lacuna de decisão:
 
 - serializer/validador do schema V1 do diário e normalização da metadata V1/V2→V3;
 - implementação dos serviços de leitura, reidratação, continuação e relatório;
-- sincronização dos doze literais do novo comando nas camadas de runtime e manifesto;
+- sincronização dos três literais nas doze ocorrências do novo comando nas camadas de runtime e manifesto;
 - implementação do injetor determinístico e dos pontos de falha fechados;
 - testes offline, testes de contrato e validação funcional na IDE;
 - eventuais ajustes adicionais de referências operacionais identificados durante a revisão
