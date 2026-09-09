@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-08.
+2026-09-09.
 
 ## Último marco concluído
 
@@ -142,13 +142,13 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 humana foi registrada nesta sessão. A F1 (ordem de gravação e writer final único) foi
 implementada localmente em 2026-09-08; build e gates offline passaram. F2 (seam de
 persistência e recibos) e F3 (durabilidade da intenção e remoção segura) continuam pendentes.
-Ainda não houve instalação, commit ou push. A validação manual deve usar a DLL recém-gerada,
-sem `genexus /install`, pois o manifesto não mudou.
+Ainda não houve instalação nem push. A implementação foi commitada localmente; a validação
+manual deve usar a DLL recém-gerada, sem `genexus /install`, pois o manifesto não mudou.
 O parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR
 COM RESSALVAS`; suas observações P3 úteis foram incorporadas como clarificações de escopo,
 canonização e estágios. A decisão humana de implementar a F1 foi registrada nesta sessão;
 a validação manual na IDE e o aceite operacional ainda estão pendentes. A documentação desta
-rodada está aplicada localmente e ainda não foi commitada. Registro da revisão:
+rodada foi commitada localmente junto da implementação. Registro da revisão:
 `Docs/Implementation/2026-09-04-B111-ESTADO-DA-REVISAO-POR-PARES.md`. Item:
 `Docs/Foundation/06-BACKLOG_v0.1.md` (`B111`).
 
@@ -187,8 +187,8 @@ documentalmente em 2026-09-08 após o painel CLI, os pareceres solo do MiMo V2.5
 Codex GPT-5.6-luna, a rodada manual do Cursor, o parecer solo do Claude Code Opus 5 e o
 parecer solo do OpenCode Go DeepSeek V4 Pro. As ressalvas úteis foram incorporadas localmente.
 A decisão humana desta sessão autorizou a implementação da F1; a validação manual da F1 ainda
-está pendente, e F2/F3 continuam condicionadas ao aceite das fases anteriores. Os arquivos desta
-rodada ainda não foram commitados:
+está pendente, e F2/F3 continuam condicionadas ao aceite das fases anteriores. As alterações desta
+rodada estão commitadas localmente nesta frente:
 
 | Fase | Plano | Depende de |
 |---|---|---|
@@ -288,15 +288,14 @@ com essa validação.
 
 > O primeiro item abaixo e a promoção à Sprint 9 descrita nele são registro histórico do
 > fechamento daquela frente. Não descrevem o estado atual da `S-B111`: a F1 já foi implementada
-> localmente, sua validação funcional na IDE ainda está pendente e os ajustes desta rodada não
-> foram commitados.
+> localmente e está commitada na `main`; sua validação funcional na IDE ainda está pendente.
 
 - **[Histórico — Sprint 9]** alinhamento documental da promoção à Sprint 9 já commitado, em `main`, com working tree limpa;
 - `origin/main` atualizada, sem commits remotos à frente da frente local;
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única é validar manualmente na IDE a F1 da sprint `S-B111` com a DLL recém-gerada; o painel CLI de 2026-09-08 teve quatro respostas `REVISAR` e diversidade de três famílias de modelo, os pareceres solo do MiMo V2.5 Pro e do Codex GPT-5.6-luna foram avaliados, a rodada manual do Cursor respondeu `APROVAR COM RESSALVAS`, o parecer solo do Claude Code Opus 5 também respondeu `APROVAR COM RESSALVAS` e o parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR COM RESSALVAS`; as ressalvas úteis foram incorporadas localmente e a decisão humana de implementar a F1 foi registrada nesta sessão; ainda não houve instalação, `genexus /install`, commit ou push; `B108` está estacionado (`Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); a Etapa 1A do hardening `B082` está aceita (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é validar manualmente na IDE a F1 da sprint `S-B111` com a DLL recém-gerada; o painel CLI de 2026-09-08 teve quatro respostas `REVISAR` e diversidade de três famílias de modelo, os pareceres solo do MiMo V2.5 Pro e do Codex GPT-5.6-luna foram avaliados, a rodada manual do Cursor respondeu `APROVAR COM RESSALVAS`, o parecer solo do Claude Code Opus 5 também respondeu `APROVAR COM RESSALVAS` e o parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR COM RESSALVAS`; as ressalvas úteis foram incorporadas localmente e a decisão humana de implementar a F1 foi registrada nesta sessão; a implementação está commitada localmente, ainda não houve instalação, `genexus /install` ou push; `B108` está estacionado (`Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); a Etapa 1A do hardening `B082` está aceita (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente

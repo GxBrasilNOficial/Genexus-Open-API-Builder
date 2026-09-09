@@ -216,7 +216,7 @@ envelope do journal `schemaVersion=1` (sem confundi-lo com a metadata V3); separ
 atribuída em memória de compromisso durável; fechar o canal comum de `NotAttempted`; alinhar
 `StageFailed` à persistência exclusiva da F3; e completar a especificação do lock local e
 dos namespaces de diagnóstico. Esses ajustes foram incorporados aos planos, decisões,
-status e backlog; a decisão humana de encerrar a revisão e autorizar a F1 permanece pendente.
+status e backlog; a decisão humana autorizou a implementação da F1, enquanto o aceite funcional na IDE permanece pendente.
 
 ## 11. Parecer solo do Claude Code Opus 5 — 2026-09-08
 
@@ -242,7 +242,8 @@ Os apontamentos aproveitados foram:
 
 Após conferência no código e nos planos, esses pontos foram aplicados na F2, F3, no registro
 de decisões, no status e no backlog. A ressalva P1 de compatibilidade V2→V3 permanece uma
-pré-condição da implementação da F3 e não bloqueia a decisão humana de autorizar a F1.
+pré-condição da implementação da F3; a F1 foi autorizada e implementada, mas ainda aguarda
+aceite funcional na IDE.
 
 ## 12. Parecer solo do OpenCode Go DeepSeek V4 Pro — 2026-09-08
 

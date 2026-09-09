@@ -99,7 +99,7 @@ internal static class ApiPlanBuilder
         var names = ApiPlanNames.Create(transaction.Name, contract.SelectedServices);
         var levels = ResolveHierarchicalLevels(selection);
 
-        return new ApiPlan(
+        var apiPlan = new ApiPlan(
             transaction.Name,
             snapshot.ModuleName,
             ApiPlan.GeneratorTargetDotNet,
@@ -146,6 +146,11 @@ internal static class ApiPlanBuilder
             transactionGuid: transaction.Guid,
             applicationId: Guid.NewGuid(),
             operationId: Guid.NewGuid());
+
+        // Reencontro gerenciado carrega a identidade persistida antes do primeiro Save.
+        // O nome continua sendo apenas diagnóstico; a associação operacional usa este GUID.
+        apiPlan.PlannedApiGuid = existingApiContract?.ApiGuid;
+        return apiPlan;
     }
 
     private static IReadOnlyList<ApiPlanLevel>? ResolveHierarchicalLevels(PrototypeWizardFlowSelection selection)

@@ -123,7 +123,8 @@ internal static class PrototypeWizardExistingApiContractReader
             serviceDescriptions,
             source.DuplicateServiceNames,
             includeBusinessComponentErrorMessages,
-            persistedHierarchicalRoot);
+            persistedHierarchicalRoot,
+            api?.Guid);
     }
 
     private static API? ResolveApiObject(
@@ -132,6 +133,29 @@ internal static class PrototypeWizardExistingApiContractReader
         ExistingApiMetadata metadata)
     {
         var allApis = API.GetAll(designModel).ToArray();
+        var metadataApiGuidToken = metadata.Document?.SelectToken("ownership.apiGuid");
+        var metadataApiGuid = ReadGuid(metadata.Document, "ownership.apiGuid");
+        if (metadataApiGuidToken is not null)
+        {
+            if (!metadataApiGuid.HasValue)
+            {
+                return null;
+            }
+
+            var apiByGuid = allApis.FirstOrDefault(item => item.Guid == metadataApiGuid.Value);
+            if (apiByGuid is null)
+            {
+                return null;
+            }
+
+            var guidApiName = ReadString(metadata.Document, "api.name")
+                ?? ReadString(metadata.Document, "ownership.apiName");
+            return string.IsNullOrWhiteSpace(guidApiName)
+                || string.Equals(apiByGuid.Name, guidApiName, StringComparison.OrdinalIgnoreCase)
+                ? apiByGuid
+                : null;
+        }
+
         var metadataApiName = ReadString(metadata.Document, "api.name")
             ?? ReadString(metadata.Document, "ownership.apiName");
         if (!string.IsNullOrWhiteSpace(metadataApiName))
@@ -553,6 +577,12 @@ internal static class PrototypeWizardExistingApiContractReader
         return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
+    private static Guid? ReadGuid(JObject? document, string path)
+    {
+        var value = ReadString(document, path);
+        return Guid.TryParse(value, out var guid) && guid != Guid.Empty ? guid : null;
+    }
+
     private static int? ReadInt(JObject? document, string path)
     {
         var value = document?.SelectToken(path);
@@ -705,7 +735,8 @@ internal sealed class PrototypeWizardExistingApiContract
         IReadOnlyDictionary<string, string> serviceDescriptions,
         IReadOnlyList<string> duplicateServiceNames,
         bool includeBusinessComponentErrorMessages = true,
-        ApiPlanLevel? persistedHierarchicalRoot = null)
+        ApiPlanLevel? persistedHierarchicalRoot = null,
+        Guid? apiGuid = null)
     {
         HasExistingApi = hasExistingApi;
         // A primeira declaração de cada nome vence: contrato de origem malformado não pode
@@ -741,6 +772,7 @@ internal sealed class PrototypeWizardExistingApiContract
         ServiceDescriptions = serviceDescriptions;
         IncludeBusinessComponentErrorMessages = includeBusinessComponentErrorMessages;
         PersistedHierarchicalRoot = persistedHierarchicalRoot;
+        ApiGuid = apiGuid;
     }
 
     public bool HasExistingApi { get; }
@@ -758,6 +790,7 @@ internal sealed class PrototypeWizardExistingApiContract
     public IReadOnlyList<string> DuplicateServiceNames { get; }
     public bool IncludeBusinessComponentErrorMessages { get; }
     public ApiPlanLevel? PersistedHierarchicalRoot { get; }
+    public Guid? ApiGuid { get; }
 
     public bool TryGetServiceSelection(string name, out bool selected)
     {

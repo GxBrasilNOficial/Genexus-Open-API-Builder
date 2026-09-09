@@ -64,6 +64,15 @@ internal static class ApiPlanWritePreflight
         ValidateTransactionIdentity(transaction, apiPlan, "B111/F1");
 
         var requiresConsumersOrApi = generateApiObject || generateMetadata || applyList || applyBusinessComponent;
+        if (!generateApiObject && (generateMetadata || applyList || applyBusinessComponent))
+        {
+            ApiPlanApiObjectWriter.PreflightExistingApiObjectStrict(
+                designModel,
+                apiPlan,
+                allowIntentionalContractRefresh: true,
+                kbIndex: kbIndex);
+        }
+
         if (!generateSdts && requiresConsumersOrApi)
         {
             ApiPlanSdtWriter.PreflightStrict(designModel, transaction, apiPlan, kbIndex, preserveSdtNames);

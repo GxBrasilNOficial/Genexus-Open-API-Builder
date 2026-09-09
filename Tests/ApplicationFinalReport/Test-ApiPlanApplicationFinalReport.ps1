@@ -191,6 +191,8 @@ $businessComponentWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScr
 $listWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanListProcedureWriter.cs')
 $apiObjectWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanApiObjectWriter.cs')
 $metadataWriterSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanMetadataFileWriter.cs')
+$preflightSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanWritePreflight.cs')
+$existingApiReaderSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\PrototypeWizardExistingApiContractReader.cs')
 $transientContextSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanTransientApiContext.cs')
 Assert-True ($packageSource -match 'AppendPlanSideEffects\(collector, apiPlan\)') 'B081 deve anexar efeitos de Folder e Transaction ao relatorio final.'
 Assert-True ($packageSource -match 'conflict\.DiagnosticDetails') 'B081 deve preservar o diagnóstico detalhado de colisões no Output.'
@@ -214,6 +216,15 @@ Assert-True ($apiObjectWriterSource -match 'api\.Save\(\);\s*onApiSaveCompleted\
 Assert-True ($businessComponentWriterSource -match 'api\.Save\(\);\s*onApiSaveCompleted\?\.Invoke\(api\.Guid\)') 'BC deve registrar o Save do API Object antes da releitura/validacao.'
 Assert-True ($listWriterSource -match 'api\.Save\(\);\s*onApiSaveCompleted\?\.Invoke\(api\.Guid\)') 'List deve registrar o Save do API Object antes da releitura/validacao.'
 Assert-True ($metadataWriterSource -match 'apiPlan\.PlannedApiGuid = apiObject\.Guid') 'Metadata-only deve transportar o GUID lido do API Object reencontrado.'
+Assert-True ($apiObjectWriterSource -match 'PreflightExistingApiObjectStrict') 'F1 deve ter um preflight dedicado para API existente, sem criar objeto transitório quando a persistencia esta desabilitada.'
+Assert-True ($apiObjectWriterSource -match 'ApiPlanMainObjectResolver\.Resolve') 'A preparacao do API Object deve validar a identidade com o resolvedor GUID-first.'
+Assert-True ($metadataWriterSource -match 'ApiPlanApiObjectWriter\.PreflightExistingApiObjectStrict') 'Metadata-only deve reencontrar o API Object pelo GUID planejado, sem associacao autoritativa por nome.'
+Assert-True ($preflightSource -match '!generateApiObject && \(generateMetadata \|\| applyList \|\| applyBusinessComponent\)') 'Consumidores sem persistencia de API devem exigir o API Object existente antes do primeiro Save.'
+Assert-True ($preflightSource -match 'PreflightExistingApiObjectStrict') 'O gate reduzido deve bloquear API ausente ou incompativel antes das fases consumidoras.'
+Assert-True ($apiPlanSource -match 'apiPlan\.PlannedApiGuid = existingApiContract\?\.ApiGuid') 'ApiPlan deve carregar o GUID do contrato existente antes do Apply/Sync.'
+Assert-True ($existingApiReaderSource -match 'ReadGuid\(metadata\.Document, "ownership\.apiGuid"\)') 'O reencontro deve priorizar o GUID registrado na metadata.'
+Assert-True ($existingApiReaderSource -match 'metadata\.Document\?\.SelectToken\("ownership\.apiGuid"\)') 'GUID registrado e invalido ou ausente nao deve cair silenciosamente no reencontro por nome.'
+Assert-True ($existingApiReaderSource -match 'public Guid\? ApiGuid') 'O contrato existente deve transportar a identidade do API Object para o ApiPlan.'
 Assert-True ($sdtWriterSource -match 'StrictReencounter') 'F1 deve possuir reencontro estrito de SDTs.'
 Assert-True ($sdtWriterSource -match 'PreflightStrict') 'F1 deve validar SDTs estritamente antes das gravações consumidoras.'
 Assert-True ($packageSource -match 'ApiPlanWritePreflight\.ValidateForF1') 'F1 deve executar o gate reduzido antes das fases de escrita.'

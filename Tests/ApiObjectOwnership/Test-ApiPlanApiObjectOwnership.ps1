@@ -214,12 +214,13 @@ Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApiObjectOwner
 $writerPaths = @(
     @{ Path = '..\..\Src\Extension\Diagnostics\ApiPlanListProcedureWriter.cs'; Message = 'B070 deve usar a posse de escrita intencional.' },
     @{ Path = '..\..\Src\Extension\Diagnostics\ApiPlanBusinessComponentWriter.cs'; Message = 'B055 deve usar a posse de escrita intencional.' },
-    @{ Path = '..\..\Src\Extension\Diagnostics\ApiPlanMetadataFileWriter.cs'; Message = 'B060 deve usar a posse de escrita intencional.' },
+    @{ Path = '..\..\Src\Extension\Diagnostics\ApiPlanMetadataFileWriter.cs'; Token = 'ApiPlanApiObjectWriter.PreflightExistingApiObjectStrict'; Message = 'B060 deve usar o preflight estrito de posse e identidade.' },
     @{ Path = '..\..\Src\Extension\Diagnostics\ApiPlanApiObjectWriter.cs'; Message = 'B054 deve usar a posse de escrita intencional.' }
 )
 foreach ($writer in $writerPaths) {
     $writerText = [IO.File]::ReadAllText((Join-Path $PSScriptRoot $writer.Path))
-    Assert-True ($writerText.Contains('IsOwnedApiObjectForIntentionalWrite')) $writer.Message
+    $expectedToken = if ($writer.ContainsKey('Token')) { $writer.Token } else { 'IsOwnedApiObjectForIntentionalWrite' }
+    Assert-True ($writerText.Contains($expectedToken)) $writer.Message
 }
 
 Write-Output 'PASS: ApiPlanApiObjectOwnership'

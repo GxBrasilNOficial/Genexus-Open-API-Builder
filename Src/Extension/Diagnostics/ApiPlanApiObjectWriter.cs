@@ -138,6 +138,55 @@ internal static class ApiPlanApiObjectWriter
         PreflightRequiredProcedures(designModel, apiPlan);
     }
 
+    internal static API PreflightExistingApiObjectStrict(
+        KBModel designModel,
+        ApiPlan apiPlan,
+        bool allowIntentionalContractRefresh,
+        ApiPlanKbObjectNameIndex kbIndex)
+    {
+        if (designModel is null) throw new ArgumentNullException(nameof(designModel));
+        if (apiPlan is null) throw new ArgumentNullException(nameof(apiPlan));
+        if (kbIndex is null) throw new ArgumentNullException(nameof(kbIndex));
+
+        if (!apiPlan.PlannedApiGuid.HasValue || apiPlan.PlannedApiGuid.Value == Guid.Empty)
+        {
+            throw new InvalidOperationException(
+                $"API Object '{apiPlan.ApiName}' nao foi associado por GUID planejado. " +
+                "A associacao por nome nao autoriza a gravacao de consumidores. Nenhuma alteracao foi feita.");
+        }
+
+        var apiObject = API.Get(designModel, apiPlan.PlannedApiGuid.Value);
+        if (apiObject is null)
+        {
+            throw new InvalidOperationException(
+                $"API Object com GUID planejado '{apiPlan.PlannedApiGuid.Value}' nao foi reencontrado. " +
+                "Nenhuma alteracao foi feita.");
+        }
+
+        var resolution = ApiPlanMainObjectResolver.Resolve(
+            apiPlan.PlannedApiGuid,
+            apiPlan.ApiName,
+            new ApiPlanMainObjectCandidate(apiObject.Guid, apiObject.Name),
+            Array.Empty<ApiPlanMainObjectCandidate>());
+        if (!resolution.IsConfirmed)
+        {
+            throw new InvalidOperationException(
+                $"API Object bloqueado: {resolution.Diagnostic} Nenhuma alteracao foi feita.");
+        }
+
+        var owned = allowIntentionalContractRefresh
+            ? IsOwnedApiObjectForIntentionalChange(designModel, kbIndex, apiPlan, apiObject)
+            : IsOwnedApiObject(designModel, kbIndex, apiPlan, apiObject);
+        if (!owned)
+        {
+            throw new InvalidOperationException(
+                $"API Object com GUID planejado '{apiPlan.PlannedApiGuid.Value}' e nome '{apiPlan.ApiName}' " +
+                "e externo ou incompativel. Nenhuma alteracao foi feita.");
+        }
+
+        return apiObject;
+    }
+
     internal static ApiPlanApiObjectWriteCoreResult SavePreparedApiObject(
         KBModel designModel,
         ApiPlanTransientApiContext context,
@@ -771,30 +820,24 @@ internal static class ApiPlanApiObjectWriter
         bool allowIntentionalContractRefresh,
         ApiPlanKbObjectNameIndex kbIndex)
     {
+        if (apiPlan.PlannedApiGuid.HasValue && apiPlan.PlannedApiGuid.Value != Guid.Empty)
+        {
+            return new ApiPlanApiObjectPreflightResult(
+                PreflightExistingApiObjectStrict(designModel, apiPlan, allowIntentionalContractRefresh, kbIndex));
+        }
+
         var existing = API.GetAll(designModel)
             .Where(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase))
             .ToArray();
 
-        if (existing.Length > 1)
+        if (existing.Length > 0)
         {
-            throw new InvalidOperationException($"Criacao de API Object bloqueada: foram encontrados {existing.Length} API Objects chamados '{apiPlan.ApiName}'. Nenhuma alteracao foi feita.");
+            throw new InvalidOperationException(
+                $"Criacao de API Object bloqueada: existem {existing.Length} API Objects chamados '{apiPlan.ApiName}', " +
+                "mas nenhum GUID planejado foi confirmado. A associacao por nome nao autoriza escolher um objeto. Nenhuma alteracao foi feita.");
         }
 
-        if (existing.Length == 0)
-        {
-            return new ApiPlanApiObjectPreflightResult(null);
-        }
-
-        var apiObject = existing[0];
-        var owned = allowIntentionalContractRefresh
-            ? IsOwnedApiObjectForIntentionalWrite(designModel, kbIndex, apiPlan, apiObject)
-            : IsOwnedApiObject(designModel, kbIndex, apiPlan, apiObject);
-        if (!owned)
-        {
-            throw new InvalidOperationException($"Criacao de API Object bloqueada: ja existe API Object externo ou incompativel chamado '{apiPlan.ApiName}'. Nenhuma alteracao foi feita.");
-        }
-
-        return new ApiPlanApiObjectPreflightResult(apiObject);
+        return new ApiPlanApiObjectPreflightResult(null);
     }
 
 }

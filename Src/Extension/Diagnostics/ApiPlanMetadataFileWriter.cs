@@ -139,30 +139,13 @@ internal static class ApiPlanMetadataFileWriter
 
     private static API PreflightApiObject(KBModel designModel, ApiPlan apiPlan, bool allowIntentionalContractRefresh, ApiPlanKbObjectNameIndex kbIndex)
     {
-        var matches = API.GetAll(designModel)
-            .Where(api => string.Equals(api.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
+        var apiObject = ApiPlanApiObjectWriter.PreflightExistingApiObjectStrict(
+            designModel,
+            apiPlan,
+            allowIntentionalContractRefresh,
+            kbIndex);
 
-        if (matches.Length == 0)
-        {
-            throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: API Object requerido nao foi reencontrado: '{apiPlan.ApiName}'. Gere o API Object pelo Wizard antes. Nenhuma alteracao foi feita.");
-        }
-
-        if (matches.Length > 1)
-        {
-            throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: foram encontrados {matches.Length} API Objects chamados '{apiPlan.ApiName}'. Nenhuma alteracao foi feita.");
-        }
-
-        var apiObject = matches[0];
-        var owned = allowIntentionalContractRefresh
-            ? ApiPlanApiObjectWriter.IsOwnedApiObjectForIntentionalWrite(designModel, kbIndex, apiPlan, apiObject)
-            : ApiPlanApiObjectWriter.IsOwnedApiObject(designModel, kbIndex, apiPlan, apiObject);
-        if (!owned)
-        {
-            throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: API Object externo ou incompativel chamado '{apiPlan.ApiName}'. Nenhuma alteracao foi feita.");
-        }
-
-        // O GUID vem do API Object reencontrado; metadata-only nao passa pelo contexto transient.
+        // O GUID ja foi validado antes da leitura/escrita do File; metadata-only nao passa pelo contexto transient.
         apiPlan.PlannedApiGuid = apiObject.Guid;
         return apiObject;
     }
