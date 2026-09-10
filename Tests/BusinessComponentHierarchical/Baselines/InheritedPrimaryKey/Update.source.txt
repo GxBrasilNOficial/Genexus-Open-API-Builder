@@ -111,8 +111,8 @@ If &RestStatusCode = 200
         &ErrorResponse.Code = !"not_found"
         &ErrorResponse.Message = !"Header was not found."
     EndIf
+EndIf
 If not &PayloadErrorMessage.IsEmpty()
     &ErrorResponse.Code = &PayloadErrorCode
     &ErrorResponse.Message = &PayloadErrorMessage
-EndIf
 EndIf

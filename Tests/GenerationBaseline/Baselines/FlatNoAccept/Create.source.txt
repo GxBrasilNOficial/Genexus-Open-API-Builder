@@ -66,8 +66,8 @@ If &RestStatusCode = 201
             EndIf
         EndIf
     EndIf
+EndIf
 If not &PayloadErrorMessage.IsEmpty()
     &ErrorResponse.Code = &PayloadErrorCode
     &ErrorResponse.Message = &PayloadErrorMessage
-EndIf
 EndIf
