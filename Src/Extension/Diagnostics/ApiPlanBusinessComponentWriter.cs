@@ -1035,12 +1035,11 @@ internal static class ApiPlanBusinessComponentWriter
         lines.Add($"{bodyIndent}EndIf");
         if (guarded)
         {
+            lines.Add("EndIf");
             if (accumulatePayloadValidation)
             {
                 lines.AddRange(FinalizePayloadValidation(0));
             }
-
-            lines.Add("EndIf");
         }
 
         return string.Join(Environment.NewLine, lines);
@@ -1306,12 +1305,11 @@ internal static class ApiPlanBusinessComponentWriter
         lines.Add($"{bodyIndent}EndIf");
         if (guarded)
         {
+            lines.Add("EndIf");
             if (accumulatePayloadValidation)
             {
                 lines.AddRange(FinalizePayloadValidation(0));
             }
-
-            lines.Add("EndIf");
         }
 
         return string.Join(Environment.NewLine, lines);

@@ -84,6 +84,11 @@ Assert-Contains $source 'BeginPayloadValidation(0)' 'Create/Update devem inicial
 Assert-Contains $source 'AppendPayloadValidationError' 'Cada erro de payload deve ser acumulado, nao sobrescrito.'
 Assert-Contains $source '&ErrorResponse.Messages.Add(&PayloadErrorItem)' 'Cada erro de payload deve ser exposto na colecao Messages.'
 Assert-Contains $source 'FinalizePayloadValidation(0)' 'Create/Update devem finalizar a mensagem agregada antes de fechar a guarda do Save.'
+$finalizeAfterGuardPattern = @'
+            lines.Add("EndIf");
+            if (accumulatePayloadValidation)
+'@
+Assert-Contains $source $finalizeAfterGuardPattern 'A finalizacao dos erros de payload deve ocorrer depois de fechar a guarda que protege o Save.'
 Assert-Contains $source 'PreviousB111FieldLimitValidation' 'O preflight deve reconhecer a variante anterior que sobrescrevia erros de limite.'
 Assert-Contains $source 'PreviousB111RequiredMemberPresenceValidation' 'O preflight deve reconhecer a variante anterior que sobrescrevia erros de obrigatorios.'
 
