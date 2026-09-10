@@ -310,3 +310,15 @@ O teste de `Update` foi executado com registro temporário e limpeza posterior:
 | Limpeza | `DELETE=200` | `DELETE=200` |
 
 Durante a preparação desse teste, o .NET / PostgreSQL chegou a responder HTTP 500 com `TypeLoadException` para `GeneXus.Programs.SdtsdtTeste_API_CreateRequest_RESTInterface` em `GeneXus.Programs.Common`. O diagnóstico confirmado foi um `apiteste.dll` antigo publicado embora o objeto `apiteste` não existisse na KB, deixando assemblies incompatíveis após um Build All incremental incompleto. A criação do objeto na KB e um novo Build All corrigiram o ambiente; a execução acima passou em ambos os ambientes. Portanto, esse incidente não foi causado pelo PostgreSQL, pelo IIS, pelo navegador nem por `_app_offline.htm`.
+
+##### Primeiro smoke HTTP de `List` após os Build All — captura 2026-09-10
+
+Como primeiro teste HTTP da rodada seguinte, foi executado `GET /notafiscal` sem credencial e com token OAuth nos dois environments, sem alterar dados. O token foi obtido nos dois casos; sem token, ambos responderam `401` em JSON; com token, ambos iniciaram a operação e responderam `200` em JSON.
+
+| Verificação | .NET Framework / SQL Server | .NET / PostgreSQL |
+| --- | --- | --- |
+| Sem token | `401`, mensagem de cabeçalho `Authorization` ausente | `401`, mesma mensagem |
+| Com token | `200`; 22 itens; página 1, tamanho 50, total 22, total de páginas 1 | `200`; 10 itens; página 1, tamanho 50, total 10, total de páginas 1 |
+| Envelope efetivamente recebido | `ListResponse` + `ErrorResponse` no nível raiz; paginação e filtros dentro de `ListResponse` | `Items` + `Pagination` + `AppliedFilters` no nível raiz; sem propriedade `ErrorResponse` |
+
+O resultado não é aceito como contrato equivalente entre os environments. A leitura dos dois `apiNotaFiscal.yaml` gerados confirmou que ambos declaram `ListOutput` com as propriedades `ListResponse` e `ErrorResponse`; o Framework entregou esse formato, enquanto o PostgreSQL devolveu somente o conteúdo interno de `ListResponse`. A diferença é de serialização do runtime gerado e não indica falha de autenticação, de inicialização ou específica do banco PostgreSQL. O `List` fica pendente de classificação/correção do envelope antes de ser considerado validado de forma uniforme; este achado também não substitui os cenários de Sync ainda pendentes na validação F1 da IDE.
