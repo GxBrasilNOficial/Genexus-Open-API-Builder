@@ -69,6 +69,8 @@ Padrões de seleção:
 
 Campos sensíveis, tokens e credenciais nunca devem ser devolvidos em `appliedFilters`.
 
+No reencontro de uma API existente, se a metadata própria tiver filtros disponíveis (`FiltersAvailable`), seus filtros têm prioridade sobre os filtros lidos do Service Source; o Service Source só é usado como fallback quando a metadata não os disponibiliza.
+
 ---
 
 # 4. Tipos de Filtro
