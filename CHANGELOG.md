@@ -34,6 +34,10 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - Investigação da falha de Business Component na `Empresa` encerrada em 2026-09-05: remoção limpa, `Build All` nos dois environments, reaplicação com `procEmpresa_API_Create` salvo e `Build All` aprovado no `CSharpModel`. A falha de conversão `bool`/`decimal`/`short` no `NETFrameworkPostgreSQL` permanece separada como problema daquele environment. Evidência: `Docs/Implementation/2026-09-05-ENCERRAMENTO-BC-EMPRESA.md`.
 - `B082` Etapa 1A **aceita** (2026-09-03): índice uma vez por operação; atributos de BC/List pelo mapa. Apply na KB `FabricaBrasil18Test` abaixo das metas (`Setor` ~18 s, `Empresa` ~61 s, `DocumentoFiscal` 65 s recrear / 29 s reaplicar). Sync que grava medido na `NotaFiscal` (KB pequena) por marcas de varredura. Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`. Na data deste registro, a próxima ação única voltou a ser `B108`; **superada em 2026-09-05**, quando `B108` foi estacionado e a pauta passou à revisão por pares da sprint `S-B111` — ver a seção `Planned` abaixo.
 
+### Validated
+
+- Revalidação HTTP da `NotaFiscal` (2026-09-10) nos dois environments: `PUT` válido `200`; dois limites inválidos retornam `400` com `attribute_limit_exceeded` e duas mensagens sem alterar o registro; membro obrigatório ausente retorna `invalid_request`; ID inexistente retorna `not_found`; registros temporários foram removidos com `DELETE=200`. O HTTP 500 observado no PostgreSQL foi corrigido ao eliminar a incompatibilidade de um `apiteste.dll` antigo com `GeneXus.Programs.Common`, após criar `apiteste` na KB e executar novo `Build All`; não era falha do PostgreSQL. Evidência: `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`.
+
 ### Planned
 
 - `B108` (plano aprovado 2026-08-31; estacionado desde 2026-09-05): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. A pauta imediata é validar manualmente na IDE a F1 da sprint `S-B111`; ver o checkpoint e o documento 06.

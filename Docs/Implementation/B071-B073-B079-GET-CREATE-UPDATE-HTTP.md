@@ -289,3 +289,24 @@ A bateria foi executada com OAuth GAM usando o arquivo local ignorado `Temp/wsEd
 | Update inexistente | `404`, `not_found` | `404`, `not_found` |
 
 Os registros de teste `21` e `8` permanecem nas respectivas bases: a API atual não possui serviço DELETE e nenhuma limpeza direta no banco foi executada. Esta captura fecha a validação runtime HTTP do contrato recriado; a bateria específica do `NoAccept(EmployeeAddedDate)` permanece coberta separadamente pelos builds U13/U15.
+
+##### Revalidação do contrato atual e diagnóstico do artefato PostgreSQL — captura HTTP 2026-09-10
+
+Após a instalação da DLL atual, o Wizard foi aplicado na `NotaFiscal` com `List`, `Get`, `Create`, `Update` e `Delete` selecionados e com `Completar listagem` e `Completar REST via Business Component` ativos. O relatório final registrou `Updated=15`, `Blocked=0`, API Object escrito como `List`, metadata atualizada e somente os dois avisos conhecidos de fallback de descrições e reuso do Folder. O `Build All` terminou com `Success: Build All` em `NETPostgreSQL155` e `NETFrameworkSQLServer004`; no Framework houve apenas o warning preexistente de cópia de `FBiTextSharp.dll` para o mesmo diretório.
+
+A DLL usada nesta rodada foi `Src/Extension/bin/Release/net471/GenexusOpenApiBuilder.Extension.dll`, SHA-256 `3D7517FA2999EC5956E7B4BB4B47B8EFE5028052EA8DB1EE08115D583C47DBA6`.
+
+A validação HTTP do repasse de múltiplos erros de payload também passou nos dois ambientes: `400`, `ErrorCode=attribute_limit_exceeded`, `MessagesCount=2`, com as mensagens de `NotaFiscalSerie` e `NotaFiscalObs2` no corpo, sem gravação.
+
+O teste de `Update` foi executado com registro temporário e limpeza posterior:
+
+| Caso | .NET Framework / SQL Server | .NET / PostgreSQL |
+| --- | --- | --- |
+| Criação de preparação | `201`, `CreatedId=27` | `201`, `CreatedId=15` |
+| `PUT` válido | `200`; `GET` confirmou a alteração | `200`; `GET` confirmou a alteração |
+| `PUT` com dois limites inválidos | `400`, `attribute_limit_exceeded`, 2 mensagens; `GET` confirmou ausência de alteração | `400`, `attribute_limit_exceeded`, 2 mensagens; `GET` confirmou ausência de alteração |
+| `PUT` sem membro obrigatório | `400`, `invalid_request` | `400`, `invalid_request` |
+| `PUT` em ID inexistente | `404`, `not_found` | `404`, `not_found` |
+| Limpeza | `DELETE=200` | `DELETE=200` |
+
+Durante a preparação desse teste, o .NET / PostgreSQL chegou a responder HTTP 500 com `TypeLoadException` para `GeneXus.Programs.SdtsdtTeste_API_CreateRequest_RESTInterface` em `GeneXus.Programs.Common`. O diagnóstico confirmado foi um `apiteste.dll` antigo publicado embora o objeto `apiteste` não existisse na KB, deixando assemblies incompatíveis após um Build All incremental incompleto. A criação do objeto na KB e um novo Build All corrigiram o ambiente; a execução acima passou em ambos os ambientes. Portanto, esse incidente não foi causado pelo PostgreSQL, pelo IIS, pelo navegador nem por `_app_offline.htm`.

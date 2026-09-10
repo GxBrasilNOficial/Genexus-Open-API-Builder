@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-09.
+2026-09-10.
 
 ## Último marco concluído
 
@@ -395,6 +395,7 @@ com essa validação.
 93. Em 2026-09-03 a Etapa 1A fechou: Apply abaixo das metas nas três transações da KB grande; Sync que grava na `NotaFiscal` sem as cinco varreduras convertidas; reencontro de SDT sem segundo `Save()`; Build All nos dois environments da `FabricaBrasil18Test` (PostgreSQL após reespecificar `apiEmpresa` quando o Specifier Daemon reiniciou). Próxima ação única = `B108`. Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`.
 94. Em 2026-09-03 o D12 (âncora no monitor da IDE) foi fumado na U15, KB pequena, GeneXus no monitor secundário: Wizard, Sincronizar e Remover abriram na frente da IDE. Código veio de carona no aceite da 1A; Preferências e o restante da Etapa 3 ficam fora. Evidência: o mesmo aceite, seção «Monitor da IDE».
 95. Em 2026-09-05 a investigação da falha BC da `Empresa` foi encerrada: Remover `Deleted=50`; `Build All` limpo nos dois environments; reaplicação `Created=50`, `Blocked=0`, BC e `procEmpresa_API_Create` salvos; `Build All` pós-reaplicação aprovado no `CSharpModel`. O erro do `NETFrameworkPostgreSQL` ficou separado como falha de geração/compilação C# do environment. Evidência: `Implementation/2026-09-05-ENCERRAMENTO-BC-EMPRESA.md`.
+96. Em 2026-09-10 a validação HTTP complementar do contrato atual da `NotaFiscal` passou nos dois environments: `PUT` válido `200`, `PUT` com dois limites inválidos `400` com `attribute_limit_exceeded` e 2 mensagens, sem alteração persistida, membro obrigatório ausente `400` (`invalid_request`) e ID inexistente `404` (`not_found`); registros temporários foram removidos com `DELETE=200`. O Build All anterior também terminou com sucesso em `NETPostgreSQL155` e `NETFrameworkSQLServer004`. Durante a preparação, o HTTP 500 do PostgreSQL foi atribuído a `apiteste.dll` antigo incompatível com `GeneXus.Programs.Common`, corrigido ao criar `apiteste` na KB e executar novo Build All; não foi defeito do PostgreSQL. Evidência: `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`.
 
 ## Bloqueios e fatos ainda não validados
 
