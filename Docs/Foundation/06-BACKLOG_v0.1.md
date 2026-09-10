@@ -276,6 +276,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B117 | Reavaliar a localização da saída e do asset da DLL satélite GeneXus 18 U13, hoje em `artifacts/gx18u13`, e documentar um caminho mais intuitivo sem misturá-la à DLL canônica U14+ | Baixa — candidato a manutenção futura; sem impacto funcional imediato |
 | B118 | Tornar o build local da extensão, especialmente a DLL satélite GeneXus 18 U13, reproduzível dentro de sessões do Codex sem copiar comandos para um PowerShell externo | Média — candidato a manutenção futura; depende de definir o perfil de permissões do Codex e validar a execução no contexto correto; sem mudança de ACL por padrão |
 | B119 | Auditar e remover variáveis locais sem uso efetivo no código C#, começando por `b111ManagedApply` no fluxo de Sync | Baixa — manutenção futura, sem mudança de comportamento esperada; plano em [`Docs/Implementation/B119-LIMPEZA-VARIAVEIS-SEM-USO.md`](../Implementation/B119-LIMPEZA-VARIAVEIS-SEM-USO.md) |
+| B120 | Normalizar o envelope HTTP do serviço `List` entre .NET Framework/SQL Server e .NET/PostgreSQL, preservando o `ErrorResponse` público | Urgente — bloqueia o aceite HTTP multiplataforma; aberto em 2026-09-10 e deliberadamente estacionado até o encerramento da sprint `S-B111`; plano em [`Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`](../Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md) |
 
 ### Nota operacional — B118
 
