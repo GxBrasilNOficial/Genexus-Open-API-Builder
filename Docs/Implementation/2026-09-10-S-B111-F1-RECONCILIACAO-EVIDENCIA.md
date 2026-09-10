@@ -31,7 +31,7 @@ somente que a evidência encontrada não sustenta o aceite amplo exigido pelo pl
 | Wizard | List-only | Transaction `NotaFiscal`; `FinalApiWriter='List'`, `ApiSaveCount=1` e `Bloqueados=0` confirmados na Output | **Passou** |
 | Wizard | BC + List | Transaction `NotaFiscal`; BC salvou Procedures, List salvou a Procedure e o API Object por último, com um Save e zero bloqueios | **Passou** |
 | Wizard | API-only sobre API já REST-completa | `apiNotaFiscal` bloqueado antes do primeiro Save; `ApiSaveCount=0` e `Bloqueados=1` | **Guarda passou** |
-| Sync | sem BC/List | Foi o primeiro cenário planejado, mas o relatório/Output mostrou BC e List; a execução foi reclassificada como `BC + List` | **Não comprovado como caso separado** |
+| Sync | sem BC/List | A primeira execução foi reclassificada como `BC + List`. Na tentativa seguinte, `LaudoObs` foi marcado somente em `Response`, mas o preflight bloqueou porque `sdtLaudo_API_Response` tinha 2 membros e o contrato planejado passou a exigir 3; `API.Save()` não ocorreu | **Guard passou; cenário positivo não comprovado** |
 | Sync | somente BC | Não foi encontrado relatório/Output de uma execução de Sync isolada nesse perfil | **Não comprovado** |
 | Sync | somente List | Não foi encontrado relatório/Output de uma execução de Sync isolada nesse perfil | **Não comprovado** |
 | Sync | BC + List | Delta `NotaFiscalObs2` 40→41; `FinalApiWriter='List'`, `ApiSaveCount=1`, `Atualizados=14`, `Bloqueados=0`; Output confirmou consumidores antes do API Object | **Passou** |
@@ -55,6 +55,10 @@ somente que a evidência encontrada não sustenta o aceite amplo exigido pelo pl
 6. O Sync `BC + List` foi executado novamente com o delta `NotaFiscalObs2` 40→41;
    o relatório foi fechado antes da captura da Output, que confirmou a ordem e o
    único Save.
+7. A primeira tentativa separada do Sync sem BC/List usou o novo atributo
+   `LaudoObs`, marcado somente em `Response`. O preflight bloqueou o reencontro
+   estrito de `sdtLaudo_API_Response` antes de qualquer gravação, porque o SDT
+   existente tinha dois membros e o contrato planejado passou a exigir três.
 
 ## O que foi anotado e o que não foi
 
@@ -66,7 +70,8 @@ do plano.
 
 Build All nos dois environments e o teste HTTP de Update são evidências
 complementares. Eles não substituem os casos manuais de Sync definidos na seção
-7 do plano da F1.
+7 do plano da F1. A tentativa com `LaudoObs` acrescenta evidência do guard de
+pré-escrita, mas não comprova o fluxo positivo sem BC/List.
 
 ## Fonte e limite da reconstrução
 

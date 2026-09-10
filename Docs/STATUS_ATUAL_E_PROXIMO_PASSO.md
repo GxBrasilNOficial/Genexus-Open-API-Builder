@@ -139,12 +139,14 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Fechar a lacuna de evidência manual do Sync da F1** — recuperar ou executar e registrar os
-cenários Sync sem BC/List, somente BC, somente List e o bloqueio de BC selecionado sem
-habilitação na Transaction. A sessão confirmou os quatro perfis positivos do Wizard e o Sync
-`BC + List`, mas isso não substitui a matriz de Sync do plano. Só depois desse fechamento a F1
-poderá ser promovida à avaliação da F2 (seam de persistência e recibos); F3 continua condicionada
-ao aceite da F2.
+**Resolver e registrar o cenário Sync sem BC/List da F1** — a primeira tentativa com o novo
+atributo `LaudoObs` foi bloqueada antes do primeiro `Save()` porque o SDT de `Response` existente
+divergiu do contrato planejado; isso é evidência do guard, não aceite do fluxo positivo. É preciso
+decidir se a barreira é o comportamento estrito pretendido ou uma lacuna para inclusões aprovadas
+na tela de Sync, estabelecer uma base coerente sem editar o SDT manualmente e repetir o cenário.
+Só depois disso devem ser executados os perfis somente BC, somente List e o bloqueio de BC
+selecionado sem habilitação na Transaction. Apenas após esse fechamento a F1 poderá ser promovida
+à avaliação da F2 (seam de persistência e recibos); F3 continua condicionada ao aceite da F2.
 O manifesto não mudou nesta frente, portanto não há `genexus /install` adicional a registrar.
 O parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR
 COM RESSALVAS`; suas observações P3 úteis foram incorporadas como clarificações de escopo,
@@ -411,11 +413,14 @@ residual `B082` 1B/2/3 não competem com a próxima avaliação da F2.
 97. Em 2026-09-10 a F1 da sprint `S-B111` recebeu validação manual parcial na IDE: a matriz positiva do Wizard e a guarda de API já REST-completa passaram; o Sync `BC + List` aplicou o delta `NotaFiscalObs2` 40→41 com preflight aprovado, consumidores antes do API Object e um único `API.Save()` final; `Build All` passou em `NETPostgreSQL155` e `NETFrameworkSQLServer004`. Permanecem sem evidência separada os três outros perfis de Sync e o bloqueio de BC sem habilitação na Transaction. Próxima ação única = fechar essa lacuna antes da avaliação da F2. Evidência: `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md` e `Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`.
 98. Em 2026-09-10 o primeiro smoke HTTP da rodada pós-Build All foi executado nos dois environments: `GET /notafiscal` sem token respondeu `401` e com token respondeu `200` em ambos. Porém o Framework entregou o `ListOutput` aninhado (`ListResponse` + `ErrorResponse`), enquanto o PostgreSQL achatou `ListResponse` no nível raiz, embora os dois YAML declarem o mesmo envelope. Autenticação e inicialização passaram; a equivalência do contrato de resposta do `List` permanece pendente. Evidência: `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`.
 99. Em 2026-09-10 a divergência do envelope HTTP do `List` foi aberta como `B120`, com prioridade urgente e tratamento deliberadamente posterior ao encerramento da sprint `S-B111`. O registro separa o defeito de serialização/runtime da implementação da extensão, preserva o contrato público atual com `ErrorResponse` como hipótese de trabalho e exige reprodução mínima, decisão sobre a forma canônica e validação nos dois environments antes de qualquer correção. A próxima ação única continua sendo fechar a lacuna de Sync da F1; `B120` não a substitui. Evidência e plano: `Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`.
+100. Em 2026-09-10 a primeira tentativa do cenário Sync sem BC/List foi executada na `Laudo`: `LaudoObs` foi incluído somente em `Response`, mas o preflight bloqueou antes de qualquer gravação porque `sdtLaudo_API_Response` tinha 2 membros (`LaudoNumero`, `LaudoDataDeliberacao`) e o contrato planejado passou a exigir 3. O relatório confirmou `Salvamentos do API Object: 0`, `Criados/Atualizados/Removidos: nenhum` e `Bloqueados: 1`. O guard funcionou, mas o cenário positivo não foi aceito; a forma correta de tratar inclusões de campo no Sync precisa ser decidida antes de prosseguir para os demais perfis. Evidência: `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md` e `Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`.
+101. Em 2026-09-10 foi registrado o backlog `B121` para uma sessão futura: o Sync deve expor explicitamente os perfis de consumidor nenhum, somente BC, somente List e BC+List, porque a presença de serviços na metadata não prova quais etapas foram aplicadas. O item é separado da regressão de SDT da `Laudo`, fica fora da sprint `S-B111` e não substitui a lacuna de aceite manual que permanece como próxima ação da F1. Plano: `Docs/Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md`.
 
 ## Bloqueios e fatos ainda não validados
 
 - HTTP do Delete (contrato 401/404/200/422 e nível próprio Authorization vs Authentication no C#/IIS): **fechado** em 2026-08-31. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §3.
 - Smoke HTTP atual do `List`: autenticação e execução `401/200` passaram nos dois environments, mas o envelope divergiu do contrato declarado no YAML entre Framework e PostgreSQL; ainda não é aceite como validação HTTP uniforme. `B120` foi aberto como tratamento urgente pós-sprint, sem alterar a próxima ação única da F1. Evidência: `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md` e `Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`.
+- `B121` — seleção explícita de consumidores no Sync: planejado para sessão futura, fora da sprint `S-B111`; não substitui a lacuna de aceite manual da F1 nem a próxima ação única atual. Evidência e plano: `Docs/Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md`.
 - Add > Local por usuário externo em máquina nunca usada com a extensão (o relato U14 usou cópia em `Packages` + `/install`); instalação sem elevação alguma continua sem comprovação.
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação. Em `Remover API gerada` (B086), ambiguidade e posse de API/Procedures/SDTs próprios passam a ser validadas antes do primeiro `Delete()` (`ValidateRemovalTargets` em Preview e Remove); permanece residual a falha IDE/SDK no meio da sequência de exclusões já iniciada.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
@@ -460,6 +465,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [2026-09-02 — B082 plano de hardening e desempenho medido (Etapa 1A aceita)](Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md)
 - [2026-08-31 — B108 plano preferências e retração (estacionado desde 2026-09-05)](Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md)
 - [2026-09-10 — B120 envelope HTTP do `List` entre environments](Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md)
+- [2026-09-10 — B121 seleção explícita de BC/List no Sync](Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md)
 - [B085 — Sincronizar com a Transaction](Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
