@@ -127,11 +127,11 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B100` concluído em 2026-08-30: serviço `Delete` opt-in na `apiNotaFiscal`; 401/404/200 nos dois environments; 422 de integridade no Framework (PostgreSQL dispensado). Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md`.
 - `B082` Fases A+B gravadas em 2026-08-31; Preview do Sync alinhado ao Remover em 2026-09-01. Smoke `Empresa`: Apply ~4,2 min; Sync `PreviewMs=5089` (diff vazio); Remover Preview `PreviewMs=2525` (Não). `RefreshFolders` após criar `GxOpenAPI`: smoke `ShowcaseUnanimo` / `Company` (2026-09-01), Criados=16, Bloqueados=0. Registro: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
 - `B082` Etapa 1A **aceita** em 2026-09-03 na KB `FabricaBrasil18Test` (`Setor`, `Empresa`, `DocumentoFiscal`) e Sync que grava na `NotaFiscal`. Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`.
-- `S-B111` F1 **aceita manualmente** em 2026-09-10: matriz positiva do Wizard, guarda de API já REST-completa, Sync com delta `NotaFiscalObs2` 40→41, sequência de gravação observada na Output e `Build All` concluído nos dois environments. Evidência: `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md`.
+- `S-B111` F1 implementada e **validada manualmente de forma parcial** em 2026-09-10: os quatro perfis positivos do Wizard e a guarda de API já REST-completa passaram; o Sync `BC + List` com delta `NotaFiscalObs2` 40→41 passou com a sequência de gravação observada na Output; os demais cenários de Sync exigidos pelo plano ainda não têm evidência separada. `Build All` foi concluído nos dois environments. Evidência: `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md` e `Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`.
 
 ## Frente atual
 
-Sprint `S-B111` — Fase 1 (ordem e writer final único) **aceita em 2026-09-10**. A próxima fase é a F2 (seam de persistência e recibos); a F3 (durabilidade e remoção) depende dela. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
+Sprint `S-B111` — Fase 1 (ordem e writer final único) está **implementada e parcialmente validada** em 2026-09-10. O aceite completo permanece pendente da reconciliação/execução dos cenários de Sync ainda não comprovados; a F2 (seam de persistência e recibos) só deve ser avaliada depois desse fechamento. A F3 (durabilidade e remoção) depende da F2. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
 
 Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; **conferência de fim em 2026-08-28**, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100` (concluído em 2026-08-30) → `B082` Fases A+B (concluído em 2026-09-01) → `B082` Etapa 1A (aceita em 2026-09-03). Publicação em quatro cortes: `0.1.0-alpha.4` após `B102` (2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis (2026-08-30), `0.1.0-alpha.6` com o `Delete` (2026-08-31) e `0.1.0-alpha.7` com o progresso `B082` (**publicado em 2026-09-01**). `B105` entra na sprint apenas se houver folga.
 
@@ -139,16 +139,19 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Preparar a avaliação da F2 da sprint `S-B111`** — a F1 (ordem de gravação e writer final
-único) foi aceita manualmente na IDE em 2026-09-10, depois de a DLL ser instalada e de o
-`Build All` passar nos dois environments. F2 (seam de persistência e recibos) é a próxima
-fase; F3 (durabilidade da intenção e remoção segura) continua condicionada ao aceite da F2.
+**Fechar a lacuna de evidência manual do Sync da F1** — recuperar ou executar e registrar os
+cenários Sync sem BC/List, somente BC, somente List e o bloqueio de BC selecionado sem
+habilitação na Transaction. A sessão confirmou os quatro perfis positivos do Wizard e o Sync
+`BC + List`, mas isso não substitui a matriz de Sync do plano. Só depois desse fechamento a F1
+poderá ser promovida à avaliação da F2 (seam de persistência e recibos); F3 continua condicionada
+ao aceite da F2.
 O manifesto não mudou nesta frente, portanto não há `genexus /install` adicional a registrar.
 O parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR
 COM RESSALVAS`; suas observações P3 úteis foram incorporadas como clarificações de escopo,
 canonização e estágios. A decisão humana de implementar a F1 foi registrada nesta sessão;
-a validação manual e o aceite operacional agora estão registrados na evidência da F1. A
-documentação desta rodada foi commitada localmente junto da implementação. Registro da revisão:
+a validação manual parcial e a reconciliação do alcance da evidência estão registradas nos
+documentos da F1. A documentação desta rodada foi commitada localmente junto da implementação.
+Registro da revisão:
 `Docs/Implementation/2026-09-04-B111-ESTADO-DA-REVISAO-POR-PARES.md`. Item:
 `Docs/Foundation/06-BACKLOG_v0.1.md` (`B111`).
 
@@ -173,7 +176,7 @@ A conclusão da `S-B111` não fecha automaticamente o `B082`: ao encerrar a spri
 
 ## Estado da sprint `S-B111` (planejada em 2026-09-05; território atualizado em 2026-09-10)
 
-Planejamento concluído, avaliação técnica inicial realizada e **a F1 foi implementada localmente** em 2026-09-08: o API Object é preparado em contexto transitório, o writer final concentra o único Save e o gate estrito impede criação/correção implícita de dependências pelos consumidores. Build e gates offline passaram. O aceite funcional na IDE foi concluído em 2026-09-10, com a matriz do Wizard, a guarda de API REST-completa, o Sync com delta e o `Build All` nos dois environments. F2 e F3 não foram implementadas. A consolidação documental foi revisada em 2026-09-08 após um painel CLI de quatro revisores; as ressalvas úteis foram incorporadas e a autorização humana da F1 foi registrada nesta sessão. As decisões aprovadas estão preservadas no registro versionado `Docs/Implementation/2026-09-07-S-B111-DECISOES-APROVADAS.md`.
+Planejamento concluído, avaliação técnica inicial realizada e **a F1 foi implementada localmente** em 2026-09-08: o API Object é preparado em contexto transitório, o writer final concentra o único Save e o gate estrito impede criação/correção implícita de dependências pelos consumidores. Build e gates offline passaram. A validação manual na IDE foi parcial em 2026-09-10: a matriz positiva do Wizard, a guarda de API REST-completa e o Sync `BC + List` com delta passaram; os demais cenários de Sync do plano ainda não têm evidência separada. `Build All` passou nos dois environments. F2 e F3 não foram implementadas. A consolidação documental foi revisada em 2026-09-08 após um painel CLI de quatro revisores; as ressalvas úteis foram incorporadas e a autorização humana da F1 foi registrada nesta sessão. As decisões aprovadas estão preservadas no registro versionado `Docs/Implementation/2026-09-07-S-B111-DECISOES-APROVADAS.md`.
 
 **O que mudou no território da sprint depois de 2026-09-05**, por necessidade de campo e fora das fases — registrado na seção 13 do plano da F3:
 
@@ -186,8 +189,8 @@ Três planos de fase foram preparados, avaliados na revisão técnica inicial e 
 documentalmente em 2026-09-08 após o painel CLI, os pareceres solo do MiMo V2.5 Pro e do
 Codex GPT-5.6-luna, a rodada manual do Cursor, o parecer solo do Claude Code Opus 5 e o
 parecer solo do OpenCode Go DeepSeek V4 Pro. As ressalvas úteis foram incorporadas localmente.
-A decisão humana desta sessão autorizou a implementação da F1; o aceite manual da F1 foi
-registrado em 2026-09-10, e F2/F3 continuam condicionadas ao aceite das fases anteriores. As
+A decisão humana desta sessão autorizou a implementação da F1; a validação manual parcial da F1 foi
+registrada em 2026-09-10, e F2/F3 continuam condicionadas ao aceite das fases anteriores. As
 alterações desta rodada estão commitadas localmente nesta frente:
 
 | Fase | Plano | Depende de |
@@ -241,13 +244,16 @@ O experimento também fechou o baseline: o `Build All` sem API passou nos dois e
 
 **`B109` precisa ser reescrito** como família de falhas, com um ramo por causa, em vez de "bug intermitente na etapa de Business Component". O enunciado atual não descreve o que se observou.
 
-## Aceite manual da F1
+## Validação manual da F1
 
-Em 2026-09-10, a F1 foi aceita manualmente na IDE com a DLL instalada: a matriz positiva do
-Wizard e a guarda de API já REST-completa passaram; o Sync registrou a alteração de
-`NotaFiscalObs2` de 40 para 41, a ordem dos cinco Saves e um único `API.Save()` final; e o
-`Build All` passou em `NETPostgreSQL155` e `NETFrameworkSQLServer004`. Evidência detalhada:
-`Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md`.
+Em 2026-09-10, a F1 foi validada manualmente de forma parcial na IDE com a DLL instalada: a
+matriz positiva do Wizard e a guarda de API já REST-completa passaram; o Sync `BC + List`
+registrou a alteração de `NotaFiscalObs2` de 40 para 41, a ordem dos cinco Saves e um único
+`API.Save()` final; e o `Build All` passou em `NETPostgreSQL155` e
+`NETFrameworkSQLServer004`. Os três outros perfis de Sync e o guard de BC sem habilitação
+continuam sem evidência separada. Evidência detalhada:
+`Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md` e
+`Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`.
 
 De `B109`, apenas o ramo B foi encerrado; o ramo A não tem pauta própria, por depender de
 reprodução — se o sintoma voltar, ele passa à frente. O `Rebuild All` do
@@ -256,7 +262,7 @@ residual `B082` 1B/2/3 não competem com a próxima avaliação da F2.
 
 ## Evidência da frente encerrada
 
-- `S-B111` F1 (2026-09-10): aceite manual na IDE da matriz positiva do Wizard e da guarda de API REST-completa; Sync com delta `NotaFiscalObs2` 40→41, preflight aprovado, consumidores salvos antes do API Object e `FinalApiWriter='List'` com `ApiSaveCount=1`; `Build All` concluído em `NETPostgreSQL155` e `NETFrameworkSQLServer004`. Evidência: `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md`.
+- `S-B111` F1 (2026-09-10): validação manual parcial na IDE da matriz positiva do Wizard e da guarda de API REST-completa; Sync `BC + List` com delta `NotaFiscalObs2` 40→41, preflight aprovado, consumidores salvos antes do API Object e `FinalApiWriter='List'` com `ApiSaveCount=1`; `Build All` concluído em `NETPostgreSQL155` e `NETFrameworkSQLServer004`. Os demais cenários de Sync do plano permanecem pendentes de evidência separada. Evidência: `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md` e `Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`.
 - `B082` Etapa 1A (2026-09-03): índice único; atributos BC/List pelo mapa; reencontro de SDT sem segundo `Save()`; Apply `Setor`/`Empresa`/`DocumentoFiscal` abaixo das metas; Sync que grava na `NotaFiscal`; Build All `CSharpModel` na primeira passagem e `NETFrameworkPostgreSQL` após reespecificar `apiEmpresa` (Specifier Daemon). Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`.
 
 - `B100` (2026-08-30; HTTP recapturado 2026-08-31; residual de nível próprio fechado no mesmo dia): Delete opt-in; Wizard/confirmação/`SecurityLevel`; HTTP 401/404/200 nos dois environments da `apiNotaFiscal` e 422 de integridade no Framework; C# IIS com Delete `SecurityHigh` e demais `SecurityLow`; 403 `code` 139 no Delete com `goab_role_denied`. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §3.
@@ -293,14 +299,15 @@ residual `B082` 1B/2/3 não competem com a próxima avaliação da F2.
 
 > O primeiro item abaixo e a promoção à Sprint 9 descrita nele são registro histórico do
 > fechamento daquela frente. Não descrevem o estado atual da `S-B111`: a F1 já foi implementada
-> localmente, está commitada na `main` e foi aceita manualmente na IDE em 2026-09-10.
+> localmente e está commitada na `main`; sua validação manual na IDE em 2026-09-10 foi parcial,
+> conforme a reconciliação de evidência.
 
 - **[Histórico — Sprint 9]** alinhamento documental da promoção à Sprint 9 já commitado, em `main`, com working tree limpa;
 - `origin/main` atualizada, sem commits remotos à frente da frente local;
 - checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
-- a próxima ação única é preparar a avaliação da F2 da sprint `S-B111`; o painel CLI de 2026-09-08 teve quatro respostas `REVISAR` e diversidade de três famílias de modelo, os pareceres solo do MiMo V2.5 Pro e do Codex GPT-5.6-luna foram avaliados, a rodada manual do Cursor respondeu `APROVAR COM RESSALVAS`, o parecer solo do Claude Code Opus 5 também respondeu `APROVAR COM RESSALVAS` e o parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR COM RESSALVAS`; as ressalvas úteis foram incorporadas localmente, a decisão humana de implementar a F1 foi registrada nesta sessão e o aceite funcional na IDE foi confirmado em 2026-09-10 (`Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md`); a implementação e o registro do aceite estão commitados localmente, sem push; `B108` está estacionado (`Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); a Etapa 1A do hardening `B082` está aceita (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
+- a próxima ação única é fechar a lacuna de evidência manual do Sync da F1, recuperando ou executando e registrando os cenários sem BC/List, somente BC, somente List e o bloqueio de BC sem habilitação na Transaction; o painel CLI de 2026-09-08 teve quatro respostas `REVISAR` e diversidade de três famílias de modelo, os pareceres solo do MiMo V2.5 Pro e do Codex GPT-5.6-luna foram avaliados, a rodada manual do Cursor respondeu `APROVAR COM RESSALVAS`, o parecer solo do Claude Code Opus 5 também respondeu `APROVAR COM RESSALVAS` e o parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR COM RESSALVAS`; as ressalvas úteis foram incorporadas localmente, a decisão humana de implementar a F1 foi registrada nesta sessão e a validação manual parcial na IDE está registrada em `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md` e `Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`; a implementação e o registro da validação estão commitados localmente, sem push; `B108` está estacionado (`Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); a Etapa 1A do hardening `B082` está aceita (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
 - sem reabrir B088/B089 nem contradizer o marco do wizard.
 
 ## Sequência operacional vigente
@@ -401,7 +408,7 @@ residual `B082` 1B/2/3 não competem com a próxima avaliação da F2.
 94. Em 2026-09-03 o D12 (âncora no monitor da IDE) foi fumado na U15, KB pequena, GeneXus no monitor secundário: Wizard, Sincronizar e Remover abriram na frente da IDE. Código veio de carona no aceite da 1A; Preferências e o restante da Etapa 3 ficam fora. Evidência: o mesmo aceite, seção «Monitor da IDE».
 95. Em 2026-09-05 a investigação da falha BC da `Empresa` foi encerrada: Remover `Deleted=50`; `Build All` limpo nos dois environments; reaplicação `Created=50`, `Blocked=0`, BC e `procEmpresa_API_Create` salvos; `Build All` pós-reaplicação aprovado no `CSharpModel`. O erro do `NETFrameworkPostgreSQL` ficou separado como falha de geração/compilação C# do environment. Evidência: `Implementation/2026-09-05-ENCERRAMENTO-BC-EMPRESA.md`.
 96. Em 2026-09-10 a validação HTTP complementar do contrato atual da `NotaFiscal` passou nos dois environments: `PUT` válido `200`, `PUT` com dois limites inválidos `400` com `attribute_limit_exceeded` e 2 mensagens, sem alteração persistida, membro obrigatório ausente `400` (`invalid_request`) e ID inexistente `404` (`not_found`); registros temporários foram removidos com `DELETE=200`. O Build All anterior também terminou com sucesso em `NETPostgreSQL155` e `NETFrameworkSQLServer004`. Durante a preparação, o HTTP 500 do PostgreSQL foi atribuído a `apiteste.dll` antigo incompatível com `GeneXus.Programs.Common`, corrigido ao criar `apiteste` na KB e executar novo Build All; não foi defeito do PostgreSQL. Evidência: `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`.
-97. Em 2026-09-10 a F1 da sprint `S-B111` foi aceita manualmente na IDE: a matriz positiva do Wizard e a guarda de API já REST-completa passaram; o Sync aplicou o delta `NotaFiscalObs2` 40→41 com preflight aprovado, consumidores antes do API Object e um único `API.Save()` final; `Build All` passou em `NETPostgreSQL155` e `NETFrameworkSQLServer004`. Próxima ação única = preparar a avaliação da F2. Evidência: `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md`.
+97. Em 2026-09-10 a F1 da sprint `S-B111` recebeu validação manual parcial na IDE: a matriz positiva do Wizard e a guarda de API já REST-completa passaram; o Sync `BC + List` aplicou o delta `NotaFiscalObs2` 40→41 com preflight aprovado, consumidores antes do API Object e um único `API.Save()` final; `Build All` passou em `NETPostgreSQL155` e `NETFrameworkSQLServer004`. Permanecem sem evidência separada os três outros perfis de Sync e o bloqueio de BC sem habilitação na Transaction. Próxima ação única = fechar essa lacuna antes da avaliação da F2. Evidência: `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md` e `Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -462,7 +469,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 10 — Beta estável (`B108` está estacionado; a F1 da sprint `S-B111` foi aceita; F2 e F3 ainda não foram implementadas; Etapa 1A do `B082` aceita em 2026-09-03; residual 1B/2/3 no plano de hardening).
+- Sprint 10 — Beta estável (`B108` está estacionado; a F1 da sprint `S-B111` foi implementada e tem validação manual parcial, com cenários de Sync ainda pendentes; F2 e F3 ainda não foram implementadas; Etapa 1A do `B082` aceita em 2026-09-03; residual 1B/2/3 no plano de hardening).
 
 ## Protocolo de atualização
 

@@ -245,8 +245,9 @@ Os apontamentos aproveitados foram:
 Após conferência no código e nos planos, esses pontos foram aplicados na F2, F3, no registro
 de decisões, no status e no backlog. A ressalva P1 de compatibilidade V2→V3 permanece uma
 pré-condição da implementação da F3; a F1 foi autorizada e implementada, mas, na data do
-parecer (2026-09-08), ainda aguardava aceite funcional na IDE. O aceite posterior, registrado
-em 2026-09-10, consta em `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md`.
+parecer (2026-09-08), ainda aguardava aceite funcional na IDE. A validação manual posterior,
+registrada em 2026-09-10, foi parcial: consta em `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md`
+e é reconciliada em `Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`.
 
 ## 12. Parecer solo do OpenCode Go DeepSeek V4 Pro — 2026-09-08
 
