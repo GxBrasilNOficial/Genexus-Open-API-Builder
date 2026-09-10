@@ -80,6 +80,23 @@ Assert-Contains $source 'RequiredMemberPresenceValidation("UpdateRequest"' 'Upda
 Assert-Contains $source 'DefaultValueRequiredMemberValidation(requestName, requestVariable, requiredFields, spaces)' 'Validacao atual de obrigatorios deve comparar o membro recebido com o valor default do SDT.'
 Assert-Contains $source 'FieldLimitValidation("&CreateRequest", plan.CreateRequestFields, 0)' 'Create deve validar os limites dos atributos antes do Save.'
 Assert-Contains $source 'FieldLimitValidation("&UpdateRequest", plan.UpdateRequestFields, 0)' 'Update deve validar os limites dos atributos antes do Save.'
+Assert-Contains $source 'BeginPayloadValidation(0)' 'Create/Update devem inicializar o acumulador de erros de payload antes das validacoes.'
+Assert-Contains $source 'AppendPayloadValidationError' 'Cada erro de payload deve ser acumulado, nao sobrescrito.'
+Assert-Contains $source '&ErrorResponse.Messages.Add(&PayloadErrorItem)' 'Cada erro de payload deve ser exposto na colecao Messages.'
+Assert-Contains $source 'FinalizePayloadValidation(0)' 'Create/Update devem finalizar a mensagem agregada antes de fechar a guarda do Save.'
+Assert-Contains $source 'PreviousB111FieldLimitValidation' 'O preflight deve reconhecer a variante anterior que sobrescrevia erros de limite.'
+Assert-Contains $source 'PreviousB111RequiredMemberPresenceValidation' 'O preflight deve reconhecer a variante anterior que sobrescrevia erros de obrigatorios.'
+
+$currentFieldLimitStart = $source.IndexOf('private static IEnumerable<string> FieldLimitValidation', [StringComparison]::Ordinal)
+$previousFieldLimitStart = $source.IndexOf('private static IEnumerable<string> PreviousB111FieldLimitValidation', [StringComparison]::Ordinal)
+if ($currentFieldLimitStart -lt 0 -or $previousFieldLimitStart -lt 0 -or $previousFieldLimitStart -le $currentFieldLimitStart) {
+    throw 'ASSERT_SECTION_FAILED: nao foi possivel isolar FieldLimitValidation atual.'
+}
+
+$currentFieldLimitSource = $source.Substring($currentFieldLimitStart, $previousFieldLimitStart - $currentFieldLimitStart)
+Assert-Contains $currentFieldLimitSource 'AppendPayloadValidationError(' 'FieldLimitValidation atual deve delegar cada violacao ao acumulador.'
+Assert-NotContains $currentFieldLimitSource '&ErrorResponse = new()' 'FieldLimitValidation atual nao deve recriar ErrorResponse a cada campo invalido.'
+
 Assert-Contains $source 'NumericMaximumLiteral(field.Length, field.Decimals)' 'A validacao numerica deve derivar o maior valor a partir de Length e Decimals.'
 Assert-Contains $source 'Len({member}) > {field.Length}' 'A validacao textual deve derivar o maior comprimento a partir de Length.'
 Assert-Contains $source 'CreateContent(plan, includeFieldLimitValidation: false, includeMessageForwarding: true)' 'Procedures Create antigas sem validacao de limite, com ou sem repasse, devem ser reconhecidas como migraveis.'
@@ -102,18 +119,22 @@ Assert-Contains $source 'PreviousB079UpdateContentWithUnwrappedRequiredMemberVal
 Assert-Contains $source 'PreviousB079UpdateContentWithOriginalMemberDirtyValidation' 'Preflight deve migrar Update intermediario que consultava Dirty com nome JSON publico em vez do nome interno do SDT.'
 
 $currentPresenceStart = $source.IndexOf('private static IEnumerable<string> DefaultValueRequiredMemberValidation', [StringComparison]::Ordinal)
-$previousDirtyStart = $source.IndexOf('private static IEnumerable<string> PreviousB079SdtDirtyMemberPresenceValidation', [StringComparison]::Ordinal)
-if ($currentPresenceStart -lt 0 -or $previousDirtyStart -lt 0 -or $previousDirtyStart -le $currentPresenceStart) {
+$previousRequiredStart = $source.IndexOf('private static IEnumerable<string> PreviousB111RequiredMemberPresenceValidation', [StringComparison]::Ordinal)
+if ($currentPresenceStart -lt 0 -or $previousRequiredStart -lt 0 -or $previousRequiredStart -le $currentPresenceStart) {
     throw 'ASSERT_SECTION_FAILED: nao foi possivel isolar DefaultValueRequiredMemberValidation atual.'
 }
 
-$currentPresenceSource = $source.Substring($currentPresenceStart, $previousDirtyStart - $currentPresenceStart)
+$currentPresenceSource = $source.Substring($currentPresenceStart, $previousRequiredStart - $currentPresenceStart)
 Assert-NotContains $currentPresenceSource 'csharp ' 'Procedure gerada atualmente nao deve usar comando csharp para validar membros JSON obrigatorios.'
 Assert-NotContains $currentPresenceSource '.IsDirty(' 'Procedure gerada atualmente nao deve chamar IsDirty: o metodo nao existe no Source GeneXus.'
 Assert-NotContains $currentPresenceSource '&HttpRequest.ToString()' 'Procedure gerada atualmente nao deve tentar ler o corpo bruto: ele ja foi consumido pelo pipeline REST.'
+Assert-Contains $currentPresenceSource 'AppendPayloadValidationError(' 'Validacao atual de obrigatorios deve preservar o erro no acumulador.'
+Assert-NotContains $currentPresenceSource '&ErrorResponse = new()' 'Validacao atual de obrigatorios nao deve recriar ErrorResponse a cada validacao.'
 
 Assert-Contains $source 'new VariableSpec("ErrorItem", "sdt_API_ErrorMessage")' 'Create/Update com repasse devem declarar ErrorItem tipado pelo SDT separado.'
 Assert-Contains $source 'new VariableSpec("ConcatenatedMessage", "LongVarChar")' 'Create/Update com repasse devem concatenar mensagens em LongVarChar.'
+Assert-Contains $source 'new VariableSpec("PayloadErrorItem", "sdt_API_ErrorMessage")' 'Create/Update devem declarar item tipado para cada erro de payload.'
+Assert-Contains $source 'new VariableSpec("PayloadErrorMessage", "LongVarChar")' 'Create/Update devem declarar acumulador de mensagem de payload sem truncamento por campo.'
 Assert-Contains $source 'includeMessageForwarding: true' 'Reconhecimento de Create/Update deve aceitar o bloco com repasse de mensagens.'
 Assert-Contains $source 'includeMessageForwarding: false' 'Reconhecimento de Create/Update deve aceitar o bloco Alpha sem repasse.'
 

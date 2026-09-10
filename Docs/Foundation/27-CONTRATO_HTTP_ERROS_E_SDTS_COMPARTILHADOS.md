@@ -236,7 +236,13 @@ Quando falhas do BC produzirem mensagens:
 
 - o erro principal usa `Code = validation_error`
 - a mensagem principal é o texto das rules concatenado em `Message` (ou o texto genérico quando o repasse está desligado)
-- `Messages[]` deriva das mensagens de **erro** do BC conforme as regras da seção 3; `Errors[]` permanece fora da geração entregue
+- em falha do BC, `Messages[]` deriva das mensagens de **erro** conforme as regras da seção 3; `Errors[]` permanece fora da geração entregue
+
+Nas validações do payload de `Create` e `Update`:
+
+- qualquer violação retorna HTTP `400`; cada violação de limite é preservada como um item próprio em `Messages[]`, e todos os obrigatórios faltantes aparecem na mensagem `invalid_request`
+- `Message` reúne todas as mensagens de validação separadas por `" | "`; o `Code` principal é `attribute_limit_exceeded` quando só há limites excedidos e `invalid_request` quando a validação de obrigatórios também participa
+- o Business Component não executa `Save` quando existe qualquer violação de payload
 
 Um spike deve verificar se erros interceptados pelo GAM ou pelo runtime antes da Procedure podem preservar o mesmo corpo. A uniformidade nesses casos não é prometida antes dessa validação.
 

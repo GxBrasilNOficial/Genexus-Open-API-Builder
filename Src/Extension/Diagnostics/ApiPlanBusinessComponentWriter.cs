@@ -527,6 +527,8 @@ internal static class ApiPlanBusinessComponentWriter
     {
         return HasEquivalentGeneratedSource(source, CreateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: true)) ||
             HasEquivalentGeneratedSource(source, CreateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: false)) ||
+            HasEquivalentGeneratedSource(source, CreateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: true, accumulatePayloadValidation: false)) ||
+            HasEquivalentGeneratedSource(source, CreateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: false, accumulatePayloadValidation: false)) ||
             HasEquivalentGeneratedSource(source, CreateContent(plan, includeFieldLimitValidation: false, includeMessageForwarding: true)) ||
             HasEquivalentGeneratedSource(source, CreateContent(plan, includeFieldLimitValidation: false, includeMessageForwarding: false)) ||
             HasEquivalentGeneratedSource(source, PreviousB079CreateContentWithLocationUrlAndUrlEncodeTrim(plan)) ||
@@ -549,6 +551,8 @@ internal static class ApiPlanBusinessComponentWriter
     {
         return HasEquivalentGeneratedSource(source, UpdateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: true)) ||
             HasEquivalentGeneratedSource(source, UpdateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: false)) ||
+            HasEquivalentGeneratedSource(source, UpdateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: true, accumulatePayloadValidation: false)) ||
+            HasEquivalentGeneratedSource(source, UpdateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: false, accumulatePayloadValidation: false)) ||
             HasEquivalentGeneratedSource(source, UpdateContent(plan, includeFieldLimitValidation: false, includeMessageForwarding: true)) ||
             HasEquivalentGeneratedSource(source, UpdateContent(plan, includeFieldLimitValidation: false, includeMessageForwarding: false)) ||
             HasEquivalentGeneratedSource(source, PreviousB079UpdateContentWithNativeJsonValidation(plan)) ||
@@ -928,7 +932,7 @@ internal static class ApiPlanBusinessComponentWriter
     private static string CreateContent(ApiPlan plan) =>
         CreateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: plan.IncludeBusinessComponentErrorMessages);
 
-    private static string CreateContent(ApiPlan plan, bool includeFieldLimitValidation, bool includeMessageForwarding)
+    private static string CreateContent(ApiPlan plan, bool includeFieldLimitValidation, bool includeMessageForwarding, bool accumulatePayloadValidation = true)
     {
         var bc = "&" + plan.TransactionName;
         var requiredFields = RequiredFieldsFor(plan, "CreateRequest", plan.CreateRequestFields);
@@ -939,10 +943,26 @@ internal static class ApiPlanBusinessComponentWriter
         var committedIndent = successIndent + 4;
         var slashGuard = PrimaryKeySlashGuardCondition(bc, plan);
         var lines = new List<string> { "&RestStatusCode = 201" };
-        lines.AddRange(RequiredMemberPresenceValidation("CreateRequest", "&CreateRequest", requiredFields, 0));
-        if (includeFieldLimitValidation)
+        if (accumulatePayloadValidation && guarded)
         {
-            lines.AddRange(FieldLimitValidation("&CreateRequest", plan.CreateRequestFields, 0));
+            lines.AddRange(BeginPayloadValidation(0));
+        }
+
+        if (accumulatePayloadValidation)
+        {
+            lines.AddRange(RequiredMemberPresenceValidation("CreateRequest", "&CreateRequest", requiredFields, 0));
+            if (includeFieldLimitValidation)
+            {
+                lines.AddRange(FieldLimitValidation("&CreateRequest", plan.CreateRequestFields, 0));
+            }
+        }
+        else
+        {
+            lines.AddRange(PreviousB111RequiredMemberPresenceValidation("CreateRequest", "&CreateRequest", requiredFields, 0));
+            if (includeFieldLimitValidation)
+            {
+                lines.AddRange(PreviousB111FieldLimitValidation("&CreateRequest", plan.CreateRequestFields, 0));
+            }
         }
 
         if (guarded)
@@ -1015,6 +1035,11 @@ internal static class ApiPlanBusinessComponentWriter
         lines.Add($"{bodyIndent}EndIf");
         if (guarded)
         {
+            if (accumulatePayloadValidation)
+            {
+                lines.AddRange(FinalizePayloadValidation(0));
+            }
+
             lines.Add("EndIf");
         }
 
@@ -1207,7 +1232,7 @@ internal static class ApiPlanBusinessComponentWriter
     private static string UpdateContent(ApiPlan plan) =>
         UpdateContent(plan, includeFieldLimitValidation: true, includeMessageForwarding: plan.IncludeBusinessComponentErrorMessages);
 
-    private static string UpdateContent(ApiPlan plan, bool includeFieldLimitValidation, bool includeMessageForwarding)
+    private static string UpdateContent(ApiPlan plan, bool includeFieldLimitValidation, bool includeMessageForwarding, bool accumulatePayloadValidation = true)
     {
         var bc = "&" + plan.TransactionName;
         var requiredFields = RequiredFieldsFor(plan, "UpdateRequest", plan.UpdateRequestFields);
@@ -1218,10 +1243,26 @@ internal static class ApiPlanBusinessComponentWriter
         var nestedIndent = guarded ? 12 : 8;
         var failureIndent = guarded ? 8 : 4;
         var lines = new List<string> { "&RestStatusCode = 200" };
-        lines.AddRange(RequiredMemberPresenceValidation("UpdateRequest", "&UpdateRequest", requiredFields, 0));
-        if (includeFieldLimitValidation)
+        if (accumulatePayloadValidation && guarded)
         {
-            lines.AddRange(FieldLimitValidation("&UpdateRequest", plan.UpdateRequestFields, 0));
+            lines.AddRange(BeginPayloadValidation(0));
+        }
+
+        if (accumulatePayloadValidation)
+        {
+            lines.AddRange(RequiredMemberPresenceValidation("UpdateRequest", "&UpdateRequest", requiredFields, 0));
+            if (includeFieldLimitValidation)
+            {
+                lines.AddRange(FieldLimitValidation("&UpdateRequest", plan.UpdateRequestFields, 0));
+            }
+        }
+        else
+        {
+            lines.AddRange(PreviousB111RequiredMemberPresenceValidation("UpdateRequest", "&UpdateRequest", requiredFields, 0));
+            if (includeFieldLimitValidation)
+            {
+                lines.AddRange(PreviousB111FieldLimitValidation("&UpdateRequest", plan.UpdateRequestFields, 0));
+            }
         }
 
         if (guarded)
@@ -1265,6 +1306,11 @@ internal static class ApiPlanBusinessComponentWriter
         lines.Add($"{bodyIndent}EndIf");
         if (guarded)
         {
+            if (accumulatePayloadValidation)
+            {
+                lines.AddRange(FinalizePayloadValidation(0));
+            }
+
             lines.Add("EndIf");
         }
 
@@ -1287,7 +1333,65 @@ internal static class ApiPlanBusinessComponentWriter
         return false;
     }
 
+    private static IEnumerable<string> BeginPayloadValidation(int spaces)
+    {
+        var indent = new string(' ', spaces);
+        yield return $"{indent}&PayloadErrorCode = !\"\"";
+        yield return $"{indent}&PayloadErrorMessage = !\"\"";
+    }
+
+    private static IEnumerable<string> AppendPayloadValidationError(string code, string messageExpression, int spaces)
+    {
+        var indent = new string(' ', spaces);
+        yield return $"{indent}&RestStatusCode = 400";
+        yield return $"{indent}If &PayloadErrorCode.IsEmpty()";
+        yield return $"{indent}    &PayloadErrorCode = !\"{code}\"";
+        yield return $"{indent}    &ErrorResponse = new()";
+        yield return $"{indent}EndIf";
+        yield return $"{indent}&PayloadErrorItem = new()";
+        yield return $"{indent}&PayloadErrorItem.Code = !\"{code}\"";
+        yield return $"{indent}&PayloadErrorItem.Message = {messageExpression}";
+        yield return $"{indent}&ErrorResponse.Messages.Add(&PayloadErrorItem)";
+        yield return $"{indent}If &PayloadErrorMessage.IsEmpty()";
+        yield return $"{indent}    &PayloadErrorMessage = {messageExpression}";
+        yield return $"{indent}Else";
+        yield return $"{indent}    &PayloadErrorMessage = &PayloadErrorMessage + !\" | \" + {messageExpression}";
+        yield return $"{indent}EndIf";
+    }
+
+    private static IEnumerable<string> FinalizePayloadValidation(int spaces)
+    {
+        var indent = new string(' ', spaces);
+        yield return $"{indent}If not &PayloadErrorMessage.IsEmpty()";
+        yield return $"{indent}    &ErrorResponse.Code = &PayloadErrorCode";
+        yield return $"{indent}    &ErrorResponse.Message = &PayloadErrorMessage";
+        yield return $"{indent}EndIf";
+    }
+
     private static IEnumerable<string> FieldLimitValidation(string requestVariable, IReadOnlyList<ApiPlanField> fields, int spaces)
+    {
+        var indent = new string(' ', spaces);
+        foreach (var field in fields)
+        {
+            if (!TryGetFieldLimitCondition(requestVariable, field, out var condition))
+            {
+                continue;
+            }
+
+            yield return $"{indent}If {condition}";
+            foreach (var line in AppendPayloadValidationError(
+                "attribute_limit_exceeded",
+                $"Format(!\"Value of field %1 exceeds the limit defined by its attribute.\", !\"{field.Name}\")",
+                spaces + 4))
+            {
+                yield return line;
+            }
+
+            yield return $"{indent}EndIf";
+        }
+    }
+
+    private static IEnumerable<string> PreviousB111FieldLimitValidation(string requestVariable, IReadOnlyList<ApiPlanField> fields, int spaces)
     {
         var indent = new string(' ', spaces);
         foreach (var field in fields)
@@ -1434,6 +1538,48 @@ internal static class ApiPlanBusinessComponentWriter
     /// (por exemplo, numerico zero) e recusado com 400.
     /// </remarks>
     private static IEnumerable<string> DefaultValueRequiredMemberValidation(string requestName, string requestVariable, IReadOnlyList<ApiPlanField> requiredFields, int spaces)
+    {
+        if (requiredFields.Count == 0)
+        {
+            yield break;
+        }
+
+        var indent = new string(' ', spaces);
+        var emptyVariable = "&" + EmptyRequestVariableName(requestName);
+        yield return $"{indent}&RequestJsonHasRequiredMembers = True";
+        yield return $"{indent}&MissingRequiredFields = !\"\"";
+        yield return $"{indent}{emptyVariable} = new()";
+
+        foreach (var field in requiredFields)
+        {
+            yield return $"{indent}If {requestVariable}.{field.Name} = {emptyVariable}.{field.Name}";
+            yield return $"{indent}    &RequestJsonHasRequiredMembers = False";
+            yield return $"{indent}    If &MissingRequiredFields.IsEmpty()";
+            yield return $"{indent}        &MissingRequiredFields = !\"{field.Name}\"";
+            yield return $"{indent}    Else";
+            yield return $"{indent}        &MissingRequiredFields = &MissingRequiredFields + !\", {field.Name}\"";
+            yield return $"{indent}    EndIf";
+            yield return $"{indent}EndIf";
+        }
+
+        yield return $"{indent}If not &RequestJsonHasRequiredMembers";
+        foreach (var line in AppendPayloadValidationError(
+            "invalid_request",
+            "Format(!\"Required JSON member(s) missing or empty: %1.\", &MissingRequiredFields.Trim())",
+            spaces + 4))
+        {
+            yield return line;
+        }
+
+        yield return $"{indent}EndIf";
+    }
+
+    private static IEnumerable<string> PreviousB111RequiredMemberPresenceValidation(string requestName, string requestVariable, IReadOnlyList<ApiPlanField> requiredFields, int spaces)
+    {
+        return PreviousB079DefaultValueRequiredMemberValidation(requestName, requestVariable, requiredFields, spaces);
+    }
+
+    private static IEnumerable<string> PreviousB079DefaultValueRequiredMemberValidation(string requestName, string requestVariable, IReadOnlyList<ApiPlanField> requiredFields, int spaces)
     {
         if (requiredFields.Count == 0)
         {
@@ -2474,7 +2620,7 @@ internal static class ApiPlanBusinessComponentWriter
     private static IReadOnlyList<VariableSpec> CreateVariables(ApiPlan plan) =>
         CreateVariables(plan, plan.IncludeBusinessComponentErrorMessages);
 
-    private static IReadOnlyList<VariableSpec> CreateVariables(ApiPlan plan, bool includeMessageForwarding)
+    private static IReadOnlyList<VariableSpec> CreateVariables(ApiPlan plan, bool includeMessageForwarding, bool includePayloadValidation = true)
     {
         var variables = new List<VariableSpec>
         {
@@ -2489,6 +2635,11 @@ internal static class ApiPlanBusinessComponentWriter
         if (includeMessageForwarding)
         {
             variables.AddRange(MessageForwardingVariables());
+        }
+
+        if (includePayloadValidation)
+        {
+            variables.AddRange(PayloadValidationVariables(plan, "CreateRequest", plan.CreateRequestFields));
         }
 
         variables.AddRange(RequiredMemberPresenceVariables(plan, "CreateRequest", plan.CreateRequestFields));
@@ -2521,7 +2672,7 @@ internal static class ApiPlanBusinessComponentWriter
     private static IReadOnlyList<VariableSpec> UpdateVariables(ApiPlan plan) =>
         UpdateVariables(plan, plan.IncludeBusinessComponentErrorMessages);
 
-    private static IReadOnlyList<VariableSpec> UpdateVariables(ApiPlan plan, bool includeMessageForwarding)
+    private static IReadOnlyList<VariableSpec> UpdateVariables(ApiPlan plan, bool includeMessageForwarding, bool includePayloadValidation = true)
     {
         var variables = plan.PrimaryKey.Select(field => new VariableSpec(field.Name, $"Attribute:{field.Name}"))
             .Concat(new[]
@@ -2536,6 +2687,11 @@ internal static class ApiPlanBusinessComponentWriter
         if (includeMessageForwarding)
         {
             variables.AddRange(MessageForwardingVariables());
+        }
+
+        if (includePayloadValidation)
+        {
+            variables.AddRange(PayloadValidationVariables(plan, "UpdateRequest", plan.UpdateRequestFields));
         }
 
         variables.AddRange(RequiredMemberPresenceVariables(plan, "UpdateRequest", plan.UpdateRequestFields));
@@ -2561,13 +2717,17 @@ internal static class ApiPlanBusinessComponentWriter
         if (string.Equals(service, "Create", StringComparison.OrdinalIgnoreCase))
         {
             return HasExpectedVariables(model, kbIndex, procedure, CreateVariables(plan, true))
-                || HasExpectedVariables(model, kbIndex, procedure, CreateVariables(plan, false));
+                || HasExpectedVariables(model, kbIndex, procedure, CreateVariables(plan, false))
+                || HasExpectedVariables(model, kbIndex, procedure, CreateVariables(plan, true, includePayloadValidation: false))
+                || HasExpectedVariables(model, kbIndex, procedure, CreateVariables(plan, false, includePayloadValidation: false));
         }
 
         if (string.Equals(service, "Update", StringComparison.OrdinalIgnoreCase))
         {
             return HasExpectedVariables(model, kbIndex, procedure, UpdateVariables(plan, true))
-                || HasExpectedVariables(model, kbIndex, procedure, UpdateVariables(plan, false));
+                || HasExpectedVariables(model, kbIndex, procedure, UpdateVariables(plan, false))
+                || HasExpectedVariables(model, kbIndex, procedure, UpdateVariables(plan, true, includePayloadValidation: false))
+                || HasExpectedVariables(model, kbIndex, procedure, UpdateVariables(plan, false, includePayloadValidation: false));
         }
 
         return false;
@@ -2596,6 +2756,21 @@ internal static class ApiPlanBusinessComponentWriter
             new VariableSpec("Messages", "Messages, GeneXus.Common"),
         })
         .ToArray();
+
+    private static IReadOnlyList<VariableSpec> PayloadValidationVariables(ApiPlan plan, string requestName, IReadOnlyList<ApiPlanField> candidateFields)
+    {
+        if (RequiredFieldsFor(plan, requestName, candidateFields).Count == 0 && !HasFieldLimitValidation(candidateFields))
+        {
+            return Array.Empty<VariableSpec>();
+        }
+
+        return new[]
+        {
+            new VariableSpec("PayloadErrorCode", "VarChar(64)"),
+            new VariableSpec("PayloadErrorMessage", "LongVarChar"),
+            new VariableSpec("PayloadErrorItem", "sdt_API_ErrorMessage"),
+        };
+    }
 
     private static IEnumerable<VariableSpec> RequiredMemberPresenceVariables(ApiPlan plan, string requestName, IReadOnlyList<ApiPlanField> candidateFields)
     {
