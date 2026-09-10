@@ -1,4 +1,6 @@
 &RestStatusCode = 200
+&PayloadErrorCode = !""
+&PayloadErrorMessage = !""
 &RequestJsonHasRequiredMembers = True
 &MissingRequiredFields = !""
 &EmptyUpdateRequest = new()
@@ -20,15 +22,35 @@ If &UpdateRequest.FlatSimpleKeyActive = &EmptyUpdateRequest.FlatSimpleKeyActive
 EndIf
 If not &RequestJsonHasRequiredMembers
     &RestStatusCode = 400
-    &ErrorResponse = new()
-    &ErrorResponse.Code = !"invalid_request"
-    &ErrorResponse.Message = Format(!"Required JSON member(s) missing or empty: %1.", &MissingRequiredFields.Trim())
+    If &PayloadErrorCode.IsEmpty()
+        &PayloadErrorCode = !"invalid_request"
+        &ErrorResponse = new()
+    EndIf
+    &PayloadErrorItem = new()
+    &PayloadErrorItem.Code = !"invalid_request"
+    &PayloadErrorItem.Message = Format(!"Required JSON member(s) missing or empty: %1.", &MissingRequiredFields.Trim())
+    &ErrorResponse.Messages.Add(&PayloadErrorItem)
+    If &PayloadErrorMessage.IsEmpty()
+        &PayloadErrorMessage = Format(!"Required JSON member(s) missing or empty: %1.", &MissingRequiredFields.Trim())
+    Else
+        &PayloadErrorMessage = &PayloadErrorMessage + !" | " + Format(!"Required JSON member(s) missing or empty: %1.", &MissingRequiredFields.Trim())
+    EndIf
 EndIf
 If Len(&UpdateRequest.FlatSimpleKeyName) > 60
     &RestStatusCode = 400
-    &ErrorResponse = new()
-    &ErrorResponse.Code = !"attribute_limit_exceeded"
-    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatSimpleKeyName")
+    If &PayloadErrorCode.IsEmpty()
+        &PayloadErrorCode = !"attribute_limit_exceeded"
+        &ErrorResponse = new()
+    EndIf
+    &PayloadErrorItem = new()
+    &PayloadErrorItem.Code = !"attribute_limit_exceeded"
+    &PayloadErrorItem.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatSimpleKeyName")
+    &ErrorResponse.Messages.Add(&PayloadErrorItem)
+    If &PayloadErrorMessage.IsEmpty()
+        &PayloadErrorMessage = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatSimpleKeyName")
+    Else
+        &PayloadErrorMessage = &PayloadErrorMessage + !" | " + Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatSimpleKeyName")
+    EndIf
 EndIf
 If &RestStatusCode = 200
     &FlatSimpleKey.Load(&FlatSimpleKeyId)
@@ -84,4 +106,8 @@ If &RestStatusCode = 200
         &ErrorResponse.Code = !"not_found"
         &ErrorResponse.Message = !"FlatSimpleKey was not found."
     EndIf
+If not &PayloadErrorMessage.IsEmpty()
+    &ErrorResponse.Code = &PayloadErrorCode
+    &ErrorResponse.Message = &PayloadErrorMessage
+EndIf
 EndIf

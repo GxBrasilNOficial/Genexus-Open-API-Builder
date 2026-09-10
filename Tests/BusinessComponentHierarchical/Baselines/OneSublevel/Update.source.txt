@@ -1,15 +1,37 @@
 &RestStatusCode = 200
+&PayloadErrorCode = !""
+&PayloadErrorMessage = !""
 If &UpdateRequest.OrderId > 99999999
     &RestStatusCode = 400
-    &ErrorResponse = new()
-    &ErrorResponse.Code = !"attribute_limit_exceeded"
-    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"OrderId")
+    If &PayloadErrorCode.IsEmpty()
+        &PayloadErrorCode = !"attribute_limit_exceeded"
+        &ErrorResponse = new()
+    EndIf
+    &PayloadErrorItem = new()
+    &PayloadErrorItem.Code = !"attribute_limit_exceeded"
+    &PayloadErrorItem.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"OrderId")
+    &ErrorResponse.Messages.Add(&PayloadErrorItem)
+    If &PayloadErrorMessage.IsEmpty()
+        &PayloadErrorMessage = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"OrderId")
+    Else
+        &PayloadErrorMessage = &PayloadErrorMessage + !" | " + Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"OrderId")
+    EndIf
 EndIf
 If Len(&UpdateRequest.OrderDesc) > 40
     &RestStatusCode = 400
-    &ErrorResponse = new()
-    &ErrorResponse.Code = !"attribute_limit_exceeded"
-    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"OrderDesc")
+    If &PayloadErrorCode.IsEmpty()
+        &PayloadErrorCode = !"attribute_limit_exceeded"
+        &ErrorResponse = new()
+    EndIf
+    &PayloadErrorItem = new()
+    &PayloadErrorItem.Code = !"attribute_limit_exceeded"
+    &PayloadErrorItem.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"OrderDesc")
+    &ErrorResponse.Messages.Add(&PayloadErrorItem)
+    If &PayloadErrorMessage.IsEmpty()
+        &PayloadErrorMessage = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"OrderDesc")
+    Else
+        &PayloadErrorMessage = &PayloadErrorMessage + !" | " + Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"OrderDesc")
+    EndIf
 EndIf
 If &RestStatusCode = 200
     &Order.Load(&OrderId)
@@ -106,4 +128,8 @@ If &RestStatusCode = 200
         &ErrorResponse.Code = !"not_found"
         &ErrorResponse.Message = !"Order was not found."
     EndIf
+If not &PayloadErrorMessage.IsEmpty()
+    &ErrorResponse.Code = &PayloadErrorCode
+    &ErrorResponse.Message = &PayloadErrorMessage
+EndIf
 EndIf

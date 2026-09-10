@@ -1,9 +1,21 @@
 &RestStatusCode = 201
+&PayloadErrorCode = !""
+&PayloadErrorMessage = !""
 If Len(&CreateRequest.FirmName) > 40
     &RestStatusCode = 400
-    &ErrorResponse = new()
-    &ErrorResponse.Code = !"attribute_limit_exceeded"
-    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FirmName")
+    If &PayloadErrorCode.IsEmpty()
+        &PayloadErrorCode = !"attribute_limit_exceeded"
+        &ErrorResponse = new()
+    EndIf
+    &PayloadErrorItem = new()
+    &PayloadErrorItem.Code = !"attribute_limit_exceeded"
+    &PayloadErrorItem.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FirmName")
+    &ErrorResponse.Messages.Add(&PayloadErrorItem)
+    If &PayloadErrorMessage.IsEmpty()
+        &PayloadErrorMessage = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FirmName")
+    Else
+        &PayloadErrorMessage = &PayloadErrorMessage + !" | " + Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FirmName")
+    EndIf
 EndIf
 If &RestStatusCode = 201
     &Firm = new()
@@ -58,4 +70,8 @@ If &RestStatusCode = 201
             EndIf
         EndIf
     EndIf
+If not &PayloadErrorMessage.IsEmpty()
+    &ErrorResponse.Code = &PayloadErrorCode
+    &ErrorResponse.Message = &PayloadErrorMessage
+EndIf
 EndIf

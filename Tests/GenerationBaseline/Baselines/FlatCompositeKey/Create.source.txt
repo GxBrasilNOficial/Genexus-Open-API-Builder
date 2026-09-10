@@ -1,27 +1,69 @@
 &RestStatusCode = 201
+&PayloadErrorCode = !""
+&PayloadErrorMessage = !""
 If &CreateRequest.FlatCompositeKeyCompanyId > 999999999
     &RestStatusCode = 400
-    &ErrorResponse = new()
-    &ErrorResponse.Code = !"attribute_limit_exceeded"
-    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyCompanyId")
+    If &PayloadErrorCode.IsEmpty()
+        &PayloadErrorCode = !"attribute_limit_exceeded"
+        &ErrorResponse = new()
+    EndIf
+    &PayloadErrorItem = new()
+    &PayloadErrorItem.Code = !"attribute_limit_exceeded"
+    &PayloadErrorItem.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyCompanyId")
+    &ErrorResponse.Messages.Add(&PayloadErrorItem)
+    If &PayloadErrorMessage.IsEmpty()
+        &PayloadErrorMessage = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyCompanyId")
+    Else
+        &PayloadErrorMessage = &PayloadErrorMessage + !" | " + Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyCompanyId")
+    EndIf
 EndIf
 If &CreateRequest.FlatCompositeKeyItemId > 999999999
     &RestStatusCode = 400
-    &ErrorResponse = new()
-    &ErrorResponse.Code = !"attribute_limit_exceeded"
-    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyItemId")
+    If &PayloadErrorCode.IsEmpty()
+        &PayloadErrorCode = !"attribute_limit_exceeded"
+        &ErrorResponse = new()
+    EndIf
+    &PayloadErrorItem = new()
+    &PayloadErrorItem.Code = !"attribute_limit_exceeded"
+    &PayloadErrorItem.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyItemId")
+    &ErrorResponse.Messages.Add(&PayloadErrorItem)
+    If &PayloadErrorMessage.IsEmpty()
+        &PayloadErrorMessage = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyItemId")
+    Else
+        &PayloadErrorMessage = &PayloadErrorMessage + !" | " + Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyItemId")
+    EndIf
 EndIf
 If Len(&CreateRequest.FlatCompositeKeyCode) > 20
     &RestStatusCode = 400
-    &ErrorResponse = new()
-    &ErrorResponse.Code = !"attribute_limit_exceeded"
-    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyCode")
+    If &PayloadErrorCode.IsEmpty()
+        &PayloadErrorCode = !"attribute_limit_exceeded"
+        &ErrorResponse = new()
+    EndIf
+    &PayloadErrorItem = new()
+    &PayloadErrorItem.Code = !"attribute_limit_exceeded"
+    &PayloadErrorItem.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyCode")
+    &ErrorResponse.Messages.Add(&PayloadErrorItem)
+    If &PayloadErrorMessage.IsEmpty()
+        &PayloadErrorMessage = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyCode")
+    Else
+        &PayloadErrorMessage = &PayloadErrorMessage + !" | " + Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyCode")
+    EndIf
 EndIf
 If Len(&CreateRequest.FlatCompositeKeyDescription) > 100
     &RestStatusCode = 400
-    &ErrorResponse = new()
-    &ErrorResponse.Code = !"attribute_limit_exceeded"
-    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyDescription")
+    If &PayloadErrorCode.IsEmpty()
+        &PayloadErrorCode = !"attribute_limit_exceeded"
+        &ErrorResponse = new()
+    EndIf
+    &PayloadErrorItem = new()
+    &PayloadErrorItem.Code = !"attribute_limit_exceeded"
+    &PayloadErrorItem.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyDescription")
+    &ErrorResponse.Messages.Add(&PayloadErrorItem)
+    If &PayloadErrorMessage.IsEmpty()
+        &PayloadErrorMessage = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyDescription")
+    Else
+        &PayloadErrorMessage = &PayloadErrorMessage + !" | " + Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"FlatCompositeKeyDescription")
+    EndIf
 EndIf
 If &RestStatusCode = 201
     &FlatCompositeKey = new()
@@ -86,4 +128,8 @@ If &RestStatusCode = 201
             EndIf
         EndIf
     EndIf
+If not &PayloadErrorMessage.IsEmpty()
+    &ErrorResponse.Code = &PayloadErrorCode
+    &ErrorResponse.Message = &PayloadErrorMessage
+EndIf
 EndIf

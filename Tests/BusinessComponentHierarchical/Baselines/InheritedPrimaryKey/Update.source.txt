@@ -1,9 +1,21 @@
 &RestStatusCode = 200
+&PayloadErrorCode = !""
+&PayloadErrorMessage = !""
 If &UpdateRequest.HeaderId > 99999999
     &RestStatusCode = 400
-    &ErrorResponse = new()
-    &ErrorResponse.Code = !"attribute_limit_exceeded"
-    &ErrorResponse.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"HeaderId")
+    If &PayloadErrorCode.IsEmpty()
+        &PayloadErrorCode = !"attribute_limit_exceeded"
+        &ErrorResponse = new()
+    EndIf
+    &PayloadErrorItem = new()
+    &PayloadErrorItem.Code = !"attribute_limit_exceeded"
+    &PayloadErrorItem.Message = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"HeaderId")
+    &ErrorResponse.Messages.Add(&PayloadErrorItem)
+    If &PayloadErrorMessage.IsEmpty()
+        &PayloadErrorMessage = Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"HeaderId")
+    Else
+        &PayloadErrorMessage = &PayloadErrorMessage + !" | " + Format(!"Value of field %1 exceeds the limit defined by its attribute.", !"HeaderId")
+    EndIf
 EndIf
 If &RestStatusCode = 200
     &Header.Load(&HeaderId)
@@ -99,4 +111,8 @@ If &RestStatusCode = 200
         &ErrorResponse.Code = !"not_found"
         &ErrorResponse.Message = !"Header was not found."
     EndIf
+If not &PayloadErrorMessage.IsEmpty()
+    &ErrorResponse.Code = &PayloadErrorCode
+    &ErrorResponse.Message = &PayloadErrorMessage
+EndIf
 EndIf
