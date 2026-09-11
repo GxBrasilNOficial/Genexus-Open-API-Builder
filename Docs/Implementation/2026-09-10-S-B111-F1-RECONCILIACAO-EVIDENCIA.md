@@ -19,6 +19,8 @@ O registro correto é, portanto:
 - o reencontro positivo API-only da `Laudo`, com SDTs e Procedures desmarcados,
   reencontrou as dependências próprias e salvou o API Object uma única vez em
   B054, sem bloqueio;
+- o teste negativo API-only da `Laudo`, com divergência temporária em
+  `sdtLaudo_API_Response`, bloqueou antes de qualquer gravação e foi restaurado;
 - os Syncs `BC + List`, sem BC/List e somente BC estão registrados com relatório e Output;
 - o guard de reencontro estrito para divergência manual e a restauração sem
   diferença também estão registrados com relatório e Output;
@@ -38,6 +40,7 @@ somente que a evidência encontrada não sustenta o aceite amplo exigido pelo pl
 | Família | Cenário | Evidência encontrada na sessão | Situação para o aceite da F1 |
 |---|---|---|---|
 | Wizard | API-only | API Object novo na `Laudo` com `FinalApiWriter='B054'`; depois, reencontro estrito na mesma Transaction com `GenerateSdts=False`, `GenerateProcedures=False`, `ApiSaveCount=1`, atualização somente de `apiLaudo`/metadata e `Bloqueados=0` | **Passou** |
+| Wizard | API-only com dependência divergente | `sdtLaudo_API_Response` com `LaudoObs1`; bloqueio `B063/B064/B067` antes de qualquer gravação, `ApiSaveCount=0`, `Criados/Atualizados/Removidos=0` e restauração posterior para `LaudoObs` | **Guarda passou** |
 | Wizard | BC-only | Transaction `NotaFiscal`; aplicação com List desmarcado, writer final Business Component, um Save e zero bloqueios; reteste da correção na Transaction `Carga`, com `Completar listagem=False`, `FinalApiWriter='Business Component'`, `ApiSaveCount=1`, `Criados=5`, `Atualizados=6` e `Bloqueados=0` | **Passou** |
 | Wizard | List-only | Transaction `NotaFiscal`; `FinalApiWriter='List'`, `ApiSaveCount=1` e `Bloqueados=0` confirmados na Output | **Passou** |
 | Wizard | BC + List | Transaction `NotaFiscal`; BC salvou Procedures, List salvou a Procedure e o API Object por último, com um Save e zero bloqueios | **Passou** |
@@ -128,8 +131,16 @@ somente que a evidência encontrada não sustenta o aceite amplo exigido pelo pl
     `ApiSaveAttempted=True`, `ApiSaveCount=1`, `Atualizados=2` (`apiLaudo` e
     `apiLaudo_Metadata`, `Bytes=33098`) e `Bloqueados=0`. Não houve gravação de
     SDT ou Procedure. O cenário API-only positivo de reencontro estrito está
-    comprovado; permanece para a próxima etapa o cenário negativo com uma
-    dependência ausente ou divergente.
+    comprovado.
+16. Em seguida, foi preservada a versão boa e somente o membro `LaudoObs` do
+    `sdtLaudo_API_Response` foi renomeado temporariamente para `LaudoObs1`. O
+    Wizard API-only, com as fases de SDT e Procedure desmarcadas, bloqueou no
+    preflight `B063/B064/B067` por divergência do contrato planejado. O relatório
+    confirmou `ApiSaveAttempted=False`, `ApiSaveCount=0`, nenhum objeto criado,
+    atualizado ou removido e `Bloqueados=1`. O membro foi restaurado para
+    `LaudoObs` e salvo, devolvendo a KB ao estado coerente. A guarda negativa foi
+    aprovada; os cenários com `GenerateApiObject=False` permanecem para a próxima
+    etapa.
 
 ## O que foi anotado e o que não foi
 
