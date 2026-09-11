@@ -271,6 +271,46 @@ internal static class ApiPlanTransactionSyncOrchestrator
         }
     }
 
+    public static IReadOnlyDictionary<string, IReadOnlyCollection<string>> ResolveSelectedAddedSdtMemberNamesByRole(
+        ApiPlanTransactionSyncPreview preview,
+        ApiPlanTransactionSyncChoices choices)
+    {
+        if (preview is null)
+        {
+            throw new ArgumentNullException(nameof(preview));
+        }
+
+        if (choices is null)
+        {
+            throw new ArgumentNullException(nameof(choices));
+        }
+
+        var addedNamesByGuid = preview.Diff.Added
+            .Where(change => change.Current is not null)
+            .ToDictionary(change => change.AttributeGuid, change => change.Current!.Name, StringComparer.OrdinalIgnoreCase);
+        var selectedNamesByRole = new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var roleSelection in choices.IncludeAddedByRole)
+        {
+            if (roleSelection.Value is null || roleSelection.Value.Count == 0)
+            {
+                continue;
+            }
+
+            var selectedNames = roleSelection.Value
+                .Where(guid => !string.IsNullOrWhiteSpace(guid) && addedNamesByGuid.ContainsKey(guid))
+                .Select(guid => addedNamesByGuid[guid])
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            if (selectedNames.Length > 0)
+            {
+                selectedNamesByRole[roleSelection.Key] = selectedNames;
+            }
+        }
+
+        return selectedNamesByRole;
+    }
+
     public static IReadOnlyCollection<string> ResolvePreservedSdtNames(
         ApiPlanTransactionSyncPreview preview,
         ApiPlanTransactionSyncChoices choices)

@@ -11,10 +11,11 @@ intenção somente pela lista de serviços persistida na metadata.
 ## Decisão de encaminhamento
 
 `B121` fica fora da sprint `S-B111` e não altera a próxima ação única da F1 nem
-reclassifica a lacuna de aceite manual que permanece registrada para a sprint.
-O problema de seleção dos consumidores é separado da regressão de preflight
-de SDT registrada na validação do Sync da `Laudo`. Este backlog não autoriza
-alteração do runtime nesta sprint.
+reclassifica os perfis de Sync que ainda permanecem sem evidência separada. O
+problema de seleção dos consumidores é separado da regressão de preflight de
+SDT registrada na validação do Sync da `Laudo`; essa regressão foi corrigida e
+validada na mesma rodada, incluindo o bloqueio de uma divergência manual. Este
+backlog não autoriza alteração do runtime nesta sprint.
 
 O Sync deve continuar protegido pelo preflight completo e pela regra de zero
 gravação quando houver bloqueio. A melhoria futura deve preservar essa barreira
@@ -76,7 +77,7 @@ intenção de consumidor deveria ser aplicada.
 
 ## Limites
 
-Este registro não corrige a regressão do reencontro estrito de SDT observada
-na `Laudo`, não reabre a decisão da F1 e não muda os checkboxes ou os objetos da
-KB nesta frente. A implementação fica para uma sessão futura, depois do
-encerramento da sprint `S-B111`.
+Este registro não reabre a decisão da F1 nem muda os checkboxes ou os objetos da
+KB nesta frente. A melhoria de seleção explícita fica para uma sessão futura,
+depois do encerramento da sprint `S-B111`; a regressão do reencontro estrito de
+SDT da `Laudo` foi tratada separadamente na F1 e não é escopo deste backlog.

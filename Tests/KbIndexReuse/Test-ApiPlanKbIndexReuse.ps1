@@ -23,6 +23,7 @@ $preflight = Read-LfText (Join-Path $srcRoot 'Diagnostics\ApiPlanWritePreflight.
 $stateReader = Read-LfText (Join-Path $srcRoot 'Diagnostics\ApiPlanGenerationStateReader.cs')
 $procedureWriter = Read-LfText (Join-Path $srcRoot 'Diagnostics\ApiPlanProcedureWriter.cs')
 $package = Read-LfText (Join-Path $srcRoot 'Package.cs')
+$syncOrchestrator = Read-LfText (Join-Path $srcRoot 'Diagnostics\ApiPlanTransactionSyncOrchestrator.cs')
 $remover = Read-LfText (Join-Path $srcRoot 'Diagnostics\ApiPlanGeneratedApiRemover.cs')
 $kbIndex = Read-LfText (Join-Path $srcRoot 'Diagnostics\ApiPlanKbObjectNameIndex.cs')
 
@@ -115,6 +116,9 @@ Assert-NotContains $package 'ApiPlanSdtSpecifier' 'Especificacao sincrona de SDT
 Assert-NotContains $sdtWriter 'SkipValidation' 'Save de SDT no Apply nao usa SkipValidation; o reencontro idempotente evita regravar.'
 Assert-Contains $sdtWriter 'TryMatchPlannedSdtStructure' 'Reencontro de SDT deve comparar a estrutura persistida antes de Save.'
 Assert-Contains $sdtWriter 'for (var index = 0; index < planned.Length; index++)' 'TryMatchPlannedSdtStructure deve comparar a ordem fisica dos membros de primeiro nivel.'
+Assert-Contains $sdtWriter 'ApiPlanSdtMemberSequenceMatcher.TryMatch' 'Sync deve comparar a subsequência de membros persistidos por um helper testável.'
+Assert-Contains $sdtWriter 'allowedAddedSdtMemberNamesByRole.TryGetValue(definition.Kind' 'Inclusões selecionadas devem ser aplicadas somente ao papel do SDT correspondente.'
+Assert-Contains $syncOrchestrator 'ResolveSelectedAddedSdtMemberNamesByRole' 'Sync deve resolver inclusões selecionadas por papel antes do preflight.'
 Assert-Contains $sdtWriter 'explicitPreserve ||' 'Skip de Save aceita Keep explicito do Sync ou estrutura e ordem iguais ao plano.'
 Assert-Contains $sdtWriter 'canSkipRewrite' 'Reencontro de SDT deve pular Save quando Keep explicito ou estrutura ja bate.'
 Assert-Contains $sdtWriter 'ApiPlanSdtWriteStatus.Unchanged' 'Reencontro sem Save deve publicar Unchanged, nao Reencountered.'

@@ -55,7 +55,8 @@ internal static class ApiPlanWritePreflight
         bool applyList,
         bool applyBusinessComponent,
         ApiPlanKbObjectNameIndex kbIndex,
-        IReadOnlyCollection<string>? preserveSdtNames = null)
+        IReadOnlyCollection<string>? preserveSdtNames = null,
+        IReadOnlyDictionary<string, IReadOnlyCollection<string>>? allowedAddedSdtMemberNamesByRole = null)
     {
         if (designModel is null) throw new ArgumentNullException(nameof(designModel));
         if (transaction is null) throw new ArgumentNullException(nameof(transaction));
@@ -86,10 +87,15 @@ internal static class ApiPlanWritePreflight
 
         if (generateSdts && requiresConsumersOrApi)
         {
-            // A etapa normal de SDTs aceita criar os ausentes, mas não pode
-            // reescrever um SDT existente divergente antes do preflight dos
-            // consumidores e do API Object.
-            ApiPlanSdtWriter.PreflightExistingStructures(designModel, apiPlan, kbIndex, preserveSdtNames);
+            // A etapa normal de SDTs aceita criar os ausentes e aplicar apenas
+            // inclusões explicitamente selecionadas no Sync. Alterações em
+            // membros já existentes continuam bloqueadas antes dos consumidores.
+            ApiPlanSdtWriter.PreflightExistingStructures(
+                designModel,
+                apiPlan,
+                kbIndex,
+                preserveSdtNames,
+                allowedAddedSdtMemberNamesByRole);
         }
         else if (!generateSdts && requiresConsumersOrApi)
         {

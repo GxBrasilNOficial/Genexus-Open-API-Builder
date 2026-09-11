@@ -615,6 +615,7 @@ public sealed class Package : AbstractPackageUI
 
             var selection = ApiPlanTransactionSyncOrchestrator.BuildSelection(preview, dialog.Choices);
             var preserveSdts = ApiPlanTransactionSyncOrchestrator.ResolvePreservedSdtNames(preview, dialog.Choices);
+            var allowedAddedSdtMemberNamesByRole = ApiPlanTransactionSyncOrchestrator.ResolveSelectedAddedSdtMemberNamesByRole(preview, dialog.Choices);
             var apiPlan = ApiPlanBuilder.Build(knowledgeBase.DesignModel, transaction, selection);
             var b111ManagedApply = selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyBusinessComponent || selection.ApplyList;
             var report = new ApiPlanApplicationFinalReportCollector("Sincronizar", transaction.Name, apiPlan.ApiName);
@@ -664,7 +665,8 @@ public sealed class Package : AbstractPackageUI
                         selection.ApplyList,
                         selection.ApplyBusinessComponent,
                         syncKbIndex,
-                        preserveSdts);
+                        preserveSdts,
+                        allowedAddedSdtMemberNamesByRole);
                 }
                 catch (Exception ex) when (ex is not ApiPlanBusyAbortedException)
                 {

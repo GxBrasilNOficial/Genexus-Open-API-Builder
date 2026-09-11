@@ -179,14 +179,15 @@ internal static class ApiPlanSdtWriter
     /// <summary>
     /// Valida a estrutura dos SDTs que já existem sem exigir que a primeira
     /// geração já tenha todos os SDTs persistidos. Isso permite criar os
-    /// ausentes, mas impede que a etapa normal reescreva um SDT divergente
-    /// antes do preflight estrito do consumidor.
+    /// ausentes e aplicar inclusões de membros selecionadas no Sync, mas
+    /// mantém estrito o reencontro dos membros já existentes.
     /// </summary>
     internal static void PreflightExistingStructures(
         KBModel designModel,
         ApiPlan apiPlan,
         ApiPlanKbObjectNameIndex kbIndex,
-        IReadOnlyCollection<string>? preserveSdtNames = null)
+        IReadOnlyCollection<string>? preserveSdtNames = null,
+        IReadOnlyDictionary<string, IReadOnlyCollection<string>>? allowedAddedSdtMemberNamesByRole = null)
     {
         if (designModel is null) throw new ArgumentNullException(nameof(designModel));
         if (apiPlan is null) throw new ArgumentNullException(nameof(apiPlan));
@@ -194,7 +195,13 @@ internal static class ApiPlanSdtWriter
 
         var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var preflight = CreatePreflightResult(designModel, generationPlan, kbIndex);
-        ValidateExistingSdtStructures(generationPlan, preflight, kbIndex, preserveSdtNames, requireAll: false);
+        ValidateExistingSdtStructures(
+            generationPlan,
+            preflight,
+            kbIndex,
+            preserveSdtNames,
+            requireAll: false,
+            allowedAddedSdtMemberNamesByRole: allowedAddedSdtMemberNamesByRole);
     }
 
     private static ApiPlanSdtWriteResult StrictReencounter(
@@ -298,7 +305,8 @@ internal static class ApiPlanSdtWriter
         ApiPlanSdtPreflightResult preflight,
         ApiPlanKbObjectNameIndex kbIndex,
         IReadOnlyCollection<string>? preserveSdtNames,
-        bool requireAll)
+        bool requireAll,
+        IReadOnlyDictionary<string, IReadOnlyCollection<string>>? allowedAddedSdtMemberNamesByRole = null)
     {
         foreach (var definition in generationPlan.SharedSdts.Concat(generationPlan.OwnSdts))
         {
@@ -312,7 +320,14 @@ internal static class ApiPlanSdtWriter
                 continue;
             }
 
-            if (!TryMatchPlannedSdtStructure(sdt, definition, kbIndex, out var mismatch) &&
+            IReadOnlyCollection<string>? allowedMissingMemberNames = null;
+            if (allowedAddedSdtMemberNamesByRole is not null &&
+                allowedAddedSdtMemberNamesByRole.TryGetValue(definition.Kind, out var selectedAddedMemberNames))
+            {
+                allowedMissingMemberNames = selectedAddedMemberNames;
+            }
+
+            if (!TryMatchPlannedSdtStructure(sdt, definition, kbIndex, out var mismatch, allowedMissingMemberNames) &&
                 !(preserveSdtNames?.Contains(definition.Name, StringComparer.OrdinalIgnoreCase) ?? false))
             {
                 throw new InvalidOperationException($"Reencontro estrito bloqueado: SDT '{definition.Name}' diverge do contrato planejado ({mismatch}). Nenhuma alteracao foi feita.");
@@ -464,7 +479,8 @@ internal static class ApiPlanSdtWriter
         SDT sdt,
         ApiPlanSdtDefinition definition,
         ApiPlanKbObjectNameIndex kbIndex,
-        out string? mismatch)
+        out string? mismatch,
+        IReadOnlyCollection<string>? allowedMissingMemberNames = null)
     {
         mismatch = null;
         var rootName = sdt.SDTStructure.Root.Name ?? string.Empty;
@@ -512,6 +528,38 @@ internal static class ApiPlanSdtWriter
         {
             mismatch = "membros extras '" + string.Join(",", extraNames) + "'";
             return false;
+        }
+
+        if (allowedMissingMemberNames is not null)
+        {
+            var actualNames = actualItems.Select(item => item.Name).ToArray();
+            var plannedNamesInOrder = planned.Select(member => member.Name).ToArray();
+            if (!ApiPlanSdtMemberSequenceMatcher.TryMatch(
+                    actualNames,
+                    plannedNamesInOrder,
+                    allowedMissingMemberNames,
+                    out var actualIndexByPlannedIndex,
+                    out mismatch))
+            {
+                return false;
+            }
+
+            for (var plannedIndex = 0; plannedIndex < planned.Length; plannedIndex++)
+            {
+                var actualIndex = actualIndexByPlannedIndex[plannedIndex];
+                if (actualIndex < 0)
+                {
+                    continue;
+                }
+
+                if (!MemberMatchesItem(actualItems[actualIndex], planned[plannedIndex], kbIndex))
+                {
+                    mismatch = DescribeMemberMismatch(actualItems[actualIndex], planned[plannedIndex]);
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         if (actualItems.Count != planned.Length)
