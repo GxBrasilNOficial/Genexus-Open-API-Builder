@@ -10,10 +10,11 @@ intenção somente pela lista de serviços persistida na metadata.
 
 ## Decisão de encaminhamento
 
-`B121` fica fora da sprint `S-B111` e não altera a próxima ação única da F1 nem
-reclassifica os perfis de Sync que ainda permanecem sem evidência separada. O
-problema de seleção dos consumidores é separado da regressão de preflight de
-SDT registrada na validação do Sync da `Laudo`; essa regressão foi corrigida e
+`B121` fica fora da sprint `S-B111` e não impede o encerramento da F1 com a
+exceção explícita registrada na documentação de aceite. Ele não reclassifica a
+tentativa de Sync somente List como perfil isolado. O problema de seleção dos
+consumidores é separado da regressão de preflight de SDT registrada na
+validação do Sync da `Laudo`; essa regressão foi corrigida e
 validada na mesma rodada, incluindo o bloqueio de uma divergência manual. Este
 backlog não autoriza alteração do runtime nesta sprint.
 
@@ -38,6 +39,35 @@ A evidência da F1 já mostrou essa diferença: uma API podia declarar
 `Completar REST via Business Component` permaneciam `False` no resumo do
 Wizard. Portanto, reabrir o Sync não permite reconstruir com segurança qual
 intenção de consumidor deveria ser aplicada.
+
+## Evidência observada na IDE em 2026-09-11
+
+A tentativa de validar o perfil Sync somente List foi feita na Transaction
+`Contrato`, após o Wizard List-only ter aplicado `apiContrato` com
+`ApplyBusinessComponent=False`, `ApplyList=True`, `FinalWriter='List'` e um
+único `API.Save()`. No Sync, não havia opção de BC no diálogo; o novo atributo
+`ContratoObservacao` (`VARCHAR(40)`) foi marcado somente em `Response`.
+
+O preview identificou uma inclusão. Apesar disso, o Output registrou, nesta
+ordem, os Saves de `procContrato_API_Get`, `procContrato_API_Create` e
+`procContrato_API_Update` no estágio Business Component, a mensagem
+`REST via Business Component aplicado`, depois `procContrato_API_List` e, por
+fim, `apiContrato`. O relatório final foi:
+
+```text
+FinalWriter='List'
+ApiSaveAttempted=True
+ApiSaveCount=1
+Resultado='SuccessWithWarnings'
+Atualizados=14
+Bloqueados=0
+```
+
+Esse resultado não comprova Sync somente List. Ele comprova o comportamento
+que motivou este backlog: o writer final ser `List` não significa que somente
+List foi aplicado, e a metadata/contrato derivado pode acionar consumidores
+de BC que não foram escolhidos explicitamente. A tentativa deve ser usada como
+evidência do B121 e não como aceite do perfil isolado da F1.
 
 ## Riscos
 

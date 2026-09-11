@@ -64,6 +64,11 @@ internal static class ApiPlanWritePreflight
         if (kbIndex is null) throw new ArgumentNullException(nameof(kbIndex));
         ValidateTransactionIdentity(transaction, apiPlan, "B111/F1");
 
+        if (applyBusinessComponent && !transaction.IsBusinessComponent)
+        {
+            throw new InvalidOperationException($"B055 bloqueado: Transaction='{transaction.Name}' esta com Business Component desabilitado. Nenhuma alteracao foi feita.");
+        }
+
         var requiresConsumersOrApi = generateApiObject || generateMetadata || applyList || applyBusinessComponent;
         if (generateApiObject && !applyList && !applyBusinessComponent)
         {

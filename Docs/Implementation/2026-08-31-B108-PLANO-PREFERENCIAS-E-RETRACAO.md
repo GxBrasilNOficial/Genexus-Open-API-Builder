@@ -3,7 +3,7 @@
 Data: 2026-08-31.
 Estado: **estacionado desde 2026-09-05** (plano aprovado em 2026-08-31).
 Correlato de backlog: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
-Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. Desde 2026-09-05 este plano está estacionado; após o fechamento da validação manual da F1 da sprint `S-B111` — ainda parcial em 2026-09-10 —, a **próxima ação única** será preparar a avaliação da F2. Escopo inalterado. A reconciliação da evidência está em `2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`.
+Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. Desde 2026-09-05 este plano está estacionado; após o fechamento da validação manual da F1 da sprint `S-B111`, com a exceção explícita do `B121` registrada em 2026-09-10/11, a **próxima ação única** é preparar a avaliação da F2. Escopo inalterado. A reconciliação da evidência está em `2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`.
 
 Não misturar com `B082` (sinal de vida no Wizard/Remover).
 
