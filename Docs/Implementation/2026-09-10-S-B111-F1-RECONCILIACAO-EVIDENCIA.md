@@ -169,8 +169,11 @@ somente que a evidência encontrada não sustenta o aceite amplo exigido pelo pl
     `Atualizados=9`, `ApiSaveAttempted=False`, `ApiSaveCount=0` e
     `Bloqueados=0`; o `B111` esclareceu que eram oito reencontros estritos de
     SDT e cinco de Folder, todos sem gravação. O cenário passou. A validação
-    runtime do endpoint List/B076 permanece pendente e não foi confundida com
-    este teste da IDE.
+    runtime do endpoint List/B076 foi tentado em 2026-09-11, após Build All nos
+    dois environments, mas permaneceu bloqueado pela autorização GAM: `401`
+    sem token e `403` (`code=139`) com
+    token válido nos dois environments. A tentativa não acessou dados,
+    filtros ou paginação e não foi confundida com este teste da IDE.
 
 ## O que foi anotado e o que não foi
 

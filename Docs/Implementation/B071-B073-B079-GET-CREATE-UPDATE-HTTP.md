@@ -322,3 +322,27 @@ Como primeiro teste HTTP da rodada seguinte, foi executado `GET /notafiscal` sem
 | Envelope efetivamente recebido | `ListResponse` + `ErrorResponse` no nível raiz; paginação e filtros dentro de `ListResponse` | `Items` + `Pagination` + `AppliedFilters` no nível raiz; sem propriedade `ErrorResponse` |
 
 O resultado não é aceito como contrato equivalente entre os environments. A leitura dos dois `apiNotaFiscal.yaml` gerados confirmou que ambos declaram `ListOutput` com as propriedades `ListResponse` e `ErrorResponse`; o Framework entregou esse formato, enquanto o PostgreSQL devolveu somente o conteúdo interno de `ListResponse`. A diferença é de serialização do runtime gerado e não indica falha de autenticação, de inicialização ou específica do banco PostgreSQL. O `List` fica pendente de classificação/correção do envelope antes de ser considerado validado de forma uniforme; este achado também não substitui os cenários de Sync ainda pendentes na validação F1 da IDE.
+
+##### Tentativa de validação HTTP do `List` da `Laudo` — captura 2026-09-11
+
+Após a aplicação da F1 na Transaction `Laudo` e o Build All nos dois
+environments, foi repetida a validação HTTP do endpoint
+`GET /apiLaudo/laudo`, sem alterar dados. A rota correta foi confirmada nos
+dois environments locais:
+
+| Verificação | .NET Framework / SQL Server | .NET / PostgreSQL |
+| --- | --- | --- |
+| `GET /apiLaudo/laudo` sem token | `401` JSON | `401` JSON |
+| Obtenção do token OAuth/GAM | `200` | `200` |
+| `GET /apiLaudo/laudo` com token | `403`, `code=139`, `Não autorizado: acesso negado.` | `403`, `code=139`, `Não autorizado: acesso negado.` |
+
+Os artefatos gerados confirmam que o serviço `List` está sob
+`GAMSecurityLevel.SecurityHigh` e usa a permissão
+`apilaudo_Services_List`. Assim, a requisição autenticada chegou ao runtime,
+mas o principal de teste não possui a permissão específica dessa API. Como o
+HTTP `200` não foi alcançado, não foram medidos itens, `AppliedFilters`,
+`Pagination`, filtro válido, filtro sem resultado ou página 2. B076 não é
+marcado como aprovado por esta tentativa; não houve gravação nem alteração na
+KB. Para continuar, é necessário conceder no GAM a permissão
+`apilaudo_Services_List` ao principal de teste nos dois environments e repetir
+as chamadas somente de leitura.
