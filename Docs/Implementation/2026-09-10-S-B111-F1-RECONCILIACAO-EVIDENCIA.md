@@ -16,6 +16,9 @@ O registro correto é, portanto:
 - a implementação da F1 está concluída e recebeu validação manual para
   encerramento da frente, com a exceção explícita do `B121`;
 - os quatro perfis positivos do Wizard estão registrados como exercitados;
+- o reencontro positivo API-only da `Laudo`, com SDTs e Procedures desmarcados,
+  reencontrou as dependências próprias e salvou o API Object uma única vez em
+  B054, sem bloqueio;
 - os Syncs `BC + List`, sem BC/List e somente BC estão registrados com relatório e Output;
 - o guard de reencontro estrito para divergência manual e a restauração sem
   diferença também estão registrados com relatório e Output;
@@ -34,7 +37,7 @@ somente que a evidência encontrada não sustenta o aceite amplo exigido pelo pl
 
 | Família | Cenário | Evidência encontrada na sessão | Situação para o aceite da F1 |
 |---|---|---|---|
-| Wizard | API-only | Transaction `Laudo`; `FinalApiWriter='B054'`, `ApiSaveCount=1`, `Bloqueados=0`; criação do API Object novo confirmada | **Passou** |
+| Wizard | API-only | API Object novo na `Laudo` com `FinalApiWriter='B054'`; depois, reencontro estrito na mesma Transaction com `GenerateSdts=False`, `GenerateProcedures=False`, `ApiSaveCount=1`, atualização somente de `apiLaudo`/metadata e `Bloqueados=0` | **Passou** |
 | Wizard | BC-only | Transaction `NotaFiscal`; aplicação com List desmarcado, writer final Business Component, um Save e zero bloqueios; reteste da correção na Transaction `Carga`, com `Completar listagem=False`, `FinalApiWriter='Business Component'`, `ApiSaveCount=1`, `Criados=5`, `Atualizados=6` e `Bloqueados=0` | **Passou** |
 | Wizard | List-only | Transaction `NotaFiscal`; `FinalApiWriter='List'`, `ApiSaveCount=1` e `Bloqueados=0` confirmados na Output | **Passou** |
 | Wizard | BC + List | Transaction `NotaFiscal`; BC salvou Procedures, List salvou a Procedure e o API Object por último, com um Save e zero bloqueios | **Passou** |
@@ -117,6 +120,16 @@ somente que a evidência encontrada não sustenta o aceite amplo exigido pelo pl
     avisos foram o fallback de idioma e a reutilização do Folder. Esta passagem
     recuperou a baseline; não deve ser contada como o teste API-only com SDTs e
     Procedures desmarcados.
+15. Sobre essa baseline completa, o Wizard foi reaplicado em API-only, mantendo
+    `List`, `Get`, `Create` e `Update`, o filtro `LaudoNumero`,
+    `Completar listagem=False`, metadata habilitada e REST via BC desabilitado,
+    mas com `GenerateSdts=False`, `GenerateProcedures=False` e
+    `GenerateApiObject=True`. O relatório confirmou `FinalApiWriter='B054'`,
+    `ApiSaveAttempted=True`, `ApiSaveCount=1`, `Atualizados=2` (`apiLaudo` e
+    `apiLaudo_Metadata`, `Bytes=33098`) e `Bloqueados=0`. Não houve gravação de
+    SDT ou Procedure. O cenário API-only positivo de reencontro estrito está
+    comprovado; permanece para a próxima etapa o cenário negativo com uma
+    dependência ausente ou divergente.
 
 ## O que foi anotado e o que não foi
 
