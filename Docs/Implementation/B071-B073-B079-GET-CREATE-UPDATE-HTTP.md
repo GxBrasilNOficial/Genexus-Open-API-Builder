@@ -346,3 +346,34 @@ marcado como aprovado por esta tentativa; não houve gravação nem alteração 
 KB. Para continuar, é necessário conceder no GAM a permissão
 `apilaudo_Services_List` ao principal de teste nos dois environments e repetir
 as chamadas somente de leitura.
+
+##### Reteste após permissão GAM — captura 2026-09-11
+
+No primeiro environment, o usuário concedeu `apilaudo_Services_List` diretamente
+ao principal `goab_api_teste` na aplicação `wsEducacaoSpTeste`. A permissão foi
+confirmada no GAM como `Permitir`, com `Herdado=0`. A nova chamada HTTP confirmou
+que o bloqueio de autorização deixou de ocorrer:
+
+| Verificação | .NET Framework / SQL Server |
+| --- | --- |
+| Sem token | `401` |
+| Token OAuth/GAM | `200` |
+| `GET /apiLaudo/laudo` autenticado | `200`, mas corpo `{}` |
+| Filtro sem resultado | `200`, mas corpo `{}` |
+| Página 2 com tamanho 1 | `200`, mas corpo `{}` |
+
+O corpo vazio não permite medir `Items`, `Pagination`, `AppliedFilters` ou
+filtro válido. A leitura do artefato gerado fechou a causa: o
+`apiLaudo.yaml`/`OpenApi3/apiLaudo.json` não contém parâmetros nem schemas; e o
+`apilaudo.cs` declara `gxep_list()` como `void`, executando a Procedure sem
+devolver `ListResponse` ou `ErrorResponse`. A Procedure
+`proclaudo_api_list.cs` monta o `ListResponse` corretamente, mas o API Object
+persistido continua no formato B054 `List() => procLaudo_API_List()`, sem os
+parâmetros e saídas do contrato B070. O registro detalhado está em
+`Docs/Implementation/2026-09-11-B076-LIST-HTTP-POS-PERMISSAO.md`.
+
+Assim, a autenticação e a autorização do primeiro environment passaram, mas
+B076 continua sem aceite funcional. O próximo passo é salvar o API Object com
+o contrato de List parametrizado, gerar novamente os artefatos com `Build All`
+e só então repetir os cenários de leitura. O segundo environment não foi
+alterado no GAM nesta rodada.
