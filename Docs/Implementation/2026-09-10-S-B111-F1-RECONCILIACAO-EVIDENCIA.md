@@ -5,8 +5,8 @@
 Esta reconciliação confronta o plano da F1 com o histórico completo da sessão de
 2026-09-09/10 e com os relatórios e Outputs enviados durante os testes. O trabalho
 manual não foi perdido: os quatro fluxos positivos do Wizard foram exercitados, há
-evidência de Sync bem-sucedido com `BC + List` e, após a correção da regressão,
-também há evidência do caminho positivo sem BC/List, do guard de divergência
+evidência de Sync bem-sucedido com `BC + List`, sem BC/List e somente BC e, após a
+correção da regressão, também há evidência do guard de divergência
 manual e da restauração idempotente. O problema foi de promoção documental: os
 testes do Wizard foram tratados como se também fechassem a matriz específica do
 Sync, e a primeira falha do Sync sem BC/List não foi separada do caminho corrigido.
@@ -15,11 +15,11 @@ O registro correto é, portanto:
 
 - a implementação da F1 está concluída e recebeu validação manual parcial;
 - os quatro perfis positivos do Wizard estão registrados como exercitados;
-- os Syncs `BC + List` e sem BC/List estão registrados com relatório e Output;
+- os Syncs `BC + List`, sem BC/List e somente BC estão registrados com relatório e Output;
 - o guard de reencontro estrito para divergência manual e a restauração sem
   diferença também estão registrados com relatório e Output;
-- não há evidência separada, na sessão, dos perfis Sync somente BC, somente List
-  nem do bloqueio de Sync com BC selecionado em Transaction sem BC habilitado;
+- não há evidência separada, na sessão, do perfil Sync somente List nem do
+  bloqueio de Sync com BC selecionado em Transaction sem BC habilitado;
 - a F1 não deve ser promovida à avaliação da F2 até essa lacuna ser recuperada ou
   executada e registrada.
 
@@ -31,12 +31,12 @@ somente que a evidência encontrada não sustenta o aceite amplo exigido pelo pl
 | Família | Cenário | Evidência encontrada na sessão | Situação para o aceite da F1 |
 |---|---|---|---|
 | Wizard | API-only | Transaction `Laudo`; `FinalApiWriter='B054'`, `ApiSaveCount=1`, `Bloqueados=0`; criação do API Object novo confirmada | **Passou** |
-| Wizard | BC-only | Transaction `NotaFiscal`; aplicação com List desmarcado, writer final Business Component, um Save e zero bloqueios confirmados no relatório/Output | **Passou** |
+| Wizard | BC-only | Transaction `NotaFiscal`; aplicação com List desmarcado, writer final Business Component, um Save e zero bloqueios; reteste da correção na Transaction `Carga`, com `Completar listagem=False`, `FinalApiWriter='Business Component'`, `ApiSaveCount=1`, `Criados=5`, `Atualizados=6` e `Bloqueados=0` | **Passou** |
 | Wizard | List-only | Transaction `NotaFiscal`; `FinalApiWriter='List'`, `ApiSaveCount=1` e `Bloqueados=0` confirmados na Output | **Passou** |
 | Wizard | BC + List | Transaction `NotaFiscal`; BC salvou Procedures, List salvou a Procedure e o API Object por último, com um Save e zero bloqueios | **Passou** |
 | Wizard | API-only sobre API já REST-completa | `apiNotaFiscal` bloqueado antes do primeiro Save; `ApiSaveCount=0` e `Bloqueados=1` | **Guarda passou** |
 | Sync | sem BC/List | Após a correção, `LaudoObs` foi marcado somente em `Response`; o resumo manteve BC e List desmarcados, o Sync aplicou `Updated=14`, `Blocked=0` e um `API.Save()`. Em seguida, a divergência manual `LaudoObs`→`LaudoObs1` bloqueou com `ApiSaveCount=0`, e a restauração produziu reencontro sem diferença | **Passou; caminho positivo, guard e restauração** |
-| Sync | somente BC | Não foi encontrado relatório/Output de uma execução de Sync isolada nesse perfil | **Não comprovado** |
+| Sync | somente BC | Transaction `Carga`; `CargaObservacao2` selecionado em Response/Create/Update, `ListFilters` desmarcado; Procedures BC salvas antes do API Object; `FinalApiWriter='Business Component'`, `ApiSaveCount=1`, `Atualizados=11`, `Bloqueados=0` | **Passou** |
 | Sync | somente List | Não foi encontrado relatório/Output de uma execução de Sync isolada nesse perfil | **Não comprovado** |
 | Sync | BC + List | Delta `NotaFiscalObs2` 40→41; `FinalApiWriter='List'`, `ApiSaveCount=1`, `Atualizados=14`, `Bloqueados=0`; Output confirmou consumidores antes do API Object | **Passou** |
 | Sync | BC selecionado sem BC habilitado na Transaction | Não foi encontrada execução distinta desse guard no Sync. O aviso de dependência visto no Wizard não substitui este caso | **Não comprovado** |
@@ -47,8 +47,9 @@ somente que a evidência encontrada não sustenta o aceite amplo exigido pelo pl
    `NotaFiscalObs`, mas o relatório mostrou as Procedures de BC e List e writer
    final `List`. Ele foi corretamente reclassificado na própria sessão como
    `BC + List`.
-2. O Wizard `BC-only` foi executado e passou após a correção do preflight de
-   metadata que havia causado uma execução parcial anterior.
+2. O Wizard `BC-only` foi executado e passou na `NotaFiscal`; depois, na `Carga`,
+   foi retestado após a correção que omite os contratos de List sem o serviço
+   `List`, com `Criados=5`, `Atualizados=6` e `Bloqueados=0`.
 3. O Wizard `List-only` foi executado e passou com `FinalApiWriter='List'` e um
    `API.Save()`.
 4. O Wizard `BC + List` foi executado e passou com BC antes de List e o API Object
@@ -72,21 +73,28 @@ somente que a evidência encontrada não sustenta o aceite amplo exigido pelo pl
    `Bloqueados=1`; nenhum objeto foi alterado.
 10. `LaudoObs1` foi restaurado para `LaudoObs`. O Sync seguinte encontrou os
     três membros esperados, com diff zero, `ApiSaveCount=0` e `Bloqueados=0`.
+11. Depois do Apply BC-only do Wizard, a `Carga` recebeu `CargaObservacao2`
+    (`VarChar(40)`). O Sync somente BC aplicou o delta com o atributo em
+    Response/Create/Update e `ListFilters` desmarcado; o Output confirmou os
+    três consumidores antes de `apiCarga`, e o relatório confirmou um único
+    `API.Save()` final, `Atualizados=11` e `Bloqueados=0`.
 
 ## O que foi anotado e o que não foi
 
 O documento de aceite da F1 e o Changelog registraram corretamente os quatro
-perfis do Wizard e o Sync `BC + List`, mas não mantiveram uma matriz explícita que
-separasse as duas famílias. A frase posterior “não há outro teste obrigatório”
-foi ampla demais: ela confundiu a matriz positiva do Wizard com a matriz de Sync
-do plano. A nova evidência fecha o caminho positivo sem BC/List e o guard que
-motivou a correção, mas não substitui os três perfis de Sync ainda ausentes.
+perfis do Wizard e os Syncs `BC + List`, sem BC/List e somente BC, mas não
+mantiveram inicialmente uma matriz explícita que separasse as duas famílias. A
+frase posterior “não há outro teste obrigatório” foi ampla demais: ela confundiu
+a matriz positiva do Wizard com a matriz de Sync do plano. A nova evidência fecha
+também o caminho positivo somente BC; permanecem
+apenas o Sync somente List e o bloqueio de BC sem habilitação na Transaction.
 
 Build All nos dois environments e o teste HTTP de Update são evidências
 complementares. Eles não substituem os casos manuais de Sync definidos na seção
 7 do plano da F1. A evidência atual de `LaudoObs` cobre o caminho positivo sem
-BC/List, o bloqueio de divergência manual e o reencontro idempotente; somente BC,
-somente List e BC sem habilitação na Transaction continuam sem captura separada.
+BC/List, o bloqueio de divergência manual e o reencontro idempotente;
+`CargaObservacao2` cobre o caminho somente BC. Somente List e BC sem habilitação
+na Transaction continuam sem captura separada.
 
 ## Fonte e limite da reconstrução
 

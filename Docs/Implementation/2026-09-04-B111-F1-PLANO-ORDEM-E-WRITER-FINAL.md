@@ -6,8 +6,8 @@
 
 **Status:** decisões de escopo e contrato consolidadas em 2026-09-07; implementação local da
 F1 concluída em 2026-09-08, com build e gates offline aprovados. A validação funcional na IDE
-é parcial: o caminho positivo de Sync sem BC/List, o guard de divergência manual e a
-restauração idempotente foram validados em 2026-09-10; os perfis Sync somente BC, somente
+é parcial: os caminhos positivos de Sync sem BC/List e somente BC, o guard de divergência
+manual e a restauração idempotente foram validados em 2026-09-10; os perfis Sync somente
 List e BC sem habilitação na Transaction ainda estão pendentes. **Não** autoriza instalação,
 commit ou push.
 

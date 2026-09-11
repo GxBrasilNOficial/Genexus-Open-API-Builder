@@ -101,11 +101,13 @@ try {
     $baselineType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGenerationBaseline', $true, $false)
     $fixtureType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGenerationBaselineFixture', $true, $false)
     $snapshotType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGenerationBaselineSnapshot', $true, $false)
+    $sdtPlanBuilderType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Domain.ApiPlanSdtGenerationPlanBuilder', $true, $false)
 
     $createFixtures = $baselineType.GetMethod('CreateFixtures', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     $capture = $baselineType.GetMethod('Capture', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     $normalize = $baselineType.GetMethod('NormalizeForComparison', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     $toFileMap = $snapshotType.GetMethod('ToFileMap', [System.Reflection.BindingFlags]'Instance, NonPublic, Public')
+    $hasListService = $sdtPlanBuilderType.GetMethod('HasListService', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     $nameProperty = $fixtureType.GetProperty('Name', [System.Reflection.BindingFlags]'Instance, NonPublic, Public')
     $planProperty = $fixtureType.GetProperty('Plan', [System.Reflection.BindingFlags]'Instance, NonPublic, Public')
 
@@ -113,6 +115,25 @@ try {
     Assert-True ($null -ne $capture) 'Capture não encontrado.'
     Assert-True ($null -ne $normalize) 'NormalizeForComparison não encontrado.'
     Assert-True ($null -ne $toFileMap) 'ToFileMap não encontrado.'
+    Assert-True ($null -ne $hasListService) 'HasListService não encontrado.'
+
+    $bcOnlyServices = [string[]]@('Get', 'Create', 'Update')
+    $listServices = [string[]]@('Get', 'List', 'Create', 'Update')
+    $emptyServices = [string[]]@()
+    $bcOnlyArguments = [object[]]::new(1)
+    $bcOnlyArguments[0] = $bcOnlyServices
+    $listArguments = [object[]]::new(1)
+    $listArguments[0] = $listServices
+    $emptyArguments = [object[]]::new(1)
+    $emptyArguments[0] = $emptyServices
+    Assert-True (-not [bool]$hasListService.Invoke($null, $bcOnlyArguments)) 'BC-only não deve selecionar contratos de List.'
+    Assert-True ([bool]$hasListService.Invoke($null, $listArguments)) 'A presença de List deve selecionar contratos de List.'
+    Assert-True (-not [bool]$hasListService.Invoke($null, $emptyArguments)) 'Nenhum serviço não deve selecionar contratos de List.'
+
+    $sdtPlanSource = [System.IO.File]::ReadAllText((Join-Path $repositoryRoot 'Src\Domain\ApiPlanSdtGenerationPlan.cs'))
+    Assert-True ($sdtPlanSource.Contains('CreateFlatOwnSdts(')) 'O plano de SDTs deve separar a montagem plana para selecionar contratos de List.'
+    Assert-True ($sdtPlanSource.Contains('if (hasListService)')) 'ListFilters/ListResponse devem ser condicionados à seleção de List.'
+    Assert-True ($sdtPlanSource.Contains('if (!hasListService)')) 'O plano hierárquico também deve omitir contratos de List sem o serviço.'
 
     $fixtures = @($createFixtures.Invoke($null, @()))
     Assert-True ($fixtures.Count -ge 3) "Esperava pelo menos 3 fixtures; encontrado $($fixtures.Count)."

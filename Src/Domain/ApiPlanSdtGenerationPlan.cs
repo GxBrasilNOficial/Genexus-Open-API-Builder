@@ -13,38 +13,15 @@ internal static class ApiPlanSdtGenerationPlanBuilder
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
-        var responseSdtName = apiPlan.ResponseSdtName;
-        var listFiltersSdtName = apiPlan.ListFiltersSdtName;
         var transactionFolderScope = ApiPlanSdtScope.CreateTransactionModuleFolderScope(apiPlan.TransactionFolderName);
+        var hasListService = HasListService(apiPlan.Services.Select(service => service.Name));
 
         var ownSdts = ApiPlanSdtHierarchicalNaming.HasSelectedSublevels(apiPlan)
-            ? CreateHierarchicalOwnSdts(apiPlan, transactionFolderScope)
-            : new[]
-            {
-                CreateFieldBackedSdt(
-                    apiPlan.CreateRequestSdtName,
-                    "B040",
-                    "CreateRequest",
-                    transactionFolderScope,
-                    apiPlan.CreateRequestFields,
-                    "CreateRequest"),
-                CreateFieldBackedSdt(
-                    apiPlan.UpdateRequestSdtName,
-                    "B041",
-                    "UpdateRequest",
-                    transactionFolderScope,
-                    apiPlan.UpdateRequestFields,
-                    "UpdateRequest"),
-                CreateFieldBackedSdt(
-                    apiPlan.ResponseSdtName,
-                    "B042",
-                    "Response",
-                    transactionFolderScope,
-                    apiPlan.ResponseFields,
-                    "Response"),
-                CreateListFiltersSdt(apiPlan, transactionFolderScope),
-                CreateListResponseSdt(apiPlan.ListResponseSdtName, responseSdtName, listFiltersSdtName, transactionFolderScope),
-            };
+            ? CreateHierarchicalOwnSdts(apiPlan, transactionFolderScope, hasListService)
+            : CreateFlatOwnSdts(
+                apiPlan,
+                transactionFolderScope,
+                hasListService);
 
         var sharedSdts = new[]
         {
@@ -61,9 +38,62 @@ internal static class ApiPlanSdtGenerationPlanBuilder
             sharedSdts);
     }
 
+    internal static bool HasListService(IEnumerable<string> serviceNames)
+    {
+        if (serviceNames is null)
+        {
+            throw new ArgumentNullException(nameof(serviceNames));
+        }
+
+        return serviceNames.Any(service => string.Equals(service, "List", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static IReadOnlyList<ApiPlanSdtDefinition> CreateFlatOwnSdts(
+        ApiPlan apiPlan,
+        string transactionFolderScope,
+        bool hasListService)
+    {
+        var ownSdts = new List<ApiPlanSdtDefinition>
+        {
+            CreateFieldBackedSdt(
+                apiPlan.CreateRequestSdtName,
+                "B040",
+                "CreateRequest",
+                transactionFolderScope,
+                apiPlan.CreateRequestFields,
+                "CreateRequest"),
+            CreateFieldBackedSdt(
+                apiPlan.UpdateRequestSdtName,
+                "B041",
+                "UpdateRequest",
+                transactionFolderScope,
+                apiPlan.UpdateRequestFields,
+                "UpdateRequest"),
+            CreateFieldBackedSdt(
+                apiPlan.ResponseSdtName,
+                "B042",
+                "Response",
+                transactionFolderScope,
+                apiPlan.ResponseFields,
+                "Response"),
+        };
+
+        // ListFilters/ListResponse are dependencies of the List endpoint only.
+        // Emitting an empty ListFilters SDT for BC-only makes the GeneXus SDK
+        // reject the new object during B040-B046 validation.
+        if (hasListService)
+        {
+            ownSdts.Add(CreateListFiltersSdt(apiPlan, transactionFolderScope));
+            ownSdts.Add(CreateListResponseSdt(apiPlan.ListResponseSdtName, apiPlan.ResponseSdtName, apiPlan.ListFiltersSdtName, transactionFolderScope));
+        }
+
+        return ownSdts;
+    }
+
     private static IReadOnlyList<ApiPlanSdtDefinition> CreateHierarchicalOwnSdts(
         ApiPlan apiPlan,
-        string transactionFolderScope)
+        string transactionFolderScope,
+        bool hasListService)
     {
         if (!ApiPlanSdtHierarchicalNaming.TryGetRoot(apiPlan, out var root))
         {
@@ -117,6 +147,12 @@ internal static class ApiPlanSdtGenerationPlanBuilder
             transactionFolderScope,
             includeReplace: false,
             reservedSdtNames);
+
+        if (!hasListService)
+        {
+            return ownSdts;
+        }
+
         ownSdts.Add(CreateListFiltersSdt(apiPlan, transactionFolderScope));
 
         var listContract = ApiPlanListHierarchicalContractBuilder.Create(apiPlan);
