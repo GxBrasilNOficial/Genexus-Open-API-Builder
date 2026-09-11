@@ -100,6 +100,23 @@ somente que a evidência encontrada não sustenta o aceite amplo exigido pelo pl
     `ApiSaveAttempted=False`, `ApiSaveCount=0`, `Criados=0`, `Atualizados=0`,
     `Removidos=0`, `Bloqueados=1` e `Avisos=2`; a divergência do SDT não foi
     substituída e nenhuma alteração foi feita na KB.
+14. Depois da restauração de uma versão salva da KB, a árvore `LaudoOpenApi`
+    foi conferida com `apiLaudo`, quatro Procedures e cinco SDTs próprios, mas
+    sem o File `apiLaudo_Metadata`. O Wizard ofereceu a recuperação de metadata;
+    a confirmação criou o File de inventário (`Guid` próprio,
+    `Bytes=1489`), não alterou API Object, Procedure ou SDT e exigiu reabrir o
+    Wizard. A primeira aplicação posterior foi bloqueada antes de qualquer
+    gravação por `B063/B064/B067`, porque o contrato planejado tinha zero
+    `ListFilters` e o SDT existente continha o membro extra `LaudoNumero`.
+    Após restaurar novamente a versão salva e alinhar o contrato ao estado
+    existente — serviços `List`, `Get`, `Create` e `Update`, filtro
+    `LaudoNumero`, SDTs/Procedures/API habilitados, `Completar listagem=False`,
+    metadata habilitada e REST via BC desabilitado — a aplicação completa
+    atualizou as quatro Procedures, `apiLaudo` e `apiLaudo_Metadata` (`Bytes=33098`),
+    com `FinalApiWriter='B054'`, `ApiSaveCount=1` e `Bloqueados=0`. Os dois
+    avisos foram o fallback de idioma e a reutilização do Folder. Esta passagem
+    recuperou a baseline; não deve ser contada como o teste API-only com SDTs e
+    Procedures desmarcados.
 
 ## O que foi anotado e o que não foi
 
