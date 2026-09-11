@@ -21,6 +21,9 @@ O registro correto é, portanto:
   B054, sem bloqueio;
 - o teste negativo API-only da `Laudo`, com divergência temporária em
   `sdtLaudo_API_Response`, bloqueou antes de qualquer gravação e foi restaurado;
+- o primeiro cenário com `GenerateApiObject=False` e `BC-only` atualizou somente
+  as três Procedures de Business Component, sem `API.Save()` ou gravação física
+  de SDT, Folder ou metadata;
 - os Syncs `BC + List`, sem BC/List e somente BC estão registrados com relatório e Output;
 - o guard de reencontro estrito para divergência manual e a restauração sem
   diferença também estão registrados com relatório e Output;
@@ -41,6 +44,7 @@ somente que a evidência encontrada não sustenta o aceite amplo exigido pelo pl
 |---|---|---|---|
 | Wizard | API-only | API Object novo na `Laudo` com `FinalApiWriter='B054'`; depois, reencontro estrito na mesma Transaction com `GenerateSdts=False`, `GenerateProcedures=False`, `ApiSaveCount=1`, atualização somente de `apiLaudo`/metadata e `Bloqueados=0` | **Passou** |
 | Wizard | API-only com dependência divergente | `sdtLaudo_API_Response` com `LaudoObs1`; bloqueio `B063/B064/B067` antes de qualquer gravação, `ApiSaveCount=0`, `Criados/Atualizados/Removidos=0` e restauração posterior para `LaudoObs` | **Guarda passou** |
+| Wizard | `GenerateApiObject=False` + BC-only | `Laudo` com `GenerateSdts=False`, `GenerateProcedures=False`, `GenerateMetadata=False`, `ApplyList=False` e `ApplyBusinessComponent=True`; três Procedures salvas, `ApiSaveCount=0`; seis SDTs e cinco Folders apenas reencontrados sem gravação (`B111`) | **Passou** |
 | Wizard | BC-only | Transaction `NotaFiscal`; aplicação com List desmarcado, writer final Business Component, um Save e zero bloqueios; reteste da correção na Transaction `Carga`, com `Completar listagem=False`, `FinalApiWriter='Business Component'`, `ApiSaveCount=1`, `Criados=5`, `Atualizados=6` e `Bloqueados=0` | **Passou** |
 | Wizard | List-only | Transaction `NotaFiscal`; `FinalApiWriter='List'`, `ApiSaveCount=1` e `Bloqueados=0` confirmados na Output | **Passou** |
 | Wizard | BC + List | Transaction `NotaFiscal`; BC salvou Procedures, List salvou a Procedure e o API Object por último, com um Save e zero bloqueios | **Passou** |
@@ -141,6 +145,16 @@ somente que a evidência encontrada não sustenta o aceite amplo exigido pelo pl
     `LaudoObs` e salvo, devolvendo a KB ao estado coerente. A guarda negativa foi
     aprovada; os cenários com `GenerateApiObject=False` permanecem para a próxima
     etapa.
+17. O primeiro cenário dessa matriz foi então executado na `Laudo` com API próprio
+    existente, serviços `Get`, `Create` e `Update`, `ListFilters=0`,
+    `GenerateSdts=False`, `GenerateProcedures=False`, `GenerateApiObject=False`,
+    `GenerateMetadata=False`, `ApplyList=False` e `ApplyBusinessComponent=True`.
+    O preflight foi aprovado. O relatório agregado registrou `Atualizados=9`,
+    `ApiSaveAttempted=False`, `ApiSaveCount=0` e `Bloqueados=0`; o Output B111
+    esclareceu que eram seis reencontros estritos de SDT e cinco de Folder, todos
+    com zero gravações, enquanto os únicos `Save concluido` foram as três
+    Procedures de Business Component. O cenário passou; a métrica agregada de
+    `Atualizados` não deve ser confundida com contagem de `Save()` físico.
 
 ## O que foi anotado e o que não foi
 
