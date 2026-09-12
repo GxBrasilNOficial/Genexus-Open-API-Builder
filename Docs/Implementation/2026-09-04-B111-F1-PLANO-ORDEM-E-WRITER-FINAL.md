@@ -10,7 +10,8 @@ foi encerrada em 2026-09-11 com a exceção explícita do `B121`: os caminhos po
 sem BC/List e somente BC, o guard de divergência manual, a restauração idempotente e o guard
 de BC sem habilitação na Transaction foram validados; a tentativa de Sync somente List
 executou BC antes de List e não comprovou o perfil isolado. A F1 pode ser promovida à
-avaliação da F2; o `B121` permanece fora da sprint. **Não** autoriza instalação da DLL nem
+avaliação da F2; o perfil de Sync somente List isolado está formalmente fora do aceite desta
+F1 e permanece no `B121`, fora da sprint. **Não** autoriza instalação da DLL nem
 push adicionais.
 
 ### Documentos que este plano substitui, e como
@@ -599,6 +600,18 @@ na coluna e deve ser respeitado.
 | Wizard | **BC+List com API novo** | primeiro ramo de 4.8: valor `true` mesmo sem API persistido |
 | Wizard | API preexistente na variante de List sem parâmetros de BC, reaplicado com as duas etapas | os parâmetros de BC aparecem, provando que a guarda é necessária |
 
+### Exceção formal de escopo — Sync somente List isolado (B121)
+
+A linha `Sync | com List` da matriz acima descreve o comportamento pretendido quando a etapa
+de List estiver realmente isolada. Ela não é critério de aceite desta F1: a validação manual
+de 2026-09-11 mostrou que a implementação vigente ainda infere a etapa de Business Component
+a partir da lista de serviços e executa BC antes de List. O cenário permanece explicitamente
+deferido ao `B121`, que deve tornar a seleção de BC e List explícita no diálogo do Sync.
+
+Assim, a F1 aceita os perfis de Sync sem BC/List, somente BC e BC + List, além da guarda de
+BC sem habilitação na Transaction. O perfil somente List isolado permanece não comprovado e
+não deve ser contado como aprovado nem como falha de um critério aplicável à F1.
+
 Para `GenerateApiObject=false`, API próprio existente e qualquer uma das seleções
 BC-only, List-only ou BC+List, as quatro combinações das flags dedicadas têm este
 resultado obrigatório:
@@ -632,9 +645,10 @@ Reinstalar a DLL conforme a política do repositório e repetir a validação **
 DLL que contém a alteração; evidência de DLL anterior não vale para o gerador novo.
 
 Numa Transaction de teste com objetos suficientes para exercitar SDT, Procedure, API, BC
-e List:
+e List, aplicando a exceção formal de escopo do `B121`:
 
-1. Sync sem BC/List, com BC, com List, com BC+List;
+1. Sync sem BC/List, somente BC e BC+List; o perfil somente List isolado permanece deferido
+   ao `B121` e não faz parte do aceite desta F1;
 2. Sync com BC selecionado numa Transaction sem BC habilitado — deve bloquear antes de
    qualquer gravação;
 3. Wizard em API-only, BC-only, List-only, BC+List;
@@ -670,17 +684,24 @@ F1 não é frente de desempenho, mas a ordem física muda e a medição é barat
    ausência ou ambiguidade de qualquer dependência bloqueia antes do primeiro `Save()`;
    divergência de Folder/SDT também bloqueia o reencontro estrito, enquanto a divergência
    do Source de uma Procedure própria pode ser corrigida pelo consumidor selecionado.
-10. Nenhuma regressão nos fluxos existentes de Sync, Wizard e relatório.
+10. Nenhuma regressão nos fluxos de Sync aplicáveis a esta F1, no Wizard e no relatório; o
+    perfil Sync somente List isolado segue a exceção formal do critério 14.
 11. A guarda de 4.8 depende de a etapa de Business Component ter rodado; “List sem Business
     Component” continua produzindo um Source correto, e `List-only` com API novo resolve o
     valor pelo contexto transient, sem ler API persistido.
 12. A trilha de 4.9 registra a ordem efetiva na Output, conforme as sete alíneas.
 13. O relatório atribui a atualização do API Object à etapa que de fato o gravou.
+14. A exceção formal de escopo do `B121` é respeitada: o perfil Sync somente List isolado
+    não é contado como aprovado nem como critério aplicável desta F1; sua ausência de
+    comprovação permanece registrada como pendência do `B121`.
 
 Os critérios 11 a 13 vêm do plano aprovado de 2026-09-04 e não são novidade desta fase:
 estão aqui para que o fatiamento não os perca.
 
-Falhando qualquer critério, a F1 não está pronta para aceite.
+Falhando qualquer critério aplicável à F1, a F1 não está pronta para aceite. A ausência de
+comprovação do perfil Sync somente List isolado não bloqueia este aceite porque está
+formalmente excluída pelo critério 14 e transferida ao `B121`; isso não constitui aprovação
+do comportamento nem encerra o `B121`.
 
 ---
 
