@@ -37,39 +37,39 @@ A F2 fecha as duas coisas e para aí.
 ### 2.1 Os pontos de gravação reais
 
 Excluídas as sondas e o código GeneXus emitido como string, o mapa consolidado tem
-**15 chamadas físicas de `Save()`** e dois pontos de execução de laço que transportam
-essas chamadas em BC e List. Os laços não são Saves adicionais e não podem ser somados
-às chamadas físicas.
+**14 chamadas físicas de `Save()`** e dois pontos de execução de laço que transportam
+essas chamadas em BC e List. O caminho de API reencontrado/novo agora compartilha uma
+única chamada física; os laços não são Saves adicionais e não podem ser somados às
+chamadas físicas.
 
 | Arquivo:linha | O que grava |
 |---|---|
 | `ApiPlanTransactionFolder.cs:45` | Folder da Transaction |
-| `ApiPlanSdtWriter.cs:230` | Folder compartilhado |
-| `ApiPlanSdtWriter.cs:266` | SDT reencontrado |
-| `ApiPlanSdtWriter.cs:302` | SDT novo |
-| `ApiPlanProcedureWriter.cs:221` | Procedure reencontrada |
-| `ApiPlanProcedureWriter.cs:235` | Procedure nova |
-| `ApiPlanApiObjectWriter.cs:707` | API reencontrado |
-| `ApiPlanApiObjectWriter.cs:718` | API novo |
-| `ApiPlanBusinessComponentWriter.cs:111` | laço de `saveSteps` |
-| `ApiPlanBusinessComponentWriter.cs:560` | `SaveProcedure` |
-| `ApiPlanBusinessComponentWriter.cs:626` | `SaveApi` |
-| `ApiPlanListProcedureWriter.cs:72` | laço de `saveSteps` |
-| `ApiPlanListProcedureWriter.cs:953` | `SaveProcedure` |
-| `ApiPlanListProcedureWriter.cs:975` | `SaveApi` |
-| `ApiPlanMetadataFileWriter.cs:98` | metadata B060 |
+| `ApiPlanSdtWriter.cs:371` | Folder compartilhado |
+| `ApiPlanSdtWriter.cs:407` | SDT reencontrado |
+| `ApiPlanSdtWriter.cs:443` | SDT novo |
+| `ApiPlanProcedureWriter.cs:218` | Procedure reencontrada |
+| `ApiPlanProcedureWriter.cs:232` | Procedure nova |
+| `ApiPlanApiObjectWriter.cs:314` | API reencontrado ou novo, em uma chamada compartilhada |
+| `ApiPlanBusinessComponentWriter.cs:144` | laço de `saveSteps` |
+| `ApiPlanBusinessComponentWriter.cs:585` | `SaveProcedure` |
+| `ApiPlanBusinessComponentWriter.cs:652` | `SaveApi` |
+| `ApiPlanListProcedureWriter.cs:107` | laço de `saveSteps` |
+| `ApiPlanListProcedureWriter.cs:976` | `SaveProcedure` |
+| `ApiPlanListProcedureWriter.cs:999` | `SaveApi` |
+| `ApiPlanMetadataFileWriter.cs:95` | metadata B060 |
 | `ApiPlanOrphanMetadataRecovery.cs:261` | File de metadata reconstituído pela recuperação B115 |
-| `Package.cs:1566` | `transaction.Save()` para habilitar BC, em `EnableBusinessComponentForWizard` |
+| `Package.cs:1712` | `transaction.Save()` para habilitar BC, em `EnableBusinessComponentForWizard` |
 
-Além das 15 chamadas físicas de `Save()`, o remover possui hoje cinco pontos físicos de
+Além das 14 chamadas físicas de `Save()`, o remover possui hoje cinco pontos físicos de
 `Delete()`: API Object, Procedure, SDT, File de metadata e Folder. O `Delete()` do SDT
 é chamado dentro da fila de passadas; cada tentativa física continua sendo um recibo
 independente. O invólucro de relatório não substitui a instrumentação do `Delete()`.
 
 ### 2.2 Dois padrões que o repositório já resolveu
 
-**Proto-seam nos writers de consumidor.** `ApiPlanBusinessComponentWriter.cs:98` e
-`ApiPlanListProcedureWriter.cs:66` já montam `saveSteps` como lista de
+**Proto-seam nos writers de consumidor.** `ApiPlanBusinessComponentWriter.cs:115` e
+`ApiPlanListProcedureWriter.cs:85` já montam `saveSteps` como lista de
 `(Label, Action Save, Snapshot)` e a executam em laço com progresso e cronômetro por passo. Falta
 pouco para um seam: identidade e tipo do objeto, resultado da operação, ordem monotônica
 global e um único laço em vez de dois duplicados. O executor unificado deve transportar o
@@ -619,4 +619,4 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
 - `Docs/Implementation/2026-09-04-B111-MANUSCRITO-EXPANDIDO-V24.md` (expansão nunca aprovada; origem das exigências de seam e de falhas C/D/E)
 - `Src/Extension/Diagnostics/ApiPlanScanProbe.cs` e `ApiPlanScanTelemetry.cs` (padrão a seguir)
 - `Tests/ScanProbe/Test-ApiPlanScanProbe.ps1` (padrão de teste executável offline)
-- as 15 chamadas físicas e os dois laços de gravação descritos na seção 2.1
+- as 14 chamadas físicas e os dois laços de gravação descritos na seção 2.1
