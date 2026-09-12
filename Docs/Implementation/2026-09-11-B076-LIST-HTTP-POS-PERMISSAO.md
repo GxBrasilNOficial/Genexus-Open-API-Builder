@@ -61,7 +61,7 @@ portanto, o próximo ajuste deve garantir que o API Object seja salvo com esse
 contrato de List, em vez de deixar somente a Procedure atualizada ou manter
 o writer B054.
 
-## Classificação
+## Classificação da primeira rodada (histórico)
 
 - GAM direto no primeiro environment: **passou**.
 - Autenticação sem/com token: **passou** (`401` / OAuth `200`).
@@ -69,8 +69,43 @@ o writer B054.
 - Corpo e contrato funcional do `List`: **bloqueado** pelo corpo `{}`.
 - B076: **não aprovado** nesta rodada.
 
-Antes de repetir o HTTP, o Wizard deve produzir um relatório que mostre o
+Naquele momento, antes do reteste, o Wizard deveria produzir um relatório que mostrasse o
 API Object salvo com o contrato de List parametrizado (e não apenas a
 Procedure `procLaudo_API_List`). Depois disso, é necessário novo `Build All`
 nos dois environments e nova medição de itens, filtro válido, filtro sem
 resultado e página 2.
+
+## Reteste após contrato B070 e novo Build All
+
+O Wizard foi reaplicado com o contrato parametrizado do `List` no API Object,
+e o usuário executou `Build All` nos dois environments. A conferência do
+artefato confirmou que `gxep_list` passou a receber página, tamanho e filtro,
+repassar `ListResponse` e `ErrorResponse` e chamar a Procedure com esses
+parâmetros. Os avisos `spc0024` observados para `Get`, `Create` e `Update` são
+separados deste teste de `List`.
+
+| Verificação | .NET Framework / SQL Server | .NET / PostgreSQL |
+| --- | --- | --- |
+| `GET /apiLaudo/laudo` sem token | `401` | `401` |
+| Token OAuth/GAM | `200` | `200` |
+| List autenticado sem filtro | `200`; 1 item (`753159`); total 1; 1 página | `200`; 2 itens (`B076-001`, `B076-002`); total 2; 1 página |
+| Filtro válido | `753159`: 1 item | `B076-001`: 1 item |
+| Página 1, tamanho 1 | 1 item; total 1; 1 página | 1 item; total 2; 2 páginas |
+| Página 2, tamanho 1 | sem item; total 1; 1 página | `B076-002`; total 2; 2 páginas |
+| Filtro sem resultado | `200`; total 0 | `200`; total 0 |
+
+O teste comprova a execução funcional de consulta, filtro e paginação nos dois
+environments. A forma do corpo, porém, diverge: o Framework devolve o wrapper
+`ListResponse` + `ErrorResponse`, enquanto o PostgreSQL devolve diretamente
+`Items` + `Pagination` + `AppliedFilters`. Como os dois YAML declaram
+`ListOutput` com as duas propriedades externas, a divergência permanece aberta
+no `B120` e este reteste não fecha a equivalência multiplataforma.
+
+## Classificação atual
+
+- GAM e autenticação: **passou** nos dois environments (`401` sem token e
+  `200` com OAuth).
+- Consulta, filtro e paginação do `List`: **passou** nos dois environments.
+- Envelope HTTP uniforme conforme YAML: **pendente**, tratado no `B120`.
+- B076: **aceito quanto à execução funcional do List**, com a ressalva de
+  contrato multiplataforma registrada no `B120`.

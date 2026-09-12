@@ -347,7 +347,7 @@ KB. Para continuar, é necessário conceder no GAM a permissão
 `apilaudo_Services_List` ao principal de teste nos dois environments e repetir
 as chamadas somente de leitura.
 
-##### Reteste após permissão GAM — captura 2026-09-11
+##### Reteste após permissão GAM — primeira tentativa — captura 2026-09-11
 
 No primeiro environment, o usuário concedeu `apilaudo_Services_List` diretamente
 ao principal `goab_api_teste` na aplicação `wsEducacaoSpTeste`. A permissão foi
@@ -372,8 +372,32 @@ persistido continua no formato B054 `List() => procLaudo_API_List()`, sem os
 parâmetros e saídas do contrato B070. O registro detalhado está em
 `Docs/Implementation/2026-09-11-B076-LIST-HTTP-POS-PERMISSAO.md`.
 
-Assim, a autenticação e a autorização do primeiro environment passaram, mas
-B076 continua sem aceite funcional. O próximo passo é salvar o API Object com
+Assim, naquela primeira tentativa, a autenticação e a autorização do primeiro
+environment passaram, mas B076 continuava sem aceite funcional. O próximo passo
+era salvar o API Object com
 o contrato de List parametrizado, gerar novamente os artefatos com `Build All`
 e só então repetir os cenários de leitura. O segundo environment não foi
 alterado no GAM nesta rodada.
+
+##### Reteste do `List` da `Laudo` após contrato B070 — captura 2026-09-11
+
+O Wizard foi reaplicado com o contrato parametrizado do `List` no API Object e
+houve `Build All` nos dois environments. O artefato gerado passou a expor
+`gxep_list` com página, tamanho, filtro, `ListResponse` e `ErrorResponse`.
+
+| Verificação | .NET Framework / SQL Server | .NET / PostgreSQL |
+| --- | --- | --- |
+| Sem token | `401` | `401` |
+| Token OAuth/GAM | `200` | `200` |
+| List autenticado sem filtro | `200`; 1 item (`753159`); total 1; 1 página | `200`; 2 itens (`B076-001`, `B076-002`); total 2; 1 página |
+| Filtro válido | `753159`: 1 item | `B076-001`: 1 item |
+| Página 1, tamanho 1 | 1 item; total 1; 1 página | 1 item; total 2; 2 páginas |
+| Página 2, tamanho 1 | sem item; total 1; 1 página | `B076-002`; total 2; 2 páginas |
+| Filtro sem resultado | `200`; total 0 | `200`; total 0 |
+
+O `List` passou funcionalmente nos dois environments. A forma do corpo ainda
+diverge: o Framework entrega `ListResponse` + `ErrorResponse` no nível raiz,
+enquanto o PostgreSQL entrega `Items` + `Pagination` + `AppliedFilters` no
+nível raiz. Os dois YAML declaram `ListOutput` com o wrapper; portanto, a
+equivalência do contrato permanece pendente no `B120`. Os avisos `spc0024` de
+`Get`, `Create` e `Update` são uma questão separada da validação do `List`.
