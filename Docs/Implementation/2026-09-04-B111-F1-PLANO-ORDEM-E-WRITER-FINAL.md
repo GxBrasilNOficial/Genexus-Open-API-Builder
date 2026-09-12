@@ -6,10 +6,12 @@
 
 **Status:** decisões de escopo e contrato consolidadas em 2026-09-07; implementação local da
 F1 concluída em 2026-09-08, com build e gates offline aprovados. A validação funcional na IDE
-é parcial: os caminhos positivos de Sync sem BC/List e somente BC, o guard de divergência
-manual e a restauração idempotente foram validados em 2026-09-10; os perfis Sync somente
-List e BC sem habilitação na Transaction ainda estão pendentes. **Não** autoriza instalação,
-commit ou push.
+foi encerrada em 2026-09-11 com a exceção explícita do `B121`: os caminhos positivos de Sync
+sem BC/List e somente BC, o guard de divergência manual, a restauração idempotente e o guard
+de BC sem habilitação na Transaction foram validados; a tentativa de Sync somente List
+executou BC antes de List e não comprovou o perfil isolado. A F1 pode ser promovida à
+avaliação da F2; o `B121` permanece fora da sprint. **Não** autoriza instalação da DLL nem
+push adicionais.
 
 ### Documentos que este plano substitui, e como
 

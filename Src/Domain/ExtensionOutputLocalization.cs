@@ -143,7 +143,7 @@ internal static class ExtensionOutputLocalization
         new("REST via Business Component nao foi aplicado para", "REST mediante Business Component no se aplicó para", "REST via Business Component was not applied for"),
         new("List aplicado e API Object sincronizado:", "List aplicado y API Object sincronizado:", "List applied and API Object synchronized:"),
         new("Aplicacao do List bloqueada por preflight ou falhou antes de concluir:", "La aplicación de List fue bloqueada por el preflight o falló antes de finalizar:", "List application was blocked by preflight or failed before completion:"),
-        new("B076 e validacao runtime do List permanecem pendentes.", "B076 y la validación runtime de List siguen pendientes.", "B076 and List runtime validation remain pending."),
+        new("B076 requer validação HTTP em etapa separada.", "B076 requiere validación HTTP en una etapa separada.", "B076 requires HTTP validation in a separate step."),
         new("Conflitos de SDT:", "Conflictos de SDT:", "SDT conflicts:"),
         new("Diff para", "Diferencia para", "Diff for"),
         new("Nenhuma diferenca entre Transaction e metadata.", "No hay diferencias entre Transaction y metadata.", "There is no difference between Transaction and metadata."),

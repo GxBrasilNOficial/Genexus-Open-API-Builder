@@ -79,33 +79,50 @@ Ensaio: o Length 41 ficou na Transaction; o operador pode reverter para 40 e sin
 
 Status: **concluído** (preservação do SecurityLevel do Delete no Sync validada no U15).
 
-## Escrita parcial do BC — drift API Object ↔ metadata (2026-09-03)
+## Registro histórico de escrita parcial do BC — drift API Object ↔ metadata (2026-09-03)
+
+Este registro descreve o comportamento medido em 2026-09-03. A ordem de gravação foi
+corrigida posteriormente na Fase 1 da sprint `S-B111`; as limitações de atomicidade
+multiobjeto permanecem fora do escopo da F1.
 
 ### Sintoma
 
-Se o Sync (ou o Apply com BC) **aborta depois** de `ApiPlanBusinessComponentWriter.Apply` ter gravado o API Object mas **antes** de concluir Procedures e/ou metadata, o Service Source do `api<Nome>` fica à frente do hash B067 em `api<Nome>_Metadata`. O preflight seguinte bloqueia Wizard e Sync com `BaselineServiceSourceHashMismatch` até a KB ser realinhada.
+No comportamento medido em 2026-09-03, se o Sync (ou o Apply com BC) **abortasse depois** de
+`ApiPlanBusinessComponentWriter.Apply` ter gravado o API Object mas **antes** de concluir
+Procedures e/ou metadata, o Service Source do `api<Nome>` ficaria à frente do hash B067 em
+`api<Nome>_Metadata`. O preflight seguinte bloquearia Wizard e Sync com
+`BaselineServiceSourceHashMismatch` até a KB ser realinhada.
 
 Evidência: Sync Keep em `wsEducacaoSpTeste` / `NotaFiscal` (2026-09-03) — BC falhou em `procNotaFiscal_API_Get`; tentativa de Replace imediata bloqueou no preflight; **Remover API gerada** + Wizard restaurou baseline.
 
 ### Causa no código
 
-Em `ApiPlanBusinessComponentWriter.Apply`, `saveSteps` grava o **API Object primeiro** e as Procedures depois (`SaveApi` → `SaveProcedure` Get/Create/Update/Delete). A metadata B060/B067 só é escrita no **final** do Sync/Apply. Qualquer falha no meio deixa API atualizado e metadata antiga.
+Na implementação observada em 2026-09-03, `saveSteps` gravava o **API Object primeiro** e
+as Procedures depois (`SaveApi` → `SaveProcedure` Get/Create/Update/Delete). A metadata
+B060/B067 só era escrita no **final** do Sync/Apply. A F1 da `S-B111` reordenou os writers
+para salvar as Procedures consumidoras antes do API Object, deixando o API Object no writer
+final único; a metadata continua sendo escrita ao final da operação.
 
-### Recuperação operacional (hoje)
+### Recuperação operacional usada no incidente de 2026-09-03
 
-1. **Remover API gerada** na Transaction + **Wizard** completo (recomendado em KB de teste).
-2. Não editar manualmente o hash em `api<Nome>_Metadata` salvo decisão consciente de auditoria.
+1. No incidente, foi usada a combinação **Remover API gerada** na Transaction + **Wizard**
+   completo, recomendada apenas para a KB de teste daquele cenário.
+2. O hash em `api<Nome>_Metadata` não deve ser editado manualmente, salvo decisão consciente
+   de auditoria.
 
-### Correções possíveis (código — pendente)
+### Evolução posterior e pendências
 
 | Prioridade | Ação | Efeito |
 |---|---|---|
-| **P1 (recomendada)** | Reordenar `saveSteps` para gravar o API Object **por último**, após todas as Procedures passarem em `Save()`. | Se Get/Create/Update/Delete falhar, API e metadata permanecem alinhados; preflight não trava. |
+| **P1 — concluída na F1 da `S-B111`** | Reordenar `saveSteps` para gravar o API Object **por último**, após todas as Procedures passarem em `Save()`. | Os consumidores são salvos antes do API Object, e o writer final faz um único `API.Save()` nos caminhos positivos validados. |
 | P2 | Na falha do Sync/Apply, detectar drift API↔metadata e orientar no B081 («Remover + Wizard») com mensagem explícita. | Não evita escrita parcial; melhora diagnóstico. |
 | P3 | Rollback do Service Source do API Object em `catch` quando Procedures falham depois de `SaveApi`. | Mais frágil (estado GeneXus, Events, variáveis). |
 | Fora de escopo imediato | Transação atômica multi-objeto na IDE. | SDK não oferece commit/rollback transacional real. |
 
-**Próximo passo sugerido:** P1 na Etapa 1B residual do `B082` ou frente dedicada pequena, com teste que simule falha em `SaveProcedure` e confirme API inalterado.
+**Situação atual:** a P1 foi absorvida pela F1 da `S-B111` e validada manualmente em
+2026-09-10/11, com a exceção explícita do `B121`. F2 (seam de persistência e recibos) e F3
+(durabilidade e remoção) permanecem planejadas; a atomicidade transacional entre objetos da
+IDE continua fora do escopo atual.
 
 ### Validação Keep/Replace (2026-09-03)
 

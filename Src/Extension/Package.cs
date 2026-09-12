@@ -465,7 +465,7 @@ public sealed class Package : AbstractPackageUI
                 onApiSaveAttempted: () => report?.MarkApiSaveAttempted());
             var apiObjectSavedByList = apiObjectSaveExpected;
             var apiObjectStageStatus = apiObjectSavedByList ? "API Object sincronizado" : "API Object nao gravado nesta etapa";
-            WriteOutput($"[Genexus Open API Builder][B070] List aplicado; {apiObjectStageStatus}: Transaction='{transaction.Name}', Trigger='{triggerSource}', ListProcedureGuid='{result.ListProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', Filters={result.Filters}, OrderParts={result.OrderParts}, DefaultPageSize={result.DefaultPageSize}, MaximumPageSize={result.MaximumPageSize}. B076 e validacao runtime do List permanecem pendentes.");
+            WriteOutput($"[Genexus Open API Builder][B070] List aplicado; {apiObjectStageStatus}: Transaction='{transaction.Name}', Trigger='{triggerSource}', ListProcedureGuid='{result.ListProcedureGuid}', ApiObjectGuid='{result.ApiObjectGuid}', Filters={result.Filters}, OrderParts={result.OrderParts}, DefaultPageSize={result.DefaultPageSize}, MaximumPageSize={result.MaximumPageSize}. B076 requer validacao HTTP em etapa separada.");
             var listProcedure = apiPlan.ProcedureNames.FirstOrDefault(name =>
                 name.EndsWith("_API_List", StringComparison.OrdinalIgnoreCase));
             if (!string.IsNullOrWhiteSpace(listProcedure))
