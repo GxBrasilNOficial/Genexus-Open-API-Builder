@@ -1,7 +1,7 @@
 # B120 — Envelope HTTP do `List` entre environments
 
-**Estado:** aberto; urgente; deliberadamente estacionado até o encerramento da
-sprint `S-B111`.
+**Estado:** aberto; urgente; a retenção até o encerramento da sprint `S-B111` foi superada.
+O item segue pendente e sua retomada será ordenada pelo checkpoint.
 
 **Correlato de backlog:** [`B120`](../Foundation/06-BACKLOG_v0.1.md).
 
@@ -15,10 +15,10 @@ conclusão da sprint `S-B111`. O smoke já demonstrou que a aplicação inicia, 
 autenticação funciona e o endpoint responde nos dois environments; o que falhou
 foi a equivalência observável do contrato de resposta do `List`.
 
-`B120` não muda a próxima ação única do checkpoint: concluir a evidência dos
-cenários de Sync que ainda faltam para o aceite da F1. Depois desse encerramento,
-este item deve ser puxado antes de considerar o contrato HTTP do `List` validado
-de forma multiplataforma.
+`B120` não muda a próxima ação única do checkpoint: preparar e iniciar a avaliação da F2.
+A F1 foi encerrada com a exceção explícita do `B121`; os cenários de Sync já não são a
+pendência que condiciona este item. `B120` deve ser retomado conforme a ordem do checkpoint
+e antes de considerar o contrato HTTP do `List` validado de forma multiplataforma.
 
 ## 2. Problema observado
 
@@ -147,7 +147,8 @@ environments.
 
 - O smoke HTTP que abriu este item está registrado em
   [`B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`](B071-B073-B079-GET-CREATE-UPDATE-HTTP.md).
-- O estado da F1 e a única ação vigente estão em
-  [`2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`](2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md).
+- A próxima ação única vigente está no checkpoint
+  [`STATUS_ATUAL_E_PROXIMO_PASSO.md`](../STATUS_ATUAL_E_PROXIMO_PASSO.md); a reconciliação da F1
+  está em [`2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`](2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md).
 - A abertura de `B120` não promove a F1, não fecha sua lacuna de Sync e não
   altera a decisão de manter `B108` estacionado.
