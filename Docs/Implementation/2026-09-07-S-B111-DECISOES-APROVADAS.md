@@ -1328,3 +1328,12 @@ implementação. Após validação no código e nos planos, foram aproveitados e
   31.
 
 Nenhum desses apontamentos altera o veredito local sobre a F1 ou cria um bloqueio P1/P2.
+
+### 57. Reconciliação da contagem de `Save()` da F2 — 2026-09-12
+
+Decisão de reconciliação:
+
+- a contagem de 15 chamadas físicas registrada na decisão 39 em 2026-09-07 fica preservada como inventário aprovado daquele momento, antes da consolidação do caminho do API Object;
+- no código vigente após a F1, o inventário operacional da F2 é de 14 chamadas diretas físicas de `Save()` gerenciadas pela S-B111, mais dois executores de laço (`step.Save()`) em BC e List; os executores não são chamadas físicas adicionais;
+- o `Save()` do File de preferências e os `Save()` do próprio journal permanecem fora do seam operacional da F2, conforme a seção 9.1 do plano F2;
+- em documentos que descrevem o estado atual da F2, deve prevalecer a formulação de 14 chamadas diretas físicas; a decisão 39 não deve ser reescrita, mas lida como histórico do inventário anterior.

@@ -36,11 +36,12 @@ A F2 fecha as duas coisas e para aí.
 
 ### 2.1 Os pontos de gravação reais
 
-Excluídas as sondas e o código GeneXus emitido como string, o mapa consolidado tem
-**14 chamadas físicas de `Save()`** e dois pontos de execução de laço que transportam
-essas chamadas em BC e List. O caminho de API reencontrado/novo agora compartilha uma
-única chamada física; os laços não são Saves adicionais e não podem ser somados às
-chamadas físicas.
+Excluídas as sondas, o código GeneXus emitido como string, o `Save()` do File de
+preferências da KB e os `Save()` do próprio journal, o mapa das gravações gerenciadas
+pela S-B111 tem **14 chamadas diretas físicas de `Save()`** e dois pontos de execução de
+laço que transportam essas chamadas em BC e List. O caminho de API reencontrado/novo
+agora compartilha uma única chamada física; os laços não são Saves adicionais e não
+podem ser somados às chamadas diretas.
 
 | Arquivo:linha | O que grava |
 |---|---|
