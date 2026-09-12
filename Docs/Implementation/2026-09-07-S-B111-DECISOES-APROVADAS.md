@@ -985,8 +985,10 @@ Decisão aprovada após os pareceres nativos e DeepSeek da v3:
   dos bytes esperados;
 - confirmação baseada apenas em reenumeração por nome não atende ao contrato de
   identidade da sprint;
-- a contagem documental distinguirá as 15 chamadas físicas de `Save()` dos dois laços
-  executores de BC/List, que não são Saves adicionais;
+- a decisão aprovada em 2026-09-07 registrou um inventário inicial de 15 chamadas
+  físicas de `Save()`, separado dos dois laços executores de BC/List, que não são Saves
+  adicionais; esse número é histórico e, após a reconciliação da decisão 57, não deve
+  ser lido como a contagem vigente da F2;
 - o teste da F2 cobrirá a recuperação com File novo e com File reutilizado, além das
   falhas e resultados indeterminados desse `Save()`.
 
