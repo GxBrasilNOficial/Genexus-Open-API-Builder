@@ -323,6 +323,17 @@ Business Component. O relatório contém a ressalva conhecida de listar SDTs ree
 gravação física em `Atualizados=14`; a correção dessa contagem foi deliberadamente postergada.
 Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 
+**Atualização da S-B111 — 2026-09-13.** O reteste da habilitação diferida de
+Business Component na `Produto`, o cancelamento cooperativo durante o Apply, a
+recomposição posterior e o teste adicional 4 na `Empresa` foram aceitos na IDE.
+O teste 4 foi uma criação nova na KB grande `FabricaBrasil18Test`, com 13
+subníveis, `Criados=55`, `PersistenceReceipts=59`, `PersistenceStageFailures=0`
+e `Bloqueados=0`; todos os recibos ficaram confirmados e presentes. A medição
+de `79041 ms` fica registrada como telemetria atual de escala, sem comparação
+estatística com o histórico de reencontro de DLL anterior. A F2 permanece
+aberta somente para as fronteiras de falha controlada e os ajustes já
+postergados. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
+
 **B106 — concluído em 2026-08-24.** O roteiro foi atualizado para a Alpha `0.1.0-alpha.4`, passou a registrar o checkbox de repasse das mensagens do Business Component e aponta para as notas da Alpha 4. A captura de Segurança foi explicitamente marcada como referência visual anterior; uma nova captura da UI permanece uma melhoria visual separada, sem bloquear a documentação textual.
 
 **B107 — concluído em 2026-08-25.** O teste deixou de ler YAML publicado pelo Build da KB (`C:\KBs\...`): esse artefato pertence ao ambiente GeneXus, não ao pré-push deste repositório. A trava permanece offline sobre `Src/Domain/ApiPlan.cs` e, a partir de B096, também sobre `Src/Domain/ApiPlanSdtHierarchicalNaming.cs`, agora incluindo `sdt_API_ErrorMessage` além de `sdt_API_ErrorResponse` e dos padrões `_API_*` / serviços. Não foi absorvido pela Fase 0 (`Tests/GenerationBaseline/` cobre Source / Service Source / plano de SDT; a conferência de YAML publicado continua evidência pontual na IDE, prevista ao fim da Fase 4). Encontrado na revisão pré-push retroativa de 2026-08-24.

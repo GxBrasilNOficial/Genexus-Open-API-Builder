@@ -1,7 +1,7 @@
 # S-B111 F2 — implementação local do seam de persistência e recibos
 
-**Data:** 2026-09-12
-**Status:** implementação local concluída; cenário positivo do `Wizard`, reteste da habilitação diferida de Business Component, cancelamento cooperativo durante o Apply e recomposição posterior da `Produto` aceitos manualmente na IDE GeneXus, com a F2 ainda aberta para o teste adicional 4 e as fronteiras de falha.
+**Data:** 2026-09-13
+**Status:** implementação local concluída; cenário positivo do `Wizard`, reteste da habilitação diferida de Business Component, cancelamento cooperativo durante o Apply, recomposição posterior da `Produto` e criação em escala da `Empresa` aceitos manualmente na IDE GeneXus, com a F2 ainda aberta para as fronteiras de falha controlada.
 **Escopo:** F2 do plano `2026-09-04-B111-F2-PLANO-SEAM-E-RECIBOS.md`.
 
 ## Resultado
@@ -44,6 +44,24 @@ preexistente foram reencontrados sem gravação física.
 O aceite e a leitura detalhada dos avisos estão em
 `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 
+## Aceite manual adicional 4 — criação em KB grande
+
+Em 2026-09-13, a `Transaction` `Empresa` foi aplicada na KB
+`FabricaBrasil18Test` (GeneXus 18 U15), em criação nova com 13 subníveis e 48
+SDTs ausentes. O relatório terminou com `SuccessWithWarnings`,
+`FinalApiWriter='List'`, `ApiSaveCount=1`, `Criados=55`, `Atualizados=0`,
+`Removidos=0`, `Bloqueados=0`, `PersistenceReceipts=59`,
+`PersistenceStageFailures=0` e `DuraçãoMs=79041`. Todos os recibos ficaram
+confirmados e presentes; o único aviso foi o fallback das descrições para
+inglês.
+
+O teste fica aceito como prova positiva de escala e persistência. A duração e
+as fases (`SDTs=39942 ms`, `BusinessComponent=24298 ms`, `List=4625 ms`, entre
+outras) ficam como medição atual. Não foi feita comparação estatística antes/
+depois, pois as referências históricas usam DLL e estado de operação distintos.
+O registro completo está em
+`Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
+
 ## Limites e próxima validação
 
 O teste offline e os cenários manuais já aceitos não encerram a F2. O reteste na
@@ -53,8 +71,9 @@ durante o Apply, depois de seis persistências confirmadas e antes do API Object
 Antes do teste adicional 4, a `Produto` foi recomposta por um Apply completo.
 Essa recomposição foi concluída com `SuccessWithWarnings`,
 `ApiSaveCount=1`, `PersistenceReceipts=10`, `PersistenceStageFailures=0`,
-`Criados=0`, `Atualizados=14` e `Bloqueados=0`. Também permanece o exercício da
-falha controlada de cada fronteira.
+`Criados=0`, `Atualizados=14` e `Bloqueados=0`. A criação em escala da
+`Empresa` também foi aceita com 59 recibos confirmados e nenhum bloqueio.
+Permanece o exercício da falha controlada de cada fronteira.
 A instalação manual da DLL foi realizada pelo usuário, não pelo agente. A contagem `Atualizados=14` do cenário de
 reencontro da `Laudo` contém a ressalva conhecida dos SDTs reencontrados sem
 gravação; o ajuste fica para frente posterior. Diário durável,
