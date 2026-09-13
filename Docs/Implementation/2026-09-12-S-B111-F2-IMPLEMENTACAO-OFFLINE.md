@@ -1,7 +1,7 @@
 # S-B111 F2 — implementação local do seam de persistência e recibos
 
 **Data:** 2026-09-12
-**Status:** implementação local concluída; cenário positivo do `Wizard` aceito manualmente na IDE GeneXus, com a F2 ainda aberta para as fronteiras de falha e a habilitação diferida de Business Component.
+**Status:** implementação local concluída; cenário positivo do `Wizard` e reteste da habilitação diferida de Business Component aceitos manualmente na IDE GeneXus, com a F2 ainda aberta para os testes adicionais restantes e as fronteiras de falha.
 **Escopo:** F2 do plano `2026-09-04-B111-F2-PLANO-SEAM-E-RECIBOS.md`.
 
 ## Resultado
@@ -46,4 +46,11 @@ O aceite e a leitura detalhada dos avisos estão em
 
 ## Limites e próxima validação
 
-O cenário positivo agora tem evidência manual na IDE, mas o teste offline e esse cenário isolado não encerram a F2. Falta repetir os fluxos aplicáveis da matriz da F1, exercitar a falha controlada de cada fronteira e validar a habilitação diferida de Business Component. A instalação manual da DLL foi realizada pelo usuário, não pelo agente. A contagem `Atualizados=14` contém a ressalva conhecida dos SDTs reencontrados sem gravação; o ajuste fica para frente posterior. Diário durável, recuperação/reconciliação e decisão de retry permanecem no escopo da F3.
+O teste offline e os cenários manuais já aceitos não encerram a F2. O reteste na
+`Produto` validou a habilitação diferida de Business Component e a criação de
+SDTs dependentes; ainda falta repetir os testes adicionais restantes e exercitar
+a falha controlada de cada fronteira. A instalação manual da DLL foi realizada
+pelo usuário, não pelo agente. A contagem `Atualizados=14` do cenário de
+reencontro da `Laudo` contém a ressalva conhecida dos SDTs reencontrados sem
+gravação; o ajuste fica para frente posterior. Diário durável,
+recuperação/reconciliação e decisão de retry permanecem no escopo da F3.
