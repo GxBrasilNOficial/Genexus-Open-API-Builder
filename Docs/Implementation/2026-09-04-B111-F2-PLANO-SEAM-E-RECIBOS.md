@@ -522,7 +522,7 @@ recibos resultante:
 A forma de injeção deve ser determinística e ficar fechada antes da implementação:
 
 - o ponto de injeção usa os identificadores fechados
-  `TransactionSave`, `FolderSave`, `SdtSave`, `ProcedureSave`, `ApiSave`,
+  `FolderSave`, `SdtSave`, `ProcedureSave`, `ApiSave`,
   `MetadataSave`, `B115MetadataSave`, `BusinessComponentEnablementSave`,
   `ApiDelete`, `ProcedureDelete`, `SdtDelete`, `MetadataDelete` e `FolderDelete`;
 - a API de teste é `IApiPlanPersistenceFaultInjector`, com
@@ -534,6 +534,10 @@ A forma de injeção deve ser determinística e ficar fechada antes da implement
   o injetor por dependência de teste; o adaptador SDK recebe o mesmo contrato por um
   hook interno exclusivo da assembly de testes. Produção usa sempre o injetor nulo,
   sem configuração por arquivo, variável de ambiente ou preferência da KB;
+- `ReturnWithoutMutation` é válido somente em `Before`: ele simula o retorno do
+  delegate sem mutação e exige confirmação posterior. Em `After`, é erro de contrato,
+  preserva o recibo como `OutcomeUnknown` e relança a violação; reciprocamente,
+  `DivergentConfirmation` e `UnreadableConfirmation` são válidos somente em `After`;
 - cada escopo de teste instala o injetor por `IDisposable`, restaura o injetor nulo no
   `Dispose` e falha se qualquer ponto esperado não for visitado. Não há ativação
   persistente entre testes nem interpretação de texto de exceção;

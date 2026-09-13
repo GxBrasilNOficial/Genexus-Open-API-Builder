@@ -288,19 +288,18 @@ public sealed class PersistenceConfirmation
 public enum PersistenceFaultPoint
 {
     None = 0,
-    TransactionSave = 1,
-    FolderSave = 2,
-    SdtSave = 3,
-    ProcedureSave = 4,
-    ApiSave = 5,
-    MetadataSave = 6,
-    B115MetadataSave = 7,
-    BusinessComponentEnablementSave = 8,
-    ApiDelete = 9,
-    ProcedureDelete = 10,
-    SdtDelete = 11,
-    MetadataDelete = 12,
-    FolderDelete = 13,
+    FolderSave = 1,
+    SdtSave = 2,
+    ProcedureSave = 3,
+    ApiSave = 4,
+    MetadataSave = 5,
+    B115MetadataSave = 6,
+    BusinessComponentEnablementSave = 7,
+    ApiDelete = 8,
+    ProcedureDelete = 9,
+    SdtDelete = 10,
+    MetadataDelete = 11,
+    FolderDelete = 12,
 }
 
 public enum PersistenceFaultAction
@@ -308,6 +307,7 @@ public enum PersistenceFaultAction
     None = 0,
     Throw = 1,
     Cancel = 2,
+    // Válido somente em Before: simula um delegate físico que retorna sem mutar o alvo.
     ReturnWithoutMutation = 3,
     DivergentConfirmation = 4,
     UnreadableConfirmation = 5,
@@ -344,7 +344,7 @@ public static class ApiPlanPersistenceCore
         return new Scope(() => _current = previous, () => SafePublish(log, onDispose));
     }
 
-    public static IDisposable BeginFaultInjection(IApiPlanPersistenceFaultInjector injector)
+    internal static IDisposable BeginFaultInjection(IApiPlanPersistenceFaultInjector injector)
     {
         if (injector is null)
         {
@@ -403,9 +403,10 @@ public static class ApiPlanPersistenceCore
         }
 
         var attempt = log.GetNextAttempt(operationKind, objectType, identity);
+        PersistenceFaultAction beforeAction;
         try
         {
-            ApplyBeforeFault(faultPoint, attempt);
+            beforeAction = ApplyBeforeFault(faultPoint, attempt);
         }
         catch (Exception exception)
         {
@@ -418,7 +419,11 @@ public static class ApiPlanPersistenceCore
         var confirmationRead = false;
         try
         {
-            persist();
+            if (beforeAction != PersistenceFaultAction.ReturnWithoutMutation)
+            {
+                persist();
+            }
+
             physicalDelegateReturned = true;
             var afterAction = GetFaultAction(faultPoint, attempt, after: true);
             ApplyAfterFault(afterAction);
@@ -594,7 +599,7 @@ public static class ApiPlanPersistenceCore
         }
     }
 
-    private static void ApplyBeforeFault(PersistenceFaultPoint point, int attempt)
+    private static PersistenceFaultAction ApplyBeforeFault(PersistenceFaultPoint point, int attempt)
     {
         var action = GetFaultAction(point, attempt, after: false);
         if (action == PersistenceFaultAction.Throw)
@@ -606,6 +611,14 @@ public static class ApiPlanPersistenceCore
         {
             throw new OperationCanceledException("Cancelamento de preparação injetado em " + point + ".");
         }
+
+        if (action == PersistenceFaultAction.None || action == PersistenceFaultAction.ReturnWithoutMutation)
+        {
+            return action;
+        }
+
+        throw new InvalidOperationException(
+            action + " só pode ser injetado depois do delegate físico.");
     }
 
     private static void ApplyAfterFault(PersistenceFaultAction action)
@@ -618,6 +631,20 @@ public static class ApiPlanPersistenceCore
         if (action == PersistenceFaultAction.Cancel)
         {
             throw new OperationCanceledException("Cancelamento após a persistência injetado.");
+        }
+
+        if (action == PersistenceFaultAction.ReturnWithoutMutation)
+        {
+            throw new InvalidOperationException(
+                "ReturnWithoutMutation deve ser injetado antes do delegate físico.");
+        }
+
+        if (action != PersistenceFaultAction.None
+            && action != PersistenceFaultAction.DivergentConfirmation
+            && action != PersistenceFaultAction.UnreadableConfirmation)
+        {
+            throw new InvalidOperationException(
+                "Ação de falha posterior não reconhecida: " + action + ".");
         }
     }
 

@@ -16,6 +16,17 @@ public sealed class PersistenceTestFaultInjector : IApiPlanPersistenceFaultInjec
     public PersistenceFaultAction Before(PersistenceFaultPoint point, int attempt) => BeforeAction;
     public PersistenceFaultAction After(PersistenceFaultPoint point, int attempt) => AfterAction;
 }
+public sealed class PersistenceTestCounter
+{
+    public int Value { get; private set; }
+    public void Increment() => Value++;
+    public System.Action AsAction() => Increment;
+}
+public static class PersistenceTestFaultScope
+{
+    public static System.IDisposable Begin(IApiPlanPersistenceFaultInjector injector) =>
+        ApiPlanPersistenceCore.BeginFaultInjection(injector);
+}
 "@
 $logBody = $logSource -replace '(?m)^#nullable enable\r?\n', '' -replace '(?m)^using [^\r\n]+\r?\n', '' -replace '(?m)^namespace [^\r\n]+\r?\n', ''
 $injectorBody = $injectorSource -replace '(?m)^using [^\r\n]+\r?\n', ''
@@ -45,6 +56,7 @@ $statusType = [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceConfirmati
 $physicalType = [GenexusOpenApiBuilder.Extension.Diagnostics.PersistencePhysicalState]
 $faultPointType = [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceFaultPoint]
 $faultActionType = [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceFaultAction]
+$faultScopeType = [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceTestFaultScope]
 
 # 1) Sem escopo, o delegate roda e a confirmação não é chamada.
 $log = $logType::new()
@@ -238,7 +250,7 @@ Assert-Equal 1 $innerLog.Receipts.Count 'Escopo interno deve receber apenas seu 
 $injector = [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceTestFaultInjector]::new()
 $faultLog = $logType::new()
 $scope = $core::Begin($faultLog)
-$faultScope = $core::BeginFaultInjection($injector)
+    $faultScope = $faultScopeType::Begin($injector)
 try {
     $injector.BeforeAction = $faultActionType::Throw
     try {
@@ -262,5 +274,226 @@ finally {
 }
 Assert-Equal $outcomeType::OutcomeUnknown $faultLog.Receipts[0].Outcome 'Divergência injetada deve ser OutcomeUnknown.'
 Assert-Equal $outcomeType::OutcomeUnknown $faultLog.Receipts[1].Outcome 'Confirmação ilegível injetada deve ser OutcomeUnknown.'
+
+# 11) A matriz percorre todos os pontos fechados e mantém o contrato de cada classe.
+$expectedFaultPoints = @(
+    'FolderSave', 'SdtSave', 'ProcedureSave', 'ApiSave',
+    'MetadataSave', 'B115MetadataSave', 'BusinessComponentEnablementSave',
+    'ApiDelete', 'ProcedureDelete', 'SdtDelete', 'MetadataDelete', 'FolderDelete')
+$actualFaultPoints = [Enum]::GetNames($faultPointType) | Where-Object { $_ -ne 'None' }
+Assert-Equal ($expectedFaultPoints -join ',') ($actualFaultPoints -join ',') 'A enumeração dos pontos de falha deve permanecer fechada e ordenada.'
+
+function Invoke-SaveCase {
+    param(
+        [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceFaultPoint]$Point,
+        [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceFaultAction]$BeforeAction,
+        [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceFaultAction]$AfterAction)
+
+    $caseInjector = [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceTestFaultInjector]::new()
+    $caseInjector.BeforeAction = $BeforeAction
+    $caseInjector.AfterAction = $AfterAction
+    $caseLog = $logType::new()
+    $physicalCounter = [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceTestCounter]::new()
+    $caseException = $null
+    $scope = $core::Begin($caseLog)
+    $faultScope = $faultScopeType::Begin($caseInjector)
+    try {
+        $persistAction = $physicalCounter.AsAction()
+        try {
+            [void]$core::Persist(
+                $Point, 'Save', 'Fixture', 'FaultMatrix', $Point.ToString(), (New-Identity),
+                $persistAction,
+                [Func[GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceConfirmation]] {
+                    if ($BeforeAction -eq $faultActionType::ReturnWithoutMutation) {
+                        return $confirmationType::Absent('fixture sem mutação')
+                    }
+
+                    return $confirmationType::Confirmed($Point.ToString())
+                })
+        }
+        catch {
+            $caseException = $_.Exception
+        }
+    }
+    finally {
+        $faultScope.Dispose()
+        $scope.Dispose()
+    }
+
+    return [pscustomobject]@{
+        Log = $caseLog
+        PhysicalCount = $physicalCounter.Value
+        Exception = $caseException
+    }
+}
+
+foreach ($pointName in $expectedFaultPoints) {
+    $point = [Enum]::Parse($faultPointType, $pointName)
+
+    $normal = Invoke-SaveCase $point $faultActionType::None $faultActionType::None
+    Assert-Equal 1 $normal.PhysicalCount "Save normal deve executar o delegate em '$pointName'."
+    Assert-Equal 1 $normal.Log.Receipts.Count "Save normal deve gerar recibo em '$pointName'."
+    Assert-Equal $outcomeType::Confirmed $normal.Log.Receipts[0].Outcome "Save normal deve ser confirmado em '$pointName'."
+
+    foreach ($beforeAction in @($faultActionType::Throw, $faultActionType::Cancel)) {
+        $beforeFailure = Invoke-SaveCase $point $beforeAction $faultActionType::None
+        Assert-Equal 0 $beforeFailure.PhysicalCount "Falha Before não pode executar o delegate em '$pointName'."
+        Assert-Equal 0 $beforeFailure.Log.Receipts.Count "Falha Before não pode criar recibo em '$pointName'."
+        Assert-Equal 1 $beforeFailure.Log.StageFailures.Count "Falha Before deve registrar etapa em '$pointName'."
+    }
+
+    foreach ($beforeAction in @($faultActionType::DivergentConfirmation, $faultActionType::UnreadableConfirmation)) {
+        $invalidBefore = Invoke-SaveCase $point $beforeAction $faultActionType::None
+        Assert-Equal 0 $invalidBefore.PhysicalCount "Ação posterior em Before não pode executar o delegate em '$pointName'."
+        Assert-Equal 0 $invalidBefore.Log.Receipts.Count "Ação posterior em Before não pode criar recibo em '$pointName'."
+        Assert-Equal 1 $invalidBefore.Log.StageFailures.Count "Ação posterior em Before deve registrar falha de etapa em '$pointName'."
+    }
+
+    $noMutation = Invoke-SaveCase $point $faultActionType::ReturnWithoutMutation $faultActionType::None
+    Assert-Equal 0 $noMutation.PhysicalCount "ReturnWithoutMutation não pode mutar em '$pointName'."
+    Assert-Equal 1 $noMutation.Log.Receipts.Count "ReturnWithoutMutation deve gerar observação em '$pointName'."
+    Assert-Equal $outcomeType::OutcomeUnknown $noMutation.Log.Receipts[0].Outcome "Save sem mutação deve ser indeterminado em '$pointName'."
+
+    foreach ($afterAction in @(
+        $faultActionType::Throw,
+        $faultActionType::Cancel,
+        $faultActionType::DivergentConfirmation,
+        $faultActionType::UnreadableConfirmation)) {
+        $afterFailure = Invoke-SaveCase $point $faultActionType::None $afterAction
+        Assert-Equal 1 $afterFailure.PhysicalCount "Falha After deve ocorrer depois do delegate em '$pointName'."
+        Assert-Equal 1 $afterFailure.Log.Receipts.Count "Falha After deve preservar recibo em '$pointName'."
+        Assert-Equal $outcomeType::OutcomeUnknown $afterFailure.Log.Receipts[0].Outcome "Falha After deve ser indeterminada em '$pointName'."
+    }
+
+    $invalidAfter = Invoke-SaveCase $point $faultActionType::None $faultActionType::ReturnWithoutMutation
+    Assert-Equal 1 $invalidAfter.PhysicalCount "ReturnWithoutMutation em After ocorre depois do delegate em '$pointName'."
+    Assert-Equal 1 $invalidAfter.Log.Receipts.Count "ReturnWithoutMutation em After deve preservar recibo em '$pointName'."
+    Assert-Equal $outcomeType::OutcomeUnknown $invalidAfter.Log.Receipts[0].Outcome "ReturnWithoutMutation em After deve ser indeterminado em '$pointName'."
+    Assert-True ($invalidAfter.Exception.Message -match 'antes do delegate físico') "ReturnWithoutMutation em After deve explicar a violação em '$pointName'."
+}
+
+function Invoke-DeleteCase {
+    param(
+        [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceFaultPoint]$Point,
+        [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceFaultAction]$BeforeAction,
+        [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceFaultAction]$AfterAction,
+        [bool]$DeleteMutates = $true)
+
+    $caseInjector = [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceTestFaultInjector]::new()
+    $caseInjector.BeforeAction = $BeforeAction
+    $caseInjector.AfterAction = $AfterAction
+    $caseLog = $logType::new()
+    $physicalCounter = [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceTestCounter]::new()
+    $physicalState = [pscustomobject]@{ Present = $true }
+    $caseException = $null
+    $scope = $core::Begin($caseLog)
+    $faultScope = $faultScopeType::Begin($caseInjector)
+    try {
+        $deleteAction = if ($DeleteMutates) {
+            [Action] { $physicalCounter.Increment(); $physicalState.Present = $false }.GetNewClosure()
+        }
+        else {
+            [Action] { $physicalCounter.Increment() }.GetNewClosure()
+        }
+        try {
+            [void]$core::Persist(
+                $Point, 'Delete', 'Fixture', 'FaultMatrix', $Point.ToString(), (New-Identity),
+                $deleteAction,
+                [Func[GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceConfirmation]] {
+                    if ($physicalState.Present) {
+                        return $confirmationType::Confirmed('fixture-present')
+                    }
+
+                    return $confirmationType::Absent('fixture-absent')
+                }.GetNewClosure())
+        }
+        catch {
+            $caseException = $_.Exception
+        }
+    }
+    finally {
+        $faultScope.Dispose()
+        $scope.Dispose()
+    }
+
+    return [pscustomobject]@{
+        Log = $caseLog
+        PhysicalCount = $physicalCounter.Value
+        PhysicalPresent = $physicalState.Present
+        Exception = $caseException
+    }
+}
+
+$deleteFaultPoints = @('ApiDelete', 'ProcedureDelete', 'SdtDelete', 'MetadataDelete', 'FolderDelete')
+foreach ($pointName in $deleteFaultPoints) {
+    $point = [Enum]::Parse($faultPointType, $pointName)
+
+    $normal = Invoke-DeleteCase $point $faultActionType::None $faultActionType::None
+    Assert-Equal 1 $normal.PhysicalCount "Delete normal deve executar o delegate em '$pointName'."
+    Assert-Equal $outcomeType::Confirmed $normal.Log.Receipts[0].Outcome "Delete normal deve ser confirmado em '$pointName'."
+
+    foreach ($beforeAction in @($faultActionType::Throw, $faultActionType::Cancel)) {
+        $beforeFailure = Invoke-DeleteCase $point $beforeAction $faultActionType::None
+        Assert-Equal 0 $beforeFailure.PhysicalCount "Falha Before de Delete não pode executar o delegate em '$pointName'."
+        Assert-Equal 0 $beforeFailure.Log.Receipts.Count "Falha Before de Delete não pode criar recibo em '$pointName'."
+        Assert-Equal 1 $beforeFailure.Log.StageFailures.Count "Falha Before de Delete deve registrar etapa em '$pointName'."
+    }
+
+    $noMutation = Invoke-DeleteCase $point $faultActionType::ReturnWithoutMutation $faultActionType::None
+    Assert-Equal 0 $noMutation.PhysicalCount "Delete ReturnWithoutMutation não pode mutar em '$pointName'."
+    Assert-Equal $outcomeType::Failed $noMutation.Log.Receipts[0].Outcome "Delete sem mutação deve ser Failed em '$pointName'."
+    Assert-True $noMutation.Log.Receipts[0].RetryEligible "Delete sem mutação deve ser retryable em '$pointName'."
+
+    foreach ($afterAction in @(
+        $faultActionType::Throw,
+        $faultActionType::Cancel)) {
+        $afterFailure = Invoke-DeleteCase $point $faultActionType::None $afterAction
+        Assert-Equal 1 $afterFailure.PhysicalCount "Falha After de Delete deve ocorrer depois do delegate em '$pointName'."
+        Assert-Equal $outcomeType::Confirmed $afterFailure.Log.Receipts[0].Outcome "Delete confirmado por ausência deve ser reconciliado em '$pointName'."
+    }
+
+    foreach ($afterAction in @(
+        $faultActionType::DivergentConfirmation,
+        $faultActionType::UnreadableConfirmation)) {
+        $ambiguous = Invoke-DeleteCase $point $faultActionType::None $afterAction
+        Assert-Equal 1 $ambiguous.PhysicalCount "Confirmação ambígua de Delete deve ocorrer depois do delegate em '$pointName'."
+        Assert-Equal $outcomeType::OutcomeUnknown $ambiguous.Log.Receipts[0].Outcome "Confirmação ambígua de Delete deve bloquear em '$pointName'."
+        Assert-True (-not $ambiguous.Log.Receipts[0].RetryEligible) "Delete ambíguo não pode autorizar retry em '$pointName'."
+    }
+
+    $stillPresent = Invoke-DeleteCase $point $faultActionType::None $faultActionType::Throw $false
+    Assert-Equal $outcomeType::Failed $stillPresent.Log.Receipts[0].Outcome "Delete ainda presente deve ser Failed em '$pointName'."
+    Assert-True $stillPresent.Log.Receipts[0].RetryEligible "Delete ainda presente deve autorizar retry em '$pointName'."
+}
+
+# 12) Confirmação ausente é rejeitada; identidades File preservam nome, id e bytes esperados.
+$missingConfirmationLog = $logType::new()
+$scope = $core::Begin($missingConfirmationLog)
+try {
+    try {
+        [void]$core::Persist(
+            $faultPointType::B115MetadataSave, 'Save', 'File', 'Metadata', 'apiTeste_Metadata', (New-Identity),
+            [Action] { },
+            [Func[GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceConfirmation]] { return $null })
+    }
+    catch {
+    }
+}
+finally {
+    $scope.Dispose()
+}
+Assert-Equal $outcomeType::OutcomeUnknown $missingConfirmationLog.Receipts[0].Outcome 'Confirmação ausente deve ser OutcomeUnknown.'
+Assert-Equal $statusType::Unreadable $missingConfirmationLog.Receipts[0].Confirmation 'Confirmação ausente deve ser Unreadable.'
+Assert-True $missingConfirmationLog.Receipts[0].ConfirmationRead 'Tentativa de confirmação ausente deve ser registrada.'
+
+$newFile = $confirmationType::Confirmed('file-new')
+$newFileIdentity = [GenexusOpenApiBuilder.Extension.Diagnostics.FileIdentity]::new(
+    [guid]'66666666-6666-6666-6666-666666666666', 'apiTeste_Metadata', 'sha256-new')
+$reusedFileIdentity = [GenexusOpenApiBuilder.Extension.Diagnostics.FileIdentity]::new(
+    [guid]'77777777-7777-7777-7777-777777777777', 'apiTeste_Metadata', 'sha256-reused')
+Assert-True ($newFileIdentity.StableKey -ne $reusedFileIdentity.StableKey) 'File novo e reutilizado devem ter identidades distintas.'
+Assert-True ($newFileIdentity.Display -match 'apiTeste_Metadata') 'Identidade File nova deve preservar o nome canônico.'
+Assert-True ($newFileIdentity.StableKey -match 'sha256-new') 'Identidade File nova deve preservar os bytes esperados.'
+Assert-True ($reusedFileIdentity.StableKey -match 'sha256-reused') 'Identidade File reutilizada deve preservar os bytes esperados.'
 
 Write-Output 'PASS: ApiPlanPersistenceCore'

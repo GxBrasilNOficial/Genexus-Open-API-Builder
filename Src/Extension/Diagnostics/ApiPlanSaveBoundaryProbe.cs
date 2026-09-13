@@ -51,6 +51,13 @@ internal static class ApiPlanSaveBoundaryProbe
 
     public static IDisposable SuspendPersistence() => ApiPlanPersistenceCore.Suspend();
 
+    /// <summary>
+    /// Hook interno para testes do adaptador SDK. Produção não o ativa nem
+    /// expõe configuração persistente para injeção de falhas.
+    /// </summary>
+    internal static IDisposable BeginFaultInjection(IApiPlanPersistenceFaultInjector injector) =>
+        ApiPlanPersistenceCore.BeginFaultInjection(injector);
+
     public static PersistenceReceipt? Persist(
         string operationKind,
         string objectType,

@@ -334,6 +334,13 @@ estatística com o histórico de reencontro de DLL anterior. A F2 permanece
 aberta somente para as fronteiras de falha controlada e os ajustes já
 postergados. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 
+**Fechamento da S-B111 F2 — 2026-09-13.** As três fronteiras controladas foram
+capturadas na `Teste` descartável: retorno sem mutação antes de `SDT.Save`,
+confirmação divergente após `API.Save` e falha antes de `Procedure.Delete`.
+Houve recuperação B115 e limpeza idempotente dos objetos restantes. A F2 está
+encerrada; journal durável, reconciliação e retry continuam exclusivamente na
+F3. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
+
 **B106 — concluído em 2026-08-24.** O roteiro foi atualizado para a Alpha `0.1.0-alpha.4`, passou a registrar o checkbox de repasse das mensagens do Business Component e aponta para as notas da Alpha 4. A captura de Segurança foi explicitamente marcada como referência visual anterior; uma nova captura da UI permanece uma melhoria visual separada, sem bloquear a documentação textual.
 
 **B107 — concluído em 2026-08-25.** O teste deixou de ler YAML publicado pelo Build da KB (`C:\KBs\...`): esse artefato pertence ao ambiente GeneXus, não ao pré-push deste repositório. A trava permanece offline sobre `Src/Domain/ApiPlan.cs` e, a partir de B096, também sobre `Src/Domain/ApiPlanSdtHierarchicalNaming.cs`, agora incluindo `sdt_API_ErrorMessage` além de `sdt_API_ErrorResponse` e dos padrões `_API_*` / serviços. Não foi absorvido pela Fase 0 (`Tests/GenerationBaseline/` cobre Source / Service Source / plano de SDT; a conferência de YAML publicado continua evidência pontual na IDE, prevista ao fim da Fase 4). Encontrado na revisão pré-push retroativa de 2026-08-24.

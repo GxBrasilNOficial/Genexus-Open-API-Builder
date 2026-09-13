@@ -1075,7 +1075,7 @@ Decisão aprovada durante a consolidação do gap de retry:
 
 O contrato de injeção também fica fechado para que “falha em cada Save” seja executável:
 
-- os pontos são `TransactionSave`, `FolderSave`, `SdtSave`, `ProcedureSave`, `ApiSave`,
+- os pontos são `FolderSave`, `SdtSave`, `ProcedureSave`, `ApiSave`,
   `MetadataSave`, `B115MetadataSave`, `BusinessComponentEnablementSave`, `ApiDelete`,
   `ProcedureDelete`, `SdtDelete`, `MetadataDelete` e `FolderDelete`;
 - `IApiPlanPersistenceFaultInjector.Before(point, attempt)` injeta falha antes do
@@ -1085,6 +1085,9 @@ O contrato de injeção também fica fechado para que “falha em cada Save” s
 - o núcleo SDK-free recebe o injetor por dependência de teste; o adaptador recebe um hook
   interno exclusivo da assembly de testes; a produção usa o injetor nulo e não há ativação
   por arquivo, variável de ambiente ou preferência da KB;
+- `ReturnWithoutMutation` só é permitido em `Before`; em `After`, a violação ocorre depois
+  do delegate, preserva `OutcomeUnknown` e é relançada. `DivergentConfirmation` e
+  `UnreadableConfirmation` só são permitidos em `After`;
 - cada escopo instala o injetor por `IDisposable`, restaura o injetor nulo no `Dispose` e
   falha se um ponto esperado não for visitado. O hook não interpreta texto de exceção e
   não permanece ativo entre testes.

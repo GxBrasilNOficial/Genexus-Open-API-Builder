@@ -1,7 +1,7 @@
 # S-B111 F2 — implementação local do seam de persistência e recibos
 
 **Data:** 2026-09-13
-**Status:** implementação local concluída; cenário positivo do `Wizard`, reteste da habilitação diferida de Business Component, cancelamento cooperativo durante o Apply, recomposição posterior da `Produto` e criação em escala da `Empresa` aceitos manualmente na IDE GeneXus, com a F2 ainda aberta para as fronteiras de falha controlada.
+**Status:** F2 concluída: implementação local, cenários positivos, cancelamento cooperativo, criação em escala e fronteiras de falha controlada aceitos manualmente na IDE GeneXus.
 **Escopo:** F2 do plano `2026-09-04-B111-F2-PLANO-SEAM-E-RECIBOS.md`.
 
 ## Resultado
@@ -22,9 +22,11 @@ A F2 foi implementada localmente sem alterar o manifesto da extensão, a instala
 Passaram:
 
 - `Tests/PersistenceProbe/Test-ApiPlanPersistenceCore.ps1`
+- `Tests/PersistenceProbe/Test-ApiPlanSaveStepExecutor.ps1`, que executa o executor comum com
+  passos confirmados, `ReturnWithoutMutation` em `Before` e usos inválidos das ações de cada lado;
 - `Tests/ApplicationFinalReport/Test-ApiPlanApplicationFinalReport.ps1`
 - testes de preflight, BC/List, Folder, recuperação de metadata e remoção resiliente;
-- `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`, incluindo a fixture de repositório limpo e o gate `tests.persistenceCore`;
+- `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`, incluindo a fixture de repositório limpo e os gates `tests.persistenceCore` e `tests.persistenceExecutor`;
 - build Release sem restore, com 0 avisos e 0 erros.
 
 Artefato gerado: `Src/Extension/bin/Release/net471/GenexusOpenApiBuilder.Extension.dll`.
@@ -62,7 +64,7 @@ depois, pois as referências históricas usam DLL e estado de operação distint
 O registro completo está em
 `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 
-## Limites e próxima validação
+## Fechamento da F2
 
 O teste offline e os cenários manuais já aceitos não encerram a F2. O reteste na
 `Produto` validou a habilitação diferida de Business Component e a criação de
@@ -73,7 +75,12 @@ Essa recomposição foi concluída com `SuccessWithWarnings`,
 `ApiSaveCount=1`, `PersistenceReceipts=10`, `PersistenceStageFailures=0`,
 `Criados=0`, `Atualizados=14` e `Bloqueados=0`. A criação em escala da
 `Empresa` também foi aceita com 59 recibos confirmados e nenhum bloqueio.
-Permanece o exercício da falha controlada de cada fronteira.
+As três fronteiras restantes foram exercitadas na `Transaction` descartável
+`Teste`: retorno sem mutação antes de `SDT.Save`, confirmação divergente após
+`API.Save` e falha antes de `Procedure.Delete`. A evidência registrou a
+interrupção antes da escrita, o resultado indeterminado pós-escrita, a remoção
+parcial e a limpeza idempotente posterior. O comando e a instrumentação
+temporários usados para armar essas falhas foram removidos após a captura.
 A instalação manual da DLL foi realizada pelo usuário, não pelo agente. A contagem `Atualizados=14` do cenário de
 reencontro da `Laudo` contém a ressalva conhecida dos SDTs reencontrados sem
 gravação; o ajuste fica para frente posterior. Diário durável,
