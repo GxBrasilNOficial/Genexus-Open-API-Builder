@@ -133,7 +133,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Frente atual
 
-Sprint `S-B111` — F1 está **implementada e validada para encerramento com exceção explícita do `B121`** em 2026-09-10/11, e a implementação local da F2 (seam de persistência e recibos) foi concluída em 2026-09-12. O cenário positivo do `Wizard` para `Laudo` foi aceito manualmente na IDE; a segunda validação adicional, na `Produto` inicialmente sem BC, foi interrompida por divergência de persistência em `sdtProduto_API_ListResponse` após a habilitação do BC, deixando estado parcial que precisa ser inspecionado antes do teste 3. A F2 ainda requer as fronteiras de falha, a reconciliação desse estado e a habilitação diferida de Business Component. O `B121` permanece como melhoria fora da sprint. A F3 (durabilidade e remoção) continua condicionada ao aceite completo da F2. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
+Sprint `S-B111` — F1 está **implementada e validada para encerramento com exceção explícita do `B121`** em 2026-09-10/11, e a implementação local da F2 (seam de persistência e recibos) foi concluída em 2026-09-12. O cenário positivo do `Wizard` para `Laudo` foi aceito manualmente na IDE; a segunda validação adicional, na `Produto` inicialmente sem BC, foi interrompida por divergência de persistência em `sdtProduto_API_ListResponse` após a habilitação do BC, deixando estado parcial. A auditoria posterior confirmou um snapshot desatualizado do índice de SDTs e a correção local já foi compilada; falta a reinstalação manual da DLL e o reteste antes do teste 3. A F2 ainda requer as fronteiras de falha, a reconciliação desse estado e a habilitação diferida de Business Component. O `B121` permanece como melhoria fora da sprint. A F3 (durabilidade e remoção) continua condicionada ao aceite completo da F2. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
 
 Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; **conferência de fim em 2026-08-28**, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100` (concluído em 2026-08-30) → `B082` Fases A+B (concluído em 2026-09-01) → `B082` Etapa 1A (aceita em 2026-09-03). Publicação em quatro cortes: `0.1.0-alpha.4` após `B102` (2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis (2026-08-30), `0.1.0-alpha.6` com o `Delete` (2026-08-31) e `0.1.0-alpha.7` com o progresso `B082` (**publicado em 2026-09-01**). `B105` entra na sprint apenas se houver folga.
 
@@ -141,17 +141,21 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Inspecionar e reconciliar o estado parcial do teste 2 antes de continuar a F2 na IDE GeneXus** —
+**Reinstalar a DLL corrigida e repetir o teste 2 na IDE GeneXus antes de iniciar o teste 3** —
 o cenário positivo do `Wizard` para `Laudo` foi aceito em 2026-09-12, mas a validação adicional
 na `Produto` inicialmente sem BC foi interrompida após confirmar a habilitação da Transaction e
 encontrar `OutcomeUnknown`/`Divergent` no SDT `sdtProduto_API_ListResponse`. O relatório registrou
 `ApiSaveAttempted=False`, `ApiSaveCount=0`, `Criados=5`, `Atualizados=1` e `Bloqueados=1`;
-Procedures, API Object, REST e metadata não foram executados. Conferir na IDE o Folder
-`ProdutoOpenApi`, os quatro SDTs criados e o estado de `sdtProduto_API_ListResponse`, sem reaplicar
-nem iniciar o teste 3 antes de definir a reconciliação. O registro detalhado está em
+Procedures, API Object, REST e metadata não foram executados. A inspeção posterior identificou
+que o índice de SDTs não era atualizado entre gravações dependentes, e a correção local passou nos
+testes offline e nos builds Release U14+/U15 e U13. Fechar a IDE, executar
+`Install-ExtensionForGeneXus18.bat` como administrador, reabrir a IDE e repetir exatamente o
+perfil do teste 2 na `Produto`, registrando Preview, Output, relatório final e estado físico dos
+SDTs. Não iniciar o teste 3 antes desse reteste. O registro detalhado está em
 `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`. A F3 continua condicionada ao aceite
 completo da F2.
-O manifesto não mudou nesta frente, portanto não há `genexus /install` adicional a registrar.
+O manifesto/registro da extensão não mudou nesta frente; portanto, não executar
+`genexus /install` adicional.
 O parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR
 COM RESSALVAS`; suas observações P3 úteis foram incorporadas como clarificações de escopo,
 canonização e estágios. A decisão humana de implementar a F1 foi registrada nesta sessão;
@@ -446,6 +450,7 @@ residual `B082` 1B/2/3 não competem com a próxima avaliação da F2.
 
 112. Em 2026-09-13, o primeiro teste adicional da validação IDE da F2 foi concluído via `Sincronizar com a Transaction` na `NotaFiscal`, usando alteração controlada de `NotaFiscalObs3` (`VarChar(40)` para `VarChar(41)`). O Preview confirmou `Adicionados=0`, `Removidos=0`, `Renomeados=0`, `Modificados=1` e `Inalterados=10`, sem conflito de SDT. O preflight foi aprovado antes da aplicação; SDTs, Folder e Procedures foram reencontrados sem criação ou gravação na fase preparatória. O Sync efetivo `BC + List` registrou `FinalApiWriter='List'`, `ApiSaveAttempted=True`, `ApiSaveCount=1`, `PersistenceReceipts=10`, `PersistenceStageFailures=0`, `Criados=0`, `Removidos=0` e `Bloqueados=0`; a sequência incluiu quatro recibos da fase Procedures, três de Business Component, a Procedure de List, o API Object no estágio List e a metadata B060. Nenhum API Save ocorreu no Business Component. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 113. Em 2026-09-13, o segundo teste adicional foi executado na `Produto`, inicialmente com `Business Component=False`, para validar a habilitação diferida durante o Wizard. O preflight agregado passou antes do primeiro `Save()` e a `Transaction` foi atualizada com BC confirmado; o Folder `ProdutoOpenApi` e quatro SDTs próprios foram criados. A confirmação de `sdtProduto_API_ListResponse` terminou `Outcome='OutcomeUnknown'`, `Confirmation='Divergent'`, por divergência do membro `AppliedFilters` em relação ao contrato persistido. O relatório final foi `Interrupted`, com `ApiSaveAttempted=False`, `ApiSaveCount=0`, `PersistenceReceipts=7`, `PersistenceStageFailures=0`, `Criados=5`, `Atualizados=1`, `Bloqueados=1` e `Avisos=2`; Procedures, API Object, REST via BC e metadata não foram executados. O B111 confirmou quatro gravações de SDT e uma de Folder, além da atualização da Transaction. O teste não foi aceito como fluxo positivo e o teste 3 fica pendente da inspeção/reconciliação do estado parcial. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
+114. Em 2026-09-13, a auditoria do código confirmou que a divergência do item 113 veio do índice de SDTs desatualizado entre gravações dependentes: `ListFilters` era salvo, mas o `ListResponse` era confirmado contra o snapshot anterior. A correção atualiza o índice após cada novo `SDT.Save()` e antes da confirmação, cobrindo também a cadeia hierárquica de SDTs; a auditoria não encontrou o mesmo gap nos pontos de criação de Procedure, API Object ou File no Apply. O teste textual do índice, os probes de SDT/hierarquia e os builds Release U14+/U15 e U13 passaram; permanece pendente reinstalar a DLL e repetir o teste 2 na IDE. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 
 ## Bloqueios e fatos ainda não validados
 

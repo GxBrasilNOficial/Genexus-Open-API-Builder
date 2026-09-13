@@ -468,7 +468,14 @@ internal static class ApiPlanSdtWriter
             definition.Kind,
             definition.Name,
             new GuidIdentity(sdt.Guid),
-            sdt.Save,
+            () =>
+            {
+                sdt.Save();
+                // O próximo SDT pode referenciar este objeto. Atualizar o índice
+                // entre os Saves evita validar ATTCUSTOMTYPE contra um snapshot
+                // que ainda não conhecia o SDT recém-persistido.
+                kbIndex.RefreshSdts(designModel);
+            },
             () => ConfirmSdt(designModel, sdt, definition, kbIndex, validateStructure: true));
         EnsureConfirmed(saveReceipt, () => ConfirmSdt(designModel, sdt, definition, kbIndex, validateStructure: true), $"SDT '{definition.Name}'");
         B111CallSiteProbe.Wrote("SdtWriter.SdtNovo", definition.Name);

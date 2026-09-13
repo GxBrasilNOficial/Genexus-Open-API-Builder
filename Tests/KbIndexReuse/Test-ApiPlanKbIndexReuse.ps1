@@ -126,6 +126,11 @@ Assert-Contains $sdtWriter 'CollectionItemNameMatches' 'Reencontro de SDT deve t
 Assert-Contains $sdtWriter 'IsEnglishSingularOf' 'Specifier pode gravar CollectionItemName no singular ingles (Item para Items).'
 Assert-Contains $sdtWriter 'TryResolveStructureTypeReferenceName' 'Reencontro deve resolver ATTCUSTOMTYPE StructureTypeReference para o nome do SDT.'
 Assert-Contains $kbIndex 'TryGetSdtById' 'Indice deve resolver SDT pelo Id numerico da KB.'
+Assert-Contains $sdtWriter 'sdt.Save();
+                // O próximo SDT pode referenciar este objeto. Atualizar o índice
+                // entre os Saves evita validar ATTCUSTOMTYPE contra um snapshot
+                // que ainda não conhecia o SDT recém-persistido.
+                kbIndex.RefreshSdts(designModel);' 'Cada SDT novo deve atualizar o indice antes da confirmacao, permitindo dependencias entre SDTs no mesmo Apply.'
 Assert-Contains $package 'SDT diverge' 'Reencontro deve publicar Motivo na Output quando a estrutura nao bate.'
 Assert-NotContains $package 'preserveSdtNames: ApiPlanSdtWriter.PlannedSdtNames(apiPlan)' 'Wizard nao deve pular SDT por lista mecanica nas fases Business Component e List.'
 Assert-Contains $package 'preserveSdtNames: preserveSdts' 'Sync deve repassar apenas SDTs com resolucao Keep explicita.'
