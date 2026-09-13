@@ -1,7 +1,7 @@
 # S-B111 F2 — implementação local do seam de persistência e recibos
 
 **Data:** 2026-09-12
-**Status:** implementação local concluída; cenário positivo do `Wizard`, reteste da habilitação diferida de Business Component e cancelamento cooperativo durante o Apply aceitos manualmente na IDE GeneXus, com a F2 ainda aberta para o teste adicional 4 e as fronteiras de falha.
+**Status:** implementação local concluída; cenário positivo do `Wizard`, reteste da habilitação diferida de Business Component, cancelamento cooperativo durante o Apply e recomposição posterior da `Produto` aceitos manualmente na IDE GeneXus, com a F2 ainda aberta para o teste adicional 4 e as fronteiras de falha.
 **Escopo:** F2 do plano `2026-09-04-B111-F2-PLANO-SEAM-E-RECIBOS.md`.
 
 ## Resultado
@@ -50,8 +50,11 @@ O teste offline e os cenários manuais já aceitos não encerram a F2. O reteste
 `Produto` validou a habilitação diferida de Business Component e a criação de
 SDTs dependentes; o teste adicional 3 confirmou o cancelamento cooperativo
 durante o Apply, depois de seis persistências confirmadas e antes do API Object.
-Antes do teste adicional 4, a `Produto` ainda deve ser recomposta por um Apply
-completo. Também permanece o exercício da falha controlada de cada fronteira.
+Antes do teste adicional 4, a `Produto` foi recomposta por um Apply completo.
+Essa recomposição foi concluída com `SuccessWithWarnings`,
+`ApiSaveCount=1`, `PersistenceReceipts=10`, `PersistenceStageFailures=0`,
+`Criados=0`, `Atualizados=14` e `Bloqueados=0`. Também permanece o exercício da
+falha controlada de cada fronteira.
 A instalação manual da DLL foi realizada pelo usuário, não pelo agente. A contagem `Atualizados=14` do cenário de
 reencontro da `Laudo` contém a ressalva conhecida dos SDTs reencontrados sem
 gravação; o ajuste fica para frente posterior. Diário durável,
