@@ -433,6 +433,8 @@ residual `B082` 1B/2/3 não competem com a próxima avaliação da F2.
 
 108. Em 2026-09-12, na KB ativa `wsEducacaoSpTeste`, a repetição manual do Wizard API-only para `Laudo` (`GenerateSdts=False`, `GenerateProcedures=False`, `GenerateApiObject=True`, `ApplyList=False`, `ApplyBusinessComponent=False`, metadata habilitada) foi interrompida antes do primeiro `Save()` por `B063/B064/B067`: o `apiLaudo` existente já possuía contrato REST via Business Component. O relatório confirmou `ApiSaveAttempted=False`, `ApiSaveCount=0`, `PersistenceReceipts=0`, `PersistenceStageFailures=0`, `Criados/Atualizados/Removidos=nenhum` e `Bloqueados=1`; nenhuma alteração foi feita na KB. A guarda orientou marcar `Completar REST via Business Component` para incluir ou alterar serviços. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 
+109. Em 2026-09-12, o segundo teste da matriz principal da F2 foi concluído na mesma `Laudo`, no perfil BC-only: `GenerateSdts=False`, `GenerateProcedures=False`, `GenerateApiObject=True`, `ApplyList=False`, `GenerateMetadata=True` e `ApplyBusinessComponent=True`. O relatório registrou `FinalApiWriter='Business Component'`, `ApiSaveAttempted=True`, `ApiSaveCount=1`, `PersistenceReceipts=5`, `PersistenceStageFailures=0`, `Criados=0`, `Removidos=0` e `Bloqueados=0`. A ordem confirmou `procLaudo_API_Get`, `procLaudo_API_Create`, `procLaudo_API_Update`, `apiLaudo` e `apiLaudo_Metadata`; não houve recibo de List nem Save físico de SDT ou Folder. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
+
 ## Bloqueios e fatos ainda não validados
 
 O reteste de 2026-09-11 atualizou a situação do `List` da `Laudo`: a execução
