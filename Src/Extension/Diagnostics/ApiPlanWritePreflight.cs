@@ -56,7 +56,8 @@ internal static class ApiPlanWritePreflight
         bool applyBusinessComponent,
         ApiPlanKbObjectNameIndex kbIndex,
         IReadOnlyCollection<string>? preserveSdtNames = null,
-        IReadOnlyDictionary<string, IReadOnlyCollection<string>>? allowedAddedSdtMemberNamesByRole = null)
+        IReadOnlyDictionary<string, IReadOnlyCollection<string>>? allowedAddedSdtMemberNamesByRole = null,
+        bool businessComponentEnablementPending = false)
     {
         if (designModel is null) throw new ArgumentNullException(nameof(designModel));
         if (transaction is null) throw new ArgumentNullException(nameof(transaction));
@@ -66,7 +67,10 @@ internal static class ApiPlanWritePreflight
 
         if (applyBusinessComponent && !transaction.IsBusinessComponent)
         {
-            throw new InvalidOperationException($"B055 bloqueado: Transaction='{transaction.Name}' esta com Business Component desabilitado. Nenhuma alteracao foi feita.");
+            if (!businessComponentEnablementPending)
+            {
+                throw new InvalidOperationException($"B055 bloqueado: Transaction='{transaction.Name}' esta com Business Component desabilitado. Nenhuma alteracao foi feita.");
+            }
         }
 
         var requiresConsumersOrApi = generateApiObject || generateMetadata || applyList || applyBusinessComponent;

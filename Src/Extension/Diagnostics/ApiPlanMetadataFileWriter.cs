@@ -42,9 +42,14 @@ internal static class ApiPlanMetadataFileWriter
         return false;
     }
 
-    public static ApiPlanMetadataFileWriteResult CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan, ApiPlanKbObjectNameIndex kbIndex)
+    public static ApiPlanMetadataFileWriteResult CreateOrReencounter(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        ApiPlanKbObjectNameIndex kbIndex,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
-        return CreateOrReencounter(designModel, transaction, apiPlan, allowIntentionalContractRefresh: false, kbIndex);
+        return CreateOrReencounter(designModel, transaction, apiPlan, allowIntentionalContractRefresh: false, kbIndex, persistenceLog);
     }
 
     public static ApiPlanMetadataFileWriteResult CreateOrReencounter(
@@ -52,7 +57,8 @@ internal static class ApiPlanMetadataFileWriter
         Transaction transaction,
         ApiPlan apiPlan,
         bool allowIntentionalContractRefresh,
-        ApiPlanKbObjectNameIndex kbIndex)
+        ApiPlanKbObjectNameIndex kbIndex,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         if (designModel is null)
         {
@@ -92,7 +98,21 @@ internal static class ApiPlanMetadataFileWriter
         SetExtractionFlags(file);
         file.BlobPart.SetPropertyValue("FileName", externalFileName);
         file.BlobPart.Data = BinaryStream.FromBytes(bytes);
-        file.Save();
+        var expectedSha256 = ComputeSha256(bytes);
+        var receipt = ApiPlanSaveBoundaryProbe.Persist(
+            PersistenceFaultPoint.MetadataSave,
+            "Save",
+            "File",
+            "B060",
+            file.Name,
+            new FileIdentity(file.Guid, apiPlan.MetadataFileName, expectedSha256),
+            file.Save,
+            () => ConfirmMetadataFile(designModel, apiPlan, file, bytes, externalFileName));
+        if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
+        {
+            throw new InvalidOperationException(
+                $"Persistência da metadata '{apiPlan.MetadataFileName}' não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.");
+        }
 
         var persisted = WikiFileKBObject.GetAll(designModel)
             .Single(item => string.Equals(item.Name, apiPlan.MetadataFileName, StringComparison.OrdinalIgnoreCase));
@@ -114,9 +134,46 @@ internal static class ApiPlanMetadataFileWriter
             preflight.ExistingFile is null ? ApiPlanMetadataFileWriteStatus.Created : ApiPlanMetadataFileWriteStatus.Reencountered,
             SchemaVersion,
             bytes.Length,
-            ComputeSha256(bytes),
+            expectedSha256,
             B067IntegrityVersion,
             ComputePlannedContractHash(apiPlan));
+    }
+
+    private static PersistenceConfirmation ConfirmMetadataFile(
+        KBModel designModel,
+        ApiPlan apiPlan,
+        WikiFileKBObject file,
+        byte[] expectedBytes,
+        string expectedExternalFileName)
+    {
+        try
+        {
+            var matches = WikiFileKBObject.GetAll(designModel)
+                .Where(item => string.Equals(item.Name, apiPlan.MetadataFileName, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            if (matches.Length == 0)
+            {
+                return PersistenceConfirmation.Absent("File de metadata não foi reencontrado pelo nome exato.");
+            }
+
+            var persisted = matches.SingleOrDefault(item => item.Guid == file.Guid);
+            if (matches.Length != 1 || persisted is null)
+            {
+                return PersistenceConfirmation.Divergent(
+                    string.Join(",", matches.Select(item => item.Guid.ToString())),
+                    "A identidade do File de metadata divergiu do alvo planejado.");
+            }
+
+            var bytes = persisted.BlobPart?.Data?.GetBytes();
+            var externalFileName = persisted.BlobPart?.GetPropertyValue<string>("FileName");
+            return bytes is not null && bytes.SequenceEqual(expectedBytes) && string.Equals(externalFileName, expectedExternalFileName, StringComparison.Ordinal)
+                ? PersistenceConfirmation.Confirmed(persisted.Guid.ToString())
+                : PersistenceConfirmation.Divergent(persisted.Guid.ToString(), "Os bytes ou o nome externo persistido não correspondem ao contrato B060.");
+        }
+        catch (Exception exception)
+        {
+            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+        }
     }
 
     internal static string CreateOwnedDescription(ApiPlan apiPlan)
@@ -919,7 +976,7 @@ internal static class ApiPlanMetadataFileWriter
 
     private static string NormalizeForComparison(string? value) => (value ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n").Trim();
 
-    private static string ComputeSha256(byte[] bytes)
+    internal static string ComputeSha256(byte[] bytes)
     {
         using (var algorithm = SHA256.Create())
         {

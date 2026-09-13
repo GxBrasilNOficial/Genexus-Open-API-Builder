@@ -22,7 +22,8 @@ internal static class ApiPlanApiObjectWriter
         ApiPlanBusyProgressSession? progress = null,
         System.Action<Guid>? onApiSaveCompleted = null,
         System.Action<Guid>? onApiPhysicalSave = null,
-        System.Action? onApiSaveAttempted = null)
+        System.Action? onApiSaveAttempted = null,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         if (designModel is null)
         {
@@ -311,8 +312,25 @@ internal static class ApiPlanApiObjectWriter
         }
 
         onApiSaveAttempted?.Invoke();
-        api.Save();
-        onApiPhysicalSave?.Invoke(api.Guid);
+        var receipt = ApiPlanSaveBoundaryProbe.Persist(
+            PersistenceFaultPoint.ApiSave,
+            "Save",
+            "API",
+            isB055ApiObject ? "B055" : "B054",
+            api.Name,
+            new GuidIdentity(api.Guid),
+            () =>
+            {
+                api.Save();
+                onApiPhysicalSave?.Invoke(api.Guid);
+            },
+            () => ConfirmApiObject(designModel, api, apiPlan, isB055ApiObject));
+        if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
+        {
+            throw new InvalidOperationException(
+                $"Persistência do API Object '{api.Name}' não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.");
+        }
+
         var persisted = RequirePersistedApiObject(designModel, api.Guid, apiPlan.ApiName, isB055ApiObject ? "B055" : "B054");
         var persistedSource = ApiPlanBusinessComponentWriter.NormalizeForComparison(persisted.ServiceGroupSource.Source);
         var sourceMatchesContract = isB055ApiObject
@@ -328,6 +346,43 @@ internal static class ApiPlanApiObjectWriter
         return new ApiPlanApiObjectWriteCoreResult(
             context.ApiWasCreated ? ApiPlanApiObjectWriteStatus.Created : ApiPlanApiObjectWriteStatus.Reencountered,
             persisted.Guid);
+    }
+
+    private static PersistenceConfirmation ConfirmApiObject(
+        KBModel designModel,
+        API api,
+        ApiPlan apiPlan,
+        bool isB055ApiObject)
+    {
+        try
+        {
+            var persisted = API.Get(designModel, api.Guid);
+            if (persisted is null)
+            {
+                return PersistenceConfirmation.Absent("API Object não foi reencontrado pelo GUID.");
+            }
+
+            if (!string.Equals(persisted.Name, apiPlan.ApiName, StringComparison.OrdinalIgnoreCase))
+            {
+                return PersistenceConfirmation.Divergent(
+                    persisted.Guid.ToString(),
+                    $"O API Object persistido tem nome '{persisted.Name}', esperado '{apiPlan.ApiName}'.");
+            }
+
+            var persistedSource = ApiPlanBusinessComponentWriter.NormalizeForComparison(persisted.ServiceGroupSource.Source);
+            var sourceMatchesContract = isB055ApiObject
+                ? ApiPlanBusinessComponentWriter.IsB055ServiceGroupSource(apiPlan, persistedSource)
+                : ApiPlanBusinessComponentWriter.IsB054ServiceGroupSource(apiPlan, persistedSource);
+            return sourceMatchesContract
+                ? PersistenceConfirmation.Confirmed(persisted.Guid.ToString())
+                : PersistenceConfirmation.Divergent(
+                    persisted.Guid.ToString(),
+                    "O Service Source persistido não corresponde ao contrato planejado.");
+        }
+        catch (Exception exception)
+        {
+            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+        }
     }
 
     internal static API RequirePersistedApiObject(

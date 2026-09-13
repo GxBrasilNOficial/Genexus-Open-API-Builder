@@ -30,7 +30,8 @@ public sealed class ApiPlanApplicationFinalReport
         Guid? persistedMainObjectGuid = null,
         string? finalApiWriter = null,
         int apiSaveCount = 0,
-        bool apiSaveAttempted = false)
+        bool apiSaveAttempted = false,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         Operation = operation ?? throw new ArgumentNullException(nameof(operation));
         TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
@@ -51,6 +52,7 @@ public sealed class ApiPlanApplicationFinalReport
         FinalApiWriter = finalApiWriter;
         ApiSaveCount = apiSaveCount;
         ApiSaveAttempted = apiSaveAttempted;
+        PersistenceLog = persistenceLog;
     }
 
     public string Operation { get; }
@@ -91,6 +93,12 @@ public sealed class ApiPlanApplicationFinalReport
 
     public bool ApiSaveAttempted { get; }
 
+    public ApiPlanPersistenceLog? PersistenceLog { get; }
+
+    public IReadOnlyList<PersistenceReceipt> PersistenceReceipts => PersistenceLog?.Receipts ?? Array.Empty<PersistenceReceipt>();
+
+    public IReadOnlyList<PersistenceStageFailure> PersistenceStageFailures => PersistenceLog?.StageFailures ?? Array.Empty<PersistenceStageFailure>();
+
     public int CreatedCount => Created.Count;
 
     public int UpdatedCount => Updated.Count;
@@ -109,7 +117,7 @@ public sealed class ApiPlanApplicationFinalReport
         builder.Append($"PlannedApiName='{PlannedApiName ?? string.Empty}', PersistedMainObjectName='{PersistedMainObjectName ?? string.Empty}', PersistedMainObjectGuid='{PersistedMainObjectGuid?.ToString() ?? string.Empty}', ");
         builder.Append($"FinalApiWriter='{FinalApiWriter ?? string.Empty}', ApiSaveAttempted={ApiSaveAttempted}, ApiSaveCount={ApiSaveCount}, ");
         builder.Append($"Resultado='{Outcome}', Criados={CreatedCount}, Atualizados={UpdatedCount}, Removidos={DeletedCount}, ");
-        builder.Append($"Bloqueados={BlockedCount}, Avisos={WarningCount}, DuraçãoMs={(int)Elapsed.TotalMilliseconds}, Título='{Headline}'.");
+        builder.Append($"Bloqueados={BlockedCount}, Avisos={WarningCount}, PersistenceReceipts={PersistenceReceipts.Count}, PersistenceStageFailures={PersistenceStageFailures.Count}, DuraçãoMs={(int)Elapsed.TotalMilliseconds}, Título='{Headline}'.");
         return builder.ToString();
     }
 
@@ -142,6 +150,15 @@ public sealed class ApiPlanApplicationFinalReport
             }
             builder.AppendLine($"Tentativa de salvamento do API Object: {(ApiSaveAttempted ? "sim" : "não")}");
             builder.AppendLine($"Salvamentos do API Object: {ApiSaveCount}");
+        }
+
+        if (PersistenceLog is not null)
+        {
+            builder.AppendLine($"Recibos de persistência ({PersistenceReceipts.Count}):");
+            foreach (var line in PersistenceLog.BuildOutputLines())
+            {
+                builder.AppendLine("  " + line);
+            }
         }
 
         builder.AppendLine(Localize($"Tempo: {FormatElapsed(Elapsed)}"));
@@ -291,6 +308,7 @@ public sealed class ApiPlanApplicationFinalReportCollector
     private string[] _updatedKeys = Array.Empty<string>();
     private string[] _deletedKeys = Array.Empty<string>();
     private string[] _warningKeys = Array.Empty<string>();
+    private ApiPlanPersistenceLog? _persistenceLog;
 
     public ApiPlanApplicationFinalReportCollector(string operation, string transactionName, string? apiName)
     {
@@ -320,6 +338,13 @@ public sealed class ApiPlanApplicationFinalReportCollector
     public int ApiSaveCount { get; private set; }
 
     public bool ApiSaveAttempted { get; private set; }
+
+    public ApiPlanPersistenceLog? PersistenceLog => _persistenceLog;
+
+    public void SetPersistenceLog(ApiPlanPersistenceLog? persistenceLog)
+    {
+        _persistenceLog = persistenceLog;
+    }
 
     public bool ApiSavePathEntered { get; private set; }
 
@@ -514,7 +539,8 @@ public sealed class ApiPlanApplicationFinalReportCollector
             PersistedMainObjectGuid,
             FinalApiWriter,
             ApiSaveCount,
-            ApiSaveAttempted);
+            ApiSaveAttempted,
+            _persistenceLog);
     }
 
     private ApiPlanApplicationFinalOutcome ResolveOutcome()

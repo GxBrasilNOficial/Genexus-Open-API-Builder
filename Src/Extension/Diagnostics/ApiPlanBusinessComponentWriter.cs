@@ -32,7 +32,8 @@ internal static class ApiPlanBusinessComponentWriter
         System.Action<string, string, long>? onSaveCompleted = null,
         System.Action<Guid>? onApiSaveCompleted = null,
         System.Action<Guid>? onApiPhysicalSave = null,
-        System.Action? onApiSaveAttempted = null)
+        System.Action? onApiSaveAttempted = null,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         if (model is null) throw new ArgumentNullException(nameof(model));
         if (transaction is null) throw new ArgumentNullException(nameof(transaction));
@@ -108,53 +109,27 @@ internal static class ApiPlanBusinessComponentWriter
             kbIndex,
             onSdtWrite,
             progress,
-            ApiPlanSdtWriter.WriteMode.StrictReencounter);
+            ApiPlanSdtWriter.WriteMode.StrictReencounter,
+            persistenceLog: persistenceLog);
         progress?.PumpAndThrowIfAbortRequested();
         var transactionFolder = apiContext?.TransactionFolder ?? ApiPlanTransactionFolder.GetOrReencounterStrict(model, transaction, plan);
 
-        var saveSteps = new List<(string Label, System.Action Save, Func<string> Snapshot)>
+        var saveSteps = new List<ApiPlanSaveStep>
         {
-            (get.Name, () => SaveProcedure(model, kbIndex, get, getContent, getVariables, getRules), () => ApiPlanSaveBoundaryProbe.Snapshot(get)),
-            (create.Name, () => SaveProcedure(model, kbIndex, create, createContent, createVariables, createRules), () => ApiPlanSaveBoundaryProbe.Snapshot(create)),
-            (update.Name, () => SaveProcedure(model, kbIndex, update, updateContent, updateVariables, updateRules), () => ApiPlanSaveBoundaryProbe.Snapshot(update)),
+            CreateProcedureSaveStep(model, kbIndex, plan, get, getContent, getVariables, getRules),
+            CreateProcedureSaveStep(model, kbIndex, plan, create, createContent, createVariables, createRules),
+            CreateProcedureSaveStep(model, kbIndex, plan, update, updateContent, updateVariables, updateRules),
         };
         if (delete is not null && deleteContent is not null && deleteRules is not null && deleteVariables is not null)
         {
-            saveSteps.Add((delete.Name, () => SaveProcedure(model, kbIndex, delete, deleteContent, deleteVariables, deleteRules), () => ApiPlanSaveBoundaryProbe.Snapshot(delete)));
+            saveSteps.Add(CreateProcedureSaveStep(model, kbIndex, plan, delete, deleteContent, deleteVariables, deleteRules));
         }
         if (apiContext is null || (apiContext.PersistApiObject && string.Equals(apiContext.FinalWriter, "Business Component", StringComparison.Ordinal)))
         {
-            saveSteps.Add((api.Name, () => SaveApi(model, kbIndex, api, transactionFolder, plan, apiSource, apiVariables, onApiSaveCompleted, onApiPhysicalSave, onApiSaveAttempted), () => ApiPlanSaveBoundaryProbe.Snapshot(api)));
+            saveSteps.Add(CreateApiSaveStep(model, kbIndex, plan, api, transactionFolder, apiSource, apiVariables, onApiSaveCompleted, onApiPhysicalSave, onApiSaveAttempted));
         }
 
-        var saveIndex = 0;
-        foreach (var step in saveSteps)
-        {
-            progress?.ThrowIfAbortRequested();
-            saveIndex++;
-            var beforePumpSnapshot = step.Item3();
-            progress?.Report("Business Component", saveIndex, saveSteps.Count, step.Label);
-            progress?.Pump();
-            var afterPumpSnapshot = step.Item3();
-            ApiPlanSaveBoundaryProbe.PumpBoundary("Business Component", step.Label, beforePumpSnapshot, afterPumpSnapshot);
-            ApiPlanSaveBoundaryProbe.BeforeSave("Business Component", step.Label, afterPumpSnapshot);
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            try
-            {
-                step.Save();
-                // O relogio para aqui: o fingerprint da sonda nao pode entrar no tempo do Save.
-                sw.Stop();
-                ApiPlanSaveBoundaryProbe.Saved("Business Component", step.Label, step.Snapshot());
-                onSaveCompleted?.Invoke("Business Component", step.Label, sw.ElapsedMilliseconds);
-            }
-            catch (Exception exception)
-            {
-                ApiPlanSaveBoundaryProbe.Failed("Business Component", step.Label, exception, step.Snapshot());
-                throw;
-            }
-
-            progress?.Report("Business Component", saveIndex, saveSteps.Count, step.Label, sw.ElapsedMilliseconds);
-        }
+        ApiPlanSaveStepExecutor.Execute(saveSteps, progress, onSaveCompleted);
 
         return new ApiPlanBusinessComponentWriteResult(get.Guid, create.Guid, update.Guid, api.Guid, plan.PrimaryKey.Count, plan.CreateRequestFields.Count, plan.UpdateRequestFields.Count, plan.ResponseFields.Count, delete is null ? Guid.Empty : delete.Guid);
     }
@@ -571,7 +546,52 @@ internal static class ApiPlanBusinessComponentWriter
         return string.Equals(RemoveWhitespace(source), RemoveWhitespace(expectedSource), StringComparison.Ordinal);
     }
 
-    private static void SaveProcedure(KBModel model, ApiPlanKbObjectNameIndex kbIndex, Procedure procedure, string content, IReadOnlyList<VariableSpec> variables, string rules)
+    private static ApiPlanSaveStep CreateProcedureSaveStep(
+        KBModel model,
+        ApiPlanKbObjectNameIndex kbIndex,
+        ApiPlan plan,
+        Procedure procedure,
+        string content,
+        IReadOnlyList<VariableSpec> variables,
+        string rules)
+    {
+        return new ApiPlanSaveStep(
+            procedure.Name,
+            "Procedure",
+            "Business Component",
+            new CompositeIdentity(
+                procedure.Name,
+                "Procedure",
+                "Generated",
+                procedure.Description,
+                plan.TransactionGuid,
+                procedure.Guid),
+            PersistenceFaultPoint.ProcedureSave,
+            () => PrepareProcedure(model, kbIndex, procedure, variables, rules, content),
+            () =>
+            {
+                try
+                {
+                    procedure.Save();
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(
+                        $"B071-B073/B079 falhou ao salvar a Procedure '{procedure.Name}': {ex.Message}. {DescribeProcedureSaveState(procedure, variables)}",
+                        ex);
+                }
+            },
+            () => ConfirmProcedure(model, kbIndex, procedure, content, variables, rules),
+            () => ApiPlanSaveBoundaryProbe.Snapshot(procedure));
+    }
+
+    private static void PrepareProcedure(
+        KBModel model,
+        ApiPlanKbObjectNameIndex kbIndex,
+        Procedure procedure,
+        IReadOnlyList<VariableSpec> variables,
+        string rules,
+        string content)
     {
         ReplaceVariables(model, kbIndex, procedure, variables);
         procedure.Rules.Source = rules;
@@ -580,31 +600,38 @@ internal static class ApiPlanBusinessComponentWriter
             "Business Component",
             procedure,
             variables.Select(variable => variable.Name + ":" + variable.DataType));
+    }
+
+    private static PersistenceConfirmation ConfirmProcedure(
+        KBModel model,
+        ApiPlanKbObjectNameIndex kbIndex,
+        Procedure procedure,
+        string content,
+        IReadOnlyList<VariableSpec> variables,
+        string rules)
+    {
         try
         {
-            procedure.Save();
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException(
-                $"B071-B073/B079 falhou ao salvar a Procedure '{procedure.Name}': {ex.Message}. {DescribeProcedureSaveState(procedure, variables)}",
-                ex);
-        }
+            var persisted = Procedure.Get(model, procedure.Guid);
+            if (persisted is null)
+            {
+                return PersistenceConfirmation.Absent("Procedure não foi reencontrada pelo GUID.");
+            }
 
-        var persisted = Procedure.Get(model, procedure.Guid);
-        if (!HasEquivalentGeneratedSource(persisted.ProcedurePart.Source, content))
-        {
-            throw new InvalidOperationException($"B055 bloqueado: a Procedure '{procedure.Name}' foi salva, mas o Source persistido nao corresponde ao conteudo Business Component planejado. Nenhuma outra alteracao sera feita.");
-        }
+            if (!HasEquivalentGeneratedSource(persisted.ProcedurePart.Source, content)
+                || !string.Equals(NormalizeForComparison(persisted.Rules.Source), NormalizeForComparison(rules), StringComparison.Ordinal)
+                || !HasExpectedVariables(model, kbIndex, persisted, variables))
+            {
+                return PersistenceConfirmation.Divergent(
+                    persisted.Guid.ToString(),
+                    $"Procedure '{procedure.Name}' não corresponde ao contrato Business Component planejado.");
+            }
 
-        if (!string.Equals(NormalizeForComparison(persisted.Rules.Source), NormalizeForComparison(rules), StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException($"B055 bloqueado: a Procedure '{procedure.Name}' foi salva, mas as Rules persistidas nao correspondem ao conteudo Business Component planejado. Nenhuma outra alteracao sera feita.");
+            return PersistenceConfirmation.Confirmed(persisted.Guid.ToString());
         }
-
-        if (!HasExpectedVariables(model, kbIndex, persisted, variables))
+        catch (Exception exception)
         {
-            throw new InvalidOperationException($"B055 bloqueado: a Procedure '{procedure.Name}' foi salva, mas as variaveis persistidas nao correspondem ao contrato Business Component planejado. Nenhuma outra alteracao sera feita.");
+            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
         }
     }
 
@@ -641,29 +668,85 @@ internal static class ApiPlanBusinessComponentWriter
             .Take(40));
     }
 
-    private static void SaveApi(KBModel model, ApiPlanKbObjectNameIndex kbIndex, API api, Folder transactionFolder, ApiPlan plan, string source, IReadOnlyList<VariableSpec> variables, System.Action<Guid>? onApiSaveCompleted, System.Action<Guid>? onApiPhysicalSave, System.Action? onApiSaveAttempted)
+    private static ApiPlanSaveStep CreateApiSaveStep(
+        KBModel model,
+        ApiPlanKbObjectNameIndex kbIndex,
+        ApiPlan plan,
+        API api,
+        Folder transactionFolder,
+        string source,
+        IReadOnlyList<VariableSpec> variables,
+        System.Action<Guid>? onApiSaveCompleted,
+        System.Action<Guid>? onApiPhysicalSave,
+        System.Action? onApiSaveAttempted)
+    {
+        return new ApiPlanSaveStep(
+            api.Name,
+            "API",
+            "Business Component",
+            new GuidIdentity(api.Guid),
+            PersistenceFaultPoint.ApiSave,
+            () => PrepareApi(api, transactionFolder, plan, model, kbIndex, source, variables),
+            () =>
+            {
+                onApiSaveAttempted?.Invoke();
+                api.Save();
+                onApiPhysicalSave?.Invoke(api.Guid);
+            },
+            () => ConfirmApi(model, kbIndex, api, plan, variables, onApiSaveCompleted),
+            () => ApiPlanSaveBoundaryProbe.Snapshot(api));
+    }
+
+    private static void PrepareApi(
+        API api,
+        Folder transactionFolder,
+        ApiPlan plan,
+        KBModel model,
+        ApiPlanKbObjectNameIndex kbIndex,
+        string source,
+        IReadOnlyList<VariableSpec> variables)
     {
         api.Parent = transactionFolder;
         api.ServiceGroupSource.Source = source;
         api.Events.Source = CreateB079ApiEventsForPlan(plan);
         ReplaceVariables(model, kbIndex, api, variables);
         ApiPlanSaveBoundaryProbe.PreparedApi("Business Component", api);
-        onApiSaveAttempted?.Invoke();
-        api.Save();
-        onApiPhysicalSave?.Invoke(api.Guid);
+    }
 
-        var persisted = ApiPlanApiObjectWriter.RequirePersistedApiObject(model, api.Guid, plan.ApiName, "B055");
-        if (!IsB055ServiceGroupSource(plan, NormalizeForComparison(persisted.ServiceGroupSource.Source)))
+    private static PersistenceConfirmation ConfirmApi(
+        KBModel model,
+        ApiPlanKbObjectNameIndex kbIndex,
+        API api,
+        ApiPlan plan,
+        IReadOnlyList<VariableSpec> variables,
+        System.Action<Guid>? onApiSaveCompleted)
+    {
+        try
         {
-            throw new InvalidOperationException($"B055 bloqueado: o API Object '{api.Name}' foi salvo, mas o Service Source persistido nao corresponde ao contrato API/Procedure planejado. Nenhuma outra alteracao sera feita.");
-        }
+            var existing = API.Get(model, api.Guid);
+            if (existing is null)
+            {
+                return PersistenceConfirmation.Absent("API Object não foi reencontrado pelo GUID.");
+            }
 
-        if (!HasExpectedVariables(model, kbIndex, persisted, variables) || !HasExpectedApiEvents(persisted, plan))
+            var persisted = ApiPlanApiObjectWriter.RequirePersistedApiObject(model, api.Guid, api.Name, "B055");
+
+            if (!IsB055ServiceGroupSource(plan, NormalizeForComparison(persisted.ServiceGroupSource.Source))
+                || !HasExpectedVariables(model, kbIndex, persisted, variables)
+                || !HasExpectedApiEvents(persisted, plan))
+            {
+                return PersistenceConfirmation.Divergent(
+                    persisted.Guid.ToString(),
+                    $"API Object '{api.Name}' não corresponde ao contrato API/Procedure planejado.");
+            }
+
+            onApiSaveCompleted?.Invoke(persisted.Guid);
+            return PersistenceConfirmation.Confirmed(persisted.Guid.ToString());
+        }
+        catch (Exception exception)
         {
-            throw new InvalidOperationException($"B055 bloqueado: o API Object '{api.Name}' foi salvo, mas eventos ou variaveis persistidas nao correspondem ao contrato API/Procedure planejado. Nenhuma outra alteracao sera feita.");
+            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
         }
-
-        onApiSaveCompleted?.Invoke(persisted.Guid);
     }
 
     private static void ValidateProcedureVariableSpecs(KBModel model, ApiPlanKbObjectNameIndex kbIndex, Procedure procedure, IReadOnlyList<VariableSpec> variables)

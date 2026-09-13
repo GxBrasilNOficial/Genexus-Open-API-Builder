@@ -97,8 +97,8 @@ Assert-True ($recovery -match 'IsOwnedSdt') 'O inventário de SDTs deve confirma
 
 # --- 9. Nada além do File é gravado --------------------------------------------------------
 Assert-False ($recovery -match '(?m)^\s*(?!//).*\b(apiObject|procedure|sdt)\.Save\(\)') 'A recuperação não pode salvar API Object, Procedure ou SDT.'
-$saveCount = ([regex]::Matches($recovery, '\.Save\(\)')).Count
-Assert-True ($saveCount -eq 1) "A recuperação deve conter exatamente um Save(), o do File de metadata; encontrados $saveCount."
+$saveCount = ([regex]::Matches($recovery, '\bfile\.Save\b')).Count
+Assert-True ($saveCount -eq 1) "A recuperação deve conter exatamente um delegate file.Save, o do File de metadata; encontrados $saveCount."
 
 # --- 9b. Metadata existente: só a importada com API Object trocado é regravável ------------
 # Em 2026-09-06 a metadata recuperada guardou o apiGuid do momento; o API Object foi removido

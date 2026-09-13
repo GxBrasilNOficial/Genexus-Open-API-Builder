@@ -276,7 +276,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B117 | Reavaliar a localização da saída e do asset da DLL satélite GeneXus 18 U13, hoje em `artifacts/gx18u13`, e documentar um caminho mais intuitivo sem misturá-la à DLL canônica U14+ | Baixa — candidato a manutenção futura; sem impacto funcional imediato |
 | B118 | Tornar o build local da extensão, especialmente a DLL satélite GeneXus 18 U13, reproduzível dentro de sessões do Codex sem copiar comandos para um PowerShell externo | Média — candidato a manutenção futura; depende de definir o perfil de permissões do Codex e validar a execução no contexto correto; sem mudança de ACL por padrão |
 | B119 | Auditar e remover variáveis locais sem uso efetivo no código C#, começando por `b111ManagedApply` no fluxo de Sync | Baixa — manutenção futura, sem mudança de comportamento esperada; plano em [`Docs/Implementation/B119-LIMPEZA-VARIAVEIS-SEM-USO.md`](../Implementation/B119-LIMPEZA-VARIAVEIS-SEM-USO.md) |
-| B120 | Normalizar o envelope HTTP do serviço `List` entre .NET Framework/SQL Server e .NET/PostgreSQL, preservando o `ErrorResponse` público | Urgente — bloqueia o aceite HTTP multiplataforma; aberto em 2026-09-10, a retenção até o encerramento da sprint `S-B111` foi superada e o item segue aberto para retomada conforme o checkpoint; a avaliação da F2 continua sendo a próxima ação única; plano em [`Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`](../Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md) |
+| B120 | Normalizar o envelope HTTP do serviço `List` entre .NET Framework/SQL Server e .NET/PostgreSQL, preservando o `ErrorResponse` público | Urgente — bloqueia o aceite HTTP multiplataforma; aberto em 2026-09-10, a retenção até o encerramento da sprint `S-B111` foi superada e o item segue aberto para retomada conforme o checkpoint; o aceite da F2 na IDE é a próxima ação única; plano em [`Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`](../Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md) |
 | B121 | Tornar explícita a seleção das etapas `Business Component` e `List` no Sync, sem inferir a intenção pela lista de serviços | Média — melhoria futura, fora da sprint `S-B111`; os perfis Sync sem BC/List, somente BC e BC+List foram aceitos na F1, enquanto o perfil somente List isolado é a exceção formal transferida para este item e permanece não comprovado até sua implementação. Evidência IDE em 2026-09-11: no Sync de `Contrato`, sem opção de BC e com `ContratoObservacao` marcado somente em `Response`, o Output executou BC (`Get/Create/Update`) antes de List; `FinalWriter='List'`, `ApiSaveCount=1`, `Bloqueados=0`. O perfil somente List não foi comprovado. Plano: [`Docs/Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md`](../Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md) |
 
 ### Nota operacional — B118
@@ -313,6 +313,15 @@ Sync somente List não foi comprovado isoladamente. O aceite e a reconciliação
 `Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`;
 a revisão por pares não foi encerrada e B109, B110, B112, B113 e B114 permanecem fora da
 S-B111.
+
+**Atualização da S-B111 — 2026-09-12.** A implementação local da F2 foi concluída com bateria
+offline e build Release aprovados. O cenário positivo do `Wizard` para `Laudo`, com `List`,
+`Get`, `Create`, `Update`, `Business Component` apto e `FinalWriter='List'`, foi aceito na IDE:
+`ApiSaveCount=1`, `PersistenceReceipts=10`, `PersistenceStageFailures=0`, `Bloqueados=0` e
+recibos confirmados. A F2 permanece aberta para falhas controladas e habilitação diferida de
+Business Component. O relatório contém a ressalva conhecida de listar SDTs reencontrados sem
+gravação física em `Atualizados=14`; a correção dessa contagem foi deliberadamente postergada.
+Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 
 **B106 — concluído em 2026-08-24.** O roteiro foi atualizado para a Alpha `0.1.0-alpha.4`, passou a registrar o checkbox de repasse das mensagens do Business Component e aponta para as notas da Alpha 4. A captura de Segurança foi explicitamente marcada como referência visual anterior; uma nova captura da UI permanece uma melhoria visual separada, sem bloquear a documentação textual.
 

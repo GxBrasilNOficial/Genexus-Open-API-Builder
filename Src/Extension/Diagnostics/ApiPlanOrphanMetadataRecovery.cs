@@ -219,7 +219,8 @@ internal static class ApiPlanOrphanMetadataRecovery
     public static OrphanMetadataRecoveryResult Recover(
         KBModel designModel,
         Transaction transaction,
-        OrphanMetadataRecoveryPlan plan)
+        OrphanMetadataRecoveryPlan plan,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         if (designModel is null)
         {
@@ -258,7 +259,21 @@ internal static class ApiPlanOrphanMetadataRecovery
         file.SetPropertyValue("NetExtract", false);
         file.BlobPart.SetPropertyValue("FileName", plan.MetadataFileName + ".json");
         file.BlobPart.Data = BinaryStream.FromBytes(bytes);
-        file.Save();
+        var expectedSha256 = ApiPlanMetadataFileWriter.ComputeSha256(bytes);
+        var receipt = ApiPlanSaveBoundaryProbe.Persist(
+            PersistenceFaultPoint.B115MetadataSave,
+            "Save",
+            "File",
+            "B115",
+            file.Name,
+            new FileIdentity(file.Guid, plan.MetadataFileName, expectedSha256),
+            file.Save,
+            () => ConfirmRecoveryFile(designModel, plan, file, bytes));
+        if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
+        {
+            throw new InvalidOperationException(
+                $"Persistência da metadata B115 '{plan.MetadataFileName}' não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.");
+        }
 
         var persisted = WikiFileKBObject.GetAll(designModel)
             .Single(item => string.Equals(item.Name, plan.MetadataFileName, StringComparison.OrdinalIgnoreCase));
@@ -276,6 +291,41 @@ internal static class ApiPlanOrphanMetadataRecovery
             plan.ProcedureNames.Count,
             plan.OwnSdtNames.Count,
             plan.SharedSdtNames.Count);
+    }
+
+    private static PersistenceConfirmation ConfirmRecoveryFile(
+        KBModel designModel,
+        OrphanMetadataRecoveryPlan plan,
+        WikiFileKBObject file,
+        byte[] expectedBytes)
+    {
+        try
+        {
+            var matches = WikiFileKBObject.GetAll(designModel)
+                .Where(item => string.Equals(item.Name, plan.MetadataFileName, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            if (matches.Length == 0)
+            {
+                return PersistenceConfirmation.Absent("File de recuperação não foi reencontrado pelo nome exato.");
+            }
+
+            var persisted = matches.SingleOrDefault(item => item.Guid == file.Guid);
+            if (matches.Length != 1 || persisted is null)
+            {
+                return PersistenceConfirmation.Divergent(
+                    string.Join(",", matches.Select(item => item.Guid.ToString())),
+                    "A identidade do File de recuperação divergiu do alvo planejado.");
+            }
+
+            var bytes = persisted.BlobPart?.Data?.GetBytes();
+            return bytes is not null && bytes.SequenceEqual(expectedBytes)
+                ? PersistenceConfirmation.Confirmed(persisted.Guid.ToString())
+                : PersistenceConfirmation.Divergent(persisted.Guid.ToString(), "Os bytes persistidos não correspondem ao contrato B115.");
+        }
+        catch (Exception exception)
+        {
+            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+        }
     }
 
     /// <summary>

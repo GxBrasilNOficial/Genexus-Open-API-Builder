@@ -619,6 +619,9 @@ public sealed class Package : AbstractPackageUI
             var apiPlan = ApiPlanBuilder.Build(knowledgeBase.DesignModel, transaction, selection);
             var b111ManagedApply = selection.GenerateApiObject || selection.GenerateMetadata || selection.ApplyBusinessComponent || selection.ApplyList;
             var report = new ApiPlanApplicationFinalReportCollector("Sincronizar", transaction.Name, apiPlan.ApiName);
+            var persistenceLog = new ApiPlanPersistenceLog();
+            using var persistenceScope = ApiPlanSaveBoundaryProbe.BeginPersistence(persistenceLog);
+            report.SetPersistenceLog(persistenceLog);
             var stopwatch = Stopwatch.StartNew();
             AppendPlanWarnings(report, apiPlan);
             // B082: mede o custo das varreduras de catalogo ao longo do Sync que escreve.
@@ -885,6 +888,7 @@ public sealed class Package : AbstractPackageUI
         // Declarado fora do try para o catch enxergar o que já saiu da KB quando a remoção
         // é interrompida no meio.
         var deletedBeforeFailure = new List<string>();
+        ApiPlanPersistenceLog? persistenceLog = null;
         try
         {
             var owner = ResolveFinalReportOwner();
@@ -932,6 +936,8 @@ public sealed class Package : AbstractPackageUI
                 return true;
             }
 
+            persistenceLog = new ApiPlanPersistenceLog();
+            using var persistenceScope = ApiPlanSaveBoundaryProbe.BeginPersistence(persistenceLog);
             var stopwatch = Stopwatch.StartNew();
             ApiPlanGeneratedApiRemovalResult result;
             // `deletedBeforeFailure` é preenchido durante a remoção: numa interrupção, é a
@@ -941,7 +947,7 @@ public sealed class Package : AbstractPackageUI
                 WriteOutput($"[Genexus Open API Builder][B082] Remover iniciado: Transaction='{transaction.Name}', PlannedDeletes={ApiPlanGeneratedApiRemover.CountPlannedDeletes(plan)}.");
                 try
                 {
-                    result = ApiPlanGeneratedApiRemover.Remove(knowledgeBase.DesignModel, transaction, busy.Session, deletedBeforeFailure);
+                    result = ApiPlanGeneratedApiRemover.Remove(knowledgeBase.DesignModel, transaction, busy.Session, deletedBeforeFailure, persistenceLog);
                 }
                 catch (ApiPlanBusyAbortedException abortEx)
                 {
@@ -958,7 +964,7 @@ public sealed class Package : AbstractPackageUI
                     }
 
                     abortReport.AddBlocked("Remover", transaction.Name, "Abortado [B082]");
-                    ShowFinalReport(abortReport, stopwatch.Elapsed, knowledgeBase.DesignModel);
+                    ShowFinalReport(abortReport, stopwatch.Elapsed, knowledgeBase.DesignModel, persistenceLog: persistenceLog);
                     return true;
                 }
             }
@@ -973,7 +979,7 @@ public sealed class Package : AbstractPackageUI
             var report = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, result.Plan.ApiName);
             report.SetApiName(result.Plan.ApiName);
             report.AddDeletedItems(result.DeletedItems.ToArray());
-            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel);
+            ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, persistenceLog: persistenceLog);
         }
         catch (Exception ex)
         {
@@ -989,7 +995,7 @@ public sealed class Package : AbstractPackageUI
             }
 
             report.AddBlocked("Remover", transaction.Name, errorDetail);
-            ShowFinalReport(report, TimeSpan.Zero, knowledgeBase.DesignModel);
+            ShowFinalReport(report, TimeSpan.Zero, knowledgeBase.DesignModel, persistenceLog: persistenceLog);
         }
 
         return true;
@@ -1186,7 +1192,6 @@ public sealed class Package : AbstractPackageUI
                     snapshot,
                     businessComponentSnapshot,
                     preferencesLoadResult.Preferences,
-                    () => EnableBusinessComponentForWizard(transaction),
                     WriteOutput,
                     texts);
                 uiWatch.Stop();
@@ -1230,7 +1235,7 @@ public sealed class Package : AbstractPackageUI
             ? dialog.ShowDialog()
             : dialog.ShowDialog(wizardOwner);
         var businessComponentExitStatus = dialog.BusinessComponentEnabledDuringWizard
-            ? "Business Component foi habilitado por confirmacao explicita antes da saida; essa alteracao foi gravada na KB e nao foi revertida automaticamente."
+            ? "Habilitacao de Business Component foi confirmada em memoria; a gravacao na KB ocorrera depois do preflight agregado."
             : "Nenhuma alteracao foi feita na KB.";
 
         // O wizard único não emite mais Retry: a primeira aba oculta Voltar. O ramo permanece
@@ -1313,6 +1318,9 @@ public sealed class Package : AbstractPackageUI
         var saveBoundaryLog = new ApiPlanSaveBoundaryLog();
         using var saveBoundaryScope = ApiPlanSaveBoundaryProbe.Begin(saveBoundaryLog);
         using var saveBoundaryPublisher = new ApiPlanSaveBoundaryPublisher(saveBoundaryLog, "Wizard");
+        var persistenceLog = new ApiPlanPersistenceLog();
+        using var persistenceScope = ApiPlanSaveBoundaryProbe.BeginPersistence(persistenceLog);
+        report.SetPersistenceLog(persistenceLog);
         var suppressProgressPump = preferencesLoadResult!.Preferences.SuppressProgressPumpDuringSaves;
         try
         {
@@ -1410,7 +1418,8 @@ public sealed class Package : AbstractPackageUI
                     selection.GenerateMetadata,
                     selection.ApplyList,
                     selection.ApplyBusinessComponent,
-                    kbIndexForApply);
+                    kbIndexForApply,
+                    businessComponentEnablementPending: selection.BusinessComponentSelection.EnabledDuringWizard);
             }
             catch (Exception ex) when (ex is not ApiPlanBusyAbortedException)
             {
@@ -1429,6 +1438,23 @@ public sealed class Package : AbstractPackageUI
 
             WriteProbePhase("PreflightAgregado", phaseWatch.ElapsedMilliseconds);
             WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Preflight agregado aprovado antes do primeiro Save(): Transaction='{transaction.Name}', ConflictMode='{apiPlan.ConflictMode}', ReexecutionMode='{apiPlan.ReexecutionMode}'.");
+
+            if (selection.BusinessComponentSelection.EnabledDuringWizard && !transaction.IsBusinessComponent)
+            {
+                try
+                {
+                    PersistBusinessComponentEnablement(transaction);
+                }
+                catch (Exception ex) when (ex is not ApiPlanBusyAbortedException)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B035] Habilitacao de Business Component falhou depois do preflight agregado: Transaction='{transaction.Name}', Error='{ex.Message}'. Nenhum objeto dependente sera persistido.");
+                    report.AddBlocked("Business Component", "B035", ex.Message);
+                    stopwatch.Stop();
+                    WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
+                    ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan, persistenceLog);
+                    return true;
+                }
+            }
 
             phaseWatch.Restart();
             var sdtsReady = true;
@@ -1699,7 +1725,7 @@ public sealed class Package : AbstractPackageUI
         } // using dialog [B082]
     }
 
-    private static bool EnableBusinessComponentForWizard(Transaction transaction)
+    private static bool PersistBusinessComponentEnablement(Transaction transaction)
     {
         if (transaction is null)
         {
@@ -1708,8 +1734,31 @@ public sealed class Package : AbstractPackageUI
 
         if (!transaction.IsBusinessComponent)
         {
-            transaction.SetPropertyValue("idISBUSINESSCOMPONENT", true);
-            transaction.Save();
+            var receipt = ApiPlanSaveBoundaryProbe.Persist(
+                PersistenceFaultPoint.BusinessComponentEnablementSave,
+                "Save",
+                "Transaction",
+                "Business Component",
+                transaction.Name,
+                new GuidIdentity(transaction.Guid),
+                () =>
+                {
+                    transaction.SetPropertyValue("idISBUSINESSCOMPONENT", true);
+                    transaction.Save();
+                },
+                () => transaction.IsBusinessComponent
+                    ? PersistenceConfirmation.Confirmed(transaction.Guid.ToString())
+                    : PersistenceConfirmation.Divergent(transaction.Guid.ToString(), "A Transaction persistida continua sem Business Component."));
+            if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
+            {
+                throw new InvalidOperationException(
+                    $"Persistência da habilitação de Business Component não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.");
+            }
+
+            if (!transaction.IsBusinessComponent)
+            {
+                throw new InvalidOperationException("A Transaction continuou com Business Component desabilitado após o Save.");
+            }
         }
 
         return transaction.IsBusinessComponent;
@@ -1901,7 +1950,12 @@ public sealed class Package : AbstractPackageUI
                 "criado pela extensão como contêiner compartilhado de SDTs; preservado pela remoção de uma API");
         }
 
-        if (apiPlan.BusinessComponent.EnabledDuringWizard)
+        var businessComponentWasPersisted = report.PersistenceLog?.Receipts.Any(receipt =>
+            string.Equals(receipt.OperationKind, "Save", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(receipt.ObjectType, "Transaction", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(receipt.Stage, "Business Component", StringComparison.OrdinalIgnoreCase) &&
+            receipt.Outcome == PersistenceOutcome.Confirmed) == true;
+        if (apiPlan.BusinessComponent.EnabledDuringWizard && businessComponentWasPersisted)
         {
             report.AddUpdated(
                 "Transaction",
@@ -1925,13 +1979,19 @@ public sealed class Package : AbstractPackageUI
         ApiPlanApplicationFinalReportCollector collector,
         TimeSpan elapsed,
         KBModel? designModel,
-        ApiPlan? apiPlan = null)
+        ApiPlan? apiPlan = null,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         // B082: a apresentacao do relatorio roda dentro do escopo de medicao do Sync,
         // mas nao faz parte da operacao medida. Suspender evita atribuir a ela as
         // leituras de TryResolveMainObjectFromKb e de qualquer consulta futura daqui.
         using var scanSuspension = ApiPlanScanProbe.Suspend();
+        using var persistenceSuspension = ApiPlanSaveBoundaryProbe.SuspendPersistence();
         AppendPlanSideEffects(collector, apiPlan);
+        if (persistenceLog is not null)
+        {
+            collector.SetPersistenceLog(persistenceLog);
+        }
         TryResolveMainObjectFromKb(collector, designModel, apiPlan);
         var report = collector.Build(elapsed);
         WriteOutput(report.BuildOutputSummary());

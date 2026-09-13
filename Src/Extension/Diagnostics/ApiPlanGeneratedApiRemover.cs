@@ -28,7 +28,8 @@ internal static class ApiPlanGeneratedApiRemover
         KBModel designModel,
         Transaction transaction,
         ApiPlanBusyProgressSession? progress,
-        List<string>? deletedSink = null)
+        List<string>? deletedSink = null,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         if (designModel is null)
         {
@@ -81,7 +82,7 @@ internal static class ApiPlanGeneratedApiRemover
         phaseWatch.Restart();
         progress?.ThrowIfAbortRequested();
         current = ReportDelete(progress, current, total, "API Object", plan.ApiName, () =>
-            DeleteApiObject(designModel, plan, deleted, telemetry));
+            DeleteApiObject(designModel, plan, deleted, telemetry, persistenceLog));
         telemetry.MarkPhase("ApiObject", phaseWatch.ElapsedMilliseconds);
 
         phaseWatch.Restart();
@@ -89,19 +90,19 @@ internal static class ApiPlanGeneratedApiRemover
         {
             progress?.ThrowIfAbortRequested();
             current = ReportDelete(progress, current, total, "Procedure", name, () =>
-                DeleteSingleProcedure(designModel, name, deleted, telemetry));
+                DeleteSingleProcedure(designModel, name, deleted, telemetry, persistenceLog));
         }
 
         telemetry.MarkPhase("Procedures", phaseWatch.ElapsedMilliseconds);
 
         phaseWatch.Restart();
-        current = DeleteOwnSdtsResilientToOrder(designModel, plan, deleted, telemetry, progress, current, total);
+        current = DeleteOwnSdtsResilientToOrder(designModel, plan, deleted, telemetry, progress, current, total, persistenceLog);
         telemetry.MarkPhase("Sdts", phaseWatch.ElapsedMilliseconds);
 
         phaseWatch.Restart();
         progress?.ThrowIfAbortRequested();
         current = ReportDelete(progress, current, total, "File", metadataFile.Name, () =>
-            DeleteMetadataFile(designModel, metadataFile, deleted, telemetry));
+            DeleteMetadataFile(designModel, metadataFile, deleted, telemetry, persistenceLog));
         telemetry.MarkPhase("MetadataFile", phaseWatch.ElapsedMilliseconds);
 
         if (plan.FolderWasCreated && !string.IsNullOrWhiteSpace(plan.FolderName))
@@ -109,7 +110,7 @@ internal static class ApiPlanGeneratedApiRemover
             phaseWatch.Restart();
             progress?.ThrowIfAbortRequested();
             ReportDelete(progress, current, total, "Folder", plan.FolderName!, () =>
-                MaybeDeleteFolder(designModel, plan, deleted, telemetry));
+                MaybeDeleteFolder(designModel, plan, deleted, telemetry, persistenceLog));
             telemetry.MarkPhase("Folder", phaseWatch.ElapsedMilliseconds);
         }
 
@@ -161,7 +162,8 @@ internal static class ApiPlanGeneratedApiRemover
         ApiPlanScanTelemetry telemetry,
         ApiPlanBusyProgressSession? progress,
         int current,
-        int total)
+        int total,
+        ApiPlanPersistenceLog? persistenceLog)
     {
         var pending = new List<string>(plan.OwnSdtNames);
         var lastErrors = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -179,7 +181,7 @@ internal static class ApiPlanGeneratedApiRemover
                 try
                 {
                     current = ReportDelete(progress, current, total, "SDT", name, () =>
-                        DeleteSingleOwnSdt(designModel, plan, name, deleted, telemetry));
+                        DeleteSingleOwnSdt(designModel, plan, name, deleted, telemetry, persistenceLog));
                     deletedInPass++;
                     lastErrors.Remove(name);
                 }
@@ -544,7 +546,8 @@ internal static class ApiPlanGeneratedApiRemover
         KBModel designModel,
         string name,
         List<string> deleted,
-        ApiPlanScanTelemetry? telemetry = null)
+        ApiPlanScanTelemetry? telemetry = null,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         ValidateProcedureTarget(designModel, name, beforeAnyDelete: false, kbIndex: null, telemetry);
 
@@ -553,15 +556,32 @@ internal static class ApiPlanGeneratedApiRemover
             .ToArray());
         if (matches.Length == 0)
         {
+            ApiPlanSaveBoundaryProbe.RecordNotAttempted(
+                "Delete",
+                "Procedure",
+                "Procedures",
+                name,
+                new CompositeIdentity(name, "Procedure", "Generated", string.Empty, Guid.Empty, Guid.Empty),
+                PersistenceConfirmation.NotAttempted(PersistencePhysicalState.Absent, "Procedure ausente antes do Delete."));
             return;
         }
 
         var procedure = matches[0];
         var guid = procedure.Guid;
-        procedure.Delete();
-        if (Scan(telemetry, "Procedure", "confirmacao-pos-delete", () => Procedure.GetAll(designModel).Any(item => item.Guid == guid)))
+        var receipt = ApiPlanSaveBoundaryProbe.Persist(
+            PersistenceFaultPoint.ProcedureDelete,
+            "Delete",
+            "Procedure",
+            "Procedures",
+            name,
+            new GuidIdentity(guid),
+            procedure.Delete,
+            () => ConfirmDelete(
+                () => Scan(telemetry, "Procedure", "confirmacao-pos-delete", () => Procedure.GetAll(designModel).Any(item => item.Guid == guid)),
+                guid.ToString()));
+        if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
         {
-            throw new InvalidOperationException($"Remocao falhou: Procedure '{name}' ainda existe apos Delete().");
+            throw new InvalidOperationException($"Remoção do Procedure '{name}' não foi confirmada: Outcome='{receipt.Outcome}', Detail='{receipt.ConfirmationDetail}'.");
         }
 
         deleted.Add($"Procedure:{name}");
@@ -571,7 +591,8 @@ internal static class ApiPlanGeneratedApiRemover
         KBModel designModel,
         ApiPlanGeneratedApiRemovalPlan plan,
         List<string> deleted,
-        ApiPlanScanTelemetry? telemetry = null)
+        ApiPlanScanTelemetry? telemetry = null,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         ValidateApiObjectTarget(designModel, plan, beforeAnyDelete: false, kbIndex: null, telemetry);
 
@@ -580,15 +601,32 @@ internal static class ApiPlanGeneratedApiRemover
             .ToArray());
         if (matches.Length == 0)
         {
+            ApiPlanSaveBoundaryProbe.RecordNotAttempted(
+                "Delete",
+                "API",
+                "ApiObject",
+                plan.ApiName,
+                new CompositeIdentity(plan.ApiName, "API", "Generated", string.Empty, Guid.Empty, Guid.Empty),
+                PersistenceConfirmation.NotAttempted(PersistencePhysicalState.Absent, "API Object ausente antes do Delete."));
             return;
         }
 
         var api = matches[0];
         var guid = api.Guid;
-        api.Delete();
-        if (Scan(telemetry, "API", "confirmacao-pos-delete", () => API.GetAll(designModel).Any(item => item.Guid == guid)))
+        var receipt = ApiPlanSaveBoundaryProbe.Persist(
+            PersistenceFaultPoint.ApiDelete,
+            "Delete",
+            "API",
+            "ApiObject",
+            plan.ApiName,
+            new GuidIdentity(guid),
+            api.Delete,
+            () => ConfirmDelete(
+                () => Scan(telemetry, "API", "confirmacao-pos-delete", () => API.GetAll(designModel).Any(item => item.Guid == guid)),
+                guid.ToString()));
+        if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
         {
-            throw new InvalidOperationException($"Remocao falhou: API Object '{plan.ApiName}' ainda existe apos Delete().");
+            throw new InvalidOperationException($"Remoção do API Object '{plan.ApiName}' não foi confirmada: Outcome='{receipt.Outcome}', Detail='{receipt.ConfirmationDetail}'.");
         }
 
         deleted.Add($"API:{plan.ApiName}");
@@ -599,7 +637,8 @@ internal static class ApiPlanGeneratedApiRemover
         ApiPlanGeneratedApiRemovalPlan plan,
         string name,
         List<string> deleted,
-        ApiPlanScanTelemetry? telemetry = null)
+        ApiPlanScanTelemetry? telemetry = null,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         ValidateOwnSdtTarget(designModel, plan, name, beforeAnyDelete: false, kbIndex: null, telemetry);
 
@@ -608,15 +647,32 @@ internal static class ApiPlanGeneratedApiRemover
             .ToArray());
         if (matches.Length == 0)
         {
+            ApiPlanSaveBoundaryProbe.RecordNotAttempted(
+                "Delete",
+                "SDT",
+                "OwnSdts",
+                name,
+                new CompositeIdentity(name, "SDT", "Generated", string.Empty, Guid.Empty, Guid.Empty),
+                PersistenceConfirmation.NotAttempted(PersistencePhysicalState.Absent, "SDT ausente antes do Delete."));
             return;
         }
 
         var sdt = matches[0];
         var guid = sdt.Guid;
-        sdt.Delete();
-        if (Scan(telemetry, "SDT", "confirmacao-pos-delete", () => SDT.GetAll(designModel).Any(item => item.Guid == guid)))
+        var receipt = ApiPlanSaveBoundaryProbe.Persist(
+            PersistenceFaultPoint.SdtDelete,
+            "Delete",
+            "SDT",
+            "OwnSdts",
+            name,
+            new GuidIdentity(guid),
+            sdt.Delete,
+            () => ConfirmDelete(
+                () => Scan(telemetry, "SDT", "confirmacao-pos-delete", () => SDT.GetAll(designModel).Any(item => item.Guid == guid)),
+                guid.ToString()));
+        if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
         {
-            throw new InvalidOperationException($"Remocao falhou: SDT '{name}' ainda existe apos Delete().");
+            throw new InvalidOperationException($"Remoção do SDT '{name}' não foi confirmada: Outcome='{receipt.Outcome}', Detail='{receipt.ConfirmationDetail}'.");
         }
 
         deleted.Add($"SDT:{name}");
@@ -626,14 +682,26 @@ internal static class ApiPlanGeneratedApiRemover
         KBModel designModel,
         WikiFileKBObject metadataFile,
         List<string> deleted,
-        ApiPlanScanTelemetry? telemetry = null)
+        ApiPlanScanTelemetry? telemetry = null,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         var name = metadataFile.Name;
         var guid = metadataFile.Guid;
-        metadataFile.Delete();
-        if (Scan(telemetry, "File", "confirmacao-pos-delete", () => WikiFileKBObject.GetAll(designModel).Any(item => item.Guid == guid)))
+        var expectedBytes = metadataFile.BlobPart?.Data?.GetBytes() ?? Array.Empty<byte>();
+        var receipt = ApiPlanSaveBoundaryProbe.Persist(
+            PersistenceFaultPoint.MetadataDelete,
+            "Delete",
+            "File",
+            "Metadata",
+            name,
+            new FileIdentity(guid, name, ApiPlanMetadataFileWriter.ComputeSha256(expectedBytes)),
+            metadataFile.Delete,
+            () => ConfirmDelete(
+                () => Scan(telemetry, "File", "confirmacao-pos-delete", () => WikiFileKBObject.GetAll(designModel).Any(item => item.Guid == guid)),
+                guid.ToString()));
+        if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
         {
-            throw new InvalidOperationException($"Remocao falhou: File '{name}' ainda existe apos Delete().");
+            throw new InvalidOperationException($"Remoção do File '{name}' não foi confirmada: Outcome='{receipt.Outcome}', Detail='{receipt.ConfirmationDetail}'.");
         }
 
         deleted.Add($"File:{name}");
@@ -643,7 +711,8 @@ internal static class ApiPlanGeneratedApiRemover
         KBModel designModel,
         ApiPlanGeneratedApiRemovalPlan plan,
         List<string> deleted,
-        ApiPlanScanTelemetry? telemetry = null)
+        ApiPlanScanTelemetry? telemetry = null,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         if (!plan.FolderWasCreated || string.IsNullOrWhiteSpace(plan.FolderName))
         {
@@ -674,13 +743,37 @@ internal static class ApiPlanGeneratedApiRemover
         }
 
         var guid = folder.Guid;
-        folder.Delete();
-        if (Scan(telemetry, "Folder", "confirmacao-pos-delete", () => Folder.GetAll(designModel).Any(item => item.Guid == guid)))
+        var receipt = ApiPlanSaveBoundaryProbe.Persist(
+            PersistenceFaultPoint.FolderDelete,
+            "Delete",
+            "Folder",
+            "TransactionFolder",
+            plan.FolderName!,
+            new FolderIdentity(plan.FolderName!, owned: true, emptyConfirmed: true),
+            folder.Delete,
+            () => ConfirmDelete(
+                () => Scan(telemetry, "Folder", "confirmacao-pos-delete", () => Folder.GetAll(designModel).Any(item => item.Guid == guid)),
+                guid.ToString()));
+        if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
         {
-            throw new InvalidOperationException($"Remocao falhou: Folder '{plan.FolderName}' ainda existe apos Delete().");
+            throw new InvalidOperationException($"Remoção do Folder '{plan.FolderName}' não foi confirmada: Outcome='{receipt.Outcome}', Detail='{receipt.ConfirmationDetail}'.");
         }
 
         deleted.Add($"Folder:{plan.FolderName}");
+    }
+
+    private static PersistenceConfirmation ConfirmDelete(Func<bool> stillExists, string observedIdentity)
+    {
+        try
+        {
+            return stillExists()
+                ? PersistenceConfirmation.Confirmed(observedIdentity, "O alvo ainda existe após Delete.")
+                : PersistenceConfirmation.Absent("O alvo não foi reencontrado após Delete.");
+        }
+        catch (Exception exception)
+        {
+            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+        }
     }
 
     // O curto-circuito de && e preservado: a instrumentacao envolve cada operando

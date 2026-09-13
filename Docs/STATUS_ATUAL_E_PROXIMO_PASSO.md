@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-11.
+2026-09-12.
 
 ## Último marco concluído
 
@@ -129,9 +129,11 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 - `B082` Etapa 1A **aceita** em 2026-09-03 na KB `FabricaBrasil18Test` (`Setor`, `Empresa`, `DocumentoFiscal`) e Sync que grava na `NotaFiscal`. Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`.
 - `S-B111` F1 implementada e **validada manualmente para encerramento com exceção explícita do `B121`** em 2026-09-10/11: os quatro perfis positivos do Wizard e a guarda de API já REST-completa passaram; o Sync `BC + List` com delta `NotaFiscalObs2` 40→41 passou com a sequência de gravação observada na Output; o caminho positivo de Sync sem BC/List com `LaudoObs` e o Sync somente BC na `Carga` com `CargaObservacao2` também passaram; o guard de divergência manual do SDT bloqueou antes de qualquer gravação, seguido de restauração idempotente; e o guard B055 de BC sem habilitação bloqueou no preflight com `ApiSaveAttempted=False`, `ApiSaveCount=0`, `Criados/Atualizados/Removidos=0` e `Bloqueados=1`. A tentativa de Sync somente List na `Contrato` executou BC antes de List e foi registrada no `B121`, portanto não comprova o perfil isolado. Permanece sem comprovação isolada somente o Sync somente List. `Build All` foi concluído nos dois environments antes do último delta da `Carga`. Evidência: `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md`, `Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md` e `Docs/Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md`.
 
+- `S-B111` F2 teve a implementação local do seam de persistência e recibos concluída em 2026-09-12: núcleo SDK-free, adaptador comum, confirmação pós-`Save()`/`Delete()`, habilitação diferida de Business Component, relatório final e falha de etapa sem recibo. A bateria offline e o build Release passaram; o cenário positivo do `Wizard` para `Laudo` foi aceito manualmente na IDE com `ApiSaveCount=1`, `PersistenceReceipts=10`, `PersistenceStageFailures=0` e zero bloqueios. A F2 continua aberta para as fronteiras de falha e a habilitação diferida de Business Component. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-IMPLEMENTACAO-OFFLINE.md` e `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
+
 ## Frente atual
 
-Sprint `S-B111` — Fase 1 (ordem e writer final único) está **implementada e validada para encerramento com exceção explícita do `B121`** em 2026-09-10/11. Os caminhos positivos de Sync sem BC/List e somente BC, o guard de divergência manual e o bloqueio B055 de BC sem habilitação foram validados; a tentativa de Sync somente List revelou que o Sync executa BC antes de List e não comprova o perfil isolado. A F2 (seam de persistência e recibos) pode ser avaliada a partir deste fechamento; o `B121` permanece como melhoria fora da sprint. A F3 (durabilidade e remoção) depende da F2. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
+Sprint `S-B111` — F1 está **implementada e validada para encerramento com exceção explícita do `B121`** em 2026-09-10/11, e a implementação local da F2 (seam de persistência e recibos) foi concluída em 2026-09-12. O cenário positivo do `Wizard` para `Laudo` foi aceito manualmente na IDE; a F2 ainda requer as fronteiras de falha e a habilitação diferida de Business Component. O `B121` permanece como melhoria fora da sprint. A F3 (durabilidade e remoção) continua condicionada ao aceite completo da F2. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
 
 Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; **conferência de fim em 2026-08-28**, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100` (concluído em 2026-08-30) → `B082` Fases A+B (concluído em 2026-09-01) → `B082` Etapa 1A (aceita em 2026-09-03). Publicação em quatro cortes: `0.1.0-alpha.4` após `B102` (2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis (2026-08-30), `0.1.0-alpha.6` com o `Delete` (2026-08-31) e `0.1.0-alpha.7` com o progresso `B082` (**publicado em 2026-09-01**). `B105` entra na sprint apenas se houver folga.
 
@@ -139,19 +141,18 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Preparar e iniciar a avaliação da F2** — a F1 foi encerrada com a exceção explícita do
-`B121`. O caminho positivo sem BC/List com `LaudoObs`, o reteste negativo com `LaudoObs1`, a
-restauração com diff zero, o Sync somente BC na `Carga` com `CargaObservacao2` e o bloqueio
-B055 de BC sem habilitação na `Contrato` foram registrados. A tentativa de Sync somente List
-executou BC antes de List e não conta como perfil isolado; ela permanece documentada no `B121`
-para tratamento posterior à sprint. A avaliação da F2 (seam de persistência e recibos) pode
-começar; a F3 continua condicionada à F2.
+**Continuar a validação da F2 na IDE GeneXus** — o cenário positivo do `Wizard` para `Laudo`
+foi aceito em 2026-09-12: `SuccessWithWarnings`, `ApiSaveCount=1`, `PersistenceReceipts=10`,
+`PersistenceStageFailures=0`, zero bloqueios e todos os recibos confirmados. O registro detalhado
+está em `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`. Permanecem os fluxos aplicáveis
+da matriz da F1, as falhas controladas de cada fronteira e a habilitação diferida de Business
+Component. A F3 continua condicionada ao aceite completo da F2.
 O manifesto não mudou nesta frente, portanto não há `genexus /install` adicional a registrar.
 O parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR
 COM RESSALVAS`; suas observações P3 úteis foram incorporadas como clarificações de escopo,
 canonização e estágios. A decisão humana de implementar a F1 foi registrada nesta sessão;
 a validação manual para encerramento com exceção explícita do `B121` e a reconciliação do alcance da evidência estão registradas nos
-documentos da F1. A documentação desta rodada foi commitada localmente junto da implementação.
+documentos da F1. A documentação da F1 foi commitada localmente junto daquela implementação; a evidência da F2 desta rodada será incluída no commit local autorizado nesta sessão.
 Registro da revisão:
 `Docs/Implementation/2026-09-04-B111-ESTADO-DA-REVISAO-POR-PARES.md`. Item:
 `Docs/Foundation/06-BACKLOG_v0.1.md` (`B111`).
@@ -175,9 +176,9 @@ A conclusão da `S-B111` não fecha automaticamente o `B082`: ao encerrar a spri
 
 **`B108` fica estacionado desde 2026-09-05**, com plano aprovado e sem trabalho perdido: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Item: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
 
-## Estado da sprint `S-B111` (planejada em 2026-09-05; território atualizado em 2026-09-11)
+## Estado da sprint `S-B111` (planejada em 2026-09-05; território atualizado em 2026-09-12)
 
-Planejamento concluído, avaliação técnica inicial realizada e **a F1 foi implementada localmente** em 2026-09-08: o API Object é preparado em contexto transitório, o writer final concentra o único Save e o gate estrito impede criação/correção implícita de dependências pelos consumidores. Build e gates offline passaram. A validação manual na IDE foi encerrada em 2026-09-10/11 com a exceção explícita do `B121`: a matriz positiva do Wizard, a guarda de API REST-completa, os Syncs `BC + List`, sem BC/List e somente BC, o bloqueio de divergência manual do SDT, a restauração idempotente e o bloqueio B055 de BC sem habilitação passaram; a tentativa de Sync somente List revelou execução de BC antes de List e não comprovou o perfil isolado. `Build All` passou nos dois environments antes do último delta da `Carga`. F2 e F3 não foram implementadas. A consolidação documental foi revisada em 2026-09-08 após um painel CLI de quatro revisores; as ressalvas úteis foram incorporadas e a autorização humana da F1 foi registrada nesta sessão. As decisões aprovadas estão preservadas no registro versionado `Docs/Implementation/2026-09-07-S-B111-DECISOES-APROVADAS.md`.
+Planejamento concluído, avaliação técnica inicial realizada e **a F1 foi implementada localmente** em 2026-09-08: o API Object é preparado em contexto transitório, o writer final concentra o único Save e o gate estrito impede criação/correção implícita de dependências pelos consumidores. Build e gates offline passaram. A validação manual na IDE foi encerrada em 2026-09-10/11 com a exceção explícita do `B121`; a implementação local da F2 foi concluída em 2026-09-12 e o cenário positivo do `Wizard` para `Laudo` foi aceito manualmente, com a F2 ainda aberta para as fronteiras de falha e a habilitação diferida de Business Component. A F3 ainda não foi implementada. A consolidação documental foi revisada em 2026-09-08 após um painel CLI de quatro revisores; as ressalvas úteis foram incorporadas e a autorização humana da F1 foi registrada nesta sessão. As decisões aprovadas estão preservadas no registro versionado `Docs/Implementation/2026-09-07-S-B111-DECISOES-APROVADAS.md`.
 
 **O que mudou no território da sprint depois de 2026-09-05**, por necessidade de campo e fora das fases — registrado na seção 13 do plano da F3:
 
@@ -191,8 +192,8 @@ documentalmente em 2026-09-08 após o painel CLI, os pareceres solo do MiMo V2.5
 Codex GPT-5.6-luna, a rodada manual do Cursor, o parecer solo do Claude Code Opus 5 e o
 parecer solo do OpenCode Go DeepSeek V4 Pro. As ressalvas úteis foram incorporadas localmente.
 A decisão humana desta sessão autorizou a implementação da F1; a validação manual da F1 para
-encerramento, com a exceção explícita do `B121`, foi registrada em 2026-09-10/11. A F2 passa a ser
-a próxima avaliação e F3 continua condicionada à F2. As
+encerramento, com a exceção explícita do `B121`, foi registrada em 2026-09-10/11. A F2 permanece em
+avaliação manual e F3 continua condicionada ao aceite completo da F2. As
 alterações desta rodada estão commitadas localmente nesta frente:
 
 | Fase | Plano | Depende de |
@@ -214,10 +215,10 @@ Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-
 | Instrumento | Por que continua | Sai quando |
 |---|---|---|
 | `B109ExceptionProbe` | sem ela, uma reincidência volta a chegar como uma linha de mensagem, sem stack | `B109` fechado nos dois ramos |
-| `ApiPlanSaveBoundaryProbe` (rótulo `[B109]`) | é a base observável para o seam da F2: separa mutação entre Pump e Save de falha intrínseca | absorção no seam/executor da F2, com os eventos preservados nos testes; só então retirar o rótulo de sonda |
+| `ApiPlanSaveBoundaryProbe` (rótulo `[B109]`) | é o adaptador observável do seam da F2: separa mutação entre Pump e Save e encaminha recibos sem perder os eventos B109 | retirar somente depois do aceite da F2 na IDE e do fechamento explícito de B109 |
 | preferência «Suprimir a atualização da tela durante as gravações» | é o experimento do ramo A, e nunca foi acionado | idem |
 | `ApiPlanMetadataVisibilityProbe` (rótulo `[B115]`) | diagnóstico de metadata órfã | `B115` fechado |
-| `B111CallSiteProbe` | é a cobertura que a F1 exige — contagem de gravações de Folder e SDT por aplicação — e serviu para provar que a regra 4.4.1 se manteve **depois** da implementação | absorção pelo seam da F2 ou fechamento explícito da instrumentação |
+| `B111CallSiteProbe` | é a cobertura histórica da F1 — contagem de gravações de Folder e SDT por aplicação — e continua como sentinela de granularidade durante o aceite da F2 | retirar após a conferência IDE da sequência de recibos ou fechamento explícito da instrumentação |
 
 Ao retirar qualquer um: executar `Tools/Test-ExtensionCommandRegistration.ps1` se o manifesto for tocado, e o gate mecânico em seguida.
 
@@ -264,6 +265,10 @@ De `B109`, apenas o ramo B foi encerrado; o ramo A não tem pauta própria, por 
 reprodução — se o sintoma voltar, ele passa à frente. O `Rebuild All` do
 `NETFrameworkPostgreSQL` é pendência separada de environment e não bloqueia a F1. `B108` e o
 residual `B082` 1B/2/3 não competem com a próxima avaliação da F2.
+
+## Evidência parcial da F2 em andamento
+
+- `S-B111` F2 (2026-09-12): o cenário positivo do `Wizard` na `Laudo`, com `List`, `Get`, `Create`, `Update`, `Business Component` apto e `FinalWriter='List'`, registrou `SuccessWithWarnings`, `ApiSaveCount=1`, `PersistenceReceipts=10`, `PersistenceStageFailures=0`, `Bloqueados=0` e todos os recibos confirmados. O `B111` registrou reencontros estritos de SDT sem gravação física. O relatório contém a ressalva conhecida de listar SDTs `Unchanged` dentro de `Atualizados=14`; esse ajuste foi deliberadamente postergado. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 
 ## Evidência da frente encerrada
 
@@ -504,7 +509,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 10 — Beta estável (`B108` está estacionado; a F1 da sprint `S-B111` foi implementada e validada para encerramento com a exceção explícita do `B121`; a avaliação da F2 passa a ser a próxima ação; F2 e F3 ainda não foram implementadas; Etapa 1A do `B082` aceita em 2026-09-03; residual 1B/2/3 no plano de hardening).
+- Sprint 10 — Beta estável (`B108` está estacionado; a F1 da sprint `S-B111` foi implementada e validada para encerramento com a exceção explícita do `B121`; a implementação local da F2 passou na bateria offline e o cenário positivo do `Wizard` foi aceito na IDE, restando as fronteiras de falha e a habilitação diferida de Business Component; F3 ainda não foi implementada; Etapa 1A do `B082` aceita em 2026-09-03; residual 1B/2/3 no plano de hardening).
 
 ## Protocolo de atualização
 

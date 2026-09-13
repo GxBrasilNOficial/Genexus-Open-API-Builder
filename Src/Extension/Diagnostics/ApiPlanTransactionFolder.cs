@@ -8,7 +8,11 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanTransactionFolder
 {
-    public static Folder CreateOrReencounter(KBModel designModel, Transaction transaction, ApiPlan apiPlan)
+    public static Folder CreateOrReencounter(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlan apiPlan,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         if (designModel is null)
         {
@@ -42,10 +46,71 @@ internal static class ApiPlanTransactionFolder
 
         AlignWithTransactionContainer(folder, transaction);
 
-        folder.Save();
+        var receipt = ApiPlanSaveBoundaryProbe.Persist(
+            PersistenceFaultPoint.FolderSave,
+            "Save",
+            "Folder",
+            "TransactionFolder",
+            folder.Name,
+            new FolderIdentity(folder.Name, owned: true, emptyConfirmed: true),
+            folder.Save,
+            () => ConfirmFolder(designModel, transaction, folder.Name, apiPlan));
+        EnsureConfirmed(receipt, () => ConfirmFolder(designModel, transaction, folder.Name, apiPlan), $"Folder '{folder.Name}'");
         B111CallSiteProbe.Wrote("TransactionFolder.CreateOrReencounter", folder.Name);
         apiPlan.TransactionFolderWasCreated = true;
         return folder;
+    }
+
+    private static PersistenceConfirmation ConfirmFolder(KBModel designModel, Transaction transaction, string name, ApiPlan apiPlan)
+    {
+        try
+        {
+            var matches = Folder.GetAll(designModel)
+                .Where(folder => string.Equals(folder.Name, name, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            if (matches.Length == 0)
+            {
+                return PersistenceConfirmation.Absent("Folder não foi reencontrado pelo nome exato.");
+            }
+
+            if (matches.Length != 1 || !IsReusable(matches[0], transaction, apiPlan))
+            {
+                return PersistenceConfirmation.Divergent(
+                    string.Join(",", matches.Select(folder => folder.Guid.ToString())),
+                    "O Folder persistido não corresponde ao Folder de Transaction gerenciado.");
+            }
+
+            return PersistenceConfirmation.Confirmed(matches[0].Guid.ToString());
+        }
+        catch (Exception exception)
+        {
+            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+        }
+    }
+
+    private static void EnsureConfirmed(
+        PersistenceReceipt? receipt,
+        Func<PersistenceConfirmation> fallbackConfirmation,
+        string description)
+    {
+        if (receipt is not null)
+        {
+            if (receipt.Outcome != PersistenceOutcome.Confirmed)
+            {
+                throw new InvalidOperationException(
+                    $"Persistência de {description} não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.");
+            }
+
+            return;
+        }
+
+        var confirmation = fallbackConfirmation();
+        if (confirmation.Status != PersistenceConfirmationStatus.Confirmed ||
+            confirmation.PhysicalState != PersistencePhysicalState.Present)
+        {
+            throw new InvalidOperationException(
+                $"Persistência de {description} não foi confirmada: Confirmation='{confirmation.Status}', PhysicalState='{confirmation.PhysicalState}', Detail='{confirmation.Detail}'.");
+        }
     }
 
     internal static Folder GetOrReencounterStrict(KBModel designModel, Transaction transaction, ApiPlan apiPlan)

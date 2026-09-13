@@ -28,7 +28,8 @@ internal static class ApiPlanSdtWriter
         ApiPlanKbObjectNameIndex kbIndex,
         System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite = null,
         ApiPlanBusyProgressSession? progress = null,
-        WriteMode mode = WriteMode.Dedicated)
+        WriteMode mode = WriteMode.Dedicated,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         if (designModel is null)
         {
@@ -54,7 +55,7 @@ internal static class ApiPlanSdtWriter
 
         if (mode == WriteMode.StrictReencounter)
         {
-            return StrictReencounter(designModel, transaction, apiPlan, preserveSdtNames, kbIndex, onSdtWrite, progress);
+            return StrictReencounter(designModel, transaction, apiPlan, preserveSdtNames, kbIndex, onSdtWrite, progress, persistenceLog);
         }
 
         // B111/F1: instrumentacao temporaria. So conta; nao altera fluxo nem resultado.
@@ -70,7 +71,7 @@ internal static class ApiPlanSdtWriter
         ApiPlanTransactionFolder.Preflight(designModel, transaction, apiPlan);
         progress?.PumpAndThrowIfAbortRequested();
         var sharedFolderWasCreated = preflight.SharedFolder is null;
-        var sharedFolder = preflight.SharedFolder ?? CreateSharedFolder(designModel);
+        var sharedFolder = preflight.SharedFolder ?? CreateSharedFolder(designModel, persistenceLog);
         if (sharedFolderWasCreated)
         {
             apiPlan.SharedSdtFolderWasCreated = true;
@@ -78,7 +79,7 @@ internal static class ApiPlanSdtWriter
         }
 
         progress?.PumpAndThrowIfAbortRequested();
-        var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan);
+        var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan, persistenceLog);
         var results = new List<ApiPlanSdtWriteItemResult>();
         var current = 0;
 
@@ -89,7 +90,7 @@ internal static class ApiPlanSdtWriter
             progress?.Report("SDTs", current, planned, sdt.Name);
             progress?.Pump();
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            var result = CreateOrReencounterSdt(designModel, transaction, sharedFolder, sdt, preflight, preserve, progress, kbIndex);
+            var result = CreateOrReencounterSdt(designModel, transaction, sharedFolder, sdt, preflight, preserve, progress, kbIndex, persistenceLog);
             sw.Stop();
             progress?.Report("SDTs", current, planned, sdt.Name, sw.ElapsedMilliseconds);
             onSdtWrite?.Invoke(result);
@@ -103,7 +104,7 @@ internal static class ApiPlanSdtWriter
             progress?.Report("SDTs", current, planned, sdt.Name);
             progress?.Pump();
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            var result = CreateOrReencounterSdt(designModel, transaction, transactionFolder, sdt, preflight, preserve, progress, kbIndex);
+            var result = CreateOrReencounterSdt(designModel, transaction, transactionFolder, sdt, preflight, preserve, progress, kbIndex, persistenceLog);
             sw.Stop();
             progress?.Report("SDTs", current, planned, sdt.Name, sw.ElapsedMilliseconds);
             onSdtWrite?.Invoke(result);
@@ -211,7 +212,8 @@ internal static class ApiPlanSdtWriter
         IReadOnlyCollection<string>? preserveSdtNames,
         ApiPlanKbObjectNameIndex kbIndex,
         System.Action<ApiPlanSdtWriteItemResult>? onSdtWrite,
-        ApiPlanBusyProgressSession? progress)
+        ApiPlanBusyProgressSession? progress,
+        ApiPlanPersistenceLog? persistenceLog)
     {
         PreflightStrict(designModel, transaction, apiPlan, kbIndex, preserveSdtNames);
         var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
@@ -362,13 +364,22 @@ internal static class ApiPlanSdtWriter
         }
     }
 
-    private static Folder CreateSharedFolder(KBModel designModel)
+    private static Folder CreateSharedFolder(KBModel designModel, ApiPlanPersistenceLog? persistenceLog)
     {
         var folder = new Folder(designModel, SharedFolderName)
         {
             Description = ApiPlanOwnedObjectDescription.Create(SharedFolderName),
         };
-        folder.Save();
+        var receipt = ApiPlanSaveBoundaryProbe.Persist(
+            PersistenceFaultPoint.FolderSave,
+            "Save",
+            "Folder",
+            "SDTs",
+            folder.Name,
+            new FolderIdentity(folder.Name, owned: true, emptyConfirmed: true),
+            folder.Save,
+            () => ConfirmFolder(designModel, folder.Name));
+        EnsureConfirmed(receipt, () => ConfirmFolder(designModel, folder.Name), $"Folder compartilhado '{folder.Name}'");
         B111CallSiteProbe.Wrote("SdtWriter.SharedFolder", SharedFolderName);
         return folder;
     }
@@ -381,7 +392,8 @@ internal static class ApiPlanSdtWriter
         ApiPlanSdtPreflightResult preflight,
         ISet<string> explicitPreserveSdtNames,
         ApiPlanBusyProgressSession? progress,
-        ApiPlanKbObjectNameIndex kbIndex)
+        ApiPlanKbObjectNameIndex kbIndex,
+        ApiPlanPersistenceLog? persistenceLog)
     {
         if (preflight.ExistingSdtsByName.TryGetValue(definition.Name, out var existingSdt))
         {
@@ -404,7 +416,16 @@ internal static class ApiPlanSdtWriter
             var wroteKb = !canSkipRewrite || needsParentMove;
             if (wroteKb)
             {
-                existingSdt.Save();
+                var receipt = ApiPlanSaveBoundaryProbe.Persist(
+                    PersistenceFaultPoint.SdtSave,
+                    "Save",
+                    "SDT",
+                    definition.Kind,
+                    definition.Name,
+                    new GuidIdentity(existingSdt.Guid),
+                    existingSdt.Save,
+                    () => ConfirmSdt(designModel, existingSdt, definition, kbIndex, explicitPreserve));
+                EnsureConfirmed(receipt, () => ConfirmSdt(designModel, existingSdt, definition, kbIndex, explicitPreserve), $"SDT '{definition.Name}'");
                 B111CallSiteProbe.Wrote("SdtWriter.SdtReencontrado", definition.Name);
             }
             else
@@ -440,7 +461,16 @@ internal static class ApiPlanSdtWriter
 
         ConfigureSdt(designModel, sdt, definition, kbIndex);
         progress?.ThrowIfAbortRequested();
-        sdt.Save();
+        var saveReceipt = ApiPlanSaveBoundaryProbe.Persist(
+            PersistenceFaultPoint.SdtSave,
+            "Save",
+            "SDT",
+            definition.Kind,
+            definition.Name,
+            new GuidIdentity(sdt.Guid),
+            sdt.Save,
+            () => ConfirmSdt(designModel, sdt, definition, kbIndex, validateStructure: true));
+        EnsureConfirmed(saveReceipt, () => ConfirmSdt(designModel, sdt, definition, kbIndex, validateStructure: true), $"SDT '{definition.Name}'");
         B111CallSiteProbe.Wrote("SdtWriter.SdtNovo", definition.Name);
 
         var persisted = SDT.Get(designModel, sdt.Guid);
@@ -456,6 +486,88 @@ internal static class ApiPlanSdtWriter
         foreach (var member in definition.Members.Where(item => item.Name.IndexOf(".", StringComparison.Ordinal) < 0))
         {
             AddMember(designModel, root, member, kbIndex);
+        }
+    }
+
+    private static PersistenceConfirmation ConfirmFolder(KBModel designModel, string name)
+    {
+        try
+        {
+            var matches = Folder.GetAll(designModel)
+                .Where(folder => string.Equals(folder.Name, name, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            if (matches.Length == 0)
+            {
+                return PersistenceConfirmation.Absent("Folder não foi reencontrado pelo nome exato.");
+            }
+
+            if (matches.Length != 1 || !ApiPlanOwnedObjectDescription.IsOwnedSharedFolder(matches[0].Description))
+            {
+                return PersistenceConfirmation.Divergent(
+                    string.Join(",", matches.Select(folder => folder.Guid.ToString())),
+                    "O Folder persistido não corresponde ao Folder compartilhado gerenciado.");
+            }
+
+            return PersistenceConfirmation.Confirmed(matches[0].Guid.ToString());
+        }
+        catch (Exception exception)
+        {
+            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+        }
+    }
+
+    private static PersistenceConfirmation ConfirmSdt(
+        KBModel designModel,
+        SDT sdt,
+        ApiPlanSdtDefinition definition,
+        ApiPlanKbObjectNameIndex kbIndex,
+        bool validateStructure)
+    {
+        try
+        {
+            var persisted = SDT.Get(designModel, sdt.Guid);
+            if (persisted is null)
+            {
+                return PersistenceConfirmation.Absent("SDT não foi reencontrado pelo GUID.");
+            }
+
+            if (validateStructure && !TryMatchPlannedSdtStructure(persisted, definition, kbIndex, out var mismatch))
+            {
+                return PersistenceConfirmation.Divergent(
+                    persisted.Guid.ToString(),
+                    $"SDT '{definition.Name}' não corresponde ao contrato persistido ({mismatch}).");
+            }
+
+            return PersistenceConfirmation.Confirmed(persisted.Guid.ToString());
+        }
+        catch (Exception exception)
+        {
+            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+        }
+    }
+
+    private static void EnsureConfirmed(
+        PersistenceReceipt? receipt,
+        Func<PersistenceConfirmation> fallbackConfirmation,
+        string description)
+    {
+        if (receipt is not null)
+        {
+            if (receipt.Outcome != PersistenceOutcome.Confirmed)
+            {
+                throw new InvalidOperationException(
+                    $"Persistência de {description} não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.");
+            }
+
+            return;
+        }
+
+        var confirmation = fallbackConfirmation();
+        if (confirmation.Status != PersistenceConfirmationStatus.Confirmed ||
+            confirmation.PhysicalState != PersistencePhysicalState.Present)
+        {
+            throw new InvalidOperationException(
+                $"Persistência de {description} não foi confirmada: Confirmation='{confirmation.Status}', PhysicalState='{confirmation.PhysicalState}', Detail='{confirmation.Detail}'.");
         }
     }
 

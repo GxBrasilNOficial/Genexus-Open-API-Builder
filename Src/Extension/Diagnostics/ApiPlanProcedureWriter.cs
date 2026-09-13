@@ -15,7 +15,8 @@ internal static class ApiPlanProcedureWriter
         Transaction transaction,
         ApiPlan apiPlan,
         ApiPlanKbObjectNameIndex kbIndex,
-        ApiPlanBusyProgressSession? progress = null)
+        ApiPlanBusyProgressSession? progress = null,
+        ApiPlanPersistenceLog? persistenceLog = null)
     {
         if (designModel is null)
         {
@@ -47,7 +48,7 @@ internal static class ApiPlanProcedureWriter
         progress?.PumpAndThrowIfAbortRequested();
         var preflight = PreflightProcedures(designModel, definitions, kbIndex);
         progress?.PumpAndThrowIfAbortRequested();
-        var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan);
+        var transactionFolder = ApiPlanTransactionFolder.CreateOrReencounter(designModel, transaction, apiPlan, persistenceLog);
         var results = new List<ApiPlanProcedureWriteItemResult>();
         var current = 0;
 
@@ -58,7 +59,7 @@ internal static class ApiPlanProcedureWriter
             progress?.Report("Procedures", current, definitions.Count, definition.Name);
             progress?.Pump();
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            var item = CreateOrReencounterProcedure(designModel, transaction, transactionFolder, definition, preflight, progress);
+            var item = CreateOrReencounterProcedure(designModel, transaction, transactionFolder, apiPlan, definition, preflight, progress);
             sw.Stop();
             progress?.Report("Procedures", current, definitions.Count, definition.Name, sw.ElapsedMilliseconds);
             results.Add(item);
@@ -207,6 +208,7 @@ internal static class ApiPlanProcedureWriter
         KBModel designModel,
         Transaction transaction,
         Folder transactionFolder,
+        ApiPlan apiPlan,
         ApiPlanProcedureDefinition definition,
         ApiPlanProcedurePreflightResult preflight,
         ApiPlanBusyProgressSession? progress = null)
@@ -215,7 +217,16 @@ internal static class ApiPlanProcedureWriter
         {
             existingProcedure.Parent = transactionFolder;
             progress?.PumpAndThrowIfAbortRequested();
-            existingProcedure.Save();
+            var receipt = ApiPlanSaveBoundaryProbe.Persist(
+                PersistenceFaultPoint.ProcedureSave,
+                "Save",
+                "Procedure",
+                "Procedures",
+                existingProcedure.Name,
+                new CompositeIdentity(existingProcedure.Name, "Procedure", "Generated", existingProcedure.Description, apiPlan.TransactionGuid, Guid.Empty),
+                existingProcedure.Save,
+                () => ConfirmProcedure(designModel, existingProcedure));
+            EnsureConfirmed(receipt, () => ConfirmProcedure(designModel, existingProcedure), $"Procedure '{existingProcedure.Name}'");
             return new ApiPlanProcedureWriteItemResult(definition.BacklogId, definition.ServiceName, definition.Name, ApiPlanProcedureWriteStatus.Reencountered, existingProcedure.Guid);
         }
 
@@ -229,10 +240,59 @@ internal static class ApiPlanProcedureWriter
 
         ConfigureProcedure(procedure, definition);
         progress?.PumpAndThrowIfAbortRequested();
-        procedure.Save();
+        var receiptForNew = ApiPlanSaveBoundaryProbe.Persist(
+            PersistenceFaultPoint.ProcedureSave,
+            "Save",
+            "Procedure",
+            "Procedures",
+            procedure.Name,
+            new CompositeIdentity(procedure.Name, "Procedure", "Generated", procedure.Description, apiPlan.TransactionGuid, Guid.Empty),
+            procedure.Save,
+            () => ConfirmProcedure(designModel, procedure));
+        EnsureConfirmed(receiptForNew, () => ConfirmProcedure(designModel, procedure), $"Procedure '{procedure.Name}'");
 
         var persisted = Procedure.Get(designModel, procedure.Guid);
         return new ApiPlanProcedureWriteItemResult(definition.BacklogId, definition.ServiceName, definition.Name, ApiPlanProcedureWriteStatus.Created, persisted.Guid);
+    }
+
+    private static PersistenceConfirmation ConfirmProcedure(KBModel designModel, Procedure procedure)
+    {
+        try
+        {
+            var persisted = Procedure.Get(designModel, procedure.Guid);
+            return persisted is null
+                ? PersistenceConfirmation.Absent("Procedure não foi reencontrada pelo GUID.")
+                : PersistenceConfirmation.Confirmed(persisted.Guid.ToString());
+        }
+        catch (Exception exception)
+        {
+            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+        }
+    }
+
+    private static void EnsureConfirmed(
+        PersistenceReceipt? receipt,
+        Func<PersistenceConfirmation> fallbackConfirmation,
+        string description)
+    {
+        if (receipt is not null)
+        {
+            if (receipt.Outcome != PersistenceOutcome.Confirmed)
+            {
+                throw new InvalidOperationException(
+                    $"Persistência de {description} não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.");
+            }
+
+            return;
+        }
+
+        var confirmation = fallbackConfirmation();
+        if (confirmation.Status != PersistenceConfirmationStatus.Confirmed ||
+            confirmation.PhysicalState != PersistencePhysicalState.Present)
+        {
+            throw new InvalidOperationException(
+                $"Persistência de {description} não foi confirmada: Confirmation='{confirmation.Status}', PhysicalState='{confirmation.PhysicalState}', Detail='{confirmation.Detail}'.");
+        }
     }
 
     private static void ConfigureProcedure(Procedure procedure, ApiPlanProcedureDefinition definition)

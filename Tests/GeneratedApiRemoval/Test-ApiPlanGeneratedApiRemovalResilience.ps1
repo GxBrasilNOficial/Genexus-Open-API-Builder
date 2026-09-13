@@ -76,7 +76,7 @@ Assert-True ($remover -match 'deleted\s*=\s*deletedSink\s*\?\?') 'O coletor exte
 Assert-True ($package -match 'deletedBeforeFailure') 'O comando Remover deve manter a lista do que já saiu.'
 
 $deletedDecl = $package.IndexOf('var deletedBeforeFailure = new List<string>();')
-$removeCall = $package.IndexOf('ApiPlanGeneratedApiRemover.Remove(knowledgeBase.DesignModel, transaction, busy.Session, deletedBeforeFailure)')
+$removeCall = $package.IndexOf('ApiPlanGeneratedApiRemover.Remove(knowledgeBase.DesignModel, transaction, busy.Session, deletedBeforeFailure')
 Assert-True ($deletedDecl -ge 0) 'A lista deve ser declarada no comando Remover.'
 Assert-True ($removeCall -ge 0) 'A lista deve ser passada para Remove.'
 Assert-True ($deletedDecl -lt $removeCall) 'A lista deve ser declarada antes da chamada.'

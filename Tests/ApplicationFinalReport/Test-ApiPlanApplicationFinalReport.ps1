@@ -4,14 +4,30 @@ $ErrorActionPreference = 'Stop'
 $helperPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanApplicationFinalReport.cs'
 $identityPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanTransactionIdentity.cs'
 $resolutionPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanMainObjectResolution.cs'
+$persistenceCorePath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanPersistenceCore.cs'
+$persistenceLogPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanPersistenceLog.cs'
 $dialogPath = Join-Path $PSScriptRoot '..\..\Src\Extension\ApiPlanApplicationFinalReportDialog.cs'
-$runtimeAssemblies = @([System.AppContext]::GetData('TRUSTED_PLATFORM_ASSEMBLIES') -split [System.IO.Path]::PathSeparator |
-    Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-if ($runtimeAssemblies.Count -eq 0) {
-    throw 'Assemblies do runtime PowerShell atual não foram encontrados.'
+function Read-DiagnosticsSourceBody {
+    param([string]$Path)
+    return [System.IO.File]::ReadAllText($Path) -replace '(?m)^#nullable enable\r?\n', '' -replace '(?m)^using [^\r\n]+\r?\n', '' -replace '(?m)^namespace GenexusOpenApiBuilder\.Extension\.Diagnostics;\r?\n', ''
 }
 
-Add-Type -Path @($helperPath, $identityPath, $resolutionPath) -ReferencedAssemblies @($runtimeAssemblies | Sort-Object -Unique)
+$source = @(
+    '#nullable enable'
+    'using System;'
+    'using System.Collections.Generic;'
+    'using System.Globalization;'
+    'using System.Linq;'
+    'using System.Text;'
+    'namespace GenexusOpenApiBuilder.Extension.Diagnostics {'
+    (Read-DiagnosticsSourceBody $identityPath)
+    (Read-DiagnosticsSourceBody $resolutionPath)
+    (Read-DiagnosticsSourceBody $persistenceCorePath)
+    (Read-DiagnosticsSourceBody $persistenceLogPath)
+    (Read-DiagnosticsSourceBody $helperPath)
+    '}'
+) -join [Environment]::NewLine
+Add-Type -TypeDefinition $source
 
 function Assert-True {
     param([bool]$Condition, [string]$Message)
@@ -327,12 +343,16 @@ $prepareApiBlock = $packageSource.Substring($prepareApiStart, $metadataStart - $
 Assert-True ($createApiBlock -match 'catch \(ApiPlanBusyAbortedException\)') 'Criação de API deve propagar cancelamento do usuário ao fluxo externo.'
 Assert-True ($prepareApiBlock -match 'catch \(ApiPlanBusyAbortedException\)') 'Preparação de API deve propagar cancelamento do usuário ao fluxo externo.'
 
-$bcSaveBlock = [regex]::Match($businessComponentWriterSource, '(?s)var saveSteps = new List<.*?var saveIndex = 0;').Value
-$listSaveBlock = [regex]::Match($listWriterSource, '(?s)var saveSteps = new List<.*?var saveIndex = 0;').Value
-Assert-True ($bcSaveBlock.IndexOf('(get.Name', [System.StringComparison]::Ordinal) -ge 0) 'BC deve salvar Procedures no bloco de etapas.'
-Assert-True ($bcSaveBlock.IndexOf('(api.Name', [System.StringComparison]::Ordinal) -gt $bcSaveBlock.IndexOf('(get.Name', [System.StringComparison]::Ordinal)) 'BC deve colocar o API Save depois das Procedures.'
-Assert-True ($listSaveBlock.IndexOf('(procedure.Name', [System.StringComparison]::Ordinal) -ge 0) 'List deve salvar a Procedure no bloco de etapas.'
-Assert-True ($listSaveBlock.IndexOf('(api.Name', [System.StringComparison]::Ordinal) -gt $listSaveBlock.IndexOf('(procedure.Name', [System.StringComparison]::Ordinal)) 'List deve colocar o API Save depois da Procedure.'
+$bcSaveBlock = [regex]::Match($businessComponentWriterSource, '(?s)var saveSteps = new List<ApiPlanSaveStep>.*?ApiPlanSaveStepExecutor.Execute').Value
+$listSaveBlock = [regex]::Match($listWriterSource, '(?s)var saveSteps = new List<ApiPlanSaveStep>.*?ApiPlanSaveStepExecutor.Execute').Value
+$bcProcedureIndex = $bcSaveBlock.IndexOf('CreateProcedureSaveStep(model, kbIndex, plan, get,', [System.StringComparison]::Ordinal)
+$bcApiIndex = $bcSaveBlock.IndexOf('saveSteps.Add(CreateApiSaveStep', [System.StringComparison]::Ordinal)
+$listProcedureIndex = $listSaveBlock.IndexOf('CreateProcedureSaveStep(model, kbIndex, plan, procedure,', [System.StringComparison]::Ordinal)
+$listApiIndex = $listSaveBlock.IndexOf('saveSteps.Add(CreateApiSaveStep', [System.StringComparison]::Ordinal)
+Assert-True ($bcProcedureIndex -ge 0) 'BC deve salvar Procedures no bloco de etapas.'
+Assert-True ($bcApiIndex -gt $bcProcedureIndex) 'BC deve colocar o API Save depois das Procedures.'
+Assert-True ($listProcedureIndex -ge 0) 'List deve salvar a Procedure no bloco de etapas.'
+Assert-True ($listApiIndex -gt $listProcedureIndex) 'List deve colocar o API Save depois da Procedure.'
 
 $reportSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanApplicationFinalReport.cs')
 Assert-True ($reportSource -match 'PlannedApiName') 'B081 deve registrar o nome planejado do API Object.'

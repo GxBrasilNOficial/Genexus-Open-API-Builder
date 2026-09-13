@@ -20,7 +20,6 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly PrototypeWizardContractSnapshot _snapshot;
     private readonly PrototypeBusinessComponentSnapshot _businessComponentSnapshot;
     private readonly PrototypeWizardPreferences _preferences;
-    private readonly Func<bool> _enableBusinessComponent;
     private readonly Action<string> _writeBusinessComponentOutput;
     private readonly FlowLayoutPanel _servicesList = CreateChoicePanel();
     private readonly FlowLayoutPanel _createFieldsList = CreateChoicePanel();
@@ -114,7 +113,7 @@ internal sealed class PrototypeWizardDialog : Form
     private string _currentLevelPathKey = string.Empty;
     private bool _syncingLevelUi;
 
-    public PrototypeWizardDialog(KBModel designModel, Transaction transaction, PrototypeWizardContractSnapshot snapshot, PrototypeBusinessComponentSnapshot businessComponentSnapshot, PrototypeWizardPreferences preferences, Func<bool> enableBusinessComponent, Action<string> writeBusinessComponentOutput, ExtensionTexts texts)
+    public PrototypeWizardDialog(KBModel designModel, Transaction transaction, PrototypeWizardContractSnapshot snapshot, PrototypeBusinessComponentSnapshot businessComponentSnapshot, PrototypeWizardPreferences preferences, Action<string> writeBusinessComponentOutput, ExtensionTexts texts)
     {
         _texts = texts ?? throw new ArgumentNullException(nameof(texts));
         _designModel = designModel ?? throw new ArgumentNullException(nameof(designModel));
@@ -122,7 +121,6 @@ internal sealed class PrototypeWizardDialog : Form
         _snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
         _businessComponentSnapshot = businessComponentSnapshot ?? throw new ArgumentNullException(nameof(businessComponentSnapshot));
         _preferences = preferences?.Clone() ?? throw new ArgumentNullException(nameof(preferences));
-        _enableBusinessComponent = enableBusinessComponent ?? throw new ArgumentNullException(nameof(enableBusinessComponent));
         _writeBusinessComponentOutput = writeBusinessComponentOutput ?? throw new ArgumentNullException(nameof(writeBusinessComponentOutput));
 
         Text = _texts.WizardTitle;
@@ -2636,26 +2634,8 @@ internal sealed class PrototypeWizardDialog : Form
             return false;
         }
 
-        try
-        {
-            if (!_enableBusinessComponent())
-            {
-                _writeBusinessComponentOutput($"[Genexus Open API Builder][B035] Falha ao confirmar Business Component habilitado para Transaction='{_businessComponentSnapshot.TransactionName}' apos gravacao.");
-                MessageBox.Show(this, _texts.Translate("Não foi possível confirmar Business Component habilitado após a gravação."), Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                RefreshBusinessComponentText();
-                return false;
-            }
-        }
-        catch (Exception ex)
-        {
-            _writeBusinessComponentOutput($"[Genexus Open API Builder][B035] Falha ao habilitar Business Component para Transaction='{_businessComponentSnapshot.TransactionName}': {ex.Message}");
-            MessageBox.Show(this, _texts.Translate("Falha ao habilitar Business Component: ") + ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
-            RefreshBusinessComponentText();
-            return false;
-        }
-
         _businessComponentEnabledDuringWizard = true;
-        _writeBusinessComponentOutput($"[Genexus Open API Builder][B035] Business Component habilitado por confirmacao explicita para Transaction='{_businessComponentSnapshot.TransactionName}'. A alteracao foi gravada na KB e nao sera revertida automaticamente.");
+        _writeBusinessComponentOutput($"[Genexus Open API Builder][B035] Habilitacao de Business Component confirmada em memoria para Transaction='{_businessComponentSnapshot.TransactionName}'. A alteracao sera gravada depois do preflight agregado, antes dos objetos dependentes.");
         _enableBusinessComponentCheck.Checked = false;
         RefreshBusinessComponentText();
         return true;
