@@ -437,6 +437,8 @@ residual `B082` 1B/2/3 não competem com a próxima avaliação da F2.
 
 110. Em 2026-09-12, o terceiro teste da matriz principal da F2 foi concluído na mesma `Laudo`, no perfil List-only: `GenerateSdts=False`, `GenerateProcedures=False`, `GenerateApiObject=True`, `ApplyList=True`, `GenerateMetadata=True` e `ApplyBusinessComponent=False`. O relatório registrou `FinalApiWriter='List'`, `ApiSaveAttempted=True`, `ApiSaveCount=1`, `PersistenceReceipts=3`, `PersistenceStageFailures=0`, `Criados=0`, `Removidos=0` e `Bloqueados=0`. A ordem confirmou `procLaudo_API_List`, `apiLaudo` e `apiLaudo_Metadata`; não houve recibo de Business Component nem Save físico de SDT ou Folder. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 
+111. Em 2026-09-12, o quarto teste da matriz principal da F2 foi concluído na mesma `Laudo`, no perfil combinado BC + List: `GenerateSdts=False`, `GenerateProcedures=False`, `GenerateApiObject=True`, `ApplyList=True`, `GenerateMetadata=True` e `ApplyBusinessComponent=True`. O relatório registrou `FinalApiWriter='List'`, `ApiSaveAttempted=True`, `ApiSaveCount=1`, `PersistenceReceipts=6`, `PersistenceStageFailures=0`, `Criados=0`, `Removidos=0` e `Bloqueados=0`. A ordem confirmou `procLaudo_API_Get`, `procLaudo_API_Create`, `procLaudo_API_Update`, `procLaudo_API_List`, `apiLaudo` e `apiLaudo_Metadata`; não houve recibo de API no Business Component nem Save físico de SDT ou Folder. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
+
 ## Bloqueios e fatos ainda não validados
 
 O reteste de 2026-09-11 atualizou a situação do `List` da `Laudo`: a execução
