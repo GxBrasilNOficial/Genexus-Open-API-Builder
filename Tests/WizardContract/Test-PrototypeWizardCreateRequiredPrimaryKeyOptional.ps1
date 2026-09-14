@@ -21,7 +21,15 @@ Assert-Contains $source '_createRequiredList' 'Aba Obrigatorios Create deve ser 
 Assert-Contains $source 'Chave primária não autonumerada inicia opcional' 'Motivo de PK opcional no Create deve existir.'
 Assert-Contains $source 'RoleLabel("CreateRequest")' 'Rotulo CreateRequest da aba Obrigatorios deve usar RoleLabel.'
 Assert-Contains $source 'Obrigatório no payload (editável)' 'Rotulo da aba deve indicar Create required editavel.'
-Assert-Contains $source 'Width = 1500;' 'Wizard principal deve iniciar com largura de 1500 pixels.'
+Assert-Contains $source 'Width = 1800;' 'Wizard principal deve iniciar com largura de 1800 pixels.'
+# A largura subiu de 1500 para 1800 em 2026-09-14: o resumo e os avisos de escala quebravam
+# linha cedo demais. A asserção continua fixando o valor de propósito — a janela é maior que
+# muitos monitores, e quem mudá-la precisa conferir o encolhimento de CenterOnIdeScreen.
+$placementPath = Join-Path $PSScriptRoot '..\..\Src\Extension\ExtensionIdeScreenPlacement.cs'
+if (-not (Test-Path -LiteralPath $placementPath)) {
+    throw "SOURCE_MISSING: $placementPath"
+}
+Assert-Contains ([IO.File]::ReadAllText($placementPath)) 'Math.Min(form.Width, working.Width)' 'Diálogos devem encolher para caber no monitor.'
 Assert-Contains $source 'Height = 1004;' 'Wizard principal deve iniciar com altura de 1004 pixels.'
 
 # Garante que o default de PK e false (return false apos IsPrimaryKey no DefaultCreateRequired).
