@@ -565,7 +565,11 @@ internal static class ApiPlanBusinessComponentWriter
                 "Generated",
                 procedure.Description,
                 plan.TransactionGuid,
-                procedure.Guid),
+                // O campo é o GUID do API Object a que a Procedure pertence, não o dela
+                // própria: é esse vínculo que a identidade histórica usa para autorizar
+                // exclusão. Numa criação nova o API ainda não existe, e Guid.Empty é o
+                // valor honesto.
+                plan.PlannedApiGuid ?? Guid.Empty),
             PersistenceFaultPoint.ProcedureSave,
             () => PrepareProcedure(model, kbIndex, procedure, variables, rules, content),
             () =>

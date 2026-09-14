@@ -378,11 +378,14 @@ fechadas: um diário de outra KB era aceito como governante desta, e `Prepared` 
 indistinguível de um envelope ativo. O enum `blockReason` recebeu `UserAborted` — mudança
 incompatível de schema, feita enquanto o V1 não saiu num release. **Validada na IDE em
 2026-09-14** na `Escola` da `wsEducacaoSpTeste`, nos cinco cenários do roteiro — inclusive os
-dois caminhos que passavam antes da P3, o diário de outra KB e a colisão externa. A bateria
-expôs dois defeitos anteriores à P3, ainda abertos: `composite.apiGuid` gravado com o GUID do
-próprio objeto pelos writers de Business Component e List — que **precisa estar corrigido antes
-da P4**, porque é identidade composta que autoriza exclusão — e `SetMainObject` declarando
-persistência ao apenas identificar o API Object. Seções 6 e 9 de
+dois caminhos que passavam antes da P3, o diário de outra KB e a colisão externa. Um sexto cenário,
+nascido da bateria, expôs que a fronteira `ApiPhysicallySaved` era registrada sem gravação do
+API Object. Quatro correções foram aplicadas e validadas em campo na mesma
+data — fronteira exigindo `ApiSaveCount > 0`, `composite.apiGuid` apontando para o API Object,
+`SetMainObject` deixando de declarar persistência e a remoção do fallback equivalente no
+construtor do relatório, que sobrevivera à terceira. Gate novo `tests.journalFrontierSentinel`
+e casos novos em `tests.applicationFinalReport`, verificados por mutação. **A P3 está
+concluída**; a etapa seguinte é a P4. Seções 6 e 9 de
 `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`. A condição para o próximo
 corte, acima, permanece inalterada: ela depende da P6 ou da documentação pública.
 

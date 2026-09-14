@@ -48,8 +48,12 @@ public sealed class ApiPlanApplicationFinalReport
         MainObjectName = mainObjectName;
         MainObjectGuid = mainObjectGuid;
         PlannedApiName = plannedApiName ?? apiName;
-        PersistedMainObjectName = persistedMainObjectName ?? mainObjectName;
-        PersistedMainObjectGuid = persistedMainObjectGuid ?? mainObjectGuid;
+        // B111/F3 P3: sem fallback para o objeto apenas identificado. O fallback fazia o
+        // relatório repor aqui o que o collector deixou vazio de propósito, e foi assim que
+        // operações sem gravação nenhuma reportaram PersistedMainObject preenchido — medido
+        // na IDE em 2026-09-14.
+        PersistedMainObjectName = persistedMainObjectName;
+        PersistedMainObjectGuid = persistedMainObjectGuid;
         FinalApiWriter = finalApiWriter;
         ApiSaveCount = apiSaveCount;
         ApiSaveAttempted = apiSaveAttempted;
@@ -418,6 +422,13 @@ public sealed class ApiPlanApplicationFinalReportCollector
         }
     }
 
+    /// <summary>
+    /// Identifica o objeto principal da operacao — o que o botao «Abrir objeto principal»
+    /// usa. Identificar **nao** e persistir: um reencontro, um bloqueio antes da primeira
+    /// gravacao ou um Apply que nao escreve o API Object tambem passam por aqui. Quem
+    /// declara persistencia e <see cref="SetPersistedMainObject"/>, chamado apenas quando
+    /// um Save foi confirmado.
+    /// </summary>
     public void SetMainObject(string name, Guid guid)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -427,7 +438,6 @@ public sealed class ApiPlanApplicationFinalReportCollector
 
         MainObjectName = name;
         MainObjectGuid = guid;
-        SetPersistedMainObject(name, guid);
     }
 
     public void SetPersistedMainObject(string name, Guid guid)

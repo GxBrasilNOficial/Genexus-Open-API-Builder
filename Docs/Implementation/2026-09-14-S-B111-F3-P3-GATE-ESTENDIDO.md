@@ -9,9 +9,10 @@ lê essa frase — o relatório final hoje, a reconciliação da P5 e o comando 
 P6 amanhã — não tem como distinguir «o diário não pôde ser lido» de «o diário está íntegro e
 o estado impede a operação». São saídas diferentes: apagar, reconciliar ou continuar.
 
-A implementação é offline. **A validação na IDE foi executada em 2026-09-14** e passou nos
-cinco cenários do roteiro; um sexto cenário nasceu de um defeito encontrado na bateria e
-continua pendente. Tudo na seção 6.
+A implementação é offline. **A validação na IDE foi executada em 2026-09-14**: os cinco
+cenários do roteiro passaram, e um sexto, nascido durante a bateria, expôs um defeito no
+registro da fronteira do API Object. Seção 6 para a validação, 9 para as três correções que
+saíram dela, 10 para o que falta revalidar.
 
 ## 1. O que entrou
 
@@ -124,11 +125,12 @@ journalDurability=Confirmed.
 O contexto é o que a decisão 24 manda carregar ao lado da mensagem. `reasonCode` e
 `blockReason` continuam em namespaces separados no código: nada copia um para o outro.
 
-## 6. Validação na IDE — cinco de seis executados
+## 6. Validação na IDE — seis cenários
 
 **Executada em 2026-09-14**, na KB `wsEducacaoSpTeste`, Transaction `Escola`, com a DLL desta
 etapa instalada. Os cinco cenários do roteiro original passaram. Um sexto nasceu durante a
-bateria, a partir de um achado, e está pendente — seção 6.7.
+bateria, a partir de um achado, e **encontrou um defeito** — seção 6.7. As correções estão na
+seção 9, e a revalidação na IDE, na seção 10.
 
 ### 6.1 Aborto com `UserAborted`
 
@@ -233,22 +235,31 @@ A causa é `SetMainObject`, que serve para *identificar* o API Object na KB — 
 botão «Abrir objeto principal» — e chama `SetPersistedMainObject` por dentro. Identificar
 passou a significar «persistido».
 
-### 6.7 Teste 6 — pendente
+### 6.7 Teste 6 — a fronteira do API era afirmada sem gravação
 
-O defeito 2 tem uma consequência possível que **não foi medida**, e por isso vira teste: o
-`CompleteJournal` usa `report.PersistedMainObjectGuid` como uma das fontes do GUID que dispara
-`NoteApiPhysicallySaved`, sem checar `ApiSaveAttempted`. Num Apply que conclua **sem gravar o
-API Object** — só SDTs e Procedures —, o campo estaria preenchido por identificação e o diário
-registraria a fronteira `ApiPhysicallySaved`.
+O defeito 2 tinha uma consequência possível no diário, e ela **se confirmou**. Apply na
+`Escola` com Delete fora dos Serviços e, nas abas de geração, apenas SDTs e Procedures:
 
-Se isso ocorrer, o envelope afirma uma gravação física que não aconteceu, e é justamente a
-fronteira que impede qualquer recuperação de repetir o Save do API Object. A seção 7 da P2 diz
-que esse Apply «faz três checkpoints, não quatro, porque não existe fronteira de API a
-registrar»; o teste é se a implementação cumpre isso.
+```
+[B111/F3] Checkpoint 'API Object confirmado': Running/ApiPhysicallySaved, FileId=88,
+          Bytes=4238, Recibos=4, Inventário=4.
+[B111/F3] Custo do diário: Checkpoints=4, TotalMs=185, Estado=Completed/Completed.
+[B081]    ApiSaveAttempted=False, ApiSaveCount=0, Atualizados=4.
+```
 
-**Roteiro:** Wizard na `Escola` com Delete desmarcado em Serviços e, nas abas de geração,
-apenas SDTs e Procedures. Sinais de confirmação: a linha `Checkpoint 'API Object confirmado'`
-na Output, `Checkpoints=4` no custo, e `ApiSaveAttempted=False` / `ApiSaveCount=0` no B081.
+Os três sinais juntos: fronteira registrada, quatro checkpoints, nenhum Save de API tentado. E
+uma contradição dentro do próprio snapshot — o inventário tem **quatro itens, todas
+Procedures**; não há item de API Object. O envelope afirma que o API está fisicamente gravado e,
+na mesma gravação, não lista API nenhum.
+
+A seção 7 da P2 afirmava que esse Apply «faz três checkpoints, não quatro, porque não existe
+fronteira de API a registrar». Fez quatro. A afirmação estava errada, e agora está medida.
+
+Por que importa: `ApiPhysicallySaved` é a fronteira que, pelo plano, impede qualquer
+recuperação de repetir a gravação do API Object. Declarada sem gravação, ela faz a P5 recusar
+justamente o passo que precisaria executar.
+
+O GUID vinha de `report.PersistedMainObjectGuid`, preenchido por identificação — o defeito 2.
 
 ## 7. O que a P3 deliberadamente não faz
 
@@ -275,16 +286,95 @@ Verificação executada nesta rodada: build Release com 0 avisos e 0 erros;
 `tests.operationJournalSchema`, `tests.operationJournalCheckpoints`,
 `tests.operationJournalReceipts`, `tests.operationJournalGate` e o teste do checker pré-push.
 
-## 9. Pendências abertas ao fim desta etapa
+## 9. As três correções, aplicadas em 2026-09-14
 
-1. **Teste 6** — medir se um Apply sem gravação de API Object registra `ApiPhysicallySaved`
-   (seção 6.7).
-2. **Defeito 1** — `composite.apiGuid` com o GUID do próprio objeto, em
-   `ApiPlanBusinessComponentWriter` e `ApiPlanListProcedureWriter` (seção 6.6). Corrigir antes
-   da P4, que é quem consome identidade composta para autorizar exclusão.
-3. **Defeito 2** — `SetMainObject` declarando persistência ao identificar (seção 6.6).
-4. Decidido com o usuário em 2026-09-14: as correções entram **depois** da bateria, numa única
-   reinstalação de DLL, e o teste 6 é refeito junto com o teste 1 para conferir o inventário.
+Feitas depois da bateria, como combinado, para não invalidar a DLL no meio dela.
 
-Nenhuma delas invalida o que a seção 6 registra: os cinco cenários foram exercidos com a DLL
-desta etapa, e os dois defeitos são anteriores à P3.
+| # | Correção | Onde |
+|---|---|---|
+| 1 | `composite.apiGuid` passa a ser o GUID do **API Object** (`plan.PlannedApiGuid`), com `Guid.Empty` quando ele ainda não existe | `ApiPlanBusinessComponentWriter`, `ApiPlanListProcedureWriter` |
+| 2 | `SetMainObject` deixou de declarar persistência; `PersistedMainObject` só é escrito por `onApiSaveCompleted` | `ApiPlanApplicationFinalReport` |
+| 3 | a fronteira `ApiPhysicallySaved` exige **gravação confirmada** (`report.ApiSaveCount > 0`), não um GUID conhecido | `CompleteJournal`, em `Package.cs` |
+
+A 3 é consequência da 2, e mesmo assim tem trava própria: o diário não deve depender da
+veracidade de um campo de outro componente para afirmar uma fronteira física.
+
+**Cobertura.** `tests.applicationFinalReport` ganhou o caso que separa identificar de persistir.
+As outras duas não são observáveis offline — uma vive no fluxo do `Package`, a outra depende de
+objetos reais da KB —, então entram por sentinela textual sobre o fonte,
+`tests.journalFrontierSentinel`: o único ponto de registro da fronteira precisa estar guardado
+por `ApiSaveCount > 0`, e nenhum writer pode passar `procedure.Guid` como `apiGuid`. A eficácia
+foi verificada por mutação: trocar a guarda por `true` faz o gate falhar.
+
+Build Release com 0 avisos e 0 erros; orquestrador mecânico com todos os checks `passed`.
+
+## 10. Revalidação na IDE — 2026-09-14, e a correção que faltava
+
+### 10.1 Apply completo de reencontro
+
+`Escola`, cinco serviços, todas as etapas exceto metadata. Conferiu duas coisas ao mesmo tempo:
+
+| Observação | Valor |
+|---|---|
+| `composite.apiGuid`, nos cinco itens | **`34491e46-…`**, o `apiEscola` — antes, o GUID de cada Procedure |
+| Inventário | 6 alvos, o sexto sendo o próprio `apiEscola` (`identityKind=Guid`, recibo 11) |
+| `ApiSaveAttempted` / `ApiSaveCount` | `True` / `1`, writer final `List` |
+| Fronteira e checkpoints | `ApiPhysicallySaved` registrada, `Checkpoints=4`, 234 ms |
+
+A correção 1 está validada: Procedures de uma API apontam todas para a mesma API. E a correção
+3 está validada **pelo lado positivo** — com gravação confirmada, a fronteira continua sendo
+registrada e o inventário traz um item de API real para sustentá-la.
+
+### 10.2 Apply sem API Object — e o fallback que sobrevivera
+
+Mesma configuração do teste 6: Delete fora, apenas SDTs e Procedures.
+
+| Sinal | Antes | Agora |
+|---|---|---|
+| `Checkpoint 'API Object confirmado'` | aparecia | **não aparece** |
+| `Checkpoints` | 4 | **3**, 70 ms |
+| `PersistedMainObjectName` / `Guid` | preenchidos | **ainda preenchidos** |
+
+Dois de três. O terceiro expôs que a correção 2 estava **incompleta**: eu corrigi o collector,
+mas o construtor de `ApiPlanApplicationFinalReport` repunha o valor por fallback —
+`PersistedMainObjectName = persistedMainObjectName ?? mainObjectName`. O collector deixava
+vazio de propósito e o relatório preenchia de novo.
+
+O gate que escrevi não pegou porque testava o **nível errado**: exercitava o collector, onde a
+correção estava certa, e não o `Build()`, onde o defeito vivia. A lição é da cobertura, não do
+código: um teste que não passa pelo caminho que o usuário vê não prova o que afirma.
+
+**Correção 2b, aplicada em 2026-09-14:** o fallback saiu do construtor do relatório. O caso de
+teste passou a exercitar `Build()` e o `BuildOutputSummary()`, e a eficácia foi verificada por
+mutação — repondo o fallback, o gate falha apontando o GUID indevido.
+
+Build Release limpo e orquestrador com todos os checks `passed`.
+
+### 10.3 O fechamento, com a DLL da correção 2b
+
+Mesmo Apply da 10.2, repetido:
+
+```
+[B111/F3] Custo do diário: Checkpoints=3, TotalMs=279, Estado=Completed/Completed.
+[B081]    PersistedMainObjectName='', PersistedMainObjectGuid='',
+          ApiSaveAttempted=False, ApiSaveCount=0, Atualizados=4.
+```
+
+Os três sinais. Um Apply que não grava o API Object não registra a fronteira, faz três
+checkpoints e não chama de persistido nada que ninguém gravou.
+
+## 11. Estado ao fim da etapa
+
+A P3 está **implementada e validada na IDE**, com as quatro correções que a validação produziu
+também validadas em campo:
+
+| # | Correção | Validada em |
+|---|---|---|
+| 1 | `composite.apiGuid` aponta para o API Object | 10.1 |
+| 2 | `SetMainObject` não declara persistência | 10.2 (incompleta) e 10.3 |
+| 2b | sem fallback do persistido para o identificado no relatório | 10.3 |
+| 3 | fronteira `ApiPhysicallySaved` exige gravação confirmada | 10.1 (positivo) e 10.2 (negativo) |
+
+Nada da P3 continua pendente. A próxima etapa da F3 é a **P4** — remoção com intenção, passadas
+e orçamento —, que já encontra a identidade composta correta no inventário, coisa que esta
+etapa descobriu não estar.

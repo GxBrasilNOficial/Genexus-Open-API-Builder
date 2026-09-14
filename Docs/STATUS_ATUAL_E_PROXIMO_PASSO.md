@@ -143,26 +143,28 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**F3 — concluir o teste 6 e corrigir os dois defeitos que a bateria expôs.** A P3 foi
-implementada e **validada na IDE em 2026-09-14**, na `Escola` da `wsEducacaoSpTeste`, nos cinco
-cenários do roteiro: aborto gravando `UserAborted`, Apply e Sync recusados com diagnóstico
+**F3 — etapa P4: remoção com intenção, passadas e orçamento.** A P3 está **concluída e
+validada na IDE em 2026-09-14**, na `Escola` da `wsEducacaoSpTeste`: os cinco cenários do
+roteiro passaram — aborto gravando `UserAborted`, Apply e Sync recusados com diagnóstico
 classificado e sem tocar no envelope, diário adulterado para outra KB e colisão externa no nome
-do File. O caso do diário de outra KB provou a precedência da decisão 24 em campo — o mesmo
+do File. O caso do diário de outra KB provou a precedência da decisão 24 em campo: o mesmo
 envelope `Partial` que produzia `GateBlocked` passou a ser recusado como `JournalUnavailable`.
-Registro: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seção 6.
 
-Três pendências, nesta ordem, com a DLL atual ainda instalada:
+Um sexto cenário, nascido da bateria, expôs que a fronteira `ApiPhysicallySaved` era registrada
+sem gravação do API Object. Quatro correções saíram daí, **todas validadas em campo**: a
+fronteira passou a exigir `ApiSaveCount > 0`; `composite.apiGuid` passou a ser o GUID do API
+Object, e não o do próprio objeto — defeito que precisava estar corrigido antes da P4, que
+consome identidade composta para autorizar exclusão; e `SetMainObject` deixou de declarar
+persistência, primeiro no collector e depois no fallback do próprio relatório, que sobrevivera
+à primeira correção. Gate novo `tests.journalFrontierSentinel` e casos novos em
+`tests.applicationFinalReport`, ambos verificados por mutação.
 
-1. **teste 6** — Wizard na `Escola` com apenas SDTs e Procedures, para medir se um Apply que
-   não grava API Object registra mesmo assim a fronteira `ApiPhysicallySaved` (seção 6.7);
-2. **defeito 1** — `composite.apiGuid` gravado com o GUID do próprio objeto, pelos writers de
-   Business Component e List. Anterior à P3, exposto por ela, e **precisa estar corrigido antes
-   da P4**, que consome identidade composta para autorizar exclusão;
-3. **defeito 2** — `SetMainObject` declarando persistência ao apenas identificar o API Object,
-   o que faz o relatório afirmar `PersistedMainObject` em operações que nada gravaram.
+Registro: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seções 6, 9, 10 e 11.
 
-As correções entram numa única reinstalação de DLL, e os testes 1 e 6 são refeitos depois
-delas. Só então a P4.
+A P4 é o plano da seção 4.3 da F3: registrar a intenção de remoção com o inventário completo
+antes do primeiro `Delete()`, as passadas da fila, o orçamento de tentativas e `RemovalPartial`
+na interrupção. A máquina de checkpoints já a implementa; falta acioná-la no `Remover API
+gerada`.
 
 Depois dela: P4 (remoção com intenção, passadas e orçamento), P5 (serviços de recuperação),
 P6 (comando explícito e preferência), P7 (localização trilíngue e gates restantes) e P8 (validação integrada na IDE, os nove cenários da seção 9 do plano da F3, que só podem ser exercidos com remoção e recuperação prontas).
@@ -488,6 +490,9 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 124. Em 2026-09-14, o `Sincronizar` com delta fechou a validação da P2 na `Escola` (`EscolaEndereco` 70→71): `operationKind='Sync'`, File reutilizado (`FileId=86`), quatro checkpoints confirmados, 12 recibos, 7 alvos e 156 ms de diário sobre 4,4 s de operação; o `PlannedContractHash` acompanhou a mudança de contrato. A P2 está validada nos quatro fluxos que cobre, em duas KBs. Próxima ação única = F3 etapa P3. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`, seção 6.8.
 125. Em 2026-09-14, a etapa P3 da F3 foi implementada offline: o gate estendido da seção 4.2 passou a classificar o bloqueio com a precedência fechada da decisão 24 — `JournalUnavailable`, `DurabilityUnknown`, `GateBlocked` e `PreconditionFailed` —, com `reasonCode` estável, a pré-condição que reprovou e contexto estruturado, no lugar da mensagem única da P2. Duas lacunas de validação foram fechadas: um diário de outra KB era aceito como governante desta, e `Prepared` era indistinguível de um envelope ativo — agora com razão própria e o ponto de autorização que a P6 vai preencher. O enum `blockReason` recebeu `UserAborted`, resolvendo a imprecisão da seção 6.5 da P2; é mudança incompatível de schema, feita enquanto o V1 não saiu num release. Build Release com 0 avisos, gate novo `tests.operationJournalGate`, `tests.operationJournalSchema` ampliado e gates vizinhos passando; **nada validado na IDE**. Próxima ação única = validar a P3 na IDE, pelos cinco cenários da seção 6. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`.
 126. Em 2026-09-14, a P3 foi validada na IDE na `Escola` da `wsEducacaoSpTeste`, nos cinco cenários do roteiro: o aborto gravou `blockReason=UserAborted` (3 checkpoints, 219 ms, 10 recibos, 5 alvos); o Apply seguinte foi recusado com `[GateBlocked/JournalNonTerminal]`, pré-condição `PriorIntentReconciled` e contexto completo, sem gravar nada e sem tocar no envelope; o Sync com delta recebeu o mesmo diagnóstico, com `operationKind=Apply` no contexto, porque quem bloqueia é o envelope registrado; o diário adulterado para outra KB foi recusado com `[JournalUnavailable/JournalIdentityDivergent]`, provando em campo a precedência da decisão 24 sobre o mesmo envelope `Partial`; e a colisão externa no nome do File produziu o mesmo par código/razão com `lookupState=ExternalCollision` e sem campos de envelope. A bateria expôs dois defeitos anteriores à P3 — `composite.apiGuid` com o GUID do próprio objeto, e `SetMainObject` declarando persistência ao identificar — e gerou um sexto teste, pendente. Próxima ação única = teste 6 e as duas correções, numa única reinstalação de DLL. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seções 6 e 9.
+127. Em 2026-09-14, o teste 6 confirmou a hipótese e as três correções foram aplicadas: o Apply da `Escola` com apenas SDTs e Procedures registrou `ApiPhysicallySaved` com `ApiSaveCount=0`, quatro checkpoints e um inventário de quatro Procedures sem nenhum item de API — a fronteira que impede a recuperação de repetir o Save do API Object era afirmada sem gravação. Corrigidos: a fronteira passou a exigir `report.ApiSaveCount > 0`; `composite.apiGuid` passou a ser o GUID do API Object nos writers de Business Component e de List; e `SetMainObject` deixou de declarar persistência ao apenas identificar. Gate novo `tests.journalFrontierSentinel`, verificado por mutação, e caso novo em `tests.applicationFinalReport`; build Release limpo e orquestrador com todos os checks `passed`. Próxima ação única = reinstalar a DLL e refazer os testes 1 e 6. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seções 6.7, 9 e 10.
+128. Em 2026-09-14, a revalidação na IDE validou duas das três correções: o Apply completo de reencontro gravou `composite.apiGuid` com o GUID do `apiEscola` nos cinco itens e manteve a fronteira com `ApiSaveCount=1`; o Apply sem API Object passou a fazer três checkpoints, sem registrar a fronteira. A terceira estava incompleta — o construtor de `ApiPlanApplicationFinalReport` repunha `PersistedMainObject` por fallback para o objeto identificado, e o gate testava o collector em vez do `Build()`. O fallback foi removido, o caso passou a exercitar o relatório construído e a eficácia foi verificada por mutação. Próxima ação única = reinstalar a DLL e refazer só o Apply sem API Object. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seções 10 e 11.
+129. Em 2026-09-14, a correção 2b fechou a P3: o Apply sem API Object terminou com `Checkpoints=3`, sem registrar a fronteira, e com `PersistedMainObjectName` e `PersistedMainObjectGuid` vazios. A etapa P3 está concluída e validada na IDE, com as quatro correções também validadas em campo. Próxima ação única = F3 etapa P4 (remoção com intenção, passadas e orçamento). Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seções 10 e 11.
 
 ## Bloqueios e fatos ainda não validados
 

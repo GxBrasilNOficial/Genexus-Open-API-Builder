@@ -952,7 +952,9 @@ internal static class ApiPlanListProcedureWriter
             procedure.Name,
             "Procedure",
             "List",
-            new CompositeIdentity(procedure.Name, "Procedure", "Generated", procedure.Description, plan.TransactionGuid, procedure.Guid),
+            // apiGuid é o GUID do API Object a que a Procedure pertence, não o dela própria:
+            // é esse vínculo que autoriza exclusão na identidade histórica.
+            new CompositeIdentity(procedure.Name, "Procedure", "Generated", procedure.Description, plan.TransactionGuid, plan.PlannedApiGuid ?? Guid.Empty),
             PersistenceFaultPoint.ProcedureSave,
             () => PrepareProcedure(model, kbIndex, procedure, source, variables, rules),
             () => procedure.Save(),

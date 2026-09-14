@@ -1845,6 +1845,12 @@ public sealed class Package : AbstractPackageUI
     /// <summary>
     /// Fecha o diário no caminho feliz. Quando o API Object foi persistido, registra antes a
     /// fronteira que impede qualquer recuperação de repetir essa gravação.
+    ///
+    /// B111/F3 P3: a fronteira exige **gravação confirmada**, não apenas um GUID conhecido.
+    /// Medido na IDE em 2026-09-14: um Apply de SDTs e Procedures, com a etapa de API Object
+    /// desmarcada, registrava `ApiPhysicallySaved` com `ApiSaveCount=0` — o GUID vinha do
+    /// objeto apenas identificado na KB. Afirmar essa fronteira sem gravação faz a
+    /// recuperação recusar justamente o passo que precisaria executar.
     /// </summary>
     private static void CompleteJournal(
         ApiPlanOperationJournalSession? journal,
@@ -1856,7 +1862,8 @@ public sealed class Package : AbstractPackageUI
             return;
         }
 
-        if (persistedApiGuid.HasValue && persistedApiGuid.Value != Guid.Empty)
+        var apiPhysicallySaved = report.ApiSaveCount > 0;
+        if (apiPhysicallySaved && persistedApiGuid.HasValue && persistedApiGuid.Value != Guid.Empty)
         {
             journal.SetPlannedApiGuid(persistedApiGuid.Value);
             journal.NoteApiPhysicallySaved();

@@ -56,7 +56,7 @@ $collector.AddFromWriteStatus('SDT', 'sdt_API_ErrorResponse', 'Reencountered', '
 $collector.AddFromWriteStatus('Procedure', 'procContrato_API_List', 'Created', 'List')
 $collector.AddFromWriteStatus('API Object', 'apiContrato', 'Created')
 $collector.AddCreated('Folder', 'ContratoOpenApi', 'criado pela extensão; apagar só se ficar vazio')
-$collector.SetMainObject('apiContrato', [guid]'11111111-1111-1111-1111-111111111111')
+$collector.SetPersistedMainObject('apiContrato', [guid]'11111111-1111-1111-1111-111111111111')
 $collector.AddWarning('Descricoes de servico usaram fallback em ingles.')
 
 $report = $collector.Build([timespan]::FromMilliseconds(1250))
@@ -69,6 +69,27 @@ Assert-Equal 0 $report.BlockedCount 'Sem bloqueios.'
 Assert-Equal 1 $report.WarningCount 'Um aviso.'
 Assert-True ($report.BuildOutputSummary() -match "\[B081\] Relatório final") 'Output summary deve citar B081.'
 Assert-True ($report.BuildOutputSummary() -match "PersistedMainObjectGuid='11111111-1111-1111-1111-111111111111'") 'Output summary deve expor o GUID persistido.'
+
+# B111/F3 P3: identificar o objeto principal não é persistir. Medido na IDE em 2026-09-14:
+# operações bloqueadas antes da primeira gravação, e um Apply que não escreveu o API Object,
+# reportavam PersistedMainObject preenchido — o GUID vinha só da identificação na KB.
+$identifiedOnly = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalReportCollector]::new('Wizard', 'Contrato', 'apiContrato')
+$identifiedOnly.SetMainObject('apiContrato', [guid]'22222222-2222-2222-2222-222222222222')
+Assert-Equal ([guid]'22222222-2222-2222-2222-222222222222') $identifiedOnly.MainObjectGuid 'Identificar deve registrar o objeto principal.'
+Assert-Equal $null $identifiedOnly.PersistedMainObjectGuid 'Identificar não pode declarar persistência.'
+$identifiedOnly.SetPersistedMainObject('apiContrato', [guid]'22222222-2222-2222-2222-222222222222')
+Assert-Equal ([guid]'22222222-2222-2222-2222-222222222222') $identifiedOnly.PersistedMainObjectGuid 'Save confirmado declara persistência.'
+
+# O defeito real vivia um nível abaixo: o collector deixava vazio, e o relatório repunha o
+# valor por fallback para o objeto identificado. Medido na IDE em 2026-09-14 — um Apply sem
+# gravação de API Object reportava PersistedMainObject preenchido. A trava é sobre Build().
+$identifiedReport = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalReportCollector]::new('Wizard', 'Contrato', 'apiContrato')
+$identifiedReport.SetMainObject('apiContrato', [guid]'33333333-3333-3333-3333-333333333333')
+$identifiedBuilt = $identifiedReport.Build([timespan]::FromMilliseconds(10))
+Assert-Equal ([guid]'33333333-3333-3333-3333-333333333333') $identifiedBuilt.MainObjectGuid 'O relatório preserva o objeto principal identificado.'
+Assert-Equal $null $identifiedBuilt.PersistedMainObjectGuid 'O relatório não pode repor o persistido por fallback do identificado.'
+Assert-Equal $null $identifiedBuilt.PersistedMainObjectName 'O nome persistido também não pode vir por fallback.'
+Assert-True ($identifiedBuilt.BuildOutputSummary() -match "PersistedMainObjectGuid=''") 'Sem gravação, o summary expõe o GUID persistido vazio.'
 Assert-True ($report.BuildReadableBody() -match 'Resultado: Criados=4; Atualizados=1; Removidos=0.') 'Corpo legivel deve resumir os efeitos bem-sucedidos por contagem.'
 Assert-True ($report.BuildReadableBody() -notmatch 'Guid persistido do objeto principal') 'Corpo legivel normal não deve exibir GUID técnico.'
 Assert-True ($report.BuildReadableBody() -notmatch '\[Folder\] ContratoOpenApi') 'Corpo legivel normal não deve listar cada objeto criado.'
