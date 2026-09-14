@@ -355,8 +355,12 @@ Sincronizar registram a intenção no File único `GxOpenApiBuilder_OperationJou
 qualquer gravação de negócio, em duas fases confirmadas, e o fecham na conclusão, na falha
 de etapa e no aborto. Um envelope anterior não terminal bloqueia a operação seguinte em vez
 de ser sobrescrito. Reconciliar e continuar operações permanecem abertos, nas etapas P3 a
-P6; a P2 ainda não foi validada na IDE. Evidência:
-`Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`.
+P6. A P2 foi **validada na IDE em 2026-09-14**, nos quatro fluxos que cobre — Apply de
+criação, Apply de reencontro, Apply abortado com bloqueio da operação seguinte e Sync com
+delta —, em `wsEducacaoSpTeste` e `FabricaBrasil18Test`. O custo do diário ficou em 182 ms
+sobre um Apply de 44,2 s na KB grande, contra os ~4,4 s do orçamento, que recebeu nota de
+remissão no plano. Evidência:
+`Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`, seções 6.1 a 6.8.
 
 **B106 — concluído em 2026-08-24.** O roteiro foi atualizado para a Alpha `0.1.0-alpha.4`, passou a registrar o checkbox de repasse das mensagens do Business Component e aponta para as notas da Alpha 4. A captura de Segurança foi explicitamente marcada como referência visual anterior; uma nova captura da UI permanece uma melhoria visual separada, sem bloquear a documentação textual.
 
