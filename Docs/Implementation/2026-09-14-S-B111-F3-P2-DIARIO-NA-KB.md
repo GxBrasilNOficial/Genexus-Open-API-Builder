@@ -52,9 +52,21 @@ Os dois fecham o diário em todas as saídas: conclusão normal (`Completed`), f
 (`Partial` + `blockReason=StageFailed`) e aborto do usuário (idem). A sessão vive fora do
 `try` justamente para que o aborto seja registrado em vez de desaparecer com o escopo.
 
+**Remissão — 2026-09-14:** o aborto do usuário deixou de compartilhar o motivo da falha de
+etapa. A decisão 58 acrescentou `UserAborted` ao enum, e é ele que o Apply e o Sync gravam
+nessa saída — ver a seção 6.5 deste documento e a seção 4 da P3.
+
 Na conclusão, quando o API Object foi persistido, a fronteira `ApiPhysicallySaved` é
 registrada antes do terminal. O GUID vem, nesta ordem, do contexto transitório da F1, do
 objeto principal persistido no relatório final, ou do plano — o que existir primeiro.
+
+**Remissão — 2026-09-14:** «quando o API Object foi persistido» era a intenção, mas a
+implementação da P2 usava a existência de um GUID como prova de gravação, e a cadeia acima
+sempre devolvia algum. Medido na validação da P3: um Apply sem gravação de API registrava a
+fronteira com `ApiSaveCount=0`. Desde a correção, a fronteira exige gravação confirmada, e a
+cadeia de GUID serve apenas para dizer **qual** identidade registrar — nunca **se** registra.
+Detalhe em [`2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`](2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md),
+seções 6.7 e 9.
 
 ## 4. Duas decisões que a implementação forçou
 

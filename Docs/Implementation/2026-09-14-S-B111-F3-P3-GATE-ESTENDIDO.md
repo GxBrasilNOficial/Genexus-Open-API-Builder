@@ -11,8 +11,8 @@ o estado impede a operação». São saídas diferentes: apagar, reconciliar ou 
 
 A implementação é offline. **A validação na IDE foi executada em 2026-09-14**: os cinco
 cenários do roteiro passaram, e um sexto, nascido durante a bateria, expôs um defeito no
-registro da fronteira do API Object. Seção 6 para a validação, 9 para as três correções que
-saíram dela, 10 para o que falta revalidar.
+registro da fronteira do API Object. Seção 6 para a validação, 9 para as três correções
+imediatas, 10 para a revalidação — que exigiu uma quarta — e 11 para o estado final.
 
 ## 1. O que entrou
 
@@ -286,9 +286,11 @@ Verificação executada nesta rodada: build Release com 0 avisos e 0 erros;
 `tests.operationJournalSchema`, `tests.operationJournalCheckpoints`,
 `tests.operationJournalReceipts`, `tests.operationJournalGate` e o teste do checker pré-push.
 
-## 9. As três correções, aplicadas em 2026-09-14
+## 9. As três primeiras correções, aplicadas em 2026-09-14
 
-Feitas depois da bateria, como combinado, para não invalidar a DLL no meio dela.
+Feitas depois da bateria, como combinado, para não invalidar a DLL no meio dela. A revalidação
+da seção 10 mostrou que a segunda estava incompleta e exigiu uma quarta, a 2b; o conjunto
+fechado são **quatro** correções, listadas na seção 11.
 
 | # | Correção | Onde |
 |---|---|---|
