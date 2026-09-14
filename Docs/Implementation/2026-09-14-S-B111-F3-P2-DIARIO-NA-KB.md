@@ -88,8 +88,10 @@ Localizar o diário usa o índice já montado (0 ms) e as releituras vão por `F
 
 ## 6. Validação na IDE — roteiro
 
-Precisa de DLL instalada. Os itens 1 e 2 foram executados (seções 6.1 a 6.4); 3 a 6 seguem
-pendentes:
+Precisa de DLL instalada. **Executados e aceitos:** itens 1, 2, 4 e 6 (seções 6.1 a 6.7).
+**Pendente:** item 3, o Sync com delta. O item 5 — desbloqueio pela ferramenta — não é
+executável nesta etapa, porque o comando de recuperação é a P6; o contorno manual foi
+exercido duas vezes.
 
 1. **Apply completo numa Transaction nova.** Conferir na Output as linhas `[B111/F3]`: diário
    aberto com `FileId`, checkpoints `Prepared`→`Active`→`ApiPhysicallySaved`→`Completed`. Na
@@ -311,6 +313,46 @@ Ressalva da medição: foi num **reencontro**, com 10 recibos. Uma criação nov
 teria ~50 recibos e envelope maior. A sonda original mediu 247 bytes e 20 KB com o mesmo
 tempo de gravação, e os dois Applies da `Escola` (1022 e 7616 bytes, 314 e 305 ms)
 confirmam isso; ainda assim, a medição com envelope grande continua não feita.
+
+## 6.7 Reuso do File, e a prova incidental da promoção V3
+
+Segundo Apply seguido na `Empresa`, sem apagar nada:
+
+| Observação | Apply anterior | Este Apply |
+|---|---|---|
+| `Created` | True | **False** |
+| `FileId` | 138 | **138** — o mesmo |
+| `OperationId` | `9a9e3a9b…` | `ad9bfa1f…` — novo |
+| `ApplicationId` | `5b8dc95a…` | `6973d4f4…` — novo |
+| Custo do diário | 182 ms | 151 ms |
+| Recibos / inventário | 10 / 6 | 10 / 6 |
+
+O File é reutilizado e substituído, como manda a decisão 44: há **um** diário por KB, e o
+envelope terminal anterior dá lugar ao novo. Cada operação recebe `operationId` e
+`applicationId` novos, que é o contrato da matriz de identidade da seção 4.1.1 para «Apply
+ou Sync novos».
+
+Terceira medição de custo na KB grande: 125 ms (3 checkpoints), 182 ms e 151 ms (4
+checkpoints). Consistentes entre si e uma ordem de grandeza abaixo do orçamento.
+
+### A promoção V3 se provou sozinha, por acidente
+
+Comparando a metadata gravada nos dois Applies:
+
+| | Apply anterior | Este Apply |
+|---|---|---|
+| `Bytes` | 1344725 | 1344725 — **idêntico** |
+| `Sha256` do File | `B2A6C311…` | `22F11F96…` — **diferente** |
+| `PlannedContractHash` B067 | `41DBB659…` | `41DBB659…` — **idêntico** |
+
+Mesmo tamanho, mesmo contrato, conteúdo diferente. A única coisa que mudou no payload foi
+`ownership.applicationId` — um GUID trocado por outro, daí o tamanho idêntico. É exatamente o
+que a decisão 24 afirma sobre a promoção V2→V3: «`ownership.applicationId` passa a integrar o
+payload e o fingerprint, portanto um valor novo muda o fingerprint por definição».
+
+E confirma, do outro lado, que o `PlannedContractHash` do B067 **não** inclui ownership —
+razão pela qual o reencontro conservador não passou a bloquear com a promoção. Isso era uma
+verificação de código feita na revisão pré-push da P0; agora é observação de campo.
 
 ## 7. Riscos e lacunas assumidos nesta etapa
 

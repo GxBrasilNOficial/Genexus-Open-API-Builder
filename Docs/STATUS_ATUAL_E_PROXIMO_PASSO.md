@@ -135,7 +135,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Frente atual
 
-Sprint `S-B111` — F1 está **implementada e validada para encerramento com exceção explícita do `B121`** em 2026-09-10/11, e a F2 (seam de persistência e recibos) foi encerrada em 2026-09-13. Além dos cenários positivos, cancelamento cooperativo e criação em escala já aceitos, a `Teste` descartável comprovou retorno sem mutação antes de `SDT.Save`, confirmação divergente após `API.Save` e falha antes de `Procedure.Delete`, seguida de limpeza idempotente. O `B121` permanece como melhoria fora da sprint. A frente atual é a F3 (durabilidade e remoção), em andamento: as etapas P0 (metadata V3), P1 (schema V1 do diário) e P2 (o diário gravado na KB em Apply e Sync) foram implementadas em 2026-09-14; a P2 teve os dois primeiros testes de IDE aceitos em 2026-09-14 e aguarda os testes 3 a 6. Reconciliação, retry de remoção e comando de recuperação continuam não implementados. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
+Sprint `S-B111` — F1 está **implementada e validada para encerramento com exceção explícita do `B121`** em 2026-09-10/11, e a F2 (seam de persistência e recibos) foi encerrada em 2026-09-13. Além dos cenários positivos, cancelamento cooperativo e criação em escala já aceitos, a `Teste` descartável comprovou retorno sem mutação antes de `SDT.Save`, confirmação divergente após `API.Save` e falha antes de `Procedure.Delete`, seguida de limpeza idempotente. O `B121` permanece como melhoria fora da sprint. A frente atual é a F3 (durabilidade e remoção), em andamento: as etapas P0 (metadata V3), P1 (schema V1 do diário) e P2 (o diário gravado na KB em Apply e Sync) foram implementadas em 2026-09-14; a P2 foi validada na IDE em 2026-09-14 em Apply de criação, reencontro, aborto com bloqueio, custo na KB grande e reuso do File, restando apenas o Sync com delta. Reconciliação, retry de remoção e comando de recuperação continuam não implementados. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
 
 Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; **conferência de fim em 2026-08-28**, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100` (concluído em 2026-08-30) → `B082` Fases A+B (concluído em 2026-09-01) → `B082` Etapa 1A (aceita em 2026-09-03). Publicação em quatro cortes: `0.1.0-alpha.4` após `B102` (2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis (2026-08-30), `0.1.0-alpha.6` com o `Delete` (2026-08-31) e `0.1.0-alpha.7` com o progresso `B082` (**publicado em 2026-09-01**). `B105` entra na sprint apenas se houver folga.
 
@@ -143,7 +143,7 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Concluir a validação da P2 da F3 na IDE — restam os testes 3 a 6.** As etapas P0
+**Concluir a validação da P2 da F3 na IDE — resta o Sync com delta.** As etapas P0
 (metadata V3), P1 (schema V1 do diário) e P2 (o diário na KB, com checkpoints, recibos e
 inventário) foram implementadas em 2026-09-14. Os dois primeiros testes do roteiro passaram
 na `Escola` da KB `wsEducacaoSpTeste`: Apply de criação nova e Apply de reencontro, este com
@@ -151,16 +151,18 @@ na `Escola` da KB `wsEducacaoSpTeste`: Apply de criação nova e Apply de reenco
 Registros: `Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md` e
 `Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`, seções 6.1 a 6.4.
 
-Faltam, na ordem de valor:
+Já aceitos em 2026-09-14: Apply de criação nova e de reencontro na `Escola`; aborto na
+`Empresa` da KB grande terminando em `Partial`/`NotStarted` e **bloqueando** o Apply seguinte
+antes da primeira gravação; custo do diário medido em 182 ms sobre um Apply de 44,2 s; e
+reuso do File com `Created=False` e mesmo `FileId`.
 
-1. **Aborto durante o Apply** — o diário tem de terminar em `Partial`/`StageFailed` e a
-   operação seguinte tem de ser **bloqueada**. É o teste que prova para que o diário serve;
-2. **Reuso do File** — um segundo Apply seguido deve trazer `Created=False` com o mesmo
-   `FileId`, sem criar um segundo diário. Já observado uma vez, com a DLL anterior;
-3. **Sync com delta** — mesma sequência com `operationKind=Sync`;
-4. **Custo na KB grande** (`FabricaBrasil18Test`), contra os ~4,4 s previstos;
-5. **Colisão externa** (opcional): um File homônimo com outra Description deve bloquear antes
-   de qualquer gravação.
+**Falta um teste:** o `Sincronizar com a Transaction` com delta, que é o único fluxo
+integrado ainda não exercido com o diário. Opcional e barato: um File homônimo com outra
+Description, que deve bloquear como colisão externa.
+
+Fora do alcance desta etapa: o desbloqueio de um envelope não terminal pela ferramenta, que
+é a P6. O contorno manual — apagar o File `GxOpenApiBuilder_OperationJournal` — foi exercido
+duas vezes.
 
 **Antes de abortar um Apply de propósito:** um envelope não terminal bloqueia as operações
 seguintes por contrato, e a saída pela ferramenta só chega nas etapas P5/P6. Até lá, o
@@ -477,6 +479,7 @@ residual `B082` 1B/2/3 não competem com a preparação da F3.
 120. Em 2026-09-14, as etapas P0 e P1 da F3 foram implementadas offline: a metadata de negócio passou a ser emitida como `GOAB_API_METADATA_B060_V3`, com `ownership.applicationId` no payload e no fingerprint e leitura tolerante a V1/V2 sem regravação implícita; e o schema V1 do diário `GxOpenApiBuilder_OperationJournal` ganhou modelo, serializer canônico determinístico, `snapshotHash` SHA-256 e validador que recusa envelope inválido antes de qualquer `File.Save()`. Nenhum diário é gravado em KB ainda, e nenhum fluxo mudou. Build Release com 0 avisos, gate novo `tests.operationJournalSchema` e os gates vizinhos passaram. Próxima ação única = F3 etapa P2. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`.
 121. Em 2026-09-14, a etapa P2 da F3 foi implementada: o diário durável passa a existir na KB. Apply e Sincronizar abrem o File único `GxOpenApiBuilder_OperationJournal` em duas fases confirmadas antes de qualquer gravação de negócio, registram a fronteira do API Object e fecham o diário na conclusão, na falha de etapa e no aborto; um envelope anterior não terminal bloqueia a operação seguinte. Remove e Recovery existem na máquina de checkpoints e ainda não são acionados. Build Release sem avisos, gate novo `tests.operationJournalCheckpoints` e gates vizinhos passando; **nada validado na IDE**. Próxima ação única = validar a P2 na IDE. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`.
 122. Em 2026-09-14, os dois primeiros testes da P2 passaram na IDE, na `Escola` da KB `wsEducacaoSpTeste`: o Apply de criação nova gravou o diário com quatro checkpoints confirmados e 314 ms, e o cruzamento do `applicationId` entre diário e metadata V3 fechou o critério de aceite 8. O JSON exportado expôs `inventory` e `receipts` vazios, corrigido na mesma data; o reteste do reencontro gravou 12 recibos duráveis e 7 alvos, com 305 ms e envelope de 7616 bytes, e as sequências persistidas provam a ordem da F1 — API Object na sequência 11, depois de todos os consumidores. Três defeitos foram encontrados e corrigidos, o principal deles a falha do diário derrubando o Apply. Próxima ação única = concluir os testes 3 a 6 da P2. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`, seções 6.1 a 6.4.
+123. Em 2026-09-14, a validação da P2 avançou na KB grande `FabricaBrasil18Test`, Transaction `Empresa`: o aborto terminou em `Partial`/`NotStarted` com `blockReason=StageFailed` e o Apply seguinte foi recusado antes da primeira gravação, com `Criados=0` e `PersistenceReceipts=0`; o Apply completo custou 182 ms de diário sobre 44,2 s de operação, contra os ~4,4 s do orçamento, que recebeu nota de remissão no plano; e o Apply seguinte reutilizou o mesmo File (`Created=False`, `FileId=138`) com identidades novas. A comparação entre os dois Applies provou em campo a promoção V3 — mesma metadata e mesmo `PlannedContractHash`, `Sha256` diferente. A janela do Wizard passou a 1800 px e os diálogos encolhem em monitor menor. Próxima ação única = validar o `Sincronizar` com delta. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`, seções 6.5 a 6.7.
 
 ## Bloqueios e fatos ainda não validados
 
