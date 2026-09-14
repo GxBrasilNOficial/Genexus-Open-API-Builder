@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-13.
+2026-09-14.
 
 ## Último marco concluído
 
@@ -135,7 +135,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Frente atual
 
-Sprint `S-B111` — F1 está **implementada e validada para encerramento com exceção explícita do `B121`** em 2026-09-10/11, e a F2 (seam de persistência e recibos) foi encerrada em 2026-09-13. Além dos cenários positivos, cancelamento cooperativo e criação em escala já aceitos, a `Teste` descartável comprovou retorno sem mutação antes de `SDT.Save`, confirmação divergente após `API.Save` e falha antes de `Procedure.Delete`, seguida de limpeza idempotente. O `B121` permanece como melhoria fora da sprint. A próxima frente é F3 (durabilidade e remoção), sem capacidade de journal, reconciliação ou retry já implementada. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
+Sprint `S-B111` — F1 está **implementada e validada para encerramento com exceção explícita do `B121`** em 2026-09-10/11, e a F2 (seam de persistência e recibos) foi encerrada em 2026-09-13. Além dos cenários positivos, cancelamento cooperativo e criação em escala já aceitos, a `Teste` descartável comprovou retorno sem mutação antes de `SDT.Save`, confirmação divergente após `API.Save` e falha antes de `Procedure.Delete`, seguida de limpeza idempotente. O `B121` permanece como melhoria fora da sprint. A frente atual é a F3 (durabilidade e remoção), em andamento: as etapas P0 (metadata V3) e P1 (schema V1 do diário) foram implementadas offline em 2026-09-14, e a próxima é a P2. Ainda não há capacidade de journal gravado em KB, reconciliação ou retry implementada. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
 
 Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; **conferência de fim em 2026-08-28**, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100` (concluído em 2026-08-30) → `B082` Fases A+B (concluído em 2026-09-01) → `B082` Etapa 1A (aceita em 2026-09-03). Publicação em quatro cortes: `0.1.0-alpha.4` após `B102` (2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis (2026-08-30), `0.1.0-alpha.6` com o `Delete` (2026-08-31) e `0.1.0-alpha.7` com o progresso `B082` (**publicado em 2026-09-01**). `B105` entra na sprint apenas se houver folga.
 
@@ -143,14 +143,27 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Preparar a F3 (durabilidade e remoção)** — a F2 foi encerrada após as
+**F3 — etapa P2: ciclo de vida do diário na KB.** As etapas P0 (metadata V3 com
+`ownership.applicationId`) e P1 (schema V1 do diário: modelo, serializer canônico,
+`snapshotHash` e validador) foram implementadas offline em 2026-09-14, com build Release
+sem avisos, gate novo `tests.operationJournalSchema` e gates vizinhos passando. Registro:
+`Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`.
+
+A P2 é a primeira etapa da F3 que toca a KB: criar o File único
+`GxOpenApiBuilder_OperationJournal`, gravar e confirmar as fases `Prepared` e `Active`
+antes de qualquer `Save()` de negócio, guardar o `FileId` na criação e reler por ele, e
+cumprir a matriz de checkpoints da seção 4.4 do plano da F3 em Apply e Sync. Ela é também a
+primeira que exigirá DLL instalada e validação na IDE. Não iniciar gate estendido,
+reconciliação, retry de remoção ou comando de recuperação antes da P2 — são as etapas P3 a
+P6, na ordem registrada no documento acima.
+
+A F2 foi encerrada após as
 fronteiras de falha controlada na `Teste`: ausência confirmada antes de
 `SDT.Save`, confirmação divergente após `API.Save` e `StageFailed` antes de
 `Procedure.Delete`, com recomposição B115 e limpeza idempotente final. A
 sonda temporária de call sites B111 foi removida; B109 e B115 permanecem sob
 os critérios de saída registrados neste checkpoint. O registro detalhado está em
-`Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`. Não iniciar
-journal, reconciliação ou retry sem o plano e a autorização próprios da F3.
+`Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 O parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR
 COM RESSALVAS`; suas observações P3 úteis foram incorporadas como clarificações de escopo,
 canonização e estágios. A decisão humana de implementar a F1 foi registrada nesta sessão;
@@ -192,7 +205,7 @@ Planejamento concluído, avaliação técnica inicial realizada e **a F1 foi imp
 
 Os três planos de fase preservam as decisões e o desenho original da sprint. A F1 foi
 encerrada com a exceção explícita do `B121`; a F2 foi implementada e aceita na IDE em
-2026-09-13. A F3 continua como próxima fase e não foi implementada.
+2026-09-13. A F3 está em andamento: as etapas P0 (metadata V3) e P1 (schema V1 do diário) foram implementadas offline em 2026-09-14, e as etapas P2 a P8 continuam abertas, na ordem registrada em `Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`.
 
 | Fase | Plano | Depende de |
 |---|---|---|
@@ -448,6 +461,7 @@ residual `B082` 1B/2/3 não competem com a preparação da F3.
 117. Em 2026-09-13, a recomposição da `Transaction` `Produto` após o teste adicional 3 foi concluída pelo Apply completo, sem aborto. O relatório registrou `SuccessWithWarnings`, `FinalApiWriter='List'`, `ApiSaveAttempted=True`, `ApiSaveCount=1`, `PersistenceReceipts=10`, `Criados=0`, `Atualizados=14`, `Removidos=0`, `Bloqueados=0` e `Avisos=2`. Os oito SDTs, a pasta `ProdutoOpenApi`, as quatro Procedures e a metadata foram reencontrados; o API Object foi salvo uma vez no estágio `List`, e a sequência também confirmou as gravações do estágio `Business Component`, da Procedure de List e da metadata. A recomposição não é contada como novo teste adicional; o teste adicional 4 foi registrado no item 118. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 118. Em 2026-09-13, o teste adicional 4 da F2 foi aceito na `Empresa`, na KB grande `FabricaBrasil18Test` (GeneXus 18 U15), em criação nova com 13 subníveis. O relatório registrou `SuccessWithWarnings`, `FinalApiWriter='List'`, `ApiSaveAttempted=True`, `ApiSaveCount=1`, `Criados=55`, `Atualizados=0`, `Removidos=0`, `Bloqueados=0`, `PersistenceReceipts=59`, `PersistenceStageFailures=0` e `DuraçãoMs=79041`; todos os recibos ficaram confirmados e presentes. O Output registrou `Apply Scans=64` e `TotalScanMs=13566`. A medição é de criação em escala na DLL atual e não é comparada estatisticamente com o histórico de reencontro de DLL anterior. A próxima ação única passa a ser exercitar as fronteiras de falha controlada da F2. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 119. Em 2026-09-13, as fronteiras de falha controlada encerraram a F2 na `Transaction` descartável `Teste` da KB `wsEducacaoSpTeste`. O retorno sem mutação antes de `SDT.Save` produziu um único recibo `OutcomeUnknown/Absent/Absent` sem persistir os passos posteriores. A confirmação divergente após `API.Save` deixou 28 recibos confirmados e o recibo final do API Object como `OutcomeUnknown/Divergent/Unknown`; a recuperação B115 regravou somente a metadata e o Apply completo seguinte teve 12 recibos confirmados. A falha antes de `Procedure.Delete` confirmou a remoção do API Object e parou com `StageFailed=Procedures` e `ReasonCode=persistence.before_failed`; a repetição normal removeu os 24 objetos restantes, preservando SDTs compartilhados, Folder reutilizado e Business Component, com 25 recibos e zero bloqueios. A instrumentação temporária foi retirada. Próxima ação única = preparar F3. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
+120. Em 2026-09-14, as etapas P0 e P1 da F3 foram implementadas offline: a metadata de negócio passou a ser emitida como `GOAB_API_METADATA_B060_V3`, com `ownership.applicationId` no payload e no fingerprint e leitura tolerante a V1/V2 sem regravação implícita; e o schema V1 do diário `GxOpenApiBuilder_OperationJournal` ganhou modelo, serializer canônico determinístico, `snapshotHash` SHA-256 e validador que recusa envelope inválido antes de qualquer `File.Save()`. Nenhum diário é gravado em KB ainda, e nenhum fluxo mudou. Build Release com 0 avisos, gate novo `tests.operationJournalSchema` e os gates vizinhos passaram. Próxima ação única = F3 etapa P2. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -514,6 +528,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [2026-08-31 — B108 plano preferências e retração (estacionado desde 2026-09-05)](Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md)
 - [2026-09-10 — B120 envelope HTTP do `List` entre environments](Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md)
 - [2026-09-10 — B121 seleção explícita de BC/List no Sync](Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md)
+- [2026-09-14 — S-B111 F3 etapas P0 e P1 implementadas offline](Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md)
 - [B085 — Sincronizar com a Transaction](Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)
@@ -527,7 +542,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 10 — Beta estável (`B108` está estacionado; a F1 da sprint `S-B111` foi implementada e validada para encerramento com a exceção explícita do `B121`; a F2 foi encerrada após bateria offline, cenários IDE positivos, cancelamento cooperativo, recomposição, escala e falhas controladas; F3 ainda não foi implementada; Etapa 1A do `B082` aceita em 2026-09-03; residual 1B/2/3 no plano de hardening).
+- Sprint 10 — Beta estável (`B108` está estacionado; a F1 da sprint `S-B111` foi implementada e validada para encerramento com a exceção explícita do `B121`; a F2 foi encerrada após bateria offline, cenários IDE positivos, cancelamento cooperativo, recomposição, escala e falhas controladas; a F3 está em andamento, com as etapas P0 e P1 implementadas offline em 2026-09-14 e P2 a P8 abertas; Etapa 1A do `B082` aceita em 2026-09-03; residual 1B/2/3 no plano de hardening).
 
 ## Protocolo de atualização
 

@@ -16,13 +16,46 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 internal static class ApiPlanMetadataFileWriter
 {
     internal const string SchemaVersionV1 = "GOAB_API_METADATA_B060_V1";
-    internal const string SchemaVersion = "GOAB_API_METADATA_B060_V2";
+    internal const string SchemaVersionV2 = "GOAB_API_METADATA_B060_V2";
+
+    /// <summary>
+    /// Versão emitida por Apply, Sync e B115. A promoção V2→V3 é aditiva:
+    /// acrescenta <c>ownership.applicationId</c> ao payload e, por isso, ao
+    /// fingerprint. V1 e V2 continuam sendo entradas de leitura e nunca são
+    /// regravadas implicitamente só para preencher o campo novo.
+    /// </summary>
+    internal const string SchemaVersion = "GOAB_API_METADATA_B060_V3";
     internal static readonly string[] SupportedSchemaVersions =
     {
         SchemaVersionV1,
+        SchemaVersionV2,
         SchemaVersion,
     };
     internal const string B067IntegrityVersion = ApiPlanMetadataIntegrity.Version;
+
+    /// <summary>
+    /// Lê <c>ownership.applicationId</c> de uma metadata já carregada. Metadata
+    /// legada V1/V2 não tem o campo: nesse caso devolve <see langword="false"/> e a
+    /// adoção tardia do identificador é registrada fora do File legado.
+    /// </summary>
+    internal static bool TryReadApplicationId(JObject? metadata, out Guid applicationId)
+    {
+        applicationId = Guid.Empty;
+        var token = metadata?.SelectToken("ownership.applicationId");
+        if (token is null || token.Type != JTokenType.String)
+        {
+            return false;
+        }
+
+        var value = token.Value<string>();
+        if (string.IsNullOrWhiteSpace(value) || !Guid.TryParse(value, out var parsed) || parsed == Guid.Empty)
+        {
+            return false;
+        }
+
+        applicationId = parsed;
+        return true;
+    }
 
     internal static bool IsSupportedSchemaVersion(string? schemaVersion)
     {
@@ -394,6 +427,9 @@ internal static class ApiPlanMetadataFileWriter
                 ["transactionName"] = apiPlan.TransactionName,
                 ["transactionGuid"] = transaction.Guid.ToString(),
                 ["transactionModule"] = apiPlan.ModuleTarget,
+                // V3: identidade da aplicação que gravou esta metadata. Entra no
+                // payload e, por consequência, no fingerprint.
+                ["applicationId"] = apiPlan.ApplicationId.ToString("D"),
                 ["apiName"] = apiPlan.ApiName,
                 ["apiGuid"] = apiObject.Guid.ToString(),
                 ["metadataFileName"] = apiPlan.MetadataFileName,

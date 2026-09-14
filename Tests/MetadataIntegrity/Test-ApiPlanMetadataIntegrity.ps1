@@ -295,11 +295,20 @@ if ($metadataWriterSource.IndexOf('ParseMetadataBytes', [StringComparison]::Ordi
     throw 'ASSERT_FAILED: O writer deve reler a metadata sem converter generatedAtUtc em DateTime.'
 }
 
+if ($metadataWriterSource.IndexOf('SchemaVersion = "GOAB_API_METADATA_B060_V3"', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: A gravacao deve emitir schemaVersion V3.'
+}
 if ($metadataWriterSource.IndexOf('GOAB_API_METADATA_B060_V2', [StringComparison]::Ordinal) -lt 0) {
-    throw 'ASSERT_FAILED: A gravacao deve emitir schemaVersion V2.'
+    throw 'ASSERT_FAILED: A leitura deve continuar tolerando schemaVersion V2.'
 }
 if ($metadataWriterSource.IndexOf('GOAB_API_METADATA_B060_V1', [StringComparison]::Ordinal) -lt 0) {
     throw 'ASSERT_FAILED: A leitura deve continuar tolerando schemaVersion V1.'
+}
+if ($metadataWriterSource.IndexOf('["applicationId"] = apiPlan.ApplicationId', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: A metadata V3 deve gravar ownership.applicationId.'
+}
+if ($metadataWriterSource.IndexOf('TryReadApplicationId', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: O writer deve expor a leitura de ownership.applicationId para a metadata legada.'
 }
 if ($metadataWriterSource.IndexOf('ApiPlanMetadataLevelsCodec.CreateLevelsToken', [StringComparison]::Ordinal) -lt 0) {
     throw 'ASSERT_FAILED: A metadata V2 deve serializar levels via codec.'

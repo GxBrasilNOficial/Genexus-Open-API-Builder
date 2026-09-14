@@ -16,6 +16,7 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
     {
         "GOAB_API_METADATA_B060_V1",
         "GOAB_API_METADATA_B060_V2",
+        "GOAB_API_METADATA_B060_V3",
     };
 
     private ApiPlanGeneratedApiRemovalPlan(
@@ -190,7 +191,7 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
         if (!supported)
         {
             throw new InvalidOperationException(
-                $"Metadata de remoção incompatível em 'schemaVersion': esperado V1 ou V2, encontrado '{actual ?? "<ausente>"}'.");
+                $"Metadata de remoção incompatível em 'schemaVersion': esperado V1, V2 ou V3, encontrado '{actual ?? "<ausente>"}'.");
         }
     }
 

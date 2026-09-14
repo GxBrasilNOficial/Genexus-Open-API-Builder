@@ -46,6 +46,7 @@ Assert-True ($source -match 'Tests/ServiceSourceContract/Test-ApiPlanServiceSour
 Assert-True ($source -match 'Tests/PersistenceProbe/Test-ApiPlanPersistenceCore\.ps1') 'O checker deve executar o teste unitário do seam de persistência B111/F2.'
 Assert-True ($source -match 'Tests/PersistenceProbe/Test-ApiPlanSaveStepExecutor\.ps1') 'O checker deve executar o teste unitário do executor de persistência B111/F2.'
 Assert-True ($source -match 'Tests/PersistenceProbe/Test-ApiPlanPersistenceSeamCoverage\.ps1') 'O checker deve executar a sentinela de cobertura do seam B111/F2.'
+Assert-True ($source -match 'Tests/OperationJournal/Test-ApiPlanOperationJournalSchema\.ps1') 'O checker deve executar o teste do schema V1 do diário B111/F3.'
 Assert-True ($source -match 'Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity\.ps1') 'O checker deve executar o teste unitário da integridade B067.'
 Assert-True ($source -match 'Tests/ApiObjectOwnership/Test-ApiPlanApiObjectOwnership\.ps1') 'O checker deve executar o teste unitário da posse B087 do API Object.'
 Assert-True ($source -match 'Tests/OwnershipDescriptions/Test-ApiPlanOwnedObjectDescription\.ps1') 'O checker deve executar o teste unitário das descrições canônicas e legadas de ownership.'
@@ -102,6 +103,7 @@ try {
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ScanProbe'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\PersistenceProbe'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\OrphanMetadataRecovery'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\OperationJournal'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\TransactionSync'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\ApplicationFinalReport'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\CollisionUx'))
@@ -154,6 +156,7 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\PersistenceProbe\Test-ApiPlanSaveStepExecutor.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Persistence Executor'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\PersistenceProbe\Test-ApiPlanPersistenceSeamCoverage.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Persistence Seam Coverage'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\OrphanMetadataRecovery\Test-ApiPlanOrphanMetadataRecovery.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Orphan Metadata Recovery'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\OperationJournal\Test-ApiPlanOperationJournalSchema.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Operation Journal Schema'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GeneratedApiRemoval\Test-ApiPlanGeneratedApiRemovalResilience.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generated Api Removal Resilience'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\TransactionSync\Test-ApiPlanTransactionSyncComparer.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Transaction Sync Comparer'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\TransactionSync\Test-ApiPlanTransactionSyncFieldSelection.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Transaction Sync Field Selection'`n", [System.Text.UTF8Encoding]::new($false))
@@ -213,6 +216,7 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.scanProbe' }).status -eq 'passed') 'O teste unitário do probe de medição B082 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.persistenceCore' }).status -eq 'passed') 'O teste unitário do seam de persistência B111/F2 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.persistenceExecutor' }).status -eq 'passed') 'O teste unitário do executor de persistência B111/F2 deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.operationJournalSchema' }).status -eq 'passed') 'O teste do schema V1 do diário B111/F3 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.transactionSyncComparer' }).status -eq 'passed') 'O teste unitário do diff B085 de sincronização deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.transactionSyncFieldSelection' }).status -eq 'passed') 'O teste unitário da seleção ordenada de campos B085 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.transactionSyncSdtMemberSequenceMatcher' }).status -eq 'passed') 'O teste unitário do reencontro de SDT com inclusões selecionadas deveria passar na fixture.'

@@ -178,6 +178,24 @@ try {
     Assert-Equal 5 (Get-Count $ownV2) 'V2 com own usa inventário gravado'
     Assert-Equal 'sdtTeste_API_CreateRequest_Item' (Get-ItemAt $ownV2 3) 'own inclui SDT hierárquico'
 
+    # V3 acrescenta ownership.applicationId; a remoção continua aceitando a metadata.
+    $metadataV3 = [Newtonsoft.Json.Linq.JObject]::Parse($metadataV2.ToString([Newtonsoft.Json.Formatting]::None))
+    $metadataV3['schemaVersion'] = [Newtonsoft.Json.Linq.JValue]::new('GOAB_API_METADATA_B060_V3')
+    $metadataV3['ownership']['applicationId'] = [Newtonsoft.Json.Linq.JValue]::new('cccccccc-cccc-cccc-cccc-cccccccccccc')
+    $planV3 = $fromMetadata.Invoke($null, @($metadataV3, 'Teste', $txGuid))
+    Assert-Equal 5 (Get-Count (Get-Prop $planV3 'OwnSdtNames')) 'V3 aceita e preserva o inventário gravado'
+
+    $metadataV0 = [Newtonsoft.Json.Linq.JObject]::Parse($metadataV3.ToString([Newtonsoft.Json.Formatting]::None))
+    $metadataV0['schemaVersion'] = [Newtonsoft.Json.Linq.JValue]::new('GOAB_API_METADATA_B060_V4')
+    $rejected = $false
+    try {
+        [void]$fromMetadata.Invoke($null, @($metadataV0, 'Teste', $txGuid))
+    } catch {
+        $rejected = $true
+        Assert-Contains ([string]$_.Exception.InnerException.Message) 'V1, V2 ou V3' 'A mensagem deve citar as três versões aceitas.'
+    }
+    Assert-True $rejected 'Versão desconhecida de schema deve bloquear a remoção.'
+
     $dynamic = [Newtonsoft.Json.Linq.JObject]::Parse($metadataV2.ToString([Newtonsoft.Json.Formatting]::None))
     $sdtsToken = $dynamic.SelectToken('objects.sdts')
     if ($sdtsToken -is [Newtonsoft.Json.Linq.JObject]) {

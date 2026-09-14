@@ -69,6 +69,15 @@ foreach ($path in $productionFiles) {
     }
 }
 
+# O reconhecedor é textual e casa `<qualificador>.Save|Delete`. Os enums do diário B111/F3
+# têm membros chamados `Save` e `Delete` — `JournalReceiptOperation.Delete` é um valor, não
+# uma chamada física. Descartá-los aqui mantém a sentinela medindo o que ela existe para
+# medir, sem afrouxar o inventário de chamadas reais.
+[void]$actualCalls.RemoveAll([Predicate[object]]{
+        param($call)
+        $call.Invocation -match '^Journal[A-Za-z]+\.(Save|Delete)$'
+    })
+
 $allowedOutsideSeam = @(
     @{ File = 'Package.cs'; Invocation = 'PrototypeWizardPreferencesStore.Save' },
     @{ File = 'PrototypeWizardPreferencesDialog.cs'; Invocation = '_texts.Save' },

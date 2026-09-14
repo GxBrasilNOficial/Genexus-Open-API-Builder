@@ -350,6 +350,7 @@ internal static class ApiPlanOrphanMetadataRecovery
                 ["descriptionSentinel"] = ApiPlanOwnedObjectDescription.Create(plan.MetadataFileName),
                 ["transactionName"] = transaction.Name,
                 ["transactionGuid"] = transaction.Guid.ToString(),
+                ["applicationId"] = plan.ApplicationId.ToString("D"),
                 ["apiName"] = plan.ApiName,
                 ["apiGuid"] = plan.ApiObject.Guid.ToString(),
                 ["metadataFileName"] = plan.MetadataFileName,
@@ -466,8 +467,11 @@ internal sealed class OrphanMetadataRecoveryPlan
         IReadOnlyList<string> procedureNames,
         IReadOnlyList<string> ownSdtNames,
         IReadOnlyList<string> sharedSdtNames,
-        WikiFileKBObject? staleFile = null)
+        WikiFileKBObject? staleFile = null,
+        Guid? applicationId = null)
     {
+        var resolvedApplicationId = applicationId.GetValueOrDefault();
+        ApplicationId = resolvedApplicationId == Guid.Empty ? Guid.NewGuid() : resolvedApplicationId;
         ApiName = apiName;
         MetadataFileName = metadataFileName;
         ApiObject = apiObject;
@@ -483,6 +487,13 @@ internal sealed class OrphanMetadataRecoveryPlan
     /// Nula no caso comum, em que o File não existe.
     /// </summary>
     public WikiFileKBObject? StaleFile { get; }
+
+    /// <summary>
+    /// Identidade da aplicação gravada em <c>ownership.applicationId</c> da metadata V3.
+    /// B115 autônomo recebe um valor novo; a continuação de um envelope existente informa
+    /// o valor preservado.
+    /// </summary>
+    public Guid ApplicationId { get; }
 
     public string ApiName { get; }
 

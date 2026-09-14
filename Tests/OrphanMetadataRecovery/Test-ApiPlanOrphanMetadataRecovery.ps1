@@ -64,6 +64,11 @@ foreach ($required in @('schemaVersion', 'ownership', 'objects', 'recovery')) {
 foreach ($ownershipKey in @('transactionName', 'transactionGuid', 'apiName', 'apiGuid', 'metadataFileName')) {
     Assert-True ($jsonBody -match ('\["' + $ownershipKey + '"\]\s*=')) "ApiPlanGeneratedApiRemovalPlan.FromMetadata exige ownership.$ownershipKey."
 }
+
+# A forma V3 acrescenta ownership.applicationId. B115 autônomo recebe um valor novo e o
+# registra na metadata que emite; metadata legada continua sem o campo e não é regravada.
+Assert-True ($jsonBody -match '\["applicationId"\]\s*=\s*plan\.ApplicationId') 'A metadata recuperada deve gravar ownership.applicationId da forma V3.'
+Assert-True ($recovery -match 'public Guid ApplicationId') 'O plano de recuperação deve expor o ApplicationId gravado.'
 foreach ($objectKey in @('transactionFolder', 'procedures', 'own', 'shared')) {
     Assert-True ($jsonBody -match ('\["' + $objectKey + '"\]\s*=')) "ApiPlanGeneratedApiRemovalPlan.FromMetadata exige objects.$objectKey."
 }

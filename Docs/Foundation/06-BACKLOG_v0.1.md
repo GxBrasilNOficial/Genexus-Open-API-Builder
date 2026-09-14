@@ -341,6 +341,16 @@ Houve recuperação B115 e limpeza idempotente dos objetos restantes. A F2 está
 encerrada; journal durável, reconciliação e retry continuam exclusivamente na
 F3. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 
+**Início da S-B111 F3 — 2026-09-14.** As etapas P0 e P1 da F3 foram implementadas
+offline. A metadata de negócio passou a ser emitida como `GOAB_API_METADATA_B060_V3`,
+com `ownership.applicationId` no payload e no fingerprint e leitura ainda tolerante a
+V1 e V2 sem regravação implícita; e o schema V1 do diário
+`GxOpenApiBuilder_OperationJournal` ganhou modelo, serializer canônico determinístico,
+`snapshotHash` SHA-256 e validador que recusa envelope inválido antes de qualquer
+`File.Save()`. Nenhum diário é gravado em KB e nenhum fluxo mudou: gravar o diário,
+reconciliar e continuar operações são as etapas P2 a P6, ainda abertas. Evidência:
+`Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`.
+
 **B106 — concluído em 2026-08-24.** O roteiro foi atualizado para a Alpha `0.1.0-alpha.4`, passou a registrar o checkbox de repasse das mensagens do Business Component e aponta para as notas da Alpha 4. A captura de Segurança foi explicitamente marcada como referência visual anterior; uma nova captura da UI permanece uma melhoria visual separada, sem bloquear a documentação textual.
 
 **B107 — concluído em 2026-08-25.** O teste deixou de ler YAML publicado pelo Build da KB (`C:\KBs\...`): esse artefato pertence ao ambiente GeneXus, não ao pré-push deste repositório. A trava permanece offline sobre `Src/Domain/ApiPlan.cs` e, a partir de B096, também sobre `Src/Domain/ApiPlanSdtHierarchicalNaming.cs`, agora incluindo `sdt_API_ErrorMessage` além de `sdt_API_ErrorResponse` e dos padrões `_API_*` / serviços. Não foi absorvido pela Fase 0 (`Tests/GenerationBaseline/` cobre Source / Service Source / plano de SDT; a conferência de YAML publicado continua evidência pontual na IDE, prevista ao fim da Fase 4). Encontrado na revisão pré-push retroativa de 2026-08-24.
