@@ -399,6 +399,33 @@ etapas P4 e P5.
   desfaz nada; ela impede continuar às cegas e preserva o último snapshot durável. Continua
   valendo o que o checkpoint operacional já registra sobre gravações multiobjeto.
 
+## 7.1 Condição para o próximo corte de release
+
+A P2 muda o que o usuário final vê na própria KB, e a documentação pública ainda descreve a
+Alpha sem o diário. **Não é gap de texto: é condição de publicação.**
+
+O que muda para quem usa a extensão:
+
+1. um objeto novo aparece na KB, `GxOpenApiBuilder_OperationJournal`, no Root Module, com
+   Description própria e o arquivo externo `GxOpenApiBuilder_OperationJournal.json`. O
+   `DEMO.md` hoje cita o File de preferências `GxOpenApiBuilder_Settings` e não este;
+2. Apply e Sincronizar passam a poder ser **bloqueados** por um estado do diário, com uma
+   mensagem que fala de «operação em estado não terminal» — vocabulário que não existe em
+   nenhum texto público;
+3. **enquanto a P6 não existir, a única saída desse bloqueio é apagar o File à mão.** Um
+   usuário que aborte um Apply e não saiba disso fica com a KB travada para gerar, sem
+   caminho pela ferramenta.
+
+Por isso, ao preparar o corte, uma destas duas condições precisa estar satisfeita:
+
+- **a P6 está entregue** e existe o comando explícito de recuperação; ou
+- **`Docs/Public/DEMO.md` e os três `README` explicam** o File do diário, o bloqueio e o
+  contorno manual, e as notas de release avisam do comportamento novo.
+
+Publicar a P2 sem uma das duas entrega ao usuário um modo de travar a KB sem saída
+documentada. O registro da pendência em mensagem de commit não basta, e é por isso que ela
+está aqui.
+
 ## 8. Gates
 
 Dois novos, ambos registrados no orquestrador e no teste do checker:

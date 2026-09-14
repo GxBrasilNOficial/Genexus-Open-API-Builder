@@ -350,6 +350,14 @@ V1 e V2 sem regravação implícita; e o schema V1 do diário
 `File.Save()`. Evidência:
 `Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`.
 
+**Condição para o próximo corte — 2026-09-14.** A etapa P2 da F3 cria na KB do usuário o
+File `GxOpenApiBuilder_OperationJournal` e permite que Apply e Sincronizar sejam bloqueados
+por um estado do diário. Enquanto a etapa P6 não entregar o comando de recuperação, a única
+saída desse bloqueio é apagar o File à mão. Antes de cortar release com a P2 dentro, ou a P6
+está entregue, ou `Docs/Public/DEMO.md` e os três `README` explicam o File, o bloqueio e o
+contorno, com aviso nas notas do corte. Detalhe: seção 7.1 de
+`Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`.
+
 **Etapa P2 da S-B111 F3 — 2026-09-14.** O diário passou a existir na KB: Apply e
 Sincronizar registram a intenção no File único `GxOpenApiBuilder_OperationJournal` antes de
 qualquer gravação de negócio, em duas fases confirmadas, e o fecham na conclusão, na falha

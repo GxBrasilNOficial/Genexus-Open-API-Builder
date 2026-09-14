@@ -477,6 +477,8 @@ residual `B082` 1B/2/3 não competem com a preparação da F3.
 
 ## Bloqueios e fatos ainda não validados
 
+- **Corte de release com a etapa P2 da F3 dentro exige decisão documental.** O diário cria o File `GxOpenApiBuilder_OperationJournal` na KB do usuário e pode bloquear Apply e Sincronizar; enquanto a P6 não entregar o comando de recuperação, a única saída é apagar o File à mão, e nada disso está na documentação pública. Ou a P6 entra no corte, ou `DEMO`, os três `README` e as notas explicam o File, o bloqueio e o contorno. Detalhe: seção 7.1 de `Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`.
+
 O reteste de 2026-09-11 atualizou a situação do `List` da `Laudo`: a execução
 funcional passou nos dois environments, e somente a forma do envelope permanece
 pendente no `B120`. Os itens históricos 105 e 106 acima registram as tentativas
