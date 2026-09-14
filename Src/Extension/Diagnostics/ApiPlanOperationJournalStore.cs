@@ -56,6 +56,13 @@ internal sealed class ApiPlanOperationJournalStore
     /// <summary>Gravações físicas efetivamente tentadas, para conferir a política de checkpoints.</summary>
     internal int PhysicalCheckpoints { get; private set; }
 
+    /// <summary>
+    /// Tempo somado das gravações do diário, gravação e confirmação incluídas. É o número que
+    /// se compara com o orçamento da seção 4.4 do plano da F3; sem ele, o custo do diário
+    /// ficaria indistinguível do custo do resto do Apply.
+    /// </summary>
+    internal long CheckpointMs { get; private set; }
+
     /// <summary>Hash canônico do último snapshot confirmado; vazio enquanto não houver um.</summary>
     internal string LastConfirmedSnapshotHash { get; private set; } = string.Empty;
 
@@ -144,6 +151,7 @@ internal sealed class ApiPlanOperationJournalStore
         file.BlobPart.Data = BinaryStream.FromBytes(bytes);
 
         PhysicalCheckpoints++;
+        var watch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
             file.Save();
@@ -153,6 +161,7 @@ internal sealed class ApiPlanOperationJournalStore
             // O Save lançou: não se sabe se o snapshot novo foi persistido. Isso é
             // indeterminação, não "não gravou".
             Durability = JournalDurability.Unknown;
+            CheckpointMs += watch.ElapsedMilliseconds;
             return ApiPlanOperationJournalCheckpointResult.Unconfirmed(
                 FileId,
                 expectedHash,
@@ -164,6 +173,7 @@ internal sealed class ApiPlanOperationJournalStore
         if (FileId <= 0)
         {
             Durability = JournalDurability.Unknown;
+            CheckpointMs += watch.ElapsedMilliseconds;
             return ApiPlanOperationJournalCheckpointResult.Unconfirmed(
                 FileId,
                 expectedHash,
@@ -174,11 +184,13 @@ internal sealed class ApiPlanOperationJournalStore
         if (!confirmation.Confirmed)
         {
             Durability = JournalDurability.Unknown;
+            CheckpointMs += watch.ElapsedMilliseconds;
             return ApiPlanOperationJournalCheckpointResult.Unconfirmed(FileId, expectedHash, confirmation.Detail);
         }
 
         Durability = JournalDurability.Confirmed;
         LastConfirmedSnapshotHash = expectedHash;
+        CheckpointMs += watch.ElapsedMilliseconds;
         return ApiPlanOperationJournalCheckpointResult.Confirmed(FileId, expectedHash, bytes.Length, creating);
     }
 

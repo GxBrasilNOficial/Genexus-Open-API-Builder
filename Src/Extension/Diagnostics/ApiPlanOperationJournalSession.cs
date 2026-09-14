@@ -46,6 +46,9 @@ internal sealed class ApiPlanOperationJournalSession
 
     internal int PhysicalCheckpoints => _store.PhysicalCheckpoints;
 
+    /// <summary>Custo somado das gravações do diário, para comparar com o orçamento da F3.</summary>
+    internal long CheckpointMs => _store.CheckpointMs;
+
     internal string SnapshotHash => _store.LastConfirmedSnapshotHash;
 
     /// <summary>
@@ -222,17 +225,38 @@ internal sealed class ApiPlanOperationJournalSession
     /// <summary>CP4 de sucesso.</summary>
     internal bool Complete()
     {
-        return Advance(
+        var completed = Advance(
             () => ApiPlanOperationJournalCheckpoints.Complete(Envelope, DateTime.UtcNow),
             "conclusão");
+        NoteCost();
+        return completed;
     }
 
     /// <summary>CP4 de interrupção, com o motivo persistido do enum fechado.</summary>
     internal bool Interrupt(JournalOperationState state, JournalBlockReason blockReason)
     {
-        return Advance(
+        var interrupted = Advance(
             () => ApiPlanOperationJournalCheckpoints.Interrupt(Envelope, state, blockReason, DateTime.UtcNow),
             "interrupção (" + blockReason + ")");
+        NoteCost();
+        return interrupted;
+    }
+
+    /// <summary>
+    /// Publica o custo do diário no fechamento. Sem esta linha, o acréscimo do diário ficaria
+    /// embutido no tempo total da operação e não daria para compará-lo com o orçamento.
+    /// </summary>
+    private void NoteCost()
+    {
+        Note(string.Format(
+            CultureInfo.InvariantCulture,
+            "Custo do diário: Checkpoints={0}, TotalMs={1}, FileId={2}, Durability={3}, Estado={4}/{5}.",
+            PhysicalCheckpoints,
+            CheckpointMs,
+            FileId,
+            Durability,
+            Envelope.OperationState,
+            Envelope.LogicalStage));
     }
 
     private bool Advance(Action transition, string description)
