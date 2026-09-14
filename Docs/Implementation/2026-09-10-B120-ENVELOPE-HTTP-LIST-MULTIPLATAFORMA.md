@@ -15,10 +15,10 @@ conclusão da sprint `S-B111`. O smoke já demonstrou que a aplicação inicia, 
 autenticação funciona e o endpoint responde nos dois environments; o que falhou
 foi a equivalência observável do contrato de resposta do `List`.
 
-`B120` não muda a próxima ação única do checkpoint: preparar e iniciar a avaliação da F2.
-A F1 foi encerrada com a exceção explícita do `B121`; os cenários de Sync já não são a
-pendência que condiciona este item. `B120` deve ser retomado conforme a ordem do checkpoint
-e antes de considerar o contrato HTTP do `List` validado de forma multiplataforma.
+`B120` não muda a próxima ação única do checkpoint: preparar a F3 (durabilidade e remoção).
+As F1 e F2 foram encerradas, com a exceção explícita do `B121` fora da sprint; os cenários de
+Sync já não são a pendência que condiciona este item. `B120` deve ser retomado conforme a ordem
+do checkpoint e antes de considerar o contrato HTTP do `List` validado de forma multiplataforma.
 
 ## 2. Problema observado
 

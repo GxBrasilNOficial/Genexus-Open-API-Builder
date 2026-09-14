@@ -261,9 +261,9 @@ tentado, mas continua sem comprovação isolada e está registrado no `B121`. Ev
 De `B109`, apenas o ramo B foi encerrado; o ramo A não tem pauta própria, por depender de
 reprodução — se o sintoma voltar, ele passa à frente. O `Rebuild All` do
 `NETFrameworkPostgreSQL` é pendência separada de environment e não bloqueia a F1. `B108` e o
-residual `B082` 1B/2/3 não competem com a próxima avaliação da F2.
+residual `B082` 1B/2/3 não competem com a preparação da F3.
 
-## Evidência parcial da F2 em andamento
+## Evidência histórica da F2 encerrada
 
 - `S-B111` F2 (2026-09-12): o cenário positivo do `Wizard` na `Laudo`, com `List`, `Get`, `Create`, `Update`, `Business Component` apto e `FinalWriter='List'`, registrou `SuccessWithWarnings`, `ApiSaveCount=1`, `PersistenceReceipts=10`, `PersistenceStageFailures=0`, `Bloqueados=0` e todos os recibos confirmados. O `B111` registrou reencontros estritos de SDT sem gravação física. O relatório contém a ressalva conhecida de listar SDTs `Unchanged` dentro de `Atualizados=14`; esse ajuste foi deliberadamente postergado. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 - `S-B111` F2 (2026-09-13): a primeira execução da segunda validação adicional do `Wizard`, na `Produto` inicialmente sem `Business Component`, confirmou a atualização da Transaction e passou pelo preflight antes do primeiro `Save()`, mas foi interrompida na confirmação de `sdtProduto_API_ListResponse`, com `Outcome='OutcomeUnknown'` e `Confirmation='Divergent'` no membro `AppliedFilters`. O relatório registrou `ApiSaveAttempted=False`, `ApiSaveCount=0`, `PersistenceReceipts=7`, `Criados=5`, `Atualizados=1`, `Bloqueados=1` e `Avisos=2`; o B111 confirmou quatro gravações de SDT e uma de Folder. Procedures, API Object, REST via BC e metadata não foram executados. **Superada pelo reteste abaixo.**
