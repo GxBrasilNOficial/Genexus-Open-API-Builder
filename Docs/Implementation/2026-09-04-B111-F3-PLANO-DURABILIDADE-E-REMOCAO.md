@@ -460,6 +460,18 @@ O estado atual desses consumidores ainda aceita V1/V2, e `ownership.applicationI
 não existe no `Src/`; isso é uma pré-condição P1 da implementação da F3, não trabalho
 antecipado nesta rodada.
 
+**Remissão — 2026-09-14:** o parágrafo acima descreve o estado em que este plano foi
+escrito. A pré-condição **foi cumprida** na etapa P0 da F3: a gravação emite
+`GOAB_API_METADATA_B060_V3` com `ownership.applicationId`, a leitura continua tolerando
+V1 e V2 e metadata legada não é regravada só para preencher o campo. Dos seis consumidores
+listados, três precisaram de mudança — `ApiPlanMetadataFileWriter`,
+`ApiPlanGeneratedApiRemovalPlan` e (para a forma importada de B115)
+`ApiPlanOrphanMetadataRecovery`; `ApiPlanMetadataIntegrity` não precisou, porque o
+fingerprint já cobre a metadata inteira menos o próprio campo `fingerprint`, e
+`ApiPlanGenerationStateReader`, `ApiPlanApiObjectOwnership` e `ApiPlanApiObjectWriter`
+passaram a aceitar V3 pela lista central que já consultavam. Evidência:
+[`2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`](2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md).
+
 Esses seis são os componentes obrigatórios que validam versão, ownership ou fingerprint;
 a lista não exclui leitores como `ApiPlanGeneratedApiRemovalInventory`,
 `ApiPlanTransactionSyncOrchestrator`, `PrototypeWizardExistingApiContractReader` e

@@ -232,7 +232,9 @@ Os apontamentos aproveitados foram:
   restritos a V1/V2 (`ApiPlanMetadataFileWriter`, `ApiPlanGeneratedApiRemovalPlan`,
   `ApiPlanGenerationStateReader`, `ApiPlanApiObjectOwnership` e
   `ApiPlanApiObjectWriter`); `ownership.applicationId` ainda não existe no `Src/`, e a
-  promoção muda o fingerprint;
+  promoção muda o fingerprint (**remissão — 2026-09-14:** o confronto foi feito na etapa
+  P0 da F3 — o campo existe, a gravação emite V3 e os leitores de versão aceitam V1, V2 e
+  V3; evidência em `2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`);
 - o seam da F2 entrega `RecordNotAttempted` ao remover, com `attempt=1` e sem consumo de
   `maxPasses`; a F3 recebe o receipt e persiste o checkpoint;
 - `NoteStageFailed` usa namespace estável `stage.*`, sem copiar o diagnóstico para

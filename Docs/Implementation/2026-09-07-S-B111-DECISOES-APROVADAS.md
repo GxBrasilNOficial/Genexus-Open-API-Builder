@@ -548,6 +548,12 @@ atualizados em conjunto os consumidores de versão e ownership:
   `ApiPlanGenerationStateReader`, `ApiPlanApiObjectOwnership` e
   `ApiPlanApiObjectWriter`. Enquanto isso não ocorrer, `ownership.applicationId` é uma
   pré-condição de implementação da F3, não uma capacidade já disponível no `Src/`.
+  **Remissão — 2026-09-14:** a pré-condição foi cumprida na etapa P0 da F3. A gravação
+  emite V3 com `ownership.applicationId`; a leitura segue tolerante a V1 e V2, sem
+  regravação implícita de metadata legada. `ApiPlanMetadataIntegrity` não precisou de
+  mudança, porque o fingerprint já cobre a metadata inteira menos o próprio campo
+  `fingerprint`, e os três leitores de versão passaram a aceitar V3 pela lista central.
+  Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`.
 - A forma V3 importada de B115 mantém `recovery.imported=true` e a lista fechada
   `notRecovered=[fields,pagination,order,services,levels,transactionStructure]`;
   esses seis caminhos ficam ausentes, não vazios. Ela exige, em contrapartida,
@@ -1105,6 +1111,13 @@ durabilidade e recuperação, não uma lacuna de decisão da F2:
 - eventuais ajustes adicionais de referências operacionais identificados durante a revisão
   da F3.
 
+**Atualização — 2026-09-14.** O primeiro item acima foi entregue nas etapas P0 e P1 da F3:
+o serializer canônico e o validador do schema V1 do diário existem, e a metadata passou a
+ser emitida em V3. O que permanece aberto da lista é gravar o diário na KB com a política
+de checkpoints, os serviços de leitura, reidratação, continuação e relatório, e o registro
+do comando nas três camadas. Evidência:
+`Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`.
+
 ## Consolidação adicional das decisões posteriores
 
 Este bloco foi acrescentado depois do registro inicial, para preservar as decisões tomadas
@@ -1301,7 +1314,9 @@ foram incorporadas estas clarificações:
   `ApiPlanGeneratedApiRemovalPlan`, `ApiPlanGenerationStateReader`,
   `ApiPlanApiObjectOwnership` e `ApiPlanApiObjectWriter`) e o componente de integridade
   `ApiPlanMetadataIntegrity` — seis componentes obrigatórios no conjunto canônico;
-  `ownership.applicationId` ainda não existe no `Src/`, e seu valor entra no fingerprint V3;
+  `ownership.applicationId` ainda não existe no `Src/`, e seu valor entra no fingerprint V3
+  (**remissão — 2026-09-14:** o campo passou a existir na etapa P0 da F3; a exigência de
+  atualizar os consumidores antes de emitir V3 foi cumprida na mesma etapa);
 - o remover chama `RecordNotAttempted` pelo seam entregue na F2; o receipt usa `attempt=1`,
   não consome `maxPasses`, fica disponível em memória e só é relacionado ao checkpoint
   durável pela F3;
