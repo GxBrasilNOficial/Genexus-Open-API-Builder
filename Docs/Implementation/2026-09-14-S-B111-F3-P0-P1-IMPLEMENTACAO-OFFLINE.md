@@ -17,7 +17,7 @@ A F3 foi dividida em oito etapas, nesta ordem de dependência:
 |---|---|---|
 | P0 | promoção da metadata V2→V3 com `ownership.applicationId` | **entregue** |
 | P1 | schema V1 do diário: modelo, serializer canônico, validador | **entregue** |
-| P2 | ciclo de vida do diário na KB e checkpoints da matriz 4.4 | não iniciada |
+| P2 | ciclo de vida do diário na KB e checkpoints da matriz 4.4 | **entregue em 2026-09-14**, depois desta rodada — ver [o registro da P2](2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md); pendente de validação na IDE |
 | P3 | gate estendido e `GateDiagnostic` com a precedência fechada | não iniciada |
 | P4 | remoção com intenção, passadas e orçamento `maxPasses` | não iniciada |
 | P5 | `ApiPlanRecoveryReader` / `Rehydrator` / `Executor` / `Report` | não iniciada |

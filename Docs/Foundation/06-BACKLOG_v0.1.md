@@ -347,9 +347,16 @@ com `ownership.applicationId` no payload e no fingerprint e leitura ainda tolera
 V1 e V2 sem regravação implícita; e o schema V1 do diário
 `GxOpenApiBuilder_OperationJournal` ganhou modelo, serializer canônico determinístico,
 `snapshotHash` SHA-256 e validador que recusa envelope inválido antes de qualquer
-`File.Save()`. Nenhum diário é gravado em KB e nenhum fluxo mudou: gravar o diário,
-reconciliar e continuar operações são as etapas P2 a P6, ainda abertas. Evidência:
+`File.Save()`. Evidência:
 `Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`.
+
+**Etapa P2 da S-B111 F3 — 2026-09-14.** O diário passou a existir na KB: Apply e
+Sincronizar registram a intenção no File único `GxOpenApiBuilder_OperationJournal` antes de
+qualquer gravação de negócio, em duas fases confirmadas, e o fecham na conclusão, na falha
+de etapa e no aborto. Um envelope anterior não terminal bloqueia a operação seguinte em vez
+de ser sobrescrito. Reconciliar e continuar operações permanecem abertos, nas etapas P3 a
+P6; a P2 ainda não foi validada na IDE. Evidência:
+`Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`.
 
 **B106 — concluído em 2026-08-24.** O roteiro foi atualizado para a Alpha `0.1.0-alpha.4`, passou a registrar o checkbox de repasse das mensagens do Business Component e aponta para as notas da Alpha 4. A captura de Segurança foi explicitamente marcada como referência visual anterior; uma nova captura da UI permanece uma melhoria visual separada, sem bloquear a documentação textual.
 
