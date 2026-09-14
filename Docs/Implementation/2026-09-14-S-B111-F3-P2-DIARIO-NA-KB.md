@@ -408,7 +408,7 @@ etapas P4 e P5.
   reutilização da decisão 44, dentro da sessão. A precedência completa de `GateDiagnostic`
   (`JournalUnavailable`, `DurabilityUnknown`, `GateBlocked`, `PreconditionFailed`) com
   `reasonCode` estável é a P3; hoje o bloqueio chega como uma mensagem única no relatório.
-  **Entregue na P3 — 2026-09-14**, ainda sem validação na IDE.
+  **Entregue e validado na IDE pela P3 — 2026-09-14**, em seis cenários.
 - **Sem localização trilíngue.** As mensagens do diário estão em português, direto no
   código. A tradução é a P7.
 - **O Apply que não grava API** — só SDTs e Procedures — faz três checkpoints, não quatro,

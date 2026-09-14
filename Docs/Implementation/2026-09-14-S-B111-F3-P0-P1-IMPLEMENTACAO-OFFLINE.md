@@ -129,7 +129,7 @@ Versão de schema desconhecida bloqueia a leitura: não há migração destrutiv
 
 O modelo e a validação são o contrato de dados. **Nenhuma** política de quando gravar, quantos
 checkpoints, como confirmar durabilidade ou como continuar uma operação entrou nesta etapa —
-isso é P2 em diante. Em particular, o diário ainda não existe como File em nenhuma KB.
+isso é P2 em diante. Em particular, o diário ainda não existe como File em nenhuma KB. **Remissão — 2026-09-14:** isto descreve o alcance desta etapa. A P2 passou a gravar o diário na KB em Apply e Sync, e a P3 fechou o gate estendido; as duas foram validadas na IDE na mesma data.
 
 ## 4. Gate novo
 
