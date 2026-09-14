@@ -1092,22 +1092,18 @@ O contrato de injeção também fica fechado para que “falha em cada Save” s
   falha se um ponto esperado não for visitado. O hook não interpreta texto de exceção e
   não permanece ativo entre testes.
 
-## Itens ainda não implementados no código
+## Estado de implementação após a F2
 
-As decisões acima já foram consolidadas documentalmente nos planos F1, F2 e F3 e no
-checkpoint operacional. Ainda não foram alterados código, manifesto ou testes; a revisão
-por pares da sprint permanece em aberto.
-
-O contrato documental dos pontos criticados está fechado nesta rodada. O que permanece é
-implementação e evidência, não uma lacuna de decisão:
+As decisões acima foram consolidadas nos planos F1, F2 e F3 e no checkpoint operacional.
+F1 e F2 foram implementadas; a F2 foi aceita na IDE em 2026-09-13. O contrato documental
+dos pontos criticados permanece preservado neste registro. O que ainda cabe à F3 é
+durabilidade e recuperação, não uma lacuna de decisão da F2:
 
 - serializer/validador do schema V1 do diário e normalização da metadata V1/V2→V3;
 - implementação dos serviços de leitura, reidratação, continuação e relatório;
 - sincronização dos três literais nas doze ocorrências do novo comando nas camadas de runtime e manifesto;
-- implementação do injetor determinístico e dos pontos de falha fechados;
-- testes offline, testes de contrato e validação funcional na IDE;
 - eventuais ajustes adicionais de referências operacionais identificados durante a revisão
-  por pares ou a implementação.
+  da F3.
 
 ## Consolidação adicional das decisões posteriores
 

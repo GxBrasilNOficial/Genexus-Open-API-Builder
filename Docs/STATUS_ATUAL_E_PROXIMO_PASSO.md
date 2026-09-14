@@ -182,19 +182,14 @@ Planejamento concluído, avaliação técnica inicial realizada e **a F1 foi imp
 
 **O que mudou no território da sprint depois de 2026-09-05**, por necessidade de campo e fora das fases — registrado na seção 13 do plano da F3:
 
-- os writers de Business Component e de List ganharam a instrumentação `ApiPlanSaveBoundaryProbe` e `B111CallSiteProbe`, e o cronômetro por objeto passou a parar antes do fingerprint da sonda, que ele antes contabilizava;
+- os writers de Business Component e de List passaram a usar o executor único e a instrumentação `ApiPlanSaveBoundaryProbe`; o cronômetro por objeto para antes do fingerprint da sonda, que antes era contabilizado;
 - a **remoção** deixou de depender de a lista de SDTs vir na ordem de dependência: o que a IDE recusa volta para a fila e é tentado na passada seguinte;
 - uma remoção interrompida passou a listar no relatório final o que já saiu da KB;
 - nasceu a recuperação de metadata órfã (`B115`), que ocupa parte do que a seção 4.3 da F3 normatiza. Ela cobre dois estados: o File ausente, e o File presente que ficou apontando para um API Object removido — este último travava o Wizard em `OwnershipSchemaApiNameOrGuidMismatch` sem saída pela ferramenta. Metadata **completa** com esse mesmo descompasso segue exigindo intervenção humana.
 
-Três planos de fase foram preparados, avaliados na revisão técnica inicial e consolidados
-documentalmente em 2026-09-08 após o painel CLI, os pareceres solo do MiMo V2.5 Pro e do
-Codex GPT-5.6-luna, a rodada manual do Cursor, o parecer solo do Claude Code Opus 5 e o
-parecer solo do OpenCode Go DeepSeek V4 Pro. As ressalvas úteis foram incorporadas localmente.
-A decisão humana desta sessão autorizou a implementação da F1; a validação manual da F1 para
-encerramento, com a exceção explícita do `B121`, foi registrada em 2026-09-10/11. A F2 permanece em
-avaliação manual e F3 continua condicionada ao aceite completo da F2. As
-alterações desta rodada estão commitadas localmente nesta frente:
+Os três planos de fase preservam as decisões e o desenho original da sprint. A F1 foi
+encerrada com a exceção explícita do `B121`; a F2 foi implementada e aceita na IDE em
+2026-09-13. A F3 continua como próxima fase e não foi implementada.
 
 | Fase | Plano | Depende de |
 |---|---|---|
@@ -208,17 +203,16 @@ Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-
 
 ### Instrumentação temporária — o que já saiu e o que continua instalado
 
-**Retirado em 2026-09-05**, com as perguntas respondidas e os resultados registrados em `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`: o comando `Sonda B111` das três camadas, as sondas `B111IdentityProbe`, `B111JournalProbe` e `B111SaveCostProbe`, e a exceção `$temporaryProbeCreateSymbols` que a sonda do diário exigia no teste de origem única do índice. O manifesto voltou ao estado publicado: o comando entrou e saiu dentro do mesmo bloco de commits, e contra `origin/main` o arquivo está idêntico. Quem instalar a partir do publicado não precisa de nada além da DLL. **Nesta máquina, sim**: a DLL instalada ainda registra `Sonda B111`, e desregistrá-lo exige `genexus /install`.
+**Retirado em 2026-09-05 e 2026-09-13**, com as perguntas respondidas e os resultados registrados em `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`: o comando `Sonda B111` das três camadas, as sondas `B111IdentityProbe`, `B111JournalProbe` e `B111SaveCostProbe`, a exceção `$temporaryProbeCreateSymbols` que a sonda do diário exigia no teste de origem única do índice e, no fechamento da F2, `B111CallSiteProbe`. O manifesto voltou ao estado publicado: o comando entrou e saiu dentro do mesmo bloco de commits, e contra `origin/main` o arquivo está idêntico. Quem instalar a partir do publicado não precisa de nada além da DLL. **Nesta máquina, sim**: a DLL instalada ainda registra `Sonda B111`, e desregistrá-lo exige `genexus /install`.
 
 **Continua instalado**, com o motivo e o momento de sair:
 
 | Instrumento | Por que continua | Sai quando |
 |---|---|---|
 | `B109ExceptionProbe` | sem ela, uma reincidência volta a chegar como uma linha de mensagem, sem stack | `B109` fechado nos dois ramos |
-| `ApiPlanSaveBoundaryProbe` (rótulo `[B109]`) | é o adaptador observável do seam da F2: separa mutação entre Pump e Save e encaminha recibos sem perder os eventos B109 | retirar somente depois do aceite da F2 na IDE e do fechamento explícito de B109 |
+| `ApiPlanSaveBoundaryProbe` (rótulo `[B109]`) | é o adaptador observável do seam da F2 e preserva o diagnóstico de mutação entre Pump e Save para o ramo A de B109 | F2 aceita; retirar somente no fechamento explícito de B109 |
 | preferência «Suprimir a atualização da tela durante as gravações» | é o experimento do ramo A, e nunca foi acionado | idem |
 | `ApiPlanMetadataVisibilityProbe` (rótulo `[B115]`) | diagnóstico de metadata órfã | `B115` fechado |
-| `B111CallSiteProbe` | é a cobertura histórica da F1 — contagem de gravações de Folder e SDT por aplicação — e continua como sentinela de granularidade durante o aceite da F2 | retirar após a conferência IDE da sequência de recibos ou fechamento explícito da instrumentação |
 
 Ao retirar qualquer um: executar `Tools/Test-ExtensionCommandRegistration.ps1` se o manifesto for tocado, e o gate mecânico em seguida.
 

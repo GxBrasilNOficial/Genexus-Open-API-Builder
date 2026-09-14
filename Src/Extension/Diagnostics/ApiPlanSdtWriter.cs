@@ -58,9 +58,6 @@ internal static class ApiPlanSdtWriter
             return StrictReencounter(designModel, transaction, apiPlan, preserveSdtNames, kbIndex, onSdtWrite, progress, persistenceLog);
         }
 
-        // B111/F1: instrumentacao temporaria. So conta; nao altera fluxo nem resultado.
-        B111CallSiteProbe.Enter("SdtWriter.CreateOrReencounter");
-
         var preserve = new HashSet<string>(preserveSdtNames ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
         var generationPlan = ApiPlanSdtGenerationPlanBuilder.Create(apiPlan);
         var planned = generationPlan.SharedSdts.Count + generationPlan.OwnSdts.Count;
@@ -230,7 +227,6 @@ internal static class ApiPlanSdtWriter
                 ? ApiPlanSdtWriteStatus.Unchanged
                 : ApiPlanSdtWriteStatus.Reencountered;
             var item = new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, status, sdt.Guid, null);
-            B111CallSiteProbe.Skipped("SdtWriter.StrictReencounter", definition.Name);
             onSdtWrite?.Invoke(item);
             results.Add(item);
         }
@@ -380,7 +376,6 @@ internal static class ApiPlanSdtWriter
             folder.Save,
             () => ConfirmFolder(designModel, folder.Name));
         EnsureConfirmed(receipt, () => ConfirmFolder(designModel, folder.Name), $"Folder compartilhado '{folder.Name}'");
-        B111CallSiteProbe.Wrote("SdtWriter.SharedFolder", SharedFolderName);
         return folder;
     }
 
@@ -426,13 +421,7 @@ internal static class ApiPlanSdtWriter
                     existingSdt.Save,
                     () => ConfirmSdt(designModel, existingSdt, definition, kbIndex, explicitPreserve));
                 EnsureConfirmed(receipt, () => ConfirmSdt(designModel, existingSdt, definition, kbIndex, explicitPreserve), $"SDT '{definition.Name}'");
-                B111CallSiteProbe.Wrote("SdtWriter.SdtReencontrado", definition.Name);
             }
-            else
-            {
-                B111CallSiteProbe.Skipped("SdtWriter.SdtReencontrado", definition.Name);
-            }
-
             var status = wroteKb ? ApiPlanSdtWriteStatus.Reencountered : ApiPlanSdtWriteStatus.Unchanged;
             return new ApiPlanSdtWriteItemResult(
                 definition.BacklogId,
@@ -478,7 +467,6 @@ internal static class ApiPlanSdtWriter
             },
             () => ConfirmSdt(designModel, sdt, definition, kbIndex, validateStructure: true));
         EnsureConfirmed(saveReceipt, () => ConfirmSdt(designModel, sdt, definition, kbIndex, validateStructure: true), $"SDT '{definition.Name}'");
-        B111CallSiteProbe.Wrote("SdtWriter.SdtNovo", definition.Name);
 
         var persisted = SDT.Get(designModel, sdt.Guid);
         return new ApiPlanSdtWriteItemResult(definition.BacklogId, definition.Kind, definition.Name, definition.Scope, ApiPlanSdtWriteStatus.Created, persisted.Guid);

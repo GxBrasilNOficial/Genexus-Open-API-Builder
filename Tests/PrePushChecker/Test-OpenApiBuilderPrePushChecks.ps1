@@ -45,6 +45,7 @@ Assert-True ($source -match 'Tests/MetadataHierarchical/Test-ApiPlanMetadataLeve
 Assert-True ($source -match 'Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract\.ps1') 'O checker deve executar o teste unitário do parser Service Source.'
 Assert-True ($source -match 'Tests/PersistenceProbe/Test-ApiPlanPersistenceCore\.ps1') 'O checker deve executar o teste unitário do seam de persistência B111/F2.'
 Assert-True ($source -match 'Tests/PersistenceProbe/Test-ApiPlanSaveStepExecutor\.ps1') 'O checker deve executar o teste unitário do executor de persistência B111/F2.'
+Assert-True ($source -match 'Tests/PersistenceProbe/Test-ApiPlanPersistenceSeamCoverage\.ps1') 'O checker deve executar a sentinela de cobertura do seam B111/F2.'
 Assert-True ($source -match 'Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity\.ps1') 'O checker deve executar o teste unitário da integridade B067.'
 Assert-True ($source -match 'Tests/ApiObjectOwnership/Test-ApiPlanApiObjectOwnership\.ps1') 'O checker deve executar o teste unitário da posse B087 do API Object.'
 Assert-True ($source -match 'Tests/OwnershipDescriptions/Test-ApiPlanOwnedObjectDescription\.ps1') 'O checker deve executar o teste unitário das descrições canônicas e legadas de ownership.'
@@ -151,6 +152,7 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ScanProbe\Test-ApiPlanScanProbe.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Scan Probe'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\PersistenceProbe\Test-ApiPlanPersistenceCore.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Persistence Core'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\PersistenceProbe\Test-ApiPlanSaveStepExecutor.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Persistence Executor'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\PersistenceProbe\Test-ApiPlanPersistenceSeamCoverage.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Persistence Seam Coverage'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\OrphanMetadataRecovery\Test-ApiPlanOrphanMetadataRecovery.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Orphan Metadata Recovery'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GeneratedApiRemoval\Test-ApiPlanGeneratedApiRemovalResilience.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generated Api Removal Resilience'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\TransactionSync\Test-ApiPlanTransactionSyncComparer.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Transaction Sync Comparer'`n", [System.Text.UTF8Encoding]::new($false))

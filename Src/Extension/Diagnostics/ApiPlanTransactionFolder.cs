@@ -29,13 +29,9 @@ internal static class ApiPlanTransactionFolder
             throw new ArgumentNullException(nameof(apiPlan));
         }
 
-        // B111/F1: instrumentacao temporaria. So conta; nao altera fluxo nem resultado.
-        B111CallSiteProbe.Enter("TransactionFolder.CreateOrReencounter");
-
         var existingFolder = Preflight(designModel, transaction, apiPlan);
         if (existingFolder is not null)
         {
-            B111CallSiteProbe.Skipped("TransactionFolder.CreateOrReencounter", existingFolder.Name);
             return existingFolder;
         }
 
@@ -56,7 +52,6 @@ internal static class ApiPlanTransactionFolder
             folder.Save,
             () => ConfirmFolder(designModel, transaction, folder.Name, apiPlan));
         EnsureConfirmed(receipt, () => ConfirmFolder(designModel, transaction, folder.Name, apiPlan), $"Folder '{folder.Name}'");
-        B111CallSiteProbe.Wrote("TransactionFolder.CreateOrReencounter", folder.Name);
         apiPlan.TransactionFolderWasCreated = true;
         return folder;
     }
@@ -125,7 +120,6 @@ internal static class ApiPlanTransactionFolder
             throw new InvalidOperationException($"Reencontro estrito bloqueado: Folder requerido '{apiPlan.TransactionFolderName}' nao existe. Gere os artefatos base antes. Nenhuma alteracao foi feita.");
         }
 
-        B111CallSiteProbe.Skipped("TransactionFolder.StrictReencounter", folder.Name);
         return folder;
     }
 

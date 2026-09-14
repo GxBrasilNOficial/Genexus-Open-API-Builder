@@ -629,11 +629,6 @@ public sealed class Package : AbstractPackageUI
             using var syncScanScope = ApiPlanScanProbe.Begin(
                 syncScanTelemetry,
                 telemetry => WriteScanTelemetry("Sync", telemetry));
-            // B111/F1: sonda temporaria — conta chamadas e gravacoes de Folder/SDT.
-            var syncCallSiteLog = new B111CallSiteLog();
-            using var syncCallSiteScope = B111CallSiteProbe.Begin(syncCallSiteLog);
-            using var syncCallSitePublisher = new B111CallSitePublisher(syncCallSiteLog, "Sync");
-
             try
             {
                 using var busy = ExtensionBusyProgressScope.Show(ResolveFinalReportOwner(), texts.BusyProgressTitleSync, texts);
@@ -1310,11 +1305,6 @@ public sealed class Package : AbstractPackageUI
         // B082: mede o custo das varreduras de catalogo ao longo de todo o Apply.
         var scanTelemetry = new ApiPlanScanTelemetry();
         using var scanScope = ApiPlanScanProbe.Begin(scanTelemetry);
-        // B111/F1: sonda temporaria — conta chamadas e gravacoes de Folder/SDT. Publicada
-        // pelo Dispose, para sobreviver a qualquer retorno antecipado do Apply.
-        var callSiteLog = new B111CallSiteLog();
-        using var callSiteScope = B111CallSiteProbe.Begin(callSiteLog);
-        using var callSitePublisher = new B111CallSitePublisher(callSiteLog, "Wizard");
         var saveBoundaryLog = new ApiPlanSaveBoundaryLog();
         using var saveBoundaryScope = ApiPlanSaveBoundaryProbe.Begin(saveBoundaryLog);
         using var saveBoundaryPublisher = new ApiPlanSaveBoundaryPublisher(saveBoundaryLog, "Wizard");
@@ -2175,46 +2165,6 @@ public sealed class Package : AbstractPackageUI
         // ActiveForm primeiro posicionava o Wizard no monitor primário quando o
         // owner não era um Form WinForms.
         return ExtensionIdeScreenPlacement.ResolveOwner();
-    }
-
-    /// <summary>
-    /// B111/F1 — publica na Output as contagens da sonda de call sites ao encerrar a
-    /// operação, inclusive quando o Apply retorna cedo por falha ou bloqueio. Sonda
-    /// temporária: sai junto com <c>B111CallSiteProbe</c> no fechamento da sprint.
-    /// </summary>
-    private sealed class B111CallSitePublisher : IDisposable
-    {
-        private readonly B111CallSiteLog _log;
-        private readonly string _operation;
-        private bool _disposed;
-
-        public B111CallSitePublisher(B111CallSiteLog log, string operation)
-        {
-            _log = log;
-            _operation = operation;
-        }
-
-        public void Dispose()
-        {
-            if (_disposed)
-            {
-                return;
-            }
-
-            _disposed = true;
-
-            // A publicacao nunca pode derrubar o fluxo medido.
-            try
-            {
-                foreach (var line in _log.Render())
-                {
-                    WriteOutput($"[Genexus Open API Builder][B111][{_operation}] {line}");
-                }
-            }
-            catch
-            {
-            }
-        }
     }
 
     /// <summary>

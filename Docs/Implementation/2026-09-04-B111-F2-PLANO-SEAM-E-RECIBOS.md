@@ -4,9 +4,10 @@
 **Fase:** F2 de 3 (F1 ordem e writer final · **F2 seam e recibos** · F3 durabilidade e remoção).
 **Data:** 2026-09-04. **Item:** `B111` em `Docs/Foundation/06-BACKLOG_v0.1.md`.
 
-**Status:** decisões de escopo e contrato da F2 consolidadas em 2026-09-07; o plano ainda
-não foi implementado. A revisão por pares da sprint não está encerrada. **Não** autoriza
-alteração de código, instalação, commit ou push.
+**Status histórico:** decisões de escopo e contrato consolidadas em 2026-09-07. A F2 foi
+implementada e aceita na IDE em 2026-09-13; a evidência está em
+`2026-09-12-S-B111-F2-ACEITE-IDE.md`. Este plano preserva o contrato e não autoriza, por
+si só, alteração de código, instalação, commit ou push.
 
 **Pré-requisito:** F1 aceita
 (`Docs/Implementation/2026-09-04-B111-F1-PLANO-ORDEM-E-WRITER-FINAL.md`). A F2 não
