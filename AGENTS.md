@@ -148,7 +148,7 @@ Modelo canônico: `v0.1.0-alpha.3`. Antes de publicar, comparar o corpo montado 
 
 Cada corte leva **dois assets DLL** e é publicado como **pre-release** enquanto a linha for Alpha. Conferir o SHA-256 dos assets após o download.
 
-Também atualizar, no mesmo corte: `CHANGELOG.md`, a versão em `Src/Extension/Version.Shared.props` e os três `README` quando a entrega mudar comportamento visível ao consumidor.
+Também atualizar, no mesmo corte: `CHANGELOG.md`, a versão em `Src/Extension/Version.Shared.props` e os três `README` quando a entrega mudar comportamento visível ao consumidor. Ao promover o bloco `[Unreleased]` a seção de versão, lê-lo antes como o leitor do release o lerá — a regra e o porquê estão em «Bloco `[Unreleased]` do `CHANGELOG.md`», na seção de promoção de frente.
 
 Registrado em 2026-08-24, depois de o corte `0.1.0-alpha.4` sair com o corpo do release em português apenas, montado por cópia da nota pt-BR e com links relativos que não resolvem na página. A convenção trilíngue existia só como padrão nos cortes anteriores, sem estar escrita em lugar nenhum.
 
@@ -227,6 +227,21 @@ Para cada ocorrência encontrada:
 - registrar mentalmente a justificativa para flags descartadas, para reportar na revisão pré-push quando aplicável.
 
 O checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` continua sendo a fonte canônica do próximo passo, mas documentos antigos não devem contradizê-lo com frases operacionais obsoletas.
+
+Na varredura, tratar **contagens como termo de estado**: `dois defeitos`, `três correções`, `cinco cenários`, `N checkpoints`. Números envelhecem como qualquer afirmação — um defeito a mais encontrado no meio da frente deixa divergentes todos os documentos que citavam o total anterior. Varrer também os termos do que **ainda falta**, que é o que mais envelhece: `pendente`, `restam`, `falta`, `aguarda`, `ainda não`, `sem validação`. E, depois de editar um documento longo por trecho, varrer o **próprio arquivo** pelo fato que mudou, porque editar seção a seção deixa contradição interna.
+
+### Bloco `[Unreleased]` do `CHANGELOG.md`
+
+O bloco `[Unreleased]` é **rascunho do próximo release, não registro histórico**. Cada entrada descreve o estado no instante em que foi escrita, e as entradas seguintes mudam esse estado sem tocar nas anteriores — mas no corte todas serão lidas como um texto só, pelo leitor do release, que não acompanhou a cronologia interna.
+
+Por isso, enquanto a versão não for publicada:
+
+- **uma entrega, uma entrada.** Ao avançar dentro da mesma frente — validar o que estava sem validação, corrigir um defeito da própria entrega, medir o que era estimativa —, **editar a entrada existente** em vez de acrescentar outra ao lado;
+- **classificar pela pergunta do leitor**, usando as seções que o arquivo já tem: `Added` para o que passou a existir, `Fixed` para defeito corrigido — dizendo se ele era visível em versão publicada ou se atinge mecanismo que estreia no mesmo bloco —, `Changed` para comportamento alterado, `Validated` para o que foi exercido na IDE;
+- **ao fechar uma etapa, reler o bloco inteiro como se fosse o leitor do release**, não apenas a entrada que se acabou de escrever. É aqui que aparecem o «sem validação na IDE» numa entrega validada horas depois e o «defeito ainda aberto» logo abaixo da entrada que o fecha;
+- a **cronologia interna** — quem descobriu o quê, quando, em que ordem — pertence ao log numerado do checkpoint e aos documentos de `Docs/Implementation/`, que são o lugar onde ela serve a alguém.
+
+Depois de publicada, a seção da versão é imutável: correção posterior entra como entrada nova ou como remissão datada, nunca reescrevendo o que já saiu.
 
 ## Revisão pré-push do repositório
 
