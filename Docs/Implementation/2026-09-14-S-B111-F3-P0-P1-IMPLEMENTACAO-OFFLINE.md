@@ -105,7 +105,10 @@ As regras implementadas, agrupadas:
 - **abandono** — exige o objeto `abandonment` completo, envelope `Prepared`,
   `journalDurability=Confirmed` e **nenhum** recibo de gravação de negócio;
 - **plano** — `planKind` amarrado ao `operationKind`; `Generation` exige `plannedApiGuid`,
-  `contractHash` e as quatro flags; `Removal` exige inventário não vazio e recusa as flags de
+  `contractHash` e as quatro flags (**remissão — 2026-09-14:** a exigência de
+  `plannedApiGuid` passou a valer a partir do estágio em que a identidade tem de existir,
+  porque numa criação nova o GUID só nasce do `API.Create`, dentro do pipeline — ver a seção
+  4.1 do registro da P2); `Removal` exige inventário não vazio e recusa as flags de
   geração; `MetadataRecovery` recusa `contractHash`, porque a recuperação devolve inventário
   e não contrato;
 - **recibos** — `sequence` positivo, único e monotônico; `attempt` positivo;
