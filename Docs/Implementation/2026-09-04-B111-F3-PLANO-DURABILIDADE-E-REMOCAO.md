@@ -1088,3 +1088,8 @@ e de outros objetos da KB.
 Uma gravação de `WikiFileKBObject` por recuperação: ~130 ms na KB pequena, **~1,1 s** na
 grande (seção 2.3, e item `B114` do backlog). A recuperação é opt-in, ocorre uma vez por
 incidente e não entra no orçamento de gravação da seção 4.4.
+
+**Remissão — 2026-09-14:** vale aqui a mesma ressalva da seção 2.3 — o número da KB grande não
+se confirmou em campo, onde a instrumentação da P2 mediu ~45 ms por gravação do diário. O
+`B114` foi reavaliado no backlog e passou a ser a investigação da divergência entre as duas
+medições; enquanto ela não for entendida, nenhuma das duas serve como linha de base.
