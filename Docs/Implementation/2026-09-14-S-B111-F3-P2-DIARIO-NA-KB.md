@@ -282,6 +282,36 @@ Decisão desta etapa: **manter `StageFailed`**, registrando a imprecisão, e res
 que é onde a precedência de motivos é normatizada. Inventar valor novo no meio da validação
 seria pior que conviver com a imprecisão documentada.
 
+## 6.6 Custo na KB grande — o orçamento do plano está 24 vezes acima do medido
+
+Apply completo de reencontro na `Empresa` da `FabricaBrasil18Test`, 47 SDTs e 4 Procedures
+reencontrados, 53 objetos atualizados, sem aborto:
+
+| Medida | Valor |
+|---|---|
+| Custo do diário | **182 ms**, 4 checkpoints (~45 ms cada) |
+| Apply completo | 44.190 ms |
+| Peso do diário no Apply | **0,4%** |
+| Envelope | 6534 bytes, 10 recibos, 6 alvos |
+| Orçamento da seção 4.4 | ~4.400 ms |
+
+O aborto anterior, com três checkpoints, custou 125 ms — ~42 ms cada. Duas medições
+independentes na mesma KB, com a mesma ordem de grandeza.
+
+A seção 2.3 do plano da F3 registra «gravar um `WikiFileKBObject`: ~1,1 s na KB grande»,
+medição de 2026-09-04 que sustenta o orçamento de ~4,4 s. A medição de campo diz ~45 ms. Não
+investiguei a diferença e não afirmo a causa; o fato registrado é que o orçamento não
+descreve o custo observado, e por uma margem grande demais para ser ruído.
+
+O que isso muda: nada na política de checkpoints, que é contrato. Muda o risco «o Modo A
+acrescentar segundos ao Apply de forma percebida como regressão», da seção 11 do plano — que
+não se materializou. O plano recebeu nota de remissão nas duas seções.
+
+Ressalva da medição: foi num **reencontro**, com 10 recibos. Uma criação nova na KB grande
+teria ~50 recibos e envelope maior. A sonda original mediu 247 bytes e 20 KB com o mesmo
+tempo de gravação, e os dois Applies da `Escola` (1022 e 7616 bytes, 314 e 305 ms)
+confirmam isso; ainda assim, a medição com envelope grande continua não feita.
+
 ## 7. Riscos e lacunas assumidos nesta etapa
 
 - **Um envelope não terminal trava a KB para novas operações, e ainda não há saída pela

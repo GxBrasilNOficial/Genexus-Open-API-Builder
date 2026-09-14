@@ -97,6 +97,14 @@ Do registro `2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`, seis execuções so
 | remontar o índice | ~100 ms | **~3,1 s** |
 | varrer Files por prefixo (medição histórica) | 5 ms | 22–28 ms |
 
+**Remissão — 2026-09-14:** a linha «gravar um `WikiFileKBObject` … ~1,1 s» não se confirmou
+em campo. Na mesma KB grande, medido pela instrumentação da P2: 45 ms por gravação do diário
+num Apply completo (182 ms em 4 checkpoints, contra 44,2 s de Apply) e 42 ms num aborto com 3
+checkpoints. A causa da diferença não foi investigada. As três restrições abaixo continuam
+válidas como desenho — elas minimizam gravações e evitam remontar o índice —, mas o
+orçamento da seção 4.4 que deriva desta linha está superestimado. Evidência:
+[`2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`](2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md), seção 6.6.
+
 Três restrições saem daí, e valem para qualquer desenho de diário:
 
 1. **escrever é caro, ler é grátis** — o desenho deve minimizar gravações, não leituras;
@@ -329,6 +337,12 @@ não definem a política de implementação e não substituem a matriz fechada l
 | uma por etapa confirmada, como no manuscrito expandido | ~10 | ~11 s |
 | três checkpoints agrupados: início, pós-API, conclusão | 4 | ~4,4 s |
 | mínimo: criação e conclusão | 2 | ~2,2 s |
+
+**Remissão — 2026-09-14:** os acréscimos estimados nesta tabela (~11 s, ~4,4 s, ~2,2 s) vêm
+da linha de 2,3 corrigida acima e estão superestimados em cerca de vinte vezes. Medido na
+`FabricaBrasil18Test`: a política de quatro checkpoints custou **182 ms**, 0,4% de um Apply
+de 44,2 s. Isso não altera a política — que é contrato e continua fechada na matriz abaixo —,
+apenas retira a pressão de I/O que motivava discutir granularidade.
 
 O diário deve ser atualizado e confirmado ao longo da operação e no estado terminal, mas
 isso não significa um `File.Save()` para cada recibo individual. A política normativa
