@@ -6,8 +6,10 @@
 
 Esta é a primeira etapa da F3 que **escreve na KB**. O diário deixa de ser um contrato de
 dados e passa a ser um File real, gravado antes de qualquer objeto de negócio em Apply e
-Sync. O primeiro Apply real foi executado na IDE em 2026-09-14 e está na seção 6.1; os
-demais testes do roteiro da seção 6 continuam pendentes.
+Sync. **A etapa foi validada na IDE em 2026-09-14**, nos quatro fluxos que ela cobre — Apply
+de criação, Apply de reencontro, Apply abortado com bloqueio da operação seguinte e Sync com
+delta —, em duas KBs. As seções 6.1 a 6.8 registram cada execução, incluindo os três defeitos
+encontrados e corrigidos no caminho.
 
 ## 1. O que entrou
 
@@ -88,10 +90,10 @@ Localizar o diário usa o índice já montado (0 ms) e as releituras vão por `F
 
 ## 6. Validação na IDE — roteiro
 
-Precisa de DLL instalada. **Executados e aceitos:** itens 1, 2, 4 e 6 (seções 6.1 a 6.7).
-**Pendente:** item 3, o Sync com delta. O item 5 — desbloqueio pela ferramenta — não é
-executável nesta etapa, porque o comando de recuperação é a P6; o contorno manual foi
-exercido duas vezes.
+Precisa de DLL instalada. **Todos executados e aceitos em 2026-09-14** (seções 6.1 a 6.8),
+em duas KBs: `wsEducacaoSpTeste` (pequena) e `FabricaBrasil18Test` (grande, 52 objetos
+planejados e 13 subníveis). O item 5 — desbloqueio pela ferramenta — não é executável nesta
+etapa, porque o comando de recuperação é a P6; o contorno manual foi exercido duas vezes.
 
 1. **Apply completo numa Transaction nova.** Conferir na Output as linhas `[B111/F3]`: diário
    aberto com `FileId`, checkpoints `Prepared`→`Active`→`ApiPhysicallySaved`→`Completed`. Na
@@ -353,6 +355,29 @@ payload e o fingerprint, portanto um valor novo muda o fingerprint por definiç�
 E confirma, do outro lado, que o `PlannedContractHash` do B067 **não** inclui ownership —
 razão pela qual o reencontro conservador não passou a bloquear com a promoção. Isso era uma
 verificação de código feita na revisão pré-push da P0; agora é observação de campo.
+
+## 6.8 Sync com delta — o último fluxo integrado
+
+`Escola` da `wsEducacaoSpTeste`, com `EscolaEndereco` alterado de `VarChar(70)` para
+`VarChar(71)`. Diff do B085: `Modificados: 1`, nenhum campo adicionado, nenhum conflito de
+SDT.
+
+| Observação | Valor |
+|---|---|
+| Diário | `OperationKind='Sync'`, `Created=False`, `FileId=86` reutilizado |
+| Checkpoints | 4, `Completed/Completed`, `Durability=Confirmed` |
+| Recibos / inventário | 12 / 7, batendo com `PersistenceReceipts=12` |
+| Custo | **156 ms** sobre 4.358 ms de operação |
+| Resultado | `SuccessWithWarnings`, `Atualizados=15`, `Bloqueados=0` |
+
+O `PlannedContractHash` do B067 mudou de `D39DCB84…` para `1F87DD9E…`, como deve: o contrato
+mudou junto com o campo. O diário registra esse mesmo valor em `plan.contractHash`, de modo
+que envelope e metadata continuam concordando sobre qual contrato foi aplicado — agora
+verificado nos dois fluxos que gravam.
+
+Com isso, **os quatro fluxos que o diário cobre nesta etapa foram exercidos**: Apply de
+criação, Apply de reencontro, Apply abortado e Sync. Remove e Recovery continuam fora, nas
+etapas P4 e P5.
 
 ## 7. Riscos e lacunas assumidos nesta etapa
 
