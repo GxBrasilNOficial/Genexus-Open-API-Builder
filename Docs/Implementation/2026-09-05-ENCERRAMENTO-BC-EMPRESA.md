@@ -106,8 +106,9 @@ Os erros `bool`/`decimal`/`short` do `NETFrameworkPostgreSQL` pertencem à gera�
 ## Estado das sondas e do código
 
 - **Superado no fechamento da F2 (2026-09-13):** `B111CallSiteProbe` foi removido; os recibos
-  B111 passaram ao seam único e ao relatório final. `ApiPlanSaveBoundaryProbe` permanece somente
-  como diagnóstico condicional de anomalia B109; não é mais uma sonda temporária exposta.
+  B111 passaram ao seam único e ao relatório final. `ApiPlanSaveBoundaryProbe` permanece
+  instalada como instrumentação temporária interna e só publica diagnóstico condicional de
+  anomalia B109.
 - A revisão por pares da sprint `S-B111` foi concluída e suas decisões foram incorporadas. A F1 e
   a F2 estão encerradas; a próxima fase é F3, conforme o checkpoint.
 
