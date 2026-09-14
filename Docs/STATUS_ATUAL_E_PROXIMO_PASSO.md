@@ -135,7 +135,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Frente atual
 
-Sprint `S-B111` — F1 está **implementada e validada para encerramento com exceção explícita do `B121`** em 2026-09-10/11, e a F2 (seam de persistência e recibos) foi encerrada em 2026-09-13. Além dos cenários positivos, cancelamento cooperativo e criação em escala já aceitos, a `Teste` descartável comprovou retorno sem mutação antes de `SDT.Save`, confirmação divergente após `API.Save` e falha antes de `Procedure.Delete`, seguida de limpeza idempotente. O `B121` permanece como melhoria fora da sprint. A frente atual é a F3 (durabilidade e remoção), em andamento: as etapas P0 (metadata V3), P1 (schema V1 do diário) e P2 (o diário gravado na KB em Apply e Sync) foram implementadas em 2026-09-14; a P2 aguarda validação na IDE. Reconciliação, retry de remoção e comando de recuperação continuam não implementados. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
+Sprint `S-B111` — F1 está **implementada e validada para encerramento com exceção explícita do `B121`** em 2026-09-10/11, e a F2 (seam de persistência e recibos) foi encerrada em 2026-09-13. Além dos cenários positivos, cancelamento cooperativo e criação em escala já aceitos, a `Teste` descartável comprovou retorno sem mutação antes de `SDT.Save`, confirmação divergente após `API.Save` e falha antes de `Procedure.Delete`, seguida de limpeza idempotente. O `B121` permanece como melhoria fora da sprint. A frente atual é a F3 (durabilidade e remoção), em andamento: as etapas P0 (metadata V3), P1 (schema V1 do diário) e P2 (o diário gravado na KB em Apply e Sync) foram implementadas em 2026-09-14; a P2 teve os dois primeiros testes de IDE aceitos em 2026-09-14 e aguarda os testes 3 a 6. Reconciliação, retry de remoção e comando de recuperação continuam não implementados. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
 
 Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; **conferência de fim em 2026-08-28**, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100` (concluído em 2026-08-30) → `B082` Fases A+B (concluído em 2026-09-01) → `B082` Etapa 1A (aceita em 2026-09-03). Publicação em quatro cortes: `0.1.0-alpha.4` após `B102` (2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis (2026-08-30), `0.1.0-alpha.6` com o `Delete` (2026-08-31) e `0.1.0-alpha.7` com o progresso `B082` (**publicado em 2026-09-01**). `B105` entra na sprint apenas se houver folga.
 
@@ -143,18 +143,24 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Validar a P2 da F3 na IDE.** As etapas P0 (metadata V3), P1 (schema V1 do diário) e P2
-(o diário na KB, com os checkpoints de Apply e Sync) foram implementadas em 2026-09-14, com
-build Release sem avisos e os gates offline passando — inclusive os dois novos,
-`tests.operationJournalSchema` e `tests.operationJournalCheckpoints`. Registros:
-`Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md` e
-`Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`.
+**Concluir a validação da P2 da F3 na IDE — restam os testes 3 a 6.** As etapas P0
+(metadata V3), P1 (schema V1 do diário) e P2 (o diário na KB, com checkpoints, recibos e
+inventário) foram implementadas em 2026-09-14. Os dois primeiros testes do roteiro passaram
+na `Escola` da KB `wsEducacaoSpTeste`: Apply de criação nova e Apply de reencontro, este com
+12 recibos duráveis, 7 alvos no inventário, quatro checkpoints confirmados e 305 ms de custo.
+Registros: `Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md` e
+`Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`, seções 6.1 a 6.4.
 
-A P2 é a primeira etapa da F3 que escreve na KB, e **nada dela foi validado na IDE**. O
-roteiro mínimo está na seção 6 do registro da P2: Apply completo com os quatro checkpoints
-confirmados, segundo Apply reutilizando o mesmo File, Sync com delta, aborto terminando em
-`Partial`/`StageFailed` com a operação seguinte bloqueada, e medição do custo na KB grande
-contra os ~4,4 s previstos.
+Faltam, na ordem de valor:
+
+1. **Aborto durante o Apply** — o diário tem de terminar em `Partial`/`StageFailed` e a
+   operação seguinte tem de ser **bloqueada**. É o teste que prova para que o diário serve;
+2. **Reuso do File** — um segundo Apply seguido deve trazer `Created=False` com o mesmo
+   `FileId`, sem criar um segundo diário. Já observado uma vez, com a DLL anterior;
+3. **Sync com delta** — mesma sequência com `operationKind=Sync`;
+4. **Custo na KB grande** (`FabricaBrasil18Test`), contra os ~4,4 s previstos;
+5. **Colisão externa** (opcional): um File homônimo com outra Description deve bloquear antes
+   de qualquer gravação.
 
 **Antes de abortar um Apply de propósito:** um envelope não terminal bloqueia as operações
 seguintes por contrato, e a saída pela ferramenta só chega nas etapas P5/P6. Até lá, o
@@ -470,6 +476,7 @@ residual `B082` 1B/2/3 não competem com a preparação da F3.
 119. Em 2026-09-13, as fronteiras de falha controlada encerraram a F2 na `Transaction` descartável `Teste` da KB `wsEducacaoSpTeste`. O retorno sem mutação antes de `SDT.Save` produziu um único recibo `OutcomeUnknown/Absent/Absent` sem persistir os passos posteriores. A confirmação divergente após `API.Save` deixou 28 recibos confirmados e o recibo final do API Object como `OutcomeUnknown/Divergent/Unknown`; a recuperação B115 regravou somente a metadata e o Apply completo seguinte teve 12 recibos confirmados. A falha antes de `Procedure.Delete` confirmou a remoção do API Object e parou com `StageFailed=Procedures` e `ReasonCode=persistence.before_failed`; a repetição normal removeu os 24 objetos restantes, preservando SDTs compartilhados, Folder reutilizado e Business Component, com 25 recibos e zero bloqueios. A instrumentação temporária foi retirada. Próxima ação única = preparar F3. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 120. Em 2026-09-14, as etapas P0 e P1 da F3 foram implementadas offline: a metadata de negócio passou a ser emitida como `GOAB_API_METADATA_B060_V3`, com `ownership.applicationId` no payload e no fingerprint e leitura tolerante a V1/V2 sem regravação implícita; e o schema V1 do diário `GxOpenApiBuilder_OperationJournal` ganhou modelo, serializer canônico determinístico, `snapshotHash` SHA-256 e validador que recusa envelope inválido antes de qualquer `File.Save()`. Nenhum diário é gravado em KB ainda, e nenhum fluxo mudou. Build Release com 0 avisos, gate novo `tests.operationJournalSchema` e os gates vizinhos passaram. Próxima ação única = F3 etapa P2. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`.
 121. Em 2026-09-14, a etapa P2 da F3 foi implementada: o diário durável passa a existir na KB. Apply e Sincronizar abrem o File único `GxOpenApiBuilder_OperationJournal` em duas fases confirmadas antes de qualquer gravação de negócio, registram a fronteira do API Object e fecham o diário na conclusão, na falha de etapa e no aborto; um envelope anterior não terminal bloqueia a operação seguinte. Remove e Recovery existem na máquina de checkpoints e ainda não são acionados. Build Release sem avisos, gate novo `tests.operationJournalCheckpoints` e gates vizinhos passando; **nada validado na IDE**. Próxima ação única = validar a P2 na IDE. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`.
+122. Em 2026-09-14, os dois primeiros testes da P2 passaram na IDE, na `Escola` da KB `wsEducacaoSpTeste`: o Apply de criação nova gravou o diário com quatro checkpoints confirmados e 314 ms, e o cruzamento do `applicationId` entre diário e metadata V3 fechou o critério de aceite 8. O JSON exportado expôs `inventory` e `receipts` vazios, corrigido na mesma data; o reteste do reencontro gravou 12 recibos duráveis e 7 alvos, com 305 ms e envelope de 7616 bytes, e as sequências persistidas provam a ordem da F1 — API Object na sequência 11, depois de todos os consumidores. Três defeitos foram encontrados e corrigidos, o principal deles a falha do diário derrubando o Apply. Próxima ação única = concluir os testes 3 a 6 da P2. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`, seções 6.1 a 6.4.
 
 ## Bloqueios e fatos ainda não validados
 

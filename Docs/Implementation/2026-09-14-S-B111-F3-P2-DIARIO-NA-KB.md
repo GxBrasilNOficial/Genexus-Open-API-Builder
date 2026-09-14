@@ -88,7 +88,8 @@ Localizar o diário usa o índice já montado (0 ms) e as releituras vão por `F
 
 ## 6. Validação na IDE — roteiro
 
-Precisa de DLL instalada. O item 1 foi executado (seção 6.1); os demais seguem pendentes:
+Precisa de DLL instalada. Os itens 1 e 2 foram executados (seções 6.1 a 6.4); 3 a 6 seguem
+pendentes:
 
 1. **Apply completo numa Transaction nova.** Conferir na Output as linhas `[B111/F3]`: diário
    aberto com `FileId`, checkpoints `Prepared`→`Active`→`ApiPhysicallySaved`→`Completed`. Na
@@ -183,6 +184,51 @@ Os três estão cobertos por teste: o gate de recibos reproduz o cenário exato 
 identidade composta com `transactionGuid` preenchido e `apiGuid` vazio, o mesmo alvo com duas
 identidades — e exige envelope válido no Save e bloqueio no Delete. O primeiro defeito, por
 depender do store e da KB, só se comprova na IDE: é o reteste do Apply de reencontro.
+
+## 6.4 Terceiro Apply — recibos duráveis, e a ordem da F1 provada por dado
+
+Reteste do reencontro da `Escola` com a DLL corrigida, depois de o File do diário ter sido
+apagado à mão (contorno previsto até a P6). Resultado: `SuccessWithWarnings`, `Bloqueados=0`,
+relatório final apresentado.
+
+| Observação | Valor |
+|---|---|
+| Diário | `FileId=86`, `Created=True` (nasceu de novo após a limpeza) |
+| Recibos duráveis | **12**, batendo com `PersistenceReceipts=12` do relatório |
+| Inventário | **7** alvos |
+| Checkpoints | 4, `Durability=Confirmed` |
+| Custo | **305 ms**, com envelope de 7616 bytes |
+| Estado final | `Active` / `Completed` / `Completed`, `blockReason: null` |
+
+O custo praticamente não mudou em relação aos 314 ms do envelope de 1022 bytes. É a
+confirmação em campo do que a sonda de 2026-09-04 mediu — 247 bytes e 20 KB com o mesmo
+tempo de gravação —, e significa que carregar recibos no diário não compromete o orçamento
+da seção 4.4.
+
+`Recibos=12` contra `Atualizados=15` no relatório não é divergência: o recibo só existe onde
+houve gravação física, e objetos reencontrados sem alteração não geram `Save`.
+
+O inventário exportado:
+
+| Alvo | Tipo | Ação | Estado | Confirmação | Recibos |
+|---|---|---|---|---|---|
+| `procEscola_API_List` | Procedure | Update | Present | Confirmed | 1, 10 |
+| `procEscola_API_Get` | Procedure | Update | Present | Confirmed | 2, 6 |
+| `procEscola_API_Create` | Procedure | Update | Present | Confirmed | 3, 7 |
+| `procEscola_API_Update` | Procedure | Update | Present | Confirmed | 4, 8 |
+| `procEscola_API_Delete` | Procedure | Update | Present | Confirmed | 5, 9 |
+| `apiEscola` | ApiObject | Update | Present | Confirmed | 11 |
+| `apiEscola_Metadata` | MetadataFile | Update | Present | Confirmed | 12 |
+
+Cada Procedure carrega **duas** sequências — uma do estágio `Procedures`, outra do
+`Business Component` ou do `List`. É exatamente o caso que a chave divergente de antes
+transformava em alvo repetido, e que agora colapsa num item só.
+
+**A ordem da F1 deixou de depender da Output.** As sequências mostram as cinco Procedures
+(1–5), o Business Component (6–9), o List (10), o API Object (**11**) e a metadata (12). O
+API é gravado depois de todos os consumidores, uma única vez, e isso está agora persistido
+na KB por identidade, com o estágio que gravou cada um — não mais apenas afirmado por uma
+linha de log e pelo `ApiSaveCount=1`.
 
 ## 7. Riscos e lacunas assumidos nesta etapa
 
