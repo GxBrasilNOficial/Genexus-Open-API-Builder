@@ -413,7 +413,7 @@ nomes serializados.
 | `inventory` | array obrigatório, possivelmente vazio | cada alvo e preservação aparecem uma vez |
 | `receipts` | array obrigatório, possivelmente vazio | sequência monotônica dentro da operação |
 | `abandonment` | objeto anulável | obrigatório somente quando `logicalStage=Abandoned` |
-| `blockReason` | enum anulável | obrigatória em um checkpoint confirmado que registre bloqueio, `OutcomeUnknown` ou reconciliação pendente; valores V1 persistíveis: `OutcomeUnknown`, `InventoryInsufficient`, `IdentityAmbiguous`, `IdentityDivergent`, `UnreconciledNotAttempted`, `TargetAbsentBeforeDelete`, `StageFailed` ou `RetryBudgetExhausted` |
+| `blockReason` | enum anulável | obrigatória em um checkpoint confirmado que registre bloqueio, `OutcomeUnknown` ou reconciliação pendente; valores V1 persistíveis: `OutcomeUnknown`, `InventoryInsufficient`, `IdentityAmbiguous`, `IdentityDivergent`, `UnreconciledNotAttempted`, `TargetAbsentBeforeDelete`, `StageFailed`, `RetryBudgetExhausted` ou `UserAborted` (este acrescentado pela decisão 58, em 2026-09-14) |
 
 O contrato separa o motivo persistido no envelope do diagnóstico que impede uma
 gravação. `blockReason` só pode ser alterado junto de um snapshot de diário que
@@ -1353,3 +1353,30 @@ Decisão de reconciliação:
 - no código vigente após a F1, o inventário operacional da F2 é de 14 chamadas diretas físicas de `Save()` gerenciadas pela S-B111, mais dois executores de laço (`step.Save()`) em BC e List; os executores não são chamadas físicas adicionais;
 - o `Save()` do File de preferências e os `Save()` do próprio journal permanecem fora do seam operacional da F2, conforme a seção 9.1 do plano F2;
 - em documentos que descrevem o estado atual da F2, deve prevalecer a formulação de 14 chamadas diretas físicas; a decisão 39 não deve ser reescrita, mas lida como histórico do inventário anterior.
+
+### 58. `UserAborted` no enum `blockReason` — 2026-09-14
+
+A validação da etapa P3 da F3 registrou que um aborto do usuário era persistido como
+`blockReason=StageFailed`, valor que a decisão 24 amarra a «falha conhecida e não retryable
+comunicada pelo orquestrador por `NoteStageFailed`». Um aborto deliberado não é isso.
+
+Decisão:
+
+- o enum `blockReason` do schema V1 recebe o valor `UserAborted`, para a interrupção deliberada
+  pelo usuário. A tabela de campos da decisão 24 fica emendada: os valores V1 persistíveis
+  passam a ser nove;
+- `UserAborted` exige `operationState=Partial`. Um aborto nunca produz `OutcomeUnknown`: quem
+  parou de propósito sabe que parou, e a indeterminação descreve resultado desconhecido de
+  gravação, não decisão humana;
+- `StageFailed` permanece reservado ao mapeamento da decisão 24, sem alteração. As demais
+  interrupções continuam usando-o;
+- acrescentar valor a enum fechado é mudança incompatível de schema. Ela é feita agora porque o
+  schema V1 do diário nunca saiu num release — o último publicado é o `0.1.0-alpha.7`, anterior
+  à etapa P0 — e os únicos envelopes V1 existentes estão nas KBs de teste da máquina de
+  desenvolvimento. Depois do próximo corte, o mesmo acréscimo exigiria schema V2 e caminho de
+  migração;
+- a distinção não é cosmética: a reconciliação da P5 lê esse campo para decidir o que oferecer,
+  e o que se oferece a quem parou de propósito não é o que se oferece a quem quebrou.
+
+Evidência da validação: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`,
+seções 4 e 6.1.

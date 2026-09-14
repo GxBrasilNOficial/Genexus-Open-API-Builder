@@ -401,7 +401,13 @@ etapas P4 e P5.
   código. A tradução é a P7.
 - **O Apply que não grava API** — só SDTs e Procedures — faz três checkpoints, não quatro,
   porque não existe fronteira de API a registrar. A matriz fala do «caminho completo»; este
-  não é.
+  não é. **Remissão — 2026-09-14:** isto era o comportamento pretendido, não o medido. A
+  validação da P3 exercitou esse caminho pela primeira vez e encontrou **quatro** checkpoints,
+  com `ApiPhysicallySaved` registrada e `ApiSaveCount=0`: a fronteira dependia de um GUID
+  conhecido, não de gravação confirmada. A afirmação acima só passou a ser verdadeira depois da
+  correção registrada em
+  [`2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`](2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md),
+  seções 6.7 e 9.
 - **Nenhuma atomicidade.** Uma falha de checkpoint depois do primeiro `Save()` de negócio não
   desfaz nada; ela impede continuar às cegas e preserva o último snapshot durável. Continua
   valendo o que o checkpoint operacional já registra sobre gravações multiobjeto.
