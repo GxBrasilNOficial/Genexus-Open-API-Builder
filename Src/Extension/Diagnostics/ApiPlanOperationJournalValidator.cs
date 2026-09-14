@@ -471,9 +471,12 @@ public static class ApiPlanOperationJournalValidator
                 break;
 
             case JournalIdentityKind.Folder:
-                if (item.EmptyConfirmed != true)
+                // `emptyConfirmed` é exigência da fila destrutiva: só se apaga um Folder
+                // próprio depois de confirmá-lo vazio. Num Apply, o mesmo Folder aparece
+                // como alvo de criação ou reuso, e exigir vazio ali não teria sentido.
+                if (item.Action == JournalInventoryAction.Delete && item.EmptyConfirmed != true)
                 {
-                    errors.Add("identityKind=Folder exige emptyConfirmed=true.");
+                    errors.Add("identityKind=Folder exige emptyConfirmed=true para ser removido.");
                 }
 
                 if (!item.OwnershipValidated)

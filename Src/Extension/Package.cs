@@ -708,6 +708,7 @@ public sealed class Package : AbstractPackageUI
                 }
 
                 syncJournal = syncJournalStart.Session!;
+                syncJournal.AttachPersistence(persistenceLog, () => report.CreatedObjectNames);
                 WriteJournalDiagnostics(syncJournal);
 
                 if (!TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", syncKbIndex, preserveSdts, report, busy.Session))
@@ -1500,6 +1501,7 @@ public sealed class Package : AbstractPackageUI
             }
 
             journal = journalStart.Session!;
+            journal.AttachPersistence(persistenceLog, () => report.CreatedObjectNames);
             WriteJournalDiagnostics(journal);
 
             if (selection.BusinessComponentSelection.EnabledDuringWizard && !transaction.IsBusinessComponent)

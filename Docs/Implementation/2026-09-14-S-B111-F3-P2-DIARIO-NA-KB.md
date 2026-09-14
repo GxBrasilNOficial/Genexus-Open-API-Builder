@@ -6,8 +6,8 @@
 
 Esta é a primeira etapa da F3 que **escreve na KB**. O diário deixa de ser um contrato de
 dados e passa a ser um File real, gravado antes de qualquer objeto de negócio em Apply e
-Sync. **Nada foi validado na IDE nesta rodada** — a validação é o gate desta etapa e está
-roteirizada na seção 6.
+Sync. O primeiro Apply real foi executado na IDE em 2026-09-14 e está na seção 6.1; os
+demais testes do roteiro da seção 6 continuam pendentes.
 
 ## 1. O que entrou
 
@@ -86,9 +86,9 @@ medição real contra ele é parte da validação da seção 6.
 Localizar o diário usa o índice já montado (0 ms) e as releituras vão por `FileId` (0 ms). O
 índice nunca é remontado para reencontrá-lo: isso custaria ~3,1 s na KB grande.
 
-## 6. Validação na IDE — ainda não executada
+## 6. Validação na IDE — roteiro
 
-Precisa de DLL instalada. O roteiro mínimo desta etapa:
+Precisa de DLL instalada. O item 1 foi executado (seção 6.1); os demais seguem pendentes:
 
 1. **Apply completo numa Transaction nova.** Conferir na Output as linhas `[B111/F3]`: diário
    aberto com `FileId`, checkpoints `Prepared`→`Active`→`ApiPhysicallySaved`→`Completed`. Na
@@ -104,6 +104,54 @@ Precisa de DLL instalada. O roteiro mínimo desta etapa:
 5. **Desbloqueio.** Hoje, a única saída de um envelope `Partial` é apagar o File do diário à
    mão. A saída pela ferramenta é o comando de recuperação, que é a etapa P6 — ver a seção 7.
 6. **Custo medido** na KB grande, comparado com os ~4,4 s previstos.
+
+## 6.1 Primeira execução real — `Escola`, 2026-09-14
+
+Apply completo de criação nova na KB `wsEducacaoSpTeste`, DLL instalada:
+
+| Observação | Valor |
+|---|---|
+| Diário criado | `FileId=84`, `Created=True`, 987 bytes no `Prepared` |
+| Checkpoints | 4, `Durability=Confirmed` |
+| Custo | **314 ms** — abaixo dos ~520 ms previstos para a KB pequena |
+| Estado final | `Active` / `Completed` / `Completed`, `blockReason: null` |
+| Metadata | `GOAB_API_METADATA_B060_V3` na primeira gravação |
+| F1 preservada | `ApiSaveCount=1`, `FinalWriter='List'` |
+
+O cruzamento que só existe com as duas gravações reais — critério de aceite 8 — fechou:
+`journal.applicationId` e `metadata.ownership.applicationId` são o mesmo
+`46e63949-c26e-4daa-9a57-60fb0c6a3bf5`, e `plan.plannedApiGuid` é o
+`34491e46-4ca0-4d07-80ca-304d8aad5433` do API Object. O `contractHash` do plano é o mesmo
+`D39DCB84…` que o B067 gravou como `PlannedContractHash`.
+
+A forma canônica se confirmou no arquivo gravado: 1022 bytes no snapshot terminal, sem BOM,
+sem CR, sem espaço após dois-pontos, `abandonment` e `blockReason` como `null`.
+
+**A execução também revelou uma lacuna**, invisível na Output e visível no JSON exportado:
+`inventory` e `receipts` saíram vazios. A matriz 4.4 manda gravar os recibos nas fronteiras,
+e a implementação inicial da P2 gravava só as dimensões de estado. Foram 18 recibos
+confirmados que não ficaram duráveis. Corrigido na mesma data — seção 6.2.
+
+## 6.2 Recibos e inventário no envelope
+
+`ApiPlanOperationJournalReceiptMapper` leva os `PersistenceReceipt` da F2 para o envelope e
+deriva o inventário deles. A sessão reconstrói os dois a cada checkpoint: o snapshot
+descreve o estado observado naquele instante, não um acúmulo.
+
+Três decisões que a conversão forçou:
+
+- **o mapa de tipos é fechado.** `Transaction`, `Folder`, `API`, `Procedure`, `SDT` e `File`
+  têm correspondência no schema; qualquer outro vira exceção, que a sessão converte em
+  bloqueio visível do diário. Gravar um recibo com tipo inventado seria pior que não gravar;
+- **`Create` contra `Update` vem da lista de criados do relatório final.** O recibo prova que
+  o alvo foi gravado, não que ele nasceu agora. O collector passou a expor
+  `CreatedObjectNames` para esse cruzamento;
+- **`emptyConfirmed` deixou de ser exigido fora da remoção.** A regra da decisão 24 é da fila
+  destrutiva — só se apaga um Folder próprio depois de confirmá-lo vazio. Num Apply, o mesmo
+  Folder aparece como alvo de criação ou reuso, e exigir vazio ali não teria sentido.
+
+A identidade de File da F2 é o GUID do objeto, não o `Id` numérico; o item de inventário
+registra `identityKind=Guid` com o hash esperado ao lado. Gate: `tests.operationJournalReceipts`.
 
 ## 7. Riscos e lacunas assumidos nesta etapa
 
@@ -127,9 +175,14 @@ Precisa de DLL instalada. O roteiro mínimo desta etapa:
 
 ## 8. Gates
 
-Novo: `tests.operationJournalCheckpoints` — matriz de checkpoints por operação, transições
-recusadas, abandono explícito, identidade da API por estágio e reutilização do diário entre
-operações. Registrado no orquestrador e no teste do checker.
+Dois novos, ambos registrados no orquestrador e no teste do checker:
+
+- `tests.operationJournalCheckpoints` — matriz de checkpoints por operação, transições
+  recusadas, abandono explícito, identidade da API por estágio e reutilização do diário entre
+  operações;
+- `tests.operationJournalReceipts` — mapa fechado de tipos, recusa de tipo desconhecido,
+  transporte dos recibos, identidades preservadas, `Create` contra `Update` e validação do
+  envelope resultante pelo mesmo validador do schema.
 
 A sentinela de cobertura do seam da F2 passou a aceitar o `file.Save()` do store como
 chamada física fora do seam, com o motivo escrito na própria allowlist: o diário tem rotina

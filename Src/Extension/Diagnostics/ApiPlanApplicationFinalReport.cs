@@ -381,6 +381,14 @@ public sealed class ApiPlanApplicationFinalReportCollector
 
     public ApiPlanPersistenceLog? PersistenceLog => _persistenceLog;
 
+    /// <summary>
+    /// Nomes dos objetos criados nesta operação. O diário B111/F3 usa esta lista para
+    /// distinguir `Create` de `Update` no inventário: o recibo de persistência prova que o
+    /// alvo foi gravado, mas não diz se ele nasceu agora.
+    /// </summary>
+    public IReadOnlyList<string> CreatedObjectNames =>
+        _created.Select(item => item.Name).ToArray();
+
     public void SetPersistenceLog(ApiPlanPersistenceLog? persistenceLog)
     {
         _persistenceLog = persistenceLog;

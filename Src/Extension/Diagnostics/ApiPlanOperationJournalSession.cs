@@ -31,6 +31,8 @@ internal sealed class ApiPlanOperationJournalSession
 {
     private readonly ApiPlanOperationJournalStore _store;
     private readonly List<string> _diagnostics = new List<string>();
+    private ApiPlanPersistenceLog? _persistenceLog;
+    private Func<IEnumerable<string>>? _createdNames;
 
     private ApiPlanOperationJournalSession(ApiPlanOperationJournalStore store, ApiPlanOperationJournal envelope)
     {
@@ -190,6 +192,17 @@ internal sealed class ApiPlanOperationJournalSession
         Envelope.Plan.PlannedApiGuid = plannedApiGuid;
     }
 
+    /// <summary>
+    /// Liga o diário ao log de persistência da F2. A partir daqui, cada checkpoint leva para
+    /// o envelope os recibos e o inventário observados — sem isso, o diário saberia em que
+    /// ponto a operação parou, mas não o que já tinha sido confirmado por objeto.
+    /// </summary>
+    internal void AttachPersistence(ApiPlanPersistenceLog? persistenceLog, Func<IEnumerable<string>>? createdNames)
+    {
+        _persistenceLog = persistenceLog;
+        _createdNames = createdNames;
+    }
+
     /// <summary>CP3 de Apply e Sync.</summary>
     internal bool NoteApiPhysicallySaved()
     {
@@ -270,6 +283,7 @@ internal sealed class ApiPlanOperationJournalSession
         try
         {
             transition();
+            SyncPersistenceSnapshot();
         }
         catch (InvalidOperationException exception)
         {
@@ -287,13 +301,45 @@ internal sealed class ApiPlanOperationJournalSession
 
         Note(string.Format(
             CultureInfo.InvariantCulture,
-            "Checkpoint '{0}': {1}/{2}, FileId={3}, Bytes={4}.",
+            "Checkpoint '{0}': {1}/{2}, FileId={3}, Bytes={4}, Recibos={5}, Inventário={6}.",
             description,
             Envelope.OperationState,
             Envelope.LogicalStage,
             result.FileId,
-            result.Bytes));
+            result.Bytes,
+            Envelope.Receipts.Count,
+            Envelope.Inventory.Count));
         return true;
+    }
+
+    /// <summary>
+    /// Copia recibos e inventário do log da F2 para o envelope. É reconstrução completa, não
+    /// acréscimo: o snapshot do checkpoint descreve o estado observado naquele instante.
+    /// </summary>
+    private void SyncPersistenceSnapshot()
+    {
+        if (_persistenceLog is null)
+        {
+            return;
+        }
+
+        var receipts = ApiPlanOperationJournalReceiptMapper.MapReceipts(_persistenceLog.Receipts);
+        var inventory = ApiPlanOperationJournalReceiptMapper.BuildInventory(
+            _persistenceLog.Receipts,
+            _createdNames?.Invoke(),
+            Envelope.OperationKind);
+
+        Envelope.Receipts.Clear();
+        foreach (var receipt in receipts)
+        {
+            Envelope.Receipts.Add(receipt);
+        }
+
+        Envelope.Inventory.Clear();
+        foreach (var item in inventory)
+        {
+            Envelope.Inventory.Add(item);
+        }
     }
 
     private void Block(string detail)
