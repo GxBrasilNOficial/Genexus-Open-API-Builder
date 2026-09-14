@@ -159,7 +159,7 @@ na seção 6.5: um aborto do usuário termina com `blockReason=StageFailed`, val
 valor é mudança incompatível de schema — decisão a tomar na P3, não antes.
 
 Depois dela: P4 (remoção com intenção, passadas e orçamento), P5 (serviços de recuperação),
-P6 (comando explícito e preferência), P7 (localização trilíngue e gates restantes).
+P6 (comando explícito e preferência), P7 (localização trilíngue e gates restantes) e P8 (validação integrada na IDE, os nove cenários da seção 9 do plano da F3, que só podem ser exercidos com remoção e recuperação prontas).
 
 **Enquanto a P6 não existe**, um envelope não terminal bloqueia as operações seguintes e a
 única saída é apagar o File `GxOpenApiBuilder_OperationJournal` à mão. Isso foi exercido duas
@@ -282,7 +282,7 @@ tentado, mas continua sem comprovação isolada e está registrado no `B121`. Ev
 De `B109`, apenas o ramo B foi encerrado; o ramo A não tem pauta própria, por depender de
 reprodução — se o sintoma voltar, ele passa à frente. O `Rebuild All` do
 `NETFrameworkPostgreSQL` é pendência separada de environment e não bloqueia a F1. `B108` e o
-residual `B082` 1B/2/3 não competem com a F3, hoje em andamento na etapa P3.
+residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1 e P2 e tem a P3 como próxima etapa.
 
 ## Evidência histórica da F2 encerrada
 
