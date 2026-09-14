@@ -69,10 +69,45 @@ Assert-Equal 0 $report.BlockedCount 'Sem bloqueios.'
 Assert-Equal 1 $report.WarningCount 'Um aviso.'
 Assert-True ($report.BuildOutputSummary() -match "\[B081\] Relatório final") 'Output summary deve citar B081.'
 Assert-True ($report.BuildOutputSummary() -match "PersistedMainObjectGuid='11111111-1111-1111-1111-111111111111'") 'Output summary deve expor o GUID persistido.'
-Assert-True ($report.BuildReadableBody() -match 'Criados \(4\)') 'Corpo legivel lista criados.'
-Assert-True ($report.BuildReadableBody() -match 'Guid persistido do objeto principal: 11111111-1111-1111-1111-111111111111') 'Corpo legivel deve expor o GUID persistido.'
-Assert-True ($report.BuildReadableBody() -match 'Atualizados \(1\)') 'Corpo legivel lista atualizados.'
-Assert-True ($report.BuildReadableBody() -match '\[Folder\] ContratoOpenApi') 'Corpo legivel lista Folder criado.'
+Assert-True ($report.BuildReadableBody() -match 'Resultado: Criados=4; Atualizados=1; Removidos=0.') 'Corpo legivel deve resumir os efeitos bem-sucedidos por contagem.'
+Assert-True ($report.BuildReadableBody() -notmatch 'Guid persistido do objeto principal') 'Corpo legivel normal não deve exibir GUID técnico.'
+Assert-True ($report.BuildReadableBody() -notmatch '\[Folder\] ContratoOpenApi') 'Corpo legivel normal não deve listar cada objeto criado.'
+
+$persistenceSuccess = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanPersistenceLog]::new()
+$successScope = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanPersistenceCore]::Begin($persistenceSuccess)
+try {
+    [void][GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanPersistenceCore]::Persist(
+        'Save', 'Procedure', 'Procedures', 'procContrato_API_List',
+        [GenexusOpenApiBuilder.Extension.Diagnostics.GuidIdentity]::new([guid]'55555555-5555-5555-5555-555555555555'),
+        [Action] { },
+        [Func[GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceConfirmation]] { [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceConfirmation]::Confirmed('procContrato_API_List') })
+}
+finally {
+    $successScope.Dispose()
+}
+$compactPersistence = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalReportCollector]::new('Wizard', 'Contrato', 'apiContrato')
+$compactPersistence.SetPersistenceLog($persistenceSuccess)
+$compactBody = $compactPersistence.Build([timespan]::FromMilliseconds(10)).BuildReadableBody()
+Assert-True ($compactBody -match 'Persistência: Confirmados=1; Pendências=0.') 'Sucesso deve resumir recibos por contagem.'
+Assert-True ($compactBody -notmatch 'Receipt Sequence=') 'Sucesso não deve listar cada recibo técnico.'
+
+$persistenceFailure = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanPersistenceLog]::new()
+$failureScope = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanPersistenceCore]::Begin($persistenceFailure)
+try {
+    [void][GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanPersistenceCore]::Persist(
+        'Save', 'Procedure', 'Procedures', 'procContrato_API_Create',
+        [GenexusOpenApiBuilder.Extension.Diagnostics.GuidIdentity]::new([guid]'66666666-6666-6666-6666-666666666666'),
+        [Action] { },
+        [Func[GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceConfirmation]] { [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceConfirmation]::Divergent('outro-guid', 'identidade divergente') })
+}
+finally {
+    $failureScope.Dispose()
+}
+$detailedPersistence = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalReportCollector]::new('Wizard', 'Contrato', 'apiContrato')
+$detailedPersistence.SetPersistenceLog($persistenceFailure)
+$detailedBody = $detailedPersistence.Build([timespan]::FromMilliseconds(10)).BuildReadableBody()
+Assert-True ($detailedBody -match 'Diagnóstico de persistência:') 'Falha de confirmação deve abrir o diagnóstico técnico.'
+Assert-True ($detailedBody -match 'procContrato_API_Create') 'Falha de confirmação deve identificar somente o recibo problemático.'
 
 # S-B111 F1: exercita as decisões de identidade e resolução sem depender de uma KB/IDE.
 $transactionGuid = [guid]'22222222-2222-2222-2222-222222222222'
@@ -254,13 +289,14 @@ Assert-True ($listWriterSource -match 'onApiPhysicalSave\?\.Invoke\(api\.Guid\)'
 Assert-Equal 3 ([regex]::Matches($packageSource, 'report\?\.MarkApiSavePathEntered\(\)').Count) 'Os tres fluxos gerenciados devem registrar a entrada no caminho de Save antes do writer.'
 Assert-Equal 3 ([regex]::Matches($packageSource, 'onApiSaveAttempted: \(\) => report\?\.MarkApiSaveAttempted\(\)').Count) 'Os tres writers devem marcar a tentativa imediatamente antes da chamada fisica.'
 Assert-Equal 3 ([regex]::Matches($apiObjectWriterSource + $businessComponentWriterSource + $listWriterSource, 'onApiSaveAttempted\?\.Invoke\(\)').Count) 'Cada writer deve notificar a tentativa no ponto da chamada fisica.'
-Assert-Equal 2 ([regex]::Matches($packageSource, 'onSaveCompleted: \(stage, label, elapsed\) => WriteOutputWithoutShow').Count) 'Os callbacks B111 devem usar Output sem exibição forcada.'
+Assert-Equal 2 ([regex]::Matches($packageSource, 'onSaveCompleted: null').Count) 'Em sucesso normal, os callbacks B111 não devem despejar um trace por Save físico no Output.'
 Assert-True ($packageSource -match 'if \(forceShow\)\s*\{\s*output\.Show\(outputId\);\s*\}') 'A exibição do Output deve ser condicional ao modo solicitado.'
-$writeOutputWithoutShowStart = $packageSource.IndexOf('private static void WriteOutputWithoutShow', [System.StringComparison]::Ordinal)
-$writeOutputCoreStart = $packageSource.IndexOf('private static void WriteOutputCore', $writeOutputWithoutShowStart, [System.StringComparison]::Ordinal)
-$writeOutputWithoutShowBlock = $packageSource.Substring($writeOutputWithoutShowStart, $writeOutputCoreStart - $writeOutputWithoutShowStart)
-Assert-True ($writeOutputWithoutShowBlock -match 'WriteOutputCore\(message, forceShow: false\)') 'A variante B111 deve gravar sem pedir exibicao do painel.'
-Assert-True ($writeOutputWithoutShowBlock -notmatch 'output\.Show') 'A variante B111 nao deve chamar Show diretamente.'
+Assert-True ($packageSource -notmatch 'WriteOutputWithoutShow') 'Sem trace B111 por Save, a variante de Output sem exibição deixa de ser necessária.'
+Assert-True ($packageSource -match 'if \(!_log\.HasAnomaly\)') 'O dump B109 deve ser publicado somente quando a sonda detectar uma anomalia.'
+Assert-True ($packageSource -match 'if \(System\.Diagnostics\.Debugger\.IsAttached\)') 'A telemetria detalhada B082 deve ficar fora do Output normal.'
+Assert-True ($packageSource -notmatch '\[B081\] Criado:') 'O Output normal não deve repetir a lista de itens criados já consolidada no relatório final.'
+Assert-True ($packageSource -notmatch '\[B081\] Atualizado:') 'O Output normal não deve repetir a lista de itens atualizados já consolidada no relatório final.'
+Assert-True ($packageSource -notmatch '\[B081\] Removido:') 'O Output normal não deve repetir a lista de itens removidos já consolidada no relatório final.'
 
 $apiSaveIndex = $apiObjectWriterSource.IndexOf('api.Save();', [System.StringComparison]::Ordinal)
 $apiAttemptIndex = $apiObjectWriterSource.IndexOf('onApiSaveAttempted?.Invoke()', [System.StringComparison]::Ordinal)
@@ -332,8 +368,8 @@ Assert-True ($businessComponentWriterSource -match 'if \(apiContext is null \|\|
 Assert-True ($listWriterSource -match 'if \(apiContext is null \|\| apiContext\.PersistApiObject\)') 'List sem persistência de API não deve validar variáveis de uma mutação que não ocorrerá.'
 Assert-True ($listWriterSource -match 'apiContext\.BusinessComponentParticipated') 'List deve usar o fato da participação do BC no guard de parâmetros.'
 Assert-True ($listWriterSource -match 'apiContext\.ApiWasCreated') 'List deve distinguir API novo de API existente antes da mutação.'
-Assert-True ($businessComponentWriterSource -match 'onSaveCompleted') 'BC deve emitir trace de Output somente após cada Save físico.'
-Assert-True ($listWriterSource -match 'onSaveCompleted') 'List deve emitir trace de Output somente após cada Save físico.'
+Assert-True ($businessComponentWriterSource -match 'onSaveCompleted') 'BC deve manter o callback de conclusão para diagnóstico programático quando solicitado.'
+Assert-True ($listWriterSource -match 'onSaveCompleted') 'List deve manter o callback de conclusão para diagnóstico programático quando solicitado.'
 
 $createApiStart = $packageSource.IndexOf('private static bool TryCreateApiObject', [System.StringComparison]::Ordinal)
 $prepareApiStart = $packageSource.IndexOf('private static bool TryPrepareApiObject', [System.StringComparison]::Ordinal)

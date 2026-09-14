@@ -324,10 +324,12 @@ internal static class ApiPlanSaveBoundaryProbe
 internal sealed class ApiPlanSaveBoundaryLog
 {
     private readonly List<string> _lines = new List<string>();
+    private bool _hasAnomaly;
 
     public void PumpBoundary(string stage, string label, string before, string after)
     {
         var changed = !string.Equals(before, after, StringComparison.Ordinal);
+        _hasAnomaly |= changed;
         _lines.Add(
             $"PumpBoundary Stage='{Clean(stage)}' Step='{Clean(label)}' Changed={changed} Before=[{before}] After=[{after}]");
     }
@@ -348,9 +350,19 @@ internal sealed class ApiPlanSaveBoundaryLog
     public void Saved(string stage, string label, string snapshot) =>
         _lines.Add($"Saved Stage='{Clean(stage)}' Step='{Clean(label)}' State=[{snapshot}]");
 
-    public void Failed(string stage, string label, Exception exception, string snapshot) =>
+    public void Failed(string stage, string label, Exception exception, string snapshot)
+    {
+        _hasAnomaly = true;
         _lines.Add(
             $"Failed Stage='{Clean(stage)}' Step='{Clean(label)}' ExceptionType='{exception.GetType().FullName}' ExceptionMessage='{Clean(exception.Message)}' State=[{snapshot}]");
+    }
+
+    /// <summary>
+    /// O dump de fronteiras e hashes é útil apenas quando a sonda detecta mutação
+    /// inesperada durante Pump ou quando um Save falha. Em sucesso normal, o
+    /// histórico continua sendo coletado durante a operação, mas não polui Output.
+    /// </summary>
+    public bool HasAnomaly => _hasAnomaly;
 
     public IReadOnlyList<string> Render()
     {

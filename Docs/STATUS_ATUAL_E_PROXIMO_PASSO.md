@@ -131,6 +131,8 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 - `S-B111` F2 foi encerrada em 2026-09-13: núcleo SDK-free, adaptador comum, confirmação pós-`Save()`/`Delete()`, habilitação diferida de Business Component, relatório final e falha de etapa sem recibo. A bateria offline, build Release, cenários positivos, cancelamento cooperativo e criação em escala passaram. A `Teste` descartável completou as fronteiras controladas: retorno sem mutação antes de `SDT.Save`, confirmação divergente após `API.Save` e falha antes de `Procedure.Delete`, com recuperação B115 e limpeza idempotente. Evidência: `Docs/Implementation/2026-09-12-S-B111-F2-IMPLEMENTACAO-OFFLINE.md` e `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`.
 
+- Pós-aceite da F2 (2026-09-13): a DLL atual foi reinstalada e o Wizard da `Teste` reaplicado para compactar a apresentação, sem alterar o seam. O relatório B081 passou a mostrar apenas `Confirmados=12`, `Pendências=0`, writer `List` com 1 salvamento de API Object, totais `Criados=0`/`Atualizados=28`/`Removidos=0`, duração e os 2 avisos. Recibos individuais, GUIDs e listas de objetos ficam restritos a anomalia de persistência ou bloqueio; a Output normal não publicou dump B109 nem recibos individuais. Build Release e os testes de relatório, persistência, executor e localização passaram.
+
 ## Frente atual
 
 Sprint `S-B111` — F1 está **implementada e validada para encerramento com exceção explícita do `B121`** em 2026-09-10/11, e a F2 (seam de persistência e recibos) foi encerrada em 2026-09-13. Além dos cenários positivos, cancelamento cooperativo e criação em escala já aceitos, a `Teste` descartável comprovou retorno sem mutação antes de `SDT.Save`, confirmação divergente após `API.Save` e falha antes de `Procedure.Delete`, seguida de limpeza idempotente. O `B121` permanece como melhoria fora da sprint. A próxima frente é F3 (durabilidade e remoção), sem capacidade de journal, reconciliação ou retry já implementada. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
@@ -145,7 +147,8 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 fronteiras de falha controlada na `Teste`: ausência confirmada antes de
 `SDT.Save`, confirmação divergente após `API.Save` e `StageFailed` antes de
 `Procedure.Delete`, com recomposição B115 e limpeza idempotente final. A
-instrumentação temporária foi removida. O registro detalhado está em
+sonda temporária de call sites B111 foi removida; B109 e B115 permanecem sob
+os critérios de saída registrados neste checkpoint. O registro detalhado está em
 `Docs/Implementation/2026-09-12-S-B111-F2-ACEITE-IDE.md`. Não iniciar
 journal, reconciliação ou retry sem o plano e a autorização próprios da F3.
 O parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR

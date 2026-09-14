@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace GenexusOpenApiBuilder.Extension.Diagnostics;
@@ -124,6 +125,8 @@ public sealed class ApiPlanApplicationFinalReport
     public string BuildReadableBody(bool includeHeadline = true, Func<string, string>? localize = null)
     {
         string Localize(string value) => localize is null ? value : localize(value);
+        var persistenceHasAnomaly = HasPersistenceAnomaly();
+        var requiresTechnicalDetails = Blocked.Count > 0 || persistenceHasAnomaly;
 
         var builder = new StringBuilder();
         if (includeHeadline)
@@ -139,34 +142,31 @@ public sealed class ApiPlanApplicationFinalReport
             builder.AppendLine($"API: {ApiName}");
         }
 
-        if (ApiSaveAttempted || !string.IsNullOrWhiteSpace(PlannedApiName) || !string.IsNullOrWhiteSpace(PersistedMainObjectName))
+        if (ApiSaveAttempted || !string.IsNullOrWhiteSpace(FinalApiWriter))
         {
-            builder.AppendLine($"API planejada: {PlannedApiName ?? string.Empty}");
-            builder.AppendLine($"Objeto principal persistido: {PersistedMainObjectName ?? string.Empty}");
-            builder.AppendLine($"Guid persistido do objeto principal: {PersistedMainObjectGuid?.ToString() ?? string.Empty}");
-            if (!string.IsNullOrWhiteSpace(FinalApiWriter))
+            var writer = string.IsNullOrWhiteSpace(FinalApiWriter) ? "não informado" : FinalApiWriter;
+            var saveSummary = ApiSaveCount == 1 ? "1 salvamento confirmado" : $"{ApiSaveCount} salvamentos confirmados";
+            builder.AppendLine($"API Object: writer {writer}; {saveSummary}.");
+            if (requiresTechnicalDetails)
             {
-                builder.AppendLine($"Escritor final do API: {FinalApiWriter}");
-            }
-            builder.AppendLine($"Tentativa de salvamento do API Object: {(ApiSaveAttempted ? "sim" : "não")}");
-            builder.AppendLine($"Salvamentos do API Object: {ApiSaveCount}");
-        }
-
-        if (PersistenceLog is not null)
-        {
-            builder.AppendLine($"Recibos de persistência ({PersistenceReceipts.Count}):");
-            foreach (var line in PersistenceLog.BuildOutputLines())
-            {
-                builder.AppendLine("  " + line);
+                builder.AppendLine($"API planejada: {PlannedApiName ?? string.Empty}");
+                builder.AppendLine($"Objeto principal persistido: {PersistedMainObjectName ?? string.Empty}");
+                builder.AppendLine($"Guid persistido do objeto principal: {PersistedMainObjectGuid?.ToString() ?? string.Empty}");
+                builder.AppendLine($"Tentativa de salvamento do API Object: {(ApiSaveAttempted ? "sim" : "não")}");
             }
         }
 
+        AppendPersistenceSummary(builder, Localize, persistenceHasAnomaly);
+
+        builder.AppendLine(Localize($"Resultado: Criados={CreatedCount}; Atualizados={UpdatedCount}; Removidos={DeletedCount}."));
         builder.AppendLine(Localize($"Tempo: {FormatElapsed(Elapsed)}"));
         builder.AppendLine();
-        AppendSection(builder, "Criados", Created, Localize);
-        AppendSection(builder, "Atualizados", Updated, Localize);
-        AppendSection(builder, "Removidos", Deleted, Localize);
-        AppendSection(builder, "Bloqueados", Blocked, Localize);
+
+        if (requiresTechnicalDetails)
+        {
+            AppendSection(builder, "Bloqueados", Blocked, Localize);
+        }
+
         if (Warnings.Count == 0)
         {
             builder.AppendLine(Localize("Avisos: (nenhum)"));
@@ -184,6 +184,46 @@ public sealed class ApiPlanApplicationFinalReport
         }
 
         return builder.ToString().TrimEnd();
+    }
+
+    private bool HasPersistenceAnomaly() =>
+        PersistenceStageFailures.Count > 0
+        || PersistenceReceipts.Any(receipt => receipt.Outcome != PersistenceOutcome.Confirmed);
+
+    private void AppendPersistenceSummary(
+        StringBuilder builder,
+        Func<string, string> localize,
+        bool persistenceHasAnomaly)
+    {
+        if (PersistenceLog is null)
+        {
+            return;
+        }
+
+        var confirmed = PersistenceReceipts.Count(receipt => receipt.Outcome == PersistenceOutcome.Confirmed);
+        var anomalies = PersistenceReceipts.Count - confirmed + PersistenceStageFailures.Count;
+        builder.AppendLine(localize($"Persistência: Confirmados={confirmed}; Pendências={anomalies}."));
+
+        if (!persistenceHasAnomaly)
+        {
+            return;
+        }
+
+        builder.AppendLine(localize("Diagnóstico de persistência:"));
+        foreach (var receipt in PersistenceReceipts.Where(receipt => receipt.Outcome != PersistenceOutcome.Confirmed))
+        {
+            var detail = string.IsNullOrWhiteSpace(receipt.ExceptionMessage)
+                ? receipt.ConfirmationDetail ?? string.Empty
+                : receipt.ExceptionMessage;
+            builder.AppendLine($"  - [{receipt.Stage}/{receipt.ObjectType}] {receipt.PlannedName}: Outcome={receipt.Outcome}; Confirmação={receipt.Confirmation}; {detail}".TrimEnd());
+        }
+
+        foreach (var failure in PersistenceStageFailures)
+        {
+            builder.AppendLine($"  - [{failure.Stage}] {failure.ReasonCode}: {failure.Detail}");
+        }
+
+        builder.AppendLine();
     }
 
     private static void AppendSection(

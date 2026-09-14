@@ -129,7 +129,6 @@ public sealed class Package : AbstractPackageUI
             Action<ApiPlanSdtWriteItemResult> onSdtWrite = item =>
             {
                 AppendSdtWriteItemToReport(report, item);
-                WriteOutput($"[Genexus Open API Builder][B082] SDT {item.Status}: Name='{item.Name}', Scope='{item.Scope}'.");
                 if (!string.IsNullOrWhiteSpace(item.StructureMismatch))
                 {
                     WriteOutput($"[Genexus Open API Builder][B082] SDT diverge: Name='{item.Name}', Motivo='{item.StructureMismatch}'.");
@@ -139,10 +138,6 @@ public sealed class Package : AbstractPackageUI
                 ? ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames: null, kbIndex: kbIndex, onSdtWrite: onSdtWrite, progress: progress)
                 : ApiPlanSdtWriter.CreateOrReencounter(designModel, transaction, apiPlan, preserveSdtNames, kbIndex, onSdtWrite, progress);
             WriteOutput($"[Genexus Open API Builder][B040-B046] Escrita de SDTs concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedOwnSdts={result.PlannedOwnSdts}, PlannedSharedSdts={result.PlannedSharedSdts}, Created={result.CreatedSdts}, Reencountered={result.ReencounteredSdts}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhuma Procedure, API Object ou metadata persistente definitiva foi criada.");
-            foreach (var item in result.Items)
-            {
-                WriteOutput($"[Genexus Open API Builder][B040-B046] SDT {item.Status}: Backlog='{item.BacklogId}', Kind='{item.Kind}', Name='{item.Name}', Scope='{item.Scope}', Guid='{item.Guid}'.");
-            }
 
             return true;
         }
@@ -179,8 +174,6 @@ public sealed class Package : AbstractPackageUI
             WriteOutput($"[Genexus Open API Builder][{procedureStage}] Escrita de Procedures concluida: Transaction='{transaction.Name}', Trigger='{triggerSource}', PlannedProcedures={result.PlannedProcedures}, ReencounteredSdts={result.ReencounteredSdts}, Created={result.CreatedProcedures}, Reencountered={result.ReencounteredProcedures}, TransactionFolder='{result.TransactionFolderName}', TransactionFolderGuid='{result.TransactionFolderGuid}'. Nenhum API Object, REST completo ou metadata persistente definitiva foi criado.");
             foreach (var item in result.Items)
             {
-                WriteOutput($"[Genexus Open API Builder][{procedureStage}] Procedure {item.Status}: Backlog='{item.BacklogId}', Service='{item.ServiceName}', Name='{item.Name}', Guid='{item.Guid}'.");
-                WriteOutput($"[Genexus Open API Builder][B082] Procedure {item.Status}: Name='{item.Name}'.");
                 report?.AddFromWriteStatus("Procedure", item.Name, item.Status, item.ServiceName);
             }
 
@@ -375,7 +368,7 @@ public sealed class Package : AbstractPackageUI
                 onSdtWrite: item => AppendSdtWriteItemToReport(report, item),
                 progress: progress,
                 apiContext: apiContext,
-                onSaveCompleted: (stage, label, elapsed) => WriteOutputWithoutShow($"[Genexus Open API Builder][B111] Save concluido: Stage='{stage}', Object='{label}', DurationMs={elapsed}."),
+                onSaveCompleted: null,
                 onApiSaveCompleted: guid => report?.SetPersistedMainObject(apiPlan.ApiName, guid),
                 onApiPhysicalSave: guid =>
                 {
@@ -455,7 +448,7 @@ public sealed class Package : AbstractPackageUI
                 onSdtWrite: item => AppendSdtWriteItemToReport(report, item),
                 progress: progress,
                 apiContext: apiContext,
-                onSaveCompleted: (stage, label, elapsed) => WriteOutputWithoutShow($"[Genexus Open API Builder][B111] Save concluido: Stage='{stage}', Object='{label}', DurationMs={elapsed}."),
+                onSaveCompleted: null,
                 onApiSaveCompleted: guid => report?.SetPersistedMainObject(apiPlan.ApiName, guid),
                 onApiPhysicalSave: guid =>
                 {
@@ -1277,6 +1270,8 @@ public sealed class Package : AbstractPackageUI
         PrototypeWizardSessionState.StoreContractSelection(selection.ContractSelection);
         PrototypeWizardReviewSessionState.StoreReviewSelection(selection.ReviewSelection);
         ApiPlanSessionState.Store(apiPlan);
+        if (System.Diagnostics.Debugger.IsAttached)
+        {
         WriteOutput($"[Genexus Open API Builder][B030] Wizard único concluido em memoria: Transaction='{transaction.Name}', Module='{module.Name}', SelectionSource='{selectionSource}'.");
         WriteOutput($"[Genexus Open API Builder][B031] Contrato de API da Transacao='{transaction.Name}' em memoria: Services='{string.Join(",", selection.ContractSelection.SelectedServices)}', Create={selection.ContractSelection.CreateFields.Count}, Update={selection.ContractSelection.UpdateFields.Count}, Response={selection.ContractSelection.ResponseFields.Count}, ListFilters={selection.ContractSelection.ListFilters.Count}.");
         WriteOutput($"[Genexus Open API Builder][B032] Paths, segurança e paginacao em memoria: ApiName='{selection.ReviewSelection.ApiName}', ServicesBasePath='{selection.ReviewSelection.ServicesBasePath}', RestPath='{selection.ReviewSelection.RestPath}', SecurityLevel='{selection.ReviewSelection.SecurityLevel}', DefaultPageSize={selection.ReviewSelection.DefaultPageSize}, MaximumPageSize={selection.ReviewSelection.MaximumPageSize}.");
@@ -1298,6 +1293,7 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B056] Descricoes no ApiPlan: Resolved={serviceDescriptionsResolvedCount}/{apiPlan.ServiceDescriptions.Count}, Language='{apiPlan.ServiceDescriptionLanguage}', LanguageSource='{apiPlan.ServiceDescriptionLanguageSource}', FallbackUsed={apiPlan.ServiceDescriptionFallbackUsed}, FallbackReason='{apiPlan.ServiceDescriptionFallbackReason}'. Sem aplicar [Description] em objeto API real e sem gerar objetos.");
         WriteOutput($"[Genexus Open API Builder][B092] Seguranca no ApiPlan: SecurityLevel='{apiPlan.Security.SecurityLevel}', GamCondition='{apiPlan.Security.GamCondition}', RequiresGenerationConfirmation={apiPlan.Security.RequiresGenerationConfirmation}. Sem aplicar seguranca em objetos reais.");
         WriteOutput($"[Genexus Open API Builder][B034] Wizard concluido sem acionar cancelamento. Decisoes e ApiPlan permanecem em memoria. GenerateSdts={selection.GenerateSdts}, GenerateProcedures={selection.GenerateProcedures}, GenerateApiObject={selection.GenerateApiObject}, GenerateMetadata={selection.GenerateMetadata}, ApplyList={selection.ApplyList}, ApplyBusinessComponent={selection.ApplyBusinessComponent}; escritas confirmadas no wizard exigem preflight completo antes de qualquer Save().");
+        }
         var applyFromConfirm = Stopwatch.StartNew();
         var phaseWatch = Stopwatch.StartNew();
         var report = new ApiPlanApplicationFinalReportCollector("Wizard", transaction.Name, apiPlan.ApiName);
@@ -1985,21 +1981,6 @@ public sealed class Package : AbstractPackageUI
         TryResolveMainObjectFromKb(collector, designModel, apiPlan);
         var report = collector.Build(elapsed);
         WriteOutput(report.BuildOutputSummary());
-        foreach (var item in report.Created)
-        {
-            WriteOutput($"[Genexus Open API Builder][B081] Criado: Kind='{item.ObjectKind}', Name='{item.Name}'.");
-        }
-
-        foreach (var item in report.Updated)
-        {
-            WriteOutput($"[Genexus Open API Builder][B081] Atualizado: Kind='{item.ObjectKind}', Name='{item.Name}'.");
-        }
-
-        foreach (var item in report.Deleted)
-        {
-            WriteOutput($"[Genexus Open API Builder][B081] Removido: Kind='{item.ObjectKind}', Name='{item.Name}'.");
-        }
-
         foreach (var item in report.Blocked)
         {
             WriteOutput($"[Genexus Open API Builder][B081] Bloqueado: Kind='{item.ObjectKind}', Name='{item.Name}', Detail='{item.Detail}'.");
@@ -2193,6 +2174,11 @@ public sealed class Package : AbstractPackageUI
             _disposed = true;
             try
             {
+                if (!_log.HasAnomaly)
+                {
+                    return;
+                }
+
                 foreach (var line in _log.Render())
                 {
                     WriteOutput($"[Genexus Open API Builder][B109][{_operation}] {line}");
@@ -2206,7 +2192,10 @@ public sealed class Package : AbstractPackageUI
 
     private static void WriteProbePhase(string phaseName, long elapsedMs)
     {
-        WriteOutput($"[Genexus Open API Builder][B082] Fase {phaseName}={elapsedMs} ms.");
+        if (System.Diagnostics.Debugger.IsAttached)
+        {
+            WriteOutput($"[Genexus Open API Builder][B082] Fase {phaseName}={elapsedMs} ms.");
+        }
     }
 
     /// <summary>
@@ -2224,7 +2213,7 @@ public sealed class Package : AbstractPackageUI
     /// </summary>
     private static void WriteScanTelemetry(string operation, ApiPlanScanTelemetry telemetry)
     {
-        if (telemetry is null || telemetry.ScanCount == 0)
+        if (!System.Diagnostics.Debugger.IsAttached || telemetry is null || telemetry.ScanCount == 0)
         {
             return;
         }
@@ -2238,11 +2227,6 @@ public sealed class Package : AbstractPackageUI
     private static void WriteOutput(string message)
     {
         WriteOutputCore(message, forceShow: true);
-    }
-
-    private static void WriteOutputWithoutShow(string message)
-    {
-        WriteOutputCore(message, forceShow: false);
     }
 
     private static void WriteOutputCore(string message, bool forceShow)
