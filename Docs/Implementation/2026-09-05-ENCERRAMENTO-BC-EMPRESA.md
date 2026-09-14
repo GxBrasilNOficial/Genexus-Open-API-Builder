@@ -105,10 +105,11 @@ Os erros `bool`/`decimal`/`short` do `NETFrameworkPostgreSQL` pertencem à gera�
 
 ## Estado das sondas e do código
 
-- `B109ExceptionProbe`, `B111CallSiteProbe`, `ApiPlanSaveBoundaryProbe` e
-  `ApiPlanMetadataVisibilityProbe` continuam instrumentação temporária conforme o checklist do
-  checkpoint;
-- a revisão por pares da sprint `S-B111` continua sendo a próxima frente formal do projeto.
+- **Superado no fechamento da F2 (2026-09-13):** `B111CallSiteProbe` foi removido; os recibos
+  B111 passaram ao seam único e ao relatório final. `ApiPlanSaveBoundaryProbe` permanece somente
+  como diagnóstico condicional de anomalia B109; não é mais uma sonda temporária exposta.
+- A revisão por pares da sprint `S-B111` foi concluída e suas decisões foram incorporadas. A F1 e
+  a F2 estão encerradas; a próxima fase é F3, conforme o checkpoint.
 
 **Funcionalidade de produção acrescentada na mesma rodada.** Além da instrumentação, entrou no
 Wizard a **recuperação explícita de metadata órfã** (`ApiPlanOrphanMetadataRecovery`), com
