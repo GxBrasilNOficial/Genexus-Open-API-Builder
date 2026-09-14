@@ -230,6 +230,58 @@ API é gravado depois de todos os consumidores, uma única vez, e isso está ago
 na KB por identidade, com o estágio que gravou cada um — não mais apenas afirmado por uma
 linha de log e pelo `ApiSaveCount=1`.
 
+## 6.5 Aborto e bloqueio — o teste que justifica a fase
+
+KB grande `FabricaBrasil18Test`, Transaction `Empresa` (52 objetos planejados, 13 subníveis),
+API criada no dia anterior. Duas execuções seguidas.
+
+**Aborto.** O usuário abortou logo no início, antes de qualquer gravação:
+
+| Observação | Valor |
+|---|---|
+| Relatório | `Aplicação abortada pelo usuário`, `Bloqueados=1` |
+| Diário | `Partial` / `NotStarted`, `FileId=137` |
+| Recibos e inventário | 0 e 0 — nada chegou a ser gravado |
+| Checkpoints | 3, `Durability=Confirmed` |
+| Custo | **125 ms** na KB grande |
+
+`Criados=0`, `Atualizados=0`, `PersistenceReceipts=0`: a KB **não** ficou inconsistente
+neste caso. O aviso do B082 sobre possível inconsistência é conservador e genérico.
+
+**Bloqueio da operação seguinte.** Novo Apply na mesma Transaction, sem apagar nada:
+
+```
+Bloqueados (1):
+  - [Diário de operação] B111/F3 — O diário da KB registra a operação Apply em estado
+    Partial/NotStarted, que não é terminal. Reconcilie ou continue essa operação antes
+    de iniciar outra.
+```
+
+`ApiSaveAttempted=False`, `Criados=0`, `Atualizados=0`, `PersistenceReceipts=0`, e **nenhuma**
+linha de B040-B046 ou B050-B053 depois do bloqueio: a operação foi recusada antes da primeira
+gravação, não interrompida no meio. É a prova de que o diário cumpre a função para a qual
+existe — impedir que uma operação nova passe por cima de uma que ficou pela metade.
+
+### O custo previsto está superestimado
+
+125 ms para três gravações na KB grande, ou seja, ~42 ms por checkpoint — contra os ~1,1 s
+por gravação que a sonda de 2026-09-04 mediu e que sustentam o orçamento de ~4,4 s da seção
+4.4 do plano. A medição é parcial: envelope pequeno, três gravações, sem concorrência. O
+fechamento do teste 4 exige um Apply completo na `Empresa`, com o envelope carregando os
+recibos de ~50 objetos. Se confirmar essa ordem de grandeza, o orçamento do plano precisa ser
+revisto — e a revisão é do orçamento, não da política de checkpoints.
+
+### `blockReason=StageFailed` num aborto é impreciso
+
+O mapeamento normativo da decisão 24 amarra `StageFailed` a «falha conhecida e não retryable
+comunicada pelo orquestrador por `NoteStageFailed`». Um aborto do usuário não é isso. O enum
+`blockReason` do schema V1 é fechado e não tem valor para interrupção deliberada, e
+acrescentar um é mudança incompatível de schema, que exige decisão explícita.
+
+Decisão desta etapa: **manter `StageFailed`**, registrando a imprecisão, e resolver na P3,
+que é onde a precedência de motivos é normatizada. Inventar valor novo no meio da validação
+seria pior que conviver com a imprecisão documentada.
+
 ## 7. Riscos e lacunas assumidos nesta etapa
 
 - **Um envelope não terminal trava a KB para novas operações, e ainda não há saída pela

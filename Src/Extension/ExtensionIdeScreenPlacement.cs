@@ -41,6 +41,16 @@ internal static class ExtensionIdeScreenPlacement
 
         form.StartPosition = FormStartPosition.Manual;
         var working = GetWorkingArea(form, owner);
+
+        // Uma janela maior que a área útil do monitor perde bordas e botões fora da tela.
+        // Centrar não resolve isso; encolher resolve, respeitando o mínimo do diálogo.
+        var width = Math.Max(form.MinimumSize.Width, Math.Min(form.Width, working.Width));
+        var height = Math.Max(form.MinimumSize.Height, Math.Min(form.Height, working.Height));
+        if (width != form.Width || height != form.Height)
+        {
+            form.Size = new Size(width, height);
+        }
+
         form.Location = new Point(
             working.Left + Math.Max(0, (working.Width - form.Width) / 2),
             working.Top + Math.Max(0, (working.Height - form.Height) / 2));

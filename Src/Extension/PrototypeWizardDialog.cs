@@ -126,7 +126,10 @@ internal sealed class PrototypeWizardDialog : Form
         Text = _texts.WizardTitle;
         // CenterParent com HWND da IDE (não Form) cai no monitor primário.
         StartPosition = FormStartPosition.Manual;
-        Width = 1500;
+        // 1800 em vez de 1500 (2026-09-14): o resumo e os avisos de escala quebravam linha
+        // cedo demais e ficavam ilegíveis. `CenterOnIdeScreen` reduz a janela quando o
+        // monitor for menor que isso.
+        Width = 1800;
         Height = 1004;
         MinimumSize = new Size(900, 640);
         ShowIcon = false;
