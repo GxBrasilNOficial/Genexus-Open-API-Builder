@@ -617,6 +617,9 @@ public sealed class Package : AbstractPackageUI
             report.SetPersistenceLog(persistenceLog);
             var stopwatch = Stopwatch.StartNew();
             AppendPlanWarnings(report, apiPlan);
+            // B111/F3: o diário do Sync segue o mesmo contrato do Apply e fica fora do try
+            // para que o aborto também seja registrado como interrupção.
+            ApiPlanOperationJournalSession? syncJournal = null;
             // B082: mede o custo das varreduras de catalogo ao longo do Sync que escreve.
             var syncScanTelemetry = new ApiPlanScanTelemetry();
             using var syncScanScope = ApiPlanScanProbe.Begin(
@@ -678,8 +681,38 @@ public sealed class Package : AbstractPackageUI
 
                 WriteOutput($"[Genexus Open API Builder][B085] Preflight de sincronizacao aprovado. Aplicando para Transaction='{transaction.Name}', ApiName='{apiPlan.ApiName}'.");
 
+                var syncJournalStart = ApiPlanOperationJournalSession.Start(
+                    knowledgeBase.DesignModel,
+                    syncKbIndex,
+                    knowledgeBase.Guid,
+                    transaction,
+                    JournalOperationKind.Sync,
+                    ApiPlanOperationJournalPlans.ForGeneration(
+                        apiPlan.PlannedApiGuid,
+                        ApiPlanMetadataFileWriter.ComputePlannedContractHash(apiPlan),
+                        selection.GenerateApiObject,
+                        selection.GenerateSdts,
+                        selection.GenerateProcedures,
+                        selection.GenerateMetadata,
+                        apiPlan.Services.Select(service => service.Name)),
+                    apiPlan.ApplicationId,
+                    JournalIntentKind.Current,
+                    selection.GenerateMetadata ? ApiPlanMetadataFileWriter.SchemaVersion : null);
+                if (!syncJournalStart.IsStarted)
+                {
+                    WriteOutput($"[Genexus Open API Builder][B111/F3] Sincronizacao bloqueada pelo diário durável: Transaction='{transaction.Name}', Kind='{syncJournalStart.Kind}', Detail='{syncJournalStart.Detail}'. Nenhuma gravação foi solicitada.");
+                    report.AddBlocked("Diário de operação", "B111/F3", syncJournalStart.Detail);
+                    stopwatch.Stop();
+                    ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                    return true;
+                }
+
+                syncJournal = syncJournalStart.Session!;
+                WriteJournalDiagnostics(syncJournal);
+
                 if (!TryCreateSdts(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", syncKbIndex, preserveSdts, report, busy.Session))
                 {
+                    InterruptJournal(syncJournal, report, JournalBlockReason.StageFailed);
                     stopwatch.Stop();
                     ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                     return true;
@@ -689,6 +722,7 @@ public sealed class Package : AbstractPackageUI
 
                 if (!TryCreateProcedures(knowledgeBase.DesignModel, transaction, apiPlan, "SyncB085", syncKbIndex, report, busy.Session))
                 {
+                    InterruptJournal(syncJournal, report, JournalBlockReason.StageFailed);
                     stopwatch.Stop();
                     ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                     return true;
@@ -761,6 +795,7 @@ public sealed class Package : AbstractPackageUI
                         apiContext: syncApiContext);
                     if (bcFailed)
                     {
+                        InterruptJournal(syncJournal, report, JournalBlockReason.StageFailed);
                         stopwatch.Stop();
                         ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                         return true;
@@ -783,6 +818,7 @@ public sealed class Package : AbstractPackageUI
                         apiContext: syncApiContext);
                     if (listFailed)
                     {
+                        InterruptJournal(syncJournal, report, JournalBlockReason.StageFailed);
                         stopwatch.Stop();
                         ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                         return true;
@@ -809,6 +845,8 @@ public sealed class Package : AbstractPackageUI
                     });
                     busy.Report("Metadata", 1, 1, apiPlan.MetadataFileName, metaMs);
                 }
+
+                CompleteJournal(syncJournal, report, syncApiContext?.PlannedApiGuid ?? report.PersistedMainObjectGuid ?? apiPlan.PlannedApiGuid);
             }
             catch (ApiPlanBusyAbortedException abortEx)
             {
@@ -816,6 +854,7 @@ public sealed class Package : AbstractPackageUI
                 report.HeadlineOverride = "Sincronização abortada pelo usuário.";
                 report.AddWarning(abortEx.Message);
                 report.AddBlocked("Sync", transaction.Name, "Abortado [B082]");
+                InterruptJournal(syncJournal, report, JournalBlockReason.StageFailed);
                 stopwatch.Stop();
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 return true;
@@ -823,6 +862,7 @@ public sealed class Package : AbstractPackageUI
             catch (InvalidOperationException ex) when (
                 ex.Message == "SYNC_API_OBJECT_FAILED" || ex.Message == "SYNC_METADATA_FAILED")
             {
+                InterruptJournal(syncJournal, report, JournalBlockReason.StageFailed);
                 stopwatch.Stop();
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 return true;
@@ -1307,6 +1347,9 @@ public sealed class Package : AbstractPackageUI
         var persistenceLog = new ApiPlanPersistenceLog();
         using var persistenceScope = ApiPlanSaveBoundaryProbe.BeginPersistence(persistenceLog);
         report.SetPersistenceLog(persistenceLog);
+        // B111/F3: o diário vive fora do try para que o aborto do usuário também seja
+        // registrado como interrupção, e não desapareça com o escopo.
+        ApiPlanOperationJournalSession? journal = null;
         var suppressProgressPump = preferencesLoadResult!.Preferences.SuppressProgressPumpDuringSaves;
         try
         {
@@ -1425,6 +1468,40 @@ public sealed class Package : AbstractPackageUI
             WriteProbePhase("PreflightAgregado", phaseWatch.ElapsedMilliseconds);
             WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Preflight agregado aprovado antes do primeiro Save(): Transaction='{transaction.Name}', ConflictMode='{apiPlan.ConflictMode}', ReexecutionMode='{apiPlan.ReexecutionMode}'.");
 
+            // B111/F3: a intenção fica durável antes de qualquer gravação de negócio — a
+            // habilitação de Business Component logo abaixo já é uma delas.
+            phaseWatch.Restart();
+            var journalStart = ApiPlanOperationJournalSession.Start(
+                knowledgeBase.DesignModel,
+                kbIndexForApply,
+                knowledgeBase.Guid,
+                transaction,
+                JournalOperationKind.Apply,
+                ApiPlanOperationJournalPlans.ForGeneration(
+                    apiPlan.PlannedApiGuid,
+                    ApiPlanMetadataFileWriter.ComputePlannedContractHash(apiPlan),
+                    selection.GenerateApiObject,
+                    selection.GenerateSdts,
+                    selection.GenerateProcedures,
+                    selection.GenerateMetadata,
+                    apiPlan.Services.Select(service => service.Name)),
+                apiPlan.ApplicationId,
+                JournalIntentKind.Current,
+                selection.GenerateMetadata ? ApiPlanMetadataFileWriter.SchemaVersion : null);
+            WriteProbePhase("DiarioAbertura", phaseWatch.ElapsedMilliseconds);
+            if (!journalStart.IsStarted)
+            {
+                WriteOutput($"[Genexus Open API Builder][B111/F3] Apply bloqueado pelo diário durável: Transaction='{transaction.Name}', Kind='{journalStart.Kind}', Detail='{journalStart.Detail}'. Nenhuma gravação foi solicitada.");
+                report.AddBlocked("Diário de operação", "B111/F3", journalStart.Detail);
+                stopwatch.Stop();
+                WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
+                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                return true;
+            }
+
+            journal = journalStart.Session!;
+            WriteJournalDiagnostics(journal);
+
             if (selection.BusinessComponentSelection.EnabledDuringWizard && !transaction.IsBusinessComponent)
             {
                 try
@@ -1435,6 +1512,7 @@ public sealed class Package : AbstractPackageUI
                 {
                     WriteOutput($"[Genexus Open API Builder][B035] Habilitacao de Business Component falhou depois do preflight agregado: Transaction='{transaction.Name}', Error='{ex.Message}'. Nenhum objeto dependente sera persistido.");
                     report.AddBlocked("Business Component", "B035", ex.Message);
+                    InterruptJournal(journal, report, JournalBlockReason.StageFailed);
                     stopwatch.Stop();
                     WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
                     ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan, persistenceLog);
@@ -1488,6 +1566,7 @@ public sealed class Package : AbstractPackageUI
                     WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B040-B046 falhou ou foi bloqueado neste fluxo.");
                 }
 
+                InterruptJournal(journal, report, JournalBlockReason.StageFailed);
                 stopwatch.Stop();
                 WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
@@ -1528,6 +1607,7 @@ public sealed class Package : AbstractPackageUI
                     WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque a etapa de Procedures falhou ou foi bloqueada neste fluxo.");
                 }
 
+                InterruptJournal(journal, report, JournalBlockReason.StageFailed);
                 stopwatch.Stop();
                 WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
@@ -1603,6 +1683,7 @@ public sealed class Package : AbstractPackageUI
                     WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B054 falhou ou foi bloqueado neste fluxo.");
                 }
 
+                InterruptJournal(journal, report, JournalBlockReason.StageFailed);
                 stopwatch.Stop();
                 WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
@@ -1634,6 +1715,7 @@ public sealed class Package : AbstractPackageUI
                     WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B071-B073/B079 falhou ou foi bloqueado neste fluxo.");
                 }
 
+                InterruptJournal(journal, report, JournalBlockReason.StageFailed);
                 stopwatch.Stop();
                 WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
@@ -1665,6 +1747,7 @@ public sealed class Package : AbstractPackageUI
                     WriteOutput($"[Genexus Open API Builder][B060] Metadata nao foi gravada para Transaction='{transaction.Name}' porque B070 falhou ou foi bloqueado neste fluxo.");
                 }
 
+                InterruptJournal(journal, report, JournalBlockReason.StageFailed);
                 stopwatch.Stop();
                 WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
@@ -1691,6 +1774,10 @@ public sealed class Package : AbstractPackageUI
             }
 
             WriteProbePhase("Metadata", phaseWatch.ElapsedMilliseconds);
+            // Fronteira terminal: com API persistido, o diário registra antes o
+            // ApiPhysicallySaved — é o que impede qualquer recuperação de repetir a
+            // gravação do API Object.
+            CompleteJournal(journal, report, wizardApiContext?.PlannedApiGuid ?? report.PersistedMainObjectGuid ?? apiPlan.PlannedApiGuid);
         }
         catch (ApiPlanBusyAbortedException abortEx)
         {
@@ -1698,6 +1785,7 @@ public sealed class Package : AbstractPackageUI
             report.HeadlineOverride = "Aplicação abortada pelo usuário.";
             report.AddWarning(abortEx.Message);
             report.AddBlocked("Apply", transaction.Name, "Abortado [B082]");
+            InterruptJournal(journal, report, JournalBlockReason.StageFailed);
             stopwatch.Stop();
             WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
             ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
@@ -1709,6 +1797,73 @@ public sealed class Package : AbstractPackageUI
         ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
         return true;
         } // using dialog [B082]
+    }
+
+    /// <summary>
+    /// Publica na Output o que o diário registrou desde a última publicação. As linhas são
+    /// drenadas para não repetir o mesmo diagnóstico a cada fronteira.
+    /// </summary>
+    private static void WriteJournalDiagnostics(ApiPlanOperationJournalSession? journal)
+    {
+        if (journal is null)
+        {
+            return;
+        }
+
+        foreach (var line in journal.DrainDiagnostics())
+        {
+            WriteOutput($"[Genexus Open API Builder][B111/F3] {line}");
+        }
+    }
+
+    /// <summary>
+    /// Fecha o diário numa interrupção. A intenção e os checkpoints já duráveis permanecem:
+    /// é isso que permite dizer depois o que ficou pela metade.
+    /// </summary>
+    private static void InterruptJournal(
+        ApiPlanOperationJournalSession? journal,
+        ApiPlanApplicationFinalReportCollector report,
+        JournalBlockReason blockReason)
+    {
+        if (journal is null)
+        {
+            return;
+        }
+
+        journal.Interrupt(JournalOperationState.Partial, blockReason);
+        WriteJournalDiagnostics(journal);
+        if (journal.IsBlocked)
+        {
+            report.AddWarning($"Diário de operação: {journal.BlockDetail}");
+        }
+    }
+
+    /// <summary>
+    /// Fecha o diário no caminho feliz. Quando o API Object foi persistido, registra antes a
+    /// fronteira que impede qualquer recuperação de repetir essa gravação.
+    /// </summary>
+    private static void CompleteJournal(
+        ApiPlanOperationJournalSession? journal,
+        ApiPlanApplicationFinalReportCollector report,
+        Guid? persistedApiGuid)
+    {
+        if (journal is null)
+        {
+            return;
+        }
+
+        if (persistedApiGuid.HasValue && persistedApiGuid.Value != Guid.Empty)
+        {
+            journal.SetPlannedApiGuid(persistedApiGuid.Value);
+            journal.NoteApiPhysicallySaved();
+        }
+
+        journal.Complete();
+        WriteJournalDiagnostics(journal);
+        if (journal.IsBlocked)
+        {
+            report.AddWarning($"Diário de operação: {journal.BlockDetail}");
+        }
     }
 
     private static bool PersistBusinessComponentEnablement(Transaction transaction)

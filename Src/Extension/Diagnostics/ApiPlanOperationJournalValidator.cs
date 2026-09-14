@@ -248,11 +248,23 @@ public static class ApiPlanOperationJournalValidator
         switch (plan.PlanKind)
         {
             case JournalPlanKind.Generation:
-                if (!plan.PlannedApiGuid.HasValue || plan.PlannedApiGuid.Value == Guid.Empty)
+                // A identidade da API é **lida** do `API.Create` e nunca atribuída. Numa
+                // criação nova ela ainda não existe quando a intenção é registrada, porque o
+                // Create acontece dentro do pipeline, depois do envelope. Por isso o campo é
+                // exigido a partir do estágio em que a identidade já tem de existir — o
+                // mesmo momento em que a decisão 50 manda bloquear: antes do write do API.
+                if (RequiresPlannedApiGuid(journal)
+                    && (!plan.PlannedApiGuid.HasValue || plan.PlannedApiGuid.Value == Guid.Empty))
                 {
-                    // A identidade da API é lida do Create e nunca atribuída; sem ela não há
-                    // como reencontrar o objeto depois de um Save indeterminado.
-                    errors.Add("plan.plannedApiGuid é obrigatório em Apply e Sync.");
+                    errors.Add(string.Format(
+                        CultureInfo.InvariantCulture,
+                        "plan.plannedApiGuid é obrigatório em Apply e Sync a partir do estágio {0}.",
+                        journal.LogicalStage));
+                }
+
+                if (plan.PlannedApiGuid.HasValue && plan.PlannedApiGuid.Value == Guid.Empty)
+                {
+                    errors.Add("plan.plannedApiGuid não pode ser o GUID vazio.");
                 }
 
                 if (string.IsNullOrWhiteSpace(plan.ContractHash))
@@ -506,6 +518,15 @@ public static class ApiPlanOperationJournalValidator
             : item.Composite.ObjectTypeName + ":" + item.Composite.Role + ":" + item.Composite.ExactName,
         _ => item.Name,
     };
+
+    /// <summary>
+    /// Estágios em que a identidade da API já precisa estar registrada: a partir da
+    /// persistência do API Object não há mais como reencontrá-lo sem ela.
+    /// </summary>
+    private static bool RequiresPlannedApiGuid(ApiPlanOperationJournal journal) =>
+        journal.LogicalStage == JournalLogicalStage.ApiPhysicallySaved
+        || journal.LogicalStage == JournalLogicalStage.ApiSaveOutcomeUnknown
+        || journal.LogicalStage == JournalLogicalStage.Completed;
 
     private static void RequireFlag(bool? value, string name, List<string> errors)
     {

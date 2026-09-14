@@ -81,7 +81,12 @@ foreach ($path in $productionFiles) {
 $allowedOutsideSeam = @(
     @{ File = 'Package.cs'; Invocation = 'PrototypeWizardPreferencesStore.Save' },
     @{ File = 'PrototypeWizardPreferencesDialog.cs'; Invocation = '_texts.Save' },
-    @{ File = 'Diagnostics\PrototypeWizardPreferences.cs'; Invocation = 'file.Save' }
+    @{ File = 'Diagnostics\PrototypeWizardPreferences.cs'; Invocation = 'file.Save' },
+    # O diário durável B111/F3 não passa pelo Persist(...) da F2 por decisão de contrato: ele
+    # tem rotina própria de durabilidade, confirmada por FileId, bytes e hash, e atualiza
+    # `journalDurability` separadamente dos recibos dos objetos de negócio. Contar o Save do
+    # diário como persistência de negócio misturaria as duas contagens.
+    @{ File = 'Diagnostics\ApiPlanOperationJournalStore.cs'; Invocation = 'file.Save' }
 )
 foreach ($allowed in $allowedOutsideSeam) {
 [void]$actualCalls.RemoveAll([Predicate[object]]{
