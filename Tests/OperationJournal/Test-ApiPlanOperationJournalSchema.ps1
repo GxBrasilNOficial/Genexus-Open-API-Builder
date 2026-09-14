@@ -317,6 +317,13 @@ try {
             Needle = 'as flags de geração não pertencem ao plano de Remove'
         },
         @{
+            # P3: o aborto ganhou motivo próprio, e ele é de interrupção deliberada. Quem
+            # aborta sabe que abortou — `OutcomeUnknown` diz o contrário.
+            Name   = 'aborto do usuário em estado indeterminado'
+            Json   = $canonical.Replace('"operationState":"Running"', '"operationState":"OutcomeUnknown"').Replace('"blockReason":null', '"blockReason":"UserAborted"')
+            Needle = 'UserAborted exige operationState=Partial'
+        },
+        @{
             Name   = 'orçamento esgotado fora de Remove'
             Json   = $canonical.Replace('"operationState":"Running"', '"operationState":"Partial"').Replace('"blockReason":null', '"blockReason":"RetryBudgetExhausted"')
             Needle = 'RetryBudgetExhausted pertence ao orçamento de passadas do Remove'
@@ -328,6 +335,12 @@ try {
         Assert-True (-not [bool]$caseResult.IsValid) "Deveria bloquear: $($case.Name)."
         Assert-Contains $caseResult.Describe() ([string]$case.Needle) "Mensagem esperada para: $($case.Name)."
     }
+
+    # O mesmo motivo em Partial é o caminho legítimo: é o que o Apply e o Sync gravam quando
+    # o usuário interrompe.
+    $userAbortedJson = $canonical.Replace('"operationState":"Running"', '"operationState":"Partial"').Replace('"blockReason":null', '"blockReason":"UserAborted"')
+    $userAborted = Read-Journal $userAbortedJson
+    Assert-True ([bool]$userAborted.IsValid) "Partial com UserAborted deve ser válido. Erros: $($userAborted.Describe())"
 
     # --- 7. Abandono explícito de um envelope Prepared --------------------------------------
     $abandonJson = '{"schemaVersion":1,"journalKind":"GOAB_OPERATION_JOURNAL","knowledgeBaseGuid":"11111111-1111-1111-1111-111111111111","transactionGuid":"22222222-2222-2222-2222-222222222222","transactionName":"Teste","operationId":"33333333-3333-3333-3333-333333333333","applicationId":"44444444-4444-4444-4444-444444444444","operationKind":"Apply","generatorVersion":"0.1.0-alpha.7","createdUtc":"2026-09-14T10:00:00.000Z","updatedUtc":"2026-09-14T10:05:00.000Z","envelopePhase":"Prepared","operationState":"Completed","logicalStage":"Abandoned","journalDurability":"Confirmed","intentKind":"Current","metadataSchemaVersion":null,"plan":{"planKind":"Generation","plannedApiGuid":"55555555-5555-5555-5555-555555555555","contractHash":"abc123","generateApiObject":true,"generateSdts":true,"generateProcedures":true,"generateMetadata":true,"services":["List"]},"inventory":[],"receipts":[],"abandonment":{"reason":"Abandono autorizado pelo usuário","authorizedUtc":"2026-09-14T10:05:00.000Z","authorizedBy":"ANTONIOJOSE"},"blockReason":null}'

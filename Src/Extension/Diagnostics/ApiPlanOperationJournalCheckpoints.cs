@@ -267,29 +267,24 @@ public static class ApiPlanOperationJournalCheckpoints
         ApiPlanOperationJournal? current,
         JournalDurability observedDurability)
     {
-        if (current is null)
+        // A regra tem um dono só: o gate estendido da P3. Esta sobrecarga continua existindo
+        // como leitura simplificada — «pode ou não pode» —, mas delega, para que as duas não
+        // divirjam com o tempo.
+        var decision = ApiPlanOperationJournalGate.Evaluate(new ApiPlanOperationJournalGateInput
+        {
+            LookupState = current is null ? JournalGateLookupState.Absent : JournalGateLookupState.Found,
+            CurrentEnvelope = current,
+            ObservedDurability = observedDurability,
+        });
+
+        if (decision.CanStart)
         {
             return ApiPlanOperationJournalReuse.Allowed();
         }
 
-        if (observedDurability != JournalDurability.Confirmed)
-        {
-            return ApiPlanOperationJournalReuse.Blocked(
-                "A durabilidade do diário atual não pôde ser confirmada; a operação anterior precisa ser reconciliada antes de uma nova.");
-        }
-
-        if (current.OperationState != JournalOperationState.Completed
-            && current.OperationState != JournalOperationState.Removed)
-        {
-            return ApiPlanOperationJournalReuse.Blocked(string.Format(
-                CultureInfo.InvariantCulture,
-                "O diário da KB registra a operação {0} em estado {1}/{2}, que não é terminal. Reconcilie ou continue essa operação antes de iniciar outra.",
-                current.OperationKind,
-                current.OperationState,
-                current.LogicalStage));
-        }
-
-        return ApiPlanOperationJournalReuse.Allowed();
+        return ApiPlanOperationJournalReuse.Blocked(
+            decision.Diagnostic?.Message
+            ?? "A continuação do envelope preparado ainda não tem serviço que a execute.");
     }
 
     /// <summary>

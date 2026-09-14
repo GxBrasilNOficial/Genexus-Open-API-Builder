@@ -370,6 +370,22 @@ sobre um Apply de 44,2 s na KB grande, contra os ~4,4 s do orçamento, que receb
 remissão no plano. Evidência:
 `Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`, seções 6.1 a 6.8.
 
+**Etapa P3 da S-B111 F3 — 2026-09-14, offline.** O bloqueio do diário deixou de ser uma
+frase: o gate estendido classifica o motivo com a precedência fechada da decisão 24
+(`JournalUnavailable`, `DurabilityUnknown`, `GateBlocked`, `PreconditionFailed`), cada um com
+`reasonCode` estável, a pré-condição que reprovou e contexto estruturado. Duas lacunas foram
+fechadas: um diário de outra KB era aceito como governante desta, e `Prepared` era
+indistinguível de um envelope ativo. O enum `blockReason` recebeu `UserAborted` — mudança
+incompatível de schema, feita enquanto o V1 não saiu num release. **Validada na IDE em
+2026-09-14** na `Escola` da `wsEducacaoSpTeste`, nos cinco cenários do roteiro — inclusive os
+dois caminhos que passavam antes da P3, o diário de outra KB e a colisão externa. A bateria
+expôs dois defeitos anteriores à P3, ainda abertos: `composite.apiGuid` gravado com o GUID do
+próprio objeto pelos writers de Business Component e List — que **precisa estar corrigido antes
+da P4**, porque é identidade composta que autoriza exclusão — e `SetMainObject` declarando
+persistência ao apenas identificar o API Object. Seções 6 e 9 de
+`Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`. A condição para o próximo
+corte, acima, permanece inalterada: ela depende da P6 ou da documentação pública.
+
 **B106 — concluído em 2026-08-24.** O roteiro foi atualizado para a Alpha `0.1.0-alpha.4`, passou a registrar o checkbox de repasse das mensagens do Business Component e aponta para as notas da Alpha 4. A captura de Segurança foi explicitamente marcada como referência visual anterior; uma nova captura da UI permanece uma melhoria visual separada, sem bloquear a documentação textual.
 
 **B107 — concluído em 2026-08-25.** O teste deixou de ler YAML publicado pelo Build da KB (`C:\KBs\...`): esse artefato pertence ao ambiente GeneXus, não ao pré-push deste repositório. A trava permanece offline sobre `Src/Domain/ApiPlan.cs` e, a partir de B096, também sobre `Src/Domain/ApiPlanSdtHierarchicalNaming.cs`, agora incluindo `sdt_API_ErrorMessage` além de `sdt_API_ErrorResponse` e dos padrões `_API_*` / serviços. Não foi absorvido pela Fase 0 (`Tests/GenerationBaseline/` cobre Source / Service Source / plano de SDT; a conferência de YAML publicado continua evidência pontual na IDE, prevista ao fim da Fase 4). Encontrado na revisão pré-push retroativa de 2026-08-24.

@@ -340,4 +340,12 @@ public enum JournalBlockReason
     TargetAbsentBeforeDelete = 5,
     StageFailed = 6,
     RetryBudgetExhausted = 7,
+
+    /// <summary>
+    /// Interrupção deliberada pelo usuário. Existe porque <c>StageFailed</c> é, pela decisão
+    /// 24, «falha conhecida e não retryable comunicada por `NoteStageFailed`» — e um aborto
+    /// não é falha nenhuma. A distinção não é cosmética: a reconciliação da P5 oferece coisas
+    /// diferentes para algo que quebrou e para algo que alguém decidiu parar.
+    /// </summary>
+    UserAborted = 8,
 }

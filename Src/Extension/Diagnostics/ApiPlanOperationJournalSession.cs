@@ -101,23 +101,28 @@ internal sealed class ApiPlanOperationJournalSession
         }
 
         var lookup = ApiPlanOperationJournalStore.Locate(designModel, kbIndex);
-        switch (lookup.Kind)
-        {
-            case ApiPlanOperationJournalLookupKind.Ambiguous:
-            case ApiPlanOperationJournalLookupKind.ExternalCollision:
-            case ApiPlanOperationJournalLookupKind.Unreadable:
-                return ApiPlanOperationJournalStart.Unavailable(lookup.Detail);
-        }
 
-        if (lookup.Kind == ApiPlanOperationJournalLookupKind.Found)
+        // B111/F3 P3: quem decide se a operação pode começar é o gate estendido, e ele
+        // devolve o motivo em forma classificada — código, razão estável, pré-condição e
+        // contexto —, não uma frase.
+        var decision = ApiPlanOperationJournalGate.Evaluate(new ApiPlanOperationJournalGateInput
         {
+            LookupState = MapLookup(lookup.Kind),
+            LookupDetail = lookup.Detail,
+            CurrentEnvelope = lookup.Journal,
             // A durabilidade do que já está gravado é conhecida: o snapshot foi lido e
-            // validado agora. O que decide é o estado da operação anterior.
-            var reuse = ApiPlanOperationJournalCheckpoints.EvaluateReuse(lookup.Journal, JournalDurability.Confirmed);
-            if (!reuse.CanStart)
-            {
-                return ApiPlanOperationJournalStart.Blocked(reuse.Reason, lookup.Journal);
-            }
+            // validado agora.
+            ObservedDurability = JournalDurability.Confirmed,
+            KnowledgeBaseGuid = knowledgeBaseGuid,
+            JournalFileId = lookup.File?.Id ?? 0,
+            // A continuação de um envelope Prepared é serviço da P5/P6. Enquanto ela não
+            // existe, nenhum chamador autoriza — e o gate diz isso com razão própria.
+            PreparedContinuationAuthorization = null,
+        });
+
+        if (decision.Outcome != JournalGateOutcome.Allowed)
+        {
+            return ApiPlanOperationJournalStart.Rejected(decision);
         }
 
         var operationId = Guid.NewGuid();
@@ -144,22 +149,25 @@ internal sealed class ApiPlanOperationJournalSession
             {
                 // Antes de qualquer objeto de negócio: abortar é seguro e é a única saída
                 // honesta, porque não se sabe qual snapshot ficou no File.
-                return ApiPlanOperationJournalStart.Unavailable(
-                    "O envelope Prepared do diário não pôde ser confirmado: " + prepared.Detail);
+                return ApiPlanOperationJournalStart.Rejected(ApiPlanOperationJournalGate.SaveUnconfirmed(
+                    store.FileId,
+                    "O envelope Prepared do diário não pôde ser confirmado: " + prepared.Detail));
             }
 
             ApiPlanOperationJournalCheckpoints.PromoteToActive(envelope, DateTime.UtcNow);
             active = store.WriteCheckpoint(envelope);
             if (!active.IsConfirmed)
             {
-                return ApiPlanOperationJournalStart.Unavailable(
-                    "A promoção do diário a Active não pôde ser confirmada: " + active.Detail);
+                return ApiPlanOperationJournalStart.Rejected(ApiPlanOperationJournalGate.SaveUnconfirmed(
+                    store.FileId,
+                    "A promoção do diário a Active não pôde ser confirmada: " + active.Detail));
             }
         }
         catch (Exception exception)
         {
-            return ApiPlanOperationJournalStart.Unavailable(
-                "A abertura do diário falhou: " + Clean(exception.Message));
+            return ApiPlanOperationJournalStart.Rejected(ApiPlanOperationJournalGate.SaveUnconfirmed(
+                store.FileId,
+                "A abertura do diário falhou: " + Clean(exception.Message)));
         }
 
         var session = new ApiPlanOperationJournalSession(store, envelope);
@@ -378,6 +386,19 @@ internal sealed class ApiPlanOperationJournalSession
 
     private static string Clean(string value) => (value ?? string.Empty).Replace("\r", " ").Replace("\n", " ");
 
+    /// <summary>
+    /// Traduz o resultado da busca, que depende do SDK, para a forma neutra que o gate avalia.
+    /// </summary>
+    private static JournalGateLookupState MapLookup(ApiPlanOperationJournalLookupKind kind) => kind switch
+    {
+        ApiPlanOperationJournalLookupKind.Absent => JournalGateLookupState.Absent,
+        ApiPlanOperationJournalLookupKind.Found => JournalGateLookupState.Found,
+        ApiPlanOperationJournalLookupKind.Ambiguous => JournalGateLookupState.Ambiguous,
+        ApiPlanOperationJournalLookupKind.ExternalCollision => JournalGateLookupState.ExternalCollision,
+        ApiPlanOperationJournalLookupKind.Unreadable => JournalGateLookupState.Unreadable,
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Resultado de busca do diário fora do contrato."),
+    };
+
     private static string ResolveGeneratorVersion()
     {
         var assembly = typeof(ApiPlanOperationJournalSession).Assembly;
@@ -391,48 +412,54 @@ internal sealed class ApiPlanOperationJournalSession
     }
 }
 
-internal enum ApiPlanOperationJournalStartKind
-{
-    Started = 0,
-
-    /// <summary>O diário não pôde ser lido, validado ou confirmado — `JournalUnavailable`.</summary>
-    Unavailable = 1,
-
-    /// <summary>O diário está legível e durável, mas o estado anterior impede a operação.</summary>
-    Blocked = 2,
-}
-
+/// <summary>
+/// Resultado da abertura. Quando a operação não começa, o motivo vem classificado pelo gate:
+/// o relatório e a Output publicam código, razão estável e contexto, não apenas a frase.
+/// </summary>
 internal sealed class ApiPlanOperationJournalStart
 {
     private ApiPlanOperationJournalStart(
-        ApiPlanOperationJournalStartKind kind,
         ApiPlanOperationJournalSession? session,
-        ApiPlanOperationJournal? currentEnvelope,
-        string detail)
+        ApiPlanOperationJournalGateDiagnostic? diagnostic,
+        ApiPlanOperationJournal? currentEnvelope)
     {
-        Kind = kind;
         Session = session;
+        Diagnostic = diagnostic;
         CurrentEnvelope = currentEnvelope;
-        Detail = detail;
     }
 
-    internal ApiPlanOperationJournalStartKind Kind { get; }
-
     internal ApiPlanOperationJournalSession? Session { get; }
+
+    /// <summary>Preenchido sempre que a operação não pôde começar.</summary>
+    internal ApiPlanOperationJournalGateDiagnostic? Diagnostic { get; }
 
     /// <summary>Envelope anterior, quando o bloqueio vem do estado da operação previamente registrada.</summary>
     internal ApiPlanOperationJournal? CurrentEnvelope { get; }
 
-    internal string Detail { get; }
+    internal bool IsStarted => Session is not null;
 
-    internal bool IsStarted => Kind == ApiPlanOperationJournalStartKind.Started && Session is not null;
+    /// <summary>Linha única para a Output e para o relatório final.</summary>
+    internal string Detail => Diagnostic?.Describe() ?? string.Empty;
 
     internal static ApiPlanOperationJournalStart Started(ApiPlanOperationJournalSession session) =>
-        new ApiPlanOperationJournalStart(ApiPlanOperationJournalStartKind.Started, session, null, string.Empty);
+        new ApiPlanOperationJournalStart(session, null, null);
 
-    internal static ApiPlanOperationJournalStart Unavailable(string detail) =>
-        new ApiPlanOperationJournalStart(ApiPlanOperationJournalStartKind.Unavailable, null, null, detail);
+    internal static ApiPlanOperationJournalStart Rejected(ApiPlanOperationJournalGateDecision decision)
+    {
+        if (decision.Diagnostic is not null)
+        {
+            return new ApiPlanOperationJournalStart(null, decision.Diagnostic, decision.CurrentEnvelope);
+        }
 
-    internal static ApiPlanOperationJournalStart Blocked(string detail, ApiPlanOperationJournal? currentEnvelope) =>
-        new ApiPlanOperationJournalStart(ApiPlanOperationJournalStartKind.Blocked, null, currentEnvelope, detail);
+        // Continuação autorizada: o gate a reconhece, mas continuar um envelope preservando
+        // os identificadores é serviço da P5/P6. Enquanto ele não existe, a operação não
+        // começa — e dizer isso é mais honesto que abrir um envelope novo por cima.
+        return new ApiPlanOperationJournalStart(
+            null,
+            ApiPlanOperationJournalGate.ContinuationServiceUnavailable(decision.CurrentEnvelope!),
+            decision.CurrentEnvelope);
+    }
+
+    internal static ApiPlanOperationJournalStart Rejected(ApiPlanOperationJournalGateDiagnostic diagnostic) =>
+        new ApiPlanOperationJournalStart(null, diagnostic, null);
 }

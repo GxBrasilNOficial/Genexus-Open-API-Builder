@@ -700,7 +700,7 @@ public sealed class Package : AbstractPackageUI
                     selection.GenerateMetadata ? ApiPlanMetadataFileWriter.SchemaVersion : null);
                 if (!syncJournalStart.IsStarted)
                 {
-                    WriteOutput($"[Genexus Open API Builder][B111/F3] Sincronizacao bloqueada pelo diário durável: Transaction='{transaction.Name}', Kind='{syncJournalStart.Kind}', Detail='{syncJournalStart.Detail}'. Nenhuma gravação foi solicitada.");
+                    WriteOutput($"[Genexus Open API Builder][B111/F3] Sincronizacao bloqueada pelo diário durável: Transaction='{transaction.Name}'. {syncJournalStart.Detail} Nenhuma gravação foi solicitada.");
                     report.AddBlocked("Diário de operação", "B111/F3", syncJournalStart.Detail);
                     stopwatch.Stop();
                     ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
@@ -855,7 +855,8 @@ public sealed class Package : AbstractPackageUI
                 report.HeadlineOverride = "Sincronização abortada pelo usuário.";
                 report.AddWarning(abortEx.Message);
                 report.AddBlocked("Sync", transaction.Name, "Abortado [B082]");
-                InterruptJournal(syncJournal, report, JournalBlockReason.StageFailed);
+                // B111/F3 P3: aborto é decisão do usuário, não falha de etapa.
+                InterruptJournal(syncJournal, report, JournalBlockReason.UserAborted);
                 stopwatch.Stop();
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 return true;
@@ -1492,7 +1493,7 @@ public sealed class Package : AbstractPackageUI
             WriteProbePhase("DiarioAbertura", phaseWatch.ElapsedMilliseconds);
             if (!journalStart.IsStarted)
             {
-                WriteOutput($"[Genexus Open API Builder][B111/F3] Apply bloqueado pelo diário durável: Transaction='{transaction.Name}', Kind='{journalStart.Kind}', Detail='{journalStart.Detail}'. Nenhuma gravação foi solicitada.");
+                WriteOutput($"[Genexus Open API Builder][B111/F3] Apply bloqueado pelo diário durável: Transaction='{transaction.Name}'. {journalStart.Detail} Nenhuma gravação foi solicitada.");
                 report.AddBlocked("Diário de operação", "B111/F3", journalStart.Detail);
                 stopwatch.Stop();
                 WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
@@ -1787,7 +1788,8 @@ public sealed class Package : AbstractPackageUI
             report.HeadlineOverride = "Aplicação abortada pelo usuário.";
             report.AddWarning(abortEx.Message);
             report.AddBlocked("Apply", transaction.Name, "Abortado [B082]");
-            InterruptJournal(journal, report, JournalBlockReason.StageFailed);
+            // B111/F3 P3: aborto é decisão do usuário, não falha de etapa.
+            InterruptJournal(journal, report, JournalBlockReason.UserAborted);
             stopwatch.Stop();
             WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
             ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);

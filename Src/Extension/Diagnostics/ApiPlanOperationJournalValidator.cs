@@ -216,6 +216,15 @@ public static class ApiPlanOperationJournalValidator
         {
             errors.Add("blockReason=RetryBudgetExhausted pertence ao orçamento de passadas do Remove.");
         }
+
+        // Um aborto é decisão, não indeterminação: quem parou de propósito sabe que parou.
+        // `OutcomeUnknown` significa que o resultado da última gravação não é conhecido, e
+        // isso nunca decorre de o usuário ter cancelado.
+        if (journal.BlockReason == JournalBlockReason.UserAborted
+            && journal.OperationState != JournalOperationState.Partial)
+        {
+            errors.Add("blockReason=UserAborted exige operationState=Partial.");
+        }
     }
 
     private static void ValidatePlan(ApiPlanOperationJournal journal, List<string> errors)

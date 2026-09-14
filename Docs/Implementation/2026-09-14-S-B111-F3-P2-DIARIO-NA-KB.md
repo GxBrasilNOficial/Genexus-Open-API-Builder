@@ -286,6 +286,12 @@ Decisão desta etapa: **manter `StageFailed`**, registrando a imprecisão, e res
 que é onde a precedência de motivos é normatizada. Inventar valor novo no meio da validação
 seria pior que conviver com a imprecisão documentada.
 
+**Resolvido na P3 — 2026-09-14:** o enum recebeu `UserAborted`, e o Apply e o Sync passaram a
+gravá-lo no aborto do usuário. A janela de compatibilidade justificou a mudança de schema: o
+V1 nunca saiu num release. Detalhe em
+[`2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`](2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md),
+seção 4.
+
 ## 6.6 Custo na KB grande — o orçamento do plano está 24 vezes acima do medido
 
 Apply completo de reencontro na `Empresa` da `FabricaBrasil18Test`, 47 SDTs e 4 Procedures
@@ -390,6 +396,7 @@ etapas P4 e P5.
   reutilização da decisão 44, dentro da sessão. A precedência completa de `GateDiagnostic`
   (`JournalUnavailable`, `DurabilityUnknown`, `GateBlocked`, `PreconditionFailed`) com
   `reasonCode` estável é a P3; hoje o bloqueio chega como uma mensagem única no relatório.
+  **Entregue na P3 — 2026-09-14**, ainda sem validação na IDE.
 - **Sem localização trilíngue.** As mensagens do diário estão em português, direto no
   código. A tradução é a P7.
 - **O Apply que não grava API** — só SDTs e Procedures — faz três checkpoints, não quatro,
