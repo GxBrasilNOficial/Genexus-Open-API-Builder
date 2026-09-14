@@ -218,6 +218,37 @@ try {
     Assert-Equal 'deadbeef' ([string](Get-Prop $byName['apiTeste_Metadata'] 'ExpectedHash')) 'O hash esperado do File acompanha o item.'
     Assert-Equal 'Folder' ([string](Get-Prop $byName['TesteOpenApi'] 'IdentityKind')) 'Folder mantém a identidade própria.'
 
+    # --- 3.1 Reencontro: identidade composta sem GUIDs e dois recibos do mesmo alvo ----------
+    # Cenário medido na IDE em 2026-09-14, no segundo Apply da `Escola`: o writer de Business
+    # Component identifica a Procedure por CompositeIdentity, e no reencontro os GUIDs podem
+    # chegar vazios. Exigi-los num Save era regra indevida — a identidade histórica completa
+    # só é exigência de quem autoriza exclusão.
+    $compositeType = $assembly.GetType($ns + 'CompositeIdentity', $true, $false)
+    $log2 = [Activator]::CreateInstance($logType)
+    $emptyGuid = [Guid]::Empty
+    $transactionGuid = [Guid]'22222222-2222-2222-2222-222222222222'
+
+    # O mesmo alvo aparece duas vezes, com identidades diferentes: antes e depois de o objeto
+    # existir. O inventário precisa colapsar os dois num item só.
+    foreach ($identity in @(
+        [Activator]::CreateInstance($compositeType, @([object]'procEscola_API_Get', [object]'Procedure', [object]'Generated', [object]'', [object]$transactionGuid, [object]$emptyGuid)),
+        [Activator]::CreateInstance($compositeType, @([object]'procEscola_API_Get', [object]'Procedure', [object]'Generated', [object]'apiEscola', [object]$transactionGuid, [object]$emptyGuid))
+    )) {
+        $receipt = $startReceipt.Invoke($log2, @('Save', 'Procedure', 'B071-B073/B079', 'procEscola_API_Get', $identity, 1))
+        $observation = $confirmedFactory.Invoke($null, @('observado', 'teste'))
+        [void]$completeReceipt.Invoke($log2, @($receipt, (Get-Enum $attemptStateType 'Finished'), (Get-Enum $outcomeType 'Confirmed'), $observation, $null, $true))
+    }
+
+    $reencounterArgs = New-Object object[] 3
+    $reencounterArgs[0] = $log2.Receipts
+    $reencounterArgs[1] = [string[]]@()
+    $reencounterArgs[2] = Get-Enum $kindType 'Apply'
+    $reencounterInventory = $buildInventory.Invoke($null, $reencounterArgs)
+    Assert-Equal 1 ([int]@($reencounterInventory).Count) 'Dois recibos do mesmo alvo produzem um item de inventário.'
+    $reencounterItem = @($reencounterInventory)[0]
+    Assert-Equal 'Update' ([string](Get-Prop $reencounterItem 'Action')) 'No reencontro o alvo entra como Update.'
+    Assert-Equal 2 ([int]@(Get-Prop $reencounterItem 'ReceiptSequences').Count) 'O item acumula as duas sequências.'
+
     # --- 4. O envelope resultante tem de ser válido -------------------------------------------
     $checkpointsType = $assembly.GetType($ns + 'ApiPlanOperationJournalCheckpoints', $true, $false)
     $plansType = $assembly.GetType($ns + 'ApiPlanOperationJournalPlans', $true, $false)
@@ -253,6 +284,29 @@ try {
     $validateArgs[0] = $journal
     $validation = $validatorType.GetMethod('Validate', $static).Invoke($null, $validateArgs)
     Assert-True ([bool](Get-Prop $validation 'IsValid')) "O envelope com recibos e inventário reais deve ser válido. Erros: $([string](Get-Prop $validation 'Errors') -join '; ')"
+
+    # O envelope do reencontro, com identidade composta sem GUIDs, também precisa ser válido.
+    $journal2 = $checkpointsType.GetMethod('CreatePrepared', $static).Invoke($null, $createArgs)
+    $mapArgs2 = New-Object object[] 1
+    $mapArgs2[0] = $log2.Receipts
+    foreach ($item in $mapReceipts.Invoke($null, $mapArgs2)) { [void]$journal2.Receipts.Add($item) }
+    foreach ($item in $reencounterInventory) { [void]$journal2.Inventory.Add($item) }
+    $validateArgs2 = New-Object object[] 1
+    $validateArgs2[0] = $journal2
+    $validation2 = $validatorType.GetMethod('Validate', $static).Invoke($null, $validateArgs2)
+    Assert-True ([bool](Get-Prop $validation2 'IsValid')) "Identidade composta sem GUIDs é válida num Save. Erros: $([string](Get-Prop $validation2 'Errors') -join '; ')"
+
+    # Mas continua exigida onde autoriza exclusão.
+    $deleteAction = [Enum]::Parse($assembly.GetType($ns + 'JournalInventoryAction', $true, $false), 'Delete')
+    $reencounterItem.GetType().GetProperty('Action', $instance).SetValue($reencounterItem, $deleteAction)
+    $journal3 = $checkpointsType.GetMethod('CreatePrepared', $static).Invoke($null, $createArgs)
+    foreach ($item in $mapReceipts.Invoke($null, $mapArgs2)) { [void]$journal3.Receipts.Add($item) }
+    [void]$journal3.Inventory.Add($reencounterItem)
+    $validateArgs3 = New-Object object[] 1
+    $validateArgs3[0] = $journal3
+    $validation3 = $validatorType.GetMethod('Validate', $static).Invoke($null, $validateArgs3)
+    Assert-True (-not [bool](Get-Prop $validation3 'IsValid')) 'Identidade composta sem GUIDs não pode autorizar exclusão.'
+    Assert-Contains ([string](Get-Prop $validation3 'Errors') -join '; ') 'composite.apiGuid é obrigatório' 'A exigência permanece na fila destrutiva.'
 
 } finally {
     if ($null -ne $script:AssemblyResolveHandler) {

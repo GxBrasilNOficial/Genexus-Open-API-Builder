@@ -81,16 +81,7 @@ internal static class ApiPlanOperationJournalReceiptMapper
 
         foreach (var receipt in receipts.OrderBy(item => item.Sequence))
         {
-            var key = receipt.ObjectType + "|" + receipt.Identity.StableKey;
             var sequence = ToSequence(receipt.Sequence);
-            if (!sequencesByTarget.TryGetValue(key, out var sequences))
-            {
-                sequences = new List<int>();
-                sequencesByTarget[key] = sequences;
-            }
-
-            sequences.Add(sequence);
-
             var item = new ApiPlanOperationJournalInventoryItem
             {
                 ObjectType = MapObjectType(receipt.ObjectType),
@@ -102,6 +93,18 @@ internal static class ApiPlanOperationJournalReceiptMapper
             };
 
             ApplyIdentity(item, receipt.Identity);
+
+            // A chave é a do validador, não a da F2: identidades diferentes do mesmo alvo
+            // (um Save antes do objeto existir e outro depois) precisam colapsar no mesmo
+            // item, senão o inventário sai com alvo repetido.
+            var key = ApiPlanOperationJournalValidator.BuildIdentityKey(item);
+            if (!sequencesByTarget.TryGetValue(key, out var sequences))
+            {
+                sequences = new List<int>();
+                sequencesByTarget[key] = sequences;
+            }
+
+            sequences.Add(sequence);
             byTarget[key] = item;
         }
 

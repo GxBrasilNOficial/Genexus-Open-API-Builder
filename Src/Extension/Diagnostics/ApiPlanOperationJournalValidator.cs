@@ -420,8 +420,7 @@ public static class ApiPlanOperationJournalValidator
             }
 
             // Cada alvo e cada preservação aparecem uma vez.
-            var identity = item.ObjectType + "|" + item.IdentityKind + "|" + DescribeIdentity(item);
-            if (!identities.Add(identity))
+            if (!identities.Add(BuildIdentityKey(item)))
             {
                 errors.Add("inventory repete o mesmo alvo: " + item.Name + ".");
             }
@@ -460,14 +459,21 @@ public static class ApiPlanOperationJournalValidator
                     break;
                 }
 
-                // Nome isolado, Description isolada ou prefixo isolado nunca autorizam
-                // exclusão: a identidade composta precisa estar inteira.
                 RequireText(item.Composite.ExactName, "composite.exactName", errors);
                 RequireText(item.Composite.ObjectTypeName, "composite.objectTypeName", errors);
                 RequireText(item.Composite.Role, "composite.role", errors);
-                RequireText(item.Composite.CanonicalDescription, "composite.canonicalDescription", errors);
-                RequireGuid(item.Composite.TransactionGuid, "composite.transactionGuid", errors);
-                RequireGuid(item.Composite.ApiGuid, "composite.apiGuid", errors);
+
+                // Nome isolado, Description isolada ou prefixo isolado nunca autorizam
+                // exclusão: para apagar, a identidade histórica precisa estar inteira. Num
+                // Save, a mesma identidade é só o endereço do alvo, e exigir dela os GUIDs
+                // que só existem depois da gravação impediria registrar o recibo.
+                if (item.Action == JournalInventoryAction.Delete)
+                {
+                    RequireText(item.Composite.CanonicalDescription, "composite.canonicalDescription", errors);
+                    RequireGuid(item.Composite.TransactionGuid, "composite.transactionGuid", errors);
+                    RequireGuid(item.Composite.ApiGuid, "composite.apiGuid", errors);
+                }
+
                 break;
 
             case JournalIdentityKind.Folder:
@@ -511,6 +517,14 @@ public static class ApiPlanOperationJournalValidator
             errors.Add("metadataSchemaVersion é obrigatório quando a operação envolve metadata.");
         }
     }
+
+    /// <summary>
+    /// Chave de unicidade de um alvo no inventário. É a mesma que o mapeador de recibos usa
+    /// para agregar: se as duas divergissem, dois recibos do mesmo objeto virariam dois itens
+    /// que o validador recusa como repetidos.
+    /// </summary>
+    internal static string BuildIdentityKey(ApiPlanOperationJournalInventoryItem item) =>
+        item.ObjectType + "|" + item.IdentityKind + "|" + DescribeIdentity(item);
 
     private static string DescribeIdentity(ApiPlanOperationJournalInventoryItem item) => item.IdentityKind switch
     {

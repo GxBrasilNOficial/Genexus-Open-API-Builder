@@ -135,21 +135,31 @@ internal sealed class ApiPlanOperationJournalSession
             DateTime.UtcNow);
 
         var store = new ApiPlanOperationJournalStore(designModel, lookup.File);
-        var prepared = store.WriteCheckpoint(envelope);
-        if (!prepared.IsConfirmed)
+        ApiPlanOperationJournalCheckpointResult prepared;
+        ApiPlanOperationJournalCheckpointResult active;
+        try
         {
-            // Antes de qualquer objeto de negócio: abortar é seguro e é a única saída
-            // honesta, porque não se sabe qual snapshot ficou no File.
-            return ApiPlanOperationJournalStart.Unavailable(
-                "O envelope Prepared do diário não pôde ser confirmado: " + prepared.Detail);
-        }
+            prepared = store.WriteCheckpoint(envelope);
+            if (!prepared.IsConfirmed)
+            {
+                // Antes de qualquer objeto de negócio: abortar é seguro e é a única saída
+                // honesta, porque não se sabe qual snapshot ficou no File.
+                return ApiPlanOperationJournalStart.Unavailable(
+                    "O envelope Prepared do diário não pôde ser confirmado: " + prepared.Detail);
+            }
 
-        ApiPlanOperationJournalCheckpoints.PromoteToActive(envelope, DateTime.UtcNow);
-        var active = store.WriteCheckpoint(envelope);
-        if (!active.IsConfirmed)
+            ApiPlanOperationJournalCheckpoints.PromoteToActive(envelope, DateTime.UtcNow);
+            active = store.WriteCheckpoint(envelope);
+            if (!active.IsConfirmed)
+            {
+                return ApiPlanOperationJournalStart.Unavailable(
+                    "A promoção do diário a Active não pôde ser confirmada: " + active.Detail);
+            }
+        }
+        catch (Exception exception)
         {
             return ApiPlanOperationJournalStart.Unavailable(
-                "A promoção do diário a Active não pôde ser confirmada: " + active.Detail);
+                "A abertura do diário falhou: " + Clean(exception.Message));
         }
 
         var session = new ApiPlanOperationJournalSession(store, envelope);
@@ -291,7 +301,22 @@ internal sealed class ApiPlanOperationJournalSession
             return false;
         }
 
-        var result = _store.WriteCheckpoint(Envelope);
+        ApiPlanOperationJournalCheckpointResult result;
+        try
+        {
+            result = _store.WriteCheckpoint(Envelope);
+        }
+        catch (Exception exception)
+        {
+            // O diário é instrumento de diagnóstico: ele pode bloquear a si mesmo, nunca
+            // derrubar a operação de negócio que o cerca. Um envelope recusado pelo schema
+            // vira bloqueio visível, com os objetos já gravados intactos e o relatório final
+            // preservado.
+            Block("O checkpoint '" + description + "' falhou ao ser gravado: " + Clean(exception.Message)
+                + " A operação seguiu; o diário ficou bloqueado e o último snapshot durável foi preservado.");
+            return false;
+        }
+
         if (!result.IsConfirmed)
         {
             Block("O checkpoint '" + description + "' não pôde ser confirmado: " + result.Detail
@@ -350,6 +375,8 @@ internal sealed class ApiPlanOperationJournalSession
     }
 
     private void Note(string line) => _diagnostics.Add(line);
+
+    private static string Clean(string value) => (value ?? string.Empty).Replace("\r", " ").Replace("\n", " ");
 
     private static string ResolveGeneratorVersion()
     {

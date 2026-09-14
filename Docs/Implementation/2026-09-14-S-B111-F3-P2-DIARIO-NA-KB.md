@@ -153,6 +153,37 @@ Três decisões que a conversão forçou:
 A identidade de File da F2 é o GUID do objeto, não o `Id` numérico; o item de inventário
 registra `identityKind=Guid` com o hash esperado ao lado. Gate: `tests.operationJournalReceipts`.
 
+## 6.3 Segundo Apply — três defeitos meus, corrigidos
+
+O reencontro da `Escola`, minutos depois, **falhou**: um diálogo de erro com
+`composite.apiGuid é obrigatório` quatro vezes e `inventory repete o mesmo alvo` cinco. Os
+objetos de negócio já estavam todos gravados — SDTs, Procedures, API, metadata e integridade
+— e o relatório final não chegou a aparecer.
+
+O defeito mais grave não é nenhuma das duas mensagens:
+
+1. **O diário derrubou a operação.** O serializer recusa o envelope inválido antes do
+   `File.Save()`, como manda o contrato, mas a sessão não tratava essa recusa e a exceção
+   subia até o comando. Um instrumento de diagnóstico pode bloquear a si mesmo; não pode
+   levar junto a operação que observa, ainda mais depois de tudo gravado. A sessão passou a
+   capturar qualquer falha de gravação do diário e convertê-la em bloqueio visível, com o
+   relatório final preservado. O mesmo vale para a abertura.
+2. **`composite.apiGuid` era exigência indevida num Save.** O writer de Business Component
+   identifica a Procedure por `CompositeIdentity`, e no reencontro o GUID chega vazio. A
+   identidade histórica completa é exigência de quem **autoriza exclusão** — «nome isolado
+   nunca autoriza exclusão» —, não de quem registra um recibo de gravação. Os GUIDs e a
+   Description canônica passaram a ser exigidos apenas quando `action=Delete`.
+3. **A chave de agregação do inventário divergia da chave de unicidade do validador.** O
+   mapeador agrupava por identidade da F2; o validador comparava por tipo, espécie de
+   identidade e nome. Dois recibos do mesmo alvo com identidades diferentes — antes e depois
+   de o objeto existir — viravam dois itens que colidiam. As duas chaves passaram a ser a
+   mesma função, exposta pelo validador.
+
+Os três estão cobertos por teste: o gate de recibos reproduz o cenário exato do reencontro —
+identidade composta com `transactionGuid` preenchido e `apiGuid` vazio, o mesmo alvo com duas
+identidades — e exige envelope válido no Save e bloqueio no Delete. O primeiro defeito, por
+depender do store e da KB, só se comprova na IDE: é o reteste do Apply de reencontro.
+
 ## 7. Riscos e lacunas assumidos nesta etapa
 
 - **Um envelope não terminal trava a KB para novas operações, e ainda não há saída pela
