@@ -150,6 +150,17 @@ humana** e não são inferidos do encerramento da sprint: a branch local está �
 `origin/main`, e a linha publicada continua na `0.1.0-alpha.7` — o intervalo exato se mede com
 `git rev-list --count origin/main..HEAD`, não se anota aqui.
 
+**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
+ainda não mencionam o File do diário `GxOpenApiBuilder_OperationJournal`, o bloqueio que ele
+impõe a Apply, Sync e Remover, nem o comando `Recuperar operação interrompida`. O `INSTALL.md`
+menciona o comando, na seção do mantenedor, com a ressalva de que ele existe **na build deste
+repositório** e ainda não saiu em release — ressalva que o corte terá de desfazer. Isso **não
+bloqueia** o corte pela condição do documento 06, cuja disjunção foi satisfeita pelo outro ramo
+quando a P8 fechou; é item do rito de corte do `AGENTS.md`, que exige atualizar esses arquivos
+quando muda comportamento visível. Fica aqui como registro porque escrever o texto público antes
+do corte obriga a redigi-lo no condicional e a reescrevê-lo depois — e, pior, anunciaria ao
+usuário da `0.1.0-alpha.7` um menu que ele não tem.
+
 ### A F3 e a sprint `S-B111` foram encerradas em 2026-09-15
 
 **F3 — etapa P8: validação integrada na IDE, concluída em 2026-09-15.** As etapas P4 a P7 foram
