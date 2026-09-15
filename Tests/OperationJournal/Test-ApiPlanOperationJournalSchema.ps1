@@ -326,17 +326,22 @@ try {
     # --- 5b. Leitura tolerante a diário legado (decisão 29) ---------------------------------
     # Um diário gravado antes de os campos novos do V1 existirem não traz nem tempo de recibo
     # nem suficiência de inventário. A leitura reconhece a forma por valor e reidrata o
-    # envelope; a regravação naquela forma normalizada permanece estável round-trip, porque
-    # a re-leitura volta a reconhecer o mesmo estado.
+    # envelope; a regravação emite null honesto nos tempos não medidos e permanece estável
+    # round-trip, porque a re-leitura volta a reconhecer o mesmo estado.
     $legacyReceiptJson = $canonical.Replace('"startedUtc":"2026-09-14T10:00:00.000Z",', '').Replace('"endedUtc":"2026-09-14T10:00:01.000Z",', '').Replace('"durationMs":1000,', '')
     $legacyReceipt = Read-Journal $legacyReceiptJson
     Assert-True ([bool]$legacyReceipt.IsValid) "Recibo legado sem os campos de tempo deve continuar legível. Erros: $($legacyReceipt.Describe())"
     $legacyReceiptCanonical = [string]$serializeMethod.Invoke($null, @($legacyReceipt.Journal))
     Assert-Equal $legacyReceiptCanonical ([string]$legacyReceipt.CanonicalJson) 'A regravação do legado coincide com o material canônico da leitura.'
-    Assert-Contains $legacyReceiptCanonical '"startedUtc":"0001-01-01T00:00:00.000Z"' 'O default de um legado é gravado e reaproveitado.'
+    # Tempo não medido: null honesto — nunca 0001-01-01 nem durationMs 0 sintético.
+    Assert-Contains $legacyReceiptCanonical '"startedUtc":null' 'startedUtc não medido sai null, não MinValue.'
+    Assert-Contains $legacyReceiptCanonical '"durationMs":null' 'durationMs não medido sai null, não zero sintético.'
+    Assert-True ($legacyReceiptCanonical.IndexOf('0001-01-01', [StringComparison]::Ordinal) -lt 0) 'Regravação legada não inventa o ano 1.'
     $legacyReceiptAgain = Read-Journal $legacyReceiptCanonical
     Assert-True ([bool]$legacyReceiptAgain.IsValid) 'O material normalizado do legado reidrata sem novo erro.'
     Assert-Equal $legacyReceiptCanonical ([string]$legacyReceiptAgain.CanonicalJson) 'A forma normalizada do legado é estável round-trip.'
+    $legacyFlag = $legacyReceiptAgain.Journal.GetType().GetProperty('AcceptsLegacyShapes', [System.Reflection.BindingFlags]'Instance, NonPublic, Public').GetValue($legacyReceiptAgain.Journal)
+    Assert-True ([bool]$legacyFlag) 'Após regravação honesta, a re-leitura ainda reconhece a forma legada.'
 
     # A recuperação de metadata órfã também é forma legada quando o plano não carrega a
     # suficiência — é o envelope da decisão 29 cuja regravação a tolerância precisa preservar.

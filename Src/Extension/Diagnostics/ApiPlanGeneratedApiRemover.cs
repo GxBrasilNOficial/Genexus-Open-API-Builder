@@ -336,7 +336,7 @@ internal static class ApiPlanGeneratedApiRemover
                 JournalObjectType.Procedure,
                 name,
                 procedure?.Guid,
-                ApiPlanJournalRoles.ForProcedureName(name),
+                ApiPlanJournalRoles.RequireForProcedureName(name, "B086"),
                 "Procedure",
                 transaction.Guid,
                 apiGuid));
@@ -795,7 +795,7 @@ internal static class ApiPlanGeneratedApiRemover
             .ToArray());
         if (matches.Length == 0)
         {
-            return NotAttempted(target, "Procedure", ApiPlanJournalRoles.ForProcedureName(name), "Procedure ausente antes do Delete.");
+            return NotAttempted(target, "Procedure", ApiPlanJournalRoles.RequireForProcedureName(name, "B086"), "Procedure ausente antes do Delete.");
         }
 
         var procedure = matches[0];

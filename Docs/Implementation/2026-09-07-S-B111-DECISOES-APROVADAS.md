@@ -772,6 +772,12 @@ que `null` quando o recibo nunca foi completado. O mapeamento converte
 `StartedAt → startedUtc`, `FinishedAt → endedUtc` e `DurationMs → durationMs`. A leitura
 permanece tolerante a recibo sem os três campos, preservando diários legados.
 
+**Remissão — 2026-09-15 (regravação honesta).** A primeira correção materializava recibo
+legado sem tempo como `startedUtc=0001-01-01` e `durationMs=0` na regravação — valores que
+parecem medição e não são. Passou a emitir `null` nos dois campos quando o início não foi
+medido, no mesmo espírito de `emptyConfirmed` e de `PersistedMainObject`: ausência explícita,
+não data inventada. O marcador interno `AcceptsLegacyShapes` continua sem ser serializado.
+
 ### 30. Inventário por objeto
 
 Decisão aprovada:

@@ -8,15 +8,19 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// S-B111 / F3 — vocabulário fechado de <c>composite.role</c> do diário durável (decisão 30).
 ///
 /// O papel descreve o nome arquitetural do alvo dentro da API gerada, e a F2 o recebe para
-/// localizar um objeto visto pelo API Object **depois da poda por papel** — a poda consulta
+/// localizar um objeto visto pelo API Object depois da poda por papel — a poda consulta
 /// <c>CompositeIdentity.Role</c> com <c>StringComparison.Ordinal</c>. Produzir papeis fora
 /// deste vocabulário significa inventar um contrato que a poda nunca vai consultar.
 ///
-/// O vocabulário vale para **quem escreve**. A leitura (schema, validador e a poda) aceita e
+/// O vocabulário vale para quem escreve. A leitura (schema, validador e a poda) aceita e
 /// retorna qualquer valor, porque diários legados gravaram papeis que esta classe nunca
 /// reconheceu (ex.: <c>ListFilters</c> como papel de um SDT) e nenhum deles pode ser rejeitado
 /// de volta para quem os produziu. A fronteira, então, é assimétrica: produção fecha o
 /// vocabulário; leitura preserva o histórico.
+///
+/// No caminho de escrita (Apply/Remover), preferir <see cref="TryForProcedureName"/> ou
+/// <see cref="RequireForProcedureName"/>: um nome fora do padrão é falha de invariante da
+/// extensão (renomeação manual), não <c>ArgumentException</c> de API interna.
 /// </summary>
 internal static class ApiPlanJournalRoles
 {
@@ -53,45 +57,88 @@ internal static class ApiPlanJournalRoles
     };
 
     /// <summary>
-    /// Papel do procedimento de serviço (Prc) a partir do nome gerado. O nome segue o padrão
-    /// <c>proc{Transaction}_API_{Service}</c> (case-insensitive), então o papel é o sufixo após
-    /// o último <c>_API_</c>. Um nome fora do padrão lança, porque o chamador produziria um
-    /// papel que a poda nunca consulta.
+    /// Tenta obter o papel canônico a partir do nome gerado
+    /// <c>proc{Transaction}_API_{Service}</c> (case-insensitive). Não lança.
     /// </summary>
-    public static string ForProcedureName(string procedureName)
+    public static bool TryForProcedureName(string? procedureName, out string role)
     {
+        role = string.Empty;
         if (string.IsNullOrWhiteSpace(procedureName))
         {
-            throw new ArgumentException("Nome de Procedure vazio não define papel de serviço.", nameof(procedureName));
+            return false;
         }
 
-        var marker = procedureName.LastIndexOf("_API_", StringComparison.OrdinalIgnoreCase);
+        var name = procedureName!;
+        var marker = name.LastIndexOf("_API_", StringComparison.OrdinalIgnoreCase);
         if (marker < 0)
         {
-            throw new ArgumentException(
-                "Nome fora do padrão proc{Transaction}_API_{Service}: '" + procedureName + "'.",
-                nameof(procedureName));
+            return false;
         }
 
-        return ForService(procedureName.Substring(marker + "_API_".Length));
+        return TryForService(name.Substring(marker + "_API_".Length), out role);
     }
 
     /// <summary>
-    /// Papel canônico de um nome de serviço, ou exceção quando ele não pertence ao vocabulário.
-    /// A comparação é case-insensitive; o retorno é a escrita canônica.
+    /// Tenta obter o papel canônico de um nome de serviço. Não lança.
     /// </summary>
-    public static string ForService(string service)
+    public static bool TryForService(string? service, out string role)
     {
+        role = string.Empty;
+        if (string.IsNullOrWhiteSpace(service))
+        {
+            return false;
+        }
+
         foreach (var candidate in ServiceRoles)
         {
             if (string.Equals(candidate, service, StringComparison.OrdinalIgnoreCase))
             {
-                return candidate;
+                role = candidate;
+                return true;
             }
         }
 
-        throw new ArgumentException(
-            "Serviço fora do vocabulário do diário: '" + service + "'. Esperado um de " + string.Join(", ", ServiceRoles) + ".",
-            nameof(service));
+        return false;
+    }
+
+    /// <summary>
+    /// Papel exigido no caminho de escrita. Falha com <see cref="InvalidOperationException"/>
+    /// de domínio — nunca <see cref="ArgumentException"/> — para o orquestrador tratar como
+    /// falha de etapa, não como bug de chamada.
+    /// </summary>
+    public static string RequireForProcedureName(string procedureName, string writeContext)
+    {
+        if (TryForProcedureName(procedureName, out var role))
+        {
+            return role;
+        }
+
+        throw new InvalidOperationException(
+            writeContext
+            + ": Procedure '"
+            + procedureName
+            + "' fora do padrão proc{Transaction}_API_{Service}; o diário não inventa composite.role.");
+    }
+
+    /// <summary>
+    /// Papel do procedimento a partir do nome gerado. Delega a
+    /// <see cref="RequireForProcedureName"/> com contexto genérico.
+    /// </summary>
+    public static string ForProcedureName(string procedureName) =>
+        RequireForProcedureName(procedureName, "ApiPlanJournalRoles");
+
+    /// <summary>
+    /// Papel canônico de um nome de serviço, ou exceção de domínio quando fora do vocabulário.
+    /// </summary>
+    public static string ForService(string service)
+    {
+        if (TryForService(service, out var role))
+        {
+            return role;
+        }
+
+        throw new InvalidOperationException(
+            "Serviço fora do vocabulário do diário: '" + service + "'. Esperado um de "
+            + string.Join(", ", ServiceRoles) + ".");
     }
 }

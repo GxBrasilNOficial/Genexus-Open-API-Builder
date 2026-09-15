@@ -35,6 +35,11 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// <c>AcceptsLegacyShapes</c> marcado, o que suaviza nessas regras de presença a validação da
 /// regravação em recuperação. Campos presentes porém malformados continuam sendo erro de
 /// leitura, tolerantes ou não.
+///
+/// Tempo não medido não se disfarça de medição: na regravação de um recibo legado sem
+/// <c>startedUtc</c>, o canônico emite <c>null</c> em <c>startedUtc</c> e em
+/// <c>durationMs</c> — nunca <c>0001-01-01</c> nem <c>0</c> sintético. O marcador interno
+/// não é serializado; a honestidade fica no próprio JSON.
 /// </summary>
 public static class ApiPlanOperationJournalSerializer
 {
@@ -347,9 +352,20 @@ public static class ApiPlanOperationJournalSerializer
         WriteProperty(writer, "objectType", receipt.ObjectType.ToString());
         WriteProperty(writer, "attempt", receipt.Attempt);
         WriteProperty(writer, "retryOfSequence", receipt.RetryOfSequence);
-        WriteProperty(writer, "startedUtc", FormatUtc(receipt.StartedUtc));
-        WriteProperty(writer, "endedUtc", receipt.EndedUtc);
-        WriteProperty(writer, "durationMs", receipt.DurationMs);
+        // Tempo não medido (recibo legado reidratado): null honesto, não MinValue/0.
+        if (receipt.StartedUtc == default)
+        {
+            WriteProperty(writer, "startedUtc", (string?)null);
+            WriteProperty(writer, "endedUtc", receipt.EndedUtc);
+            WriteProperty(writer, "durationMs", (long?)null);
+        }
+        else
+        {
+            WriteProperty(writer, "startedUtc", FormatUtc(receipt.StartedUtc));
+            WriteProperty(writer, "endedUtc", receipt.EndedUtc);
+            WriteProperty(writer, "durationMs", receipt.DurationMs);
+        }
+
         WriteProperty(writer, "attemptState", receipt.AttemptState.ToString());
         WriteProperty(writer, "result", receipt.Result.ToString());
         WriteProperty(writer, "confirmation", receipt.Confirmation.ToString());
@@ -445,6 +461,19 @@ public static class ApiPlanOperationJournalSerializer
     {
         writer.WritePropertyName(name);
         writer.WriteValue(value);
+    }
+
+    private static void WriteProperty(JsonTextWriter writer, string name, long? value)
+    {
+        writer.WritePropertyName(name);
+        if (value.HasValue)
+        {
+            writer.WriteValue(value.Value);
+        }
+        else
+        {
+            writer.WriteNull();
+        }
     }
 
     private static void WriteProperty(JsonTextWriter writer, string name, DateTime? value)
@@ -631,11 +660,12 @@ public static class ApiPlanOperationJournalSerializer
 
     /// <summary>
     /// Reconhece uma forma de diário legada por valor, depois de os campos novos do V1 terem
-    /// sido lidos em <see cref="Read"/>. Um recibo sem tempo medido — startedUtc deixado em
-    /// default, que é o estado em que um JSON legado materializa por não trazer o campo — ou
-    /// um plano de remoção/recuperação sem suficiência de inventário são as duas formas que
-    /// precisam de tolerância. Um recibo encerrado sem endedUtc **com** startedUtc presente
-    /// não é forma legada: é recibo novo mal formado, e a leitura continua recusando.
+    /// sido lidos em <see cref="Read"/>. Um recibo sem tempo medido — <c>startedUtc</c> ausente
+    /// ou <c>null</c>, materializado em default — ou um plano de remoção/recuperação sem
+    /// suficiência de inventário são as formas que precisam de tolerância. A regravação emite
+    /// <c>null</c> nesses tempos, não <c>0001-01-01</c>. Um recibo encerrado sem
+    /// <c>endedUtc</c> com <c>startedUtc</c> presente não é forma legada: é recibo novo
+    /// mal formado, e a leitura continua recusando.
     /// </summary>
     private static bool DetectLegacyShapes(ApiPlanOperationJournal journal)
     {

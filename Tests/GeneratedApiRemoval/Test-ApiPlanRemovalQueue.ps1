@@ -336,6 +336,15 @@ try {
     Assert-equal 'Update' ([string]$forProcedure.Invoke($null, @('procTeste_API_Update'))) 'Update pelo nome da Procedure'
     Assert-equal 'Delete' ([string]$forProcedure.Invoke($null, @('procTeste_API_Delete'))) 'Delete pelo nome da Procedure'
     Assert-equal 'Get' ([string]$forService.Invoke($null, @('get'))) 'ForService normaliza case'
+    $tryProc = $rolesType.GetMethod('TryForProcedureName', $staticAny)
+    $tryArgs = New-Object object[] 2
+    $tryArgs[0] = 'procTeste_API_List'
+    $tryArgs[1] = $null
+    Assert-True ([bool]$tryProc.Invoke($null, $tryArgs)) 'TryForProcedureName aceita nome gerado'
+    Assert-Equal 'List' ([string]$tryArgs[1]) 'Try devolve o papel canônico'
+    $tryArgs[0] = 'procTeste_Renomeada'
+    $tryArgs[1] = $null
+    Assert-True (-not [bool]$tryProc.Invoke($null, $tryArgs)) 'Try recusa nome fora do padrão sem lançar'
 
     $plansType = $assembly.GetType($ns + 'ApiPlanOperationJournalPlans', $true, $false)
     $removalPlan = $plansType.GetMethod('ForRemoval', $static).Invoke($null, @(

@@ -189,23 +189,27 @@ public sealed class ApiPlanOperationJournalReceipt
 
     /// <summary>
     /// Início medido, normalizado para UTC. Sempre presente em recibo gravado por esta
-    /// geração; default na leitura tolerante de um diário legado que não traz o campo
-    /// (marcado por <see cref="ApiPlanOperationJournal.AcceptsLegacyShapes"/>).
+    /// geração. Default na leitura tolerante de um diário legado que não traz o campo
+    /// (marcado por <see cref="ApiPlanOperationJournal.AcceptsLegacyShapes"/>); a
+    /// regravação emite <c>null</c>, não <c>0001-01-01</c>.
     /// </summary>
     public DateTime StartedUtc { get; set; }
 
     /// <summary>
     /// Fim medido, normalizado para UTC. Null somente quando o recibo ficou apenas iniciado
-    /// (<see cref="JournalAttemptState.Started"/>); a validação exige valor em Finished e
-    /// Interrupted, salvo diário legado reconhecido pela leitura.
+    /// (<see cref="JournalAttemptState.Started"/>) ou quando o tempo nunca foi medido
+    /// (legado); a validação exige valor em Finished e Interrupted, salvo diário legado
+    /// reconhecido pela leitura.
     /// </summary>
     public DateTime? EndedUtc { get; set; }
 
     /// <summary>
     /// Duração em milissegundos desde <see cref="StartedUtc"/>. Nunca negativa; zero é
-    /// permitido (gravações sub-milissegundo). A leitura tolerante de um diário legado que
-    /// não traz o campo materializa 0. Onde o todo decorrido for maior que
-    /// <see cref="long"/> a gravação satura em <see cref="long.MaxValue"/>.
+    /// permitido (gravações sub-milissegundo) quando o início foi medido. A leitura
+    /// tolerante de um diário legado que não traz o campo materializa 0 em memória; a
+    /// regravação emite <c>null</c> junto com <c>startedUtc</c> nulo, para não fingir
+    /// medição. Onde o todo decorrido for maior que <see cref="long"/> a gravação satura
+    /// em <see cref="long.MaxValue"/>.
     /// </summary>
     public long DurationMs { get; set; }
 

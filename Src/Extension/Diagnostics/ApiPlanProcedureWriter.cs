@@ -223,7 +223,7 @@ internal static class ApiPlanProcedureWriter
                 "Procedure",
                 "Procedures",
                 existingProcedure.Name,
-                new CompositeIdentity(existingProcedure.Name, "Procedure", ApiPlanJournalRoles.ForProcedureName(existingProcedure.Name), existingProcedure.Description, apiPlan.TransactionGuid, Guid.Empty),
+                new CompositeIdentity(existingProcedure.Name, "Procedure", ApiPlanJournalRoles.RequireForProcedureName(existingProcedure.Name, "B050-B053"), existingProcedure.Description, apiPlan.TransactionGuid, Guid.Empty),
                 existingProcedure.Save,
                 () => ConfirmProcedure(designModel, existingProcedure));
             EnsureConfirmed(receipt, () => ConfirmProcedure(designModel, existingProcedure), $"Procedure '{existingProcedure.Name}'");
@@ -246,7 +246,7 @@ internal static class ApiPlanProcedureWriter
             "Procedure",
             "Procedures",
             procedure.Name,
-            new CompositeIdentity(procedure.Name, "Procedure", ApiPlanJournalRoles.ForProcedureName(procedure.Name), procedure.Description, apiPlan.TransactionGuid, Guid.Empty),
+            new CompositeIdentity(procedure.Name, "Procedure", ApiPlanJournalRoles.RequireForProcedureName(procedure.Name, "B050-B053"), procedure.Description, apiPlan.TransactionGuid, Guid.Empty),
             procedure.Save,
             () => ConfirmProcedure(designModel, procedure));
         EnsureConfirmed(receiptForNew, () => ConfirmProcedure(designModel, procedure), $"Procedure '{procedure.Name}'");
