@@ -5,9 +5,10 @@
 **Plano governante:** [`2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md`](2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md), seção 9.
 **Implementação validada aqui:** [`2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`](2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md).
 
-**Documento em andamento.** Ele é escrito enquanto a bateria acontece, um cenário por vez, com
-os números colados da janela Output. Cenário sem registro aqui é cenário que ainda não foi
-exercido — não presuma o contrário.
+**Documento concluído em 2026-09-15.** Ele foi escrito enquanto a bateria acontecia, um cenário
+por vez, com os números colados da janela Output. Os nove cenários da seção 9 do plano estão
+registrados: oito passaram e um foi reformulado pelo que mediu. A ordem das seções é a da
+execução, não a da numeração dos cenários.
 
 ## 1. Ambiente
 

@@ -1545,7 +1545,8 @@ internal static class ExtensionOutputLocalization
     /// frase plausível meio em cada idioma.
     ///
     /// Isso era administrado à mão, por comentário: «um fragmento curto cadastrado antes
-    /// recortaria o meio delas». Disciplina na cabeça de quem edita não sobrevive a 664 entradas.
+    /// recortaria o meio delas». Disciplina na cabeça de quem edita não sobrevive a um catálogo
+    /// desta escala — eram 664 entradas na data da medição abaixo, e ele só cresce.
     /// Medido em 2026-09-15, antes desta ordenação: **oito frases** saíam corrompidas, em quinze
     /// combinações frase/idioma — `Arquivo de metadata: ` virava `Arquivo metadata: ` em inglês,
     /// porque ` de metadata` estava cadastrada dezenas de linhas antes.

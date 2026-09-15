@@ -94,6 +94,10 @@ ponto de verificação entre etapas e o API Object não foi tocado.
 
 Nota: o relatório exibe "a KB pode ter ficado inconsistente. Use Remover / Wizard / Sync para
 reparar" mesmo quando nada ficou inconsistente. O aviso é conservador por construção.
+**Remissão — 2026-09-15:** esse texto descreve a DLL de 2026-09-04. Ele mudou na validação do
+cenário 7 da P8: passou a apontar o comando `Recuperar operação interrompida`, porque o diário
+introduzido pela F3 bloqueia justamente Remover, Wizard e Sync enquanto houver envelope não
+terminal. A observação sobre o aviso ser conservador continua valendo.
 
 ## 6. Execução 5 — cancelamento após `2/4`: drift produzido
 
