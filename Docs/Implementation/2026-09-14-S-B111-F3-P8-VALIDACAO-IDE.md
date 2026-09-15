@@ -253,8 +253,41 @@ fora do contrato, a metadata descreve o objeto certo, e apagá-la destruiria o b
 problema que é de outro lugar.
 
 **Efeito colateral do teste:** a KB ficou com um API Object novo (`69407f89-…`) e a metadata
-antiga apontando para o GUID morto (`af422c2e-…`). O estado a corrigir é o mesmo, e o caminho
-também — apagar a metadata e reaplicar —, agora com a ferramenta dizendo isso.
+antiga apontando para o GUID morto (`af422c2e-…`).
+
+### 7.2 E a segunda também — o conflito é do API Object, não da metadata
+
+A execução seguinte mostrou que, **neste** estado, quem bloqueia não é a etapa de metadata: é a
+do **API Object**, e a de metadata apenas herda («Bloqueado: o API Object precisa estar
+disponível antes»). A causa aparecia assim, na aba `List` do Wizard:
+
+```
+Conflitos (1):
+  - Nome='apiTeste' | Tipo='API Object' | Modulo='Root Module' | Folder='TesteOpenApi'
+    | Causa='OwnershipSchemaApiNameOrGuidMismatch'
+    | ApiObjectGuid='69407f89-…' | MetadataApiGuid='af422c2e-…'
+```
+
+Os dois GUIDs já estavam ali, e o diagnóstico técnico inteiro abaixo — o que faltava era a
+frase que diz o que fazer com isso.
+
+`InspectApiObject` passou a acrescentar a orientação à causa **quando os dois GUIDs divergem** —
+sinal objetivo, não nome de cláusula. A cláusula continua na frente, porque é o que se cita num
+relato; a orientação vem depois do travessão. Os outros descompassos de posse — Description
+alheia, integridade divergente, Service Source fora do contrato — continuam sem sugestão, porque
+não se resolvem apagando a metadata.
+
+**As três correções cobrem três estados distintos**, e é por isso que nenhuma delas era
+suficiente sozinha:
+
+| Estado da KB | Quem bloqueia | Onde a orientação vive |
+|---|---|---|
+| API ausente, metadata presente | etapa de metadata, ownership divergente | `InspectMetadataFile` (7.1) |
+| API presente com GUID diferente do registrado | etapa do API Object | `InspectApiObject` (7.2) |
+| gravação de metadata alcançada por outro caminho | writer da metadata | `ApiPlanMetadataFileWriter` (7) |
+
+O estado a corrigir continua o mesmo, e o caminho também — apagar a metadata e reaplicar —,
+agora com a ferramenta dizendo isso nos três pontos.
 
 O que **não** mudou, de propósito: a recusa do `B115` sobre metadata completa. Ela está certa
 pelo motivo que o próprio código explica — o fingerprint B067 cobre o conteúdo inteiro, e

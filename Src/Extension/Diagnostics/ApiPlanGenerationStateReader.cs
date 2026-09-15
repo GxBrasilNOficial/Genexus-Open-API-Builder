@@ -257,10 +257,44 @@ internal static class ApiPlanGenerationStateReader
                 item,
                 "API Object",
                 folderApplicable: true,
-                diagnosticReason: intentionalDiagnosis?.FailingClause ?? ownershipDiagnostic?.ReasonText,
+                diagnosticReason: DescribeApiObjectCause(
+                    intentionalDiagnosis?.FailingClause ?? ownershipDiagnostic?.ReasonText,
+                    intentionalDiagnosis?.ActualApiGuid ?? ownershipDiagnostic?.ActualApiGuid,
+                    intentionalDiagnosis?.MetadataApiGuid ?? ownershipDiagnostic?.MetadataApiGuid,
+                    apiPlan.MetadataFileName),
                 apiObjectGuid: intentionalDiagnosis?.ActualApiGuid ?? ownershipDiagnostic?.ActualApiGuid,
                 metadataApiGuid: intentionalDiagnosis?.MetadataApiGuid ?? ownershipDiagnostic?.MetadataApiGuid,
                 diagnosticDetails: intentionalDiagnosis?.FormatDetails() ?? ownershipDiagnostic?.FormatDetails())).ToArray());
+    }
+
+    /// <summary>
+    /// Acrescenta a saída conhecida à causa do bloqueio do API Object, quando ela existe.
+    ///
+    /// A cláusula que falhou continua na frente — ela é o que se cita num relato e o que o
+    /// gate procura —, mas `OwnershipSchemaApiNameOrGuidMismatch` não diz a ninguém o que
+    /// fazer. O sinal objetivo é a divergência entre o GUID do API Object presente e o que a
+    /// metadata registra: nesse caso o API foi apagado ou trocado fora da ferramenta, e a saída
+    /// é apagar a metadata e reaplicar.
+    ///
+    /// Sem essa divergência, a causa fica como está: os outros descompassos de posse — Description
+    /// alheia, integridade divergente, Service Source fora do contrato — não se resolvem apagando
+    /// a metadata, e sugerir isso destruiria o baseline por um problema de outro lugar.
+    /// </summary>
+    private static string? DescribeApiObjectCause(
+        string? failingClause,
+        string? actualApiGuid,
+        string? metadataApiGuid,
+        string metadataFileName)
+    {
+        if (string.IsNullOrWhiteSpace(actualApiGuid)
+            || string.IsNullOrWhiteSpace(metadataApiGuid)
+            || string.Equals(actualApiGuid, metadataApiGuid, StringComparison.OrdinalIgnoreCase))
+        {
+            return failingClause;
+        }
+
+        var guidance = $"a metadata registra um API Object diferente do que está na KB com esse nome. Para regerar a API a partir do que restou, apague o File '{metadataFileName}' e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada.";
+        return string.IsNullOrWhiteSpace(failingClause) ? guidance : failingClause + " — " + guidance;
     }
 
     private static ApiPlanGenerationInspection InspectMetadataFile(KBModel designModel, ApiPlanKbObjectNameIndex index, ApiPlan apiPlan, bool forSyncContractRefresh)
