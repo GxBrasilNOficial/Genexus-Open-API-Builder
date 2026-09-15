@@ -46,8 +46,8 @@ cenário passou é posterior à execução dele.
 | 6, confirmação | posterior a `42cdf0e` | 8.1 registra o diálogo com o texto novo, «no mesmo envelope» |
 | 7 | `b788cf4` | build Release instalada em 2026-09-15, antes da retomada da bateria; o manifesto não mudou desde `19139b7`, então bastou trocar a DLL |
 | 8 | `9ab74bb` | build com as duas correções de texto do cenário 7, instalada em 2026-09-15 antes das três variantes |
-| 9a | a confirmar com quem executou | as três medições de 2026-09-15 são posteriores ao commit `734aaa0`; o intervalo desde `9ab74bb` toca apenas texto de recusa e catálogo, nada do caminho de gravação do diário, então a medição vale de qualquer modo — mas a linha fica aberta até a confirmação |
-| 9b | pendente | mesma sessão do 9a |
+| 9a | `734aaa0` | **confirmado por hash**, não por memória: a DLL em `GeneXus18\Packages` e a build local têm o mesmo SHA-256 (`CEE7B6B6…`) e o mesmo carimbo de 2026-09-15 12:51:56 — é o mesmo arquivo. Esse build é posterior às edições de código de `734aaa0`; o que entrou depois dele naquele commit foi documentação e backlog, que não produzem DLL |
+| 9b | `734aaa0` | mesma sessão e mesma instalação do 9a |
 
 **Reexercício devido — e o que não é.** Entre o cenário 5 e hoje entraram, além de texto,
 diagnóstico e localização, **um ramo de decisão no rehydrator**: `42cdf0e` acrescentou
