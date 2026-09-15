@@ -886,6 +886,23 @@ Não haverá um ID neutro compartilhado nem tradução em tempo de execução pa
 essa matriz. O teste deve conferir os três literais nas doze ocorrências esperadas: cada literal em
 `Package.cs`, no `CommandDefinition` e nos dois `Groups`.
 
+**Remissão — 2026-09-15.** A matriz acima é a decisão original e fica como está. O que a
+implementação da P6 gravou nas três camadas é **outro trio de literais**, mais curto, e é o que
+existe hoje no menu, foi validado na IDE e aparece nas mensagens de Output da F3:
+
+| Variante | Literal vigente |
+|---|---|
+| pt-BR | `Recuperar operação interrompida` |
+| es | `Recuperar operación interrumpida` |
+| en | `Recover interrupted operation` |
+
+A **regra** desta seção continua valendo inteira, e é o que importava: um ID por idioma, literal
+igual nas três camadas, sem ID neutro nem tradução em runtime, com o checker conferindo as doze
+ocorrências. O que mudou foi o texto de cada ID — a seção 7 deste mesmo documento já registrava
+`Recuperar operação interrompida`, e a divergência entre as duas seções passou despercebida até a
+conferência de 2026-09-15. Os três literais da matriz original não existem em lugar nenhum do
+código.
+
 ### 34. Matriz obrigatória de validação da F3
 
 Decisão aprovada:
