@@ -376,6 +376,26 @@ errado. Caso novo no gate `tests.operationJournalRecovery`, com a asserção de 
 pode falar em «o que ficou pela metade» quando nada foi gravado, e asserções trilíngues no gate
 de localização.
 
+**Verificado na IDE em 2026-09-15**, no mesmo envelope: o bloqueio saiu com
+`logicalStage=NotStarted` e `blockReason=UserAborted`, a oferta apareceu, e o diálogo trouxe o
+texto novo — «foi registrada e interrompida antes de gravar qualquer objeto: o diário não tem
+nenhum recibo». O encerramento fechou em `Completed`, preservando o `operationId`.
+
+**A mesma frase falsa reapareceu no passo seguinte**, e foi corrigida junto: a mensagem de
+desfecho ainda prometia «o inventário do que ficou pela metade continua gravado no diário» a
+quem não gravara nada. O executor passou a escolher o desfecho pela mesma regra do resumo.
+
+### 8.2 Dívida de localização encontrada de passagem
+
+Ao corrigir o desfecho, ficou visível que **os resumos e desfechos da recuperação não passavam
+pelo catálogo**: nascem no rehydrator e no executor, que são SDK-simples e não conhecem idioma, e
+chegavam à tela em português em qualquer KB. Era a única parte da recuperação que a P7 não tinha
+coberto — os textos de comando, confirmação e bloqueio já estavam nos três idiomas.
+
+A tradução passou a acontecer onde o texto vira tela, no comando, e as frases entraram no
+catálogo com asserções no gate. Sem a bateria na IDE, isso só apareceria para quem usasse a
+extensão numa KB em espanhol ou inglês.
+
 ## 9. Cenários restantes
 
 | # | Cenário | Estado |

@@ -247,4 +247,20 @@ Assert-True ($removalSpanish.Contains('Hay dos salidas, y la elección es suya')
 Assert-True ($removalEnglish.Contains('There are two ways out, and the choice is yours')) 'Inglês deve apresentar as duas saídas da remoção interrompida.'
 Assert-True ($removalEnglish.Contains('delete the objects listed above through the KB Explorer.')) 'Inglês deve traduzir a segunda saída.'
 
+# B111/F3 P8 — os desfechos da recuperação. Eram a única parte dela que não passava pelo
+# catálogo, e saíam em português em qualquer KB.
+$discardNothing = "O registro da operação interrompida foi encerrado. A Knowledge Base está liberada para a próxima operação e continua como estava antes dela."
+Assert-True (($translate.Invoke($null, [object[]] @($discardNothing, $spanish))).Contains('sigue como estaba antes de ella')) 'Espanhol deve traduzir o desfecho sem gravação.'
+Assert-True (($translate.Invoke($null, [object[]] @($discardNothing, $english))).Contains('remains as it was before it')) 'Inglês deve traduzir o desfecho sem gravação.'
+
+$discardWritten = "O registro da operação interrompida foi encerrado. A Knowledge Base está liberada para a próxima operação; nenhum objeto foi apagado, e o inventário do que ficou pela metade continua gravado no diário."
+Assert-True (($translate.Invoke($null, [object[]] @($discardWritten, $spanish))).Contains('el inventario de lo que quedó a medias')) 'Espanhol deve traduzir o desfecho com gravação.'
+Assert-True (($translate.Invoke($null, [object[]] @($discardWritten, $english))).Contains('the inventory of what was left halfway')) 'Inglês deve traduzir o desfecho com gravação.'
+
+$summaryNothing = "A operação Apply foi registrada e interrompida antes de gravar qualquer objeto: o diário não tem nenhum recibo. Encerrar este registro libera a Knowledge Base, que está como estava antes desta operação."
+$summarySpanish = $translate.Invoke($null, [object[]] @($summaryNothing, $spanish))
+$summaryEnglish = $translate.Invoke($null, [object[]] @($summaryNothing, $english))
+Assert-True ($summarySpanish.Contains('La operación Apply fue registrada e interrumpida antes de grabar cualquier objeto')) 'Espanhol deve traduzir o resumo sem gravação.'
+Assert-True ($summaryEnglish.Contains('The Apply operation was recorded and interrupted before writing any object')) 'Inglês deve traduzir o resumo sem gravação.'
+
 Write-Output 'PASS: ExtensionOutputLocalization'

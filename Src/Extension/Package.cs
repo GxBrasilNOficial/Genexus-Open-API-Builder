@@ -608,7 +608,7 @@ public sealed class Package : AbstractPackageUI
             ExtensionRecoveryDialog.Inform(
                 owner,
                 texts,
-                texts.RecoveryBlockedIntro + Environment.NewLine + Environment.NewLine + operation.Summary,
+                texts.RecoveryBlockedIntro + Environment.NewLine + Environment.NewLine + texts.Translate(operation.Summary),
                 DescribeRecoveryTargets(operation),
                 warning: true);
             return;
@@ -630,7 +630,7 @@ public sealed class Package : AbstractPackageUI
         var confirmed = ExtensionRecoveryDialog.Ask(
             owner,
             texts,
-            operation.Summary,
+            texts.Translate(operation.Summary),
             DescribeRecoveryTargets(operation),
             question);
         if (!confirmed)
@@ -672,14 +672,16 @@ public sealed class Package : AbstractPackageUI
             ExtensionRecoveryDialog.Inform(
                 owner,
                 texts,
-                texts.RecoveryBlockedIntro + Environment.NewLine + Environment.NewLine + result.Summary,
+                texts.RecoveryBlockedIntro + Environment.NewLine + Environment.NewLine + texts.Translate(result.Summary),
                 DescribeRecoveryTargets(operation),
                 warning: true);
             return;
         }
 
         WriteOutput($"[Genexus Open API Builder][B111/F3] Recuperação concluída: Etapa='{operation.NextStep}', OperationId='{envelope.OperationId}', Estado='{result.Envelope?.OperationState}'. {result.Summary}");
-        ExtensionRecoveryDialog.Inform(owner, texts, result.Summary, Array.Empty<string>(), warning: false);
+        // Os desfechos nascem no executor, que é SDK-simples e não conhece idioma; a tradução
+        // acontece aqui, onde o texto vira tela. Sem isto eles saíam em português em qualquer KB.
+        ExtensionRecoveryDialog.Inform(owner, texts, texts.Translate(result.Summary), Array.Empty<string>(), warning: false);
     }
 
     /// <summary>

@@ -39,6 +39,31 @@ internal static class ExtensionOutputLocalization
             " e reaplique pelo Wizard, que reencontra SDTs e Procedures — paginação, ordenação e campos obrigatórios voltam aos padrões das preferências; para descartar o que restou, apague os objetos listados acima pela KB Explorer.",
             " y vuelva a aplicar por el Wizard, que reencuentra SDTs y Procedures — paginación, ordenación y campos obligatorios vuelven a los valores predeterminados de las preferencias; para descartar lo que quedó, borre los objetos listados arriba por el KB Explorer.",
             " and reapply through the Wizard, which rediscovers SDTs and Procedures — pagination, ordering, and required fields fall back to the preference defaults; to discard what is left, delete the objects listed above through the KB Explorer."),
+        // B111/F3 P8: os desfechos e resumos da recuperação. Eles nascem no executor e no
+        // rehydrator, que são SDK-simples e não conhecem idioma; sem estas entradas, saíam em
+        // português em qualquer KB — a única parte da recuperação que a P7 não tinha coberto.
+        new(
+            "O registro da operação interrompida foi encerrado. A Knowledge Base está liberada para a próxima operação e continua como estava antes dela.",
+            "El registro de la operación interrumpida fue cerrado. La Knowledge Base está liberada para la próxima operación y sigue como estaba antes de ella.",
+            "The record of the interrupted operation was closed. The Knowledge Base is free for the next operation and remains as it was before it."),
+        new(
+            "O registro da operação interrompida foi encerrado. A Knowledge Base está liberada para a próxima operação; nenhum objeto foi apagado, e o inventário do que ficou pela metade continua gravado no diário.",
+            "El registro de la operación interrumpida fue cerrado. La Knowledge Base está liberada para la próxima operación; ningún objeto fue borrado, y el inventario de lo que quedó a medias sigue grabado en el diario.",
+            "The record of the interrupted operation was closed. The Knowledge Base is free for the next operation; no object was deleted, and the inventory of what was left halfway remains recorded in the journal."),
+        new(
+            "O envelope preparado foi abandonado. A KB está liberada para a próxima operação.",
+            "El sobre preparado fue abandonado. La KB está liberada para la próxima operación.",
+            "The prepared envelope was abandoned. The KB is free for the next operation."),
+        new(
+            "A remoção foi reconciliada: todos os alvos previstos estão ausentes e o envelope fechou como concluído.",
+            "La eliminación fue reconciliada: todos los objetivos previstos están ausentes y el sobre cerró como concluido.",
+            "The removal was reconciled: every planned target is absent and the envelope closed as completed."),
+        new(
+            " foi registrada e interrompida antes de gravar qualquer objeto: o diário não tem nenhum recibo. Encerrar este registro libera a Knowledge Base, que está como estava antes desta operação.",
+            " fue registrada e interrumpida antes de grabar cualquier objeto: el diario no tiene ningún recibo. Cerrar este registro libera la Knowledge Base, que está como estaba antes de esta operación.",
+            " was recorded and interrupted before writing any object: the journal has no receipts. Closing this record frees the Knowledge Base, which is as it was before this operation."),
+        new("A operação Apply", "La operación Apply", "The Apply operation"),
+        new("A operação Sync", "La operación Sync", "The Sync operation"),
         new("Gravação de metadata B060 bloqueada: o File '", "Grabación de metadatos B060 bloqueada: el File '", "B060 metadata write blocked: the File '"),
         // A mesma orientação, no ponto em que o Wizard desliga a etapa de metadata — antes de
         // qualquer gravação, que é onde ela é realmente lida.

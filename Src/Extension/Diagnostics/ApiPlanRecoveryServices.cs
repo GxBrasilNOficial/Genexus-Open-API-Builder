@@ -432,9 +432,14 @@ internal static class ApiPlanRecoveryExecutor
                             "Registro encerrado na recuperação: a operação parou no meio e a continuação não era possível.",
                             authorization.AuthorizedBy,
                             DateTime.UtcNow),
-                        "O registro da operação interrompida foi encerrado. A Knowledge Base está liberada "
-                        + "para a próxima operação; nenhum objeto foi apagado, e o inventário do que ficou "
-                        + "pela metade continua gravado no diário.");
+                        // O desfecho segue a mesma distinção do resumo: prometer «o inventário do
+                        // que ficou pela metade» a quem não gravou nada descreveria outra KB.
+                        operation.NothingWasWritten
+                            ? "O registro da operação interrompida foi encerrado. A Knowledge Base está "
+                                + "liberada para a próxima operação e continua como estava antes dela."
+                            : "O registro da operação interrompida foi encerrado. A Knowledge Base está "
+                                + "liberada para a próxima operação; nenhum objeto foi apagado, e o inventário "
+                                + "do que ficou pela metade continua gravado no diário.");
 
                 case RecoveryNextStep.ContinueRemovePass:
                     if (removalContinuation is null)
