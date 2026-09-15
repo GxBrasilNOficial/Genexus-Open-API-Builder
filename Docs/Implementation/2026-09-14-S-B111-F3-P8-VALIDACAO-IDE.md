@@ -120,7 +120,8 @@ P8, não como defeito de comportamento.
 
 ## 5. Cenário 3 — recuperação sobre o envelope interrompido
 
-**Parcial: a recusa foi exercida; o encerramento, ainda não.**
+**Passou**, em três passagens: a primeira exerceu a recusa e expôs o problema da janela, a
+segunda e a terceira ajustaram as medidas, e a última executou o encerramento.
 
 **Setup:** o envelope `Partial/RemovalPartial` deixado pelo cenário 4. Nada alterado à mão.
 **Ação:** menu de contexto da Transaction → `Recuperar operação interrompida`.
@@ -143,6 +144,22 @@ outro.
 **Resposta `Não`:** `Recuperação recusada pelo usuário. Nenhuma alteração foi feita.` — o
 caminho seguro fecha sem tocar em nada, como esperado.
 
+**Resposta `Sim`:**
+
+```
+Recuperação concluída: Etapa='Discard', OperationId='0eee2cc9-…', Estado='Completed'.
+O registro da operação interrompida foi encerrado. A Knowledge Base está liberada para a
+próxima operação; nenhum objeto foi apagado, e o inventário do que ficou pela metade continua
+gravado no diário.
+```
+
+O `OperationId` é o mesmo desde o cenário 4 — três operações de recuperação sobre o **mesmo**
+envelope, sem que nenhuma criasse outro. O envelope foi de `Partial/RemovalPartial` a
+`Completed/Discarded`, e os 24 objetos, a metadata e o Folder continuaram na KB.
+
+Com isso, a saída que antes exigia apagar o File do diário à mão passou a existir dentro da
+ferramenta — que era o ponto da P6.
+
 ### 5.1 Correção de apresentação saída deste cenário
 
 A janela era um `MessageBox` nativo, que não aceita largura customizada: o texto chegava numa
@@ -156,7 +173,8 @@ e na altura — 1404 × 624, com o bloco de inventário até 546 px, tudo limita
 monitor. Nomes de SDT hierárquico desta Transaction passam de sessenta caracteres, e é a
 largura que decide se o inventário se lê ou se quebra no meio do nome.
 
-O cenário 3 será refeito do início com a DLL corrigida, incluindo a resposta `Sim`.
+As medidas finais, depois de duas passagens sobre a lista real de trinta alvos: **1685 × 749**,
+com o bloco de inventário até 655 px e piso de 1123 px de largura ao encolher.
 
 ## 6. Cenários restantes
 
@@ -164,13 +182,41 @@ O cenário 3 será refeito do início com a DLL corrigida, incluindo a resposta 
 |---|---|---|
 | 1 | Remoção completa (fila nova) | **passou** — seção 2 |
 | 2 | Alvo previsto ausente antes do `Delete()` | **passou** — seção 4 |
-| 3 | Recuperação sobre o envelope `Partial`: encerrar o registro | **parcial** — recusa (`Não`) passou; `Sim` pendente, ver seção 5 |
-| 4 | Devolver a KB ao normal pela recuperação de metadata órfã (B115) | não iniciado |
+| 3 | Recuperação sobre o envelope `Partial`: encerrar o registro | **passou** — seção 5 |
+| 4 | Devolver a KB ao normal — ver o achado da seção 7 | não iniciado |
 | 5 | Abortar um Apply no meio; oferta proativa; recuperação | não iniciado |
 | 6 | Wizard cancelado antes de aplicar: envelope `Prepared` e abandono | não iniciado |
 | 7 | Interromper uma remoção no meio e retomar a fila | não iniciado |
 | 8 | Remoção de API legado, com metadata válida e com metadata insuficiente | não iniciado |
 | 9 | Acréscimo de tempo do diário na KB grande, contra o orçamento de 4.4 | não iniciado |
 
-O cenário 3 depende do envelope `Partial` deixado pelo cenário 2: **não apagar o File
+O cenário 3 dependia do envelope `Partial` deixado pelo cenário 2: **não apagar o File
 `GxOpenApiBuilder_OperationJournal` à mão** entre um e outro, sob pena de destruir a condição.
+
+## 7. Achado — metadata completa com API Object apagado à mão não tem saída pela ferramenta
+
+Descoberto ao planejar o cenário 4, conferindo o código antes de propor o caminho.
+
+O estado em que a KB ficou depois do cenário 2 — metadata **completa** e válida, API Object
+ausente, 24 objetos próprios presentes — não é recuperável por nenhum dos três comandos:
+
+| Comando | O que faz nesse estado | Por quê |
+|---|---|---|
+| `Wizard` | trava em `OwnershipSchemaApiNameOrGuidMismatch` | a metadata registra um `apiGuid` que não existe mais |
+| `Remover API gerada` | `Partial` com `TargetAbsentBeforeDelete` | o primeiro alvo previsto está ausente — é o cenário 2 |
+| Recuperação de metadata órfã (`B115`) | **não é oferecida** | exige exatamente **um** API Object presente (`TryPrepare`), e aqui há zero |
+
+O `B115` cobre o caso vizinho — metadata **recuperada** apontando para um API Object que foi
+removido e regerado com o mesmo nome —, e recusa deliberadamente a metadata completa: o
+fingerprint B067 cobre o conteúdo inteiro, e corrigir só o `apiGuid` trocaria um bloqueio por
+outro. A recusa está certa; o que falta é **orientação**: nenhuma das três mensagens diz o que
+fazer.
+
+A saída prática, exercida no cenário 4, é apagar **a metadata** à mão — um objeto, em vez dos
+vinte e quatro — e reaplicar pelo Wizard, que reencontra SDTs e Procedures e regera API Object
+e metadata. O plano volta aos defaults das preferências: paginação, ordenação e obrigatórios
+específicos não sobrevivem, porque só existiam na metadata descartada.
+
+Fica registrado como candidato a item de backlog, na forma de mensagem: quando o Wizard ou o
+Remover travarem por `apiGuid` morto, dizer qual File apagar para regerar. Não é mudança de
+contrato — é dizer em voz alta o que hoje só está no código.

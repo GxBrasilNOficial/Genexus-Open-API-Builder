@@ -25,15 +25,16 @@ internal sealed class ExtensionRecoveryDialog : Form
 {
     private const int Pad = 12;
 
-    // Medidas ajustadas em campo, durante a P8: a primeira versão coube na tela mas deixava a
-    // lista de objetos hierárquicos apertada na horizontal e curta na vertical. Todas continuam
-    // limitadas pela área útil do monitor em que a IDE está.
-    private const int PreferredWidth = 1404;
-    private const int MinimumWidth = 936;
-    private const int PreferredHeightWithDetails = 624;
-    private const int PreferredHeightWithoutDetails = 312;
-    private const int MaximumDetailsHeight = 546;
-    private const int MinimumDetailsHeight = 104;
+    // Medidas ajustadas em campo, em duas passagens da P8 sobre a lista real de trinta alvos
+    // desta Transaction — nomes de SDT hierárquico passam de sessenta caracteres. Todas
+    // continuam limitadas pela área útil do monitor em que a IDE está, então numa tela menor a
+    // janela encolhe em vez de sair da borda.
+    private const int PreferredWidth = 1685;
+    private const int MinimumWidth = 1123;
+    private const int PreferredHeightWithDetails = 749;
+    private const int PreferredHeightWithoutDetails = 374;
+    private const int MaximumDetailsHeight = 655;
+    private const int MinimumDetailsHeight = 125;
 
     private readonly IWin32Window? _owner;
     private readonly PictureBox _iconBox;
