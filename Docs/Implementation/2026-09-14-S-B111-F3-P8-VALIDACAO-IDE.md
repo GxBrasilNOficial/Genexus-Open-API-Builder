@@ -58,9 +58,16 @@ dos dois resumos aparece e qual pergunta de confirmação é feita — a ação 
 dois ramos, antes e depois.
 
 Nada mais no intervalo toca o contrato de remoção nem o do diário, então os cenários 1 a 6
-continuam valendo para o que provaram. **A medição de tempo é a exceção:** o item 7a da seção 9 do
-plano manda refazer a medição de Apply, porque número de desempenho capturado com DLL anterior não
-descreve a atual.
+continuam valendo para o que provaram. **A medição de tempo é a exceção**, e a razão precisa de
+escopo, porque a primeira redação desta seção dizia apenas «número de desempenho capturado com DLL
+anterior não descreve a atual» — genérico assim, isso vence os **dezenove** números de tempo
+publicados no `CHANGELOG.md`, nenhum dos quais alguém marcou nem pretende remedir. `Setor ~18 s`,
+de agosto, é registro datado de uma frente encerrada; envelhecer não o torna falso.
+
+O critério que separa um caso do outro: **vence a medição que sustenta uma decisão em aberto.** Os
+182 ms do Apply sustentam o orçamento da seção 4.4, que é contrato vivo e acabou de ganhar uma
+tabela derivada em cima dele — por isso precisam ser atuais. É por isso que o item 7a manda
+refazer, e é só por isso.
 
 ## 2. Cenário 1 — remoção completa pela fila nova
 
@@ -694,6 +701,26 @@ de uma entrada pode conter o `Source` de outra e ser reescrita. Um caso existe h
 `Metadata File:` produzia `Archivo de metadatos:` em vez do `Archivo de metadata:` cadastrado, e o
 valor produzido é o melhor dos dois. A entrada passou a declarar o que faz, e o gate agora falha
 se aparecer outra. É vigilância, não imunidade.
+
+#### 8.2.7 A hipótese de custo do catálogo, medida e descartada
+
+O catálogo passou de 404 para 660 entradas nesta frente, e `Translate` roda em toda linha de
+Output. A pergunta é inevitável: isso encareceu o Apply?
+
+Medido em 2026-09-15, chamando o método sobre um corpus de seis linhas reais de Output, três
+rodadas de 12.000 chamadas cada, com aquecimento antes:
+
+| Caminho | Custo por chamada |
+|---|---|
+| espanhol ou inglês, catálogo inteiro | **28 a 34 µs** |
+| português do Brasil | **6 µs** — `Translate` devolve a mensagem antes do laço |
+
+Mesmo mil linhas de Output custariam ~30 ms num Apply de 44 s. E numa KB em português, que é o
+caso corrente, o laço nem roda. **A hipótese não sobrevive**, e fica registrada medida para que
+ninguém a levante de novo por intuição.
+
+Isso não dispensa o item 7a: o que ele mede é o custo dos `File.Save()` do diário, que é outra
+coisa e é o que o orçamento de 4.4 governa.
 
 ## 9. Cenários restantes
 

@@ -837,6 +837,16 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
    - **7b — remoção retomável.** Nunca medida. A remoção não tem contagem fixa: a política é
      `3 + P`, com `P` conhecido só em runtime. Medir `P`, o custo do diário e o tempo total, e
      comparar com a tabela derivada de 4.4;
+   - **critério de aprovação, declarado antes de medir.** «Comparar com o orçamento» não decide
+     nada sozinho: a P2 registra 125 ms/3, 182 ms/4 e 151 ms/4 na mesma KB e na mesma DLL, ou seja
+     41,7, 45,5 e 37,8 ms por gravação — **±17% de dispersão entre execuções**. Uma captura
+     isolada não separa regressão de ruído. Portanto: **três execuções** de cada medição, e vale a
+     **mediana**. Reprova se a mediana passar de **60 ms por gravação** — 32% acima do pior valor
+     já registrado, margem escolhida para ficar fora da dispersão conhecida — **ou** se o diário
+     passar de **1% do tempo total** da operação, que é o limiar do risco declarado na seção 11
+     («acrescentar segundos ao Apply de forma percebida como regressão»);
+   - **7a e 7b na mesma sessão.** As duas precisam da mesma KB grande montada. Separadas, são duas
+     preparações de ambiente para uma medição cada;
 8. executar o comando de recuperação explícita sobre a KB inteira, incluindo um caso
    recuperável e casos de divergência ou ambiguidade que permaneçam bloqueados;
 9. iniciar uma nova operação depois da recuperação e confirmar que somente um diário fixo
