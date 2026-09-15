@@ -254,14 +254,16 @@ de verdade.
 **Em andamento.** Os dois primeiros passos passaram; o encerramento foi adiado por um defeito de
 apresentação que a própria bateria expôs.
 
-**Passo 1 — aborto.** `Wizard` → `Concluir e aplicar` → `Abortar` por volta dos 3 s, no meio dos
-SDTs.
+**Passo 1 — aborto.** `Wizard` → `Concluir e aplicar` → `Abortar` por volta dos 3 s. A parada
+efetiva veio depois das Procedures e antes do API Object: os 21 SDTs foram **reencontrados sem
+gravação** — por isso não têm recibo — e as 5 Procedures foram salvas, que é o que o inventário
+registra. O aborto para depois do objeto em curso, não no instante do clique.
 
 | Medida | Resultado |
 |---|---|
 | Envelope | `Partial` / `NotStarted`, `blockReason=UserAborted` |
 | Checkpoints | 3 — `Prepared`, `Active` e o terminal; nenhuma fronteira intermediária alcançada |
-| Snapshot | `Recibos=5, Inventário=5` — os cinco SDTs que chegaram a ser gravados |
+| Snapshot | `Recibos=5, Inventário=5` — as cinco **Procedures** que chegaram a ser gravadas |
 | Relatório | `Atualizados=5`, `Bloqueados=1`, `ApiSaveCount=0`, 2,2 s |
 
 `ApiSaveCount=0` importa: o aborto pegou antes do API Object, e a fronteira `ApiPhysicallySaved`
@@ -272,6 +274,9 @@ já trouxe `Module='Root Module'`, a instrumentação da seção 6.1 em uso.
 cinco objetos foram atualizados. É coerente com o desenho — no Apply o estágio só avança nas
 fronteiras declaradas, e o que aconteceu no meio está no inventário e nos recibos —, mas quem lê
 o envelope precisa saber que `logicalStage` não é uma barra de progresso.
+
+A recuperação foi **recusada** de propósito nesta passagem, por causa do defeito da seção 7.1; o
+envelope ficou intacto para o encerramento ser exercido na versão corrigida.
 
 **Passo 2 — a operação seguinte bloqueia.** `Wizard` → `Concluir e aplicar`:
 
