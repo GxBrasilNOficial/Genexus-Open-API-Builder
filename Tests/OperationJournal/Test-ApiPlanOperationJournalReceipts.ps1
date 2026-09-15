@@ -197,6 +197,17 @@ try {
     Assert-Equal 'Confirmed' ([string](Get-Prop $first 'Result')) 'O resultado observado é preservado.'
     Assert-Equal $false ([bool](Get-Prop $first 'RetryEligible')) 'Save nunca é retryable.'
 
+    # Decisão 29: o transporte F2→diário leva os três campos de tempo. Sem isso, o schema
+    # passa verde com recibo mudo e a auditabilidade da duração some no File.
+    foreach ($item in $mapped) {
+        $started = [DateTime](Get-Prop $item 'StartedUtc')
+        Assert-True ($started -ne [DateTime]::MinValue) 'startedUtc precisa sair do mapper com valor medido.'
+        $ended = Get-Prop $item 'EndedUtc'
+        Assert-True ($null -ne $ended) 'endedUtc precisa sair do mapper quando o recibo terminou.'
+        Assert-True (([DateTime]$ended) -ge $started) 'endedUtc não pode anteceder startedUtc.'
+        Assert-True (([long](Get-Prop $item 'DurationMs')) -ge 0) 'durationMs nunca é negativo.'
+    }
+
     # --- 3. Inventário: Create x Update pela lista de criados ---------------------------------
     $created = [string[]]@('sdtTeste_API_Response', 'apiTeste')
     $inventoryArgs = New-Object object[] 3
@@ -229,10 +240,11 @@ try {
     $transactionGuid = [Guid]'22222222-2222-2222-2222-222222222222'
 
     # O mesmo alvo aparece duas vezes, com identidades diferentes: antes e depois de o objeto
-    # existir. O inventário precisa colapsar os dois num item só.
+    # existir. O inventário precisa colapsar os dois num item só. O papel canônico é Get
+    # (decisão 30 / ApiPlanJournalRoles), não um literal livre.
     foreach ($identity in @(
-        [Activator]::CreateInstance($compositeType, @([object]'procEscola_API_Get', [object]'Procedure', [object]'Generated', [object]'', [object]$transactionGuid, [object]$emptyGuid)),
-        [Activator]::CreateInstance($compositeType, @([object]'procEscola_API_Get', [object]'Procedure', [object]'Generated', [object]'apiEscola', [object]$transactionGuid, [object]$emptyGuid))
+        [Activator]::CreateInstance($compositeType, @([object]'procEscola_API_Get', [object]'Procedure', [object]'Get', [object]'', [object]$transactionGuid, [object]$emptyGuid)),
+        [Activator]::CreateInstance($compositeType, @([object]'procEscola_API_Get', [object]'Procedure', [object]'Get', [object]'apiEscola', [object]$transactionGuid, [object]$emptyGuid))
     )) {
         $receipt = $startReceipt.Invoke($log2, @('Save', 'Procedure', 'B071-B073/B079', 'procEscola_API_Get', $identity, 1))
         $observation = $confirmedFactory.Invoke($null, @('observado', 'teste'))
@@ -248,6 +260,9 @@ try {
     $reencounterItem = @($reencounterInventory)[0]
     Assert-Equal 'Update' ([string](Get-Prop $reencounterItem 'Action')) 'No reencontro o alvo entra como Update.'
     Assert-Equal 2 ([int]@(Get-Prop $reencounterItem 'ReceiptSequences').Count) 'O item acumula as duas sequências.'
+    $reencounterComposite = Get-Prop $reencounterItem 'Composite'
+    Assert-True ($null -ne $reencounterComposite) 'Identidade composta precisa sobreviver no inventário.'
+    Assert-Equal 'Get' ([string](Get-Prop $reencounterComposite 'Role')) 'composite.role canônico precisa atravessar o mapper.'
 
     # --- 4. O envelope resultante tem de ser válido -------------------------------------------
     $checkpointsType = $assembly.GetType($ns + 'ApiPlanOperationJournalCheckpoints', $true, $false)

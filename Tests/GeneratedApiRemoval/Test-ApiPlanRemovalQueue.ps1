@@ -100,10 +100,14 @@ try {
     $validatorType = $assembly.GetType($ns + 'ApiPlanOperationJournalValidator', $true, $false)
 
     $static = [System.Reflection.BindingFlags]'Static, Public'
+    $staticAny = [System.Reflection.BindingFlags]'Static, NonPublic, Public'
+    $instance = [System.Reflection.BindingFlags]'Instance, Public'
     $run = $queueType.GetMethod('Run', $static)
     $buildInventory = $intentType.GetMethod('BuildInventory', $static)
     $resolveMaxPasses = $intentType.GetMethod('ResolveMaxPasses', $static)
     $order = $intentType.GetMethod('Order', $static)
+
+    function Get-Prop { param($Object, [string]$Name) return $Object.GetType().GetProperty($Name, $instance).GetValue($Object) }
 
     $listType = [System.Collections.Generic.List`1].MakeGenericType(@($targetType))
     $enumerableType = [System.Collections.Generic.IEnumerable`1].MakeGenericType(@($targetType))
@@ -315,6 +319,61 @@ try {
         Assert-True ($message.Contains('repete o mesmo alvo')) 'A recusa deve nomear a repetição'
     }
     Assert-True $rejected 'O inventário deve recusar alvo repetido'
+
+    # --- 11. Vocabulário fechado de role e suficiência explícita no plano de Remove ----------
+    # Decisões 21 e 30: sem estes literais as cinco Procedures voltam a ser indistinguíveis
+    # no inventário composto, e a suficiência some do envelope.
+    $rolesType = $assembly.GetType($ns + 'ApiPlanJournalRoles', $true, $false)
+    $forProcedure = $rolesType.GetMethod('ForProcedureName', $staticAny)
+    $forService = $rolesType.GetMethod('ForService', $staticAny)
+    Assert-Equal 'MainApi' ([string]$rolesType.GetField('MainApi', $staticAny).GetValue($null)) 'MainApi canônico'
+    Assert-Equal 'OwnSdt' ([string]$rolesType.GetField('OwnSdt', $staticAny).GetValue($null)) 'OwnSdt canônico'
+    Assert-equal 'SharedSdt' ([string]$rolesType.GetField('SharedSdt', $staticAny).GetValue($null)) 'SharedSdt canônico'
+    Assert-Equal 'Metadata' ([string]$rolesType.GetField('Metadata', $staticAny).GetValue($null)) 'Metadata canônico'
+    Assert-equal 'List' ([string]$forProcedure.Invoke($null, @('procTeste_API_List'))) 'List pelo nome da Procedure'
+    Assert-equal 'Get' ([string]$forProcedure.Invoke($null, @('procTeste_API_Get'))) 'Get pelo nome da Procedure'
+    Assert-equal 'Create' ([string]$forProcedure.Invoke($null, @('procTeste_API_Create'))) 'Create pelo nome da Procedure'
+    Assert-equal 'Update' ([string]$forProcedure.Invoke($null, @('procTeste_API_Update'))) 'Update pelo nome da Procedure'
+    Assert-equal 'Delete' ([string]$forProcedure.Invoke($null, @('procTeste_API_Delete'))) 'Delete pelo nome da Procedure'
+    Assert-equal 'Get' ([string]$forService.Invoke($null, @('get'))) 'ForService normaliza case'
+
+    $plansType = $assembly.GetType($ns + 'ApiPlanOperationJournalPlans', $true, $false)
+    $removalPlan = $plansType.GetMethod('ForRemoval', $static).Invoke($null, @(
+        [object][Guid]'55555555-5555-5555-5555-555555555555',
+        'abc123',
+        [string[]]@('List', 'Get')))
+    Assert-equal 'InventorySufficient' ([string](Get-Prop $removalPlan 'InventorySufficiency')) 'Plano de Remove declara suficiência explícita'
+    $recoveryPlan = $plansType.GetMethod('ForMetadataRecovery', $static).Invoke($null, @(
+        [object][Guid]'55555555-5555-5555-5555-555555555555'))
+    Assert-Equal 'InventorySufficient' ([string](Get-Prop $recoveryPlan 'InventorySufficiency')) 'Plano de MetadataRecovery declara suficiência explícita'
+
+    # Inventário de remoção com identidade composta: o role canônico viaja no item.
+    $compositeIdentityType = $assembly.GetType($ns + 'ApiPlanOperationJournalCompositeIdentity', $true, $false)
+    $listTarget = New-Target -Name 'procTeste_API_List' -ObjectType 'Procedure' -IdentityKind 'Composite'
+    $listComposite = [Activator]::CreateInstance($compositeIdentityType)
+    $listComposite.ExactName = 'procTeste_API_List'
+    $listComposite.ObjectTypeName = 'Procedure'
+    $listComposite.Role = [string]$forProcedure.Invoke($null, @('procTeste_API_List'))
+    $listComposite.CanonicalDescription = 'procTeste_API_List'
+    $listComposite.TransactionGuid = [Guid]'22222222-2222-2222-2222-222222222222'
+    $listComposite.ApiGuid = [Guid]'55555555-5555-5555-5555-555555555555'
+    $listTarget.Composite = $listComposite
+    $createTarget = New-Target -Name 'procTeste_API_Create' -ObjectType 'Procedure' -IdentityKind 'Composite'
+    $createComposite = [Activator]::CreateInstance($compositeIdentityType)
+    $createComposite.ExactName = 'procTeste_API_Create'
+    $createComposite.ObjectTypeName = 'Procedure'
+    $createComposite.Role = [string]$forProcedure.Invoke($null, @('procTeste_API_Create'))
+    $createComposite.CanonicalDescription = 'procTeste_API_Create'
+    $createComposite.TransactionGuid = [Guid]'22222222-2222-2222-2222-222222222222'
+    $createComposite.ApiGuid = [Guid]'55555555-5555-5555-5555-555555555555'
+    $createTarget.Composite = $createComposite
+    $roleArgs = New-Object object[] 1
+    $roleArgs[0] = New-TargetList @($listTarget, $createTarget)
+    $roleInventory = $buildInventory.Invoke($null, $roleArgs)
+    $byRoleName = @{}
+    foreach ($item in $roleInventory) { $byRoleName[[string]$item.Name] = $item }
+    Assert-Equal 'List' ([string](Get-Prop (Get-Prop $byRoleName['procTeste_API_List'] 'Composite') 'Role')) 'List permanece distinto no inventário'
+    Assert-Equal 'Create' ([string](Get-Prop (Get-Prop $byRoleName['procTeste_API_Create'] 'Composite') 'Role')) 'Create permanece distinto no inventário'
 
 } finally {
     if ($null -ne $script:AssemblyResolveHandler) {
