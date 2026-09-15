@@ -176,12 +176,12 @@ que depende da DLL instalada e da KB de teste; **offline** é trabalho de códig
 | 1 | Cenário 7 — interromper uma remoção no meio e **retomar a fila**. É o único caminho que exercita `ContinueRemovePass`, e nenhuma passada de retomada foi vista em campo | IDE | P8, seção 9 |
 | 2 | Cenário 8 — remoção de **API legado**, com metadata válida e com metadata insuficiente | IDE | P8, seção 9 |
 | 3 | Cenário 9 — **acréscimo de tempo** do diário na KB grande, contra o orçamento da seção 4.4 do plano | IDE | P8, seção 9 |
-| 4 | **47 frases que o usuário lê ainda saem em português** em qualquer KB: 24 recusas de transição do `Checkpoints`, 12 da `Session`, 8 do preflight do `GeneratedApiRemover`, e três avulsas | offline | P8, seção 8.2.4 — com a medição e a classificação dos 65 literais sinalizados |
+| 4 | ~~47 frases que o usuário lê ainda saem em português~~ **Fechado em 2026-09-15**: 93 entradas novas no catálogo cobriram as 47 e mais o que uma segunda sonda achou — as mensagens em ASCII sem acento do preflight da remoção, invisíveis para a primeira | — | P8, seções 8.2.4 (a medição) e 8.2.5 (o fechamento e o erro da sonda) |
 | 5 | `Prepared` e a ação `Abandon` **não têm caminho de entrada por clique** — CP1 e CP2 acontecem na mesma chamada. `Checkpoints.Abandon` e `RecoveryNextStep.Abandon` existem, estão testados offline e são inalcançáveis pela interface | decisão | P8, seção 8 |
 | 6 | Metadata completa com **API Object apagado à mão** não tem saída por nenhum dos três comandos. Foi resolvido por orientação no texto das mensagens, não por mudança de contrato | decisão | P8, seção 10 |
 
 Os itens 5 e 6 são conhecidos e deliberados: estão aqui para que uma sessão nova não os
-redescubra como defeito. O item 4 é dívida a fechar; os itens 1 a 3 fecham a P8.
+redescubra como defeito. O item 4 foi fechado; os itens 1 a 3 fecham a P8.
 
 **Fora da F3, para logo depois do encerramento da sprint:** `B122` — dar aos agentes uma
 ferramenta versionada de edição textual ancorada. Aberto em 2026-09-15, depois de uma única

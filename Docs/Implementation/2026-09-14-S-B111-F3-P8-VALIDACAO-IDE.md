@@ -545,6 +545,53 @@ par de enums, e parte é frase inteira. Cadastrar o prefixo de cada uma é mecâ
 uma decisão é se `Estado atual: ` deve virar um único fragmento compartilhado — provavelmente sim,
 pela mesma razão que ` em estado ` foi unificado na 8.2.2.
 
+#### 8.2.5 Dívida fechada — e a sonda que precisou ser refeita
+
+A 8.2.4 mediu 47 frases que o usuário lê e que ainda saíam em português, e as deixou como dívida.
+Perguntado por que elas não podiam ser traduzidas como as outras, a resposta honesta foi: **podem,
+e não havia impedimento nenhum** — era trabalho pendente, não limitação. Fechado na mesma data.
+
+**Noventa e três entradas novas no catálogo**, porque quase toda frase concatenada precisa de duas.
+
+**O que exigiu decisão, e não só digitação:**
+
+- **A pré-condição `Active/Running` entrou inteira, uma frase por ação.** A tentação era cadastrar
+  o prefixo `Para ` e o sufixo ` o envelope precisa estar Active/Running. Estado atual: `. Mas
+  `Para ` tem cinco caracteres e recortaria qualquer outra frase do catálogo que o contivesse. Seis
+  frases inteiras custam cinco entradas a mais e não têm esse risco.
+- **Os nomes de transição entraram com as aspas simples que os cercam.** `abandono` solto
+  recortaria `o abandono mantém operationState=Completed`, `somente um envelope Prepared pode ser
+  abandonado` e mais três frases já cadastradas. `'abandono'` — com aspas — só casa onde a
+  transição é nomeada. Há uma asserção no gate exatamente para isso: a frase que fala de abandono
+  tem de sobreviver intacta.
+- **`Operação ` obrigou a traduzir o aborto do usuário.** O cabeçalho do relatório de recuperação
+  começa assim, e o mesmo prefixo aparece em `Operação abortada pelo usuário…`, que nunca estivera
+  no catálogo. Cadastrar um sem o outro deixaria o aborto meio em inglês. Entraram juntos.
+- **`: esperado ` é compartilhado por quatro mensagens.** Mesma regra: as três vizinhas — metadata
+  de remoção incompatível, `schemaVersion` das preferências, `plan.planKind` — entraram na mesma
+  rodada, cada uma com asserção que compara a frase **inteira** com `-ceq`.
+
+**A sonda estava errada, e isso é o achado desta rodada.** A da 8.2.4 só considerava um literal se
+ele tivesse acento ou uma palavra-marcador em português. As mensagens do preflight da remoção são
+de uma leva anterior à F3 e estão escritas em **ASCII sem acento** — `nao e proprio da extensao`,
+`API Object ambiguo` —, então passaram invisíveis. Uma segunda sonda, sem esse filtro e capaz de
+partir o literal também nos buracos de interpolação do C# (`{nome}`, não só `{0}`), achou sete
+causas de bloqueio da remoção, quatro alvos ausentes antes do `Delete()`, a falha de abertura do
+diário e duas regras de schema. **Heurística de idioma por acento não encontra texto antigo** — e
+a primeira sonda tinha produzido um número que eu publiquei como medição.
+
+**O que resta, agora classificado e estável:**
+
+| Classe | Chega ao usuário? |
+| --- | --- |
+| Contrato de programador (`ArgumentException`, asserção interna) | não — só dispara com chamador errado |
+| Rótulos `Chave=valor` das linhas de diagnóstico da Output | a prosa em volta está traduzida; as chaves são identificadores |
+| `Detail` de observação do inventário | não é renderizado em lugar nenhum hoje |
+| `abandonment.reason` e `authorizedBy` | são conteúdo gravado no diário, não tela |
+
+**Rede no gate:** trinta e quatro asserções novas. As das causas de remoção comparam a frase inteira
+com `-ceq`, não `Contains`, porque meia tradução passaria por `Contains` sem reclamar.
+
 ## 9. Cenários restantes
 
 | # | Cenário | Estado |

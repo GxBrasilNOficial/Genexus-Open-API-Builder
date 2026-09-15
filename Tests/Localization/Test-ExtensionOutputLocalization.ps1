@@ -509,4 +509,122 @@ foreach ($schemaSource in $schemaSources) {
     }
 }
 
+# B111/F3 P7, última parte da dívida — as recusas de transição do envelope. Elas não nascem como
+# mensagem de tela: nascem como exceção num método de checkpoint e chegam ao diálogo coladas a um
+# prefixo que já era trilíngue. Por isso as asserções abaixo montam a frase inteira, como a tela a
+# recebe, em vez de testar a metade nova isolada.
+$blockedTransition = "A transição 'CP4 interrupção' não é válida no estado atual: Só um envelope Prepared/Pending pode ser promovido a Active. Estado atual: Prepared/Pending/IntentionRecorded."
+$blockedTransitionEnglish = $translate.Invoke($null, [object[]] @($blockedTransition, $english))
+$blockedTransitionSpanish = $translate.Invoke($null, [object[]] @($blockedTransition, $spanish))
+Assert-True ($blockedTransitionEnglish.Contains("The transition 'CP4 interruption' is not valid in the current state:")) 'Inglês deve traduzir o prefixo e o nome da transição juntos.'
+Assert-True ($blockedTransitionEnglish.Contains('Only a Prepared/Pending envelope can be promoted to Active. Current state: Prepared/Pending/IntentionRecorded.')) 'Inglês deve traduzir a recusa que vem da exceção, preservando os enums do estado.'
+Assert-True (-not $blockedTransitionEnglish.Contains('não é válida')) 'Inglês não deve deixar meia frase em português.'
+Assert-True (-not $blockedTransitionEnglish.Contains('Estado atual')) 'Inglês não deve manter o rótulo do estado em português.'
+Assert-True ($blockedTransitionSpanish.Contains("La transición 'CP4 interrupción' no es válida en el estado actual:")) 'Espanhol deve traduzir o prefixo e o nome da transição juntos.'
+Assert-True ($blockedTransitionSpanish.Contains('Solo un sobre Prepared/Pending puede ser promovido a Active. Estado actual:')) 'Espanhol deve traduzir a recusa que vem da exceção.'
+
+# A pré-condição Active/Running entra como frase inteira por ação, e não como prefixo `Para `.
+$activeRunning = 'Para registrar uma passada de remoção o envelope precisa estar Active/Running. Estado atual: Active/Partial/RemovalPartial.'
+$activeRunningEnglish = $translate.Invoke($null, [object[]] @($activeRunning, $english))
+Assert-True ($activeRunningEnglish -ceq 'To record a removal pass the envelope must be Active/Running. Current state: Active/Partial/RemovalPartial.') 'Inglês deve traduzir a pré-condição inteira e preservar os três enums.'
+
+$invalidEnvelope = "Transição 'abandono' produziu um envelope inválido. somente um envelope Prepared pode ser abandonado. o abandono exige journalDurability=Confirmed."
+$invalidEnvelopeEnglish = $translate.Invoke($null, [object[]] @($invalidEnvelope, $english))
+Assert-True ($invalidEnvelopeEnglish.Contains("Transition 'abandonment' produced an invalid envelope.")) 'Inglês deve traduzir o nome da transição entre aspas.'
+Assert-True ($invalidEnvelopeEnglish.Contains('only a Prepared envelope can be abandoned. abandonment requires journalDurability=Confirmed.')) 'Inglês deve traduzir as violações de schema que vêm anexadas.'
+Assert-True (-not $invalidEnvelopeEnglish.Contains("'abandono'")) 'Inglês não deve manter o nome da transição em português.'
+
+# `abandono` entre aspas não pode recortar as frases do catálogo que falam de abandono.
+$abandonSentence = 'o abandono não admite recibos de gravação de negócio. somente um envelope Prepared pode ser abandonado.'
+$abandonEnglish = $translate.Invoke($null, [object[]] @($abandonSentence, $english))
+Assert-True ($abandonEnglish -ceq 'abandonment does not allow business write receipts. only a Prepared envelope can be abandoned.') 'O nome de transição entre aspas não pode recortar as frases que falam de abandono.'
+
+$ownership = 'ApiPhysicallySaved pertence a Apply e Sync, não a Remove. MetadataRecovered pertence ao Recovery autônomo, não a Apply.'
+$ownershipEnglish = $translate.Invoke($null, [object[]] @($ownership, $english))
+Assert-True ($ownershipEnglish -ceq 'ApiPhysicallySaved belongs to Apply and Sync, not to Remove. MetadataRecovered belongs to the standalone Recovery, not to Apply.') 'Inglês deve traduzir as duas recusas de domínio e preservar os enums.'
+
+# Session: o que a Output publica e o que vira BlockDetail no diálogo.
+$checkpointFailed = "O checkpoint 'passada de remoção' falhou ao ser gravado: Object reference not set. A operação seguiu; o diário ficou bloqueado e o último snapshot durável foi preservado."
+$checkpointFailedEnglish = $translate.Invoke($null, [object[]] @($checkpointFailed, $english))
+Assert-True ($checkpointFailedEnglish.Contains("Checkpoint 'removal pass' failed to be written: Object reference not set.")) 'Inglês deve traduzir a falha de gravação do checkpoint e preservar a exceção.'
+Assert-True ($checkpointFailedEnglish.Contains('The operation continued; the journal was blocked and the last durable snapshot was preserved.')) 'Inglês deve traduzir a garantia que fecha a mensagem.'
+
+$alreadyBlocked = "Checkpoint 'conclusão' não foi gravado: o diário já está bloqueado. O envelope Prepared do diário não pôde ser confirmado: divergência."
+$alreadyBlockedEnglish = $translate.Invoke($null, [object[]] @($alreadyBlocked, $english))
+Assert-True ($alreadyBlockedEnglish.Contains("Checkpoint 'completion' was not written: the journal is already blocked.")) 'Inglês deve traduzir o checkpoint recusado por diário já bloqueado.'
+Assert-True ($alreadyBlockedEnglish.Contains('The Prepared journal envelope could not be confirmed:')) 'Inglês deve traduzir a confirmação do envelope Prepared.'
+
+$identityChanged = "A identidade da API mudou durante a operação: o diário registra '11111111-1111-1111-1111-111111111111' e o pipeline apresentou '22222222-2222-2222-2222-222222222222'."
+Assert-True (($translate.Invoke($null, [object[]] @($identityChanged, $english))).Contains("The API identity changed during the operation: the journal records '11111111-1111-1111-1111-111111111111' and the pipeline presented '")) 'Inglês deve traduzir a divergência de identidade em volta dos dois GUIDs.'
+
+$cost = 'Custo do diário: Checkpoints=4, TotalMs=216, FileId=1387, Durability=Confirmed, Estado=Removed/Removed.'
+Assert-True (($translate.Invoke($null, [object[]] @($cost, $english))).Contains('Journal cost: Checkpoints=4, TotalMs=216, FileId=1387, Durability=Confirmed, State=Removed/Removed.')) 'Inglês deve traduzir a linha de custo e preservar as medições.'
+
+# Remover: o preflight de metadata, escrito em ASCII numa leva anterior à F3.
+$removalPreflight = "Remocao bloqueada: File de metadata 'apiTeste_Metadata' nao foi encontrado. Nenhuma alteracao foi feita."
+$removalPreflightEnglish = $translate.Invoke($null, [object[]] @($removalPreflight, $english))
+Assert-True ($removalPreflightEnglish -ceq "Removal blocked: metadata File 'apiTeste_Metadata' was not found. No changes were made.") 'Inglês deve traduzir o preflight de metadata por inteiro.'
+
+$removalOwnership = "Remocao bloqueada: File 'apiTeste_Metadata' nao e metadata propria da extensao. Nenhuma alteracao foi feita."
+Assert-True (($translate.Invoke($null, [object[]] @($removalOwnership, $spanish))).Contains("Eliminación bloqueada: File 'apiTeste_Metadata' no es metadatos propios de la extensión.")) 'Espanhol deve traduzir a recusa por metadata alheia.'
+
+$passCheckpoint = 'O checkpoint da passada 2 não pôde ser confirmado no diário; a remoção parou para não continuar sem estado durável.'
+Assert-True (($translate.Invoke($null, [object[]] @($passCheckpoint, $english))).Contains('The checkpoint of pass 2 could not be confirmed in the journal; the removal stopped rather than continue without durable state.')) 'Inglês deve traduzir o checkpoint da passada.'
+
+# O cabeçalho do relatório de recuperação, e o aborto — que `Operação ` recortaria ao meio.
+$recoveryHeader = "Operação Remove sobre 'Teste': estado Partial/RemovalPartial, envelope Active, durabilidade Confirmed."
+$recoveryHeaderEnglish = $translate.Invoke($null, [object[]] @($recoveryHeader, $english))
+Assert-True ($recoveryHeaderEnglish -ceq "Operation Remove over 'Teste': state Partial/RemovalPartial, envelope Active, durability Confirmed.") 'Inglês deve traduzir o cabeçalho do relatório e preservar nome e enums.'
+
+$abort = 'Operação abortada pelo usuário. O objeto em curso foi concluído; a KB pode ter ficado inconsistente. Use Remover / Wizard / Sync para reparar.'
+$abortEnglish = $translate.Invoke($null, [object[]] @($abort, $english))
+Assert-True ($abortEnglish.Contains('Operation aborted by the user.')) 'Inglês deve traduzir o aborto pelo usuário.'
+Assert-True (-not $abortEnglish.Contains('abortada')) 'Inglês não deve deixar o aborto pela metade: `Operação ` sozinho o recortaria.'
+
+$noJournal = 'A KB não tem diário de operação: nenhuma operação desta ferramenta ficou pendente aqui.'
+Assert-True (($translate.Invoke($null, [object[]] @($noJournal, $english))).Contains('The KB has no operation journal:')) 'Inglês deve traduzir a KB sem diário.'
+
+$plannedGuid = 'plan.plannedApiGuid é obrigatório em Apply e Sync a partir do estágio ApiObjectWritten.'
+Assert-True (($translate.Invoke($null, [object[]] @($plannedGuid, $english))).Contains('plan.plannedApiGuid is required in Apply and Sync from stage ApiObjectWritten.')) 'Inglês deve traduzir a exigência do plannedApiGuid por estágio.'
+
+# B111/F3 P7 — as causas que o preflight da remoção cola em `Remocao bloqueada: {causa}`. São de
+# uma leva anterior à F3, escritas em ASCII sem acento, e por isso escaparam da sonda que exigia
+# marcador de português.
+$removalReasons = @(
+    @{ pt = "Remocao bloqueada: API Object ambiguo 'apiTeste'. Nenhuma alteracao foi feita."; en = "Removal blocked: ambiguous API Object 'apiTeste'. No changes were made." }
+    @{ pt = "Remocao bloqueada: API Object 'apiTeste' nao corresponde ao Guid registrado. Nenhuma alteracao foi feita."; en = "Removal blocked: API Object 'apiTeste' does not match the recorded Guid. No changes were made." }
+    @{ pt = "Remocao bloqueada: Procedure ambigua 'procTesteList'. Nenhuma alteracao foi feita."; en = "Removal blocked: ambiguous Procedure 'procTesteList'. No changes were made." }
+    @{ pt = "Remocao bloqueada: Procedure 'procTesteList' nao e propria da extensao. Nenhuma alteracao foi feita."; en = "Removal blocked: Procedure 'procTesteList' is not owned by the extension. No changes were made." }
+    @{ pt = "Remocao bloqueada: tentativa de apagar SDT compartilhado 'sdt_API_ErrorResponse'. Nenhuma alteracao foi feita."; en = "Removal blocked: attempt to delete shared SDT 'sdt_API_ErrorResponse'. No changes were made." }
+    @{ pt = "Remocao bloqueada: SDT ambiguo 'sdtTeste'. Nenhuma alteracao foi feita."; en = "Removal blocked: ambiguous SDT 'sdtTeste'. No changes were made." }
+    @{ pt = "Remocao bloqueada: SDT 'sdtTeste' nao e proprio da extensao. Nenhuma alteracao foi feita."; en = "Removal blocked: SDT 'sdtTeste' is not owned by the extension. No changes were made." }
+)
+foreach ($reason in $removalReasons) {
+    $translated = $translate.Invoke($null, [object[]] @($reason.pt, $english))
+    Assert-True ($translated -ceq $reason.en) "Causa do preflight de remoção mal traduzida. Esperado='$($reason.en)' Obtido='$translated'"
+}
+
+# A segunda cauda, para quando a KB muda depois do preflight e a fila já apagou alguma coisa.
+$afterPreflight = "Remocao bloqueada: SDT ambiguo 'sdtTeste'. O estado da KB mudou apos o preflight; interrompendo para evitar mais exclusoes."
+Assert-True (($translate.Invoke($null, [object[]] @($afterPreflight, $english))) -ceq "Removal blocked: ambiguous SDT 'sdtTeste'. The KB state changed after the preflight; stopping to avoid further deletions.") 'Inglês deve traduzir a cauda de mudança de estado após o preflight.'
+
+$absentTargets = 'Procedure ausente antes do Delete. API Object ausente antes do Delete. SDT ausente antes do Delete. File de metadata ausente antes do Delete.'
+Assert-True (($translate.Invoke($null, [object[]] @($absentTargets, $english))) -ceq 'Procedure absent before Delete. API Object absent before Delete. SDT absent before Delete. Metadata File absent before Delete.') 'Inglês deve traduzir os quatro alvos ausentes antes do Delete.'
+
+Assert-True (($translate.Invoke($null, [object[]] @('A abertura do diário falhou: acesso negado.', $english))).Contains('Opening the journal failed: acesso negado.')) 'Inglês deve traduzir a falha de abertura do diário e preservar a exceção.'
+
+# `: esperado ` é compartilhado por quatro mensagens. Se uma delas ficar sem a frase em volta,
+# sai meio em inglês — que é pior que inteira em português.
+$planKind = 'plan.planKind incompatível com operationKind=Remove: esperado Removal, encontrado Generation.'
+Assert-True (($translate.Invoke($null, [object[]] @($planKind, $english))) -ceq 'plan.planKind incompatible with operationKind=Remove: expected Removal, found Generation.') 'Inglês deve traduzir a incompatibilidade de planKind por inteiro.'
+
+$removalMetadata = "Metadata de remoção incompatível em 'schemaVersion': esperado V1, V2 ou V3, encontrado '<ausente>'."
+$removalMetadataEnglish = $translate.Invoke($null, [object[]] @($removalMetadata, $english))
+Assert-True ($removalMetadataEnglish -ceq "Incompatible removal metadata in 'schemaVersion': expected V1, V2 or V3, found '<ausente>'.") 'Inglês deve traduzir a metadata de remoção incompatível por inteiro.'
+Assert-True (-not $removalMetadataEnglish.Contains('incompatível')) 'Inglês não deve deixar essa mensagem pela metade por causa de `: esperado `.'
+
+$prefsSchema = "Membro 'schemaVersion' incompativel: esperado 'GOAB_WIZARD_PREFERENCES_V1' ou ausente (legado), atual='V9'."
+$prefsSchemaEnglish = $translate.Invoke($null, [object[]] @($prefsSchema, $english))
+Assert-True ($prefsSchemaEnglish -ceq "Member 'schemaVersion' is incompatible: expected 'GOAB_WIZARD_PREFERENCES_V1' or absent (legacy), current='V9'.") 'Inglês deve traduzir a incompatibilidade de schema das preferências por inteiro.'
+
 Write-Output 'PASS: ExtensionOutputLocalization'

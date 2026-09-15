@@ -468,16 +468,21 @@ chamada —, e no lugar dele nasceu a quarta ação da recuperação: encerrar o
 operação que gravou e parou no meio. Evidência:
 `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`.
 
-**Dívida aberta em 2026-09-15 — localização do diário.** A bateria expôs que os textos da
+**Dívida aberta e fechada em 2026-09-15 — localização do diário.** A bateria expôs que os textos da
 recuperação, do gate e do store nasciam em português e não passavam pelo catálogo de saída; 147
 frases foram cadastradas em espanhol e inglês em três rodadas, com asserções no gate
 `tests.extensionOutputLocalization` e uma varredura que exige que a versão inglesa difira da
-portuguesa. **Restam 47 frases** que o usuário lê e que ainda saem em português em qualquer KB:
-24 recusas de transição do `ApiPlanOperationJournalCheckpoints`, 12 da
-`ApiPlanOperationJournalSession`, 8 do preflight do `ApiPlanGeneratedApiRemover` e três avulsas.
-Elas escaparam das três rodadas porque não nascem como mensagem de tela: nascem como
-`InvalidOperationException` e só viram tela concatenadas a um prefixo que já é trilíngue.
-Medição e classificação dos 65 literais sinalizados na seção 8.2.4 do registro da P8.
+portuguesa. Restavam 47 frases que o usuário lê — 24 recusas de transição do
+`ApiPlanOperationJournalCheckpoints`, 12 da `ApiPlanOperationJournalSession`, 8 do preflight do
+`ApiPlanGeneratedApiRemover` e três avulsas. Elas escaparam das três primeiras rodadas porque não
+nascem como mensagem de tela: nascem como `InvalidOperationException` e só viram tela
+concatenadas a um prefixo que já é trilíngue. **Fechadas numa quarta rodada, na mesma data**, com
+93 entradas novas. A rodada também corrigiu a própria sonda que as tinha medido: ela exigia acento
+ou palavra-marcador em português e por isso não via as mensagens em ASCII sem acento de levas
+anteriores (`nao e proprio da extensao`) — uma segunda sonda achou mais catorze. O que resta em
+português está classificado como não-tela: contrato de programador, rótulo `Chave=valor` de
+diagnóstico, `Detail` de observação não renderizado e conteúdo gravado no diário. Seções 8.2.4 e
+8.2.5 do registro da P8.
 
 **B106 — concluído em 2026-08-24.** O roteiro foi atualizado para a Alpha `0.1.0-alpha.4`, passou a registrar o checkbox de repasse das mensagens do Business Component e aponta para as notas da Alpha 4. A captura de Segurança foi explicitamente marcada como referência visual anterior; uma nova captura da UI permanece uma melhoria visual separada, sem bloquear a documentação textual.
 

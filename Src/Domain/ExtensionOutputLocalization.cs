@@ -661,6 +661,389 @@ internal static class ExtensionOutputLocalization
             " é obrigatório.",
             " es obligatorio.",
             " is required."),
+        // B111/F3 P7 (dívida fechada na P8): as recusas de transição do envelope e o que a
+        // sessão publica. Estas escaparam de três rodadas porque **não nascem como mensagem
+        // de tela**: nascem como `InvalidOperationException` num método de checkpoint, e só
+        // chegam ao diálogo concatenadas a um prefixo que já era trilíngue — o resultado era
+        // meia frase em cada idioma, que parece defeito de software.
+        //
+        // Os nomes de transição entram COM as aspas simples que sempre os cercam. `abandono`
+        // solto recortaria qualquer frase do catálogo que fale de abandono, e há várias.
+        new(
+            "Para registrar o API Object confirmado o envelope precisa estar Active/Running. Estado atual: ",
+            "Para registrar el API Object confirmado el sobre debe estar Active/Running. Estado actual: ",
+            "To record the confirmed API Object the envelope must be Active/Running. Current state: "),
+        new(
+            "Para registrar resultado indeterminado do API Object o envelope precisa estar Active/Running. Estado atual: ",
+            "Para registrar resultado indeterminado del API Object el sobre debe estar Active/Running. Estado actual: ",
+            "To record an undetermined API Object result the envelope must be Active/Running. Current state: "),
+        new(
+            "Para registrar metadata recuperada o envelope precisa estar Active/Running. Estado atual: ",
+            "Para registrar metadatos recuperados el sobre debe estar Active/Running. Estado actual: ",
+            "To record recovered metadata the envelope must be Active/Running. Current state: "),
+        new(
+            "Para registrar uma passada de remoção o envelope precisa estar Active/Running. Estado atual: ",
+            "Para registrar una pasada de eliminación el sobre debe estar Active/Running. Estado actual: ",
+            "To record a removal pass the envelope must be Active/Running. Current state: "),
+        new(
+            "Para concluir a operação o envelope precisa estar Active/Running. Estado atual: ",
+            "Para concluir la operación el sobre debe estar Active/Running. Estado actual: ",
+            "To complete the operation the envelope must be Active/Running. Current state: "),
+        new(
+            "Para interromper a operação o envelope precisa estar Active/Running. Estado atual: ",
+            "Para interrumpir la operación el sobre debe estar Active/Running. Estado actual: ",
+            "To interrupt the operation the envelope must be Active/Running. Current state: "),
+        new(
+            "Só um envelope Prepared/Pending pode ser promovido a Active. Estado atual: ",
+            "Solo un sobre Prepared/Pending puede ser promovido a Active. Estado actual: ",
+            "Only a Prepared/Pending envelope can be promoted to Active. Current state: "),
+        new(
+            "Só um envelope Prepared/Pending pode ser abandonado. Estado atual: ",
+            "Solo un sobre Prepared/Pending puede ser abandonado. Estado actual: ",
+            "Only a Prepared/Pending envelope can be abandoned. Current state: "),
+        new(
+            "Só um envelope Active pode ter o registro encerrado; um Prepared é abandonado. Estado atual: ",
+            "Solo un sobre Active puede tener el registro cerrado; un Prepared se abandona. Estado actual: ",
+            "Only an Active envelope can have its record closed; a Prepared one is abandoned. Current state: "),
+        new(
+            "Só um envelope Active pode ser reconciliado como removido. Estado atual: ",
+            "Solo un sobre Active puede ser reconciliado como removido. Estado actual: ",
+            "Only an Active envelope can be reconciled as removed. Current state: "),
+        new(
+            "Só uma remoção Active/Partial pode ser retomada. Estado atual: ",
+            "Solo una eliminación Active/Partial puede ser retomada. Estado actual: ",
+            "Only an Active/Partial removal can be resumed. Current state: "),
+        new(
+            "ApiPhysicallySaved pertence a Apply e Sync, não a ",
+            "ApiPhysicallySaved pertenece a Apply y Sync, no a ",
+            "ApiPhysicallySaved belongs to Apply and Sync, not to "),
+        new(
+            "MetadataRecovered pertence ao Recovery autônomo, não a ",
+            "MetadataRecovered pertenece al Recovery autónomo, no a ",
+            "MetadataRecovered belongs to the standalone Recovery, not to "),
+        new(
+            "Passadas de remoção pertencem ao Remove, não a ",
+            "Las pasadas de eliminación pertenecen al Remove, no a ",
+            "Removal passes belong to Remove, not to "),
+        new(
+            "A retomada de passadas pertence ao Remove, não a ",
+            "La reanudación de pasadas pertenece al Remove, no a ",
+            "Resuming passes belongs to Remove, not to "),
+        new(
+            "A reconciliação para Removed pertence ao Remove, não a ",
+            "La reconciliación a Removed pertenece al Remove, no a ",
+            "Reconciling to Removed belongs to Remove, not to "),
+        new(
+            "A reconciliação para Removed parte de Partial ou Running, não de ",
+            "La reconciliación a Removed parte de Partial o Running, no de ",
+            "Reconciling to Removed starts from Partial or Running, not from "),
+        new(
+            "O encerramento do registro parte de Partial ou Running, não de ",
+            "El cierre del registro parte de Partial o Running, no de ",
+            "Closing the record starts from Partial or Running, not from "),
+        new(
+            "Uma interrupção termina em Partial ou OutcomeUnknown, não em ",
+            "Una interrupción termina en Partial o OutcomeUnknown, no en ",
+            "An interruption ends in Partial or OutcomeUnknown, not in "),
+        new(
+            "A retomada não cobre o motivo registrado: ",
+            "La reanudación no cubre el motivo registrado: ",
+            "Resuming does not cover the recorded reason: "),
+        new(
+            "Encerrar um registro cuja durabilidade não foi confirmada esconderia justamente o que não se sabe.",
+            "Cerrar un registro cuya durabilidad no fue confirmada escondería justamente lo que no se sabe.",
+            "Closing a record whose durability was not confirmed would hide precisely what is not known."),
+        new(
+            "A continuação do envelope preparado ainda não tem serviço que a execute.",
+            "La continuación del sobre preparado todavía no tiene servicio que la ejecute.",
+            "The continuation of the prepared envelope has no service to execute it yet."),
+        new(
+            "Transição '",
+            "Transición '",
+            "Transition '"),
+        new(
+            "' produziu um envelope inválido. ",
+            "' produjo un sobre inválido. ",
+            "' produced an invalid envelope. "),
+        new(
+            "'CP3 passada de remoção'",
+            "'CP3 pasada de eliminación'",
+            "'CP3 removal pass'"),
+        new(
+            "'CP4 interrupção'",
+            "'CP4 interrupción'",
+            "'CP4 interruption'"),
+        new(
+            "'retomada de remoção'",
+            "'reanudación de eliminación'",
+            "'removal resumption'"),
+        new(
+            "'reconciliação para Removed'",
+            "'reconciliación a Removed'",
+            "'reconciliation to Removed'"),
+        new(
+            "'abandono'",
+            "'abandono'",
+            "'abandonment'"),
+        new(
+            "'encerramento do registro'",
+            "'cierre del registro'",
+            "'record closing'"),
+        new(
+            "'API Object confirmado'",
+            "'API Object confirmado'",
+            "'confirmed API Object'"),
+        new(
+            "'resultado indeterminado do API Object'",
+            "'resultado indeterminado del API Object'",
+            "'undetermined API Object result'"),
+        new(
+            "'metadata recuperada'",
+            "'metadatos recuperados'",
+            "'recovered metadata'"),
+        new(
+            "'passada de remoção'",
+            "'pasada de eliminación'",
+            "'removal pass'"),
+        new(
+            "'conclusão'",
+            "'conclusión'",
+            "'completion'"),
+        new(
+            "'interrupção (",
+            "'interrupción (",
+            "'interruption ("),
+        new(
+            "O envelope Prepared do diário não pôde ser confirmado: ",
+            "El sobre Prepared del diario no pudo ser confirmado: ",
+            "The Prepared journal envelope could not be confirmed: "),
+        new(
+            "A promoção do diário a Active não pôde ser confirmada: ",
+            "La promoción del diario a Active no pudo ser confirmada: ",
+            "Promoting the journal to Active could not be confirmed: "),
+        new(
+            "A identidade da API mudou durante a operação: o diário registra '",
+            "La identidad de la API cambió durante la operación: el diario registra '",
+            "The API identity changed during the operation: the journal records '"),
+        new(
+            "' e o pipeline apresentou '",
+            "' y el pipeline presentó '",
+            "' and the pipeline presented '"),
+        new(
+            "' não foi gravado: o diário já está bloqueado. ",
+            "' no fue grabado: el diario ya está bloqueado. ",
+            "' was not written: the journal is already blocked. "),
+        new(
+            "A transição '",
+            "La transición '",
+            "The transition '"),
+        new(
+            "' não é válida no estado atual: ",
+            "' no es válida en el estado actual: ",
+            "' is not valid in the current state: "),
+        new(
+            "O checkpoint '",
+            "El checkpoint '",
+            "Checkpoint '"),
+        new(
+            "' falhou ao ser gravado: ",
+            "' falló al ser grabado: ",
+            "' failed to be written: "),
+        new(
+            " A operação seguiu; o diário ficou bloqueado e o último snapshot durável foi preservado.",
+            " La operación siguió; el diario quedó bloqueado y el último snapshot durable fue preservado.",
+            " The operation continued; the journal was blocked and the last durable snapshot was preserved."),
+        new(
+            "' não pôde ser confirmado: ",
+            "' no pudo ser confirmado: ",
+            "' could not be confirmed: "),
+        new(
+            " O último snapshot durável foi preservado e a operação não continua às cegas.",
+            " El último snapshot durable fue preservado y la operación no continúa a ciegas.",
+            " The last durable snapshot was preserved and the operation does not continue blindly."),
+        new(
+            "Custo do diário: Checkpoints=",
+            "Costo del diario: Checkpoints=",
+            "Journal cost: Checkpoints="),
+        new(
+            ", Estado=",
+            ", Estado=",
+            ", State="),
+        new(
+            "O checkpoint da passada ",
+            "El checkpoint de la pasada ",
+            "The checkpoint of pass "),
+        new(
+            " não pôde ser confirmado no diário; a remoção parou para não continuar sem estado durável.",
+            " no pudo ser confirmado en el diario; la eliminación se detuvo para no continuar sin estado durable.",
+            " could not be confirmed in the journal; the removal stopped rather than continue without durable state."),
+        new(
+            "Remocao bloqueada: File de metadata '",
+            "Eliminación bloqueada: File de metadatos '",
+            "Removal blocked: metadata File '"),
+        new(
+            "' nao foi encontrado.",
+            "' no fue encontrado.",
+            "' was not found."),
+        new(
+            "Remocao bloqueada: foram encontrados ",
+            "Eliminación bloqueada: se encontraron ",
+            "Removal blocked: found "),
+        new(
+            "Remocao bloqueada: File '",
+            "Eliminación bloqueada: File '",
+            "Removal blocked: File '"),
+        new(
+            "' nao e metadata propria da extensao.",
+            "' no es metadatos propios de la extensión.",
+            "' is not metadata owned by the extension."),
+        new(
+            "' nao possui JSON persistido.",
+            "' no posee JSON persistido.",
+            "' has no persisted JSON."),
+        new(
+            "' possui JSON invalido.",
+            "' posee JSON inválido.",
+            "' has invalid JSON."),
+        new(
+            "Remocao bloqueada: ",
+            "Eliminación bloqueada: ",
+            "Removal blocked: "),
+        new(
+            "O alvo ainda existe após Delete.",
+            "El objetivo todavía existe después del Delete.",
+            "The target still exists after Delete."),
+        new(
+            "O alvo não foi reencontrado após Delete.",
+            "El objetivo no fue reencontrado después del Delete.",
+            "The target was not found again after Delete."),
+        new(
+            "Operação abortada pelo usuário. O objeto em curso foi concluído; a KB pode ter ficado inconsistente. Use Remover / Wizard / Sync para reparar.",
+            "Operación abortada por el usuario. El objeto en curso fue concluido; la KB puede haber quedado inconsistente. Use Eliminar / Wizard / Sync para reparar.",
+            "Operation aborted by the user. The object in progress was completed; the KB may have been left inconsistent. Use Remove / Wizard / Sync to repair."),
+        new(
+            "Operação ",
+            "Operación ",
+            "Operation "),
+        new(
+            " sobre '",
+            " sobre '",
+            " over '"),
+        new(
+            "': estado ",
+            "': estado ",
+            "': state "),
+        new(
+            ", envelope ",
+            ", sobre ",
+            ", envelope "),
+        new(
+            ", durabilidade ",
+            ", durabilidad ",
+            ", durability "),
+        new(
+            ", atualizado em ",
+            ", actualizado en ",
+            ", updated at "),
+        new(
+            "Motivo registrado no envelope: ",
+            "Motivo registrado en el sobre: ",
+            "Reason recorded in the envelope: "),
+        new(
+            "Próxima etapa apurada: ",
+            "Próxima etapa determinada: ",
+            "Next step determined: "),
+        new(
+            "A KB não tem diário de operação: nenhuma operação desta ferramenta ficou pendente aqui.",
+            "La KB no tiene diario de operación: ninguna operación de esta herramienta quedó pendiente aquí.",
+            "The KB has no operation journal: no operation from this tool was left pending here."),
+        new(
+            "plan.plannedApiGuid é obrigatório em Apply e Sync a partir do estágio ",
+            "plan.plannedApiGuid es obligatorio en Apply y Sync a partir de la etapa ",
+            "plan.plannedApiGuid is required in Apply and Sync from stage "),
+        // B111/F3 P7 (dívida fechada na P8): o que a primeira sonda não viu. Ela exigia acento
+        // ou palavra-marcador para considerar um literal, e estas frases são de uma leva antiga,
+        // escritas em ASCII sem acento — `nao e proprio da extensao`. Uma segunda sonda, sem esse
+        // filtro, achou as sete causas que o preflight da remoção cola em `Remocao bloqueada: {x}`
+        // e mais algumas. A lição fica: heurística de idioma por acento não encontra texto antigo.
+        new(
+            "API Object ambiguo '",
+            "API Object ambiguo '",
+            "ambiguous API Object '"),
+        new(
+            "' nao corresponde ao Guid registrado",
+            "' no corresponde al Guid registrado",
+            "' does not match the recorded Guid"),
+        new(
+            "Procedure ambigua '",
+            "Procedure ambigua '",
+            "ambiguous Procedure '"),
+        new(
+            "' nao e propria da extensao",
+            "' no es propia de la extensión",
+            "' is not owned by the extension"),
+        new(
+            "tentativa de apagar SDT compartilhado '",
+            "intento de borrar SDT compartido '",
+            "attempt to delete shared SDT '"),
+        new(
+            "SDT ambiguo '",
+            "SDT ambiguo '",
+            "ambiguous SDT '"),
+        new(
+            "' nao e proprio da extensao",
+            "' no es propio de la extensión",
+            "' is not owned by the extension"),
+        new(
+            ". O estado da KB mudou apos o preflight; interrompendo para evitar mais exclusoes.",
+            ". El estado de la KB cambió después del preflight; interrumpiendo para evitar más exclusiones.",
+            ". The KB state changed after the preflight; stopping to avoid further deletions."),
+        new(
+            "Procedure ausente antes do Delete.",
+            "Procedure ausente antes del Delete.",
+            "Procedure absent before Delete."),
+        new(
+            "API Object ausente antes do Delete.",
+            "API Object ausente antes del Delete.",
+            "API Object absent before Delete."),
+        new(
+            "SDT ausente antes do Delete.",
+            "SDT ausente antes del Delete.",
+            "SDT absent before Delete."),
+        new(
+            "File de metadata ausente antes do Delete.",
+            "File de metadatos ausente antes del Delete.",
+            "Metadata File absent before Delete."),
+        new(
+            "A abertura do diário falhou: ",
+            "La apertura del diario falló: ",
+            "Opening the journal failed: "),
+        new(
+            "plan.planKind incompatível com operationKind=",
+            "plan.planKind incompatible con operationKind=",
+            "plan.planKind incompatible with operationKind="),
+        new(
+            "Metadata de remoção incompatível em '",
+            "Metadatos de eliminación incompatibles en '",
+            "Incompatible removal metadata in '"),
+        new(
+            "Membro 'schemaVersion' incompativel",
+            "Miembro 'schemaVersion' incompatible",
+            "Member 'schemaVersion' is incompatible"),
+        new(
+            " ou ausente (legado), atual=",
+            " o ausente (heredado), actual=",
+            " or absent (legacy), current="),
+        new(
+            "V1, V2 ou V3",
+            "V1, V2 o V3",
+            "V1, V2 or V3"),
+        new(
+            ": esperado ",
+            ": esperado ",
+            ": expected "),
+        // O File do diário sem módulo: o rótulo aparece na linha de abertura, na Output.
+        new("<sem módulo>", "<sin módulo>", "<no module>"),
         new("A operação Apply", "La operación Apply", "The Apply operation"),
         new("A operação Sync", "La operación Sync", "The Sync operation"),
         new("A operação Remove", "La operación Remove", "The Remove operation"),
