@@ -1064,6 +1064,33 @@ internal static class ExtensionOutputLocalization
             ": esperado ",
             ": esperado ",
             ": expected "),
+        // B111/F3 P8 (cenário 8): as recusas do plano de remoção sobre metadata legada ou
+        // adulterada. Nenhuma estava no catálogo — saíam em português em qualquer KB —, e a
+        // frase de saída é comum às três.
+        new(
+            "Metadata de remoção inválida: campo '",
+            "Metadatos de eliminación inválidos: campo '",
+            "Invalid removal metadata: field '"),
+        new(
+            "' ausente.",
+            "' ausente.",
+            "' is missing."),
+        new(
+            " A remoção não apaga nada sem o inventário completo: corrija o File de metadata ou, para regerar a API sobre o que restou na KB, apague o File de metadata e o API Object e execute o Wizard de novo.",
+            " La eliminación no borra nada sin el inventario completo: corrija el File de metadatos o, para regenerar la API sobre lo que quedó en la KB, borre el File de metadatos y el API Object y ejecute el Wizard de nuevo.",
+            " The removal deletes nothing without the complete inventory: fix the metadata File or, to regenerate the API over what is left in the KB, delete the metadata File and the API Object and run the Wizard again."),
+        new(
+            "Metadata hierárquica com levels ilegível; a remoção não usa fallback flat. Corrija a metadata ou regenere a API.",
+            "Metadatos jerárquicos con levels ilegible; la eliminación no usa fallback flat. Corrija los metadatos o regenere la API.",
+            "Hierarchical metadata with unreadable levels; the removal does not fall back to the flat inventory. Fix the metadata or regenerate the API."),
+        new(
+            "levels.levelName é obrigatório.",
+            "levels.levelName es obligatorio.",
+            "levels.levelName is required."),
+        new(
+            "', encontrado '",
+            "', encontrado '",
+            "', found '"),
         // O File do diário sem módulo: o rótulo aparece na linha de abertura, na Output.
         new("<sem módulo>", "<sin módulo>", "<no module>"),
         new("A operação Apply", "La operación Apply", "The Apply operation"),

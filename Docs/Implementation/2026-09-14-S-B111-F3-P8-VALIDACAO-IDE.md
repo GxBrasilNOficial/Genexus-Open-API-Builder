@@ -45,7 +45,8 @@ cenário passou é posterior à execução dele.
 | 6, primeira passagem | **anterior** a `42cdf0e` | o texto falso do envelope sem recibo foi **produzido aqui** (8.1) |
 | 6, confirmação | posterior a `42cdf0e` | 8.1 registra o diálogo com o texto novo, «no mesmo envelope» |
 | 7 | `b788cf4` | build Release instalada em 2026-09-15, antes da retomada da bateria; o manifesto não mudou desde `19139b7`, então bastou trocar a DLL |
-| 8, 9 | **a instalar** | pendentes; exigem a build com as duas correções de texto saídas do cenário 7 (seção 11.2) |
+| 8 | `9ab74bb` | build com as duas correções de texto do cenário 7, instalada em 2026-09-15 antes das três variantes |
+| 9 | **a instalar** | pendente; exige a build com as recusas de remoção corrigidas (seção 12.4) |
 
 **Reexercício devido — e o que não é.** Entre o cenário 5 e hoje entraram, além de texto,
 diagnóstico e localização, **um ramo de decisão no rehydrator**: `42cdf0e` acrescentou
@@ -735,7 +736,7 @@ coisa e é o que o orçamento de 4.4 governa.
 | 5 | Abortar um Apply no meio; oferta proativa; recuperação | **passou** — seção 7 |
 | 6 | Envelope `Prepared` e abandono | **reformulado** — não é alcançável pela interface; ver seção 8 |
 | 7 | Interromper uma remoção no meio e retomar a fila — contra os critérios 9 a 12 da seção 10 do plano | **passou** — seção 11 |
-| 8 | Remoção de API legado, com metadata válida e com metadata insuficiente | não iniciado |
+| 8 | Remoção de API legado, com metadata válida e com metadata insuficiente | **passou** — seção 12 |
 | 9 | Acréscimo de tempo do diário na KB grande — **duas** medições: **9a** Apply (medida na P2, a refazer com a DLL corrente) e **9b** remoção retomável, contra a tabela derivada de 4.4 | 9a a refazer; 9b não iniciada |
 
 O cenário 3 dependia do envelope `Partial` deixado pelo cenário 2: **não apagar o File
@@ -971,3 +972,99 @@ sonda da seção 8.2.5 encontrou, e a reescrita o traz para o catálogo trilíng
 Asserções novas em `tests.extensionOutputLocalization` (aviso partido em prefixo e sufixo, para a
 contagem no meio; título da recuperação nos três idiomas) e em
 `tests.generatedApiRemovalResilience` (os dois avisos de remoção parcial apontam a recuperação).
+
+## 12. Cenário 8 — remoção de API legado
+
+**Passou**, em 2026-09-15, com a DLL do commit `9ab74bb`, em três execuções sobre a mesma geração
+da `Teste`: duas de metadata insuficiente, que bloqueiam sem apagar nada, e uma de metadata legada
+válida, que remove. A ordem não é detalhe — as duas primeiras não consomem a API, então uma
+geração serve às três.
+
+### 12.1 Como o legado foi fabricado, e por que isso é legítimo
+
+Não foi gerado por uma DLL antiga: o JSON exportado da metadata V3 foi editado, produzindo três
+variantes. A alternativa — instalar a `0.1.0-alpha.7`, gerar, reinstalar a DLL atual, repetir —
+pagaria três instalações para exercitar o **mesmo consumidor**, que é o caminho de leitura de
+metadata sem `ownership.applicationId`. Para ele, quem escreveu o arquivo é indiferente.
+
+O que autoriza a edição à mão é uma verificação de código, não conveniência: a remoção **não**
+valida o `fingerprint` do topo da metadata — quem o valida é o caminho do Wizard
+(`ApiPlanApiObjectWriter`). O plano de remoção exige `schemaVersion` suportada, os campos de
+`ownership` e o inventário de `objects`, e revalida cada alvo na KB. Por isso o roteiro proibiu
+abrir o Wizard entre o import e o Remover: ali o fingerprint desatualizado bloquearia, e o
+bloqueio não teria nada a ver com o cenário.
+
+| Variante | O que foi alterado | Resultado esperado |
+|---|---|---|
+| 8-1 | V2, sem `applicationId`, **sem `ownership.apiGuid`** | bloqueio |
+| 8-2 | V2, sem `applicationId`, sem `objects.sdts.own`, childLevel `TesteItem` **sem `levelName`** | bloqueio |
+| 8-3 | V2, sem `applicationId`, sem `objects.sdts.own`, levels íntegros | remoção com adoção tardia |
+
+### 12.2 As duas recusas, e o que elas protegem
+
+Nas duas, `Removidos=0`, `PersistenceReceipts=0`, `Tempo: 0 ms` e **nenhuma linha `B111/F3`** na
+Output: o diário não chegou a abrir envelope. Isso é consequência da ordem da P4 — a intenção é
+resolvida antes de o diário ser aberto —, e significa que metadata insuficiente **não deixa
+rastro para limpar**.
+
+- **8-1** parou em `ApiPlanGeneratedApiRemovalPlan.RequirePresent`, antes do diálogo de
+  confirmação: sem `apiGuid` confirmado não há como identificar o API Object, e o plano é
+  explícito em que nome ou Description isolados nunca autorizam exclusão;
+- **8-2** parou em `ApiPlanGeneratedApiRemovalInventory.ResolveOwnSdtNames`. É a recusa mais
+  valiosa das três: a metadata anunciava `levels` e, ao não conseguir lê-los, a remoção **não**
+  caiu no inventário plano. Se tivesse caído, teria apagado cinco SDTs, deixado treze de subnível
+  órfãos e levado junto a metadata que os descrevia — o estado mais difícil de reparar que esta
+  ferramenta consegue produzir.
+
+### 12.3 A remoção legada, e a adoção tardia
+
+| Medida | Resultado |
+|---|---|
+| Inventário reconstruído | 18 SDTs a partir de `levels`, **nome a nome e na mesma ordem** do inventário explícito; `PlannedDeletes=25` |
+| `applicationId` | `f9b9eb17-8e01-43dd-bca1-3c9b851043b3` — **novo**, diferente do `662c6e53…` que o Apply da mesma manhã gravou, porque o arquivo legado não traz o campo |
+| Metadata legada | **não** regravada para ganhar o campo; saiu da KB como penúltima da fila |
+| Desfecho | `Removed/Removed`, 25 confirmados, `Passadas=1/25`, `Pendentes=0`, `Preservados=5` |
+| Custo | 4 checkpoints, 81 ms de diário em 5,5 s |
+
+A reconstrução pelos levels reproduzir exatamente os nomes gerados é o que sustenta o critério de
+aceite 6: a intenção **importada** da metadata legada descreve o mesmo conjunto que a geração
+criou. Um único nome divergente teria virado `TargetAbsentBeforeDelete` e encerrado a operação em
+`Partial`.
+
+O custo de 1,5% do tempo total não compara com o limiar de 1% do item 7 da seção 9: aquele limiar
+é sobre a KB grande, onde o denominador é outro. Aqui o diário levou 81 ms porque a operação
+inteira levou 5,5 s.
+
+### 12.4 O que o cenário produziu: recusas mudas e sem tradução
+
+As três recusas do plano de remoção — campo ausente, campo incompatível e `schemaVersion` fora de
+V1/V2/V3 — bloqueavam **sem dizer o que fazer**, ao contrário da recusa da metadata hierárquica
+ilegível, que já terminava com «Corrija a metadata ou regenere a API». É o mesmo critério da
+seção 10, aplicado onde ainda não estava. As três passaram a terminar com uma saída única, numa
+constante compartilhada; o nome do campo continua no começo, porque quem edita metadata legada
+precisa dele.
+
+Ao cadastrar isso, apareceu o que a leitura das mensagens não mostrava: **nenhuma das quatro
+estava no catálogo de tradução** — nem a que eu tinha elogiado por ter saída —, junto com a causa
+interna `levels.levelName é obrigatório.`, que chega ao relatório final. Saíam em português em
+qualquer KB. Sete entradas novas, com asserções no gate.
+
+É o quarto resíduo da mesma classe nesta frente: mensagem de caminho raro que ninguém lê até
+precisar. A sonda de 8.2.5 não as pegou porque elas nascem como `InvalidOperationException` num
+validador, não como texto de tela.
+
+### 12.5 Achado de contrato — o Folder vazio é permanente
+
+Depois da remoção, o Folder `TesteOpenApi` ficou na KB, vazio. **É o comportamento correto**: a
+fila só apaga Folder próprio criado pela operação corrente (`wasCreated=true`), e o diálogo avisa
+«reutilizado; nunca apagar». Mas o efeito é de mão única — assim que um Folder sobrevive a uma
+remoção, toda geração seguinte o reencontra como reutilizado, e **nenhuma remoção futura vai
+apagá-lo**, porque `wasCreated` descreve a operação corrente, não quem criou o Folder.
+
+A saída barata — apagar Folder vazio que carregue a Description canônica — foi **recusada pelo
+usuário na mesma data**, por ser menos segura: Description isolada nunca autorizou exclusão neste
+projeto, e um Folder homônimo de terceiro com a mesma marca seria apagado. A saída aprovada é a
+cara, e virou o item de backlog **`B123`**, para depois da sprint: a metadata registrar a posse
+histórica do Folder, o que é mudança de schema com leitura legada, fingerprint e consumidores.
+
+Até lá, o resíduo é um Folder vazio, inofensivo, que o usuário apaga à mão se quiser.

@@ -591,6 +591,23 @@ $partialSpanish = $translate.Invoke($null, [object[]] @($partial, $spanish))
 Assert-True ($partialSpanish.Contains('Eliminación parcial: 11 objeto(s)')) 'Espanhol deve traduzir o prefixo do aviso de remoção parcial e preservar a contagem.'
 Assert-True (-not $partialSpanish.Contains('Repetir a remoção')) 'Espanhol não deve deixar o aviso de remoção parcial pela metade.'
 
+# B111/F3 P8 (cenário 8) — as recusas do plano de remoção sobre metadata legada ou adulterada,
+# com a frase de saída comum às três. O nome do campo fica; o que mudou é a frase terminar com um
+# caminho, como as mensagens equivalentes do Wizard.
+$exitPt = " A remoção não apaga nada sem o inventário completo: corrija o File de metadata ou, para regerar a API sobre o que restou na KB, apague o File de metadata e o API Object e execute o Wizard de novo."
+$missingField = "Metadata de remoção inválida: campo 'ownership.apiGuid' ausente." + $exitPt
+$missingFieldEnglish = $translate.Invoke($null, [object[]] @($missingField, $english))
+Assert-True ($missingFieldEnglish -ceq "Invalid removal metadata: field 'ownership.apiGuid' is missing. The removal deletes nothing without the complete inventory: fix the metadata File or, to regenerate the API over what is left in the KB, delete the metadata File and the API Object and run the Wizard again.") "Inglês deve traduzir a recusa por campo ausente por inteiro. Obtido='$missingFieldEnglish'"
+Assert-True (-not ($translate.Invoke($null, [object[]] @($missingField, $spanish))).Contains('A remoção não apaga')) 'Espanhol não deve deixar a saída da recusa em português.'
+
+$badSchema = "Metadata de remoção incompatível em 'schemaVersion': esperado V1, V2 ou V3, encontrado 'GOAB_X'." + $exitPt
+$badSchemaEnglish = $translate.Invoke($null, [object[]] @($badSchema, $english))
+Assert-True ($badSchemaEnglish.Contains("Incompatible removal metadata in 'schemaVersion': expected V1, V2 or V3, found 'GOAB_X'.")) "Inglês deve traduzir a recusa por schemaVersion. Obtido='$badSchemaEnglish'"
+
+$unreadableLevels = 'Metadata hierárquica com levels ilegível; a remoção não usa fallback flat. Corrija a metadata ou regenere a API.'
+Assert-True (($translate.Invoke($null, [object[]] @($unreadableLevels, $english))) -ceq 'Hierarchical metadata with unreadable levels; the removal does not fall back to the flat inventory. Fix the metadata or regenerate the API.') 'Inglês deve traduzir a recusa da metadata hierárquica ilegível.'
+Assert-True (($translate.Invoke($null, [object[]] @('levels.levelName é obrigatório.', $english))) -ceq 'levels.levelName is required.') 'Inglês deve traduzir a causa interna da metadata hierárquica ilegível.'
+
 # O relatório final da recuperação: o verbo próprio, e o título de interrupção.
 $recovered = 'Operação recuperada com sucesso.'
 Assert-True (($translate.Invoke($null, [object[]] @($recovered, $english))) -ceq 'Operation recovered successfully.') 'Inglês deve traduzir o título da recuperação bem-sucedida.'

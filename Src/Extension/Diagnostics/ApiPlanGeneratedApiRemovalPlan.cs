@@ -162,11 +162,20 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
         }
     }
 
+    /// <summary>
+    /// B111/F3 P8: a recusa por metadata insuficiente bloqueava sem dizer o que fazer, enquanto a
+    /// recusa irmã da metadata hierárquica ilegível já apontava a saída. O nome do campo continua
+    /// no começo — quem edita metadata legada precisa dele —, mas a frase que a pessoa lê termina
+    /// com um caminho, como as mensagens da seção 10 da P8.
+    /// </summary>
+    private const string InvalidMetadataExit =
+        " A remoção não apaga nada sem o inventário completo: corrija o File de metadata ou, para regerar a API sobre o que restou na KB, apague o File de metadata e o API Object e execute o Wizard de novo.";
+
     private static string RequirePresent(JToken? token, string path)
     {
         if (token is null || token.Type != JTokenType.String || string.IsNullOrWhiteSpace(token.Value<string>()))
         {
-            throw new InvalidOperationException($"Metadata de remoção inválida: campo '{path}' ausente.");
+            throw new InvalidOperationException($"Metadata de remoção inválida: campo '{path}' ausente." + InvalidMetadataExit);
         }
 
         return token.Value<string>()!;
@@ -191,7 +200,7 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
         if (!supported)
         {
             throw new InvalidOperationException(
-                $"Metadata de remoção incompatível em 'schemaVersion': esperado V1, V2 ou V3, encontrado '{actual ?? "<ausente>"}'.");
+                $"Metadata de remoção incompatível em 'schemaVersion': esperado V1, V2 ou V3, encontrado '{actual ?? "<ausente>"}'." + InvalidMetadataExit);
         }
     }
 
@@ -200,7 +209,7 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
         var actual = RequirePresent(token, path);
         if (!string.Equals(actual, expected, StringComparison.Ordinal))
         {
-            throw new InvalidOperationException($"Metadata de remoção incompatível em '{path}': esperado '{expected}', encontrado '{actual}'.");
+            throw new InvalidOperationException($"Metadata de remoção incompatível em '{path}': esperado '{expected}', encontrado '{actual}'." + InvalidMetadataExit);
         }
     }
 
