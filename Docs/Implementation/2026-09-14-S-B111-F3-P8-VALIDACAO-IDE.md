@@ -151,6 +151,11 @@ Markdown apareciam literais. Trocada pelo `ExtensionRecoveryDialog`, com o desen
 do Remover — largura de leitura, inventário em bloco monoespaçado e rolável, pergunta no rodapé
 e o botão seguro com o foco. Os resumos deixaram de enumerar nomes.
 
+Numa segunda passagem, com o diálogo já em uso, as medidas foram aumentadas em 30% na largura
+e na altura — 1404 × 624, com o bloco de inventário até 546 px, tudo limitado pela área útil do
+monitor. Nomes de SDT hierárquico desta Transaction passam de sessenta caracteres, e é a
+largura que decide se o inventário se lê ou se quebra no meio do nome.
+
 O cenário 3 será refeito do início com a DLL corrigida, incluindo a resposta `Sim`.
 
 ## 6. Cenários restantes

@@ -25,6 +25,16 @@ internal sealed class ExtensionRecoveryDialog : Form
 {
     private const int Pad = 12;
 
+    // Medidas ajustadas em campo, durante a P8: a primeira versão coube na tela mas deixava a
+    // lista de objetos hierárquicos apertada na horizontal e curta na vertical. Todas continuam
+    // limitadas pela área útil do monitor em que a IDE está.
+    private const int PreferredWidth = 1404;
+    private const int MinimumWidth = 936;
+    private const int PreferredHeightWithDetails = 624;
+    private const int PreferredHeightWithoutDetails = 312;
+    private const int MaximumDetailsHeight = 546;
+    private const int MinimumDetailsHeight = 104;
+
     private readonly IWin32Window? _owner;
     private readonly PictureBox _iconBox;
     private readonly Label _messageLabel;
@@ -232,17 +242,17 @@ internal sealed class ExtensionRecoveryDialog : Form
     }
 
     /// <summary>
-    /// Largura de leitura, limitada pela área útil do monitor em que a IDE está. O piso de 1080
-    /// é o mesmo do diálogo do Remover: abaixo disso, a lista de objetos hierárquicos volta a
-    /// quebrar no meio do nome.
+    /// Largura de leitura, limitada pela área útil do monitor em que a IDE está. Nomes de SDT
+    /// hierárquico chegam a passar de sessenta caracteres; abaixo desta largura a lista volta a
+    /// quebrar no meio do nome, que é o que torna o inventário ilegível.
     /// </summary>
     private void FitToCurrentWorkingArea()
     {
         var working = GetTargetWorkingArea();
         var maxWidth = Math.Max(640, working.Width - 32);
         var maxHeight = Math.Max(360, working.Height - 32);
-        var preferredWidth = Math.Min(1080, maxWidth);
-        MinimumSize = new Size(Math.Min(720, maxWidth), Math.Min(320, maxHeight));
+        var preferredWidth = Math.Min(PreferredWidth, maxWidth);
+        MinimumSize = new Size(Math.Min(MinimumWidth, maxWidth), Math.Min(320, maxHeight));
         MaximumSize = new Size(maxWidth, maxHeight);
 
         var innerWidth = Math.Max(320, preferredWidth - (Pad * 4) - SystemIcons.Warning.Width - Pad);
@@ -250,8 +260,8 @@ internal sealed class ExtensionRecoveryDialog : Form
         _questionLabel.MaximumSize = new Size(Math.Max(320, preferredWidth - (Pad * 4)), 0);
 
         var height = _hasDetails
-            ? Math.Min(maxHeight, Math.Max(480, PreferredSize.Height + MeasureDetailsHeight()))
-            : Math.Min(maxHeight, Math.Max(240, PreferredSize.Height));
+            ? Math.Min(maxHeight, Math.Max(PreferredHeightWithDetails, PreferredSize.Height + MeasureDetailsHeight()))
+            : Math.Min(maxHeight, Math.Max(PreferredHeightWithoutDetails, PreferredSize.Height));
         Size = new Size(preferredWidth, height);
         Location = new Point(
             working.Left + Math.Max(0, (working.Width - Width) / 2),
@@ -262,7 +272,7 @@ internal sealed class ExtensionRecoveryDialog : Form
     {
         var lines = _bodyBox.Lines.Length;
         var lineHeight = TextRenderer.MeasureText("Ag", _bodyBox.Font).Height + 2;
-        return Math.Min(420, Math.Max(80, lines * lineHeight));
+        return Math.Min(MaximumDetailsHeight, Math.Max(MinimumDetailsHeight, lines * lineHeight));
     }
 
     private Rectangle GetTargetWorkingArea()
