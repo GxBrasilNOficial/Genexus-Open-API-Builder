@@ -205,7 +205,10 @@ que depende da DLL instalada e da KB de teste; **offline** é trabalho de códig
 
 Os itens 5 e 6 são conhecidos e deliberados: estão aqui para que uma sessão nova não os
 redescubra como defeito. Os itens 1, 2, 3 e 4 foram fechados — **a P8 está concluída**, e com
-ela as nove etapas da F3. O encerramento formal da F3 e da sprint `S-B111` **foi decidido em
+ela as nove etapas da F3. A fase foi conferida também contra a **seção 10** do plano, os
+critérios de aceite: oito de oito atendidos, com a ressalva declarada de que o critério 3
+(resultado indeterminado bloqueia continuação) está provado offline e não foi observado em campo,
+porque indeterminação não se produz por clique. Tabela critério × evidência na seção 15 da P8. O encerramento formal da F3 e da sprint `S-B111` **foi decidido em
 2026-09-15**, e está registrado na seção acima.
 
 **Fora da F3, para logo depois do encerramento da sprint:** `B122` — dar aos agentes uma
@@ -269,8 +272,10 @@ caminho de entrada por clique. Em lugar dele, o aborto no primeiro segundo produ
 **com zero recibos**, e isso expôs um texto falso: a recuperação dizia que a operação «gravou
 objetos e parou no meio». O rehydrator passou a distinguir os dois casos pelo número de recibos.
 
-Faltam três cenários: retomada de remoção interrompida, remoção de API legado e medição do
-acréscimo na KB grande. Cenário sem registro naquele documento é cenário não exercido.
+Naquele momento faltavam três cenários: retomada de remoção interrompida, remoção de API legado
+e medição do acréscimo na KB grande. **Os três foram exercidos em 2026-09-15** e estão nas
+seções 11 a 14 daquele documento; a conferência dos oito critérios de aceite comuns, feita depois
+do encerramento, está na seção 15.
 
 Verificação offline desta rodada: build Release com 0 avisos e 0 erros, checker de comandos com
 13 comandos e o orquestrador mecânico com 64 checks `passed` e 1 `skipped` (`git.statusPre`,

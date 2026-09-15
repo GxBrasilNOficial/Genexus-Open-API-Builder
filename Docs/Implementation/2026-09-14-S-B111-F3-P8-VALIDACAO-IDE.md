@@ -1189,3 +1189,27 @@ no 9a (121% entre execuções) está no custo de gravar o File, não no trabalho
 
 Com o 9b, os nove cenários da seção 9 do plano estão exercidos: oito passaram e um foi
 reformulado pelo que mediu.
+
+## 15. Os oito critérios de aceite comuns, cruzados com evidência
+
+**Escrito em 2026-09-15, depois do encerramento**, porque uma conferência externa notou que a F3
+estava sendo fechada contra a **seção 9** do plano — que diz o que exercitar — e não contra a
+**seção 10**, que diz o que precisa ser verdade no fim. Os critérios 9 a 12, da retomada, têm
+conferência registrada na seção 11; os oito comuns não tinham. A observação procede, e esta
+tabela existe para que o fecho da fase se apoie no contrato dela.
+
+| # | Critério | Evidência | Onde |
+|---|---|---|---|
+| 1 | a intenção é registrada e confirmada antes da primeira gravação do pipeline | Apply e Sync abrem o diário com `Prepared` e `Active` confirmados por releitura **antes** de qualquer objeto de negócio; na remoção, o inventário completo é gravado antes do primeiro `Delete()` — `PlannedDeletes=50`, `Inventário=55`, e só então a fila corre | P2 §6.1–6.4; seções 2, 11 e 12.3 |
+| 2 | estado físico e estágio lógico são reportados separadamente | todo checkpoint publica o par: `Running/RemovalInProgress`, `Partial/RemovalPartial`, `Completed/Discarded`, `Removed/Removed`. O par divergente é informativo por desenho — `Completed/Discarded` diz que a operação terminou fisicamente e que o registro foi encerrado por decisão | seções 2 a 14, em toda Output |
+| 3 | resultado indeterminado bloqueia continuação automática | **coberto offline, não observado em campo.** `OutcomeUnknown` bloqueia sem retry na fila, a recuperação responde `Block` com `UnreconciledOutcome`, e o encerramento de registro recusa o caso. Nenhuma das operações medidas produziu indeterminação: exigiria releitura ilegível ou ambígua da IDE, que não se provoca por clique | `tests.removalQueue`, `tests.operationJournalRecovery`; P4–P7 §3.1 |
+| 4 | reaplicação não cria API duplicado nem sobrescreve intenção parcial em silêncio | o Apply seguinte a um aborto **bloqueou** em vez de sobrescrever, com a oferta proativa (cenário 5); e a reaplicação sobre KB limpa reencontrou tudo — `Criados=2`, `Atualizados=26`, `PlannedContractHash` idêntico — sem segundo API Object | seções 6 e 7 |
+| 5 | nenhuma exclusão ocorre sem intenção de remoção confirmada | as duas metadatas insuficientes pararam no `Preview`, antes do diálogo: `Removidos=0`, `PersistenceReceipts=0`, **sem abrir envelope**. E a ordem intenção → diário → fila é verificada por gate | seções 12.2; `tests.generatedApiRemovalPreflight` |
+| 6 | remoção de legado importa a intenção da metadata ou bloqueia antes do primeiro `Delete()` | as duas saídas exercidas no mesmo dia: metadata V2 legada válida importou a intenção e removeu os 25, com adoção tardia; sem `apiGuid` e com `levels` ilegível, bloqueou | seção 12 inteira |
+| 7 | nome, Description canônica ou prefixo nunca autorizam exclusão sozinhos | a recusa por `ownership.apiGuid` ausente é exatamente este critério em campo: o File tinha nome, Description canônica e todos os demais campos, e ainda assim a remoção parou. A posse por Description continua sendo condição necessária, nunca suficiente — foi também o argumento que derrubou a saída barata do Folder e gerou o `B123` | seções 12.2 e 12.5 |
+| 8 | ciclo de `operationId`/`applicationId` pela matriz de 4.1.1, e fingerprint V3 cobrindo `ownership.applicationId` | cruzamento `journal.applicationId` = `metadata.ownership.applicationId` medido na P2; a retomada preservou os dois identificadores (critério 9); e a adoção tardia gerou `applicationId` novo **sem** regravar a metadata legada, que é a linha da matriz para legado sem o campo | P2 §6.2; seções 11.1 e 12.3 |
+
+**Resultado: oito de oito atendidos, com uma ressalva declarada** — o critério 3 está provado
+offline e não foi observado em campo, porque indeterminação não se produz por clique. Nenhum
+critério ficou sem evidência, e nenhum foi verificado apenas por leitura de código: sete têm
+observação de campo com números nesta bateria ou na P2.
