@@ -135,7 +135,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Frente atual
 
-Sprint `S-B111` — F1 está **implementada e validada para encerramento com exceção explícita do `B121`** em 2026-09-10/11, e a F2 (seam de persistência e recibos) foi encerrada em 2026-09-13. Além dos cenários positivos, cancelamento cooperativo e criação em escala já aceitos, a `Teste` descartável comprovou retorno sem mutação antes de `SDT.Save`, confirmação divergente após `API.Save` e falha antes de `Procedure.Delete`, seguida de limpeza idempotente. O `B121` permanece como melhoria fora da sprint. A frente atual é a F3 (durabilidade e remoção), em andamento: as etapas P0 (metadata V3), P1 (schema V1 do diário) e P2 (o diário gravado na KB em Apply e Sync) foram implementadas em 2026-09-14; a P2 foi validada na IDE em 2026-09-14 nos quatro fluxos que cobre — Apply de criação, reencontro, aborto com bloqueio e Sync com delta —, em duas KBs. A P3 (gate estendido e precedência de `GateDiagnostic`) foi implementada e validada na IDE em 2026-09-14, em seis cenários, e está **concluída** — as quatro correções que a validação produziu também foram validadas em campo. Reconciliação, retry de remoção e comando de recuperação continuam não implementados. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
+Sprint `S-B111` — F1 está **implementada e validada para encerramento com exceção explícita do `B121`** em 2026-09-10/11, e a F2 (seam de persistência e recibos) foi encerrada em 2026-09-13. Além dos cenários positivos, cancelamento cooperativo e criação em escala já aceitos, a `Teste` descartável comprovou retorno sem mutação antes de `SDT.Save`, confirmação divergente após `API.Save` e falha antes de `Procedure.Delete`, seguida de limpeza idempotente. O `B121` permanece como melhoria fora da sprint. A frente atual é a F3 (durabilidade e remoção), em andamento: as etapas P0 (metadata V3), P1 (schema V1 do diário) e P2 (o diário gravado na KB em Apply e Sync) foram implementadas em 2026-09-14; a P2 foi validada na IDE em 2026-09-14 nos quatro fluxos que cobre — Apply de criação, reencontro, aborto com bloqueio e Sync com delta —, em duas KBs. A P3 (gate estendido e precedência de `GateDiagnostic`) foi implementada e validada na IDE em 2026-09-14, em seis cenários, e está **concluída** — as quatro correções que a validação produziu também foram validadas em campo. As etapas P4 (remoção com intenção, passadas e orçamento), P5 (serviços de recuperação), P6 (comando explícito e preferência) e P7 (localização e gates) foram **implementadas offline na mesma data e não foram exercidas na IDE**; resta a P8, a validação integrada. A continuação de um `Apply` ou `Sync` interrompido permanece fora do escopo entregue, por decisão declarada: o envelope não carrega o contrato. `B108` continua estacionado, e o residual `B082` 1B/2/3 permanece fora da pauta imediata. O histórico da Sprint 9 e seu suporte a Transactions com Subníveis (B095–B099) continua registrado abaixo e concluído.
 
 Ordem de execução vigente na sprint: `B102` (concluído) → Fase 0 (concluída: camada offline + captura IDE de início em 2026-08-25; **conferência de fim em 2026-08-28**, `CAPTURE-FIM.md`) → Fase 1/`B095` (concluída em 2026-08-25) → Fase 2/`B096` (concluída em 2026-08-26) → Fase 3/`B097` (concluída em 2026-08-26) → Fase 4/`B098` (concluída em 2026-08-26) → Fase 5/`B099a` (concluída em 2026-08-26) → Fase 5-A/`B099v` (concluída em 2026-08-28) → Fase 6/`B099b` (concluída em 2026-08-28) → Fase 7 (concluída em 2026-08-28) → `B100` (concluído em 2026-08-30) → `B082` Fases A+B (concluído em 2026-09-01) → `B082` Etapa 1A (aceita em 2026-09-03). Publicação em quatro cortes: `0.1.0-alpha.4` após `B102` (2026-08-24), `0.1.0-alpha.5` ao fim da Fase 7 com os subníveis (2026-08-30), `0.1.0-alpha.6` com o `Delete` (2026-08-31) e `0.1.0-alpha.7` com o progresso `B082` (**publicado em 2026-09-01**). `B105` entra na sprint apenas se houver folga.
 
@@ -143,35 +143,46 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**F3 — etapa P4: remoção com intenção, passadas e orçamento.** A P3 está **concluída e
-validada na IDE em 2026-09-14**, na `Escola` da `wsEducacaoSpTeste`: os cinco cenários do
-roteiro passaram — aborto gravando `UserAborted`, Apply e Sync recusados com diagnóstico
-classificado e sem tocar no envelope, diário adulterado para outra KB e colisão externa no nome
-do File. O caso do diário de outra KB provou a precedência da decisão 24 em campo: o mesmo
-envelope `Partial` que produzia `GateBlocked` passou a ser recusado como `JournalUnavailable`.
+**F3 — etapa P8: validação integrada na IDE.** As etapas P4 a P7 foram **implementadas
+offline em 2026-09-14** e nenhuma delas foi exercida na IDE. O que falta é a seção 9 do plano
+da F3: os nove cenários, com a DLL instalada.
 
-Um sexto cenário, nascido da bateria, expôs que a fronteira `ApiPhysicallySaved` era registrada
-sem gravação do API Object. Quatro correções saíram daí, **todas validadas em campo**: a
-fronteira passou a exigir `ApiSaveCount > 0`; `composite.apiGuid` passou a ser o GUID do API
-Object, e não o do próprio objeto — defeito que precisava estar corrigido antes da P4, que
-consome identidade composta para autorizar exclusão; e `SetMainObject` deixou de declarar
-persistência, primeiro no collector e depois no fallback do próprio relatório, que sobrevivera
-à primeira correção. Gate novo `tests.journalFrontierSentinel` e casos novos em
-`tests.applicationFinalReport`, ambos verificados por mutação.
+O que entrou nesta rodada, em uma linha cada:
 
-Registro: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seções 6, 9, 10 e 11.
+- **P4** — o `Remover API gerada` registra a intenção com o inventário completo antes do
+  primeiro `Delete()`, executa uma fila única de todos os tipos removíveis por passadas, com
+  orçamento `max(1, itens da fila)`, e termina em `Removed`, `Partial` ou `OutcomeUnknown` com
+  o motivo do enum fechado;
+- **P5** — `ApiPlanRecoveryReader`, `Rehydrator`, `Executor` e `Report`: o diário é lido, cada
+  alvo é relido por identidade, e a reidratação devolve **uma** etapa autorizada — abandonar um
+  envelope que nunca gravou, fechar o registro de uma remoção que já terminou, retomar a fila
+  de uma remoção interrompida — ou bloqueia com razão classificada;
+- **P6** — comando `Recuperar operação interrompida` nas duas superfícies de menu, nos três
+  idiomas, e a preferência `ShowRecoveryOptionProactively`, ligada por padrão, que oferece a
+  recuperação quando o diário bloqueia Apply, Sync ou Remover;
+- **P7** — mensagens trilíngues e dois gates novos, `tests.removalQueue` e
+  `tests.operationJournalRecovery`, mais três gates existentes realinhados ao contrato novo.
 
-A P4 é o plano da seção 4.3 da F3: registrar a intenção de remoção com o inventário completo
-antes do primeiro `Delete()`, as passadas da fila, o orçamento de tentativas e `RemovalPartial`
-na interrupção. A máquina de checkpoints já a implementa; falta acioná-la no `Remover API
-gerada`.
+**Duas coisas precisam ser sabidas antes de testar.** A primeira: uma segunda remoção da mesma
+API agora **bloqueia** em vez de ser aceita como idempotente, porque um alvo previsto que já
+não está na KB encerra a operação em `Partial` com `TargetAbsentBeforeDelete` — é o contrato da
+seção 4.3, e a saída é o comando de recuperação. A segunda: a continuação de um `Apply` ou
+`Sync` interrompido **não** foi entregue, e não por esquecimento — o envelope guarda identidade,
+hash de contrato e flags, não o contrato, e retomar o pipeline a partir disso seria inventar um
+plano. Esses envelopes recebem bloqueio com diagnóstico e duas saídas declaradas: concluir pelo
+Wizard sobre o estado atual, ou remover o que ficou pela metade.
 
-Depois dela: P4 (remoção com intenção, passadas e orçamento), P5 (serviços de recuperação),
-P6 (comando explícito e preferência), P7 (localização trilíngue e gates restantes) e P8 (validação integrada na IDE, os nove cenários da seção 9 do plano da F3, que só podem ser exercidos com remoção e recuperação prontas).
+Registro: `Docs/Implementation/2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md` — seção 2.2
+para a mudança de comportamento, 3.2 para o recorte e 7 para os riscos abertos.
 
-**Enquanto a P6 não existe**, um envelope não terminal bloqueia as operações seguintes e a
-única saída é apagar o File `GxOpenApiBuilder_OperationJournal` à mão. Isso foi exercido duas
-vezes na validação e funciona, mas é contorno, não recurso.
+Verificação offline desta rodada: build Release com 0 avisos e 0 erros, checker de comandos com
+13 comandos e o orquestrador mecânico com 64 checks `passed` e 1 `skipped` (`git.statusPre`,
+por working tree suja antes do commit).
+
+**Até a P6, um envelope não terminal bloqueava as operações seguintes e a única saída era
+apagar o File `GxOpenApiBuilder_OperationJournal` à mão** — contorno exercido duas vezes na
+validação da P3. Desde 2026-09-14 existe o comando `Recuperar operação interrompida`, ainda
+**sem validação na IDE**: até a P8, quem testar deve conhecer os dois caminhos.
 
 A F2 foi encerrada após as
 fronteiras de falha controlada na `Teste`: ausência confirmada antes de
@@ -210,7 +221,7 @@ A conclusão da `S-B111` não fecha automaticamente o `B082`: ao encerrar a spri
 
 ## Estado da sprint `S-B111` (planejada em 2026-09-05; território atualizado em 2026-09-13)
 
-Planejamento concluído, avaliação técnica inicial realizada e **a F1 foi implementada localmente** em 2026-09-08: o API Object é preparado em contexto transitório, o writer final concentra o único Save e o gate estrito impede criação/correção implícita de dependências pelos consumidores. Build e gates offline passaram. A validação manual da F1 foi encerrada em 2026-09-10/11 com a exceção explícita do `B121`; a F2 foi encerrada em 2026-09-13 após seus cenários positivos, cancelamento cooperativo, escala e fronteiras de falha controlada. A F3 está em andamento: as etapas P0 (metadata V3), P1 (schema V1 do diário) e P2 (o diário na KB) foram implementadas e validadas na IDE em 2026-09-14; a P3 (gate estendido) foi implementada e validada na IDE na mesma data, com as quatro correções saídas da validação também validadas em campo; P4 a P8 continuam abertas. A consolidação documental foi revisada em 2026-09-08 após um painel CLI de quatro revisores; as ressalvas úteis foram incorporadas e a autorização humana da F1 foi registrada nesta sessão. As decisões aprovadas estão preservadas no registro versionado `Docs/Implementation/2026-09-07-S-B111-DECISOES-APROVADAS.md`.
+Planejamento concluído, avaliação técnica inicial realizada e **a F1 foi implementada localmente** em 2026-09-08: o API Object é preparado em contexto transitório, o writer final concentra o único Save e o gate estrito impede criação/correção implícita de dependências pelos consumidores. Build e gates offline passaram. A validação manual da F1 foi encerrada em 2026-09-10/11 com a exceção explícita do `B121`; a F2 foi encerrada em 2026-09-13 após seus cenários positivos, cancelamento cooperativo, escala e fronteiras de falha controlada. A F3 está em andamento: as etapas P0 (metadata V3), P1 (schema V1 do diário) e P2 (o diário na KB) foram implementadas e validadas na IDE em 2026-09-14; a P3 (gate estendido) foi implementada e validada na IDE na mesma data, com as quatro correções saídas da validação também validadas em campo; as etapas P4 a P7 foram implementadas offline na mesma data, sem validação na IDE, e a P8 continua aberta. A consolidação documental foi revisada em 2026-09-08 após um painel CLI de quatro revisores; as ressalvas úteis foram incorporadas e a autorização humana da F1 foi registrada nesta sessão. As decisões aprovadas estão preservadas no registro versionado `Docs/Implementation/2026-09-07-S-B111-DECISOES-APROVADAS.md`.
 
 **O que mudou no território da sprint depois de 2026-09-05**, por necessidade de campo e fora das fases — registrado na seção 13 do plano da F3:
 
@@ -221,7 +232,7 @@ Planejamento concluído, avaliação técnica inicial realizada e **a F1 foi imp
 
 Os três planos de fase preservam as decisões e o desenho original da sprint. A F1 foi
 encerrada com a exceção explícita do `B121`; a F2 foi implementada e aceita na IDE em
-2026-09-13. A F3 está em andamento: as etapas P0 (metadata V3), P1 (schema V1 do diário) e P2 (o diário na KB, em Apply e Sync) foram implementadas e validadas na IDE em 2026-09-14; a P3 foi implementada, validada na IDE e concluída na mesma data, e as etapas P4 a P8 continuam abertas, na ordem registrada em `Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`.
+2026-09-13. A F3 está em andamento: as etapas P0 (metadata V3), P1 (schema V1 do diário) e P2 (o diário na KB, em Apply e Sync) foram implementadas e validadas na IDE em 2026-09-14; a P3 foi implementada, validada na IDE e concluída na mesma data; as etapas P4 a P7 foram implementadas offline em 2026-09-14 (`Docs/Implementation/2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`) e a P8 — validação integrada na IDE — continua aberta.
 
 | Fase | Plano | Depende de |
 |---|---|---|
@@ -491,11 +502,12 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 126. Em 2026-09-14, a P3 foi validada na IDE na `Escola` da `wsEducacaoSpTeste`, nos cinco cenários do roteiro: o aborto gravou `blockReason=UserAborted` (3 checkpoints, 219 ms, 10 recibos, 5 alvos); o Apply seguinte foi recusado com `[GateBlocked/JournalNonTerminal]`, pré-condição `PriorIntentReconciled` e contexto completo, sem gravar nada e sem tocar no envelope; o Sync com delta recebeu o mesmo diagnóstico, com `operationKind=Apply` no contexto, porque quem bloqueia é o envelope registrado; o diário adulterado para outra KB foi recusado com `[JournalUnavailable/JournalIdentityDivergent]`, provando em campo a precedência da decisão 24 sobre o mesmo envelope `Partial`; e a colisão externa no nome do File produziu o mesmo par código/razão com `lookupState=ExternalCollision` e sem campos de envelope. A bateria expôs dois defeitos anteriores à P3 — `composite.apiGuid` com o GUID do próprio objeto, e `SetMainObject` declarando persistência ao identificar — e gerou um sexto teste, pendente. Próxima ação única = teste 6 e as duas correções, numa única reinstalação de DLL. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seções 6 e 9.
 127. Em 2026-09-14, o teste 6 confirmou a hipótese e as três correções foram aplicadas: o Apply da `Escola` com apenas SDTs e Procedures registrou `ApiPhysicallySaved` com `ApiSaveCount=0`, quatro checkpoints e um inventário de quatro Procedures sem nenhum item de API — a fronteira que impede a recuperação de repetir o Save do API Object era afirmada sem gravação. Corrigidos: a fronteira passou a exigir `report.ApiSaveCount > 0`; `composite.apiGuid` passou a ser o GUID do API Object nos writers de Business Component e de List; e `SetMainObject` deixou de declarar persistência ao apenas identificar. Gate novo `tests.journalFrontierSentinel`, verificado por mutação, e caso novo em `tests.applicationFinalReport`; build Release limpo e orquestrador com todos os checks `passed`. Próxima ação única = reinstalar a DLL e refazer os testes 1 e 6. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seções 6.7, 9 e 10.
 128. Em 2026-09-14, a revalidação na IDE validou duas das três correções: o Apply completo de reencontro gravou `composite.apiGuid` com o GUID do `apiEscola` nos cinco itens e manteve a fronteira com `ApiSaveCount=1`; o Apply sem API Object passou a fazer três checkpoints, sem registrar a fronteira. A terceira estava incompleta — o construtor de `ApiPlanApplicationFinalReport` repunha `PersistedMainObject` por fallback para o objeto identificado, e o gate testava o collector em vez do `Build()`. O fallback foi removido, o caso passou a exercitar o relatório construído e a eficácia foi verificada por mutação. Próxima ação única = reinstalar a DLL e refazer só o Apply sem API Object. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seções 10 e 11.
-129. Em 2026-09-14, a correção 2b fechou a P3: o Apply sem API Object terminou com `Checkpoints=3`, sem registrar a fronteira, e com `PersistedMainObjectName` e `PersistedMainObjectGuid` vazios. A etapa P3 está concluída e validada na IDE, com as quatro correções também validadas em campo. Próxima ação única = F3 etapa P4 (remoção com intenção, passadas e orçamento). Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seções 10 e 11.
+129. Em 2026-09-14, a correção 2b fechou a P3: o Apply sem API Object terminou com `Checkpoints=3`, sem registrar a fronteira, e com `PersistedMainObjectName` e `PersistedMainObjectGuid` vazios. A etapa P3 está concluída e validada na IDE, com as quatro correções também validadas em campo. ~~Próxima ação única = F3 etapa P4 (remoção com intenção, passadas e orçamento).~~ **Superada** pelo item 130. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seções 10 e 11.
+130. Em 2026-09-14 as etapas P4 a P7 da F3 foram implementadas **offline**: intenção de remoção registrada antes do primeiro `Delete()`, fila única por passadas com orçamento fechado, serviços de recuperação (reader, rehydrator, executor e relatório), comando `Recuperar operação interrompida` nas duas superfícies e nos três idiomas, preferência `ShowRecoveryOptionProactively` e dois gates novos (`tests.removalQueue`, `tests.operationJournalRecovery`). Nada foi exercido na IDE. Duas mudanças de contrato precisam ser conhecidas antes do teste: a segunda remoção da mesma API bloqueia em vez de ser idempotente, e a continuação de `Apply`/`Sync` interrompido não foi entregue por o envelope não carregar o contrato. Próxima ação única = F3 etapa P8 (validação integrada na IDE, os nove cenários da seção 9 do plano). Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`.
 
 ## Bloqueios e fatos ainda não validados
 
-- **Corte de release com a etapa P2 da F3 dentro exige decisão documental.** O diário cria o File `GxOpenApiBuilder_OperationJournal` na KB do usuário e pode bloquear Apply e Sincronizar; enquanto a P6 não entregar o comando de recuperação, a única saída é apagar o File à mão, e nada disso está na documentação pública. Ou a P6 entra no corte, ou `DEMO`, os três `README` e as notas explicam o File, o bloqueio e o contorno. Detalhe: seção 7.1 de `Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`.
+- **Corte de release com a etapa P2 da F3 dentro exige decisão documental.** O diário cria o File `GxOpenApiBuilder_OperationJournal` na KB do usuário e pode bloquear Apply e Sincronizar. O comando `Recuperar operação interrompida` (P6) foi implementado em 2026-09-14, mas **sem validação na IDE**, e nada disso está na documentação pública. Ou a P8 valida o ciclo antes do corte, ou `DEMO`, os três `README` e as notas explicam o File, o bloqueio e o comando. Detalhe: seção 7.1 de `Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`.
 
 O reteste de 2026-09-11 atualizou a situação do `List` da `Laudo`: a execução
 funcional passou nos dois environments, e somente a forma do envelope permanece

@@ -81,8 +81,9 @@ bloqueando —, mas três caminhos ficam distinguíveis e testados:
 - autorização de **outra** operação: `RecoveryAuthorizationStale`, porque entre o
   consentimento e agora o envelope mudou;
 - autorização coerente: `Outcome=ContinuationAuthorized`, que **não** é «pode começar».
-  Continuar preservando `operationId` e `applicationId` é serviço da P5/P6; enquanto ele não
-  existe, a sessão recusa com `RecoveryAuthorizationLockUnavailable`.
+  Continuar preservando `operationId` e `applicationId` é serviço da P5/P6, **entregue offline
+  em 2026-09-14** e ainda sem validação na IDE. Enquanto ele não existia, a sessão recusava
+  com `RecoveryAuthorizationLockUnavailable`.
 
 A regra tem um dono só: `EvaluateReuse` continua existindo como leitura simplificada, mas
 delega ao gate, para que as duas não divirjam.

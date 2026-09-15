@@ -18,12 +18,16 @@ A F3 foi dividida em oito etapas, nesta ordem de dependência:
 | P0 | promoção da metadata V2→V3 com `ownership.applicationId` | **entregue** |
 | P1 | schema V1 do diário: modelo, serializer canônico, validador | **entregue** |
 | P2 | ciclo de vida do diário na KB e checkpoints da matriz 4.4 | **entregue e validada na IDE em 2026-09-14**, depois desta rodada — ver [o registro da P2](2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md) |
-| P3 | gate estendido e `GateDiagnostic` com a precedência fechada | não iniciada |
-| P4 | remoção com intenção, passadas e orçamento `maxPasses` | não iniciada |
-| P5 | `ApiPlanRecoveryReader` / `Rehydrator` / `Executor` / `Report` | não iniciada |
-| P6 | comando explícito de recuperação e `ShowRecoveryOptionProactively` | não iniciada |
-| P7 | localização trilíngue e gates restantes | não iniciada |
+| P3 | gate estendido e `GateDiagnostic` com a precedência fechada | **entregue e validada na IDE em 2026-09-14** — ver [o registro da P3](2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md) |
+| P4 | remoção com intenção, passadas e orçamento `maxPasses` | **entregue offline em 2026-09-14** — ver [o registro da P4 a P7](2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md) |
+| P5 | `ApiPlanRecoveryReader` / `Rehydrator` / `Executor` / `Report` | **entregue offline em 2026-09-14**, com o recorte da seção 3.2 daquele registro |
+| P6 | comando explícito de recuperação e `ShowRecoveryOptionProactively` | **entregue offline em 2026-09-14** |
+| P7 | localização trilíngue e gates restantes | **entregue offline em 2026-09-14** |
 | P8 | validação na IDE (seção 9 do plano) | não iniciada |
+
+**Remissão — 2026-09-14:** a tabela acima descrevia o estado no fim desta rodada e envelheceu no
+mesmo dia. As colunas de estado foram atualizadas; o corpo do documento continua descrevendo
+apenas o que a P0 e a P1 entregaram.
 
 O recorte P0+P1 foi escolhido porque P0 é pré-condição declarada da fase — o plano a chama
 de «pré-condição P1 da implementação da F3» na seção 5.2 — e porque ela muda material de

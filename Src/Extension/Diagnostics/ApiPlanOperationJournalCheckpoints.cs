@@ -228,6 +228,80 @@ public static class ApiPlanOperationJournalCheckpoints
     }
 
     /// <summary>
+    /// Reabre uma remoção interrompida para a passada seguinte, preservando <c>operationId</c>,
+    /// <c>applicationId</c> e o inventário. Não é uma operação nova: é a mesma, continuada.
+    ///
+    /// Só sai daqui o que parou por orçamento esgotado ou por falha de etapa. Ausência antes do
+    /// Delete e resultado indeterminado não voltam para a fila sozinhos — são exatamente os
+    /// casos em que ninguém sabe o que aconteceu, e repetir seria inventar uma certeza.
+    /// </summary>
+    public static void ResumeRemoval(ApiPlanOperationJournal journal, DateTime utcNow)
+    {
+        Require(journal);
+        if (journal.OperationKind != JournalOperationKind.Remove)
+        {
+            throw new InvalidOperationException(
+                "A retomada de passadas pertence ao Remove, não a " + journal.OperationKind + ".");
+        }
+
+        if (journal.EnvelopePhase != JournalEnvelopePhase.Active
+            || journal.OperationState != JournalOperationState.Partial)
+        {
+            throw new InvalidOperationException(
+                "Só uma remoção Active/Partial pode ser retomada. Estado atual: " + Describe(journal) + ".");
+        }
+
+        if (journal.BlockReason != JournalBlockReason.RetryBudgetExhausted
+            && journal.BlockReason != JournalBlockReason.StageFailed
+            && journal.BlockReason != JournalBlockReason.UserAborted)
+        {
+            throw new InvalidOperationException(
+                "A retomada não cobre o motivo registrado: " + journal.BlockReason + ".");
+        }
+
+        journal.OperationState = JournalOperationState.Running;
+        journal.LogicalStage = JournalLogicalStage.RemovalInProgress;
+        journal.BlockReason = null;
+        Touch(journal, utcNow, "retomada de remoção");
+    }
+
+    /// <summary>
+    /// Reconciliação de uma remoção interrompida cujo inventário está **confirmadamente
+    /// ausente** da KB. Não é um atalho para fechar o que ficou pela metade: só o executor de
+    /// recuperação chama isto, e só depois de reler cada alvo previsto por identidade.
+    ///
+    /// A distinção importa: <see cref="Complete"/> encerra uma operação que chegou ao fim
+    /// sozinha; esta fecha o registro de uma que chegou ao fim sem conseguir dizê-lo.
+    /// </summary>
+    public static void ReconcileRemoved(ApiPlanOperationJournal journal, DateTime utcNow)
+    {
+        Require(journal);
+        if (journal.OperationKind != JournalOperationKind.Remove)
+        {
+            throw new InvalidOperationException(
+                "A reconciliação para Removed pertence ao Remove, não a " + journal.OperationKind + ".");
+        }
+
+        if (journal.EnvelopePhase != JournalEnvelopePhase.Active)
+        {
+            throw new InvalidOperationException(
+                "Só um envelope Active pode ser reconciliado como removido. Estado atual: " + Describe(journal) + ".");
+        }
+
+        if (journal.OperationState != JournalOperationState.Partial
+            && journal.OperationState != JournalOperationState.Running)
+        {
+            throw new InvalidOperationException(
+                "A reconciliação para Removed parte de Partial ou Running, não de " + journal.OperationState + ".");
+        }
+
+        journal.OperationState = JournalOperationState.Removed;
+        journal.LogicalStage = JournalLogicalStage.Removed;
+        journal.BlockReason = null;
+        Touch(journal, utcNow, "reconciliação para Removed");
+    }
+
+    /// <summary>
     /// Abandono explícito de um envelope que nunca gravou nada. Não apaga o File nem cria um
     /// estado novo: registra a disposição e libera a KB para uma operação seguinte.
     /// </summary>

@@ -3,8 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
-using System.Text;
 using Artech.Architecture.Common.Objects;
 using Artech.Genexus.Common.Objects;
 using Artech.Genexus.Common.Wiki;
@@ -13,23 +13,38 @@ using Newtonsoft.Json.Linq;
 
 namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
+/// <summary>
+/// B086 — remoção da API gerada, sob o contrato de intenção durável da F3 (P4).
+///
+/// A remoção acontece em três tempos que não se misturam:
+///
+/// 1. <see cref="ResolveIntent"/> lê a metadata, valida todos os alvos e resolve a identidade
+///    de cada um. Nada é excluído aqui, e um alvo ambíguo ou não próprio bloqueia antes de
+///    qualquer mutação;
+/// 2. o chamador registra essa intenção no diário durável — o inventário completo, antes do
+///    primeiro <c>Delete()</c>;
+/// 3. <see cref="Remove"/> executa a fila por passadas, com orçamento fechado, emitindo um
+///    checkpoint ao fim de cada passada.
+///
+/// A ordem dos dois primeiros tempos é o ponto da frente: sem intenção registrada antes,
+/// uma remoção interrompida deixa a KB num estado que ninguém reconstitui. Em 2026-09-06,
+/// na `Teste` de `wsEducacaoSpTeste`, o API Object, cinco Procedures e cinco SDTs já tinham
+/// sido apagados quando a operação parou, e o relatório final informou «Removidos: nenhum».
+/// </summary>
 internal static class ApiPlanGeneratedApiRemover
 {
-    public static ApiPlanGeneratedApiRemovalResult Remove(KBModel designModel, Transaction transaction) =>
-        Remove(designModel, transaction, progress: null);
-
-    /// <param name="deletedSink">
-    /// Coletor opcional preenchido **durante** a remoção. Sem ele, uma interrupção no meio
-    /// leva embora a lista do que já saiu, e o relatório final informa «Removidos: nenhum»
-    /// com objetos apagados — foi o que aconteceu em 2026-09-06, com o API Object, cinco
-    /// Procedures e cinco SDTs já excluídos. Quem chama passa a própria lista e a lê no catch.
-    /// </param>
-    public static ApiPlanGeneratedApiRemovalResult Remove(
+    /// <summary>
+    /// Resolve o plano e a identidade de cada alvo, validando tudo antes de qualquer exclusão.
+    ///
+    /// O que sai daqui é a **intenção**: o conjunto completo do que será apagado e do que será
+    /// preservado, com a identidade por onde cada alvo é relido. Nome, Description ou prefixo
+    /// isolados nunca entram nessa identidade.
+    /// </summary>
+    internal static ApiPlanGeneratedApiRemovalIntent ResolveIntent(
         KBModel designModel,
         Transaction transaction,
         ApiPlanBusyProgressSession? progress,
-        List<string>? deletedSink = null,
-        ApiPlanPersistenceLog? persistenceLog = null)
+        ApiPlanKbObjectNameIndex? kbIndex)
     {
         if (designModel is null)
         {
@@ -47,10 +62,10 @@ internal static class ApiPlanGeneratedApiRemover
 
         // Nível A: um índice só para a validação agregada, antes de qualquer exclusão.
         // Localização, revalidação e confirmação pós-Delete permanecem em leitura corrente.
-        var kbIndex = ApiPlanKbObjectNameIndex.Create(designModel, progress);
+        var index = kbIndex ?? ApiPlanKbObjectNameIndex.Create(designModel, progress);
 
         var metadataFileName = $"api{transaction.Name}_Metadata";
-        var metadataFile = FindOwnedMetadataFile(designModel, metadataFileName, transaction.Name, kbIndex, telemetry);
+        var metadataFile = FindOwnedMetadataFile(designModel, metadataFileName, transaction.Name, index, telemetry);
         var metadata = ParseMetadata(metadataFile);
         var plan = ApiPlanGeneratedApiRemovalPlan.FromMetadata(metadata, transaction.Name, transaction.Guid.ToString());
         telemetry.MarkPhase("ResolucaoMetadata", phaseWatch.ElapsedMilliseconds);
@@ -58,7 +73,7 @@ internal static class ApiPlanGeneratedApiRemover
         // B082: mede o contenedor real do metadata File. IsFolderEmpty conta Files,
         // entao saber se o File esta dentro do Folder decide se a ordem Folder->File e viavel.
         telemetry.AddNote(string.Format(
-            System.Globalization.CultureInfo.InvariantCulture,
+            CultureInfo.InvariantCulture,
             "MetadataFile Parent='{0}' ParentGuid='{1}' Module='{2}' FolderPlanejado='{3}' FolderWasCreated={4}",
             metadataFile.Parent is null ? "<null>" : metadataFile.Parent.Name,
             metadataFile.Parent is null ? "<null>" : metadataFile.Parent.Guid.ToString(),
@@ -67,54 +82,174 @@ internal static class ApiPlanGeneratedApiRemover
             plan.FolderWasCreated));
 
         phaseWatch.Restart();
-        ValidateRemovalTargets(designModel, plan, progress: null, kbIndex, telemetry);
+        ValidateRemovalTargets(designModel, plan, progress: null, index, telemetry);
         telemetry.MarkPhase("ValidacaoAgregada", phaseWatch.ElapsedMilliseconds);
 
-        var total = CountPlannedDeletes(plan);
-        var current = 0;
+        var targets = BuildTargets(designModel, transaction, plan, metadataFile, index, telemetry);
+        var hasApplicationId = ApiPlanMetadataFileWriter.TryReadApplicationId(metadata, out var applicationId);
+        var contractHash = metadata.SelectToken("integrity.plannedContract.hash")?.Value<string>();
+
+        return new ApiPlanGeneratedApiRemovalIntent(
+            plan,
+            metadataFile,
+            metadata.SelectToken("schemaVersion")?.Value<string>(),
+            targets,
+            hasApplicationId ? applicationId : (Guid?)null,
+            string.IsNullOrWhiteSpace(contractHash) ? null : contractHash,
+            index,
+            telemetry);
+    }
+
+    /// <summary>
+    /// Executa a fila destrutiva a partir de uma intenção já resolvida e registrada.
+    /// </summary>
+    /// <param name="deletedSink">
+    /// Coletor preenchido **durante** a remoção. Sem ele, uma interrupção no meio leva embora a
+    /// lista do que já saiu, e o relatório final informa «Removidos: nenhum» com objetos
+    /// apagados. Quem chama passa a própria lista e a lê no catch.
+    /// </param>
+    /// <param name="onPassCompleted">
+    /// Checkpoint de fim de passada. Devolver <see langword="false"/> significa que o diário
+    /// deixou de ser confirmável: a fila para, porque a seção 4.4 proíbe gravar objeto de
+    /// negócio depois de um checkpoint não confirmado.
+    /// </param>
+    internal static ApiPlanGeneratedApiRemovalResult Remove(
+        KBModel designModel,
+        ApiPlanGeneratedApiRemovalIntent intent,
+        ApiPlanBusyProgressSession? progress,
+        List<string>? deletedSink = null,
+        Func<int, bool>? onPassCompleted = null)
+    {
+        if (intent is null)
+        {
+            throw new ArgumentNullException(nameof(intent));
+        }
+
+        return Execute(
+            designModel,
+            intent.Context,
+            intent.Targets,
+            intent.Telemetry,
+            intent.MaxPasses,
+            progress,
+            deletedSink,
+            onPassCompleted,
+            intent.Plan);
+    }
+
+    /// <summary>
+    /// Executa a fila destrutiva sobre alvos já validados. É por aqui que passam os dois
+    /// caminhos: a remoção que nasce da metadata e a **retomada** de uma remoção interrompida,
+    /// que nasce do inventário durável do diário. O segundo caminho existe porque o File de
+    /// metadata é o penúltimo da fila: depois que ele sai, só o diário sabe o que faltava.
+    /// </summary>
+    internal static ApiPlanGeneratedApiRemovalResult Execute(
+        KBModel designModel,
+        ApiPlanRemovalContext context,
+        IReadOnlyList<ApiPlanRemovalTarget> targets,
+        ApiPlanScanTelemetry telemetry,
+        int maxPasses,
+        ApiPlanBusyProgressSession? progress,
+        List<string>? deletedSink,
+        Func<int, bool>? onPassCompleted,
+        ApiPlanGeneratedApiRemovalPlan? plan = null)
+    {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (context is null)
+        {
+            throw new ArgumentNullException(nameof(context));
+        }
+
+        if (targets is null)
+        {
+            throw new ArgumentNullException(nameof(targets));
+        }
+
+        if (telemetry is null)
+        {
+            throw new ArgumentNullException(nameof(telemetry));
+        }
         var deleted = deletedSink ?? new List<string>();
         deleted.Clear();
 
-        // Ordem obrigatoria na IDE:
-        // 1) API Object (referencia Procedures)
-        // 2) Procedures (tipam SDTs)
-        // 3) SDTs proprios na ordem do plano (ListResponse antes de Response)
-        phaseWatch.Restart();
-        progress?.ThrowIfAbortRequested();
-        current = ReportDelete(progress, current, total, "API Object", plan.ApiName, () =>
-            DeleteApiObject(designModel, plan, deleted, telemetry, persistenceLog));
-        telemetry.MarkPhase("ApiObject", phaseWatch.ElapsedMilliseconds);
+        var total = targets.Count(target => target.Queued);
+        var current = 0;
+        var blockDetail = string.Empty;
+        var phaseWatch = Stopwatch.StartNew();
 
-        phaseWatch.Restart();
-        foreach (var name in plan.ProcedureNames)
+        ApiPlanRemovalQueueResult queue;
+        try
         {
-            progress?.ThrowIfAbortRequested();
-            current = ReportDelete(progress, current, total, "Procedure", name, () =>
-                DeleteSingleProcedure(designModel, name, deleted, telemetry, persistenceLog));
+            queue = ApiPlanRemovalQueue.Run(
+                targets,
+                target =>
+                {
+                    progress?.ThrowIfAbortRequested();
+                    current++;
+                    var label = DescribeKind(target.ObjectType);
+                    progress?.Report("Removendo " + label, current, Math.Max(total, current), target.Name);
+                    var watch = Stopwatch.StartNew();
+                    var result = Attempt(designModel, context, target, deleted, telemetry, out var detail);
+                    watch.Stop();
+                    progress?.Report("Removendo " + label, current, Math.Max(total, current), target.Name, watch.ElapsedMilliseconds);
+                    if (!string.IsNullOrEmpty(detail))
+                    {
+                        blockDetail = detail;
+                    }
+
+                    return result;
+                },
+                (pass, pending) =>
+                {
+                    telemetry.AddNote(string.Format(
+                        CultureInfo.InvariantCulture,
+                        "Fila de remocao passada {0}: pendentes ao fim={1}.",
+                        pass,
+                        pending.Count));
+                    if (onPassCompleted is not null && !onPassCompleted(pass))
+                    {
+                        throw new ApiPlanRemovalJournalBlockedException(
+                            "O checkpoint da passada " + pass.ToString(CultureInfo.InvariantCulture)
+                            + " não pôde ser confirmado no diário; a remoção parou para não continuar sem estado durável.");
+                    }
+                },
+                maxPasses);
+        }
+        catch (ApiPlanRemovalJournalBlockedException exception)
+        {
+            telemetry.MarkPhase("FilaRemocao", phaseWatch.ElapsedMilliseconds);
+            var pending = targets
+                .Where(target => target.Queued && target.Confirmation != JournalConfirmation.Absent)
+                .ToArray();
+            var interrupted = new ApiPlanRemovalQueueResult(
+                JournalOperationState.OutcomeUnknown,
+                JournalBlockReason.OutcomeUnknown,
+                passesExecuted: 0,
+                maxPasses: maxPasses,
+                deleted: targets.Where(target => target.Confirmation == JournalConfirmation.Absent).ToArray(),
+                preserved: Array.Empty<ApiPlanRemovalTarget>(),
+                pending: pending,
+                blockingTarget: null);
+            return new ApiPlanGeneratedApiRemovalResult(
+                plan,
+                context,
+                deleted,
+                telemetry.BuildOutputLines(),
+                interrupted,
+                exception.Message);
         }
 
-        telemetry.MarkPhase("Procedures", phaseWatch.ElapsedMilliseconds);
+        telemetry.MarkPhase("FilaRemocao", phaseWatch.ElapsedMilliseconds);
+        telemetry.AddNote(string.Format(
+            CultureInfo.InvariantCulture,
+            "Fila de remocao encerrada: {0}",
+            queue.Describe()));
 
-        phaseWatch.Restart();
-        current = DeleteOwnSdtsResilientToOrder(designModel, plan, deleted, telemetry, progress, current, total, persistenceLog);
-        telemetry.MarkPhase("Sdts", phaseWatch.ElapsedMilliseconds);
-
-        phaseWatch.Restart();
-        progress?.ThrowIfAbortRequested();
-        current = ReportDelete(progress, current, total, "File", metadataFile.Name, () =>
-            DeleteMetadataFile(designModel, metadataFile, deleted, telemetry, persistenceLog));
-        telemetry.MarkPhase("MetadataFile", phaseWatch.ElapsedMilliseconds);
-
-        if (plan.FolderWasCreated && !string.IsNullOrWhiteSpace(plan.FolderName))
-        {
-            phaseWatch.Restart();
-            progress?.ThrowIfAbortRequested();
-            ReportDelete(progress, current, total, "Folder", plan.FolderName!, () =>
-                MaybeDeleteFolder(designModel, plan, deleted, telemetry, persistenceLog));
-            telemetry.MarkPhase("Folder", phaseWatch.ElapsedMilliseconds);
-        }
-
-        return new ApiPlanGeneratedApiRemovalResult(plan, deleted, telemetry.BuildOutputLines());
+        return new ApiPlanGeneratedApiRemovalResult(plan, context, deleted, telemetry.BuildOutputLines(), queue, blockDetail);
     }
 
     public static int CountPlannedDeletes(ApiPlanGeneratedApiRemovalPlan plan)
@@ -131,134 +266,6 @@ internal static class ApiPlanGeneratedApiRemover
         }
 
         return total;
-    }
-
-    /// <summary>
-    /// Apaga os SDTs próprios sem depender de a lista vir na ordem de dependência.
-    ///
-    /// A ordem gravada em <c>objects.sdts.own</c> respeita as referências entre SDTs — quem
-    /// referencia sai antes de quem é referenciado —, mas nem toda metadata a preserva: a
-    /// recuperação de metadata órfã (`B115`) reconstrói o inventário da KB e não tem como
-    /// reproduzir a árvore original. Em 2026-09-06, na `Teste` de `wsEducacaoSpTeste`, uma
-    /// lista em ordem alfabética parou a remoção no meio, com o API Object, as Procedures e
-    /// cinco SDTs já apagados: `'sdtTeste_API_ListFilters' is referenced at least by
-    /// 'sdtTeste_API_ListResponse'`.
-    ///
-    /// Aqui o que a IDE recusa volta para a fila e é tentado na passada seguinte. Enquanto
-    /// cada passada apagar ao menos um objeto, há progresso e a próxima acontece; quando uma
-    /// passada inteira falha, a operação para e reporta o que sobrou, com o motivo de cada um.
-    ///
-    /// A recusa **não** é interpretada pela mensagem: qualquer falha adia o objeto. Um erro
-    /// que não seja de dependência reaparece na última passada e é reportado igual — mais
-    /// tarde, porém sem que a heurística de texto decida o que é adiável.
-    ///
-    /// O laço termina sempre: cada passada exige ao menos uma exclusão para haver a seguinte,
-    /// então são no máximo N passadas para N objetos.
-    /// </summary>
-    private static int DeleteOwnSdtsResilientToOrder(
-        KBModel designModel,
-        ApiPlanGeneratedApiRemovalPlan plan,
-        List<string> deleted,
-        ApiPlanScanTelemetry telemetry,
-        ApiPlanBusyProgressSession? progress,
-        int current,
-        int total,
-        ApiPlanPersistenceLog? persistenceLog)
-    {
-        var pending = new List<string>(plan.OwnSdtNames);
-        var lastErrors = new Dictionary<string, string>(StringComparer.Ordinal);
-        var pass = 0;
-
-        while (pending.Count > 0)
-        {
-            pass++;
-            var stillPending = new List<string>();
-            var deletedInPass = 0;
-
-            foreach (var name in pending)
-            {
-                progress?.ThrowIfAbortRequested();
-                try
-                {
-                    current = ReportDelete(progress, current, total, "SDT", name, () =>
-                        DeleteSingleOwnSdt(designModel, plan, name, deleted, telemetry, persistenceLog));
-                    deletedInPass++;
-                    lastErrors.Remove(name);
-                }
-                catch (ApiPlanBusyAbortedException)
-                {
-                    throw;
-                }
-                catch (Exception exception)
-                {
-                    // Adiado: pode ser dependência de outro SDT ainda não apagado.
-                    stillPending.Add(name);
-                    lastErrors[name] = exception.Message;
-                }
-            }
-
-            if (deletedInPass == 0)
-            {
-                telemetry.AddNote(string.Format(
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    "Remocao de SDTs parou na passada {0} sem progresso: {1} pendente(s).",
-                    pass,
-                    stillPending.Count));
-                throw new InvalidOperationException(BuildStalledRemovalMessage(stillPending, lastErrors));
-            }
-
-            if (pass > 1 || stillPending.Count > 0)
-            {
-                telemetry.AddNote(string.Format(
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    "Remocao de SDTs passada {0}: apagados={1}, adiados={2}.",
-                    pass,
-                    deletedInPass,
-                    stillPending.Count));
-            }
-
-            pending = stillPending;
-        }
-
-        return current;
-    }
-
-    private static string BuildStalledRemovalMessage(
-        IReadOnlyList<string> stillPending,
-        IReadOnlyDictionary<string, string> lastErrors)
-    {
-        var builder = new StringBuilder();
-        builder.Append("Remocao interrompida: ")
-            .Append(stillPending.Count)
-            .Append(" SDT(s) proprio(s) nao puderam ser apagados e uma passada inteira nao fez progresso. ")
-            .Append("Os objetos ja apagados nesta operacao estao listados no relatorio final. Pendentes:");
-        foreach (var name in stillPending)
-        {
-            builder.Append(Environment.NewLine).Append("  - ").Append(name);
-            if (lastErrors.TryGetValue(name, out var reason) && !string.IsNullOrWhiteSpace(reason))
-            {
-                builder.Append(": ").Append(reason.Replace("\r", " ").Replace("\n", " "));
-            }
-        }
-
-        return builder.ToString();
-    }
-
-    private static int ReportDelete(
-        ApiPlanBusyProgressSession? progress,
-        int current,
-        int total,
-        string kind,
-        string name,
-        Action deleteAction)
-    {
-        var next = current + 1;
-        progress?.Report($"Removendo {kind}", next, total, name);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        deleteAction();
-        sw.Stop();
-        progress?.Report($"Removendo {kind}", next, total, name, sw.ElapsedMilliseconds);
-        return next;
     }
 
     public static ApiPlanGeneratedApiRemovalPlan Preview(KBModel designModel, Transaction transaction)
@@ -293,26 +300,241 @@ internal static class ApiPlanGeneratedApiRemover
     }
 
     /// <summary>
-    /// B082: executa a varredura sob medicao quando ha instrumentacao ativa.
-    /// O delegate precisa conter o pipeline inteiro, ate a materializacao, porque
-    /// <c>GetAll</c> e preguicoso e o custo esta na enumeracao.
+    /// Resolve a identidade de cada alvo e monta a lista completa — o que sai e o que fica.
+    ///
+    /// Um alvo presente é identificado pelo GUID lido agora. Um alvo previsto que já não está na
+    /// KB recebe a identidade histórica composta inteira: nome exato, tipo, papel, Description
+    /// canônica e os GUIDs da Transaction e da API. É a forma de declarar o alvo sem inventar um
+    /// GUID que não existe — e a tentativa sobre ele termina em <c>TargetAbsentBeforeDelete</c>,
+    /// não em sucesso silencioso.
     /// </summary>
-    private static T Scan<T>(
-        ApiPlanScanTelemetry? telemetry,
-        string objectType,
-        string phase,
-        Func<T> scan)
+    private static IReadOnlyList<ApiPlanRemovalTarget> BuildTargets(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlanGeneratedApiRemovalPlan plan,
+        WikiFileKBObject metadataFile,
+        ApiPlanKbObjectNameIndex kbIndex,
+        ApiPlanScanTelemetry telemetry)
     {
-        // Sem telemetria propria (caminho do Preview), cai no probe de escopo ambiente,
-        // que o handler abre para medir a fase de Preview separadamente da exclusao.
-        return telemetry is null
-            ? ApiPlanScanProbe.Scan(objectType, phase, scan)
-            : telemetry.MeasureScan(objectType, phase, scan);
+        Guid.TryParse(plan.ApiGuid, out var apiGuid);
+        var targets = new List<ApiPlanRemovalTarget>();
+
+        var api = kbIndex.FindApis(plan.ApiName).FirstOrDefault();
+        targets.Add(CreateTarget(
+            JournalObjectType.ApiObject,
+            plan.ApiName,
+            api?.Guid,
+            "ApiObject",
+            "API",
+            transaction.Guid,
+            apiGuid));
+
+        foreach (var name in plan.ProcedureNames)
+        {
+            var procedure = kbIndex.FindProcedures(name).FirstOrDefault();
+            targets.Add(CreateTarget(
+                JournalObjectType.Procedure,
+                name,
+                procedure?.Guid,
+                "Procedures",
+                "Procedure",
+                transaction.Guid,
+                apiGuid));
+        }
+
+        foreach (var name in plan.OwnSdtNames)
+        {
+            var sdt = kbIndex.FindSdts(name).FirstOrDefault();
+            targets.Add(CreateTarget(
+                JournalObjectType.Sdt,
+                name,
+                sdt?.Guid,
+                "OwnSdts",
+                "SDT",
+                transaction.Guid,
+                apiGuid));
+        }
+
+        targets.Add(new ApiPlanRemovalTarget
+        {
+            ObjectType = JournalObjectType.MetadataFile,
+            Name = metadataFile.Name,
+            Action = JournalInventoryAction.Delete,
+            Queued = true,
+            IdentityKind = JournalIdentityKind.Guid,
+            Guid = metadataFile.Guid,
+            ExpectedHash = ApiPlanMetadataFileWriter.ComputeSha256(metadataFile.BlobPart?.Data?.GetBytes() ?? Array.Empty<byte>()),
+            PhysicalState = JournalPhysicalState.Present,
+        });
+
+        if (plan.FolderWasCreated && !string.IsNullOrWhiteSpace(plan.FolderName))
+        {
+            // O Folder entra na fila, mas o inventário só pode declará-lo `Delete` quando a
+            // confirmação de vazio existir — e ela só é medida depois de os filhos saírem. Até
+            // lá ele é `Preserve`: declarar `emptyConfirmed` antes de medir seria afirmar o que
+            // ninguém verificou.
+            targets.Add(new ApiPlanRemovalTarget
+            {
+                ObjectType = JournalObjectType.Folder,
+                Name = plan.FolderName!,
+                Action = JournalInventoryAction.Preserve,
+                Queued = true,
+                IdentityKind = JournalIdentityKind.Folder,
+                OwnershipValidated = true,
+                // `false` não é «vazio desconhecido»: é a marca de que este Folder está na fila
+                // e ainda não foi medido. O Folder reutilizado não traz o campo.
+                EmptyConfirmed = false,
+                PhysicalState = JournalPhysicalState.Present,
+            });
+        }
+        else if (!string.IsNullOrWhiteSpace(plan.FolderName))
+        {
+            targets.Add(new ApiPlanRemovalTarget
+            {
+                ObjectType = JournalObjectType.Folder,
+                Name = plan.FolderName!,
+                Action = JournalInventoryAction.Preserve,
+                Queued = false,
+                IdentityKind = JournalIdentityKind.Folder,
+                OwnershipValidated = true,
+                PhysicalState = JournalPhysicalState.Present,
+            });
+        }
+
+        foreach (var name in plan.SharedSdtNamesPreserved)
+        {
+            targets.Add(new ApiPlanRemovalTarget
+            {
+                ObjectType = JournalObjectType.Sdt,
+                Name = name,
+                Action = JournalInventoryAction.Preserve,
+                Queued = false,
+                IdentityKind = JournalIdentityKind.None,
+                OwnershipValidated = false,
+                PhysicalState = JournalPhysicalState.Present,
+            });
+        }
+
+        // A Transaction nunca entra na fila destrutiva: o Business Component não é revertido.
+        targets.Add(new ApiPlanRemovalTarget
+        {
+            ObjectType = JournalObjectType.Transaction,
+            Name = transaction.Name,
+            Action = JournalInventoryAction.Preserve,
+            Queued = false,
+            IdentityKind = JournalIdentityKind.Guid,
+            Guid = transaction.Guid,
+            PhysicalState = JournalPhysicalState.Present,
+        });
+
+        telemetry.AddNote(string.Format(
+            CultureInfo.InvariantCulture,
+            "Intencao de remocao: Alvos={0}, NaFila={1}, Preservados={2}.",
+            targets.Count,
+            targets.Count(target => target.Queued),
+            targets.Count(target => !target.Queued)));
+
+        return targets;
+    }
+
+    private static ApiPlanRemovalTarget CreateTarget(
+        JournalObjectType objectType,
+        string name,
+        Guid? guid,
+        string role,
+        string objectTypeName,
+        Guid transactionGuid,
+        Guid apiGuid)
+    {
+        if (guid.HasValue && guid.Value != Guid.Empty)
+        {
+            return new ApiPlanRemovalTarget
+            {
+                ObjectType = objectType,
+                Name = name,
+                Action = JournalInventoryAction.Delete,
+                Queued = true,
+                IdentityKind = JournalIdentityKind.Guid,
+                Guid = guid,
+                PhysicalState = JournalPhysicalState.Present,
+            };
+        }
+
+        return new ApiPlanRemovalTarget
+        {
+            ObjectType = objectType,
+            Name = name,
+            Action = JournalInventoryAction.Delete,
+            Queued = true,
+            IdentityKind = JournalIdentityKind.Composite,
+            Composite = new ApiPlanOperationJournalCompositeIdentity
+            {
+                ExactName = name,
+                ObjectTypeName = objectTypeName,
+                Role = role,
+                CanonicalDescription = ApiPlanOwnedObjectDescription.Create(name),
+                TransactionGuid = transactionGuid,
+                ApiGuid = apiGuid,
+            },
+            PhysicalState = JournalPhysicalState.Absent,
+        };
+    }
+
+    /// <summary>
+    /// Uma tentativa de exclusão. A recusa da IDE **nunca** é interpretada pelo texto: quem
+    /// classifica é a releitura do alvo depois da chamada. O que escapa daqui — ambiguidade,
+    /// posse perdida, catálogo mudado depois do preflight — é falha de etapa e interrompe.
+    /// </summary>
+    private static ApiPlanRemovalAttemptResult Attempt(
+        KBModel designModel,
+        ApiPlanRemovalContext context,
+        ApiPlanRemovalTarget target,
+        List<string> deleted,
+        ApiPlanScanTelemetry telemetry,
+        out string blockDetail)
+    {
+        blockDetail = string.Empty;
+        try
+        {
+            switch (target.ObjectType)
+            {
+                case JournalObjectType.ApiObject:
+                    return DeleteApiObject(designModel, context, target, deleted, telemetry);
+
+                case JournalObjectType.Procedure:
+                    return DeleteSingleProcedure(designModel, target, deleted, telemetry);
+
+                case JournalObjectType.Sdt:
+                    return DeleteSingleOwnSdt(designModel, context, target, deleted, telemetry);
+
+                case JournalObjectType.MetadataFile:
+                    return DeleteMetadataFile(designModel, target, deleted, telemetry);
+
+                case JournalObjectType.Folder:
+                    return DeleteOwnFolder(designModel, context, target, deleted, telemetry);
+
+                default:
+                    blockDetail = "Tipo fora da fila destrutiva: " + target.ObjectType + ".";
+                    return ApiPlanRemovalAttemptResult.StageFailed;
+            }
+        }
+        catch (ApiPlanBusyAbortedException)
+        {
+            // Abortar é decisão do usuário, não falha adiável: nunca volta para a fila.
+            throw;
+        }
+        catch (Exception exception)
+        {
+            blockDetail = target.Describe() + ": " + Clean(exception.Message);
+            ApiPlanSaveBoundaryProbe.NoteStageFailed("Remove", "removal.stage_failed", blockDetail);
+            return ApiPlanRemovalAttemptResult.StageFailed;
+        }
     }
 
     /// <summary>
     /// Valida ambiguidade e posse de API Object, Procedures e SDTs proprios antes de qualquer Delete().
-    /// Ausencia de um alvo listado e aceita (remocao idempotente); ambiguidade ou objeto nao proprio bloqueiam.
+    /// Ausencia de um alvo listado e aceita aqui (a fila a classifica como TargetAbsentBeforeDelete);
+    /// ambiguidade ou objeto nao proprio bloqueiam.
     /// </summary>
     internal static void ValidateRemovalTargets(KBModel designModel, ApiPlanGeneratedApiRemovalPlan plan)
     {
@@ -344,7 +566,13 @@ internal static class ApiPlanGeneratedApiRemover
         current++;
         progress?.Report("Validando", current, total, plan.ApiName);
         progress?.Pump();
-        ValidateApiObjectTarget(designModel, plan, beforeAnyDelete: true, kbIndex, telemetry);
+        ValidateApiObjectTarget(
+            designModel,
+            plan.ApiName,
+            Guid.TryParse(plan.ApiGuid, out var plannedApiGuid) ? plannedApiGuid : (Guid?)null,
+            beforeAnyDelete: true,
+            kbIndex,
+            telemetry);
         foreach (var name in plan.ProcedureNames)
         {
             progress?.ThrowIfAbortRequested();
@@ -360,7 +588,7 @@ internal static class ApiPlanGeneratedApiRemover
             current++;
             progress?.Report("Validando", current, total, name);
             progress?.Pump();
-            ValidateOwnSdtTarget(designModel, plan, name, beforeAnyDelete: true, kbIndex, telemetry);
+            ValidateOwnSdtTarget(designModel, plan.SharedSdtNamesPreserved, name, beforeAnyDelete: true, kbIndex, telemetry);
         }
     }
 
@@ -414,21 +642,40 @@ internal static class ApiPlanGeneratedApiRemover
         }
     }
 
+    /// <summary>
+    /// B082: executa a varredura sob medicao quando ha instrumentacao ativa.
+    /// O delegate precisa conter o pipeline inteiro, ate a materializacao, porque
+    /// <c>GetAll</c> e preguicoso e o custo esta na enumeracao.
+    /// </summary>
+    private static T Scan<T>(
+        ApiPlanScanTelemetry? telemetry,
+        string objectType,
+        string phase,
+        Func<T> scan)
+    {
+        // Sem telemetria propria (caminho do Preview), cai no probe de escopo ambiente,
+        // que o handler abre para medir a fase de Preview separadamente da exclusao.
+        return telemetry is null
+            ? ApiPlanScanProbe.Scan(objectType, phase, scan)
+            : telemetry.MeasureScan(objectType, phase, scan);
+    }
+
     // kbIndex nulo e contrato deliberado de leitura corrente: localizacao e revalidacao
     // apos o catalogo ter comecado a mudar (Nível B / confirmacao pos-Delete). A validacao
-    // agregada, antes de qualquer exclusao, passa o indice criado no Remove.
+    // agregada, antes de qualquer exclusao, passa o indice criado na resolucao da intencao.
     private static void ValidateApiObjectTarget(
         KBModel designModel,
-        ApiPlanGeneratedApiRemovalPlan plan,
+        string apiName,
+        Guid? expectedGuid,
         bool beforeAnyDelete,
         ApiPlanKbObjectNameIndex? kbIndex = null,
         ApiPlanScanTelemetry? telemetry = null)
     {
         var matches = kbIndex is null
             ? Scan(telemetry, "API", beforeAnyDelete ? "validacao-agregada" : "revalidacao-pre-delete", () => API.GetAll(designModel)
-                .Where(item => string.Equals(item.Name, plan.ApiName, StringComparison.OrdinalIgnoreCase))
+                .Where(item => string.Equals(item.Name, apiName, StringComparison.OrdinalIgnoreCase))
                 .ToArray())
-            : kbIndex.FindApis(plan.ApiName).ToArray();
+            : kbIndex.FindApis(apiName).ToArray();
         if (matches.Length == 0)
         {
             return;
@@ -437,15 +684,15 @@ internal static class ApiPlanGeneratedApiRemover
         if (matches.Length > 1)
         {
             throw new InvalidOperationException(BuildBlockedMessage(
-                $"API Object ambiguo '{plan.ApiName}'",
+                $"API Object ambiguo '{apiName}'",
                 beforeAnyDelete));
         }
 
         var api = matches[0];
-        if (!Guid.TryParse(plan.ApiGuid, out var ownershipGuid) || api.Guid != ownershipGuid)
+        if (!expectedGuid.HasValue || expectedGuid.Value == Guid.Empty || api.Guid != expectedGuid.Value)
         {
             throw new InvalidOperationException(BuildBlockedMessage(
-                $"API Object '{plan.ApiName}' nao corresponde ao Guid da metadata",
+                $"API Object '{apiName}' nao corresponde ao Guid registrado",
                 beforeAnyDelete));
         }
     }
@@ -485,13 +732,13 @@ internal static class ApiPlanGeneratedApiRemover
 
     private static void ValidateOwnSdtTarget(
         KBModel designModel,
-        ApiPlanGeneratedApiRemovalPlan plan,
+        IReadOnlyList<string> preservedSharedSdtNames,
         string name,
         bool beforeAnyDelete,
         ApiPlanKbObjectNameIndex? kbIndex = null,
         ApiPlanScanTelemetry? telemetry = null)
     {
-        if (plan.SharedSdtNamesPreserved.Contains(name, StringComparer.Ordinal))
+        if (preservedSharedSdtNames.Contains(name, StringComparer.Ordinal))
         {
             throw new InvalidOperationException(BuildBlockedMessage(
                 $"tentativa de apagar SDT compartilhado '{name}'",
@@ -534,21 +781,13 @@ internal static class ApiPlanGeneratedApiRemover
         return $"Remocao bloqueada: {reason}. O estado da KB mudou apos o preflight; interrompendo para evitar mais exclusoes.";
     }
 
-    private static void DeleteProcedures(KBModel designModel, ApiPlanGeneratedApiRemovalPlan plan, List<string> deleted)
-    {
-        foreach (var name in plan.ProcedureNames)
-        {
-            DeleteSingleProcedure(designModel, name, deleted);
-        }
-    }
-
-    private static void DeleteSingleProcedure(
+    private static ApiPlanRemovalAttemptResult DeleteSingleProcedure(
         KBModel designModel,
-        string name,
+        ApiPlanRemovalTarget target,
         List<string> deleted,
-        ApiPlanScanTelemetry? telemetry = null,
-        ApiPlanPersistenceLog? persistenceLog = null)
+        ApiPlanScanTelemetry? telemetry)
     {
+        var name = target.Name;
         ValidateProcedureTarget(designModel, name, beforeAnyDelete: false, kbIndex: null, telemetry);
 
         var matches = Scan(telemetry, "Procedure", "localizacao-delete", () => Procedure.GetAll(designModel)
@@ -556,210 +795,308 @@ internal static class ApiPlanGeneratedApiRemover
             .ToArray());
         if (matches.Length == 0)
         {
-            ApiPlanSaveBoundaryProbe.RecordNotAttempted(
-                "Delete",
-                "Procedure",
-                "Procedures",
-                name,
-                new CompositeIdentity(name, "Procedure", "Generated", string.Empty, Guid.Empty, Guid.Empty),
-                PersistenceConfirmation.NotAttempted(PersistencePhysicalState.Absent, "Procedure ausente antes do Delete."));
-            return;
+            return NotAttempted(target, "Procedure", "Procedures", "Procedure ausente antes do Delete.");
         }
 
         var procedure = matches[0];
         var guid = procedure.Guid;
-        var receipt = ApiPlanSaveBoundaryProbe.Persist(
-            PersistenceFaultPoint.ProcedureDelete,
-            "Delete",
-            "Procedure",
-            "Procedures",
-            name,
-            new GuidIdentity(guid),
-            procedure.Delete,
-            () => ConfirmDelete(
-                () => Scan(telemetry, "Procedure", "confirmacao-pos-delete", () => Procedure.GetAll(designModel).Any(item => item.Guid == guid)),
-                guid.ToString()));
-        if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
-        {
-            throw new InvalidOperationException($"Remoção do Procedure '{name}' não foi confirmada: Outcome='{receipt.Outcome}', Detail='{receipt.ConfirmationDetail}'.");
-        }
-
-        deleted.Add($"Procedure:{name}");
+        Func<PersistenceConfirmation> confirm = () => ConfirmDelete(
+            () => Scan(telemetry, "Procedure", "confirmacao-pos-delete", () => Procedure.GetAll(designModel).Any(item => item.Guid == guid)),
+            guid.ToString());
+        return Execute(
+            () => ApiPlanSaveBoundaryProbe.Persist(
+                PersistenceFaultPoint.ProcedureDelete,
+                "Delete",
+                "Procedure",
+                "Procedures",
+                name,
+                new GuidIdentity(guid),
+                procedure.Delete,
+                confirm),
+            confirm,
+            target,
+            deleted,
+            $"Procedure:{name}");
     }
 
-    private static void DeleteApiObject(
+    private static ApiPlanRemovalAttemptResult DeleteApiObject(
         KBModel designModel,
-        ApiPlanGeneratedApiRemovalPlan plan,
+        ApiPlanRemovalContext context,
+        ApiPlanRemovalTarget target,
         List<string> deleted,
-        ApiPlanScanTelemetry? telemetry = null,
-        ApiPlanPersistenceLog? persistenceLog = null)
+        ApiPlanScanTelemetry? telemetry)
     {
-        ValidateApiObjectTarget(designModel, plan, beforeAnyDelete: false, kbIndex: null, telemetry);
+        ValidateApiObjectTarget(designModel, context.ApiName, context.ApiGuid, beforeAnyDelete: false, kbIndex: null, telemetry);
 
         var matches = Scan(telemetry, "API", "localizacao-delete", () => API.GetAll(designModel)
-            .Where(item => string.Equals(item.Name, plan.ApiName, StringComparison.OrdinalIgnoreCase))
+            .Where(item => string.Equals(item.Name, context.ApiName, StringComparison.OrdinalIgnoreCase))
             .ToArray());
         if (matches.Length == 0)
         {
-            ApiPlanSaveBoundaryProbe.RecordNotAttempted(
-                "Delete",
-                "API",
-                "ApiObject",
-                plan.ApiName,
-                new CompositeIdentity(plan.ApiName, "API", "Generated", string.Empty, Guid.Empty, Guid.Empty),
-                PersistenceConfirmation.NotAttempted(PersistencePhysicalState.Absent, "API Object ausente antes do Delete."));
-            return;
+            return NotAttempted(target, "API", "ApiObject", "API Object ausente antes do Delete.");
         }
 
         var api = matches[0];
         var guid = api.Guid;
-        var receipt = ApiPlanSaveBoundaryProbe.Persist(
-            PersistenceFaultPoint.ApiDelete,
-            "Delete",
-            "API",
-            "ApiObject",
-            plan.ApiName,
-            new GuidIdentity(guid),
-            api.Delete,
-            () => ConfirmDelete(
-                () => Scan(telemetry, "API", "confirmacao-pos-delete", () => API.GetAll(designModel).Any(item => item.Guid == guid)),
-                guid.ToString()));
-        if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
-        {
-            throw new InvalidOperationException($"Remoção do API Object '{plan.ApiName}' não foi confirmada: Outcome='{receipt.Outcome}', Detail='{receipt.ConfirmationDetail}'.");
-        }
-
-        deleted.Add($"API:{plan.ApiName}");
+        Func<PersistenceConfirmation> confirm = () => ConfirmDelete(
+            () => Scan(telemetry, "API", "confirmacao-pos-delete", () => API.GetAll(designModel).Any(item => item.Guid == guid)),
+            guid.ToString());
+        return Execute(
+            () => ApiPlanSaveBoundaryProbe.Persist(
+                PersistenceFaultPoint.ApiDelete,
+                "Delete",
+                "API",
+                "ApiObject",
+                context.ApiName,
+                new GuidIdentity(guid),
+                api.Delete,
+                confirm),
+            confirm,
+            target,
+            deleted,
+            $"API:{context.ApiName}");
     }
 
-    private static void DeleteSingleOwnSdt(
+    private static ApiPlanRemovalAttemptResult DeleteSingleOwnSdt(
         KBModel designModel,
-        ApiPlanGeneratedApiRemovalPlan plan,
-        string name,
+        ApiPlanRemovalContext context,
+        ApiPlanRemovalTarget target,
         List<string> deleted,
-        ApiPlanScanTelemetry? telemetry = null,
-        ApiPlanPersistenceLog? persistenceLog = null)
+        ApiPlanScanTelemetry? telemetry)
     {
-        ValidateOwnSdtTarget(designModel, plan, name, beforeAnyDelete: false, kbIndex: null, telemetry);
+        var name = target.Name;
+        ValidateOwnSdtTarget(designModel, context.PreservedSharedSdtNames, name, beforeAnyDelete: false, kbIndex: null, telemetry);
 
         var matches = Scan(telemetry, "SDT", "localizacao-delete", () => SDT.GetAll(designModel)
             .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
             .ToArray());
         if (matches.Length == 0)
         {
-            ApiPlanSaveBoundaryProbe.RecordNotAttempted(
-                "Delete",
-                "SDT",
-                "OwnSdts",
-                name,
-                new CompositeIdentity(name, "SDT", "Generated", string.Empty, Guid.Empty, Guid.Empty),
-                PersistenceConfirmation.NotAttempted(PersistencePhysicalState.Absent, "SDT ausente antes do Delete."));
-            return;
+            return NotAttempted(target, "SDT", "OwnSdts", "SDT ausente antes do Delete.");
         }
 
         var sdt = matches[0];
         var guid = sdt.Guid;
-        var receipt = ApiPlanSaveBoundaryProbe.Persist(
-            PersistenceFaultPoint.SdtDelete,
-            "Delete",
-            "SDT",
-            "OwnSdts",
-            name,
-            new GuidIdentity(guid),
-            sdt.Delete,
-            () => ConfirmDelete(
-                () => Scan(telemetry, "SDT", "confirmacao-pos-delete", () => SDT.GetAll(designModel).Any(item => item.Guid == guid)),
-                guid.ToString()));
-        if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
-        {
-            throw new InvalidOperationException($"Remoção do SDT '{name}' não foi confirmada: Outcome='{receipt.Outcome}', Detail='{receipt.ConfirmationDetail}'.");
-        }
-
-        deleted.Add($"SDT:{name}");
+        Func<PersistenceConfirmation> confirm = () => ConfirmDelete(
+            () => Scan(telemetry, "SDT", "confirmacao-pos-delete", () => SDT.GetAll(designModel).Any(item => item.Guid == guid)),
+            guid.ToString());
+        return Execute(
+            () => ApiPlanSaveBoundaryProbe.Persist(
+                PersistenceFaultPoint.SdtDelete,
+                "Delete",
+                "SDT",
+                "OwnSdts",
+                name,
+                new GuidIdentity(guid),
+                sdt.Delete,
+                confirm),
+            confirm,
+            target,
+            deleted,
+            $"SDT:{name}");
     }
 
-    private static void DeleteMetadataFile(
+    private static ApiPlanRemovalAttemptResult DeleteMetadataFile(
         KBModel designModel,
-        WikiFileKBObject metadataFile,
+        ApiPlanRemovalTarget target,
         List<string> deleted,
-        ApiPlanScanTelemetry? telemetry = null,
-        ApiPlanPersistenceLog? persistenceLog = null)
+        ApiPlanScanTelemetry? telemetry)
     {
-        var name = metadataFile.Name;
+        var name = target.Name;
+        var matches = Scan(telemetry, "File", "localizacao-delete", () => WikiFileKBObject.GetAll(designModel)
+            .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
+            .ToArray());
+        if (matches.Length == 0)
+        {
+            return NotAttempted(target, "File", "Metadata", "File de metadata ausente antes do Delete.");
+        }
+
+        var metadataFile = matches[0];
         var guid = metadataFile.Guid;
         var expectedBytes = metadataFile.BlobPart?.Data?.GetBytes() ?? Array.Empty<byte>();
-        var receipt = ApiPlanSaveBoundaryProbe.Persist(
-            PersistenceFaultPoint.MetadataDelete,
-            "Delete",
-            "File",
-            "Metadata",
-            name,
-            new FileIdentity(guid, name, ApiPlanMetadataFileWriter.ComputeSha256(expectedBytes)),
-            metadataFile.Delete,
-            () => ConfirmDelete(
-                () => Scan(telemetry, "File", "confirmacao-pos-delete", () => WikiFileKBObject.GetAll(designModel).Any(item => item.Guid == guid)),
-                guid.ToString()));
-        if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
-        {
-            throw new InvalidOperationException($"Remoção do File '{name}' não foi confirmada: Outcome='{receipt.Outcome}', Detail='{receipt.ConfirmationDetail}'.");
-        }
-
-        deleted.Add($"File:{name}");
+        Func<PersistenceConfirmation> confirm = () => ConfirmDelete(
+            () => Scan(telemetry, "File", "confirmacao-pos-delete", () => WikiFileKBObject.GetAll(designModel).Any(item => item.Guid == guid)),
+            guid.ToString());
+        return Execute(
+            () => ApiPlanSaveBoundaryProbe.Persist(
+                PersistenceFaultPoint.MetadataDelete,
+                "Delete",
+                "File",
+                "Metadata",
+                name,
+                new FileIdentity(guid, name, ApiPlanMetadataFileWriter.ComputeSha256(expectedBytes)),
+                metadataFile.Delete,
+                confirm),
+            confirm,
+            target,
+            deleted,
+            $"File:{name}");
     }
 
-    private static void MaybeDeleteFolder(
+    /// <summary>
+    /// O Folder próprio é o último da fila, e é o único alvo que pode sair dela **preservado**:
+    /// quem o reutilizou, quem deixou conteúdo dentro ou quem trocou a Description manda mais
+    /// que o plano. Preservar não impede a operação de terminar em <c>Removed</c>.
+    /// </summary>
+    private static ApiPlanRemovalAttemptResult DeleteOwnFolder(
         KBModel designModel,
-        ApiPlanGeneratedApiRemovalPlan plan,
+        ApiPlanRemovalContext context,
+        ApiPlanRemovalTarget target,
         List<string> deleted,
-        ApiPlanScanTelemetry? telemetry = null,
-        ApiPlanPersistenceLog? persistenceLog = null)
+        ApiPlanScanTelemetry? telemetry)
     {
-        if (!plan.FolderWasCreated || string.IsNullOrWhiteSpace(plan.FolderName))
-        {
-            return;
-        }
-
         var matches = Scan(telemetry, "Folder", "localizacao-delete", () => Folder.GetAll(designModel)
-            .Where(item => string.Equals(item.Name, plan.FolderName, StringComparison.OrdinalIgnoreCase))
+            .Where(item => string.Equals(item.Name, target.Name, StringComparison.OrdinalIgnoreCase))
             .ToArray());
         if (matches.Length != 1)
         {
-            return;
+            return ApiPlanRemovalAttemptResult.Preserved;
         }
 
         var folder = matches[0];
-        var expectedDescription = ApiPlanOwnedObjectDescription.CreateTransactionFolderDescription(plan.FolderName!);
-        var legacyDescription = ApiPlanOwnedObjectDescription.CreateLegacyTransactionFolderDescription(plan.TransactionName);
+        var expectedDescription = ApiPlanOwnedObjectDescription.CreateTransactionFolderDescription(target.Name);
+        var legacyDescription = ApiPlanOwnedObjectDescription.CreateLegacyTransactionFolderDescription(context.TransactionName);
         if (!string.Equals(folder.Description, expectedDescription, StringComparison.Ordinal)
             && !string.Equals(folder.Description, legacyDescription, StringComparison.Ordinal))
         {
-            return;
+            return ApiPlanRemovalAttemptResult.Preserved;
         }
 
         if (!IsFolderEmpty(designModel, folder, telemetry))
         {
-            deleted.Add($"Folder:{plan.FolderName}:PreservedNonEmpty");
-            return;
+            deleted.Add($"Folder:{target.Name}:PreservedNonEmpty");
+            return ApiPlanRemovalAttemptResult.Preserved;
         }
 
         var guid = folder.Guid;
-        var receipt = ApiPlanSaveBoundaryProbe.Persist(
-            PersistenceFaultPoint.FolderDelete,
+        Func<PersistenceConfirmation> confirm = () => ConfirmDelete(
+            () => Scan(telemetry, "Folder", "confirmacao-pos-delete", () => Folder.GetAll(designModel).Any(item => item.Guid == guid)),
+            guid.ToString());
+        return Execute(
+            () => ApiPlanSaveBoundaryProbe.Persist(
+                PersistenceFaultPoint.FolderDelete,
+                "Delete",
+                "Folder",
+                "TransactionFolder",
+                target.Name,
+                new FolderIdentity(target.Name, owned: true, emptyConfirmed: true),
+                folder.Delete,
+                confirm),
+            confirm,
+            target,
+            deleted,
+            $"Folder:{target.Name}");
+    }
+
+    /// <summary>
+    /// Registra um alvo previsto que já não estava lá. Não é sucesso implícito: o recibo sai com
+    /// <c>NotAttempted</c>, sem chamar <c>Delete()</c>, e a fila encerra a operação em
+    /// <c>Partial</c>. A identidade histórica composta vai inteira, porque é ela que o inventário
+    /// do envelope exige para declarar o alvo.
+    /// </summary>
+    private static ApiPlanRemovalAttemptResult NotAttempted(
+        ApiPlanRemovalTarget target,
+        string objectType,
+        string stage,
+        string detail)
+    {
+        var composite = target.Composite;
+        ApiPlanSaveBoundaryProbe.RecordNotAttempted(
             "Delete",
-            "Folder",
-            "TransactionFolder",
-            plan.FolderName!,
-            new FolderIdentity(plan.FolderName!, owned: true, emptyConfirmed: true),
-            folder.Delete,
-            () => ConfirmDelete(
-                () => Scan(telemetry, "Folder", "confirmacao-pos-delete", () => Folder.GetAll(designModel).Any(item => item.Guid == guid)),
-                guid.ToString()));
-        if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
+            objectType,
+            stage,
+            target.Name,
+            composite is null
+                ? new CompositeIdentity(target.Name, objectType, stage, string.Empty, Guid.Empty, Guid.Empty)
+                : new CompositeIdentity(
+                    composite.ExactName,
+                    composite.ObjectTypeName,
+                    composite.Role,
+                    composite.CanonicalDescription,
+                    composite.TransactionGuid,
+                    composite.ApiGuid),
+            PersistenceConfirmation.NotAttempted(PersistencePhysicalState.Absent, detail));
+        return ApiPlanRemovalAttemptResult.AbsentBeforeDelete;
+    }
+
+    /// <summary>
+    /// Executa a exclusão física e classifica o resultado pela **evidência**: o recibo da F2,
+    /// quando existe, e a releitura do alvo quando o <c>Delete()</c> lançou. Um alvo que
+    /// continua na KB volta para a fila; um resultado ilegível bloqueia a operação.
+    /// </summary>
+    private static ApiPlanRemovalAttemptResult Execute(
+        Func<PersistenceReceipt?> persist,
+        Func<PersistenceConfirmation> confirm,
+        ApiPlanRemovalTarget target,
+        List<string> deleted,
+        string deletedLabel)
+    {
+        PersistenceReceipt? receipt;
+        try
         {
-            throw new InvalidOperationException($"Remoção do Folder '{plan.FolderName}' não foi confirmada: Outcome='{receipt.Outcome}', Detail='{receipt.ConfirmationDetail}'.");
+            receipt = persist();
+        }
+        catch (ApiPlanBusyAbortedException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            // O `Delete()` lançou. Isso não diz se o objeto saiu: só a releitura diz, e é ela
+            // que classifica. O seam já completou o recibo com a mesma regra antes de relançar.
+            return Classify(SafeConfirm(confirm), deleted, deletedLabel);
         }
 
-        deleted.Add($"Folder:{plan.FolderName}");
+        if (receipt is null)
+        {
+            // Sem log de persistência ativo, o seam não confirma por conta própria.
+            return Classify(SafeConfirm(confirm), deleted, deletedLabel);
+        }
+
+        switch (receipt.Outcome)
+        {
+            case PersistenceOutcome.Confirmed:
+                deleted.Add(deletedLabel);
+                return ApiPlanRemovalAttemptResult.Confirmed;
+
+            case PersistenceOutcome.Failed:
+                return ApiPlanRemovalAttemptResult.StillPresent;
+
+            default:
+                return ApiPlanRemovalAttemptResult.OutcomeUnknown;
+        }
+    }
+
+    private static ApiPlanRemovalAttemptResult Classify(
+        PersistenceConfirmation observation,
+        List<string> deleted,
+        string deletedLabel)
+    {
+        if (observation.Status == PersistenceConfirmationStatus.Absent)
+        {
+            deleted.Add(deletedLabel);
+            return ApiPlanRemovalAttemptResult.Confirmed;
+        }
+
+        if (observation.Status == PersistenceConfirmationStatus.Confirmed
+            && observation.PhysicalState == PersistencePhysicalState.Present)
+        {
+            return ApiPlanRemovalAttemptResult.StillPresent;
+        }
+
+        return ApiPlanRemovalAttemptResult.OutcomeUnknown;
+    }
+
+    private static PersistenceConfirmation SafeConfirm(Func<PersistenceConfirmation> confirm)
+    {
+        try
+        {
+            return confirm();
+        }
+        catch (Exception exception)
+        {
+            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + Clean(exception.Message));
+        }
     }
 
     private static PersistenceConfirmation ConfirmDelete(Func<bool> stillExists, string observedIdentity)
@@ -786,23 +1123,207 @@ internal static class ApiPlanGeneratedApiRemover
             && !Scan(telemetry, "File", "folder-vazio", () => WikiFileKBObject.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid))
             && !Scan(telemetry, "Folder", "folder-vazio", () => Folder.GetAll(designModel).Any(item => item.Guid != folder.Guid && item.Parent is not null && item.Parent.Guid == folder.Guid));
     }
+
+    private static string DescribeKind(JournalObjectType objectType) => objectType switch
+    {
+        JournalObjectType.ApiObject => "API Object",
+        JournalObjectType.Procedure => "Procedure",
+        JournalObjectType.Sdt => "SDT",
+        JournalObjectType.MetadataFile => "File",
+        JournalObjectType.Folder => "Folder",
+        _ => objectType.ToString(),
+    };
+
+    private static string Clean(string value) => (value ?? string.Empty).Replace("\r", " ").Replace("\n", " ");
+}
+
+/// <summary>
+/// A intenção de remoção resolvida: plano, inventário completo e a identidade com que a
+/// operação será registrada no diário.
+/// </summary>
+internal sealed class ApiPlanGeneratedApiRemovalIntent
+{
+    internal ApiPlanGeneratedApiRemovalIntent(
+        ApiPlanGeneratedApiRemovalPlan plan,
+        WikiFileKBObject metadataFile,
+        string? metadataSchemaVersion,
+        IReadOnlyList<ApiPlanRemovalTarget> targets,
+        Guid? applicationId,
+        string? contractHash,
+        ApiPlanKbObjectNameIndex kbIndex,
+        ApiPlanScanTelemetry telemetry)
+    {
+        Plan = plan ?? throw new ArgumentNullException(nameof(plan));
+        MetadataFile = metadataFile ?? throw new ArgumentNullException(nameof(metadataFile));
+        MetadataSchemaVersion = metadataSchemaVersion;
+        Targets = targets ?? throw new ArgumentNullException(nameof(targets));
+        ApplicationId = applicationId;
+        ContractHash = contractHash;
+        KbIndex = kbIndex;
+        Telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
+    }
+
+    internal ApiPlanGeneratedApiRemovalPlan Plan { get; }
+
+    internal WikiFileKBObject MetadataFile { get; }
+
+    /// <summary>Versão da metadata de negócio associada, para o envelope.</summary>
+    internal string? MetadataSchemaVersion { get; }
+
+    internal IReadOnlyList<ApiPlanRemovalTarget> Targets { get; }
+
+    /// <summary>
+    /// <c>ownership.applicationId</c> da metadata V3. Nulo em metadata legada: nesse caso o
+    /// diário registra uma adoção tardia, com identificador novo, e **não** regrava o File.
+    /// </summary>
+    internal Guid? ApplicationId { get; }
+
+    /// <summary>Hash do contrato planejado gravado pela integridade B067, quando existir.</summary>
+    internal string? ContractHash { get; }
+
+    internal ApiPlanKbObjectNameIndex KbIndex { get; }
+
+    internal ApiPlanScanTelemetry Telemetry { get; }
+
+    /// <summary>Os poucos valores de que a fila precisa para validar posse antes de excluir.</summary>
+    internal ApiPlanRemovalContext Context => ApiPlanRemovalContext.FromPlan(Plan);
+
+    internal int QueuedCount => Targets.Count(target => target.Queued);
+
+    internal int MaxPasses => ApiPlanRemovalIntent.ResolveMaxPasses(Targets);
+
+    /// <summary>
+    /// Intenção importada: a metadata não trazia identidade de aplicação própria, então o
+    /// contrato do envelope aceita <c>contractHash</c> ausente e o identificador é adotado agora.
+    /// </summary>
+    internal JournalIntentKind IntentKind =>
+        ApplicationId.HasValue ? JournalIntentKind.Current : JournalIntentKind.Imported;
+
+    internal IReadOnlyList<ApiPlanOperationJournalInventoryItem> BuildInventory() =>
+        ApiPlanRemovalIntent.BuildInventory(Targets);
+}
+
+/// <summary>
+/// O mínimo que a fila precisa saber para validar posse antes de cada exclusão: qual API, com
+/// qual identidade, de qual Transaction, e quais SDTs compartilhados **nunca** podem ser
+/// tocados.
+///
+/// Ele existe para que a retomada de uma remoção interrompida não dependa do File de metadata:
+/// esse File é o penúltimo da fila, e depois que ele sai só o diário sabe o que faltava.
+/// </summary>
+internal sealed class ApiPlanRemovalContext
+{
+    private ApiPlanRemovalContext(
+        string apiName,
+        Guid? apiGuid,
+        string transactionName,
+        IReadOnlyList<string> preservedSharedSdtNames)
+    {
+        ApiName = apiName ?? string.Empty;
+        ApiGuid = apiGuid;
+        TransactionName = transactionName ?? string.Empty;
+        PreservedSharedSdtNames = preservedSharedSdtNames ?? Array.Empty<string>();
+    }
+
+    internal string ApiName { get; }
+
+    internal Guid? ApiGuid { get; }
+
+    internal string TransactionName { get; }
+
+    internal IReadOnlyList<string> PreservedSharedSdtNames { get; }
+
+    internal static ApiPlanRemovalContext FromPlan(ApiPlanGeneratedApiRemovalPlan plan)
+    {
+        if (plan is null)
+        {
+            throw new ArgumentNullException(nameof(plan));
+        }
+
+        return new ApiPlanRemovalContext(
+            plan.ApiName,
+            Guid.TryParse(plan.ApiGuid, out var apiGuid) ? apiGuid : (Guid?)null,
+            plan.TransactionName,
+            plan.SharedSdtNamesPreserved);
+    }
+
+    /// <summary>
+    /// Reconstrói o contexto a partir do envelope durável. A lista de preservados sai dos itens
+    /// <c>Preserve</c> do inventário: eles foram registrados antes da primeira exclusão
+    /// justamente para que uma retomada soubesse no que não encostar.
+    /// </summary>
+    internal static ApiPlanRemovalContext FromJournal(ApiPlanOperationJournal journal)
+    {
+        if (journal is null)
+        {
+            throw new ArgumentNullException(nameof(journal));
+        }
+
+        var api = journal.Inventory.FirstOrDefault(item => item.ObjectType == JournalObjectType.ApiObject);
+        var preserved = journal.Inventory
+            .Where(item => item.ObjectType == JournalObjectType.Sdt && item.Action == JournalInventoryAction.Preserve)
+            .Select(item => item.Name)
+            .ToArray();
+
+        return new ApiPlanRemovalContext(
+            api?.Name ?? string.Empty,
+            api?.Guid ?? journal.Plan?.PlannedApiGuid,
+            journal.TransactionName,
+            preserved);
+    }
+}
+
+/// <summary>
+/// Sinaliza que um checkpoint do diário deixou de ser confirmável no meio da remoção. Não é
+/// falha da KB: é a proibição de continuar sem estado durável.
+/// </summary>
+internal sealed class ApiPlanRemovalJournalBlockedException : Exception
+{
+    internal ApiPlanRemovalJournalBlockedException(string message)
+        : base(message)
+    {
+    }
 }
 
 internal sealed class ApiPlanGeneratedApiRemovalResult
 {
     public ApiPlanGeneratedApiRemovalResult(
-        ApiPlanGeneratedApiRemovalPlan plan,
+        ApiPlanGeneratedApiRemovalPlan? plan,
+        ApiPlanRemovalContext context,
         IReadOnlyList<string> deletedItems,
-        IReadOnlyList<string>? telemetryLines = null)
+        IReadOnlyList<string>? telemetryLines = null,
+        ApiPlanRemovalQueueResult? queue = null,
+        string blockDetail = "")
     {
-        Plan = plan ?? throw new ArgumentNullException(nameof(plan));
+        Plan = plan;
+        Context = context ?? throw new ArgumentNullException(nameof(context));
         DeletedItems = deletedItems ?? throw new ArgumentNullException(nameof(deletedItems));
         TelemetryLines = telemetryLines ?? Array.Empty<string>();
+        Queue = queue;
+        BlockDetail = blockDetail ?? string.Empty;
     }
 
-    public ApiPlanGeneratedApiRemovalPlan Plan { get; }
+    /// <summary>
+    /// Plano da metadata. Nulo na retomada de uma remoção interrompida: ali o inventário vem do
+    /// diário, justamente porque o File de metadata pode já ter saído da KB.
+    /// </summary>
+    public ApiPlanGeneratedApiRemovalPlan? Plan { get; }
+
+    public ApiPlanRemovalContext Context { get; }
+
+    /// <summary>Nome da API para relatório e Output, venha ele do plano ou do diário.</summary>
+    public string ApiName => Plan?.ApiName ?? Context.ApiName;
+
     public IReadOnlyList<string> DeletedItems { get; }
 
     /// <summary>B082: linhas de medição de custo, para a janela Output. Diagnóstico apenas.</summary>
     public IReadOnlyList<string> TelemetryLines { get; }
+
+    /// <summary>Estado terminal da fila: o que decide <c>Removed</c>, <c>Partial</c> ou bloqueio.</summary>
+    public ApiPlanRemovalQueueResult? Queue { get; }
+
+    /// <summary>Detalhe humano da última falha observada, para o relatório final.</summary>
+    public string BlockDetail { get; }
+
+    public bool IsComplete => Queue is null || Queue.IsComplete;
 }

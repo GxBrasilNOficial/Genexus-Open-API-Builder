@@ -40,6 +40,88 @@ internal sealed class ExtensionTexts
         _ => "Remove generated API",
     };
 
+    /// <summary>
+    /// B111/F3 P6 — comando de recuperação explícita, nas duas superfícies de menu.
+    /// </summary>
+    public string RecoverInterruptedOperation => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Recuperar operação interrompida",
+        ExtensionLanguage.Spanish => "Recuperar operación interrumpida",
+        _ => "Recover interrupted operation",
+    };
+
+    public string RecoveryDialogTitle => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Genexus Open API Builder - Recuperar operação interrompida",
+        ExtensionLanguage.Spanish => "Genexus Open API Builder - Recuperar operación interrumpida",
+        _ => "Genexus Open API Builder - Recover interrupted operation",
+    };
+
+    /// <summary>Não há diário na KB: nenhuma operação desta ferramenta ficou pendente aqui.</summary>
+    public string RecoveryNoJournal => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Esta Knowledge Base não tem diário de operação: nenhuma operação desta ferramenta ficou pendente aqui.",
+        ExtensionLanguage.Spanish => "Esta Knowledge Base no tiene diario de operación: ninguna operación de esta herramienta quedó pendiente aquí.",
+        _ => "This Knowledge Base has no operation journal: no operation from this tool was left pending here.",
+    };
+
+    public string RecoveryNothingToDo => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "A última operação registrada está encerrada. Não há nada a recuperar.",
+        ExtensionLanguage.Spanish => "La última operación registrada está cerrada. No hay nada que recuperar.",
+        _ => "The last recorded operation is closed. There is nothing to recover.",
+    };
+
+    /// <summary>
+    /// O bloqueio é resultado, não erro: dizer o que impede e o que a pessoa pode fazer é o
+    /// serviço que a recuperação presta quando não pode agir sozinha.
+    /// </summary>
+    public string RecoveryBlockedIntro => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "A operação registrada não pode ser continuada automaticamente. O diagnóstico está na janela Output.",
+        ExtensionLanguage.Spanish => "La operación registrada no puede continuarse automáticamente. El diagnóstico está en la ventana Output.",
+        _ => "The recorded operation cannot be continued automatically. The diagnosis is in the Output window.",
+    };
+
+    public string RecoveryConfirmAbandon => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "A operação registrada foi preparada e nunca gravou nada na Knowledge Base. Abandoná-la explicitamente libera a KB para a próxima operação e preserva o registro dessa decisão. Nenhum objeto será alterado. Abandonar agora?",
+        ExtensionLanguage.Spanish => "La operación registrada fue preparada y nunca grabó nada en la Knowledge Base. Abandonarla explícitamente libera la KB para la próxima operación y preserva el registro de esa decisión. Ningún objeto será modificado. ¿Abandonar ahora?",
+        _ => "The recorded operation was prepared and never wrote anything to the Knowledge Base. Abandoning it explicitly frees the KB for the next operation and preserves the record of that decision. No object will be changed. Abandon now?",
+    };
+
+    public string RecoveryConfirmReconcile => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Todos os objetos previstos pela remoção já estão ausentes da Knowledge Base: a remoção chegou ao fim e só o registro ficou aberto. Fechar o registro como concluído não altera nenhum objeto. Fechar agora?",
+        ExtensionLanguage.Spanish => "Todos los objetos previstos por la eliminación ya están ausentes de la Knowledge Base: la eliminación llegó al final y solo el registro quedó abierto. Cerrar el registro como concluido no modifica ningún objeto. ¿Cerrar ahora?",
+        _ => "Every object planned for removal is already absent from the Knowledge Base: the removal finished and only the record stayed open. Closing the record as completed changes no object. Close now?",
+    };
+
+    public string RecoveryConfirmContinueRemoval => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "A remoção registrada parou com objetos ainda na Knowledge Base. Retomar usa o mesmo inventário e o mesmo registro, e exclui apenas o que foi previsto. Retomar agora?",
+        ExtensionLanguage.Spanish => "La eliminación registrada se detuvo con objetos aún en la Knowledge Base. Retomar usa el mismo inventario y el mismo registro, y elimina solo lo previsto. ¿Retomar ahora?",
+        _ => "The recorded removal stopped with objects still in the Knowledge Base. Resuming uses the same inventory and the same record, and deletes only what was planned. Resume now?",
+    };
+
+    public string RecoveryDeclined => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Recuperação recusada. Nada foi alterado.",
+        ExtensionLanguage.Spanish => "Recuperación rechazada. No se modificó nada.",
+        _ => "Recovery declined. Nothing was changed.",
+    };
+
+    /// <summary>
+    /// Oferta proativa: quando o diário bloqueia Apply, Sync ou Remover, a saída fica à mão em
+    /// vez de exigir que alguém apague o File do diário.
+    /// </summary>
+    public string RecoveryOfferAfterBlock => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "Há uma operação interrompida registrada nesta Knowledge Base, e ela impede a operação atual. Abrir a recuperação agora?",
+        ExtensionLanguage.Spanish => "Hay una operación interrumpida registrada en esta Knowledge Base, y ella impide la operación actual. ¿Abrir la recuperación ahora?",
+        _ => "There is an interrupted operation recorded in this Knowledge Base, and it blocks the current operation. Open recovery now?",
+    };
+
     public string PreferencesDialogTitle => Language switch
     {
         ExtensionLanguage.PortugueseBrazil => "Genexus Open API Builder - Preferências do Wizard",
@@ -436,6 +518,7 @@ internal sealed class ExtensionTexts
                 "Marcar listagem por padrao" => "Marcar listado por defecto",
                 "Marcar REST via Business Component por padrao" => "Marcar REST mediante Business Component por defecto",
                 "Oferecer recuperacao de metadata orfa no Wizard" => "Ofrecer recuperación de metadatos huérfanos en el Wizard",
+                "Oferecer a recuperacao quando o diario bloquear uma operacao" => "Ofrecer la recuperación cuando el diario bloquee una operación",
                 "Diagnostico e recuperacao" => "Diagnóstico y recuperación",
                 "Opcoes de investigacao. Nao sao necessarias no uso normal da extensao." => "Opciones de investigación. No son necesarias en el uso normal de la extensión.",
                 "Suprimir a atualizacao da tela durante as gravacoes - a janela congela e Abortar nao responde (B109)" => "Suprimir la actualización de la pantalla durante las grabaciones — la ventana se congela y Abortar no responde (B109)",
@@ -655,6 +738,7 @@ internal sealed class ExtensionTexts
                 "Marcar listagem por padrao" => "Select list endpoint by default",
                 "Marcar REST via Business Component por padrao" => "Select REST via Business Component by default",
                 "Oferecer recuperacao de metadata orfa no Wizard" => "Offer orphan metadata recovery in the Wizard",
+                "Oferecer a recuperacao quando o diario bloquear uma operacao" => "Offer recovery when the journal blocks an operation",
                 "Diagnostico e recuperacao" => "Diagnostics and recovery",
                 "Opcoes de investigacao. Nao sao necessarias no uso normal da extensao." => "Investigation options. They are not needed in normal use of the extension.",
                 "Suprimir a atualizacao da tela durante as gravacoes - a janela congela e Abortar nao responde (B109)" => "Suppress screen updates during saves — the window freezes and Abort stops responding (B109)",

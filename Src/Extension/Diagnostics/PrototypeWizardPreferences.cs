@@ -53,6 +53,13 @@ internal sealed class PrototypeWizardPreferences
 
     public bool OfferOrphanMetadataRecovery { get; set; }
 
+    /// <summary>
+    /// B111/F3 P6 — quando o diário bloqueia uma operação por haver outra interrompida, oferecer
+    /// a recuperação na hora, em vez de só informar o bloqueio. Nasce ligada: o bloqueio sem
+    /// saída à vista foi o que obrigou, na validação da P3, a apagar o File do diário à mão.
+    /// </summary>
+    public bool ShowRecoveryOptionProactively { get; set; } = true;
+
     public bool SuppressProgressPumpDuringSaves { get; set; }
 
     public static PrototypeWizardPreferences CreateDefault()
@@ -80,6 +87,7 @@ internal sealed class PrototypeWizardPreferences
             MaximumPageSizeByDefault = MaximumPageSizeByDefault,
             IncludeBusinessComponentErrorMessagesByDefault = IncludeBusinessComponentErrorMessagesByDefault,
             OfferOrphanMetadataRecovery = OfferOrphanMetadataRecovery,
+            ShowRecoveryOptionProactively = ShowRecoveryOptionProactively,
             SuppressProgressPumpDuringSaves = SuppressProgressPumpDuringSaves,
         };
     }
@@ -114,6 +122,7 @@ internal sealed class PrototypeWizardPreferences
             MaximumPageSizeByDefault = values.MaximumPageSizeByDefault,
             IncludeBusinessComponentErrorMessagesByDefault = values.IncludeBusinessComponentErrorMessagesByDefault,
             OfferOrphanMetadataRecovery = values.OfferOrphanMetadataRecovery,
+            ShowRecoveryOptionProactively = values.ShowRecoveryOptionProactively,
             SuppressProgressPumpDuringSaves = values.SuppressProgressPumpDuringSaves,
         };
     }
@@ -138,6 +147,7 @@ internal sealed class PrototypeWizardPreferences
             MaximumPageSizeByDefault = MaximumPageSizeByDefault,
             IncludeBusinessComponentErrorMessagesByDefault = IncludeBusinessComponentErrorMessagesByDefault,
             OfferOrphanMetadataRecovery = OfferOrphanMetadataRecovery,
+            ShowRecoveryOptionProactively = ShowRecoveryOptionProactively,
             SuppressProgressPumpDuringSaves = SuppressProgressPumpDuringSaves,
         };
     }

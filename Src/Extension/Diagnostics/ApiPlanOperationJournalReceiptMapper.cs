@@ -119,6 +119,62 @@ internal static class ApiPlanOperationJournalReceiptMapper
         return byTarget.Values.ToArray();
     }
 
+    /// <summary>
+    /// Associa cada recibo ao item de inventário que já existe — o caminho do Remove, em que o
+    /// inventário vem da intenção registrada antes do primeiro <c>Delete()</c> e não pode ser
+    /// reconstruído a partir dos recibos.
+    ///
+    /// A ligação é pela mesma chave de identidade que o validador usa. Um recibo cujo alvo não
+    /// está no inventário é ignorado de propósito: ele pertence a outra etapa da operação, e
+    /// inventar um item para ele acrescentaria ao envelope um alvo que a intenção não declarou.
+    /// </summary>
+    internal static IReadOnlyList<ApiPlanOperationJournalInventoryItem> AttachReceiptSequences(
+        IEnumerable<ApiPlanOperationJournalInventoryItem> inventory,
+        IEnumerable<PersistenceReceipt> receipts)
+    {
+        if (inventory is null)
+        {
+            throw new ArgumentNullException(nameof(inventory));
+        }
+
+        if (receipts is null)
+        {
+            throw new ArgumentNullException(nameof(receipts));
+        }
+
+        var items = inventory.ToArray();
+        var byKey = new Dictionary<string, ApiPlanOperationJournalInventoryItem>(StringComparer.Ordinal);
+        foreach (var item in items)
+        {
+            byKey[ApiPlanOperationJournalValidator.BuildIdentityKey(item)] = item;
+        }
+
+        foreach (var receipt in receipts.OrderBy(item => item.Sequence))
+        {
+            // A chave sai da mesma derivação de identidade que monta um item: é ela que faz o
+            // recibo de um Delete encontrar o alvo que a intenção declarou.
+            var probe = new ApiPlanOperationJournalInventoryItem
+            {
+                ObjectType = MapObjectType(receipt.ObjectType),
+                Name = receipt.PlannedName,
+            };
+            ApplyIdentity(probe, receipt.Identity);
+
+            if (!byKey.TryGetValue(ApiPlanOperationJournalValidator.BuildIdentityKey(probe), out var item))
+            {
+                continue;
+            }
+
+            var sequence = ToSequence(receipt.Sequence);
+            if (!item.ReceiptSequences.Contains(sequence))
+            {
+                item.ReceiptSequences.Add(sequence);
+            }
+        }
+
+        return items;
+    }
+
     private static void ApplyIdentity(ApiPlanOperationJournalInventoryItem item, PersistenceIdentity identity)
     {
         switch (identity)

@@ -42,6 +42,9 @@ public sealed class Package : AbstractPackageUI
         AddCommand(new CommandKey(Id, "Remover API gerada"), ExecuteRemoveGeneratedApi, QueryRemoveGeneratedApiPortuguese);
         AddCommand(new CommandKey(Id, "Eliminar API generada"), ExecuteRemoveGeneratedApi, QueryRemoveGeneratedApiSpanish);
         AddCommand(new CommandKey(Id, "Remove generated API"), ExecuteRemoveGeneratedApi, QueryRemoveGeneratedApiEnglish);
+        AddCommand(new CommandKey(Id, "Recuperar operação interrompida"), ExecuteRecoverInterruptedOperation, QueryRecoverInterruptedOperationPortuguese);
+        AddCommand(new CommandKey(Id, "Recuperar operación interrumpida"), ExecuteRecoverInterruptedOperation, QueryRecoverInterruptedOperationSpanish);
+        AddCommand(new CommandKey(Id, "Recover interrupted operation"), ExecuteRecoverInterruptedOperation, QueryRecoverInterruptedOperationEnglish);
 
     }
 
@@ -505,6 +508,342 @@ public sealed class Package : AbstractPackageUI
         return QueryLocalizedCommand(data, ref status, ExtensionLanguage.English);
     }
 
+    /// <summary>
+    /// B111/F3 P6 — comando explícito de recuperação, nas duas superfícies de menu.
+    ///
+    /// Ele lê o diário durável da KB, cruza o inventário registrado com o que a KB mostra agora
+    /// e oferece **uma** ação, sempre com confirmação: abandonar um envelope que nunca gravou
+    /// nada, fechar o registro de uma remoção que já terminou, ou retomar a fila de uma remoção
+    /// interrompida. Quando a reconciliação não é determinística, o comando não age: publica o
+    /// diagnóstico e devolve a decisão a quem sabe o que aconteceu.
+    ///
+    /// Antes dele, um envelope não terminal bloqueava as operações seguintes e a única saída era
+    /// apagar o File `GxOpenApiBuilder_OperationJournal` à mão.
+    /// </summary>
+    private static bool ExecuteRecoverInterruptedOperation(CommandData data)
+    {
+        var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
+        if (knowledgeBase is null)
+        {
+            WriteOutput("[Genexus Open API Builder][B111/F3] Nenhuma Knowledge Base ativa foi encontrada. Abra uma KB e execute o comando novamente.");
+            return true;
+        }
+
+        var texts = ExtensionLocalization.For(knowledgeBase);
+        var owner = ResolveFinalReportOwner();
+        try
+        {
+            RunRecovery(knowledgeBase, texts, owner);
+        }
+        catch (Exception ex)
+        {
+            var detail = DescribeException(ex);
+            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Recuperar")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
+            WriteOutput($"[Genexus Open API Builder][B111/F3] Recuperação falhou: Error='{detail}'. Nenhuma alteração foi feita.");
+            System.Windows.Forms.MessageBox.Show(
+                owner,
+                detail,
+                texts.RecoveryDialogTitle,
+                System.Windows.Forms.MessageBoxButtons.OK,
+                System.Windows.Forms.MessageBoxIcon.Error);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// O fluxo da recuperação, separado do handler para que a oferta proativa — quando o diário
+    /// bloqueia Apply, Sync ou Remover — leve ao mesmo lugar, e não a uma segunda implementação.
+    /// </summary>
+    private static void RunRecovery(
+        KnowledgeBase knowledgeBase,
+        ExtensionTexts texts,
+        System.Windows.Forms.IWin32Window? owner)
+    {
+        var designModel = knowledgeBase.DesignModel;
+        ApiPlanKbObjectNameIndex kbIndex;
+        using (var loading = ExtensionBusyProgressScope.Show(owner, texts.RecoveryDialogTitle, texts))
+        {
+            kbIndex = ApiPlanKbObjectNameIndex.Create(designModel, loading.Session);
+        }
+
+        var validated = ApiPlanRecoveryReader.ReadAndValidate(designModel, kbIndex, knowledgeBase.Guid);
+        if (!validated.IsValid)
+        {
+            var diagnostic = validated.Diagnostic!;
+            WriteOutput($"[Genexus Open API Builder][B111/F3] Recuperação: {diagnostic.Describe()}");
+            var message = string.Equals(diagnostic.ReasonCode, JournalGateReasonCodes.JournalMissing, StringComparison.Ordinal)
+                ? texts.RecoveryNoJournal
+                : diagnostic.Message;
+            System.Windows.Forms.MessageBox.Show(
+                owner,
+                message,
+                texts.RecoveryDialogTitle,
+                System.Windows.Forms.MessageBoxButtons.OK,
+                System.Windows.Forms.MessageBoxIcon.Information);
+            return;
+        }
+
+        var envelope = validated.Journal!;
+        var observations = ApiPlanRecoveryReader.ObserveTargets(designModel, envelope, kbIndex);
+        var operation = ApiPlanRecoveryRehydrator.Rehydrate(envelope, observations);
+        foreach (var line in ApiPlanRecoveryReport.Describe(operation))
+        {
+            WriteOutput($"[Genexus Open API Builder][B111/F3] {line}");
+        }
+
+        if (operation.AlreadyTerminal)
+        {
+            System.Windows.Forms.MessageBox.Show(
+                owner,
+                texts.RecoveryNothingToDo,
+                texts.RecoveryDialogTitle,
+                System.Windows.Forms.MessageBoxButtons.OK,
+                System.Windows.Forms.MessageBoxIcon.Information);
+            return;
+        }
+
+        if (!operation.CanExecute)
+        {
+            System.Windows.Forms.MessageBox.Show(
+                owner,
+                texts.RecoveryBlockedIntro + Environment.NewLine + Environment.NewLine + operation.Summary,
+                texts.RecoveryDialogTitle,
+                System.Windows.Forms.MessageBoxButtons.OK,
+                System.Windows.Forms.MessageBoxIcon.Warning);
+            return;
+        }
+
+        var question = operation.NextStep switch
+        {
+            RecoveryNextStep.Abandon => texts.RecoveryConfirmAbandon,
+            RecoveryNextStep.Complete => texts.RecoveryConfirmReconcile,
+            _ => texts.RecoveryConfirmContinueRemoval,
+        };
+
+        var answer = System.Windows.Forms.MessageBox.Show(
+            owner,
+            question,
+            texts.RecoveryDialogTitle,
+            System.Windows.Forms.MessageBoxButtons.YesNo,
+            System.Windows.Forms.MessageBoxIcon.Warning,
+            System.Windows.Forms.MessageBoxDefaultButton.Button2);
+        if (answer != System.Windows.Forms.DialogResult.Yes)
+        {
+            WriteOutput("[Genexus Open API Builder][B111/F3] Recuperação recusada pelo usuário. Nenhuma alteração foi feita.");
+            System.Windows.Forms.MessageBox.Show(
+                owner,
+                texts.RecoveryDeclined,
+                texts.RecoveryDialogTitle,
+                System.Windows.Forms.MessageBoxButtons.OK,
+                System.Windows.Forms.MessageBoxIcon.Information);
+            return;
+        }
+
+        // A autorização vincula o consentimento ao snapshot exato que foi lido: identidade,
+        // FileId, updatedUtc e hash canônico. Se o diário mudar entre a leitura e a ação, o
+        // executor recusa antes de qualquer mutação.
+        var authorization = new RecoveryAuthorization(
+            humanConfirmed: true,
+            envelope.OperationId,
+            envelope.ApplicationId,
+            validated.FileId,
+            envelope.UpdatedUtc,
+            validated.SnapshotHash,
+            operation.NextStep,
+            Environment.UserName);
+
+        var result = ApiPlanRecoveryExecutor.Continue(
+            designModel,
+            validated,
+            operation,
+            authorization,
+            rehydrated => ContinueInterruptedRemoval(knowledgeBase, texts, owner, validated, rehydrated));
+
+        if (!result.Executed)
+        {
+            var diagnostic = result.Diagnostic;
+            WriteOutput($"[Genexus Open API Builder][B111/F3] Recuperação bloqueada: {diagnostic?.Describe() ?? result.Summary}");
+            System.Windows.Forms.MessageBox.Show(
+                owner,
+                texts.RecoveryBlockedIntro + Environment.NewLine + Environment.NewLine + result.Summary,
+                texts.RecoveryDialogTitle,
+                System.Windows.Forms.MessageBoxButtons.OK,
+                System.Windows.Forms.MessageBoxIcon.Warning);
+            return;
+        }
+
+        WriteOutput($"[Genexus Open API Builder][B111/F3] Recuperação concluída: Etapa='{operation.NextStep}', OperationId='{envelope.OperationId}', Estado='{result.Envelope?.OperationState}'. {result.Summary}");
+        System.Windows.Forms.MessageBox.Show(
+            owner,
+            result.Summary,
+            texts.RecoveryDialogTitle,
+            System.Windows.Forms.MessageBoxButtons.OK,
+            System.Windows.Forms.MessageBoxIcon.Information);
+    }
+
+    /// <summary>
+    /// Retoma a fila de uma remoção interrompida **no mesmo envelope**, com o inventário durável
+    /// que o diário guarda. É por isso que a intenção é registrada antes da primeira exclusão: o
+    /// File de metadata é o penúltimo da fila, e depois que ele sai não há outra fonte do que
+    /// faltava.
+    /// </summary>
+    private static ApiPlanRecoveryResult ContinueInterruptedRemoval(
+        KnowledgeBase knowledgeBase,
+        ExtensionTexts texts,
+        System.Windows.Forms.IWin32Window? owner,
+        ApiPlanValidatedJournal validated,
+        ApiPlanRehydratedOperation operation)
+    {
+        var envelope = validated.Journal!;
+        var journal = ApiPlanOperationJournalSession.Resume(knowledgeBase.DesignModel, validated.File!, envelope);
+        if (!journal.ResumeRemoval())
+        {
+            WriteJournalDiagnostics(journal);
+            return ApiPlanRecoveryResult.Blocked(
+                operation,
+                ApiPlanOperationJournalGate.SaveUnconfirmed(validated.FileId, journal.BlockDetail));
+        }
+
+        WriteJournalDiagnostics(journal);
+
+        var observed = operation.Targets.ToDictionary(
+            target => ApiPlanOperationJournalValidator.BuildIdentityKey(target.Item),
+            target => target.PhysicalState,
+            StringComparer.Ordinal);
+        var targets = ApiPlanRemovalIntent.FromInventory(envelope.Inventory, observed);
+        var context = ApiPlanRemovalContext.FromJournal(envelope);
+        var telemetry = new ApiPlanScanTelemetry();
+        var deleted = new List<string>();
+        var persistenceLog = new ApiPlanPersistenceLog();
+        using var persistenceScope = ApiPlanSaveBoundaryProbe.BeginPersistence(persistenceLog);
+        journal.AttachPersistence(persistenceLog, null);
+        journal.AttachRemovalInventory(() => ApiPlanRemovalIntent.BuildInventory(targets));
+
+        var stopwatch = Stopwatch.StartNew();
+        ApiPlanGeneratedApiRemovalResult removal;
+        using (var busy = ExtensionBusyProgressScope.Show(owner, texts.BusyProgressTitleRemove, texts))
+        {
+            try
+            {
+                removal = ApiPlanGeneratedApiRemover.Execute(
+                    knowledgeBase.DesignModel,
+                    context,
+                    targets,
+                    telemetry,
+                    ApiPlanRemovalIntent.ResolveMaxPasses(targets),
+                    busy.Session,
+                    deleted,
+                    pass =>
+                    {
+                        var confirmed = journal.NoteRemovalPassCompleted();
+                        WriteJournalDiagnostics(journal);
+                        return confirmed;
+                    });
+            }
+            catch (ApiPlanBusyAbortedException abortEx)
+            {
+                stopwatch.Stop();
+                journal.Interrupt(JournalOperationState.Partial, JournalBlockReason.UserAborted);
+                WriteJournalDiagnostics(journal);
+                WriteOutput($"[Genexus Open API Builder][B111/F3] Retomada abortada: Error='{abortEx.Message}', JaRemovidos={deleted.Count}.");
+                var abortReport = new ApiPlanApplicationFinalReportCollector("Recuperar", envelope.TransactionName, context.ApiName);
+                abortReport.SetApiName(context.ApiName);
+                abortReport.AddDeletedItems(deleted.ToArray());
+                abortReport.AddBlocked("Recuperar", envelope.TransactionName, "Abortado [B082]");
+                ShowFinalReport(abortReport, stopwatch.Elapsed, knowledgeBase.DesignModel, persistenceLog: persistenceLog);
+                return ApiPlanRecoveryResult.Blocked(
+                    operation,
+                    ApiPlanOperationJournalGate.SaveUnconfirmed(validated.FileId, abortEx.Message));
+            }
+        }
+
+        stopwatch.Stop();
+        var report = new ApiPlanApplicationFinalReportCollector("Recuperar", envelope.TransactionName, removal.ApiName);
+        report.SetApiName(removal.ApiName);
+        report.AddDeletedItems(removal.DeletedItems.ToArray());
+        CloseRemovalJournal(journal, report, removal, envelope.TransactionName);
+        foreach (var telemetryLine in removal.TelemetryLines)
+        {
+            WriteOutput($"[Genexus Open API Builder][B082] Retomada {telemetryLine}");
+        }
+
+        ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, persistenceLog: persistenceLog);
+
+        var queue = removal.Queue;
+        if (queue is not null && !queue.IsComplete)
+        {
+            return ApiPlanRecoveryResult.Blocked(
+                operation,
+                new ApiPlanOperationJournalGateDiagnostic(
+                    JournalGateDiagnosticCode.GateBlocked,
+                    JournalGateReasonCodes.JournalNonTerminal,
+                    JournalGatePrecondition.PriorIntentReconciled,
+                    "A retomada não concluiu a remoção: " + queue.Describe(),
+                    Array.Empty<KeyValuePair<string, string>>()));
+        }
+
+        return ApiPlanRecoveryResult.Applied(
+            operation,
+            envelope,
+            string.Format(
+                System.Globalization.CultureInfo.InvariantCulture,
+                "A remoção foi retomada e concluída: {0} objeto(s) saíram da KB nesta continuação.",
+                removal.DeletedItems.Count));
+    }
+
+    /// <summary>
+    /// Oferta proativa da P6: quando o diário recusa uma operação por haver outra interrompida,
+    /// a saída fica à mão. Sem isso, o bloqueio só informava — e a única saída praticada na
+    /// validação da P3 foi apagar o File do diário à mão.
+    /// </summary>
+    private static void OfferRecoveryAfterJournalBlock(
+        KnowledgeBase knowledgeBase,
+        ExtensionTexts texts,
+        ApiPlanOperationJournalStart journalStart)
+    {
+        if (journalStart.Diagnostic is null || journalStart.CurrentEnvelope is null)
+        {
+            return;
+        }
+
+        var preferences = PrototypeWizardPreferencesStore.Load(knowledgeBase.DesignModel).Preferences;
+        if (!preferences.ShowRecoveryOptionProactively)
+        {
+            return;
+        }
+
+        var owner = ResolveFinalReportOwner();
+        var answer = System.Windows.Forms.MessageBox.Show(
+            owner,
+            texts.RecoveryOfferAfterBlock,
+            texts.RecoveryDialogTitle,
+            System.Windows.Forms.MessageBoxButtons.YesNo,
+            System.Windows.Forms.MessageBoxIcon.Warning,
+            System.Windows.Forms.MessageBoxDefaultButton.Button2);
+        if (answer != System.Windows.Forms.DialogResult.Yes)
+        {
+            return;
+        }
+
+        RunRecovery(knowledgeBase, texts, owner);
+    }
+
+    private static bool QueryRecoverInterruptedOperationPortuguese(CommandData data, ref CommandStatus status)
+    {
+        return QueryLocalizedCommand(data, ref status, ExtensionLanguage.PortugueseBrazil);
+    }
+
+    private static bool QueryRecoverInterruptedOperationSpanish(CommandData data, ref CommandStatus status)
+    {
+        return QueryLocalizedCommand(data, ref status, ExtensionLanguage.Spanish);
+    }
+
+    private static bool QueryRecoverInterruptedOperationEnglish(CommandData data, ref CommandStatus status)
+    {
+        return QueryLocalizedCommand(data, ref status, ExtensionLanguage.English);
+    }
+
     private static bool QueryRemoveGeneratedApiPortuguese(CommandData data, ref CommandStatus status)
     {
         return QueryLocalizedCommand(data, ref status, ExtensionLanguage.PortugueseBrazil);
@@ -704,6 +1043,7 @@ public sealed class Package : AbstractPackageUI
                     report.AddBlocked("Diário de operação", "B111/F3", syncJournalStart.Detail);
                     stopwatch.Stop();
                     ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                    OfferRecoveryAfterJournalBlock(knowledgeBase, texts, syncJournalStart);
                     return true;
                 }
 
@@ -919,6 +1259,9 @@ public sealed class Package : AbstractPackageUI
         // é interrompida no meio.
         var deletedBeforeFailure = new List<string>();
         ApiPlanPersistenceLog? persistenceLog = null;
+        // B111/F3 P4: fora do try pelo mesmo motivo da lista acima — o catch externo precisa
+        // fechar o diário com a intenção preservada quando a remoção falha no meio.
+        ApiPlanOperationJournalSession? removeJournal = null;
         try
         {
             var owner = ResolveFinalReportOwner();
@@ -975,9 +1318,74 @@ public sealed class Package : AbstractPackageUI
             using (var busy = ExtensionBusyProgressScope.Show(owner, texts.BusyProgressTitleRemove, texts))
             {
                 WriteOutput($"[Genexus Open API Builder][B082] Remover iniciado: Transaction='{transaction.Name}', PlannedDeletes={ApiPlanGeneratedApiRemover.CountPlannedDeletes(plan)}.");
+
+                // A intenção é resolvida **antes** de qualquer exclusão: identidade de cada alvo,
+                // o que sai e o que fica. Sem ela registrada, uma interrupção no meio deixaria a
+                // KB num estado que ninguém reconstitui.
+                ApiPlanGeneratedApiRemovalIntent intent;
                 try
                 {
-                    result = ApiPlanGeneratedApiRemover.Remove(knowledgeBase.DesignModel, transaction, busy.Session, deletedBeforeFailure, persistenceLog);
+                    var removeIndex = ApiPlanKbObjectNameIndex.Create(knowledgeBase.DesignModel, busy.Session);
+                    intent = ApiPlanGeneratedApiRemover.ResolveIntent(
+                        knowledgeBase.DesignModel,
+                        transaction,
+                        busy.Session,
+                        removeIndex);
+                }
+                catch (ApiPlanBusyAbortedException abortEx)
+                {
+                    stopwatch.Stop();
+                    WriteOutput($"[Genexus Open API Builder][B082] Remover abortado antes da intencao: Transaction='{transaction.Name}', Error='{abortEx.Message}'. Nenhuma alteracao foi feita na KB.");
+                    return true;
+                }
+
+                var removalApiGuid = Guid.TryParse(intent.Plan.ApiGuid, out var parsedApiGuid) ? parsedApiGuid : (Guid?)null;
+                var journalStart = ApiPlanOperationJournalSession.Start(
+                    knowledgeBase.DesignModel,
+                    intent.KbIndex,
+                    knowledgeBase.Guid,
+                    transaction,
+                    JournalOperationKind.Remove,
+                    ApiPlanOperationJournalPlans.ForRemoval(
+                        removalApiGuid,
+                        intent.ContractHash,
+                        Array.Empty<string>()),
+                    // Metadata V3 reutiliza o `applicationId` do ownership; metadata legada
+                    // recebe um identificador novo, registrado só no diário como adoção tardia.
+                    intent.ApplicationId ?? Guid.NewGuid(),
+                    intent.IntentKind,
+                    intent.MetadataSchemaVersion,
+                    intent.BuildInventory());
+                if (!journalStart.IsStarted)
+                {
+                    stopwatch.Stop();
+                    WriteOutput($"[Genexus Open API Builder][B111/F3] Remocao bloqueada pelo diário durável: Transaction='{transaction.Name}'. {journalStart.Detail} Nenhum objeto foi excluído.");
+                    var blockedReport = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, intent.Plan.ApiName);
+                    blockedReport.SetApiName(intent.Plan.ApiName);
+                    blockedReport.AddBlocked("Diário de operação", "B111/F3", journalStart.Detail);
+                    ShowFinalReport(blockedReport, stopwatch.Elapsed, knowledgeBase.DesignModel, persistenceLog: persistenceLog);
+                    OfferRecoveryAfterJournalBlock(knowledgeBase, texts, journalStart);
+                    return true;
+                }
+
+                removeJournal = journalStart.Session!;
+                removeJournal.AttachPersistence(persistenceLog, null);
+                removeJournal.AttachRemovalInventory(intent.BuildInventory);
+                WriteJournalDiagnostics(removeJournal);
+
+                try
+                {
+                    result = ApiPlanGeneratedApiRemover.Remove(
+                        knowledgeBase.DesignModel,
+                        intent,
+                        busy.Session,
+                        deletedBeforeFailure,
+                        pass =>
+                        {
+                            var confirmed = removeJournal.NoteRemovalPassCompleted();
+                            WriteJournalDiagnostics(removeJournal);
+                            return confirmed;
+                        });
                 }
                 catch (ApiPlanBusyAbortedException abortEx)
                 {
@@ -994,21 +1402,26 @@ public sealed class Package : AbstractPackageUI
                     }
 
                     abortReport.AddBlocked("Remover", transaction.Name, "Abortado [B082]");
+                    // Aborto é decisão do usuário, não falha de etapa: a intenção fica preservada.
+                    InterruptJournal(removeJournal, abortReport, JournalBlockReason.UserAborted);
                     ShowFinalReport(abortReport, stopwatch.Elapsed, knowledgeBase.DesignModel, persistenceLog: persistenceLog);
                     return true;
                 }
             }
 
             stopwatch.Stop();
-            WriteOutput($"[Genexus Open API Builder][B086] Remocao concluida: Transaction='{transaction.Name}', ApiName='{result.Plan.ApiName}', Deleted={result.DeletedItems.Count}, Items='{string.Join("; ", result.DeletedItems)}'. SDTs compartilhados e Business Component da Transaction nao foram alterados.");
+            var queue = result.Queue;
+            WriteOutput($"[Genexus Open API Builder][B086] Remocao encerrada: Transaction='{transaction.Name}', ApiName='{result.ApiName}', Estado='{queue?.Outcome.ToString() ?? "Removed"}', Deleted={result.DeletedItems.Count}, Items='{string.Join("; ", result.DeletedItems)}'. SDTs compartilhados e Business Component da Transaction nao foram alterados.");
             WriteOutput($"[Genexus Open API Builder][B082] Remover TotalMs={stopwatch.ElapsedMilliseconds}.");
             foreach (var telemetryLine in result.TelemetryLines)
             {
                 WriteOutput($"[Genexus Open API Builder][B082] Remover {telemetryLine}");
             }
-            var report = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, result.Plan.ApiName);
-            report.SetApiName(result.Plan.ApiName);
+
+            var report = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, result.ApiName);
+            report.SetApiName(result.ApiName);
             report.AddDeletedItems(result.DeletedItems.ToArray());
+            CloseRemovalJournal(removeJournal, report, result, transaction.Name);
             ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, persistenceLog: persistenceLog);
         }
         catch (Exception ex)
@@ -1025,10 +1438,59 @@ public sealed class Package : AbstractPackageUI
             }
 
             report.AddBlocked("Remover", transaction.Name, errorDetail);
+            // A falha veio de fora da fila (preflight, metadata, catálogo). O envelope fecha em
+            // Partial: o que já saiu está no inventário, e a intenção continua registrada.
+            InterruptJournal(removeJournal, report, JournalBlockReason.StageFailed);
             ShowFinalReport(report, TimeSpan.Zero, knowledgeBase.DesignModel, persistenceLog: persistenceLog);
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Fecha o diário da remoção segundo o estado terminal da fila. <c>Removed</c> só quando
+    /// todos os alvos previstos saíram confirmados; qualquer outro desfecho grava o motivo do
+    /// enum fechado e preserva a intenção para a reconciliação.
+    /// </summary>
+    private static void CloseRemovalJournal(
+        ApiPlanOperationJournalSession? journal,
+        ApiPlanApplicationFinalReportCollector report,
+        ApiPlanGeneratedApiRemovalResult result,
+        string transactionName)
+    {
+        if (journal is null)
+        {
+            return;
+        }
+
+        var queue = result.Queue;
+        if (queue is null || queue.IsComplete)
+        {
+            journal.Complete();
+            WriteJournalDiagnostics(journal);
+            if (journal.IsBlocked)
+            {
+                report.AddWarning($"Diário de operação: {journal.BlockDetail}");
+            }
+
+            return;
+        }
+
+        journal.Interrupt(queue.Outcome, queue.BlockReason ?? JournalBlockReason.OutcomeUnknown);
+        WriteJournalDiagnostics(journal);
+
+        var pending = queue.Pending.Count == 0
+            ? string.Empty
+            : " Pendentes: " + string.Join("; ", queue.Pending.Select(target => target.Describe())) + ".";
+        WriteOutput($"[Genexus Open API Builder][B111/F3] Remocao interrompida: Transaction='{transactionName}', {queue.Describe()}{pending}");
+        report.AddWarning(
+            $"Remoção interrompida ({queue.BlockReason}): {queue.Deleted.Count} objeto(s) saíram da KB e {queue.Pending.Count} continuam lá."
+            + (string.IsNullOrEmpty(result.BlockDetail) ? string.Empty : " " + result.BlockDetail));
+        report.AddBlocked("Remover", transactionName, queue.Describe());
+        if (journal.IsBlocked)
+        {
+            report.AddWarning($"Diário de operação: {journal.BlockDetail}");
+        }
     }
 
     private static Transaction? ResolveTransactionForCommand(CommandData data, KnowledgeBase knowledgeBase, string commandLabel)
@@ -1498,6 +1960,7 @@ public sealed class Package : AbstractPackageUI
                 stopwatch.Stop();
                 WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
+                OfferRecoveryAfterJournalBlock(knowledgeBase, texts, journalStart);
                 return true;
             }
 

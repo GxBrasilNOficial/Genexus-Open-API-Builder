@@ -182,8 +182,13 @@ $allowedCreateSymbols = [System.Collections.Generic.HashSet[string]]::new([Strin
 [void]$allowedCreateSymbols.Add('Read')
 [void]$allowedCreateSymbols.Add('ExecuteSynchronizeWithTransaction')
 [void]$allowedCreateSymbols.Add('ExecuteRemoveGeneratedApi')
-# Validacao agregada do Remover, antes de qualquer Delete (Nivel A).
-[void]$allowedCreateSymbols.Add('Remove')
+# Validacao agregada do Remover, antes de qualquer Delete (Nivel A). Desde a P4 da F3 ela
+# vive na resolucao da intencao: e la que os alvos sao validados e identificados, antes de o
+# diario registrar o inventario e de a fila tentar a primeira exclusao.
+[void]$allowedCreateSymbols.Add('ResolveIntent')
+# Comando de recuperacao (B111/F3 P6): uma montagem por invocacao do comando, para localizar o
+# diario pelo nome fixo e reler cada alvo do inventario por identidade.
+[void]$allowedCreateSymbols.Add('RunRecovery')
 
 # Excecao por (simbolo, arquivo) para sondas temporarias. Vazia desde 2026-09-05, quando
 # B111JournalProbe.cs foi retirado; a estrutura permanece porque o mecanismo e util e o
@@ -235,6 +240,6 @@ foreach ($probeFile in $temporaryProbeCreateSymbols.Keys) {
 Assert-NotContains $preflight 'ReadForIntentionalChange' 'ApiPlanWritePreflight nao pode chamar ReadForIntentionalChange; usa o indice ja criado.'
 Assert-NotContains $preflight 'ReadForSync' 'ApiPlanWritePreflight nao pode chamar ReadForSync; usa ReadUsingExistingIndex.'
 Assert-Contains $preflight 'ReadUsingExistingIndex' 'Preflight agregado deve reler o estado no indice ja criado.'
-Assert-Contains $remover 'ApiPlanKbObjectNameIndex.Create' 'Remove cria o indice da validacao agregada antes de qualquer Delete.'
+Assert-Contains $remover 'ApiPlanKbObjectNameIndex.Create' 'A resolucao da intencao cria o indice da validacao agregada antes de qualquer Delete.'
 
 Write-Output 'PASS: ApiPlanKbIndexReuse'

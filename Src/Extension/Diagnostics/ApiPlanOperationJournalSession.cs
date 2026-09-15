@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using Artech.Architecture.Common.Objects;
 using Artech.Genexus.Common.Objects;
+using Artech.Genexus.Common.Wiki;
 
 namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
@@ -33,6 +34,7 @@ internal sealed class ApiPlanOperationJournalSession
     private readonly List<string> _diagnostics = new List<string>();
     private ApiPlanPersistenceLog? _persistenceLog;
     private Func<IEnumerable<string>>? _createdNames;
+    private Func<IEnumerable<ApiPlanOperationJournalInventoryItem>>? _inventoryProvider;
 
     private ApiPlanOperationJournalSession(ApiPlanOperationJournalStore store, ApiPlanOperationJournal envelope)
     {
@@ -88,7 +90,8 @@ internal sealed class ApiPlanOperationJournalSession
         ApiPlanOperationJournalPlan plan,
         Guid applicationId,
         JournalIntentKind intentKind,
-        string? metadataSchemaVersion)
+        string? metadataSchemaVersion,
+        IEnumerable<ApiPlanOperationJournalInventoryItem>? inventory = null)
     {
         if (designModel is null)
         {
@@ -137,7 +140,11 @@ internal sealed class ApiPlanOperationJournalSession
             ResolveGeneratorVersion(),
             intentKind,
             metadataSchemaVersion,
-            DateTime.UtcNow);
+            DateTime.UtcNow,
+            // B111/F3 P4: o Remove registra a intenção já com o inventário completo dos alvos
+            // validados. É esse registro, gravado antes do primeiro Delete(), que permite dizer
+            // depois o que foi previsto e o que chegou a sair da KB.
+            inventory);
 
         var store = new ApiPlanOperationJournalStore(designModel, lookup.File);
         ApiPlanOperationJournalCheckpointResult prepared;
@@ -184,6 +191,46 @@ internal sealed class ApiPlanOperationJournalSession
     }
 
     /// <summary>
+    /// Reabre a sessão sobre um envelope que já existe na KB — a retomada da P5/P6. Não há CP1
+    /// nem CP2: o envelope não nasce agora, e criar um novo aqui apagaria a intenção que a
+    /// continuação existe para honrar.
+    /// </summary>
+    internal static ApiPlanOperationJournalSession Resume(
+        KBModel designModel,
+        WikiFileKBObject journalFile,
+        ApiPlanOperationJournal envelope)
+    {
+        if (designModel is null)
+        {
+            throw new ArgumentNullException(nameof(designModel));
+        }
+
+        if (journalFile is null)
+        {
+            throw new ArgumentNullException(nameof(journalFile));
+        }
+
+        if (envelope is null)
+        {
+            throw new ArgumentNullException(nameof(envelope));
+        }
+
+        var store = new ApiPlanOperationJournalStore(designModel, journalFile);
+        return new ApiPlanOperationJournalSession(store, envelope);
+    }
+
+    /// <summary>
+    /// Checkpoint da retomada: o envelope volta a Running com os mesmos identificadores, antes
+    /// de a fila tentar a primeira exclusão da continuação.
+    /// </summary>
+    internal bool ResumeRemoval()
+    {
+        return Advance(
+            () => ApiPlanOperationJournalCheckpoints.ResumeRemoval(Envelope, DateTime.UtcNow),
+            "retomada de remoção");
+    }
+
+    /// <summary>
     /// Registra a identidade da API assim que ela existe. Numa criação nova o GUID nasce do
     /// `API.Create`, dentro do pipeline: até lá o plano não tem o que registrar. O valor
     /// nunca é atribuído pela extensão — é lido do objeto — e não pode ser trocado depois
@@ -219,6 +266,17 @@ internal sealed class ApiPlanOperationJournalSession
     {
         _persistenceLog = persistenceLog;
         _createdNames = createdNames;
+    }
+
+    /// <summary>
+    /// Liga o diário ao inventário vivo de uma remoção. Sem ele, o snapshot de cada checkpoint
+    /// seria reconstruído só a partir dos recibos — e a intenção registrada antes do primeiro
+    /// <c>Delete()</c> desapareceria justamente quando ela passa a valer: numa interrupção, o
+    /// que foi previsto e não saiu não teria recibo nenhum para reaparecer.
+    /// </summary>
+    internal void AttachRemovalInventory(Func<IEnumerable<ApiPlanOperationJournalInventoryItem>>? inventoryProvider)
+    {
+        _inventoryProvider = inventoryProvider;
     }
 
     /// <summary>CP3 de Apply e Sync.</summary>
@@ -351,16 +409,25 @@ internal sealed class ApiPlanOperationJournalSession
     /// </summary>
     private void SyncPersistenceSnapshot()
     {
-        if (_persistenceLog is null)
+        if (_persistenceLog is null && _inventoryProvider is null)
         {
             return;
         }
 
-        var receipts = ApiPlanOperationJournalReceiptMapper.MapReceipts(_persistenceLog.Receipts);
-        var inventory = ApiPlanOperationJournalReceiptMapper.BuildInventory(
-            _persistenceLog.Receipts,
-            _createdNames?.Invoke(),
-            Envelope.OperationKind);
+        var receipts = _persistenceLog is null
+            ? Array.Empty<ApiPlanOperationJournalReceipt>()
+            : ApiPlanOperationJournalReceiptMapper.MapReceipts(_persistenceLog.Receipts);
+
+        // Numa remoção, o inventário é a intenção — atualizada pelas observações de cada
+        // tentativa —, e não uma derivação dos recibos.
+        var inventory = _inventoryProvider is not null
+            ? ApiPlanOperationJournalReceiptMapper.AttachReceiptSequences(
+                _inventoryProvider.Invoke(),
+                _persistenceLog?.Receipts ?? Array.Empty<PersistenceReceipt>())
+            : ApiPlanOperationJournalReceiptMapper.BuildInventory(
+                _persistenceLog!.Receipts,
+                _createdNames?.Invoke(),
+                Envelope.OperationKind);
 
         Envelope.Receipts.Clear();
         foreach (var receipt in receipts)

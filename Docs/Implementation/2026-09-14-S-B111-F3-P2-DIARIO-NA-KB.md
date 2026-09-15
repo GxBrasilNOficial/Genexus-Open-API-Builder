@@ -399,10 +399,12 @@ etapas P4 e P5.
 
 ## 7. Riscos e lacunas assumidos nesta etapa
 
-- **Um envelope não terminal trava a KB para novas operações, e ainda não há saída pela
+- **Um envelope não terminal trava a KB para novas operações, e não havia saída pela
   ferramenta.** É o comportamento correto segundo a decisão 44 — sobrescrever apagaria a
-  prova do que ficou pela metade —, mas a recuperação explícita só chega na P5/P6. Até lá, o
-  contorno é apagar o File do diário manualmente. Quem validar na IDE precisa saber disso
+  prova do que ficou pela metade —, mas a recuperação explícita só chega na P5/P6 (**entregue
+  offline em 2026-09-14**, ainda sem validação na IDE, com o comando `Recuperar operação
+  interrompida`). Quando esta linha foi escrita, o contorno era apagar o File do diário
+  manualmente. Quem validar na IDE precisa saber disso
   **antes** de abortar um Apply de propósito.
 - **O gate estendido da seção 4.2 ainda não existe.** O que a P2 implementa é a regra de
   reutilização da decisão 44, dentro da sessão. A precedência completa de `GateDiagnostic`
@@ -437,8 +439,10 @@ O que muda para quem usa a extensão:
 2. Apply e Sincronizar passam a poder ser **bloqueados** por um estado do diário, com uma
    mensagem que fala de «operação em estado não terminal» — vocabulário que não existe em
    nenhum texto público;
-3. **enquanto a P6 não existir, a única saída desse bloqueio é apagar o File à mão.** Um
-   usuário que aborte um Apply e não saiba disso fica com a KB travada para gerar, sem
+3. **enquanto a P6 não existir, a única saída desse bloqueio é apagar o File à mão** (**remissão
+   — 2026-09-14:** a P6 foi implementada offline na mesma data, com o comando `Recuperar
+   operação interrompida`; a condição passou a depender da validação da P8 — ver o documento 06).
+   Um usuário que aborte um Apply e não saiba disso fica com a KB travada para gerar, sem
    caminho pela ferramenta.
 
 Por isso, ao preparar o corte, uma destas duas condições precisa estar satisfeita:

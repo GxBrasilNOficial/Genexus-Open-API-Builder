@@ -296,6 +296,11 @@ presente; `Confirmed` o retira e `OutcomeUnknown` bloqueia a operação. A imple
 atual, que reencaminha exceções apenas em `DeleteOwnSdtsResilientToOrder`, é comportamento
 histórico a ser substituído pelo contrato da F2/F3, não o contrato final.
 
+**Remissão — 2026-09-14:** a substituição foi feita na etapa P4. `DeleteOwnSdtsResilientToOrder`
+deixou de existir, e a fila única de `ApiPlanRemovalQueue` passou a abranger todos os tipos
+removíveis, com as regras desta seção. Registro:
+[`2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`](2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md).
+
 O ciclo de vida da fila é fechado assim:
 
 - a fila destrutiva contém somente `ApiObject`, `Procedure`, `Sdt`, `MetadataFile` e

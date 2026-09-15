@@ -13,6 +13,9 @@
     <CommandDefinition id="Remover API gerada" context="selection" />
     <CommandDefinition id="Eliminar API generada" context="selection" />
     <CommandDefinition id="Remove generated API" context="selection" />
+    <CommandDefinition id="Recuperar operação interrompida" context="selection" />
+    <CommandDefinition id="Recuperar operación interrumpida" context="selection" />
+    <CommandDefinition id="Recover interrupted operation" context="selection" />
   </Commands>
   <Groups>
     <Group id="GenexusOpenApiBuilderMainMenuGroup">
@@ -26,6 +29,9 @@
       <Command refid="Remover API gerada" />
       <Command refid="Eliminar API generada" />
       <Command refid="Remove generated API" />
+      <Command refid="Recuperar operação interrompida" />
+      <Command refid="Recuperar operación interrumpida" />
+      <Command refid="Recover interrupted operation" />
     </Group>
     <Group id="GenexusOpenApiBuilderContextMenuGroup">
       <Command refid="Wizard" />
@@ -35,6 +41,9 @@
       <Command refid="Remover API gerada" />
       <Command refid="Eliminar API generada" />
       <Command refid="Remove generated API" />
+      <Command refid="Recuperar operação interrompida" />
+      <Command refid="Recuperar operación interrumpida" />
+      <Command refid="Recover interrupted operation" />
     </Group>
     <Group refid="KBObjectGrp" package="98121D96-A7D8-468b-9310-B1F468F812AE">
       <Popup id="GenexusOpenApiBuilderPopup" name="Genexus Open API Builder">

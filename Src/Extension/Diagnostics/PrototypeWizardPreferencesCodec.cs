@@ -40,6 +40,9 @@ public sealed class PrototypeWizardPreferenceValues
 
     public bool OfferOrphanMetadataRecovery { get; set; }
 
+    /// <summary>B111/F3 P6 — oferta proativa da recuperação quando o diário bloqueia.</summary>
+    public bool ShowRecoveryOptionProactively { get; set; } = true;
+
     public bool SuppressProgressPumpDuringSaves { get; set; }
 }
 
@@ -102,6 +105,9 @@ public static class PrototypeWizardPreferencesCodec
             MaximumPageSizeByDefault = ReadOptionalPositiveInt(defaults["pagination"] as JObject, "maximumPageSize", MaximumPageSizeFallback),
             IncludeBusinessComponentErrorMessagesByDefault = ReadOptionalBool(defaults, "includeBusinessComponentErrorMessages", true),
             OfferOrphanMetadataRecovery = ReadOptionalBool(defaults, "offerOrphanMetadataRecovery", false),
+            // Ausente no File, vale ligada: um arquivo gravado antes da P6 não deve esconder a
+            // única saída de um envelope interrompido.
+            ShowRecoveryOptionProactively = ReadOptionalBool(defaults, "showRecoveryOptionProactively", true),
             SuppressProgressPumpDuringSaves = ReadOptionalBool(defaults, "suppressProgressPumpDuringSaves", false),
         };
 
@@ -141,6 +147,7 @@ public static class PrototypeWizardPreferencesCodec
                 ["securityLevel"] = NormalizeSecurityLevel(preferences.SecurityLevelByDefault),
                 ["includeBusinessComponentErrorMessages"] = preferences.IncludeBusinessComponentErrorMessagesByDefault,
                 ["offerOrphanMetadataRecovery"] = preferences.OfferOrphanMetadataRecovery,
+                ["showRecoveryOptionProactively"] = preferences.ShowRecoveryOptionProactively,
                 ["suppressProgressPumpDuringSaves"] = preferences.SuppressProgressPumpDuringSaves,
                 ["pagination"] = new JObject
                 {

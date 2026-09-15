@@ -350,12 +350,15 @@ V1 e V2 sem regravação implícita; e o schema V1 do diário
 `File.Save()`. Evidência:
 `Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`.
 
-**Condição para o próximo corte — 2026-09-14.** A etapa P2 da F3 cria na KB do usuário o
-File `GxOpenApiBuilder_OperationJournal` e permite que Apply e Sincronizar sejam bloqueados
-por um estado do diário. Enquanto a etapa P6 não entregar o comando de recuperação, a única
-saída desse bloqueio é apagar o File à mão. Antes de cortar release com a P2 dentro, ou a P6
-está entregue, ou `Docs/Public/DEMO.md` e os três `README` explicam o File, o bloqueio e o
-contorno, com aviso nas notas do corte. Detalhe: seção 7.1 de
+**Condição para o próximo corte — 2026-09-14, atualizada na mesma data.** A etapa P2 da F3
+cria na KB do usuário o File `GxOpenApiBuilder_OperationJournal` e permite que Apply e
+Sincronizar sejam bloqueados por um estado do diário. Enquanto não havia comando de
+recuperação, a única saída desse bloqueio era apagar o File à mão, e a condição era entregar
+a P6 **ou** documentar o contorno. A P6 foi implementada em 2026-09-14 — comando
+`Recuperar operação interrompida` nas duas superfícies e nos três idiomas —, mas **sem
+validação na IDE**: a condição passa a ser a P8. Um corte com a P2 dentro exige a validação
+integrada da P8, ou `Docs/Public/DEMO.md` e os três `README` explicando o File, o bloqueio e
+o comando, com aviso nas notas do corte. Detalhe: seção 7.1 de
 `Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`.
 
 **Etapa P2 da S-B111 F3 — 2026-09-14.** O diário passou a existir na KB: Apply e
@@ -385,9 +388,25 @@ data — fronteira exigindo `ApiSaveCount > 0`, `composite.apiGuid` apontando pa
 `SetMainObject` deixando de declarar persistência e a remoção do fallback equivalente no
 construtor do relatório, que sobrevivera à terceira. Gate novo `tests.journalFrontierSentinel`
 e casos novos em `tests.applicationFinalReport`, verificados por mutação. **A P3 está
-concluída**; a etapa seguinte é a P4. Seções 6 e 9 de
-`Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`. A condição para o próximo
-corte, acima, permanece inalterada: ela depende da P6 ou da documentação pública.
+concluída**; a etapa seguinte era a P4. Seções 6 e 9 de
+`Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`.
+
+**Etapas P4 a P7 da S-B111 F3 — 2026-09-14, offline.** A remoção passou a registrar a
+intenção com o inventário completo antes do primeiro `Delete()` e a excluir por uma fila
+única de todos os tipos removíveis, em passadas, com orçamento `max(1, itens da fila)` e
+checkpoint durável ao fim de cada uma; só um alvo comprovadamente presente depois do Delete
+volta para a fila, e um resultado indeterminado bloqueia sem retry. Nasceram os serviços de
+recuperação — leitura e validação do diário, releitura de cada alvo por identidade,
+reidratação que devolve uma única etapa autorizada e executor que revalida o snapshot antes
+de mutar — e o comando `Recuperar operação interrompida`, nas duas superfícies de menu e nos
+três idiomas, com a preferência `ShowRecoveryOptionProactively` ligada por padrão. **Duas
+mudanças precisam ser conhecidas antes do teste:** remover duas vezes a mesma API agora
+bloqueia, porque um alvo previsto e já ausente encerra a operação em remoção parcial; e a
+continuação de um `Apply` ou `Sync` interrompido não foi entregue, porque o envelope guarda
+identidade, hash de contrato e flags, não o contrato. Gates novos `tests.removalQueue` e
+`tests.operationJournalRecovery`. **Nada foi exercido na IDE**: a etapa seguinte é a P8, a
+validação integrada da seção 9 do plano. Evidência:
+`Docs/Implementation/2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`.
 
 **B106 — concluído em 2026-08-24.** O roteiro foi atualizado para a Alpha `0.1.0-alpha.4`, passou a registrar o checkbox de repasse das mensagens do Business Component e aponta para as notas da Alpha 4. A captura de Segurança foi explicitamente marcada como referência visual anterior; uma nova captura da UI permanece uma melhoria visual separada, sem bloquear a documentação textual.
 
