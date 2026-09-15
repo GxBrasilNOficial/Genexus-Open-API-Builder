@@ -1,0 +1,136 @@
+# S-B111 · F3 — P8: validação na IDE
+
+**Data:** 2026-09-14. **Sprint:** `S-B111`. **Fase:** F3, etapa P8.
+**Plano governante:** [`2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md`](2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md), seção 9.
+**Implementação validada aqui:** [`2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`](2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md).
+
+**Documento em andamento.** Ele é escrito enquanto a bateria acontece, um cenário por vez, com
+os números colados da janela Output. Cenário sem registro aqui é cenário que ainda não foi
+exercido — não presuma o contrário.
+
+## 1. Ambiente
+
+| Item | Valor |
+|---|---|
+| DLL | build Release do commit `a32798b` (P4 a P7 + encerramento de registro), instalada com `genexus /install` porque o manifesto ganhou três comandos |
+| IDE | GeneXus 18 U15 |
+| KB | `wsEducacaoSpTeste` |
+| Transaction | `Teste` — chave de três partes (`TesteId`, `TesteDate`, `TesteCodigo`) e quatro subníveis (`TestePortfolio`, `TesteItem`, `TesteItemFolio`, `TesteItemFolioDoc`) |
+| Volume | 25 objetos próprios: 1 API Object, 5 Procedures (List/Get/Create/Update/Delete), 18 SDTs, 1 File de metadata |
+| Preservados | 3 SDTs compartilhados (`sdt_API_ErrorMessage`, `sdt_API_ErrorResponse`, `sdt_API_Pagination`), o Folder `TesteOpenApi` (reutilizado, `FolderWasCreated=False`) e a própria Transaction |
+
+O diário da KB é o File `GxOpenApiBuilder_OperationJournal`, `FileId=88`, preexistente desde a
+validação da P2 — todas as operações abaixo reutilizaram esse mesmo File (`Created=False`),
+como o contrato exige: há exatamente um por KB.
+
+## 2. Cenário 1 — remoção completa pela fila nova
+
+**Setup:** API gerada e íntegra na Transaction `Teste`. Nada alterado à mão.
+**Ação:** menu de contexto da Transaction → `Remover API gerada` → `Sim`.
+
+| Medida | Resultado |
+|---|---|
+| Estado terminal | `Removed` / `Removed` |
+| Fila | `Outcome=Removed`, `Passadas=1/25`, `Removidos=25`, `Pendentes=0` |
+| Intenção registrada | `Alvos=30, NaFila=25, Preservados=5` |
+| Snapshot do checkpoint | `Recibos=25, Inventário=30` |
+| Diário | `Checkpoints=4`, `TotalMs=216`, `Durability=Confirmed` |
+| Relatório B081 | `Confirmados=25, Pendências=0, Removidos=25`, 5,1 s |
+| Custo total | `TotalMs=5114`, dos quais `FilaRemocao=4714ms` |
+| Identidade | `OperationId='22090d87-…'`, `ApplicationId='1a7c456d-…'` |
+
+**O que isso prova.** A intenção completa — 30 alvos, 25 na fila — foi gravada **antes** do
+primeiro `Delete()`, e o inventário do checkpoint (30) não é derivação dos recibos (25): é o
+registro do que se pretendia, que sobrevive a uma interrupção. Os `Checkpoints=4` batem com a
+política `3 + P` para `P=1`. Os três SDTs compartilhados, o Folder reutilizado e o Business
+Component da Transaction ficaram intactos.
+
+## 3. Regeração intermediária — Apply completo
+
+**Setup do cenário 2.** API regerada pelo Wizard com a mesma seleção (cinco serviços, quatro
+subníveis, todas as etapas de geração). Nada alterado nas abas.
+
+| Medida | Resultado |
+|---|---|
+| Relatório | `Criados=25, Atualizados=3, Avisos=2`, 11,0 s, `Resultado='SuccessWithWarnings'` |
+| API Object | `ApiSaveAttempted=True`, `ApiSaveCount=1`, `FinalApiWriter='List'` |
+| Diário | `OperationId='ae98e2cb-…'`, `ApplicationId='27c47222-…'`, `Checkpoints=4`, `TotalMs=141` |
+| Metadata | `GOAB_API_METADATA_B060_V3`, `Bytes=117988`, `Sha256='46C7BE98…'` |
+| Integridade | `PlannedContractHash='16DF0B0A…'` |
+
+Os dois avisos são conhecidos e não bloqueiam: fallback em inglês nas descrições de serviço e o
+Folder preexistente que será reutilizado e nunca removido.
+
+A ordem da F1 aparece intacta na Output: SDTs, Procedures, preparação do API Object sem gravar,
+Business Component, List — e **um** `API.Save()` ao fim, pelo writer `List`.
+
+## 4. Cenário 2 — alvo previsto ausente antes do `Delete()`
+
+**A mudança de comportamento da P4, exercida em campo.**
+
+**Setup:** com a API íntegra, o **API Object `apiTeste` foi apagado à mão** pela KB Explorer.
+Escolhido por ser o único objeto da API que ninguém referencia — qualquer SDT ou Procedure seria
+recusado pela IDE por estar referenciado. A metadata `apiTeste_Metadata` foi deixada no lugar:
+é ela que declara o API Object como alvo previsto, e é o descompasso entre o previsto e o real
+que o cenário exercita.
+
+**Ação:** menu de contexto da Transaction → `Remover API gerada` → `Sim`.
+
+| Medida | Resultado |
+|---|---|
+| Estado terminal | `Partial` / `RemovalPartial` |
+| Motivo persistido | `TargetAbsentBeforeDelete` |
+| Fila | `Passadas=1/25`, `Removidos=0`, `Pendentes=25`, `Bloqueado='ApiObject:apiTeste'` |
+| Snapshot do checkpoint | `Recibos=1, Inventário=30` |
+| Diário | `Checkpoints=3`, `TotalMs=121`, `Durability=Confirmed` |
+| Relatório B081 | `Resultado='Interrupted'`, `Removidos=0`, `Bloqueados=1`, `Avisos=1`, 351 ms |
+| Identidade | `OperationId='0eee2cc9-…'`, `ApplicationId='27c47222-…'` |
+
+**O que isso prova.**
+
+1. **`Removidos=0` com 25 pendentes.** A fila parou no primeiro alvo e não encostou nas cinco
+   Procedures, nos dezoito SDTs nem na metadata. Antes desta DLL a ausência seria engolida como
+   sucesso implícito e a remoção seguiria em frente — que é a origem do relatório «Removidos:
+   nenhum» com objetos apagados, de 2026-09-06;
+2. **`Checkpoints=3`.** Nenhuma passada chegou ao fim, então `P=0` e a matriz `3 + P` dá três:
+   `Prepared`, `Active` e o terminal. O checkpoint de passada só existe quando a passada se
+   completa;
+3. **`Recibos=1` contra `Inventário=30`.** Um único recibo — o `NotAttempted` do API Object —
+   e a intenção inteira preservada. É essa assimetria que permite dizer depois o que era
+   previsto e o que aconteceu;
+4. **`ApplicationId='27c47222-…'` é o mesmo do Apply da seção 3.** Confirma em campo a linha da
+   matriz de identidade da seção 4.1.1: um `Remove` sobre metadata V3 cria `operationId` novo e
+   **reutiliza** o `applicationId` do ownership, sem regravar a metadata. No cenário 1, o
+   `applicationId` era outro (`1a7c456d-…`), o da geração anterior.
+
+### 4.1 Anotação de apresentação, sem ação nesta etapa
+
+O diagnóstico de persistência do relatório mostra, para o alvo ausente:
+
+```
+[ApiObject/API] apiTeste: Outcome=OutcomeUnknown; Confirmação=NotAttempted; API Object ausente antes do Delete.
+```
+
+e o relatório conta isso como `Pendências=1`. O estado, porém, é **conhecido**: o objeto está
+comprovadamente ausente. `OutcomeUnknown` vem da resolução de desfecho do seam da F2 para um
+`RecordNotAttempted`, é anterior a esta frente e **não influencia decisão nenhuma** — a fila
+classificou `AbsentBeforeDelete` por evidência própria e o envelope gravou
+`TargetAbsentBeforeDelete`. Fica registrado como candidato a ajuste de vocabulário depois da
+P8, não como defeito de comportamento.
+
+## 5. Cenários restantes
+
+| # | Cenário | Estado |
+|---|---|---|
+| 1 | Remoção completa (fila nova) | **passou** — seção 2 |
+| 2 | Alvo previsto ausente antes do `Delete()` | **passou** — seção 4 |
+| 3 | Recuperação sobre o envelope `Partial`: encerrar o registro | em execução |
+| 4 | Devolver a KB ao normal pela recuperação de metadata órfã (B115) | não iniciado |
+| 5 | Abortar um Apply no meio; oferta proativa; recuperação | não iniciado |
+| 6 | Wizard cancelado antes de aplicar: envelope `Prepared` e abandono | não iniciado |
+| 7 | Interromper uma remoção no meio e retomar a fila | não iniciado |
+| 8 | Remoção de API legado, com metadata válida e com metadata insuficiente | não iniciado |
+| 9 | Acréscimo de tempo do diário na KB grande, contra o orçamento de 4.4 | não iniciado |
+
+O cenário 3 depende do envelope `Partial` deixado pelo cenário 2: **não apagar o File
+`GxOpenApiBuilder_OperationJournal` à mão** entre um e outro, sob pena de destruir a condição.

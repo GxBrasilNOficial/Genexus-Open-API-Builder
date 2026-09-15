@@ -183,6 +183,14 @@ validação da P3.
 Registro: `Docs/Implementation/2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md` — seção 2.2
 para a mudança de comportamento, 3.2 para o recorte e 7 para os riscos abertos.
 
+**A P8 começou em 2026-09-14**, na `Teste` da `wsEducacaoSpTeste`, e é registrada cenário a
+cenário em `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`. Passaram: a remoção
+completa pela fila nova (`Removed`, `Passadas=1/25`, `Checkpoints=4`, diário custando 216 ms em
+5,1 s) e o alvo previsto ausente antes do `Delete()` (`Partial` com `TargetAbsentBeforeDelete`,
+`Removidos=0` e 25 pendentes, sem encostar em nenhum objeto). O `applicationId` reutilizado do
+ownership V3 no `Remove` confirmou em campo a matriz de identidade da seção 4.1.1. Os demais
+cenários estão na tabela 5 daquele documento; cenário sem registro lá é cenário não exercido.
+
 Verificação offline desta rodada: build Release com 0 avisos e 0 erros, checker de comandos com
 13 comandos e o orquestrador mecânico com 64 checks `passed` e 1 `skipped` (`git.statusPre`,
 por working tree suja antes do commit).
