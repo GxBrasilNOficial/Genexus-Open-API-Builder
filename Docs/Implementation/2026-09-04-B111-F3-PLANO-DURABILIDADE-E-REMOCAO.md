@@ -354,8 +354,11 @@ da linha de 2,3 corrigida acima e estão superestimados em cerca de vinte vezes.
 de 44,2 s. Isso não altera a política — que é contrato e continua fechada na matriz abaixo —,
 apenas retira a pressão de I/O que motivava discutir granularidade.
 
-**Emenda — 2026-09-15: o orçamento de tempo da remoção.** A matriz abaixo sempre fechou a
-**contagem** da remoção em `3 + P`, e continua correta. O que não existia era um orçamento de
+**Emenda — 2026-09-15: o orçamento de tempo da remoção.** A matriz abaixo fecha a **contagem** da
+remoção em `3 + P`, e continua correta. Proveniência, porque a data do nome do arquivo engana: a
+linha `Remove` da matriz não é de 2026-09-04 — entrou em `de4d67c`, de **2026-09-08**, na
+consolidação dos contratos da revisão. Continua anterior à P4, que é o que importa: a fila por
+passadas não pegou o plano descrevendo remoção de passagem única. O que não existia era um orçamento de
 **tempo** para ela: as três linhas históricas acima são de Apply, e `P` só é conhecido em
 runtime. Do custo medido — 182 ms em 4 checkpoints na `FabricaBrasil18Test`, ~45 ms por
 gravação — deriva-se o orçamento da remoção:

@@ -31,19 +31,36 @@ a produziu, e só para ela** (regra de contrato runtime do `AGENTS.md`). Um cen�
 DLL anterior a uma mudança de emissor que o afete **precisa ser reexercido**; a data da captura
 não basta.
 
-| Cenário | DLL | Observação |
+A tabela abaixo é **derivada da evidência de cada seção**, não de memória: cada linha diz o que a
+própria seção registra ter sido corrigido depois dela. Os commits estão em ordem cronológica —
+`98112d8` → `01d491c` → `8283467` → `42cdf0e` → `256f537` —, e um commit que **registra** que um
+cenário passou é posterior à execução dele.
+
+| Cenário | DLL usada | Como se sabe |
 |---|---|---|
 | 1, 2, 3 | `a32798b` | primeira instalação da bateria |
-| 4 | entre `a32798b` e `4bab3b6` | o reapply de reencontro da seção 6.1 já foi «com a DLL corrigida» |
-| 5 | após `01d491c` | inclui o fechamento da janela de progresso |
-| 6 | após `256f537` | inclui os textos de encerramento corrigidos |
+| 4 | posterior a `a32798b` | o reapply de reencontro da seção 6.1 foi «com a DLL corrigida», depois do achado do módulo |
+| 5 | **anterior** a `8283467` | a janela de progresso viva atrás do diálogo foi **descoberta neste cenário** (7.1); a DLL não podia ter a correção |
+| 6, primeira passagem | **anterior** a `42cdf0e` | o texto falso do envelope sem recibo foi **produzido aqui** (8.1) |
+| 6, confirmação | posterior a `42cdf0e` | 8.1 registra o diálogo com o texto novo, «no mesmo envelope» |
 | 7, 8, 9 | **a instalar** | pendentes; instalar a build corrente antes de começar |
 
-**Reexercício devido.** Depois do cenário 5 vieram commits que tocam emissores e apresentação.
-Nenhum deles altera o contrato de remoção nem o do diário — são texto, diagnóstico e localização
-—, então os cenários 1 a 6 continuam valendo para o que provaram. A medição de tempo é a exceção:
-o item 7a da seção 9 do plano manda **refazer** a medição de Apply, porque número de desempenho
-capturado com DLL anterior não descreve a atual.
+**Reexercício devido — e o que não é.** Entre o cenário 5 e hoje entraram, além de texto,
+diagnóstico e localização, **um ramo de decisão no rehydrator**: `42cdf0e` acrescentou
+`Receipts.Count == 0 → Discard` com resumo e pergunta de confirmação próprios. Isso não é texto,
+e a distinção é exatamente o que esta tabela existe para fazer.
+
+Ele **não** alcança o cenário 5: o envelope daquele aborto tem `Recibos=5` — as cinco Procedures
+que chegaram a ser gravadas (seção 7) —, então ele toma o ramo **com** recibos, que `42cdf0e` não
+tocou. E o ramo novo **foi exercido na IDE**: o cenário 6 produziu o envelope de zero recibos e a
+seção 8.1 registra a confirmação com o texto novo, no mesmo envelope. O que mudou ali foi qual
+dos dois resumos aparece e qual pergunta de confirmação é feita — a ação apurada é `Discard` nos
+dois ramos, antes e depois.
+
+Nada mais no intervalo toca o contrato de remoção nem o do diário, então os cenários 1 a 6
+continuam valendo para o que provaram. **A medição de tempo é a exceção:** o item 7a da seção 9 do
+plano manda refazer a medição de Apply, porque número de desempenho capturado com DLL anterior não
+descreve a atual.
 
 ## 2. Cenário 1 — remoção completa pela fila nova
 
