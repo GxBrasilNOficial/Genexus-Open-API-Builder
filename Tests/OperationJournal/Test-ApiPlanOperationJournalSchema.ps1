@@ -8,9 +8,13 @@
     1. o material canônico é determinístico — round-trip byte a byte, ordem do schema,
        nulos presentes, arrays vazios, GUID em `D` minúsculo e UTC com milissegundos;
     2. o `snapshotHash` é SHA-256 do material canônico e muda quando o envelope muda;
-    3. o serializer recusa, antes de qualquer `File.Save()`, todo envelope que viole o
-       contrato da decisão 24 — porque um diário inválido é indistinguível de um ausente
-       na recuperação, e os dois bloqueiam a operação.
+    3. a leitura continua tolerante à ausência dos campos novos do V1 (tempo de recibo e
+       suficiência do inventário), preservando diários legados da decisão 29 — reconhecida
+       por valor, com round-trip estável do material normalizado;
+    4. o serializer recusa, antes de qualquer `File.Save()`, todo **envelope novo** que viole
+       o contrato da decisão 24 — porque um diário inválido é indistinguível de um ausente
+       na recuperação, e os dois bloqueiam a operação. Diários legados reidratados seguem o
+       schema estrito; a tolerância é exclusiva da leitura.
 #>
 
 [CmdletBinding()]
@@ -119,6 +123,18 @@ try {
     function Read-Journal {
         param([string]$Json)
         return $readMethod.Invoke($null, @($Json))
+    }
+
+    function Assert-SerializeRejects {
+        param($Journal, [string]$Needle, [string]$Message)
+        $rejected = $false
+        try {
+            [void]$serializeMethod.Invoke($null, @($Journal))
+        } catch {
+            $rejected = $true
+            Assert-Contains ([string]$_.Exception.InnerException.Message) $Needle "A recusa deve citar: $Message."
+        }
+        Assert-True $rejected "O serializer deve recusar: $Message."
     }
 
     # --- 1. Identidade fixa do schema ------------------------------------------------------
@@ -280,11 +296,6 @@ try {
             Needle  = 'receipts[].attempt deve ser inteiro positivo'
         },
         @{
-            Name    = 'recibo sem startedUtc'
-            Json    = $canonical.Replace('"startedUtc":"2026-09-14T10:00:00.000Z",', '')
-            Needle  = 'receipts[].startedUtc é obrigatório'
-        },
-        @{
             Name    = 'endedUtc anterior a startedUtc'
             Json    = $canonical.Replace('"endedUtc":"2026-09-14T10:00:01.000Z"', '"endedUtc":"2026-09-14T09:59:59.000Z"')
             Needle  = 'receipts[].endedUtc não pode ser anterior a startedUtc'
@@ -312,11 +323,38 @@ try {
         Assert-Contains $caseResult.Describe() ([string]$case.Needle) "Mensagem esperada para: $($case.Name)."
     }
 
+    # --- 5b. Leitura tolerante a diário legado (decisão 29) ---------------------------------
+    # Um diário gravado antes de os campos novos do V1 existirem não traz nem tempo de recibo
+    # nem suficiência de inventário. A leitura reconhece a forma por valor e reidrata o
+    # envelope; a regravação naquela forma normalizada permanece estável round-trip, porque
+    # a re-leitura volta a reconhecer o mesmo estado.
+    $legacyReceiptJson = $canonical.Replace('"startedUtc":"2026-09-14T10:00:00.000Z",', '').Replace('"endedUtc":"2026-09-14T10:00:01.000Z",', '').Replace('"durationMs":1000,', '')
+    $legacyReceipt = Read-Journal $legacyReceiptJson
+    Assert-True ([bool]$legacyReceipt.IsValid) "Recibo legado sem os campos de tempo deve continuar legível. Erros: $($legacyReceipt.Describe())"
+    $legacyReceiptCanonical = [string]$serializeMethod.Invoke($null, @($legacyReceipt.Journal))
+    Assert-Equal $legacyReceiptCanonical ([string]$legacyReceipt.CanonicalJson) 'A regravação do legado coincide com o material canônico da leitura.'
+    Assert-Contains $legacyReceiptCanonical '"startedUtc":"0001-01-01T00:00:00.000Z"' 'O default de um legado é gravado e reaproveitado.'
+    $legacyReceiptAgain = Read-Journal $legacyReceiptCanonical
+    Assert-True ([bool]$legacyReceiptAgain.IsValid) 'O material normalizado do legado reidrata sem novo erro.'
+    Assert-Equal $legacyReceiptCanonical ([string]$legacyReceiptAgain.CanonicalJson) 'A forma normalizada do legado é estável round-trip.'
+
+    # A recuperação de metadata órfã também é forma legada quando o plano não carrega a
+    # suficiência — é o envelope da decisão 29 cuja regravação a tolerância precisa preservar.
+    $recoveryLegacyJson = '{"schemaVersion":1,"journalKind":"GOAB_OPERATION_JOURNAL","knowledgeBaseGuid":"11111111-1111-1111-1111-111111111111","transactionGuid":"22222222-2222-2222-2222-222222222222","transactionName":"Teste","operationId":"33333333-3333-3333-3333-333333333333","applicationId":"44444444-4444-4444-4444-444444444444","operationKind":"Recovery","generatorVersion":"0.1.0-alpha.7","createdUtc":"2026-09-14T10:00:00.000Z","updatedUtc":"2026-09-14T10:00:02.000Z","envelopePhase":"Active","operationState":"Completed","logicalStage":"Completed","journalDurability":"Confirmed","intentKind":"Imported","metadataSchemaVersion":"GOAB_API_METADATA_B060_V3","plan":{"planKind":"MetadataRecovery","plannedApiGuid":null,"contractHash":null,"generateApiObject":null,"generateSdts":null,"generateProcedures":null,"generateMetadata":null,"services":[],"inventorySufficiency":null},"inventory":[],"receipts":[],"abandonment":null,"blockReason":null}'
+    $legacyRecovery = Read-Journal $recoveryLegacyJson
+    Assert-True ([bool]$legacyRecovery.IsValid) "MetadataRecovery legado sem suficiência deve continuar legível. Erros: $($legacyRecovery.Describe())"
+
     # --- 6. Remove: fila destrutiva, Partial e orçamento ------------------------------------
     $removeJson = '{"schemaVersion":1,"journalKind":"GOAB_OPERATION_JOURNAL","knowledgeBaseGuid":"11111111-1111-1111-1111-111111111111","transactionGuid":"22222222-2222-2222-2222-222222222222","transactionName":"Teste","operationId":"33333333-3333-3333-3333-333333333333","applicationId":"44444444-4444-4444-4444-444444444444","operationKind":"Remove","generatorVersion":"0.1.0-alpha.7","createdUtc":"2026-09-14T10:00:00.000Z","updatedUtc":"2026-09-14T10:00:02.000Z","envelopePhase":"Active","operationState":"Partial","logicalStage":"RemovalPartial","journalDurability":"Confirmed","intentKind":"Current","metadataSchemaVersion":null,"plan":{"planKind":"Removal","plannedApiGuid":"55555555-5555-5555-5555-555555555555","contractHash":"abc123","generateApiObject":null,"generateSdts":null,"generateProcedures":null,"generateMetadata":null,"services":[],"inventorySufficiency":"InventorySufficient"},"inventory":[{"objectType":"ApiObject","identityKind":"Guid","guid":"55555555-5555-5555-5555-555555555555","fileId":null,"composite":null,"emptyConfirmed":null,"name":"apiTeste","ownershipValidated":true,"action":"Delete","physicalState":"Absent","confirmation":"Absent","expectedHash":null,"receiptSequences":[1]},{"objectType":"Sdt","identityKind":"Composite","guid":null,"fileId":null,"composite":{"exactName":"sdtTeste_API_ListFilters","objectTypeName":"SDT","role":"ListFilters","canonicalDescription":"apiTeste_Metadata","transactionGuid":"22222222-2222-2222-2222-222222222222","apiGuid":"55555555-5555-5555-5555-555555555555"},"emptyConfirmed":null,"name":"sdtTeste_API_ListFilters","ownershipValidated":true,"action":"Delete","physicalState":"Present","confirmation":"Confirmed","expectedHash":null,"receiptSequences":[2]},{"objectType":"Transaction","identityKind":"None","guid":null,"fileId":null,"composite":null,"emptyConfirmed":null,"name":"Teste","ownershipValidated":false,"action":"Preserve","physicalState":"Present","confirmation":"Confirmed","expectedHash":null,"receiptSequences":[]}],"receipts":[{"sequence":1,"operation":"Delete","stage":"B086","objectType":"ApiObject","attempt":1,"retryOfSequence":null,"startedUtc":"2026-09-14T10:00:00.000Z","endedUtc":"2026-09-14T10:00:01.000Z","durationMs":730,"attemptState":"Finished","result":"Confirmed","confirmation":"Absent","physicalState":"Absent","retryEligible":false,"retryableReason":null},{"sequence":2,"operation":"Delete","stage":"B086","objectType":"Sdt","attempt":1,"retryOfSequence":null,"startedUtc":"2026-09-14T10:00:01.000Z","endedUtc":"2026-09-14T10:00:02.000Z","durationMs":870,"attemptState":"Finished","result":"Failed","confirmation":"Confirmed","physicalState":"Present","retryEligible":true,"retryableReason":"StillPresentAfterDelete"}],"abandonment":null,"blockReason":"RetryBudgetExhausted"}'
     $remove = Read-Journal $removeJson
     Assert-True ([bool]$remove.IsValid) "O envelope de Remove deve ser válido. Erros: $($remove.Describe())"
     Assert-Equal $removeJson ([string]$serializeMethod.Invoke($null, @($remove.Journal))) 'Remove também reserializa byte a byte.'
+
+    # Um Remove legado não carrega a suficiência do inventário; a leitura tolera e a
+    # regravação mantém o campo null, porque a re-leitura reconhece o mesmo estado.
+    $legacyRemove = Read-Journal ($removeJson.Replace('"inventorySufficiency":"InventorySufficient"', '"inventorySufficiency":null'))
+    Assert-True ([bool]$legacyRemove.IsValid) "Remove legado sem suficiência deve continuar legível. Erros: $($legacyRemove.Describe())"
+    Assert-Contains ([string]$serializeMethod.Invoke($null, @($legacyRemove.Journal))) '"inventorySufficiency":null' 'A suficiência ausente permanece null na regravação.'
 
     $removeCases = @(
         @{
@@ -355,11 +393,6 @@ try {
             Name   = 'orçamento esgotado fora de Remove'
             Json   = $canonical.Replace('"operationState":"Running"', '"operationState":"Partial"').Replace('"blockReason":null', '"blockReason":"RetryBudgetExhausted"')
             Needle = 'RetryBudgetExhausted pertence ao orçamento de passadas do Remove'
-        },
-        @{
-            Name   = 'Remove sem suficiência do inventário'
-            Json   = $removeJson.Replace('"inventorySufficiency":"InventorySufficient"', '"inventorySufficiency":null')
-            Needle = 'plan.inventorySufficiency é obrigatório em Remove'
         }
     )
 
@@ -424,6 +457,33 @@ try {
         Assert-Contains ([string]$_.Exception.InnerException.Message) 'viola o schema V1' 'A recusa deve citar o schema V1.'
     }
     Assert-True $rejected 'O serializer deve recusar um envelope inválido antes de gravar.'
+
+    # A tolerância é da leitura, não da gravação: um envelope novo — lido de um JSON completo,
+    # portanto sem o marcador de legado — que perca um dos campos novos tem de ser recusado
+    # aqui, na porta de saída. É a prova de que as três recusas que a seção 5 deixou de exigir
+    # na leitura continuam valendo para quem constrói um recibo novo.
+    $receiptsProperty = $journalType.GetProperty('Receipts', [System.Reflection.BindingFlags]'Instance, Public')
+
+    $newStarted = Read-Journal $canonical
+    $startedProperty = $receiptsProperty.GetValue($newStarted.Journal)[0].GetType().GetProperty('StartedUtc', [System.Reflection.BindingFlags]'Instance, Public')
+    $startedProperty.SetValue($receiptsProperty.GetValue($newStarted.Journal)[0], [DateTime]::MinValue)
+    Assert-SerializeRejects $newStarted.Journal 'receipts[].startedUtc é obrigatório' 'recibo novo sem startedUtc.'
+
+    $newEnded = Read-Journal $canonical
+    $endedProperty = $receiptsProperty.GetValue($newEnded.Journal)[0].GetType().GetProperty('EndedUtc', [System.Reflection.BindingFlags]'Instance, Public')
+    $endedProperty.SetValue($receiptsProperty.GetValue($newEnded.Journal)[0], $null)
+    Assert-SerializeRejects $newEnded.Journal 'receipts[].endedUtc é obrigatório quando o recibo não ficou apenas iniciado' 'recibo novo encerrado sem endedUtc.'
+
+    $newRemove = Read-Journal $removeJson
+    $planProperty = $journalType.GetProperty('Plan', [System.Reflection.BindingFlags]'Instance, Public')
+    $sufficiencyProperty = $planProperty.GetValue($newRemove.Journal).GetType().GetProperty('InventorySufficiency', [System.Reflection.BindingFlags]'Instance, Public')
+    $sufficiencyProperty.SetValue($planProperty.GetValue($newRemove.Journal), $null)
+    Assert-SerializeRejects $newRemove.Journal 'plan.inventorySufficiency é obrigatório em Remove' 'Remove novo sem suficiência do inventário.'
+
+    $newRecovery = Read-Journal ($recoveryLegacyJson.Replace('"inventorySufficiency":null', '"inventorySufficiency":"InventorySufficient"'))
+    Assert-True ([bool]$newRecovery.IsValid) "Recovery novo com suficiência deve ser válido. Erros: $($newRecovery.Describe())"
+    $sufficiencyProperty.SetValue($planProperty.GetValue($newRecovery.Journal), $null)
+    Assert-SerializeRejects $newRecovery.Journal 'plan.inventorySufficiency é obrigatório em MetadataRecovery' 'recovery novo sem suficiência do inventário.'
 
 } finally {
     if ($null -ne $script:AssemblyResolveHandler) {

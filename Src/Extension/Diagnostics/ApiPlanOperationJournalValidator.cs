@@ -17,6 +17,12 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// As regras abaixo são as da decisão 24 e das decisões 44 a 47. Onde a decisão fecha um
 /// domínio, a validação fecha junto; onde ela é silenciosa, esta classe não inventa
 /// restrição.
+///
+/// Num envelope reidratado pela leitura — e só nele — o marcador
+/// <see cref="ApiPlanOperationJournal.AcceptsLegacyShapes"/> suaviza as regras de presença dos
+/// campos novos do V1 (tempo de recibo e suficiência de inventário), para que a regravação de
+/// um diário legado em recuperação não seja recusada. Envelopes construídos em memória
+/// seguem o schema estrito.
 /// </summary>
 public static class ApiPlanOperationJournalValidator
 {
@@ -357,7 +363,7 @@ public static class ApiPlanOperationJournalValidator
 
                 RequireAbsentFlags(plan, "Remove", errors);
 
-                if (!plan.InventorySufficiency.HasValue)
+                if (!journal.AcceptsLegacyShapes && !plan.InventorySufficiency.HasValue)
                 {
                     errors.Add("plan.inventorySufficiency é obrigatório em Remove.");
                 }
@@ -375,7 +381,7 @@ public static class ApiPlanOperationJournalValidator
 
                 RequireAbsentFlags(plan, "MetadataRecovery", errors);
 
-                if (!plan.InventorySufficiency.HasValue)
+                if (!journal.AcceptsLegacyShapes && !plan.InventorySufficiency.HasValue)
                 {
                     errors.Add("plan.inventorySufficiency é obrigatório em MetadataRecovery.");
                 }
@@ -442,7 +448,7 @@ public static class ApiPlanOperationJournalValidator
                 errors.Add("receipts[].retryableReason só existe com retryEligible=true.");
             }
 
-            if (receipt.StartedUtc == default)
+            if (!journal.AcceptsLegacyShapes && receipt.StartedUtc == default)
             {
                 errors.Add("receipts[].startedUtc é obrigatório.");
             }
@@ -454,7 +460,9 @@ public static class ApiPlanOperationJournalValidator
                 errors.Add("receipts[].endedUtc não pode ser anterior a startedUtc.");
             }
 
-            if (receipt.AttemptState != JournalAttemptState.Started && !receipt.EndedUtc.HasValue)
+            if (!journal.AcceptsLegacyShapes
+                && receipt.AttemptState != JournalAttemptState.Started
+                && !receipt.EndedUtc.HasValue)
             {
                 errors.Add("receipts[].endedUtc é obrigatório quando o recibo não ficou apenas iniciado.");
             }

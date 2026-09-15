@@ -27,8 +27,14 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// de recuperação e nunca inclui a si mesmo. O digest dos bytes crus do File é verificação
 /// separada de durabilidade e não substitui este valor.
 ///
-/// A gravação é sempre validada antes: o serializer recusa um envelope que viole o contrato
-/// do schema V1, para que nenhuma violação chegue ao <c>File.Save()</c>.
+/// A gravação de envelopes construídos em memória é sempre validada antes: o serializer
+/// recusa um envelope que viole o contrato do schema V1, para que nenhuma violação chegue ao
+/// <c>File.Save()</c>. A leitura, por outro lado, continua tolerante à ausência dos campos
+/// novos do V1 — tempo de recibo e suficiência de inventário —, para preservar diários
+/// legados (decisão 29): reconhece a forma por valor e reidrata o envelope com
+/// <c>AcceptsLegacyShapes</c> marcado, o que suaviza nessas regras de presença a validação da
+/// regravação em recuperação. Campos presentes porém malformados continuam sendo erro de
+/// leitura, tolerantes ou não.
 /// </summary>
 public static class ApiPlanOperationJournalSerializer
 {
@@ -176,6 +182,12 @@ public static class ApiPlanOperationJournalSerializer
         ReadInventory(root, journal, errors);
         ReadReceipts(root, journal, errors);
         ReadAbandonment(root, journal, errors);
+
+        // A leitura do V1 continua tolerante à ausência dos campos novos (decisão 29): um
+        // diário gravado antes de eles existirem tem de permanecer legível e reidratável. O
+        // reconhecimento é por valor no envelope lido — nunca por presença — e a validação
+        // só suaviza as regras de presença desses campos quando o envelope carrega o marcador.
+        journal.AcceptsLegacyShapes = DetectLegacyShapes(journal);
 
         if (errors.Count > 0)
         {
@@ -581,9 +593,9 @@ public static class ApiPlanOperationJournalSerializer
                 ObjectType = ReadEnum<JournalObjectType>(entry, "receipts[].objectType", errors),
                 Attempt = ReadInt(entry, "receipts[].attempt", errors) ?? 0,
                 RetryOfSequence = ReadOptionalInt(entry, "receipts[].retryOfSequence", errors),
-                StartedUtc = ReadUtc(entry, "receipts[].startedUtc", errors),
+                StartedUtc = ReadOptionalUtc(entry, "receipts[].startedUtc", errors) ?? default,
                 EndedUtc = ReadOptionalUtc(entry, "receipts[].endedUtc", errors),
-                DurationMs = ReadLong(entry, "receipts[].durationMs", errors),
+                DurationMs = ReadOptionalLong(entry, "receipts[].durationMs", errors) ?? 0L,
                 AttemptState = ReadEnum<JournalAttemptState>(entry, "receipts[].attemptState", errors),
                 Result = ReadEnum<JournalResult>(entry, "receipts[].result", errors),
                 Confirmation = ReadEnum<JournalConfirmation>(entry, "receipts[].confirmation", errors),
@@ -615,6 +627,29 @@ public static class ApiPlanOperationJournalSerializer
             AuthorizedUtc = ReadUtc(entry, "abandonment.authorizedUtc", errors),
             AuthorizedBy = ReadString(entry, "abandonment.authorizedBy", errors) ?? string.Empty,
         };
+    }
+
+    /// <summary>
+    /// Reconhece uma forma de diário legada por valor, depois de os campos novos do V1 terem
+    /// sido lidos em <see cref="Read"/>. Um recibo sem tempo medido — startedUtc deixado em
+    /// default, que é o estado em que um JSON legado materializa por não trazer o campo — ou
+    /// um plano de remoção/recuperação sem suficiência de inventário são as duas formas que
+    /// precisam de tolerância. Um recibo encerrado sem endedUtc **com** startedUtc presente
+    /// não é forma legada: é recibo novo mal formado, e a leitura continua recusando.
+    /// </summary>
+    private static bool DetectLegacyShapes(ApiPlanOperationJournal journal)
+    {
+        foreach (var receipt in journal.Receipts)
+        {
+            if (receipt.StartedUtc == default)
+            {
+                return true;
+            }
+        }
+
+        var plan = journal.Plan;
+        return (plan.PlanKind == JournalPlanKind.Removal || plan.PlanKind == JournalPlanKind.MetadataRecovery)
+            && !plan.InventorySufficiency.HasValue;
     }
 
     private static string? ReadString(JObject owner, string name, List<string> errors)
@@ -786,13 +821,18 @@ public static class ApiPlanOperationJournalSerializer
         return DateTime.SpecifyKind(value, DateTimeKind.Utc);
     }
 
-    private static long ReadLong(JObject owner, string name, List<string> errors)
+    private static long? ReadOptionalLong(JObject owner, string name, List<string> errors)
     {
         var token = owner[Leaf(name)];
-        if (token is null || token.Type != JTokenType.Integer)
+        if (token is null || token.Type == JTokenType.Null)
         {
-            errors.Add(name + " é obrigatório e deve ser inteiro.");
-            return 0L;
+            return null;
+        }
+
+        if (token.Type != JTokenType.Integer)
+        {
+            errors.Add(name + " deve ser inteiro ou null.");
+            return null;
         }
 
         return token.Value<long>();

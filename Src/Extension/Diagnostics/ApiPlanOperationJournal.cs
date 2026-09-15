@@ -81,6 +81,16 @@ public sealed class ApiPlanOperationJournal
     /// diagnóstico: coincidência textual entre os dois nunca autoriza copiar um para o outro.
     /// </summary>
     public JournalBlockReason? BlockReason { get; set; }
+
+    /// <summary>
+    /// Reconhecimento de uma forma de diário legada, produzido pela leitura e **nunca**
+    /// serializado no JSON nem participa do material canônico. Envelopes construídos em
+    /// memória nascem com <c>false</c> e são gravados com o schema estrito; apenas o que veio
+    /// de um JSON sem os campos novos do V1 — tempo de recibo e suficiência de inventário —
+    /// é reidratado com <c>true</c>, para que a regravação em recuperação não derrube a
+    /// operação que a decisão 29 manda preservar.
+    /// </summary>
+    internal bool AcceptsLegacyShapes { get; set; }
 }
 
 public sealed class ApiPlanOperationJournalPlan
@@ -106,7 +116,8 @@ public sealed class ApiPlanOperationJournalPlan
     /// <see cref="JournalPlanKind.Removal"/> e <see cref="JournalPlanKind.MetadataRecovery"/>
     /// carregam valor; <see cref="JournalPlanKind.Generation"/> grava o campo sempre como
     /// null explícito, porque a suficiência é avaliação de remoção e recuperação, nunca de
-    /// geração.
+    /// geração. A leitura tolerante de um diário legado materializa null quando o campo não
+    /// existe no plano.
     /// </summary>
     public JournalInventorySufficiency? InventorySufficiency { get; set; }
 }
@@ -176,18 +187,24 @@ public sealed class ApiPlanOperationJournalReceipt
 
     public int? RetryOfSequence { get; set; }
 
-    /// <summary>Início medido, normalizado para UTC. Sempre presente no recibo.</summary>
+    /// <summary>
+    /// Início medido, normalizado para UTC. Sempre presente em recibo gravado por esta
+    /// geração; default na leitura tolerante de um diário legado que não traz o campo
+    /// (marcado por <see cref="ApiPlanOperationJournal.AcceptsLegacyShapes"/>).
+    /// </summary>
     public DateTime StartedUtc { get; set; }
 
     /// <summary>
     /// Fim medido, normalizado para UTC. Null somente quando o recibo ficou apenas iniciado
-    /// (<see cref="JournalAttemptState.Started"/>); a validação exige valor em Finished e Interrupted.
+    /// (<see cref="JournalAttemptState.Started"/>); a validação exige valor em Finished e
+    /// Interrupted, salvo diário legado reconhecido pela leitura.
     /// </summary>
     public DateTime? EndedUtc { get; set; }
 
     /// <summary>
     /// Duração em milissegundos desde <see cref="StartedUtc"/>. Nunca negativa; zero é
-    /// permitido (gravações sub-milissegundo). Onde o todo decorrido for maior que
+    /// permitido (gravações sub-milissegundo). A leitura tolerante de um diário legado que
+    /// não traz o campo materializa 0. Onde o todo decorrido for maior que
     /// <see cref="long"/> a gravação satura em <see cref="long.MaxValue"/>.
     /// </summary>
     public long DurationMs { get; set; }
