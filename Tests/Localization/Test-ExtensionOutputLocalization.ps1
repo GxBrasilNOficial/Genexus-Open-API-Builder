@@ -376,4 +376,137 @@ $externalFileEnglish = $translate.Invoke($null, [object[]] @($externalFile, $eng
 Assert-True ($externalFileEnglish.Contains("A File 'GxOpenApiBuilder_OperationJournal' that is not the generator's already exists:")) 'Inglês deve traduzir a colisão externa do File do diário.'
 Assert-True ($externalFileEnglish.Contains('No changes were made.')) 'Inglês deve manter a garantia de que nada mudou.'
 
+# B111/F3 P7, dívida fechada na P8 — as violações de schema do envelope. Elas só aparecem com um
+# diário corrompido ou editado à mão, e é justamente aí que quem lê mais precisa entender. Os
+# caminhos de JSON e os valores de enum ficam como estão; a frase em volta deles muda de idioma.
+$schemaBlock = 'Gravação do diário bloqueada: o envelope viola o schema V1. operationState=Removed pertence somente a operationKind=Remove. plan.contractHash é obrigatório em Apply e Sync.'
+$schemaBlockEnglish = $translate.Invoke($null, [object[]] @($schemaBlock, $english))
+$schemaBlockSpanish = $translate.Invoke($null, [object[]] @($schemaBlock, $spanish))
+Assert-True ($schemaBlockEnglish.Contains('Journal write blocked: the envelope violates schema V1.')) 'Inglês deve traduzir o cabeçalho da recusa por schema.'
+Assert-True ($schemaBlockEnglish.Contains('operationState=Removed belongs only to operationKind=Remove.')) 'Inglês deve traduzir a regra e preservar os enums.'
+Assert-True ($schemaBlockEnglish.Contains('plan.contractHash is required in Apply and Sync.')) 'Inglês deve traduzir a exigência do contractHash.'
+Assert-True ($schemaBlockSpanish.Contains('Grabación del diario bloqueada: el sobre viola el schema V1.')) 'Espanhol deve traduzir o cabeçalho da recusa por schema.'
+
+$readFailure = 'schemaVersion desconhecida: esperado 1, encontrado 2. journalKind deve ser GOAB_OPERATION_JOURNAL. JSON inválido: Unexpected character.'
+$readFailureEnglish = $translate.Invoke($null, [object[]] @($readFailure, $english))
+Assert-True ($readFailureEnglish.Contains('unknown schemaVersion: expected 1, found 2.')) 'Inglês deve traduzir a versão de schema em volta dos dois números.'
+Assert-True ($readFailureEnglish.Contains('journalKind must be GOAB_OPERATION_JOURNAL.')) 'Inglês deve traduzir o journalKind e preservar o valor.'
+Assert-True ($readFailureEnglish.Contains('Invalid JSON: Unexpected character.')) 'Inglês deve traduzir o prefixo do JSON inválido e preservar a exceção.'
+
+# Os sufixos do leitor de campos são colados a um caminho de JSON, que fica como está.
+$fieldErrors = 'operationId é obrigatório e deve ser um GUID. receipts[].attempt é obrigatório e deve ser inteiro. blockReason deve ser um valor conhecido de JournalBlockReason ou null. createdUtc deve seguir yyyy-MM-ddTHH:mm:ss.fffZ. metadataSchemaVersion deve ser uma string não vazia ou null.'
+$fieldErrorsEnglish = $translate.Invoke($null, [object[]] @($fieldErrors, $english))
+$fieldErrorsSpanish = $translate.Invoke($null, [object[]] @($fieldErrors, $spanish))
+Assert-True ($fieldErrorsEnglish.Contains('operationId is required and must be a GUID.')) 'Inglês deve traduzir o sufixo de GUID obrigatório.'
+Assert-True ($fieldErrorsEnglish.Contains('receipts[].attempt is required and must be an integer.')) 'Inglês deve traduzir o sufixo de inteiro obrigatório.'
+Assert-True ($fieldErrorsEnglish.Contains('blockReason must be a known value of JournalBlockReason or null.')) 'Inglês deve traduzir o enum opcional sem perder o nome do tipo.'
+Assert-True ($fieldErrorsEnglish.Contains('createdUtc must follow yyyy-MM-ddTHH:mm:ss.fffZ.')) 'Inglês deve traduzir o formato do timestamp e preservar a máscara.'
+Assert-True ($fieldErrorsEnglish.Contains('metadataSchemaVersion must be a non-empty string or null.')) 'Inglês deve traduzir o sufixo de string opcional.'
+Assert-True ($fieldErrorsSpanish.Contains('blockReason debe ser un valor conocido de JournalBlockReason o null.')) 'Espanhol deve traduzir o enum opcional sem perder o nome do tipo.'
+
+# O sufixo curto do validador não pode recortar o sufixo longo do leitor.
+$required = 'plan é obrigatório. transactionName é obrigatório. abandonment.reason é obrigatório.'
+$requiredEnglish = $translate.Invoke($null, [object[]] @($required, $english))
+Assert-True ($requiredEnglish -ceq 'plan is required. transactionName is required. abandonment.reason is required.') 'Inglês deve traduzir o obrigatório curto sem tocar nos caminhos de JSON.'
+
+$inventoryErrors = 'inventory[].action=Delete não pertence ao domínio de operationKind=Apply. a Transaction nunca entra na fila destrutiva. inventory repete o mesmo alvo: procTesteList. identityKind=Folder exige posse própria validada.'
+$inventoryEnglish = $translate.Invoke($null, [object[]] @($inventoryErrors, $english))
+Assert-True ($inventoryEnglish.Contains('inventory[].action=Delete does not belong to the domain of operationKind=Apply.')) 'Inglês deve traduzir o domínio da ação em volta dos dois enums.'
+Assert-True ($inventoryEnglish.Contains('the Transaction never enters the destructive queue.')) 'Inglês deve traduzir a proteção da Transaction.'
+Assert-True ($inventoryEnglish.Contains('inventory repeats the same target: procTesteList.')) 'Inglês deve traduzir a repetição de alvo e preservar o nome.'
+Assert-True ($inventoryEnglish.Contains('identityKind=Folder requires validated own ownership.')) 'Inglês deve traduzir a exigência de posse do Folder.'
+
+$discardErrors = 'logicalStage=Discarded exige o objeto abandonment com a disposição de quem encerrou. somente um envelope Active pode ter o registro encerrado. o encerramento do registro exige journalDurability=Confirmed.'
+$discardEnglish = $translate.Invoke($null, [object[]] @($discardErrors, $english))
+$discardSpanish = $translate.Invoke($null, [object[]] @($discardErrors, $spanish))
+Assert-True ($discardEnglish.Contains('logicalStage=Discarded requires the abandonment object with the disposition of whoever closed it.')) 'Inglês deve traduzir a exigência do encerramento.'
+Assert-True ($discardEnglish.Contains('only an Active envelope can have its record closed.')) 'Inglês deve traduzir a restrição do envelope Active.'
+Assert-True ($discardSpanish.Contains('solo un sobre Active puede tener el registro cerrado.')) 'Espanhol deve traduzir a restrição do envelope Active.'
+
+# Varredura: nenhuma das frases de schema pode chegar ao inglês com resíduo em português. Os
+# marcadores abaixo não existem em inglês nem em espanhol, então servem de rede.
+$schemaSources = @(
+    'operationId e applicationId devem ser distintos.'
+    'updatedUtc não pode ser anterior a createdUtc.'
+    'envelopePhase=Prepared exige operationState=Pending, salvo o abandono explícito.'
+    'envelopePhase=Active não admite operationState=Pending.'
+    'operationState=Pending admite apenas logicalStage NotStarted ou IntentionRecorded.'
+    'operationState=Completed exige logicalStage Completed, Abandoned ou Discarded.'
+    'operationState=Removed exige logicalStage=Removed.'
+    'operationState=Partial em Remove exige logicalStage=RemovalPartial.'
+    'operationKind=Recovery autônomo termina em Completed ou OutcomeUnknown.'
+    'operationKind=Recovery exige intentKind=Imported.'
+    'logicalStage=Abandoned exige o objeto abandonment.'
+    'o abandono mantém operationState=Completed.'
+    'somente um envelope Prepared pode ser abandonado.'
+    'o abandono exige journalDurability=Confirmed.'
+    'o abandono não admite recibos de gravação de negócio.'
+    'abandonment só é válido com logicalStage Abandoned ou Discarded.'
+    'o encerramento do registro mantém operationState=Completed.'
+    'operationState Partial ou OutcomeUnknown exige blockReason.'
+    'blockReason só é persistido com operationState Partial ou OutcomeUnknown.'
+    'blockReason=RetryBudgetExhausted pertence ao orçamento de passadas do Remove.'
+    'blockReason=UserAborted exige operationState=Partial.'
+    'plan.plannedApiGuid não pode ser o GUID vazio.'
+    'plan de Remove exige o inventário completo dos alvos.'
+    'plan.contractHash só pode ser nulo em Remove sobre metadata legada importada.'
+    'plan.plannedApiGuid é obrigatório quando o inventário de Remove contém o API Object.'
+    'plan.contractHash não existe em MetadataRecovery: a recuperação não reconstrói contrato.'
+    'plan.services não admite entradas vazias.'
+    'plan é obrigatório e deve ser um objeto.'
+    'plan.services é obrigatório e deve ser um array.'
+    'plan.services só aceita strings não vazias.'
+    'inventory é obrigatório e deve ser um array.'
+    'inventory só aceita objetos.'
+    'inventory[].composite deve ser objeto ou null.'
+    'inventory[].receiptSequences é obrigatório e deve ser um array.'
+    'inventory[].receiptSequences só aceita inteiros.'
+    'receipts é obrigatório e deve ser um array.'
+    'receipts só aceita objetos.'
+    'abandonment deve ser objeto ou null.'
+    'O diário deve ser um objeto JSON.'
+    'receipts[].sequence deve ser inteiro positivo.'
+    'receipts deve ser monotônico dentro da operação.'
+    'receipts[].attempt deve ser inteiro positivo.'
+    'receipts[].retryOfSequence deve apontar para um recibo anterior.'
+    'receipts[].retryEligible=true exige Delete, Failed, Present e StillPresentAfterDelete.'
+    'receipts[].retryableReason só existe com retryEligible=true.'
+    'receipts[].sequence deve ser único dentro da operação: 3.'
+    'receipts[].retryOfSequence referencia um recibo inexistente: 7.'
+    'inventory[].receiptSequences referencia um recibo inexistente: 7.'
+    'identityKind=Guid exige guid.'
+    'identityKind=FileId exige fileId inteiro positivo.'
+    'identityKind=FileId exige expectedHash.'
+    'identityKind=Composite exige a identidade histórica completa.'
+    'identityKind=Folder exige emptyConfirmed=true para ser removido.'
+    'identityKind=None só é permitido em item Preserve.'
+    'metadataSchemaVersion desconhecida: GOAB_API_METADATA_B060_V9.'
+    'metadataSchemaVersion é obrigatório quando a operação envolve metadata.'
+    'as flags de geração não pertencem ao plano de Remove.'
+    'nome é obrigatório e deve ser booleano.'
+    'nome deve ser booleano ou null.'
+    'nome deve ser inteiro ou null.'
+    'nome deve ser um GUID ou null.'
+    'nome é obrigatório e deve ser uma string não vazia.'
+    'nome é obrigatório e deve ser um timestamp UTC.'
+    'nome é obrigatório e deve ser um valor conhecido de JournalOperationKind.'
+)
+# `exige` e `admite` são as mesmas palavras em espanhol, então a frase espanhola de uma regra
+# feita só de enums pode coincidir com a portuguesa. Em inglês nunca coincide, e é lá que a
+# igualdade prova entrada ausente no catálogo.
+$englishResidues = @('deve ser', 'exige ', 'é obrigatório', 'só ', 'não ', 'pertence', 'admite', 'aceita', 'referencia um', 'repete')
+$spanishResidues = @('deve ser', 'é obrigatório', 'só ', 'não ', 'pertence', 'aceita', 'referencia um', 'repete')
+foreach ($schemaSource in $schemaSources) {
+    $inEnglish = $translate.Invoke($null, [object[]] @($schemaSource, $english))
+    $inSpanish = $translate.Invoke($null, [object[]] @($schemaSource, $spanish))
+    Assert-True ($inEnglish -cne $schemaSource) "Violação de schema não traduzida para o inglês: $schemaSource"
+    foreach ($residue in $englishResidues) {
+        Assert-True (-not $inEnglish.Contains($residue)) "Resíduo em português ('$residue') na tradução inglesa de: $schemaSource"
+    }
+
+    foreach ($residue in $spanishResidues) {
+        Assert-True (-not $inSpanish.Contains($residue)) "Resíduo em português ('$residue') na tradução espanhola de: $schemaSource"
+    }
+}
+
 Write-Output 'PASS: ExtensionOutputLocalization'

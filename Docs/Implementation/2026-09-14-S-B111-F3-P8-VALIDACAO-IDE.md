@@ -452,16 +452,54 @@ partilhado entre o diário e o aviso de **preferências duplicadas**. Cadastrar 
 cauda do segundo deixaria aquela mensagem meio em inglês — pior que inteira em português —, então
 a cauda `Defaults conservadores em memoria aplicados.` entrou junto, com asserção própria.
 
-**O que continua fora, de propósito:** a lista de violações de schema do
-`ApiPlanOperationJournalValidator`. São cerca de quarenta assertivas que nomeiam campo de JSON e
-valor de enum (`envelopePhase=Prepared exige operationState=Pending`), só alcançáveis com um
-envelope corrompido ou editado à mão, e legíveis apenas por quem tem o schema à frente. Elas estão
-mais perto de um `reasonCode` do que de prosa; traduzi-las acrescentaria ruído sem acrescentar
-compreensão.
+**O que eu tinha declarado como fora, e não deveria estar** — ver 8.2.3: a lista de violações de
+schema do validador e do leitor.
 
 Vinte e quatro asserções novas no gate, entre elas a linha inteira do bloqueio como o relatório final a
 recebe — código, reason, pré-condição, mensagem e contexto —, com os enums preservados. Build
 Release 0 avisos e 0 erros; orquestrador mecânico com 64 `passed` e 1 `skipped`.
+
+#### 8.2.3 O argumento que eu usei para deixar o schema de fora não se sustenta
+
+Fechei a 8.2.2 dizendo que as violações de schema do `ApiPlanOperationJournalValidator` e do
+leitor do `ApiPlanOperationJournalSerializer` ficariam em português de propósito: são assertivas
+que nomeiam campo de JSON e valor de enum, só alcançáveis com um envelope corrompido ou editado à
+mão, e mais próximas de um `reasonCode` do que de prosa.
+
+A pergunta que derrubou isso foi direta: *«acha mesmo válido deixar quem não domina português
+sofrer?»*. Não acho, e o argumento tinha um erro de método. Raridade não é critério de idioma:
+uma mensagem rara é exatamente a que o leitor não conhece de cor, e o momento em que ela aparece
+— o diário ilegível, a operação bloqueada sem saída óbvia — é o pior momento possível para
+entregar texto num idioma que a pessoa não lê. «Técnico» também não é o mesmo que «não é prosa»:
+`o abandono não admite recibos de gravação de negócio` é uma frase inteira, e o que ela tem de
+técnico são os dois substantivos, não a sintaxe.
+
+**Oitenta e cinco entradas novas**, cobrindo as duas origens:
+
+| Origem | O que entrou |
+| --- | --- |
+| Leitor (`...Serializer`) | forma do JSON, `schemaVersion` e `journalKind` divergentes, e os sufixos do leitor de campos — obrigatório/opcional para string, inteiro, booleano, GUID, timestamp e enum |
+| Validador | identidade e tempo, as quatro dimensões do envelope, abandono e encerramento, `blockReason`, plano, recibos, inventário e identidade dos alvos, metadata |
+
+**O que não muda de idioma, por decisão:** caminho de JSON (`receipts[].retryOfSequence`), valor
+de enum (`operationState=Removed`), nome de tipo (`JournalBlockReason`) e máscara de data. São o
+que se procura dentro do arquivo; traduzi-los quebraria a única ponte entre a mensagem e o
+conteúdo do diário.
+
+**Ordem no catálogo importa mais aqui do que em qualquer lugar.** A substituição é por substring,
+e os sufixos do leitor de campos são fragmentos curtos: ` é obrigatório.` recortaria o meio de
+` é obrigatório e deve ser um GUID.` se viesse antes. As frases inteiras vêm primeiro, os sufixos
+genéricos depois, e ` ou null.` por último — só sobra para o enum opcional, que tem o nome do tipo
+entre o prefixo e o fecho.
+
+**Rede de segurança no gate, além das asserções pontuais:** uma varredura passa sessenta e quatro
+frases reais pelo tradutor e exige duas coisas de cada uma — que a versão inglesa **difira** da
+portuguesa (igualdade prova entrada ausente no catálogo) e que nenhuma das duas versões contenha
+marcadores que só existem em português (`deve ser`, `é obrigatório`, `só `, `não `, `pertence`,
+`aceita`, `repete`). A lista espanhola de marcadores é menor de propósito: `exige` e `admite` são
+as mesmas palavras nos dois idiomas, e uma regra feita só de enums pode coincidir legitimamente.
+
+Build Release 0 avisos e 0 erros; orquestrador mecânico com 64 `passed` e 1 `skipped`.
 
 ## 9. Cenários restantes
 

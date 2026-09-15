@@ -312,6 +312,355 @@ internal static class ExtensionOutputLocalization
             "' que não é do gerador: a Description não é a própria.",
             "' que no es del generador: la Description no es la propia.",
             "' that is not the generator's already exists: the Description is not our own."),
+        // B111/F3 P7 (dívida fechada na P8): as violações de schema do envelope, do leitor
+        // e do validador. Elas só aparecem com um diário corrompido ou editado à mão, mas
+        // quem as encontra numa KB em espanhol ou inglês não escolheu ler português — e é
+        // justamente o momento em que a pessoa mais precisa entender o que está escrito.
+        // Os caminhos de JSON e os valores de enum ficam como estão: são o que se procura
+        // dentro do arquivo. O que passa a mudar de idioma é a frase em volta deles.
+        //
+        // Ordem importa: as frases inteiras vêm antes dos sufixos genéricos do leitor de
+        // campos, e ' ou null.' vem por último, depois de todas as que terminam assim.
+        new(
+            "Gravação do diário bloqueada: o envelope viola o schema V1. ",
+            "Grabación del diario bloqueada: el sobre viola el schema V1. ",
+            "Journal write blocked: the envelope violates schema V1. "),
+        new(
+            "O diário deve ser um objeto JSON.",
+            "El diario debe ser un objeto JSON.",
+            "The journal must be a JSON object."),
+        new(
+            "JSON inválido: ",
+            "JSON inválido: ",
+            "Invalid JSON: "),
+        new(
+            "schemaVersion desconhecida: esperado ",
+            "schemaVersion desconocida: esperado ",
+            "unknown schemaVersion: expected "),
+        new(
+            "journalKind deve ser ",
+            "journalKind debe ser ",
+            "journalKind must be "),
+        new(
+            "plan é obrigatório e deve ser um objeto.",
+            "plan es obligatorio y debe ser un objeto.",
+            "plan is required and must be an object."),
+        new(
+            "plan.services é obrigatório e deve ser um array.",
+            "plan.services es obligatorio y debe ser un array.",
+            "plan.services is required and must be an array."),
+        new(
+            "plan.services só aceita strings não vazias.",
+            "plan.services solo acepta strings no vacías.",
+            "plan.services accepts only non-empty strings."),
+        new(
+            "inventory é obrigatório e deve ser um array.",
+            "inventory es obligatorio y debe ser un array.",
+            "inventory is required and must be an array."),
+        new(
+            "inventory só aceita objetos.",
+            "inventory solo acepta objetos.",
+            "inventory accepts only objects."),
+        new(
+            "inventory[].composite deve ser objeto ou null.",
+            "inventory[].composite debe ser objeto o null.",
+            "inventory[].composite must be an object or null."),
+        new(
+            "inventory[].receiptSequences é obrigatório e deve ser um array.",
+            "inventory[].receiptSequences es obligatorio y debe ser un array.",
+            "inventory[].receiptSequences is required and must be an array."),
+        new(
+            "inventory[].receiptSequences só aceita inteiros.",
+            "inventory[].receiptSequences solo acepta enteros.",
+            "inventory[].receiptSequences accepts only integers."),
+        new(
+            "receipts é obrigatório e deve ser um array.",
+            "receipts es obligatorio y debe ser un array.",
+            "receipts is required and must be an array."),
+        new(
+            "receipts só aceita objetos.",
+            "receipts solo acepta objetos.",
+            "receipts accepts only objects."),
+        new(
+            "abandonment deve ser objeto ou null.",
+            "abandonment debe ser objeto o null.",
+            "abandonment must be an object or null."),
+        new(
+            "operationId e applicationId devem ser distintos.",
+            "operationId y applicationId deben ser distintos.",
+            "operationId and applicationId must be distinct."),
+        new(
+            "updatedUtc não pode ser anterior a createdUtc.",
+            "updatedUtc no puede ser anterior a createdUtc.",
+            "updatedUtc cannot be earlier than createdUtc."),
+        new(
+            "envelopePhase=Prepared exige operationState=Pending, salvo o abandono explícito.",
+            "envelopePhase=Prepared exige operationState=Pending, salvo el abandono explícito.",
+            "envelopePhase=Prepared requires operationState=Pending, except for explicit abandonment."),
+        new(
+            "envelopePhase=Active não admite operationState=Pending.",
+            "envelopePhase=Active no admite operationState=Pending.",
+            "envelopePhase=Active does not allow operationState=Pending."),
+        new(
+            "operationState=Pending admite apenas logicalStage NotStarted ou IntentionRecorded.",
+            "operationState=Pending admite solo logicalStage NotStarted o IntentionRecorded.",
+            "operationState=Pending allows only logicalStage NotStarted or IntentionRecorded."),
+        new(
+            "operationState=Completed exige logicalStage Completed, Abandoned ou Discarded.",
+            "operationState=Completed exige logicalStage Completed, Abandoned o Discarded.",
+            "operationState=Completed requires logicalStage Completed, Abandoned, or Discarded."),
+        new(
+            "operationState=Removed pertence somente a operationKind=Remove.",
+            "operationState=Removed pertenece solo a operationKind=Remove.",
+            "operationState=Removed belongs only to operationKind=Remove."),
+        new(
+            "operationState=Removed exige logicalStage=Removed.",
+            "operationState=Removed exige logicalStage=Removed.",
+            "operationState=Removed requires logicalStage=Removed."),
+        new(
+            "operationState=Partial em Remove exige logicalStage=RemovalPartial.",
+            "operationState=Partial en Remove exige logicalStage=RemovalPartial.",
+            "operationState=Partial in Remove requires logicalStage=RemovalPartial."),
+        new(
+            "operationKind=Recovery autônomo termina em Completed ou OutcomeUnknown.",
+            "operationKind=Recovery autónomo termina en Completed o OutcomeUnknown.",
+            "a standalone operationKind=Recovery ends in Completed or OutcomeUnknown."),
+        new(
+            "operationKind=Recovery exige intentKind=Imported.",
+            "operationKind=Recovery exige intentKind=Imported.",
+            "operationKind=Recovery requires intentKind=Imported."),
+        new(
+            "logicalStage=Abandoned exige o objeto abandonment.",
+            "logicalStage=Abandoned exige el objeto abandonment.",
+            "logicalStage=Abandoned requires the abandonment object."),
+        new(
+            "logicalStage=Discarded exige o objeto abandonment com a disposição de quem encerrou.",
+            "logicalStage=Discarded exige el objeto abandonment con la disposición de quien cerró.",
+            "logicalStage=Discarded requires the abandonment object with the disposition of whoever closed it."),
+        new(
+            "o abandono mantém operationState=Completed.",
+            "el abandono mantiene operationState=Completed.",
+            "abandonment keeps operationState=Completed."),
+        new(
+            "somente um envelope Prepared pode ser abandonado.",
+            "solo un sobre Prepared puede ser abandonado.",
+            "only a Prepared envelope can be abandoned."),
+        new(
+            "o abandono exige journalDurability=Confirmed.",
+            "el abandono exige journalDurability=Confirmed.",
+            "abandonment requires journalDurability=Confirmed."),
+        new(
+            "o abandono não admite recibos de gravação de negócio.",
+            "el abandono no admite recibos de grabación de negocio.",
+            "abandonment does not allow business write receipts."),
+        new(
+            "abandonment só é válido com logicalStage Abandoned ou Discarded.",
+            "abandonment solo es válido con logicalStage Abandoned o Discarded.",
+            "abandonment is valid only with logicalStage Abandoned or Discarded."),
+        new(
+            "o encerramento do registro mantém operationState=Completed.",
+            "el cierre del registro mantiene operationState=Completed.",
+            "closing the record keeps operationState=Completed."),
+        new(
+            "somente um envelope Active pode ter o registro encerrado.",
+            "solo un sobre Active puede tener el registro cerrado.",
+            "only an Active envelope can have its record closed."),
+        new(
+            "o encerramento do registro exige journalDurability=Confirmed.",
+            "el cierre del registro exige journalDurability=Confirmed.",
+            "closing the record requires journalDurability=Confirmed."),
+        new(
+            "operationState Partial ou OutcomeUnknown exige blockReason.",
+            "operationState Partial o OutcomeUnknown exige blockReason.",
+            "operationState Partial or OutcomeUnknown requires blockReason."),
+        new(
+            "blockReason só é persistido com operationState Partial ou OutcomeUnknown.",
+            "blockReason solo se persiste con operationState Partial o OutcomeUnknown.",
+            "blockReason is persisted only with operationState Partial or OutcomeUnknown."),
+        new(
+            "blockReason=RetryBudgetExhausted pertence ao orçamento de passadas do Remove.",
+            "blockReason=RetryBudgetExhausted pertenece al presupuesto de pasadas del Remove.",
+            "blockReason=RetryBudgetExhausted belongs to the Remove pass budget."),
+        new(
+            "blockReason=UserAborted exige operationState=Partial.",
+            "blockReason=UserAborted exige operationState=Partial.",
+            "blockReason=UserAborted requires operationState=Partial."),
+        new(
+            "plan.plannedApiGuid não pode ser o GUID vazio.",
+            "plan.plannedApiGuid no puede ser el GUID vacío.",
+            "plan.plannedApiGuid cannot be the empty GUID."),
+        new(
+            "plan.contractHash é obrigatório em Apply e Sync.",
+            "plan.contractHash es obligatorio en Apply y Sync.",
+            "plan.contractHash is required in Apply and Sync."),
+        new(
+            "plan de Remove exige o inventário completo dos alvos.",
+            "el plan de Remove exige el inventario completo de los objetivos.",
+            "the Remove plan requires the complete inventory of targets."),
+        new(
+            "plan.contractHash só pode ser nulo em Remove sobre metadata legada importada.",
+            "plan.contractHash solo puede ser nulo en Remove sobre metadatos heredados importados.",
+            "plan.contractHash can be null only in a Remove over imported legacy metadata."),
+        new(
+            "plan.plannedApiGuid é obrigatório quando o inventário de Remove contém o API Object.",
+            "plan.plannedApiGuid es obligatorio cuando el inventario de Remove contiene el API Object.",
+            "plan.plannedApiGuid is required when the Remove inventory contains the API Object."),
+        new(
+            "plan.contractHash não existe em MetadataRecovery: a recuperação não reconstrói contrato.",
+            "plan.contractHash no existe en MetadataRecovery: la recuperación no reconstruye contrato.",
+            "plan.contractHash does not exist in MetadataRecovery: recovery does not rebuild a contract."),
+        new(
+            "plan.services não admite entradas vazias.",
+            "plan.services no admite entradas vacías.",
+            "plan.services does not allow empty entries."),
+        new(
+            "as flags de geração não pertencem ao plano de ",
+            "las flags de generación no pertenecen al plan de ",
+            "the generation flags do not belong to the plan of "),
+        new(
+            "receipts[].sequence deve ser único dentro da operação: ",
+            "receipts[].sequence debe ser único dentro de la operación: ",
+            "receipts[].sequence must be unique within the operation: "),
+        new(
+            "receipts[].sequence deve ser inteiro positivo.",
+            "receipts[].sequence debe ser entero positivo.",
+            "receipts[].sequence must be a positive integer."),
+        new(
+            "receipts deve ser monotônico dentro da operação.",
+            "receipts debe ser monotónico dentro de la operación.",
+            "receipts must be monotonic within the operation."),
+        new(
+            "receipts[].attempt deve ser inteiro positivo.",
+            "receipts[].attempt debe ser entero positivo.",
+            "receipts[].attempt must be a positive integer."),
+        new(
+            "receipts[].retryOfSequence deve apontar para um recibo anterior.",
+            "receipts[].retryOfSequence debe apuntar a un recibo anterior.",
+            "receipts[].retryOfSequence must point to an earlier receipt."),
+        new(
+            "receipts[].retryOfSequence referencia um recibo inexistente: ",
+            "receipts[].retryOfSequence referencia un recibo inexistente: ",
+            "receipts[].retryOfSequence references a nonexistent receipt: "),
+        new(
+            "receipts[].retryEligible=true exige Delete, Failed, Present e StillPresentAfterDelete.",
+            "receipts[].retryEligible=true exige Delete, Failed, Present y StillPresentAfterDelete.",
+            "receipts[].retryEligible=true requires Delete, Failed, Present, and StillPresentAfterDelete."),
+        new(
+            "receipts[].retryableReason só existe com retryEligible=true.",
+            "receipts[].retryableReason solo existe con retryEligible=true.",
+            "receipts[].retryableReason exists only with retryEligible=true."),
+        new(
+            " não pertence ao domínio de operationKind=",
+            " no pertenece al dominio de operationKind=",
+            " does not belong to the domain of operationKind="),
+        new(
+            "a Transaction nunca entra na fila destrutiva.",
+            "la Transaction nunca entra en la cola destructiva.",
+            "the Transaction never enters the destructive queue."),
+        new(
+            "inventory[].receiptSequences referencia um recibo inexistente: ",
+            "inventory[].receiptSequences referencia un recibo inexistente: ",
+            "inventory[].receiptSequences references a nonexistent receipt: "),
+        new(
+            "inventory repete o mesmo alvo: ",
+            "inventory repite el mismo objetivo: ",
+            "inventory repeats the same target: "),
+        new(
+            "identityKind=Guid exige guid.",
+            "identityKind=Guid exige guid.",
+            "identityKind=Guid requires guid."),
+        new(
+            "identityKind=FileId exige fileId inteiro positivo.",
+            "identityKind=FileId exige fileId entero positivo.",
+            "identityKind=FileId requires a positive integer fileId."),
+        new(
+            "identityKind=FileId exige expectedHash.",
+            "identityKind=FileId exige expectedHash.",
+            "identityKind=FileId requires expectedHash."),
+        new(
+            "identityKind=Composite exige a identidade histórica completa.",
+            "identityKind=Composite exige la identidad histórica completa.",
+            "identityKind=Composite requires the complete historical identity."),
+        new(
+            "identityKind=Folder exige emptyConfirmed=true para ser removido.",
+            "identityKind=Folder exige emptyConfirmed=true para ser removido.",
+            "identityKind=Folder requires emptyConfirmed=true to be removed."),
+        new(
+            "identityKind=Folder exige posse própria validada.",
+            "identityKind=Folder exige pertenencia propia validada.",
+            "identityKind=Folder requires validated own ownership."),
+        new(
+            "identityKind=None só é permitido em item Preserve.",
+            "identityKind=None solo se permite en ítem Preserve.",
+            "identityKind=None is allowed only on a Preserve item."),
+        new(
+            "metadataSchemaVersion é obrigatório quando a operação envolve metadata.",
+            "metadataSchemaVersion es obligatorio cuando la operación involucra metadatos.",
+            "metadataSchemaVersion is required when the operation involves metadata."),
+        new(
+            "metadataSchemaVersion desconhecida: ",
+            "metadataSchemaVersion desconocida: ",
+            "unknown metadataSchemaVersion: "),
+        new(
+            " é obrigatório e deve ser uma string não vazia.",
+            " es obligatorio y debe ser una string no vacía.",
+            " is required and must be a non-empty string."),
+        new(
+            " deve ser uma string não vazia ou null.",
+            " debe ser una string no vacía o null.",
+            " must be a non-empty string or null."),
+        new(
+            " é obrigatório e deve ser um timestamp UTC.",
+            " es obligatorio y debe ser un timestamp UTC.",
+            " is required and must be a UTC timestamp."),
+        new(
+            " deve seguir yyyy-MM-ddTHH:mm:ss.fffZ.",
+            " debe seguir yyyy-MM-ddTHH:mm:ss.fffZ.",
+            " must follow yyyy-MM-ddTHH:mm:ss.fffZ."),
+        new(
+            " é obrigatório e deve ser inteiro.",
+            " es obligatorio y debe ser entero.",
+            " is required and must be an integer."),
+        new(
+            " deve ser inteiro ou null.",
+            " debe ser entero o null.",
+            " must be an integer or null."),
+        new(
+            " é obrigatório e deve ser booleano.",
+            " es obligatorio y debe ser booleano.",
+            " is required and must be a boolean."),
+        new(
+            " deve ser booleano ou null.",
+            " debe ser booleano o null.",
+            " must be a boolean or null."),
+        new(
+            " é obrigatório e deve ser um GUID.",
+            " es obligatorio y debe ser un GUID.",
+            " is required and must be a GUID."),
+        new(
+            " deve ser um GUID ou null.",
+            " debe ser un GUID o null.",
+            " must be a GUID or null."),
+        new(
+            " é obrigatório e deve ser um valor conhecido de ",
+            " es obligatorio y debe ser un valor conocido de ",
+            " is required and must be a known value of "),
+        new(
+            " deve ser um valor conhecido de ",
+            " debe ser un valor conocido de ",
+            " must be a known value of "),
+        new(
+            " ou null.",
+            " o null.",
+            " or null."),
+        new(
+            ", encontrado ",
+            ", encontrado ",
+            ", found "),
+        new(
+            " é obrigatório.",
+            " es obligatorio.",
+            " is required."),
         new("A operação Apply", "La operación Apply", "The Apply operation"),
         new("A operação Sync", "La operación Sync", "The Sync operation"),
         new("A operação Remove", "La operación Remove", "The Remove operation"),
