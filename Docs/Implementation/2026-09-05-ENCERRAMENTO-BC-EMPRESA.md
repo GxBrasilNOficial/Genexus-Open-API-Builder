@@ -110,7 +110,9 @@ Os erros `bool`/`decimal`/`short` do `NETFrameworkPostgreSQL` pertencem à gera�
   instalada como instrumentação temporária interna e só publica diagnóstico condicional de
   anomalia B109.
 - A revisão por pares da sprint `S-B111` foi concluída e suas decisões foram incorporadas. A F1 e
-  a F2 estão encerradas; a próxima fase é F3, conforme o checkpoint.
+  a F2 estão encerradas; a próxima fase é F3, conforme o checkpoint. **Remissão — 2026-09-15:**
+  a F3 e a sprint `S-B111` foram encerradas nessa data; esta linha descreve o estado de
+  2026-09-05.
 
 **Funcionalidade de produção acrescentada na mesma rodada.** Além da instrumentação, entrou no
 Wizard a **recuperação explícita de metadata órfã** (`ApiPlanOrphanMetadataRecovery`), com

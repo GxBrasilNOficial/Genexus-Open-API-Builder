@@ -451,7 +451,7 @@ que substitui o contorno de apagar o File do diário à mão. Gates novos `tests
 `tests.operationJournalRecovery`. Evidência:
 `Docs/Implementation/2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`.
 
-**Etapa P8 da S-B111 F3 — 2026-09-14, em andamento.** Quatro cenários passaram na `Teste` da
+**Etapa P8 da S-B111 F3 — 2026-09-14 e 15, concluída.** Dos nove cenários da seção 9 do plano, oito passaram e um foi reformulado pelo que mediu; a **F3 e a sprint `S-B111` foram encerradas em 2026-09-15**, por decisão humana. O registro abaixo descreve a bateria na ordem em que ela aconteceu; os três últimos cenários estão nas seções 11 a 14 do documento de evidência. Quatro cenários passaram na `Teste` da
 `wsEducacaoSpTeste`: remoção completa pela fila nova (`Removed`, uma passada, quatro
 checkpoints), alvo previsto ausente antes do `Delete()` (`Partial` com
 `TargetAbsentBeforeDelete`, nenhum objeto tocado), recuperação encerrando o registro de uma
@@ -462,8 +462,14 @@ bloqueio, limpeza do bloco técnico de diagnóstico e o módulo do File do diár
 módulo e foi apontado por uma extensão de terceiros. O quinto cenário — Apply abortado no meio, com bloqueio da operação
 seguinte, oferta da recuperação, encerramento do registro e Apply normal depois — passou em
 2026-09-15 e expôs um defeito **publicado na `0.1.0-alpha.7`**: a janela de progresso ficava
-viva, com `Abortar` ativo, atrás do relatório final. Restam os cenários de envelope `Prepared`,
-retomada de remoção interrompida, remoção de API legado e medição na KB grande. O sexto cenário
+viva, com `Abortar` ativo, atrás do relatório final. Os quatro cenários que restavam fecharam em 2026-09-15: a
+**retomada de remoção interrompida** — primeira execução de `ContinueRemovePass` em campo, no
+mesmo envelope, terminando em `Removed` —, a **remoção de API legado** em três variantes, com
+adoção tardia na válida e bloqueio antes do primeiro `Delete()` nas duas insuficientes, e a
+**medição na KB grande** nas duas metades, com mediana de 33,0 ms por gravação no Apply e 32,8 ms
+na remoção, contra um teto de 60, e `P=1` nas três remoções de 50 alvos. Saíram deles seis
+correções de texto e o achado de que **70% do tempo da remoção são as varreduras por alvo**, não
+o diário. O do envelope `Prepared` segue logo abaixo. O sexto cenário
 mostrou que `Prepared` **não é alcançável pela interface** — CP1 e CP2 acontecem na mesma
 chamada —, e no lugar dele nasceu a quarta ação da recuperação: encerrar o registro de uma
 operação que gravou e parou no meio. Evidência:

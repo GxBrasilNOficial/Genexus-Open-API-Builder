@@ -4,7 +4,16 @@
 **Fase:** F3 de 3 (F1 ordem e writer final · F2 seam e recibos · **F3 durabilidade e remoção**).
 **Data:** 2026-09-04. **Item:** `B111` em `Docs/Foundation/06-BACKLOG_v0.1.md`.
 
-**Status:** Modo A selecionado; decisões de escopo e contrato consolidadas em 2026-09-07.
+**Status — 2026-09-15: F3 encerrada.** As nove etapas (P0 a P8) foram entregues, e a validação na
+IDE exerceu os nove cenários da seção 9: oito passaram e um foi reformulado pelo que mediu — o
+envelope `Prepared` não é alcançável pela interface. A sprint `S-B111` foi encerrada na mesma data,
+por decisão humana. Evidência da validação:
+[`2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`](2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md).
+Ficam fora do entregue, por decisão declarada: a continuação de `Apply`/`Sync` interrompido
+(seção 3.2 do registro da P4–P7) e as ações `Prepared`/`Abandon`. O `B123`, posse histórica do
+Folder, nasceu da P8 e é posterior à sprint.
+
+**Status original:** Modo A selecionado; decisões de escopo e contrato consolidadas em 2026-09-07.
 O plano ainda não foi implementado e a revisão por pares da sprint não está encerrada.
 **Não** autoriza alteração de código, instalação, commit ou push.
 

@@ -23,7 +23,7 @@ DLL — ver a remissão da seção 6.
 | P5 | reader, rehydrator, executor e relatório de recuperação | **entregue offline nesta rodada, com o recorte da seção 4** |
 | P6 | comando explícito e `ShowRecoveryOptionProactively` | **entregue offline nesta rodada** |
 | P7 | localização trilíngue e gates restantes | **entregue offline nesta rodada** |
-| P8 | validação na IDE (seção 9 do plano) | **em andamento** — quatro cenários passaram em 2026-09-14 |
+| P8 | validação na IDE (seção 9 do plano) | **concluída em 2026-09-15** — dos nove cenários, oito passaram e um foi reformulado pelo que mediu |
 
 ## 2. P4 — a remoção passa a ter intenção, fila e orçamento
 
