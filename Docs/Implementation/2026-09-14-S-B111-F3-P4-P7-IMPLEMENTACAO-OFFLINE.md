@@ -113,8 +113,8 @@ atomicidade entre duas IDEs — onde ele não alcança, a revalidação otimista
 | `Remove` interrompido com alvos ainda na KB | **`ContinueRemovePass`** — retoma a fila no mesmo envelope |
 | `Remove` interrompido com todos os alvos ausentes | **`Complete`** — fecha o registro como `Removed` |
 | `Remove` com alvo ilegível ou sem leitura | bloqueia (`IdentityDivergent`) |
-| `Remove` parado em `TargetAbsentBeforeDelete` | bloqueia: quem apagou não foi esta operação |
-| `Apply` / `Sync` não terminais | **bloqueia** — ver 3.2 |
+| `Remove` parado em `TargetAbsentBeforeDelete` | **`Discard`** — retomar às cegas não é possível; encerrar o registro é (ver 3.4) |
+| `Apply` / `Sync` não terminais | **`Discard`** — ver 3.2 e 3.4 |
 
 ### 3.2 Recorte declarado: Apply e Sync não são retomados
 
@@ -127,6 +127,9 @@ Wizard sobre o estado atual, ou remover o que ficou pela metade.
 Isso não é uma lacuna contornada: é o que a própria seção 5.4.1 chama de «reconciliação não
 determinística → bloqueio». Mas é **menos** do que a leitura apressada da F3 sugere, e fica
 declarado aqui para que a P8 não seja o lugar onde alguém descobre isso.
+
+O que esses envelopes **recebem** é a ação da seção 3.4: encerrar o registro. Não é continuar a
+operação — é declarar que ela acabou e assumir o estado em que a KB ficou.
 
 ### 3.3 A retomada da remoção usa o diário, não a metadata
 
@@ -144,6 +147,35 @@ Para isso, as exclusões deixaram de depender do `ApiPlanGeneratedApiRemovalPlan
 depender do `ApiPlanRemovalContext`. A retomada só cobre envelopes parados por
 `RetryBudgetExhausted`, `StageFailed` ou `UserAborted`: ausência antes do Delete e indeterminação
 não voltam para a fila sozinhas.
+
+### 3.4 Encerrar o registro de uma operação interrompida
+
+**Acrescentado em 2026-09-14, depois do resto desta rodada.** Ao explicar o recorte de 3.2, a
+consequência apareceu inteira: um envelope `Apply` interrompido bloqueia todas as operações
+seguintes pelo gate, a recuperação respondia `Block`, e o círculo se fechava — a única saída
+voltava a ser apagar o File do diário à mão, que é justamente o que a frente existe para
+eliminar. O mesmo valia para um `Remove` parado em `TargetAbsentBeforeDelete`.
+
+A base contratual está na seção 4.1.1 do plano: voltar a uma situação sem intenção ativa é
+admitido **mediante confirmação humana de que nenhuma operação ativa ou parcial foi provada**.
+A ação implementa exatamente isso, e nada além:
+
+- **estágio novo `Discarded`** no enum `JournalLogicalStage`, distinto de `Abandoned`. O
+  abandono pertence a um envelope que nunca tocou a KB e por isso não admite recibos; o
+  encerramento pertence a um que gravou e parou, e **preserva** recibos e inventário. Mudança
+  incompatível de schema, feita enquanto o V1 não saiu em release — mesmo critério com que a P3
+  acrescentou `UserAborted` a `blockReason`;
+- **`RecoveryNextStep.Discard`**, valor novo no enum que a seção 5.4.1 declarava fechado. Ele é
+  efêmero — não é persistido —, e a justificativa está no XML doc do próprio valor;
+- o que a transição **recusa**, e é onde está o rigor: `OutcomeUnknown` (não se sabe se a última
+  gravação aconteceu, e encerrar transformaria dúvida em certeza), envelope `Prepared` (esse é
+  abandono, não encerramento) e durabilidade não confirmada (encerrar esconderia justamente o
+  que não se sabe);
+- a confirmação mostra o inventário junto da pergunta, além do diagnóstico já publicado na
+  Output, e o texto diz nas três línguas que **nada é apagado**.
+
+Depois do encerramento, as duas saídas são as de sempre: reaplicar pelo Wizard sobre o estado
+atual, com o reencontro conservador cuidando do que já existe, ou remover a API gerada.
 
 ## 4. P6 — o comando e a preferência
 
@@ -172,7 +204,7 @@ Gates novos, ambos registrados no orquestrador e cobertos pelo teste do próprio
 | Gate | Cobre |
 |---|---|
 | `tests.removalQueue` | ordem canônica, passadas, requeue só por `StillPresent`, orçamento, os quatro desfechos de bloqueio, Folder preservado e inventário sem alvo repetido |
-| `tests.operationJournalRecovery` | as dez decisões da tabela 3.1, o relatório somente-leitura, as seis recusas da autorização e a reconstrução da fila a partir do inventário |
+| `tests.operationJournalRecovery` | as dez decisões da tabela 3.1, o relatório somente-leitura, as seis recusas da autorização, a reconstrução da fila a partir do inventário e as três recusas do encerramento de registro, com a preservação de recibos e disposição |
 
 Gates existentes que mudaram junto com o contrato:
 
@@ -190,6 +222,7 @@ Gates existentes que mudaram junto com o contrato:
 | Verificação | Resultado |
 |---|---|
 | `dotnet build Src\GenexusOpenApiBuilder.sln --configuration Release` | 0 avisos, 0 erros |
+| `tests.operationJournalSchema` (mensagem do validador ajustada em 3.4) | PASS |
 | `Tools/Test-ExtensionCommandRegistration.ps1` | OK, 13 comandos |
 | `tests.removalQueue` (novo) | PASS |
 | `tests.operationJournalRecovery` (novo) | PASS |
@@ -208,8 +241,13 @@ laço antigo.
   como distinguir «Folder previsto, não medido» de «Folder reutilizado»; a P4 usa a presença do
   campo. Um diário gravado antes desta rodada não tem essa marca — e a retomada, nesse caso,
   não reenfileira o Folder. Não há diário anterior em produção: a P2 estreou ontem.
-- **A continuação de Apply e Sync não existe** (3.2). Enquanto ela não existir, um Apply
-  interrompido exige decisão humana entre concluir pelo Wizard ou remover.
+- **A continuação de Apply e Sync não existe** (3.2). Um Apply interrompido exige decisão
+  humana entre reaplicar pelo Wizard ou remover; o que a ferramenta faz por ele é encerrar o
+  registro (3.4), liberando a KB sem apagar nada.
+- **O encerramento de registro é a ação mais delicada da recuperação**: ela libera a KB sem
+  concluir a operação, e a KB pode ficar com objetos pela metade. A defesa é a confirmação
+  informada — inventário à vista — e as três recusas de 3.4. Se na P8 ficar claro que o texto
+  não deixa isso evidente o bastante, é o texto que muda, não a regra.
 - **O lock é local ao processo.** Duas IDEs sobre a mesma KB continuam cobertas apenas pela
   revalidação otimista, como o plano prevê.
 - **A oferta proativa nasce ligada.** Se na IDE ela se mostrar intrusiva, a preferência já

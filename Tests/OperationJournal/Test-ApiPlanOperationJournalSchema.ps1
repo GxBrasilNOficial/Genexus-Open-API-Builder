@@ -197,9 +197,12 @@ try {
             Needle  = 'blockReason deve ser um valor conhecido'
         },
         @{
+            # A disposição pertence a quem a declara: o abandono de um envelope que nunca gravou,
+            # ou o encerramento de um que gravou e parou no meio. Fora desses dois estágios, ela
+            # não descreve nada.
             Name    = 'abandonment sem estágio de abandono'
             Json    = $canonical.Replace('"abandonment":null', '"abandonment":{"reason":"teste","authorizedUtc":"2026-09-14T10:00:00.000Z","authorizedBy":"ANTONIOJOSE"}')
-            Needle  = 'abandonment só é válido com logicalStage=Abandoned'
+            Needle  = 'abandonment só é válido com logicalStage Abandoned ou Discarded'
         },
         @{
             Name    = 'operationId igual ao applicationId'

@@ -80,6 +80,7 @@ public static class ApiPlanOperationJournalValidator
     private static void ValidateEnvelope(ApiPlanOperationJournal journal, List<string> errors)
     {
         var abandoned = journal.LogicalStage == JournalLogicalStage.Abandoned;
+        var discarded = journal.LogicalStage == JournalLogicalStage.Discarded;
 
         // Fases do envelope não substituem o estado global: Prepared acompanha Pending, e a
         // única saída de Prepared sem gravação de negócio é o abandono explícito.
@@ -105,9 +106,10 @@ public static class ApiPlanOperationJournalValidator
 
         if (journal.OperationState == JournalOperationState.Completed
             && journal.LogicalStage != JournalLogicalStage.Completed
-            && !abandoned)
+            && !abandoned
+            && !discarded)
         {
-            errors.Add("operationState=Completed exige logicalStage Completed ou Abandoned.");
+            errors.Add("operationState=Completed exige logicalStage Completed, Abandoned ou Discarded.");
         }
 
         if (journal.OperationState == JournalOperationState.Removed)
@@ -146,6 +148,7 @@ public static class ApiPlanOperationJournalValidator
         }
 
         ValidateAbandonment(journal, errors, abandoned);
+        ValidateDiscard(journal, errors, discarded);
         ValidateBlockReason(journal, errors);
     }
 
@@ -191,9 +194,51 @@ public static class ApiPlanOperationJournalValidator
             return;
         }
 
-        if (journal.Abandonment is not null)
+        if (journal.Abandonment is not null && journal.LogicalStage != JournalLogicalStage.Discarded)
         {
-            errors.Add("abandonment só é válido com logicalStage=Abandoned.");
+            errors.Add("abandonment só é válido com logicalStage Abandoned ou Discarded.");
+        }
+    }
+
+    /// <summary>
+    /// O encerramento de um registro interrompido. Ao contrário do abandono, ele **admite**
+    /// recibos de gravação: é exatamente o caso em que a operação tocou a KB e parou no meio.
+    /// O que ele exige é a disposição registrada, o envelope ativo e a durabilidade confirmada —
+    /// encerrar sobre um snapshot não confirmado esconderia o que não se sabe.
+    /// </summary>
+    private static void ValidateDiscard(ApiPlanOperationJournal journal, List<string> errors, bool discarded)
+    {
+        if (!discarded)
+        {
+            return;
+        }
+
+        if (journal.Abandonment is null)
+        {
+            errors.Add("logicalStage=Discarded exige o objeto abandonment com a disposição de quem encerrou.");
+            return;
+        }
+
+        RequireText(journal.Abandonment.Reason, "abandonment.reason", errors);
+        RequireText(journal.Abandonment.AuthorizedBy, "abandonment.authorizedBy", errors);
+        if (journal.Abandonment.AuthorizedUtc == default)
+        {
+            errors.Add("abandonment.authorizedUtc é obrigatório.");
+        }
+
+        if (journal.OperationState != JournalOperationState.Completed)
+        {
+            errors.Add("o encerramento do registro mantém operationState=Completed.");
+        }
+
+        if (journal.EnvelopePhase != JournalEnvelopePhase.Active)
+        {
+            errors.Add("somente um envelope Active pode ter o registro encerrado.");
+        }
+
+        if (journal.JournalDurability != JournalDurability.Confirmed)
+        {
+            errors.Add("o encerramento do registro exige journalDurability=Confirmed.");
         }
     }
 

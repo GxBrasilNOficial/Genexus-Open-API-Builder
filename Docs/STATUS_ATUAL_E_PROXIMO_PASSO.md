@@ -156,7 +156,8 @@ O que entrou nesta rodada, em uma linha cada:
 - **P5** — `ApiPlanRecoveryReader`, `Rehydrator`, `Executor` e `Report`: o diário é lido, cada
   alvo é relido por identidade, e a reidratação devolve **uma** etapa autorizada — abandonar um
   envelope que nunca gravou, fechar o registro de uma remoção que já terminou, retomar a fila
-  de uma remoção interrompida — ou bloqueia com razão classificada;
+  de uma remoção interrompida, ou **encerrar o registro** de uma operação que gravou e parou no
+  meio — ou bloqueia com razão classificada;
 - **P6** — comando `Recuperar operação interrompida` nas duas superfícies de menu, nos três
   idiomas, e a preferência `ShowRecoveryOptionProactively`, ligada por padrão, que oferece a
   recuperação quando o diário bloqueia Apply, Sync ou Remover;
@@ -169,8 +170,15 @@ não está na KB encerra a operação em `Partial` com `TargetAbsentBeforeDelete
 seção 4.3, e a saída é o comando de recuperação. A segunda: a continuação de um `Apply` ou
 `Sync` interrompido **não** foi entregue, e não por esquecimento — o envelope guarda identidade,
 hash de contrato e flags, não o contrato, e retomar o pipeline a partir disso seria inventar um
-plano. Esses envelopes recebem bloqueio com diagnóstico e duas saídas declaradas: concluir pelo
-Wizard sobre o estado atual, ou remover o que ficou pela metade.
+plano.
+
+O que a recuperação faz por esses envelopes é **encerrar o registro**: estágio terminal próprio
+`Discarded`, com a disposição de quem encerrou, recibos e inventário preservados, e nenhum
+objeto apagado. A KB é liberada e as duas saídas seguintes ficam com você — reaplicar pelo
+Wizard sobre o estado atual, ou remover a API gerada. O encerramento recusa três situações:
+`OutcomeUnknown`, envelope `Prepared` (que é abandono) e durabilidade não confirmada. Antes
+dele, o único caminho era apagar o File do diário à mão — o contorno exercido duas vezes na
+validação da P3.
 
 Registro: `Docs/Implementation/2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md` — seção 2.2
 para a mudança de comportamento, 3.2 para o recorte e 7 para os riscos abertos.
@@ -503,7 +511,7 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 127. Em 2026-09-14, o teste 6 confirmou a hipótese e as três correções foram aplicadas: o Apply da `Escola` com apenas SDTs e Procedures registrou `ApiPhysicallySaved` com `ApiSaveCount=0`, quatro checkpoints e um inventário de quatro Procedures sem nenhum item de API — a fronteira que impede a recuperação de repetir o Save do API Object era afirmada sem gravação. Corrigidos: a fronteira passou a exigir `report.ApiSaveCount > 0`; `composite.apiGuid` passou a ser o GUID do API Object nos writers de Business Component e de List; e `SetMainObject` deixou de declarar persistência ao apenas identificar. Gate novo `tests.journalFrontierSentinel`, verificado por mutação, e caso novo em `tests.applicationFinalReport`; build Release limpo e orquestrador com todos os checks `passed`. Próxima ação única = reinstalar a DLL e refazer os testes 1 e 6. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seções 6.7, 9 e 10.
 128. Em 2026-09-14, a revalidação na IDE validou duas das três correções: o Apply completo de reencontro gravou `composite.apiGuid` com o GUID do `apiEscola` nos cinco itens e manteve a fronteira com `ApiSaveCount=1`; o Apply sem API Object passou a fazer três checkpoints, sem registrar a fronteira. A terceira estava incompleta — o construtor de `ApiPlanApplicationFinalReport` repunha `PersistedMainObject` por fallback para o objeto identificado, e o gate testava o collector em vez do `Build()`. O fallback foi removido, o caso passou a exercitar o relatório construído e a eficácia foi verificada por mutação. Próxima ação única = reinstalar a DLL e refazer só o Apply sem API Object. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seções 10 e 11.
 129. Em 2026-09-14, a correção 2b fechou a P3: o Apply sem API Object terminou com `Checkpoints=3`, sem registrar a fronteira, e com `PersistedMainObjectName` e `PersistedMainObjectGuid` vazios. A etapa P3 está concluída e validada na IDE, com as quatro correções também validadas em campo. ~~Próxima ação única = F3 etapa P4 (remoção com intenção, passadas e orçamento).~~ **Superada** pelo item 130. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P3-GATE-ESTENDIDO.md`, seções 10 e 11.
-130. Em 2026-09-14 as etapas P4 a P7 da F3 foram implementadas **offline**: intenção de remoção registrada antes do primeiro `Delete()`, fila única por passadas com orçamento fechado, serviços de recuperação (reader, rehydrator, executor e relatório), comando `Recuperar operação interrompida` nas duas superfícies e nos três idiomas, preferência `ShowRecoveryOptionProactively` e dois gates novos (`tests.removalQueue`, `tests.operationJournalRecovery`). Nada foi exercido na IDE. Duas mudanças de contrato precisam ser conhecidas antes do teste: a segunda remoção da mesma API bloqueia em vez de ser idempotente, e a continuação de `Apply`/`Sync` interrompido não foi entregue por o envelope não carregar o contrato. Próxima ação única = F3 etapa P8 (validação integrada na IDE, os nove cenários da seção 9 do plano). Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`.
+130. Em 2026-09-14 as etapas P4 a P7 da F3 foram implementadas **offline**: intenção de remoção registrada antes do primeiro `Delete()`, fila única por passadas com orçamento fechado, serviços de recuperação (reader, rehydrator, executor e relatório), comando `Recuperar operação interrompida` nas duas superfícies e nos três idiomas, preferência `ShowRecoveryOptionProactively` e dois gates novos (`tests.removalQueue`, `tests.operationJournalRecovery`). Ao fim da rodada, a explicação do recorte expôs que um `Apply` interrompido ficava sem saída pela ferramenta — o gate bloqueava e a recuperação respondia `Block` —, e a etapa ganhou o encerramento de registro: estágio terminal `Discarded`, com disposição registrada, recibos e inventário preservados e nenhum objeto apagado, recusando `OutcomeUnknown`, envelope `Prepared` e durabilidade não confirmada. Nada foi exercido na IDE. Duas mudanças de contrato precisam ser conhecidas antes do teste: a segunda remoção da mesma API bloqueia em vez de ser idempotente, e a continuação de `Apply`/`Sync` interrompido não foi entregue por o envelope não carregar o contrato — o que existe para eles é encerrar o registro. Próxima ação única = F3 etapa P8 (validação integrada na IDE, os nove cenários da seção 9 do plano). Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`.
 
 ## Bloqueios e fatos ainda não validados
 

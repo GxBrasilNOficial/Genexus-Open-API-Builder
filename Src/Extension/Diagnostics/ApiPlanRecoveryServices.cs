@@ -422,6 +422,20 @@ internal static class ApiPlanRecoveryExecutor
                         "A remoção foi reconciliada: todos os alvos previstos estão ausentes e o envelope "
                         + "fechou como concluído.");
 
+                case RecoveryNextStep.Discard:
+                    return Write(
+                        designModel,
+                        fresh,
+                        operation,
+                        journal => ApiPlanOperationJournalCheckpoints.DiscardInterrupted(
+                            journal,
+                            "Registro encerrado na recuperação: a operação parou no meio e a continuação não era possível.",
+                            authorization.AuthorizedBy,
+                            DateTime.UtcNow),
+                        "O registro da operação interrompida foi encerrado. A Knowledge Base está liberada "
+                        + "para a próxima operação; nenhum objeto foi apagado, e o inventário do que ficou "
+                        + "pela metade continua gravado no diário.");
+
                 case RecoveryNextStep.ContinueRemovePass:
                     if (removalContinuation is null)
                     {

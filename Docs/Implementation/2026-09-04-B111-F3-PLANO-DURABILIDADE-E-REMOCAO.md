@@ -226,7 +226,12 @@ pode seguir esse caminho. `Active`, `Partial` ou `OutcomeUnknown` não podem ser
 como se nada tivesse ocorrido: exigem reconciliação ou continuação explícita com os mesmos IDs.
 
 Após `Completed` ou `Removed`, a próxima operação substitui o envelope corrente pelo novo
-`Prepared`; não há arquivo, campo ou coleção de histórico. Se o diário estiver ausente,
+`Prepared`; não há arquivo, campo ou coleção de histórico.
+
+**Remissão — 2026-09-14:** a confirmação humana prevista no fim deste parágrafo virou ação da
+ferramenta na P5/P6 — o estágio terminal `Discarded`, que encerra o registro de uma operação
+que gravou e parou no meio, preservando recibos e inventário e sem apagar objeto nenhum. Ela
+recusa `OutcomeUnknown`, envelope `Prepared` (que é abandono) e durabilidade não confirmada. Se o diário estiver ausente,
 corrompido, duplicado ou não puder ser confirmado, o resultado é
 `GateDiagnostic=JournalUnavailable`: bloqueia Apply, Sync e Remove, permite apenas
 diagnóstico de leitura e não cria um novo envelope. Só admite voltar a uma situação sem
@@ -602,6 +607,15 @@ aplicável, `physicalState` e `confirmation`. `NextStep` é fechado em
 `Block`. `RecoveryAuthorization` exige `humanConfirmed=true`, os IDs do envelope, o
 `journalFileId`, `updatedUtc` e o hash do snapshot validado, além da confirmação de que
 a etapa indicada é exatamente a `NextStep` autorizada e pode produzir a próxima gravação.
+
+**Remissão — 2026-09-14:** `NextStep` ganhou um décimo primeiro valor, `Discard`, fora desta
+lista. Ele nasceu de uma consequência que o conjunto fechado não cobria: um envelope
+interrompido bloqueia as operações seguintes, e quando a continuação não é possível — um
+`Apply`, cujo contrato não está no envelope — só restava apagar o File do diário à mão, que
+apaga também a prova. A base é a seção 4.1.1 («voltar a uma situação sem intenção ativa
+mediante confirmação humana»); o valor é efêmero, e o que se persiste é
+`logicalStage=Discarded`. Detalhe na seção 3.4 de
+[`2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`](2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md).
 Essa vinculação é uma defesa de frescor e integridade contra alteração concorrente entre a
 leitura e a ação (TOCTOU); não cria histórico nem uma segunda identidade para o journal.
 O executor rejeita a autorização se qualquer parte dessa vinculação divergir do diário

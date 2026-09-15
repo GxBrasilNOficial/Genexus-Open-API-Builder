@@ -244,6 +244,17 @@ public enum JournalLogicalStage
     Abandoned = 14,
     Completed = 15,
     Removed = 16,
+
+    /// <summary>
+    /// Registro encerrado por decisão humana informada, depois de a operação ter gravado algo e
+    /// parado no meio. Não é <see cref="Abandoned"/>: aquele pertence a um envelope que nunca
+    /// tocou a KB, e por isso pode ser descartado sem consequência. Aqui houve gravação, o
+    /// inventário fica preservado e o que se encerra é a **intenção ativa**, não os objetos.
+    ///
+    /// Existe porque um envelope interrompido bloqueia as operações seguintes, e sem esta saída
+    /// a única alternativa era apagar o File do diário à mão — que apaga também a prova.
+    /// </summary>
+    Discarded = 17,
 }
 
 public enum JournalDurability

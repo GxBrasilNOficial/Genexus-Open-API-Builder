@@ -252,8 +252,13 @@ try {
     $promote.Invoke($null, @($applyPartial, $now))
     $interrupt.Invoke($null, @($applyPartial, (Get-Enum $stateEnum 'Partial'), (Get-Enum $blockReasonEnum 'StageFailed'), $now))
     $operation = Invoke-Rehydrate -Envelope $applyPartial
-    Assert-Equal 'Block' ([string]$operation.NextStep) 'Retomar o pipeline de Apply exigiria inventar um plano'
-    Assert-Equal 'JournalNonTerminal' ([string]$operation.Diagnostic.ReasonCode) 'O bloqueio do Apply é pelo estado não terminal'
+    # Retomar o pipeline exigiria inventar um plano; deixar a KB travada também não é resposta.
+    # A saída é encerrar o registro, com o inventário à vista e sem apagar nada.
+    Assert-Equal 'Discard' ([string]$operation.NextStep) 'Um Apply interrompido oferece encerrar o registro'
+    Assert-True ([bool]$operation.CanExecute) 'O encerramento do registro é executável pela ferramenta'
+    Assert-True ([bool]$operation.RequiresStateAwareness) 'Encerrar exige mostrar o estado da KB antes'
+    Assert-True ($operation.Summary.Contains('não apaga nada') -or $operation.Summary.Contains('nada é apagado')) 'O resumo precisa dizer que nada é apagado'
+    Assert-True ($operation.Summary.Contains('Wizard')) 'O resumo nomeia as duas saídas posteriores'
 
     # --- 5. Resultado indeterminado não é continuado ----------------------------------------------
     $unknownOutcome = New-Envelope -OperationKind 'Apply' -Plan ($forGeneration.Invoke($null, @([object]$apiGuid, 'abc123', $true, $true, $true, $true, [string[]]@('List'))))
@@ -300,8 +305,10 @@ try {
     $operation = Invoke-Rehydrate -Envelope $absentBefore -Observations @(
         (New-Observation -Item $apiItem -PhysicalState 'Present'),
         (New-Observation -Item $sdtItem -PhysicalState 'Present'))
-    Assert-Equal 'Block' ([string]$operation.NextStep) 'Quem apagou um alvo previsto não foi esta operação: a decisão é humana'
-    Assert-Equal 'InventoryInsufficient' ([string]$operation.Diagnostic.ReasonCode) 'A razão nomeia o inventário'
+    # Retomar a fila às cegas continua proibido, mas a KB não fica travada: o registro pode ser
+    # encerrado, e é isso que a ferramenta oferece.
+    Assert-Equal 'Discard' ([string]$operation.NextStep) 'Quem apagou um alvo previsto não foi esta operação: resta encerrar o registro'
+    Assert-True ($operation.Summary.Contains('retomar a fila às cegas não é possível')) 'O resumo diz por que não se retoma'
 
     # --- 10. O relatório descreve sem decidir -----------------------------------------------------------
     $lines = $describe.Invoke($null, @([object]$operation))
@@ -388,6 +395,65 @@ try {
     Assert-True ($queuedNames -contains 'TesteOpenApi') 'O Folder próprio enfileirado volta para a fila'
     Assert-True ($queuedNames -notcontains 'sdtTeste_API_ListResponse') 'O que já saiu não é tentado de novo'
     Assert-True ($queuedNames -notcontains 'Outro') 'O Folder reutilizado nunca entra na fila destrutiva'
+
+    # --- 13. O encerramento do registro tem limites -------------------------------------------------------
+    $discard = $checkpointsType.GetMethod('DiscardInterrupted', $static)
+
+    # Indeterminação não é encerrável: ninguém sabe se a última gravação aconteceu, e encerrar
+    # transformaria dúvida em certeza.
+    $unknownAgain = New-Envelope -OperationKind 'Apply' -Plan ($forGeneration.Invoke($null, @([object]$apiGuid, 'abc123', $true, $true, $true, $true, [string[]]@('List'))))
+    $promote.Invoke($null, @($unknownAgain, $now))
+    $interrupt.Invoke($null, @($unknownAgain, (Get-Enum $stateEnum 'OutcomeUnknown'), (Get-Enum $blockReasonEnum 'OutcomeUnknown'), $now))
+    $operation = Invoke-Rehydrate -Envelope $unknownAgain
+    Assert-Equal 'Block' ([string]$operation.NextStep) 'Resultado indeterminado continua bloqueado, e não encerrável'
+
+    $rejected = $false
+    try {
+        $discard.Invoke($null, @($unknownAgain, 'motivo', 'ANTONIOJOSE', $now))
+    } catch {
+        $rejected = $true
+        Assert-True (([string]$_.Exception.InnerException.Message).Contains('Partial ou Running')) 'A recusa deve nomear os estados admitidos'
+    }
+    Assert-True $rejected 'A transição deve recusar encerrar um envelope OutcomeUnknown'
+
+    # Um envelope Prepared é abandonado, não encerrado: são disposições diferentes.
+    $preparedAgain = New-Envelope -OperationKind 'Apply' -Plan ($forGeneration.Invoke($null, @([object]$apiGuid, 'abc123', $true, $true, $true, $true, [string[]]@('List'))))
+    $rejected = $false
+    try {
+        $discard.Invoke($null, @($preparedAgain, 'motivo', 'ANTONIOJOSE', $now))
+    } catch {
+        $rejected = $true
+        Assert-True (([string]$_.Exception.InnerException.Message).Contains('é abandonado')) 'A recusa deve apontar o abandono'
+    }
+    Assert-True $rejected 'A transição deve recusar encerrar um envelope Prepared'
+
+    # Durabilidade desconhecida: encerrar esconderia justamente o que não se sabe.
+    $undurable = New-Envelope -OperationKind 'Apply' -Plan ($forGeneration.Invoke($null, @([object]$apiGuid, 'abc123', $true, $true, $true, $true, [string[]]@('List'))))
+    $promote.Invoke($null, @($undurable, $now))
+    $interrupt.Invoke($null, @($undurable, (Get-Enum $stateEnum 'Partial'), (Get-Enum $blockReasonEnum 'StageFailed'), $now))
+    $undurable.JournalDurability = Get-Enum $durabilityEnum 'Unknown'
+    $rejected = $false
+    try {
+        $discard.Invoke($null, @($undurable, 'motivo', 'ANTONIOJOSE', $now))
+    } catch {
+        $rejected = $true
+        Assert-True (([string]$_.Exception.InnerException.Message).Contains('durabilidade')) 'A recusa deve nomear a durabilidade'
+    }
+    Assert-True $rejected 'A transição deve recusar encerrar sobre snapshot não confirmado'
+
+    # --- 14. O encerramento preserva a prova ---------------------------------------------------------------
+    $toDiscard = New-Envelope -OperationKind 'Apply' -Plan ($forGeneration.Invoke($null, @([object]$apiGuid, 'abc123', $true, $true, $true, $true, [string[]]@('List'))))
+    $promote.Invoke($null, @($toDiscard, $now))
+    $toDiscard.Receipts.Add($receipt)
+    $interrupt.Invoke($null, @($toDiscard, (Get-Enum $stateEnum 'Partial'), (Get-Enum $blockReasonEnum 'StageFailed'), $now))
+    $discard.Invoke($null, @($toDiscard, 'Encerrado no teste', 'ANTONIOJOSE', $now))
+    Assert-Equal 'Completed' ([string]$toDiscard.OperationState) 'O encerramento torna o envelope terminal'
+    Assert-Equal 'Discarded' ([string]$toDiscard.LogicalStage) 'O estágio próprio distingue encerramento de conclusão'
+    Assert-Equal $null $toDiscard.BlockReason 'Um envelope terminal não carrega motivo de bloqueio'
+    Assert-True ($null -ne $toDiscard.Abandonment) 'A disposição de quem encerrou fica registrada'
+    Assert-Equal 'ANTONIOJOSE' ([string]$toDiscard.Abandonment.AuthorizedBy) 'Quem autorizou fica no registro'
+    Assert-Equal 1 $toDiscard.Receipts.Count 'Os recibos da operação interrompida são preservados'
+    Assert-True ([bool](Invoke-Rehydrate -Envelope $toDiscard).AlreadyTerminal) 'Depois de encerrado, não há mais o que recuperar'
 
 } finally {
     if ($null -ne $script:AssemblyResolveHandler) {

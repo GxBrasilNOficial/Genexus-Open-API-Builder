@@ -332,6 +332,58 @@ public static class ApiPlanOperationJournalCheckpoints
     }
 
     /// <summary>
+    /// Encerra o registro de uma operação que gravou alguma coisa e parou no meio, por decisão
+    /// humana informada. O envelope vira terminal e libera a KB; o inventário, os recibos e a
+    /// disposição de quem encerrou ficam preservados.
+    ///
+    /// O que isto **não** faz: apagar objeto nenhum, e afirmar que a operação concluiu. A KB
+    /// continua exatamente como ficou, e é por isso que a confirmação precisa mostrar o
+    /// inventário antes de perguntar.
+    ///
+    /// <c>OutcomeUnknown</c> não entra: ali não se sabe se a última gravação aconteceu, e
+    /// encerrar transformaria dúvida em certeza. Esse caso continua exigindo consulta por
+    /// identidade antes de qualquer decisão.
+    /// </summary>
+    public static void DiscardInterrupted(
+        ApiPlanOperationJournal journal,
+        string reason,
+        string authorizedBy,
+        DateTime utcNow)
+    {
+        Require(journal);
+        if (journal.EnvelopePhase != JournalEnvelopePhase.Active)
+        {
+            throw new InvalidOperationException(
+                "Só um envelope Active pode ter o registro encerrado; um Prepared é abandonado. Estado atual: "
+                + Describe(journal) + ".");
+        }
+
+        if (journal.OperationState != JournalOperationState.Partial
+            && journal.OperationState != JournalOperationState.Running)
+        {
+            throw new InvalidOperationException(
+                "O encerramento do registro parte de Partial ou Running, não de " + journal.OperationState + ".");
+        }
+
+        if (journal.JournalDurability != JournalDurability.Confirmed)
+        {
+            throw new InvalidOperationException(
+                "Encerrar um registro cuja durabilidade não foi confirmada esconderia justamente o que não se sabe.");
+        }
+
+        journal.Abandonment = new ApiPlanOperationJournalAbandonment
+        {
+            Reason = reason ?? string.Empty,
+            AuthorizedUtc = utcNow,
+            AuthorizedBy = authorizedBy ?? string.Empty,
+        };
+        journal.OperationState = JournalOperationState.Completed;
+        journal.LogicalStage = JournalLogicalStage.Discarded;
+        journal.BlockReason = null;
+        Touch(journal, utcNow, "encerramento do registro");
+    }
+
+    /// <summary>
     /// Decide se o envelope corrente pode ser substituído por uma operação nova. Só um
     /// estado terminal com durabilidade confirmada libera; qualquer outro bloqueia e exige
     /// decisão explícita, porque sobrescrever um envelope não terminal apagaria a única

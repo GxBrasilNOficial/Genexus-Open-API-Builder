@@ -403,7 +403,9 @@ três idiomas, com a preferência `ShowRecoveryOptionProactively` ligada por pad
 mudanças precisam ser conhecidas antes do teste:** remover duas vezes a mesma API agora
 bloqueia, porque um alvo previsto e já ausente encerra a operação em remoção parcial; e a
 continuação de um `Apply` ou `Sync` interrompido não foi entregue, porque o envelope guarda
-identidade, hash de contrato e flags, não o contrato. Gates novos `tests.removalQueue` e
+identidade, hash de contrato e flags, não o contrato. Para esses envelopes, a recuperação
+oferece **encerrar o registro** — estágio terminal `Discarded`, sem apagar objeto nenhum —,
+que substitui o contorno de apagar o File do diário à mão. Gates novos `tests.removalQueue` e
 `tests.operationJournalRecovery`. **Nada foi exercido na IDE**: a etapa seguinte é a P8, a
 validação integrada da seção 9 do plano. Evidência:
 `Docs/Implementation/2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`.

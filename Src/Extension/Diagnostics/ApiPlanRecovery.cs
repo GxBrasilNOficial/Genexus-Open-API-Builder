@@ -107,17 +107,22 @@ public static class ApiPlanRecoveryRehydrator
         }
 
         // --- Apply, Sync e Recovery: o envelope não carrega o contrato ---------------------------
-        return ApiPlanRehydratedOperation.Blocked(
+        //
+        // Retomar o pipeline não é possível, mas deixar a KB travada também não é resposta: o
+        // envelope interrompido bloqueia todas as operações seguintes. O que se oferece é
+        // encerrar o registro — decisão humana, informada pelo inventário, que não apaga nada.
+        return ApiPlanRehydratedOperation.Authorized(
             journal,
             classified,
-            JournalGateDiagnosticCode.GateBlocked,
-            JournalGateReasonCodes.JournalNonTerminal,
+            RecoveryNextStep.Discard,
             string.Format(
                 CultureInfo.InvariantCulture,
                 "A operação {0} parou em {1}/{2}. O diário registra identidade, contrato por hash e o que já "
                 + "foi confirmado — não o contrato em si —, então retomar o pipeline a partir dele seria "
-                + "inventar um plano. Confira o que está descrito abaixo e decida: concluir a geração pelo "
-                + "Wizard sobre o estado atual, ou remover o que ficou pela metade.",
+                + "inventar um plano. O que a ferramenta pode fazer é encerrar este registro: a Knowledge "
+                + "Base é liberada, nada é apagado, e o que ficou pela metade continua como está. Depois "
+                + "disso, as duas saídas são reaplicar pelo Wizard sobre o estado atual — o reencontro "
+                + "conservador cuida do que já existe — ou remover a API gerada.",
                 journal.OperationKind,
                 journal.OperationState,
                 journal.LogicalStage));
@@ -164,13 +169,20 @@ public static class ApiPlanRecoveryRehydrator
 
         if (journal.BlockReason == JournalBlockReason.TargetAbsentBeforeDelete)
         {
-            return ApiPlanRehydratedOperation.Blocked(
+            // Retomar a fila às cegas continua proibido; o que se oferece é encerrar o registro,
+            // com o inventário à vista. A KB não é tocada por essa decisão.
+            return ApiPlanRehydratedOperation.Authorized(
                 journal,
                 classified,
-                JournalGateDiagnosticCode.PreconditionFailed,
-                JournalGateReasonCodes.InventoryInsufficient,
-                "A remoção parou porque um alvo previsto já não estava na KB antes da exclusão. Quem o "
-                + "apagou não foi esta operação, e retomar a fila sem saber disso é decisão humana.");
+                RecoveryNextStep.Discard,
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    "A remoção parou porque um alvo previsto já não estava na KB antes da exclusão, e quem "
+                    + "o apagou não foi esta operação: retomar a fila às cegas não é possível. {0} alvo(s) "
+                    + "ainda estão na KB: {1}. Encerrar este registro libera a Knowledge Base e não apaga "
+                    + "nada; o que estiver pela metade continua como está, para você decidir depois.",
+                    pendingDeletes.Length,
+                    string.Join(", ", pendingDeletes.Select(item => item.Item.Name))));
         }
 
         return ApiPlanRehydratedOperation.Authorized(
@@ -306,6 +318,19 @@ public enum RecoveryNextStep
     Complete = 7,
     Abandon = 8,
     Block = 9,
+
+    /// <summary>
+    /// Encerrar o registro de uma operação que gravou alguma coisa e parou no meio.
+    ///
+    /// **Valor acrescentado em 2026-09-14**, fora da lista original da seção 5.4.1. Ele nasceu
+    /// de uma consequência que o conjunto fechado não cobria: um envelope interrompido bloqueia
+    /// as operações seguintes, e quando a continuação não é possível — um `Apply` cujo contrato
+    /// não está no envelope — só restava apagar o File do diário à mão, que apaga também a
+    /// prova. A base contratual é a seção 4.1.1: voltar a uma situação sem intenção ativa é
+    /// admitido mediante confirmação humana. É efêmero como o resto deste enum: o que fica
+    /// gravado é <c>logicalStage=Discarded</c>.
+    /// </summary>
+    Discard = 10,
 }
 
 /// <summary>
@@ -356,7 +381,14 @@ public sealed class ApiPlanRehydratedOperation
         !AlreadyTerminal
         && (NextStep == RecoveryNextStep.Abandon
             || NextStep == RecoveryNextStep.Complete
-            || NextStep == RecoveryNextStep.ContinueRemovePass);
+            || NextStep == RecoveryNextStep.ContinueRemovePass
+            || NextStep == RecoveryNextStep.Discard);
+
+    /// <summary>
+    /// A ação encerra o registro sem concluir a operação: a KB fica como está, e quem confirma
+    /// precisa ver o inventário antes.
+    /// </summary>
+    public bool RequiresStateAwareness => NextStep == RecoveryNextStep.Discard;
 
     internal static ApiPlanRehydratedOperation Terminal(
         ApiPlanOperationJournal journal,

@@ -618,8 +618,16 @@ public sealed class Package : AbstractPackageUI
         {
             RecoveryNextStep.Abandon => texts.RecoveryConfirmAbandon,
             RecoveryNextStep.Complete => texts.RecoveryConfirmReconcile,
+            RecoveryNextStep.Discard => texts.RecoveryConfirmDiscard,
             _ => texts.RecoveryConfirmContinueRemoval,
         };
+
+        // Encerrar o registro não conclui a operação: quem confirma precisa ter visto o que
+        // ficou na KB. O resumo vai junto da pergunta, além do diagnóstico já publicado acima.
+        if (operation.RequiresStateAwareness)
+        {
+            question = question + Environment.NewLine + Environment.NewLine + operation.Summary;
+        }
 
         var answer = System.Windows.Forms.MessageBox.Show(
             owner,
