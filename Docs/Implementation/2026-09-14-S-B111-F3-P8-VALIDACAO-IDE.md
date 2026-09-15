@@ -229,6 +229,33 @@ A mensagem do `apiGuid` deixou de nomear o campo incompatível: nomear um campo 
 diagnóstico para quem está na IDE. A recusa continua a mesma; o que mudou é que ela agora
 termina com um caminho. Asserções trilíngues no gate `tests.extensionOutputLocalization`.
 
+### 7.1 A primeira correção estava no lugar errado — medido na IDE
+
+A correção acima foi escrita presumindo que o Wizard travaria ao **gravar** a metadata. Ele não
+trava: o leitor de estado desliga a etapa **antes**, e o Apply conclui tudo o mais. Na IDE, em
+2026-09-14, o Apply sobre o estado do cenário 2 terminou com `Criados=1` — um API Object novo,
+com GUID novo — `Atualizados=26`, `Bloqueados=0` e este aviso:
+
+```
+Etapa 'Metadata File' bloqueada na KB: Bloqueado: 1 colisao(oes) externa(s), incompativel(is)
+ou ambigua(s) detectada(s). Nenhuma escrita sera permitida.
+```
+
+A orientação que eu tinha acabado de escrever vive no writer da metadata, e o writer nunca foi
+alcançado. Presumir o caminho em vez de medir custou uma rodada.
+
+**O ponto certo é `ApiPlanGenerationStateReader.InspectMetadataFile`**, no ramo que bloqueia por
+ownership divergente em File próprio. Ele agora reconhece especificamente o descompasso de
+`ownership.apiGuid` — a metadata registra um API Object que não está na KB, ou outro — e emite
+uma colisão com causa e a instrução de qual File apagar, com os dois GUIDs ao lado. Os demais
+bloqueios da etapa continuam como estavam: em integridade B067 divergente ou Business Component
+fora do contrato, a metadata descreve o objeto certo, e apagá-la destruiria o baseline por um
+problema que é de outro lugar.
+
+**Efeito colateral do teste:** a KB ficou com um API Object novo (`69407f89-…`) e a metadata
+antiga apontando para o GUID morto (`af422c2e-…`). O estado a corrigir é o mesmo, e o caminho
+também — apagar a metadata e reaplicar —, agora com a ferramenta dizendo isso.
+
 O que **não** mudou, de propósito: a recusa do `B115` sobre metadata completa. Ela está certa
 pelo motivo que o próprio código explica — o fingerprint B067 cobre o conteúdo inteiro, e
 corrigir só o `apiGuid` trocaria um bloqueio por outro.

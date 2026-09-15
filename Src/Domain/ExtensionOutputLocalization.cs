@@ -40,6 +40,21 @@ internal static class ExtensionOutputLocalization
             " y vuelva a aplicar por el Wizard, que reencuentra SDTs y Procedures — paginación, ordenación y campos obligatorios vuelven a los valores predeterminados de las preferencias; para descartar lo que quedó, borre los objetos listados arriba por el KB Explorer.",
             " and reapply through the Wizard, which rediscovers SDTs and Procedures — pagination, ordering, and required fields fall back to the preference defaults; to discard what is left, delete the objects listed above through the KB Explorer."),
         new("Gravação de metadata B060 bloqueada: o File '", "Grabación de metadatos B060 bloqueada: el File '", "B060 metadata write blocked: the File '"),
+        // A mesma orientação, no ponto em que o Wizard desliga a etapa de metadata — antes de
+        // qualquer gravação, que é onde ela é realmente lida.
+        new(
+            "a metadata registra um API Object que não está mais na KB. Para regerar a API a partir do que restou, apague o File '",
+            "los metadatos registran un API Object que ya no está en la KB. Para regenerar la API a partir de lo que quedó, borre el File '",
+            "the metadata records an API Object that is no longer in the KB. To regenerate the API from what is left, delete the File '"),
+        new(
+            "a metadata registra um API Object diferente do que está na KB com esse nome. Para regerar a API a partir do que restou, apague o File '",
+            "los metadatos registran un API Object distinto del que está en la KB con ese nombre. Para regenerar la API a partir de lo que quedó, borre el File '",
+            "the metadata records an API Object different from the one in the KB with that name. To regenerate the API from what is left, delete the File '"),
+        new(
+            "' e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada.",
+            "' y ejecute el Wizard de nuevo: los SDTs y los Procedures existentes se reencuentran, y el API Object y los metadatos se recrean. Paginación, ordenación y campos obligatorios vuelven a los valores predeterminados de las preferencias, porque solo existían en los metadatos borrados.",
+            "' and run the Wizard again: existing SDTs and Procedures are rediscovered, and the API Object and the metadata are recreated. Pagination, ordering, and required fields fall back to the preference defaults, because they only existed in the deleted metadata."),
+        new("Causa='", "Causa='", "Cause='"),
         new(" de metadata", " de metadatos", " metadata"),
         new("API gerada com avisos.", "API generada con advertencias.", "API generated with warnings."),
         new("Relatório final:", "Informe final:", "Final report:"),

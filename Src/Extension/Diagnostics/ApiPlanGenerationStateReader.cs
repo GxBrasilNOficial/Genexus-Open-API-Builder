@@ -282,6 +282,31 @@ internal static class ApiPlanGenerationStateReader
         if (matches.Count == 1 &&
             ApiPlanOwnedObjectDescription.IsOwnedMetadataFile(matches[0].Description, apiPlan.MetadataFileName, apiPlan.TransactionName))
         {
+            // Um desses bloqueios tem saída conhecida e merece dizê-la: a metadata registra um
+            // API Object que não é o que está na KB — porque o antigo foi apagado ou trocado
+            // fora da ferramenta. Sem esta causa, a etapa aparecia como «1 colisão detectada» e
+            // ninguém tinha como saber o que fazer. Medido na IDE em 2026-09-14: o Wizard
+            // desliga a etapa de metadata aqui, antes de qualquer gravação, então a orientação
+            // que vive no writer nunca chegava a ser lida.
+            if (TryDescribeMetadataApiGuidMismatch(index, matches[0], apiPlan, out var reason, out var storedApiGuid, out var currentApiGuid))
+            {
+                return new ApiPlanGenerationInspection(
+                    1,
+                    0,
+                    0,
+                    1,
+                    new[]
+                    {
+                        ToCollision(
+                            matches[0],
+                            "File",
+                            folderApplicable: false,
+                            diagnosticReason: reason,
+                            apiObjectGuid: currentApiGuid,
+                            metadataApiGuid: storedApiGuid),
+                    });
+            }
+
             return new ApiPlanGenerationInspection(1, 0, 0, 1);
         }
 
@@ -379,6 +404,62 @@ internal static class ApiPlanGenerationStateReader
         }
 
         return ApiPlanMetadataFileWriter.HasCompatibleB067Integrity(metadata, index, apiPlan, apiObject);
+    }
+
+    /// <summary>
+    /// Reconhece o descompasso que tem saída: a metadata própria registra um `apiGuid` que não
+    /// é o do API Object presente na KB — ou não há API Object nenhum.
+    ///
+    /// Os demais bloqueios desta etapa — integridade B067 divergente, Business Component fora
+    /// do contrato — não entram aqui de propósito: neles a metadata descreve o objeto certo, e
+    /// apagá-la destruiria o baseline por um problema que é de outro lugar.
+    /// </summary>
+    private static bool TryDescribeMetadataApiGuidMismatch(
+        ApiPlanKbObjectNameIndex index,
+        WikiFileKBObject file,
+        ApiPlan apiPlan,
+        out string reason,
+        out string storedApiGuid,
+        out string currentApiGuid)
+    {
+        reason = string.Empty;
+        storedApiGuid = string.Empty;
+        currentApiGuid = string.Empty;
+
+        var bytes = file.BlobPart?.Data?.GetBytes();
+        if (bytes is null || bytes.Length == 0)
+        {
+            return false;
+        }
+
+        JObject metadata;
+        try
+        {
+            metadata = ApiPlanMetadataIntegrity.ParseMetadataBytes(bytes);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+
+        var stored = metadata.SelectToken("ownership.apiGuid")?.Value<string>();
+        if (string.IsNullOrWhiteSpace(stored))
+        {
+            return false;
+        }
+
+        var apiMatches = index.FindApis(apiPlan.ApiName);
+        if (apiMatches.Count == 1 && string.Equals(apiMatches[0].Guid.ToString(), stored, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        storedApiGuid = stored!;
+        currentApiGuid = apiMatches.Count == 1 ? apiMatches[0].Guid.ToString() : string.Empty;
+        reason = apiMatches.Count == 0
+            ? $"a metadata registra um API Object que não está mais na KB. Para regerar a API a partir do que restou, apague o File '{apiPlan.MetadataFileName}' e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada."
+            : $"a metadata registra um API Object diferente do que está na KB com esse nome. Para regerar a API a partir do que restou, apague o File '{apiPlan.MetadataFileName}' e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada.";
+        return true;
     }
 
     private static bool HasString(JToken? token, string expectedValue)
