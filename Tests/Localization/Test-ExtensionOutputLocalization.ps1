@@ -576,10 +576,27 @@ $recoveryHeader = "Operação Remove sobre 'Teste': estado Partial/RemovalPartia
 $recoveryHeaderEnglish = $translate.Invoke($null, [object[]] @($recoveryHeader, $english))
 Assert-True ($recoveryHeaderEnglish -ceq "Operation Remove over 'Teste': state Partial/RemovalPartial, envelope Active, durability Confirmed.") 'Inglês deve traduzir o cabeçalho do relatório e preservar nome e enums.'
 
-$abort = 'Operação abortada pelo usuário. O objeto em curso foi concluído; a KB pode ter ficado inconsistente. Use Remover / Wizard / Sync para reparar.'
+$abort = "Operação abortada pelo usuário. O objeto em curso foi concluído; a KB pode ter ficado inconsistente. Use o comando 'Recuperar operação interrompida' para ver o que ficou registrado e escolher a saída."
 $abortEnglish = $translate.Invoke($null, [object[]] @($abort, $english))
 Assert-True ($abortEnglish.Contains('Operation aborted by the user.')) 'Inglês deve traduzir o aborto pelo usuário.'
+Assert-True ($abortEnglish.Contains("Use the 'Recover interrupted operation' command")) 'O aborto deve apontar o comando de recuperação, no nome que o menu usa em inglês.'
 Assert-True (-not $abortEnglish.Contains('abortada')) 'Inglês não deve deixar o aborto pela metade: `Operação ` sozinho o recortaria.'
+
+# B111/F3 P8: o aviso de remoção parcial carrega a contagem no meio, então entra partido —
+# prefixo e sufixo. Sem as duas metades, ele sai meio em cada idioma.
+$partial = "Remoção parcial: 11 objeto(s) já foram excluídos e estão listados como removidos. A API ficou incompleta; use o comando 'Recuperar operação interrompida' para retomar a fila no mesmo registro. Repetir a remoção do zero bloqueia, porque os objetos já apagados não estão mais na KB."
+$partialEnglish = $translate.Invoke($null, [object[]] @($partial, $english))
+Assert-True ($partialEnglish -ceq "Partial removal: 11 object(s) were already deleted and are listed as removed. The API was left incomplete; use the 'Recover interrupted operation' command to resume the queue in the same record. Starting the removal over blocks, because the objects already deleted are no longer in the KB.") "Inglês deve traduzir o aviso de remoção parcial por inteiro e preservar a contagem. Obtido='$partialEnglish'"
+$partialSpanish = $translate.Invoke($null, [object[]] @($partial, $spanish))
+Assert-True ($partialSpanish.Contains('Eliminación parcial: 11 objeto(s)')) 'Espanhol deve traduzir o prefixo do aviso de remoção parcial e preservar a contagem.'
+Assert-True (-not $partialSpanish.Contains('Repetir a remoção')) 'Espanhol não deve deixar o aviso de remoção parcial pela metade.'
+
+# O relatório final da recuperação: o verbo próprio, e o título de interrupção.
+$recovered = 'Operação recuperada com sucesso.'
+Assert-True (($translate.Invoke($null, [object[]] @($recovered, $english))) -ceq 'Operation recovered successfully.') 'Inglês deve traduzir o título da recuperação bem-sucedida.'
+Assert-True (($translate.Invoke($null, [object[]] @($recovered, $spanish))) -ceq 'Operación recuperada con éxito.') 'Espanhol deve traduzir o título da recuperação bem-sucedida.'
+$recoveryInterrupted = 'Recuperação interrompida.'
+Assert-True (($translate.Invoke($null, [object[]] @($recoveryInterrupted, $english))) -ceq 'Recovery interrupted.') 'Inglês deve traduzir o título da recuperação interrompida.'
 
 $noJournal = 'A KB não tem diário de operação: nenhuma operação desta ferramenta ficou pendente aqui.'
 Assert-True (($translate.Invoke($null, [object[]] @($noJournal, $english))).Contains('The KB has no operation journal:')) 'Inglês deve traduzir a KB sem diário.'

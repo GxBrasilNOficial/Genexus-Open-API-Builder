@@ -100,7 +100,11 @@ Assert-True ($deletedDecl -lt $tryIndex) 'A lista deve ser declarada fora do try
 
 $addDeletedCount = ([regex]::Matches($package, 'AddDeletedItems\(deletedBeforeFailure\.ToArray\(\)\)')).Count
 Assert-True ($addDeletedCount -eq 2) "O relatório deve listar os removidos nos dois caminhos de interrupção — abort e falha; encontrados $addDeletedCount."
-Assert-True ($package -match 'Remocao parcial:') 'Uma remoção interrompida deve avisar que a API ficou incompleta.'
+Assert-True ($package -match 'Remoção parcial: ') 'Uma remoção interrompida deve avisar que a API ficou incompleta.'
+# O aviso precisa apontar a saída que existe: repetir a remoção do zero bloqueia em
+# TargetAbsentBeforeDelete, e quem retoma a fila no mesmo registro é o comando de recuperação.
+$partialWarnings = ([regex]::Matches($package, "Recuperar operação interrompida' para retomar a fila no mesmo registro")).Count
+Assert-True ($partialWarnings -eq 2) "Os dois avisos de remoção parcial devem indicar a recuperação; encontrados $partialWarnings."
 
 # --- 6. O diário fecha com o estado real da fila ----------------------------------------------
 # Terminar em `Removed` quando a fila parou no meio seria pior que não ter diário nenhum.

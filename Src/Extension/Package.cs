@@ -1435,7 +1435,7 @@ public sealed class Package : AbstractPackageUI
                     abortReport.AddWarning(abortEx.Message);
                     if (deletedBeforeFailure.Count > 0)
                     {
-                        abortReport.AddWarning($"Remocao parcial: {deletedBeforeFailure.Count} objeto(s) ja foram excluidos e estao listados como removidos. A API ficou incompleta; reaplique pelo Wizard ou repita a remocao.");
+                        abortReport.AddWarning($"Remoção parcial: {deletedBeforeFailure.Count} objeto(s) já foram excluídos e estão listados como removidos. A API ficou incompleta; use o comando 'Recuperar operação interrompida' para retomar a fila no mesmo registro. Repetir a remoção do zero bloqueia, porque os objetos já apagados não estão mais na KB.");
                     }
 
                     abortReport.AddBlocked("Remover", transaction.Name, "Abortado [B082]");
@@ -1471,7 +1471,7 @@ public sealed class Package : AbstractPackageUI
             report.AddDeletedItems(deletedBeforeFailure.ToArray());
             if (deletedBeforeFailure.Count > 0)
             {
-                report.AddWarning($"Remocao parcial: {deletedBeforeFailure.Count} objeto(s) ja foram excluidos e estao listados como removidos. A API ficou incompleta; reaplique pelo Wizard ou repita a remocao.");
+                report.AddWarning($"Remoção parcial: {deletedBeforeFailure.Count} objeto(s) já foram excluídos e estão listados como removidos. A API ficou incompleta; use o comando 'Recuperar operação interrompida' para retomar a fila no mesmo registro. Repetir a remoção do zero bloqueia, porque os objetos já apagados não estão mais na KB.");
             }
 
             report.AddBlocked("Remover", transaction.Name, errorDetail);

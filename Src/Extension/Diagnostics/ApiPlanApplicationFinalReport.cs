@@ -646,6 +646,15 @@ public sealed class ApiPlanApplicationFinalReportCollector
             return "API sincronizada";
         }
 
+        // B111/F3 P8: a recuperação não gera nada — ela retoma, reconcilia, abandona ou
+        // encerra o registro. Sem este caso, o default anunciava «API gerada com sucesso.»
+        // logo depois de uma remoção retomada, que é o oposto do que aconteceu.
+        if (string.Equals(Operation, "Recuperar", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(Operation, "Recover", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Operação recuperada";
+        }
+
         return "API gerada";
     }
 
@@ -661,6 +670,12 @@ public sealed class ApiPlanApplicationFinalReportCollector
             || string.Equals(Operation, "Sync", StringComparison.OrdinalIgnoreCase))
         {
             return "Sincronizacao interrompida.";
+        }
+
+        if (string.Equals(Operation, "Recuperar", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(Operation, "Recover", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Recuperação interrompida.";
         }
 
         return "Geracao interrompida.";

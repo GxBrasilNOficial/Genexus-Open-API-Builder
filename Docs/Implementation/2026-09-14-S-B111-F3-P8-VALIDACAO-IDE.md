@@ -1,6 +1,7 @@
 # S-B111 · F3 — P8: validação na IDE
 
-**Data:** 2026-09-14. **Sprint:** `S-B111`. **Fase:** F3, etapa P8.
+**Data:** 2026-09-14; bateria continuada em 2026-09-15 (cenário 7, seção 11).
+**Sprint:** `S-B111`. **Fase:** F3, etapa P8.
 **Plano governante:** [`2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md`](2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md), seção 9.
 **Implementação validada aqui:** [`2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`](2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md).
 
@@ -43,7 +44,8 @@ cenário passou é posterior à execução dele.
 | 5 | **anterior** a `8283467` | a janela de progresso viva atrás do diálogo foi **descoberta neste cenário** (7.1); a DLL não podia ter a correção |
 | 6, primeira passagem | **anterior** a `42cdf0e` | o texto falso do envelope sem recibo foi **produzido aqui** (8.1) |
 | 6, confirmação | posterior a `42cdf0e` | 8.1 registra o diálogo com o texto novo, «no mesmo envelope» |
-| 7, 8, 9 | **a instalar** | pendentes; instalar a build corrente antes de começar |
+| 7 | `b788cf4` | build Release instalada em 2026-09-15, antes da retomada da bateria; o manifesto não mudou desde `19139b7`, então bastou trocar a DLL |
+| 8, 9 | **a instalar** | pendentes; exigem a build com as duas correções de texto saídas do cenário 7 (seção 11.2) |
 
 **Reexercício devido — e o que não é.** Entre o cenário 5 e hoje entraram, além de texto,
 diagnóstico e localização, **um ramo de decisão no rehydrator**: `42cdf0e` acrescentou
@@ -732,7 +734,7 @@ coisa e é o que o orçamento de 4.4 governa.
 | 4 | Devolver a KB ao normal | **passou** — seção 6 |
 | 5 | Abortar um Apply no meio; oferta proativa; recuperação | **passou** — seção 7 |
 | 6 | Envelope `Prepared` e abandono | **reformulado** — não é alcançável pela interface; ver seção 8 |
-| 7 | Interromper uma remoção no meio e retomar a fila — contra os critérios 9 a 12 da seção 10 do plano | não iniciado |
+| 7 | Interromper uma remoção no meio e retomar a fila — contra os critérios 9 a 12 da seção 10 do plano | **passou** — seção 11 |
 | 8 | Remoção de API legado, com metadata válida e com metadata insuficiente | não iniciado |
 | 9 | Acréscimo de tempo do diário na KB grande — **duas** medições: **9a** Apply (medida na P2, a refazer com a DLL corrente) e **9b** remoção retomável, contra a tabela derivada de 4.4 | 9a a refazer; 9b não iniciada |
 
@@ -893,3 +895,79 @@ IDE e ler o que apareceu.
 O que **não** mudou, de propósito: a recusa do `B115` sobre metadata completa. Ela está certa
 pelo motivo que o próprio código explica — o fingerprint B067 cobre o conteúdo inteiro, e
 corrigir só o `apiGuid` trocaria um bloqueio por outro.
+
+## 11. Cenário 7 — interromper uma remoção e retomar a fila
+
+**Passou**, em 2026-09-15, com a DLL do commit `b788cf4`. É o único caminho que exercita
+`ContinueRemovePass`, e nenhuma passada de retomada tinha sido vista em campo até aqui.
+
+KB `wsEducacaoSpTeste`, Transaction `Teste`, os mesmos 25 objetos próprios da seção 1. O aborto é
+testado **antes de cada alvo** da fila (`ApiPlanGeneratedApiRemover.Remove`), então o clique em
+Abortar durante a remoção interrompe entre dois `Delete()`, que é exatamente a condição pedida.
+
+### 11.1 As duas metades da execução
+
+| Medida | Remoção abortada | Retomada pela recuperação |
+|---|---|---|
+| Recibos | 11 — API Object, as 5 Procedures e 5 SDTs, na ordem canônica da fila | 14 — os 13 SDTs restantes e o File de metadata |
+| Estado terminal | `Partial`/`RemovalPartial`, `blockReason=UserAborted` | `Removed`/`Removed` |
+| Inventário | 30 | 30, o mesmo |
+| Checkpoints / custo | 3 / 258 ms | 3 / 73 ms |
+| Relatório | `Resultado='Interrupted'`, `Removidos=11`, `Bloqueados=1` | `Resultado='Success'`, `Removidos=14`, `Bloqueados=0`, 2,2 s |
+
+O envelope: `OperationId='9f55fc57-e601-467f-8f74-25bcdbb6a3aa'`,
+`ApplicationId='de24d342-7c2d-4024-90fd-c6e4c3e4054c'`, `FileId=88`, `Durability=Confirmed` nos
+dois momentos.
+
+**Os quatro critérios da retomada (seção 10 do plano, itens 9 a 12), verificados na Output:**
+
+| # | Critério | Como se comprovou |
+|---|---|---|
+| 9 | mesmo `operationId` e `applicationId`; não abre envelope novo | os dois GUIDs acima são idênticos antes e depois; o envelope reabriu como `Active` no mesmo `FileId=88` |
+| 10 | nenhum alvo fora do inventário original | `Inventário=30` constante nos três checkpoints da retomada; os 14 removidos são exatamente os `Delete` que restavam |
+| 11 | alvo já apagado não conta como falha nem dispara `TargetAbsentBeforeDelete` | os 11 `Absent` foram lidos, publicados no diagnóstico e **não** enfileirados: `Passadas=1/14`, `Pendentes=0`, `BlockReason=<nenhum>` |
+| 12 | terminal `Removed`, não um segundo `Partial` | `Removed/Removed`, com `Outcome=Removed` na nota de encerramento da fila |
+
+Três coisas que a execução mostrou sem terem sido pedidas:
+
+- **`P=1`.** Uma passada bastou para os 14 alvos, contra um orçamento de `max(1, 14)`. A pergunta
+  que a seção 4.4 deixou aberta — se `P` cresce com dependências — teve, nesta KB e com quatro
+  níveis de subníveis, a resposta mais barata possível. Não generaliza para a KB grande, que é o
+  cenário 9;
+- **o diário custou ~24 ms por gravação** na retomada, bem abaixo do teto de 60 ms declarado no
+  item 7 da seção 9. É medição de KB pequena e não substitui o cenário 9, que mede na grande;
+- **o diálogo de recuperação diz a verdade sobre o que vai fazer**: «14 alvos previstos continuam
+  na KB» — 13 SDTs mais a metadata, com o Folder de fora por ser `Preserve` —, e lista cada item
+  com o previsto ao lado do observado. Os 3 SDTs compartilhados, o Folder `TesteOpenApi` e a
+  Transaction aparecem como `Preserve; Present`, fora da fila destrutiva.
+
+Ao fim, o Folder `TesteOpenApi` ficou na KB, vazio: ele é reutilizado (`FolderWasCreated=False`) e
+o contrato manda preservá-lo.
+
+### 11.2 Dois defeitos de texto que o cenário produziu
+
+Nenhum dos dois invalida o cenário — o contrato se cumpriu inteiro —, mas os dois estão no
+caminho que acabou de ser percorrido, e o segundo empurra para a ação errada.
+
+| Onde | O que dizia | O que passou a dizer |
+|---|---|---|
+| Título do relatório final da recuperação | «API gerada com sucesso.» logo depois de uma remoção retomada | «Operação recuperada com sucesso.» |
+| Aviso do aborto (`ApiPlanBusyProgress`) e aviso de remoção parcial (`Package.cs`, os dois caminhos) | «Use Remover / Wizard / Sync para reparar» e «reaplique pelo Wizard ou repita a remoção» | o comando `Recuperar operação interrompida`, dizendo que retomar usa o mesmo registro e que **repetir a remoção do zero bloqueia** |
+
+A causa do primeiro é localizada: `ApiPlanApplicationFinalReport.ResolveVerb` conhecia os verbos
+de `Remover` e `Sincronizar` e caía no default «API gerada» para qualquer outro — `Recuperar` não
+existia quando aquele método foi escrito. `ResolveInterruptedHeadline` tinha o mesmo buraco, e
+anunciaria «Geracao interrompida.» se a própria retomada fosse abortada.
+
+O segundo é uma orientação que **envelheceu com o contrato**: «repita a remoção» era verdade
+enquanto a remoção era idempotente por omissão, e deixou de ser na P4 — hoje a segunda remoção
+bloqueia em `TargetAbsentBeforeDelete` (seção 4.3 do plano). O texto mandava fazer exatamente o
+que o contrato novo recusa.
+
+De passagem, o aviso de remoção parcial estava escrito em ASCII sem acento e **não tinha entrada
+no catálogo**: saía em português em qualquer idioma. É a mesma classe de resíduo que a segunda
+sonda da seção 8.2.5 encontrou, e a reescrita o traz para o catálogo trilíngue junto com o resto.
+
+Asserções novas em `tests.extensionOutputLocalization` (aviso partido em prefixo e sufixo, para a
+contagem no meio; título da recuperação nos três idiomas) e em
+`tests.generatedApiRemovalResilience` (os dois avisos de remoção parcial apontam a recuperação).

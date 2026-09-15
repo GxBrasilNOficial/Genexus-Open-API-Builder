@@ -37,7 +37,7 @@ internal sealed class ApiPlanBusyProgressSession
 
         WasAborted = true;
         throw new ApiPlanBusyAbortedException(
-            "Operação abortada pelo usuário. O objeto em curso foi concluído; a KB pode ter ficado inconsistente. Use Remover / Wizard / Sync para reparar.");
+            "Operação abortada pelo usuário. O objeto em curso foi concluído; a KB pode ter ficado inconsistente. Use o comando 'Recuperar operação interrompida' para ver o que ficou registrado e escolher a saída.");
     }
 
     public void Report(string stage, int current, int total, string itemName, long elapsedMs = -1)

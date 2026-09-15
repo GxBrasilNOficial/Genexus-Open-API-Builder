@@ -918,10 +918,31 @@ internal static class ExtensionOutputLocalization
             "O alvo não foi reencontrado após Delete.",
             "El objetivo no fue reencontrado después del Delete.",
             "The target was not found again after Delete."),
+        // B111/F3 P8: o aborto e o aviso de remoção parcial apontavam para Remover / Wizard /
+        // Sync, que deixaram de ser a saída quando o diário passou a bloquear a reentrada. A
+        // saída é o comando de recuperação — e, no caso da remoção, repetir do zero bloqueia
+        // em `TargetAbsentBeforeDelete`, que é o contrato da seção 4.3.
         new(
-            "Operação abortada pelo usuário. O objeto em curso foi concluído; a KB pode ter ficado inconsistente. Use Remover / Wizard / Sync para reparar.",
-            "Operación abortada por el usuario. El objeto en curso fue concluido; la KB puede haber quedado inconsistente. Use Eliminar / Wizard / Sync para reparar.",
-            "Operation aborted by the user. The object in progress was completed; the KB may have been left inconsistent. Use Remove / Wizard / Sync to repair."),
+            "Operação abortada pelo usuário. O objeto em curso foi concluído; a KB pode ter ficado inconsistente. Use o comando 'Recuperar operação interrompida' para ver o que ficou registrado e escolher a saída.",
+            "Operación abortada por el usuario. El objeto en curso fue concluido; la KB puede haber quedado inconsistente. Use el comando 'Recuperar operación interrumpida' para ver lo que quedó registrado y elegir la salida.",
+            "Operation aborted by the user. The object in progress was completed; the KB may have been left inconsistent. Use the 'Recover interrupted operation' command to see what was recorded and choose how to proceed."),
+        new(
+            " objeto(s) já foram excluídos e estão listados como removidos. A API ficou incompleta; use o comando 'Recuperar operação interrompida' para retomar a fila no mesmo registro. Repetir a remoção do zero bloqueia, porque os objetos já apagados não estão mais na KB.",
+            " objeto(s) ya fueron eliminados y están listados como eliminados. La API quedó incompleta; use el comando 'Recuperar operación interrumpida' para retomar la cola en el mismo registro. Repetir la eliminación desde cero bloquea, porque los objetos ya borrados no están más en la KB.",
+            " object(s) were already deleted and are listed as removed. The API was left incomplete; use the 'Recover interrupted operation' command to resume the queue in the same record. Starting the removal over blocks, because the objects already deleted are no longer in the KB."),
+        new(
+            "Remoção parcial: ",
+            "Eliminación parcial: ",
+            "Partial removal: "),
+        // O relatório final da recuperação: sem estes dois, o verbo caía no default «API gerada».
+        new(
+            "Operação recuperada",
+            "Operación recuperada",
+            "Operation recovered"),
+        new(
+            "Recuperação interrompida.",
+            "Recuperación interrumpida.",
+            "Recovery interrupted."),
         new(
             "Operação ",
             "Operación ",
