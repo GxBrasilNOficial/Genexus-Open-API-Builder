@@ -33,7 +33,7 @@ Escopo: releitura de `levels` no reencontro do Wizard, tolerância de leitura em
 - `tests.generatedApiRemovalPlan`: PASS (flat, V2+`own`, dinâmico sem `own`).
 - `tests.wizardLifecycle`: PASS.
 - `tests.wizardPreferences`: PASS (JSON legado sem `schemaVersion`).
-- `tests.wizardContract` (`Test-PrototypeWizardExistingApiFilters.ps1`): PASS.
+- `tests.wizardContractExistingApiFilters` (`Test-PrototypeWizardExistingApiFilters.ps1`): PASS.
 - `tests.metadataHierarchical`: PASS.
 
 ## Validação IDE — Wizard apply (2026-08-28)
