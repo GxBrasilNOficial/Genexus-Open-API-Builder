@@ -143,9 +143,11 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**F3 — etapa P8: validação integrada na IDE.** As etapas P4 a P7 foram **implementadas
-offline em 2026-09-14** e nenhuma delas foi exercida na IDE. O que falta é a seção 9 do plano
-da F3: os nove cenários, com a DLL instalada.
+**F3 — etapa P8: validação integrada na IDE, em andamento.** As etapas P4 a P7 foram
+implementadas offline em 2026-09-14 e a validação começou na mesma data: **quatro dos nove
+cenários da seção 9 passaram**, e cinco continuam abertos — aborto de Apply com oferta proativa
+e encerramento, envelope `Prepared` abandonado, retomada de remoção interrompida, remoção de
+API legado e medição do acréscimo na KB grande.
 
 O que entrou nesta rodada, em uma linha cada:
 
@@ -184,12 +186,27 @@ Registro: `Docs/Implementation/2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.
 para a mudança de comportamento, 3.2 para o recorte e 7 para os riscos abertos.
 
 **A P8 começou em 2026-09-14**, na `Teste` da `wsEducacaoSpTeste`, e é registrada cenário a
-cenário em `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`. Passaram: a remoção
-completa pela fila nova (`Removed`, `Passadas=1/25`, `Checkpoints=4`, diário custando 216 ms em
-5,1 s) e o alvo previsto ausente antes do `Delete()` (`Partial` com `TargetAbsentBeforeDelete`,
-`Removidos=0` e 25 pendentes, sem encostar em nenhum objeto). O `applicationId` reutilizado do
-ownership V3 no `Remove` confirmou em campo a matriz de identidade da seção 4.1.1. Os demais
-cenários estão na tabela 5 daquele documento; cenário sem registro lá é cenário não exercido.
+cenário em `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`. **Quatro cenários
+passaram:** a remoção completa pela fila nova (`Removed`, `Passadas=1/25`, `Checkpoints=4`,
+diário custando 216 ms em 5,1 s); o alvo previsto ausente antes do `Delete()` (`Partial` com
+`TargetAbsentBeforeDelete`, `Removidos=0` e 25 pendentes, sem encostar em nenhum objeto); a
+recuperação encerrando o registro daquele envelope (`Discard`, mesmo `operationId` desde o
+cenário anterior, `Completed/Discarded`, nada apagado); e a devolução da KB ao normal pelo
+Wizard, com `PlannedContractHash` idêntico ao da geração original. O `applicationId`
+reutilizado do ownership V3 no `Remove` confirmou em campo a matriz de identidade da seção
+4.1.1.
+
+**A bateria produziu seis correções**, todas registradas naquele documento: o diálogo próprio da
+recuperação, no lugar de um `MessageBox` que não aceita largura; **três rodadas** de orientação
+nas mensagens de bloqueio por `apiGuid` divergente e `MetadataMissing` — as duas primeiras
+erraram o ponto por presumir o caminho em vez de medi-lo, e a terceira mandava meio caminho,
+porque o API Object e a metadata precisam sair juntos; a limpeza do bloco técnico de
+diagnóstico, de 33 linhas fixas para as que foram de fato medidas; e o módulo do File do
+diário, que nascia sem módulo nenhum e foi apontado por uma extensão de terceiros.
+
+Faltam cinco cenários: aborto de Apply com oferta proativa e encerramento, envelope `Prepared`
+abandonado, retomada de remoção interrompida, remoção de API legado e medição do acréscimo na
+KB grande. Cenário sem registro naquele documento é cenário não exercido.
 
 Verificação offline desta rodada: build Release com 0 avisos e 0 erros, checker de comandos com
 13 comandos e o orquestrador mecânico com 64 checks `passed` e 1 `skipped` (`git.statusPre`,

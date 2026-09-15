@@ -406,9 +406,21 @@ continuação de um `Apply` ou `Sync` interrompido não foi entregue, porque o e
 identidade, hash de contrato e flags, não o contrato. Para esses envelopes, a recuperação
 oferece **encerrar o registro** — estágio terminal `Discarded`, sem apagar objeto nenhum —,
 que substitui o contorno de apagar o File do diário à mão. Gates novos `tests.removalQueue` e
-`tests.operationJournalRecovery`. **Nada foi exercido na IDE**: a etapa seguinte é a P8, a
-validação integrada da seção 9 do plano. Evidência:
+`tests.operationJournalRecovery`. Evidência:
 `Docs/Implementation/2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`.
+
+**Etapa P8 da S-B111 F3 — 2026-09-14, em andamento.** Quatro cenários passaram na `Teste` da
+`wsEducacaoSpTeste`: remoção completa pela fila nova (`Removed`, uma passada, quatro
+checkpoints), alvo previsto ausente antes do `Delete()` (`Partial` com
+`TargetAbsentBeforeDelete`, nenhum objeto tocado), recuperação encerrando o registro de uma
+remoção interrompida (`Discard`, mesmo `operationId`, nada apagado) e devolução da KB ao normal
+pelo Wizard, com o `PlannedContractHash` idêntico ao da geração original. A bateria produziu
+seis correções — diálogo próprio da recuperação, três rodadas de orientação nas mensagens de
+bloqueio, limpeza do bloco técnico de diagnóstico e o módulo do File do diário, que nascia sem
+módulo e foi apontado por uma extensão de terceiros. Restam os cenários de aborto de Apply,
+envelope `Prepared`, retomada de remoção interrompida, remoção de API legado e medição na KB
+grande. Evidência:
+`Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`.
 
 **B106 — concluído em 2026-08-24.** O roteiro foi atualizado para a Alpha `0.1.0-alpha.4`, passou a registrar o checkbox de repasse das mensagens do Business Component e aponta para as notas da Alpha 4. A captura de Segurança foi explicitamente marcada como referência visual anterior; uma nova captura da UI permanece uma melhoria visual separada, sem bloquear a documentação textual.
 

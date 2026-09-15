@@ -8,7 +8,8 @@
 Esta rodada entrega as quatro etapas que restavam antes da validação na IDE: a remoção com
 intenção registrada e fila por passadas (P4), os serviços de recuperação (P5), o comando
 explícito e a preferência (P6), e a localização trilíngue com os gates novos (P7). **Nada foi
-validado na IDE**: a P8 é a validação integrada, e ela pertence a quem instala a DLL.
+validado na IDE nesta rodada**: a P8 é a validação integrada, e ela pertence a quem instala a
+DLL — ver a remissão da seção 6.
 
 ## 1. Estado das etapas
 
@@ -22,7 +23,7 @@ validado na IDE**: a P8 é a validação integrada, e ela pertence a quem instal
 | P5 | reader, rehydrator, executor e relatório de recuperação | **entregue offline nesta rodada, com o recorte da seção 4** |
 | P6 | comando explícito e `ShowRecoveryOptionProactively` | **entregue offline nesta rodada** |
 | P7 | localização trilíngue e gates restantes | **entregue offline nesta rodada** |
-| P8 | validação na IDE (seção 9 do plano) | não iniciada — depende de DLL instalada |
+| P8 | validação na IDE (seção 9 do plano) | **em andamento** — quatro cenários passaram em 2026-09-14 |
 
 ## 2. P4 — a remoção passa a ter intenção, fila e orçamento
 
@@ -238,9 +239,15 @@ Gates existentes que mudaram junto com o contrato:
 | `tests.operationJournalRecovery` (novo) | PASS |
 | `scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson` | 65 checks, 64 `passed` e 1 `skipped` (`git.statusPre`, working tree suja antes do commit) |
 
-Nada foi exercido na IDE. A primeira coisa a fazer com a DLL instalada é a seção 9 do plano da
-F3 — e o cenário 4 (remoção de API gerada por esta frente) agora exercita a fila nova, não o
-laço antigo.
+Nada foi exercido na IDE **nesta rodada**.
+
+**Remissão — 2026-09-14, mesma data:** a P8 começou logo depois e quatro cenários passaram —
+remoção completa pela fila nova, alvo previsto ausente antes do `Delete()`, recuperação
+encerrando o registro e devolução da KB ao normal. A bateria produziu seis correções, todas
+registradas em [`2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`](2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md):
+o diálogo próprio da recuperação, três rodadas de orientação nas mensagens de bloqueio, a
+limpeza do bloco técnico de diagnóstico e o módulo do File do diário. O que este documento
+descreve continua sendo o que as etapas P4 a P7 entregaram offline.
 
 ## 7. Riscos assumidos e abertos
 
