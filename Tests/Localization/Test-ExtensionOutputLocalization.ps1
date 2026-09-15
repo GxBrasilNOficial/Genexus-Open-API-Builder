@@ -263,4 +263,56 @@ $summaryEnglish = $translate.Invoke($null, [object[]] @($summaryNothing, $englis
 Assert-True ($summarySpanish.Contains('La operación Apply fue registrada e interrumpida antes de grabar cualquier objeto')) 'Espanhol deve traduzir o resumo sem gravação.'
 Assert-True ($summaryEnglish.Contains('The Apply operation was recorded and interrupted before writing any object')) 'Inglês deve traduzir o resumo sem gravação.'
 
+# B111/F3 P7, dívida fechada na P8 — o resto do que a recuperação diz. Os desfechos já estavam
+# cobertos; os bloqueios, o resumo do encerramento com recibo, o inventário e as recusas do
+# executor não estavam, e saíam em português em qualquer KB.
+$durability = 'A durabilidade do último snapshot do diário não foi confirmada. Reconcilie a operação antes de qualquer continuação: uma gravação incerta não vira certeza por repetição.'
+Assert-True (($translate.Invoke($null, [object[]] @($durability, $spanish))).Contains('una grabación incierta no se vuelve certeza por repetición')) 'Espanhol deve traduzir o bloqueio por durabilidade não confirmada.'
+Assert-True (($translate.Invoke($null, [object[]] @($durability, $english))).Contains('an uncertain write does not become certain by repetition')) 'Inglês deve traduzir o bloqueio por durabilidade não confirmada.'
+
+$outcomeUnknown = 'A última gravação terminou com resultado desconhecido. A consulta por identidade precisa ser feita e conferida por uma pessoa antes de qualquer nova gravação.'
+Assert-True (($translate.Invoke($null, [object[]] @($outcomeUnknown, $english))).Contains('The last write ended with an unknown result.')) 'Inglês deve traduzir o bloqueio por resultado desconhecido.'
+Assert-True (-not ($translate.Invoke($null, [object[]] @($outcomeUnknown, $english))).Contains('resultado desconhecido')) 'Inglês não deve manter o bloqueio em português.'
+
+# O resumo com recibo entra partido: o miolo carrega dois enums e não pode ser cadastrado.
+$discardWrittenSummary = 'A operação Apply parou em Partial/ApiObjectWritten. O diário registra identidade, contrato por hash e o que já foi confirmado — não o contrato em si —, então retomar o pipeline a partir dele seria inventar um plano. O que a ferramenta pode fazer é encerrar este registro: a Knowledge Base é liberada, nada é apagado, e o que ficou pela metade continua como está. Depois disso, as duas saídas são reaplicar pelo Wizard sobre o estado atual — o reencontro conservador cuida do que já existe — ou remover a API gerada.'
+$discardWrittenEnglish = $translate.Invoke($null, [object[]] @($discardWrittenSummary, $english))
+$discardWrittenSpanish = $translate.Invoke($null, [object[]] @($discardWrittenSummary, $spanish))
+Assert-True ($discardWrittenEnglish.Contains('The Apply operation stopped at Partial/ApiObjectWritten.')) 'Inglês deve traduzir as duas metades em volta dos enums.'
+Assert-True ($discardWrittenEnglish.Contains('or removing the generated API.')) 'Inglês deve traduzir a segunda saída do encerramento.'
+Assert-True (-not $discardWrittenEnglish.Contains('parou em')) 'Inglês não deve manter parou em.'
+Assert-True ($discardWrittenSpanish.Contains('La operación Apply se detuvo en Partial/ApiObjectWritten.')) 'Espanhol deve traduzir as duas metades em volta dos enums.'
+Assert-True (-not $discardWrittenSpanish.Contains('inventar um plano')) 'Espanhol não deve manter o resumo em português.'
+
+$absentBefore = 'A remoção parou porque um alvo previsto já não estava na KB antes da exclusão, e quem o apagou não foi esta operação: retomar a fila às cegas não é possível. 25 alvo(s) previstos ainda estão na KB, listados abaixo. Encerrar este registro libera a Knowledge Base e não apaga nada; o que estiver pela metade continua como está, para você decidir depois.'
+$absentBeforeEnglish = $translate.Invoke($null, [object[]] @($absentBefore, $english))
+Assert-True ($absentBeforeEnglish.Contains('resuming the queue blindly is not possible. 25 planned target(s) are still in the KB')) 'Inglês deve traduzir o resumo do TargetAbsentBeforeDelete em volta da contagem.'
+Assert-True (-not $absentBeforeEnglish.Contains('alvo(s)')) 'Inglês não deve manter alvo(s).'
+
+$continuePass = '3 alvo(s) previsto(s) continuam na KB, listados abaixo. A fila pode ser retomada com o mesmo inventário e o mesmo envelope.'
+Assert-True (($translate.Invoke($null, [object[]] @($continuePass, $english))).Contains('3 planned target(s) are still in the KB, listed below.')) 'Inglês deve traduzir a retomada da fila.'
+Assert-True (($translate.Invoke($null, [object[]] @($continuePass, $spanish))).Contains('La cola puede ser retomada con el mismo inventario')) 'Espanhol deve traduzir a retomada da fila.'
+
+$reconcile = 'Todos os alvos previstos estão ausentes da KB: a remoção chegou ao fim e só o registro ficou aberto. Fechar o envelope como concluído reconcilia o diário com a KB.'
+Assert-True (($translate.Invoke($null, [object[]] @($reconcile, $english))).Contains('Every planned target is absent from the KB')) 'Inglês deve traduzir a reconciliação da remoção.'
+
+$terminal = 'A operação Remove já está encerrada em Removed. Não há nada a recuperar; a KB está liberada para a próxima operação.'
+Assert-True (($translate.Invoke($null, [object[]] @($terminal, $english))).Contains('The Remove operation is already closed at Removed.')) 'Inglês deve traduzir o envelope já terminal.'
+Assert-True (($translate.Invoke($null, [object[]] @($terminal, $english))).Contains('There is nothing to recover;')) 'Inglês deve traduzir o nada a recuperar.'
+
+# O inventário do diálogo: uma linha por alvo. Os enums ficam como estão; os rótulos, não.
+$target = "Procedure procTesteList — previsto: Delete; na KB: Present"
+$targetEnglish = $translate.Invoke($null, [object[]] @($target, $english))
+$targetSpanish = $translate.Invoke($null, [object[]] @($target, $spanish))
+Assert-True ($targetEnglish -ceq 'Procedure procTesteList — planned: Delete; in the KB: Present') 'Inglês deve traduzir os rótulos do inventário e preservar os enums.'
+Assert-True ($targetSpanish -ceq 'Procedure procTesteList — previsto: Delete; en la KB: Present') 'Espanhol deve traduzir o rótulo da KB e preservar os enums.'
+
+$staleAuthorization = "A autorização é para 'Discard', e a etapa apurada agora é 'ContinueRemovePass'."
+$staleEnglish = $translate.Invoke($null, [object[]] @($staleAuthorization, $english))
+Assert-True ($staleEnglish.Contains("The authorization is for 'Discard', and the step determined now is 'ContinueRemovePass'.")) 'Inglês deve traduzir a autorização vencida em volta das etapas.'
+
+$lockBusy = 'Outra continuação desta KB está em andamento nesta sessão. A execução não prossegue como se houvesse atomicidade.'
+Assert-True (($translate.Invoke($null, [object[]] @($lockBusy, $spanish))).Contains('Otra continuación de esta KB está en curso en esta sesión.')) 'Espanhol deve traduzir a recusa por lock ocupado.'
+Assert-True (($translate.Invoke($null, [object[]] @($lockBusy, $english))).Contains('as if atomicity existed.')) 'Inglês deve traduzir a recusa por lock ocupado.'
+
 Write-Output 'PASS: ExtensionOutputLocalization'

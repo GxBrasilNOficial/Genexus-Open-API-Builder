@@ -396,6 +396,33 @@ A tradução passou a acontecer onde o texto vira tela, no comando, e as frases 
 catálogo com asserções no gate. Sem a bateria na IDE, isso só apareceria para quem usasse a
 extensão numa KB em espanhol ou inglês.
 
+#### 8.2.1 A correção de 2026-09-14 cobria só uma parte — fechada em 2026-09-15
+
+Perguntado se a dívida estava fechada, fui conferir em vez de responder de memória: **não
+estava**. O commit `256f537` cadastrou os quatro desfechos do executor, o resumo do envelope sem
+recibo e os dois rótulos de operação, e ligou `texts.Translate(...)` nos quatro pontos do
+`Package.cs` onde o `Summary` vira tela. O que ficou de fora era o resto do que a mesma tela diz:
+
+| Superfície | O que faltava |
+| --- | --- |
+| Bloqueios do rehydrator | durabilidade não confirmada, `Prepared` com recibos, resultado desconhecido, alvos ilegíveis |
+| Resumos autorizados | abandono do `Prepared`, encerramento com recibo, reconciliação da remoção, `TargetAbsentBeforeDelete`, retomada da fila, envelope já terminal |
+| Inventário do diálogo | os rótulos `— previsto:` e `; na KB:` de cada linha de alvo |
+| Recusas do executor | lock ocupado, transição inválida no estado revalidado, etapa sem execução, continuação não fornecida |
+| Autorização vencida | as seis recusas do `RecoveryAuthorization.Validate`, que viram `Summary` no caminho bloqueado |
+
+Trinta entradas novas no catálogo, em espanhol e inglês. Três delas exigiram partir a frase em
+duas metades, porque o miolo carrega enum (`A operação Apply parou em Partial/ApiObjectWritten.`)
+e um valor variável não pode ser cadastrado por substring; os enums continuam como estão, que é o
+que se cola num relato. Os rótulos do inventário só chegam traduzidos porque
+`DescribeRecoveryTargets` passou a receber `ExtensionTexts` — a lista de detalhes do diálogo não
+passava por tradução nenhuma.
+
+O gate `tests.extensionOutputLocalization` ganhou onze asserções novas, entre elas a que fecha as
+duas metades em volta do enum e a que exige o inventário traduzido com o enum preservado
+(`Procedure procTesteList — planned: Delete; in the KB: Present`). Build Release com 0 avisos e
+0 erros; orquestrador mecânico com 64 `passed` e 1 `skipped`.
+
 ## 9. Cenários restantes
 
 | # | Cenário | Estado |

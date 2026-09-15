@@ -62,8 +62,127 @@ internal static class ExtensionOutputLocalization
             " foi registrada e interrompida antes de gravar qualquer objeto: o diário não tem nenhum recibo. Encerrar este registro libera a Knowledge Base, que está como estava antes desta operação.",
             " fue registrada e interrumpida antes de grabar cualquier objeto: el diario no tiene ningún recibo. Cerrar este registro libera la Knowledge Base, que está como estaba antes de esta operación.",
             " was recorded and interrupted before writing any object: the journal has no receipts. Closing this record frees the Knowledge Base, which is as it was before this operation."),
+        // B111/F3 P7 (dívida fechada na P8): os bloqueios, resumos e recusas da recuperação.
+        // O rehydrator e o executor são SDK-simples e não conhecem idioma; sem estas entradas,
+        // tudo o que o diálogo de recuperação diz saía em português em qualquer KB. As frases
+        // que carregam enum no meio entram partidas, porque a substituição é por substring e
+        // o miolo variável não pode ser cadastrado.
+        new(
+            "A durabilidade do último snapshot do diário não foi confirmada. Reconcilie a operação antes de qualquer continuação: uma gravação incerta não vira certeza por repetição.",
+            "La durabilidad del último snapshot del diario no fue confirmada. Reconcilie la operación antes de cualquier continuación: una grabación incierta no se vuelve certeza por repetición.",
+            "The durability of the last journal snapshot was not confirmed. Reconcile the operation before any continuation: an uncertain write does not become certain by repetition."),
+        new(
+            "O envelope está Prepared, mas registra recibos de gravação. Abandoná-lo apagaria a única prova do que foi gravado; a reconciliação é humana.",
+            "El sobre está Prepared, pero registra recibos de grabación. Abandonarlo borraría la única prueba de lo que fue grabado; la reconciliación es humana.",
+            "The envelope is Prepared, but it records write receipts. Abandoning it would erase the only proof of what was written; reconciliation is human."),
+        new(
+            "A operação foi preparada e nunca gravou nada na KB. Abandoná-la explicitamente libera a KB para a próxima operação, preservando o registro da disposição.",
+            "La operación fue preparada y nunca grabó nada en la KB. Abandonarla explícitamente libera la KB para la próxima operación, preservando el registro de la disposición.",
+            "The operation was prepared and never wrote anything to the KB. Abandoning it explicitly frees the KB for the next operation, preserving the record of the decision."),
+        new(
+            "A última gravação terminou com resultado desconhecido. A consulta por identidade precisa ser feita e conferida por uma pessoa antes de qualquer nova gravação.",
+            "La última grabación terminó con resultado desconocido. La consulta por identidad debe ser hecha y verificada por una persona antes de cualquier nueva grabación.",
+            "The last write ended with an unknown result. The identity lookup must be performed and checked by a person before any new write."),
+        new(
+            " parou em ",
+            " se detuvo en ",
+            " stopped at "),
+        new(
+            ". O diário registra identidade, contrato por hash e o que já foi confirmado — não o contrato em si —, então retomar o pipeline a partir dele seria inventar um plano. O que a ferramenta pode fazer é encerrar este registro: a Knowledge Base é liberada, nada é apagado, e o que ficou pela metade continua como está. Depois disso, as duas saídas são reaplicar pelo Wizard sobre o estado atual — o reencontro conservador cuida do que já existe — ou remover a API gerada.",
+            ". El diario registra identidad, contrato por hash y lo que ya fue confirmado — no el contrato en sí —, entonces retomar el pipeline a partir de él sería inventar un plan. Lo que la herramienta puede hacer es cerrar este registro: la Knowledge Base queda liberada, nada es borrado, y lo que quedó a medias continúa como está. Después de eso, las dos salidas son volver a aplicar por el Wizard sobre el estado actual — el reencuentro conservador se ocupa de lo que ya existe — o eliminar la API generada.",
+            ". The journal records identity, the contract by hash, and what was already confirmed — not the contract itself —, so resuming the pipeline from it would mean inventing a plan. What the tool can do is close this record: the Knowledge Base is freed, nothing is deleted, and whatever was left halfway stays as it is. After that, the two ways out are reapplying through the Wizard over the current state — conservative rediscovery handles what already exists — or removing the generated API."),
+        new(
+            " alvo(s) previsto(s) não puderam ser lidos por identidade: ",
+            " objetivo(s) previsto(s) no pudieron ser leídos por identidad: ",
+            " planned target(s) could not be read by identity: "),
+        new(
+            ". Sem saber se ainda estão na KB, a fila não pode ser retomada.",
+            ". Sin saber si todavía están en la KB, la cola no puede ser retomada.",
+            ". Without knowing whether they are still in the KB, the queue cannot be resumed."),
+        new(
+            "Todos os alvos previstos estão ausentes da KB: a remoção chegou ao fim e só o registro ficou aberto. Fechar o envelope como concluído reconcilia o diário com a KB.",
+            "Todos los objetivos previstos están ausentes de la KB: la eliminación llegó al final y solo el registro quedó abierto. Cerrar el sobre como concluido reconcilia el diario con la KB.",
+            "Every planned target is absent from the KB: the removal reached its end and only the record stayed open. Closing the envelope as completed reconciles the journal with the KB."),
+        new(
+            "A remoção parou porque um alvo previsto já não estava na KB antes da exclusão, e quem o apagou não foi esta operação: retomar a fila às cegas não é possível. ",
+            "La eliminación se detuvo porque un objetivo previsto ya no estaba en la KB antes de la exclusión, y quien lo borró no fue esta operación: retomar la cola a ciegas no es posible. ",
+            "The removal stopped because a planned target was no longer in the KB before deletion, and this operation is not the one that deleted it: resuming the queue blindly is not possible. "),
+        new(
+            " alvo(s) previstos ainda estão na KB, listados abaixo. Encerrar este registro libera a Knowledge Base e não apaga nada; o que estiver pela metade continua como está, para você decidir depois.",
+            " objetivo(s) previstos todavía están en la KB, listados abajo. Cerrar este registro libera la Knowledge Base y no borra nada; lo que esté a medias continúa como está, para que usted decida después.",
+            " planned target(s) are still in the KB, listed below. Closing this record frees the Knowledge Base and deletes nothing; whatever is halfway stays as it is, for you to decide later."),
+        new(
+            " alvo(s) previsto(s) continuam na KB, listados abaixo. A fila pode ser retomada com o mesmo inventário e o mesmo envelope.",
+            " objetivo(s) previsto(s) siguen en la KB, listados abajo. La cola puede ser retomada con el mismo inventario y el mismo sobre.",
+            " planned target(s) are still in the KB, listed below. The queue can be resumed with the same inventory and the same envelope."),
+        new(
+            " já está encerrada em ",
+            " ya está cerrada en ",
+            " is already closed at "),
+        new(
+            ". Não há nada a recuperar; a KB está liberada para a próxima operação.",
+            ". No hay nada que recuperar; la KB está liberada para la próxima operación.",
+            ". There is nothing to recover; the KB is free for the next operation."),
+        new(
+            " — previsto: ",
+            " — previsto: ",
+            " — planned: "),
+        new(
+            "; na KB: ",
+            "; en la KB: ",
+            "; in the KB: "),
+        new(
+            "Não há etapa executável para este envelope.",
+            "No hay etapa ejecutable para este sobre.",
+            "There is no executable step for this envelope."),
+        new(
+            "Outra continuação desta KB está em andamento nesta sessão. A execução não prossegue como se houvesse atomicidade.",
+            "Otra continuación de esta KB está en curso en esta sesión. La ejecución no prosigue como si hubiera atomicidad.",
+            "Another continuation of this KB is in progress in this session. Execution does not proceed as if atomicity existed."),
+        new(
+            "A retomada da fila de remoção não foi fornecida por quem chamou a recuperação.",
+            "La reanudación de la cola de eliminación no fue provista por quien llamó a la recuperación.",
+            "The removal queue continuation was not supplied by the caller of the recovery."),
+        new(
+            "Etapa sem execução disponível nesta versão: ",
+            "Etapa sin ejecución disponible en esta versión: ",
+            "Step with no execution available in this version: "),
+        new(
+            "A transição autorizada não é válida no estado revalidado: ",
+            "La transición autorizada no es válida en el estado revalidado: ",
+            "The authorized transition is not valid in the revalidated state: "),
+        new(
+            "A execução exige confirmação humana explícita.",
+            "La ejecución exige confirmación humana explícita.",
+            "Execution requires explicit human confirmation."),
+        new(
+            "A autorização é para '",
+            "La autorización es para '",
+            "The authorization is for '"),
+        new(
+            "', e a etapa apurada agora é '",
+            "', y la etapa determinada ahora es '",
+            "', and the step determined now is '"),
+        new(
+            "Os identificadores da autorização não são os do envelope revalidado.",
+            "Los identificadores de la autorización no son los del sobre revalidado.",
+            "The authorization identifiers are not those of the revalidated envelope."),
+        new(
+            "O diário revalidado está em outro File.",
+            "El diario revalidado está en otro File.",
+            "The revalidated journal is in a different File."),
+        new(
+            "O envelope foi atualizado depois da leitura que produziu a autorização.",
+            "El sobre fue actualizado después de la lectura que produjo la autorización.",
+            "The envelope was updated after the read that produced the authorization."),
+        new(
+            "O hash canônico do snapshot mudou entre a leitura e a ação.",
+            "El hash canónico del snapshot cambió entre la lectura y la acción.",
+            "The canonical snapshot hash changed between the read and the action."),
         new("A operação Apply", "La operación Apply", "The Apply operation"),
         new("A operação Sync", "La operación Sync", "The Sync operation"),
+        new("A operação Remove", "La operación Remove", "The Remove operation"),
+        new("A operação Recovery", "La operación Recovery", "The Recovery operation"),
         new("Gravação de metadata B060 bloqueada: o File '", "Grabación de metadatos B060 bloqueada: el File '", "B060 metadata write blocked: the File '"),
         // A mesma orientação, no ponto em que o Wizard desliga a etapa de metadata — antes de
         // qualquer gravação, que é onde ela é realmente lida.

@@ -609,7 +609,7 @@ public sealed class Package : AbstractPackageUI
                 owner,
                 texts,
                 texts.RecoveryBlockedIntro + Environment.NewLine + Environment.NewLine + texts.Translate(operation.Summary),
-                DescribeRecoveryTargets(operation),
+                DescribeRecoveryTargets(texts, operation),
                 warning: true);
             return;
         }
@@ -631,7 +631,7 @@ public sealed class Package : AbstractPackageUI
             owner,
             texts,
             texts.Translate(operation.Summary),
-            DescribeRecoveryTargets(operation),
+            DescribeRecoveryTargets(texts, operation),
             question);
         if (!confirmed)
         {
@@ -673,7 +673,7 @@ public sealed class Package : AbstractPackageUI
                 owner,
                 texts,
                 texts.RecoveryBlockedIntro + Environment.NewLine + Environment.NewLine + texts.Translate(result.Summary),
-                DescribeRecoveryTargets(operation),
+                DescribeRecoveryTargets(texts, operation),
                 warning: true);
             return;
         }
@@ -716,8 +716,8 @@ public sealed class Package : AbstractPackageUI
     /// O inventário como o diálogo o mostra: uma linha por alvo, com o que a intenção previa e
     /// o que a KB mostra agora. É a informação que sustenta a decisão de encerrar um registro.
     /// </summary>
-    private static IReadOnlyList<string> DescribeRecoveryTargets(ApiPlanRehydratedOperation operation) =>
-        operation.Targets.Select(target => target.Describe()).ToArray();
+    private static IReadOnlyList<string> DescribeRecoveryTargets(ExtensionTexts texts, ApiPlanRehydratedOperation operation) =>
+        operation.Targets.Select(target => texts.Translate(target.Describe())).ToArray();
 
     /// <summary>
     /// Retoma a fila de uma remoção interrompida **no mesmo envelope**, com o inventário durável
