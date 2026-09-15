@@ -213,6 +213,15 @@ versão, na primeira gravação seguinte — não é preciso apagar nada.
 O aviso veio de fora e apontou um objeto nosso; sem ele, isso passaria despercebido por tempo
 indefinido, porque não quebra nada.
 
+**Verificado na IDE em 2026-09-14**, depois de um reapply de reencontro com a DLL corrigida
+(`Criados=0`, `Atualizados=28`, `Bloqueados=0`, diário `Completed/Completed`): as Properties do
+File passaram a mostrar `Module: Root Module`. O aviso do LSI ainda apareceu naquela sessão
+porque ele roda no **start** da extensão, antes da gravação que corrigiu o módulo.
+
+Para a próxima vez, a organização deixou de depender de inspeção manual: a linha de abertura do
+diário passou a publicar `Module='Root Module'` — ou `'<sem módulo>'` — ao lado de `FileId` e
+`Bytes`.
+
 ## 7. Cenários restantes
 
 | # | Cenário | Estado |
