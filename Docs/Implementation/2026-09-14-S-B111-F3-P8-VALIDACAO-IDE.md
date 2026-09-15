@@ -738,7 +738,7 @@ coisa e é o que o orçamento de 4.4 governa.
 | 6 | Envelope `Prepared` e abandono | **reformulado** — não é alcançável pela interface; ver seção 8 |
 | 7 | Interromper uma remoção no meio e retomar a fila — contra os critérios 9 a 12 da seção 10 do plano | **passou** — seção 11 |
 | 8 | Remoção de API legado, com metadata válida e com metadata insuficiente | **passou** — seção 12 |
-| 9 | Acréscimo de tempo do diário na KB grande — **duas** medições: **9a** Apply e **9b** remoção retomável, contra a tabela derivada de 4.4 | **9a passou** — seção 13; 9b não iniciada |
+| 9 | Acréscimo de tempo do diário na KB grande — **duas** medições: **9a** Apply e **9b** remoção retomável, contra a tabela derivada de 4.4 | **passou** — seções 13 (9a) e 14 (9b) |
 
 O cenário 3 dependia do envelope `Partial` deixado pelo cenário 2: **não apagar o File
 `GxOpenApiBuilder_OperationJournal` à mão** entre um e outro, sob pena de destruir a condição.
@@ -1109,3 +1109,82 @@ de um minuto e meio de máquina.
 O peso no Apply também vale registrar por outro motivo: o Apply da KB grande leva ~45 s, e o
 diário responde por menos de meio décimo desse tempo. O que domina a operação continua sendo a
 gravação dos objetos de negócio, e é lá que qualquer trabalho futuro de desempenho tem retorno.
+
+## 14. Cenário 9b — o acréscimo do diário na remoção da KB grande
+
+**Aprovado**, em 2026-09-15, na mesma sessão e na mesma `Empresa` — 50 alvos na fila (1 API
+Object, 4 Procedures, 44 SDTs e o File de metadata), 55 no inventário, 5 preservados. Nunca havia
+sido medido: o orçamento da remoção existia apenas como derivação do custo do Apply.
+
+Cada remoção consome a API, então a série exigiu intercalar Applies de criação completa: remover,
+repor, remover, repor, remover, repor.
+
+| Execução | Diário | Por gravação | Remoção | Peso | `P` |
+|---|---|---|---|---|---|
+| 1 | 141 ms | 35,3 ms | 34.625 ms | 0,41% | 1 |
+| 2 | 131 ms | 32,8 ms | 34.713 ms | 0,38% | 1 |
+| 3 | 123 ms | 30,8 ms | 35.324 ms | 0,35% | 1 |
+| **Mediana** | **131 ms** | **32,8 ms** | 34.713 ms | **0,38%** | **1** |
+
+Contra o critério do item 7 da seção 9: **32,8 ms** por gravação contra teto de 60, e **0,38%** do
+tempo total contra limiar de 1%. O orçamento derivado da seção 4.4 previa `(3 + 1) × ~45 ms ≈ 180
+ms` para `P=1`; o medido foi 131 ms de mediana — a derivação **superestima em 37%**, que é a
+direção segura para um orçamento.
+
+### 14.1 `P` não cresce com as dependências — a pergunta de 4.4, respondida
+
+A seção 4.4 declarou em voz alta o que não sabia: «o que a medição precisa responder é se `P` se
+mantém baixo quando há muitas dependências — uma remoção que precise de dezenas de passadas custa
+pouco em I/O de diário e muito em tentativas de `Delete()`, e é a segunda parte que dominaria o
+tempo».
+
+**`P=1` nas três execuções**, com 50 alvos e 13 subníveis, `Pendentes=0` ao fim da primeira
+passada, contra um orçamento de 50 passadas. Somado ao `P=1` da `Teste` (25 alvos, 4 níveis), o
+que se observa é que a ordem canônica da fila — API Object, Procedures, SDTs em ordem de
+dependência, metadata, Folder — entrega as dependências já resolvidas. O requeue por
+`StillPresent` existe para o caso que não aconteceu em nenhuma das quatro remoções medidas.
+
+Isso não prova que `P` nunca cresce: prova que, nas duas formas de hierarquia exercitadas, a
+ordem basta. O mecanismo de passadas continua sendo a defesa para o caso contrário.
+
+### 14.2 O tempo da remoção está nas varreduras, não no diário nem no `Delete()`
+
+O achado maior da medição não é sobre o diário. Das três execuções, com variação desprezível:
+
+| Fase | Tempo | Fração |
+|---|---|---|
+| Operação inteira | ~34,9 s | 100% |
+| Fila de remoção | ~32,4 s | 93% |
+| **Varreduras (`Scans=149`)** | **~24,4 s** | **70%** |
+| Diário | ~131 ms | 0,38% |
+
+São três varreduras por alvo — localizar, revalidar antes do `Delete()`, confirmar depois —, e nos
+44 SDTs elas custam ~18,4 s sozinhas, cerca de 134 ms por varredura de SDT. As três são exigência
+de contrato: a classificação vem **sempre** da releitura do alvo, nunca do texto da exceção da
+IDE, e é isso que impede um relatório de afirmar o que não mediu.
+
+Registrado aqui como insumo para o residual do `B082`, não como defeito desta frente: se algum dia
+houver trabalho de desempenho na remoção, é nas varreduras que está o tempo. O diário, que era a
+preocupação da seção 11, responde por menos de meio por cento.
+
+### 14.3 Os Applies de reposição, de graça
+
+Não faziam parte do roteiro, mas são a única medição de Apply de **criação** na KB grande com esta
+DLL — os três do 9a são de reencontro:
+
+| Apply de criação | Diário | Operação | Peso |
+|---|---|---|---|
+| 1ª reposição | 178 ms | 75.834 ms | 0,23% |
+| 2ª reposição | 104 ms | 72.327 ms | 0,14% |
+
+A operação é bem mais longa que a de reencontro (~45 s) e o peso relativo do diário cai. Nenhum
+dos dois entra na mediana do 9a, que é de reencontro por definição; ficam como contexto.
+
+### 14.4 A remoção é reprodutível; o diário é que varia
+
+34.625, 34.713 e 35.324 ms — 2% entre a maior e a menor. As varreduras: 24.278, 24.433 e 24.442
+ms. A operação que hospeda o diário é notavelmente estável nesta KB, e toda a dispersão observada
+no 9a (121% entre execuções) está no custo de gravar o File, não no trabalho em volta.
+
+Com o 9b, os nove cenários da seção 9 do plano estão exercidos: oito passaram e um foi
+reformulado pelo que mediu.

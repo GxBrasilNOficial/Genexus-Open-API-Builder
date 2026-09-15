@@ -370,11 +370,14 @@ gravação — deriva-se o orçamento da remoção:
 | 5 | 8 | ~360 ms |
 | N | `3 + N` | `(3 + N) × ~45 ms` |
 
-Este número é **derivado, não medido**: nenhuma remoção foi cronometrada na KB grande. Ele serve
-de referência para o item 7b da seção 9, não de evidência. O que a medição precisa responder é se
-`P` se mantém baixo quando há muitas dependências — uma remoção que precise de dezenas de passadas
-custa pouco em I/O de diário e muito em tentativas de `Delete()`, e é a segunda parte que
-dominaria o tempo.
+Este número era **derivado, não medido**, e servia de referência para o item 7b da seção 9.
+**Medido em 2026-09-15** na `Empresa` da `FabricaBrasil18Test`: `P=1` nas três execuções, com 50
+alvos e 13 subníveis, e mediana de 131 ms contra os ~180 ms derivados — a derivação superestima em
+37%. A pergunta que esta seção deixou aberta, se `P` cresce com as dependências, teve resposta
+negativa nas duas hierarquias exercitadas: a ordem canônica da fila entrega as dependências
+resolvidas, e o requeue por `StillPresent` não foi acionado em nenhuma das quatro remoções
+medidas. O que domina o tempo não é nenhuma das duas hipóteses da redação original: são as três
+varreduras por alvo, 70% da operação (seção 14.2 da P8).
 
 O diário deve ser atualizado e confirmado ao longo da operação e no estado terminal, mas
 isso não significa um `File.Save()` para cada recibo individual. A política normativa
@@ -836,9 +839,12 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
      `AGENTS.md`, evidência vale para a DLL que a produziu. **Refeito em 2026-09-15** e
      **aprovado**: três Applies de reencontro na mesma `Empresa`, mediana de 132 ms em 4
      checkpoints — 33,0 ms por gravação — e 0,30% do tempo total. Registro na seção 13 da P8;
-   - **7b — remoção retomável.** Nunca medida. A remoção não tem contagem fixa: a política é
-     `3 + P`, com `P` conhecido só em runtime. Medir `P`, o custo do diário e o tempo total, e
-     comparar com a tabela derivada de 4.4;
+   - **7b — remoção retomável.** Era «nunca medida». **Medida e aprovada em 2026-09-15**, três
+     remoções da `Empresa` na `FabricaBrasil18Test`: `P=1` nas três, com 50 alvos e 13
+     subníveis; mediana de 131 ms em 4 checkpoints — 32,8 ms por gravação — e 0,38% do tempo
+     total. A tabela derivada de 4.4 previa ~180 ms para `P=1` e superestima em 37%. O achado
+     de peso é outro: 70% da remoção são as três varreduras por alvo, e não o diário nem o
+     `Delete()`. Registro na seção 14 da P8;
    - **critério de aprovação, declarado antes de medir.** «Comparar com o orçamento» não decide
      nada sozinho: a P2 registra 125 ms/3, 182 ms/4 e 151 ms/4 na mesma KB e na mesma DLL, ou seja
      41,7, 45,5 e 37,8 ms por gravação — **±17% de dispersão entre execuções**. Uma captura
