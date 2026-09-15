@@ -215,12 +215,39 @@ indefinido, porque não quebra nada.
 
 **Verificado na IDE em 2026-09-14**, depois de um reapply de reencontro com a DLL corrigida
 (`Criados=0`, `Atualizados=28`, `Bloqueados=0`, diário `Completed/Completed`): as Properties do
-File passaram a mostrar `Module: Root Module`. O aviso do LSI ainda apareceu naquela sessão
-porque ele roda no **start** da extensão, antes da gravação que corrigiu o módulo.
+File passaram a mostrar `Module: Root Module`.
 
-Para a próxima vez, a organização deixou de depender de inspeção manual: a linha de abertura do
-diário passou a publicar `Module='Root Module'` — ou `'<sem módulo>'` — ao lado de `FileId` e
-`Bytes`.
+A organização deixou de depender de inspeção manual: a linha de abertura do diário passou a
+publicar `Module='Root Module'` — ou `'<sem módulo>'` — ao lado de `FileId` e `Bytes`.
+
+#### O aviso do LSI continua, e está certo assim
+
+A leitura seguinte do log da extensão de terceiros desmentiu a conclusão de que o aviso sumiria:
+
+```
+warning: Object GxOpenApiBuilder_OperationJournal has no folder/module assigned
+warning: Object apiTeste_Metadata has no folder/module assigned
+```
+
+A metadata **tem** módulo — `Root Module`, tanto nas Properties quanto na Nota de telemetria do
+Remover. Se ela aparece na mesma lista, o que o LSI cobra é a ausência de **Folder**, não de
+módulo. E nenhum dos dois Files está em Folder, por decisão desta extensão, registrada em
+2026-07-28 nas evidências de B061/B062: **File é organizado por módulo, não por Folder**. Os
+SDTs, as Procedures e o API Object vão para o Folder da Transaction; os Files, não.
+
+Ou seja: a correção do módulo era legítima e independente — o diário nascia sem módulo nenhum,
+ao contrário da metadata e das preferências —, mas ela não resolve o aviso, e não deveria. O
+LSI tem outra convenção de organização, e avisar é o trabalho dele.
+
+O outro aviso da mesma leitura — `Object apiTeste: There are unused variables: apipage,
+apipagesize, …` — é conhecido desde 2026-07-26 e já classificado como não bloqueante: são as
+variáveis que o Service Source usa pelo contrato REST, e o build nativo do API Object as
+reconhece.
+
+**A lição, que vale além deste caso:** a primeira leitura tinha uma explicação plausível — o
+aviso roda no start, antes da gravação — e ela sobreviveu porque ninguém procurou o segundo
+objeto na mesma lista. Foi a metadata aparecendo ao lado do diário que mostrou qual era a regra
+de verdade.
 
 ## 7. Cenários restantes
 
