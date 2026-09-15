@@ -501,6 +501,50 @@ as mesmas palavras nos dois idiomas, e uma regra feita só de enums pode coincid
 
 Build Release 0 avisos e 0 erros; orquestrador mecânico com 64 `passed` e 1 `skipped`.
 
+#### 8.2.4 O que ainda sai em português — medido, não estimado
+
+Ao fechar a 8.2.3 eu escrevi que «não há mais texto do diário que saia em português numa KB que
+não seja pt-BR». **A frase era forte demais.** Fui medir em vez de repeti-la, e ela é falsa.
+
+**Como foi medido.** Uma sonda varre os arquivos da F3 — `ApiPlanOperationJournal*`,
+`ApiPlanRecovery*`, `ApiPlanRemoval*` e `ApiPlanGeneratedApiRemover` —, recolhe cada literal de
+string fora de comentário com pelo menos doze caracteres e algum marcador de português corrido
+(`ção`, `não`, `é`, `deve`, `exige`, `só`, `já`…), e verifica se ele aparece no catálogo, inteiro
+ou como fragmento em volta dos `{N}`. É heurística, não prova: serve para dimensionar o resíduo
+em vez de adivinhá-lo. A sonda ficou no scratchpad da sessão; o que vale é o resultado abaixo.
+
+**Sessenta e cinco literais sinalizados.** Classificados um a um:
+
+| Classe | Qtd. | Chega ao usuário? |
+| --- | --- | --- |
+| Falso positivo — já coberto pelo sufixo ` é obrigatório.` | 5 | — |
+| Contrato de programador (`ArgumentException`, asserção interna) | 5 | não: só dispara com chamador errado |
+| Dado gravado no diário (`abandonment.reason`, `authorizedBy`) | 2 | não é tela: é conteúdo do registro |
+| `Detail` de observação, hoje não renderizado em lugar nenhum | 6 | não hoje — mudaria se o inventário passar a mostrá-lo |
+| **Texto que o usuário lê** | **47** | **sim** |
+
+Os 47, por origem:
+
+| Arquivo | Qtd. | O que são |
+| --- | --- | --- |
+| `ApiPlanOperationJournalCheckpoints.cs` | 24 | recusas de transição ilegal (`Só um envelope Prepared/Pending pode ser promovido a Active. Estado atual: …`). Chegam à tela **coladas** ao prefixo que já é trilíngue, tanto pelo executor (`A transição autorizada não é válida no estado revalidado: `) quanto pela sessão |
+| `ApiPlanOperationJournalSession.cs` | 12 | checkpoint não gravado, transição inválida, falha ao gravar, confirmação impossível — saem na Output e viram `BlockDetail` no diálogo |
+| `ApiPlanGeneratedApiRemover.cs` | 8 | os `Remocao bloqueada: …` do preflight de metadata, ainda em ASCII sem acento, de uma leva anterior à F3 |
+| `ApiPlanRecovery.cs` | 1 | a linha de cabeçalho do relatório de recuperação (`Operação {0} sobre '{1}': estado {2}/{3}, …`) |
+| `ApiPlanRecoveryServices.cs` | 1 | `A KB não tem diário de operação: nenhuma operação desta ferramenta ficou pendente aqui.` |
+| `ApiPlanOperationJournalValidator.cs` | 1 | `plan.plannedApiGuid é obrigatório em Apply e Sync a partir do estágio {0}.` — escapou da 8.2.3 porque só a irmã dela, a do `contractHash`, tinha sido cadastrada |
+
+**O padrão que explica os 24 maiores.** As recusas de transição não nascem como mensagem de
+tela: nascem como `InvalidOperationException` de um método de checkpoint, e só viram tela porque
+alguém as concatena depois. Uma frase que atravessa uma exceção até o diálogo é exatamente o tipo
+de texto que uma varredura por arquivo de UI não encontra — foi por isso que a P7 não a viu, e
+por isso a sonda acima vale mais que uma nova leitura atenta.
+
+**Decisão a tomar antes de traduzir:** parte desses 24 termina em `Estado atual: ` seguido de um
+par de enums, e parte é frase inteira. Cadastrar o prefixo de cada uma é mecânico; o que merece
+uma decisão é se `Estado atual: ` deve virar um único fragmento compartilhado — provavelmente sim,
+pela mesma razão que ` em estado ` foi unificado na 8.2.2.
+
 ## 9. Cenários restantes
 
 | # | Cenário | Estado |

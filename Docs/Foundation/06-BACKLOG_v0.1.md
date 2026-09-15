@@ -421,8 +421,22 @@ módulo e foi apontado por uma extensão de terceiros. O quinto cenário — App
 seguinte, oferta da recuperação, encerramento do registro e Apply normal depois — passou em
 2026-09-15 e expôs um defeito **publicado na `0.1.0-alpha.7`**: a janela de progresso ficava
 viva, com `Abortar` ativo, atrás do relatório final. Restam os cenários de envelope `Prepared`,
-retomada de remoção interrompida, remoção de API legado e medição na KB grande. Evidência:
+retomada de remoção interrompida, remoção de API legado e medição na KB grande. O sexto cenário
+mostrou que `Prepared` **não é alcançável pela interface** — CP1 e CP2 acontecem na mesma
+chamada —, e no lugar dele nasceu a quarta ação da recuperação: encerrar o registro de uma
+operação que gravou e parou no meio. Evidência:
 `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`.
+
+**Dívida aberta em 2026-09-15 — localização do diário.** A bateria expôs que os textos da
+recuperação, do gate e do store nasciam em português e não passavam pelo catálogo de saída; 147
+frases foram cadastradas em espanhol e inglês em três rodadas, com asserções no gate
+`tests.extensionOutputLocalization` e uma varredura que exige que a versão inglesa difira da
+portuguesa. **Restam 47 frases** que o usuário lê e que ainda saem em português em qualquer KB:
+24 recusas de transição do `ApiPlanOperationJournalCheckpoints`, 12 da
+`ApiPlanOperationJournalSession`, 8 do preflight do `ApiPlanGeneratedApiRemover` e três avulsas.
+Elas escaparam das três rodadas porque não nascem como mensagem de tela: nascem como
+`InvalidOperationException` e só viram tela concatenadas a um prefixo que já é trilíngue.
+Medição e classificação dos 65 literais sinalizados na seção 8.2.4 do registro da P8.
 
 **B106 — concluído em 2026-08-24.** O roteiro foi atualizado para a Alpha `0.1.0-alpha.4`, passou a registrar o checkbox de repasse das mensagens do Business Component e aponta para as notas da Alpha 4. A captura de Segurança foi explicitamente marcada como referência visual anterior; uma nova captura da UI permanece uma melhoria visual separada, sem bloquear a documentação textual.
 

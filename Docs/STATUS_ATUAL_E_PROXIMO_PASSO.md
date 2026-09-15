@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-14.
+2026-09-15.
 
 ## Último marco concluído
 
@@ -165,6 +165,23 @@ O que entrou nesta rodada, em uma linha cada:
   recuperação quando o diário bloqueia Apply, Sync ou Remover;
 - **P7** — mensagens trilíngues e dois gates novos, `tests.removalQueue` e
   `tests.operationJournalRecovery`, mais três gates existentes realinhados ao contrato novo.
+
+### O que falta na F3, em 2026-09-15
+
+Consolidado depois da rodada de localização. Cada item tem dono declarado: **IDE** é validação
+que depende da DLL instalada e da KB de teste; **offline** é trabalho de código.
+
+| # | O que falta | Tipo | Onde está documentado |
+| --- | --- | --- | --- |
+| 1 | Cenário 7 — interromper uma remoção no meio e **retomar a fila**. É o único caminho que exercita `ContinueRemovePass`, e nenhuma passada de retomada foi vista em campo | IDE | P8, seção 9 |
+| 2 | Cenário 8 — remoção de **API legado**, com metadata válida e com metadata insuficiente | IDE | P8, seção 9 |
+| 3 | Cenário 9 — **acréscimo de tempo** do diário na KB grande, contra o orçamento da seção 4.4 do plano | IDE | P8, seção 9 |
+| 4 | **47 frases que o usuário lê ainda saem em português** em qualquer KB: 24 recusas de transição do `Checkpoints`, 12 da `Session`, 8 do preflight do `GeneratedApiRemover`, e três avulsas | offline | P8, seção 8.2.4 — com a medição e a classificação dos 65 literais sinalizados |
+| 5 | `Prepared` e a ação `Abandon` **não têm caminho de entrada por clique** — CP1 e CP2 acontecem na mesma chamada. `Checkpoints.Abandon` e `RecoveryNextStep.Abandon` existem, estão testados offline e são inalcançáveis pela interface | decisão | P8, seção 8 |
+| 6 | Metadata completa com **API Object apagado à mão** não tem saída por nenhum dos três comandos. Foi resolvido por orientação no texto das mensagens, não por mudança de contrato | decisão | P8, seção 10 |
+
+Os itens 5 e 6 são conhecidos e deliberados: estão aqui para que uma sessão nova não os
+redescubra como defeito. O item 4 é dívida a fechar; os itens 1 a 3 fecham a P8.
 
 **Duas coisas precisam ser sabidas antes de testar.** A primeira: uma segunda remoção da mesma
 API agora **bloqueia** em vez de ser aceita como idempotente, porque um alvo previsto que já
