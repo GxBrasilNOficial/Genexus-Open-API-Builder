@@ -180,11 +180,12 @@ internal sealed class ApiPlanOperationJournalSession
         var session = new ApiPlanOperationJournalSession(store, envelope);
         session.Note(string.Format(
             CultureInfo.InvariantCulture,
-            "Diário aberto: OperationKind='{0}', OperationId='{1}', ApplicationId='{2}', FileId={3}, Created={4}, Bytes={5}.",
+            "Diário aberto: OperationKind='{0}', OperationId='{1}', ApplicationId='{2}', FileId={3}, Module='{4}', Created={5}, Bytes={6}.",
             operationKind,
             operationId,
             applicationId,
             store.FileId,
+            store.ModuleName,
             prepared.Created,
             active.Bytes));
         return ApiPlanOperationJournalStart.Started(session);

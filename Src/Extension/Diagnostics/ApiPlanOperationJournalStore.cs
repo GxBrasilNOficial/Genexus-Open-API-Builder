@@ -126,6 +126,13 @@ internal sealed class ApiPlanOperationJournalStore
     /// confirmação: devolve o resultado com <c>Unknown</c>, porque a decisão de parar é de
     /// quem conduz a operação, e uma segunda gravação incerta só apagaria a evidência.
     /// </summary>
+    /// <summary>
+    /// Módulo em que o File do diário ficou, lido depois da gravação. Existe para que a
+    /// organização do objeto seja **verificável na Output**, e não por inspeção manual na IDE:
+    /// foi assim que se descobriu que ele nascia sem módulo nenhum.
+    /// </summary>
+    internal string ModuleName { get; private set; } = string.Empty;
+
     internal ApiPlanOperationJournalCheckpointResult WriteCheckpoint(ApiPlanOperationJournal journal)
     {
         if (journal is null)
@@ -186,6 +193,7 @@ internal sealed class ApiPlanOperationJournalStore
 
         _file = file;
         FileId = file.Id;
+        ModuleName = file.Module?.Name ?? "<sem módulo>";
         if (FileId <= 0)
         {
             Durability = JournalDurability.Unknown;
