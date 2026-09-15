@@ -417,9 +417,11 @@ remoção interrompida (`Discard`, mesmo `operationId`, nada apagado) e devoluç
 pelo Wizard, com o `PlannedContractHash` idêntico ao da geração original. A bateria produziu
 seis correções — diálogo próprio da recuperação, três rodadas de orientação nas mensagens de
 bloqueio, limpeza do bloco técnico de diagnóstico e o módulo do File do diário, que nascia sem
-módulo e foi apontado por uma extensão de terceiros. Restam os cenários de aborto de Apply,
-envelope `Prepared`, retomada de remoção interrompida, remoção de API legado e medição na KB
-grande. Evidência:
+módulo e foi apontado por uma extensão de terceiros. O quinto cenário — Apply abortado no meio, com bloqueio da operação
+seguinte, oferta da recuperação, encerramento do registro e Apply normal depois — passou em
+2026-09-15 e expôs um defeito **publicado na `0.1.0-alpha.7`**: a janela de progresso ficava
+viva, com `Abortar` ativo, atrás do relatório final. Restam os cenários de envelope `Prepared`,
+retomada de remoção interrompida, remoção de API legado e medição na KB grande. Evidência:
 `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`.
 
 **B106 — concluído em 2026-08-24.** O roteiro foi atualizado para a Alpha `0.1.0-alpha.4`, passou a registrar o checkbox de repasse das mensagens do Business Component e aponta para as notas da Alpha 4. A captura de Segurança foi explicitamente marcada como referência visual anterior; uma nova captura da UI permanece uma melhoria visual separada, sem bloquear a documentação textual.

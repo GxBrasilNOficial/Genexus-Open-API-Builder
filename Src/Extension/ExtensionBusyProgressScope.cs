@@ -12,6 +12,16 @@ namespace GenexusOpenApiBuilder.Extension;
 /// </summary>
 internal sealed class ExtensionBusyProgressScope : IDisposable
 {
+    /// <summary>
+    /// Escopo ativo nesta thread. Existe para que o relatório final possa fechar a janela de
+    /// progresso antes de aparecer: os comandos mostram o relatório **dentro** do escopo, e sem
+    /// isso a janela fica viva atrás dele — com o botão `Abortar` ativo numa operação que já
+    /// terminou. Medido na IDE em 2026-09-14, no bloqueio pelo diário, onde havia dois diálogos
+    /// por cima e o defeito ficou visível.
+    /// </summary>
+    [ThreadStatic]
+    private static ExtensionBusyProgressScope? _current;
+
     private readonly ExtensionBusyProgressDialog _dialog;
     private readonly Control? _ownerControl;
     private readonly bool _previousOwnerWaitCursor;
@@ -89,7 +99,9 @@ internal sealed class ExtensionBusyProgressScope : IDisposable
 
         session.Report(texts.BusyProgressStarting, 0, 0, string.Empty);
         Application.DoEvents();
-        return new ExtensionBusyProgressScope(dialog, ownerControl, previousWait);
+        var scope = new ExtensionBusyProgressScope(dialog, ownerControl, previousWait);
+        _current = scope;
+        return scope;
     }
 
     public void Report(string stage, int current, int total, string itemName, long elapsedMs = -1)
@@ -110,6 +122,12 @@ internal sealed class ExtensionBusyProgressScope : IDisposable
         return sw.ElapsedMilliseconds;
     }
 
+    /// <summary>
+    /// Fecha a janela de progresso desta thread, se houver uma aberta. Idempotente: o `using`
+    /// de quem a abriu continua correto depois disso.
+    /// </summary>
+    internal static void CloseCurrent() => _current?.Dispose();
+
     public void Dispose()
     {
         if (_disposed)
@@ -118,6 +136,11 @@ internal sealed class ExtensionBusyProgressScope : IDisposable
         }
 
         _disposed = true;
+        if (ReferenceEquals(_current, this))
+        {
+            _current = null;
+        }
+
         if (_ownerControl is not null && !_ownerControl.IsDisposed)
         {
             _ownerControl.UseWaitCursor = _previousOwnerWaitCursor;

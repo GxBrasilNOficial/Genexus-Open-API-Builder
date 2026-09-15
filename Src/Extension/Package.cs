@@ -1075,9 +1075,6 @@ public sealed class Package : AbstractPackageUI
                     WriteOutput($"[Genexus Open API Builder][B111/F3] Sincronizacao bloqueada pelo diário durável: Transaction='{transaction.Name}'. {syncJournalStart.Detail} Nenhuma gravação foi solicitada.");
                     report.AddBlocked("Diário de operação", "B111/F3", syncJournalStart.Detail);
                     stopwatch.Stop();
-                    // A operação acaba aqui: a janela de progresso sai antes do relatório e
-                    // da oferta. Dispose é idempotente, então o `using` no fim não repete nada.
-                    busy.Dispose();
                     ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                     OfferRecoveryAfterJournalBlock(knowledgeBase, texts, syncJournalStart);
                     return true;
@@ -1399,9 +1396,6 @@ public sealed class Package : AbstractPackageUI
                     var blockedReport = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, intent.Plan.ApiName);
                     blockedReport.SetApiName(intent.Plan.ApiName);
                     blockedReport.AddBlocked("Diário de operação", "B111/F3", journalStart.Detail);
-                    // A operação acaba aqui: a janela de progresso sai antes do relatório e
-                    // da oferta. Dispose é idempotente, então o `using` no fim não repete nada.
-                    busy.Dispose();
                     ShowFinalReport(blockedReport, stopwatch.Elapsed, knowledgeBase.DesignModel, persistenceLog: persistenceLog);
                     OfferRecoveryAfterJournalBlock(knowledgeBase, texts, journalStart);
                     return true;
@@ -2000,9 +1994,6 @@ public sealed class Package : AbstractPackageUI
                 report.AddBlocked("Diário de operação", "B111/F3", journalStart.Detail);
                 stopwatch.Stop();
                 WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
-                // A operação acaba aqui: a janela de progresso sai antes do relatório e da
-                // oferta. Dispose é idempotente, então o `using` no fim não repete nada.
-                busy.Dispose();
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 OfferRecoveryAfterJournalBlock(knowledgeBase, texts, journalStart);
                 return true;
@@ -2641,6 +2632,12 @@ public sealed class Package : AbstractPackageUI
         ApiPlan? apiPlan = null,
         ApiPlanPersistenceLog? persistenceLog = null)
     {
+        // A janela de progresso sai de cena antes do relatório: os comandos mostram o relatório
+        // dentro do escopo dela, e deixá-la viva põe um `Abortar` ativo atrás de uma operação
+        // que já terminou. Fica aqui, e não em cada chamador, porque vale para todos os
+        // caminhos — sucesso, bloqueio, falha de etapa e aborto.
+        ExtensionBusyProgressScope.CloseCurrent();
+
         // B082: a apresentacao do relatorio roda dentro do escopo de medicao do Sync,
         // mas nao faz parte da operacao medida. Suspender evita atribuir a ela as
         // leituras de TryResolveMainObjectFromKb e de qualquer consulta futura daqui.

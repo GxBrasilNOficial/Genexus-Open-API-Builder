@@ -324,11 +324,20 @@ O caminho de bloqueio pelo diário encerra a operação dentro do escopo da jane
 ela continuava aberta — com o botão `Abortar` ativo — atrás do relatório final e da oferta de
 recuperação. Um `Abortar` que já não aborta coisa nenhuma, numa operação que terminou.
 
-Corrigido nos três comandos: a janela é fechada antes do relatório e da oferta. `Dispose` é
-idempotente, então o `using` do fim continua correto.
+A primeira correção tratou os três caminhos de bloqueio pelo diário. Ao documentá-la, ficou
+claro que o problema era maior: **todos** os relatórios finais são mostrados dentro do escopo da
+janela — sucesso, falha de etapa e aborto inclusive —, e só o bloqueio tinha sido coberto.
 
-O defeito é anterior à F3 no que toca ao relatório final — ele sempre foi mostrado dentro do
-escopo —, e só ficou visível quando a oferta acrescentou um segundo diálogo por cima.
+A correção final é na origem: o escopo ativo passou a ser conhecido por thread, e
+`ShowFinalReport` fecha a janela antes de aparecer. Vale para todos os caminhos e para os que
+vierem, sem depender de cada chamador lembrar. `Dispose` continua idempotente, então o `using`
+de quem abriu segue correto.
+
+**Visibilidade verificada contra a tag**, como manda a regra da casa: o escopo de progresso
+entrou no commit `3e7ca61` (`B082`), que é ancestral de `v0.1.0-alpha.7`. Ou seja, **o defeito
+está na versão publicada** — não é interno a esta frente. Ele só ficou visível agora porque o
+bloqueio pelo diário somou um segundo diálogo por cima; com um diálogo só, a janela atrás passa
+despercebida.
 
 ## 8. Cenários restantes
 
