@@ -144,8 +144,14 @@ Na IDE, o menu **Genexus Open API Builder** deve aparecer antes de **Help**, com
 - Wizard
 - Sincronizar com a Transaction
 - Remover API gerada
+- Recuperar operação interrompida
 
-No menu de contexto de uma Transaction, o submenu deve expor Wizard, Sincronizar e Remover.
+No menu de contexto de uma Transaction, o submenu deve expor Wizard, Sincronizar, Remover e
+Recuperar.
+
+> `Recuperar operação interrompida` existe **na build deste repositório** e ainda não saiu em
+> release publicado. Quem instalou a DLL da `0.1.0-alpha.7` vê quatro itens no menu principal e
+> três no de contexto, como descrito na verificação do usuário final acima — e isso está certo.
 
 ---
 

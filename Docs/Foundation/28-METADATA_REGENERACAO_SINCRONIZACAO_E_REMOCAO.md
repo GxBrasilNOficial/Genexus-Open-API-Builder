@@ -204,6 +204,36 @@ As decisões da `Emenda técnica — 2026-08-23` alcançam este contrato em quat
 
 **Versão do schema.** A metadata passa de `schemaVersion` V1 para V2. A leitura aceita as duas versões — V1 é interpretada como transação de nível único —, a gravação emite sempre V2, e a conversão ocorre somente quando a geração é aplicada, nunca na simples abertura do Wizard. Sem essa tolerância, toda API gerada na Alpha ficaria simultaneamente irreencontrável e irremovível, já que reencontro e remoção validam o carimbo.
 
-**Inventário próprio deixa de ser fixo (Fase 7).** "SDTs próprios" passa a incluir os derivados de subnível (`sdt<NomeBase>_API_<Papel>_<Subnível>`) e, quando houver subnível selecionado, o `sdt<NomeBase>_API_ListResponse_Item`. A remoção lê esses nomes da metadata (`objects.sdts.own` quando presente; senão inventário dinâmico a partir de `levels`) em vez de assumir lista fechada, sob pena de deixar órfãos na KB. A ordem de exclusão continua respeitando a dependência entre tipos. **Desde `B099b`/`Fase 7`:** `ApiPlanGeneratedApiRemovalInventory` resolve `own` gravado ou reconstrói via stub `ApiPlan` + plano de SDT; fallback flat nos cinco nomes fixos só quando não há hierarquia ou o stub não monta (ex.: SDTs raiz ausentes). Se `levels` anuncia hierarquia mas está ilegível, a remoção falha — não cai no flat.
+**Inventário próprio deixa de ser fixo (Fase 7).** "SDTs próprios" passa a incluir os derivados de subnível (`sdt<NomeBase>_API_<Papel>_<Subnível>`) e, quando houver subnível selecionado, o `sdt<NomeBase>_API_ListResponse_Item`. A remoção lê esses nomes da metadata (`objects.sdts.own` quando presente; senão inventário dinâmico a partir de `levels`) em vez de assumir lista fechada, sob pena de deixar órfãos na KB. A ordem de exclusão parte da dependência entre tipos. **Desde a `S-B111 F3` ela é o ponto de partida de uma fila em passadas, não a garantia de que tudo sai de primeira** — ver a nota 11. **Desde `B099b`/`Fase 7`:** `ApiPlanGeneratedApiRemovalInventory` resolve `own` gravado ou reconstrói via stub `ApiPlan` + plano de SDT; fallback flat nos cinco nomes fixos só quando não há hierarquia ou o stub não monta (ex.: SDTs raiz ausentes). Se `levels` anuncia hierarquia mas está ilegível, a remoção falha — não cai no flat.
 
 **Sincronização hierárquica.** A comparação com a Transaction passa a percorrer a árvore de níveis, confrontando adições, remoções e renomeações dentro de cada nível por `attributeGuid`, e tratando explicitamente o caso de um subnível inteiro deixar de existir na estrutura.
+
+---
+
+# 11. Nota de revisão — 2026-09-15 — a remoção passou a ter intenção durável
+
+A `S-B111 F3` mudou o contrato de remoção descrito acima em três pontos, e este documento não o
+acompanhava. As seções 1 a 10 continuam válidas no que dizem sobre **o que** é próprio e **o que**
+é preservado; o que envelheceu foi **como** a exclusão acontece.
+
+**A ordem deixou de ser garantia.** O texto da nota 10 dizia que "a ordem de exclusão continua
+respeitando a dependência entre tipos", e isso bastava quando a exclusão era uma passagem única.
+A ordenação canônica por tipo permanece — `ApiPlanRemovalIntent.Order` ordena por
+`RemovalRank(ObjectType)` —, mas ela é agora **o ponto de partida de uma fila**, não a promessa de
+que tudo sai de primeira. Um alvo que a IDE recusa por dependência volta para a fila e é tentado
+na passada seguinte, com orçamento `max(1, itens da fila)`. A erosão começou antes desta frente:
+em 2026-09-06 o laço de SDTs já tinha deixado de depender da ordem perfeita, e a F3 estendeu isso
+a todos os tipos removíveis — API Object, Procedures, metadata e Folder na mesma fila.
+
+**A intenção é registrada antes da primeira exclusão.** Existe um File único por KB,
+`GxOpenApiBuilder_OperationJournal`, onde o inventário completo dos alvos — com a identidade de
+cada um — é gravado **antes** do primeiro `Delete()`. É o que permite saber o que faltava depois
+que o File de metadata sai da KB: ele é o penúltimo da fila, e sem o diário não há outra fonte.
+
+**Remover duas vezes a mesma API deixou de ser aceito em silêncio.** Um alvo previsto que já não
+está na KB antes da exclusão encerra a operação em `Partial` com `TargetAbsentBeforeDelete`, porque
+quem apagou aquele objeto não foi esta operação. A saída é o comando **`Recuperar operação
+interrompida`**, que relê cada alvo por identidade e fecha o registro.
+
+Contrato completo em `Docs/Implementation/2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md`;
+o que foi exercido na IDE, em `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`.
