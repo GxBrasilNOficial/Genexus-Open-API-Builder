@@ -331,7 +331,7 @@ Planejamento concluído, avaliação técnica inicial realizada e **a F1 foi imp
 
 Os três planos de fase preservam as decisões e o desenho original da sprint. A F1 foi
 encerrada com a exceção explícita do `B121`; a F2 foi implementada e aceita na IDE em
-2026-09-13. A F3 foi **encerrada em 2026-09-15**, com as nove etapas entregues e a P8 concluída na IDE: as etapas P0 (metadata V3), P1 (schema V1 do diário) e P2 (o diário na KB, em Apply e Sync) foram implementadas e validadas na IDE em 2026-09-14; a P3 foi implementada, validada na IDE e concluída na mesma data; as etapas P4 a P7 foram implementadas offline em 2026-09-14 (`Docs/Implementation/2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`) e a P8 — validação integrada na IDE — está **em andamento** desde a mesma data, com cinco cenários passados, um reformulado e três abertos (`Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`).
+2026-09-13. A F3 foi **encerrada em 2026-09-15**, com as nove etapas entregues e a P8 concluída na IDE: as etapas P0 (metadata V3), P1 (schema V1 do diário) e P2 (o diário na KB, em Apply e Sync) foram implementadas e validadas na IDE em 2026-09-14; a P3 foi implementada, validada na IDE e concluída na mesma data; as etapas P4 a P7 foram implementadas offline em 2026-09-14 (`Docs/Implementation/2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`) e a P8 — validação integrada na IDE — foi **concluída em 2026-09-15**, com oito cenários passados e um reformulado pelo que mediu (`Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`).
 
 | Fase | Plano | Depende de |
 |---|---|---|

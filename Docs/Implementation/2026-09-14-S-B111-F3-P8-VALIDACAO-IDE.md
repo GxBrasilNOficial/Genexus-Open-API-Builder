@@ -1,6 +1,6 @@
 # S-B111 · F3 — P8: validação na IDE
 
-**Data:** 2026-09-14; bateria continuada em 2026-09-15 (cenário 7, seção 11).
+**Data:** 2026-09-14; bateria continuada e concluída em 2026-09-15 (cenários 7 a 9, seções 11 a 14).
 **Sprint:** `S-B111`. **Fase:** F3, etapa P8.
 **Plano governante:** [`2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md`](2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md), seção 9.
 **Implementação validada aqui:** [`2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md`](2026-09-14-S-B111-F3-P4-P7-IMPLEMENTACAO-OFFLINE.md).
