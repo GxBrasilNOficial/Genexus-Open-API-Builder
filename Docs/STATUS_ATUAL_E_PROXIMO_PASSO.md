@@ -183,6 +183,12 @@ que depende da DLL instalada e da KB de teste; **offline** é trabalho de códig
 Os itens 5 e 6 são conhecidos e deliberados: estão aqui para que uma sessão nova não os
 redescubra como defeito. O item 4 é dívida a fechar; os itens 1 a 3 fecham a P8.
 
+**Fora da F3, para logo depois do encerramento da sprint:** `B122` — dar aos agentes uma
+ferramenta versionada de edição textual ancorada. Aberto em 2026-09-15, depois de uma única
+sessão produzir 39 scripts descartáveis para aplicar edições de texto, cada um decidindo à mão
+quebra de linha, encoding e unicidade da âncora. Não muda o produto; muda o risco de toda
+alteração de texto feita por agente aqui. Desenho e motivo na nota operacional do documento 06.
+
 **Duas coisas precisam ser sabidas antes de testar.** A primeira: uma segunda remoção da mesma
 API agora **bloqueia** em vez de ser aceita como idempotente, porque um alvo previsto que já
 não está na KB encerra a operação em `Partial` com `TargetAbsentBeforeDelete` — é o contrato da

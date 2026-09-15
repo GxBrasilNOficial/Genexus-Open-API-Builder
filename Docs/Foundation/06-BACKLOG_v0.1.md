@@ -278,6 +278,47 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B119 | Auditar e remover variáveis locais sem uso efetivo no código C#, começando por `b111ManagedApply` no fluxo de Sync | Baixa — manutenção futura, sem mudança de comportamento esperada; plano em [`Docs/Implementation/B119-LIMPEZA-VARIAVEIS-SEM-USO.md`](../Implementation/B119-LIMPEZA-VARIAVEIS-SEM-USO.md) |
 | B120 | Normalizar o envelope HTTP do serviço `List` entre .NET Framework/SQL Server e .NET/PostgreSQL, preservando o `ErrorResponse` público | Urgente — bloqueia o aceite HTTP multiplataforma; aberto em 2026-09-10, a retenção até o encerramento da sprint `S-B111` foi superada e o item segue aberto para retomada conforme o checkpoint. A F2 foi encerrada em 2026-09-13; a próxima fase é F3. Plano em [`Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`](../Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md) |
 | B121 | Tornar explícita a seleção das etapas `Business Component` e `List` no Sync, sem inferir a intenção pela lista de serviços | Média — melhoria futura, fora da sprint `S-B111`; os perfis Sync sem BC/List, somente BC e BC+List foram aceitos na F1, enquanto o perfil somente List isolado é a exceção formal transferida para este item e permanece não comprovado até sua implementação. Evidência IDE em 2026-09-11: no Sync de `Contrato`, sem opção de BC e com `ContratoObservacao` marcado somente em `Response`, o Output executou BC (`Get/Create/Update`) antes de List; `FinalWriter='List'`, `ApiSaveCount=1`, `Bloqueados=0`. O perfil somente List não foi comprovado. Plano: [`Docs/Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md`](../Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md) |
+| B122 | Dar aos agentes uma ferramenta versionada de edição textual ancorada, no lugar do script descartável que cada sessão reinventa | **Urgente — a executar logo após o encerramento da sprint `S-B111`.** Não muda o produto; muda o risco de toda alteração de texto feita por agente neste repositório. Ver a nota operacional abaixo |
+
+### Nota operacional — B122, registrada em 2026-09-15
+
+**O sintoma.** Numa única sessão de trabalho, um agente criou **39 scripts Python descartáveis**
+no scratchpad para aplicar edições de texto neste repositório. Todos faziam a mesma coisa: abrir o
+arquivo com encoding explícito, procurar uma âncora, substituir, gravar com quebra de linha
+explícita. Nenhum sobreviveu à sessão, nenhum foi revisado, e nenhum pode ser reexecutado por
+outra pessoa.
+
+**Por que o agente não usou a ferramenta de edição direta.** Ela resolve uma edição por vez, com
+verificação de unicidade por edição. O que faltava era o resto:
+
+1. **Lote atômico.** Uma mudança de contrato costuma tocar cinco ou seis pontos que só fazem
+   sentido juntos. Aplicar um a um deixa o arquivo consistente apenas no fim; se a terceira âncora
+   não existir mais, as duas primeiras já foram gravadas. O certo é **conferir todas as âncoras
+   antes de gravar qualquer uma**.
+2. **Quebra de linha e encoding por construção, não por decisão.** Este repositório tem
+   `.gitattributes`: `.cs` em CRLF, `.md` em LF. Cada um dos 39 scripts **escolheu à mão** qual
+   usar. Acertar 39 vezes seguidas é sorte administrada, não processo. O mesmo vale para a
+   proibição de BOM, que hoje depende de o agente lembrar de `UTF8Encoding($false)`.
+3. **Unicidade da âncora.** O padrão que os 39 usaram foi `assert âncora in texto` seguido de
+   substituir a primeira ocorrência. Isso **não** verifica que a âncora é única: numa âncora curta
+   ou repetida, a substituição acerta a primeira e ninguém percebe. A verificação correta é contar
+   as ocorrências e recusar quando forem diferentes de uma.
+4. **Prévia antes de gravar.** Não havia como ver o efeito sem já tê-lo causado.
+5. **Rastro.** O que foi alterado, e com que âncora, morre com a sessão. Numa revisão pré-push,
+   isso é justamente o que se quer poder reler.
+
+**Direção recomendada.** Um script versionado em `scripts/` — `Apply-TextPatch.ps1` ou
+equivalente — que receba uma lista de `{arquivo, de, para}`, **valide todas** as âncoras (existe e
+é única) antes de qualquer escrita, derive quebra de linha e encoding do arquivo alvo e do
+`.gitattributes` em vez de aceitá-los como parâmetro, recuse BOM, ofereça `-WhatIf` com o diff, e
+registre o que aplicou. Fica no repositório porque é aqui que a política de EOL vive; promover a
+skill global só depois de a ferramenta provar valor em uso real.
+
+**O que esta nota não afirma.** Não há evidência de que algum dos 39 scripts tenha corrompido
+arquivo: os gates mecânicos, o build e a releitura das seções alteradas passaram em todas as
+rodadas. O item existe porque o método dependia de o agente acertar à mão, toda vez, aquilo que
+uma ferramenta deveria garantir — e porque a regra global de edição segura de `.md` longos já
+alerta exatamente para esse risco.
 
 ### Nota operacional — B118
 

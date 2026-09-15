@@ -72,6 +72,7 @@ Assert-Equal 50 $defaults.DefaultPageSizeByDefault 'Paginação default deve ini
 Assert-Equal 200 $defaults.MaximumPageSizeByDefault 'Paginação máxima default deve iniciar em 200.'
 Assert-True $defaults.IncludeBusinessComponentErrorMessagesByDefault 'Default deve incluir mensagens de erro do Business Component.'
 Assert-False $defaults.OfferOrphanMetadataRecovery 'Recuperação de metadata órfã deve iniciar desligada.'
+Assert-True $defaults.ShowRecoveryOptionProactively 'Oferta proativa da recuperação deve iniciar ligada: desligada, um envelope interrompido bloqueia a KB sem apresentar a saída.'
 Assert-False $defaults.SuppressProgressPumpDuringSaves 'Supressão do Pump durante as gravações deve iniciar desligada.'
 
 $values = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferenceValues]::new()
@@ -90,6 +91,7 @@ $values.SecurityLevelByDefault = 'authorization'
 $values.DefaultPageSizeByDefault = 40
 $values.MaximumPageSizeByDefault = 100
 $values.OfferOrphanMetadataRecovery = $true
+$values.ShowRecoveryOptionProactively = $false
 $values.SuppressProgressPumpDuringSaves = $true
 
 $json = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Serialize($values)
@@ -111,6 +113,7 @@ Assert-Equal 40 $parsed.DefaultPageSizeByDefault 'Serialização deve preservar 
 Assert-Equal 100 $parsed.MaximumPageSizeByDefault 'Serialização deve preservar MaximumPageSize.'
 Assert-True $parsed.IncludeBusinessComponentErrorMessagesByDefault 'Serialização deve preservar o default ligado do repasse de mensagens do BC.'
 Assert-True $parsed.OfferOrphanMetadataRecovery 'Serialização deve preservar a oferta de recuperação de metadata órfã.'
+Assert-False $parsed.ShowRecoveryOptionProactively 'Serialização deve gravar a oferta proativa desligada: sem a chave no File, o fallback ligado apagaria a escolha.'
 Assert-True $parsed.SuppressProgressPumpDuringSaves 'Serialização deve preservar a supressão do Pump durante as gravações.'
 
 $legacyJson = @'
@@ -148,6 +151,7 @@ Assert-Equal 'Authentication' $legacyParsed.SecurityLevelByDefault 'JSON sem sec
 Assert-Equal 50 $legacyParsed.DefaultPageSizeByDefault 'JSON sem pagination deve aplicar DefaultPageSize fallback.'
 Assert-Equal 200 $legacyParsed.MaximumPageSizeByDefault 'JSON sem pagination deve aplicar MaximumPageSize fallback.'
 Assert-True $legacyParsed.IncludeBusinessComponentErrorMessagesByDefault 'JSON sem includeBusinessComponentErrorMessages deve aplicar fallback ligado.'
+Assert-True $legacyParsed.ShowRecoveryOptionProactively 'JSON gravado antes da P6 não tem showRecoveryOptionProactively e deve valer ligado: um arquivo antigo não pode esconder a única saída de um envelope interrompido.'
 
 $withDelete = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferenceValues]::new()
 $withDelete.ListServiceByDefault = $true
