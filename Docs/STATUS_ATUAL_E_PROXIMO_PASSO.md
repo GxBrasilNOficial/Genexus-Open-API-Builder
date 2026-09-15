@@ -204,9 +204,18 @@ porque o API Object e a metadata precisam sair juntos; a limpeza do bloco técni
 diagnóstico, de 33 linhas fixas para as que foram de fato medidas; e o módulo do File do
 diário, que nascia sem módulo nenhum e foi apontado por uma extensão de terceiros.
 
-Faltam cinco cenários: aborto de Apply com oferta proativa e encerramento, envelope `Prepared`
-abandonado, retomada de remoção interrompida, remoção de API legado e medição do acréscimo na
-KB grande. Cenário sem registro naquele documento é cenário não exercido.
+O **quinto cenário também passou**, já em 2026-09-15: um `Apply` abortado no meio parou em
+`Partial/NotStarted` com `blockReason=UserAborted` e `ApiSaveCount=0` — a fronteira do API
+Object corretamente não registrada —, a operação seguinte foi recusada com diagnóstico
+classificado, a oferta proativa apareceu, o encerramento fechou o envelope em
+`Completed/Discarded` preservando o `operationId`, e o Apply seguinte rodou com `Bloqueados=0`.
+Era o caso que motivou a quarta ação da recuperação. Ele também expôs um defeito anterior à F3:
+a janela de progresso ficava viva, com `Abortar` ativo, atrás do relatório final e dos diálogos;
+os três comandos passaram a fechá-la antes.
+
+Faltam quatro cenários: envelope `Prepared` abandonado, retomada de remoção interrompida,
+remoção de API legado e medição do acréscimo na KB grande. Cenário sem registro naquele
+documento é cenário não exercido.
 
 Verificação offline desta rodada: build Release com 0 avisos e 0 erros, checker de comandos com
 13 comandos e o orquestrador mecânico com 64 checks `passed` e 1 `skipped` (`git.statusPre`,

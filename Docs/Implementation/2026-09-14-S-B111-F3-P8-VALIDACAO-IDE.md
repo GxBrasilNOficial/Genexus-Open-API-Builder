@@ -251,8 +251,13 @@ de verdade.
 
 ## 7. Cenário 5 — abortar um Apply no meio
 
-**Em andamento.** Os dois primeiros passos passaram; o encerramento foi adiado por um defeito de
-apresentação que a própria bateria expôs.
+**Passou**, em duas passagens: a primeira exerceu aborto, bloqueio e oferta, e expôs um defeito
+de apresentação; a segunda, na versão corrigida, executou o encerramento e confirmou que a KB
+voltou a aceitar operações.
+
+Este é **o cenário que motivou a quarta ação da recuperação**: um `Apply` interrompido não pode
+ser retomado, porque o envelope guarda o hash do contrato e não o contrato. Antes desta frente,
+ele travava a Knowledge Base e a única saída era apagar o File do diário à mão.
 
 **Passo 1 — aborto.** `Wizard` → `Concluir e aplicar` → `Abortar` por volta dos 3 s. A parada
 efetiva veio depois das Procedures e antes do API Object: os 21 SDTs foram **reencontrados sem
@@ -277,6 +282,28 @@ o envelope precisa saber que `logicalStage` não é uma barra de progresso.
 
 A recuperação foi **recusada** de propósito nesta passagem, por causa do defeito da seção 7.1; o
 envelope ficou intacto para o encerramento ser exercido na versão corrigida.
+
+**Passo 3 — encerrar o registro**, na versão corrigida:
+
+```
+Recuperação concluída: Etapa='Discard',
+OperationId='87526386-b226-48f6-91cb-b7785bd50f34', Estado='Completed'
+```
+
+O `OperationId` é o do aborto: nenhuma operação nova foi criada. As três janelas — relatório,
+oferta e diálogo da recuperação — apareceram uma de cada vez, sem nada por baixo.
+
+**Passo 4 — a KB voltou a aceitar operações.** `Wizard` → `Concluir e aplicar`:
+
+| Medida | Resultado |
+|---|---|
+| Relatório | `Criados=0`, `Atualizados=28`, `Bloqueados=0`, 8,8 s |
+| Diário | `OperationId` **novo** (`5d453ded-…`), `Checkpoints=4`, `TotalMs=126`, `Completed/Completed` |
+| API Object | `ApiSaveCount=1`, writer `List` |
+| Integridade | `PlannedContractHash='16DF0B0A…'`, o mesmo de sempre |
+
+É esta última linha que fecha o cenário: o encerramento destravou de fato, e não apenas trocou o
+texto do envelope.
 
 **Passo 2 — a operação seguinte bloqueia.** `Wizard` → `Concluir e aplicar`:
 
@@ -311,7 +338,7 @@ escopo —, e só ficou visível quando a oferta acrescentou um segundo diálogo
 | 2 | Alvo previsto ausente antes do `Delete()` | **passou** — seção 4 |
 | 3 | Recuperação sobre o envelope `Partial`: encerrar o registro | **passou** — seção 5 |
 | 4 | Devolver a KB ao normal | **passou** — seção 6 |
-| 5 | Abortar um Apply no meio; oferta proativa; recuperação | **parcial** — aborto e bloqueio passaram; encerramento pendente, ver seção 7 |
+| 5 | Abortar um Apply no meio; oferta proativa; recuperação | **passou** — seção 7 |
 | 6 | Wizard cancelado antes de aplicar: envelope `Prepared` e abandono | não iniciado |
 | 7 | Interromper uma remoção no meio e retomar a fila | não iniciado |
 | 8 | Remoção de API legado, com metadata válida e com metadata insuficiente | não iniciado |
