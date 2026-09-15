@@ -843,8 +843,11 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
      isolada não separa regressão de ruído. Portanto: **três execuções** de cada medição, e vale a
      **mediana**. Reprova se a mediana passar de **60 ms por gravação** — 32% acima do pior valor
      já registrado, margem escolhida para ficar fora da dispersão conhecida — **ou** se o diário
-     passar de **1% do tempo total** da operação, que é o limiar do risco declarado na seção 11
-     («acrescentar segundos ao Apply de forma percebida como regressão»);
+     passar de **1% do tempo total** da operação. Este 1% é **limiar derivado aqui**, não citação:
+     o risco da seção 11 é qualitativo — «acrescentar segundos ao Apply de forma percebida como
+     regressão» — e não declara número nenhum. A derivação: 1% de um Apply de 44 s é 0,44 s,
+     folgadamente abaixo de «segundos» no plural, e deixa 2,4× de margem sobre os 0,41% medidos na
+     P2;
    - **7a e 7b na mesma sessão.** As duas precisam da mesma KB grande montada. Separadas, são duas
      preparações de ambiente para uma medição cada;
 8. executar o comando de recuperação explícita sobre a KB inteira, incluindo um caso
