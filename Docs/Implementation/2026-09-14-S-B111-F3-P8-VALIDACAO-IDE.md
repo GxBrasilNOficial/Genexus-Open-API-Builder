@@ -176,14 +176,51 @@ largura que decide se o inventário se lê ou se quebra no meio do nome.
 As medidas finais, depois de duas passagens sobre a lista real de trinta alvos: **1685 × 749**,
 com o bloco de inventário até 655 px e piso de 1123 px de largura ao encolher.
 
-## 6. Cenários restantes
+## 6. Cenário 4 — devolver a KB ao normal
+
+**Passou.** Depois de apagar o par API Object + metadata, o Wizard reaplicou sobre o que restou:
+
+| Medida | Resultado |
+|---|---|
+| Relatório | `Criados=2`, `Atualizados=26`, `Removidos=0`, `Bloqueados=0`, 9,3 s |
+| O que foi criado | o API Object (`d8448562-…`) e a metadata |
+| O que foi reencontrado | 21 SDTs (18 próprios + 3 compartilhados) e as 5 Procedures, `Created=0` em ambos |
+| Metadata | `GOAB_API_METADATA_B060_V3`, `Bytes=117988` |
+| Integridade | `PlannedContractHash='16DF0B0A…'` — **idêntico** ao da geração original |
+| Diário | `OperationId` novo, `Checkpoints=4`, `TotalMs=250`, `Completed/Completed` |
+
+O `PlannedContractHash` igual ao de antes é a prova de que o contrato reconstruído é o mesmo:
+as preferências da KB descreviam a mesma API que a metadata apagada descrevia. Num caso em que
+as preferências tivessem mudado, ele seria outro — e o aviso sobre paginação, ordenação e
+obrigatórios existe justamente para esse caso.
+
+### 6.1 Achado — o File do diário nascia sem módulo
+
+O LSI.Extensions, extensão de terceiros instalada na mesma IDE, avisou:
+
+```
+warning: Object GxOpenApiBuilder_OperationJournal has no folder/module assigned
+```
+
+Procedia. O store criava o File com nome, Description e conteúdo, e não atribuía módulo — a IDE
+aceita, mas o objeto fica fora da organização que todo o resto da extensão segue: a metadata de
+negócio herda o módulo da Transaction, e o File de preferências está no `Root Module`.
+
+O diário pertence à **KB**, não a uma Transaction, então o lugar dele é o `Root Module`, via
+`Module.GetRoot`. A atribuição é idempotente e corrige também um diário criado antes desta
+versão, na primeira gravação seguinte — não é preciso apagar nada.
+
+O aviso veio de fora e apontou um objeto nosso; sem ele, isso passaria despercebido por tempo
+indefinido, porque não quebra nada.
+
+## 7. Cenários restantes
 
 | # | Cenário | Estado |
 |---|---|---|
 | 1 | Remoção completa (fila nova) | **passou** — seção 2 |
 | 2 | Alvo previsto ausente antes do `Delete()` | **passou** — seção 4 |
 | 3 | Recuperação sobre o envelope `Partial`: encerrar o registro | **passou** — seção 5 |
-| 4 | Devolver a KB ao normal — ver o achado da seção 7 | não iniciado |
+| 4 | Devolver a KB ao normal | **passou** — seção 6 |
 | 5 | Abortar um Apply no meio; oferta proativa; recuperação | não iniciado |
 | 6 | Wizard cancelado antes de aplicar: envelope `Prepared` e abandono | não iniciado |
 | 7 | Interromper uma remoção no meio e retomar a fila | não iniciado |
@@ -193,7 +230,7 @@ com o bloco de inventário até 655 px e piso de 1123 px de largura ao encolher.
 O cenário 3 dependia do envelope `Partial` deixado pelo cenário 2: **não apagar o File
 `GxOpenApiBuilder_OperationJournal` à mão** entre um e outro, sob pena de destruir a condição.
 
-## 7. Achado — metadata completa com API Object apagado à mão não tem saída pela ferramenta
+## 8. Achado — metadata completa com API Object apagado à mão não tem saída pela ferramenta
 
 Descoberto ao planejar o cenário 4, conferindo o código antes de propor o caminho.
 
@@ -229,7 +266,7 @@ A mensagem do `apiGuid` deixou de nomear o campo incompatível: nomear um campo 
 diagnóstico para quem está na IDE. A recusa continua a mesma; o que mudou é que ela agora
 termina com um caminho. Asserções trilíngues no gate `tests.extensionOutputLocalization`.
 
-### 7.1 A primeira correção estava no lugar errado — medido na IDE
+### 8.1 A primeira correção estava no lugar errado — medido na IDE
 
 A correção acima foi escrita presumindo que o Wizard travaria ao **gravar** a metadata. Ele não
 trava: o leitor de estado desliga a etapa **antes**, e o Apply conclui tudo o mais. Na IDE, em
@@ -255,7 +292,7 @@ problema que é de outro lugar.
 **Efeito colateral do teste:** a KB ficou com um API Object novo (`69407f89-…`) e a metadata
 antiga apontando para o GUID morto (`af422c2e-…`).
 
-### 7.2 E a segunda também — o conflito é do API Object, não da metadata
+### 8.2 E a segunda também — o conflito é do API Object, não da metadata
 
 A execução seguinte mostrou que, **neste** estado, quem bloqueia não é a etapa de metadata: é a
 do **API Object**, e a de metadata apenas herda («Bloqueado: o API Object precisa estar
@@ -289,7 +326,7 @@ suficiente sozinha:
 O estado a corrigir continua o mesmo, e o caminho também — apagar a metadata e reaplicar —,
 agora com a ferramenta dizendo isso nos três pontos.
 
-### 7.3 O bloco técnico deixou de competir com a orientação
+### 8.3 O bloco técnico deixou de competir com a orientação
 
 Verificada a orientação na IDE, sobrou o ruído em volta dela: o diagnóstico do bloqueio
 publicava **trinta e três linhas fixas**, onze delas vazias e cinco derivadas de uma medição
@@ -318,9 +355,9 @@ ApiNameEsperado='apiTeste'
 Nada se perdeu: o que saiu era derivável do que ficou. O GUID atual e o da metadata continuam
 na linha da causa, onde já estavam.
 
-### 7.4 A orientação estava errada: os dois objetos saem juntos
+### 8.4 A orientação estava errada: os dois objetos saem juntos
 
-A instrução das seções 7 a 7.2 mandava apagar **o File de metadata** e reaplicar. Exercida na
+A instrução das seções 8 a 8.2 mandava apagar **o File de metadata** e reaplicar. Exercida na
 IDE, ela não funciona quando o API Object existe: sem metadata, a posse dele não pode ser
 confirmada, e o Wizard volta a bloquear — agora com `Causa='MetadataMissing'`, `ApiObjectCount=1`.
 Um bloqueio trocado pelo outro.

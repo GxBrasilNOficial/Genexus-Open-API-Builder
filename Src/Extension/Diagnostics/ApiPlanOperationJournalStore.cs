@@ -146,6 +146,22 @@ internal sealed class ApiPlanOperationJournalStore
         }
 
         file.Description = OwnedDescription;
+
+        // O diário pertence à KB, não a uma Transaction: o lugar dele é o Root Module. Sem esta
+        // atribuição ele nascia sem módulo — o que a IDE aceita, mas deixa o objeto fora da
+        // organização que todo o resto segue, e faz ferramenta de terceiros avisar («Object
+        // GxOpenApiBuilder_OperationJournal has no folder/module assigned», LSI.Extensions,
+        // medido na IDE em 2026-09-14). A atribuição é idempotente e corrige também um diário
+        // criado antes desta versão, na primeira gravação seguinte.
+        if (file.Module is null)
+        {
+            var rootModule = Module.GetRoot(_designModel);
+            if (rootModule is not null)
+            {
+                file.Module = rootModule;
+            }
+        }
+
         SetExtractionFlags(file);
         file.BlobPart.SetPropertyValue("FileName", ApiPlanOperationJournal.JournalExternalFileName);
         file.BlobPart.Data = BinaryStream.FromBytes(bytes);
