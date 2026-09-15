@@ -100,6 +100,15 @@ public sealed class ApiPlanOperationJournalPlan
     public bool? GenerateMetadata { get; set; }
 
     public IList<string> Services { get; } = new List<string>();
+
+    /// <summary>
+    /// Suficiência do inventário que sustentou o plano. Somente planos de
+    /// <see cref="JournalPlanKind.Removal"/> e <see cref="JournalPlanKind.MetadataRecovery"/>
+    /// carregam valor; <see cref="JournalPlanKind.Generation"/> grava o campo sempre como
+    /// null explícito, porque a suficiência é avaliação de remoção e recuperação, nunca de
+    /// geração.
+    /// </summary>
+    public JournalInventorySufficiency? InventorySufficiency { get; set; }
 }
 
 public sealed class ApiPlanOperationJournalInventoryItem
@@ -167,6 +176,22 @@ public sealed class ApiPlanOperationJournalReceipt
 
     public int? RetryOfSequence { get; set; }
 
+    /// <summary>Início medido, normalizado para UTC. Sempre presente no recibo.</summary>
+    public DateTime StartedUtc { get; set; }
+
+    /// <summary>
+    /// Fim medido, normalizado para UTC. Null somente quando o recibo ficou apenas iniciado
+    /// (<see cref="JournalAttemptState.Started"/>); a validação exige valor em Finished e Interrupted.
+    /// </summary>
+    public DateTime? EndedUtc { get; set; }
+
+    /// <summary>
+    /// Duração em milissegundos desde <see cref="StartedUtc"/>. Nunca negativa; zero é
+    /// permitido (gravações sub-milissegundo). Onde o todo decorrido for maior que
+    /// <see cref="long"/> a gravação satura em <see cref="long.MaxValue"/>.
+    /// </summary>
+    public long DurationMs { get; set; }
+
     public JournalAttemptState AttemptState { get; set; }
 
     public JournalResult Result { get; set; }
@@ -207,6 +232,19 @@ public enum JournalPlanKind
     Generation = 0,
     Removal = 1,
     MetadataRecovery = 2,
+}
+
+/// <summary>
+/// Suficiência do inventário de remoção. A ausência total do inventário e o inventário
+/// incompleto são um só valor, porque ambos bloqueiam a operação na recusa P8 §12 — o
+/// negativo nunca é persistido no diário; o único valor que chega ao envelope é
+/// <see cref="InventorySufficient"/>. O enum existe para o campo viajar tipado e legível,
+/// não para distribuir estados de bloqueio.
+/// </summary>
+public enum JournalInventorySufficiency
+{
+    InventorySufficient = 0,
+    InventoryInsufficient = 1,
 }
 
 public enum JournalEnvelopePhase

@@ -231,6 +231,9 @@ try {
     $receipt.Stage = 'OwnSdts'
     $receipt.ObjectType = Get-Enum $objectTypeEnum 'Sdt'
     $receipt.Attempt = 1
+    $receipt.StartedUtc = $now.AddSeconds(-2)
+    $receipt.EndedUtc = $now.AddSeconds(-1)
+    $receipt.DurationMs = 1000
     $receipt.AttemptState = Get-Enum $attemptStateEnum 'Finished'
     $receipt.Result = Get-Enum $resultEnum 'Confirmed'
     $receipt.Confirmation = Get-Enum $confirmationEnum 'Confirmed'

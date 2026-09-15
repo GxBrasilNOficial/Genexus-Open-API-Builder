@@ -1376,6 +1376,8 @@ public sealed class Package : AbstractPackageUI
                     return true;
                 }
 
+                WriteOutput($"[Genexus Open API Builder][B111/F3] Inventario de remocao avaliado: {intent.Sufficiency} — Alvos={intent.Targets.Count}, NaFila={intent.QueuedCount}.");
+
                 var removalApiGuid = Guid.TryParse(intent.Plan.ApiGuid, out var parsedApiGuid) ? parsedApiGuid : (Guid?)null;
                 var journalStart = ApiPlanOperationJournalSession.Start(
                     knowledgeBase.DesignModel,

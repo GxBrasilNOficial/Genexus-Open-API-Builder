@@ -508,7 +508,8 @@ public static class ApiPlanOperationJournalPlans
     /// <summary>
     /// Plano de Remove. O inventário completo vive no envelope; aqui ficam a identidade da
     /// API e o contrato, que pode ser nulo quando a intenção foi importada de metadata
-    /// legada.
+    /// legada. A suficiência do inventário é registrada porque um plano de Remove só nasce
+    /// quando a avaliação da intenção aprovou os alvos.
     /// </summary>
     public static ApiPlanOperationJournalPlan ForRemoval(
         Guid? plannedApiGuid,
@@ -520,6 +521,7 @@ public static class ApiPlanOperationJournalPlans
             PlanKind = JournalPlanKind.Removal,
             PlannedApiGuid = plannedApiGuid.HasValue && plannedApiGuid.Value != Guid.Empty ? plannedApiGuid : null,
             ContractHash = string.IsNullOrWhiteSpace(contractHash) ? null : contractHash,
+            InventorySufficiency = JournalInventorySufficiency.InventorySufficient,
         };
 
         AddServices(plan, services);
@@ -529,7 +531,8 @@ public static class ApiPlanOperationJournalPlans
     /// <summary>
     /// Plano do Recovery autônomo de B115: inventário, nunca contrato. Os blocos não
     /// recuperáveis ficam ausentes, e inventá-los faria o Sync comparar a API real contra
-    /// uma descrição falsa.
+    /// uma descrição falsa. A suficiência do inventário é registrada porque a recuperação
+    /// só começa quando o inventário dos blocos órfãos foi avaliado como suficiente.
     /// </summary>
     public static ApiPlanOperationJournalPlan ForMetadataRecovery(Guid? plannedApiGuid)
     {
@@ -537,6 +540,7 @@ public static class ApiPlanOperationJournalPlans
         {
             PlanKind = JournalPlanKind.MetadataRecovery,
             PlannedApiGuid = plannedApiGuid.HasValue && plannedApiGuid.Value != Guid.Empty ? plannedApiGuid : null,
+            InventorySufficiency = JournalInventorySufficiency.InventorySufficient,
         };
     }
 

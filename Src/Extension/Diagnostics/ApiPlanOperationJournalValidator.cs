@@ -330,6 +330,12 @@ public static class ApiPlanOperationJournalValidator
                 RequireFlag(plan.GenerateSdts, "plan.generateSdts", errors);
                 RequireFlag(plan.GenerateProcedures, "plan.generateProcedures", errors);
                 RequireFlag(plan.GenerateMetadata, "plan.generateMetadata", errors);
+
+                if (plan.InventorySufficiency.HasValue)
+                {
+                    errors.Add("plan.inventorySufficiency não existe em Generation: a suficiência é avaliação de remoção e recuperação.");
+                }
+
                 break;
 
             case JournalPlanKind.Removal:
@@ -350,6 +356,12 @@ public static class ApiPlanOperationJournalValidator
                 }
 
                 RequireAbsentFlags(plan, "Remove", errors);
+
+                if (!plan.InventorySufficiency.HasValue)
+                {
+                    errors.Add("plan.inventorySufficiency é obrigatório em Remove.");
+                }
+
                 break;
 
             case JournalPlanKind.MetadataRecovery:
@@ -362,6 +374,12 @@ public static class ApiPlanOperationJournalValidator
                 }
 
                 RequireAbsentFlags(plan, "MetadataRecovery", errors);
+
+                if (!plan.InventorySufficiency.HasValue)
+                {
+                    errors.Add("plan.inventorySufficiency é obrigatório em MetadataRecovery.");
+                }
+
                 break;
         }
 
@@ -422,6 +440,28 @@ public static class ApiPlanOperationJournalValidator
             else if (receipt.RetryableReason.HasValue)
             {
                 errors.Add("receipts[].retryableReason só existe com retryEligible=true.");
+            }
+
+            if (receipt.StartedUtc == default)
+            {
+                errors.Add("receipts[].startedUtc é obrigatório.");
+            }
+
+            if (receipt.EndedUtc.HasValue
+                && receipt.StartedUtc != default
+                && receipt.EndedUtc.Value < receipt.StartedUtc)
+            {
+                errors.Add("receipts[].endedUtc não pode ser anterior a startedUtc.");
+            }
+
+            if (receipt.AttemptState != JournalAttemptState.Started && !receipt.EndedUtc.HasValue)
+            {
+                errors.Add("receipts[].endedUtc é obrigatório quando o recibo não ficou apenas iniciado.");
+            }
+
+            if (receipt.DurationMs < 0)
+            {
+                errors.Add("receipts[].durationMs não pode ser negativo.");
             }
         }
 

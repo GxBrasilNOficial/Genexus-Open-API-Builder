@@ -98,7 +98,7 @@ if (-not (Test-Path -LiteralPath $GeneXusDirectory -PathType Container)) {
 
 # O envelope canônico de referência. Qualquer mudança de ordem, espaçamento ou formato de
 # valor quebra este literal — que é exatamente o ponto: o material canônico é contrato.
-$canonical = '{"schemaVersion":1,"journalKind":"GOAB_OPERATION_JOURNAL","knowledgeBaseGuid":"11111111-1111-1111-1111-111111111111","transactionGuid":"22222222-2222-2222-2222-222222222222","transactionName":"Teste","operationId":"33333333-3333-3333-3333-333333333333","applicationId":"44444444-4444-4444-4444-444444444444","operationKind":"Apply","generatorVersion":"0.1.0-alpha.7","createdUtc":"2026-09-14T10:00:00.000Z","updatedUtc":"2026-09-14T10:00:01.500Z","envelopePhase":"Active","operationState":"Running","logicalStage":"ApiPhysicallySaved","journalDurability":"Confirmed","intentKind":"Current","metadataSchemaVersion":"GOAB_API_METADATA_B060_V3","plan":{"planKind":"Generation","plannedApiGuid":"55555555-5555-5555-5555-555555555555","contractHash":"abc123","generateApiObject":true,"generateSdts":true,"generateProcedures":true,"generateMetadata":true,"services":["List","Get"]},"inventory":[{"objectType":"ApiObject","identityKind":"Guid","guid":"55555555-5555-5555-5555-555555555555","fileId":null,"composite":null,"emptyConfirmed":null,"name":"apiTeste","ownershipValidated":true,"action":"Create","physicalState":"Present","confirmation":"Confirmed","expectedHash":null,"receiptSequences":[1]},{"objectType":"MetadataFile","identityKind":"FileId","guid":null,"fileId":42,"composite":null,"emptyConfirmed":null,"name":"apiTeste_Metadata","ownershipValidated":true,"action":"Create","physicalState":"Unknown","confirmation":"NotAttempted","expectedHash":"deadbeef","receiptSequences":[]}],"receipts":[{"sequence":1,"operation":"Save","stage":"B055","objectType":"ApiObject","attempt":1,"retryOfSequence":null,"attemptState":"Finished","result":"Confirmed","confirmation":"Confirmed","physicalState":"Present","retryEligible":false,"retryableReason":null}],"abandonment":null,"blockReason":null}'
+$canonical = '{"schemaVersion":1,"journalKind":"GOAB_OPERATION_JOURNAL","knowledgeBaseGuid":"11111111-1111-1111-1111-111111111111","transactionGuid":"22222222-2222-2222-2222-222222222222","transactionName":"Teste","operationId":"33333333-3333-3333-3333-333333333333","applicationId":"44444444-4444-4444-4444-444444444444","operationKind":"Apply","generatorVersion":"0.1.0-alpha.7","createdUtc":"2026-09-14T10:00:00.000Z","updatedUtc":"2026-09-14T10:00:01.500Z","envelopePhase":"Active","operationState":"Running","logicalStage":"ApiPhysicallySaved","journalDurability":"Confirmed","intentKind":"Current","metadataSchemaVersion":"GOAB_API_METADATA_B060_V3","plan":{"planKind":"Generation","plannedApiGuid":"55555555-5555-5555-5555-555555555555","contractHash":"abc123","generateApiObject":true,"generateSdts":true,"generateProcedures":true,"generateMetadata":true,"services":["List","Get"],"inventorySufficiency":null},"inventory":[{"objectType":"ApiObject","identityKind":"Guid","guid":"55555555-5555-5555-5555-555555555555","fileId":null,"composite":null,"emptyConfirmed":null,"name":"apiTeste","ownershipValidated":true,"action":"Create","physicalState":"Present","confirmation":"Confirmed","expectedHash":null,"receiptSequences":[1]},{"objectType":"MetadataFile","identityKind":"FileId","guid":null,"fileId":42,"composite":null,"emptyConfirmed":null,"name":"apiTeste_Metadata","ownershipValidated":true,"action":"Create","physicalState":"Unknown","confirmation":"NotAttempted","expectedHash":"deadbeef","receiptSequences":[]}],"receipts":[{"sequence":1,"operation":"Save","stage":"B055","objectType":"ApiObject","attempt":1,"retryOfSequence":null,"startedUtc":"2026-09-14T10:00:00.000Z","endedUtc":"2026-09-14T10:00:01.000Z","durationMs":1000,"attemptState":"Finished","result":"Confirmed","confirmation":"Confirmed","physicalState":"Present","retryEligible":false,"retryableReason":null}],"abandonment":null,"blockReason":null}'
 
 $script:AssemblyResolveHandler = $null
 try {
@@ -278,6 +278,31 @@ try {
             Name    = 'attempt não positivo'
             Json    = $canonical.Replace('"attempt":1', '"attempt":0')
             Needle  = 'receipts[].attempt deve ser inteiro positivo'
+        },
+        @{
+            Name    = 'recibo sem startedUtc'
+            Json    = $canonical.Replace('"startedUtc":"2026-09-14T10:00:00.000Z",', '')
+            Needle  = 'receipts[].startedUtc é obrigatório'
+        },
+        @{
+            Name    = 'endedUtc anterior a startedUtc'
+            Json    = $canonical.Replace('"endedUtc":"2026-09-14T10:00:01.000Z"', '"endedUtc":"2026-09-14T09:59:59.000Z"')
+            Needle  = 'receipts[].endedUtc não pode ser anterior a startedUtc'
+        },
+        @{
+            Name    = 'endedUtc ausente em recibo encerrado'
+            Json    = $canonical.Replace('"endedUtc":"2026-09-14T10:00:01.000Z",', '')
+            Needle  = 'receipts[].endedUtc é obrigatório quando o recibo não ficou apenas iniciado'
+        },
+        @{
+            Name    = 'durationMs negativo'
+            Json    = $canonical.Replace('"durationMs":1000', '"durationMs":-5')
+            Needle  = 'receipts[].durationMs não pode ser negativo'
+        },
+        @{
+            Name    = 'suficiência do inventário em Generation'
+            Json    = $canonical.Replace('"inventorySufficiency":null', '"inventorySufficiency":"InventorySufficient"')
+            Needle  = 'plan.inventorySufficiency não existe em Generation'
         }
     )
 
@@ -288,7 +313,7 @@ try {
     }
 
     # --- 6. Remove: fila destrutiva, Partial e orçamento ------------------------------------
-    $removeJson = '{"schemaVersion":1,"journalKind":"GOAB_OPERATION_JOURNAL","knowledgeBaseGuid":"11111111-1111-1111-1111-111111111111","transactionGuid":"22222222-2222-2222-2222-222222222222","transactionName":"Teste","operationId":"33333333-3333-3333-3333-333333333333","applicationId":"44444444-4444-4444-4444-444444444444","operationKind":"Remove","generatorVersion":"0.1.0-alpha.7","createdUtc":"2026-09-14T10:00:00.000Z","updatedUtc":"2026-09-14T10:00:02.000Z","envelopePhase":"Active","operationState":"Partial","logicalStage":"RemovalPartial","journalDurability":"Confirmed","intentKind":"Current","metadataSchemaVersion":null,"plan":{"planKind":"Removal","plannedApiGuid":"55555555-5555-5555-5555-555555555555","contractHash":"abc123","generateApiObject":null,"generateSdts":null,"generateProcedures":null,"generateMetadata":null,"services":[]},"inventory":[{"objectType":"ApiObject","identityKind":"Guid","guid":"55555555-5555-5555-5555-555555555555","fileId":null,"composite":null,"emptyConfirmed":null,"name":"apiTeste","ownershipValidated":true,"action":"Delete","physicalState":"Absent","confirmation":"Absent","expectedHash":null,"receiptSequences":[1]},{"objectType":"Sdt","identityKind":"Composite","guid":null,"fileId":null,"composite":{"exactName":"sdtTeste_API_ListFilters","objectTypeName":"SDT","role":"ListFilters","canonicalDescription":"apiTeste_Metadata","transactionGuid":"22222222-2222-2222-2222-222222222222","apiGuid":"55555555-5555-5555-5555-555555555555"},"emptyConfirmed":null,"name":"sdtTeste_API_ListFilters","ownershipValidated":true,"action":"Delete","physicalState":"Present","confirmation":"Confirmed","expectedHash":null,"receiptSequences":[2]},{"objectType":"Transaction","identityKind":"None","guid":null,"fileId":null,"composite":null,"emptyConfirmed":null,"name":"Teste","ownershipValidated":false,"action":"Preserve","physicalState":"Present","confirmation":"Confirmed","expectedHash":null,"receiptSequences":[]}],"receipts":[{"sequence":1,"operation":"Delete","stage":"B086","objectType":"ApiObject","attempt":1,"retryOfSequence":null,"attemptState":"Finished","result":"Confirmed","confirmation":"Absent","physicalState":"Absent","retryEligible":false,"retryableReason":null},{"sequence":2,"operation":"Delete","stage":"B086","objectType":"Sdt","attempt":1,"retryOfSequence":null,"attemptState":"Finished","result":"Failed","confirmation":"Confirmed","physicalState":"Present","retryEligible":true,"retryableReason":"StillPresentAfterDelete"}],"abandonment":null,"blockReason":"RetryBudgetExhausted"}'
+    $removeJson = '{"schemaVersion":1,"journalKind":"GOAB_OPERATION_JOURNAL","knowledgeBaseGuid":"11111111-1111-1111-1111-111111111111","transactionGuid":"22222222-2222-2222-2222-222222222222","transactionName":"Teste","operationId":"33333333-3333-3333-3333-333333333333","applicationId":"44444444-4444-4444-4444-444444444444","operationKind":"Remove","generatorVersion":"0.1.0-alpha.7","createdUtc":"2026-09-14T10:00:00.000Z","updatedUtc":"2026-09-14T10:00:02.000Z","envelopePhase":"Active","operationState":"Partial","logicalStage":"RemovalPartial","journalDurability":"Confirmed","intentKind":"Current","metadataSchemaVersion":null,"plan":{"planKind":"Removal","plannedApiGuid":"55555555-5555-5555-5555-555555555555","contractHash":"abc123","generateApiObject":null,"generateSdts":null,"generateProcedures":null,"generateMetadata":null,"services":[],"inventorySufficiency":"InventorySufficient"},"inventory":[{"objectType":"ApiObject","identityKind":"Guid","guid":"55555555-5555-5555-5555-555555555555","fileId":null,"composite":null,"emptyConfirmed":null,"name":"apiTeste","ownershipValidated":true,"action":"Delete","physicalState":"Absent","confirmation":"Absent","expectedHash":null,"receiptSequences":[1]},{"objectType":"Sdt","identityKind":"Composite","guid":null,"fileId":null,"composite":{"exactName":"sdtTeste_API_ListFilters","objectTypeName":"SDT","role":"ListFilters","canonicalDescription":"apiTeste_Metadata","transactionGuid":"22222222-2222-2222-2222-222222222222","apiGuid":"55555555-5555-5555-5555-555555555555"},"emptyConfirmed":null,"name":"sdtTeste_API_ListFilters","ownershipValidated":true,"action":"Delete","physicalState":"Present","confirmation":"Confirmed","expectedHash":null,"receiptSequences":[2]},{"objectType":"Transaction","identityKind":"None","guid":null,"fileId":null,"composite":null,"emptyConfirmed":null,"name":"Teste","ownershipValidated":false,"action":"Preserve","physicalState":"Present","confirmation":"Confirmed","expectedHash":null,"receiptSequences":[]}],"receipts":[{"sequence":1,"operation":"Delete","stage":"B086","objectType":"ApiObject","attempt":1,"retryOfSequence":null,"startedUtc":"2026-09-14T10:00:00.000Z","endedUtc":"2026-09-14T10:00:01.000Z","durationMs":730,"attemptState":"Finished","result":"Confirmed","confirmation":"Absent","physicalState":"Absent","retryEligible":false,"retryableReason":null},{"sequence":2,"operation":"Delete","stage":"B086","objectType":"Sdt","attempt":1,"retryOfSequence":null,"startedUtc":"2026-09-14T10:00:01.000Z","endedUtc":"2026-09-14T10:00:02.000Z","durationMs":870,"attemptState":"Finished","result":"Failed","confirmation":"Confirmed","physicalState":"Present","retryEligible":true,"retryableReason":"StillPresentAfterDelete"}],"abandonment":null,"blockReason":"RetryBudgetExhausted"}'
     $remove = Read-Journal $removeJson
     Assert-True ([bool]$remove.IsValid) "O envelope de Remove deve ser válido. Erros: $($remove.Describe())"
     Assert-Equal $removeJson ([string]$serializeMethod.Invoke($null, @($remove.Journal))) 'Remove também reserializa byte a byte.'
@@ -330,6 +355,11 @@ try {
             Name   = 'orçamento esgotado fora de Remove'
             Json   = $canonical.Replace('"operationState":"Running"', '"operationState":"Partial"').Replace('"blockReason":null', '"blockReason":"RetryBudgetExhausted"')
             Needle = 'RetryBudgetExhausted pertence ao orçamento de passadas do Remove'
+        },
+        @{
+            Name   = 'Remove sem suficiência do inventário'
+            Json   = $removeJson.Replace('"inventorySufficiency":"InventorySufficient"', '"inventorySufficiency":null')
+            Needle = 'plan.inventorySufficiency é obrigatório em Remove'
         }
     )
 
@@ -346,7 +376,7 @@ try {
     Assert-True ([bool]$userAborted.IsValid) "Partial com UserAborted deve ser válido. Erros: $($userAborted.Describe())"
 
     # --- 7. Abandono explícito de um envelope Prepared --------------------------------------
-    $abandonJson = '{"schemaVersion":1,"journalKind":"GOAB_OPERATION_JOURNAL","knowledgeBaseGuid":"11111111-1111-1111-1111-111111111111","transactionGuid":"22222222-2222-2222-2222-222222222222","transactionName":"Teste","operationId":"33333333-3333-3333-3333-333333333333","applicationId":"44444444-4444-4444-4444-444444444444","operationKind":"Apply","generatorVersion":"0.1.0-alpha.7","createdUtc":"2026-09-14T10:00:00.000Z","updatedUtc":"2026-09-14T10:05:00.000Z","envelopePhase":"Prepared","operationState":"Completed","logicalStage":"Abandoned","journalDurability":"Confirmed","intentKind":"Current","metadataSchemaVersion":null,"plan":{"planKind":"Generation","plannedApiGuid":"55555555-5555-5555-5555-555555555555","contractHash":"abc123","generateApiObject":true,"generateSdts":true,"generateProcedures":true,"generateMetadata":true,"services":["List"]},"inventory":[],"receipts":[],"abandonment":{"reason":"Abandono autorizado pelo usuário","authorizedUtc":"2026-09-14T10:05:00.000Z","authorizedBy":"ANTONIOJOSE"},"blockReason":null}'
+    $abandonJson = '{"schemaVersion":1,"journalKind":"GOAB_OPERATION_JOURNAL","knowledgeBaseGuid":"11111111-1111-1111-1111-111111111111","transactionGuid":"22222222-2222-2222-2222-222222222222","transactionName":"Teste","operationId":"33333333-3333-3333-3333-333333333333","applicationId":"44444444-4444-4444-4444-444444444444","operationKind":"Apply","generatorVersion":"0.1.0-alpha.7","createdUtc":"2026-09-14T10:00:00.000Z","updatedUtc":"2026-09-14T10:05:00.000Z","envelopePhase":"Prepared","operationState":"Completed","logicalStage":"Abandoned","journalDurability":"Confirmed","intentKind":"Current","metadataSchemaVersion":null,"plan":{"planKind":"Generation","plannedApiGuid":"55555555-5555-5555-5555-555555555555","contractHash":"abc123","generateApiObject":true,"generateSdts":true,"generateProcedures":true,"generateMetadata":true,"services":["List"],"inventorySufficiency":null},"inventory":[],"receipts":[],"abandonment":{"reason":"Abandono autorizado pelo usuário","authorizedUtc":"2026-09-14T10:05:00.000Z","authorizedBy":"ANTONIOJOSE"},"blockReason":null}'
     $abandon = Read-Journal $abandonJson
     Assert-True ([bool]$abandon.IsValid) "O abandono explícito deve ser válido. Erros: $($abandon.Describe())"
     Assert-Equal $abandonJson ([string]$serializeMethod.Invoke($null, @($abandon.Journal))) 'O abandono também reserializa byte a byte.'
@@ -369,7 +399,7 @@ try {
         },
         @{
             Name   = 'abandono com gravação de negócio'
-            Json   = $abandonJson.Replace('"receipts":[]', '"receipts":[{"sequence":1,"operation":"Save","stage":"B055","objectType":"Sdt","attempt":1,"retryOfSequence":null,"attemptState":"Finished","result":"Confirmed","confirmation":"Confirmed","physicalState":"Present","retryEligible":false,"retryableReason":null}]')
+            Json   = $abandonJson.Replace('"receipts":[]', '"receipts":[{"sequence":1,"operation":"Save","stage":"B055","objectType":"Sdt","attempt":1,"retryOfSequence":null,"startedUtc":"2026-09-14T10:00:00.000Z","endedUtc":"2026-09-14T10:00:01.000Z","durationMs":1000,"attemptState":"Finished","result":"Confirmed","confirmation":"Confirmed","physicalState":"Present","retryEligible":false,"retryableReason":null}]')
             Needle = 'o abandono não admite recibos'
         }
     )

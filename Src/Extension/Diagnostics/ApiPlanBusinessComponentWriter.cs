@@ -562,7 +562,7 @@ internal static class ApiPlanBusinessComponentWriter
             new CompositeIdentity(
                 procedure.Name,
                 "Procedure",
-                "Generated",
+                ApiPlanJournalRoles.ForProcedureName(procedure.Name),
                 procedure.Description,
                 plan.TransactionGuid,
                 // O campo é o GUID do API Object a que a Procedure pertence, não o dela

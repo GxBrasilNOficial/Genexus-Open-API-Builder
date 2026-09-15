@@ -324,7 +324,7 @@ internal static class ApiPlanGeneratedApiRemover
             JournalObjectType.ApiObject,
             plan.ApiName,
             api?.Guid,
-            "ApiObject",
+            ApiPlanJournalRoles.MainApi,
             "API",
             transaction.Guid,
             apiGuid));
@@ -336,7 +336,7 @@ internal static class ApiPlanGeneratedApiRemover
                 JournalObjectType.Procedure,
                 name,
                 procedure?.Guid,
-                "Procedures",
+                ApiPlanJournalRoles.ForProcedureName(name),
                 "Procedure",
                 transaction.Guid,
                 apiGuid));
@@ -349,7 +349,7 @@ internal static class ApiPlanGeneratedApiRemover
                 JournalObjectType.Sdt,
                 name,
                 sdt?.Guid,
-                "OwnSdts",
+                ApiPlanJournalRoles.OwnSdt,
                 "SDT",
                 transaction.Guid,
                 apiGuid));
@@ -795,7 +795,7 @@ internal static class ApiPlanGeneratedApiRemover
             .ToArray());
         if (matches.Length == 0)
         {
-            return NotAttempted(target, "Procedure", "Procedures", "Procedure ausente antes do Delete.");
+            return NotAttempted(target, "Procedure", ApiPlanJournalRoles.ForProcedureName(name), "Procedure ausente antes do Delete.");
         }
 
         var procedure = matches[0];
@@ -833,7 +833,7 @@ internal static class ApiPlanGeneratedApiRemover
             .ToArray());
         if (matches.Length == 0)
         {
-            return NotAttempted(target, "API", "ApiObject", "API Object ausente antes do Delete.");
+            return NotAttempted(target, "API", ApiPlanJournalRoles.MainApi, "API Object ausente antes do Delete.");
         }
 
         var api = matches[0];
@@ -872,7 +872,7 @@ internal static class ApiPlanGeneratedApiRemover
             .ToArray());
         if (matches.Length == 0)
         {
-            return NotAttempted(target, "SDT", "OwnSdts", "SDT ausente antes do Delete.");
+            return NotAttempted(target, "SDT", ApiPlanJournalRoles.OwnSdt, "SDT ausente antes do Delete.");
         }
 
         var sdt = matches[0];
@@ -908,7 +908,7 @@ internal static class ApiPlanGeneratedApiRemover
             .ToArray());
         if (matches.Length == 0)
         {
-            return NotAttempted(target, "File", "Metadata", "File de metadata ausente antes do Delete.");
+            return NotAttempted(target, "File", ApiPlanJournalRoles.Metadata, "File de metadata ausente antes do Delete.");
         }
 
         var metadataFile = matches[0];
@@ -997,17 +997,17 @@ internal static class ApiPlanGeneratedApiRemover
     private static ApiPlanRemovalAttemptResult NotAttempted(
         ApiPlanRemovalTarget target,
         string objectType,
-        string stage,
+        string role,
         string detail)
     {
         var composite = target.Composite;
         ApiPlanSaveBoundaryProbe.RecordNotAttempted(
             "Delete",
             objectType,
-            stage,
+            role,
             target.Name,
             composite is null
-                ? new CompositeIdentity(target.Name, objectType, stage, string.Empty, Guid.Empty, Guid.Empty)
+                ? new CompositeIdentity(target.Name, objectType, role, string.Empty, Guid.Empty, Guid.Empty)
                 : new CompositeIdentity(
                     composite.ExactName,
                     composite.ObjectTypeName,
@@ -1191,6 +1191,13 @@ internal sealed class ApiPlanGeneratedApiRemovalIntent
     internal int QueuedCount => Targets.Count(target => target.Queued);
 
     internal int MaxPasses => ApiPlanRemovalIntent.ResolveMaxPasses(Targets);
+
+    /// <summary>
+    /// Suficiência do inventário que sustentou a intenção. Só existe intenção quando a
+    /// avaliação aprovou os alvos, então o valor carregado aqui é sempre suficiente — o
+    /// negativo bloqueia antes, na recusa P8 §12, e nunca chega ao diário.
+    /// </summary>
+    internal JournalInventorySufficiency Sufficiency => JournalInventorySufficiency.InventorySufficient;
 
     /// <summary>
     /// Intenção importada: a metadata não trazia identidade de aplicação própria, então o

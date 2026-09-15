@@ -345,6 +345,16 @@ Decisão aprovada:
 - `InventorySufficient` significa inventário suficiente para a remoção, não
   prova histórica de que nenhum objeto antigo ficou fora do inventário.
 
+**Remissão — 2026-09-15.** A decisão acima é a regra de comportamento e vale inteira.
+O que a implementação da F3 tornou explícito é a **forma no diário**: o plano de operação
+serializa um campo próprio `inventorySufficiency` (enum anulável), em vez de deixar a
+suficiência implícita no conjunto de alvos. O valor persistido é sempre
+`InventorySufficient`, porque a recusa negativa (seção P8 §12 do plano da F3) bloqueia
+antes da primeira gravação do diário — `InventoryInsufficient` nunca chega a ser
+persistido. A recuperação de metadata e a avaliação da intenção continuam produzindo o
+resultado explícito exigido aqui; a diferença é que, doravante, a suficiência também
+viaja no payload do envelope (ver remissão na decisão 24).
+
 ### 22. Alcance das provas da F2
 
 Decisão aprovada:
@@ -415,8 +425,16 @@ nomes serializados.
 | `abandonment` | objeto anulável | obrigatório somente quando `logicalStage=Abandoned` |
 | `blockReason` | enum anulável | obrigatória em um checkpoint confirmado que registre bloqueio, `OutcomeUnknown` ou reconciliação pendente; valores V1 persistíveis: `OutcomeUnknown`, `InventoryInsufficient`, `IdentityAmbiguous`, `IdentityDivergent`, `UnreconciledNotAttempted`, `TargetAbsentBeforeDelete`, `StageFailed`, `RetryBudgetExhausted` ou `UserAborted` (este acrescentado pela decisão 58, em 2026-09-14) |
 
-O contrato separa o motivo persistido no envelope do diagnóstico que impede uma
-gravação. `blockReason` só pode ser alterado junto de um snapshot de diário que
+**Remissão — 2026-09-15.** O contrato da tabela acima é o mínimo decidido e permanece
+vigente. A implementação vigente do schema V1 acrescentou dois campos ao payload, ambos
+aditivos em relação à decisão (novos e flexíveis, sem exigir `schemaVersion: 2`):
+
+- em `plan`, o campo `inventorySufficiency` (enum anulável); e
+- em cada `receipts[]`, os campos de tempo `startedUtc`, `endedUtc` e `durationMs`
+  (ver decisão 29).
+
+A leitura continua tolerante à ausência dos campos novos, de forma que um diário V1
+gravado pela DLL anterior continua válido e reidratável. `blockReason` só pode ser alterado junto de um snapshot de diário que
 tenha `journalDurability=Confirmed`. Quando o diário não existe, está inválido ou
 quando o `Save()`/a releitura não permitem confirmar o novo snapshot, não há campo
 JSON novo a emitir: o resultado usa `GateDiagnostic` somente no relatório. Esse
@@ -744,6 +762,16 @@ Regras do recibo:
 - `Absent` pode confirmar `Delete`, mas não `Save`;
 - `Divergent` ou `Unreadable` produz `OutcomeUnknown`.
 
+**Remissão — 2026-09-15.** Os campos de tempo decidiram nesta seção e existiam no modelo
+de recibo da F2 (`StartedAt`, `FinishedAt`, `DurationMs`), mas a primeira grafia do
+diário **não os serializava** nos `receipts[]` — o schema do envelope só registrava
+identidade, tentativas e confirmações. A divergência foi corrigida no escritor do
+diário: cada recibo agora grava `startedUtc`, `endedUtc` e `durationMs`, com a posição
+fixa entre `retryOfSequence` e `attemptState` e com `endedUtc` sempre presente, ainda
+que `null` quando o recibo nunca foi completado. O mapeamento converte
+`StartedAt → startedUtc`, `FinishedAt → endedUtc` e `DurationMs → durationMs`. A leitura
+permanece tolerante a recibo sem os três campos, preservando diários legados.
+
 ### 30. Inventário por objeto
 
 Decisão aprovada:
@@ -775,6 +803,22 @@ Regras do inventário:
 - objeto novo poderá começar sem identidade persistida, mas deverá receber a
   identidade confirmada no recibo após criação;
 - o inventário servirá para Apply, Sync, Recovery e Remove.
+
+**Remissão — 2026-09-15.** A regra desta seção permanece vigente. O vocabulário de
+`role` passou a ser **fechado para quem escreve**, na classe
+`ApiPlanJournalRoles` (`Src/Extension/Diagnostics`), com exatamente: `MainApi`,
+`List`, `Get`, `Create`, `Update`, `Delete`, `OwnSdt`, `SharedSdt` e `Metadata`.
+A lista da decisão acima ficava num espaço de escrita livre, e a poda por papel (F2,
+por `CompositeIdentity.Role`, ordinal) consultava valores que a produção podia
+inventar. A escrita fecha o vocabulário; a **leitura** continua aceitando qualquer
+valor, porque diários legados gravaram papeis que a classe nunca reconheceu e nenhum
+deles pode ser rejeitado de volta para quem os produziu. `ForService` normaliza a
+comparação case-insensitive e devolve a escrita canônica; `ForProcedureName` extrai o
+sufixo após o último `_API_` do nome `proc{Transaction}_API_{Service}` e lança para
+nome fora do padrão — o que impede produzir um papel que a poda nunca consulta.
+`SharedSdt` segue existindo apenas no vocabulário (poda consulta); ele nunca vira
+identidade composta no diário, conforme a regra acima ("SDT compartilhado nunca será
+alvo de remoção").
 
 ### 31. Estágios lógicos do pipeline
 

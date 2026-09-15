@@ -280,6 +280,7 @@ public static class ApiPlanOperationJournalSerializer
         }
 
         writer.WriteEndArray();
+        WriteProperty(writer, "inventorySufficiency", plan.InventorySufficiency?.ToString());
         writer.WriteEndObject();
     }
 
@@ -334,6 +335,9 @@ public static class ApiPlanOperationJournalSerializer
         WriteProperty(writer, "objectType", receipt.ObjectType.ToString());
         WriteProperty(writer, "attempt", receipt.Attempt);
         WriteProperty(writer, "retryOfSequence", receipt.RetryOfSequence);
+        WriteProperty(writer, "startedUtc", FormatUtc(receipt.StartedUtc));
+        WriteProperty(writer, "endedUtc", receipt.EndedUtc);
+        WriteProperty(writer, "durationMs", receipt.DurationMs);
         WriteProperty(writer, "attemptState", receipt.AttemptState.ToString());
         WriteProperty(writer, "result", receipt.Result.ToString());
         WriteProperty(writer, "confirmation", receipt.Confirmation.ToString());
@@ -425,6 +429,25 @@ public static class ApiPlanOperationJournalSerializer
         return utc.ToString(UtcFormat, CultureInfo.InvariantCulture);
     }
 
+    private static void WriteProperty(JsonTextWriter writer, string name, long value)
+    {
+        writer.WritePropertyName(name);
+        writer.WriteValue(value);
+    }
+
+    private static void WriteProperty(JsonTextWriter writer, string name, DateTime? value)
+    {
+        writer.WritePropertyName(name);
+        if (value.HasValue)
+        {
+            writer.WriteValue(FormatUtc(value.Value));
+        }
+        else
+        {
+            writer.WriteNull();
+        }
+    }
+
     private static void ReadPlan(JObject root, ApiPlanOperationJournal journal, List<string> errors)
     {
         if (root["plan"] is not JObject plan)
@@ -442,6 +465,8 @@ public static class ApiPlanOperationJournalSerializer
             GenerateSdts = ReadOptionalBool(plan, "plan.generateSdts", errors),
             GenerateProcedures = ReadOptionalBool(plan, "plan.generateProcedures", errors),
             GenerateMetadata = ReadOptionalBool(plan, "plan.generateMetadata", errors),
+            InventorySufficiency = ReadOptionalEnum<JournalInventorySufficiency>(
+                plan, "plan.inventorySufficiency", errors),
         };
 
         if (plan["services"] is not JArray services)
@@ -556,6 +581,9 @@ public static class ApiPlanOperationJournalSerializer
                 ObjectType = ReadEnum<JournalObjectType>(entry, "receipts[].objectType", errors),
                 Attempt = ReadInt(entry, "receipts[].attempt", errors) ?? 0,
                 RetryOfSequence = ReadOptionalInt(entry, "receipts[].retryOfSequence", errors),
+                StartedUtc = ReadUtc(entry, "receipts[].startedUtc", errors),
+                EndedUtc = ReadOptionalUtc(entry, "receipts[].endedUtc", errors),
+                DurationMs = ReadLong(entry, "receipts[].durationMs", errors),
                 AttemptState = ReadEnum<JournalAttemptState>(entry, "receipts[].attemptState", errors),
                 Result = ReadEnum<JournalResult>(entry, "receipts[].result", errors),
                 Confirmation = ReadEnum<JournalConfirmation>(entry, "receipts[].confirmation", errors),
@@ -727,6 +755,47 @@ public static class ApiPlanOperationJournalSerializer
         }
 
         return DateTime.SpecifyKind(value, DateTimeKind.Utc);
+    }
+
+    private static DateTime? ReadOptionalUtc(JObject owner, string name, List<string> errors)
+    {
+        var token = owner[Leaf(name)];
+        if (token is null || token.Type == JTokenType.Null)
+        {
+            return null;
+        }
+
+        if (token.Type != JTokenType.String)
+        {
+            errors.Add(name + " deve ser um timestamp UTC ou null.");
+            return null;
+        }
+
+        var text = token.Value<string>() ?? string.Empty;
+        if (!DateTime.TryParseExact(
+                text,
+                UtcFormat,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal,
+                out var value))
+        {
+            errors.Add(name + " deve seguir yyyy-MM-ddTHH:mm:ss.fffZ ou null.");
+            return null;
+        }
+
+        return DateTime.SpecifyKind(value, DateTimeKind.Utc);
+    }
+
+    private static long ReadLong(JObject owner, string name, List<string> errors)
+    {
+        var token = owner[Leaf(name)];
+        if (token is null || token.Type != JTokenType.Integer)
+        {
+            errors.Add(name + " é obrigatório e deve ser inteiro.");
+            return 0L;
+        }
+
+        return token.Value<long>();
     }
 
     private static TEnum ReadEnum<TEnum>(JObject owner, string name, List<string> errors)

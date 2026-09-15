@@ -42,6 +42,9 @@ internal static class ApiPlanOperationJournalReceiptMapper
                 RetryOfSequence = receipt.RetryOfSequence.HasValue
                     ? ToSequence(receipt.RetryOfSequence.Value)
                     : (int?)null,
+                StartedUtc = receipt.StartedAt.UtcDateTime,
+                EndedUtc = receipt.FinishedAt?.UtcDateTime,
+                DurationMs = receipt.DurationMs,
                 AttemptState = MapAttemptState(receipt.AttemptState),
                 Result = MapResult(receipt.Outcome),
                 Confirmation = MapConfirmation(receipt.Confirmation),
