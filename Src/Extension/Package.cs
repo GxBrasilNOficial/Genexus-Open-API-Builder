@@ -1075,6 +1075,9 @@ public sealed class Package : AbstractPackageUI
                     WriteOutput($"[Genexus Open API Builder][B111/F3] Sincronizacao bloqueada pelo diário durável: Transaction='{transaction.Name}'. {syncJournalStart.Detail} Nenhuma gravação foi solicitada.");
                     report.AddBlocked("Diário de operação", "B111/F3", syncJournalStart.Detail);
                     stopwatch.Stop();
+                    // A operação acaba aqui: a janela de progresso sai antes do relatório e
+                    // da oferta. Dispose é idempotente, então o `using` no fim não repete nada.
+                    busy.Dispose();
                     ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                     OfferRecoveryAfterJournalBlock(knowledgeBase, texts, syncJournalStart);
                     return true;
@@ -1396,6 +1399,9 @@ public sealed class Package : AbstractPackageUI
                     var blockedReport = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, intent.Plan.ApiName);
                     blockedReport.SetApiName(intent.Plan.ApiName);
                     blockedReport.AddBlocked("Diário de operação", "B111/F3", journalStart.Detail);
+                    // A operação acaba aqui: a janela de progresso sai antes do relatório e
+                    // da oferta. Dispose é idempotente, então o `using` no fim não repete nada.
+                    busy.Dispose();
                     ShowFinalReport(blockedReport, stopwatch.Elapsed, knowledgeBase.DesignModel, persistenceLog: persistenceLog);
                     OfferRecoveryAfterJournalBlock(knowledgeBase, texts, journalStart);
                     return true;
@@ -1994,6 +2000,9 @@ public sealed class Package : AbstractPackageUI
                 report.AddBlocked("Diário de operação", "B111/F3", journalStart.Detail);
                 stopwatch.Stop();
                 WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
+                // A operação acaba aqui: a janela de progresso sai antes do relatório e da
+                // oferta. Dispose é idempotente, então o `using` no fim não repete nada.
+                busy.Dispose();
                 ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 OfferRecoveryAfterJournalBlock(knowledgeBase, texts, journalStart);
                 return true;

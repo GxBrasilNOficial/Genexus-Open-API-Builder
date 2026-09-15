@@ -249,7 +249,56 @@ aviso roda no start, antes da gravação — e ela sobreviveu porque ninguém pr
 objeto na mesma lista. Foi a metadata aparecendo ao lado do diário que mostrou qual era a regra
 de verdade.
 
-## 7. Cenários restantes
+## 7. Cenário 5 — abortar um Apply no meio
+
+**Em andamento.** Os dois primeiros passos passaram; o encerramento foi adiado por um defeito de
+apresentação que a própria bateria expôs.
+
+**Passo 1 — aborto.** `Wizard` → `Concluir e aplicar` → `Abortar` por volta dos 3 s, no meio dos
+SDTs.
+
+| Medida | Resultado |
+|---|---|
+| Envelope | `Partial` / `NotStarted`, `blockReason=UserAborted` |
+| Checkpoints | 3 — `Prepared`, `Active` e o terminal; nenhuma fronteira intermediária alcançada |
+| Snapshot | `Recibos=5, Inventário=5` — os cinco SDTs que chegaram a ser gravados |
+| Relatório | `Atualizados=5`, `Bloqueados=1`, `ApiSaveCount=0`, 2,2 s |
+
+`ApiSaveCount=0` importa: o aborto pegou antes do API Object, e a fronteira `ApiPhysicallySaved`
+**não** foi registrada — que é exatamente a correção que a P3 fez em campo. A linha de abertura
+já trouxe `Module='Root Module'`, a instrumentação da seção 6.1 em uso.
+
+**Nota de vocabulário, sem ação.** `Partial/NotStarted` parece dizer que nada começou, enquanto
+cinco objetos foram atualizados. É coerente com o desenho — no Apply o estágio só avança nas
+fronteiras declaradas, e o que aconteceu no meio está no inventário e nos recibos —, mas quem lê
+o envelope precisa saber que `logicalStage` não é uma barra de progresso.
+
+**Passo 2 — a operação seguinte bloqueia.** `Wizard` → `Concluir e aplicar`:
+
+```
+[GateBlocked/JournalNonTerminal] Pré-condição 'PriorIntentReconciled'. O diário da KB registra a
+operação Apply em estado Partial/NotStarted, que não é terminal. … operationKind=Apply,
+envelopePhase=Active, operationState=Partial, logicalStage=NotStarted, blockReason=UserAborted,
+journalDurability=Confirmed
+```
+
+`Criados=0, Atualizados=0, Removidos=0`: nada foi tocado antes de bloquear. Em seguida apareceu a
+oferta proativa, e a recuperação apurou `Discard` com o inventário correto — as cinco Procedures
+`previsto: Update; na KB: Present`.
+
+### 7.1 A janela de progresso ficava viva atrás dos diálogos
+
+O caminho de bloqueio pelo diário encerra a operação dentro do escopo da janela de progresso, e
+ela continuava aberta — com o botão `Abortar` ativo — atrás do relatório final e da oferta de
+recuperação. Um `Abortar` que já não aborta coisa nenhuma, numa operação que terminou.
+
+Corrigido nos três comandos: a janela é fechada antes do relatório e da oferta. `Dispose` é
+idempotente, então o `using` do fim continua correto.
+
+O defeito é anterior à F3 no que toca ao relatório final — ele sempre foi mostrado dentro do
+escopo —, e só ficou visível quando a oferta acrescentou um segundo diálogo por cima.
+
+## 8. Cenários restantes
 
 | # | Cenário | Estado |
 |---|---|---|
@@ -257,7 +306,7 @@ de verdade.
 | 2 | Alvo previsto ausente antes do `Delete()` | **passou** — seção 4 |
 | 3 | Recuperação sobre o envelope `Partial`: encerrar o registro | **passou** — seção 5 |
 | 4 | Devolver a KB ao normal | **passou** — seção 6 |
-| 5 | Abortar um Apply no meio; oferta proativa; recuperação | não iniciado |
+| 5 | Abortar um Apply no meio; oferta proativa; recuperação | **parcial** — aborto e bloqueio passaram; encerramento pendente, ver seção 7 |
 | 6 | Wizard cancelado antes de aplicar: envelope `Prepared` e abandono | não iniciado |
 | 7 | Interromper uma remoção no meio e retomar a fila | não iniciado |
 | 8 | Remoção de API legado, com metadata válida e com metadata insuficiente | não iniciado |
@@ -266,7 +315,7 @@ de verdade.
 O cenário 3 dependia do envelope `Partial` deixado pelo cenário 2: **não apagar o File
 `GxOpenApiBuilder_OperationJournal` à mão** entre um e outro, sob pena de destruir a condição.
 
-## 8. Achado — metadata completa com API Object apagado à mão não tem saída pela ferramenta
+## 9. Achado — metadata completa com API Object apagado à mão não tem saída pela ferramenta
 
 Descoberto ao planejar o cenário 4, conferindo o código antes de propor o caminho.
 
@@ -302,7 +351,7 @@ A mensagem do `apiGuid` deixou de nomear o campo incompatível: nomear um campo 
 diagnóstico para quem está na IDE. A recusa continua a mesma; o que mudou é que ela agora
 termina com um caminho. Asserções trilíngues no gate `tests.extensionOutputLocalization`.
 
-### 8.1 A primeira correção estava no lugar errado — medido na IDE
+### 9.1 A primeira correção estava no lugar errado — medido na IDE
 
 A correção acima foi escrita presumindo que o Wizard travaria ao **gravar** a metadata. Ele não
 trava: o leitor de estado desliga a etapa **antes**, e o Apply conclui tudo o mais. Na IDE, em
@@ -328,7 +377,7 @@ problema que é de outro lugar.
 **Efeito colateral do teste:** a KB ficou com um API Object novo (`69407f89-…`) e a metadata
 antiga apontando para o GUID morto (`af422c2e-…`).
 
-### 8.2 E a segunda também — o conflito é do API Object, não da metadata
+### 9.2 E a segunda também — o conflito é do API Object, não da metadata
 
 A execução seguinte mostrou que, **neste** estado, quem bloqueia não é a etapa de metadata: é a
 do **API Object**, e a de metadata apenas herda («Bloqueado: o API Object precisa estar
@@ -362,7 +411,7 @@ suficiente sozinha:
 O estado a corrigir continua o mesmo, e o caminho também — apagar a metadata e reaplicar —,
 agora com a ferramenta dizendo isso nos três pontos.
 
-### 8.3 O bloco técnico deixou de competir com a orientação
+### 9.3 O bloco técnico deixou de competir com a orientação
 
 Verificada a orientação na IDE, sobrou o ruído em volta dela: o diagnóstico do bloqueio
 publicava **trinta e três linhas fixas**, onze delas vazias e cinco derivadas de uma medição
@@ -391,9 +440,9 @@ ApiNameEsperado='apiTeste'
 Nada se perdeu: o que saiu era derivável do que ficou. O GUID atual e o da metadata continuam
 na linha da causa, onde já estavam.
 
-### 8.4 A orientação estava errada: os dois objetos saem juntos
+### 9.4 A orientação estava errada: os dois objetos saem juntos
 
-A instrução das seções 8 a 8.2 mandava apagar **o File de metadata** e reaplicar. Exercida na
+A instrução das seções 9 a 9.2 mandava apagar **o File de metadata** e reaplicar. Exercida na
 IDE, ela não funciona quando o API Object existe: sem metadata, a posse dele não pode ser
 confirmada, e o Wizard volta a bloquear — agora com `Causa='MetadataMissing'`, `ApiObjectCount=1`.
 Um bloqueio trocado pelo outro.
