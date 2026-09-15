@@ -80,6 +80,7 @@ Assert-True ($source -match 'Tests/ExtensionAssemblyInventory/Test-ExtensionAsse
 Assert-True ($source -match 'Tests/Installation/Test-InstallExtensionBatPathHandling\.ps1') 'O checker deve executar o teste unitário do tratamento de caminhos dos BATs.'
 Assert-True ($source -match 'Tests/Localization/Test-ExtensionLanguage\.ps1') 'O checker deve executar o teste unitário da resolução do idioma da extensão.'
 Assert-True ($source -match 'Tests/Localization/Test-ExtensionOutputLocalization\.ps1') 'O checker deve executar o teste unitário da localização do Output da extensão.'
+Assert-True ($source -match 'Tests/Localization/Test-ExtensionOutputLocalizationSelfConsistency\.ps1') 'O checker deve exercer o catálogo de saída contra si mesmo.'
 Assert-True ($source -match 'Tests/IssueForms/Test-GitHubIssueFormsYaml\.ps1') 'O checker deve executar o teste unitário dos YAML / Issue Forms.'
 Assert-True ($source.Contains('\b(B00[0-6])\b')) 'currentFront deve reconhecer somente spikes B000-B006.'
 Assert-True ($source -match 'lista vazia com próxima ação B007\+') 'O JSON notCovered deve declarar que manualRequired vazio fora de B000-B006 não substitui a revisão semântica.'
@@ -204,6 +205,7 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\Installation\Test-InstallExtensionBatPathHandling.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Installation BAT Path Handling'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\Localization\Test-ExtensionLanguage.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Extension Language'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\Localization\Test-ExtensionOutputLocalization.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Extension Output Localization'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\Localization\Test-ExtensionOutputLocalizationSelfConsistency.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Output Localization Self Consistency'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\IssueForms\Test-GitHubIssueFormsYaml.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Issue Forms Yaml'`n", [System.Text.UTF8Encoding]::new($false))
         & git add .gitignore README.md Src scripts Tests
         & git commit -m 'Fixture do checker' | Out-Null
@@ -269,6 +271,7 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.installationBatPathHandling' }).status -eq 'passed') 'O teste unitário do tratamento de caminhos dos BATs deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.extensionLanguage' }).status -eq 'passed') 'O teste unitário da resolução do idioma da extensão deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.extensionOutputLocalization' }).status -eq 'passed') 'O teste unitário da localização do Output da extensão deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.outputLocalizationSelfConsistency' }).status -eq 'passed') 'A auto-consistência do catálogo de saída deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.issueForms' }).status -eq 'passed') 'O teste unitário dos YAML / Issue Forms deveria passar na fixture.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract.ps1' }).Count -eq 1) 'O comando do teste Service Source deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity.ps1' }).Count -eq 1) 'O comando do teste Metadata Integrity deve aparecer no JSON.'

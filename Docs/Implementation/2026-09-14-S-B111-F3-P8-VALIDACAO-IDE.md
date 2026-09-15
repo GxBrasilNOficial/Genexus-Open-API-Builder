@@ -631,6 +631,70 @@ a primeira sonda tinha produzido um número que eu publiquei como medição.
 **Rede no gate:** trinta e quatro asserções novas. As das causas de remoção comparam a frase inteira
 com `-ceq`, não `Contains`, porque meia tradução passaria por `Contains` sem reclamar.
 
+#### 8.2.6 O catálogo corrompia a si mesmo — e o gate estava verde
+
+As quatro rodadas anteriores perguntaram «esta frase está cadastrada?». Faltava a pergunta
+seguinte: **«o que está cadastrado é o que sai?»**. Medido em 2026-09-15, com o catálogo já em 664
+entradas: **não**, em oito frases.
+
+**O mecanismo.** A substituição é por substring, sequencial, na ordem em que as frases foram
+escritas. Uma entrada curta aplicada antes de uma longa que a contenha recorta o meio da longa:
+quando a longa chega, o texto já mudou e ela não casa mais. Sobra meia frase em cada idioma.
+
+| O que estava cadastrado | O que saía |
+|---|---|
+| `Arquivo de metadata: ` → `Metadata file: ` | `Arquivo metadata: ` |
+| `Ainda sem ler ou gravar File de metadata.` → `Still without reading or writing the metadata File.` | `Ainda sem ler ou gravar File metadata.` |
+| `Wizard Passo 2 concluido em memoria:` → `Wizard Step 2 completed in memory:` | `Wizard Passo 2 concluido in memory:` |
+
+Quatro entradas curtas precediam entradas que as contêm — ` de metadata`, ` em memoria:`,
+`API Object:` e `compatível` —, mas só duas produziam inconsistência observável. **A relação de
+contenção não é o defeito; o defeito é o resultado divergir do cadastrado.** Por isso o gate testa
+a invariante, não a estrutura.
+
+**É o pior modo de falha possível para texto.** Não quebra, não lança, não avisa, e produz frase
+plausível. Um leitor espanhol vê `Arquivo de metadatos:` e não tem como saber se é defeito ou
+termo que a ferramenta deixou em português de propósito. O defeito não chega como reclamação —
+chega como impressão de produto mal-acabado.
+
+**Publicado.** Verificado contra a tag, não de memória: extraí
+`ExtensionOutputLocalization.cs` de `v0.1.0-alpha.7` e rodei a mesma sonda. Aquele catálogo tinha
+404 entradas e **três frases inconsistentes**, das quais duas são visíveis ao usuário —
+`Wizard Passo 2 concluido em memoria:` e a irmã do Passo 3 saíam meio em inglês para quem usasse a
+IDE em inglês. O grupo da metadata é posterior à tag: nasceu e morreu dentro deste bloco.
+
+**A correção é estrutural, não caso a caso.** Reordenar à mão resolveria as oito e manteria a
+fragilidade: cada frase nova cadastrada pode quebrar uma antiga, dependendo só de onde cair na
+lista. `Translate` passou a iterar uma ordem derivada — **por comprimento de `Source`
+decrescente** —, o que elimina a classe inteira: se A é substring de B, então A é mais curta, logo
+B é aplicada primeiro e casa. O array literal continua sendo a fonte editável; a ordenação é
+`OrderByDescending`, que é estável, então entradas de mesmo comprimento preservam a ordem de
+escrita.
+
+**Medido antes e depois, não deduzido.** Capturei a tradução de todos os 664 `Source` nos dois
+idiomas antes da mudança e de novo depois. O diff tem **exatamente quinze linhas**, todas
+correções — nenhuma outra frase mudou de comportamento. As 216 asserções do gate irmão
+continuaram passando.
+
+**O gate novo: `tests.outputLocalizationSelfConsistency`.** Para cada entrada, `Translate(Source)`
+tem de reproduzir a tradução cadastrada, em espanhol e inglês, e o português tem de sair intacto.
+Recusa também `Source` duplicado. Verificado por mutação: revertendo a ordenação, ele acusa
+quatorze ocorrências.
+
+**Uma armadilha que custou uma medição errada.** A primeira contagem de duplicatas deu catorze,
+onze com tradução divergente. Era falso: `Dictionary` do PowerShell criado como `@{}` é
+**case-insensitive**, e o catálogo cadastra pares de capitalização de propósito — `Nenhum ApiPlan
+foi criado.` e `nenhum ApiPlan foi criado.` são entradas distintas e ambas legítimas, uma para
+início de frase e outra para o meio. Com comparador ordinal, as duplicatas reais eram **quatro**.
+As quatro foram removidas — eram inertes, e a remoção não mudou saída nenhuma, o que o diff do
+corpus confirma. O gate usa `[StringComparer]::Ordinal` e o teste diz por quê.
+
+**O que isto não resolve.** A substituição sequencial ainda permite cascata: a saída em espanhol
+de uma entrada pode conter o `Source` de outra e ser reescrita. Um caso existe hoje —
+`Metadata File:` produzia `Archivo de metadatos:` em vez do `Archivo de metadata:` cadastrado, e o
+valor produzido é o melhor dos dois. A entrada passou a declarar o que faz, e o gate agora falha
+se aparecer outra. É vigilância, não imunidade.
+
 ## 9. Cenários restantes
 
 | # | Cenário | Estado |

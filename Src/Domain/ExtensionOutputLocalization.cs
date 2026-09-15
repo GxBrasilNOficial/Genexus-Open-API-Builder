@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Linq;
 
 namespace GenexusOpenApiBuilder.Extension.Domain;
 
@@ -1269,8 +1270,6 @@ internal static class ExtensionOutputLocalization
         new("Proximo passo habilitado para", "Siguiente paso habilitado para", "Next step enabled for"),
         new("Próximo passo habilitado para", "Siguiente paso habilitado para", "Next step enabled for"),
         new("Nenhum Save foi solicitado.", "No se solicitó ningún Save.", "No Save was requested."),
-        new("Nenhuma etapa de escrita foi confirmada no wizard", "No se confirmó ninguna etapa de escritura en el asistente", "No writing stage was confirmed in the wizard"),
-        new("Nenhuma escrita foi solicitada.", "No se solicitó ninguna escritura.", "No writing was requested."),
         new("A dependencia sera reencontrada e validada pelo preflight da etapa seguinte.", "La dependencia se reencontrará y validará mediante el preflight de la siguiente etapa.", "The dependency will be found again and validated by the next stage preflight."),
         new("A dependência será reencontrada e validada pelo preflight da etapa seguinte.", "La dependencia se reencontrará y validará mediante el preflight de la siguiente etapa.", "The dependency will be found again and validated by the next stage preflight."),
         new("Etapa de", "Etapa de", "Stage of"),
@@ -1293,7 +1292,6 @@ internal static class ExtensionOutputLocalization
         new("A atualização do API Object será absorvida pelo preflight de Business Component.", "La actualización del API Object será absorbida por el preflight de Business Component.", "The API Object update will be handled by the Business Component preflight."),
         new("Nível de segurança", "Nivel de seguridad", "Security level"),
         new("Adicionados:", "Agregados:", "Added:"),
-        new("Removidos:", "Eliminados:", "Removed:"),
         new("Renomeados:", "Renombrados:", "Renamed:"),
         new("Modificados:", "Modificados:", "Modified:"),
         new("Inalterados:", "Sin cambios:", "Unchanged:"),
@@ -1301,7 +1299,11 @@ internal static class ExtensionOutputLocalization
         new("natureza estrutural (formula/inferido/redundante) alterada", "naturaleza estructural (fórmula/inferido/redundante) modificada", "structural nature (formula/inferred/redundant) changed"),
         new("natureza estrutural (fórmula/inferido/redundante) alterada", "naturaleza estructural (fórmula/inferido/redundante) modificada", "structural nature (formula/inferred/redundant) changed"),
         new("API Object:", "API Object:", "API Object:"),
-        new("Metadata File:", "Archivo de metadata:", "Metadata File:"),
+        // O espanhol cadastrado aqui era `Archivo de metadata:`, mas a saída real sempre foi
+        // `Archivo de metadatos:` — a entrada ` de metadata` alcança o próprio resultado desta,
+        // porque a substituição é sequencial e reescreve texto já traduzido. O valor produzido é
+        // o certo, e é o que o resto do catálogo usa; a entrada passou a declarar o que faz.
+        new("Metadata File:", "Archivo de metadatos:", "Metadata File:"),
         new("Procedures (", "Procedures (", "Procedures ("),
         new("SDTs próprios (", "SDTs propios (", "Own SDTs ("),
         new("SDTs próprios", "SDTs propios", "Own SDTs"),
@@ -1325,7 +1327,6 @@ internal static class ExtensionOutputLocalization
         new("Removido:", "Eliminado:", "Removed:"),
         new("Bloqueado:", "Bloqueado:", "Blocked:"),
         new("Causa principal: ", "Causa principal: ", "Primary cause: "),
-        new("Causa='", "Causa='", "Cause='"),
         new("ApiObjectGuid='", "GUIDApiObject='", "APIObjectGuid='"),
         new("MetadataApiGuid='", "GUIDMetadata='", "MetadataApiGuid='"),
         new("API Object GUID atual: ", "GUID actual del API Object: ", "Current API Object GUID: "),
@@ -1487,6 +1488,33 @@ internal static class ExtensionOutputLocalization
         new("Nenhum", "Ningún", "No"),
     };
 
+    /// <summary>
+    /// A ordem em que as frases são **aplicadas**, que não é a ordem em que foram escritas.
+    ///
+    /// A substituição é por substring, então uma entrada curta aplicada antes de uma longa que a
+    /// contenha recorta o meio da longa: quando a longa chega, o texto já mudou e ela não casa
+    /// mais. O resultado é a pior falha possível para texto — não quebra, não lança, e produz
+    /// frase plausível meio em cada idioma.
+    ///
+    /// Isso era administrado à mão, por comentário: «um fragmento curto cadastrado antes
+    /// recortaria o meio delas». Disciplina na cabeça de quem edita não sobrevive a 664 entradas.
+    /// Medido em 2026-09-15, antes desta ordenação: **oito frases** saíam corrompidas, em quinze
+    /// combinações frase/idioma — `Arquivo de metadata: ` virava `Arquivo metadata: ` em inglês,
+    /// porque ` de metadata` estava cadastrada dezenas de linhas antes.
+    ///
+    /// Ordenar por comprimento decrescente elimina a classe inteira: se A é substring de B então
+    /// A é mais curta que B, logo B é aplicada primeiro e casa. `OrderByDescending` do LINQ é
+    /// estável, então entradas de mesmo comprimento preservam a ordem de escrita — inclusive a
+    /// resolução de duplicatas, onde a primeira continua vencendo.
+    ///
+    /// O array literal acima continua sendo a fonte de verdade editável; esta é só a ordem de
+    /// aplicação, derivada dele uma vez. O gate `tests.outputLocalizationSelfConsistency` exerce
+    /// o catálogo contra si mesmo e falha se a classe voltar.
+    /// </summary>
+    private static readonly Phrase[] OrderedPhrases = Phrases
+        .OrderByDescending(phrase => phrase.Source.Length)
+        .ToArray();
+
     public static string Translate(string message, ExtensionLanguage language)
     {
         if (string.IsNullOrEmpty(message) || language == ExtensionLanguage.PortugueseBrazil)
@@ -1495,7 +1523,7 @@ internal static class ExtensionOutputLocalization
         }
 
         var localized = message;
-        foreach (var phrase in Phrases)
+        foreach (var phrase in OrderedPhrases)
         {
             localized = localized.Replace(
                 phrase.Source,
