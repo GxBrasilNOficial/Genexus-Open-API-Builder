@@ -116,6 +116,17 @@ internal sealed class ExtensionTexts
         _ => "The recorded operation wrote objects to the Knowledge Base and stopped halfway, and the tool cannot resume it from where it stopped. Closing this record frees the KB for the next operations and DELETES NOTHING: whatever was left halfway stays exactly as it is, and the inventory remains recorded in the journal. After that, the two ways out are reapplying through the Wizard over the current state, or removing the generated API. Close the record now?",
     };
 
+    /// <summary>
+    /// A mesma decisão, para um envelope sem recibo nenhum: aqui não há «o que ficou pela
+    /// metade», e prometer o contrário seria mentir sobre o estado da KB.
+    /// </summary>
+    public string RecoveryConfirmDiscardNothingWritten => Language switch
+    {
+        ExtensionLanguage.PortugueseBrazil => "A operação registrada foi interrompida antes de gravar qualquer objeto: o diário não tem nenhum recibo, e a Knowledge Base está como estava antes dela. Encerrar este registro libera a KB para as próximas operações e NÃO APAGA NADA. Encerrar o registro agora?",
+        ExtensionLanguage.Spanish => "La operación registrada fue interrumpida antes de grabar cualquier objeto: el diario no tiene ningún recibo, y la Knowledge Base está como estaba antes de ella. Cerrar este registro libera la KB para las próximas operaciones y NO BORRA NADA. ¿Cerrar el registro ahora?",
+        _ => "The recorded operation was interrupted before writing any object: the journal has no receipts, and the Knowledge Base is as it was before it. Closing this record frees the KB for the next operations and DELETES NOTHING. Close the record now?",
+    };
+
     public string RecoveryDeclined => Language switch
     {
         ExtensionLanguage.PortugueseBrazil => "Recuperação recusada. Nada foi alterado.",

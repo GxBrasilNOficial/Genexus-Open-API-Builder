@@ -339,7 +339,44 @@ está na versão publicada** — não é interno a esta frente. Ele só ficou vi
 bloqueio pelo diário somou um segundo diálogo por cima; com um diálogo só, a janela atrás passa
 despercebida.
 
-## 8. Cenários restantes
+## 8. Cenário 6 — o envelope `Prepared` não é alcançável pela interface
+
+**Reformulado pelo próprio teste.** O roteiro pedia um envelope `Prepared` — aquele que registra
+a intenção e nunca toca a KB — para exercer o **abandono**, que é a saída distinta do
+encerramento. Ele não acontece.
+
+A abertura do diário grava `Prepared` **e** promove a `Active` na mesma chamada, antes de
+devolver a sessão: é o que a matriz da seção 4.4 manda, e não há ponto de aborto entre os dois
+`Save`. Um envelope `Prepared` durável só sobrevive se o processo morrer entre eles — crash ou
+kill da IDE, não clique. Medido em 2026-09-15: aborto no primeiro segundo produz
+`Partial/NotStarted` com `Recibos=0` e `Inventário=0`.
+
+Consequência a registrar: **`Checkpoints.Abandon` e `RecoveryNextStep.Abandon` existem sem
+caminho de entrada pela interface.** Não são código morto — o contrato da F3 prevê a fase
+`Prepared` e o abandono como sua saída, e um crash entre os dois checkpoints é possível —, mas
+nenhuma sessão de teste vai produzi-los clicando. Fica declarado para que ninguém procure esse
+cenário de novo.
+
+### 8.1 O defeito que o cenário produziu no lugar do planejado
+
+O envelope abortado cedo é `Partial` **com zero recibos**, e a recuperação o tratava como
+qualquer outro: oferecia encerrar o registro com o texto «a operação registrada gravou objetos na
+Knowledge Base e parou no meio». **Falso** — não gravou nada, e essa é a frase que a pessoa lê
+antes de decidir.
+
+O rehydrator passou a distinguir os dois casos pelo número de recibos:
+
+| Envelope | O que o resumo e a pergunta dizem |
+|---|---|
+| com recibos | gravou objetos e parou no meio; o que ficou pela metade continua como está |
+| **sem recibo nenhum** | foi interrompida antes de gravar qualquer objeto; a KB está como estava antes dela |
+
+É o caso mais comum de aborto — quem desiste, desiste cedo —, e era exatamente o que ele lia
+errado. Caso novo no gate `tests.operationJournalRecovery`, com a asserção de que o resumo **não**
+pode falar em «o que ficou pela metade» quando nada foi gravado, e asserções trilíngues no gate
+de localização.
+
+## 9. Cenários restantes
 
 | # | Cenário | Estado |
 |---|---|---|
@@ -348,7 +385,7 @@ despercebida.
 | 3 | Recuperação sobre o envelope `Partial`: encerrar o registro | **passou** — seção 5 |
 | 4 | Devolver a KB ao normal | **passou** — seção 6 |
 | 5 | Abortar um Apply no meio; oferta proativa; recuperação | **passou** — seção 7 |
-| 6 | Wizard cancelado antes de aplicar: envelope `Prepared` e abandono | não iniciado |
+| 6 | Envelope `Prepared` e abandono | **reformulado** — não é alcançável pela interface; ver seção 8 |
 | 7 | Interromper uma remoção no meio e retomar a fila | não iniciado |
 | 8 | Remoção de API legado, com metadata válida e com metadata insuficiente | não iniciado |
 | 9 | Acréscimo de tempo do diário na KB grande, contra o orçamento de 4.4 | não iniciado |
@@ -356,7 +393,7 @@ despercebida.
 O cenário 3 dependia do envelope `Partial` deixado pelo cenário 2: **não apagar o File
 `GxOpenApiBuilder_OperationJournal` à mão** entre um e outro, sob pena de destruir a condição.
 
-## 9. Achado — metadata completa com API Object apagado à mão não tem saída pela ferramenta
+## 10. Achado — metadata completa com API Object apagado à mão não tem saída pela ferramenta
 
 Descoberto ao planejar o cenário 4, conferindo o código antes de propor o caminho.
 
@@ -392,7 +429,7 @@ A mensagem do `apiGuid` deixou de nomear o campo incompatível: nomear um campo 
 diagnóstico para quem está na IDE. A recusa continua a mesma; o que mudou é que ela agora
 termina com um caminho. Asserções trilíngues no gate `tests.extensionOutputLocalization`.
 
-### 9.1 A primeira correção estava no lugar errado — medido na IDE
+### 10.1 A primeira correção estava no lugar errado — medido na IDE
 
 A correção acima foi escrita presumindo que o Wizard travaria ao **gravar** a metadata. Ele não
 trava: o leitor de estado desliga a etapa **antes**, e o Apply conclui tudo o mais. Na IDE, em
@@ -418,7 +455,7 @@ problema que é de outro lugar.
 **Efeito colateral do teste:** a KB ficou com um API Object novo (`69407f89-…`) e a metadata
 antiga apontando para o GUID morto (`af422c2e-…`).
 
-### 9.2 E a segunda também — o conflito é do API Object, não da metadata
+### 10.2 E a segunda também — o conflito é do API Object, não da metadata
 
 A execução seguinte mostrou que, **neste** estado, quem bloqueia não é a etapa de metadata: é a
 do **API Object**, e a de metadata apenas herda («Bloqueado: o API Object precisa estar
@@ -452,7 +489,7 @@ suficiente sozinha:
 O estado a corrigir continua o mesmo, e o caminho também — apagar a metadata e reaplicar —,
 agora com a ferramenta dizendo isso nos três pontos.
 
-### 9.3 O bloco técnico deixou de competir com a orientação
+### 10.3 O bloco técnico deixou de competir com a orientação
 
 Verificada a orientação na IDE, sobrou o ruído em volta dela: o diagnóstico do bloqueio
 publicava **trinta e três linhas fixas**, onze delas vazias e cinco derivadas de uma medição
@@ -481,9 +518,9 @@ ApiNameEsperado='apiTeste'
 Nada se perdeu: o que saiu era derivável do que ficou. O GUID atual e o da metadata continuam
 na linha da causa, onde já estavam.
 
-### 9.4 A orientação estava errada: os dois objetos saem juntos
+### 10.4 A orientação estava errada: os dois objetos saem juntos
 
-A instrução das seções 9 a 9.2 mandava apagar **o File de metadata** e reaplicar. Exercida na
+A instrução das seções 10 a 10.2 mandava apagar **o File de metadata** e reaplicar. Exercida na
 IDE, ela não funciona quando o API Object existe: sem metadata, a posse dele não pode ser
 confirmada, e o Wizard volta a bloquear — agora com `Causa='MetadataMissing'`, `ApiObjectCount=1`.
 Um bloqueio trocado pelo outro.

@@ -248,8 +248,11 @@ try {
     Assert-Equal 'DurabilityUnknown' ([string]$operation.Diagnostic.Code) 'A precedência do diagnóstico é a da decisão 24'
 
     # --- 4. Apply interrompido: o envelope não carrega o contrato --------------------------------
+    # Com recibo: é o envelope que gravou alguma coisa e parou no meio. O caso sem recibo nenhum
+    # tem texto próprio e está no bloco 4.1.
     $applyPartial = New-Envelope -OperationKind 'Apply' -Plan ($forGeneration.Invoke($null, @([object]$apiGuid, 'abc123', $true, $true, $true, $true, [string[]]@('List'))))
     $promote.Invoke($null, @($applyPartial, $now))
+    $applyPartial.Receipts.Add($receipt)
     $interrupt.Invoke($null, @($applyPartial, (Get-Enum $stateEnum 'Partial'), (Get-Enum $blockReasonEnum 'StageFailed'), $now))
     $operation = Invoke-Rehydrate -Envelope $applyPartial
     # Retomar o pipeline exigiria inventar um plano; deixar a KB travada também não é resposta.
@@ -259,6 +262,19 @@ try {
     Assert-True ([bool]$operation.RequiresStateAwareness) 'Encerrar exige mostrar o estado da KB antes'
     Assert-True ($operation.Summary.Contains('não apaga nada') -or $operation.Summary.Contains('nada é apagado')) 'O resumo precisa dizer que nada é apagado'
     Assert-True ($operation.Summary.Contains('Wizard')) 'O resumo nomeia as duas saídas posteriores'
+
+    # --- 4.1 Envelope interrompido sem recibo nenhum ----------------------------------------------
+    # O caso mais comum de aborto: quem desiste, desiste cedo. Dizer que ele «gravou objetos e
+    # parou no meio» seria falso, e é o texto que a pessoa lê antes de decidir.
+    $applyUntouched = New-Envelope -OperationKind 'Apply' -Plan ($forGeneration.Invoke($null, @([object]$apiGuid, 'abc123', $true, $true, $true, $true, [string[]]@('List'))))
+    $promote.Invoke($null, @($applyUntouched, $now))
+    $interrupt.Invoke($null, @($applyUntouched, (Get-Enum $stateEnum 'Partial'), (Get-Enum $blockReasonEnum 'UserAborted'), $now))
+    $operation = Invoke-Rehydrate -Envelope $applyUntouched
+    Assert-Equal 'Discard' ([string]$operation.NextStep) 'Um envelope sem recibos também é encerrável'
+    Assert-True ([bool]$operation.NothingWasWritten) 'A ausência de recibos precisa ser visível a quem monta a pergunta'
+    Assert-True ($operation.Summary.Contains('antes de gravar qualquer objeto')) 'O resumo não pode afirmar gravação que não houve'
+    Assert-True (-not $operation.Summary.Contains('o que ficou pela metade')) 'Não há metade quando nada foi gravado'
+    Assert-True (-not [bool](Invoke-Rehydrate -Envelope $applyPartial).NothingWasWritten) 'Um envelope com recibos continua sendo o outro caso'
 
     # --- 5. Resultado indeterminado não é continuado ----------------------------------------------
     $unknownOutcome = New-Envelope -OperationKind 'Apply' -Plan ($forGeneration.Invoke($null, @([object]$apiGuid, 'abc123', $true, $true, $true, $true, [string[]]@('List'))))

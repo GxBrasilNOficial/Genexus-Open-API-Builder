@@ -213,9 +213,16 @@ Era o caso que motivou a quarta ação da recuperação. Ele também expôs um d
 a janela de progresso ficava viva, com `Abortar` ativo, atrás do relatório final e dos diálogos;
 os três comandos passaram a fechá-la antes.
 
-Faltam quatro cenários: envelope `Prepared` abandonado, retomada de remoção interrompida,
-remoção de API legado e medição do acréscimo na KB grande. Cenário sem registro naquele
-documento é cenário não exercido.
+O **sexto cenário foi reformulado pelo próprio teste**: o envelope `Prepared` não é alcançável
+pela interface, porque a abertura do diário grava `Prepared` e promove a `Active` na mesma
+chamada, sem ponto de aborto entre os dois `Save`. Ele só sobrevive a um crash do processo entre
+os checkpoints — e, portanto, `Checkpoints.Abandon` e `RecoveryNextStep.Abandon` existem sem
+caminho de entrada por clique. Em lugar dele, o aborto no primeiro segundo produziu um `Partial`
+**com zero recibos**, e isso expôs um texto falso: a recuperação dizia que a operação «gravou
+objetos e parou no meio». O rehydrator passou a distinguir os dois casos pelo número de recibos.
+
+Faltam três cenários: retomada de remoção interrompida, remoção de API legado e medição do
+acréscimo na KB grande. Cenário sem registro naquele documento é cenário não exercido.
 
 Verificação offline desta rodada: build Release com 0 avisos e 0 erros, checker de comandos com
 13 comandos e o orquestrador mecânico com 64 checks `passed` e 1 `skipped` (`git.statusPre`,

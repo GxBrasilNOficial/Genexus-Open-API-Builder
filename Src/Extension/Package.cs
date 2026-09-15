@@ -618,7 +618,9 @@ public sealed class Package : AbstractPackageUI
         {
             RecoveryNextStep.Abandon => texts.RecoveryConfirmAbandon,
             RecoveryNextStep.Complete => texts.RecoveryConfirmReconcile,
-            RecoveryNextStep.Discard => texts.RecoveryConfirmDiscard,
+            RecoveryNextStep.Discard => operation.NothingWasWritten
+                ? texts.RecoveryConfirmDiscardNothingWritten
+                : texts.RecoveryConfirmDiscard,
             _ => texts.RecoveryConfirmContinueRemoval,
         };
 

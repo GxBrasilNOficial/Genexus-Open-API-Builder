@@ -111,6 +111,25 @@ public static class ApiPlanRecoveryRehydrator
         // Retomar o pipeline não é possível, mas deixar a KB travada também não é resposta: o
         // envelope interrompido bloqueia todas as operações seguintes. O que se oferece é
         // encerrar o registro — decisão humana, informada pelo inventário, que não apaga nada.
+        //
+        // Um envelope **sem recibo nenhum** merece texto próprio: dizer que ele «gravou objetos
+        // e parou no meio» seria falso, e é o caso mais comum de aborto — quem desiste, desiste
+        // cedo. Medido na IDE em 2026-09-15: aborto no primeiro segundo produz `Partial` com
+        // `Recibos=0` e `Inventário=0`.
+        if (journal.Receipts.Count == 0)
+        {
+            return ApiPlanRehydratedOperation.Authorized(
+                journal,
+                classified,
+                RecoveryNextStep.Discard,
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    "A operação {0} foi registrada e interrompida antes de gravar qualquer objeto: o diário "
+                    + "não tem nenhum recibo. Encerrar este registro libera a Knowledge Base, que está como "
+                    + "estava antes desta operação.",
+                    journal.OperationKind));
+        }
+
         return ApiPlanRehydratedOperation.Authorized(
             journal,
             classified,
@@ -388,6 +407,13 @@ public sealed class ApiPlanRehydratedOperation
     /// precisa ver o inventário antes.
     /// </summary>
     public bool RequiresStateAwareness => NextStep == RecoveryNextStep.Discard;
+
+    /// <summary>
+    /// O envelope não tem recibo nenhum: a operação foi registrada e interrompida antes de
+    /// gravar qualquer objeto. A pergunta da confirmação muda por causa disso — afirmar que
+    /// «gravou objetos e parou no meio» seria falso.
+    /// </summary>
+    public bool NothingWasWritten => Journal.Receipts.Count == 0;
 
     internal static ApiPlanRehydratedOperation Terminal(
         ApiPlanOperationJournal journal,
