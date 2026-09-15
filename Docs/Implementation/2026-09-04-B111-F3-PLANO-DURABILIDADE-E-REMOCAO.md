@@ -354,6 +354,25 @@ da linha de 2,3 corrigida acima e estão superestimados em cerca de vinte vezes.
 de 44,2 s. Isso não altera a política — que é contrato e continua fechada na matriz abaixo —,
 apenas retira a pressão de I/O que motivava discutir granularidade.
 
+**Emenda — 2026-09-15: o orçamento de tempo da remoção.** A matriz abaixo sempre fechou a
+**contagem** da remoção em `3 + P`, e continua correta. O que não existia era um orçamento de
+**tempo** para ela: as três linhas históricas acima são de Apply, e `P` só é conhecido em
+runtime. Do custo medido — 182 ms em 4 checkpoints na `FabricaBrasil18Test`, ~45 ms por
+gravação — deriva-se o orçamento da remoção:
+
+| Passadas (`P`) | Checkpoints (`3 + P`) | Custo derivado do diário |
+|---|---|---|
+| 1 | 4 | ~180 ms |
+| 2 | 5 | ~225 ms |
+| 5 | 8 | ~360 ms |
+| N | `3 + N` | `(3 + N) × ~45 ms` |
+
+Este número é **derivado, não medido**: nenhuma remoção foi cronometrada na KB grande. Ele serve
+de referência para o item 7b da seção 9, não de evidência. O que a medição precisa responder é se
+`P` se mantém baixo quando há muitas dependências — uma remoção que precise de dezenas de passadas
+custa pouco em I/O de diário e muito em tentativas de `Delete()`, e é a segunda parte que
+dominaria o tempo.
+
 O diário deve ser atualizado e confirmado ao longo da operação e no estado terminal, mas
 isso não significa um `File.Save()` para cada recibo individual. A política normativa
 agrupa recibos nas fronteiras que mudam a capacidade de continuar ou reconciliar:
@@ -806,7 +825,15 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
 4. remoção de API gerada por esta frente;
 5. remoção de API legado, com metadata válida e com metadata insuficiente;
 6. interrupção no meio da remoção;
-7. medir o acréscimo real ao tempo de Apply na KB grande e comparar com o orçamento de 4.4;
+7. medir o acréscimo real do diário na KB grande e comparar com o orçamento de 4.4, em **duas**
+   medições distintas:
+   - **7a — Apply.** Medido na P2, em 2026-09-14: 182 ms em 4 checkpoints, 0,4% de um Apply de
+     44,2 s. **Precisa ser refeito**: aquela medição é da DLL da P2, e as etapas P4 a P7 mais
+     sete commits posteriores tocaram emissores — pela regra de contrato runtime do `AGENTS.md`,
+     evidência vale para a DLL que a produziu;
+   - **7b — remoção retomável.** Nunca medida. A remoção não tem contagem fixa: a política é
+     `3 + P`, com `P` conhecido só em runtime. Medir `P`, o custo do diário e o tempo total, e
+     comparar com a tabela derivada de 4.4;
 8. executar o comando de recuperação explícita sobre a KB inteira, incluindo um caso
    recuperável e casos de divergência ou ambiguidade que permaneçam bloqueados;
 9. iniciar uma nova operação depois da recuperação e confirmar que somente um diário fixo
@@ -829,6 +856,22 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
 8. o ciclo de `operationId`/`applicationId` segue a matriz da seção 4.1.1, e o fingerprint
    V3 cobre `ownership.applicationId` com serialização canônica.
 
+**Da retomada de remoção (`ContinueRemovePass`) — acrescentados em 2026-09-15.** Os critérios
+acima cobrem o que precede a primeira exclusão; nenhum dizia o que precisa ser verdade **depois**
+que uma remoção interrompida é retomada, que é o único caminho que reabre a exclusão:
+
+9. a retomada usa o **mesmo `operationId`** e o mesmo `applicationId`; não abre envelope novo;
+10. nenhum alvo fora do inventário original é tocado — a fila da retomada nasce de
+    `journal.inventory`, não de uma releitura do plano;
+11. um alvo já apagado numa passada anterior **não** conta como falha nem dispara
+    `TargetAbsentBeforeDelete`. Ele é o resultado esperado da passada anterior; tratá-lo como
+    divergência faria a retomada bloquear a si mesma. *Já implementado e coberto offline:*
+    `ApiPlanRemovalIntent.FromInventory` só enfileira alvo cujo estado observado **não** é
+    `Absent`, e `tests.operationJournalRecovery` exerce exatamente isso. O critério existe para
+    que a validação na IDE **confirme** a regra, e para que uma regressão futura tenha contra o
+    que ser medida;
+12. o estado terminal da retomada bem-sucedida é `Removed`, não um segundo `Partial`.
+
 **Contrato ativo do Modo A:** a durabilidade do diário é uma das quatro dimensões registradas
 separadamente;
 recuperação compara intenção durável com inventário físico; a política de checkpoints está
@@ -847,7 +890,7 @@ como comparação histórica.
 | o Modo A acrescentar segundos ao Apply de forma percebida como regressão | política de checkpoints declarada e medida (4.4); comparar com o Apply pós-F1 |
 | o diário acumular registros na KB | manter um único File por KB; reutilizar ou substituir somente após estado terminal confirmado e `journalDurability=Confirmed` |
 | reintroduzir “um pouco de A e um pouco de B” | o Modo A é o contrato selecionado; a comparação com B é histórica e não autoriza comportamento alternativo |
-| a remoção de legado bloquear casos que hoje funcionam | o remover já reconstrói plano a partir da metadata (2.2); a F3 acrescenta registro de intenção, não restringe o que já valida |
+| a remoção de legado bloquear casos que hoje funcionam | **Hipótese, não fato — rebaixada em 2026-09-15.** O remover já reconstrói plano a partir da metadata (2.2), e a intenção do desenho é acrescentar registro sem restringir o que já validava. **Há um contraexemplo conhecido:** remover duas vezes a mesma API deixou de ser aceito em silêncio e passa a bloquear em `Partial` com `TargetAbsentBeforeDelete` — comportamento alterado, declarado no `CHANGELOG.md` como válido para quem vinha da `0.1.0-alpha.7`. Verificação: **cenário 8** da P8, remoção de legado com metadata válida e com metadata insuficiente, ainda não iniciado. Enquanto ele não rodar, esta linha não encerra a pergunta |
 | planejar sobre um sistema que ainda vai mudar | este plano mantém dependências explícitas de F1 e F2; a implementação deve revalidar os contratos contra o código vigente |
 
 ---

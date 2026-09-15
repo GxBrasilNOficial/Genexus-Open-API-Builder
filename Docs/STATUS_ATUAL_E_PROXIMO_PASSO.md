@@ -173,9 +173,9 @@ que depende da DLL instalada e da KB de teste; **offline** é trabalho de códig
 
 | # | O que falta | Tipo | Onde está documentado |
 | --- | --- | --- | --- |
-| 1 | Cenário 7 — interromper uma remoção no meio e **retomar a fila**. É o único caminho que exercita `ContinueRemovePass`, e nenhuma passada de retomada foi vista em campo | IDE | P8, seção 9 |
+| 1 | Cenário 7 — interromper uma remoção no meio e **retomar a fila**. É o único caminho que exercita `ContinueRemovePass`, e nenhuma passada de retomada foi vista em campo. Os critérios 9 a 12 da seção 10 do plano dizem o que conferir depois da retomada | IDE | P8, seção 9 |
 | 2 | Cenário 8 — remoção de **API legado**, com metadata válida e com metadata insuficiente | IDE | P8, seção 9 |
-| 3 | Cenário 9 — **acréscimo de tempo** do diário na KB grande, contra o orçamento da seção 4.4 do plano | IDE | P8, seção 9 |
+| 3 | Cenário 9 — **acréscimo de tempo** do diário na KB grande, em duas medições: **9a** Apply, medida na P2 e a refazer porque a DLL mudou, e **9b** remoção retomável, nunca medida, contra a tabela derivada acrescentada à seção 4.4 do plano | IDE | P8, seção 9 |
 | 4 | ~~47 frases que o usuário lê ainda saem em português~~ **Fechado em 2026-09-15**: 93 entradas novas no catálogo cobriram as 47 e mais o que uma segunda sonda achou — as mensagens em ASCII sem acento do preflight da remoção, invisíveis para a primeira | — | P8, seções 8.2.4 (a medição) e 8.2.5 (o fechamento e o erro da sonda) |
 | 5 | `Prepared` e a ação `Abandon` **não têm caminho de entrada por clique** — CP1 e CP2 acontecem na mesma chamada. `Checkpoints.Abandon` e `RecoveryNextStep.Abandon` existem, estão testados offline e são inalcançáveis pela interface | decisão | P8, seção 8 |
 | 6 | Metadata completa com **API Object apagado à mão** não tem saída por nenhum dos três comandos. Foi resolvido por orientação no texto das mensagens, não por mudança de contrato | decisão | P8, seção 10 |

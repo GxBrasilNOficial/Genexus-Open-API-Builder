@@ -12,7 +12,7 @@ exercido — não presuma o contrário.
 
 | Item | Valor |
 |---|---|
-| DLL | build Release do commit `a32798b` (P4 a P7 + encerramento de registro), instalada com `genexus /install` porque o manifesto ganhou três comandos |
+| DLL inicial | build Release do commit `a32798b` (P4 a P7 + encerramento de registro), instalada com `genexus /install` porque o manifesto ganhou três comandos. **Não foi a única** — ver a tabela de DLL por cenário abaixo |
 | IDE | GeneXus 18 U15 |
 | KB | `wsEducacaoSpTeste` |
 | Transaction | `Teste` — chave de três partes (`TesteId`, `TesteDate`, `TesteCodigo`) e quatro subníveis (`TestePortfolio`, `TesteItem`, `TesteItemFolio`, `TesteItemFolioDoc`) |
@@ -22,6 +22,28 @@ exercido — não presuma o contrário.
 O diário da KB é o File `GxOpenApiBuilder_OperationJournal`, `FileId=88`, preexistente desde a
 validação da P2 — todas as operações abaixo reutilizaram esse mesmo File (`Created=False`),
 como o contrato exige: há exatamente um por KB.
+
+### 1.1 Qual DLL exerceu cada cenário
+
+A bateria não correu sobre uma DLL só: cada correção saída dela foi compilada e instalada antes
+do cenário seguinte. Registrar isso não é burocracia — **evidência de runtime vale para a DLL que
+a produziu, e só para ela** (regra de contrato runtime do `AGENTS.md`). Um cenário validado com
+DLL anterior a uma mudança de emissor que o afete **precisa ser reexercido**; a data da captura
+não basta.
+
+| Cenário | DLL | Observação |
+|---|---|---|
+| 1, 2, 3 | `a32798b` | primeira instalação da bateria |
+| 4 | entre `a32798b` e `4bab3b6` | o reapply de reencontro da seção 6.1 já foi «com a DLL corrigida» |
+| 5 | após `01d491c` | inclui o fechamento da janela de progresso |
+| 6 | após `256f537` | inclui os textos de encerramento corrigidos |
+| 7, 8, 9 | **a instalar** | pendentes; instalar a build corrente antes de começar |
+
+**Reexercício devido.** Depois do cenário 5 vieram commits que tocam emissores e apresentação.
+Nenhum deles altera o contrato de remoção nem o do diário — são texto, diagnóstico e localização
+—, então os cenários 1 a 6 continuam valendo para o que provaram. A medição de tempo é a exceção:
+o item 7a da seção 9 do plano manda **refazer** a medição de Apply, porque número de desempenho
+capturado com DLL anterior não descreve a atual.
 
 ## 2. Cenário 1 — remoção completa pela fila nova
 
@@ -602,9 +624,9 @@ com `-ceq`, não `Contains`, porque meia tradução passaria por `Contains` sem 
 | 4 | Devolver a KB ao normal | **passou** — seção 6 |
 | 5 | Abortar um Apply no meio; oferta proativa; recuperação | **passou** — seção 7 |
 | 6 | Envelope `Prepared` e abandono | **reformulado** — não é alcançável pela interface; ver seção 8 |
-| 7 | Interromper uma remoção no meio e retomar a fila | não iniciado |
+| 7 | Interromper uma remoção no meio e retomar a fila — contra os critérios 9 a 12 da seção 10 do plano | não iniciado |
 | 8 | Remoção de API legado, com metadata válida e com metadata insuficiente | não iniciado |
-| 9 | Acréscimo de tempo do diário na KB grande, contra o orçamento de 4.4 | não iniciado |
+| 9 | Acréscimo de tempo do diário na KB grande — **duas** medições: **9a** Apply (medida na P2, a refazer com a DLL corrente) e **9b** remoção retomável, contra a tabela derivada de 4.4 | 9a a refazer; 9b não iniciada |
 
 O cenário 3 dependia do envelope `Partial` deixado pelo cenário 2: **não apagar o File
 `GxOpenApiBuilder_OperationJournal` à mão** entre um e outro, sob pena de destruir a condição.
