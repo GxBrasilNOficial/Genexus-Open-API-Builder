@@ -681,6 +681,34 @@ public sealed class Package : AbstractPackageUI
     }
 
     /// <summary>
+    /// A orientação que faltava quando a remoção para no API Object ausente.
+    ///
+    /// Esse estado — API Object apagado fora da ferramenta, metadata e objetos próprios no
+    /// lugar — recebia três recusas corretas e nenhuma explicação: o Wizard travava por
+    /// ownership, o Remover parava aqui, e a recuperação de metadata órfã não se oferecia,
+    /// porque exige exatamente um API Object presente. As duas saídas reais são estas, e ambas
+    /// dependem de uma decisão que é do usuário, não da ferramenta.
+    /// </summary>
+    private static string DescribeRemovalGuidance(
+        ApiPlanRemovalQueueResult queue,
+        ApiPlanGeneratedApiRemovalResult result)
+    {
+        if (queue.BlockReason != JournalBlockReason.TargetAbsentBeforeDelete
+            || queue.BlockingTarget?.ObjectType != JournalObjectType.ApiObject)
+        {
+            return string.Empty;
+        }
+
+        var metadataName = result.Plan?.MetadataFileName ?? string.Empty;
+        return " O API Object previsto não está na KB, e quem o apagou não foi esta operação."
+            + " Há duas saídas, e a escolha é sua: para regerar a API sobre o que restou, apague o File"
+            + (string.IsNullOrEmpty(metadataName) ? " de metadata" : $" '{metadataName}'")
+            + " e reaplique pelo Wizard, que reencontra SDTs e Procedures — paginação, ordenação e campos"
+            + " obrigatórios voltam aos padrões das preferências; para descartar o que restou, apague os"
+            + " objetos listados acima pela KB Explorer.";
+    }
+
+    /// <summary>
     /// O inventário como o diálogo o mostra: uma linha por alvo, com o que a intenção previa e
     /// o que a KB mostra agora. É a informação que sustenta a decisão de encerrar um registro.
     /// </summary>
@@ -1487,10 +1515,12 @@ public sealed class Package : AbstractPackageUI
         var pending = queue.Pending.Count == 0
             ? string.Empty
             : " Pendentes: " + string.Join("; ", queue.Pending.Select(target => target.Describe())) + ".";
+        var guidance = DescribeRemovalGuidance(queue, result);
         WriteOutput($"[Genexus Open API Builder][B111/F3] Remocao interrompida: Transaction='{transactionName}', {queue.Describe()}{pending}");
         report.AddWarning(
             $"Remoção interrompida ({queue.BlockReason}): {queue.Deleted.Count} objeto(s) saíram da KB e {queue.Pending.Count} continuam lá."
-            + (string.IsNullOrEmpty(result.BlockDetail) ? string.Empty : " " + result.BlockDetail));
+            + (string.IsNullOrEmpty(result.BlockDetail) ? string.Empty : " " + result.BlockDetail)
+            + guidance);
         report.AddBlocked("Remover", transactionName, queue.Describe());
         if (journal.IsBlocked)
         {

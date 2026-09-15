@@ -24,6 +24,23 @@ internal static class ExtensionOutputLocalization
 
     private static readonly Phrase[] Phrases =
     {
+        // B111/F3 P8: as duas orientações do descompasso de `ownership.apiGuid`. Elas vêm antes
+        // das demais porque são frases longas: a substituição é por substring, e um fragmento
+        // curto cadastrado antes recortaria o meio delas.
+        new(
+            " registra um API Object que não existe mais na KB, ou outro que não é o desta aplicação. Para regerar a API a partir do que restou na KB, apague esse File e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada. Nenhuma alteração foi feita.",
+            " registra un API Object que ya no existe en la KB, u otro que no es el de esta aplicación. Para regenerar la API a partir de lo que quedó en la KB, borre ese File y ejecute el Wizard de nuevo: los SDTs y los Procedures existentes se reencuentran, y el API Object y los metadatos se recrean. Paginación, ordenación y campos obligatorios vuelven a los valores predeterminados de las preferencias, porque solo existían en los metadatos borrados. No se modificó nada.",
+            " records an API Object that no longer exists in the KB, or a different one that does not belong to this application. To regenerate the API from what is left in the KB, delete that File and run the Wizard again: existing SDTs and Procedures are rediscovered, and the API Object and the metadata are recreated. Pagination, ordering, and required fields fall back to the preference defaults, because they only existed in the deleted metadata. No changes were made."),
+        new(
+            " O API Object previsto não está na KB, e quem o apagou não foi esta operação. Há duas saídas, e a escolha é sua: para regerar a API sobre o que restou, apague o File",
+            " El API Object previsto no está en la KB, y quien lo borró no fue esta operación. Hay dos salidas, y la elección es suya: para regenerar la API sobre lo que quedó, borre el File",
+            " The planned API Object is not in the KB, and this operation is not the one that deleted it. There are two ways out, and the choice is yours: to regenerate the API over what is left, delete the File"),
+        new(
+            " e reaplique pelo Wizard, que reencontra SDTs e Procedures — paginação, ordenação e campos obrigatórios voltam aos padrões das preferências; para descartar o que restou, apague os objetos listados acima pela KB Explorer.",
+            " y vuelva a aplicar por el Wizard, que reencuentra SDTs y Procedures — paginación, ordenación y campos obligatorios vuelven a los valores predeterminados de las preferencias; para descartar lo que quedó, borre los objetos listados arriba por el KB Explorer.",
+            " and reapply through the Wizard, which rediscovers SDTs and Procedures — pagination, ordering, and required fields fall back to the preference defaults; to discard what is left, delete the objects listed above through the KB Explorer."),
+        new("Gravação de metadata B060 bloqueada: o File '", "Grabación de metadatos B060 bloqueada: el File '", "B060 metadata write blocked: the File '"),
+        new(" de metadata", " de metadatos", " metadata"),
         new("API gerada com avisos.", "API generada con advertencias.", "API generated with warnings."),
         new("Relatório final:", "Informe final:", "Final report:"),
         new("Relatorio final:", "Informe final:", "Final report:"),

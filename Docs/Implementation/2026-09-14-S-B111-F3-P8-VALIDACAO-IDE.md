@@ -217,6 +217,18 @@ vinte e quatro — e reaplicar pelo Wizard, que reencontra SDTs e Procedures e r
 e metadata. O plano volta aos defaults das preferências: paginação, ordenação e obrigatórios
 específicos não sobrevivem, porque só existiam na metadata descartada.
 
-Fica registrado como candidato a item de backlog, na forma de mensagem: quando o Wizard ou o
-Remover travarem por `apiGuid` morto, dizer qual File apagar para regerar. Não é mudança de
-contrato — é dizer em voz alta o que hoje só está no código.
+**Corrigido na mesma data**, por decisão do usuário: texto não vira backlog. As duas mensagens
+que a pessoa efetivamente encontra passaram a dizer o que fazer, nos três idiomas.
+
+| Onde | O que passou a dizer |
+|---|---|
+| `ApiPlanMetadataFileWriter`, descompasso de `ownership.apiGuid` | que o File registra um API Object que não existe mais, que a saída é apagar **esse File** e reaplicar pelo Wizard, e o que se perde ao fazer isso |
+| Relatório do `Remover`, quando o alvo ausente é o próprio API Object | as duas saídas — regerar sobre o que restou apagando a metadata, ou descartar apagando os objetos listados — deixando a escolha com quem decide |
+
+A mensagem do `apiGuid` deixou de nomear o campo incompatível: nomear um campo de JSON não é
+diagnóstico para quem está na IDE. A recusa continua a mesma; o que mudou é que ela agora
+termina com um caminho. Asserções trilíngues no gate `tests.extensionOutputLocalization`.
+
+O que **não** mudou, de propósito: a recusa do `B115` sobre metadata completa. Ela está certa
+pelo motivo que o próprio código explica — o fingerprint B067 cobre o conteúdo inteiro, e
+corrigir só o `apiGuid` trocaria um bloqueio por outro.

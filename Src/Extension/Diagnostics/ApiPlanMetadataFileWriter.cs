@@ -310,7 +310,7 @@ internal static class ApiPlanMetadataFileWriter
         RequireString(metadata.SelectToken("ownership.transactionName"), apiPlan.TransactionName, "ownership.transactionName", apiPlan.MetadataFileName);
         RequireString(metadata.SelectToken("ownership.transactionGuid"), transaction.Guid.ToString(), "ownership.transactionGuid", apiPlan.MetadataFileName);
         RequireString(metadata.SelectToken("ownership.apiName"), apiPlan.ApiName, "ownership.apiName", apiPlan.MetadataFileName);
-        RequireString(metadata.SelectToken("ownership.apiGuid"), apiObject.Guid.ToString(), "ownership.apiGuid", apiPlan.MetadataFileName);
+        RequireApiGuid(metadata.SelectToken("ownership.apiGuid"), apiObject.Guid.ToString(), apiPlan.MetadataFileName);
         RequireString(metadata.SelectToken("ownership.metadataFileName"), apiPlan.MetadataFileName, "ownership.metadataFileName", apiPlan.MetadataFileName);
         if (!allowIntentionalContractRefresh)
         {
@@ -781,6 +781,36 @@ internal static class ApiPlanMetadataFileWriter
     private static bool HasString(JToken? token, string expectedValue)
     {
         return token is not null && token.Type == JTokenType.String && string.Equals(token.Value<string>(), expectedValue, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// O `apiGuid` divergente tem mensagem própria porque é o único descompasso de ownership com
+    /// uma saída prática, e nomear o campo não a revelava.
+    ///
+    /// Ele acontece quando o API Object registrado foi apagado ou substituído fora da
+    /// ferramenta: o Wizard cria outro, com GUID novo, e a metadata continua apontando para o
+    /// antigo. Nesse estado o Wizard travava aqui, o Remover parava em `TargetAbsentBeforeDelete`
+    /// e a recuperação de metadata órfã não se oferecia — ela exige exatamente um API Object
+    /// presente. Três recusas corretas e nenhuma dizia o que fazer.
+    ///
+    /// A saída é apagar **a metadata** — um objeto — e reaplicar. O que se perde é o que só
+    /// existia nela, e a mensagem diz isso antes de a pessoa decidir.
+    /// </summary>
+    private static void RequireApiGuid(JToken? token, string expectedValue, string fileName)
+    {
+        if (token is not null && token.Type == JTokenType.String
+            && string.Equals(token.Value<string>(), expectedValue, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"Gravação de metadata B060 bloqueada: o File '{fileName}'"
+            + " registra um API Object que não existe mais na KB, ou outro que não é o desta aplicação."
+            + " Para regerar a API a partir do que restou na KB, apague esse File e execute o Wizard de novo:"
+            + " os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados."
+            + " Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam"
+            + " na metadata apagada. Nenhuma alteração foi feita.");
     }
 
     private static void RequireString(JToken? token, string expectedValue, string tokenPath, string fileName)

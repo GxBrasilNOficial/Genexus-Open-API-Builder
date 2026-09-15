@@ -217,4 +217,21 @@ Assert-True ($duplicateEnglish.Contains('The API Object Service Source declares 
 Assert-True ($duplicateEnglish.Contains('review the API Object in the IDE.')) 'Inglês deve traduzir a orientação de revisão do API Object.'
 Assert-True (-not $duplicateEnglish.Contains('declara servico duplicado')) 'Inglês não deve manter o diagnóstico de duplicidade em português.'
 
+# B111/F3 P8 — as duas orientações do descompasso de `ownership.apiGuid`. Elas existem porque
+# três recusas corretas não diziam o que fazer; uma orientação só em português seria meia
+# correção.
+$apiGuidBlock = "Gravação de metadata B060 bloqueada: o File 'apiTeste_Metadata' registra um API Object que não existe mais na KB, ou outro que não é o desta aplicação. Para regerar a API a partir do que restou na KB, apague esse File e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada. Nenhuma alteração foi feita."
+$apiGuidSpanish = $translate.Invoke($null, [object[]] @($apiGuidBlock, $spanish))
+$apiGuidEnglish = $translate.Invoke($null, [object[]] @($apiGuidBlock, $english))
+Assert-True ($apiGuidSpanish.Contains('borre ese File y ejecute el Wizard de nuevo')) 'Espanhol deve orientar qual File apagar.'
+Assert-True ($apiGuidEnglish.Contains('delete that File and run the Wizard again')) 'Inglês deve orientar qual File apagar.'
+Assert-True (-not $apiGuidEnglish.Contains('apague esse File')) 'Inglês não deve manter a orientação em português.'
+
+$removalGuidance = "Remoção interrompida (TargetAbsentBeforeDelete): 0 objeto(s) saíram da KB e 25 continuam lá. O API Object previsto não está na KB, e quem o apagou não foi esta operação. Há duas saídas, e a escolha é sua: para regerar a API sobre o que restou, apague o File 'apiTeste_Metadata' e reaplique pelo Wizard, que reencontra SDTs e Procedures — paginação, ordenação e campos obrigatórios voltam aos padrões das preferências; para descartar o que restou, apague os objetos listados acima pela KB Explorer."
+$removalSpanish = $translate.Invoke($null, [object[]] @($removalGuidance, $spanish))
+$removalEnglish = $translate.Invoke($null, [object[]] @($removalGuidance, $english))
+Assert-True ($removalSpanish.Contains('Hay dos salidas, y la elección es suya')) 'Espanhol deve apresentar as duas saídas da remoção interrompida.'
+Assert-True ($removalEnglish.Contains('There are two ways out, and the choice is yours')) 'Inglês deve apresentar as duas saídas da remoção interrompida.'
+Assert-True ($removalEnglish.Contains('delete the objects listed above through the KB Explorer.')) 'Inglês deve traduzir a segunda saída.'
+
 Write-Output 'PASS: ExtensionOutputLocalization'
