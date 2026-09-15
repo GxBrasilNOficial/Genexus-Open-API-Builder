@@ -46,7 +46,8 @@ cenário passou é posterior à execução dele.
 | 6, confirmação | posterior a `42cdf0e` | 8.1 registra o diálogo com o texto novo, «no mesmo envelope» |
 | 7 | `b788cf4` | build Release instalada em 2026-09-15, antes da retomada da bateria; o manifesto não mudou desde `19139b7`, então bastou trocar a DLL |
 | 8 | `9ab74bb` | build com as duas correções de texto do cenário 7, instalada em 2026-09-15 antes das três variantes |
-| 9 | **a instalar** | pendente; exige a build com as recusas de remoção corrigidas (seção 12.4) |
+| 9a | a confirmar com quem executou | as três medições de 2026-09-15 são posteriores ao commit `734aaa0`; o intervalo desde `9ab74bb` toca apenas texto de recusa e catálogo, nada do caminho de gravação do diário, então a medição vale de qualquer modo — mas a linha fica aberta até a confirmação |
+| 9b | pendente | mesma sessão do 9a |
 
 **Reexercício devido — e o que não é.** Entre o cenário 5 e hoje entraram, além de texto,
 diagnóstico e localização, **um ramo de decisão no rehydrator**: `42cdf0e` acrescentou
@@ -737,7 +738,7 @@ coisa e é o que o orçamento de 4.4 governa.
 | 6 | Envelope `Prepared` e abandono | **reformulado** — não é alcançável pela interface; ver seção 8 |
 | 7 | Interromper uma remoção no meio e retomar a fila — contra os critérios 9 a 12 da seção 10 do plano | **passou** — seção 11 |
 | 8 | Remoção de API legado, com metadata válida e com metadata insuficiente | **passou** — seção 12 |
-| 9 | Acréscimo de tempo do diário na KB grande — **duas** medições: **9a** Apply (medida na P2, a refazer com a DLL corrente) e **9b** remoção retomável, contra a tabela derivada de 4.4 | 9a a refazer; 9b não iniciada |
+| 9 | Acréscimo de tempo do diário na KB grande — **duas** medições: **9a** Apply e **9b** remoção retomável, contra a tabela derivada de 4.4 | **9a passou** — seção 13; 9b não iniciada |
 
 O cenário 3 dependia do envelope `Partial` deixado pelo cenário 2: **não apagar o File
 `GxOpenApiBuilder_OperationJournal` à mão** entre um e outro, sob pena de destruir a condição.
@@ -1068,3 +1069,43 @@ cara, e virou o item de backlog **`B123`**, para depois da sprint: a metadata re
 histórica do Folder, o que é mudança de schema com leitura legada, fingerprint e consumidores.
 
 Até lá, o resíduo é um Folder vazio, inofensivo, que o usuário apaga à mão se quiser.
+
+## 13. Cenário 9a — o acréscimo do diário no Apply da KB grande
+
+**Aprovado**, em 2026-09-15, na `Empresa` da `FabricaBrasil18Test` — 47 SDTs e 4 Procedures
+reencontrados, 53 objetos atualizados, envelope de 6.534 bytes com 10 recibos. É a mesma condição
+da medição da P2, reproduzida de propósito: Apply **de reencontro**, sem alterar nada entre as
+execuções.
+
+| Execução | Diário | Por gravação | Apply | Peso |
+|---|---|---|---|---|
+| 1 | 234 ms | 58,5 ms | 46.389 ms | 0,50% |
+| 2 | 132 ms | 33,0 ms | 43.331 ms | 0,30% |
+| 3 | 106 ms | 26,5 ms | 47.788 ms | 0,22% |
+| **Mediana** | **132 ms** | **33,0 ms** | 46.389 ms | **0,30%** |
+
+Contra o critério do item 7 da seção 9 do plano, declarado antes de medir: mediana de **33,0 ms**
+por gravação contra teto de **60** (folga de 45%), e **0,30%** do tempo total contra limiar de
+**1%** (folga de 3,3×). O orçamento da seção 4.4 fica sustentado por medição feita com a DLL
+corrente, que era exatamente o que o item 7a exigia ao mandar refazer a medição da P2.
+
+### 13.1 O que a série mostra e uma captura não mostraria
+
+A dispersão foi **maior** que a registrada na P2: entre 58,5 e 26,5 ms por gravação, a primeira
+121% acima da última, contra os ±17% que a P2 observou. O critério de três execuções foi escrito
+com base nos ±17%; o campo mostrou que a margem real é maior, o que reforça a regra em vez de
+enfraquecê-la.
+
+**A primeira execução é o outlier, não a última** — 58,5 → 33,0 → 26,5, monotônico. O padrão é
+compatível com custo de primeira gravação depois de abrir a KB, seja cache de disco ou da própria
+IDE. É **hipótese, não causa medida**: ninguém instrumentou o `Save()` para separar I/O de
+overhead da IDE, e a série tem três pontos.
+
+O valor prático da regra fica explícito aqui: parando na primeira, o número publicado seria
+**58,5 ms**, a 2,5% do teto, e a conclusão provável seria mexer no teto ou na política de
+checkpoints — uma decisão de projeto tomada sobre ruído. As outras duas execuções custaram cerca
+de um minuto e meio de máquina.
+
+O peso no Apply também vale registrar por outro motivo: o Apply da KB grande leva ~45 s, e o
+diário responde por menos de meio décimo desse tempo. O que domina a operação continua sendo a
+gravação dos objetos de negócio, e é lá que qualquer trabalho futuro de desempenho tem retorno.

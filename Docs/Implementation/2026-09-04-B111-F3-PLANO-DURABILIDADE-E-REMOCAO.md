@@ -831,9 +831,11 @@ Reinstalar a DLL conforme a política do repositório e validar depois dela.
 7. medir o acréscimo real do diário na KB grande e comparar com o orçamento de 4.4, em **duas**
    medições distintas:
    - **7a — Apply.** Medido na P2, em 2026-09-14: 182 ms em 4 checkpoints, 0,4% de um Apply de
-     44,2 s. **Precisa ser refeito**: aquela medição é da DLL da P2, e as etapas P4 a P7 mais
-     sete commits posteriores tocaram emissores — pela regra de contrato runtime do `AGENTS.md`,
-     evidência vale para a DLL que a produziu;
+     44,2 s. Precisava ser refeito, porque aquela medição era da DLL da P2 e as etapas P4 a P7
+     mais sete commits posteriores tocaram emissores — pela regra de contrato runtime do
+     `AGENTS.md`, evidência vale para a DLL que a produziu. **Refeito em 2026-09-15** e
+     **aprovado**: três Applies de reencontro na mesma `Empresa`, mediana de 132 ms em 4
+     checkpoints — 33,0 ms por gravação — e 0,30% do tempo total. Registro na seção 13 da P8;
    - **7b — remoção retomável.** Nunca medida. A remoção não tem contagem fixa: a política é
      `3 + P`, com `P` conhecido só em runtime. Medir `P`, o custo do diário e o tempo total, e
      comparar com a tabela derivada de 4.4;
