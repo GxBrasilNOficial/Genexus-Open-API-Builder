@@ -261,7 +261,8 @@ internal static class ApiPlanGenerationStateReader
                     intentionalDiagnosis?.FailingClause ?? ownershipDiagnostic?.ReasonText,
                     intentionalDiagnosis?.ActualApiGuid ?? ownershipDiagnostic?.ActualApiGuid,
                     intentionalDiagnosis?.MetadataApiGuid ?? ownershipDiagnostic?.MetadataApiGuid,
-                    apiPlan.MetadataFileName),
+                    apiPlan.MetadataFileName,
+                    apiPlan.ApiName),
                 apiObjectGuid: intentionalDiagnosis?.ActualApiGuid ?? ownershipDiagnostic?.ActualApiGuid,
                 metadataApiGuid: intentionalDiagnosis?.MetadataApiGuid ?? ownershipDiagnostic?.MetadataApiGuid,
                 diagnosticDetails: intentionalDiagnosis?.FormatDetails() ?? ownershipDiagnostic?.FormatDetails())).ToArray());
@@ -270,30 +271,45 @@ internal static class ApiPlanGenerationStateReader
     /// <summary>
     /// Acrescenta a saída conhecida à causa do bloqueio do API Object, quando ela existe.
     ///
-    /// A cláusula que falhou continua na frente — ela é o que se cita num relato e o que o
-    /// gate procura —, mas `OwnershipSchemaApiNameOrGuidMismatch` não diz a ninguém o que
-    /// fazer. O sinal objetivo é a divergência entre o GUID do API Object presente e o que a
-    /// metadata registra: nesse caso o API foi apagado ou trocado fora da ferramenta, e a saída
-    /// é apagar a metadata e reaplicar.
+    /// A cláusula que falhou continua na frente — ela é o que se cita num relato e o que o gate
+    /// procura —, mas `OwnershipSchemaApiNameOrGuidMismatch` e `MetadataMissing` não dizem a
+    /// ninguém o que fazer. Dois estados têm saída conhecida, e ela é a **mesma**, por um motivo
+    /// que custou uma rodada de teste para ficar claro:
     ///
-    /// Sem essa divergência, a causa fica como está: os outros descompassos de posse — Description
-    /// alheia, integridade divergente, Service Source fora do contrato — não se resolvem apagando
-    /// a metadata, e sugerir isso destruiria o baseline por um problema de outro lugar.
+    /// - **GUID divergente** — a metadata registra um API Object que não é o que está na KB;
+    /// - **metadata ausente** — sem ela, a posse do API Object existente não pode ser confirmada.
+    ///
+    /// Em ambos, o par API Object + metadata precisa sair **junto**. Apagar só a metadata deixa
+    /// o API Object órfão de posse e troca um bloqueio pelo outro: medido na IDE em 2026-09-14,
+    /// a orientação anterior — que mandava apagar apenas o File — levava direto a
+    /// `MetadataMissing`.
+    ///
+    /// Os demais descompassos de posse ficam sem sugestão: Description alheia, integridade
+    /// divergente e Service Source fora do contrato não se resolvem apagando nada, e sugerir isso
+    /// destruiria o baseline por um problema de outro lugar.
     /// </summary>
     private static string? DescribeApiObjectCause(
         string? failingClause,
         string? actualApiGuid,
         string? metadataApiGuid,
-        string metadataFileName)
+        string metadataFileName,
+        string apiName)
     {
-        if (string.IsNullOrWhiteSpace(actualApiGuid)
-            || string.IsNullOrWhiteSpace(metadataApiGuid)
-            || string.Equals(actualApiGuid, metadataApiGuid, StringComparison.OrdinalIgnoreCase))
+        var guidDivergent = !string.IsNullOrWhiteSpace(actualApiGuid)
+            && !string.IsNullOrWhiteSpace(metadataApiGuid)
+            && !string.Equals(actualApiGuid, metadataApiGuid, StringComparison.OrdinalIgnoreCase);
+        var metadataMissing = string.Equals(failingClause, "MetadataMissing", StringComparison.Ordinal)
+            && !string.IsNullOrWhiteSpace(actualApiGuid);
+        if (!guidDivergent && !metadataMissing)
         {
             return failingClause;
         }
 
-        var guidance = $"a metadata registra um API Object diferente do que está na KB com esse nome. Para regerar a API a partir do que restou, apague o File '{metadataFileName}' e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada.";
+        var cause = guidDivergent
+            ? "a metadata registra um API Object diferente do que está na KB com esse nome"
+            : "a metadata da API não está na KB, e sem ela a posse do API Object existente não pode ser confirmada";
+        var guidance = cause
+            + $". Para regerar a API a partir do que restou, apague o API Object '{apiName}' e o File '{metadataFileName}' — os dois, porque um sem o outro apenas troca este bloqueio pelo seguinte — e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada.";
         return string.IsNullOrWhiteSpace(failingClause) ? guidance : failingClause + " — " + guidance;
     }
 
@@ -490,9 +506,12 @@ internal static class ApiPlanGenerationStateReader
 
         storedApiGuid = stored!;
         currentApiGuid = apiMatches.Count == 1 ? apiMatches[0].Guid.ToString() : string.Empty;
+        // Com o API Object ausente, apagar o File basta: o Wizard cria o API novo. Com um API
+        // Object presente e divergente, os dois precisam sair juntos — apagar só o File troca
+        // este bloqueio por `MetadataMissing`, medido na IDE em 2026-09-14.
         reason = apiMatches.Count == 0
             ? $"a metadata registra um API Object que não está mais na KB. Para regerar a API a partir do que restou, apague o File '{apiPlan.MetadataFileName}' e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada."
-            : $"a metadata registra um API Object diferente do que está na KB com esse nome. Para regerar a API a partir do que restou, apague o File '{apiPlan.MetadataFileName}' e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada.";
+            : $"a metadata registra um API Object diferente do que está na KB com esse nome. Para regerar a API a partir do que restou, apague o API Object '{apiPlan.ApiName}' e o File '{apiPlan.MetadataFileName}' — os dois, porque um sem o outro apenas troca este bloqueio pelo seguinte — e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada.";
         return true;
     }
 

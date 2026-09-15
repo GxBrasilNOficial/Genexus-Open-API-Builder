@@ -28,9 +28,9 @@ internal static class ExtensionOutputLocalization
         // das demais porque são frases longas: a substituição é por substring, e um fragmento
         // curto cadastrado antes recortaria o meio delas.
         new(
-            " registra um API Object que não existe mais na KB, ou outro que não é o desta aplicação. Para regerar a API a partir do que restou na KB, apague esse File e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada. Nenhuma alteração foi feita.",
-            " registra un API Object que ya no existe en la KB, u otro que no es el de esta aplicación. Para regenerar la API a partir de lo que quedó en la KB, borre ese File y ejecute el Wizard de nuevo: los SDTs y los Procedures existentes se reencuentran, y el API Object y los metadatos se recrean. Paginación, ordenación y campos obligatorios vuelven a los valores predeterminados de las preferencias, porque solo existían en los metadatos borrados. No se modificó nada.",
-            " records an API Object that no longer exists in the KB, or a different one that does not belong to this application. To regenerate the API from what is left in the KB, delete that File and run the Wizard again: existing SDTs and Procedures are rediscovered, and the API Object and the metadata are recreated. Pagination, ordering, and required fields fall back to the preference defaults, because they only existed in the deleted metadata. No changes were made."),
+            " registra um API Object que não existe mais na KB, ou outro que não é o desta aplicação. Para regerar a API a partir do que restou na KB, apague esse File e o API Object que leva o nome da API — os dois, porque um sem o outro apenas troca este bloqueio pelo seguinte — e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada. Nenhuma alteração foi feita.",
+            " registra un API Object que ya no existe en la KB, u otro que no es el de esta aplicación. Para regenerar la API a partir de lo que quedó en la KB, borre ese File y el API Object que lleva el nombre de la API — los dos, porque uno sin el otro solo cambia este bloqueo por el siguiente — y ejecute el Wizard de nuevo: los SDTs y los Procedures existentes se reencuentran, y el API Object y los metadatos se recrean. Paginación, ordenación y campos obligatorios vuelven a los valores predeterminados de las preferencias, porque solo existían en los metadatos borrados. No se modificó nada.",
+            " records an API Object that no longer exists in the KB, or a different one that does not belong to this application. To regenerate the API from what is left in the KB, delete that File and the API Object that carries the API name — both, because one without the other only swaps this block for the next one — and run the Wizard again: existing SDTs and Procedures are rediscovered, and the API Object and the metadata are recreated. Pagination, ordering, and required fields fall back to the preference defaults, because they only existed in the deleted metadata. No changes were made."),
         new(
             " O API Object previsto não está na KB, e quem o apagou não foi esta operação. Há duas saídas, e a escolha é sua: para regerar a API sobre o que restou, apague o File",
             " El API Object previsto no está en la KB, y quien lo borró no fue esta operación. Hay dos salidas, y la elección es suya: para regenerar la API sobre lo que quedó, borre el File",
@@ -47,13 +47,29 @@ internal static class ExtensionOutputLocalization
             "los metadatos registran un API Object que ya no está en la KB. Para regenerar la API a partir de lo que quedó, borre el File '",
             "the metadata records an API Object that is no longer in the KB. To regenerate the API from what is left, delete the File '"),
         new(
-            "a metadata registra um API Object diferente do que está na KB com esse nome. Para regerar a API a partir do que restou, apague o File '",
-            "los metadatos registran un API Object distinto del que está en la KB con ese nombre. Para regenerar la API a partir de lo que quedó, borre el File '",
-            "the metadata records an API Object different from the one in the KB with that name. To regenerate the API from what is left, delete the File '"),
+            "a metadata registra um API Object diferente do que está na KB com esse nome",
+            "los metadatos registran un API Object distinto del que está en la KB con ese nombre",
+            "the metadata records an API Object different from the one in the KB with that name"),
+        new(
+            "a metadata da API não está na KB, e sem ela a posse do API Object existente não pode ser confirmada",
+            "los metadatos de la API no están en la KB, y sin ellos la pertenencia del API Object existente no puede confirmarse",
+            "the API metadata is not in the KB, and without it the ownership of the existing API Object cannot be confirmed"),
+        new(
+            ". Para regerar a API a partir do que restou, apague o API Object '",
+            ". Para regenerar la API a partir de lo que quedó, borre el API Object '",
+            ". To regenerate the API from what is left, delete the API Object '"),
+        new(
+            "' — os dois, porque um sem o outro apenas troca este bloqueio pelo seguinte — e execute o Wizard de novo:",
+            "' — los dos, porque uno sin el otro solo cambia este bloqueo por el siguiente — y ejecute el Wizard de nuevo:",
+            "' — both, because one without the other only swaps this block for the next one — and run the Wizard again:"),
         new(
             "' e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada.",
             "' y ejecute el Wizard de nuevo: los SDTs y los Procedures existentes se reencuentran, y el API Object y los metadatos se recrean. Paginación, ordenación y campos obligatorios vuelven a los valores predeterminados de las preferencias, porque solo existían en los metadatos borrados.",
             "' and run the Wizard again: existing SDTs and Procedures are rediscovered, and the API Object and the metadata are recreated. Pagination, ordering, and required fields fall back to the preference defaults, because they only existed in the deleted metadata."),
+        new(
+            " os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada.",
+            " los SDTs y los Procedures existentes se reencuentran, y el API Object y los metadatos se recrean. Paginación, ordenación y campos obligatorios vuelven a los valores predeterminados de las preferencias, porque solo existían en los metadatos borrados.",
+            " existing SDTs and Procedures are rediscovered, and the API Object and the metadata are recreated. Pagination, ordering, and required fields fall back to the preference defaults, because they only existed in the deleted metadata."),
         new("Causa='", "Causa='", "Cause='"),
         new(" de metadata", " de metadatos", " metadata"),
         new("API gerada com avisos.", "API generada con advertencias.", "API generated with warnings."),

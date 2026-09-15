@@ -220,12 +220,25 @@ Assert-True (-not $duplicateEnglish.Contains('declara servico duplicado')) 'Ingl
 # B111/F3 P8 — as duas orientações do descompasso de `ownership.apiGuid`. Elas existem porque
 # três recusas corretas não diziam o que fazer; uma orientação só em português seria meia
 # correção.
-$apiGuidBlock = "Gravação de metadata B060 bloqueada: o File 'apiTeste_Metadata' registra um API Object que não existe mais na KB, ou outro que não é o desta aplicação. Para regerar a API a partir do que restou na KB, apague esse File e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada. Nenhuma alteração foi feita."
+$apiGuidBlock = "Gravação de metadata B060 bloqueada: o File 'apiTeste_Metadata' registra um API Object que não existe mais na KB, ou outro que não é o desta aplicação. Para regerar a API a partir do que restou na KB, apague esse File e o API Object que leva o nome da API — os dois, porque um sem o outro apenas troca este bloqueio pelo seguinte — e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada. Nenhuma alteração foi feita."
 $apiGuidSpanish = $translate.Invoke($null, [object[]] @($apiGuidBlock, $spanish))
 $apiGuidEnglish = $translate.Invoke($null, [object[]] @($apiGuidBlock, $english))
-Assert-True ($apiGuidSpanish.Contains('borre ese File y ejecute el Wizard de nuevo')) 'Espanhol deve orientar qual File apagar.'
-Assert-True ($apiGuidEnglish.Contains('delete that File and run the Wizard again')) 'Inglês deve orientar qual File apagar.'
+Assert-True ($apiGuidSpanish.Contains('borre ese File y el API Object')) 'Espanhol deve orientar a apagar os dois objetos.'
+Assert-True ($apiGuidEnglish.Contains('delete that File and the API Object')) 'Inglês deve orientar a apagar os dois objetos.'
 Assert-True (-not $apiGuidEnglish.Contains('apague esse File')) 'Inglês não deve manter a orientação em português.'
+
+# A orientação da causa do API Object: os dois objetos saem juntos, e o texto diz por quê.
+$causeGuidance = "OwnershipSchemaApiNameOrGuidMismatch — a metadata registra um API Object diferente do que está na KB com esse nome. Para regerar a API a partir do que restou, apague o API Object 'apiTeste' e o File 'apiTeste_Metadata' — os dois, porque um sem o outro apenas troca este bloqueio pelo seguinte — e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada."
+$causeSpanish = $translate.Invoke($null, [object[]] @($causeGuidance, $spanish))
+$causeEnglish = $translate.Invoke($null, [object[]] @($causeGuidance, $english))
+Assert-True ($causeSpanish.Contains('los dos, porque uno sin el otro solo cambia este bloqueo por el siguiente')) 'Espanhol deve explicar por que os dois saem juntos.'
+Assert-True ($causeEnglish.Contains('both, because one without the other only swaps this block for the next one')) 'Inglês deve explicar por que os dois saem juntos.'
+
+$missingGuidance = "MetadataMissing — a metadata da API não está na KB, e sem ela a posse do API Object existente não pode ser confirmada. Para regerar a API a partir do que restou, apague o API Object 'apiTeste' e o File 'apiTeste_Metadata' — os dois, porque um sem o outro apenas troca este bloqueio pelo seguinte — e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada."
+$missingSpanish = $translate.Invoke($null, [object[]] @($missingGuidance, $spanish))
+$missingEnglish = $translate.Invoke($null, [object[]] @($missingGuidance, $english))
+Assert-True ($missingSpanish.Contains('la pertenencia del API Object existente no puede confirmarse')) 'Espanhol deve explicar a metadata ausente.'
+Assert-True ($missingEnglish.Contains('the ownership of the existing API Object cannot be confirmed')) 'Inglês deve explicar a metadata ausente.'
 
 $removalGuidance = "Remoção interrompida (TargetAbsentBeforeDelete): 0 objeto(s) saíram da KB e 25 continuam lá. O API Object previsto não está na KB, e quem o apagou não foi esta operação. Há duas saídas, e a escolha é sua: para regerar a API sobre o que restou, apague o File 'apiTeste_Metadata' e reaplique pelo Wizard, que reencontra SDTs e Procedures — paginação, ordenação e campos obrigatórios voltam aos padrões das preferências; para descartar o que restou, apague os objetos listados acima pela KB Explorer."
 $removalSpanish = $translate.Invoke($null, [object[]] @($removalGuidance, $spanish))

@@ -807,7 +807,8 @@ internal static class ApiPlanMetadataFileWriter
         throw new InvalidOperationException(
             $"Gravação de metadata B060 bloqueada: o File '{fileName}'"
             + " registra um API Object que não existe mais na KB, ou outro que não é o desta aplicação."
-            + " Para regerar a API a partir do que restou na KB, apague esse File e execute o Wizard de novo:"
+            + " Para regerar a API a partir do que restou na KB, apague esse File e o API Object que leva o nome da API"
+            + " — os dois, porque um sem o outro apenas troca este bloqueio pelo seguinte — e execute o Wizard de novo:"
             + " os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados."
             + " Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam"
             + " na metadata apagada. Nenhuma alteração foi feita.");

@@ -318,6 +318,32 @@ ApiNameEsperado='apiTeste'
 Nada se perdeu: o que saiu era derivável do que ficou. O GUID atual e o da metadata continuam
 na linha da causa, onde já estavam.
 
+### 7.4 A orientação estava errada: os dois objetos saem juntos
+
+A instrução das seções 7 a 7.2 mandava apagar **o File de metadata** e reaplicar. Exercida na
+IDE, ela não funciona quando o API Object existe: sem metadata, a posse dele não pode ser
+confirmada, e o Wizard volta a bloquear — agora com `Causa='MetadataMissing'`, `ApiObjectCount=1`.
+Um bloqueio trocado pelo outro.
+
+A saída correta é apagar **o par**: o API Object e o File de metadata. Depois disso o Wizard
+cria os dois e reencontra SDTs e Procedures. As três mensagens passaram a dizer isso, e a dizer
+**por quê** — «os dois, porque um sem o outro apenas troca este bloqueio pelo seguinte» —, para
+que ninguém repita meio caminho.
+
+`MetadataMissing` com API Object presente ganhou a mesma orientação: é o outro lado da mesma
+moeda, e antes chegava à tela como uma palavra só.
+
+Há um segundo caminho, oferecido pela própria ferramenta e **não exercido nesta bateria**: com a
+metadata ausente e o API Object presente, a recuperação de metadata órfã (`B115`) se oferece na
+abertura do Wizard e reconstrói uma metadata inventário-apenas, que devolve a posse. Ela foi
+recusada aqui de propósito — o objetivo era metadata **completa** —, e fica como cenário à
+parte.
+
+**Três correções de orientação em três rodadas, todas pelo mesmo erro meu:** presumir o caminho
+em vez de medi-lo. A primeira foi para o ponto que não é alcançado, a segunda para o estado
+errado, e a terceira dizia meia verdade. O que as corrigiu, em todos os casos, foi executar na
+IDE e ler o que apareceu.
+
 O que **não** mudou, de propósito: a recusa do `B115` sobre metadata completa. Ela está certa
 pelo motivo que o próprio código explica — o fingerprint B067 cobre o conteúdo inteiro, e
 corrigir só o `apiGuid` trocaria um bloqueio por outro.
