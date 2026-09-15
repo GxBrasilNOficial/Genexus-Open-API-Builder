@@ -179,10 +179,10 @@ public static class ApiPlanRecoveryRehydrator
                     CultureInfo.InvariantCulture,
                     "A remoção parou porque um alvo previsto já não estava na KB antes da exclusão, e quem "
                     + "o apagou não foi esta operação: retomar a fila às cegas não é possível. {0} alvo(s) "
-                    + "ainda estão na KB: {1}. Encerrar este registro libera a Knowledge Base e não apaga "
-                    + "nada; o que estiver pela metade continua como está, para você decidir depois.",
-                    pendingDeletes.Length,
-                    string.Join(", ", pendingDeletes.Select(item => item.Item.Name))));
+                    + "previstos ainda estão na KB, listados abaixo. Encerrar este registro libera a "
+                    + "Knowledge Base e não apaga nada; o que estiver pela metade continua como está, para "
+                    + "você decidir depois.",
+                    pendingDeletes.Length));
         }
 
         return ApiPlanRehydratedOperation.Authorized(
@@ -191,10 +191,9 @@ public static class ApiPlanRecoveryRehydrator
             RecoveryNextStep.ContinueRemovePass,
             string.Format(
                 CultureInfo.InvariantCulture,
-                "{0} alvo(s) previsto(s) continuam na KB: {1}. A fila pode ser retomada com o mesmo "
-                + "inventário e o mesmo envelope.",
-                pendingDeletes.Length,
-                string.Join(", ", pendingDeletes.Select(item => item.Item.Name))));
+                "{0} alvo(s) previsto(s) continuam na KB, listados abaixo. A fila pode ser retomada com "
+                + "o mesmo inventário e o mesmo envelope.",
+                pendingDeletes.Length));
     }
 
     /// <summary>

@@ -185,7 +185,17 @@ atual, com o reencontro conservador cuidando do que já existe, ou remover a API
 de contexto da Transaction. O checker de comandos passou com **13** comandos.
 
 O comando sempre publica o diagnóstico completo na Output antes de qualquer pergunta, e só age
-depois de confirmação explícita. A preferência nova `ShowRecoveryOptionProactively` — gravada
+depois de confirmação explícita.
+
+**Diálogo próprio, não `MessageBox`** (ajustado em 2026-09-14, durante a P8). O `MessageBox` do
+Windows escolhe a própria largura, e a decisão de encerrar um registro chegava espremida numa
+coluna estreita, com o inventário de vinte e quatro objetos derretido dentro do parágrafo —
+mais os asteriscos de Markdown aparecendo literais, porque ali não há formatação. O
+`ExtensionRecoveryDialog` segue o desenho do diálogo do Remover: mensagem com largura de
+leitura, inventário em bloco monoespaçado e rolável — uma linha por alvo, com o previsto e o
+observado —, pergunta no rodapé e o botão seguro com o foco, respondendo a Enter e a Esc. Os
+resumos deixaram de enumerar nomes: contam quantos alvos continuam na KB e deixam a lista para
+o bloco. A preferência nova `ShowRecoveryOptionProactively` — gravada
 como `showRecoveryOptionProactively` no File de preferências, **ligada por padrão** — faz o
 bloqueio de Apply, Sync e Remover oferecer a recuperação na hora.
 

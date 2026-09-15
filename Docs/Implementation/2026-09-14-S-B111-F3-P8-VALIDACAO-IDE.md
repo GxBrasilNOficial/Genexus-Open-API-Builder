@@ -118,13 +118,48 @@ classificou `AbsentBeforeDelete` por evidência própria e o envelope gravou
 `TargetAbsentBeforeDelete`. Fica registrado como candidato a ajuste de vocabulário depois da
 P8, não como defeito de comportamento.
 
-## 5. Cenários restantes
+## 5. Cenário 3 — recuperação sobre o envelope interrompido
+
+**Parcial: a recusa foi exercida; o encerramento, ainda não.**
+
+**Setup:** o envelope `Partial/RemovalPartial` deixado pelo cenário 4. Nada alterado à mão.
+**Ação:** menu de contexto da Transaction → `Recuperar operação interrompida`.
+
+A reidratação leu o envelope e apurou a etapa certa:
+
+```
+Operação Remove sobre 'Teste': estado Partial/RemovalPartial, envelope Active, durabilidade Confirmed.
+OperationId=0eee2cc9-…, ApplicationId=27c47222-…, atualizado em 2026-09-15 01:15:45Z.
+Motivo registrado no envelope: TargetAbsentBeforeDelete.
+Próxima etapa apurada: Discard.
+```
+
+As **trinta** linhas de inventário saíram com o cruzamento correto: `ApiObject apiTeste —
+previsto: Delete; na KB: Absent`, os 24 alvos restantes `Delete`/`Present`, e os cinco
+preservados (3 SDTs compartilhados, Folder e Transaction) como `Preserve`/`Present`. O
+`OperationId` é o mesmo do cenário 4: a recuperação agiu sobre o envelope existente, sem criar
+outro.
+
+**Resposta `Não`:** `Recuperação recusada pelo usuário. Nenhuma alteração foi feita.` — o
+caminho seguro fecha sem tocar em nada, como esperado.
+
+### 5.1 Correção de apresentação saída deste cenário
+
+A janela era um `MessageBox` nativo, que não aceita largura customizada: o texto chegava numa
+coluna estreita, o inventário de 24 nomes derretia dentro do parágrafo e os asteriscos de
+Markdown apareciam literais. Trocada pelo `ExtensionRecoveryDialog`, com o desenho do diálogo
+do Remover — largura de leitura, inventário em bloco monoespaçado e rolável, pergunta no rodapé
+e o botão seguro com o foco. Os resumos deixaram de enumerar nomes.
+
+O cenário 3 será refeito do início com a DLL corrigida, incluindo a resposta `Sim`.
+
+## 6. Cenários restantes
 
 | # | Cenário | Estado |
 |---|---|---|
 | 1 | Remoção completa (fila nova) | **passou** — seção 2 |
 | 2 | Alvo previsto ausente antes do `Delete()` | **passou** — seção 4 |
-| 3 | Recuperação sobre o envelope `Partial`: encerrar o registro | em execução |
+| 3 | Recuperação sobre o envelope `Partial`: encerrar o registro | **parcial** — recusa (`Não`) passou; `Sim` pendente, ver seção 5 |
 | 4 | Devolver a KB ao normal pela recuperação de metadata órfã (B115) | não iniciado |
 | 5 | Abortar um Apply no meio; oferta proativa; recuperação | não iniciado |
 | 6 | Wizard cancelado antes de aplicar: envelope `Prepared` e abandono | não iniciado |

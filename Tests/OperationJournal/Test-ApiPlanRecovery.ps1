@@ -279,7 +279,11 @@ try {
         (New-Observation -Item $sdtItem -PhysicalState 'Present'))
     Assert-Equal 'ContinueRemovePass' ([string]$operation.NextStep) 'Alvo previsto ainda na KB autoriza retomar a fila'
     Assert-True ([bool]$operation.CanExecute) 'A retomada é executável'
-    Assert-True ($operation.Summary.Contains('sdtTeste_API_Response')) 'O resumo nomeia o que continua na KB'
+    # O resumo conta quantos continuam na KB; a lista fica no inventário, que o diálogo mostra em
+    # bloco próprio e a Output publica uma linha por alvo. Enumerar dentro do parágrafo tornava
+    # a mensagem ilegível na janela.
+    Assert-True ($operation.Summary.Contains('1 alvo(s) previsto(s) continuam na KB')) 'O resumo conta o que continua na KB'
+    Assert-True ($operation.Targets.Count -eq 2) 'O inventário cruzado acompanha a decisão'
 
     # --- 7. Remoção que já terminou: fechar o registro ----------------------------------------------
     $operation = Invoke-Rehydrate -Envelope $partialRemoval -Observations @(

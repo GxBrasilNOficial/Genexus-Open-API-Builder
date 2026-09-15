@@ -605,12 +605,12 @@ public sealed class Package : AbstractPackageUI
 
         if (!operation.CanExecute)
         {
-            System.Windows.Forms.MessageBox.Show(
+            ExtensionRecoveryDialog.Inform(
                 owner,
+                texts,
                 texts.RecoveryBlockedIntro + Environment.NewLine + Environment.NewLine + operation.Summary,
-                texts.RecoveryDialogTitle,
-                System.Windows.Forms.MessageBoxButtons.OK,
-                System.Windows.Forms.MessageBoxIcon.Warning);
+                DescribeRecoveryTargets(operation),
+                warning: true);
             return;
         }
 
@@ -623,20 +623,15 @@ public sealed class Package : AbstractPackageUI
         };
 
         // Encerrar o registro não conclui a operação: quem confirma precisa ter visto o que
-        // ficou na KB. O resumo vai junto da pergunta, além do diagnóstico já publicado acima.
-        if (operation.RequiresStateAwareness)
-        {
-            question = question + Environment.NewLine + Environment.NewLine + operation.Summary;
-        }
-
-        var answer = System.Windows.Forms.MessageBox.Show(
+        // ficou na KB. Por isso o resumo encabeça o diálogo e o inventário aparece em bloco
+        // próprio, em vez de derreter dentro do parágrafo da pergunta.
+        var confirmed = ExtensionRecoveryDialog.Ask(
             owner,
-            question,
-            texts.RecoveryDialogTitle,
-            System.Windows.Forms.MessageBoxButtons.YesNo,
-            System.Windows.Forms.MessageBoxIcon.Warning,
-            System.Windows.Forms.MessageBoxDefaultButton.Button2);
-        if (answer != System.Windows.Forms.DialogResult.Yes)
+            texts,
+            operation.Summary,
+            DescribeRecoveryTargets(operation),
+            question);
+        if (!confirmed)
         {
             WriteOutput("[Genexus Open API Builder][B111/F3] Recuperação recusada pelo usuário. Nenhuma alteração foi feita.");
             System.Windows.Forms.MessageBox.Show(
@@ -672,23 +667,25 @@ public sealed class Package : AbstractPackageUI
         {
             var diagnostic = result.Diagnostic;
             WriteOutput($"[Genexus Open API Builder][B111/F3] Recuperação bloqueada: {diagnostic?.Describe() ?? result.Summary}");
-            System.Windows.Forms.MessageBox.Show(
+            ExtensionRecoveryDialog.Inform(
                 owner,
+                texts,
                 texts.RecoveryBlockedIntro + Environment.NewLine + Environment.NewLine + result.Summary,
-                texts.RecoveryDialogTitle,
-                System.Windows.Forms.MessageBoxButtons.OK,
-                System.Windows.Forms.MessageBoxIcon.Warning);
+                DescribeRecoveryTargets(operation),
+                warning: true);
             return;
         }
 
         WriteOutput($"[Genexus Open API Builder][B111/F3] Recuperação concluída: Etapa='{operation.NextStep}', OperationId='{envelope.OperationId}', Estado='{result.Envelope?.OperationState}'. {result.Summary}");
-        System.Windows.Forms.MessageBox.Show(
-            owner,
-            result.Summary,
-            texts.RecoveryDialogTitle,
-            System.Windows.Forms.MessageBoxButtons.OK,
-            System.Windows.Forms.MessageBoxIcon.Information);
+        ExtensionRecoveryDialog.Inform(owner, texts, result.Summary, Array.Empty<string>(), warning: false);
     }
+
+    /// <summary>
+    /// O inventário como o diálogo o mostra: uma linha por alvo, com o que a intenção previa e
+    /// o que a KB mostra agora. É a informação que sustenta a decisão de encerrar um registro.
+    /// </summary>
+    private static IReadOnlyList<string> DescribeRecoveryTargets(ApiPlanRehydratedOperation operation) =>
+        operation.Targets.Select(target => target.Describe()).ToArray();
 
     /// <summary>
     /// Retoma a fila de uma remoção interrompida **no mesmo envelope**, com o inventário durável
