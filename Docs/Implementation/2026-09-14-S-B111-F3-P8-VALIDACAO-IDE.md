@@ -289,6 +289,35 @@ suficiente sozinha:
 O estado a corrigir continua o mesmo, e o caminho também — apagar a metadata e reaplicar —,
 agora com a ferramenta dizendo isso nos três pontos.
 
+### 7.3 O bloco técnico deixou de competir com a orientação
+
+Verificada a orientação na IDE, sobrou o ruído em volta dela: o diagnóstico do bloqueio
+publicava **trinta e três linhas fixas**, onze delas vazias e cinco derivadas de uma medição
+que nem tinha acontecido. Quando não há fingerprint gravado, `FingerprintHashOk=False` não é
+resultado — é consequência de não haver o que comparar —, e `ClausulaQueFalhou` repetia o que a
+causa já encabeçava.
+
+`ApiPlanIntentionalChangeOwnershipDiagnosis.FormatDetails` passou a mostrar só o que foi
+medido: a cláusula não se repete, os blocos de fingerprint e de baseline só se abrem quando
+existem, e campo textual vazio não vira linha. No caso desta bateria, de trinta e três para dez
+linhas, todas informativas:
+
+```
+ApiObjectCount=1
+MetadataPresente=True
+MetadataDescriptionPropria=True
+MetadataParseOk=True
+OwnershipSchemaApiNameGuid=False
+FingerprintPresente=False
+IntegrityPresente=False
+SchemaGravado='GOAB_API_METADATA_B060_V3'
+ApiNameGravado='apiTeste'
+ApiNameEsperado='apiTeste'
+```
+
+Nada se perdeu: o que saiu era derivável do que ficou. O GUID atual e o da metadata continuam
+na linha da causa, onde já estavam.
+
 O que **não** mudou, de propósito: a recusa do `B115` sobre metadata completa. Ela está certa
 pelo motivo que o próprio código explica — o fingerprint B067 cobre o conteúdo inteiro, e
 corrigir só o `apiGuid` trocaria um bloqueio por outro.

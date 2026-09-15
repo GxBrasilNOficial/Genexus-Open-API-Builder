@@ -1303,45 +1303,79 @@ internal sealed class ApiPlanIntentionalChangeOwnershipDiagnosis
             expectedApiName: expectedApiName);
     }
 
+    /// <summary>
+    /// O bloco técnico do bloqueio, publicado na Output e na aba do Wizard.
+    ///
+    /// Ele mostra **o que foi medido**, e só isso. Trinta e três linhas fixas — onze delas
+    /// vazias e cinco derivadas de uma medição que nem aconteceu — faziam o leitor procurar o
+    /// sinal no meio do ruído: quando não há fingerprint gravado, `FingerprintHashOk=False` não
+    /// é resultado, é consequência de não haver o que comparar.
+    ///
+    /// Por isso: a cláusula que falhou não se repete aqui (ela encabeça a causa), os blocos de
+    /// fingerprint e de baseline só se abrem quando existem, e campo textual vazio não vira
+    /// linha. O que sobra é o que alguém usaria para entender o bloqueio ou colar num relato.
+    /// </summary>
     public string FormatDetails()
     {
-        return string.Join(
-            Environment.NewLine,
-            $"ClausulaQueFalhou='{FailingClause}'",
+        var lines = new List<string>
+        {
             $"ApiObjectCount={MatchCount}",
             $"MetadataPresente={MetadataPresent}",
             $"MetadataDescriptionPropria={MetadataDescriptionOwned}",
             $"MetadataParseOk={MetadataParseOk}",
             $"OwnershipSchemaApiNameGuid={OwnershipOk}",
-            $"FingerprintOk={FingerprintOk}",
-            $"FingerprintPresente={FingerprintPresent}",
-            $"FingerprintAlgoritmoOk={FingerprintAlgorithmOk}",
-            $"FingerprintEscopoOk={FingerprintScopeOk}",
-            $"FingerprintValorPresente={FingerprintValuePresent}",
-            $"FingerprintHashOk={FingerprintHashMatch}",
-            $"FingerprintDetalhe='{FingerprintDetail}'",
-            $"FingerprintAlgoritmo='{FingerprintAlgorithm}'",
-            $"FingerprintEscopo='{FingerprintScope}'",
-            $"FingerprintGravado='{FingerprintStored}'",
-            $"FingerprintRecalculado='{FingerprintActual}'",
-            $"FingerprintSnapshotLength={FingerprintSnapshotLength}",
-            $"IntegrityPresente={IntegrityPresent}",
-            $"BaselineVersionOk={VersionOk}",
-            $"BaselineGuidOk={GuidOk}",
-            $"BaselineDescriptionOk={DescriptionOk}",
-            $"BaselineServiceSourceHashOk={ServiceSourceHashOk}",
-            $"BaselineServiceDescriptionsHashOk={ServiceDescriptionsHashOk}",
-            $"ApiObjectGuid='{ActualApiGuid}'",
-            $"MetadataApiGuid='{MetadataApiGuid ?? string.Empty}'",
-            $"SchemaGravado='{StoredSchema}'",
-            $"ApiNameGravado='{StoredApiName}'",
-            $"ApiNameEsperado='{ExpectedApiName}'",
-            $"DescriptionAtual='{ActualDescription}'",
-            $"DescriptionSentinel='{StoredDescription}'",
-            $"ServiceSourceHashAtual='{ActualSourceHash}'",
-            $"ServiceSourceHashGravado='{StoredSourceHash}'",
-            $"DescriptionsHashAtual='{ActualDescriptionsHash}'",
-            $"DescriptionsHashGravado='{StoredDescriptionsHash}'");
+        };
+
+        void AddText(string name, string? value)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                lines.Add(name + "='" + value + "'");
+            }
+        }
+
+        if (FingerprintPresent)
+        {
+            lines.Add($"FingerprintOk={FingerprintOk}");
+            lines.Add($"FingerprintAlgoritmoOk={FingerprintAlgorithmOk}");
+            lines.Add($"FingerprintEscopoOk={FingerprintScopeOk}");
+            lines.Add($"FingerprintValorPresente={FingerprintValuePresent}");
+            lines.Add($"FingerprintHashOk={FingerprintHashMatch}");
+            lines.Add($"FingerprintSnapshotLength={FingerprintSnapshotLength}");
+            AddText("FingerprintDetalhe", FingerprintDetail);
+            AddText("FingerprintAlgoritmo", FingerprintAlgorithm);
+            AddText("FingerprintEscopo", FingerprintScope);
+            AddText("FingerprintGravado", FingerprintStored);
+            AddText("FingerprintRecalculado", FingerprintActual);
+        }
+        else
+        {
+            lines.Add("FingerprintPresente=False");
+        }
+
+        if (IntegrityPresent)
+        {
+            lines.Add($"BaselineVersionOk={VersionOk}");
+            lines.Add($"BaselineGuidOk={GuidOk}");
+            lines.Add($"BaselineDescriptionOk={DescriptionOk}");
+            lines.Add($"BaselineServiceSourceHashOk={ServiceSourceHashOk}");
+            lines.Add($"BaselineServiceDescriptionsHashOk={ServiceDescriptionsHashOk}");
+        }
+        else
+        {
+            lines.Add("IntegrityPresente=False");
+        }
+
+        AddText("SchemaGravado", StoredSchema);
+        AddText("ApiNameGravado", StoredApiName);
+        AddText("ApiNameEsperado", ExpectedApiName);
+        AddText("DescriptionAtual", ActualDescription);
+        AddText("DescriptionSentinel", StoredDescription);
+        AddText("ServiceSourceHashAtual", ActualSourceHash);
+        AddText("ServiceSourceHashGravado", StoredSourceHash);
+        AddText("DescriptionsHashAtual", ActualDescriptionsHash);
+        AddText("DescriptionsHashGravado", StoredDescriptionsHash);
+        return string.Join(Environment.NewLine, lines);
     }
 }
 
