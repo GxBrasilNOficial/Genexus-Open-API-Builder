@@ -423,6 +423,46 @@ duas metades em volta do enum e a que exige o inventário traduzido com o enum p
 (`Procedure procTesteList — planned: Delete; in the KB: Present`). Build Release com 0 avisos e
 0 erros; orquestrador mecânico com 64 `passed` e 1 `skipped`.
 
+#### 8.2.2 E o gate e o store, que eram a outra metade da mesma tela
+
+Ao fechar a 8.2.1 declarei o que tinha ficado de fora: as mensagens do **gate estendido** e do
+**store** do diário. Elas não pertencem ao comando de recuperação — são o que bloqueia Apply,
+Sync e Remover quando existe um envelope não terminal —, mas chegam à mesma superfície: o
+relatório final localiza cada linha pelo catálogo, e a Output também. Eram a metade do texto que
+o usuário lê quando o diário barra uma operação.
+
+Trinta e duas entradas novas, cobrindo:
+
+| Origem | O que faltava |
+| --- | --- |
+| Identidade do diário | diário de outra KB, durabilidade não confirmada |
+| Estado global | envelope preparado, envelope não terminal, resultado indeterminado, autorização de continuação vencida, serviço de continuação ausente |
+| Rótulos do diagnóstico | `Pré-condição '...'` e `Contexto: ...`, que o próprio `Describe()` acrescenta |
+| Store — confirmação | `Save()` que lançou, Id inutilizável, releitura que falhou ou não achou o File, `FileId` que resolveu para outro objeto, bytes, digest e hash canônico divergentes |
+| Store — localização | File sem conteúdo, duplicidade de Files, File homônimo de outro dono |
+
+**Uma mudança de texto no gate, e a razão dela.** Duas mensagens irmãs diziam a mesma coisa com
+conectores diferentes: o bloqueio por envelope não terminal usava `em estado {estado}/{etapa}`, e
+a indeterminação usava só `em {estado}/{etapa}`. O conector curto não pode entrar no catálogo —
+` em ` sozinho recortaria qualquer outra frase —, e o longo já era o que a P2 publicou. Alinhar a
+indeterminação ao conector longo é o que tornou as duas traduzíveis, sem mudar informação nenhuma.
+
+**Um efeito colateral que precisou ser terminado.** `Foram encontrados N Files chamados 'X'` é
+partilhado entre o diário e o aviso de **preferências duplicadas**. Cadastrar o começo sem a
+cauda do segundo deixaria aquela mensagem meio em inglês — pior que inteira em português —, então
+a cauda `Defaults conservadores em memoria aplicados.` entrou junto, com asserção própria.
+
+**O que continua fora, de propósito:** a lista de violações de schema do
+`ApiPlanOperationJournalValidator`. São cerca de quarenta assertivas que nomeiam campo de JSON e
+valor de enum (`envelopePhase=Prepared exige operationState=Pending`), só alcançáveis com um
+envelope corrompido ou editado à mão, e legíveis apenas por quem tem o schema à frente. Elas estão
+mais perto de um `reasonCode` do que de prosa; traduzi-las acrescentaria ruído sem acrescentar
+compreensão.
+
+Vinte e quatro asserções novas no gate, entre elas a linha inteira do bloqueio como o relatório final a
+recebe — código, reason, pré-condição, mensagem e contexto —, com os enums preservados. Build
+Release 0 avisos e 0 erros; orquestrador mecânico com 64 `passed` e 1 `skipped`.
+
 ## 9. Cenários restantes
 
 | # | Cenário | Estado |

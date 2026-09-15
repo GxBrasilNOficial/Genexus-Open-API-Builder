@@ -315,4 +315,65 @@ $lockBusy = 'Outra continuação desta KB está em andamento nesta sessão. A ex
 Assert-True (($translate.Invoke($null, [object[]] @($lockBusy, $spanish))).Contains('Otra continuación de esta KB está en curso en esta sesión.')) 'Espanhol deve traduzir a recusa por lock ocupado.'
 Assert-True (($translate.Invoke($null, [object[]] @($lockBusy, $english))).Contains('as if atomicity existed.')) 'Inglês deve traduzir a recusa por lock ocupado.'
 
+# B111/F3 P7, dívida fechada na P8 — o gate estendido e o store do diário. A linha inteira, como
+# o relatório final a recebe: código, reason, pré-condição, mensagem e contexto.
+$nonTerminal = "[GateBlocked/JournalNonTerminal] Pré-condição 'PriorIntentReconciled'. O diário da KB registra a operação Apply em estado Partial/ApiObjectWritten, que não é terminal. Reconcilie ou continue essa operação antes de iniciar outra. Contexto: lookupState=Found, journalFileId=1387."
+$nonTerminalEnglish = $translate.Invoke($null, [object[]] @($nonTerminal, $english))
+$nonTerminalSpanish = $translate.Invoke($null, [object[]] @($nonTerminal, $spanish))
+Assert-True ($nonTerminalEnglish.Contains("Precondition 'PriorIntentReconciled'.")) 'Inglês deve traduzir o rótulo da pré-condição.'
+Assert-True ($nonTerminalEnglish.Contains('The KB journal records the Apply operation in state Partial/ApiObjectWritten, which is not terminal.')) 'Inglês deve traduzir as duas metades em volta dos enums do bloqueio.'
+Assert-True ($nonTerminalEnglish.Contains('Context: lookupState=Found')) 'Inglês deve traduzir o rótulo do contexto.'
+Assert-True (-not $nonTerminalEnglish.Contains('Pré-condição')) 'Inglês não deve manter a pré-condição em português.'
+Assert-True (-not $nonTerminalEnglish.Contains('em estado')) 'Inglês não deve manter o conector em estado.'
+Assert-True ($nonTerminalSpanish.Contains('El diario de la KB registra la operación Apply en estado Partial/ApiObjectWritten, que no es terminal.')) 'Espanhol deve traduzir as duas metades em volta dos enums do bloqueio.'
+
+# A indeterminação usa o mesmo conector, e é por isso que ele foi alinhado no gate.
+$outcome = "[GateBlocked/UnreconciledOutcome] Pré-condição 'NoUnreconciledOutcome'. O diário da KB registra a operação Remove em estado OutcomeUnknown/RemovalPartial: o resultado da última gravação não é conhecido e precisa ser reconciliado por identidade antes de outra operação."
+$outcomeEnglish = $translate.Invoke($null, [object[]] @($outcome, $english))
+Assert-True ($outcomeEnglish.Contains('The KB journal records the Remove operation in state OutcomeUnknown/RemovalPartial: the result of the last write is not known')) 'Inglês deve traduzir a indeterminação com o mesmo conector.'
+
+$prepared = 'O diário da KB registra a operação Sync preparada e ainda não iniciada. Continuá-la ou abandoná-la exige autorização explícita.'
+Assert-True (($translate.Invoke($null, [object[]] @($prepared, $english))).Contains('The KB journal records the Sync operation as prepared and not yet started.')) 'Inglês deve traduzir o envelope preparado e não iniciado.'
+Assert-True (($translate.Invoke($null, [object[]] @($prepared, $spanish))).Contains('El diario de la KB registra la operación Sync preparada y aún no iniciada.')) 'Espanhol deve traduzir o envelope preparado e não iniciado.'
+
+$foreignKb = "O diário encontrado pertence à KB '11111111-1111-1111-1111-111111111111', e a KB aberta é '22222222-2222-2222-2222-222222222222'. Um diário de outra KB não governa esta."
+$foreignKbEnglish = $translate.Invoke($null, [object[]] @($foreignKb, $english))
+Assert-True ($foreignKbEnglish.Contains("The journal found belongs to KB '11111111-1111-1111-1111-111111111111', and the open KB is '22222222-2222-2222-2222-222222222222'.")) 'Inglês deve traduzir o diário de outra KB em volta dos dois GUIDs.'
+Assert-True ($foreignKbEnglish.Contains('A journal from another KB does not govern this one.')) 'Inglês deve traduzir a conclusão do diário alheio.'
+
+$durability = 'A durabilidade do diário atual não pôde ser confirmada; a operação anterior precisa ser reconciliada antes de uma nova.'
+Assert-True (($translate.Invoke($null, [object[]] @($durability, $spanish))).Contains('La durabilidad del diario actual no pudo ser confirmada')) 'Espanhol deve traduzir a durabilidade não confirmada do gate.'
+Assert-True (($translate.Invoke($null, [object[]] @($durability, $english))).Contains('must be reconciled before a new one.')) 'Inglês deve traduzir a durabilidade não confirmada do gate.'
+
+$staleContinuation = "A autorização de continuação é da operação '11111111-1111-1111-1111-111111111111', e o diário registra '22222222-2222-2222-2222-222222222222'."
+Assert-True (($translate.Invoke($null, [object[]] @($staleContinuation, $english))).Contains("The continuation authorization is for operation '11111111-1111-1111-1111-111111111111', and the journal records '")) 'Inglês deve traduzir a autorização de continuação vencida.'
+
+# O store: o que a KB devolveu ao localizar o File e ao confirmar a gravação.
+$reloadMismatch = 'Os bytes relidos do diário divergem do snapshot gravado.'
+Assert-True (($translate.Invoke($null, [object[]] @($reloadMismatch, $english))).Contains('The journal bytes read back differ from the written snapshot.')) 'Inglês deve traduzir a divergência dos bytes relidos.'
+Assert-True (($translate.Invoke($null, [object[]] @($reloadMismatch, $spanish))).Contains('Los bytes releídos del diario difieren del snapshot grabado.')) 'Espanhol deve traduzir a divergência dos bytes relidos.'
+
+$wrongFile = "O FileId 1387 resolveu para 'apiTeste_Metadata', e não para o diário."
+Assert-True (($translate.Invoke($null, [object[]] @($wrongFile, $english))).Contains("FileId 1387 resolved to 'apiTeste_Metadata', not to the journal.")) 'Inglês deve traduzir o FileId que resolveu para outro objeto.'
+
+$saveThrew = 'O Save() do diário lançou: Object reference not set to an instance of an object.'
+Assert-True (($translate.Invoke($null, [object[]] @($saveThrew, $english))).Contains('The journal Save() threw: Object reference')) 'Inglês deve traduzir o prefixo do Save que lançou e preservar a exceção.'
+
+$duplicate = "Foram encontrados 2 Files chamados 'GxOpenApiBuilder_OperationJournal'. Há exatamente um diário por KB; a duplicidade precisa ser resolvida à mão."
+$duplicateEnglishJournal = $translate.Invoke($null, [object[]] @($duplicate, $english))
+Assert-True ($duplicateEnglishJournal.Contains("Found 2 Files named 'GxOpenApiBuilder_OperationJournal'.")) 'Inglês deve traduzir a contagem de Files duplicados.'
+Assert-True ($duplicateEnglishJournal.Contains('There is exactly one journal per KB;')) 'Inglês deve traduzir a unicidade do diário.'
+
+# O mesmo começo serve ao aviso de preferências duplicadas; a cauda dele também precisa entrar,
+# ou aquela mensagem sairia meio traduzida — pior que não traduzida.
+$duplicatePrefs = "Foram encontrados 2 Files chamados 'GxOpenApiBuilder_Settings'. Defaults conservadores em memoria aplicados."
+$duplicatePrefsEnglish = $translate.Invoke($null, [object[]] @($duplicatePrefs, $english))
+Assert-True ($duplicatePrefsEnglish.Contains("Found 2 Files named 'GxOpenApiBuilder_Settings'. Conservative in-memory defaults applied.")) 'Inglês deve traduzir o aviso de preferências duplicadas por inteiro.'
+Assert-True (-not $duplicatePrefsEnglish.Contains('Defaults conservadores')) 'Inglês não deve deixar o aviso de preferências pela metade.'
+
+$externalFile = "Já existe um File 'GxOpenApiBuilder_OperationJournal' que não é do gerador: a Description não é a própria. Nenhuma alteração foi feita."
+$externalFileEnglish = $translate.Invoke($null, [object[]] @($externalFile, $english))
+Assert-True ($externalFileEnglish.Contains("A File 'GxOpenApiBuilder_OperationJournal' that is not the generator's already exists:")) 'Inglês deve traduzir a colisão externa do File do diário.'
+Assert-True ($externalFileEnglish.Contains('No changes were made.')) 'Inglês deve manter a garantia de que nada mudou.'
+
 Write-Output 'PASS: ExtensionOutputLocalization'

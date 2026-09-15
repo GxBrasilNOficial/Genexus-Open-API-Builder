@@ -181,7 +181,7 @@ public static class ApiPlanOperationJournalGate
                 input,
                 string.Format(
                     CultureInfo.InvariantCulture,
-                    "O diário da KB registra a operação {0} em {1}/{2}: o resultado da última gravação não é conhecido e precisa ser reconciliado por identidade antes de outra operação.",
+                    "O diário da KB registra a operação {0} em estado {1}/{2}: o resultado da última gravação não é conhecido e precisa ser reconciliado por identidade antes de outra operação.",
                     current.OperationKind,
                     current.OperationState,
                     current.LogicalStage));

@@ -179,6 +179,139 @@ internal static class ExtensionOutputLocalization
             "O hash canônico do snapshot mudou entre a leitura e a ação.",
             "El hash canónico del snapshot cambió entre la lectura y la acción.",
             "The canonical snapshot hash changed between the read and the action."),
+        // B111/F3 P7 (dívida fechada na P8): o gate estendido e o store do diário. Eles são
+        // SDK-simples e neutros de propósito, e a mensagem que produzem chega ao relatório
+        // final — que localiza pelo catálogo — e à Output. Sem estas entradas, todo bloqueio
+        // por diário saía em português em qualquer KB. As frases com enum no meio entram
+        // partidas; ' em estado ' cobre as duas irmãs, que foram alinhadas no gate para isso.
+        new(
+            "O diário encontrado pertence à KB '",
+            "El diario encontrado pertenece a la KB '",
+            "The journal found belongs to KB '"),
+        new(
+            "', e a KB aberta é '",
+            "', y la KB abierta es '",
+            "', and the open KB is '"),
+        new(
+            "'. Um diário de outra KB não governa esta.",
+            "'. Un diario de otra KB no gobierna esta.",
+            "'. A journal from another KB does not govern this one."),
+        new(
+            "A durabilidade do diário atual não pôde ser confirmada; a operação anterior precisa ser reconciliada antes de uma nova.",
+            "La durabilidad del diario actual no pudo ser confirmada; la operación anterior debe ser reconciliada antes de una nueva.",
+            "The durability of the current journal could not be confirmed; the previous operation must be reconciled before a new one."),
+        new(
+            "O diário da KB registra a operação ",
+            "El diario de la KB registra la operación ",
+            "The KB journal records the "),
+        new(
+            " preparada e ainda não iniciada. Continuá-la ou abandoná-la exige autorização explícita.",
+            " preparada y aún no iniciada. Continuarla o abandonarla exige autorización explícita.",
+            " operation as prepared and not yet started. Continuing or abandoning it requires explicit authorization."),
+        new(
+            " em estado ",
+            " en estado ",
+            " operation in state "),
+        new(
+            ", que não é terminal. Reconcilie ou continue essa operação antes de iniciar outra.",
+            ", que no es terminal. Reconcilie o continúe esa operación antes de iniciar otra.",
+            ", which is not terminal. Reconcile or continue that operation before starting another."),
+        new(
+            ": o resultado da última gravação não é conhecido e precisa ser reconciliado por identidade antes de outra operação.",
+            ": el resultado de la última grabación no es conocido y debe ser reconciliado por identidad antes de otra operación.",
+            ": the result of the last write is not known and must be reconciled by identity before another operation."),
+        new(
+            "A autorização de continuação é da operação '",
+            "La autorización de continuación es de la operación '",
+            "The continuation authorization is for operation '"),
+        new(
+            "', e o diário registra '",
+            "', y el diario registra '",
+            "', and the journal records '"),
+        new(
+            "A continuação do envelope preparado foi autorizada, mas o serviço que a executa ainda não existe.",
+            "La continuación del sobre preparado fue autorizada, pero el servicio que la ejecuta todavía no existe.",
+            "The continuation of the prepared envelope was authorized, but the service that executes it does not exist yet."),
+        new(
+            "] Pré-condição '",
+            "] Precondición '",
+            "] Precondition '"),
+        new(
+            " Contexto: ",
+            " Contexto: ",
+            " Context: "),
+        new(
+            "O File do diário não tem conteúdo persistido.",
+            "El File del diario no tiene contenido persistido.",
+            "The journal File has no persisted content."),
+        new(
+            "O Save() do diário lançou: ",
+            "El Save() del diario lanzó: ",
+            "The journal Save() threw: "),
+        new(
+            "O File do diário não devolveu um Id utilizável após o Save().",
+            "El File del diario no devolvió un Id utilizable después del Save().",
+            "The journal File did not return a usable Id after Save()."),
+        new(
+            "A releitura do diário por FileId falhou: ",
+            "La relectura del diario por FileId falló: ",
+            "Re-reading the journal by FileId failed: "),
+        new(
+            "A releitura do diário por FileId não encontrou o File.",
+            "La relectura del diario por FileId no encontró el File.",
+            "Re-reading the journal by FileId did not find the File."),
+        new(
+            "O FileId ",
+            "El FileId ",
+            "FileId "),
+        new(
+            " resolveu para '",
+            " resolvió a '",
+            " resolved to '"),
+        new(
+            "', e não para o diário.",
+            "', y no al diario.",
+            "', not to the journal."),
+        new(
+            "O diário relido não tem conteúdo persistido.",
+            "El diario releído no tiene contenido persistido.",
+            "The re-read journal has no persisted content."),
+        new(
+            "Os bytes relidos do diário divergem do snapshot gravado.",
+            "Los bytes releídos del diario difieren del snapshot grabado.",
+            "The journal bytes read back differ from the written snapshot."),
+        new(
+            "O digest dos bytes relidos diverge do snapshot gravado.",
+            "El digest de los bytes releídos difiere del snapshot grabado.",
+            "The digest of the bytes read back differs from the written snapshot."),
+        new(
+            "O snapshot relido não reproduz o hash canônico esperado.",
+            "El snapshot releído no reproduce el hash canónico esperado.",
+            "The snapshot read back does not reproduce the expected canonical hash."),
+        new(
+            "Foram encontrados ",
+            "Se encontraron ",
+            "Found "),
+        new(
+            " Files chamados '",
+            " Files llamados '",
+            " Files named '"),
+        new(
+            "'. Há exatamente um diário por KB; a duplicidade precisa ser resolvida à mão.",
+            "'. Hay exactamente un diario por KB; la duplicidad debe ser resuelta a mano.",
+            "'. There is exactly one journal per KB; the duplicate must be resolved by hand."),
+        new(
+            "'. Defaults conservadores em memoria aplicados.",
+            "'. Defaults conservadores en memoria aplicados.",
+            "'. Conservative in-memory defaults applied."),
+        new(
+            "Já existe um File '",
+            "Ya existe un File '",
+            "A File '"),
+        new(
+            "' que não é do gerador: a Description não é a própria.",
+            "' que no es del generador: la Description no es la propia.",
+            "' that is not the generator's already exists: the Description is not our own."),
         new("A operação Apply", "La operación Apply", "The Apply operation"),
         new("A operação Sync", "La operación Sync", "The Sync operation"),
         new("A operação Remove", "La operación Remove", "The Remove operation"),
