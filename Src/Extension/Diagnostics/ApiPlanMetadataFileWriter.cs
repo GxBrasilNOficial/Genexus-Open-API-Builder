@@ -793,8 +793,10 @@ internal static class ApiPlanMetadataFileWriter
     /// e a recuperação de metadata órfã não se oferecia — ela exige exatamente um API Object
     /// presente. Três recusas corretas e nenhuma dizia o que fazer.
     ///
-    /// A saída é apagar **a metadata** — um objeto — e reaplicar. O que se perde é o que só
-    /// existia nela, e a mensagem diz isso antes de a pessoa decidir.
+    /// A saída é apagar **o par**: o API Object e o File de metadata. Apagar só a metadata deixa
+    /// o API Object órfão de posse e troca este bloqueio por `MetadataMissing` — medido na IDE em
+    /// 2026-09-14, com a orientação anterior, que mandava apagar apenas o File. A mensagem diz o
+    /// que se perde antes de a pessoa decidir: o que só existia na metadata.
     /// </summary>
     private static void RequireApiGuid(JToken? token, string expectedValue, string fileName)
     {
