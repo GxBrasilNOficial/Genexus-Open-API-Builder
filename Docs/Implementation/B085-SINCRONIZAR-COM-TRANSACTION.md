@@ -121,7 +121,7 @@ final único; a metadata continua sendo escrita ao final da operação.
 
 **Situação atual:** a P1 foi absorvida pela F1 da `S-B111` e validada manualmente em
 2026-09-10/11, com a exceção explícita do `B121`. F2 (seam de persistência e recibos) e F3
-(durabilidade e remoção) permanecem planejadas; a atomicidade transacional entre objetos da
+(durabilidade e remoção) foram encerradas em 2026-09-13 e 2026-09-15; a atomicidade transacional entre objetos da
 IDE continua fora do escopo atual.
 
 ### Validação Keep/Replace (2026-09-03)
