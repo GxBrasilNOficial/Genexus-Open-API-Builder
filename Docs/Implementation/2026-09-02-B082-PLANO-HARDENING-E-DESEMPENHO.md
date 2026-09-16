@@ -32,6 +32,26 @@ em 2026-09-05**: `B108` foi estacionado e a próxima ação única passou a ser 
  recebeu validação manual para encerramento com a exceção explícita do `B121` em 2026-09-10/11. O residual 1B/2/3 permanece neste plano. No encerramento da `S-B111` (2026-09-15), por decisão declarada, ficou fora da sprint e da pauta imediata; a sprint não fechou automaticamente o `B082`.
 Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`.
 
+## Retomada em duas sessões (aprovada 2026-09-16)
+
+Reconciliação somente leitura em 2026-09-16 (código como evidência primária) confirmou que as
+Etapas 1B, 2 e 3 **não** foram fechadas pela `S-B111`. O que a sprint absorveu — ordem do API
+Object (F1), seam/recibos (F2), journal/fila/recovery do Remover (F3) — permanece; o residual
+deste plano continua. A anotação operacional vive no checkpoint
+(`Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`, «Missão estacionada»). A próxima ação única vigente
+continua sendo `B122` até priorização humana explícita deste residual.
+
+**Não** reimplementar mecanismos já corretos da F3 (journal, fila, guardas de recovery).
+**Não** tratar métricas antigas da 1A como prova da DLL atual.
+
+| Sessão | Escopo | Fora de escopo nesta sessão |
+| --- | --- | --- |
+| **A — código** | Etapa 2: guarda de operação única nos quatro handlers; protocolo abort (`Report` → processar eventos → `ThrowIfAbort` → mutar); remover `DoEvents` de `OnAbortClicked`; Preview→Remove por referência (decisão 7) com identidade/hash e zero deletes se divergir; contêiner + GUID no Folder do Remove (D10). Se a janela de contexto aguentar: Etapa 3 (DEMO, Folder preservado estruturado, Preferências no monitor da IDE) e higiene (pendências 3 e 4). Testes offline proporcionais; commit. Sem install em `C:\Program Files (x86)\GeneXus`. | Etapa 1B; medição de desempenho salvo critério de aceite aberto; push; corte de release |
+| **B — IDE** | Install manual da DLL da Sessão A; aceite: segunda operação recusada durante a primeira; abort no Remove sem apagar o objeto em que o clique caiu; Folder homônimo fora do contêiner não deletado; divergência Preview↔execução com zero exclusões; casca fechada antes do relatório; DEMO alinhado ao abort cooperativo e à persistência parcial | Continuação de Apply/Sync interrompido (fora da F3 entregue); Etapa 1B |
+
+**Etapa 1B** permanece adiada: contrato de índice mutável (Nível B) antes de qualquer código;
+confirmações pós-`Delete` continuam individuais e por leitura corrente.
+
 A primeira redação deste documento afirmava que o checkpoint não mudaria. Isso se sustentava
 enquanto ele fosse planejamento; deixou de valer quando a implementação foi autorizada, e a
 contradição entre os dois documentos canônicos foi apontada por revisão externa.

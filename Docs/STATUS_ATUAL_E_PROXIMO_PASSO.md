@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-15.
+2026-09-16.
 
 ## Último marco concluído
 
@@ -320,6 +320,14 @@ Residual `B082` após a 1A (Etapas 1B índice mutável no Remover; 2 segurança/
 O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. A próxima ação única vigente é `B122` (ver seção «Próxima ação única»).
 
 A conclusão da `S-B111` não fechou automaticamente o `B082`: no encerramento, por decisão declarada (item 135), o residual 1B/2/3 ficou fora da sprint e da pauta imediata; o que a sprint absorveu (ordem do API Object, seam de persistência, remoção por fila) já está nas fases F1–F3.
+
+**Retomada do residual `B082` em duas sessões (aprovada 2026-09-16).** Reconciliação somente leitura confirmou no código atual que 1B/2/3 seguem abertos; a S-B111 não os fechou. Sequência aprovada, **fora da pauta imediata** até priorização humana explícita (não displace `B122`):
+
+1. **Sessão A (código, sem install GeneXus):** Etapa 2 — guarda de operação única; abort com checagem entre `Report` e mutação; remover `DoEvents` do clique Abort; Preview→Remove por referência com identidade/hash e zero deletes se divergir; contêiner+GUID no Folder do Remove. Se couber na mesma janela: Etapa 3 (DEMO, Folder estruturado, Preferências no monitor da IDE) e higiene (probe `SdtReencounter`, matcher `idJsonInclude`). Testes offline proporcionais e commit. Não reimplementar journal/fila/recovery da F3.
+2. **Sessão B (IDE):** install manual da DLL da Sessão A; aceite — reentrada recusada; abort no Remove sem apagar o objeto do clique; Folder homônimo fora do contêiner preservado; Preview divergente com zero exclusões; casca fechada antes do relatório; DEMO alinhado aos limites reais.
+3. **Etapa 1B** permanece adiada (contrato de índice mutável antes de código).
+
+Detalhe normativo: seção «Retomada em duas sessões» em `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`.
 
 **`B108` fica estacionado desde 2026-09-05**, com plano aprovado e sem trabalho perdido: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Item: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
 
