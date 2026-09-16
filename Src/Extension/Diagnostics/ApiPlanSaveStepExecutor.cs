@@ -71,11 +71,12 @@ internal static class ApiPlanSaveStepExecutor
         var saveIndex = 0;
         foreach (var step in materialized)
         {
-            progress?.ThrowIfAbortRequested();
+            // B082 Etapa 2: Report → Pump (eventos) → ThrowIfAbort → só então mutar.
             saveIndex++;
             var beforePumpSnapshot = step.Snapshot();
             progress?.Report(step.Stage, saveIndex, materialized.Length, step.Label);
             progress?.Pump();
+            progress?.ThrowIfAbortRequested();
             var afterPumpSnapshot = step.Snapshot();
             ApiPlanSaveBoundaryProbe.PumpBoundary(step.Stage, step.Label, beforePumpSnapshot, afterPumpSnapshot);
             ApiPlanSaveBoundaryProbe.BeforeSave(step.Stage, step.Label, afterPumpSnapshot);

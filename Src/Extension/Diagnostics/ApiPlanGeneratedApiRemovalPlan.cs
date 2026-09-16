@@ -51,6 +51,17 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
     public IReadOnlyList<string> OwnSdtNames { get; }
     public IReadOnlyList<string> SharedSdtNamesPreserved { get; }
 
+    /// <summary>
+    /// B082 Etapa 2: identidades capturadas no Preview. Nulo até
+    /// <see cref="AttachPreviewCapture"/>; o ResolveIntent exige captura presente.
+    /// </summary>
+    internal ApiPlanGeneratedApiRemovalPreviewCapture? PreviewCapture { get; private set; }
+
+    internal void AttachPreviewCapture(ApiPlanGeneratedApiRemovalPreviewCapture capture)
+    {
+        PreviewCapture = capture ?? throw new ArgumentNullException(nameof(capture));
+    }
+
     public static ApiPlanGeneratedApiRemovalPlan FromMetadata(
         JObject metadata,
         string expectedTransactionName,

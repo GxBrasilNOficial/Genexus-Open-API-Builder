@@ -47,6 +47,27 @@ internal static class ExtensionOutputLocalization
             "O registro da operação interrompida foi encerrado. A Knowledge Base está liberada para a próxima operação e continua como estava antes dela.",
             "El registro de la operación interrumpida fue cerrado. La Knowledge Base está liberada para la próxima operación y sigue como estaba antes de ella.",
             "The record of the interrupted operation was closed. The Knowledge Base is free for the next operation and remains as it was before it."),
+        // B082 Etapa 2: guarda de operação única.
+        new(
+            "Operação recusada: já há '",
+            "Operación rechazada: ya hay '",
+            "Operation refused: '"),
+        new(
+            "' em andamento. Aguarde o término antes de iniciar outra.",
+            "' en curso. Espere a que termine antes de iniciar otra.",
+            "' is already in progress. Wait for it to finish before starting another."),
+        new(
+            "Operação recusada: já há 'outra operação' em andamento. Aguarde o término antes de iniciar outra.",
+            "Operación rechazada: ya hay 'otra operación' en curso. Espere a que termine antes de iniciar otra.",
+            "Operation refused: 'another operation' is already in progress. Wait for it to finish before starting another."),
+        new(
+            "Remoção bloqueada: a Knowledge Base divergiu do Preview confirmado (",
+            "Eliminación bloqueada: la Knowledge Base divergió del Preview confirmado (",
+            "Removal blocked: the Knowledge Base diverged from the confirmed Preview ("),
+        new(
+            "). Nenhuma exclusão foi feita.",
+            "). No se realizó ninguna exclusión.",
+            "). No deletions were performed."),
         new(
             "O registro da operação interrompida foi encerrado. A Knowledge Base está liberada para a próxima operação; nenhum objeto foi apagado, e o inventário do que ficou pela metade continua gravado no diário.",
             "El registro de la operación interrumpida fue cerrado. La Knowledge Base está liberada para la próxima operación; ningún objeto fue borrado, y el inventario de lo que quedó a medias sigue grabado en el diario.",

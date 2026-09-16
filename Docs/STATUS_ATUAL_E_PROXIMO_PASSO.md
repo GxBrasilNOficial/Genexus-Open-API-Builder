@@ -323,7 +323,7 @@ A conclusão da `S-B111` não fechou automaticamente o `B082`: no encerramento, 
 
 **Retomada do residual `B082` em duas sessões (aprovada 2026-09-16).** Reconciliação somente leitura confirmou no código atual que 1B/2/3 seguem abertos; a S-B111 não os fechou. Sequência aprovada, **fora da pauta imediata** até priorização humana explícita (não displace `B122`):
 
-1. **Sessão A (código, sem install GeneXus):** Etapa 2 — guarda de operação única; abort com checagem entre `Report` e mutação; remover `DoEvents` do clique Abort; Preview→Remove por referência com identidade/hash e zero deletes se divergir; contêiner+GUID no Folder do Remove. Se couber na mesma janela: Etapa 3 (DEMO, Folder estruturado, Preferências no monitor da IDE) e higiene (probe `SdtReencounter`, matcher `idJsonInclude`). Testes offline proporcionais e commit. Não reimplementar journal/fila/recovery da F3.
+1. **Sessão A (código, sem install GeneXus):** Etapa 2 — **implementada offline em 2026-09-16** (guarda de operação única nos quatro handlers; abort `Report` → `ThrowIfAbort` → mutar; sem `DoEvents` no clique Abort; Preview→Remove por referência com identidade/hash e zero deletes se divergir; contêiner+GUID no Folder do Remove). Gate `tests.b082Etapa2Safety`. Etapa 3 e higiene **não** entraram nesta janela. Sem install GeneXus; B082 **não** fechado.
 2. **Sessão B (IDE):** install manual da DLL da Sessão A; aceite — reentrada recusada; abort no Remove sem apagar o objeto do clique; Folder homônimo fora do contêiner preservado; Preview divergente com zero exclusões; casca fechada antes do relatório; DEMO alinhado aos limites reais.
 3. **Etapa 1B** permanece adiada (contrato de índice mutável antes de código).
 

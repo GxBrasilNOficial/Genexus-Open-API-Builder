@@ -228,7 +228,7 @@ internal static class ApiPlanTransactionFolder
         return $"Folder preexistente '{apiPlan.TransactionFolderName}' no contenedor correto sera reutilizado; a Description existente sera preservada e o Folder nunca sera removido pela remocao desta API.";
     }
 
-    private static bool IsInExpectedContainer(Folder folder, Transaction transaction)
+    internal static bool IsInExpectedContainer(Folder folder, Transaction transaction)
     {
         if (transaction.Parent is not null)
         {

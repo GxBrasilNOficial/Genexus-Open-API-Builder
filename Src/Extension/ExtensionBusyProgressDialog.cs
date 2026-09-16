@@ -232,6 +232,8 @@ internal sealed class ExtensionBusyProgressDialog : Form
         _abortButton.Enabled = false;
         _hintLabel.Text = texts.BusyProgressAbortRequested;
         Refresh();
-        Application.DoEvents();
+        // B082 Etapa 2: sem DoEvents aninhado no clique. O pump entre itens
+        // (Report/Pump) já processa a UI; DoEvents aqui reabria a janela de
+        // reentrada (D5) sem necessidade.
     }
 }

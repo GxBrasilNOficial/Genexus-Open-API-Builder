@@ -56,6 +56,7 @@ Assert-True ($source -match 'Tests/ApiObjectOwnership/Test-ApiPlanApiObjectOwner
 Assert-True ($source -match 'Tests/OwnershipDescriptions/Test-ApiPlanOwnedObjectDescription\.ps1') 'O checker deve executar o teste unitário das descrições canônicas e legadas de ownership.'
 Assert-True ($source -match 'Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPlan\.ps1') 'O checker deve executar o teste unitário do plano de remoção B086.'
 Assert-True ($source -match 'Tests/GeneratedApiRemoval/Test-ApiPlanGeneratedApiRemovalPreflight\.ps1') 'O checker deve executar o teste unitário do preflight B086 antes do primeiro Delete.'
+Assert-True ($source -match 'Tests/GeneratedApiRemoval/Test-ApiPlanB082Etapa2Safety\.ps1') 'O checker deve executar o teste textual da B082 Etapa 2.'
 Assert-True ($source -match 'Tests/TransactionSync/Test-ApiPlanTransactionSyncComparer\.ps1') 'O checker deve executar o teste unitário do diff B085 de sincronização.'
 Assert-True ($source -match 'Tests/TransactionSync/Test-ApiPlanTransactionSyncFieldSelection\.ps1') 'O checker deve executar o teste unitário da seleção ordenada de campos B085.'
 Assert-True ($source -match 'Tests/TransactionSync/Test-ApiPlanTransactionSyncSdtMemberSequenceMatcher\.ps1') 'O checker deve executar o teste unitário do reencontro de SDT com inclusões selecionadas.'
@@ -156,6 +157,7 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\OwnershipDescriptions\Test-ApiPlanOwnedObjectDescription.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Owned Object Description'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GeneratedApiRemoval\Test-ApiPlanGeneratedApiRemovalPlan.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generated Api Removal Plan'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GeneratedApiRemoval\Test-ApiPlanGeneratedApiRemovalPreflight.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generated Api Removal Preflight'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GeneratedApiRemoval\Test-ApiPlanB082Etapa2Safety.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture B082 Etapa 2 Safety'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ScanProbe\Test-ApiPlanScanProbe.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Scan Probe'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\PersistenceProbe\Test-ApiPlanPersistenceCore.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Persistence Core'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\PersistenceProbe\Test-ApiPlanSaveStepExecutor.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Persistence Executor'`n", [System.Text.UTF8Encoding]::new($false))
@@ -225,6 +227,7 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.ownedObjectDescription' }).status -eq 'passed') 'O teste unitário das descrições de ownership deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.generatedApiRemovalPlan' }).status -eq 'passed') 'O teste unitário do plano de remoção B086 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.generatedApiRemovalPreflight' }).status -eq 'passed') 'O teste unitário do preflight B086 deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.b082Etapa2Safety' }).status -eq 'passed') 'O teste textual da B082 Etapa 2 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.scanProbe' }).status -eq 'passed') 'O teste unitário do probe de medição B082 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.persistenceCore' }).status -eq 'passed') 'O teste unitário do seam de persistência B111/F2 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.persistenceExecutor' }).status -eq 'passed') 'O teste unitário do executor de persistência B111/F2 deveria passar na fixture.'

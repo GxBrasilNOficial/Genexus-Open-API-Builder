@@ -18,9 +18,8 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 ///
 /// A remoção acontece em três tempos que não se misturam:
 ///
-/// 1. <see cref="ResolveIntent"/> lê a metadata, valida todos os alvos e resolve a identidade
-///    de cada um. Nada é excluído aqui, e um alvo ambíguo ou não próprio bloqueia antes de
-///    qualquer mutação;
+/// 1. o Preview monta o plano e captura identidades; <see cref="ResolveIntent"/> recebe a
+///    mesma instância confirmada, revalida GUID/SHA e monta a fila — nada é excluído aqui;
 /// 2. o chamador registra essa intenção no diário durável — o inventário completo, antes do
 ///    primeiro <c>Delete()</c>;
 /// 3. <see cref="Remove"/> executa a fila por passadas, com orçamento fechado, emitindo um
@@ -34,15 +33,14 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 internal static class ApiPlanGeneratedApiRemover
 {
     /// <summary>
-    /// Resolve o plano e a identidade de cada alvo, validando tudo antes de qualquer exclusão.
-    ///
-    /// O que sai daqui é a **intenção**: o conjunto completo do que será apagado e do que será
-    /// preservado, com a identidade por onde cada alvo é relido. Nome, Description ou prefixo
-    /// isolados nunca entram nessa identidade.
+    /// Resolve a intenção a partir do plano confirmado no Preview (decisão 7 / B082 Etapa 2).
+    /// A mesma instância exibida na confirmação alimenta a fila; divergência de identidade ou
+    /// de SHA-256 do metadata bloqueia com zero exclusões.
     /// </summary>
     internal static ApiPlanGeneratedApiRemovalIntent ResolveIntent(
         KBModel designModel,
         Transaction transaction,
+        ApiPlanGeneratedApiRemovalPlan confirmedPlan,
         ApiPlanBusyProgressSession? progress,
         ApiPlanKbObjectNameIndex? kbIndex)
     {
@@ -56,6 +54,15 @@ internal static class ApiPlanGeneratedApiRemover
             throw new ArgumentNullException(nameof(transaction));
         }
 
+        if (confirmedPlan is null)
+        {
+            throw new ArgumentNullException(nameof(confirmedPlan));
+        }
+
+        var capture = confirmedPlan.PreviewCapture
+            ?? throw new InvalidOperationException(
+                "Remoção bloqueada: o plano confirmado não carrega a captura do Preview. Nenhuma exclusão foi feita.");
+
         // B082: instrumentacao de custo. So observa; nao altera ordem nem condicao.
         var telemetry = new ApiPlanScanTelemetry();
         var phaseWatch = Stopwatch.StartNew();
@@ -64,41 +71,183 @@ internal static class ApiPlanGeneratedApiRemover
         // Localização, revalidação e confirmação pós-Delete permanecem em leitura corrente.
         var index = kbIndex ?? ApiPlanKbObjectNameIndex.Create(designModel, progress);
 
-        var metadataFileName = $"api{transaction.Name}_Metadata";
-        var metadataFile = FindOwnedMetadataFile(designModel, metadataFileName, transaction.Name, index, telemetry);
-        var metadata = ParseMetadata(metadataFile);
-        var plan = ApiPlanGeneratedApiRemovalPlan.FromMetadata(metadata, transaction.Name, transaction.Guid.ToString());
+        AssertPreviewStillMatches(designModel, transaction, confirmedPlan, capture, index, telemetry);
         telemetry.MarkPhase("ResolucaoMetadata", phaseWatch.ElapsedMilliseconds);
 
-        // B082: mede o contenedor real do metadata File. IsFolderEmpty conta Files,
-        // entao saber se o File esta dentro do Folder decide se a ordem Folder->File e viavel.
+        var metadataFile = FindOwnedMetadataFile(
+            designModel,
+            confirmedPlan.MetadataFileName,
+            transaction.Name,
+            index,
+            telemetry);
+
         telemetry.AddNote(string.Format(
             CultureInfo.InvariantCulture,
             "MetadataFile Parent='{0}' ParentGuid='{1}' Module='{2}' FolderPlanejado='{3}' FolderWasCreated={4}",
             metadataFile.Parent is null ? "<null>" : metadataFile.Parent.Name,
             metadataFile.Parent is null ? "<null>" : metadataFile.Parent.Guid.ToString(),
             metadataFile.Module is null ? "<null>" : metadataFile.Module.Name,
-            plan.FolderName ?? "<null>",
-            plan.FolderWasCreated));
+            confirmedPlan.FolderName ?? "<null>",
+            confirmedPlan.FolderWasCreated));
 
         phaseWatch.Restart();
+        // A mesma instância do Preview: não reconstrói plano a partir do File corrente.
+        var plan = confirmedPlan;
         ValidateRemovalTargets(designModel, plan, progress: null, index, telemetry);
         telemetry.MarkPhase("ValidacaoAgregada", phaseWatch.ElapsedMilliseconds);
 
         var targets = BuildTargets(designModel, transaction, plan, metadataFile, index, telemetry);
-        var hasApplicationId = ApiPlanMetadataFileWriter.TryReadApplicationId(metadata, out var applicationId);
-        var contractHash = metadata.SelectToken("integrity.plannedContract.hash")?.Value<string>();
+        AssertTargetsMatchCapture(targets, capture);
 
         return new ApiPlanGeneratedApiRemovalIntent(
             plan,
             metadataFile,
-            metadata.SelectToken("schemaVersion")?.Value<string>(),
+            capture.MetadataSchemaVersion,
             targets,
-            hasApplicationId ? applicationId : (Guid?)null,
-            string.IsNullOrWhiteSpace(contractHash) ? null : contractHash,
+            capture.ApplicationId,
+            capture.ContractHash,
             index,
             telemetry);
     }
+
+    private static void AssertPreviewStillMatches(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlanGeneratedApiRemovalPlan plan,
+        ApiPlanGeneratedApiRemovalPreviewCapture capture,
+        ApiPlanKbObjectNameIndex index,
+        ApiPlanScanTelemetry telemetry)
+    {
+        if (transaction.Guid != capture.TransactionGuid)
+        {
+            throw BuildPreviewDivergence("Transaction GUID");
+        }
+
+        if (!string.Equals(plan.TransactionName, transaction.Name, StringComparison.Ordinal))
+        {
+            throw BuildPreviewDivergence("Transaction name");
+        }
+
+        var metadataFile = FindOwnedMetadataFile(
+            designModel,
+            plan.MetadataFileName,
+            transaction.Name,
+            index,
+            telemetry);
+        if (metadataFile.Guid != capture.MetadataFileGuid)
+        {
+            throw BuildPreviewDivergence("Metadata File GUID");
+        }
+
+        var bytes = metadataFile.BlobPart?.Data?.GetBytes() ?? Array.Empty<byte>();
+        var sha = ApiPlanMetadataFileWriter.ComputeSha256(bytes);
+        if (!string.Equals(sha, capture.MetadataSha256, StringComparison.OrdinalIgnoreCase))
+        {
+            throw BuildPreviewDivergence("Metadata SHA-256");
+        }
+
+        foreach (var pair in capture.PresentObjectGuids)
+        {
+            var separator = pair.Key.IndexOf(':');
+            if (separator <= 0 || separator >= pair.Key.Length - 1)
+            {
+                throw BuildPreviewDivergence("chave de identidade inválida");
+            }
+
+            var typeName = pair.Key.Substring(0, separator);
+            var objectName = pair.Key.Substring(separator + 1);
+            if (!Enum.TryParse(typeName, ignoreCase: false, out JournalObjectType objectType))
+            {
+                throw BuildPreviewDivergence("tipo de identidade inválido");
+            }
+
+            var currentGuid = TryFindCurrentGuid(designModel, index, objectType, objectName, telemetry);
+            if (!currentGuid.HasValue || currentGuid.Value != pair.Value)
+            {
+                throw BuildPreviewDivergence(objectType + " '" + objectName + "'");
+            }
+        }
+
+        if (capture.FolderGuid.HasValue && !string.IsNullOrWhiteSpace(plan.FolderName))
+        {
+            var folders = index.FindFolders(plan.FolderName!).ToArray();
+            if (folders.Length != 1 || folders[0].Guid != capture.FolderGuid.Value)
+            {
+                throw BuildPreviewDivergence("Folder '" + plan.FolderName + "'");
+            }
+        }
+    }
+
+    private static Guid? TryFindCurrentGuid(
+        KBModel designModel,
+        ApiPlanKbObjectNameIndex index,
+        JournalObjectType objectType,
+        string name,
+        ApiPlanScanTelemetry telemetry)
+    {
+        switch (objectType)
+        {
+            case JournalObjectType.ApiObject:
+                return index.FindApis(name).FirstOrDefault()?.Guid;
+            case JournalObjectType.Procedure:
+                return index.FindProcedures(name).FirstOrDefault()?.Guid;
+            case JournalObjectType.Sdt:
+                return index.FindSdts(name).FirstOrDefault()?.Guid;
+            case JournalObjectType.MetadataFile:
+                return index.FindFiles(name).FirstOrDefault()?.Guid;
+            case JournalObjectType.Folder:
+                return index.FindFolders(name).FirstOrDefault()?.Guid;
+            default:
+                _ = designModel;
+                _ = telemetry;
+                return null;
+        }
+    }
+
+    private static void AssertTargetsMatchCapture(
+        IReadOnlyList<ApiPlanRemovalTarget> targets,
+        ApiPlanGeneratedApiRemovalPreviewCapture capture)
+    {
+        foreach (var target in targets)
+        {
+            if (!target.Queued || target.Action != JournalInventoryAction.Delete)
+            {
+                continue;
+            }
+
+            if (target.ObjectType == JournalObjectType.Folder)
+            {
+                if (capture.FolderGuid.HasValue
+                    && target.Guid.HasValue
+                    && target.Guid.Value != capture.FolderGuid.Value)
+                {
+                    throw BuildPreviewDivergence("Folder GUID na fila");
+                }
+
+                continue;
+            }
+
+            var key = ApiPlanGeneratedApiRemovalPreviewCapture.Key(target.ObjectType, target.Name);
+            if (capture.PresentObjectGuids.TryGetValue(key, out var expectedGuid))
+            {
+                if (!target.Guid.HasValue || target.Guid.Value != expectedGuid)
+                {
+                    throw BuildPreviewDivergence(target.ObjectType + " '" + target.Name + "' na fila");
+                }
+            }
+            else if (target.Guid.HasValue && target.Guid.Value != Guid.Empty)
+            {
+                // Presente agora, ausente no Preview: não era a lista confirmada.
+                throw BuildPreviewDivergence(target.ObjectType + " '" + target.Name + "' apareceu após o Preview");
+            }
+        }
+    }
+
+    private static InvalidOperationException BuildPreviewDivergence(string detail) =>
+        new(
+            "Remoção bloqueada: a Knowledge Base divergiu do Preview confirmado ("
+            + detail
+            + "). Nenhuma exclusão foi feita.");
 
     /// <summary>
     /// Executa a fila destrutiva a partir de uma intenção já resolvida e registrada.
@@ -188,13 +337,17 @@ internal static class ApiPlanGeneratedApiRemover
                 targets,
                 target =>
                 {
-                    progress?.ThrowIfAbortRequested();
+                    // B082 Etapa 2: Report → processar eventos (DoEvents no Report) →
+                    // ThrowIfAbort → só então mutar. Throw antes do Report deixava o
+                    // Abortar do Report apagar mais um objeto (D3).
                     current++;
                     var label = DescribeKind(target.ObjectType);
                     progress?.Report("Removendo " + label, current, Math.Max(total, current), target.Name);
+                    progress?.ThrowIfAbortRequested();
                     var watch = Stopwatch.StartNew();
                     var result = Attempt(designModel, context, target, deleted, telemetry, out var detail);
                     watch.Stop();
+                    // Report pós-mutação não verifica abort: o Delete já ocorreu.
                     progress?.Report("Removendo " + label, current, Math.Max(total, current), target.Name, watch.ElapsedMilliseconds);
                     if (!string.IsNullOrEmpty(detail))
                     {
@@ -296,7 +449,65 @@ internal static class ApiPlanGeneratedApiRemover
         var metadata = ParseMetadata(metadataFile);
         var plan = ApiPlanGeneratedApiRemovalPlan.FromMetadata(metadata, transaction.Name, transaction.Guid.ToString());
         ValidateRemovalTargets(designModel, plan, progress, kbIndex);
+        plan.AttachPreviewCapture(CapturePreviewIdentities(designModel, transaction, plan, metadata, metadataFile, kbIndex));
         return plan;
+    }
+
+    private static ApiPlanGeneratedApiRemovalPreviewCapture CapturePreviewIdentities(
+        KBModel designModel,
+        Transaction transaction,
+        ApiPlanGeneratedApiRemovalPlan plan,
+        JObject metadata,
+        WikiFileKBObject metadataFile,
+        ApiPlanKbObjectNameIndex? kbIndex)
+    {
+        var index = kbIndex ?? ApiPlanKbObjectNameIndex.Create(designModel, progress: null);
+        var present = new Dictionary<string, Guid>(StringComparer.Ordinal);
+
+        void CaptureIfPresent(JournalObjectType objectType, string name, Guid? guid)
+        {
+            if (guid.HasValue && guid.Value != Guid.Empty)
+            {
+                present[ApiPlanGeneratedApiRemovalPreviewCapture.Key(objectType, name)] = guid.Value;
+            }
+        }
+
+        CaptureIfPresent(JournalObjectType.ApiObject, plan.ApiName, index.FindApis(plan.ApiName).FirstOrDefault()?.Guid);
+        foreach (var name in plan.ProcedureNames)
+        {
+            CaptureIfPresent(JournalObjectType.Procedure, name, index.FindProcedures(name).FirstOrDefault()?.Guid);
+        }
+
+        foreach (var name in plan.OwnSdtNames)
+        {
+            CaptureIfPresent(JournalObjectType.Sdt, name, index.FindSdts(name).FirstOrDefault()?.Guid);
+        }
+
+        var metadataBytes = metadataFile.BlobPart?.Data?.GetBytes() ?? Array.Empty<byte>();
+        present[ApiPlanGeneratedApiRemovalPreviewCapture.Key(JournalObjectType.MetadataFile, metadataFile.Name)] = metadataFile.Guid;
+
+        Guid? folderGuid = null;
+        if (!string.IsNullOrWhiteSpace(plan.FolderName))
+        {
+            var folder = index.FindFolders(plan.FolderName!).FirstOrDefault();
+            if (folder is not null)
+            {
+                folderGuid = folder.Guid;
+            }
+        }
+
+        var hasApplicationId = ApiPlanMetadataFileWriter.TryReadApplicationId(metadata, out var applicationId);
+        var contractHash = metadata.SelectToken("integrity.plannedContract.hash")?.Value<string>();
+
+        return new ApiPlanGeneratedApiRemovalPreviewCapture(
+            transaction.Guid,
+            metadataFile.Guid,
+            ApiPlanMetadataFileWriter.ComputeSha256(metadataBytes),
+            metadata.SelectToken("schemaVersion")?.Value<string>(),
+            hasApplicationId ? applicationId : (Guid?)null,
+            string.IsNullOrWhiteSpace(contractHash) ? null : contractHash,
+            folderGuid,
+            present);
     }
 
     /// <summary>
@@ -373,13 +584,15 @@ internal static class ApiPlanGeneratedApiRemover
             // confirmação de vazio existir — e ela só é medida depois de os filhos saírem. Até
             // lá ele é `Preserve`: declarar `emptyConfirmed` antes de medir seria afirmar o que
             // ninguém verificou.
+            var folderGuid = plan.PreviewCapture?.FolderGuid;
             targets.Add(new ApiPlanRemovalTarget
             {
                 ObjectType = JournalObjectType.Folder,
                 Name = plan.FolderName!,
                 Action = JournalInventoryAction.Preserve,
                 Queued = true,
-                IdentityKind = JournalIdentityKind.Folder,
+                IdentityKind = folderGuid.HasValue ? JournalIdentityKind.Guid : JournalIdentityKind.Folder,
+                Guid = folderGuid,
                 OwnershipValidated = true,
                 // `false` não é «vazio desconhecido»: é a marca de que este Folder está na fila
                 // e ainda não foi medido. O Folder reutilizado não traz o campo.
@@ -957,6 +1170,8 @@ internal static class ApiPlanGeneratedApiRemover
     /// O Folder próprio é o último da fila, e é o único alvo que pode sair dela **preservado**:
     /// quem o reutilizou, quem deixou conteúdo dentro ou quem trocou a Description manda mais
     /// que o plano. Preservar não impede a operação de terminar em <c>Removed</c>.
+    /// B082 Etapa 2 / D10: também exige GUID do Preview e contêiner esperado — sem copiar a
+    /// permissividade de Description vazia do Apply.
     /// </summary>
     private static ApiPlanRemovalAttemptResult DeleteOwnFolder(
         KBModel designModel,
@@ -974,6 +1189,20 @@ internal static class ApiPlanGeneratedApiRemover
         }
 
         var folder = matches[0];
+        if (target.Guid.HasValue && target.Guid.Value != Guid.Empty && folder.Guid != target.Guid.Value)
+        {
+            return ApiPlanRemovalAttemptResult.Preserved;
+        }
+
+        if (context.TransactionGuid != Guid.Empty)
+        {
+            var transaction = Transaction.Get(designModel, context.TransactionGuid);
+            if (transaction is null || !ApiPlanTransactionFolder.IsInExpectedContainer(folder, transaction))
+            {
+                return ApiPlanRemovalAttemptResult.Preserved;
+            }
+        }
+
         var expectedDescription = ApiPlanOwnedObjectDescription.CreateTransactionFolderDescription(target.Name);
         var legacyDescription = ApiPlanOwnedObjectDescription.CreateLegacyTransactionFolderDescription(context.TransactionName);
         if (!string.Equals(folder.Description, expectedDescription, StringComparison.Ordinal)
@@ -1249,11 +1478,13 @@ internal sealed class ApiPlanRemovalContext
         string apiName,
         Guid? apiGuid,
         string transactionName,
+        Guid transactionGuid,
         IReadOnlyList<string> preservedSharedSdtNames)
     {
         ApiName = apiName ?? string.Empty;
         ApiGuid = apiGuid;
         TransactionName = transactionName ?? string.Empty;
+        TransactionGuid = transactionGuid;
         PreservedSharedSdtNames = preservedSharedSdtNames ?? Array.Empty<string>();
     }
 
@@ -1262,6 +1493,9 @@ internal sealed class ApiPlanRemovalContext
     internal Guid? ApiGuid { get; }
 
     internal string TransactionName { get; }
+
+    /// <summary>B082 Etapa 2 / D10 — identidade da Transaction para conferir o contêiner do Folder.</summary>
+    internal Guid TransactionGuid { get; }
 
     internal IReadOnlyList<string> PreservedSharedSdtNames { get; }
 
@@ -1276,6 +1510,7 @@ internal sealed class ApiPlanRemovalContext
             plan.ApiName,
             Guid.TryParse(plan.ApiGuid, out var apiGuid) ? apiGuid : (Guid?)null,
             plan.TransactionName,
+            plan.PreviewCapture?.TransactionGuid ?? Guid.Empty,
             plan.SharedSdtNamesPreserved);
     }
 
@@ -1301,6 +1536,7 @@ internal sealed class ApiPlanRemovalContext
             api?.Name ?? string.Empty,
             api?.Guid ?? journal.Plan?.PlannedApiGuid,
             journal.TransactionName,
+            journal.TransactionGuid,
             preserved);
     }
 }

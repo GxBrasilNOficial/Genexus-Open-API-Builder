@@ -71,6 +71,24 @@ public sealed class Package : AbstractPackageUI
 
     private static bool ExecuteConfigureWizardPreferences(CommandData data)
     {
+        if (!ExtensionOperationGuard.TryEnter("Configurar Preferências do Wizard"))
+        {
+            WriteOutput("[Genexus Open API Builder][B082] " + ExtensionOperationGuard.BuildBusyMessage(ExtensionOperationGuard.CurrentOperation));
+            return true;
+        }
+
+        try
+        {
+            return ExecuteConfigureWizardPreferencesCore(data);
+        }
+        finally
+        {
+            ExtensionOperationGuard.Exit();
+        }
+    }
+
+    private static bool ExecuteConfigureWizardPreferencesCore(CommandData data)
+    {
         var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
         if (knowledgeBase is null)
         {
@@ -898,6 +916,24 @@ public sealed class Package : AbstractPackageUI
 
     private static bool ExecuteSynchronizeWithTransaction(CommandData data)
     {
+        if (!ExtensionOperationGuard.TryEnter("Sincronizar com a Transaction"))
+        {
+            WriteOutput("[Genexus Open API Builder][B082] " + ExtensionOperationGuard.BuildBusyMessage(ExtensionOperationGuard.CurrentOperation));
+            return true;
+        }
+
+        try
+        {
+            return ExecuteSynchronizeWithTransactionCore(data);
+        }
+        finally
+        {
+            ExtensionOperationGuard.Exit();
+        }
+    }
+
+    private static bool ExecuteSynchronizeWithTransactionCore(CommandData data)
+    {
         var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
         if (knowledgeBase is null)
         {
@@ -1267,6 +1303,24 @@ public sealed class Package : AbstractPackageUI
 
     private static bool ExecuteRemoveGeneratedApi(CommandData data)
     {
+        if (!ExtensionOperationGuard.TryEnter("Remover API gerada"))
+        {
+            WriteOutput("[Genexus Open API Builder][B082] " + ExtensionOperationGuard.BuildBusyMessage(ExtensionOperationGuard.CurrentOperation));
+            return true;
+        }
+
+        try
+        {
+            return ExecuteRemoveGeneratedApiCore(data);
+        }
+        finally
+        {
+            ExtensionOperationGuard.Exit();
+        }
+    }
+
+    private static bool ExecuteRemoveGeneratedApiCore(CommandData data)
+    {
         var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
         if (knowledgeBase is null)
         {
@@ -1366,6 +1420,7 @@ public sealed class Package : AbstractPackageUI
                     intent = ApiPlanGeneratedApiRemover.ResolveIntent(
                         knowledgeBase.DesignModel,
                         transaction,
+                        plan,
                         busy.Session,
                         removeIndex);
                 }
@@ -1592,6 +1647,24 @@ public sealed class Package : AbstractPackageUI
     }
 
     private static bool ExecuteOpenWizardStepOne(CommandData data)
+    {
+        if (!ExtensionOperationGuard.TryEnter("Wizard"))
+        {
+            WriteOutput("[Genexus Open API Builder][B082] " + ExtensionOperationGuard.BuildBusyMessage(ExtensionOperationGuard.CurrentOperation));
+            return true;
+        }
+
+        try
+        {
+            return ExecuteOpenWizardStepOneCore(data);
+        }
+        finally
+        {
+            ExtensionOperationGuard.Exit();
+        }
+    }
+
+    private static bool ExecuteOpenWizardStepOneCore(CommandData data)
     {
         var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
         if (knowledgeBase is null)
