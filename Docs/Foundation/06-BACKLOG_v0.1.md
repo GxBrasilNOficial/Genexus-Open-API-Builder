@@ -280,6 +280,35 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B121 | Tornar explícita a seleção das etapas `Business Component` e `List` no Sync, sem inferir a intenção pela lista de serviços | Média — melhoria futura, fora da sprint `S-B111`; os perfis Sync sem BC/List, somente BC e BC+List foram aceitos na F1, enquanto o perfil somente List isolado é a exceção formal transferida para este item e permanece não comprovado até sua implementação. Evidência IDE em 2026-09-11: no Sync de `Contrato`, sem opção de BC e com `ContratoObservacao` marcado somente em `Response`, o Output executou BC (`Get/Create/Update`) antes de List; `FinalWriter='List'`, `ApiSaveCount=1`, `Bloqueados=0`. O perfil somente List não foi comprovado. Plano: [`Docs/Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md`](../Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md) |
 | B122 | Dar aos agentes uma ferramenta versionada de edição textual ancorada, no lugar do script descartável que cada sessão reinventa | **Urgente — a executar logo após o encerramento da sprint `S-B111`.** Não muda o produto; muda o risco de toda alteração de texto feita por agente neste repositório. Ver a nota operacional abaixo |
 | B123 | Registrar a **posse histórica do Folder** da API na metadata, para que a remoção possa apagar um Folder próprio que ficou vazio | Média — **a executar depois da sprint `S-B111`**, por decisão de 2026-09-15. Medido em campo no cenário 8 da P8: o `TesteOpenApi` ficou na KB, vazio, depois de uma remoção completa. É o comportamento correto hoje — a fila só apaga Folder `wasCreated=true`, e `wasCreated` descreve a operação corrente, não quem criou o Folder —, mas o efeito é permanente: assim que um Folder sobrevive a uma remoção, toda geração seguinte o reencontra como reutilizado e nenhuma remoção futura o apagará. A saída barata, apagar Folder vazio com Description canônica, foi **recusada na mesma data** por ser menos segura: Description isolada nunca autorizou exclusão neste projeto (seção 4.3 do plano da F3), e um Folder homônimo de terceiro com a mesma marca seria apagado. A saída aprovada é a cara: a metadata registrar quem criou o Folder, o que é mudança de schema (V4) com leitura legada V1/V2/V3, fingerprint e consumidores a atualizar. Enquanto não existir, o resíduo é um Folder vazio, inofensivo, que o usuário apaga à mão se quiser. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`, seção 12 |
+| B124 | Definir **quando** um aceite ou smoke IDE exige documento dedicado de evidência em `Docs/Implementation/`, em vez de ficar só no item do checkpoint e na entrada Validated do `CHANGELOG` | Média — nascido em 2026-09-16. Ver nota operacional abaixo. **Não displace `B122`** |
+
+### Nota operacional — B124, registrada em 2026-09-16
+
+**O sintoma.** O smoke parcial da Etapa 2 do `B082` (guarda com Recuperar, diálogos unificados,
+oferta proativa, `ContinueRemovePass`) foi exercido na IDE e registrado com cuidado no **item 142**
+do checkpoint, no progresso Sessão B do plano e no Validated do `CHANGELOG`. Não nasceu, porém, o
+documento espelho em `Docs/Implementation/` no molde da 1A (`…-B082-ETAPA-1A-ACEITE.md`) ou das
+F1/F2 (`…-ACEITE-IDE.md`). Quem retoma a frente numa sessão nova precisa remontar a bateria a
+partir de um parágrafo longo do log.
+
+**O que este item não é.** Não é “escrever agora o doc que faltou” como único entregável, nem
+obrigar doc dedicado para todo clique. O caso 142 é a **prova do gap**; a entrega é a regra.
+
+**O que estudar e decidir noutra sessão.**
+
+1. **Critério de obrigatoriedade.** Quando o item do checkpoint basta (correção pontual,
+   smoke de uma linha) e quando o doc dedicado é obrigatório (aceite de etapa, Sessão B de
+   retomada, bateria com mais de um cenário, ou quando o Validated do release citaria a evidência).
+2. **Conteúdo mínimo do doc**, quando existir: KB/Transaction; commit ou hash da DLL; passos
+   na ordem; resultado esperado × obtido (Output e/ou print); o que passou; o que ficou aberto;
+   problemas observados sem correção na sessão.
+3. **Momento.** Escrever na mesma sessão do teste, ou aceitar rascunho no item e promover a doc
+   no fechamento da Sessão B / da etapa.
+4. **Primeira aplicação.** Redigir a evidência do smoke 2026-09-16 (item 142) sob a regra
+   aprovada — não inventar o doc antes do critério.
+
+**Fora de escopo deste item.** Fechar o restante do aceite Sessão B do `B082`; corrigir Preview
+pós-aborto listando alvos já `Absent`; Etapa 3/1B. Esses seguem no plano do `B082`.
 
 ### Nota operacional — B122, registrada em 2026-09-15
 

@@ -139,11 +139,11 @@ Decisões acumuladas, endpoints e garantias — depois **Concluir e aplicar**.
 
 ![Resumo](../Images/alpha-wizard-resumo.png)
 
-## 21. Progresso visível e cancelamento seguro (desde `0.1.0-alpha.7`)
+## 21. Progresso visível e cancelamento cooperativo (desde `0.1.0-alpha.7`)
 
-Ao clicar em **Concluir e aplicar** (e também na abertura do Wizard, no Preview do Sync e no Preview do Remover), um diálogo modal exibe o progresso em tempo real das etapas (`Preferências`, `Indexando objetos`, `Pré-verificação`, `Criando SDTs`, etc.).
+Ao clicar em **Concluir e aplicar** (e também na abertura do Wizard, no Preview do Sync e no Preview do Remover), um diálogo **modeless** mostra o progresso em tempo real das etapas (`Preferências`, `Indexando objetos`, `Pré-verificação`, `Criando SDTs`, etc.).
 
-Durante essas fases é possível clicar em **Abortar** para cancelar a operação com segurança antes de qualquer gravação na KB.
+Durante essas fases é possível clicar em **Abortar**. O objeto em curso (um `Save()` ou `Delete()`) termina; a operação para antes do próximo. Se já houve gravação, a Knowledge Base pode ficar parcial — use **Recuperar operação interrompida** quando o diário registrar a interrupção.
 
 ## 22. Relatório final
 

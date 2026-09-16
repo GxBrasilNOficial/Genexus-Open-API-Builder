@@ -123,6 +123,8 @@ Assert-Contains $sdtWriter 'explicitPreserve ||' 'Skip de Save aceita Keep expli
 Assert-Contains $sdtWriter 'canSkipRewrite' 'Reencontro de SDT deve pular Save quando Keep explicito ou estrutura ja bate.'
 Assert-Contains $sdtWriter 'ApiPlanSdtWriteStatus.Unchanged' 'Reencontro sem Save deve publicar Unchanged, nao Reencountered.'
 Assert-Contains $sdtWriter 'CollectionItemNameMatches' 'Reencontro de SDT deve tratar CollectionItemName de colecao sem exigir igualdade com o tipo.'
+Assert-Contains $sdtWriter 'string.IsNullOrWhiteSpace(item.CollectionItemName)' 'Match deve tolerar CollectionItemName vazio apos Save (specifier troca o nome do item).'
+Assert-Contains $sdtWriter 'NormalizeSdtTypeName' 'Match de tipo SDT deve normalizar sdt:Nome e Modulo.Nome.'
 Assert-Contains $sdtWriter 'IsEnglishSingularOf' 'Specifier pode gravar CollectionItemName no singular ingles (Item para Items).'
 Assert-Contains $sdtWriter 'TryResolveStructureTypeReferenceName' 'Reencontro deve resolver ATTCUSTOMTYPE StructureTypeReference para o nome do SDT.'
 Assert-Contains $kbIndex 'TryGetSdtById' 'Indice deve resolver SDT pelo Id numerico da KB.'
@@ -180,12 +182,15 @@ $allowedCreateSymbols = [System.Collections.Generic.HashSet[string]]::new([Strin
 # Abertura do Wizard (D8): ReadForIntentionalChange -> Read privado de 4 args.
 # Apply/Sync nao passam por este Create; o preflight usa ReadUsingExistingIndex.
 [void]$allowedCreateSymbols.Add('Read')
-[void]$allowedCreateSymbols.Add('ExecuteSynchronizeWithTransaction')
-[void]$allowedCreateSymbols.Add('ExecuteRemoveGeneratedApi')
+# Handlers longos: o TryEnter fica no wrapper; o Create vive no Core (B082 Etapa 2).
+[void]$allowedCreateSymbols.Add('ExecuteSynchronizeWithTransactionCore')
+[void]$allowedCreateSymbols.Add('ExecuteRemoveGeneratedApiCore')
 # Validacao agregada do Remover, antes de qualquer Delete (Nivel A). Desde a P4 da F3 ela
 # vive na resolucao da intencao: e la que os alvos sao validados e identificados, antes de o
 # diario registrar o inventario e de a fila tentar a primeira exclusao.
 [void]$allowedCreateSymbols.Add('ResolveIntent')
+# Preview do Remover (B082 Etapa 2): captura identidades; Create so se o caller nao passou indice.
+[void]$allowedCreateSymbols.Add('CapturePreviewIdentities')
 # Comando de recuperacao (B111/F3 P6): uma montagem por invocacao do comando, para localizar o
 # diario pelo nome fixo e reler cada alvo do inventario por identidade.
 [void]$allowedCreateSymbols.Add('RunRecovery')
