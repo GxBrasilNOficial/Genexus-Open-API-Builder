@@ -65,6 +65,17 @@ Assert-True ($queue -match 'JournalBlockReason\.TargetAbsentBeforeDelete') 'Aus�
 Assert-True ($queue -match 'JournalOperationState\.OutcomeUnknown') 'Resultado indeterminado bloqueia a operação.'
 Assert-True ($remover -match 'ApiPlanRemovalIntent\.ResolveMaxPasses|intent\.MaxPasses') 'O orçamento de passadas deve vir do inventário.'
 
+# NotAttempted: stage do recibo e role da identidade composta são parâmetros distintos.
+# Misturar os dois (como em e20e0aa) faz alvo ausente sair como [Get/Procedure] enquanto o
+# Persist irmão grava [Procedures/Procedure].
+Assert-True ($remover -match '(?s)private static ApiPlanRemovalAttemptResult NotAttempted\(\s*ApiPlanRemovalTarget target,\s*string objectType,\s*string stage,\s*string role,\s*string detail\)') 'NotAttempted deve receber stage e role em parâmetros separados.'
+Assert-True ($remover -match 'RecordNotAttempted\(\s*"Delete",\s*objectType,\s*stage,') 'RecordNotAttempted deve receber o stage, não o role.'
+Assert-True ($remover -match 'NotAttempted\(\s*target,\s*"Procedure",\s*"Procedures",\s*ApiPlanJournalRoles\.RequireForProcedureName') 'Procedure ausente deve registrar stage Procedures e role canônico.'
+Assert-True ($remover -match 'NotAttempted\(\s*target,\s*"API",\s*"ApiObject",\s*ApiPlanJournalRoles\.MainApi') 'API ausente deve registrar stage ApiObject e role MainApi.'
+Assert-True ($remover -match 'NotAttempted\(\s*target,\s*"SDT",\s*"OwnSdts",\s*ApiPlanJournalRoles\.OwnSdt') 'SDT ausente deve registrar stage OwnSdts e role OwnSdt.'
+Assert-True ($remover -match 'NotAttempted\(\s*target,\s*"File",\s*"Metadata",\s*ApiPlanJournalRoles\.Metadata') 'Metadata ausente deve registrar stage Metadata e role Metadata.'
+Assert-False ($remover -match 'NotAttempted\(target, "Procedure", ApiPlanJournalRoles') 'Procedure NotAttempted não pode voltar a passar só o role no lugar do stage.'
+
 # --- 3. O abort do usuário nunca é adiado -----------------------------------------------------
 # Sem esta guarda, Abortar viraria "adiar" e a fila tentaria de novo, ignorando o usuário.
 $attemptStart = $remover.IndexOf('private static ApiPlanRemovalAttemptResult Attempt(')

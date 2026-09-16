@@ -88,7 +88,11 @@ public sealed class ApiPlanOperationJournal
     /// memória nascem com <c>false</c> e são gravados com o schema estrito; apenas o que veio
     /// de um JSON sem os campos novos do V1 — tempo de recibo e suficiência de inventário —
     /// é reidratado com <c>true</c>, para que a regravação em recuperação não derrube a
-    /// operação que a decisão 29 manda preservar.
+    /// operação que a decisão 29 manda preservar. O marcador vale para o **envelope inteiro**:
+    /// um único recibo sem tempo (ou plano de remoção/recuperação sem suficiência) suaviza as
+    /// regras de presença também para os demais recibos naquele objeto. Recibos novos
+    /// acrescentados pela recuperação nascem com tempo medido pelo mapper; o afrouxamento
+    /// extra sobre eles é teórico, não o desenho pretendido por recibo.
     /// </summary>
     internal bool AcceptsLegacyShapes { get; set; }
 }
@@ -208,8 +212,10 @@ public sealed class ApiPlanOperationJournalReceipt
     /// permitido (gravações sub-milissegundo) quando o início foi medido. A leitura
     /// tolerante de um diário legado que não traz o campo materializa 0 em memória; a
     /// regravação emite <c>null</c> junto com <c>startedUtc</c> nulo, para não fingir
-    /// medição. Onde o todo decorrido for maior que <see cref="long"/> a gravação satura
-    /// em <see cref="long.MaxValue"/>.
+    /// medição. O caminho de medição da F2 (<c>ApiPlanPersistenceLog</c>) calcula
+    /// <c>Math.Max(0, (long)delta.TotalMilliseconds)</c>: um overflow de cast para
+    /// <see cref="long"/> vira negativo e cai em zero — não há saturação em
+    /// <see cref="long.MaxValue"/>.
     /// </summary>
     public long DurationMs { get; set; }
 

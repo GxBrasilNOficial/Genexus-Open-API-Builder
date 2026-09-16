@@ -795,7 +795,12 @@ internal static class ApiPlanGeneratedApiRemover
             .ToArray());
         if (matches.Length == 0)
         {
-            return NotAttempted(target, "Procedure", ApiPlanJournalRoles.RequireForProcedureName(name, "B086"), "Procedure ausente antes do Delete.");
+            return NotAttempted(
+                target,
+                "Procedure",
+                "Procedures",
+                ApiPlanJournalRoles.RequireForProcedureName(name, "B086"),
+                "Procedure ausente antes do Delete.");
         }
 
         var procedure = matches[0];
@@ -833,7 +838,12 @@ internal static class ApiPlanGeneratedApiRemover
             .ToArray());
         if (matches.Length == 0)
         {
-            return NotAttempted(target, "API", ApiPlanJournalRoles.MainApi, "API Object ausente antes do Delete.");
+            return NotAttempted(
+                target,
+                "API",
+                "ApiObject",
+                ApiPlanJournalRoles.MainApi,
+                "API Object ausente antes do Delete.");
         }
 
         var api = matches[0];
@@ -872,7 +882,12 @@ internal static class ApiPlanGeneratedApiRemover
             .ToArray());
         if (matches.Length == 0)
         {
-            return NotAttempted(target, "SDT", ApiPlanJournalRoles.OwnSdt, "SDT ausente antes do Delete.");
+            return NotAttempted(
+                target,
+                "SDT",
+                "OwnSdts",
+                ApiPlanJournalRoles.OwnSdt,
+                "SDT ausente antes do Delete.");
         }
 
         var sdt = matches[0];
@@ -908,7 +923,12 @@ internal static class ApiPlanGeneratedApiRemover
             .ToArray());
         if (matches.Length == 0)
         {
-            return NotAttempted(target, "File", ApiPlanJournalRoles.Metadata, "File de metadata ausente antes do Delete.");
+            return NotAttempted(
+                target,
+                "File",
+                "Metadata",
+                ApiPlanJournalRoles.Metadata,
+                "File de metadata ausente antes do Delete.");
         }
 
         var metadataFile = matches[0];
@@ -992,11 +1012,16 @@ internal static class ApiPlanGeneratedApiRemover
     /// Registra um alvo previsto que já não estava lá. Não é sucesso implícito: o recibo sai com
     /// <c>NotAttempted</c>, sem chamar <c>Delete()</c>, e a fila encerra a operação em
     /// <c>Partial</c>. A identidade histórica composta vai inteira, porque é ela que o inventário
-    /// do envelope exige para declarar o alvo.
+    /// do envelope exige para declarar o alvo. <paramref name="stage"/> alimenta o recibo
+    /// (<c>receipts[].stage</c> / relatório <c>[stage/objectType]</c>) e deve coincidir com o
+    /// <c>Persist</c> irmão do mesmo tipo — <c>Procedures</c>, <c>ApiObject</c>, <c>OwnSdts</c>,
+    /// <c>Metadata</c>. <paramref name="role"/> alimenta só o fallback de
+    /// <see cref="CompositeIdentity"/> quando o alvo não carrega composto; nunca substitui o stage.
     /// </summary>
     private static ApiPlanRemovalAttemptResult NotAttempted(
         ApiPlanRemovalTarget target,
         string objectType,
+        string stage,
         string role,
         string detail)
     {
@@ -1004,7 +1029,7 @@ internal static class ApiPlanGeneratedApiRemover
         ApiPlanSaveBoundaryProbe.RecordNotAttempted(
             "Delete",
             objectType,
-            role,
+            stage,
             target.Name,
             composite is null
                 ? new CompositeIdentity(target.Name, objectType, role, string.Empty, Guid.Empty, Guid.Empty)

@@ -32,9 +32,10 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// <c>File.Save()</c>. A leitura, por outro lado, continua tolerante à ausência dos campos
 /// novos do V1 — tempo de recibo e suficiência de inventário —, para preservar diários
 /// legados (decisão 29): reconhece a forma por valor e reidrata o envelope com
-/// <c>AcceptsLegacyShapes</c> marcado, o que suaviza nessas regras de presença a validação da
-/// regravação em recuperação. Campos presentes porém malformados continuam sendo erro de
-/// leitura, tolerantes ou não.
+/// <c>AcceptsLegacyShapes</c> marcado. O marcador é por envelope, não por recibo: um único
+/// recibo sem tempo (ou plano sem suficiência) suaviza as regras de presença na regravação
+/// de recuperação para o objeto inteiro. Campos presentes porém malformados continuam sendo
+/// erro de leitura, tolerantes ou não.
 ///
 /// Tempo não medido não se disfarça de medição: na regravação de um recibo legado sem
 /// <c>startedUtc</c>, o canônico emite <c>null</c> em <c>startedUtc</c> e em
