@@ -3,19 +3,22 @@ $ErrorActionPreference = 'Stop'
 
 $writerPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanBusinessComponentWriter.cs'
 $apiPlanPath = Join-Path $PSScriptRoot '..\..\Src\Domain\ApiPlan.cs'
-$source = Get-Content -Path $writerPath -Raw
-$apiPlanSource = Get-Content -Path $apiPlanPath -Raw
+# Comparação independente de EOL: working tree mista (CRLF × LF) não deve falhar o contrato.
+$source = (Get-Content -Path $writerPath -Raw).Replace("`r", '')
+$apiPlanSource = (Get-Content -Path $apiPlanPath -Raw).Replace("`r", '')
 
 function Assert-Contains {
     param([string]$Text, [string]$Expected, [string]$Message)
-    if (-not $Text.Contains($Expected)) {
+    $needle = $Expected.Replace("`r", '')
+    if (-not $Text.Contains($needle)) {
         throw "ASSERT_CONTAINS_FAILED: $Message Expected='$Expected'"
     }
 }
 
 function Assert-NotContains {
     param([string]$Text, [string]$Unexpected, [string]$Message)
-    if ($Text.Contains($Unexpected)) {
+    $needle = $Unexpected.Replace("`r", '')
+    if ($Text.Contains($needle)) {
         throw "ASSERT_NOT_CONTAINS_FAILED: $Message Unexpected='$Unexpected'"
     }
 }
