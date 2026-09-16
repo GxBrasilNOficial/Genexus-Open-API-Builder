@@ -319,7 +319,7 @@ Residual `B082` após a 1A (Etapas 1B índice mutável no Remover; 2 segurança/
 
 O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. A próxima ação única vigente é `B122` (ver seção «Próxima ação única»).
 
-A conclusão da `S-B111` não fechou automaticamente o `B082`: no encerramento, o residual 1B/2/3 foi reavaliado e permanece fora da pauta imediata, por decisão declarada (item 135); o que a sprint absorveu (ordem do API Object, seam de persistência, remoção por fila) já está nas fases F1–F3.
+A conclusão da `S-B111` não fechou automaticamente o `B082`: no encerramento, por decisão declarada (item 135), o residual 1B/2/3 ficou fora da sprint e da pauta imediata; o que a sprint absorveu (ordem do API Object, seam de persistência, remoção por fila) já está nas fases F1–F3.
 
 **`B108` fica estacionado desde 2026-09-05**, com plano aprovado e sem trabalho perdido: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Item: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
 
