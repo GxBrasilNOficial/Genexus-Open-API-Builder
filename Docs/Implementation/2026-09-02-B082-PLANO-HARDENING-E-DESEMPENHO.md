@@ -46,10 +46,12 @@ continua sendo `B122` até priorização humana explícita deste residual.
 
 | Sessão | Escopo | Fora de escopo nesta sessão |
 | --- | --- | --- |
-| **A — código** | Etapa 2: guarda de operação única nos quatro handlers; protocolo abort (`Report` → processar eventos → `ThrowIfAbort` → mutar); remover `DoEvents` de `OnAbortClicked`; Preview→Remove por referência (decisão 7) com identidade/hash e zero deletes se divergir; contêiner + GUID no Folder do Remove (D10). Se a janela de contexto aguentar: Etapa 3 (DEMO, Folder preservado estruturado, Preferências no monitor da IDE) e higiene (pendências 3 e 4). Testes offline proporcionais; commit. Sem install em `C:\Program Files (x86)\GeneXus`. | Etapa 1B; medição de desempenho salvo critério de aceite aberto; push; corte de release |
+| **A — código** | Etapa 2: guarda de operação única nos cinco handlers (Wizard, Sync, Remover, Preferências e Recuperar); protocolo abort (`Report` → processar eventos → `ThrowIfAbort` → mutar); remover `DoEvents` de `OnAbortClicked`; Preview→Remove por referência (decisão 7) com identidade/hash e zero deletes se divergir; contêiner + GUID no Folder do Remove (D10). Se a janela de contexto aguentar: Etapa 3 (DEMO, Folder preservado estruturado, Preferências no monitor da IDE) e higiene (pendências 3 e 4). Testes offline proporcionais; commit. Sem install em `C:\Program Files (x86)\GeneXus`. | Etapa 1B; medição de desempenho salvo critério de aceite aberto; push; corte de release |
 | **B — IDE** | Install manual da DLL da Sessão A; aceite: segunda operação recusada durante a primeira; abort no Remove sem apagar o objeto em que o clique caiu; Folder homônimo fora do contêiner não deletado; divergência Preview↔execução com zero exclusões; casca fechada antes do relatório; DEMO alinhado ao abort cooperativo e à persistência parcial | Continuação de Apply/Sync interrompido (fora da F3 entregue); Etapa 1B |
 
-**Progresso Sessão A (2026-09-16).** Etapa 2 **implementada offline** no código desta sessão: `ExtensionOperationGuard` nos quatro handlers; fila de remoção e `ApiPlanSaveStepExecutor` com `Report` → `ThrowIfAbort` → mutar; `OnAbortClicked` sem `DoEvents`; `ResolveIntent` consome a mesma instância do Preview com captura de identidades e bloqueio por divergência; `DeleteOwnFolder` exige `IsInExpectedContainer` + GUID do Preview (sem `IsReusable` do Apply). Gate `tests.b082Etapa2Safety`. Etapa 3 e higiene **não** entraram. Aceite IDE = Sessão B. B082 permanece residual aberto; próxima ação única continua `B122`.
+**Progresso Sessão A (2026-09-16).** Etapa 2 **implementada offline** no código desta sessão: `ExtensionOperationGuard` nos cinco handlers (Wizard, Sync, Remover, Preferências e Recuperar — este último incluído após o aceite IDE revelar que o menu de recuperação furava a exclusão mútua; a oferta proativa pós-bloqueio do diário continua sob a guarda do handler que falhou o Start, sem segundo `TryEnter`); avisos simples da Recuperar migrados de `MessageBox` para `ExtensionRecoveryDialog`; fila de remoção e `ApiPlanSaveStepExecutor` com `Report` → `ThrowIfAbort` → mutar; `OnAbortClicked` sem `DoEvents`; `ResolveIntent` consome a mesma instância do Preview com captura de identidades e bloqueio por divergência; `DeleteOwnFolder` exige `IsInExpectedContainer` + GUID do Preview (sem `IsReusable` do Apply). Gate `tests.b082Etapa2Safety`. Etapa 3 e higiene **não** entraram. B082 permanece residual aberto; próxima ação única continua `B122`.
+
+**Progresso Sessão B (parcial, 2026-09-16).** KB `wsEducacaoSpTeste`, Transaction `Teste`: (1) diálogo unificado da Recuperar (terminal / oferta / inventário / desfecho); (2) aborto de Remover → `Partial/RemovalPartial` + segundo Remover com `GateBlocked` e oferta proativa; (3) `ContinueRemovePass` → `Removed` (24 objetos, mesma `OperationId`); (4) durante a retomada, guarda recusou outra operação citando Recuperar. **Ainda aberto no aceite B:** Remover-em-curso → menu Recuperar recusado; abort sem apagar o objeto do clique; Folder homônimo fora do contêiner; Preview divergente com zero exclusões; casca × relatório nos demais caminhos; DEMO. Observado sem correção: Preview pós-aborto ainda listava alvos já `Absent`.
 
 **Etapa 1B** permanece adiada: contrato de índice mutável (Nível B) antes de qualquer código;
 confirmações pós-`Delete` continuam individuais e por leitura corrente.
@@ -483,12 +485,15 @@ e apaga, com o contrato exigido pelo Nível B da decisão 1 escrito antes do có
 validação agregada, a localização e a revalidação do Remover. **Não** cobre as confirmações
 pós-`Delete`, que permanecem individuais e por leitura corrente.
 
-**Etapa 2 — segurança.** Guarda de operação única nos quatro handlers (`ExecuteOpenWizardStepOne`,
-`ExecuteSynchronizeWithTransaction`, `ExecuteRemoveGeneratedApi`, `ExecuteConfigureWizardPreferences`),
+**Etapa 2 — segurança.** Guarda de operação única nos cinco handlers (`ExecuteOpenWizardStepOne`,
+`ExecuteSynchronizeWithTransaction`, `ExecuteRemoveGeneratedApi`, `ExecuteConfigureWizardPreferences`,
+`ExecuteRecoverInterruptedOperation`),
 viva até o retorno do handler, inclusive durante o relatório final; remoção do `DoEvents()`
 aninhado em `OnAbortClicked`; protocolo de abort escrito como sequência explícita — **reportar,
 processar eventos, verificar abort, e só então mutar**; plano do Preview entregue ao Remove como
 instância única, conforme a decisão 7; e **verificação de contêiner e GUID no `MaybeDeleteFolder`**.
+A oferta proativa `OfferRecoveryAfterJournalBlock` → `RunRecovery` **não** disputa `TryEnter`:
+ela corre sob a guarda do Apply/Sync/Remover que acabou de falhar o Start do diário.
 
 **A sequência de abort não acrescenta revalidação de identidade por alvo.** Uma redação anterior
 dizia «verificar abort, revalidar o alvo, só então mutar», o que contradizia a decisão 7 e

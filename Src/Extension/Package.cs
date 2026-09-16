@@ -540,6 +540,24 @@ public sealed class Package : AbstractPackageUI
     /// </summary>
     private static bool ExecuteRecoverInterruptedOperation(CommandData data)
     {
+        if (!ExtensionOperationGuard.TryEnter("Recuperar operação interrompida"))
+        {
+            WriteOutput("[Genexus Open API Builder][B082] " + ExtensionOperationGuard.BuildBusyMessage(ExtensionOperationGuard.CurrentOperation));
+            return true;
+        }
+
+        try
+        {
+            return ExecuteRecoverInterruptedOperationCore(data);
+        }
+        finally
+        {
+            ExtensionOperationGuard.Exit();
+        }
+    }
+
+    private static bool ExecuteRecoverInterruptedOperationCore(CommandData data)
+    {
         var knowledgeBase = UIServices.IsKBAvailable ? UIServices.KB.CurrentKB : null;
         if (knowledgeBase is null)
         {
@@ -551,6 +569,9 @@ public sealed class Package : AbstractPackageUI
         var owner = ResolveFinalReportOwner();
         try
         {
+            // Oferta proativa (OfferRecoveryAfterJournalBlock) chama RunRecovery direto, sob a
+            // guarda do Wizard/Sync/Remover que acabou de ser bloqueado pelo diário — sem
+            // TryEnter próprio. O menu passa por este handler e disputa a guarda global.
             RunRecovery(knowledgeBase, texts, owner);
         }
         catch (Exception ex)
@@ -558,12 +579,7 @@ public sealed class Package : AbstractPackageUI
             var detail = DescribeException(ex);
             foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Recuperar")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B111/F3] Recuperação falhou: Error='{detail}'. Nenhuma alteração foi feita.");
-            System.Windows.Forms.MessageBox.Show(
-                owner,
-                detail,
-                texts.RecoveryDialogTitle,
-                System.Windows.Forms.MessageBoxButtons.OK,
-                System.Windows.Forms.MessageBoxIcon.Error);
+            ExtensionRecoveryDialog.Inform(owner, texts, detail, Array.Empty<string>(), warning: true);
         }
 
         return true;
@@ -593,12 +609,7 @@ public sealed class Package : AbstractPackageUI
             var message = string.Equals(diagnostic.ReasonCode, JournalGateReasonCodes.JournalMissing, StringComparison.Ordinal)
                 ? texts.RecoveryNoJournal
                 : diagnostic.Message;
-            System.Windows.Forms.MessageBox.Show(
-                owner,
-                message,
-                texts.RecoveryDialogTitle,
-                System.Windows.Forms.MessageBoxButtons.OK,
-                System.Windows.Forms.MessageBoxIcon.Information);
+            ExtensionRecoveryDialog.Inform(owner, texts, message, Array.Empty<string>(), warning: false);
             return;
         }
 
@@ -612,12 +623,7 @@ public sealed class Package : AbstractPackageUI
 
         if (operation.AlreadyTerminal)
         {
-            System.Windows.Forms.MessageBox.Show(
-                owner,
-                texts.RecoveryNothingToDo,
-                texts.RecoveryDialogTitle,
-                System.Windows.Forms.MessageBoxButtons.OK,
-                System.Windows.Forms.MessageBoxIcon.Information);
+            ExtensionRecoveryDialog.Inform(owner, texts, texts.RecoveryNothingToDo, Array.Empty<string>(), warning: false);
             return;
         }
 
@@ -654,12 +660,7 @@ public sealed class Package : AbstractPackageUI
         if (!confirmed)
         {
             WriteOutput("[Genexus Open API Builder][B111/F3] Recuperação recusada pelo usuário. Nenhuma alteração foi feita.");
-            System.Windows.Forms.MessageBox.Show(
-                owner,
-                texts.RecoveryDeclined,
-                texts.RecoveryDialogTitle,
-                System.Windows.Forms.MessageBoxButtons.OK,
-                System.Windows.Forms.MessageBoxIcon.Information);
+            ExtensionRecoveryDialog.Inform(owner, texts, texts.RecoveryDeclined, Array.Empty<string>(), warning: false);
             return;
         }
 
@@ -869,14 +870,14 @@ public sealed class Package : AbstractPackageUI
         }
 
         var owner = ResolveFinalReportOwner();
-        var answer = System.Windows.Forms.MessageBox.Show(
-            owner,
-            texts.RecoveryOfferAfterBlock,
-            texts.RecoveryDialogTitle,
-            System.Windows.Forms.MessageBoxButtons.YesNo,
-            System.Windows.Forms.MessageBoxIcon.Warning,
-            System.Windows.Forms.MessageBoxDefaultButton.Button2);
-        if (answer != System.Windows.Forms.DialogResult.Yes)
+        // Mesmo diálogo da decisão com inventário: o MessageBox nativo era a única tela da
+        // recuperação que ainda saía estreita e fora do padrão do Remover.
+        if (!ExtensionRecoveryDialog.Ask(
+                owner,
+                texts,
+                texts.RecoveryOfferAfterBlock,
+                Array.Empty<string>(),
+                string.Empty))
         {
             return;
         }

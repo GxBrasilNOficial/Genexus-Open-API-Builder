@@ -48,22 +48,44 @@ $plan = Read-Source 'Src\Extension\Diagnostics\ApiPlanGeneratedApiRemovalPlan.cs
 $saveExecutor = Read-Source 'Src\Extension\Diagnostics\ApiPlanSaveStepExecutor.cs'
 $localization = Read-Source 'Src\Domain\ExtensionOutputLocalization.cs'
 
-# --- 1. Guarda de operação única nos quatro handlers ----------------------------------------
+# --- 1. Guarda de operação única nos cinco handlers longos ----------------------------------
 Assert-Contains $guard 'internal static bool TryEnter(string operationName)' 'A guarda deve expor TryEnter.'
 Assert-Contains $guard 'internal static void Exit()' 'A guarda deve expor Exit.'
-foreach ($handler in @(
-        'ExecuteConfigureWizardPreferences',
-        'ExecuteSynchronizeWithTransaction',
-        'ExecuteRemoveGeneratedApi',
-        'ExecuteOpenWizardStepOne')) {
-    Assert-Contains $package "ExtensionOperationGuard.TryEnter(" "O handler $handler deve adquirir a guarda."
+Assert-Contains $package 'TryEnter("Configurar Preferências do Wizard")' 'Preferências deve disputar a guarda.'
+Assert-Contains $package 'TryEnter("Sincronizar com a Transaction")' 'Sync deve disputar a guarda.'
+Assert-Contains $package 'TryEnter("Remover API gerada")' 'Remover deve disputar a guarda.'
+Assert-Contains $package 'TryEnter("Wizard")' 'Wizard deve disputar a guarda.'
+Assert-Contains $package 'TryEnter("Recuperar operação interrompida")' 'Recuperar (menu) deve disputar a guarda.'
+if ([regex]::Matches($package, 'ExtensionOperationGuard\.TryEnter\(').Count -ne 5) {
+    throw 'ASSERT_FAILED: Os cinco handlers longos devem ser os únicos TryEnter da guarda.'
 }
 
 Assert-Contains $package 'ExecuteConfigureWizardPreferencesCore(' 'Preferências deve liberar a guarda via Core+finally.'
 Assert-Contains $package 'ExecuteSynchronizeWithTransactionCore(' 'Sync deve liberar a guarda via Core+finally.'
 Assert-Contains $package 'ExecuteRemoveGeneratedApiCore(' 'Remover deve liberar a guarda via Core+finally.'
 Assert-Contains $package 'ExecuteOpenWizardStepOneCore(' 'Wizard deve liberar a guarda via Core+finally.'
+Assert-Contains $package 'ExecuteRecoverInterruptedOperationCore(' 'Recuperar deve liberar a guarda via Core+finally.'
+Assert-Contains $package 'OfferRecoveryAfterJournalBlock(' 'A oferta proativa após bloqueio do diário deve continuar existindo.'
+Assert-Contains $package 'RunRecovery(knowledgeBase, texts, owner);' 'A oferta proativa chama RunRecovery direto (sem TryEnter próprio).'
 Assert-Contains $localization "Operação recusada: já há '" 'A mensagem da guarda deve estar no catálogo de Output.'
+
+$offerStart = $package.IndexOf('private static void OfferRecoveryAfterJournalBlock(', [StringComparison]::Ordinal)
+$offerEnd = $package.IndexOf('private static bool QueryRecoverInterruptedOperationPortuguese(', [StringComparison]::Ordinal)
+if ($offerStart -lt 0 -or $offerEnd -le $offerStart) {
+    throw 'ASSERT_FAILED: Não localizei OfferRecoveryAfterJournalBlock para auditar MessageBox.'
+}
+$offerBody = $package.Substring($offerStart, $offerEnd - $offerStart)
+Assert-Contains $offerBody 'ExtensionRecoveryDialog.Ask(' 'A oferta proativa deve usar ExtensionRecoveryDialog.'
+Assert-NotContains $offerBody 'MessageBox.Show' 'A oferta proativa não deve mais usar MessageBox nativo.'
+
+$runStart = $package.IndexOf('private static void RunRecovery(', [StringComparison]::Ordinal)
+$runEnd = $package.IndexOf('private static string DescribeRemovalGuidance(', [StringComparison]::Ordinal)
+if ($runStart -lt 0 -or $runEnd -le $runStart) {
+    throw 'ASSERT_FAILED: Não localizei RunRecovery para auditar MessageBox.'
+}
+$runBody = $package.Substring($runStart, $runEnd - $runStart)
+Assert-NotContains $runBody 'MessageBox.Show' 'RunRecovery não deve mais usar MessageBox nativo.'
+Assert-Contains $runBody 'ExtensionRecoveryDialog.Inform(' 'RunRecovery deve informar via ExtensionRecoveryDialog.'
 
 # --- 2. Abort: Report → ThrowIfAbort → mutar; sem DoEvents no clique -------------------------
 $executeStart = $remover.IndexOf('internal static ApiPlanGeneratedApiRemovalResult Execute(', [StringComparison]::Ordinal)

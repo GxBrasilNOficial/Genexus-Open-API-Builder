@@ -5,9 +5,11 @@ using System;
 namespace GenexusOpenApiBuilder.Extension;
 
 /// <summary>
-/// B082 Etapa 2 — exclusão mútua entre os quatro comandos longos da extensão.
-/// Global ao processo (não por KB): uma operação em andamento recusa a segunda.
-/// Não cobre comandos nativos da IDE durante <c>DoEvents</c>.
+/// B082 Etapa 2 — exclusão mútua entre os comandos longos da extensão (Wizard, Sync,
+/// Remover, Preferências e Recuperar). Global ao processo (não por KB): uma operação em
+/// andamento recusa a segunda. Não cobre comandos nativos da IDE durante <c>DoEvents</c>.
+/// A oferta proativa após bloqueio do diário chama <c>RunRecovery</c> sob a guarda do
+/// handler que falhou o Start — não disputa TryEnter de novo.
 /// </summary>
 internal static class ExtensionOperationGuard
 {
