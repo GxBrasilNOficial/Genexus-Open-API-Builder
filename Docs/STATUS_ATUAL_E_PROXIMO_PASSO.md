@@ -317,9 +317,9 @@ Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/t
 
 Residual `B082` após a 1A (Etapas 1B índice mutável no Remover; 2 segurança/abort/Folder; 3 casca × B081 e UX). Não é a próxima ação única. Plano: `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`. **Anotado no plano (pós-push):** higiene do probe `SdtReencounter` (absorver no `tests.kbIndexReuse`, sem gate novo); matcher `idJsonInclude` unidirecional (pendência 4). **Aceite 1A:** tabela Apply da KB grande é DLL `ce30374`; emissor de SDT mudou em `0568677`/`cfb73b0` (números conservadores; não reusar como linha de base atual).
 
-O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou frente própria (`B111`), hoje a **sprint `S-B111`** e a pauta imediata (ver `Próxima ação única`). Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`.
+O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. A próxima ação única vigente é `B122` (ver seção «Próxima ação única»).
 
-A conclusão da `S-B111` não fecha automaticamente o `B082`: ao encerrar a sprint, o checkpoint deverá reavaliar o residual 1B/2/3 e registrar o que foi absorvido pela `S-B111` antes de definir a próxima ação única.
+A conclusão da `S-B111` não fechou automaticamente o `B082`: no encerramento, o residual 1B/2/3 foi reavaliado e permanece fora da pauta imediata, por decisão declarada (item 135); o que a sprint absorveu (ordem do API Object, seam de persistência, remoção por fila) já está nas fases F1–F3.
 
 **`B108` fica estacionado desde 2026-09-05**, com plano aprovado e sem trabalho perdido: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. Item: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
 
