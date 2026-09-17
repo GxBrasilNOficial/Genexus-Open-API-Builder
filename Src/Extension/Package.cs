@@ -21,8 +21,8 @@ namespace GenexusOpenApiBuilder.Extension;
 /// <summary>
 /// Ponto de entrada da extensão. As sondas B001-B006 permanecem como
 /// evidências históricas e não são invocadas em runtime nem na abertura de KBs.
-/// O menu principal expõe preferências, Wizard, Sincronizar com a Transaction e Remover API gerada (nesta ordem);
-/// o contexto da Transaction expõe Wizard, Sincronizar com a Transaction e Remover API gerada.
+/// O menu principal expõe preferências, Wizard, Sincronizar com a Transaction, Remover API gerada e Recuperar operação interrompida (nesta ordem);
+/// o contexto da Transaction expõe Wizard, Sincronizar com a Transaction, Remover API gerada e Recuperar operação interrompida.
 /// </summary>
 public sealed class Package : AbstractPackageUI
 {
