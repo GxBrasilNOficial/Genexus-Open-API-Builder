@@ -29,7 +29,7 @@ foi a primeira ação de código desta frente entre 2026-09-02 e o aceite da Eta
 naquele momento, o checkpoint promoveu `B108` à próxima ação única. **Essa promoção foi superada
 em 2026-09-05**: `B108` foi estacionado e a próxima ação única passou a ser decidir o encerramento
  da revisão e autorizar a F1 da sprint `S-B111`. Essa decisão já ocorreu; a F1 foi implementada e
- recebeu validação manual para encerramento com a exceção explícita do `B121` em 2026-09-10/11. O residual 1B/2/3 permanece neste plano. No encerramento da `S-B111` (2026-09-15), por decisão declarada, ficou fora da sprint e da pauta imediata; a sprint não fechou automaticamente o `B082`.
+ recebeu validação manual para encerramento com a exceção explícita do `B121` em 2026-09-10/11. No encerramento da `S-B111` (2026-09-15), por decisão declarada, o residual 1B/2/3 ficou fora da sprint e da pauta imediata; a sprint não fechou automaticamente o `B082`. **Estado após a retomada (2026-09-16):** Etapas **2** e **3** fechadas; **resta Etapa 1B** (adiada) neste plano.
 Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`.
 
 ## Retomada em duas sessões (aprovada 2026-09-16)

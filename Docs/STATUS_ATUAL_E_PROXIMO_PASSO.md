@@ -671,7 +671,7 @@ anteriores, antes do contrato B070 parametrizado e do novo Build All.
 - Gap B099a (2026-08-26): required de linha aparece na UI e **não** alimenta o writer BC (validação 400 com caminho `Parcelas[0].Campo` fica para frente posterior, para não recapturar o ouro B097).
 - Residual B099b (Sync flat vs SDT raiz hierárquico): **encerrado na Fase 7** (`DetectSdtConflicts` vazio em metadata hierárquica; smoke Sync 2026-08-28 sem conflito).
 - Sync hierárquico — falso `Added` por campo de subnível omitido de propósito no Wizard: **corrigido e smoke U15 2026-08-28** (`TesteItemObs2` desmarcado → Sync `Adicionados=0`, `Inalterados=17`). Metadata antiga só melhora após regravação de `levels`.
-- UX de espera do Wizard, Sync e Remover — `B082` Fases A+B em código; Etapa 1A **aceita** em 2026-09-03 (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`). Residual 1B/2/3 no plano de 2026-09-02, sem ser a próxima ação única. Registro da entrega alpha.7: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
+- UX de espera do Wizard, Sync e Remover — `B082` Fases A+B em código; Etapa 1A **aceita** em 2026-09-03 (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`). Após a retomada de 2026-09-16, Etapas **2** e **3** fechadas; **resta Etapa 1B** (adiada) no plano de hardening, sem ser a próxima ação única. Registro da entrega alpha.7: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 
 ## Documentos governantes
@@ -723,7 +723,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 10 — Beta estável (`B108` está estacionado; a F1 da sprint `S-B111` foi implementada e validada para encerramento com a exceção explícita do `B121`; a F2 foi encerrada após bateria offline, cenários IDE positivos, cancelamento cooperativo, recomposição, escala e falhas controladas; a F3 foi encerrada em 2026-09-15, com as nove etapas entregues e os nove cenários da P8 exercidos na IDE — oito passaram e um foi reformulado pelo que mediu; Etapa 1A do `B082` aceita em 2026-09-03; residual 1B/2/3 no plano de hardening).
+- Sprint 10 — Beta estável (`B108` está estacionado; a F1 da sprint `S-B111` foi implementada e validada para encerramento com a exceção explícita do `B121`; a F2 foi encerrada após bateria offline, cenários IDE positivos, cancelamento cooperativo, recomposição, escala e falhas controladas; a F3 foi encerrada em 2026-09-15, com as nove etapas entregues e os nove cenários da P8 exercidos na IDE — oito passaram e um foi reformulado pelo que mediu; Etapa 1A do `B082` aceita em 2026-09-03; retomada 2026-09-16 fechou Etapas 2 e 3; **resta Etapa 1B** no plano de hardening).
 
 ## Protocolo de atualização
 
