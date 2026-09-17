@@ -19,7 +19,7 @@ Abra no GeneXus 18 uma KB pequena, fora de produção.
 
 ## 2. Menu principal
 
-Menu **Genexus Open API Builder** (antes de **Help**): Preferências, Wizard, Sincronizar e Remover.
+Menu **Genexus Open API Builder** (antes de **Help**): Preferências, Wizard, Sincronizar, Remover e Recuperar.
 
 ![Menu Genexus Open API Builder](../Images/alpha-menu.png)
 
@@ -31,7 +31,7 @@ Defaults por KB (etapas de geração, serviços, segurança e paginação), grav
 
 ## 4. Menu de contexto da Transaction
 
-No objeto Transaction: **Genexus Open API Builder** → Wizard / Sincronizar / Remover.
+No objeto Transaction: **Genexus Open API Builder** → Wizard / Sincronizar / Remover / Recuperar.
 
 ![Menu de contexto](../Images/alpha-context-menu.png)
 
