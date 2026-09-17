@@ -1,6 +1,6 @@
 # Instalação — Genexus Open API Builder
 
-Guia para instalar a extensão no **GeneXus 18**. A Alpha `0.1.0-alpha.8` publica duas DLLs: uma para a linha U14+ e outra para o Upgrade 13. A validação principal da linha canônica foi feita no **Upgrade 15**; o Upgrade 14 foi confirmado por usuário externo com a Alpha `0.1.0-alpha.1` (carregamento + geração), ver [evidência 2026-08-12](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md).
+Guia para instalar a extensão no **GeneXus 18**. A Alpha `0.1.0-alpha.8` publica duas DLLs: uma para a linha **U14+** e outra para a linha **U13−** (Upgrade 13 e anteriores). A validação principal da linha canônica foi feita no **Upgrade 15**; o Upgrade 14 foi confirmado por usuário externo com a Alpha `0.1.0-alpha.1` (carregamento + geração), ver [evidência 2026-08-12](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md). A linha **U13−** foi validada formalmente no **Upgrade 13**; upgrades anteriores podem funcionar, sem matriz completa nesta Alpha.
 
 Há dois caminhos:
 
@@ -24,8 +24,8 @@ No GitHub Release `0.1.0-alpha.8`, baixe somente um dos arquivos:
 
 | Arquivo | Use quando | Não use quando |
 |---|---|---|
-| `GenexusOpenApiBuilder.Extension.dll` | A IDE é GeneXus 18 U14, U15 ou posterior U14+ | A IDE é GeneXus 18 U13 |
-| `GenexusOpenApiBuilder.Extension-gx18u13.dll` | A IDE é GeneXus 18 U13 | A IDE é GeneXus 18 U14+ |
+| `GenexusOpenApiBuilder.Extension.dll` | A IDE é GeneXus 18 U14, U15 ou posterior (**U14+**) | A IDE é GeneXus 18 **U13−** (Upgrade 13 ou anterior) |
+| `GenexusOpenApiBuilder.Extension-gx18u13.dll` | A IDE é GeneXus 18 Upgrade 13 ou anterior (**U13−**) | A IDE é GeneXus 18 **U14+** |
 
 O nome com `-gx18u13` é o nome público do asset para distinguir as linhas. Não instale as duas DLLs na mesma IDE e não use uma DLL de uma linha em outra.
 
@@ -57,7 +57,7 @@ Em 2026-08-11 o mantenedor reexecutou limpeza real (apagar a DLL em `Packages` +
 
 Em 2026-08-12 um usuário externo (Igor C. Menin) instalou a DLL do Release `0.1.0-alpha.1` no GeneXus 18 U14 copiando-a para `Packages` e executando `genexus /install`, com menus e geração confirmados. Essa cópia manual é **variante observada**, não o caminho oficial deste guia. Evidência: [U14](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md) (issue [#1](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/1)).
 
-Para a linha U13, a DLL `GenexusOpenApiBuilder.Extension-gx18u13.dll` é o asset público específico do GeneXus 18 Upgrade 13. A compatibilidade foi validada pelo carregamento, menus, Wizard e `Build All` no U13; siga a mesma sequência de **Add > Local** e `genexus /install`, apontando para esse arquivo, sem misturá-lo com a DLL U14+.
+Para a linha **U13−**, a DLL `GenexusOpenApiBuilder.Extension-gx18u13.dll` é o asset público de GeneXus 18 Upgrade 13 e anteriores. A compatibilidade foi validada formalmente pelo carregamento, menus, Wizard e `Build All` no U13; upgrades anteriores podem funcionar sem matriz completa nesta Alpha. Siga a mesma sequência de **Add > Local** e `genexus /install`, apontando para esse arquivo, sem misturá-lo com a DLL U14+.
 
 No mesmo dia, outro usuário externo (Miguel) confirmou uso bem-sucedido no GeneXus 18 U15 pelo **caminho de mantenedor**: repositório baixado, DLL do build local e `Install-ExtensionForGeneXus18.bat` antes de `genexus /install` — não a variante Packages/Release do parágrafo acima. Evidência: [U15](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U15-ALPHA.md) (issue [#3](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/issues/3)).
 

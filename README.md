@@ -44,8 +44,8 @@ Em recusa de regra do Business Component, `Create` e `Update` respondem **HTTP 4
 |------|--------|
 | Wizard funcional do MVP | Concluído (GeneXus 18 U15) |
 | Ciclo de vida (posse, sync, remoção, relatório) | Concluído |
-| Alpha pública `0.1.0-alpha.8` | Pacote desta release (diário de operação + residual B082), com assets U14+ e U13 |
-| Upgrade 13 | DLL satélite `GenexusOpenApiBuilder.Extension-gx18u13.dll` validada no U13 |
+| Alpha pública `0.1.0-alpha.8` | Pacote desta release (diário de operação + residual B082), com assets U14+ e U13− |
+| Upgrade 13 e anteriores (**U13−**) | DLL satélite `GenexusOpenApiBuilder.Extension-gx18u13.dll`; validação formal no U13 |
 | Upgrade 14 | Confirmado por usuário externo (Alpha `0.1.0-alpha.1`; carregamento + geração) |
 | Upgrade 15 | Base do desenvolvimento; uso confirmado por usuário externo pelo caminho de mantenedor (build local + `Install-ExtensionForGeneXus18.bat`) |
 
@@ -55,8 +55,8 @@ O Release `0.1.0-alpha.8` contém duas DLLs. Instale somente a correspondente à
 
 | Arquivo no GitHub Release | Serve para | Observação |
 |---|---|---|
-| `GenexusOpenApiBuilder.Extension.dll` | GeneXus 18 Upgrade 14, Upgrade 15 e posteriores U14+ | Linha canônica; não usar no U13 |
-| `GenexusOpenApiBuilder.Extension-gx18u13.dll` | GeneXus 18 Upgrade 13 | Linha satélite U13; não usar em U14+ |
+| `GenexusOpenApiBuilder.Extension.dll` | GeneXus 18 Upgrade 14, Upgrade 15 e posteriores (**U14+**) | Linha canônica; não usar em **U13−** |
+| `GenexusOpenApiBuilder.Extension-gx18u13.dll` | GeneXus 18 Upgrade 13 e anteriores (**U13−**) | Linha satélite; validação formal no U13; não usar em **U14+** |
 
 O sufixo `-gx18u13` identifica apenas o asset de download. Não renomeie os arquivos para trocar de linha nem instale as duas DLLs na mesma IDE.
 
