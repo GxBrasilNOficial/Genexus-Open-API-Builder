@@ -11,14 +11,16 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// <summary>
 /// Índice por nome dos objetos da KB — uma varredura GetAll por tipo (B082 / abertura do wizard).
 /// Reutilizar entre inspeção do wizard e Apply evita O(n×m) no preflight de KBs grandes.
+/// B082 Etapa 1B: mapas de tipos removíveis no Remover deixam de ser <c>readonly</c> para
+/// permitir remoção pontual por GUID após confirmação pós-<c>Delete</c> por leitura corrente.
 /// </summary>
 internal sealed class ApiPlanKbObjectNameIndex
 {
     private ILookup<string, Folder> _folders;
     private ILookup<string, SDT> _sdts;
-    private readonly ILookup<string, Procedure> _procedures;
-    private readonly ILookup<string, API> _apis;
-    private readonly ILookup<string, WikiFileKBObject> _files;
+    private ILookup<string, Procedure> _procedures;
+    private ILookup<string, API> _apis;
+    private ILookup<string, WikiFileKBObject> _files;
     private readonly ILookup<string, Transaction> _transactions;
     private readonly ILookup<string, GxAttribute> _attributes;
 
@@ -83,6 +85,43 @@ internal sealed class ApiPlanKbObjectNameIndex
         }
 
         _sdts = ApiPlanScanProbe.Scan("SDT", "indice-refresh", () => SDT.GetAll(designModel).ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// B082 Etapa 1B / Nível B: retira do mapa o objeto cuja ausência já foi atestada por
+    /// leitura corrente após <c>Delete()</c>. Não substitui a confirmação; sem GUID válido é no-op.
+    /// </summary>
+    internal void ForgetRemovedApi(Guid objectGuid) =>
+        _apis = FilterOutByGuid(_apis, objectGuid);
+
+    /// <inheritdoc cref="ForgetRemovedApi"/>
+    internal void ForgetRemovedProcedure(Guid objectGuid) =>
+        _procedures = FilterOutByGuid(_procedures, objectGuid);
+
+    /// <inheritdoc cref="ForgetRemovedApi"/>
+    internal void ForgetRemovedSdt(Guid objectGuid) =>
+        _sdts = FilterOutByGuid(_sdts, objectGuid);
+
+    /// <inheritdoc cref="ForgetRemovedApi"/>
+    internal void ForgetRemovedFile(Guid objectGuid) =>
+        _files = FilterOutByGuid(_files, objectGuid);
+
+    /// <inheritdoc cref="ForgetRemovedApi"/>
+    internal void ForgetRemovedFolder(Guid objectGuid) =>
+        _folders = FilterOutByGuid(_folders, objectGuid);
+
+    private static ILookup<string, T> FilterOutByGuid<T>(ILookup<string, T> lookup, Guid objectGuid)
+        where T : KBObject
+    {
+        if (objectGuid == Guid.Empty)
+        {
+            return lookup;
+        }
+
+        return lookup
+            .SelectMany(group => group)
+            .Where(item => item.Guid != objectGuid)
+            .ToLookup(item => item.Name, StringComparer.OrdinalIgnoreCase);
     }
 
     internal IReadOnlyList<Folder> FindFolders(string name) => _folders[name].ToArray();

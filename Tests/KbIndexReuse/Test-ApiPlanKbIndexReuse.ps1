@@ -193,6 +193,8 @@ $allowedCreateSymbols = [System.Collections.Generic.HashSet[string]]::new([Strin
 [void]$allowedCreateSymbols.Add('ResolveIntent')
 # Preview do Remover (B082 Etapa 2): captura identidades; Create so se o caller nao passou indice.
 [void]$allowedCreateSymbols.Add('CapturePreviewIdentities')
+# Retomada de remoção interrompida (B082 Etapa 1B / F3): um índice por ContinueInterruptedRemoval.
+[void]$allowedCreateSymbols.Add('ContinueInterruptedRemoval')
 # Comando de recuperacao (B111/F3 P6): uma montagem por invocacao do comando, para localizar o
 # diario pelo nome fixo e reler cada alvo do inventario por identidade.
 [void]$allowedCreateSymbols.Add('RunRecovery')

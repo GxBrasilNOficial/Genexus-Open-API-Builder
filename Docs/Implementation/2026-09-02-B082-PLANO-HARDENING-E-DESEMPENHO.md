@@ -29,7 +29,9 @@ foi a primeira ação de código desta frente entre 2026-09-02 e o aceite da Eta
 naquele momento, o checkpoint promoveu `B108` à próxima ação única. **Essa promoção foi superada
 em 2026-09-05**: `B108` foi estacionado e a próxima ação única passou a ser decidir o encerramento
  da revisão e autorizar a F1 da sprint `S-B111`. Essa decisão já ocorreu; a F1 foi implementada e
- recebeu validação manual para encerramento com a exceção explícita do `B121` em 2026-09-10/11. No encerramento da `S-B111` (2026-09-15), por decisão declarada, o residual 1B/2/3 ficou fora da sprint e da pauta imediata; a sprint não fechou automaticamente o `B082`. **Estado após a retomada (2026-09-16):** Etapas **2** e **3** fechadas; **resta Etapa 1B** (adiada) neste plano.
+ recebeu validação manual para encerramento com a exceção explícita do `B121` em 2026-09-10/11. No encerramento da `S-B111` (2026-09-15), por decisão declarada, o residual 1B/2/3 ficou fora da sprint e da pauta imediata; a sprint não fechou automaticamente o `B082`. **Estado após a retomada (2026-09-16):** Etapas **2** e **3** fechadas; Etapa **1B** ainda
+aberta naquela data. **Remissão — 2026-09-17:** Etapa 1B aceita (com ressalva de relógio) e
+residual `B082` **fechado** — `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`.
 Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`.
 
 ## Retomada em duas sessões (aprovada 2026-09-16)
@@ -51,10 +53,13 @@ continua sendo `B122` até priorização humana explícita deste residual.
 
 **Progresso Sessão A (2026-09-16).** Etapa 2 **implementada offline** no código desta sessão: `ExtensionOperationGuard` nos cinco handlers (Wizard, Sync, Remover, Preferências e Recuperar — este último incluído após o aceite IDE revelar que o menu de recuperação furava a exclusão mútua; a oferta proativa pós-bloqueio do diário continua sob a guarda do handler que falhou o Start, sem segundo `TryEnter`); avisos simples da Recuperar migrados de `MessageBox` para `ExtensionRecoveryDialog`; fila de remoção e `ApiPlanSaveStepExecutor` com `Report` → `ThrowIfAbort` → mutar; `OnAbortClicked` sem `DoEvents`; `ResolveIntent` consome a mesma instância do Preview com captura de identidades e bloqueio por divergência; `DeleteOwnFolder` exige `IsInExpectedContainer` + GUID do Preview (sem `IsReusable` do Apply). Gate `tests.b082Etapa2Safety`. **Fatia A da Etapa 3 (mesma data):** `DEMO.md` alinhado a casca modeless e abort cooperativo com estado parcial + Recuperar; higiene pendência 3 (probe `SdtReencounter` absorvido em `tests.kbIndexReuse`, pasta removida); allowlist de `Create` do lint atualizada aos handlers `*Core` da guarda; casca antes do relatório e Preferências no monitor da IDE **já estavam no código** (`CloseCurrent` / `CenterOnIdeScreen`). **Fatia B + pendência 4 (mesma data, segunda janela):** Folder preservado tipado (`PreservedNonEmptyFolders` / `AddPreservedNonEmptyFolder`); `TryParsePreservedFolder` removido; `MemberMatchesItem` rejeita `idJsonJsonNull` inesperado e o writer limpa com `idJsonNoProperty`. Etapa 1B **não** entrou. B082 permanece residual aberto; próxima ação única continua `B122`.
 
-**Progresso Sessão B (fechada, 2026-09-16).** KB `wsEducacaoSpTeste`, Transaction `Teste`: itens 142–148 (guarda, abort, D10, Preview divergente, casca×relatório, Folder tipado com aviso `nao ficou vazio`); item 149 — DEMO §21 conferido contra o exercido. Sessão B do residual **encerrada**; Etapa **1B** permanece adiada. Evidência 142–149 — `B124`.
+**Progresso Sessão B (fechada, 2026-09-16).** KB `wsEducacaoSpTeste`, Transaction `Teste`: itens 142–148 (guarda, abort, D10, Preview divergente, casca×relatório, Folder tipado com aviso `nao ficou vazio`); item 149 — DEMO §21 conferido contra o exercido. Sessão B do residual **encerrada**; Etapa **1B** ficou adiada naquela data. Evidência 142–149 — `B124`.
 
-**Etapa 1B** permanece adiada: contrato de índice mutável (Nível B) antes de qualquer código;
-confirmações pós-`Delete` continuam individuais e por leitura corrente.
+**Etapa 1B (2026-09-17).** Contrato Nível B **escrito**; código offline **implementado**;
+aceite IDE na KB grande **aceito por decisão humana** com ressalva de relógio em `Setor` /
+`Empresa` — evidência `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`. Gate
+`tests.b082Etapa1BIndex`. **Residual `B082` fechado** (1A + 1B + Etapas 2 e 3). Confirmações
+pós-`Delete` continuam individuais e por leitura corrente (decisão 3).
 
 A primeira redação deste documento afirmava que o checkpoint não mudaria. Isso se sustentava
 enquanto ele fosse planejamento; deixou de valer quando a implementação foi autorizada, e a
@@ -495,9 +500,52 @@ estrutural muda junto (as três linhas somem e `Procedure/indice-refresh` aparec
 feita, nada muda no aceite. O item A1 do apêndice descreve os três passos que ela exige.
 
 **Etapa 1B — desempenho atravessando mutação.** Índice mantido coerente conforme a extensão cria
-e apaga, com o contrato exigido pelo Nível B da decisão 1 escrito antes do código. Cobre a
-validação agregada, a localização e a revalidação do Remover. **Não** cobre as confirmações
-pós-`Delete`, que permanecem individuais e por leitura corrente.
+e apaga, com o contrato Nível B abaixo (exigido pela decisão 1) escrito **antes** do código.
+Cobre a validação agregada, a localização e a revalidação do Remover. **Não** cobre as
+confirmações pós-`Delete`, que permanecem individuais e por leitura corrente.
+
+### Contrato Nível B — índice sob mutação (Remover / Etapa 1B)
+
+Normativo para a implementação da 1B. Escrito em 2026-09-17. Não altera Etapas 2 e 3 já fechadas.
+
+**Escopo.** Somente o Remover nesta etapa. Fora: `RefreshProcedures` do Apply (opcional da 1A);
+journal, fila e recovery da F3; agregação de confirmações pós-`Delete`.
+
+**Invariante.** Depois de uma mutação **bem-sucedida** da extensão neste Remover, `Find*` do tipo
+afetado **não** devolve o objeto removido (mesmo nome + mesmo GUID).
+
+**Momento da atualização.** O índice só é atualizado **depois** de a confirmação pós-`Delete` por
+leitura corrente atestar ausência do GUID. `Delete()` sem confirmação de ausência, exceção,
+`NotAttempted`, `Preserved` ou abort **antes** dessa confirmação → índice intacto para aquele alvo.
+
+**Após exceção ou abort.** O índice pode refletir só o subconjunto já confirmado como removido.
+Não reconstruir o índice com `Create` no meio da fila. Não usar o índice como prova de que o
+`Delete()` surtiu efeito.
+
+**Duplicidade.** Se o índice (ou a leitura corrente, onde ela ainda for obrigatória) encontrar
+mais de um homônimo, o fluxo bloqueia como hoje. O índice não escolhe «o certo» entre ambíguos.
+
+**Mudança de contêiner.** O Folder do Remove continua exigindo GUID do Preview e
+`IsInExpectedContainer` (Etapa 2 / D10). O índice **não** substitui essas checagens.
+
+**Uso permitido do índice mantido.** Validação agregada (já Nível A no `ResolveIntent`);
+localização antes do `Delete`; revalidação de identidade imediatamente antes do `Delete`.
+
+**Proibido.** Confirmação pós-`Delete` via índice ou qualquer cache derivado; agregar
+confirmações ao fim da fila (decisão 3).
+
+**Mecanismo.** Preferir remoção pontual do mapa do tipo (por GUID) após confirmação positiva de
+ausência — ou reatribuição mínima equivalente desse mapa. Evitar `GetAll` completo por alvo só
+para manter coerência. `RefreshFolders` / `RefreshSdts` do Apply **não** são o modelo obrigatório
+da 1B no Remover; se algum refresh por tipo entrar, documentar por que a remoção pontual não
+bastou.
+
+**Marcas e metas (aceite).** Com a DLL desta frente, na KB grande `FabricaBrasil18Test`:
+`localizacao-delete` e `revalidacao-pre-delete` deixam de varrer o catálogo; `confirmacao-pos-delete`
+permanece **uma por objeto**. Metas de relógio (referência): Remove `Setor` ≤ 7 s, `Empresa` ≤ 20 s,
+`DocumentoFiscal` ≤ 9 s. Números da medição 2026-09-02 **não** provam a DLL atual. Se as marcas
+estruturais sumirem e o relógio falhar, reportar e parar para decisão humana — não afrouxar meta
+sozinho.
 
 **Etapa 2 — segurança.** Guarda de operação única nos cinco handlers (`ExecuteOpenWizardStepOne`,
 `ExecuteSynchronizeWithTransaction`, `ExecuteRemoveGeneratedApi`, `ExecuteConfigureWizardPreferences`,
@@ -762,37 +810,41 @@ o código à frente. O que segue é o mapa, não o caminho.
 Todas as referências são por **arquivo e símbolo**. Números de linha aparecem só como auxílio
 de navegação e podem ter mudado; confirme pelo símbolo.
 
-### A1 — O índice hoje é imutável, e a 1A não muda isso
+### A1 — O índice na 1A era imutável nos tipos do Remover; a 1B muda isso
 
 `ApiPlanKbObjectNameIndex` guarda os sete mapas como `ILookup<string, T>`, que **não permite
-inserção nem remoção**. Cinco dos sete campos são `readonly` — `_procedures`, `_apis`,
-`_files`, `_transactions` e `_attributes` — e por isso nem podem ser reatribuídos. Apenas
-`_folders` e `_sdts` não são `readonly`, o que é exatamente a razão de só eles terem
-`RefreshFolders` e `RefreshSdts`, ambos reconstruindo o mapa inteiro com um novo `GetAll`.
+inserção nem remoção in-place**. Até a 1A, cinco dos sete campos eram `readonly` —
+`_procedures`, `_apis`, `_files`, `_transactions` e `_attributes` — e por isso nem podiam ser
+reatribuídos. Apenas `_folders` e `_sdts` tinham `RefreshFolders` e `RefreshSdts`, ambos
+reconstruindo o mapa inteiro com um novo `GetAll`.
 
-**Isso é assunto da Etapa 1B, não da 1A.** Uma redação anterior deste apêndice mandava tornar o
-índice mutável como primeira decisão técnica da Etapa 1 — está revogada. A 1A **não altera a
-estrutura do índice**: ele continua `ILookup`, e `RefreshFolders` e `RefreshSdts` continuam
-existindo e sendo chamados. Removê-los reabriria o defeito em que um segundo `CreateOrReencounter`
-no mesmo Apply tentava criar `GxOpenAPI` de novo, e há teste textual que exige essas chamadas.
+**A Etapa 1A não alterou essa estrutura.** O índice continuou `ILookup`, e `RefreshFolders` e
+`RefreshSdts` continuaram existindo e sendo chamados. Removê-los reabriria o defeito em que um
+segundo `CreateOrReencounter` no mesmo Apply tentava criar `GxOpenAPI` de novo, e há teste
+textual que exige essas chamadas.
 
-O que a imutabilidade impede, e que por isso fica na 1B: manter o índice fiel **através** das
-mutações. Enquanto ela não existir, todo lookup posterior a uma gravação depende de um
-`Refresh<Tipo>` daquele tipo — que só existe para Folder e SDT — ou permanece em leitura corrente.
+**Remissão — 2026-09-17 (Etapa 1B):** `_procedures`, `_apis` e `_files` deixaram de ser
+`readonly` e passaram a aceitar remoção pontual por GUID (`ForgetRemoved*`) **depois** da
+confirmação pós-`Delete` por leitura corrente. `_transactions` e `_attributes` permanecem
+`readonly` — o Remover não os apaga. Isto **não** é `RefreshProcedures` do Apply (opcional da
+1A); é coerência do índice sob exclusão no Remover.
 
-**A ausência de `RefreshProcedures` é a consequência prática mais importante.** `_procedures` é
-`readonly`, então nem reatribuir é possível hoje. Criar um `RefreshProcedures` no molde exato do
-`RefreshSdts` — uma varredura, reatribuindo o campo, sem tornar o índice incremental — é
-**extensão opcional da 1A**, não parte do escopo mínimo. A política está fixada na seção «Ordem de
-execução»: as três buscas ficam **fora por padrão**, e as metas pressupõem isso. Se a extensão for
-feita, ela libera `PreflightRequiredProcedures`, `FindProcedure` e `FindListProcedure`, rendendo
-cerca de 3,6 s a mais por Apply na KB grande — ganho adicional, nunca requisito.
+O que a imutabilidade da 1A impedia, e que a 1B entrega no Remover: manter o índice fiel
+**através** das exclusões confirmadas, para localização e revalidação sem `GetAll` por alvo.
 
-São três passos, e **os três são obrigatórios juntos**: tirar o `readonly` de `_procedures`;
-acrescentar o método; e **chamá-lo nos dois fluxos que gravam Procedures**, logo após a respectiva
-fase, exatamente como `RefreshSdts` já é chamado após a fase de SDTs —
-`kbIndexForApply.RefreshSdts(...)` em `Package.cs:1430` no Apply e `syncKbIndex.RefreshSdts(...)`
-em `Package.cs:767` no Sincronizar. Um `RefreshProcedures` só no Apply deixaria o Sync com mapa
+**A ausência de `RefreshProcedures` no Apply permanece.** Criar um `RefreshProcedures` no molde
+exato do `RefreshSdts` — uma varredura, reatribuindo o campo, sem tornar o índice incremental —
+é **extensão opcional da 1A**, não parte do escopo mínimo nem da 1B. A política está fixada na
+seção «Ordem de execução»: as três buscas de Procedure pós-gravação no Apply ficam **fora por
+padrão**, e as metas pressupõem isso. Se a extensão for feita, ela libera
+`PreflightRequiredProcedures`, `FindProcedure` e `FindListProcedure`, rendendo cerca de 3,6 s a
+mais por Apply na KB grande — ganho adicional, nunca requisito.
+
+São três passos, e **os três são obrigatórios juntos** se a extensão opcional for escolhida:
+acrescentar o método `RefreshProcedures`; e **chamá-lo nos dois fluxos que gravam Procedures**,
+logo após a respectiva fase, exatamente como `RefreshSdts` já é chamado após a fase de SDTs —
+`kbIndexForApply.RefreshSdts(...)` em `Package.cs` no Apply e `syncKbIndex.RefreshSdts(...)`
+em `Package.cs` no Sincronizar. Um `RefreshProcedures` só no Apply deixaria o Sync com mapa
 desatualizado.
 
 O repositório tem **três** call sites de refresh, não dois: além desses dois de `RefreshSdts`,
@@ -1206,13 +1258,16 @@ da 1A.
 
 ### A4 — No Remover
 
-`ApiPlanGeneratedApiRemover` faz quatro varreduras por objeto, hoje todas com `kbIndex: null`
-depois da validação agregada:
+`ApiPlanGeneratedApiRemover` faz quatro consultas por objeto. **Remissão — 2026-09-17 (Etapa 1B):**
+com o índice mantido na fila, localização e revalidação usam `Find*`; confirmação pós-`Delete`
+permanece em `GetAll` individual. Sem índice (wrapper de teste / caminho nulo), as três primeiras
+ainda caem em `GetAll`:
 
 - validação agregada (`ValidateRemovalTargets`) — roda **antes de qualquer exclusão**, portanto é
-  Nível A: pode usar o índice já na Etapa 1A;
+  Nível A: usa o índice já na Etapa 1A / `ResolveIntent`;
 - localização antes do `Delete` (`DeleteSingleProcedure`, `DeleteApiObject`, `DeleteSingleOwnSdt`,
-  `MaybeDeleteFolder`) — Nível B, exige índice mantido;
+  `DeleteMetadataFile`, `DeleteOwnFolder`) — Nível B: índice mantido + `ForgetRemoved*` após
+  ausência confirmada;
 - revalidação de identidade imediatamente antes do `Delete` — Nível B, idem;
 - confirmação depois do `Delete` — **permanece individual e por leitura corrente**. Ela existe
   para constatar que o `Delete()` do SDK surtiu efeito; um índice, mantido ou não, não responde a

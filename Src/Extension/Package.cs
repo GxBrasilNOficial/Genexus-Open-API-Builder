@@ -781,6 +781,8 @@ public sealed class Package : AbstractPackageUI
         ApiPlanGeneratedApiRemovalResult removal;
         using (var busy = ExtensionBusyProgressScope.Show(owner, texts.BusyProgressTitleRemove, texts))
         {
+            // B082 Etapa 1B: um índice por retomada — localização/revalidação coerente na fila.
+            var kbIndex = ApiPlanKbObjectNameIndex.Create(knowledgeBase.DesignModel, busy.Session);
             try
             {
                 removal = ApiPlanGeneratedApiRemover.Execute(
@@ -798,7 +800,8 @@ public sealed class Package : AbstractPackageUI
                         return confirmed;
                     },
                     plan: null,
-                    preservedNonEmptyFolderSink: preservedNonEmptyFolders);
+                    preservedNonEmptyFolderSink: preservedNonEmptyFolders,
+                    kbIndex: kbIndex);
             }
             catch (ApiPlanBusyAbortedException abortEx)
             {

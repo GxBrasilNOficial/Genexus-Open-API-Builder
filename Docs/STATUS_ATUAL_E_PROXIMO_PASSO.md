@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-16.
+2026-09-17.
 
 ## Último marco concluído
 
@@ -308,24 +308,29 @@ Dois documentos anteriores estão **superados** e não devem ser submetidos nem 
 
 `B108` volta para missão estacionada, com plano aprovado e sem trabalho perdido.
 
-A Etapa 1A do hardening `B082` **fechou em 2026-09-03**. Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`. Plano (resta **1B**; 2 e 3 fechadas na retomada de 2026-09-16; sem ser a pauta imediata): `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`. Entrega do alpha.7: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
+A Etapa 1A do hardening `B082` **fechou em 2026-09-03**. Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`. Plano (1B aceita 2026-09-17 com ressalva de relógio; 2 e 3 fechadas 2026-09-16; **residual B082 fechado**): `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md` e `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`. Entrega do alpha.7: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
 Notas do corte: `Docs/Releases/0.1.0-alpha.7.md`.
 Release: https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.7
 `B105` permanece folga/Sprint 10.
 
 ## Missão estacionada (outra sessão)
 
-Residual `B082` após a 1A: **resta Etapa 1B** (índice mutável no Remover); Etapas **2** (segurança/abort/Folder) e **3** (casca × B081 e UX) **fechadas** na retomada de 2026-09-16. Não é a próxima ação única. Plano: `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`. **Anotado no plano:** ~~higiene do probe `SdtReencounter` (pendência 3)~~ **feita em 2026-09-16**; ~~matcher `idJsonInclude` unidirecional (pendência 4)~~ **feita em 2026-09-16**. **Aceite 1A:** tabela Apply da KB grande é DLL `ce30374`; emissor de SDT mudou em `0568677`/`cfb73b0` (números conservadores; não reusar como linha de base atual).
+~~Residual `B082`~~ **fechado em 2026-09-17** (Etapa 1B aceita com ressalva de relógio;
+evidência `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`). Etapas 1A (2026-09-03), 2 e
+3 (2026-09-16) e 1B (2026-09-17) concluídas. Plano:
+`Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`. **Aceite 1A:** tabela Apply
+da KB grande é DLL `ce30374`; emissor de SDT mudou em `0568677`/`cfb73b0` (números conservadores
+da 1A).
 
 O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. A próxima ação única vigente é `B122` (ver seção «Próxima ação única»).
 
-A conclusão da `S-B111` não fechou automaticamente o `B082`: no encerramento, por decisão declarada (item 135), o residual 1B/2/3 ficou fora da sprint e da pauta imediata; o que a sprint absorveu (ordem do API Object, seam de persistência, remoção por fila) já está nas fases F1–F3.
+A conclusão da `S-B111` não fechou automaticamente o `B082`: no encerramento, por decisão declarada (item 135), o residual 1B/2/3 ficou fora da sprint e da pauta imediata; o que a sprint absorveu (ordem do API Object, seam de persistência, remoção por fila) já está nas fases F1–F3. O fechamento do residual veio depois, na retomada de 2026-09-16 (Etapas 2+3) e no aceite 1B de 2026-09-17.
 
-**Retomada do residual `B082` em duas sessões (aprovada 2026-09-16).** Na abertura da retomada, reconciliação somente leitura confirmou no código que 1B/2/3 ainda estavam abertos e que a S-B111 não os fechara. **Ao fim da retomada:** Etapas **2** e **3** fechadas (Sessões A+B); **resta 1B** (adiada). Sequência aprovada, **fora da pauta imediata** até priorização humana explícita (não displace `B122`):
+**Retomada do residual `B082` em duas sessões (aprovada 2026-09-16; residual fechado 2026-09-17).** Na abertura da retomada, reconciliação somente leitura confirmou no código que 1B/2/3 ainda estavam abertos e que a S-B111 não os fechara. **Ao fim:** Etapas **2** e **3** fechadas (Sessões A+B); Etapa **1B** aceita na IDE com ressalva de relógio — **B082 fechado**.
 
-1. **Sessão A (código, sem install GeneXus):** Etapa 2 — **implementada offline em 2026-09-16** (guarda de operação única; abort `Report` → `ThrowIfAbort` → mutar; sem `DoEvents` no clique Abort; Preview→Remove por referência com identidade/hash e zero deletes se divergir; contêiner+GUID no Folder do Remove). Aceite IDE do caso 1 revelou furo: `Recuperar operação interrompida` ficou fora da guarda — **corrigido na mesma data** (menu disputa a guarda; oferta proativa pós-bloqueio do diário continua sob a guarda do handler que falhou o Start). Na mesma rodada, avisos simples da Recuperar ainda em `MessageBox` passaram a `ExtensionRecoveryDialog`. Gate `tests.b082Etapa2Safety`. **Fatia A da Etapa 3 (2026-09-16):** `DEMO.md` (modeless + abort cooperativo); higiene pendência 3 (`SdtReencounter` → `tests.kbIndexReuse`); allowlist `Create` alinhada aos `*Core`; casca/Preferências já no código. **Fatia B + pendência 4 (2026-09-16):** Folder preservado tipado (fora da lista de removidos); matcher `idJsonInclude` bidirecional + limpeza no writer. **Falta** Etapa 1B. Sem install GeneXus nesta fatia de código; B082 **não** fechado (resta 1B).
-2. **Sessão B (IDE):** **fechada em 2026-09-16** na `Teste`/`wsEducacaoSpTeste` (itens 142–149). Fechados: diálogo unificado da Recuperar; oferta proativa; guarda com Recuperar em andamento; retomada `ContinueRemovePass`; **guarda inversa**; **abort no Remove**; **Folder D10** fora do contêiner; **Preview divergente → zero exclusões**; **casca × relatório** (sucesso/abort/bloqueio); **Folder tipado não-vazio** (item 148); **DEMO** §21 modeless + Abortar/parcial/`Recuperar` alinhado ao exercido (item 149).
-3. **Etapa 1B** permanece adiada (contrato de índice mutável antes de código).
+1. **Sessão A (código, sem install GeneXus):** Etapa 2 — **implementada offline em 2026-09-16** (guarda de operação única; abort `Report` → `ThrowIfAbort` → mutar; sem `DoEvents` no clique Abort; Preview→Remove por referência com identidade/hash e zero deletes se divergir; contêiner+GUID no Folder do Remove). Aceite IDE do caso 1 revelou furo: `Recuperar operação interrompida` ficou fora da guarda — **corrigido na mesma data** (menu disputa a guarda; oferta proativa pós-bloqueio do diário continua sob a guarda do handler que falhou o Start). Na mesma rodada, avisos simples da Recuperar ainda em `MessageBox` passaram a `ExtensionRecoveryDialog`. Gate `tests.b082Etapa2Safety`. **Fatia A da Etapa 3 (2026-09-16):** `DEMO.md` (modeless + abort cooperativo); higiene pendência 3 (`SdtReencounter` → `tests.kbIndexReuse`); allowlist `Create` alinhada aos `*Core`; casca/Preferências já no código. **Fatia B + pendência 4 (2026-09-16):** Folder preservado tipado (fora da lista de removidos); matcher `idJsonInclude` bidirecional + limpeza no writer.
+2. **Sessão B (IDE):** **fechada em 2026-09-16** na `Teste`/`wsEducacaoSpTeste` (itens 142–149).
+3. **Etapa 1B (2026-09-17):** contrato + código + gate; aceite Remove em `FabricaBrasil18Test` — marcas 1B ok nas três; relógio `DocumentoFiscal` ok; `Setor`/`Empresa` acima do teto com ressalva humana — `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`.
 
 Detalhe normativo: seção «Retomada em duas sessões» em `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md`.
 
@@ -640,6 +645,8 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 147. Em 2026-09-16, **caso 6 (Folder tipado não-vazio / Fatia B) — falhou o critério tipado** na mesma KB/`Teste`: Folder recriado no Root Module pelo Wizard; WebPanel colocado dentro de `TesteOpenApi`; Remover `OperationId=27673109-…`, `Estado=Partial`, `BlockReason=RetryBudgetExhausted`, `Passadas=26/26`, `Removidos=25`, `Preservados=0`, `Pendentes=1`, `Bloqueado='Folder:TesteOpenApi'`. Relatório B081 `Removidos=25` / `Bloqueados=1` / `Avisos=1` com aviso de interrupção por orçamento — **sem** o aviso tipado `Folder 'TesteOpenApi' nao foi apagado porque nao ficou vazio.` e **sem** string mágica `Folder:…:PreservedNonEmpty` em Removidos. Folder e WebPanel permaneceram na KB (efeito físico ok; classificação errada). Causa no código: `IsFolderEmpty` só varria API/Procedure/SDT/File/Folder — **não contava WebPanel**; a fila tentava `Delete` 26 vezes (`StillPresent`) e esgotava o orçamento. **Conserto offline na mesma data:** `IsFolderEmpty` passou a `Folder.HasObjects` + `SubFolders` (gate `tests.b082Etapa2Safety`). Recuperação do envelope: `Complete` → `Removed` (`OperationId` mesmo), Folder+WebPanel1 intactos. **Reteste pós-install (mesma data):** Wizard com Folder já habitado → metadata `FolderWasCreated=False` / Preview «reutilizado; nunca apagar»; Remover `OperationId=542a5df7-…`, `Estado=Removed`, `PlannedDeletes=25`, `Avisos=0`, `Success` — Folder fora da fila (caminho reuso), **não** exercita `PreservedNonEmpty`.
 148. Em 2026-09-16, **caso 6 fechado** (reteste correto pós-conserto `HasObjects`): Folder apagado e recriado pelo Wizard (`FolderWasCreated=True`); WebPanel movido **depois** do Apply; Remover `OperationId=873872c5-…`, Preview «criado pela extensão; apagar só se ficar vazio», `PlannedDeletes=26`, `Estado=Removed`, `Passadas=1/26`, `Removidos=25`, `Preservados=1`, `Bloqueados=0`; B081 `SuccessWithWarnings`, `Avisos=1`: `Folder 'TesteOpenApi' nao foi apagado porque nao ficou vazio.` Scan `Folder/folder-vazio` 1×. Sem `RetryBudgetExhausted` e sem string mágica em Removidos.
 149. Em 2026-09-16, **DEMO / Sessão B fechada** para o residual `B082` Etapas 2+3 (exceto 1B): `Docs/Public/DEMO.md` §21 já descreve casca **modeless**, Abortar cooperativo com KB parcial e `Recuperar operação interrompida` — alinhado ao exercido nos itens 142–148 (abort Remove, casca×relatório, Recuperar). Sem novo clique IDE. Etapa **1B** permanece adiada. Próxima ação única permanece `B122`.
+150. Em 2026-09-17, **Etapa 1B offline** do residual `B082`: contrato Nível B no plano; `ForgetRemoved*` no índice; Remover usa o índice em localização/revalidação e só esquece após `confirmacao-pos-delete` por `GetAll`; retomada `ContinueInterruptedRemoval` cria índice próprio; gate `tests.b082Etapa1BIndex`; build Release 0 avisos. **B082 não fechado** — falta remediar Remove em `FabricaBrasil18Test` (`Setor`/`Empresa`/`DocumentoFiscal`) com a DLL desta sessão (metas ≤7s/≤20s/≤9s; marcas estruturais). Próxima ação única permanece `B122`.
+151. Em 2026-09-17, **aceite IDE Etapa 1B e fechamento do residual `B082`**, por decisão humana com ressalva de relógio: Remove em `FabricaBrasil18Test` — `Setor` 7711 ms (meta ≤7 s), `Empresa` 20063 ms (meta ≤20 s), `DocumentoFiscal` 7998 ms (meta ≤9 s); marcas 1B ok nas três (só `confirmacao-pos-delete` + `folder-vazio`). Evidência: `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`. Próxima ação única permanece `B122`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -671,7 +678,7 @@ anteriores, antes do contrato B070 parametrizado e do novo Build All.
 - Gap B099a (2026-08-26): required de linha aparece na UI e **não** alimenta o writer BC (validação 400 com caminho `Parcelas[0].Campo` fica para frente posterior, para não recapturar o ouro B097).
 - Residual B099b (Sync flat vs SDT raiz hierárquico): **encerrado na Fase 7** (`DetectSdtConflicts` vazio em metadata hierárquica; smoke Sync 2026-08-28 sem conflito).
 - Sync hierárquico — falso `Added` por campo de subnível omitido de propósito no Wizard: **corrigido e smoke U15 2026-08-28** (`TesteItemObs2` desmarcado → Sync `Adicionados=0`, `Inalterados=17`). Metadata antiga só melhora após regravação de `levels`.
-- UX de espera do Wizard, Sync e Remover — `B082` Fases A+B em código; Etapa 1A **aceita** em 2026-09-03 (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`). Após a retomada de 2026-09-16, Etapas **2** e **3** fechadas; **resta Etapa 1B** (adiada) no plano de hardening, sem ser a próxima ação única. Registro da entrega alpha.7: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
+- UX de espera do Wizard, Sync e Remover — `B082` Fases A+B em código; Etapa 1A **aceita** em 2026-09-03; Etapas 2 e 3 fechadas em 2026-09-16; Etapa 1B **aceita** em 2026-09-17 com ressalva de relógio — **residual B082 fechado** (`Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`). Registro da entrega alpha.7: `Docs/Implementation/2026-08-31-B082-PLANO-UX-PROGRESSO.md`.
 A ausência do instalador Platform SDK não é bloqueio para U14+, porque a compilação usa o feed NuGet e os MSBuild SDKs oficiais. A proteção da instalação do GeneXus continua válida: o agente não escreve em `C:\Program Files (x86)\GeneXus`; o instalador controlado só copia a DLL quando o usuário o executa manualmente como administrador.
 
 ## Documentos governantes
@@ -723,7 +730,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 
 ## Marcos ainda não iniciados
 
-- Sprint 10 — Beta estável (`B108` está estacionado; a F1 da sprint `S-B111` foi implementada e validada para encerramento com a exceção explícita do `B121`; a F2 foi encerrada após bateria offline, cenários IDE positivos, cancelamento cooperativo, recomposição, escala e falhas controladas; a F3 foi encerrada em 2026-09-15, com as nove etapas entregues e os nove cenários da P8 exercidos na IDE — oito passaram e um foi reformulado pelo que mediu; Etapa 1A do `B082` aceita em 2026-09-03; retomada 2026-09-16 fechou Etapas 2 e 3; **resta Etapa 1B** no plano de hardening).
+- Sprint 10 — Beta estável (`B108` está estacionado; a F1 da sprint `S-B111` foi implementada e validada para encerramento com a exceção explícita do `B121`; a F2 foi encerrada após bateria offline, cenários IDE positivos, cancelamento cooperativo, recomposição, escala e falhas controladas; a F3 foi encerrada em 2026-09-15, com as nove etapas entregues e os nove cenários da P8 exercidos na IDE — oito passaram e um foi reformulado pelo que mediu; residual `B082` **fechado** em 2026-09-17 — 1A + Etapas 2/3 + 1B com ressalva de relógio).
 
 ## Protocolo de atualização
 

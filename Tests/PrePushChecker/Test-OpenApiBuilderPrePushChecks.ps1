@@ -158,6 +158,7 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GeneratedApiRemoval\Test-ApiPlanGeneratedApiRemovalPlan.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generated Api Removal Plan'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GeneratedApiRemoval\Test-ApiPlanGeneratedApiRemovalPreflight.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Generated Api Removal Preflight'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GeneratedApiRemoval\Test-ApiPlanB082Etapa2Safety.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture B082 Etapa 2 Safety'`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\GeneratedApiRemoval\Test-ApiPlanB082Etapa1BIndex.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture B082 Etapa 1B Index'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ScanProbe\Test-ApiPlanScanProbe.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Scan Probe'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\PersistenceProbe\Test-ApiPlanPersistenceCore.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Persistence Core'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\PersistenceProbe\Test-ApiPlanSaveStepExecutor.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Persistence Executor'`n", [System.Text.UTF8Encoding]::new($false))
@@ -228,6 +229,7 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.generatedApiRemovalPlan' }).status -eq 'passed') 'O teste unitário do plano de remoção B086 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.generatedApiRemovalPreflight' }).status -eq 'passed') 'O teste unitário do preflight B086 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.b082Etapa2Safety' }).status -eq 'passed') 'O teste textual da B082 Etapa 2 deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.b082Etapa1BIndex' }).status -eq 'passed') 'O teste textual da B082 Etapa 1B deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.scanProbe' }).status -eq 'passed') 'O teste unitário do probe de medição B082 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.persistenceCore' }).status -eq 'passed') 'O teste unitário do seam de persistência B111/F2 deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.persistenceExecutor' }).status -eq 'passed') 'O teste unitário do executor de persistência B111/F2 deveria passar na fixture.'

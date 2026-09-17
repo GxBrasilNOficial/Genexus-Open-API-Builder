@@ -67,8 +67,9 @@ internal static class ApiPlanGeneratedApiRemover
         var telemetry = new ApiPlanScanTelemetry();
         var phaseWatch = Stopwatch.StartNew();
 
-        // Nível A: um índice só para a validação agregada, antes de qualquer exclusão.
-        // Localização, revalidação e confirmação pós-Delete permanecem em leitura corrente.
+        // Nível A na resolução: um índice só para validação agregada e captura.
+        // Nível B na fila: o mesmo índice alimenta localização/revalidação e esquece após
+        // confirmação pós-Delete por leitura corrente.
         var index = kbIndex ?? ApiPlanKbObjectNameIndex.Create(designModel, progress);
 
         AssertPreviewStillMatches(designModel, transaction, confirmedPlan, capture, index, telemetry);
@@ -289,7 +290,8 @@ internal static class ApiPlanGeneratedApiRemover
             deletedSink,
             onPassCompleted,
             intent.Plan,
-            preservedNonEmptyFolderSink);
+            preservedNonEmptyFolderSink,
+            intent.KbIndex);
     }
 
     /// <summary>
@@ -308,7 +310,8 @@ internal static class ApiPlanGeneratedApiRemover
         List<string>? deletedSink,
         Func<int, bool>? onPassCompleted,
         ApiPlanGeneratedApiRemovalPlan? plan = null,
-        List<string>? preservedNonEmptyFolderSink = null)
+        List<string>? preservedNonEmptyFolderSink = null,
+        ApiPlanKbObjectNameIndex? kbIndex = null)
     {
         if (designModel is null)
         {
@@ -361,6 +364,7 @@ internal static class ApiPlanGeneratedApiRemover
                         deleted,
                         preservedNonEmptyFolders,
                         telemetry,
+                        kbIndex,
                         out var detail);
                     watch.Stop();
                     // Report pós-mutação não verifica abort: o Delete já ocorreu.
@@ -729,6 +733,7 @@ internal static class ApiPlanGeneratedApiRemover
         List<string> deleted,
         List<string> preservedNonEmptyFolders,
         ApiPlanScanTelemetry telemetry,
+        ApiPlanKbObjectNameIndex? kbIndex,
         out string blockDetail)
     {
         blockDetail = string.Empty;
@@ -737,16 +742,16 @@ internal static class ApiPlanGeneratedApiRemover
             switch (target.ObjectType)
             {
                 case JournalObjectType.ApiObject:
-                    return DeleteApiObject(designModel, context, target, deleted, telemetry);
+                    return DeleteApiObject(designModel, context, target, deleted, telemetry, kbIndex);
 
                 case JournalObjectType.Procedure:
-                    return DeleteSingleProcedure(designModel, target, deleted, telemetry);
+                    return DeleteSingleProcedure(designModel, target, deleted, telemetry, kbIndex);
 
                 case JournalObjectType.Sdt:
-                    return DeleteSingleOwnSdt(designModel, context, target, deleted, telemetry);
+                    return DeleteSingleOwnSdt(designModel, context, target, deleted, telemetry, kbIndex);
 
                 case JournalObjectType.MetadataFile:
-                    return DeleteMetadataFile(designModel, target, deleted, telemetry);
+                    return DeleteMetadataFile(designModel, target, deleted, telemetry, kbIndex);
 
                 case JournalObjectType.Folder:
                     return DeleteOwnFolder(
@@ -755,7 +760,8 @@ internal static class ApiPlanGeneratedApiRemover
                         target,
                         deleted,
                         preservedNonEmptyFolders,
-                        telemetry);
+                        telemetry,
+                        kbIndex);
 
                 default:
                     blockDetail = "Tipo fora da fila destrutiva: " + target.ObjectType + ".";
@@ -904,9 +910,8 @@ internal static class ApiPlanGeneratedApiRemover
             : telemetry.MeasureScan(objectType, phase, scan);
     }
 
-    // kbIndex nulo e contrato deliberado de leitura corrente: localizacao e revalidacao
-    // apos o catalogo ter comecado a mudar (Nível B / confirmacao pos-Delete). A validacao
-    // agregada, antes de qualquer exclusao, passa o indice criado na resolucao da intencao.
+    // Nível B (1B): com índice mantido, localização e revalidação usam Find*; sem índice
+    // (caminho legado/teste), permanece leitura corrente. Confirmação pós-Delete nunca usa índice.
     private static void ValidateApiObjectTarget(
         KBModel designModel,
         string apiName,
@@ -1029,14 +1034,17 @@ internal static class ApiPlanGeneratedApiRemover
         KBModel designModel,
         ApiPlanRemovalTarget target,
         List<string> deleted,
-        ApiPlanScanTelemetry? telemetry)
+        ApiPlanScanTelemetry? telemetry,
+        ApiPlanKbObjectNameIndex? kbIndex)
     {
         var name = target.Name;
-        ValidateProcedureTarget(designModel, name, beforeAnyDelete: false, kbIndex: null, telemetry);
+        ValidateProcedureTarget(designModel, name, beforeAnyDelete: false, kbIndex, telemetry);
 
-        var matches = Scan(telemetry, "Procedure", "localizacao-delete", () => Procedure.GetAll(designModel)
-            .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
-            .ToArray());
+        var matches = kbIndex is null
+            ? Scan(telemetry, "Procedure", "localizacao-delete", () => Procedure.GetAll(designModel)
+                .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
+                .ToArray())
+            : kbIndex.FindProcedures(name).ToArray();
         if (matches.Length == 0)
         {
             return NotAttempted(
@@ -1049,9 +1057,10 @@ internal static class ApiPlanGeneratedApiRemover
 
         var procedure = matches[0];
         var guid = procedure.Guid;
-        Func<PersistenceConfirmation> confirm = () => ConfirmDelete(
+        Func<PersistenceConfirmation> confirm = () => ConfirmDeleteAndForget(
             () => Scan(telemetry, "Procedure", "confirmacao-pos-delete", () => Procedure.GetAll(designModel).Any(item => item.Guid == guid)),
-            guid.ToString());
+            guid.ToString(),
+            () => kbIndex?.ForgetRemovedProcedure(guid));
         return Execute(
             () => ApiPlanSaveBoundaryProbe.Persist(
                 PersistenceFaultPoint.ProcedureDelete,
@@ -1073,13 +1082,16 @@ internal static class ApiPlanGeneratedApiRemover
         ApiPlanRemovalContext context,
         ApiPlanRemovalTarget target,
         List<string> deleted,
-        ApiPlanScanTelemetry? telemetry)
+        ApiPlanScanTelemetry? telemetry,
+        ApiPlanKbObjectNameIndex? kbIndex)
     {
-        ValidateApiObjectTarget(designModel, context.ApiName, context.ApiGuid, beforeAnyDelete: false, kbIndex: null, telemetry);
+        ValidateApiObjectTarget(designModel, context.ApiName, context.ApiGuid, beforeAnyDelete: false, kbIndex, telemetry);
 
-        var matches = Scan(telemetry, "API", "localizacao-delete", () => API.GetAll(designModel)
-            .Where(item => string.Equals(item.Name, context.ApiName, StringComparison.OrdinalIgnoreCase))
-            .ToArray());
+        var matches = kbIndex is null
+            ? Scan(telemetry, "API", "localizacao-delete", () => API.GetAll(designModel)
+                .Where(item => string.Equals(item.Name, context.ApiName, StringComparison.OrdinalIgnoreCase))
+                .ToArray())
+            : kbIndex.FindApis(context.ApiName).ToArray();
         if (matches.Length == 0)
         {
             return NotAttempted(
@@ -1092,9 +1104,10 @@ internal static class ApiPlanGeneratedApiRemover
 
         var api = matches[0];
         var guid = api.Guid;
-        Func<PersistenceConfirmation> confirm = () => ConfirmDelete(
+        Func<PersistenceConfirmation> confirm = () => ConfirmDeleteAndForget(
             () => Scan(telemetry, "API", "confirmacao-pos-delete", () => API.GetAll(designModel).Any(item => item.Guid == guid)),
-            guid.ToString());
+            guid.ToString(),
+            () => kbIndex?.ForgetRemovedApi(guid));
         return Execute(
             () => ApiPlanSaveBoundaryProbe.Persist(
                 PersistenceFaultPoint.ApiDelete,
@@ -1116,14 +1129,17 @@ internal static class ApiPlanGeneratedApiRemover
         ApiPlanRemovalContext context,
         ApiPlanRemovalTarget target,
         List<string> deleted,
-        ApiPlanScanTelemetry? telemetry)
+        ApiPlanScanTelemetry? telemetry,
+        ApiPlanKbObjectNameIndex? kbIndex)
     {
         var name = target.Name;
-        ValidateOwnSdtTarget(designModel, context.PreservedSharedSdtNames, name, beforeAnyDelete: false, kbIndex: null, telemetry);
+        ValidateOwnSdtTarget(designModel, context.PreservedSharedSdtNames, name, beforeAnyDelete: false, kbIndex, telemetry);
 
-        var matches = Scan(telemetry, "SDT", "localizacao-delete", () => SDT.GetAll(designModel)
-            .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
-            .ToArray());
+        var matches = kbIndex is null
+            ? Scan(telemetry, "SDT", "localizacao-delete", () => SDT.GetAll(designModel)
+                .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
+                .ToArray())
+            : kbIndex.FindSdts(name).ToArray();
         if (matches.Length == 0)
         {
             return NotAttempted(
@@ -1136,9 +1152,10 @@ internal static class ApiPlanGeneratedApiRemover
 
         var sdt = matches[0];
         var guid = sdt.Guid;
-        Func<PersistenceConfirmation> confirm = () => ConfirmDelete(
+        Func<PersistenceConfirmation> confirm = () => ConfirmDeleteAndForget(
             () => Scan(telemetry, "SDT", "confirmacao-pos-delete", () => SDT.GetAll(designModel).Any(item => item.Guid == guid)),
-            guid.ToString());
+            guid.ToString(),
+            () => kbIndex?.ForgetRemovedSdt(guid));
         return Execute(
             () => ApiPlanSaveBoundaryProbe.Persist(
                 PersistenceFaultPoint.SdtDelete,
@@ -1159,12 +1176,15 @@ internal static class ApiPlanGeneratedApiRemover
         KBModel designModel,
         ApiPlanRemovalTarget target,
         List<string> deleted,
-        ApiPlanScanTelemetry? telemetry)
+        ApiPlanScanTelemetry? telemetry,
+        ApiPlanKbObjectNameIndex? kbIndex)
     {
         var name = target.Name;
-        var matches = Scan(telemetry, "File", "localizacao-delete", () => WikiFileKBObject.GetAll(designModel)
-            .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
-            .ToArray());
+        var matches = kbIndex is null
+            ? Scan(telemetry, "File", "localizacao-delete", () => WikiFileKBObject.GetAll(designModel)
+                .Where(item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase))
+                .ToArray())
+            : kbIndex.FindFiles(name).ToArray();
         if (matches.Length == 0)
         {
             return NotAttempted(
@@ -1178,9 +1198,10 @@ internal static class ApiPlanGeneratedApiRemover
         var metadataFile = matches[0];
         var guid = metadataFile.Guid;
         var expectedBytes = metadataFile.BlobPart?.Data?.GetBytes() ?? Array.Empty<byte>();
-        Func<PersistenceConfirmation> confirm = () => ConfirmDelete(
+        Func<PersistenceConfirmation> confirm = () => ConfirmDeleteAndForget(
             () => Scan(telemetry, "File", "confirmacao-pos-delete", () => WikiFileKBObject.GetAll(designModel).Any(item => item.Guid == guid)),
-            guid.ToString());
+            guid.ToString(),
+            () => kbIndex?.ForgetRemovedFile(guid));
         return Execute(
             () => ApiPlanSaveBoundaryProbe.Persist(
                 PersistenceFaultPoint.MetadataDelete,
@@ -1210,11 +1231,14 @@ internal static class ApiPlanGeneratedApiRemover
         ApiPlanRemovalTarget target,
         List<string> deleted,
         List<string> preservedNonEmptyFolders,
-        ApiPlanScanTelemetry? telemetry)
+        ApiPlanScanTelemetry? telemetry,
+        ApiPlanKbObjectNameIndex? kbIndex)
     {
-        var matches = Scan(telemetry, "Folder", "localizacao-delete", () => Folder.GetAll(designModel)
-            .Where(item => string.Equals(item.Name, target.Name, StringComparison.OrdinalIgnoreCase))
-            .ToArray());
+        var matches = kbIndex is null
+            ? Scan(telemetry, "Folder", "localizacao-delete", () => Folder.GetAll(designModel)
+                .Where(item => string.Equals(item.Name, target.Name, StringComparison.OrdinalIgnoreCase))
+                .ToArray())
+            : kbIndex.FindFolders(target.Name).ToArray();
         if (matches.Length != 1)
         {
             return ApiPlanRemovalAttemptResult.Preserved;
@@ -1250,9 +1274,10 @@ internal static class ApiPlanGeneratedApiRemover
         }
 
         var guid = folder.Guid;
-        Func<PersistenceConfirmation> confirm = () => ConfirmDelete(
+        Func<PersistenceConfirmation> confirm = () => ConfirmDeleteAndForget(
             () => Scan(telemetry, "Folder", "confirmacao-pos-delete", () => Folder.GetAll(designModel).Any(item => item.Guid == guid)),
-            guid.ToString());
+            guid.ToString(),
+            () => kbIndex?.ForgetRemovedFolder(guid));
         return Execute(
             () => ApiPlanSaveBoundaryProbe.Persist(
                 PersistenceFaultPoint.FolderDelete,
@@ -1397,6 +1422,25 @@ internal static class ApiPlanGeneratedApiRemover
         {
             return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
         }
+    }
+
+    /// <summary>
+    /// Confirma ausência por leitura corrente e, só então, atualiza o índice (Nível B / 1B).
+    /// <paramref name="forgetFromIndex"/> não substitui a confirmação e não roda se o alvo
+    /// ainda existir ou se a leitura falhar.
+    /// </summary>
+    private static PersistenceConfirmation ConfirmDeleteAndForget(
+        Func<bool> stillExists,
+        string observedIdentity,
+        Action? forgetFromIndex)
+    {
+        var observation = ConfirmDelete(stillExists, observedIdentity);
+        if (observation.Status == PersistenceConfirmationStatus.Absent)
+        {
+            forgetFromIndex?.Invoke();
+        }
+
+        return observation;
     }
 
     /// <summary>
