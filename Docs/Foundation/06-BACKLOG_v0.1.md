@@ -281,13 +281,39 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B122 | Dar aos agentes uma ferramenta versionada de edição textual ancorada, no lugar do script descartável que cada sessão reinventa | **Urgente — a executar logo após o encerramento da sprint `S-B111`.** Não muda o produto; muda o risco de toda alteração de texto feita por agente neste repositório. Ver a nota operacional abaixo |
 | B123 | Registrar a **posse histórica do Folder** da API na metadata, para que a remoção possa apagar um Folder próprio que ficou vazio | Média — **a executar depois da sprint `S-B111`**, por decisão de 2026-09-15. Medido em campo no cenário 8 da P8: o `TesteOpenApi` ficou na KB, vazio, depois de uma remoção completa. É o comportamento correto hoje — a fila só apaga Folder `wasCreated=true`, e `wasCreated` descreve a operação corrente, não quem criou o Folder —, mas o efeito é permanente: assim que um Folder sobrevive a uma remoção, toda geração seguinte o reencontra como reutilizado e nenhuma remoção futura o apagará. A saída barata, apagar Folder vazio com Description canônica, foi **recusada na mesma data** por ser menos segura: Description isolada nunca autorizou exclusão neste projeto (seção 4.3 do plano da F3), e um Folder homônimo de terceiro com a mesma marca seria apagado. A saída aprovada é a cara: a metadata registrar quem criou o Folder, o que é mudança de schema (V4) com leitura legada V1/V2/V3, fingerprint e consumidores a atualizar. Enquanto não existir, o resíduo é um Folder vazio, inofensivo, que o usuário apaga à mão se quiser. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`, seção 12 |
 | B124 | Definir **quando** um aceite ou smoke IDE exige documento dedicado de evidência em `Docs/Implementation/`, em vez de ficar só no item do checkpoint e na entrada Validated do `CHANGELOG` | Média — nascido em 2026-09-16. Ver nota operacional abaixo. **Não displace `B122`** |
+| B125 | Preview do Remover, após aborto parcial, ainda lista alvos já apagados na KB (inventário vem só da metadata) | Média — nascido em 2026-09-17 a partir do observado no item 142 do checkpoint. Ver nota operacional abaixo. **Não displace `B122`** |
+
+### Nota operacional — B125, registrada em 2026-09-17
+
+**O que é.** Depois de um `Remover API gerada` abortado com objetos já excluídos
+(`JaRemovidos>0`, diário `Partial`), um segundo clique em Remover monta o diálogo de Preview a
+partir de `ApiPlanGeneratedApiRemovalPlan.FromMetadata`. A metadata **não** foi reescrita no meio
+da fila; objetos já ausentes na KB (ex.: `apiTeste`, procedure `List`) **continuam na lista** que
+o usuário confirma.
+
+**O que não é.** Não é o caso «Preview divergente → zero exclusões» (item 145 / decisão 7 do
+plano B082), nem a retomada por `Recuperar`/`ContinueRemovePass` (que já trata ausentes). No
+fluxo observado, o segundo Remover encerrou em `GateBlocked` pelo diário parcial — **não** chegou
+a excluir; o dano medido é Preview mentiroso, não exclusão errada.
+
+**Evidência.** Uma observação em 2026-09-16, item 142 de
+`Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` (`Teste`/`wsEducacaoSpTeste`). Itens 143–149 **não**
+retestaram este recorte. Nenhuma correção de código foi apontada a este sintoma.
+
+**Entrega deste item.** (1) Reproduzir na IDE o cenário abort → segundo Remover → inspecionar o
+diálogo; (2) se confirmar, corrigir o Preview para refletir presença real na KB (ou documentar
+por que a lista da metadata é a verdade intencional); (3) se não reproduzir, fechar com evidência.
+Até lá o estado é **observado, não revalidado**.
+
+**Fora de escopo.** Regra de documento de evidência (`B124`); residual Etapa **1B** do `B082`;
+mudança de schema da metadata.
 
 ### Nota operacional — B124, registrada em 2026-09-16
 
 **Remissão — 2026-09-17:** a cobertura citada abaixo nasceu com o item 142. Sessão B e Etapa 3
 do `B082` fecharam depois; a evidência vigente no checkpoint é **142–149**. O enunciado do item
-(definir a regra) permanece. «Fora de escopo» abaixo: Sessão B e Etapa 3 saíram da lista — resta
-o residual **1B** e o Preview pós-aborto.
+(definir a regra) permanece. O Preview pós-aborto saiu deste «Fora de escopo» e virou o
+**`B125`**. Residual do plano `B082` neste parágrafo: só a **Etapa 1B**.
 
 **O sintoma.** O smoke parcial da Etapa 2 do `B082` (guarda com Recuperar, diálogos unificados,
 oferta proativa, `ContinueRemovePass`) foi exercido na IDE e registrado com cuidado no **item 142**
@@ -314,8 +340,8 @@ entrega é a regra.
 4. **Primeira aplicação.** Redigir a evidência do smoke/aceite 2026-09-16 (itens **142–149**) sob
    a regra aprovada — não inventar o doc antes do critério.
 
-**Fora de escopo deste item.** Corrigir Preview pós-aborto listando alvos já `Absent`; residual
-**Etapa 1B** do `B082`. Esses seguem no plano do `B082`.
+**Fora de escopo deste item.** Preview pós-aborto com alvos já apagados na lista (`B125`);
+residual **Etapa 1B** do `B082` (plano de hardening).
 
 ### Nota operacional — B122, registrada em 2026-09-15
 
