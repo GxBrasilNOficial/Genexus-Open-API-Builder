@@ -1,6 +1,6 @@
 # Instalação — Genexus Open API Builder
 
-Guia para instalar a extensão no **GeneXus 18**. A Alpha `0.1.0-alpha.7` publica duas DLLs: uma para a linha U14+ e outra para o Upgrade 13. A validação principal da linha canônica foi feita no **Upgrade 15**; o Upgrade 14 foi confirmado por usuário externo com a Alpha `0.1.0-alpha.1` (carregamento + geração), ver [evidência 2026-08-12](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md).
+Guia para instalar a extensão no **GeneXus 18**. A Alpha `0.1.0-alpha.8` publica duas DLLs: uma para a linha U14+ e outra para o Upgrade 13. A validação principal da linha canônica foi feita no **Upgrade 15**; o Upgrade 14 foi confirmado por usuário externo com a Alpha `0.1.0-alpha.1` (carregamento + geração), ver [evidência 2026-08-12](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md).
 
 Há dois caminhos:
 
@@ -20,7 +20,7 @@ Fonte factual: evidência [B094](../Implementation/B094-INSTALACAO-APENAS-COM-A-
 
 ### Escolha da DLL
 
-No GitHub Release `0.1.0-alpha.7`, baixe somente um dos arquivos:
+No GitHub Release `0.1.0-alpha.8`, baixe somente um dos arquivos:
 
 | Arquivo | Use quando | Não use quando |
 |---|---|---|
@@ -78,8 +78,11 @@ Na IDE, o menu **Genexus Open API Builder** deve aparecer antes de **Help**, com
 - Wizard
 - Sincronizar com a Transaction
 - Remover API gerada
+- Recuperar operação interrompida
 
-No menu de contexto de uma Transaction, o submenu deve expor Wizard, Sincronizar e Remover.
+No menu de contexto de uma Transaction, o submenu deve expor Wizard, Sincronizar, Remover e Recuperar.
+
+Desde `0.1.0-alpha.8`, a extensão grava na KB o File `GxOpenApiBuilder_OperationJournal` (Root Module). Um envelope não terminal **bloqueia** Apply, Sync e Remover; use **Recuperar operação interrompida** para retomar uma remoção, fechar o registro ou encerrar a operação sem apagar objetos. Continuação de Apply/Sync interrompido não existe nesta Alpha.
 
 ---
 
@@ -149,10 +152,6 @@ Na IDE, o menu **Genexus Open API Builder** deve aparecer antes de **Help**, com
 No menu de contexto de uma Transaction, o submenu deve expor Wizard, Sincronizar, Remover e
 Recuperar.
 
-> `Recuperar operação interrompida` existe **na build deste repositório** e ainda não saiu em
-> release publicado. Quem instalou a DLL da `0.1.0-alpha.7` vê quatro itens no menu principal e
-> três no de contexto, como descrito na verificação do usuário final acima — e isso está certo.
-
 ---
 
 ## Publicação em IIS (.NET Framework)
@@ -167,7 +166,7 @@ Siga o roteiro curto em [DEMO.md](DEMO.md).
 
 ## Notas da Alpha
 
-- Notas de release: [0.1.0-alpha.7](../Releases/0.1.0-alpha.7.md)
-- Español: [notas 0.1.0-alpha.7](../Releases/0.1.0-alpha.7.es.md)
-- English: [release notes 0.1.0-alpha.7](../Releases/0.1.0-alpha.7.en.md)
+- Notas de release: [0.1.0-alpha.8](../Releases/0.1.0-alpha.8.md)
+- Español: [notas 0.1.0-alpha.8](../Releases/0.1.0-alpha.8.es.md)
+- English: [release notes 0.1.0-alpha.8](../Releases/0.1.0-alpha.8.en.md)
 - Changelog: [CHANGELOG.md](../../CHANGELOG.md)

@@ -1,6 +1,6 @@
 # Demo rápida — Genexus Open API Builder
 
-Roteiro visual da Alpha `0.1.0-alpha.7` (Transaction de exemplo: `NotaFiscal`).
+Roteiro visual da Alpha `0.1.0-alpha.8` (Transaction de exemplo: `NotaFiscal`).
 
 Use sempre uma **KB de teste**, com backup. Não execute na KB de produção.
 
@@ -145,19 +145,29 @@ Ao clicar em **Concluir e aplicar** (e também na abertura do Wizard, no Preview
 
 Durante essas fases é possível clicar em **Abortar**. O objeto em curso (um `Save()` ou `Delete()`) termina; a operação para antes do próximo. Se já houve gravação, a Knowledge Base pode ficar parcial — use **Recuperar operação interrompida** quando o diário registrar a interrupção.
 
-## 22. Relatório final
+## 22. Diário de operação e recuperação (desde `0.1.0-alpha.8`)
+
+Apply, Sync e Remover registram a intenção no File único `GxOpenApiBuilder_OperationJournal` (Root Module) **antes** de mutar objetos de negócio. Se a operação for interrompida, um envelope não terminal **bloqueia** as três entradas até você usar **Recuperar operação interrompida** (menu principal ou contexto da Transaction):
+
+- retomar a fila de uma remoção interrompida no mesmo registro;
+- fechar o registro de uma remoção que já terminou;
+- **encerrar o registro** de um Apply/Sync que parou no meio (nenhum objeto é apagado; a saída seguinte é Wizard ou Remover).
+
+Preferência **Mostrar opção de recuperação proativamente** (ligada por padrão) oferece a recuperação quando o diário bloqueia. Continuação automática de Apply/Sync interrompido **não** existe nesta Alpha.
+
+## 23. Relatório final
 
 Após aplicar, o relatório lista criados, atualizados, bloqueados e avisos. No caminho feliz: `Blocked=0` e metadata criada.
 
 ![Relatório final](../Images/alpha-relatorio-final.png)
 
-## 23. Objetos gerados
+## 24. Objetos gerados
 
 Folder `<Transaction>OpenApi` com API Object, Procedures e SDTs próprios.
 
 ![Folder NotaFiscalOpenApi](../Images/alpha-folder.png)
 
-## 24. Build e checagem
+## 25. Build e checagem
 
 Execute Build na API (ou Build All). Se o environment estiver publicado, teste `List`/`Get`/`Create`/`Update` conforme a segurança escolhida, e `Delete` só se o serviço tiver sido marcado.
 
@@ -170,6 +180,7 @@ Execute Build na API (ou Build All). Se o environment estiver publicado, teste `
 | Wizard | Regenerar / complementar de forma conservadora |
 | Sincronizar com a Transaction | Diff da estrutura da Transaction vs metadata |
 | Remover API gerada | Remoção conservadora dos objetos próprios |
+| Recuperar operação interrompida | Retomar remoção, fechar ou encerrar registro do diário |
 
 ### Sincronizar com a Transaction
 
@@ -190,8 +201,9 @@ Confirmação com o plano: objetos próprios a apagar, SDTs compartilhados e Fol
 - YAML OpenAPI nativo do GeneXus tem restrições documentadas
 - Classificação de campos sensíveis/auditoria ainda usa política default
 - Validação prática principal no Upgrade 15
+- Diário de operação: Apply/Sync interrompidos não têm retomada automática; use Recuperar para encerrar o registro
 
-Detalhes: [notas 0.1.0-alpha.7](../Releases/0.1.0-alpha.7.md).
+Detalhes: [notas 0.1.0-alpha.8](../Releases/0.1.0-alpha.8.md).
 
 ## Índice das capturas
 

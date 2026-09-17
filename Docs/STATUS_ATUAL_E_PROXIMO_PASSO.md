@@ -145,12 +145,13 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 **`B122` — a ferramenta versionada de edição textual ancorada.** O backlog a declara urgente e
 «a executar logo após o encerramento da sprint `S-B111`», que aconteceu em 2026-09-15. Desenho e
-motivo na nota operacional do documento 06. **Corte de release aguarda autorização humana** e
-não é inferido do encerramento da sprint nem do fechamento do `B082`: a linha publicada continua
-na `0.1.0-alpha.7`. O estado da branch em relação a `origin/main` se mede com
-`git rev-list --left-right --count origin/main...HEAD`, não se anota aqui como fato permanente.
+motivo na nota operacional do documento 06. **Corte `0.1.0-alpha.8` em preparação nesta sessão**
+(pacote documental + builds; push/tag/release só com autorização humana explícita). A linha
+publicada no remoto permanece `0.1.0-alpha.7` até o Release sair. O estado da branch em relação a
+`origin/main` se mede com `git rev-list --left-right --count origin/main...HEAD`, não se anota
+aqui como fato permanente.
 
-**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
+~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
 ainda não mencionam o File do diário `GxOpenApiBuilder_OperationJournal`, o bloqueio que ele
 impõe a Apply, Sync e Remover, nem o comando `Recuperar operação interrompida`. O `INSTALL.md`
 menciona o comando, na seção do mantenedor, com a ressalva de que ele existe **na build deste
@@ -159,7 +160,8 @@ bloqueia** o corte pela condição do documento 06, cuja disjunção foi satisfe
 quando a P8 fechou; é item do rito de corte do `AGENTS.md`, que exige atualizar esses arquivos
 quando muda comportamento visível. Fica aqui como registro porque escrever o texto público antes
 do corte obriga a redigi-lo no condicional e a reescrevê-lo depois — e, pior, anunciaria ao
-usuário da `0.1.0-alpha.7` um menu que ele não tem.
+usuário da `0.1.0-alpha.7` um menu que ele não tem.~~ **Feito no pacote `0.1.0-alpha.8`
+(2026-09-17):** README×3, `INSTALL.md` e `DEMO.md` documentam o File, o bloqueio e o comando.
 
 ### A F3 e a sprint `S-B111` foram encerradas em 2026-09-15
 
@@ -650,7 +652,7 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 
 ## Bloqueios e fatos ainda não validados
 
-- **Corte de release com a etapa P2 da F3 dentro exige decisão documental.** O diário cria o File `GxOpenApiBuilder_OperationJournal` na KB do usuário e pode bloquear Apply e Sincronizar. O comando `Recuperar operação interrompida` (P6) foi implementado em 2026-09-14 e **validado na IDE** nos cenários 3 e 5 da P8, mas nada disso está na documentação pública. Ou a P8 valida o ciclo antes do corte, ou `DEMO`, os três `README` e as notas explicam o File, o bloqueio e o comando. Detalhe: seção 7.1 de `Docs/Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md`.
+- ~~**Corte de release com a etapa P2 da F3 dentro exige decisão documental.** … nada disso está na documentação pública.~~ **Superado no pacote `0.1.0-alpha.8` (2026-09-17):** README×3, `INSTALL.md`, `DEMO.md` e as notas de release documentam o File `GxOpenApiBuilder_OperationJournal`, o bloqueio e `Recuperar operação interrompida`. Push/tag/GitHub Release ainda dependem de autorização humana explícita.
 
 O reteste de 2026-09-11 atualizou a situação do `List` da `Laudo`: a execução
 funcional passou nos dois environments, e somente a forma do envelope permanece
