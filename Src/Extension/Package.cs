@@ -771,6 +771,7 @@ public sealed class Package : AbstractPackageUI
         var context = ApiPlanRemovalContext.FromJournal(envelope);
         var telemetry = new ApiPlanScanTelemetry();
         var deleted = new List<string>();
+        var preservedNonEmptyFolders = new List<string>();
         var persistenceLog = new ApiPlanPersistenceLog();
         using var persistenceScope = ApiPlanSaveBoundaryProbe.BeginPersistence(persistenceLog);
         journal.AttachPersistence(persistenceLog, null);
@@ -795,7 +796,9 @@ public sealed class Package : AbstractPackageUI
                         var confirmed = journal.NoteRemovalPassCompleted();
                         WriteJournalDiagnostics(journal);
                         return confirmed;
-                    });
+                    },
+                    plan: null,
+                    preservedNonEmptyFolderSink: preservedNonEmptyFolders);
             }
             catch (ApiPlanBusyAbortedException abortEx)
             {
@@ -806,6 +809,7 @@ public sealed class Package : AbstractPackageUI
                 var abortReport = new ApiPlanApplicationFinalReportCollector("Recuperar", envelope.TransactionName, context.ApiName);
                 abortReport.SetApiName(context.ApiName);
                 abortReport.AddDeletedItems(deleted.ToArray());
+                abortReport.AddPreservedNonEmptyFolders(preservedNonEmptyFolders);
                 abortReport.AddBlocked("Recuperar", envelope.TransactionName, "Abortado [B082]");
                 ShowFinalReport(abortReport, stopwatch.Elapsed, knowledgeBase.DesignModel, persistenceLog: persistenceLog);
                 return ApiPlanRecoveryResult.Blocked(
@@ -818,6 +822,7 @@ public sealed class Package : AbstractPackageUI
         var report = new ApiPlanApplicationFinalReportCollector("Recuperar", envelope.TransactionName, removal.ApiName);
         report.SetApiName(removal.ApiName);
         report.AddDeletedItems(removal.DeletedItems.ToArray());
+        report.AddPreservedNonEmptyFolders(removal.PreservedNonEmptyFolders);
         CloseRemovalJournal(journal, report, removal, envelope.TransactionName);
         foreach (var telemetryLine in removal.TelemetryLines)
         {
@@ -1350,6 +1355,7 @@ public sealed class Package : AbstractPackageUI
         // Declarado fora do try para o catch enxergar o que já saiu da KB quando a remoção
         // é interrompida no meio.
         var deletedBeforeFailure = new List<string>();
+        var preservedNonEmptyFolders = new List<string>();
         ApiPlanPersistenceLog? persistenceLog = null;
         // B111/F3 P4: fora do try pelo mesmo motivo da lista acima — o catch externo precisa
         // fechar o diário com a intenção preservada quando a remoção falha no meio.
@@ -1480,7 +1486,8 @@ public sealed class Package : AbstractPackageUI
                             var confirmed = removeJournal.NoteRemovalPassCompleted();
                             WriteJournalDiagnostics(removeJournal);
                             return confirmed;
-                        });
+                        },
+                        preservedNonEmptyFolders);
                 }
                 catch (ApiPlanBusyAbortedException abortEx)
                 {
@@ -1490,6 +1497,7 @@ public sealed class Package : AbstractPackageUI
                     abortReport.SetApiName(plan.ApiName);
                     abortReport.HeadlineOverride = "Remoção abortada pelo usuário.";
                     abortReport.AddDeletedItems(deletedBeforeFailure.ToArray());
+                    abortReport.AddPreservedNonEmptyFolders(preservedNonEmptyFolders);
                     abortReport.AddWarning(abortEx.Message);
                     if (deletedBeforeFailure.Count > 0)
                     {
@@ -1516,6 +1524,7 @@ public sealed class Package : AbstractPackageUI
             var report = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, result.ApiName);
             report.SetApiName(result.ApiName);
             report.AddDeletedItems(result.DeletedItems.ToArray());
+            report.AddPreservedNonEmptyFolders(result.PreservedNonEmptyFolders);
             CloseRemovalJournal(removeJournal, report, result, transaction.Name);
             ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, persistenceLog: persistenceLog);
         }
@@ -1527,6 +1536,7 @@ public sealed class Package : AbstractPackageUI
             WriteOutput($"[Genexus Open API Builder][B086] Remocao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}', JaRemovidos={deletedBeforeFailure.Count}, Items='{string.Join("; ", deletedBeforeFailure)}'");
             var report = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, null);
             report.AddDeletedItems(deletedBeforeFailure.ToArray());
+            report.AddPreservedNonEmptyFolders(preservedNonEmptyFolders);
             if (deletedBeforeFailure.Count > 0)
             {
                 report.AddWarning($"Remoção parcial: {deletedBeforeFailure.Count} objeto(s) já foram excluídos e estão listados como removidos. A API ficou incompleta; use o comando 'Recuperar operação interrompida' para retomar a fila no mesmo registro. Repetir a remoção do zero bloqueia, porque os objetos já apagados não estão mais na KB.");

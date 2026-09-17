@@ -262,12 +262,17 @@ internal static class ApiPlanGeneratedApiRemover
     /// deixou de ser confirmável: a fila para, porque a seção 4.4 proíbe gravar objeto de
     /// negócio depois de um checkpoint não confirmado.
     /// </param>
+    /// <param name="preservedNonEmptyFolderSink">
+    /// Folders próprios preservados por não estarem vazios. Viajam tipados — nunca na lista de
+    /// removidos como string mágica. Quem chama lê no catch e no relatório B081.
+    /// </param>
     internal static ApiPlanGeneratedApiRemovalResult Remove(
         KBModel designModel,
         ApiPlanGeneratedApiRemovalIntent intent,
         ApiPlanBusyProgressSession? progress,
         List<string>? deletedSink = null,
-        Func<int, bool>? onPassCompleted = null)
+        Func<int, bool>? onPassCompleted = null,
+        List<string>? preservedNonEmptyFolderSink = null)
     {
         if (intent is null)
         {
@@ -283,7 +288,8 @@ internal static class ApiPlanGeneratedApiRemover
             progress,
             deletedSink,
             onPassCompleted,
-            intent.Plan);
+            intent.Plan,
+            preservedNonEmptyFolderSink);
     }
 
     /// <summary>
@@ -301,7 +307,8 @@ internal static class ApiPlanGeneratedApiRemover
         ApiPlanBusyProgressSession? progress,
         List<string>? deletedSink,
         Func<int, bool>? onPassCompleted,
-        ApiPlanGeneratedApiRemovalPlan? plan = null)
+        ApiPlanGeneratedApiRemovalPlan? plan = null,
+        List<string>? preservedNonEmptyFolderSink = null)
     {
         if (designModel is null)
         {
@@ -324,6 +331,8 @@ internal static class ApiPlanGeneratedApiRemover
         }
         var deleted = deletedSink ?? new List<string>();
         deleted.Clear();
+        var preservedNonEmptyFolders = preservedNonEmptyFolderSink ?? new List<string>();
+        preservedNonEmptyFolders.Clear();
 
         var total = targets.Count(target => target.Queued);
         var current = 0;
@@ -345,7 +354,14 @@ internal static class ApiPlanGeneratedApiRemover
                     progress?.Report("Removendo " + label, current, Math.Max(total, current), target.Name);
                     progress?.ThrowIfAbortRequested();
                     var watch = Stopwatch.StartNew();
-                    var result = Attempt(designModel, context, target, deleted, telemetry, out var detail);
+                    var result = Attempt(
+                        designModel,
+                        context,
+                        target,
+                        deleted,
+                        preservedNonEmptyFolders,
+                        telemetry,
+                        out var detail);
                     watch.Stop();
                     // Report pós-mutação não verifica abort: o Delete já ocorreu.
                     progress?.Report("Removendo " + label, current, Math.Max(total, current), target.Name, watch.ElapsedMilliseconds);
@@ -393,7 +409,8 @@ internal static class ApiPlanGeneratedApiRemover
                 deleted,
                 telemetry.BuildOutputLines(),
                 interrupted,
-                exception.Message);
+                exception.Message,
+                preservedNonEmptyFolders);
         }
 
         telemetry.MarkPhase("FilaRemocao", phaseWatch.ElapsedMilliseconds);
@@ -402,7 +419,14 @@ internal static class ApiPlanGeneratedApiRemover
             "Fila de remocao encerrada: {0}",
             queue.Describe()));
 
-        return new ApiPlanGeneratedApiRemovalResult(plan, context, deleted, telemetry.BuildOutputLines(), queue, blockDetail);
+        return new ApiPlanGeneratedApiRemovalResult(
+            plan,
+            context,
+            deleted,
+            telemetry.BuildOutputLines(),
+            queue,
+            blockDetail,
+            preservedNonEmptyFolders);
     }
 
     public static int CountPlannedDeletes(ApiPlanGeneratedApiRemovalPlan plan)
@@ -703,6 +727,7 @@ internal static class ApiPlanGeneratedApiRemover
         ApiPlanRemovalContext context,
         ApiPlanRemovalTarget target,
         List<string> deleted,
+        List<string> preservedNonEmptyFolders,
         ApiPlanScanTelemetry telemetry,
         out string blockDetail)
     {
@@ -724,7 +749,13 @@ internal static class ApiPlanGeneratedApiRemover
                     return DeleteMetadataFile(designModel, target, deleted, telemetry);
 
                 case JournalObjectType.Folder:
-                    return DeleteOwnFolder(designModel, context, target, deleted, telemetry);
+                    return DeleteOwnFolder(
+                        designModel,
+                        context,
+                        target,
+                        deleted,
+                        preservedNonEmptyFolders,
+                        telemetry);
 
                 default:
                     blockDetail = "Tipo fora da fila destrutiva: " + target.ObjectType + ".";
@@ -1178,6 +1209,7 @@ internal static class ApiPlanGeneratedApiRemover
         ApiPlanRemovalContext context,
         ApiPlanRemovalTarget target,
         List<string> deleted,
+        List<string> preservedNonEmptyFolders,
         ApiPlanScanTelemetry? telemetry)
     {
         var matches = Scan(telemetry, "Folder", "localizacao-delete", () => Folder.GetAll(designModel)
@@ -1211,9 +1243,9 @@ internal static class ApiPlanGeneratedApiRemover
             return ApiPlanRemovalAttemptResult.Preserved;
         }
 
-        if (!IsFolderEmpty(designModel, folder, telemetry))
+        if (!IsFolderEmpty(folder, telemetry))
         {
-            deleted.Add($"Folder:{target.Name}:PreservedNonEmpty");
+            preservedNonEmptyFolders.Add(target.Name);
             return ApiPlanRemovalAttemptResult.Preserved;
         }
 
@@ -1369,13 +1401,20 @@ internal static class ApiPlanGeneratedApiRemover
 
     // O curto-circuito de && e preservado: a instrumentacao envolve cada operando
     // isoladamente, entao uma varredura so e medida quando de fato executa.
-    private static bool IsFolderEmpty(KBModel designModel, Folder folder, ApiPlanScanTelemetry? telemetry = null)
+    /// <summary>
+    /// Folder vazio = sem filhos diretos e sem subpastas. Usa <see cref="Folder.HasObjects"/> e
+    /// <see cref="Folder.SubFolders"/> — não uma lista tipada de <c>GetAll</c>. Em 2026-09-16 o
+    /// aceite IDE do caso 6 mostrou que API/Procedure/SDT/File/Folder não viam WebPanel: o Folder
+    /// era tratado como vazio, o <c>Delete</c> falhava em <c>StillPresent</c> e a fila esgotava
+    /// <c>RetryBudgetExhausted</c> sem emitir <c>PreservedNonEmpty</c>.
+    /// </summary>
+    private static bool IsFolderEmpty(Folder folder, ApiPlanScanTelemetry? telemetry = null)
     {
-        return !Scan(telemetry, "API", "folder-vazio", () => API.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid))
-            && !Scan(telemetry, "Procedure", "folder-vazio", () => Procedure.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid))
-            && !Scan(telemetry, "SDT", "folder-vazio", () => SDT.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid))
-            && !Scan(telemetry, "File", "folder-vazio", () => WikiFileKBObject.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid))
-            && !Scan(telemetry, "Folder", "folder-vazio", () => Folder.GetAll(designModel).Any(item => item.Guid != folder.Guid && item.Parent is not null && item.Parent.Guid == folder.Guid));
+        return Scan(
+            telemetry,
+            "Folder",
+            "folder-vazio",
+            () => !folder.HasObjects && !folder.SubFolders.Any());
     }
 
     private static string DescribeKind(JournalObjectType objectType) => objectType switch
@@ -1561,7 +1600,8 @@ internal sealed class ApiPlanGeneratedApiRemovalResult
         IReadOnlyList<string> deletedItems,
         IReadOnlyList<string>? telemetryLines = null,
         ApiPlanRemovalQueueResult? queue = null,
-        string blockDetail = "")
+        string blockDetail = "",
+        IReadOnlyList<string>? preservedNonEmptyFolders = null)
     {
         Plan = plan;
         Context = context ?? throw new ArgumentNullException(nameof(context));
@@ -1569,6 +1609,7 @@ internal sealed class ApiPlanGeneratedApiRemovalResult
         TelemetryLines = telemetryLines ?? Array.Empty<string>();
         Queue = queue;
         BlockDetail = blockDetail ?? string.Empty;
+        PreservedNonEmptyFolders = preservedNonEmptyFolders ?? Array.Empty<string>();
     }
 
     /// <summary>
@@ -1583,6 +1624,12 @@ internal sealed class ApiPlanGeneratedApiRemovalResult
     public string ApiName => Plan?.ApiName ?? Context.ApiName;
 
     public IReadOnlyList<string> DeletedItems { get; }
+
+    /// <summary>
+    /// Folders próprios preservados por não estarem vazios. Não entram em
+    /// <see cref="DeletedItems"/> — o relatório B081 os recebe tipados.
+    /// </summary>
+    public IReadOnlyList<string> PreservedNonEmptyFolders { get; }
 
     /// <summary>B082: linhas de medição de custo, para a janela Output. Diagnóstico apenas.</summary>
     public IReadOnlyList<string> TelemetryLines { get; }

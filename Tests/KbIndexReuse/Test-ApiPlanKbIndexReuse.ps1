@@ -122,6 +122,8 @@ Assert-Contains $syncOrchestrator 'ResolveSelectedAddedSdtMemberNamesByRole' 'Sy
 Assert-Contains $sdtWriter 'explicitPreserve ||' 'Skip de Save aceita Keep explicito do Sync ou estrutura e ordem iguais ao plano.'
 Assert-Contains $sdtWriter 'canSkipRewrite' 'Reencontro de SDT deve pular Save quando Keep explicito ou estrutura ja bate.'
 Assert-Contains $sdtWriter 'ApiPlanSdtWriteStatus.Unchanged' 'Reencontro sem Save deve publicar Unchanged, nao Reencountered.'
+Assert-Contains $sdtWriter 'else if (string.Equals(ReadPropertyString(item, "idJsonInclude"), "idJsonJsonNull", StringComparison.Ordinal))' 'MemberMatchesItem deve rejeitar idJsonJsonNull quando o plano nao pede Json Null (B082 pendencia 4).'
+Assert-Contains $sdtWriter 'item.SetPropertyValue("idJsonInclude", "idJsonNoProperty");' 'Writer deve limpar idJsonJsonNull obsoleto ao regravar membro sem Json Null.'
 Assert-Contains $sdtWriter 'CollectionItemNameMatches' 'Reencontro de SDT deve tratar CollectionItemName de colecao sem exigir igualdade com o tipo.'
 Assert-Contains $sdtWriter 'string.IsNullOrWhiteSpace(item.CollectionItemName)' 'Match deve tolerar CollectionItemName vazio apos Save (specifier troca o nome do item).'
 Assert-Contains $sdtWriter 'NormalizeSdtTypeName' 'Match de tipo SDT deve normalizar sdt:Nome e Modulo.Nome.'

@@ -557,18 +557,39 @@ public sealed class ApiPlanApplicationFinalReportCollector
         for (var index = 0; index < rawItems.Length; index++)
         {
             var raw = rawItems[index];
-            if (TryParsePreservedFolder(raw, out var preservedFolder))
-            {
-                AddWarning($"Folder '{preservedFolder}' nao foi apagado porque nao ficou vazio.");
-                continue;
-            }
-
             ParseDeletedItem(raw, out var kind, out var name);
             AddDeleted(kind, name);
             if (string.Equals(kind, "API Object", StringComparison.OrdinalIgnoreCase))
             {
                 MainObjectName = name;
             }
+        }
+    }
+
+    /// <summary>
+    /// B082 Fatia B: Folder preservado por não estar vazio — aviso tipado, nunca via lista de
+    /// removidos com string mágica <c>Folder:{nome}:PreservedNonEmpty</c>.
+    /// </summary>
+    public void AddPreservedNonEmptyFolder(string folderName)
+    {
+        if (string.IsNullOrWhiteSpace(folderName))
+        {
+            throw new ArgumentException("Nome do Folder preservado e obrigatorio.", nameof(folderName));
+        }
+
+        AddWarning($"Folder '{folderName.Trim()}' nao foi apagado porque nao ficou vazio.");
+    }
+
+    public void AddPreservedNonEmptyFolders(IReadOnlyList<string> folderNames)
+    {
+        if (folderNames is null)
+        {
+            throw new ArgumentNullException(nameof(folderNames));
+        }
+
+        for (var index = 0; index < folderNames.Count; index++)
+        {
+            AddPreservedNonEmptyFolder(folderNames[index]);
         }
     }
 
@@ -758,34 +779,6 @@ public sealed class ApiPlanApplicationFinalReportCollector
 
         kind = NormalizeDeletedKind(raw.Substring(0, separator).Trim());
         name = raw.Substring(separator + 1).Trim();
-    }
-
-    private static bool TryParsePreservedFolder(string raw, out string folderName)
-    {
-        folderName = string.Empty;
-        if (string.IsNullOrWhiteSpace(raw))
-        {
-            return false;
-        }
-
-        var parts = raw.Split(new[] { ':' }, StringSplitOptions.None);
-        if (parts.Length < 3)
-        {
-            return false;
-        }
-
-        if (!string.Equals(parts[0], "Folder", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        if (!string.Equals(parts[parts.Length - 1], "PreservedNonEmpty", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        folderName = string.Join(":", parts, 1, parts.Length - 2);
-        return !string.IsNullOrWhiteSpace(folderName);
     }
 
     private static string NormalizeDeletedKind(string kind)

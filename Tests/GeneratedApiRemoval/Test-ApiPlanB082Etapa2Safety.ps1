@@ -135,4 +135,11 @@ Assert-NotContains ($remover.Substring($remover.IndexOf('private static ApiPlanR
     'IsReusableTransactionFolderDescription' `
     'DeleteOwnFolder não pode reutilizar a permissividade de Description vazia do Apply.'
 
+# --- 5. IsFolderEmpty cobre qualquer filho (caso 6 / WebPanel), não só tipos da API ----------
+Assert-Contains $remover '!folder.HasObjects && !folder.SubFolders.Any()' 'IsFolderEmpty deve usar HasObjects/SubFolders.'
+Assert-NotContains $remover 'API.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid)' `
+    'IsFolderEmpty nao deve mais varrer API tipada para decidir vazio.'
+Assert-NotContains $remover 'Procedure.GetAll(designModel).Any(item => item.Parent is not null && item.Parent.Guid == folder.Guid)' `
+    'IsFolderEmpty nao deve mais varrer Procedure tipada para decidir vazio.'
+
 Write-Output 'PASS: ApiPlanB082Etapa2Safety'

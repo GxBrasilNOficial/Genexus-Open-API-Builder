@@ -749,6 +749,12 @@ internal static class ApiPlanSdtWriter
                 return false;
             }
         }
+        else if (string.Equals(ReadPropertyString(item, "idJsonInclude"), "idJsonJsonNull", StringComparison.Ordinal))
+        {
+            // B082 pendência 4: Json Null só é contrato de ListFilters nullable. Propriedade
+            // obsoleta na KB não pode passar Unchanged sem limpeza.
+            return false;
+        }
 
         if (member.IsCollection || IsSdtReference(member.DataType))
         {
@@ -991,6 +997,12 @@ internal static class ApiPlanSdtWriter
         if (ShouldSerializeAsJsonNull(member))
         {
             item.SetPropertyValue("idJsonInclude", "idJsonJsonNull");
+            return;
+        }
+
+        if (string.Equals(ReadPropertyString(item, "idJsonInclude"), "idJsonJsonNull", StringComparison.Ordinal))
+        {
+            item.SetPropertyValue("idJsonInclude", "idJsonNoProperty");
         }
     }
 
