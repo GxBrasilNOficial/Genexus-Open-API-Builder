@@ -74,8 +74,8 @@ Release focada no diário durável de operação (`S-B111` F3), no comando `Recu
 - Revalidação HTTP da `NotaFiscal` (2026-09-10) nos dois environments: `PUT` válido `200`; dois limites inválidos retornam `400` com `attribute_limit_exceeded` e duas mensagens sem alterar o registro; membro obrigatório ausente retorna `invalid_request`; ID inexistente retorna `not_found`; registros temporários foram removidos com `DELETE=200`. O HTTP 500 observado no PostgreSQL foi corrigido ao eliminar a incompatibilidade de um `apiteste.dll` antigo com `GeneXus.Programs.Common`, após criar `apiteste` na KB e executar novo `Build All`; não era falha do PostgreSQL. Evidência: `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`.
 ## Assets
 
-- `GenexusOpenApiBuilder.Extension.dll` — GeneXus 18 U14+ (U14, U15 e posteriores). SHA-256 `B073AE58354830BDD532CF5AC6AB364986724D6DD74B161262D35DB3FCA8D571`.
-- `GenexusOpenApiBuilder.Extension-gx18u13.dll` — GeneXus 18 U13− (Upgrade 13 e anteriores; validação formal no U13). SHA-256 `99EC574125A490C1B68B7E75A3E4DC9A126E7D8283770B123C0910F50598F5CC`.
+- `GenexusOpenApiBuilder.Extension.dll` — GeneXus 18 U14+ (U14, U15 e posteriores). SHA-256 `F5A6806F6837080814CFC5A7724AD3C19F6257F8362D8E8A862CCEB0210B2AB4`.
+- `GenexusOpenApiBuilder.Extension-gx18u13.dll` — GeneXus 18 U13− (Upgrade 13 e anteriores; validação formal no U13). SHA-256 `4A33104C8A295162DFC4006C33EF8059F76FA2E4B11BA680FCBCCB0434FE7590`.
 
 ---
 
