@@ -131,19 +131,24 @@ progresso — o que processa os eventos pendentes, inclusive o clique — e emen
 
 ### De comunicação e UX — comprovadas
 
-**D4 — O `DEMO.md:144-146` promete o que o Abortar não cumpre**, afirmando cancelamento "com
-segurança antes de qualquer gravação". Abortar depois do primeiro `Save()` deixa a KB pela
-metade. Atenuante medido: o *hint* da própria janela diz a verdade, então o usuário vê o texto
-correto no momento da decisão. O mesmo trecho descreve a casca como modal, sendo modeless.
+**D4 — ~~O `DEMO.md:144-146` promete o que o Abortar não cumpre~~** (cancelamento "com
+segurança antes de qualquer gravação"; casca descrita como modal). **Feito em 2026-09-16
+(Fatia A da Etapa 3):** `DEMO.md` §21 alinhado a casca modeless e Abortar cooperativo com
+estado parcial + `Recuperar operação interrompida`.
 
-**D5 — O próprio Abortar abre uma janela de reentrada.** `ExtensionBusyProgressDialog.
-OnAbortClicked` chama `Application.DoEvents()` dentro do clique.
+**D5 — ~~O próprio Abortar abre uma janela de reentrada~~** (`OnAbortClicked` com
+`Application.DoEvents()`). **Feito em 2026-09-16 (Etapa 2):** `OnAbortClicked` sem
+`DoEvents` aninhado.
 
-**D6 — A casca de progresso fica viva atrás do relatório final**, em todos os caminhos de
-Apply e Sync e no abort do Remover (`Package.cs:991`, dentro do `using`).
+**D6 — ~~A casca de progresso fica viva atrás do relatório final~~** (Apply/Sync/abort do
+Remover). **Feito** (Unreleased Fixed da janela de progresso; aceite Sessão B item 146 /
+casca × relatório): a casca sai de cena no início do relatório em sucesso, bloqueio, falha
+e aborto.
 
-**D7 — O relatório comunica resultado por texto solto.** Folder preservado por não estar vazio
-entra na lista de itens *apagados* como a string `Folder:{nome}:PreservedNonEmpty`.
+**D7 — ~~O relatório comunica resultado por texto solto~~** (`Folder:{nome}:PreservedNonEmpty`
+na lista de *apagados*). **Feito em 2026-09-16 (Fatia B):** `PreservedNonEmptyFolders` tipado
++ `AddPreservedNonEmptyFolder(s)`; `TryParsePreservedFolder` removido. Ver receita Etapa 3
+abaixo.
 
 **D12 — Diálogos abrem no monitor errado.** Diagnóstico de 2026-09-02: `PrototypeWizardDialog`
 usava `CenterParent`, que o WinForms ignora quando o owner não é um `Control` — e
