@@ -145,11 +145,10 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 **`B122` — a ferramenta versionada de edição textual ancorada.** O backlog a declara urgente e
 «a executar logo após o encerramento da sprint `S-B111`», que aconteceu em 2026-09-15. Desenho e
-motivo na nota operacional do documento 06. **Corte `0.1.0-alpha.8` em preparação nesta sessão**
-(pacote documental + builds; push/tag/release só com autorização humana explícita). A linha
-publicada no remoto permanece `0.1.0-alpha.7` até o Release sair. O estado da branch em relação a
-`origin/main` se mede com `git rev-list --left-right --count origin/main...HEAD`, não se anota
-aqui como fato permanente.
+motivo na nota operacional do documento 06. **Corte `0.1.0-alpha.8` publicado em 2026-09-17**
+(tag `v0.1.0-alpha.8`, GitHub Release pre-release, assets U14+ e U13−). O estado da branch em
+relação a `origin/main` se mede com `git rev-list --left-right --count origin/main...HEAD`, não
+se anota aqui como fato permanente.
 
 ~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
 ainda não mencionam o File do diário `GxOpenApiBuilder_OperationJournal`, o bloqueio que ele
@@ -652,7 +651,7 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 
 ## Bloqueios e fatos ainda não validados
 
-- ~~**Corte de release com a etapa P2 da F3 dentro exige decisão documental.** … nada disso está na documentação pública.~~ **Superado no pacote `0.1.0-alpha.8` (2026-09-17):** README×3, `INSTALL.md`, `DEMO.md` e as notas de release documentam o File `GxOpenApiBuilder_OperationJournal`, o bloqueio e `Recuperar operação interrompida`. Push/tag/GitHub Release ainda dependem de autorização humana explícita.
+- ~~**Corte de release com a etapa P2 da F3 dentro exige decisão documental.** … nada disso está na documentação pública.~~ **Superado:** pacote `0.1.0-alpha.8` documentou o File/bloqueio/Recuperar e foi **publicado** em 2026-09-17 (`v0.1.0-alpha.8`).
 
 O reteste de 2026-09-11 atualizou a situação do `List` da `Laudo`: a execução
 funcional passou nos dois environments, e somente a forma do envelope permanece
