@@ -157,8 +157,11 @@ o caso normal nesta IDE. `ExtensionBusyProgressDialog` usava `CenterScreen`, que
 tela **primária**, não na tela onde a IDE está. Observado em uso; causa identificada por leitura.
 **Atualização 2026-09-03:** Wizard, progresso, Sync e Remover passam por
 `ExtensionIdeScreenPlacement` (Wizard em `StartPosition = Manual`). Smoke U15 na KB pequena, com
-o GeneXus no monitor secundário: essas janelas abriram na frente da IDE. Preferências do Wizard
-ainda usam `CenterParent`. Isso **não** fecha a Etapa 3.
+o GeneXus no monitor secundário: essas janelas abriram na frente da IDE. **Atualização
+2026-09-16 (Fatia A / Etapa 3):** Preferências do Wizard também passam por
+`ExtensionIdeScreenPlacement.CenterOnIdeScreen` antes do `ShowDialog` (`Package.cs`); o
+`CenterParent` residual no construtor do diálogo é sobrescrito. **Feito** — não impede o
+fechamento da Etapa 3.
 
 ### Desempenho — medidas
 
@@ -712,7 +715,8 @@ deixar estado parcial. Folder preservado aparece como item preservado, não entr
 com produtor e consumidores atualizados no mesmo passo, e `TryParsePreservedFolder` removido ou
 reescrito, nunca deixado a interpretar uma string que já não é produzida. Wizard, progresso,
 confirmação e relatório abrem na mesma tela da IDE, com a IDE em monitor secundário. A âncora
-Wizard / Sync / Remover foi fumada em 2026-09-03; casca, Folder preservado e DEMO permanecem.
+Wizard / Sync / Remover foi fumada em 2026-09-03; **casca × relatório, Folder tipado e DEMO**
+foram fechados na retomada de 2026-09-16 (itens 146–149 do checkpoint).
 
 **Em todas:** build Release pelo procedimento do repositório, reinstalação manual da DLL, e
 smoke na IDE. Lint e teste unitário não substituem o smoke.

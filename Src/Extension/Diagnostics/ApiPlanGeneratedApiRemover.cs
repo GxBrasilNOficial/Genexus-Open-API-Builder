@@ -1399,8 +1399,6 @@ internal static class ApiPlanGeneratedApiRemover
         }
     }
 
-    // O curto-circuito de && e preservado: a instrumentacao envolve cada operando
-    // isoladamente, entao uma varredura so e medida quando de fato executa.
     /// <summary>
     /// Folder vazio = sem filhos diretos e sem subpastas. Usa <see cref="Folder.HasObjects"/> e
     /// <see cref="Folder.SubFolders"/> — não uma lista tipada de <c>GetAll</c>. Em 2026-09-16 o
