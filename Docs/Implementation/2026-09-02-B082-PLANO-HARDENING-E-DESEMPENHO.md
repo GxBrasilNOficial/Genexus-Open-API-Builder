@@ -66,6 +66,8 @@ Instrumentação nos commits `7fd4a0d` (Remover) e `c4d62ee` (Apply/Sync), com
 `ApiPlanScanTelemetry` e `ApiPlanScanProbe`. Ambos apenas contam e cronometram: sem escopo ativo
 o delegate executa igual ao código não instrumentado. O curto-circuito de `&&` em
 `IsFolderEmpty` foi preservado, para não medir varredura que não chega a executar.
+**Remissão — 2026-09-17:** estado da medição nestes commits; o `IsFolderEmpty` vigente usa
+`Folder.HasObjects` + `SubFolders` (seção A4, após a linha sobre confirmação pós-`Delete`).
 
 KB `Fabrica Brasil Test`, 196 transações. Três transações escolhidas para isolar variáveis
 distintas: `Setor` (10 KB, 1 nível), `Empresa` (82 KB, 14 níveis) e `DocumentoFiscal` (495 KB,
@@ -332,6 +334,8 @@ Três conclusões, todas com efeito sobre este plano:
 
 `MetadataFile Parent='Root Module'` nas três transações. O metadata File **não** fica dentro do
 Folder da Transaction, e por isso o `WikiFileKBObject.GetAll` de `IsFolderEmpty` nunca o conta.
+**Remissão — 2026-09-17:** a forma tipada (`GetAll`) é a da medição; o `IsFolderEmpty` vigente
+não varre por tipo — ver seção A4 (`HasObjects` + `SubFolders`).
 
 Isso respondia ao gate que a `v20` exigia antes de inverter a ordem para Folder → File. Como a
 inversão foi abandonada (decisão 4), o dado permanece apenas como observação: **três transações
@@ -394,6 +398,8 @@ de uma KB não provam o comportamento de toda instalação**, e a ordem atual n�
    compra nada e exigiria uma exceção no `IsFolderEmpty` para ignorar o File terminal, exceção
    capaz de liberar um Folder que ainda contenha outro File. Mantida a ordem atual, some a
    exceção e some o risco.
+   **Remissão — 2026-09-17:** a «exceção no `IsFolderEmpty`» refere-se à forma tipada da época;
+   o helper vigente (`HasObjects` + `SubFolders`) está na seção A4.
    O fato medido continua registrado, agora como observação e não como premissa: nas três
    transações o metadata File ficou no `Root Module`, fora do Folder.
 5. **A sessão de progresso expõe três primitivos**, não dois:
