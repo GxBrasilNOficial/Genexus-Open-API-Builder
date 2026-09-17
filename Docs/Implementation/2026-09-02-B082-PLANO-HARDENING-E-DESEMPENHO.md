@@ -511,20 +511,24 @@ reutilização durante o Apply e **não** pode ser transportada para autorizar u
 
 **Etapa 3 — comunicação e UX.** Fechamento da casca antes do relatório final em todos os
 caminhos; correção do `DEMO.md:144-146` e do trecho correspondente do plano de 2026-08-31;
-ancoragem das janelas na tela do owner; e Folder preservado como item estruturado — o que exige
-tocar, no mesmo passo, toda a cadeia que hoje transporta a informação como texto:
+ancoragem das janelas na tela do owner; e Folder preservado como item estruturado — o que exigia
+tocar, no mesmo passo, toda a cadeia que **então** transportava a informação como texto:
 
-1. `ApiPlanGeneratedApiRemover.MaybeDeleteFolder` produz `Folder:{nome}:PreservedNonEmpty` e a
-   insere na lista de **removidos**;
-2. `Package.cs` a entrega por `report.AddDeletedItems(result.DeletedItems.ToArray())`;
-3. `ApiPlanApplicationFinalReport.AddDeletedItems` chama `TryParsePreservedFolder`, que faz o
-   *parsing* da string e a reclassifica;
-4. `BuildOutputSummary` e `BuildReadableBody` renderizam o resultado — o primeiro publicado por
+1. `ApiPlanGeneratedApiRemover.MaybeDeleteFolder` produzia `Folder:{nome}:PreservedNonEmpty` e a
+   inseria na lista de **removidos**;
+2. `Package.cs` a entregava por `report.AddDeletedItems(result.DeletedItems.ToArray())`;
+3. `ApiPlanApplicationFinalReport.AddDeletedItems` chamava `TryParsePreservedFolder`, que fazia o
+   *parsing* da string e a reclassificava;
+4. `BuildOutputSummary` e `BuildReadableBody` renderizavam o resultado — o primeiro publicado por
    `WriteOutput` em `Package.cs`, o segundo pelo diálogo do relatório final via `ShowFinalReport`.
 
-Trocar apenas o produtor deixa `TryParsePreservedFolder` interpretando uma string que já não é
-produzida. Os testes de `Tests/ApplicationFinalReport/` cobrem esse caminho e precisam afirmar a
-forma nova, não apenas perder as asserções antigas.
+Trocar apenas o produtor deixaria `TryParsePreservedFolder` interpretando uma string que já não
+seria produzida. Os testes de `Tests/ApplicationFinalReport/` cobriam esse caminho e precisavam
+afirmar a forma nova, não apenas perder as asserções antigas.
+
+**Feito em 2026-09-16 (Fatia B):** produtor tipado `PreservedNonEmptyFolders`;
+`AddPreservedNonEmptyFolder(s)` no relatório; `TryParsePreservedFolder` removido; aceite IDE do
+caso 6 (aviso tipado com WebPanel / `HasObjects`).
 
 **Fora desta frente, registrado:** a abertura do Wizard (D8) e a responsividade da IDE (D11)
 têm causa distinta — montagem de interface e trabalho na thread da UI. Merecem frente própria.
@@ -595,7 +599,7 @@ Build All: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`.
 1. **Escrita parcial do BC (P1 — consistência B067; absorvido pela F1 da `S-B111`).** A medição de 2026-09-03 registrou `ApiPlanBusinessComponentWriter.Apply` salvando o API Object **antes** das Procedures (`SaveApi` → `SaveProcedure` Get/Create/Update/Delete), com risco de drift entre API Object e metadata se a operação abortasse no meio. A F1 reordenou `saveSteps` para salvar as Procedures consumidoras antes do API Object, deixando o API Object no writer final único; essa correção foi validada manualmente para encerramento em 2026-09-10/11, com a exceção explícita do `B121`. A matriz de Sync permanece com a exceção do perfil List isolado, registrada no `B121`; F2 e F3 absorveram os resíduos de seam/recibos e durabilidade/remoção e foram encerradas em 2026-09-13 e 2026-09-15. O incidente original, sua evidência e a recuperação usada permanecem no registro histórico `Docs/Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md`. Não tratar este P1 como pendência aberta do `B082` nem como tarefa posterior a `B108`; o residual 1B/2/3 do `B082`, no encerramento da `S-B111`, ficou fora da sprint e da pauta imediata por decisão declarada.
 2. **Reencontro de SDT em coleções / referências.** **Fechado na IDE (2026-09-03):** 8/8 SDTs `Unchanged` na `NotaFiscal` (inclui `ErrorResponse`/`ListResponse`). Causas: `CollectionItemName` pós-specifier; `ATTCUSTOMTYPE` `StructureTypeReference` resolvido por Id.
 3. ~~**Higiene de teste (não bloqueia).** `Tests/SdtReencounter/Test-SdtCollectionItemNameProbe.ps1` absorvido em `Tests/KbIndexReuse/Test-ApiPlanKbIndexReuse.ps1`; pasta removida; sem gate novo. **Feito em 2026-09-16** (Fatia A da Etapa 3).~~
-4. **Matcher `idJsonInclude` unidirecional (não bloqueia).** Em `MemberMatchesItem`, `idJsonJsonNull` só é exigido quando `ShouldSerializeAsJsonNull` (ListFilters nullable). Se a KB tiver `idJsonInclude=idJsonJsonNull` e o plano não pedir, o SDT pode ficar `Unchanged` sem limpar a propriedade. Contrato aplicável: Json Null em filtros List (B070/B076); espírito do doc 13 §características. **Correção:** rejeitar `idJsonJsonNull` quando o plano não espera (aceitar vazio/`idJsonNoProperty`); alinhar lint no KbIndexReuse. Sessão futura nesta sprint, junto do matcher/Unchanged.
+4. ~~**Matcher `idJsonInclude` unidirecional (não bloqueia).** Em `MemberMatchesItem`, `idJsonJsonNull` só era exigido quando `ShouldSerializeAsJsonNull` (ListFilters nullable). Se a KB tivesse `idJsonInclude=idJsonJsonNull` e o plano não pedisse, o SDT podia ficar `Unchanged` sem limpar a propriedade. **Feito em 2026-09-16** (Fatia B): matcher rejeita `idJsonJsonNull` inesperado; writer limpa com `idJsonNoProperty`; lint em `tests.kbIndexReuse`.~~
 
 **Etapa 1B**, se e quando for executada:
 
@@ -1199,18 +1203,21 @@ depois da validação agregada:
   para constatar que o `Delete()` do SDK surtiu efeito; um índice, mantido ou não, não responde a
   essa pergunta. Não otimizar por agregação (ver decisão 3).
 
-`IsFolderEmpty` faz cinco varreduras completas de uma vez, e com as de localização e confirmação
-do Folder a exclusão de um único Folder custa sete. Mede 1,4 a 1,7 s — não é o gargalo. As de
-localização podem usar o índice mantido na 1B; a de confirmação, não.
+`IsFolderEmpty` **fazia** cinco varreduras completas de uma vez, e com as de localização e
+confirmação do Folder a exclusão de um único Folder custava sete. Media 1,4 a 1,7 s — não era o
+gargalo. As de localização poderiam usar o índice mantido na 1B; a de confirmação, não.
+**Em 2026-09-16** passou a `Folder.HasObjects` + `SubFolders` (uma leitura do Folder, sem
+`GetAll` tipado) — o aceite IDE mostrou que a lista tipada não via WebPanel e esgotava
+`RetryBudgetExhausted` sem `PreservedNonEmpty`.
 
 O parâmetro booleano `beforeAnyDelete`, usado para variar a mensagem de bloqueio, é o ponto onde
 a distinção entre "antes de qualquer exclusão" e "durante" está codificada hoje.
 
-`MaybeDeleteFolder` é também onde entra a correção da D10 (Etapa 2): hoje ele não verifica
-contêiner, e a regra a reaproveitar é `ApiPlanTransactionFolder.IsInExpectedContainer`, hoje
-privada e usada só por `IsReusable`. Note que a permissividade de `IsReusable` para Description
-vazia serve à reutilização durante o Apply e **não** deve ser transportada para autorizar um
-`Delete`.
+`MaybeDeleteFolder` é também onde entra a correção da D10 (Etapa 2): ~~hoje ele não verifica
+contêiner~~ **(corrigido na Etapa 2, 2026-09-16)**; a regra reaproveitada é
+`ApiPlanTransactionFolder.IsInExpectedContainer`. Note que a permissividade de `IsReusable` para
+Description vazia serve à reutilização durante o Apply e **não** deve ser transportada para
+autorizar um `Delete`.
 
 ### A5 — Testes que reprovam por casamento textual
 
