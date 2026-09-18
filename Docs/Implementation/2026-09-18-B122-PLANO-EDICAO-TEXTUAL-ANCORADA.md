@@ -355,21 +355,20 @@ pré-push. Não é necessário renumerar os codes do script.
 
 ## 8. Critérios de aceite
 
-- [ ] `Apply-TextPatch.ps1` existe em `scripts/` e roda em pwsh 7.4+.
-- [ ] Matriz A–H do §2.3 coberta pelo teste offline com token de sucesso explícito.
-- [ ] Pipeline D16: revalidação no buffer antes de cada op; hazard de concatenação coberto.
-- [ ] Fail-fast `CROSS_OP_TO_CONTAINS_FROM` coberto por teste.
-- [ ] Nenhuma escrita ocorre se qualquer âncora falhar (original ou buffer).
-- [ ] WhatIf não altera SHA-256 do alvo.
-- [ ] Escrita UTF-8 sem BOM; leitura com BOM falha.
-- [ ] MIXED falha; `.md` com política LF grava LF.
-- [ ] Gate `tests.textPatch` no checker **e** na fixture de `Test-OpenApiBuilderPrePushChecks.ps1`
+- [x] `Apply-TextPatch.ps1` existe em `scripts/` e roda em pwsh 7.4+.
+- [x] Matriz A–H do §2.3 coberta pelo teste offline com token de sucesso explícito.
+- [x] Pipeline D16: revalidação no buffer antes de cada op; hazard de concatenação coberto.
+- [x] Fail-fast `CROSS_OP_TO_CONTAINS_FROM` coberto por teste.
+- [x] Nenhuma escrita ocorre se qualquer âncora falhar (original ou buffer).
+- [x] WhatIf não altera SHA-256 do alvo.
+- [x] Escrita UTF-8 sem BOM; leitura com BOM falha.
+- [x] MIXED falha; `.md` com política LF grava LF.
+- [x] Gate `tests.textPatch` no checker **e** na fixture de `Test-OpenApiBuilderPrePushChecks.ps1`
       (checklist §7.4 completo).
-- [ ] `Test-ApplyTextPatch.ps1` só sai com exit `0` ou `1` (nunca propaga exit `2` do script).
-- [ ] Cabeçalho do script declara fronteira com `Apply-ApprovedPatch`.
-- [ ] Documento 06: nota B122 alinhada à evidência de attributes (remissão datada).
-- [ ] Checkpoint aponta para este plano enquanto a frente estiver aberta; após aceite, próxima
-      ação única só muda por decisão humana.
+- [x] `Test-ApplyTextPatch.ps1` só sai com exit `0` ou `1` (nunca propaga exit `2` do script).
+- [x] Cabeçalho do script declara fronteira com `Apply-ApprovedPatch`.
+- [x] Documento 06: nota B122 alinhada à evidência de attributes (remissão datada).
+- [x] Checkpoint: frente `B122` fechada; próxima ação única vigente = `B123` (2026-09-18).
 
 ## 9. Riscos e mitigação
 
@@ -386,7 +385,8 @@ pré-push. Não é necessário renumerar os codes do script.
 
 ## 10. Próximo passo operacional
 
-Após aprovação humana deste plano: implementar os itens 2–5 da §7 nesta ordem, sem tocar na
-instalação GeneXus e sem commit até pedido explícito.
+~~Após aprovação humana deste plano: implementar os itens 2–5 da §7.~~ **Feito em 2026-09-18**
+(implementação, testes, gate, commits `ce1cf44`/`bf40b3b`). Próxima ação do repositório: `B123`
+(ver checkpoint).
 
 FIM DO PLANO

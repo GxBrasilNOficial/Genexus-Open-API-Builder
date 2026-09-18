@@ -143,13 +143,11 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**Aceite humano e commit do `B122`** (implementação offline concluída em 2026-09-18). Entregue:
-`scripts/Apply-TextPatch.ps1`, `Tests/TextPatch/Test-ApplyTextPatch.ps1`, gate `tests.textPatch`,
-plano em `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`, remissão na nota
-operacional do documento 06. Suíte B122 e integração no checker pendentes de confirmação humana
-antes do commit. **Não muda o produto** (extensão/IDE). Itens `B123`/`B124`/`B125` **não
-displace** este fechamento. **Corte `0.1.0-alpha.8` publicado em 2026-09-17**
-(tag `v0.1.0-alpha.8`). O estado da branch em relação a `origin/main` se mede com
+**`B123` — posse histórica do Folder na metadata**, para a remoção poder apagar Folder próprio
+que ficou vazio. Decisão de 2026-09-15 («depois da sprint `S-B111`»); o `B122` (edição textual
+ancorada) foi **entregue e commitado** em 2026-09-18 (`ce1cf44`, imagens promo `bf40b3b`) e não
+segura mais a fila. Detalhe no documento 06. **Corte `0.1.0-alpha.8` publicado em 2026-09-17**.
+O estado da branch em relação a `origin/main` se mede com
 `git rev-list --left-right --count origin/main...HEAD`, não se anota aqui como fato permanente.
 
 ~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
@@ -214,11 +212,11 @@ critérios de aceite: oito de oito atendidos, com a ressalva declarada de que o 
 porque indeterminação não se produz por clique. Tabela critério × evidência na seção 15 da P8. O encerramento formal da F3 e da sprint `S-B111` **foi decidido em
 2026-09-15**, e está registrado na seção acima.
 
-**Fora da F3, para logo depois do encerramento da sprint:** `B122` — dar aos agentes uma
-ferramenta versionada de edição textual ancorada. Aberto em 2026-09-15, depois de uma única
-sessão produzir 39 scripts descartáveis para aplicar edições de texto, cada um decidindo à mão
-quebra de linha, encoding e unicidade da âncora. Não muda o produto; muda o risco de toda
-alteração de texto feita por agente aqui. Desenho e motivo na nota operacional do documento 06.
+**Fora da F3, depois do encerramento da sprint:** ~~`B122` (edição textual ancorada)~~
+**entregue e commitado em 2026-09-18** (`scripts/Apply-TextPatch.ps1`, gate `tests.textPatch`,
+plano `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`). A próxima ação
+única vigente é `B123` (posse histórica do Folder). Nota operacional do `B122` permanece no
+documento 06.
 
 **Duas coisas precisam ser sabidas antes de testar.** A primeira: uma segunda remoção da mesma
 API agora **bloqueia** em vez de ser aceita como idempotente, porque um alvo previsto que já
@@ -325,7 +323,7 @@ evidência `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`). Etapas 1A 
 da KB grande é DLL `ce30374`; emissor de SDT mudou em `0568677`/`cfb73b0` (números conservadores
 da 1A).
 
-O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. A próxima ação única vigente é `B122` (ver seção «Próxima ação única»).
+O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. ~~A próxima ação única vigente é `B122`.~~ **Superado em 2026-09-18:** `B122` commitado; vigente = `B123` (ver seção «Próxima ação única»).
 
 A conclusão da `S-B111` não fechou automaticamente o `B082`: no encerramento, por decisão declarada (item 135), o residual 1B/2/3 ficou fora da sprint e da pauta imediata; o que a sprint absorveu (ordem do API Object, seam de persistência, remoção por fila) já está nas fases F1–F3. O fechamento do residual veio depois, na retomada de 2026-09-16 (Etapas 2+3) e no aceite 1B de 2026-09-17.
 
@@ -650,7 +648,8 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 149. Em 2026-09-16, **DEMO / Sessão B fechada** para o residual `B082` Etapas 2+3 (exceto 1B): `Docs/Public/DEMO.md` §21 já descreve casca **modeless**, Abortar cooperativo com KB parcial e `Recuperar operação interrompida` — alinhado ao exercido nos itens 142–148 (abort Remove, casca×relatório, Recuperar). Sem novo clique IDE. Etapa **1B** permanece adiada. Próxima ação única permanece `B122`.
 150. Em 2026-09-17, **Etapa 1B offline** do residual `B082`: contrato Nível B no plano; `ForgetRemoved*` no índice; Remover usa o índice em localização/revalidação e só esquece após `confirmacao-pos-delete` por `GetAll`; retomada `ContinueInterruptedRemoval` cria índice próprio; gate `tests.b082Etapa1BIndex`; build Release 0 avisos. **B082 não fechado** — falta remediar Remove em `FabricaBrasil18Test` (`Setor`/`Empresa`/`DocumentoFiscal`) com a DLL desta sessão (metas ≤7s/≤20s/≤9s; marcas estruturais). Próxima ação única permanece `B122`.
 151. Em 2026-09-17, **aceite IDE Etapa 1B e fechamento do residual `B082`**, por decisão humana com ressalva de relógio: Remove em `FabricaBrasil18Test` — `Setor` 7711 ms (meta ≤7 s), `Empresa` 20063 ms (meta ≤20 s), `DocumentoFiscal` 7998 ms (meta ≤9 s); marcas 1B ok nas três (só `confirmacao-pos-delete` + `folder-vazio`). Evidência: `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`. Próxima ação única permanece `B122`.
-152. Em 2026-09-18, **`B122` implementado offline**: plano emendado (D16, gate, exit do harness); `scripts/Apply-TextPatch.ps1`; `Tests/TextPatch/Test-ApplyTextPatch.ps1` (PASS); gate `tests.textPatch` no checker + fixture; nota do documento 06 alinhada à evidência de attributes; entrada `[Unreleased]` no CHANGELOG. Próxima ação única = aceite humano e commit do B122.
+152. Em 2026-09-18, **`B122` implementado offline**: plano emendado (D16, gate, exit do harness); `scripts/Apply-TextPatch.ps1`; `Tests/TextPatch/Test-ApplyTextPatch.ps1` (PASS); gate `tests.textPatch` no checker + fixture; nota do documento 06 alinhada à evidência de attributes; entrada `[Unreleased]` no CHANGELOG. Naquele instante a próxima ação ainda era o aceite/commit.
+153. Em 2026-09-18, **`B122` fechado no repositório**: commits `ce1cf44` (ferramenta + gate + docs) e `bf40b3b` (imagens promo `0.1.0-alpha.8`); pré-push mecânica sem impedimento; gaps de checkpoint/`AGENTS.md` alinhados neste follow-up. Próxima ação única = `B123`.
 
 ## Bloqueios e fatos ainda não validados
 

@@ -12,6 +12,17 @@
 - Em PowerShell, uma verificação direta é `[IO.File]::ReadAllBytes($path)[-1] -eq 10`; não considerar a edição concluída enquanto o último byte não for `10`.
 - `git diff --check` não acusa ausência de newline final, então esta conferência deve ser explícita antes de commitar documentação.
 
+## Edição textual ancorada em lote (B122)
+
+- Para várias substituições literais no mesmo arquivo (ou quando a edição precisa de unicidade
+  estrita da âncora, política de EOL/BOM e prévia sem gravar), preferir
+  `scripts/Apply-TextPatch.ps1` com manifesto JSON (`-ManifestPath`) e, se couber, `-WhatIf`.
+- Não reinventar script descartável de `contains` + primeira ocorrência: o contrato (D16,
+  `count == 1`, recusa de MIXED/BOM, gate `tests.textPatch`) está no plano
+  `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`.
+- Esta ferramenta **não** substitui `Apply-ApprovedPatch` das skills XPZ (backup de unified
+  diff Git); são complementares.
+
 ## Skills transversais de GeneXus-XPZ-Skills
 
 O repositório irmão `C:\Dev\Knowledge\GeneXus-XPZ-Skills` (ou a raiz de repositório de skills

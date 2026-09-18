@@ -15,7 +15,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - `B122` — ferramenta versionada de edição textual ancorada: `scripts/Apply-TextPatch.ps1`
   (manifesto JSON, unicidade `count==1`, lote atômico com revalidação no buffer, política de
   EOL/BOM, `-WhatIf`, recibo JSON), teste `Tests/TextPatch/Test-ApplyTextPatch.ps1` e gate
-  `tests.textPatch` no checker pré-push. Plano:
+  `tests.textPatch` no checker pré-push. **Fechado em 2026-09-18** (`ce1cf44`). Plano:
   `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`. Não altera a extensão.
 
 ### Planned
