@@ -10,6 +10,14 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
+### Added
+
+- `B122` — ferramenta versionada de edição textual ancorada: `scripts/Apply-TextPatch.ps1`
+  (manifesto JSON, unicidade `count==1`, lote atômico com revalidação no buffer, política de
+  EOL/BOM, `-WhatIf`, recibo JSON), teste `Tests/TextPatch/Test-ApplyTextPatch.ps1` e gate
+  `tests.textPatch` no checker pré-push. Plano:
+  `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`. Não altera a extensão.
+
 ### Planned
 
 - `B108` (plano aprovado 2026-08-31; estacionado desde 2026-09-05): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. As três fases da sprint `S-B111` foram encerradas em 2026-09-15, mantendo `B121` fora dela. Ver o checkpoint e o documento 06.

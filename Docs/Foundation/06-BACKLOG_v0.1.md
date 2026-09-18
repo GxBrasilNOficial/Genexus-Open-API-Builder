@@ -278,7 +278,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B119 | Auditar e remover variáveis locais sem uso efetivo no código C#, começando por `b111ManagedApply` no fluxo de Sync | Baixa — manutenção futura, sem mudança de comportamento esperada; plano em [`Docs/Implementation/B119-LIMPEZA-VARIAVEIS-SEM-USO.md`](../Implementation/B119-LIMPEZA-VARIAVEIS-SEM-USO.md) |
 | B120 | Normalizar o envelope HTTP do serviço `List` entre .NET Framework/SQL Server e .NET/PostgreSQL, preservando o `ErrorResponse` público | Urgente — bloqueia o aceite HTTP multiplataforma; aberto em 2026-09-10, a retenção até o encerramento da sprint `S-B111` foi superada e o item segue aberto para retomada conforme o checkpoint. A F2 foi encerrada em 2026-09-13 e a F3 em 2026-09-15, com a sprint. Plano em [`Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`](../Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md) |
 | B121 | Tornar explícita a seleção das etapas `Business Component` e `List` no Sync, sem inferir a intenção pela lista de serviços | Média — melhoria futura, fora da sprint `S-B111`; os perfis Sync sem BC/List, somente BC e BC+List foram aceitos na F1, enquanto o perfil somente List isolado é a exceção formal transferida para este item e permanece não comprovado até sua implementação. Evidência IDE em 2026-09-11: no Sync de `Contrato`, sem opção de BC e com `ContratoObservacao` marcado somente em `Response`, o Output executou BC (`Get/Create/Update`) antes de List; `FinalWriter='List'`, `ApiSaveCount=1`, `Bloqueados=0`. O perfil somente List não foi comprovado. Plano: [`Docs/Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md`](../Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md) |
-| B122 | Dar aos agentes uma ferramenta versionada de edição textual ancorada, no lugar do script descartável que cada sessão reinventa | **Urgente — a executar logo após o encerramento da sprint `S-B111`.** Não muda o produto; muda o risco de toda alteração de texto feita por agente neste repositório. Ver a nota operacional abaixo |
+| B122 | Dar aos agentes uma ferramenta versionada de edição textual ancorada, no lugar do script descartável que cada sessão reinventa | **Implementado offline em 2026-09-18** (`scripts/Apply-TextPatch.ps1` + gate `tests.textPatch`); aguarda aceite humano/commit. Plano: `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`. Não muda o produto |
 | B123 | Registrar a **posse histórica do Folder** da API na metadata, para que a remoção possa apagar um Folder próprio que ficou vazio | Média — **a executar depois da sprint `S-B111`**, por decisão de 2026-09-15. Medido em campo no cenário 8 da P8: o `TesteOpenApi` ficou na KB, vazio, depois de uma remoção completa. É o comportamento correto hoje — a fila só apaga Folder `wasCreated=true`, e `wasCreated` descreve a operação corrente, não quem criou o Folder —, mas o efeito é permanente: assim que um Folder sobrevive a uma remoção, toda geração seguinte o reencontra como reutilizado e nenhuma remoção futura o apagará. A saída barata, apagar Folder vazio com Description canônica, foi **recusada na mesma data** por ser menos segura: Description isolada nunca autorizou exclusão neste projeto (seção 4.3 do plano da F3), e um Folder homônimo de terceiro com a mesma marca seria apagado. A saída aprovada é a cara: a metadata registrar quem criou o Folder, o que é mudança de schema (V4) com leitura legada V1/V2/V3, fingerprint e consumidores a atualizar. Enquanto não existir, o resíduo é um Folder vazio, inofensivo, que o usuário apaga à mão se quiser. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`, seção 12 |
 | B124 | Definir **quando** um aceite ou smoke IDE exige documento dedicado de evidência em `Docs/Implementation/`, em vez de ficar só no item do checkpoint e na entrada Validated do `CHANGELOG` | Média — nascido em 2026-09-16. Ver nota operacional abaixo. **Não displace `B122`** |
 | B125 | Preview do Remover, após aborto parcial, ainda lista alvos já apagados na KB (inventário vem só da metadata) | Média — nascido em 2026-09-17 a partir do observado no item 142 do checkpoint. Ver nota operacional abaixo. **Não displace `B122`** |
@@ -361,9 +361,14 @@ verificação de unicidade por edição. O que faltava era o resto:
    não existir mais, as duas primeiras já foram gravadas. O certo é **conferir todas as âncoras
    antes de gravar qualquer uma**.
 2. **Quebra de linha e encoding por construção, não por decisão.** Este repositório tem
-   `.gitattributes`: `.cs` em CRLF, `.md` em LF. Cada um dos 39 scripts **escolheu à mão** qual
-   usar. Acertar 39 vezes seguidas é sorte administrada, não processo. O mesmo vale para a
-   proibição de BOM, que hoje depende de o agente lembrar de `UTF8Encoding($false)`.
+   `.gitattributes` com `eol=lf` explícito para `*.md`, `*.yml` e `*.yaml`. Demais tipos
+   (incluindo `.cs` e `.ps1`) ficam sem `eol=` no attributes — a working tree pode ser LF,
+   CRLF ou MIXED. Cada um dos 39 scripts **escolheu à mão** qual usar. Acertar 39 vezes
+   seguidas é sorte administrada, não processo. O mesmo vale para a proibição de BOM, que
+   hoje depende de o agente lembrar de `UTF8Encoding($false)`. Remissão — 2026-09-18: a
+   redação anterior desta nota que associava «`.cs` em CRLF via attributes» estava imprecisa;
+   a medição e o contrato vigentes estão em
+   `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`.
 3. **Unicidade da âncora.** O padrão que os 39 usaram foi `assert âncora in texto` seguido de
    substituir a primeira ocorrência. Isso **não** verifica que a âncora é única: numa âncora curta
    ou repetida, a substituição acerta a primeira e ninguém percebe. A verificação correta é contar
@@ -372,12 +377,14 @@ verificação de unicidade por edição. O que faltava era o resto:
 5. **Rastro.** O que foi alterado, e com que âncora, morre com a sessão. Numa revisão pré-push,
    isso é justamente o que se quer poder reler.
 
-**Direção recomendada.** Um script versionado em `scripts/` — `Apply-TextPatch.ps1` ou
-equivalente — que receba uma lista de `{arquivo, de, para}`, **valide todas** as âncoras (existe e
-é única) antes de qualquer escrita, derive quebra de linha e encoding do arquivo alvo e do
-`.gitattributes` em vez de aceitá-los como parâmetro, recuse BOM, ofereça `-WhatIf` com o diff, e
-registre o que aplicou. Fica no repositório porque é aqui que a política de EOL vive; promover a
-skill global só depois de a ferramenta provar valor em uso real.
+**Direção recomendada.** Um script versionado em `scripts/` — `Apply-TextPatch.ps1` —
+que receba um manifesto `{path, ops[{from,to}]}`, **valide todas** as âncoras (existe e é
+única) no original, revalide no buffer antes de cada substituição (D16), derive quebra de
+linha e encoding da política do alvo / `.gitattributes` em vez de aceitá-los como parâmetro,
+recuse BOM e MIXED, ofereça `-WhatIf`, e registre o que aplicou em JSON no stdout. Fica no
+repositório porque é aqui que a política de EOL vive; promover a skill global só depois de a
+ferramenta provar valor em uso real. Plano e aceite:
+`Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`.
 
 **O que esta nota não afirma.** Não há evidência de que algum dos 39 scripts tenha corrompido
 arquivo: os gates mecânicos, o build e a releitura das seções alteradas passaram em todas as

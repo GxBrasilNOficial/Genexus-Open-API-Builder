@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-17.
+2026-09-18.
 
 ## Último marco concluído
 
@@ -143,12 +143,14 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**`B122` — a ferramenta versionada de edição textual ancorada.** O backlog a declara urgente e
-«a executar logo após o encerramento da sprint `S-B111`», que aconteceu em 2026-09-15. Desenho e
-motivo na nota operacional do documento 06. **Corte `0.1.0-alpha.8` publicado em 2026-09-17**
-(tag `v0.1.0-alpha.8`, GitHub Release pre-release, assets U14+ e U13−). O estado da branch em
-relação a `origin/main` se mede com `git rev-list --left-right --count origin/main...HEAD`, não
-se anota aqui como fato permanente.
+**Aceite humano e commit do `B122`** (implementação offline concluída em 2026-09-18). Entregue:
+`scripts/Apply-TextPatch.ps1`, `Tests/TextPatch/Test-ApplyTextPatch.ps1`, gate `tests.textPatch`,
+plano em `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`, remissão na nota
+operacional do documento 06. Suíte B122 e integração no checker pendentes de confirmação humana
+antes do commit. **Não muda o produto** (extensão/IDE). Itens `B123`/`B124`/`B125` **não
+displace** este fechamento. **Corte `0.1.0-alpha.8` publicado em 2026-09-17**
+(tag `v0.1.0-alpha.8`). O estado da branch em relação a `origin/main` se mede com
+`git rev-list --left-right --count origin/main...HEAD`, não se anota aqui como fato permanente.
 
 ~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
 ainda não mencionam o File do diário `GxOpenApiBuilder_OperationJournal`, o bloqueio que ele
@@ -648,6 +650,7 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 149. Em 2026-09-16, **DEMO / Sessão B fechada** para o residual `B082` Etapas 2+3 (exceto 1B): `Docs/Public/DEMO.md` §21 já descreve casca **modeless**, Abortar cooperativo com KB parcial e `Recuperar operação interrompida` — alinhado ao exercido nos itens 142–148 (abort Remove, casca×relatório, Recuperar). Sem novo clique IDE. Etapa **1B** permanece adiada. Próxima ação única permanece `B122`.
 150. Em 2026-09-17, **Etapa 1B offline** do residual `B082`: contrato Nível B no plano; `ForgetRemoved*` no índice; Remover usa o índice em localização/revalidação e só esquece após `confirmacao-pos-delete` por `GetAll`; retomada `ContinueInterruptedRemoval` cria índice próprio; gate `tests.b082Etapa1BIndex`; build Release 0 avisos. **B082 não fechado** — falta remediar Remove em `FabricaBrasil18Test` (`Setor`/`Empresa`/`DocumentoFiscal`) com a DLL desta sessão (metas ≤7s/≤20s/≤9s; marcas estruturais). Próxima ação única permanece `B122`.
 151. Em 2026-09-17, **aceite IDE Etapa 1B e fechamento do residual `B082`**, por decisão humana com ressalva de relógio: Remove em `FabricaBrasil18Test` — `Setor` 7711 ms (meta ≤7 s), `Empresa` 20063 ms (meta ≤20 s), `DocumentoFiscal` 7998 ms (meta ≤9 s); marcas 1B ok nas três (só `confirmacao-pos-delete` + `folder-vazio`). Evidência: `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`. Próxima ação única permanece `B122`.
+152. Em 2026-09-18, **`B122` implementado offline**: plano emendado (D16, gate, exit do harness); `scripts/Apply-TextPatch.ps1`; `Tests/TextPatch/Test-ApplyTextPatch.ps1` (PASS); gate `tests.textPatch` no checker + fixture; nota do documento 06 alinhada à evidência de attributes; entrada `[Unreleased]` no CHANGELOG. Próxima ação única = aceite humano e commit do B122.
 
 ## Bloqueios e fatos ainda não validados
 
