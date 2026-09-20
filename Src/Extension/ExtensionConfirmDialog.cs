@@ -288,9 +288,11 @@ internal sealed class ExtensionConfirmDialog : Form
             return "Business Component da Transaction: não será revertido.";
         }
 
-        if (plan.FolderWasCreated)
+        if (plan.FolderShouldBeRemoved)
         {
-            return "Folder: " + plan.FolderName + " (criado pela extensão; apagar só se ficar vazio)"
+            return "Folder: " + plan.FolderName + (plan.FolderWasCreated
+                ? " (criado pela extensão; apagar só se ficar vazio)"
+                : " (próprio da API; a remoção apaga se ficar vazio)")
                 + Environment.NewLine
                 + "Business Component da Transaction: não será revertido.";
         }

@@ -61,8 +61,8 @@ public sealed class ApiPlanOperationJournal
     public JournalIntentKind IntentKind { get; set; }
 
     /// <summary>
-    /// Versão da metadata de negócio associada, quando houver. Fechado em
-    /// <c>GOAB_API_METADATA_B060_V1</c>, <c>..._V2</c> ou <c>..._V3</c>.
+    /// Versão da metadata de negócio associada, quando houver. Fechado nas
+    /// versões suportadas pelo schema da metadata (V1–V4).
     /// </summary>
     public string? MetadataSchemaVersion { get; set; }
 

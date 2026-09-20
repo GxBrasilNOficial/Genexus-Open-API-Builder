@@ -18,6 +18,18 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   `tests.textPatch` no checker pré-push. **Fechado em 2026-09-18** (`ce1cf44`). Plano:
   `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`. Não altera a extensão.
 
+### Changed
+
+- `B123` — posse histórica do Folder na metadata (`GOAB_API_METADATA_B060_V4`): `objects.transactionFolder` passa a gravar `guid` e `ownedByThisApi`; `wasCreated` continua descrevendo só esta execução. A fila de remoção enfileira o Folder pela posse histórica e pelo GUID persistido, quando houver, e não mais pelo `wasCreated` da operação corrente — um segundo Apply deixava de apagar Folder que a extensão criou. Leitura continua tolerando V1–V3; V3 com `wasCreated=true` e sem o campo novo é adotada na primeira regravação. B115 segue sem reivindicar dono. «Nunca apagar» só para Folder sem posse. Gates da seção 5 e smoke IDE §6 (quatro cenários) passaram em 2026-09-20. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
+
+### Validated
+
+- `B123` — smoke IDE §6 na KB `wsEducacaoSpTeste` / Transaction `Teste` (2026-09-20): criação+Remover apaga Folder; segundo Apply preserva `ownedByThisApi` e Remover apaga Folder; Folder de terceiro permanece; B115 sem posse + Remover (após conserto `IntentKind`) deixa Folder vazio. Evidência no plano e itens 155–158 do checkpoint.
+
+### Fixed
+
+- Remover sobre metadata reconstruída pelo B115: o diário recusava o envelope com `plan.contractHash` nulo quando a metadata tinha `ownership.applicationId` (forma V3/V4 do B115) porque `IntentKind` só olhava a presença do identificador e saía `Current`. O Preview do Folder estava certo; nenhuma exclusão ocorria. Agora `recovery.imported` força `IntentKind=Imported`, reutilizando o `applicationId` gravado. Visível desde a `0.1.0-alpha.8` (B115 com `applicationId`). Descoberto e **revalidado na IDE** no smoke do `B123` (2026-09-20).
+
 ### Planned
 
 - `B108` (plano aprovado 2026-08-31; estacionado desde 2026-09-05): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. As três fases da sprint `S-B111` foram encerradas em 2026-09-15, mantendo `B121` fora dela. Ver o checkpoint e o documento 06.

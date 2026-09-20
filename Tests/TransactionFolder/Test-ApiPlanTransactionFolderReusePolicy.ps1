@@ -42,6 +42,7 @@ if ($reuseStart -lt 0 -or $reuseEnd -lt 0) {
 
 $reuseBranch = $folderSource.Substring($reuseStart, $reuseEnd - $reuseStart)
 Assert-NotContains $reuseBranch '.Save()' 'Folder reutilizado nao pode ser salvo nem realinhado.'
+Assert-NotContains $reuseBranch 'TransactionFolderOwnedByThisApi' 'Reuso não marca posse: a posse histórica vem da metadata anterior.'
 Assert-Contains $folderSource 'var existingFolder = Preflight(designModel, transaction, apiPlan);' 'CreateOrReencounter deve validar o contenedor com a Transaction atual.'
 
 $preflightStart = $folderSource.IndexOf('public static Folder? Preflight(', [StringComparison]::Ordinal)
@@ -65,7 +66,8 @@ Assert-Contains $folderSource 'CreateReuseWarning' 'O reuso deve produzir aviso 
 
 Assert-Contains $stateSource 'InspectFolder(ApiPlanKbObjectNameIndex index, Transaction transaction, ApiPlan apiPlan)' 'O leitor de estado deve receber a Transaction para validar o contenedor.'
 Assert-Contains $stateSource 'ApiPlanTransactionFolder.IsReusable(matches[0], transaction, apiPlan)' 'O leitor de estado deve compartilhar a politica de reuso.'
-Assert-Contains $stateSource 'ApiPlanTransactionFolder.CreateReuseWarning(apiPlan)' 'O detalhe do Wizard deve informar o reuso.'
+Assert-Contains $stateSource 'ApiPlanTransactionFolder.CreateReuseWarning(apiPlan, TryReadFolderOwnedByThisApi(index, apiPlan))' 'O detalhe do Wizard deve informar o reuso com posse histórica.'
+Assert-Contains $stateSource 'TryReadFolderOwnedByThisApi' 'O leitor deve ler ownedByThisApi da metadata existente.'
 Assert-Contains $stateSource 'TransactionFolderWarning' 'O estado deve transportar o aviso para o relatorio final.'
 
 Assert-Contains $packageSource 'AppendTransactionFolderWarning(report, generationState);' 'Wizard/Sync devem propagar o aviso ao relatorio B081.'
@@ -82,6 +84,11 @@ $syncIndex = $packageNorm.IndexOf('ReadForSyncWithIndex(', [StringComparison]::O
 if ($syncShell -lt 0 -or $syncIndex -lt 0 -or $syncShell -gt $syncIndex) {
     throw 'ASSERT_FAILED: a casca do Sync deve abrir antes do índice da KB.'
 }
-Assert-Contains $metadataSource '"wasCreated"] = apiPlan.TransactionFolderWasCreated' 'Metadata deve continuar persistindo wasCreated.'
+Assert-Contains $metadataSource '"wasCreated"] = createdThisRun' 'Metadata deve continuar persistindo wasCreated da operação corrente.'
+Assert-Contains $metadataSource '["ownedByThisApi"] = owned' 'Metadata V4 deve persistir posse histórica do Folder.'
+Assert-Contains $metadataSource 'token["guid"] = guid.Value.ToString("D")' 'Metadata V4 deve persistir o GUID do Folder quando ele existe.'
+Assert-Contains $metadataSource 'CreateTransactionFolderToken' 'Writer deve montar transactionFolder com posse e GUID.'
+Assert-Contains $folderSource 'TransactionFolderOwnedByThisApi = true' 'Criação do Folder deve marcar posse histórica.'
+Assert-Contains $folderSource 'a remocao desta API apagara o Folder se ele ficar vazio' 'Aviso de reuso próprio não pode dizer nunca apagar.'
 
 Write-Output 'PASS: ApiPlanTransactionFolderReusePolicy'

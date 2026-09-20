@@ -10,7 +10,7 @@ Alinhar o tratamento do Folder `<Transaction>OpenApi` preexistente no módulo co
 - Folder reutilizado não recebe `Save()`, não é realinhado e não tem a `Description` alterada. Description humana, vazia ou outro conteúdo preexistente é preservado.
 - Sentinela de Description pertencente à extensão só é aceita quando corresponde exatamente à API atual; sentinela divergente, Folder em outro módulo/contêiner e mais de uma ocorrência continuam bloqueando.
 - O Wizard e o relatório final propagam o aviso de reuso. A metadata mantém `transactionFolder.wasCreated=true` somente para Folder criado na execução e `false` para Folder reencontrado.
-- A remoção continua usando `wasCreated`; Folder reutilizado nunca é apagado. Esse comportamento também foi validado na evidência de B086.
+- A remoção usava `wasCreated` da operação corrente; Folder reutilizado nunca era apagado. Esse comportamento também foi validado na evidência de B086. **Remissão — 2026-09-20 (`B123`):** a fila passou a decidir por `ownedByThisApi` (e GUID persistido); «nunca apagar» só vale sem posse histórica. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
 - A janela B081 passou a recalcular a necessidade de rolagem após o layout e ao redimensionar, evitando ocultar a última linha de avisos longos.
 
 ## Código, testes e build

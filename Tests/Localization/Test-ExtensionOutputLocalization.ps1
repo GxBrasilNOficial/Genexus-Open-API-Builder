@@ -80,6 +80,16 @@ $generationEnglish = $translate.Invoke($null, [object[]] @($generationDetail, $e
 Assert-True ($generationEnglish.Contains('missing=0')) 'Inglês deve traduzir ausentes=.'
 Assert-True (-not $generationEnglish.Contains('ausentes=')) 'Inglês não deve manter ausentes=.'
 Assert-True ($generationEnglish.Contains('planned=8')) 'Inglês deve traduzir planejados.'
+Assert-True ($generationEnglish.Contains('the Folder will never be removed by removing this API')) 'Inglês deve traduzir o aviso de Folder sem posse histórica.'
+Assert-True ($generationSpanish.Contains('el Folder nunca será eliminado por la eliminación de esta API')) 'Espanhol deve traduzir o aviso de Folder sem posse histórica.'
+
+$ownedReuseDetail = "Folder preexistente 'NotaFiscalOpenApi' no contenedor correto sera reutilizado; a Description existente sera preservada e a remocao desta API apagara o Folder se ele ficar vazio."
+$ownedReuseSpanish = $translate.Invoke($null, [object[]] @($ownedReuseDetail, $spanish))
+$ownedReuseEnglish = $translate.Invoke($null, [object[]] @($ownedReuseDetail, $english))
+Assert-True ($ownedReuseSpanish.Contains('la eliminación de esta API eliminará el Folder si queda vacío')) 'Espanhol deve traduzir o aviso de Folder próprio reencontrado.'
+Assert-True ($ownedReuseEnglish.Contains('removing this API will delete the Folder if it remains empty')) 'Inglês deve traduzir o aviso de Folder próprio reencontrado.'
+Assert-True (-not $ownedReuseEnglish.Contains('never be removed')) 'Inglês do reencontro próprio não pode dizer never delete.'
+Assert-True (-not $ownedReuseSpanish.Contains('nunca será eliminado')) 'Espanhol do reencontro próprio não pode dizer nunca eliminar.'
 
 $prefsLoaded = "Preferencias do wizard carregadas da KB ativa: File='GxOpenApiBuilder_Settings'."
 $prefsSpanish = $translate.Invoke($null, [object[]] @($prefsLoaded, $spanish))
@@ -600,9 +610,9 @@ $missingFieldEnglish = $translate.Invoke($null, [object[]] @($missingField, $eng
 Assert-True ($missingFieldEnglish -ceq "Invalid removal metadata: field 'ownership.apiGuid' is missing. The removal deletes nothing without the complete inventory: fix the metadata File or, to regenerate the API over what is left in the KB, delete the metadata File and the API Object and run the Wizard again.") "Inglês deve traduzir a recusa por campo ausente por inteiro. Obtido='$missingFieldEnglish'"
 Assert-True (-not ($translate.Invoke($null, [object[]] @($missingField, $spanish))).Contains('A remoção não apaga')) 'Espanhol não deve deixar a saída da recusa em português.'
 
-$badSchema = "Metadata de remoção incompatível em 'schemaVersion': esperado V1, V2 ou V3, encontrado 'GOAB_X'." + $exitPt
+$badSchema = "Metadata de remoção incompatível em 'schemaVersion': esperado V1, V2, V3 ou V4, encontrado 'GOAB_X'." + $exitPt
 $badSchemaEnglish = $translate.Invoke($null, [object[]] @($badSchema, $english))
-Assert-True ($badSchemaEnglish.Contains("Incompatible removal metadata in 'schemaVersion': expected V1, V2 or V3, found 'GOAB_X'.")) "Inglês deve traduzir a recusa por schemaVersion. Obtido='$badSchemaEnglish'"
+Assert-True ($badSchemaEnglish.Contains("Incompatible removal metadata in 'schemaVersion': expected V1, V2, V3 or V4, found 'GOAB_X'.")) "Inglês deve traduzir a recusa por schemaVersion. Obtido='$badSchemaEnglish'"
 
 $unreadableLevels = 'Metadata hierárquica com levels ilegível; a remoção não usa fallback flat. Corrija a metadata ou regenere a API.'
 Assert-True (($translate.Invoke($null, [object[]] @($unreadableLevels, $english))) -ceq 'Hierarchical metadata with unreadable levels; the removal does not fall back to the flat inventory. Fix the metadata or regenerate the API.') 'Inglês deve traduzir a recusa da metadata hierárquica ilegível.'
@@ -652,10 +662,14 @@ Assert-True (($translate.Invoke($null, [object[]] @('A abertura do diário falho
 $planKind = 'plan.planKind incompatível com operationKind=Remove: esperado Removal, encontrado Generation.'
 Assert-True (($translate.Invoke($null, [object[]] @($planKind, $english))) -ceq 'plan.planKind incompatible with operationKind=Remove: expected Removal, found Generation.') 'Inglês deve traduzir a incompatibilidade de planKind por inteiro.'
 
-$removalMetadata = "Metadata de remoção incompatível em 'schemaVersion': esperado V1, V2 ou V3, encontrado '<ausente>'."
+$removalMetadata = "Metadata de remoção incompatível em 'schemaVersion': esperado V1, V2, V3 ou V4, encontrado '<ausente>'."
 $removalMetadataEnglish = $translate.Invoke($null, [object[]] @($removalMetadata, $english))
-Assert-True ($removalMetadataEnglish -ceq "Incompatible removal metadata in 'schemaVersion': expected V1, V2 or V3, found '<ausente>'.") 'Inglês deve traduzir a metadata de remoção incompatível por inteiro.'
+Assert-True ($removalMetadataEnglish -ceq "Incompatible removal metadata in 'schemaVersion': expected V1, V2, V3 or V4, found '<ausente>'.") 'Inglês deve traduzir a metadata de remoção incompatível por inteiro.'
 Assert-True (-not $removalMetadataEnglish.Contains('incompatível')) 'Inglês não deve deixar essa mensagem pela metade por causa de `: esperado `.'
+
+$ownedFolderNote = 'Folder: TesteOpenApi (próprio da API; a remoção apaga se ficar vazio)'
+Assert-True (($translate.Invoke($null, [object[]] @($ownedFolderNote, $english))) -ceq 'Folder: TesteOpenApi (owned by the API; removal deletes it if it remains empty)') 'Inglês deve traduzir a nota de Folder próprio na confirmação.'
+Assert-True (($translate.Invoke($null, [object[]] @($ownedFolderNote, $spanish))) -ceq 'Folder: TesteOpenApi (propio de la API; la eliminación lo borra si queda vacío)') 'Espanhol deve traduzir a nota de Folder próprio na confirmação.'
 
 $prefsSchema = "Membro 'schemaVersion' incompativel: esperado 'GOAB_WIZARD_PREFERENCES_V1' ou ausente (legado), atual='V9'."
 $prefsSchemaEnglish = $translate.Invoke($null, [object[]] @($prefsSchema, $english))

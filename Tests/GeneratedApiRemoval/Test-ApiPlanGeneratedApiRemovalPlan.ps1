@@ -184,15 +184,59 @@ try {
     $metadataV3['ownership']['applicationId'] = [Newtonsoft.Json.Linq.JValue]::new('cccccccc-cccc-cccc-cccc-cccccccccccc')
     $planV3 = $fromMetadata.Invoke($null, @($metadataV3, 'Teste', $txGuid))
     Assert-Equal 5 (Get-Count (Get-Prop $planV3 'OwnSdtNames')) 'V3 aceita e preserva o inventário gravado'
+    Assert-True ([bool](Get-Prop $planV3 'FolderShouldBeRemoved')) 'Legado V3 com wasCreated=true ainda enfileira o Folder'
 
-    $metadataV0 = [Newtonsoft.Json.Linq.JObject]::Parse($metadataV3.ToString([Newtonsoft.Json.Formatting]::None))
-    $metadataV0['schemaVersion'] = [Newtonsoft.Json.Linq.JValue]::new('GOAB_API_METADATA_B060_V4')
+    $metadataV3False = [Newtonsoft.Json.Linq.JObject]::Parse($metadataV3.ToString([Newtonsoft.Json.Formatting]::None))
+    $metadataV3False['objects']['transactionFolder']['wasCreated'] = [Newtonsoft.Json.Linq.JValue]::new($false)
+    $planV3False = $fromMetadata.Invoke($null, @($metadataV3False, 'Teste', $txGuid))
+    Assert-True (-not [bool](Get-Prop $planV3False 'FolderShouldBeRemoved')) 'Legado V3 com wasCreated=false não enfileira o Folder'
+
+    # V4: posse histórica. wasCreated da operação não autoriza sozinho.
+    $folderGuid = 'dddddddd-dddd-dddd-dddd-dddddddddddd'
+    $metadataV4 = [Newtonsoft.Json.Linq.JObject]::Parse($metadataV3.ToString([Newtonsoft.Json.Formatting]::None))
+    $metadataV4['schemaVersion'] = [Newtonsoft.Json.Linq.JValue]::new('GOAB_API_METADATA_B060_V4')
+    $metadataV4['objects']['transactionFolder']['wasCreated'] = [Newtonsoft.Json.Linq.JValue]::new($false)
+    $metadataV4['objects']['transactionFolder']['ownedByThisApi'] = [Newtonsoft.Json.Linq.JValue]::new($true)
+    $metadataV4['objects']['transactionFolder']['guid'] = [Newtonsoft.Json.Linq.JValue]::new($folderGuid)
+    $planV4 = $fromMetadata.Invoke($null, @($metadataV4, 'Teste', $txGuid))
+    Assert-True ([bool](Get-Prop $planV4 'FolderOwnedByThisApi')) 'V4 ownedByThisApi=true marca posse'
+    Assert-True ([bool](Get-Prop $planV4 'FolderShouldBeRemoved')) 'V4 ownedByThisApi=true enfileira mesmo com wasCreated=false'
+    Assert-Equal $folderGuid ([string](Get-Prop $planV4 'FolderGuid')) 'V4 persiste o GUID do Folder'
+    $summaryV4 = [string]$planType.GetMethod('BuildConfirmationSummary', [System.Reflection.BindingFlags]'Instance, Public').Invoke($planV4, @())
+    Assert-Contains $summaryV4 'próprio da API; a remoção apaga se ficar vazio' 'Confirmação V4 de reencontro próprio'
+
+    $metadataV4Op = [Newtonsoft.Json.Linq.JObject]::Parse($metadataV4.ToString([Newtonsoft.Json.Formatting]::None))
+    $metadataV4Op['objects']['transactionFolder']['wasCreated'] = [Newtonsoft.Json.Linq.JValue]::new($true)
+    $metadataV4Op['objects']['transactionFolder']['ownedByThisApi'] = [Newtonsoft.Json.Linq.JValue]::new($false)
+    $planV4Op = $fromMetadata.Invoke($null, @($metadataV4Op, 'Teste', $txGuid))
+    Assert-True (-not [bool](Get-Prop $planV4Op 'FolderShouldBeRemoved')) 'V4 wasCreated=true sem posse não enfileira'
+
+    $ownType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanTransactionFolderOwnership', $true, $false)
+    Assert-True ($null -ne $ownType) 'ApiPlanTransactionFolderOwnership não encontrado.'
+    $resolveOwnFolder = $ownType.GetMethod('ResolveOwnedByThisApi', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
+    $matchGuid = $ownType.GetMethod('MatchesPersistedGuid', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
+    Assert-True ($null -ne $resolveOwnFolder) 'ResolveOwnedByThisApi não encontrado.'
+    Assert-True ($null -ne $matchGuid) 'MatchesPersistedGuid não encontrado.'
+
+    $previousOwned = [Newtonsoft.Json.Linq.JObject]::Parse('{"objects":{"transactionFolder":{"name":"TesteOpenApi","wasCreated":false,"ownedByThisApi":true}}}')
+    Assert-True ([bool]$resolveOwnFolder.Invoke($null, @($false, $previousOwned))) 'Regravação preserva ownedByThisApi=true do JSON anterior'
+    Assert-True ([bool]$resolveOwnFolder.Invoke($null, @($true, $null))) 'Criação nesta execução marca posse mesmo sem metadata anterior'
+    Assert-True (-not [bool]$resolveOwnFolder.Invoke($null, @($false, $null))) 'Reuso sem metadata anterior não inventa posse'
+
+    $sameGuid = [guid]$folderGuid
+    $otherGuid = [guid]'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'
+    Assert-True ([bool]$matchGuid.Invoke($null, @($sameGuid, $sameGuid))) 'GUID persistido igual ao da KB autoriza'
+    Assert-True (-not [bool]$matchGuid.Invoke($null, @($sameGuid, $otherGuid))) 'GUID persistido diferente do da KB recusa exclusão'
+    Assert-True ([bool]$matchGuid.Invoke($null, @($null, $sameGuid))) 'Sem GUID persistido a identidade não restringe'
+
+    $metadataV0 = [Newtonsoft.Json.Linq.JObject]::Parse($metadataV4.ToString([Newtonsoft.Json.Formatting]::None))
+    $metadataV0['schemaVersion'] = [Newtonsoft.Json.Linq.JValue]::new('GOAB_API_METADATA_B060_V5')
     $rejected = $false
     try {
         [void]$fromMetadata.Invoke($null, @($metadataV0, 'Teste', $txGuid))
     } catch {
         $rejected = $true
-        Assert-Contains ([string]$_.Exception.InnerException.Message) 'V1, V2 ou V3' 'A mensagem deve citar as três versões aceitas.'
+        Assert-Contains ([string]$_.Exception.InnerException.Message) 'V1, V2, V3 ou V4' 'A mensagem deve citar as quatro versões aceitas.'
     }
     Assert-True $rejected 'Versão desconhecida de schema deve bloquear a remoção.'
 

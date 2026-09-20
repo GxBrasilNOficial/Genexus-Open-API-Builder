@@ -12,13 +12,6 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// </summary>
 public sealed class ApiPlanGeneratedApiRemovalPlan
 {
-    private static readonly string[] SupportedSchemaVersions =
-    {
-        "GOAB_API_METADATA_B060_V1",
-        "GOAB_API_METADATA_B060_V2",
-        "GOAB_API_METADATA_B060_V3",
-    };
-
     private ApiPlanGeneratedApiRemovalPlan(
         string transactionName,
         string apiName,
@@ -26,6 +19,9 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
         string metadataFileName,
         string? folderName,
         bool folderWasCreated,
+        bool folderOwnedByThisApi,
+        Guid? folderGuid,
+        bool folderShouldBeRemoved,
         IReadOnlyList<string> procedureNames,
         IReadOnlyList<string> ownSdtNames,
         IReadOnlyList<string> sharedSdtNamesPreserved)
@@ -36,6 +32,9 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
         MetadataFileName = metadataFileName;
         FolderName = folderName;
         FolderWasCreated = folderWasCreated;
+        FolderOwnedByThisApi = folderOwnedByThisApi;
+        FolderGuid = folderGuid;
+        FolderShouldBeRemoved = folderShouldBeRemoved;
         ProcedureNames = procedureNames;
         OwnSdtNames = ownSdtNames;
         SharedSdtNamesPreserved = sharedSdtNamesPreserved;
@@ -47,6 +46,9 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
     public string MetadataFileName { get; }
     public string? FolderName { get; }
     public bool FolderWasCreated { get; }
+    public bool FolderOwnedByThisApi { get; }
+    public Guid? FolderGuid { get; }
+    public bool FolderShouldBeRemoved { get; }
     public IReadOnlyList<string> ProcedureNames { get; }
     public IReadOnlyList<string> OwnSdtNames { get; }
     public IReadOnlyList<string> SharedSdtNamesPreserved { get; }
@@ -91,6 +93,10 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
         var metadataFileName = RequirePresent(metadata.SelectToken("ownership.metadataFileName"), "ownership.metadataFileName");
         var folderName = metadata.SelectToken("objects.transactionFolder.name")?.Value<string>();
         var folderWasCreated = metadata.SelectToken("objects.transactionFolder.wasCreated")?.Value<bool>() == true;
+        var folderOwnedByThisApi = ApiPlanTransactionFolderOwnership.ReadOwnedByThisApi(metadata);
+        var folderGuid = ApiPlanTransactionFolderOwnership.TryReadFolderGuid(metadata);
+        var resolvedFolderName = string.IsNullOrWhiteSpace(folderName) ? null : folderName;
+        var folderShouldBeRemoved = folderOwnedByThisApi && !string.IsNullOrWhiteSpace(resolvedFolderName);
 
         var procedures = ReadStringArray(metadata.SelectToken("objects.procedures"));
         var shared = ReadStringArray(metadata.SelectToken("objects.sdts.shared"));
@@ -113,6 +119,9 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
             metadataFileName,
             string.IsNullOrWhiteSpace(folderName) ? null : folderName,
             folderWasCreated,
+            folderOwnedByThisApi,
+            folderGuid,
+            folderShouldBeRemoved,
             procedures,
             ownSdts,
             shared);
@@ -144,9 +153,16 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
         if (!string.IsNullOrWhiteSpace(FolderName))
         {
             builder.AppendLine();
-            if (FolderWasCreated)
+            if (FolderShouldBeRemoved)
             {
-                builder.Append("Folder: ").Append(FolderName).AppendLine(" (criado pela extensão; apagar só se ficar vazio)");
+                if (FolderWasCreated)
+                {
+                    builder.Append("Folder: ").Append(FolderName).AppendLine(" (criado pela extensão; apagar só se ficar vazio)");
+                }
+                else
+                {
+                    builder.Append("Folder: ").Append(FolderName).AppendLine(" (próprio da API; a remoção apaga se ficar vazio)");
+                }
             }
             else
             {
@@ -195,23 +211,11 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
     private static void RequireSupportedSchemaVersion(JToken? token)
     {
         var actual = token is not null && token.Type == JTokenType.String ? token.Value<string>() : null;
-        var supported = false;
-        if (!string.IsNullOrWhiteSpace(actual))
-        {
-            for (var index = 0; index < SupportedSchemaVersions.Length; index++)
-            {
-                if (string.Equals(actual, SupportedSchemaVersions[index], StringComparison.Ordinal))
-                {
-                    supported = true;
-                    break;
-                }
-            }
-        }
-
+        var supported = ApiPlanMetadataSchema.IsSupported(actual);
         if (!supported)
         {
             throw new InvalidOperationException(
-                $"Metadata de remoção incompatível em 'schemaVersion': esperado V1, V2 ou V3, encontrado '{actual ?? "<ausente>"}'." + InvalidMetadataExit);
+                $"Metadata de remoção incompatível em 'schemaVersion': esperado {ApiPlanMetadataSchema.FormatSupportedVersionList()}, encontrado '{actual ?? "<ausente>"}'." + InvalidMetadataExit);
         }
     }
 

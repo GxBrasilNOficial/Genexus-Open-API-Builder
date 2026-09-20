@@ -36,7 +36,8 @@ function Assert-False {
 $recovery = Read-Source 'Src\Extension\Diagnostics\ApiPlanOrphanMetadataRecovery.cs'
 $package = Read-Source 'Src\Extension\Package.cs'
 $sync = Read-Source 'Src\Extension\Diagnostics\ApiPlanTransactionSyncOrchestrator.cs'
-$remover = Read-Source 'Src\Extension\Diagnostics\ApiPlanGeneratedApiRemovalPlan.cs'
+$removalPlan = Read-Source 'Src\Extension\Diagnostics\ApiPlanGeneratedApiRemovalPlan.cs'
+$remover = Read-Source 'Src\Extension\Diagnostics\ApiPlanGeneratedApiRemover.cs'
 
 # --- 1. A oferta precisa vir ANTES do diálogo do Wizard -----------------------------------
 # Em 2026-09-06 o recurso era inalcançável: era oferecido depois de o Wizard concluir com
@@ -80,6 +81,7 @@ Assert-True ($jsonBody -match 'ApiPlanMetadataFileWriter\.SchemaVersion') 'A met
 
 # --- 5. O Folder nunca entra como criado pela extensão ------------------------------------
 Assert-True ($jsonBody -match '\["wasCreated"\]\s*=\s*false') 'objects.transactionFolder.wasCreated deve ser false: não há como saber se o Folder foi criado pela extensão, e a remoção não pode apagar Folder de terceiro.'
+Assert-True ($jsonBody -match '\["ownedByThisApi"\]\s*=\s*false') 'objects.transactionFolder.ownedByThisApi deve ser false: B115 não reivindica posse histórica.'
 
 # --- 6. A marca de intenção importada -----------------------------------------------------
 Assert-True ($jsonBody -match '\["imported"\]\s*=\s*true') 'A metadata recuperada deve ser marcada como intenção importada.'
@@ -121,7 +123,15 @@ Assert-True ($recovery -match 'plan\.StaleFile \?\? new WikiFileKBObject') 'A re
 
 # --- 10. O que a remoção consome não pode divergir sem ninguém perceber --------------------
 foreach ($token in @('ownership.transactionName', 'ownership.apiGuid', 'objects.procedures', 'objects.sdts.shared')) {
-    Assert-True ($remover -match [regex]::Escape($token)) "O teste está desatualizado: ApiPlanGeneratedApiRemovalPlan não lê mais '$token'. Reveja o que a metadata recuperada precisa gravar."
+    Assert-True ($removalPlan -match [regex]::Escape($token)) "O teste está desatualizado: ApiPlanGeneratedApiRemovalPlan não lê mais '$token'. Reveja o que a metadata recuperada precisa gravar."
 }
+
+# --- 11. Remove sobre B115: IntentKind=Imported mesmo com applicationId --------------------
+# Em 2026-09-20 o smoke do B123 travou aqui: B115 grava ownership.applicationId e omite
+# integrity/contractHash; o IntentKind só olhava ApplicationId e saía Current; o diário
+# recusava «contractHash só pode ser nulo em Remove sobre metadata legada importada».
+Assert-True ($remover -match 'ApiPlanOrphanMetadataRecovery\.IsImportedRecovery\(metadata\)') 'A captura do Preview do Remover deve ler recovery.imported.'
+Assert-True ($remover -match 'IsImportedRecovery') 'A intenção de remoção deve carregar a marca importada.'
+Assert-True ($remover -match 'ApplicationId\.HasValue && !IsImportedRecovery') 'IntentKind=Current só com applicationId e sem recovery.imported; B115 com applicationId permanece Imported.'
 
 Write-Output 'PASS: ApiPlanOrphanMetadataRecovery'

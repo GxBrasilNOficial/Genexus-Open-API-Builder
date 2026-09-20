@@ -32,6 +32,7 @@ internal static class ApiPlanTransactionFolder
         var existingFolder = Preflight(designModel, transaction, apiPlan);
         if (existingFolder is not null)
         {
+            apiPlan.TransactionFolderGuid = existingFolder.Guid;
             return existingFolder;
         }
 
@@ -53,6 +54,8 @@ internal static class ApiPlanTransactionFolder
             () => ConfirmFolder(designModel, transaction, folder.Name, apiPlan));
         EnsureConfirmed(receipt, () => ConfirmFolder(designModel, transaction, folder.Name, apiPlan), $"Folder '{folder.Name}'");
         apiPlan.TransactionFolderWasCreated = true;
+        apiPlan.TransactionFolderOwnedByThisApi = true;
+        apiPlan.TransactionFolderGuid = folder.Guid;
         return folder;
     }
 
@@ -120,6 +123,7 @@ internal static class ApiPlanTransactionFolder
             throw new InvalidOperationException($"Reencontro estrito bloqueado: Folder requerido '{apiPlan.TransactionFolderName}' nao existe. Gere os artefatos base antes. Nenhuma alteracao foi feita.");
         }
 
+        apiPlan.TransactionFolderGuid = folder.Guid;
         return folder;
     }
 
@@ -218,11 +222,16 @@ internal static class ApiPlanTransactionFolder
             apiPlan.TransactionName);
     }
 
-    internal static string CreateReuseWarning(ApiPlan apiPlan)
+    internal static string CreateReuseWarning(ApiPlan apiPlan, bool ownedByThisApi)
     {
         if (apiPlan is null)
         {
             throw new ArgumentNullException(nameof(apiPlan));
+        }
+
+        if (ownedByThisApi)
+        {
+            return $"Folder preexistente '{apiPlan.TransactionFolderName}' no contenedor correto sera reutilizado; a Description existente sera preservada e a remocao desta API apagara o Folder se ele ficar vazio.";
         }
 
         return $"Folder preexistente '{apiPlan.TransactionFolderName}' no contenedor correto sera reutilizado; a Description existente sera preservada e o Folder nunca sera removido pela remocao desta API.";

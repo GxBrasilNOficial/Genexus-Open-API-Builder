@@ -3,7 +3,7 @@
 Data: 2026-08-31.
 Estado: **estacionado desde 2026-09-05** (plano aprovado em 2026-08-31).
 Correlato de backlog: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
-Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. Desde 2026-09-05 este plano está estacionado. A sprint `S-B111` (F1–F3) foi encerrada em 2026-09-15, mantendo `B121` fora dela; este plano permanece estacionado. Remissão — 2026-09-18: o `B122` foi fechado; a próxima ação única vigente no checkpoint é `B123` (posse histórica do Folder). Escopo inalterado.
+Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. Desde 2026-09-05 este plano está estacionado. A sprint `S-B111` (F1–F3) foi encerrada em 2026-09-15, mantendo `B121` fora dela; este plano permanece estacionado. Remissão — 2026-09-18: o `B122` foi fechado; então a próxima era `B123`. Remissão — 2026-09-20: `B123` fechado; vigente no checkpoint = `B124`. Escopo inalterado.
 
 Não misturar com `B082` (sinal de vida no Wizard/Remover).
 

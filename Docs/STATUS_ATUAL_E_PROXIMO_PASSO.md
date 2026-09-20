@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-18.
+2026-09-20.
 
 ## Último marco concluído
 
@@ -143,10 +143,10 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**`B123` — posse histórica do Folder na metadata**, para a remoção poder apagar Folder próprio
-que ficou vazio. Decisão de 2026-09-15 («depois da sprint `S-B111`»); o `B122` (edição textual
-ancorada) foi **entregue e commitado** em 2026-09-18 (`ce1cf44`, imagens promo `bf40b3b`) e não
-segura mais a fila. Detalhe no documento 06. **Corte `0.1.0-alpha.8` publicado em 2026-09-17**.
+**`B124` — regra de documento de evidência IDE** — quando aceite/smoke exige doc em
+`Docs/Implementation/` em vez de só checkpoint/`CHANGELOG`. Nascido em 2026-09-16; `B123`
+fechado (smoke §6 PASS 2026-09-20). `B125` (Preview mentiroso pós-aborto) permanece aberto
+à parte. Nota no documento 06. **Corte `0.1.0-alpha.8` publicado em 2026-09-17**.
 O estado da branch em relação a `origin/main` se mede com
 `git rev-list --left-right --count origin/main...HEAD`, não se anota aqui como fato permanente.
 
@@ -214,8 +214,9 @@ porque indeterminação não se produz por clique. Tabela critério × evidênci
 
 **Fora da F3, depois do encerramento da sprint:** ~~`B122` (edição textual ancorada)~~
 **entregue e commitado em 2026-09-18** (`scripts/Apply-TextPatch.ps1`, gate `tests.textPatch`,
-plano `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`). A próxima ação
-única vigente é `B123` (posse histórica do Folder). Nota operacional do `B122` permanece no
+plano `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`). ~~O `B123` entrou no
+código em 2026-09-20; a próxima ação única vigente é o **smoke na IDE** (plano §6).~~
+**Superado em 2026-09-20:** `B123` fechado (smoke §6 PASS); vigente = `B124`. Nota operacional do `B122` permanece no
 documento 06.
 
 **Duas coisas precisam ser sabidas antes de testar.** A primeira: uma segunda remoção da mesma
@@ -323,7 +324,7 @@ evidência `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`). Etapas 1A 
 da KB grande é DLL `ce30374`; emissor de SDT mudou em `0568677`/`cfb73b0` (números conservadores
 da 1A).
 
-O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. ~~A próxima ação única vigente é `B122`.~~ **Superado em 2026-09-18:** `B122` commitado; vigente = `B123` (ver seção «Próxima ação única»).
+O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. ~~A próxima ação única vigente é `B122`.~~ **Superado em 2026-09-18:** `B122` commitado. ~~vigente = `B123`~~ **Superado em 2026-09-20:** `B123` fechado; vigente = `B124` (ver seção «Próxima ação única»).
 
 A conclusão da `S-B111` não fechou automaticamente o `B082`: no encerramento, por decisão declarada (item 135), o residual 1B/2/3 ficou fora da sprint e da pauta imediata; o que a sprint absorveu (ordem do API Object, seam de persistência, remoção por fila) já está nas fases F1–F3. O fechamento do residual veio depois, na retomada de 2026-09-16 (Etapas 2+3) e no aceite 1B de 2026-09-17.
 
@@ -650,6 +651,11 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 151. Em 2026-09-17, **aceite IDE Etapa 1B e fechamento do residual `B082`**, por decisão humana com ressalva de relógio: Remove em `FabricaBrasil18Test` — `Setor` 7711 ms (meta ≤7 s), `Empresa` 20063 ms (meta ≤20 s), `DocumentoFiscal` 7998 ms (meta ≤9 s); marcas 1B ok nas três (só `confirmacao-pos-delete` + `folder-vazio`). Evidência: `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`. Próxima ação única permanece `B122`.
 152. Em 2026-09-18, **`B122` implementado offline**: plano emendado (D16, gate, exit do harness); `scripts/Apply-TextPatch.ps1`; `Tests/TextPatch/Test-ApplyTextPatch.ps1` (PASS); gate `tests.textPatch` no checker + fixture; nota do documento 06 alinhada à evidência de attributes; entrada `[Unreleased]` no CHANGELOG. Naquele instante a próxima ação ainda era o aceite/commit.
 153. Em 2026-09-18, **`B122` fechado no repositório**: commits `ce1cf44` (ferramenta + gate + docs) e `bf40b3b` (imagens promo `0.1.0-alpha.8`); pré-push mecânica sem impedimento; gaps de checkpoint/`AGENTS.md` alinhados neste follow-up. Próxima ação única = `B123`.
+154. Em 2026-09-20, **`B123` implementado offline**: schema V4 com `guid` e `ownedByThisApi`; remoção pela posse histórica + GUID; B115 conservador; avisos ramificados; listas de schema unificadas. Build Release 0 avisos; gates da seção 5 do plano passando. **Não validado na IDE.** Manifesto/registro da extensão não mudou. Próxima ação única = smoke IDE do `B123` (plano §6). Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
+155. Em 2026-09-20, **smoke IDE `B123` parcial** (KB `wsEducacaoSpTeste` / Transaction `Teste`): **teste 1 PASS** — criação V4 + Remover `Deleted=26` com Folder (Guid `138a527d-…`); **teste 2 PASS** — segundo Apply preservou `ownedByThisApi=true` com `wasCreated=false` (Guid `a0db1027-…`), Remover «próprio da API», `Deleted=26` com Folder; **teste 3 PASS** — Folder de terceiro (Guid `3f401e9f-…`, Description humana), Remover `Deleted=25` / `FolderShouldBeRemoved=False`, Folder permaneceu (confirmado); sumiço seguinte = apagar à mão na preparação do teste 4. **Falta teste 4 (B115).** Evidência: §6 do plano. Próxima ação única = smoke teste 4.
+156. Em 2026-09-20, no teste 4 do `B123`: B115 recuperou metadata (`recovery.imported`, `ownedByThisApi=false`); Preview do Remover «nunca apagar» / `PlannedDeletes=25`; Remover bloqueou em `CP1 Prepared` — `contractHash` nulo com `IntentKind=Current` porque B115 grava `applicationId`. **Conserto offline:** captura lê `recovery.imported`; `IntentKind=Imported` nesse caso (reusa o `applicationId`). Gate `tests.orphanMetadataRecovery` ampliado; build Release 0 avisos. Manifesto não mudou. Próxima ação = reinstalar DLL e retestar Remover sobre a metadata B115 já na KB.
+157. Em 2026-09-20, **reteste Remover pós-B115 PASS**: diário abriu (`ApplicationId` do B115); `FolderShouldBeRemoved=False`; `Deleted=25` sem Folder (2 passadas; `ListFilters` na 2ª); B081 `Success`. Folder `TesteOpenApi` vazio **confirmado** na KB. Smoke §6 do `B123` completo.
+158. Em 2026-09-20, **`B123` fechado**: schema V4 + posse histórica + smoke IDE §6 (quatro cenários) + conserto `IntentKind` no Remover sobre B115. Próxima ação única = `B124`. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -720,6 +726,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [2026-09-10 — B121 seleção explícita de BC/List no Sync](Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md)
 - [2026-09-14 — S-B111 F3 etapas P0 e P1 implementadas offline](Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md)
 - [2026-09-14 — S-B111 F3 etapa P2: o diário durável na KB](Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md)
+- [2026-09-20 — B123 plano posse histórica do Folder](Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md)
 - [B085 — Sincronizar com a Transaction](Implementation/B085-SINCRONIZAR-COM-TRANSACTION.md)
 - [INSTALL — Alpha](Public/INSTALL.md)
 - [DEMO — Alpha](Public/DEMO.md)

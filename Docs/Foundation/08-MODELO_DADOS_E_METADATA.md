@@ -279,6 +279,8 @@ Campos de origem de migração não são auditoria operacional. Um campo como `P
 | SharedSdtNames | lista texto |
 | TransactionFolderName | texto |
 | TransactionFolderWasCreated | boolean |
+| TransactionFolderOwnedByThisApi | boolean |
+| TransactionFolderGuid | guid opcional |
 | SecurityLevel | texto |
 | FieldClassificationConfiguration | objeto |
 | DefaultPageSize | número |
@@ -388,6 +390,8 @@ Os serviços obrigatórios são `List`, `Get`, `Create` e `Update`. O `Delete` �
 O contrato detalhado de metadata, regeneração, sincronização e remoção está em `28-METADATA_REGENERACAO_SINCRONIZACAO_E_REMOCAO.md`.
 
 Esta metadata deve preservar também as decisões de campos selecionados, obrigatoriedade no payload, filtros, operadores, períodos, paginação, ordenação, `Services base path`, `RestPath`, `Security Level`, descrições geradas, idioma das descrições, fallback usado e indicação de Folder criado ou reutilizado.
+
+**Remissão — 2026-09-20 (`B123`).** A forma emitida é `GOAB_API_METADATA_B060_V4`. Em `objects.transactionFolder`, `wasCreated` descreve só a operação corrente; `ownedByThisApi` é a posse histórica que autoriza a fila de remoção; `guid` é a identidade do Folder, gravada também no reuso de terceiro e insuficiente sozinha para apagar. Leitura continua tolerando V1–V3. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
 
 As descrições preservadas na metadata devem permitir detectar alteração manual posterior no objeto `API`, sem sobrescrever silenciosamente o texto editado pelo usuário.
 

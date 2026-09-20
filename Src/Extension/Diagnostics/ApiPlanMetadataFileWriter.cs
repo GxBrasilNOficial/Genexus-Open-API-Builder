@@ -15,22 +15,18 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 internal static class ApiPlanMetadataFileWriter
 {
-    internal const string SchemaVersionV1 = "GOAB_API_METADATA_B060_V1";
-    internal const string SchemaVersionV2 = "GOAB_API_METADATA_B060_V2";
+    internal const string SchemaVersionV1 = ApiPlanMetadataSchema.V1;
+    internal const string SchemaVersionV2 = ApiPlanMetadataSchema.V2;
+    internal const string SchemaVersionV3 = ApiPlanMetadataSchema.V3;
 
     /// <summary>
-    /// Versão emitida por Apply, Sync e B115. A promoção V2→V3 é aditiva:
-    /// acrescenta <c>ownership.applicationId</c> ao payload e, por isso, ao
-    /// fingerprint. V1 e V2 continuam sendo entradas de leitura e nunca são
-    /// regravadas implicitamente só para preencher o campo novo.
+    /// Versão emitida por Apply, Sync e B115. A promoção V3→V4 é aditiva:
+    /// acrescenta posse histórica do Folder (<c>guid</c> e
+    /// <c>ownedByThisApi</c>). V1–V3 continuam sendo entradas de leitura e
+    /// nunca são regravadas implicitamente só para preencher os campos novos.
     /// </summary>
-    internal const string SchemaVersion = "GOAB_API_METADATA_B060_V3";
-    internal static readonly string[] SupportedSchemaVersions =
-    {
-        SchemaVersionV1,
-        SchemaVersionV2,
-        SchemaVersion,
-    };
+    internal const string SchemaVersion = ApiPlanMetadataSchema.Current;
+    internal static readonly string[] SupportedSchemaVersions = ApiPlanMetadataSchema.Supported;
     internal const string B067IntegrityVersion = ApiPlanMetadataIntegrity.Version;
 
     /// <summary>
@@ -57,23 +53,8 @@ internal static class ApiPlanMetadataFileWriter
         return true;
     }
 
-    internal static bool IsSupportedSchemaVersion(string? schemaVersion)
-    {
-        if (string.IsNullOrWhiteSpace(schemaVersion))
-        {
-            return false;
-        }
-
-        for (var index = 0; index < SupportedSchemaVersions.Length; index++)
-        {
-            if (string.Equals(schemaVersion, SupportedSchemaVersions[index], StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    internal static bool IsSupportedSchemaVersion(string? schemaVersion) =>
+        ApiPlanMetadataSchema.IsSupported(schemaVersion);
 
     public static ApiPlanMetadataFileWriteResult CreateOrReencounter(
         KBModel designModel,
@@ -117,7 +98,7 @@ internal static class ApiPlanMetadataFileWriter
 
         var apiObject = PreflightApiObject(designModel, apiPlan, allowIntentionalContractRefresh, kbIndex);
         var preflight = PreflightMetadataFile(designModel, transaction, apiPlan, apiObject, allowIntentionalContractRefresh, kbIndex);
-        var json = CreateMetadataJson(transaction, apiPlan, apiObject, kbIndex);
+        var json = CreateMetadataJson(transaction, apiPlan, apiObject, kbIndex, preflight.ExistingMetadata);
         var bytes = Encoding.UTF8.GetBytes(json);
         var file = preflight.ExistingFile ?? new WikiFileKBObject(designModel);
         if (preflight.ExistingFile is null)
@@ -264,7 +245,7 @@ internal static class ApiPlanMetadataFileWriter
 
         if (matches.Length == 0)
         {
-            return new ApiPlanMetadataFilePreflightResult(null);
+            return new ApiPlanMetadataFilePreflightResult(null, null);
         }
 
         var file = matches[0];
@@ -278,11 +259,11 @@ internal static class ApiPlanMetadataFileWriter
             throw new InvalidOperationException($"Gravacao de metadata B060 bloqueada: ja existe File externo ou incompativel chamado '{apiPlan.MetadataFileName}'. Nenhuma alteracao foi feita.");
         }
 
-        ValidateExistingMetadata(file, transaction, apiPlan, apiObject, allowIntentionalContractRefresh, kbIndex);
-        return new ApiPlanMetadataFilePreflightResult(file);
+        var existingMetadata = ValidateExistingMetadata(file, transaction, apiPlan, apiObject, allowIntentionalContractRefresh, kbIndex);
+        return new ApiPlanMetadataFilePreflightResult(file, existingMetadata);
     }
 
-    private static void ValidateExistingMetadata(
+    private static JObject ValidateExistingMetadata(
         WikiFileKBObject file,
         Transaction transaction,
         ApiPlan apiPlan,
@@ -316,6 +297,8 @@ internal static class ApiPlanMetadataFileWriter
         {
             ValidateB067IntegrityIfPresent(metadata, apiPlan, apiObject, kbIndex);
         }
+
+        return metadata;
     }
 
     internal static bool HasCompatibleB067Integrity(JObject metadata, ApiPlanKbObjectNameIndex kbIndex, ApiPlan apiPlan, API apiObject)
@@ -413,7 +396,12 @@ internal static class ApiPlanMetadataFileWriter
         return ApiPlanMetadataIntegrity.DiagnoseMetadataFingerprint(metadata).IsCompatible;
     }
 
-    private static string CreateMetadataJson(Transaction transaction, ApiPlan apiPlan, API apiObject, ApiPlanKbObjectNameIndex kbIndex)
+    private static string CreateMetadataJson(
+        Transaction transaction,
+        ApiPlan apiPlan,
+        API apiObject,
+        ApiPlanKbObjectNameIndex kbIndex,
+        JObject? previousMetadata)
     {
         var transactionStructure = BuildTransactionStructure(transaction);
         var metadata = new JObject
@@ -446,7 +434,7 @@ internal static class ApiPlanMetadataFileWriter
             },
             ["objects"] = new JObject
             {
-                ["transactionFolder"] = new JObject { ["name"] = apiPlan.TransactionFolderName, ["wasCreated"] = apiPlan.TransactionFolderWasCreated },
+                ["transactionFolder"] = CreateTransactionFolderToken(apiPlan, previousMetadata, kbIndex),
                 ["apiObject"] = new JObject { ["name"] = apiPlan.ApiName, ["guid"] = apiObject.Guid.ToString() },
                 ["procedures"] = ToStringArray(apiPlan.ProcedureNames),
                 ["sdts"] = new JObject
@@ -1052,6 +1040,38 @@ internal static class ApiPlanMetadataFileWriter
             return BitConverter.ToString(algorithm.ComputeHash(bytes)).Replace("-", string.Empty);
         }
     }
+
+    private static JObject CreateTransactionFolderToken(
+        ApiPlan apiPlan,
+        JObject? previousMetadata,
+        ApiPlanKbObjectNameIndex kbIndex)
+    {
+        var createdThisRun = apiPlan.TransactionFolderWasCreated;
+        var owned = ApiPlanTransactionFolderOwnership.ResolveOwnedByThisApi(createdThisRun, previousMetadata);
+        apiPlan.TransactionFolderOwnedByThisApi = owned;
+
+        var folder = kbIndex.FindFolders(apiPlan.TransactionFolderName).FirstOrDefault();
+        var guid = folder?.Guid
+            ?? apiPlan.TransactionFolderGuid
+            ?? ApiPlanTransactionFolderOwnership.TryReadFolderGuid(previousMetadata);
+        if (guid.HasValue && guid.Value != Guid.Empty)
+        {
+            apiPlan.TransactionFolderGuid = guid;
+        }
+
+        var token = new JObject
+        {
+            ["name"] = apiPlan.TransactionFolderName,
+            ["wasCreated"] = createdThisRun,
+            ["ownedByThisApi"] = owned,
+        };
+        if (guid.HasValue && guid.Value != Guid.Empty)
+        {
+            token["guid"] = guid.Value.ToString("D");
+        }
+
+        return token;
+    }
 }
 
 internal static class ApiPlanMetadataFileWriteStatus
@@ -1062,12 +1082,15 @@ internal static class ApiPlanMetadataFileWriteStatus
 
 internal sealed class ApiPlanMetadataFilePreflightResult
 {
-    public ApiPlanMetadataFilePreflightResult(WikiFileKBObject? existingFile)
+    public ApiPlanMetadataFilePreflightResult(WikiFileKBObject? existingFile, JObject? existingMetadata)
     {
         ExistingFile = existingFile;
+        ExistingMetadata = existingMetadata;
     }
 
     public WikiFileKBObject? ExistingFile { get; }
+
+    public JObject? ExistingMetadata { get; }
 }
 
 internal sealed class ApiPlanMetadataFileWriteResult

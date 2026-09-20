@@ -26,13 +26,6 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// </summary>
 public static class ApiPlanOperationJournalValidator
 {
-    private static readonly string[] MetadataSchemaVersions =
-    {
-        "GOAB_API_METADATA_B060_V1",
-        "GOAB_API_METADATA_B060_V2",
-        "GOAB_API_METADATA_B060_V3",
-    };
-
     public static ApiPlanOperationJournalValidation Validate(ApiPlanOperationJournal journal)
     {
         if (journal is null)
@@ -607,7 +600,7 @@ public static class ApiPlanOperationJournalValidator
     private static void ValidateMetadataSchemaVersion(ApiPlanOperationJournal journal, List<string> errors)
     {
         var version = journal.MetadataSchemaVersion;
-        if (version is not null && !MetadataSchemaVersions.Contains(version, StringComparer.Ordinal))
+        if (version is not null && !ApiPlanMetadataSchema.IsSupported(version))
         {
             errors.Add("metadataSchemaVersion desconhecida: " + version + ".");
         }

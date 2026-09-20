@@ -3,7 +3,9 @@ $ErrorActionPreference = 'Stop'
 
 $helperPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanMetadataIntegrity.cs'
 $metadataWriterPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanMetadataFileWriter.cs'
+$metadataSchemaPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanMetadataSchema.cs'
 $metadataWriterSource = Get-Content -Raw -LiteralPath $metadataWriterPath
+$metadataSchemaSource = Get-Content -Raw -LiteralPath $metadataSchemaPath
 $newtonsoftPath = Get-ChildItem -Path (Join-Path $env:USERPROFILE '.nuget\packages\newtonsoft.json') -Filter Newtonsoft.Json.dll -Recurse |
     Where-Object { $_.FullName -match '\\lib\\netstandard2\.0\\Newtonsoft\.Json\.dll$' } |
     Sort-Object FullName -Descending |
@@ -295,14 +297,23 @@ if ($metadataWriterSource.IndexOf('ParseMetadataBytes', [StringComparison]::Ordi
     throw 'ASSERT_FAILED: O writer deve reler a metadata sem converter generatedAtUtc em DateTime.'
 }
 
-if ($metadataWriterSource.IndexOf('SchemaVersion = "GOAB_API_METADATA_B060_V3"', [StringComparison]::Ordinal) -lt 0) {
-    throw 'ASSERT_FAILED: A gravacao deve emitir schemaVersion V3.'
+if ($metadataWriterSource.IndexOf('SchemaVersion = ApiPlanMetadataSchema.Current', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: A gravacao deve emitir a schemaVersion corrente do schema unico.'
 }
-if ($metadataWriterSource.IndexOf('GOAB_API_METADATA_B060_V2', [StringComparison]::Ordinal) -lt 0) {
+if ($metadataSchemaSource.IndexOf('Current = V4', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: A gravacao deve emitir schemaVersion V4.'
+}
+if ($metadataSchemaSource.IndexOf('GOAB_API_METADATA_B060_V3', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: A leitura deve continuar tolerando schemaVersion V3.'
+}
+if ($metadataSchemaSource.IndexOf('GOAB_API_METADATA_B060_V2', [StringComparison]::Ordinal) -lt 0) {
     throw 'ASSERT_FAILED: A leitura deve continuar tolerando schemaVersion V2.'
 }
-if ($metadataWriterSource.IndexOf('GOAB_API_METADATA_B060_V1', [StringComparison]::Ordinal) -lt 0) {
+if ($metadataSchemaSource.IndexOf('GOAB_API_METADATA_B060_V1', [StringComparison]::Ordinal) -lt 0) {
     throw 'ASSERT_FAILED: A leitura deve continuar tolerando schemaVersion V1.'
+}
+if ($metadataWriterSource.IndexOf('CreateTransactionFolderToken', [StringComparison]::Ordinal) -lt 0) {
+    throw 'ASSERT_FAILED: A metadata V4 deve gravar posse histórica do Folder.'
 }
 if ($metadataWriterSource.IndexOf('["applicationId"] = apiPlan.ApplicationId', [StringComparison]::Ordinal) -lt 0) {
     throw 'ASSERT_FAILED: A metadata V3 deve gravar ownership.applicationId.'

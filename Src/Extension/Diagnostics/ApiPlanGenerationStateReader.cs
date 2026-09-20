@@ -163,7 +163,32 @@ internal static class ApiPlanGenerationStateReader
             return new ApiPlanGenerationInspection(1, 0, 0, matches.Count, matches.Select(item => ToCollision(item, "Folder", folderApplicable: true)).ToArray());
         }
 
-        return new ApiPlanGenerationInspection(1, 1, 0, 0, warning: ApiPlanTransactionFolder.CreateReuseWarning(apiPlan));
+        return new ApiPlanGenerationInspection(1, 1, 0, 0, warning: ApiPlanTransactionFolder.CreateReuseWarning(apiPlan, TryReadFolderOwnedByThisApi(index, apiPlan)));
+    }
+
+    private static bool TryReadFolderOwnedByThisApi(ApiPlanKbObjectNameIndex index, ApiPlan apiPlan)
+    {
+        var matches = index.FindFiles(apiPlan.MetadataFileName);
+        if (matches.Count != 1)
+        {
+            return false;
+        }
+
+        var bytes = matches[0].BlobPart?.Data?.GetBytes();
+        if (bytes is null || bytes.Length == 0)
+        {
+            return false;
+        }
+
+        try
+        {
+            var metadata = ApiPlanMetadataIntegrity.ParseMetadataBytes(bytes);
+            return ApiPlanTransactionFolderOwnership.ReadOwnedByThisApi(metadata);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     private static ApiPlanGenerationInspection InspectSdts(ApiPlanKbObjectNameIndex index, ApiPlanSdtGenerationPlan generationPlan)

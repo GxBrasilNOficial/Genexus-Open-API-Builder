@@ -1078,6 +1078,10 @@ internal static class ExtensionOutputLocalization
             " o ausente (heredado), actual=",
             " or absent (legacy), current="),
         new(
+            "V1, V2, V3 ou V4",
+            "V1, V2, V3 o V4",
+            "V1, V2, V3 or V4"),
+        new(
             "V1, V2 ou V3",
             "V1, V2 o V3",
             "V1, V2 or V3"),
@@ -1379,6 +1383,7 @@ internal static class ExtensionOutputLocalization
         new("SDTs compartilhados preservados (", "SDTs compartidos preservados (", "Preserved shared SDTs ("),
         new("SDTs compartilhados preservados", "SDTs compartidos preservados", "Preserved shared SDTs"),
         new("criado pela extensão; apagar só se ficar vazio", "creado por la extensión; eliminar solo si queda vacío", "created by the extension; delete only if it remains empty"),
+        new("próprio da API; a remoção apaga se ficar vazio", "propio de la API; la eliminación lo borra si queda vacío", "owned by the API; removal deletes it if it remains empty"),
         new("reutilizado; nunca apagar", "reutilizado; nunca eliminar", "reused; never delete"),
         new("Business Component da Transaction: não será revertido.", "Business Component de la Transaction: no será revertido.", "Transaction Business Component: it will not be reverted."),
         new("Business Component da Transaction: nao sera revertido.", "Business Component de la Transaction: no será revertido.", "Transaction Business Component: it will not be reverted."),
@@ -1435,6 +1440,7 @@ internal static class ExtensionOutputLocalization
         new("idioma da KB ainda nao validado por API publica", "idioma de la KB aún no validado por API pública", "KB language not yet validated by a public API"),
         new("fallback tecnico em ingles registrado no ApiPlan", "fallback técnico en inglés registrado en el ApiPlan", "technical English fallback recorded in the ApiPlan"),
         new("Folder preexistente '", "Carpeta preexistente '", "Pre-existing folder '"),
+        new("no contenedor correto sera reutilizado; a Description existente sera preservada e a remocao desta API apagara o Folder se ele ficar vazio.", "en el contenedor correcto será reutilizado; la Description existente se preservará y la eliminación de esta API eliminará el Folder si queda vacío.", "in the correct container will be reused; the existing Description will be preserved and removing this API will delete the Folder if it remains empty."),
         new("no contenedor correto sera reutilizado; a Description existente sera preservada e o Folder nunca sera removido pela remocao desta API.", "en el contenedor correcto será reutilizado; la Description existente se preservará y el Folder nunca será eliminado por la eliminación de esta API.", "in the correct container will be reused; the existing Description will be preserved and the Folder will never be removed by removing this API."),
         new("Apta via Business Component", "Apta mediante Business Component", "Ready via Business Component"),
         new("divergentes", "divergentes", "divergent"),

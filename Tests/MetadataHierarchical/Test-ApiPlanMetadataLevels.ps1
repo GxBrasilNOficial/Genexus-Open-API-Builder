@@ -96,9 +96,14 @@ function Initialize-GeneXusAssemblyResolver {
 
 $writerPath = Join-Path $repositoryRoot 'Src\Extension\Diagnostics\ApiPlanMetadataFileWriter.cs'
 $codecPath = Join-Path $repositoryRoot 'Src\Extension\Diagnostics\ApiPlanMetadataLevelsCodec.cs'
-Assert-Contains ([IO.File]::ReadAllText($writerPath)) 'SchemaVersion = "GOAB_API_METADATA_B060_V3"' 'SchemaVersion de gravação deve ser V3.'
-Assert-Contains ([IO.File]::ReadAllText($writerPath)) 'SchemaVersionV1' 'Constante V1 deve existir para leitura tolerante.'
-Assert-Contains ([IO.File]::ReadAllText($writerPath)) 'SchemaVersionV2' 'Constante V2 deve existir para leitura tolerante.'
+$schemaPath = Join-Path $repositoryRoot 'Src\Extension\Diagnostics\ApiPlanMetadataSchema.cs'
+Assert-Contains ([IO.File]::ReadAllText($writerPath)) 'SchemaVersion = ApiPlanMetadataSchema.Current' 'SchemaVersion de gravação deve apontar para a versão corrente.'
+Assert-Contains ([IO.File]::ReadAllText($schemaPath)) 'Current = V4' 'Schema corrente deve ser V4.'
+Assert-Contains ([IO.File]::ReadAllText($schemaPath)) 'V1 = "GOAB_API_METADATA_B060_V1"' 'Constante V1 deve existir para leitura tolerante.'
+Assert-Contains ([IO.File]::ReadAllText($schemaPath)) 'V2 = "GOAB_API_METADATA_B060_V2"' 'Constante V2 deve existir para leitura tolerante.'
+Assert-Contains ([IO.File]::ReadAllText($schemaPath)) 'V3 = "GOAB_API_METADATA_B060_V3"' 'Constante V3 deve existir para leitura tolerante.'
+Assert-Contains ([IO.File]::ReadAllText($writerPath)) 'SchemaVersionV1' 'Writer deve continuar expondo SchemaVersionV1.'
+Assert-Contains ([IO.File]::ReadAllText($writerPath)) 'SchemaVersionV2' 'Writer deve continuar expondo SchemaVersionV2.'
 Assert-Contains ([IO.File]::ReadAllText($writerPath)) 'CreateLevelsToken' 'Metadata deve serializar levels.'
 Assert-Contains ([IO.File]::ReadAllText($writerPath)) 'ApiPlanGeneratedApiRemovalInventory.BuildOwnSdtNamesForRemoval' 'Metadata deve inventariar SDTs próprios para remoção.'
 Assert-Contains ([IO.File]::ReadAllText($codecPath)) 'HasHierarchicalLevels' 'Codec deve detectar árvore hierárquica.'
@@ -130,13 +135,15 @@ try {
     $schema = $writerType.GetField('SchemaVersion', [System.Reflection.BindingFlags]'Static, NonPublic, Public').GetValue($null)
     $schemaV1 = $writerType.GetField('SchemaVersionV1', [System.Reflection.BindingFlags]'Static, NonPublic, Public').GetValue($null)
     $schemaV2 = $writerType.GetField('SchemaVersionV2', [System.Reflection.BindingFlags]'Static, NonPublic, Public').GetValue($null)
-    Assert-Equal 'GOAB_API_METADATA_B060_V3' $schema 'SchemaVersion gravado'
+    Assert-Equal 'GOAB_API_METADATA_B060_V4' $schema 'SchemaVersion gravado'
     Assert-Equal 'GOAB_API_METADATA_B060_V1' $schemaV1 'SchemaVersionV1'
     Assert-Equal 'GOAB_API_METADATA_B060_V2' $schemaV2 'SchemaVersionV2'
 
     $isSupported = $writerType.GetMethod('IsSupportedSchemaVersion', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     $supportedArgs = New-Object object[] 1
     $supportedArgs[0] = [string]$schema
+    Assert-True ([bool]$isSupported.Invoke($null, $supportedArgs)) 'V4 suportado'
+    $supportedArgs[0] = 'GOAB_API_METADATA_B060_V3'
     Assert-True ([bool]$isSupported.Invoke($null, $supportedArgs)) 'V3 suportado'
     $supportedArgs[0] = [string]$schemaV2
     Assert-True ([bool]$isSupported.Invoke($null, $supportedArgs)) 'V2 suportado'

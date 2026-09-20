@@ -357,12 +357,14 @@ internal static class ApiPlanOrphanMetadataRecovery
             },
             ["objects"] = new JObject
             {
-                // wasCreated=false é conservador e deliberado: não há como saber se o Folder
-                // foi criado pela extensão, e a remoção não deve apagar Folder de terceiro.
+                // wasCreated=false e ownedByThisApi=false são conservadores e
+                // deliberados: não há como saber se o Folder foi criado pela
+                // extensão, e a remoção não deve apagar Folder de terceiro.
                 ["transactionFolder"] = new JObject
                 {
                     ["name"] = plan.TransactionFolderName,
                     ["wasCreated"] = false,
+                    ["ownedByThisApi"] = false,
                 },
                 ["apiObject"] = new JObject
                 {

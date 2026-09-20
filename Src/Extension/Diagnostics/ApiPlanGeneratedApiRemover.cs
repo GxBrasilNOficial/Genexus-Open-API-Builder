@@ -84,12 +84,12 @@ internal static class ApiPlanGeneratedApiRemover
 
         telemetry.AddNote(string.Format(
             CultureInfo.InvariantCulture,
-            "MetadataFile Parent='{0}' ParentGuid='{1}' Module='{2}' FolderPlanejado='{3}' FolderWasCreated={4}",
+            "MetadataFile Parent='{0}' ParentGuid='{1}' Module='{2}' FolderPlanejado='{3}' FolderShouldBeRemoved={4}",
             metadataFile.Parent is null ? "<null>" : metadataFile.Parent.Name,
             metadataFile.Parent is null ? "<null>" : metadataFile.Parent.Guid.ToString(),
             metadataFile.Module is null ? "<null>" : metadataFile.Module.Name,
             confirmedPlan.FolderName ?? "<null>",
-            confirmedPlan.FolderWasCreated));
+            confirmedPlan.FolderShouldBeRemoved));
 
         phaseWatch.Restart();
         // A mesma instância do Preview: não reconstrói plano a partir do File corrente.
@@ -107,6 +107,7 @@ internal static class ApiPlanGeneratedApiRemover
             targets,
             capture.ApplicationId,
             capture.ContractHash,
+            capture.IsImportedRecovery,
             index,
             telemetry);
     }
@@ -441,7 +442,7 @@ internal static class ApiPlanGeneratedApiRemover
         }
 
         var total = 1 + plan.ProcedureNames.Count + plan.OwnSdtNames.Count + 1;
-        if (plan.FolderWasCreated && !string.IsNullOrWhiteSpace(plan.FolderName))
+        if (plan.FolderShouldBeRemoved && !string.IsNullOrWhiteSpace(plan.FolderName))
         {
             total++;
         }
@@ -534,6 +535,7 @@ internal static class ApiPlanGeneratedApiRemover
             metadata.SelectToken("schemaVersion")?.Value<string>(),
             hasApplicationId ? applicationId : (Guid?)null,
             string.IsNullOrWhiteSpace(contractHash) ? null : contractHash,
+            ApiPlanOrphanMetadataRecovery.IsImportedRecovery(metadata),
             folderGuid,
             present);
     }
@@ -606,27 +608,44 @@ internal static class ApiPlanGeneratedApiRemover
             PhysicalState = JournalPhysicalState.Present,
         });
 
-        if (plan.FolderWasCreated && !string.IsNullOrWhiteSpace(plan.FolderName))
+        if (plan.FolderShouldBeRemoved && !string.IsNullOrWhiteSpace(plan.FolderName))
         {
             // O Folder entra na fila, mas o inventário só pode declará-lo `Delete` quando a
             // confirmação de vazio existir — e ela só é medida depois de os filhos saírem. Até
             // lá ele é `Preserve`: declarar `emptyConfirmed` antes de medir seria afirmar o que
             // ninguém verificou.
-            var folderGuid = plan.PreviewCapture?.FolderGuid;
-            targets.Add(new ApiPlanRemovalTarget
+            var folderGuid = plan.PreviewCapture?.FolderGuid
+                ?? kbIndex.FindFolders(plan.FolderName!).FirstOrDefault()?.Guid;
+            if (!ApiPlanTransactionFolderOwnership.MatchesPersistedGuid(plan.FolderGuid, folderGuid))
             {
-                ObjectType = JournalObjectType.Folder,
-                Name = plan.FolderName!,
-                Action = JournalInventoryAction.Preserve,
-                Queued = true,
-                IdentityKind = folderGuid.HasValue ? JournalIdentityKind.Guid : JournalIdentityKind.Folder,
-                Guid = folderGuid,
-                OwnershipValidated = true,
-                // `false` não é «vazio desconhecido»: é a marca de que este Folder está na fila
-                // e ainda não foi medido. O Folder reutilizado não traz o campo.
-                EmptyConfirmed = false,
-                PhysicalState = JournalPhysicalState.Present,
-            });
+                targets.Add(new ApiPlanRemovalTarget
+                {
+                    ObjectType = JournalObjectType.Folder,
+                    Name = plan.FolderName!,
+                    Action = JournalInventoryAction.Preserve,
+                    Queued = false,
+                    IdentityKind = JournalIdentityKind.Folder,
+                    OwnershipValidated = true,
+                    PhysicalState = JournalPhysicalState.Present,
+                });
+            }
+            else
+            {
+                targets.Add(new ApiPlanRemovalTarget
+                {
+                    ObjectType = JournalObjectType.Folder,
+                    Name = plan.FolderName!,
+                    Action = JournalInventoryAction.Preserve,
+                    Queued = true,
+                    IdentityKind = folderGuid.HasValue ? JournalIdentityKind.Guid : JournalIdentityKind.Folder,
+                    Guid = folderGuid,
+                    OwnershipValidated = true,
+                    // `false` não é «vazio desconhecido»: é a marca de que este Folder está na fila
+                    // e ainda não foi medido. O Folder reutilizado não traz o campo.
+                    EmptyConfirmed = false,
+                    PhysicalState = JournalPhysicalState.Present,
+                });
+            }
         }
         else if (!string.IsNullOrWhiteSpace(plan.FolderName))
         {
@@ -1485,6 +1504,7 @@ internal sealed class ApiPlanGeneratedApiRemovalIntent
         IReadOnlyList<ApiPlanRemovalTarget> targets,
         Guid? applicationId,
         string? contractHash,
+        bool isImportedRecovery,
         ApiPlanKbObjectNameIndex kbIndex,
         ApiPlanScanTelemetry telemetry)
     {
@@ -1494,6 +1514,7 @@ internal sealed class ApiPlanGeneratedApiRemovalIntent
         Targets = targets ?? throw new ArgumentNullException(nameof(targets));
         ApplicationId = applicationId;
         ContractHash = contractHash;
+        IsImportedRecovery = isImportedRecovery;
         KbIndex = kbIndex;
         Telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
     }
@@ -1510,11 +1531,16 @@ internal sealed class ApiPlanGeneratedApiRemovalIntent
     /// <summary>
     /// <c>ownership.applicationId</c> da metadata V3. Nulo em metadata legada: nesse caso o
     /// diário registra uma adoção tardia, com identificador novo, e **não** regrava o File.
+    /// Quando a metadata veio do B115, o valor existe e é reutilizado; o que muda é o
+    /// <see cref="IntentKind"/>, não a ausência do identificador.
     /// </summary>
     internal Guid? ApplicationId { get; }
 
     /// <summary>Hash do contrato planejado gravado pela integridade B067, quando existir.</summary>
     internal string? ContractHash { get; }
+
+    /// <summary>Metadata reconstruída pelo B115 (<c>recovery.imported</c>), sem contrato.</summary>
+    internal bool IsImportedRecovery { get; }
 
     internal ApiPlanKbObjectNameIndex KbIndex { get; }
 
@@ -1535,11 +1561,17 @@ internal sealed class ApiPlanGeneratedApiRemovalIntent
     internal JournalInventorySufficiency Sufficiency => JournalInventorySufficiency.InventorySufficient;
 
     /// <summary>
-    /// Intenção importada: a metadata não trazia identidade de aplicação própria, então o
-    /// contrato do envelope aceita <c>contractHash</c> ausente e o identificador é adotado agora.
+    /// Intenção importada quando a metadata não trazia <c>applicationId</c> (legado: adoção
+    /// tardia no diário) <strong>ou</strong> quando veio do B115 (<c>recovery.imported</c>):
+    /// inventário sem <c>contractHash</c>. Só a presença de <c>applicationId</c> não basta
+    /// para marcar <see cref="JournalIntentKind.Current"/> — o B115 grava o identificador e
+    /// deliberadamente omite o contrato; tratar isso como Current fazia o diário recusar o
+    /// Remove antes da primeira exclusão.
     /// </summary>
     internal JournalIntentKind IntentKind =>
-        ApplicationId.HasValue ? JournalIntentKind.Current : JournalIntentKind.Imported;
+        ApplicationId.HasValue && !IsImportedRecovery
+            ? JournalIntentKind.Current
+            : JournalIntentKind.Imported;
 
     internal IReadOnlyList<ApiPlanOperationJournalInventoryItem> BuildInventory() =>
         ApiPlanRemovalIntent.BuildInventory(Targets);

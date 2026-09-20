@@ -19,6 +19,7 @@ internal sealed class ApiPlanGeneratedApiRemovalPreviewCapture
         string? metadataSchemaVersion,
         Guid? applicationId,
         string? contractHash,
+        bool isImportedRecovery,
         Guid? folderGuid,
         IReadOnlyDictionary<string, Guid> presentObjectGuids)
     {
@@ -28,6 +29,7 @@ internal sealed class ApiPlanGeneratedApiRemovalPreviewCapture
         MetadataSchemaVersion = metadataSchemaVersion;
         ApplicationId = applicationId;
         ContractHash = contractHash;
+        IsImportedRecovery = isImportedRecovery;
         FolderGuid = folderGuid;
         PresentObjectGuids = presentObjectGuids ?? throw new ArgumentNullException(nameof(presentObjectGuids));
     }
@@ -43,6 +45,12 @@ internal sealed class ApiPlanGeneratedApiRemovalPreviewCapture
     internal Guid? ApplicationId { get; }
 
     internal string? ContractHash { get; }
+
+    /// <summary>
+    /// Metadata reconstruída pelo B115 (<c>recovery.imported</c>): inventário sem contrato.
+    /// O Remove precisa tratar como intenção importada mesmo quando há <c>applicationId</c>.
+    /// </summary>
+    internal bool IsImportedRecovery { get; }
 
     /// <summary>GUID do Folder no Preview, quando encontrado; nulo se ausente ou não aplicável.</summary>
     internal Guid? FolderGuid { get; }
