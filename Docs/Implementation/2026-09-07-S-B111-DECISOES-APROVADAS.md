@@ -418,7 +418,7 @@ nomes serializados.
 | `logicalStage` | enum obrigatório | `NotStarted`, `IntentionRecorded`, `TransactionPending`, `FolderPending`, `SdtsPending`, `ProceduresPending`, `ApiPending`, `ApiSaveOutcomeUnknown`, `ApiPhysicallySaved`, `MetadataPending`, `MetadataRecovered`, `RemovalInProgress`, `RemovalPartial`, `RecoveryInProgress`, `Abandoned`, `Completed` ou `Removed` |
 | `journalDurability` | enum obrigatório | `Confirmed` ou `Unknown` |
 | `intentKind` | enum obrigatório | `Current` ou `Imported` |
-| `metadataSchemaVersion` | enum anulável | `GOAB_API_METADATA_B060_V1`, `GOAB_API_METADATA_B060_V2` ou `GOAB_API_METADATA_B060_V3`; obrigatório quando houver metadata |
+| `metadataSchemaVersion` | enum anulável | `GOAB_API_METADATA_B060_V1`–`V4`; obrigatório quando houver metadata. **Remissão — 2026-09-20:** a lista fechada passou a aceitar V4 com o `B123`; V3 permanece válido |
 | `plan` | objeto obrigatório | varia conforme `operationKind` |
 | `inventory` | array obrigatório, possivelmente vazio | cada alvo e preservação aparecem uma vez |
 | `receipts` | array obrigatório, possivelmente vazio | sequência monotônica dentro da operação |
@@ -556,6 +556,10 @@ A relação entre a metadata de negócio e o diário também fica fechada:
   `classification`, `businessComponent`, `engine`, `scope`, `fingerprint` e
   `ownership.applicationId`. O fingerprint cobre esses dados, exceto o próprio
   campo `fingerprint`, usando UTF-8 e SHA-256.
+  **Remissão — 2026-09-20 (`B123`):** a gravação vigente passou a `GOAB_API_METADATA_B060_V4`,
+  com `objects.transactionFolder.guid` e `ownedByThisApi`; a leitura continua tolerando
+  V1–V3. O contrato V3 acima permanece o piso da F3. Plano:
+  `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
 - A promoção V2→V3 é aditiva: `ownership.applicationId` passa a integrar o payload e o
   fingerprint, portanto um valor novo muda o fingerprint por definição. V2 pode ser lida
   e normalizada, mas não é equivalente a V3 nem deve ser regravada silenciosamente como
@@ -1308,6 +1312,7 @@ instalação, commit ou push:
 - o journal será `GxOpenApiBuilder_OperationJournal`, com envelope da operação corrente e sem
   histórico;
 - metadata V1/V2 será lida e normalizada, mas Apply, Sync e B115 gravarão V3;
+  **Remissão — 2026-09-20:** gravação vigente = V4 (`B123`); V1–V3 só leitura;
 - API será associada por GUID validado e File por `FileId`, GUID, `FileName` e hash;
 - B115 exigirá inventário completo e inequívoco de Procedures e SDTs referenciados;
 - F1 deverá preparar consumidores antes do único `API.Save()` final;

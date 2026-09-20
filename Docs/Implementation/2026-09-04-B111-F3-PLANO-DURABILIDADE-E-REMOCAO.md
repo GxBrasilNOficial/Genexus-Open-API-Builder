@@ -503,6 +503,10 @@ completo existente, trata `levels` ausente como plano, materializa
 `recovery.imported=true`; os caminhos não recuperados permanecem ausentes, e não
 vazios. Remove legado não regrava a metadata só para preencher `applicationId`.
 
+**Remissão — 2026-09-20 (`B123`):** a forma emitida passou a `GOAB_API_METADATA_B060_V4`
+(`guid` + `ownedByThisApi` no Folder); leitura V1–V3. O parágrafo acima é o contrato da
+F3 na data do plano. Evidência: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
+
 A promoção V2→V3 é aditiva e muda o material de integridade: a forma V3 acrescenta
 `ownership.applicationId` ao payload completo, e esse valor entra no fingerprint (exceto o
 próprio campo `fingerprint`). Portanto, um `applicationId` novo altera o fingerprint por
