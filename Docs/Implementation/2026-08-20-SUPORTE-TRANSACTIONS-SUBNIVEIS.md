@@ -283,7 +283,9 @@ A Fase 6 (`B099b`, concluída em 2026-08-28) acrescentou a estrutura de níveis 
 - A mesma política de tolerância vale para `GOAB_WIZARD_PREFERENCES_V1`, tratado na Fase 7.
 - Sem essa tolerância, toda API gerada na Alpha ficaria simultaneamente irreencontrável e **irremovível**, já que os dois caminhos validam o carimbo.
 
-**Remissão — 2026-09-14:** esta seção descreve o estado que vigorou entre `B099b` e a P0 da F3 da sprint `S-B111`. Desde então a **gravação** emite `GOAB_API_METADATA_B060_V3`, que acrescenta `ownership.applicationId` ao payload e, por consequência, ao fingerprint; a **leitura** passou a tolerar `V1`, `V2` e `V3`, e a política de não converter durante a abertura do Wizard permanece igual. Metadata legada não é regravada apenas para preencher o campo novo. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`.
+**Remissão — 2026-09-14:** esta seção descreve o estado que vigorou entre `B099b` e a P0 da F3 da sprint `S-B111`. A P0 passou a **gravar** `GOAB_API_METADATA_B060_V3` (`ownership.applicationId` no payload e no fingerprint); a **leitura** passou a tolerar `V1`, `V2` e `V3`, e a política de não converter durante a abertura do Wizard permanece igual. Metadata legada não é regravada apenas para preencher o campo novo. Evidência: `Docs/Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md`.
+
+**Remissão — 2026-09-20 (`B123`):** a **gravação** vigente é `GOAB_API_METADATA_B060_V4` (`objects.transactionFolder.guid` e `ownedByThisApi`); a **leitura** tolera `V1`–`V3`. A remissão de 2026-09-14 cobre o intervalo P0→`B123`, não o estado atual. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
 
 ---
 
