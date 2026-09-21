@@ -3,7 +3,7 @@
 Data: 2026-08-31.
 Estado: **estacionado desde 2026-09-05** (plano aprovado em 2026-08-31).
 Correlato de backlog: `Docs/Foundation/06-BACKLOG_v0.1.md` (`B108`).
-Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. Desde 2026-09-05 este plano está estacionado. A sprint `S-B111` (F1–F3) foi encerrada em 2026-09-15, mantendo `B121` fora dela; este plano permanece estacionado. Remissão — 2026-09-18: o `B122` foi fechado; então a próxima era `B123`. Remissão — 2026-09-20: `B123` fechado; vigente no checkpoint = `B124`. Escopo inalterado.
+Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`. Desde 2026-09-05 este plano está estacionado. A sprint `S-B111` (F1–F3) foi encerrada em 2026-09-15, mantendo `B121` fora dela; este plano permanece estacionado. Remissão — 2026-09-18: o `B122` foi fechado; então a próxima era `B123`. Remissão — 2026-09-20: `B123` fechado; vigente no checkpoint = `B124`. Escopo do B108 inalterado; as menções ao Remover abaixo remitem à posse histórica (`ownedByThisApi` + GUID), não a `wasCreated` sozinho.
 
 Não misturar com `B082` (sinal de vida no Wizard/Remover).
 
@@ -46,7 +46,7 @@ No reencontro, cada checkbox de etapa espelha o que **existe / está aplicado** 
 | Completar REST via BC | aplicar / manter REST/BC | **rebaixar** Get/Create/Update → skeleton; **Delete some** (serviço + Procedure + rota) |
 | Delete | (acoplado a BC; já na API ou marcado na sessão) | some com BC; não existe sem BC |
 
-Preservar sempre: SDTs compartilhados `GxOpenAPI`, propriedade Business Component da Transaction, Folder reutilizado (`wasCreated=false`).
+Preservar sempre: SDTs compartilhados `GxOpenAPI`, propriedade Business Component da Transaction, Folder **sem** posse histórica. **Remissão — 2026-09-20 (`B123`):** não usar `wasCreated=false` como sinônimo de «nunca apagar» — Folder próprio reencontrado tem `wasCreated=false` e `ownedByThisApi=true`.
 
 ### 2.4 Confirmação ao desmarcar
 
@@ -88,7 +88,7 @@ Marcar Delete com BC desligado → religa BC (comportamento já existente).
 
 3. **Apply — retração**
    - Caminho explícito de rebaixamento BC/List (writers ou rotina dedicada).
-   - Remoção seletiva reutilizando preflight/posse do `ApiPlanGeneratedApiRemover` (API → Procedures → SDTs próprios → metadata; Folder só se `wasCreated` e vazio de objetos próprios, como no Remover).
+   - Remoção seletiva reutilizando preflight/posse do `ApiPlanGeneratedApiRemover` (API → Procedures → SDTs próprios → metadata; Folder só se posse histórica (`ownedByThisApi`) com o mesmo GUID e vazio, como no Remover vigente desde o `B123` — não mais só `wasCreated`).
    - Quando a intenção for retração explícita, a trava `ThrowIfB054WouldDowngradeRestContract` **não** pode bloquear o rebaixamento autorizado (substituir por caminho consciente, não remover a proteção contra rebaixamento acidental via B054 “normal”).
 
 4. **Preflight**
