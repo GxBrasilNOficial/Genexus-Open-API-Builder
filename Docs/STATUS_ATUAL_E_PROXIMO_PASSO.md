@@ -145,8 +145,8 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 **`B124` — regra de documento de evidência IDE** — quando aceite/smoke exige doc em
 `Docs/Implementation/` em vez de só checkpoint/`CHANGELOG`. Nascido em 2026-09-16; `B123`
-fechado (smoke §6 PASS 2026-09-20). `B125` (Preview mentiroso pós-aborto) permanece aberto
-à parte. Nota no documento 06. **Corte `0.1.0-alpha.8` publicado em 2026-09-17**.
+fechado (smoke §6 do **núcleo** PASS 2026-09-20; hardenings `86ef414`/`c358fb2` → `B127`).
+`B125`/`B126`/`B127` permanecem abertos à parte. Nota no documento 06. **Corte `0.1.0-alpha.8` publicado em 2026-09-17**.
 O estado da branch em relação a `origin/main` se mede com
 `git rev-list --left-right --count origin/main...HEAD`, não se anota aqui como fato permanente.
 
@@ -216,7 +216,7 @@ porque indeterminação não se produz por clique. Tabela critério × evidênci
 **entregue e commitado em 2026-09-18** (`scripts/Apply-TextPatch.ps1`, gate `tests.textPatch`,
 plano `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`). ~~O `B123` entrou no
 código em 2026-09-20; a próxima ação única vigente é o **smoke na IDE** (plano §6).~~
-**Superado em 2026-09-20:** `B123` fechado (smoke §6 PASS); vigente = `B124`. Nota operacional do `B122` permanece no
+**Superado em 2026-09-20:** `B123` fechado (smoke §6 do núcleo PASS; `B127` para IDE dos hardenings); vigente = `B124`. Nota operacional do `B122` permanece no
 documento 06.
 
 **Duas coisas precisam ser sabidas antes de testar.** A primeira: uma segunda remoção da mesma
@@ -656,6 +656,7 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 156. Em 2026-09-20, no teste 4 do `B123`: B115 recuperou metadata (`recovery.imported`, `ownedByThisApi=false`); Preview do Remover «nunca apagar» / `PlannedDeletes=25`; Remover bloqueou em `CP1 Prepared` — `contractHash` nulo com `IntentKind=Current` porque B115 grava `applicationId`. **Conserto offline:** captura lê `recovery.imported`; `IntentKind=Imported` nesse caso (reusa o `applicationId`). Gate `tests.orphanMetadataRecovery` ampliado; build Release 0 avisos. Manifesto não mudou. Próxima ação = reinstalar DLL e retestar Remover sobre a metadata B115 já na KB.
 157. Em 2026-09-20, **reteste Remover pós-B115 PASS**: diário abriu (`ApplicationId` do B115); `FolderShouldBeRemoved=False`; `Deleted=25` sem Folder (2 passadas; `ListFilters` na 2ª); B081 `Success`. Folder `TesteOpenApi` vazio **confirmado** na KB. Smoke §6 do `B123` completo.
 158. Em 2026-09-20, **`B123` fechado**: schema V4 + posse histórica + smoke IDE §6 (quatro cenários) + conserto `IntentKind` no Remover sobre B115. Próxima ação única = `B124`. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
+159. Em 2026-09-21, **escopo da evidência §6**: o smoke IDE mede a DLL de `05da79a` (+ IntentKind); não cobre `86ef414` (Preview/GUID) nem `c358fb2` (homônimo sem herdar posse). Ambos com gate offline; residual `B127` no documento 06. `Validated`/`plano` alinhados. Próxima ação única permanece `B124`.
 
 ## Bloqueios e fatos ainda não validados
 

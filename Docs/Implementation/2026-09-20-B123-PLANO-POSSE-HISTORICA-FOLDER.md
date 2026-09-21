@@ -3,7 +3,7 @@
 Data: 2026-09-20.
 Item de backlog: `B123` (documento 06).
 Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` (próxima ação única vigente).
-Estado: **frente fechada** (2026-09-20). Smoke §6 completo; checkpoint promove `B124`. Commit sob autorização humana.
+Estado: **frente fechada** (2026-09-20). Smoke §6 completo **para o núcleo medido** (DLL de `05da79a` + reteste IntentKind); checkpoint promove `B124`. Hardenings `86ef414`/`c358fb2` → gates offline + residual `B127`.
 
 **Não** autorizava, neste arquivo, alteração de código, instalação, commit ou push. **Remissão — 2026-09-20:** código e gates da seção 5 executados.
 
@@ -291,6 +291,12 @@ adotar esse caso.
 KB `wsEducacaoSpTeste`, Transaction `Teste`, Folder `TesteOpenApi`, File `apiTeste_Metadata`.
 Hierarquia típica: 5 Procedures (incl. Delete), 18 SDTs próprios, 3 compartilhados `sdt_API_*`.
 
+**Alcance desta medição.** Os quatro PASS abaixo valem para a DLL do commit `05da79a`
+(2026-09-20 ~20:02) e o reteste IntentKind daquele ciclo. **Não** cobrem
+`86ef414` (Preview/contagem desanuncia Folder com GUID divergente) nem `c358fb2`
+(homônimo com GUID novo não herda `ownedByThisApi` na escrita) — ambos com gate offline;
+re-smoke IDE numerado em `B127`.
+
 1. **PASS** — Apply criação (`SchemaVersion` V4, Folder Guid `138a527d-…`, metadata
    `wasCreated=true` / `ownedByThisApi=true`). Remover: confirmação «criado pela extensão»;
    `FolderShouldBeRemoved=True`; `Deleted=26` incluindo `Folder:TesteOpenApi`; Folder sumiu
@@ -332,7 +338,7 @@ Não misturar com `B125` (Preview mentiroso após aborto), `B121` nem `B108`.
       Description própria, contêiner e vazio; B115 sem posse.
 - [x] Aviso «nunca apagar» só sem posse.
 - [x] Gates da seção 5 verdes.
-- [x] Smoke da seção 6 na IDE, com evidência (1–4 PASS 2026-09-20; conserto IntentKind no 4).
+- [x] Smoke da seção 6 na IDE, com evidência (1–4 PASS 2026-09-20; conserto IntentKind no 4) — núcleo; ver alcance acima e `B127`.
 - [x] Documentos da seção 4 alinhados; `CHANGELOG` com uma entrada.
 - [x] Checkpoint: frente `B123` fechada; próxima ação única = `B124` (2026-09-20).
 

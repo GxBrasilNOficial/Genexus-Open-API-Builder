@@ -279,10 +279,27 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B120 | Normalizar o envelope HTTP do serviço `List` entre .NET Framework/SQL Server e .NET/PostgreSQL, preservando o `ErrorResponse` público | Urgente — bloqueia o aceite HTTP multiplataforma; aberto em 2026-09-10, a retenção até o encerramento da sprint `S-B111` foi superada e o item segue aberto para retomada conforme o checkpoint. A F2 foi encerrada em 2026-09-13 e a F3 em 2026-09-15, com a sprint. Plano em [`Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`](../Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md) |
 | B121 | Tornar explícita a seleção das etapas `Business Component` e `List` no Sync, sem inferir a intenção pela lista de serviços | Média — melhoria futura, fora da sprint `S-B111`; os perfis Sync sem BC/List, somente BC e BC+List foram aceitos na F1, enquanto o perfil somente List isolado é a exceção formal transferida para este item e permanece não comprovado até sua implementação. Evidência IDE em 2026-09-11: no Sync de `Contrato`, sem opção de BC e com `ContratoObservacao` marcado somente em `Response`, o Output executou BC (`Get/Create/Update`) antes de List; `FinalWriter='List'`, `ApiSaveCount=1`, `Bloqueados=0`. O perfil somente List não foi comprovado. Plano: [`Docs/Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md`](../Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md) |
 | B122 | Dar aos agentes uma ferramenta versionada de edição textual ancorada, no lugar do script descartável que cada sessão reinventa | **Fechado em 2026-09-18** (commits `ce1cf44` / `bf40b3b`). `scripts/Apply-TextPatch.ps1` + gate `tests.textPatch`. Plano: `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`. Não muda o produto |
-| B123 | Registrar a **posse histórica do Folder** da API na metadata, para que a remoção possa apagar um Folder próprio que ficou vazio | **Fechado em 2026-09-20** (código, gates e smoke IDE §6). Também consertou Remover sobre B115 (`IntentKind`/`recovery.imported`). Medido em campo no cenário 8 da P8: o `TesteOpenApi` ficou na KB, vazio, depois de uma remoção completa. Era o comportamento correto até o `B123` — a fila só apagava Folder `wasCreated=true`, e `wasCreated` descreve a operação corrente, não quem criou o Folder —, e o efeito era permanente: assim que um Folder sobrevivia a uma remoção, toda geração seguinte o reencontrava como reutilizado. A saída barata, apagar Folder vazio com Description canônica, foi **recusada** por ser menos segura: Description isolada nunca autorizou exclusão neste projeto (seção 4.3 do plano da F3). Em 2026-09-20 o contrato entrou no código: schema V4 com `guid` e `ownedByThisApi`; remoção pela posse histórica + GUID; B115 sem reivindicar dono; «nunca apagar» só sem posse. Metadata V1–V3 ainda é lida; Folder legado já gravado com `wasCreated=false` continua fora da adoção retroativa. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`. Evidência do achado: `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`, seção 12 |
+| B123 | Registrar a **posse histórica do Folder** da API na metadata, para que a remoção possa apagar um Folder próprio que ficou vazio | **Fechado em 2026-09-20** (código, gates e smoke IDE §6 do **núcleo**; hardenings `86ef414`/`c358fb2` → `B127`). Também consertou Remover sobre B115 (`IntentKind`/`recovery.imported`). Medido em campo no cenário 8 da P8: o `TesteOpenApi` ficou na KB, vazio, depois de uma remoção completa. Era o comportamento correto até o `B123` — a fila só apagava Folder `wasCreated=true`, e `wasCreated` descreve a operação corrente, não quem criou o Folder —, e o efeito era permanente: assim que um Folder sobrevivia a uma remoção, toda geração seguinte o reencontrava como reutilizado. A saída barata, apagar Folder vazio com Description canônica, foi **recusada** por ser menos segura: Description isolada nunca autorizou exclusão neste projeto (seção 4.3 do plano da F3). Em 2026-09-20 o contrato entrou no código: schema V4 com `guid` e `ownedByThisApi`; remoção pela posse histórica + GUID; B115 sem reivindicar dono; «nunca apagar» só sem posse. Metadata V1–V3 ainda é lida; Folder legado já gravado com `wasCreated=false` continua fora da adoção retroativa. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`. Evidência do achado: `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`, seção 12 |
 | B124 | Definir **quando** um aceite ou smoke IDE exige documento dedicado de evidência em `Docs/Implementation/`, em vez de ficar só no item do checkpoint e na entrada Validated do `CHANGELOG` | Média — nascido em 2026-09-16. Ver nota operacional abaixo |
 | B125 | Preview do Remover, após aborto parcial, ainda lista alvos já apagados na KB (inventário vem só da metadata) | Média — nascido em 2026-09-17 a partir do observado no item 142 do checkpoint. Ver nota operacional abaixo |
 | B126 | Confirmação do Remover anuncia «apaga se ficar vazio» para Folder com posse, mas Description editada (ou contêiner inesperado) preserva em silêncio em `DeleteOwnFolder` | Média — numerado em 2026-09-21. Ver nota operacional abaixo |
+| B127 | Re-smoke IDE dos hardenings pós-§6 do `B123`: Preview/contagem com GUID divergente (`86ef414`); regravação com homônimo sem herdar `ownedByThisApi` (`c358fb2`) | Média — numerado em 2026-09-21. Ver nota operacional abaixo |
+
+### Nota operacional — B127, registrada em 2026-09-21
+
+**O que é.** O smoke §6 do `B123` (quatro cenários) fechou na DLL de `05da79a`. No mesmo dia,
+`86ef414` alinhou anúncio/contagem do Preview ao GUID e `c358fb2` impediu herança de posse
+para homônimo com GUID novo. Ambos têm gate offline; nenhum tem evidência IDE.
+
+**O que não é.** Não invalida os quatro PASS do núcleo V4/posse/terceiro/B115. Não é o
+`B126` (confirmação vs Description). Não substitui a próxima ação única (`B124`).
+
+**Entrega deste item.** Reinstalar a DLL vigente; (1) metadata com GUID A e Folder vivo B →
+confirmação/contagem **sem** anunciar o Folder; (2) Apply/Sync sobre Folder homônimo novo
+com metadata `ownedByThisApi=true`+GUID antigo → gravar `ownedByThisApi=false`. Fechar com
+evidência no plano ou no checkpoint.
+
+**Fora de escopo.** Anúncio Description/`B126`; Preview pós-aborto/`B125`.
 
 ### Nota operacional — B126, registrada em 2026-09-21
 
@@ -299,7 +316,7 @@ Folders entram na fila com posse.
 tratar Description divergente no preflight/Preview; smoke IDE do caso. Até lá: residual
 numerado, sem mudança de runtime nesta frente documental.
 
-**Fora de escopo.** Preview pós-aborto (`B125`); mudança de schema da metadata.
+**Fora de escopo.** Preview pós-aborto (`B125`); re-smoke Preview-GUID/homônimo (`B127`); mudança de schema da metadata.
 
 ### Nota operacional — B125, registrada em 2026-09-17
 
