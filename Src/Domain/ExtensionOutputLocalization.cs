@@ -1082,10 +1082,6 @@ internal static class ExtensionOutputLocalization
             "V1, V2, V3 o V4",
             "V1, V2, V3 or V4"),
         new(
-            "V1, V2 ou V3",
-            "V1, V2 o V3",
-            "V1, V2 or V3"),
-        new(
             ": esperado ",
             ": esperado ",
             ": expected "),

@@ -229,6 +229,59 @@ try {
     Assert-True (-not [bool]$matchGuid.Invoke($null, @($sameGuid, $otherGuid))) 'GUID persistido diferente do da KB recusa exclusão'
     Assert-True ([bool]$matchGuid.Invoke($null, @($null, $sameGuid))) 'Sem GUID persistido a identidade não restringe'
 
+    # Preview: GUID divergente alinha anúncio/contagem (não só a fila em BuildTargets).
+    $captureType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGeneratedApiRemovalPreviewCapture', $true, $false)
+    Assert-True ($null -ne $captureType) 'ApiPlanGeneratedApiRemovalPreviewCapture não encontrado.'
+    $emptyGuids = New-Object 'System.Collections.Generic.Dictionary[string,System.Guid]'
+    $emptyGuidsRo = [System.Collections.ObjectModel.ReadOnlyDictionary[string,System.Guid]]::new($emptyGuids)
+    $captureCtor = $captureType.GetConstructors([System.Reflection.BindingFlags]'Instance, NonPublic, Public') |
+        Where-Object { $_.GetParameters().Count -eq 9 } |
+        Select-Object -First 1
+    Assert-True ($null -ne $captureCtor) 'Construtor da PreviewCapture não encontrado.'
+    $planGuidMismatch = $fromMetadata.Invoke($null, @($metadataV4, 'Teste', $txGuid))
+    Assert-True ([bool](Get-Prop $planGuidMismatch 'FolderShouldBeRemoved')) 'Antes do Preview, V4 com posse ainda anuncia o Folder'
+    $captureMismatch = $captureCtor.Invoke([object[]]@(
+        [guid]$txGuid,
+        [guid]'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+        'GOAB_API_METADATA_B060_V4',
+        $null,
+        $null,
+        $false,
+        $otherGuid,
+        $emptyGuidsRo
+    ))
+    $attach = $planType.GetMethod('AttachPreviewCapture', [System.Reflection.BindingFlags]'Instance, NonPublic, Public')
+    Assert-True ($null -ne $attach) 'AttachPreviewCapture não encontrado.'
+    [void]$attach.Invoke($planGuidMismatch, @($captureMismatch))
+    Assert-True (-not [bool](Get-Prop $planGuidMismatch 'FolderShouldBeRemoved')) 'GUID divergente no Preview desanuncia o Folder'
+    $countDeletes = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGeneratedApiRemover', $true, $false).
+        GetMethod('CountPlannedDeletes', [System.Reflection.BindingFlags]'Static, Public')
+    $plannedAfterMismatch = [int]$countDeletes.Invoke($null, @($planGuidMismatch))
+    $planGuidMatch = $fromMetadata.Invoke($null, @($metadataV4, 'Teste', $txGuid))
+    $captureMatch = $captureCtor.Invoke([object[]]@(
+        [guid]$txGuid,
+        [guid]'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+        'GOAB_API_METADATA_B060_V4',
+        $null,
+        $null,
+        $false,
+        $sameGuid,
+        $emptyGuidsRo
+    ))
+    [void]$attach.Invoke($planGuidMatch, @($captureMatch))
+    Assert-True ([bool](Get-Prop $planGuidMatch 'FolderShouldBeRemoved')) 'GUID igual no Preview mantém o anúncio do Folder'
+    $plannedAfterMatch = [int]$countDeletes.Invoke($null, @($planGuidMatch))
+    Assert-True ($plannedAfterMatch -eq ($plannedAfterMismatch + 1)) 'Contagem do Preview deve incluir o Folder só quando o GUID casa'
+
+    # Gate: FormatSupportedVersionList() deve existir como fragmento no catálogo de l10n.
+    $schemaType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataSchema', $true, $false)
+    $formatList = $schemaType.GetMethod('FormatSupportedVersionList', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
+    $versionListPt = [string]$formatList.Invoke($null, @())
+    $locSrc = Get-Content -LiteralPath (Join-Path $repositoryRoot 'Src/Domain/ExtensionOutputLocalization.cs') -Raw
+    Assert-Contains $locSrc ('"' + $versionListPt + '"') "Catálogo deve traduzir o fragmento produzido por FormatSupportedVersionList ('$versionListPt')."
+
     $metadataV0 = [Newtonsoft.Json.Linq.JObject]::Parse($metadataV4.ToString([Newtonsoft.Json.Formatting]::None))
     $metadataV0['schemaVersion'] = [Newtonsoft.Json.Linq.JValue]::new('GOAB_API_METADATA_B060_V5')
     $rejected = $false

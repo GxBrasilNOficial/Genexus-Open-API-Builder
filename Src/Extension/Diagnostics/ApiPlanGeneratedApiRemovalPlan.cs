@@ -48,7 +48,11 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
     public bool FolderWasCreated { get; }
     public bool FolderOwnedByThisApi { get; }
     public Guid? FolderGuid { get; }
-    public bool FolderShouldBeRemoved { get; }
+    /// <summary>
+    /// Inicialmente posse+nome; após <see cref="AttachPreviewCapture"/> pode
+    /// cair a <c>false</c> quando o GUID persistido diverge do Folder na KB.
+    /// </summary>
+    public bool FolderShouldBeRemoved { get; private set; }
     public IReadOnlyList<string> ProcedureNames { get; }
     public IReadOnlyList<string> OwnSdtNames { get; }
     public IReadOnlyList<string> SharedSdtNamesPreserved { get; }
@@ -62,6 +66,14 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
     internal void AttachPreviewCapture(ApiPlanGeneratedApiRemovalPreviewCapture capture)
     {
         PreviewCapture = capture ?? throw new ArgumentNullException(nameof(capture));
+
+        // Homônimo com GUID divergente: a fila já preservava em BuildTargets;
+        // alinhar anúncio/contagem/confirmação ao mesmo critério.
+        if (FolderShouldBeRemoved
+            && !ApiPlanTransactionFolderOwnership.MatchesPersistedGuid(FolderGuid, capture.FolderGuid))
+        {
+            FolderShouldBeRemoved = false;
+        }
     }
 
     public static ApiPlanGeneratedApiRemovalPlan FromMetadata(

@@ -156,9 +156,9 @@ Ela deve:
 - remover apenas objetos próprios
 - não remover nem desabilitar a Transaction
 - não reverter automaticamente a propriedade Business Component
-- nunca apagar Folder reutilizado
-- apagar Folder criado pela extensão apenas se ficar vazio
-- preservar Folder criado pela extensão quando contiver objetos alheios
+- apagar Folder só com posse histórica (`ownedByThisApi`) e se ficar vazio — reutilizado sem posse permanece
+- preservar Folder próprio quando contiver objetos alheios
+- GUID persistido divergente do Folder na KB preserva (homônimo de terceiro)
 - preservar os SDTs compartilhados em `GxOpenAPI`
 
 **Build após remoção (evidência B099b, 2026-08-28).** Remover apaga objetos do **Design**; caches de especificação e artefatos gerados por **environment** (`GXSPC*`, `GeneXus.Programs.Common.sdts.targets`, `type_Sdt*.cs`) podem continuar referenciando SDTs removidos. Work With Objects limpo no Design **não** garante Build All incremental limpo. Após Remover, tratar **Rebuild All por environment** como passo operacional recomendado — em KBs grandes o custo de horas evita falha tardia na compilação por SDT órfão. Evidência: `Docs/Implementation/2026-08-28-B099b-METADATA-HIERARQUICA-V2.md` (seção build pós-Remover).
@@ -178,7 +178,7 @@ Colisões incompatíveis bloqueiam a geração até decisão explícita.
 
 O MVP não deve sobrescrever, adotar, apagar nem criar sufixos automaticamente para resolver colisão.
 
-Folder preexistente específico da Transaction pode ser reutilizado com aviso. A metadata deve distinguir Folder reutilizado de Folder criado pela extensão.
+Folder preexistente específico da Transaction pode ser reutilizado com aviso. A metadata distingue a operação corrente (`wasCreated`) da posse histórica (`ownedByThisApi`); reuso sem posse não autoriza exclusão.
 
 ---
 
@@ -190,7 +190,7 @@ Folder preexistente específico da Transaction pode ser reutilizado com aviso. A
 - `_v2` não é criado automaticamente
 - remoção lista e remove apenas objetos próprios
 - Business Component não é revertido pela remoção
-- Folder reutilizado nunca é apagado pela remoção
+- Folder sem posse histórica (`ownedByThisApi=false`) não é apagado; com posse, só se ficar vazio
 - SDTs compartilhados em `GxOpenAPI` permanecem ao remover uma API específica
 - sincronização apresenta comparação antes de alterar qualquer objeto
 
@@ -237,3 +237,17 @@ interrompida`**, que relê cada alvo por identidade e fecha o registro.
 
 Contrato completo em `Docs/Implementation/2026-09-04-B111-F3-PLANO-DURABILIDADE-E-REMOCAO.md`;
 o que foi exercido na IDE, em `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`.
+
+---
+
+# 12. Nota de revisão — 2026-09-20 — posse histórica do Folder (`B123`)
+
+As seções 7 e 9 ainda falavam em «nunca apagar Folder reutilizado» e em distinguir só
+criado vs reutilizado. Isso envelheceu quando a metadata passou a `GOAB_API_METADATA_B060_V4`:
+`wasCreated` descreve a operação corrente; `ownedByThisApi` autoriza a fila de remoção;
+`guid` identifica o Folder e, se divergir do presente na KB, a exclusão é recusada.
+Um Folder reencontrado com posse histórica pode ser apagado se ficar vazio — o que a
+formulação absoluta das seções 7/9 proibia. O texto daquelas seções foi alinhado nesta
+mesma data; o contrato detalhado permanece no plano
+`Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md` e no documento 08
+(remissão `B123`).
