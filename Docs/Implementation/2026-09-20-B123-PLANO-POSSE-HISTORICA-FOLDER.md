@@ -228,7 +228,9 @@ Código:
 - `ApiPlanTransactionFolder.cs` — marcar posse ao criar; aviso de reuso ramificado.
 - `ApiPlanGeneratedApiRemovalPlan.cs` — fila pela posse histórica; lista de schema
   compartilhada; mensagem V1–V4.
-- `ApiPlanGeneratedApiRemovalInventory.cs` — mesma regra ao reconstruir plano.
+- `ApiPlanGeneratedApiRemovalInventory.cs` — **não alterado** neste passo: o stub de
+  `ApiPlan` ainda lê `wasCreated` só como campo do plano; a autorização de exclusão do
+  Folder ficou em `RemovalPlan` / Ownership, não no inventário de SDTs.
 - `ApiPlanGeneratedApiRemover.cs` — `CountPlannedDeletes` / `BuildTargets` / conferência
   de GUID.
 - `ApiPlanOrphanMetadataRecovery.cs` — `ownedByThisApi=false`.

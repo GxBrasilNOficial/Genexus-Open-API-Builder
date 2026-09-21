@@ -1040,7 +1040,7 @@ inteira levou 5,5 s.
 ### 12.4 O que o cenário produziu: recusas mudas e sem tradução
 
 As três recusas do plano de remoção — campo ausente, campo incompatível e `schemaVersion` fora de
-V1/V2/V3 — bloqueavam **sem dizer o que fazer**, ao contrário da recusa da metadata hierárquica
+V1/V2/V3 (**lista aceita na data desta validação**; desde o `B123` a mensagem cita V1–V4) — bloqueavam **sem dizer o que fazer**, ao contrário da recusa da metadata hierárquica
 ilegível, que já terminava com «Corrija a metadata ou regenere a API». É o mesmo critério da
 seção 10, aplicado onde ainda não estava. As três passaram a terminar com uma saída única, numa
 constante compartilhada; o nome do campo continua no começo, porque quem edita metadata legada
@@ -1057,19 +1057,25 @@ validador, não como texto de tela.
 
 ### 12.5 Achado de contrato — o Folder vazio é permanente
 
-Depois da remoção, o Folder `TesteOpenApi` ficou na KB, vazio. **É o comportamento correto**: a
-fila só apaga Folder próprio criado pela operação corrente (`wasCreated=true`), e o diálogo avisa
-«reutilizado; nunca apagar». Mas o efeito é de mão única — assim que um Folder sobrevive a uma
-remoção, toda geração seguinte o reencontra como reutilizado, e **nenhuma remoção futura vai
-apagá-lo**, porque `wasCreated` descreve a operação corrente, não quem criou o Folder.
+Depois da remoção, o Folder `TesteOpenApi` ficou na KB, vazio. **Na data desta validação, era o
+comportamento correto**: a fila só apagava Folder próprio criado pela operação corrente
+(`wasCreated=true`), e o diálogo avisava «reutilizado; nunca apagar». O efeito era de mão única —
+assim que um Folder sobrevivia a uma remoção, toda geração seguinte o reencontrava como
+reutilizado, e **nenhuma remoção futura o apagaria**, porque `wasCreated` descreve a operação
+corrente, não quem criou o Folder.
 
 A saída barata — apagar Folder vazio que carregue a Description canônica — foi **recusada pelo
 usuário na mesma data**, por ser menos segura: Description isolada nunca autorizou exclusão neste
 projeto, e um Folder homônimo de terceiro com a mesma marca seria apagado. A saída aprovada é a
-cara, e virou o item de backlog **`B123`**, para depois da sprint: a metadata registrar a posse
-histórica do Folder, o que é mudança de schema com leitura legada, fingerprint e consumidores.
+cara, e virou o item de backlog **`B123`**: a metadata registrar a posse histórica do Folder.
 
-Até lá, o resíduo é um Folder vazio, inofensivo, que o usuário apaga à mão se quiser.
+**Remissão — 2026-09-20 (`B123` fechado).** O absoluto «nenhuma remoção futura» e o «até lá» abaixo
+deixaram de ser o contrato vigente. Com `GOAB_API_METADATA_B060_V4`, `ownedByThisApi` + `guid`
+autorizam apagar Folder próprio reencontrado se ficar vazio; homônimo com GUID divergente não
+herda posse. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
+
+Até o fechamento do `B123`, o resíduo era um Folder vazio, inofensivo, que o usuário apagava à mão
+se quisesse.
 
 ## 13. Cenário 9a — o acréscimo do diário no Apply da KB grande
 

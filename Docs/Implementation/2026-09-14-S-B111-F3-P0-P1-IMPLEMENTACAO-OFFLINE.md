@@ -45,7 +45,7 @@ definição quando o identificador muda. O mecanismo de hash não precisou de al
 | Arquivo | Mudança |
 |---|---|
 | `ApiPlanMetadataFileWriter.cs` | `SchemaVersionV2` passa a existir como constante própria; `SchemaVersion` emitido vira `..._V3`; `SupportedSchemaVersions` aceita V1, V2 e V3; `ownership.applicationId` é gravado a partir de `ApiPlan.ApplicationId`; `TryReadApplicationId` expõe a leitura tolerante do campo |
-| `ApiPlanGeneratedApiRemovalPlan.cs` | aceita V3 e a mensagem de bloqueio passa a citar «V1, V2 ou V3» |
+| `ApiPlanGeneratedApiRemovalPlan.cs` | aceita V3 e a mensagem de bloqueio passa a citar «V1, V2 ou V3» (**nesta frente**; desde o `B123` a mensagem cita «V1, V2, V3 ou V4») |
 | `ApiPlanOrphanMetadataRecovery.cs` | o plano de recuperação carrega um `ApplicationId` próprio — novo quando B115 é autônomo — e a metadata importada grava o campo |
 
 Os outros três consumidores obrigatórios — `ApiPlanGenerationStateReader`,
