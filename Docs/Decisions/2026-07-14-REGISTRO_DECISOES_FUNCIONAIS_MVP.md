@@ -155,6 +155,33 @@ Permanecem válidas a ausência de array de erros **por linha**, a atomicidade d
 
 Ficam remidos, quanto ao estado de implementação, os trechos das emendas de 2026-08-20 e 2026-08-23 que registravam o gap de `B102` ou o experimento ainda aberto, e a afirmação da `Emenda técnica — 2026-08-03 — contrato OpenAPI publicado` de que o SDT compartilhava apenas `Code` e `Message` — válida naquela data; desde esta emenda o SDT inclui também `Messages[]`.
 
+## Emenda técnica — 2026-09-20 — Posse histórica do Folder (`B123`)
+
+### Fato que motivou a emenda
+
+A decisão original de colisões prometia nunca apagar Folder «preexistente reutilizado» e apagar só o
+criado pela extensão se ficasse vazio. Em campo (P8), um Folder próprio que sobrevivia a uma remoção
+passava a `wasCreated=false` e deixava de ser apagável — efeito permanente. O `B123` fechou esse gap
+com metadata `GOAB_API_METADATA_B060_V4`. Plano:
+`Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`. Foundation: 08, 14 e 28.
+
+### Decisões
+
+1. **Posse vs operação.** `wasCreated` descreve só a execução corrente. `ownedByThisApi` é a posse
+   histórica que autoriza enfileirar o Folder. `guid` identifica o objeto; também se grava no reuso
+   de terceiro e **não** prova posse sozinho.
+2. **Quando apaga.** Folder com posse e o mesmo `guid` na KB entra na fila e só é apagado se ficar
+   vazio. Folder sem posse (reuso de terceiro) permanece com «nunca apagar».
+3. **Continuidade.** Homônimo com GUID divergente **não** herda `ownedByThisApi` na regravação.
+4. **B115.** Metadata importada não reivindica posse (`ownedByThisApi=false`).
+
+### O que a emenda não altera
+
+Permanecem: reutilizar Folder `NomeOpenApi` no contêiner correto com aviso; não mover nem alterar
+conteúdo preexistente; remoção só pelo comando explícito; confirmação antes de apagar; preservar
+Folder que ainda contenha objetos alheios; SDTs compartilhados em `GxOpenAPI` preservados; não
+apagar objetos alheios (gate 10).
+
 ## Emenda técnica — 2026-08-03
 
 ### Experimento previsto que motivou a emenda
@@ -454,11 +481,11 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 - O resumo do wizard informará explicitamente que o Folder existente será reutilizado.
 - Nenhum conteúdo preexistente será movido, alterado nem assumido como pertencente à extensão.
 - Os objetos planejados dentro dele continuarão sujeitos à verificação normal de colisões.
-- Os metadados distinguirão Folder reutilizado de Folder criado pela extensão.
-- Ao remover a API, a extensão retirará somente os objetos que ela própria gerou e nunca apagará um Folder preexistente reutilizado.
+- Os metadados distinguirão Folder reutilizado de Folder criado pela extensão. **Remissão — 2026-09-20 (`B123`):** a forma vigente distingue a operação corrente (`wasCreated`) da posse histórica (`ownedByThisApi`); ver `Emenda técnica — 2026-09-20`.
+- Ao remover a API, a extensão retirará somente os objetos que ela própria gerou e nunca apagará um Folder preexistente reutilizado. **Superado em parte pela `Emenda técnica — 2026-09-20`:** «nunca apagar» permanece para Folder **sem** posse histórica; Folder próprio reencontrado com `ownedByThisApi` pode ser apagado se ficar vazio.
 - A remoção ocorrerá somente pelo comando explícito `Remover API gerada`; desinstalar a extensão da IDE não apagará objetos da KB.
 - Antes de remover, a extensão mostrará todos os objetos identificados pelos metadados e exigirá confirmação.
-- Se o Folder tiver sido criado pela extensão e ficar vazio depois da remoção, ele será apagado na mesma operação.
+- Se o Folder tiver sido criado pela extensão e ficar vazio depois da remoção, ele será apagado na mesma operação. **Remissão — 2026-09-20 (`B123`):** o critério vigente é a posse histórica (`ownedByThisApi`) com o mesmo `guid`, não só a criação nesta execução (`wasCreated`).
 - Se o Folder contiver qualquer objeto que não pertença à geração removida, ele será preservado.
 - Os SDTs compartilhados do Folder `GxOpenAPI` não serão apagados ao remover uma API específica.
 

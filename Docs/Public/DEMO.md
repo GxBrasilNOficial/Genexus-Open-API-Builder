@@ -190,7 +190,7 @@ Quando a Transaction ganha atributos novos, o Sync mostra o delta e permite marc
 
 ### Remover API gerada
 
-Confirmação com o plano: objetos próprios a apagar, SDTs compartilhados e Folder reutilizado preservados, BC da Transaction intacto.
+Confirmação com o plano: objetos próprios a apagar; SDTs compartilhados e Folder **sem** posse histórica preservados; Folder próprio (com posse) só se ficar vazio; BC da Transaction intacto.
 
 ![Remover API gerada](../Images/alpha-remover.png)
 
