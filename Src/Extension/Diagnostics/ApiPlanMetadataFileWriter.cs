@@ -1047,13 +1047,17 @@ internal static class ApiPlanMetadataFileWriter
         ApiPlanKbObjectNameIndex kbIndex)
     {
         var createdThisRun = apiPlan.TransactionFolderWasCreated;
-        var owned = ApiPlanTransactionFolderOwnership.ResolveOwnedByThisApi(createdThisRun, previousMetadata);
+        var folder = kbIndex.FindFolders(apiPlan.TransactionFolderName).FirstOrDefault();
+        // GUID vivo (índice ou plano desta run) — não cair no previousMetadata antes
+        // de decidir posse: senão homônimo herda ownedByThisApi do GUID antigo.
+        var liveGuid = folder?.Guid ?? apiPlan.TransactionFolderGuid;
+        var owned = ApiPlanTransactionFolderOwnership.ResolveOwnedByThisApi(
+            createdThisRun,
+            previousMetadata,
+            liveGuid);
         apiPlan.TransactionFolderOwnedByThisApi = owned;
 
-        var folder = kbIndex.FindFolders(apiPlan.TransactionFolderName).FirstOrDefault();
-        var guid = folder?.Guid
-            ?? apiPlan.TransactionFolderGuid
-            ?? ApiPlanTransactionFolderOwnership.TryReadFolderGuid(previousMetadata);
+        var guid = liveGuid ?? ApiPlanTransactionFolderOwnership.TryReadFolderGuid(previousMetadata);
         if (guid.HasValue && guid.Value != Guid.Empty)
         {
             apiPlan.TransactionFolderGuid = guid;

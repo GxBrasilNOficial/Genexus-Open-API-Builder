@@ -163,10 +163,20 @@ internal static class ApiPlanGenerationStateReader
             return new ApiPlanGenerationInspection(1, 0, 0, matches.Count, matches.Select(item => ToCollision(item, "Folder", folderApplicable: true)).ToArray());
         }
 
-        return new ApiPlanGenerationInspection(1, 1, 0, 0, warning: ApiPlanTransactionFolder.CreateReuseWarning(apiPlan, TryReadFolderOwnedByThisApi(index, apiPlan)));
+        return new ApiPlanGenerationInspection(
+            1,
+            1,
+            0,
+            0,
+            warning: ApiPlanTransactionFolder.CreateReuseWarning(
+                apiPlan,
+                TryReadFolderOwnedByThisApi(index, apiPlan, matches[0].Guid)));
     }
 
-    private static bool TryReadFolderOwnedByThisApi(ApiPlanKbObjectNameIndex index, ApiPlan apiPlan)
+    private static bool TryReadFolderOwnedByThisApi(
+        ApiPlanKbObjectNameIndex index,
+        ApiPlan apiPlan,
+        Guid liveFolderGuid)
     {
         var matches = index.FindFiles(apiPlan.MetadataFileName);
         if (matches.Count != 1)
@@ -183,7 +193,10 @@ internal static class ApiPlanGenerationStateReader
         try
         {
             var metadata = ApiPlanMetadataIntegrity.ParseMetadataBytes(bytes);
-            return ApiPlanTransactionFolderOwnership.ReadOwnedByThisApi(metadata);
+            return ApiPlanTransactionFolderOwnership.ResolveOwnedByThisApi(
+                createdThisRun: false,
+                metadata,
+                liveFolderGuid);
         }
         catch (JsonException)
         {

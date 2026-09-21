@@ -167,8 +167,9 @@ no diário, não «quem criou este Folder».
 ### 3.3 Quando `ownedByThisApi` vira `true`
 
 1. Esta execução **criou** o Folder (`CreateOrReencounter` criou e confirmou).
-2. A metadata já persistida tem `ownedByThisApi=true` — preservar no reencontro, mesmo com
-   `wasCreated=false`.
+2. A metadata já persistida tem `ownedByThisApi=true` **e** o Folder vivo tem o mesmo
+   `guid` — preservar no reencontro, mesmo com `wasCreated=false`. Homônimo com GUID
+   novo **não** herda posse (grava `ownedByThisApi=false` + `guid` atual).
 3. Adoção pontual do legado V1–V3: metadata existente com `wasCreated=true` e sem o campo
    novo. É a última evidência de «esta API criou o Folder e a metadata nunca foi
    regravada depois». Grava `ownedByThisApi=true` e o `guid` atual.

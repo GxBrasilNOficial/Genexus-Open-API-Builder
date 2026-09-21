@@ -12,14 +12,35 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// </summary>
 internal static class ApiPlanTransactionFolderOwnership
 {
-    internal static bool ResolveOwnedByThisApi(bool createdThisRun, JObject? previousMetadata)
+    /// <summary>
+    /// Decide a posse a gravar nesta execução. Criação nesta run autoriza.
+    /// Regravação só preserva posse da metadata anterior quando o Folder vivo
+    /// é o mesmo objeto (GUID contínuo); homônimo com GUID novo não herda
+    /// <c>ownedByThisApi</c> — evita transferir exclusão a Folder de terceiro.
+    /// Metadata legada sem <c>guid</c> (V1–V3) continua adotável nesta regravação.
+    /// </summary>
+    internal static bool ResolveOwnedByThisApi(
+        bool createdThisRun,
+        JObject? previousMetadata,
+        Guid? liveFolderGuid)
     {
         if (createdThisRun)
         {
             return true;
         }
 
-        return ReadOwnedByThisApi(previousMetadata);
+        if (!ReadOwnedByThisApi(previousMetadata))
+        {
+            return false;
+        }
+
+        var previousGuid = TryReadFolderGuid(previousMetadata);
+        if (!previousGuid.HasValue || previousGuid.Value == Guid.Empty)
+        {
+            return true;
+        }
+
+        return MatchesPersistedGuid(previousGuid, liveFolderGuid);
     }
 
     /// <summary>

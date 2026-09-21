@@ -213,18 +213,31 @@ try {
 
     $ownType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanTransactionFolderOwnership', $true, $false)
     Assert-True ($null -ne $ownType) 'ApiPlanTransactionFolderOwnership não encontrado.'
-    $resolveOwnFolder = $ownType.GetMethod('ResolveOwnedByThisApi', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
+    $nullableGuid = [type]'System.Nullable`1[System.Guid]'
+    $resolveOwnFolder = $ownType.GetMethod(
+        'ResolveOwnedByThisApi',
+        [System.Reflection.BindingFlags]'Static, NonPublic, Public',
+        $null,
+        [type[]]@([bool], [Newtonsoft.Json.Linq.JObject], $nullableGuid),
+        $null)
     $matchGuid = $ownType.GetMethod('MatchesPersistedGuid', [System.Reflection.BindingFlags]'Static, NonPublic, Public')
     Assert-True ($null -ne $resolveOwnFolder) 'ResolveOwnedByThisApi não encontrado.'
     Assert-True ($null -ne $matchGuid) 'MatchesPersistedGuid não encontrado.'
 
-    $previousOwned = [Newtonsoft.Json.Linq.JObject]::Parse('{"objects":{"transactionFolder":{"name":"TesteOpenApi","wasCreated":false,"ownedByThisApi":true}}}')
-    Assert-True ([bool]$resolveOwnFolder.Invoke($null, @($false, $previousOwned))) 'Regravação preserva ownedByThisApi=true do JSON anterior'
-    Assert-True ([bool]$resolveOwnFolder.Invoke($null, @($true, $null))) 'Criação nesta execução marca posse mesmo sem metadata anterior'
-    Assert-True (-not [bool]$resolveOwnFolder.Invoke($null, @($false, $null))) 'Reuso sem metadata anterior não inventa posse'
-
     $sameGuid = [guid]$folderGuid
     $otherGuid = [guid]'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'
+    $previousOwned = [Newtonsoft.Json.Linq.JObject]::Parse(
+        ('{"objects":{"transactionFolder":{"name":"TesteOpenApi","wasCreated":false,"ownedByThisApi":true,"guid":"' + $folderGuid + '"}}}'))
+    Assert-True ([bool]$resolveOwnFolder.Invoke($null, @($false, $previousOwned, $sameGuid))) 'Regravação preserva posse com o mesmo GUID'
+    Assert-True (-not [bool]$resolveOwnFolder.Invoke($null, @($false, $previousOwned, $otherGuid))) 'Homônimo com GUID novo não herda ownedByThisApi'
+    Assert-True (-not [bool]$resolveOwnFolder.Invoke($null, @($false, $previousOwned, $null))) 'Sem Folder vivo não preserva posse com GUID anterior'
+    Assert-True ([bool]$resolveOwnFolder.Invoke($null, @($true, $null, $null))) 'Criação nesta execução marca posse mesmo sem metadata anterior'
+    Assert-True (-not [bool]$resolveOwnFolder.Invoke($null, @($false, $null, $sameGuid))) 'Reuso sem metadata anterior não inventa posse'
+
+    $previousLegacy = [Newtonsoft.Json.Linq.JObject]::Parse(
+        '{"objects":{"transactionFolder":{"name":"TesteOpenApi","wasCreated":true}}}')
+    Assert-True ([bool]$resolveOwnFolder.Invoke($null, @($false, $previousLegacy, $otherGuid))) 'Legado V3 sem guid ainda adota o Folder vivo nesta regravação'
+
     Assert-True ([bool]$matchGuid.Invoke($null, @($sameGuid, $sameGuid))) 'GUID persistido igual ao da KB autoriza'
     Assert-True (-not [bool]$matchGuid.Invoke($null, @($sameGuid, $otherGuid))) 'GUID persistido diferente do da KB recusa exclusão'
     Assert-True ([bool]$matchGuid.Invoke($null, @($null, $sameGuid))) 'Sem GUID persistido a identidade não restringe'

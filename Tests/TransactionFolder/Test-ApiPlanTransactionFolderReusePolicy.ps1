@@ -66,8 +66,9 @@ Assert-Contains $folderSource 'CreateReuseWarning' 'O reuso deve produzir aviso 
 
 Assert-Contains $stateSource 'InspectFolder(ApiPlanKbObjectNameIndex index, Transaction transaction, ApiPlan apiPlan)' 'O leitor de estado deve receber a Transaction para validar o contenedor.'
 Assert-Contains $stateSource 'ApiPlanTransactionFolder.IsReusable(matches[0], transaction, apiPlan)' 'O leitor de estado deve compartilhar a politica de reuso.'
-Assert-Contains $stateSource 'ApiPlanTransactionFolder.CreateReuseWarning(apiPlan, TryReadFolderOwnedByThisApi(index, apiPlan))' 'O detalhe do Wizard deve informar o reuso com posse histórica.'
+Assert-Contains $stateSource 'CreateReuseWarning(' 'O detalhe do Wizard deve informar o reuso com posse histórica.'
 Assert-Contains $stateSource 'TryReadFolderOwnedByThisApi' 'O leitor deve ler ownedByThisApi da metadata existente.'
+Assert-Contains $stateSource 'ResolveOwnedByThisApi(' 'O aviso de reuso deve exigir continuidade de GUID para posse.'
 Assert-Contains $stateSource 'TransactionFolderWarning' 'O estado deve transportar o aviso para o relatorio final.'
 
 Assert-Contains $packageSource 'AppendTransactionFolderWarning(report, generationState);' 'Wizard/Sync devem propagar o aviso ao relatorio B081.'
@@ -88,6 +89,8 @@ Assert-Contains $metadataSource '"wasCreated"] = createdThisRun' 'Metadata deve 
 Assert-Contains $metadataSource '["ownedByThisApi"] = owned' 'Metadata V4 deve persistir posse histórica do Folder.'
 Assert-Contains $metadataSource 'token["guid"] = guid.Value.ToString("D")' 'Metadata V4 deve persistir o GUID do Folder quando ele existe.'
 Assert-Contains $metadataSource 'CreateTransactionFolderToken' 'Writer deve montar transactionFolder com posse e GUID.'
+Assert-Contains $metadataSource 'ResolveOwnedByThisApi(' 'Writer deve resolver posse com o GUID vivo antes de gravar.'
+Assert-Contains $metadataSource 'liveGuid' 'Writer não pode decidir posse só pelo previousMetadata.'
 Assert-Contains $folderSource 'TransactionFolderOwnedByThisApi = true' 'Criação do Folder deve marcar posse histórica.'
 Assert-Contains $folderSource 'a remocao desta API apagara o Folder se ele ficar vazio' 'Aviso de reuso próprio não pode dizer nunca apagar.'
 
