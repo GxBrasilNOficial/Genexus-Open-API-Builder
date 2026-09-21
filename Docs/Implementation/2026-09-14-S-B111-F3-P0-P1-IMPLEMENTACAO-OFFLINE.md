@@ -124,8 +124,9 @@ As regras implementadas, agrupadas:
   `Folder` exige `emptyConfirmed=true` e posse validada; `None` só em item `Preserve`; a
   Transaction nunca entra na fila destrutiva; cada alvo aparece uma vez;
   `receiptSequences` só referencia recibos existentes;
-- **metadata associada** — `metadataSchemaVersion` fechada em V1/V2/V3 e obrigatória quando
-  a operação envolve metadata.
+- **metadata associada** — `metadataSchemaVersion` fechada nas versões suportadas da metadata
+  de negócio e obrigatória quando a operação envolve metadata (**nesta frente:** V1/V2/V3;
+  desde o `B123`: V1–V4 via `ApiPlanMetadataSchema.IsSupported`).
 
 Versão de schema desconhecida bloqueia a leitura: não há migração destrutiva automática.
 

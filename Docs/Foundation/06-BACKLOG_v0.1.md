@@ -282,6 +282,24 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B123 | Registrar a **posse histórica do Folder** da API na metadata, para que a remoção possa apagar um Folder próprio que ficou vazio | **Fechado em 2026-09-20** (código, gates e smoke IDE §6). Também consertou Remover sobre B115 (`IntentKind`/`recovery.imported`). Medido em campo no cenário 8 da P8: o `TesteOpenApi` ficou na KB, vazio, depois de uma remoção completa. Era o comportamento correto até o `B123` — a fila só apagava Folder `wasCreated=true`, e `wasCreated` descreve a operação corrente, não quem criou o Folder —, e o efeito era permanente: assim que um Folder sobrevivia a uma remoção, toda geração seguinte o reencontrava como reutilizado. A saída barata, apagar Folder vazio com Description canônica, foi **recusada** por ser menos segura: Description isolada nunca autorizou exclusão neste projeto (seção 4.3 do plano da F3). Em 2026-09-20 o contrato entrou no código: schema V4 com `guid` e `ownedByThisApi`; remoção pela posse histórica + GUID; B115 sem reivindicar dono; «nunca apagar» só sem posse. Metadata V1–V3 ainda é lida; Folder legado já gravado com `wasCreated=false` continua fora da adoção retroativa. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`. Evidência do achado: `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`, seção 12 |
 | B124 | Definir **quando** um aceite ou smoke IDE exige documento dedicado de evidência em `Docs/Implementation/`, em vez de ficar só no item do checkpoint e na entrada Validated do `CHANGELOG` | Média — nascido em 2026-09-16. Ver nota operacional abaixo |
 | B125 | Preview do Remover, após aborto parcial, ainda lista alvos já apagados na KB (inventário vem só da metadata) | Média — nascido em 2026-09-17 a partir do observado no item 142 do checkpoint. Ver nota operacional abaixo |
+| B126 | Confirmação do Remover anuncia «apaga se ficar vazio» para Folder com posse, mas Description editada (ou contêiner inesperado) preserva em silêncio em `DeleteOwnFolder` | Média — numerado em 2026-09-21. Ver nota operacional abaixo |
+
+### Nota operacional — B126, registrada em 2026-09-21
+
+**O que é.** Com `ownedByThisApi=true`, a confirmação diz «próprio da API; a remoção apaga se
+ficar vazio». Em `DeleteOwnFolder`, Description diferente da canônica/legada (ou contêiner
+inesperado) devolve `Preserved` **sem** o aviso tipado de Folder não-vazio. O usuário pode
+concluir que o Folder saiu e ele permanece.
+
+**O que não é.** Não é falha de posse/GUID na fila; a fila está correta. Não é o «nunca
+apagar» de Folder sem posse. Pré-existente ao `B123`; o B123 amplia o alcance porque mais
+Folders entram na fila com posse.
+
+**Entrega deste item.** Anunciar na confirmação/relatório o risco Description/contêiner, ou
+tratar Description divergente no preflight/Preview; smoke IDE do caso. Até lá: residual
+numerado, sem mudança de runtime nesta frente documental.
+
+**Fora de escopo.** Preview pós-aborto (`B125`); mudança de schema da metadata.
 
 ### Nota operacional — B125, registrada em 2026-09-17
 

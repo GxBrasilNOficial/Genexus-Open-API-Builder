@@ -286,7 +286,7 @@ Registrar:
 | dúvida estrutural + Update | bloqueia |
 | falha parcial | loga incompleta |
 | Folder reutilizado sem posse histórica | preserva na remoção |
-| Folder próprio reencontrado (`ownedByThisApi`) | apaga se ficar vazio |
+| Folder próprio reencontrado (`ownedByThisApi`) | apaga se GUID coincidir, Description própria, contêiner esperado e vazio |
 | SDTs compartilhados `GxOpenAPI` | preserva ao remover API específica |
 
 [CFG-F14]

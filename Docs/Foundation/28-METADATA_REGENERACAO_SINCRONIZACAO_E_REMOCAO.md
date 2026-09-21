@@ -156,8 +156,8 @@ Ela deve:
 - remover apenas objetos próprios
 - não remover nem desabilitar a Transaction
 - não reverter automaticamente a propriedade Business Component
-- apagar Folder só com posse histórica (`ownedByThisApi`) e se ficar vazio — reutilizado sem posse permanece
-- preservar Folder próprio quando contiver objetos alheios
+- apagar Folder só com posse histórica (`ownedByThisApi`), GUID coincidente quando existir, Description canônica ou legada, contêiner esperado e Folder vazio — reutilizado sem posse permanece
+- preservar Folder próprio quando contiver objetos alheios, Description divergente ou contêiner inesperado
 - GUID persistido divergente do Folder na KB preserva (homônimo de terceiro)
 - preservar os SDTs compartilhados em `GxOpenAPI`
 
@@ -190,7 +190,7 @@ Folder preexistente específico da Transaction pode ser reutilizado com aviso. A
 - `_v2` não é criado automaticamente
 - remoção lista e remove apenas objetos próprios
 - Business Component não é revertido pela remoção
-- Folder sem posse histórica (`ownedByThisApi=false`) não é apagado; com posse, só se ficar vazio
+- Folder sem posse histórica (`ownedByThisApi=false`) não é apagado; com posse, só com GUID coincidente, Description própria, contêiner esperado e vazio
 - SDTs compartilhados em `GxOpenAPI` permanecem ao remover uma API específica
 - sincronização apresenta comparação antes de alterar qualquer objeto
 
@@ -246,8 +246,8 @@ As seções 7 e 9 ainda falavam em «nunca apagar Folder reutilizado» e em dist
 criado vs reutilizado. Isso envelheceu quando a metadata passou a `GOAB_API_METADATA_B060_V4`:
 `wasCreated` descreve a operação corrente; `ownedByThisApi` autoriza a fila de remoção;
 `guid` identifica o Folder e, se divergir do presente na KB, a exclusão é recusada.
-Um Folder reencontrado com posse histórica pode ser apagado se ficar vazio — o que a
-formulação absoluta das seções 7/9 proibia. O texto daquelas seções foi alinhado nesta
-mesma data; o contrato detalhado permanece no plano
+Um Folder reencontrado com posse histórica pode ser apagado se ficar vazio — e só se
+Description e contêiner ainda forem os esperados em `DeleteOwnFolder`. O texto das
+seções 7/9 foi alinhado nesta mesma data; o contrato detalhado permanece no plano
 `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md` e no documento 08
 (remissão `B123`).

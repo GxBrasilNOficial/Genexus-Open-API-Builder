@@ -73,8 +73,11 @@ o Folder na geração anterior. Isso está documentado como contrato do B066, n�
 Caso contrário o alvo entra como `Preserve` / `Queued=false`.
 
 O GUID do Folder **já existe** no Preview (`PreviewCapture.FolderGuid`) e nos resultados de
-escrita de SDT/Procedure. **Não** é persistido na metadata. A Description canônica entra
-em `IsReusable` (reencontro / preflight), nunca na autorização de `Delete()`.
+escrita de SDT/Procedure — e, desde esta frente, também na metadata. A Description **não**
+enfileira o Folder (`ownedByThisApi` + nome + GUID o fazem). Em `DeleteOwnFolder`, porém,
+Description canônica/legada e contêiner esperado ainda **preservam** se divergirem — gate de
+execução, não de fila. Residual de confirmação mentindo «apaga se vazio» quando a Description
+foi editada: `B126`.
 
 `IsFolderEmpty` já conta WebPanel (correção de 2026-09-16, item 147 do checkpoint). Folder
 próprio que não ficou vazio não deve ser apagado; isso permanece.
@@ -325,7 +328,8 @@ Não misturar com `B125` (Preview mentiroso após aborto), `B121` nem `B108`.
 - [x] Código emite V4 e lê V1–V4.
 - [x] Listas de schema unificadas; recusa cita as quatro versões.
 - [x] `ownedByThisApi` só pelos três casos da §3.3.
-- [x] Remoção enfileira pela posse histórica + GUID + vazio; B115 sem posse.
+- [x] Remoção enfileira pela posse histórica + GUID; `DeleteOwnFolder` ainda exige
+      Description própria, contêiner e vazio; B115 sem posse.
 - [x] Aviso «nunca apagar» só sem posse.
 - [x] Gates da seção 5 verdes.
 - [x] Smoke da seção 6 na IDE, com evidência (1–4 PASS 2026-09-20; conserto IntentKind no 4).
@@ -338,4 +342,5 @@ Não misturar com `B125` (Preview mentiroso após aborto), `B121` nem `B108`.
 2. `guid` do Folder persistido; mismatch recusa exclusão.
 3. Sem adoção de Folder cujo legado já está `wasCreated=false`.
 4. B115 continua sem reivindicar dono.
-5. Description continua fora da autorização de `Delete()`.
+5. Description **não** autoriza enfileirar; em `DeleteOwnFolder` ainda pode preservar
+   (canônica/legada + contêiner). Ver `B126` para o anúncio da confirmação.

@@ -64,9 +64,11 @@ public static class ApiPlanRemovalIntent
 
     /// <summary>
     /// Monta o inventário do envelope a partir dos alvos validados. Cada alvo aparece uma vez, e
-    /// o que não entra na fila destrutiva — SDTs compartilhados, Folder reutilizado, a própria
-    /// Transaction — aparece como <c>Preserve</c>, nunca omitido: um inventário que esconde o
-    /// preservado não distingue «não era para apagar» de «esqueci de listar».
+    /// o que não entra na fila destrutiva — SDTs compartilhados, Folder sem posse histórica, a
+    /// própria Transaction — aparece como <c>Preserve</c>, nunca omitido: um inventário que
+    /// esconde o preservado não distingue «não era para apagar» de «esqueci de listar».
+    /// Folder com <c>ownedByThisApi</c> entra na fila (<c>Queued</c>); Description/contêiner
+    /// podem ainda preservá-lo na execução.
     /// </summary>
     public static IReadOnlyList<ApiPlanOperationJournalInventoryItem> BuildInventory(
         IEnumerable<ApiPlanRemovalTarget> targets)
@@ -186,7 +188,9 @@ public sealed class ApiPlanRemovalTarget
 
     /// <summary>
     /// Verdadeiro para os alvos que a fila destrutiva vai tentar. SDTs compartilhados, Folder
-    /// reutilizado e a Transaction ficam fora dela e aparecem somente como <c>Preserve</c>.
+    /// sem posse histórica e a Transaction ficam fora dela e aparecem somente como
+    /// <c>Preserve</c>. Folder com posse histórica entra na fila mesmo reencontrado
+    /// (<c>wasCreated=false</c>).
     /// </summary>
     public bool Queued { get; set; } = true;
 
