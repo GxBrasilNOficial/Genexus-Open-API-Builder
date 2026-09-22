@@ -12,6 +12,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Último marco concluído
 
+- `B124` concluído em 2026-09-21: regra do documento de evidência de campo (régua «na dúvida cria» + piso G1–G6 + molde proporcional) publicada no documento 15 §18.2 e no `AGENTS.md`, com aviso não bloqueante `evidence-doc-required:*` no checker; primeira aplicação retroativa (itens 142–149) em `Docs/Implementation/2026-09-16-B082-ETAPAS-2-3-SESSAO-B-ACEITE-IDE.md`. Sem mudança de runtime.
 - entrevista funcional do MVP consolidada;
 - documentos Foundation alinhados e auditados;
 - `B010` revalidado pelo método oficial U14+: feed NuGet, MSBuild SDKs, lockfile, solution, projeto e pacote mínimos;
@@ -143,10 +144,12 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**`B124` — regra de documento de evidência IDE** — quando aceite/smoke exige doc em
-`Docs/Implementation/` em vez de só checkpoint/`CHANGELOG`. Nascido em 2026-09-16; `B123`
-fechado (smoke §6 do **núcleo** PASS 2026-09-20; hardenings `86ef414`/`c358fb2` → `B127`).
-`B125`/`B126`/`B127` permanecem abertos à parte. Nota no documento 06. **Corte `0.1.0-alpha.8` publicado em 2026-09-17**.
+**`B125` — Preview do Remover pós-aborto** — o segundo Remover monta o diálogo de Preview a partir
+da metadata e ainda lista alvos já apagados na KB (`apiTeste`/`List`), observado no item 142
+(2026-09-16) e ainda sem revalidação. `B124` fechado em 2026-09-21 (regra do documento de
+evidência). `B126`/`B127` permanecem abertos à parte; o `B127` (re-smoke dos hardenings
+`86ef414`/`c358fb2`) é candidato a aproveitar a mesma instalação. Nota no documento 06. **Corte
+`0.1.0-alpha.8` publicado em 2026-09-17**.
 O estado da branch em relação a `origin/main` se mede com
 `git rev-list --left-right --count origin/main...HEAD`, não se anota aqui como fato permanente.
 
@@ -432,6 +435,8 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 
 ## Evidência da frente encerrada
 
+- `B124` (2026-09-21): regra do documento de evidência de campo publicada (documento 15 §18.2; `AGENTS.md` «Promoção de frente», «Revisão pré-push» e «Corte de release»); aviso não bloqueante `evidence-doc-required:checkpoint|validated|fixed` no canal `warnings` do checker, com contrato de teste em `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`. Primeira aplicação: doc retroativo `Docs/Implementation/2026-09-16-B082-ETAPAS-2-3-SESSAO-B-ACEITE-IDE.md` (itens 142–149). Sem mudança de runtime; sem instalação. Plano: `Docs/Implementation/2026-09-21-B124-PLANO-REGRA-DOCUMENTO-EVIDENCIA-IDE.md`.
+
 - `S-B111` F1 (2026-09-10/11): validação manual na IDE para encerramento com exceção explícita do `B121`; matriz positiva do Wizard e guarda de API REST-completa; Sync `BC + List` com delta `NotaFiscalObs2` 40→41, preflight aprovado, consumidores salvos antes do API Object e `FinalApiWriter='List'` com `ApiSaveCount=1`; Sync sem BC/List com `LaudoObs` aplicado (`Updated=14`, `Blocked=0`, um `API.Save()`); Sync somente BC na `Carga` com `CargaObservacao2` aplicado em Response/Create/Update (`Updated=11`, `Blocked=0`, um `API.Save()`); divergência manual `LaudoObs`→`LaudoObs1` bloqueada antes de gravar (`ApiSaveCount=0`, `Blocked=1`); restauração com diff zero; guard B055 de BC sem habilitação bloqueado no preflight (`ApiSaveAttempted=False`, `ApiSaveCount=0`, `Criados/Atualizados/Removidos=0`, `Bloqueados=1`); `Build All` concluído em `NETPostgreSQL155` e `NETFrameworkSQLServer004`. Permanece sem comprovação isolada somente List, registrado no `B121`. Evidência: `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md` e `Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`.
 - `B082` Etapa 1A (2026-09-03): índice único; atributos BC/List pelo mapa; reencontro de SDT sem segundo `Save()`; Apply `Setor`/`Empresa`/`DocumentoFiscal` abaixo das metas; Sync que grava na `NotaFiscal`; Build All `CSharpModel` na primeira passagem e `NETFrameworkPostgreSQL` após reespecificar `apiEmpresa` (Specifier Daemon). Evidência: `Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`.
 
@@ -481,10 +486,14 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 > **Superada em 2026-09-15:** a P4 foi entregue junto com P5, P6 e P7, e a próxima ação única
 > passou a ser a **P8**. Esta nota fica como registro datado; a ação vigente é sempre a da seção
 > «Próxima ação única».
+>
+> **Atualização de 2026-09-21:** o checker pré-push ganhou o canal `warnings` com avisos não
+> bloqueantes `evidence-doc-required:*` (B124). Aviso não bloqueia push nem substitui a revisão
+> semântica; exige a conferência da régua de evidência declarada no relatório.
 
 - **[Histórico — Sprint 9]** alinhamento documental da promoção à Sprint 9 já commitado, em `main`, com working tree limpa;
 - `origin/main` atualizada, sem commits remotos à frente da frente local;
-- checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`;
+- checker mecânico concluído com `status='passed'`, `manualRequired=[]` e `incompleteReasons=[]`; avisos `evidence-doc-required:*` no canal `warnings` não bloqueiam, mas exigem conferência da régua de evidência declarada no relatório semântico;
 - revisão semântica concluída, com contratos alterados, consumidores, flags descartados e áreas não cobertas registrados no relatório da rotina;
 - nenhuma validação funcional de IDE, instalação, publicação remota ou push inferida a partir dos gates mecânicos;
 - ~~a próxima ação única é preparar a F3~~ — **superado em 2026-09-14**: a F3 entregou P0, P1, P2 e P3, todas validadas na IDE, e a próxima ação única passou a ser a P4 — **e, desde 2026-09-15, a P8**, com P4 a P7 entregues; a F2 foi encerrada após a recomposição da `Produto`, a criação em escala da `Empresa` e as falhas controladas na `Teste`; o painel CLI de 2026-09-08 teve quatro respostas `REVISAR` e diversidade de três famílias de modelo, os pareceres solo do MiMo V2.5 Pro e do Codex GPT-5.6-luna foram avaliados, a rodada manual do Cursor respondeu `APROVAR COM RESSALVAS`, o parecer solo do Claude Code Opus 5 também respondeu `APROVAR COM RESSALVAS` e o parecer solo do OpenCode Go DeepSeek V4 Pro também respondeu `APROVAR COM RESSALVAS`; as ressalvas úteis foram incorporadas localmente, a decisão humana de implementar a F1 foi registrada nesta sessão e a validação manual para encerramento com exceção explícita do `B121` está registrada em `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md` e `Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`; a implementação e o registro da validação estão commitados localmente, sem push; `B108` está estacionado (`Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`); a Etapa 1A do hardening `B082` está aceita (`Docs/Implementation/2026-09-03-B082-ETAPA-1A-ACEITE.md`); o corte `0.1.0-alpha.7` está publicado; o corte `0.1.0-alpha.6` está publicado; o corte `0.1.0-alpha.5` está publicado; o critério 11 (escala `Empresa`) está concluído; a Fase 7 está concluída; a lacuna Sync ADDED/rename foi fechada (offline + smoke IDE com `TesteItemObs2`); a Fase 6 (`B099b`) está concluída; a Fase 5-A (`B099v`) está concluída; a Fase 5 (`B099a`) está concluída; a Fase 4 (`B098`) está concluída; a Fase 3 (`B097`) está concluída; a Fase 2 (`B096`) está concluída; a Fase 1 (`B095`) está concluída; a Fase 0 de início (offline + captura IDE) permanece registrada; o gate HTTP de `B102` já foi validado nos dois environments; localização residual, fingerprint B060, aborto na primeira aba, `Build All` pós-reencontro e leftovers/monitor B081 não são mais requisito desta rotina;
@@ -658,6 +667,8 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 158. Em 2026-09-20, **`B123` fechado**: schema V4 + posse histórica + smoke IDE §6 (quatro cenários) + conserto `IntentKind` no Remover sobre B115. Próxima ação única = `B124`. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
 159. Em 2026-09-21, **escopo da evidência §6**: o smoke IDE mede a DLL de `05da79a` (+ IntentKind); não cobre `86ef414` (Preview/GUID) nem `c358fb2` (homônimo sem herdar posse). Ambos com gate offline; residual `B127` no documento 06. `Validated`/`plano` alinhados. Próxima ação única permanece `B124`.
 
+160. Em 2026-09-21, **`B124` fechado**: regra do documento de evidência de campo publicada no documento 15 §18.2 (régua «na dúvida cria» + piso G1–G6 + molde proporcional + momento + nomeação) e no `AGENTS.md` («Promoção de frente», «Revisão pré-push», «Corte de release»); aviso não bloqueante `evidence-doc-required:checkpoint|validated|fixed` no canal `warnings` do checker, com contrato de teste. Primeira aplicação retroativa (itens 142–149): `Docs/Implementation/2026-09-16-B082-ETAPAS-2-3-SESSAO-B-ACEITE-IDE.md` — DLL da Sessão B declarada **não registrada**. Sem mudança de runtime; sem instalação. Próxima ação única = `B125`. Plano: `Docs/Implementation/2026-09-21-B124-PLANO-REGRA-DOCUMENTO-EVIDENCIA-IDE.md`.
+
 ## Bloqueios e fatos ainda não validados
 
 - ~~**Corte de release com a etapa P2 da F3 dentro exige decisão documental.** … nada disso está na documentação pública.~~ **Superado:** pacote `0.1.0-alpha.8` documentou o File/bloqueio/Recuperar e foi **publicado** em 2026-09-17 (`v0.1.0-alpha.8`).
@@ -755,5 +766,7 @@ Ao promover uma frente concluída para a próxima ação, atualizar em conjunto:
 - a seção `Sequência operacional vigente`.
 
 Divergência entre essas seções é gap documental confirmado na revisão pré-push.
+
+Fechar frente/etapa sem documento dedicado de evidência exige registrar, no item de log, a frase fixa `B124: sem documento dedicado porque <motivo objetivo>` (régua no documento 15 §18.2) — salvo no piso G1–G6, em que o documento é obrigatório.
 
 O fechamento de cada spike `B000`–`B006` também deve cumprir o checklist obrigatório de retirada de sondas temporárias, reinstalação da DLL passiva e alinhamento documental definido em `AGENTS.md`, antes de o marco ser considerado pronto para revisão pré-push.

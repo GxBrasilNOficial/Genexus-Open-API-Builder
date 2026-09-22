@@ -383,6 +383,77 @@ Nenhuma operação de validação deve ser feita diretamente na KB principal de 
 
 ---
 
+# 18.2 Regra do documento de evidência de campo (B124)
+
+Fonte canônica: plano `Docs/Implementation/2026-09-21-B124-PLANO-REGRA-DOCUMENTO-EVIDENCIA-IDE.md`.
+O agente é quem produz o documento na mesma sessão; esta seção é o contrato, e o acionamento está
+no `AGENTS.md` («Promoção de frente e próximo passo»).
+
+**Termos.** *Evidência de campo* é o registro de uma sessão na IDE, no runtime HTTP ou na KB
+real que prova o estado de uma DLL contra KB/ambiente nomeados. Não inclui gate offline nem corte
+de release. *Registro mínimo* é o item do checkpoint no mesmo commit da sessão mais a entrada
+correspondente no `CHANGELOG`. *Documento dedicado* é arquivo próprio em `Docs/Implementation/`
+**ou** seção delimitada e intitulada como evidência no documento da frente, citável por link
+estável.
+
+**Régua (na dúvida, cria).** Ou existe o documento dedicado, ou existe, no item do checkpoint, a
+exceção justificada com a frase fixa — com a sessão identificada e os gatilhos G1–G6 declarados
+como não aplicáveis:
+
+> `B124: sem documento dedicado porque <motivo objetivo>`
+
+O prefixo `B124:` é o **marcador estável da convenção**, não do item que se encerra. Não há
+terceiro estado — o silêncio.
+
+**Piso — seis situações sem exceção** (a frase de dispensa não se aplica):
+
+| # | Situação | Exemplo do repositório |
+|---|---|---|
+| G1 | **Fechamento** — a sessão é o aceite que fecha etapa/frente/sprint/residual, ou que promove a próxima ação única | 1A, 1B, F1, F2, P8, `B123` §6 |
+| G2 | **Bateria** — ≥2 cenários/casos na mesma sessão, ou 1 caso com ≥2 dimensões de verificação | 142–149; `B099v`; cenário 8 da P8 |
+| G3 | **Medição durável** — a sessão produz número que vira orçamento, meta, linha de base ou limiar | 9a/9b da P8; tabela do aceite 1A |
+| G4 | **Retomada** — a sessão continua uma bateria já documentada | P3 após P2; Sessão B após Sessão A |
+| G5 | **Residual operacional** — a sessão gera item de backlog cuja reprodução depende de passos além do texto do item | item 142 → `B125`; `B127` |
+| G6 | **Entrada de release** — a sessão é citada como prova por entrada `Validated`/`Fixed` em `[Unreleased]` ou em release ainda não publicado (um `Fixed` puramente offline não incide) | `Validated` da `alpha.8` — caso histórico mantido intacto; exigência prospectiva |
+
+Piso não é prazo: ele elimina a dispensa, mas o documento continua devido até o fechamento
+(§18.2 «Momento»), inclusive no G6. FAIL também é evidência: sessão que só produziu falha e
+conserto registra a falha e aponta o reteste.
+
+**Molde proporcional.** Núcleo (sempre): cabeçalho (data da sessão, frente/item, KB/Transaction
+ou rota, versão do GeneXus quando importa, data de redação se diferente, resultado
+PASS/FAIL/ressalva/observação); proveniência e alcance (commit curto **ou** evidência de
+instalação, e o que a DLL medida **não** inclui — campo não produzido é declarado «não
+registrado»); cenários (preparação, passos na ordem, resultado obtido, PASS/FAIL — hipótese ou
+leitura de código separadas do observado); aberto (o que não foi coberto e residuais por ID);
+rastreabilidade (planos, itens do checkpoint, entrada do `CHANGELOG` — inclusive em seção
+publicada, **citada, nunca editada**). Matriz por cenário (estado inicial, esperado × obtido,
+`Output`/`OperationId`/GUID, estado final da KB, limpeza manual) quando o ensaio libera remoção
+ou exclusão, medição durável, fechamento de frente/etapa ou entrada de release — nos campos que
+a sessão produziu.
+
+**Momento.** Preferível redigir na mesma sessão; aceitável manter o essencial no item e o
+documento é devido **até o fechamento** (o commit que registra o encerramento e altera a próxima
+ação única), nunca depois. Adiar só é legítimo se o item já contiver cabeçalho, proveniência e
+alcance. Sessão avulsa (sem evento de fechamento): documento ou exceção **no mesmo commit** do
+item. Entrada de versão publicada é imutável; a ligação posterior se faz por entrada nova em
+`[Unreleased]` ou remissão datada. Proibido criar o documento antes do critério e preenchê-lo com
+resultado presumido.
+
+**Nome e local.** Arquivo próprio `Docs/Implementation/AAAA-MM-DD-<ID ou frente>-<recorte>-ACEITE[-IDE].md`
+para aceite; `…-VALIDACAO-<AMBIENTE>[-<recorte>].md` para bateria/validação (`-VALIDACAO-IDE` na
+IDE, `-VALIDACAO-RUNTIME-…` em runtime HTTP/KB). A data do nome é a da sessão. Seção em documento
+existente: título próprio no nível imediatamente abaixo da seção hospedeira, citável como
+`<doc> §N`.
+
+**Não satisfaz o documento dedicado:** parágrafo de progresso em plano; item do checkpoint
+sozinho; mensagem de commit; Output bruto sem cabeçalho de proveniência, KB e passos; doc que não
+declara o que a medição não cobre.
+
+[QA-F15]
+
+---
+
 # 19. Uso Correto por Agentes de IA
 
 ## Pode assumir

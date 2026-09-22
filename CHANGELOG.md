@@ -17,6 +17,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   EOL/BOM, `-WhatIf`, recibo JSON), teste `Tests/TextPatch/Test-ApplyTextPatch.ps1` e gate
   `tests.textPatch` no checker pré-push. **Fechado em 2026-09-18** (`ce1cf44`). Plano:
   `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`. Não altera a extensão.
+- `B124` — regra do documento de evidência de campo: sessão citada como prova por entrada de release exige documento dedicado em `Docs/Implementation/`; fora dos gatilhos de piso, a dispensa é exceção registrada; aviso não bloqueante no checker. Não altera a extensão. Primeira aplicação: `Docs/Implementation/2026-09-16-B082-ETAPAS-2-3-SESSAO-B-ACEITE-IDE.md`; plano: `Docs/Implementation/2026-09-21-B124-PLANO-REGRA-DOCUMENTO-EVIDENCIA-IDE.md`.
 
 ### Changed
 

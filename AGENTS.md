@@ -161,6 +161,10 @@ Cada corte leva **dois assets DLL** e é publicado como **pre-release** enquanto
 
 Também atualizar, no mesmo corte: `CHANGELOG.md`, a versão em `Src/Extension/Version.Shared.props`, os três `README`, `Docs/Public/INSTALL.md` e `Docs/Public/DEMO.md` quando a entrega mudar comportamento visível ao consumidor. Os dois últimos entraram nesta lista em 2026-09-15: `INSTALL.md` manda conferir o menu **item a item** depois de instalar, e `DEMO.md` tabela os comandos disponíveis — um comando novo os desatualiza tanto quanto desatualiza os `README`, e nenhum dos dois estava aqui. Atenção ao escopo dentro do `INSTALL.md`: a verificação do **usuário final** descreve a DLL publicada e só muda no corte, enquanto a do **desenvolvedor / mantenedor** descreve a build deste repositório e muda junto com o código. Ao promover o bloco `[Unreleased]` a seção de versão, lê-lo antes como o leitor do release o lerá — a regra e o porquê estão em «Bloco `[Unreleased]` do `CHANGELOG.md`», na seção de promoção de frente.
 
+Antes de publicar, conferir a régua de evidência (documento 15 §18.2, G6): toda entrada de
+`[Unreleased]` que cite sessão de campo como prova por `Validated`/`Fixed` exige o documento
+dedicado em `Docs/Implementation/` (ou remissão a um doc existente); entrada já publicada sem doc
+só comporta citação sem reescrita.
 Registrado em 2026-08-24, depois de o corte `0.1.0-alpha.4` sair com o corpo do release em português apenas, montado por cópia da nota pt-BR e com links relativos que não resolvem na página. A convenção trilíngue existia só como padrão nos cortes anteriores, sem estar escrita em lugar nenhum.
 
 ## Atualização manual da extensão para testes
@@ -241,6 +245,14 @@ O checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` continua sendo a fonte canô
 
 Na varredura, tratar **contagens como termo de estado**: `dois defeitos`, `três correções`, `cinco cenários`, `N checkpoints`. Números envelhecem como qualquer afirmação — um defeito a mais encontrado no meio da frente deixa divergentes todos os documentos que citavam o total anterior. Varrer também os termos do que **ainda falta**, que é o que mais envelhece: `pendente`, `restam`, `falta`, `aguarda`, `ainda não`, `sem validação`. E, depois de editar um documento longo por trecho, varrer o **próprio arquivo** pelo fato que mudou, porque editar seção a seção deixa contradição interna.
 
+### Documento de evidência de campo (B124)
+
+Ao fechar uma frente/etapa — e antes de commitar a promoção da próxima ação —, conferir a régua
+do documento 15 §18.2: fechamento sem documento dedicado de evidência em `Docs/Implementation/`
+— ou sem a frase de dispensa `B124: sem documento dedicado porque <motivo objetivo>` no item do
+checkpoint — é **gap P1 documental**. Vale também para sessão citada como prova por entrada
+`Validated`/`Fixed` de release (G6). O agente é quem produz o documento na mesma sessão; o
+contrato completo está no documento 15 §18.2, não reproduzido aqui.
 ### Bloco `[Unreleased]` do `CHANGELOG.md`
 
 O bloco `[Unreleased]` é **rascunho do próximo release, não registro histórico**. Cada entrada descreve o estado no instante em que foi escrita, e as entradas seguintes mudam esse estado sem tocar nas anteriores — mas no corte todas serão lidas como um texto só, pelo leitor do release, que não acompanhou a cronologia interna.
@@ -268,13 +280,13 @@ Antes de qualquer push:
 pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
 ```
 
-3. ler `pushReadiness`, `incompleteReasons`, `manualRequired` e `notCovered` no JSON;
-4. na resposta final da rotina, terminar sempre com uma frase explícita: `Sem impedimento para push.` quando `pushReadiness` estiver pronto, `behind=0`, working tree limpa, `manualRequired=[]`, `incompleteReasons=[]` e a revisão semântica não tiver gap bloqueante; caso contrário, terminar com `Com impedimento para push:` seguido do motivo objetivo;
-5. concluir a revisão semântica exigida pelas instruções globais; `exit 0` mecânico não substitui essa revisão;
+3. ler `pushReadiness`, `incompleteReasons`, `manualRequired`, `warnings` e `notCovered` no JSON;
+4. na resposta final da rotina, terminar sempre com uma frase explícita: `Sem impedimento para push.` quando `pushReadiness` estiver pronto, `behind=0`, working tree limpa, `manualRequired=[]`, `incompleteReasons=[]` e a revisão semântica não tiver gap bloqueante; caso contrário, terminar com `Com impedimento para push:` seguido do motivo objetivo; aviso `evidence-doc-required:*` no canal `warnings` não impede push, mas exige a conferência da régua de evidência declarada no relatório semântico.
+5. concluir a revisão semântica exigida pelas instruções globais; `exit 0` mecânico não substitui essa revisão; fechamento de frente/etapa sem documento dedicado de evidência — ou sem a frase de dispensa `B124:` no item — é gap P1 documental (documento 15 §18.2).
 6. quando o checker ou seu teste mudar, executar também `pwsh -NoProfile -File Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`.
 
 - `scripts/Invoke-PrePushMechanicalChecks.ps1` é o nome canônico e não deve divergir do contrato global.
-- `manualRequired` no JSON **não** é a revisão semântica. Só dispara quando a `Próxima ação única` do checkpoint é um spike `B000`–`B006` e o intervalo menciona esse ID (checklist de encerramento de sonda). Lista vazia com próxima ação `B007+` (hoje, `B111`/`S-B111`) é o comportamento esperado, não falso verde.
+- `manualRequired` no JSON **não** é a revisão semântica. Só dispara quando a `Próxima ação única` do checkpoint é um spike `B000`–`B006` e o intervalo menciona esse ID (checklist de encerramento de sonda). Lista vazia com próxima ação `B007+` é o comportamento esperado, não falso verde. Os avisos `evidence-doc-required:*` do canal `warnings` (B124) valem também para `B007+` e são outra coisa: sinalizam a conferência da régua de evidência, não bloqueiam push e não substituem a revisão semântica.
 - Gaps confirmados, flags descartados e áreas não cobertas pertencem ao relatório da revisão semântica (passo 5), independentemente de `manualRequired`.
 - Após alterar `.github/ISSUE_TEMPLATE/`, abrir uma vez o seletor **New issue** no navegador: o check `tests.issueForms` reduz o risco, mas só o GitHub confirma se o formulário aparece (YAML inválido some sem aviso).
 

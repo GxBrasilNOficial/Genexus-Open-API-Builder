@@ -86,6 +86,9 @@ Assert-True ($source -match 'Tests/IssueForms/Test-GitHubIssueFormsYaml\.ps1') '
 Assert-True ($source -match 'Tests/TextPatch/Test-ApplyTextPatch\.ps1') 'O checker deve executar o teste unitário da edição textual ancorada B122.'
 Assert-True ($source.Contains('\b(B00[0-6])\b')) 'currentFront deve reconhecer somente spikes B000-B006.'
 Assert-True ($source -match 'lista vazia com próxima ação B007\+') 'O JSON notCovered deve declarar que manualRequired vazio fora de B000-B006 não substitui a revisão semântica.'
+Assert-True ($source -match 'evidence-doc-required:checkpoint') 'O checker deve emitir o aviso evidence-doc-required:checkpoint no canal warnings.'
+Assert-True ($source -match 'evidence-doc-required:validated') 'O checker deve emitir o aviso evidence-doc-required:validated no canal warnings.'
+Assert-True ($source -match 'evidence-doc-required:fixed') 'O checker deve emitir o aviso evidence-doc-required:fixed no canal warnings.'
 
 $fixtures = @(
     @{ Text = 'error NU1004: The package lock file is inconsistent.'; Phase = 'restore'; Expected = 'lockFileInconsistent' },
@@ -360,6 +363,97 @@ try {
         Assert-True ($dirtyResult.pushReadiness -eq 'blocked') 'A working tree suja deve bloquear push.'
         Assert-True ('workingTreeDirty' -in @($dirtyResult.incompleteReasons)) 'O JSON deve explicitar workingTreeDirty.'
         Assert-True (@($dirtyResult.warnings | Where-Object { $_ -match 'working tree' }).Count -eq 1) 'A working tree suja deve gerar aviso explícito.'
+
+        # --- Evidência B124: aviso evidence-doc-required:* no canal warnings (não bloqueante) ---
+        & git checkout -- README.md
+        Assert-True ($LASTEXITCODE -eq 0) 'Não foi possível limpar a working tree antes da bateria B124.'
+
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'CHANGELOG.md'), (@'
+## [Unreleased]
+
+### Added
+
+- item novo
+
+### Validated
+
+- validação nova
+
+### Fixed
+
+- correção nova
+
+# [0.1.0-alpha.1] - 2026-01-01
+
+### Validated
+
+- validação publicada
+'@), [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Docs\STATUS_ATUAL_E_PROXIMO_PASSO.md'), "## Próxima ação única`n`nExecutar B125.`n`n## Histórico`n`nB000 concluído.`n", [System.Text.UTF8Encoding]::new($false))
+        & git add CHANGELOG.md Docs\STATUS_ATUAL_E_PROXIMO_PASSO.md
+        & git commit -m 'Fixture baseline B124' | Out-Null
+        & git push origin main | Out-Null
+
+        function Invoke-FixtureChecker {
+            $j = & pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
+            return [pscustomobject]@{ ExitCode = $LASTEXITCODE; Result = ($j | ConvertFrom-Json) }
+        }
+
+        function Append-Commit {
+            param([string]$File, [string]$Anchor, [string]$Extra)
+            $text = [IO.File]::ReadAllText((Join-Path $PWD $File))
+            Assert-True ($text.Contains($Anchor)) "Âncora ausente em $File."
+            [IO.File]::WriteAllText((Join-Path $PWD $File), $text.Replace($Anchor, $Anchor + $Extra), [System.Text.UTF8Encoding]::new($false))
+            & git add $File
+            & git commit -m 'Fixture B124 delta' | Out-Null
+        }
+
+        # Negativo — baseline limpa: nenhum aviso de evidência.
+        $baseRun = Invoke-FixtureChecker
+        Assert-True ($baseRun.ExitCode -eq 0) 'Baseline B124 deve passar sem bloqueio.'
+        Assert-True (@($baseRun.Result.warnings | Where-Object { $_ -match '^evidence-doc-required' }).Count -eq 0) 'Baseline B124 não deve emitir aviso de evidência.'
+
+        # Positivo — só Validated.
+        Append-Commit -File 'CHANGELOG.md' -Anchor '- validação nova' -Extra "`n- validação nova 2"
+        $vRun = Invoke-FixtureChecker
+        Assert-True ($vRun.ExitCode -eq 0) 'Aviso de evidência não deve bloquear (Validated).'
+        Assert-True (@($vRun.Result.warnings | Where-Object { $_ -match '^evidence-doc-required:validated' }).Count -eq 1) 'Tocar Validated de [Unreleased] deve emitir evidence-doc-required:validated.'
+        Assert-True (@($vRun.Result.warnings | Where-Object { $_ -match '^evidence-doc-required:fixed' }).Count -eq 0) 'Só Validated não deve emitir evidence-doc-required:fixed.'
+        Assert-True (@($vRun.Result.warnings | Where-Object { $_ -match '^evidence-doc-required:checkpoint' }).Count -eq 0) 'Só Validated não deve emitir evidence-doc-required:checkpoint.'
+        Assert-True (@($vRun.Result.incompleteReasons).Count -eq 0) 'Aviso de evidência não alimenta incompleteReasons.'
+        Assert-True ($vRun.Result.pushReadiness -eq 'readyLocal') 'Aviso de evidência não bloqueia pushReadiness.'
+        & git push origin main | Out-Null
+
+        # Positivo — só Fixed.
+        Append-Commit -File 'CHANGELOG.md' -Anchor '- correção nova' -Extra "`n- correção nova 2"
+        $fRun = Invoke-FixtureChecker
+        Assert-True ($fRun.ExitCode -eq 0) 'Aviso de evidência não deve bloquear (Fixed).'
+        Assert-True (@($fRun.Result.warnings | Where-Object { $_ -match '^evidence-doc-required:fixed' }).Count -eq 1) 'Tocar Fixed de [Unreleased] deve emitir evidence-doc-required:fixed.'
+        & git push origin main | Out-Null
+
+        # Positivo — checkpoint (Próxima ação única).
+        Append-Commit -File 'Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md' -Anchor 'Executar B125.' -Extra ' (revisado)'
+        $cRun = Invoke-FixtureChecker
+        Assert-True ($cRun.ExitCode -eq 0) 'Aviso de evidência não deve bloquear (checkpoint).'
+        Assert-True (@($cRun.Result.warnings | Where-Object { $_ -match '^evidence-doc-required:checkpoint' }).Count -eq 1) 'Tocar Próxima ação única deve emitir evidence-doc-required:checkpoint.'
+        & git push origin main | Out-Null
+
+        # Negativo — checkpoint fora das seções (Histórico).
+        Append-Commit -File 'Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md' -Anchor 'B000 concluído.' -Extra "`nB999 histórico."
+        $hRun = Invoke-FixtureChecker
+        Assert-True (@($hRun.Result.warnings | Where-Object { $_ -match '^evidence-doc-required:checkpoint' }).Count -eq 0) 'Tocar fora da Próxima ação única não deve emitir aviso de checkpoint.'
+        & git push origin main | Out-Null
+
+        # Negativo — Validated de versão publicada.
+        Append-Commit -File 'CHANGELOG.md' -Anchor '- validação publicada' -Extra "`n- publicada 2"
+        $pRun = Invoke-FixtureChecker
+        Assert-True (@($pRun.Result.warnings | Where-Object { $_ -match '^evidence-doc-required:validated' }).Count -eq 0) 'Tocar Validated de versão publicada não deve emitir aviso.'
+        & git push origin main | Out-Null
+
+        # Negativo — subseção não monitorada (Added) dentro de [Unreleased].
+        Append-Commit -File 'CHANGELOG.md' -Anchor '- item novo' -Extra "`n- item novo 2"
+        $aRun = Invoke-FixtureChecker
+        Assert-True (@($aRun.Result.warnings | Where-Object { $_ -match '^evidence-doc-required:(validated|fixed)' }).Count -eq 0) 'Tocar Added não deve emitir aviso de Validated/Fixed.'
     }
     finally {
         Pop-Location
@@ -369,4 +463,4 @@ finally {
     if (Test-Path -LiteralPath $tempRoot) { Remove-Item -LiteralPath $tempRoot -Recurse -Force }
 }
 
-'OK: fixtures de classificação, fronteira operacional, Git limpo/sujo e fetch local validados.'
+'OK: fixtures de classificação, fronteira operacional, Git limpo/sujo, fetch local e aviso de evidência B124 validados.'

@@ -138,6 +138,111 @@ function Get-ManualRequirements {
     return @($requirements)
 }
 
+function Get-AddedLineNumbers {
+    param([AllowNull()] [string]$DiffOutput)
+    $numbers = [System.Collections.Generic.List[int]]::new()
+    if ([string]::IsNullOrWhiteSpace($DiffOutput)) { return @() }
+    $newLine = 0
+    foreach ($raw in @($DiffOutput -split "`n")) {
+        $line = $raw.TrimEnd("`r")
+        if ($line -match '^@@\s+-\d+(?:,\d+)?\s+\+(\d+)(?:,\d+)?\s+@@') {
+            $newLine = [int]$Matches[1]
+            continue
+        }
+        if ($line.StartsWith('+++') -or $line.StartsWith('---')) { continue }
+        if ($line.StartsWith('+')) { $numbers.Add($newLine); $newLine++; continue }
+        if ($line.StartsWith('-')) { continue }
+        if ($line.StartsWith(' ')) { $newLine++; continue }
+    }
+    return @($numbers)
+}
+
+function Get-SectionRange {
+    param([string[]]$Lines, [string]$HeadingPattern, [string]$EndPattern)
+    for ($i = 0; $i -lt $Lines.Count; $i++) {
+        if ($Lines[$i] -match $HeadingPattern) {
+            $start = $i + 1
+            $end = $Lines.Count
+            for ($j = $i + 1; $j -lt $Lines.Count; $j++) {
+                if ($Lines[$j] -match $EndPattern) { $end = $j; break }
+            }
+            return @($start, $end)
+        }
+    }
+    return $null
+}
+
+function Get-SubsectionRange {
+    param([string[]]$Lines, [string]$Heading, [int]$BlockStart, [int]$BlockEnd)
+    for ($i = $BlockStart - 1; $i -lt $BlockEnd; $i++) {
+        if ($Lines[$i] -match ('^' + [regex]::Escape($Heading) + '\s*$')) {
+            $start = $i + 1
+            $end = $BlockEnd
+            for ($j = $i + 1; $j -lt $BlockEnd; $j++) {
+                if ($Lines[$j] -match '^#') { $end = $j; break }
+            }
+            return @($start, $end)
+        }
+    }
+    return $null
+}
+
+function Get-EvidenceDocWarnings {
+    param([string]$RepositoryRoot)
+
+    $warnings = [System.Collections.Generic.List[string]]::new()
+    $checkpointRel = 'Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md'
+    $changelogRel = 'CHANGELOG.md'
+
+    foreach ($file in @($checkpointRel, $changelogRel)) {
+        $abs = Join-Path $RepositoryRoot $file
+        if (-not (Test-Path -LiteralPath $abs -PathType Leaf)) { continue }
+        $interval = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--unified=0', 'origin/main..HEAD', '--', $file) -WorkingDirectory $RepositoryRoot
+        $worktree = Invoke-ExternalProcess -FileName 'git' -Arguments @('diff', '--unified=0', '--', $file) -WorkingDirectory $RepositoryRoot
+        if ($interval.ExitCode -ne 0 -or $worktree.ExitCode -ne 0) { continue }
+
+        $added = [System.Collections.Generic.HashSet[int]]::new()
+        foreach ($n in @(Get-AddedLineNumbers $interval.StdOut)) { if ($n -gt 0) { [void]$added.Add($n) } }
+        foreach ($n in @(Get-AddedLineNumbers $worktree.StdOut)) { if ($n -gt 0) { [void]$added.Add($n) } }
+        if ($added.Count -eq 0) { continue }
+
+        $lines = @(Get-Content -LiteralPath $abs)
+
+        if ($file -eq $checkpointRel) {
+            $range = Get-SectionRange -Lines $lines -HeadingPattern '^## Próxima ação única\s*$' -EndPattern '^## '
+            if ($null -ne $range) {
+                $hit = @($added | Where-Object { $_ -ge $range[0] -and $_ -le $range[1] } | Select-Object -First 1)
+                if ($hit.Count -gt 0) {
+                    $warnings.Add('evidence-doc-required:checkpoint — a seção `## Próxima ação única` do checkpoint foi tocada; confira a régua `B124` (documento 15 §18.2). Fora do piso G1–G6, registre no item a frase fixa `B124: sem documento dedicado porque <motivo objetivo>`; este aviso não bloqueia push.')
+                }
+            }
+        }
+        else {
+            $unreleasedStart = -1
+            for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match '^## \[Unreleased\]\s*$') { $unreleasedStart = $i + 1; break } }
+            if ($unreleasedStart -gt 0) {
+                $unreleasedEnd = $lines.Count
+                for ($i = $unreleasedStart; $i -lt $lines.Count; $i++) { if ($lines[$i] -match '^# \[0\.1\.0-') { $unreleasedEnd = $i; break } }
+                foreach ($kind in @('Validated', 'Fixed')) {
+                    $sub = Get-SubsectionRange -Lines $lines -Heading ('### ' + $kind) -BlockStart $unreleasedStart -BlockEnd $unreleasedEnd
+                    if ($null -ne $sub) {
+                        $hit = @($added | Where-Object { $_ -ge $sub[0] -and $_ -le $sub[1] } | Select-Object -First 1)
+                        if ($hit.Count -gt 0) {
+                            if ($kind -eq 'Validated') {
+                                $warnings.Add('evidence-doc-required:validated — entrada em `### Validated` de `[Unreleased]` tocada; se a entrada cita sessão de campo como prova, o documento dedicado é devido até o fechamento (plano `B124` §3.5); este aviso não bloqueia push.')
+                            }
+                            else {
+                                $warnings.Add('evidence-doc-required:fixed — entrada em `### Fixed` de `[Unreleased]` tocada; se a entrada cita sessão de campo como prova, o documento dedicado é devido até o fechamento (plano `B124` §3.5); este aviso não bloqueia push.')
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return @($warnings)
+}
+
 $checks = [System.Collections.Generic.List[object]]::new()
 $warnings = [System.Collections.Generic.List[string]]::new()
 $commands = [System.Collections.Generic.List[object]]::new()
@@ -334,6 +439,7 @@ if (Test-Path -LiteralPath $checkpoint -PathType Leaf) {
     }
 }
 $manualRequired = @(Get-ManualRequirements -WorkingDirectory $repositoryRoot -CurrentFront $currentFront)
+foreach ($evidenceWarning in @(Get-EvidenceDocWarnings -RepositoryRoot $repositoryRoot)) { $warnings.Add($evidenceWarning) }
 $incompleteReasons = [System.Collections.Generic.List[string]]::new()
 if ($workingTreeDirty) { $incompleteReasons.Add('workingTreeDirty') }
 if ($manualRequired.Count -gt 0) { $incompleteReasons.Add('manualRequired') }
@@ -357,7 +463,7 @@ $localReadiness = if ($overallStatus -eq 'passed') { 'ready' } else { 'blocked' 
     warnings = @($warnings)
     incompleteReasons = @($incompleteReasons)
     manualRequired = @($manualRequired)
-    notCovered = @('Validação funcional na IDE GeneXus, acesso a KB, instalação de DLL e scripts em Tools não são executados.', 'manualRequired e workingTreeDirty exigem revisão humana; não comprovam fechamento semântico.', 'currentFront/manualRequired só reconhecem spike B000-B006 vigente no checkpoint; lista vazia com próxima ação B007+ (ex. corte 0.1.0-alpha.6) é esperada e não substitui a revisão semântica.')
+    notCovered = @('Validação funcional na IDE GeneXus, acesso a KB, instalação de DLL e scripts em Tools não são executados.', 'manualRequired e workingTreeDirty exigem revisão humana; não comprovam fechamento semântico.', 'currentFront/manualRequired só reconhecem spike B000-B006 vigente no checkpoint; lista vazia com próxima ação B007+ é esperada e não substitui a revisão semântica.', 'aviso de evidência (evidence-doc-required:*) não comprova fechamento semântico.')
 } | ConvertTo-Json -Depth 8
 
 exit $exitCode
