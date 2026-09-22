@@ -698,6 +698,14 @@ public sealed class Package : AbstractPackageUI
         }
 
         WriteOutput($"[Genexus Open API Builder][B111/F3] Recuperação concluída: Etapa='{operation.NextStep}', OperationId='{envelope.OperationId}', Estado='{result.Envelope?.OperationState}'. {result.Summary}");
+        // A retomada da fila de remoção já abriu o Relatório final, que contém o mesmo resumo
+        // em "Informações". Reabrir a mensagem abaixo duplicaria o desfecho para o usuário.
+        // As demais recuperações concluídas não têm relatório final e continuam informadas aqui.
+        if (operation.NextStep == RecoveryNextStep.ContinueRemovePass)
+        {
+            return;
+        }
+
         // Os desfechos nascem no executor, que é SDK-simples e não conhece idioma; a tradução
         // acontece aqui, onde o texto vira tela. Sem isto eles saíam em português em qualquer KB.
         ExtensionRecoveryDialog.Inform(owner, texts, texts.Translate(result.Summary), Array.Empty<string>(), warning: false);
