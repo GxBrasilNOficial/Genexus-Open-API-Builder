@@ -35,7 +35,10 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   concluída também registra no relatório final o resumo da continuação, em `Informações`, sem
   transformar o sucesso em aviso e sem repetir o diálogo informativo. **Validado na IDE** em
   `wsEducacaoSpTeste` / `Teste`: abortar, recusar o segundo Remover sem mutação e recuperar a
-  mesma fila. Evidência: `Docs/Implementation/2026-09-22-B125-VALIDACAO-IDE-PREVIEW-POS-ABORTO.md`.
+  mesma fila. O Preview incorreto e o diálogo legado já eram visíveis desde a
+  `0.1.0-alpha.8`; a duplicidade só surgiu neste bloco `[Unreleased]`, quando o resumo foi
+  incluído no relatório final, e foi corrigida antes de publicação. Evidência:
+  `Docs/Implementation/2026-09-22-B125-VALIDACAO-IDE-PREVIEW-POS-ABORTO.md`.
 - Remover sobre metadata reconstruída pelo B115: o diário recusava o envelope com `plan.contractHash` nulo quando a metadata tinha `ownership.applicationId` (forma V3/V4 do B115) porque `IntentKind` só olhava a presença do identificador e saía `Current`. O Preview do Folder estava certo; nenhuma exclusão ocorria. Agora `recovery.imported` força `IntentKind=Imported`, reutilizando o `applicationId` gravado. Visível desde a `0.1.0-alpha.8` (B115 com `applicationId`). Descoberto e **revalidado na IDE** no smoke do `B123` (2026-09-20).
 
 ### Planned

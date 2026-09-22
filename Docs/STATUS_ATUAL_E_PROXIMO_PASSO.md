@@ -220,7 +220,7 @@ porque indeterminação não se produz por clique. Tabela critério × evidênci
 **entregue e commitado em 2026-09-18** (`scripts/Apply-TextPatch.ps1`, gate `tests.textPatch`,
 plano `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`). ~~O `B123` entrou no
 código em 2026-09-20; a próxima ação única vigente é o **smoke na IDE** (plano §6).~~
-**Superado em 2026-09-20:** `B123` fechado (smoke §6 do núcleo PASS; `B127` para IDE dos hardenings); ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; vigente = `B125`. Nota operacional do `B122` permanece no
+**Superado em 2026-09-20:** `B123` fechado (smoke §6 do núcleo PASS; `B127` para IDE dos hardenings); ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; ~~vigente = `B125`~~ **Superado em 2026-09-22:** `B125` fechado; vigente = `B126`. Nota operacional do `B122` permanece no
 documento 06.
 
 **Duas coisas precisam ser sabidas antes de testar.** A primeira: uma segunda remoção da mesma

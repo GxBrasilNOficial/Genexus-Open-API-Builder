@@ -61,3 +61,11 @@ foi mais mostrado após o relatório.
 A melhoria de UX foi exercida somente no caminho de `ContinueRemovePass` após uma remoção
 interrompida. Os outros desfechos de recuperação preservam seus próprios diálogos informativos
 ou de bloqueio e não foram reexecutados nesta sessão.
+
+## Rastreabilidade
+
+- Backlog: `B125` em `Docs/Foundation/06-BACKLOG_v0.1.md`.
+- Checkpoint: item 161 de `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
+- Release em preparação: entrada `B125` de `### Fixed` em `[Unreleased]` no `CHANGELOG.md`.
+- Implementação: `ba310f1` (Preview), `1f2589f` (informação no relatório) e `4999d6f`
+  (supressão do diálogo redundante).
