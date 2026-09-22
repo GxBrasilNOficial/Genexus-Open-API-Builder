@@ -281,7 +281,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B122 | Dar aos agentes uma ferramenta versionada de edição textual ancorada, no lugar do script descartável que cada sessão reinventa | **Fechado em 2026-09-18** (commits `ce1cf44` / `bf40b3b`). `scripts/Apply-TextPatch.ps1` + gate `tests.textPatch`. Plano: `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`. Não muda o produto |
 | B123 | Registrar a **posse histórica do Folder** da API na metadata, para que a remoção possa apagar um Folder próprio que ficou vazio | **Fechado em 2026-09-20** (código, gates e smoke IDE §6 do **núcleo**; hardenings `86ef414`/`c358fb2` → `B127`). Também consertou Remover sobre B115 (`IntentKind`/`recovery.imported`). Medido em campo no cenário 8 da P8: o `TesteOpenApi` ficou na KB, vazio, depois de uma remoção completa. Era o comportamento correto até o `B123` — a fila só apagava Folder `wasCreated=true`, e `wasCreated` descreve a operação corrente, não quem criou o Folder —, e o efeito era permanente: assim que um Folder sobrevivia a uma remoção, toda geração seguinte o reencontrava como reutilizado. A saída barata, apagar Folder vazio com Description canônica, foi **recusada** por ser menos segura: Description isolada nunca autorizou exclusão neste projeto (seção 4.3 do plano da F3). Em 2026-09-20 o contrato entrou no código: schema V4 com `guid` e `ownedByThisApi`; remoção pela posse histórica + GUID; B115 sem reivindicar dono; «nunca apagar» só sem posse. Metadata V1–V3 ainda é lida; Folder legado já gravado com `wasCreated=false` continua fora da adoção retroativa. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`. Evidência do achado: `Docs/Implementation/2026-09-14-S-B111-F3-P8-VALIDACAO-IDE.md`, seção 12 |
 | B124 | Definir **quando** um aceite ou smoke de campo (IDE ou runtime HTTP) exige documento dedicado de evidência em `Docs/Implementation/`, em vez de ficar só no item do checkpoint e na entrada Validated do `CHANGELOG` | **Fechado em 2026-09-21** — regra publicada no documento 15 §18.2 e no `AGENTS.md`; aviso não bloqueante `evidence-doc-required:*` no checker. Plano: `Docs/Implementation/2026-09-21-B124-PLANO-REGRA-DOCUMENTO-EVIDENCIA-IDE.md`; primeira aplicação: `Docs/Implementation/2026-09-16-B082-ETAPAS-2-3-SESSAO-B-ACEITE-IDE.md` |
-| B125 | Preview do Remover, após aborto parcial, ainda lista alvos já apagados na KB (inventário vem só da metadata) | Média — nascido em 2026-09-17 a partir do observado no item 142 do checkpoint. Ver nota operacional abaixo |
+| B125 | Preview do Remover, após aborto parcial, listava alvos já apagados na KB (inventário vinha só da metadata) | **Fechado em 2026-09-22** — Preview separa os alvos presentes dos já ausentes sem reduzir o inventário do diário; re-smoke IDE e recuperação da mesma fila passaram. Evidência: `Docs/Implementation/2026-09-22-B125-VALIDACAO-IDE-PREVIEW-POS-ABORTO.md` |
 | B126 | Confirmação do Remover anuncia «apaga se ficar vazio» para Folder com posse, mas Description editada (ou contêiner inesperado) preserva em silêncio em `DeleteOwnFolder` | Média — numerado em 2026-09-21. Ver nota operacional abaixo |
 | B127 | Re-smoke IDE dos hardenings pós-§6 do `B123`: Preview/contagem com GUID divergente (`86ef414`); regravação com homônimo sem herdar `ownedByThisApi` (`c358fb2`) | Média — numerado em 2026-09-21. Ver nota operacional abaixo |
 | B128 | Check no orquestrador de pré-push que valida as referências de linha `Arquivo.cs:NNN` nos `.md` de `Docs/` contra o código real, para o gate barrar ref deslocada em vez de depender de leitura humana | Baixa — nascido em 2026-09-21 a partir de reincidência confirmada: duas rodadas de correção manual de refs na sessão de 06–07/09 (instrumentação B109 deslocou `Save()` para linhas vizinhas) e de novo em `cadc258` no plano B124 (88→89 após a entrada Added). Hoje há 38 refs em `Docs/`, nenhuma com arquivo inexistente ou linha fora do arquivo — o erro real é a ref que cai na linha *vizinha* à correta. Decisão de projeto em aberto ao implementar: **Nível 1** (só existência de arquivo/linha; robusto, mas quase cosmético) vs. **Nível 2** (âncora textual — a linha real deve conter o trecho citado entre crases ao lado da ref; pega o deslocamento vizinho, mas exige normalizar as 38 refs para formato citável ou marcá-las isentas). Sem Nível 2 a proposta quase não vale |
@@ -293,7 +293,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 para homônimo com GUID novo. Ambos têm gate offline; nenhum tem evidência IDE.
 
 **O que não é.** Não invalida os quatro PASS do núcleo V4/posse/terceiro/B115. Não é o
-`B126` (confirmação vs Description). Não substitui a próxima ação única (`B125`).
+`B126` (confirmação vs Description). Não substitui a próxima ação única (`B126`).
 
 **Entrega deste item.** Reinstalar a DLL vigente; (1) metadata com GUID A e Folder vivo B →
 confirmação/contagem **sem** anunciar o Folder; (2) Apply/Sync sobre Folder homônimo novo
@@ -321,26 +321,22 @@ numerado, sem mudança de runtime nesta frente documental.
 
 ### Nota operacional — B125, registrada em 2026-09-17
 
-**O que é.** Depois de um `Remover API gerada` abortado com objetos já excluídos
-(`JaRemovidos>0`, diário `Partial`), um segundo clique em Remover monta o diálogo de Preview a
-partir de `ApiPlanGeneratedApiRemovalPlan.FromMetadata`. A metadata **não** foi reescrita no meio
-da fila; objetos já ausentes na KB (ex.: `apiTeste`, procedure `List`) **continuam na lista** que
-o usuário confirma.
+**O que era.** Depois de um `Remover API gerada` abortado com objetos já excluídos
+(`JaRemovidos>0`, diário `Partial`), um segundo clique em Remover montava o diálogo de Preview a
+partir de `ApiPlanGeneratedApiRemovalPlan.FromMetadata`. A metadata **não** era reescrita no meio
+da fila; objetos já ausentes na KB (ex.: `apiTeste`, procedure `List`) continuavam na lista que
+o usuário confirmava.
 
 **O que não é.** Não é o caso «Preview divergente → zero exclusões» (item 145 / decisão 7 do
 plano B082), nem a retomada por `Recuperar`/`ContinueRemovePass` (que já trata ausentes). No
 fluxo observado, o segundo Remover encerrou em `GateBlocked` pelo diário parcial — **não** chegou
 a excluir; o dano medido é Preview mentiroso, não exclusão errada.
 
-**Evidência.** Uma observação em 2026-09-16, item 142 de
-`Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` (`Teste`/`wsEducacaoSpTeste`). Itens 143–149 **não**
-retestaram este recorte. A correção local separa, no Preview, os alvos presentes dos já ausentes
-sem reduzir o inventário durável usado pela recuperação; o re-smoke na IDE continua necessário.
-
-**Entrega deste item.** (1) Re-smoke na IDE do cenário abort → segundo Remover → inspecionar o
-diálogo; (2) validar que a correção do Preview reflete a presença real na KB, sem reduzir o
-inventário do diário; (3) se não reproduzir, fechar com evidência. Até lá o estado é
-**observado, não revalidado**.
+**Remissão — 2026-09-22: fechado.** O re-smoke na IDE em `Teste`/`wsEducacaoSpTeste` confirmou
+o Preview com 0 Procedures, 14 SDTs próprios presentes e 10 alvos já ausentes separados; a
+recusa da confirmação não alterou a KB. A recuperação usou o inventário durável original e
+removeu os 15 alvos restantes no mesmo envelope. Evidência:
+`Docs/Implementation/2026-09-22-B125-VALIDACAO-IDE-PREVIEW-POS-ABORTO.md`.
 
 **Fora de escopo.** Regra de documento de evidência (`B124`); residual do `B082`
 (**fechado** 2026-09-17, `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`);
