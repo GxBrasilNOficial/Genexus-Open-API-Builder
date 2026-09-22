@@ -41,8 +41,23 @@ de GUID e homônimo).
 intacto para a recuperação. A retomada comprovou que a correção de apresentação não alterou a
 fila durável nem incluiu alvo fora do inventário original.
 
+## Evolução de UX validada após B125
+
+Os commits `1f2589f` (`Melhora relatório da retomada de remoção`) e `4999d6f` (`Evita diálogo
+duplicado na recuperação`) absorveram no relatório final o resumo da continuação e retiraram o
+diálogo informativo redundante que aparecia depois dele.
+
+Em nova execução na mesma KB e Transaction, o diário `OperationId=6e03fe65-77d1-4222-b5ac-3bb84e418caa`
+registrou `Partial/RemovalPartial` após aborto do usuário. A recuperação identificou 17 alvos
+`Delete` ainda presentes, retomou a fila no mesmo envelope e a fechou em `Removed/Removed`.
+O Output registrou `Removidos=17`, `Bloqueados=0`, `Avisos=0`, `Informações=1` e
+`PersistenceReceipts=17`. O relatório final exibiu o texto
+`A remoção foi retomada e concluída: 17 objeto(s) saíram da KB nesta continuação.` na seção
+`Informações (1)`, mantendo `Avisos: (nenhum)`. O mantenedor confirmou que o aviso extra não
+foi mais mostrado após o relatório.
+
 ## Limite da evidência
 
-O relatório final da recuperação mostra os 15 objetos removidos na continuação; a mensagem
-informativa separada explica que eles pertencem à retomada. A oportunidade de exibir esse resumo
-também no relatório final é melhoria de UX independente, não condição pendente de `B125`.
+A melhoria de UX foi exercida somente no caminho de `ContinueRemovePass` após uma remoção
+interrompida. Os outros desfechos de recuperação preservam seus próprios diálogos informativos
+ou de bloqueio e não foram reexecutados nesta sessão.
