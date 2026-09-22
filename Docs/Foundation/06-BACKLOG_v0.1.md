@@ -292,7 +292,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 para homônimo com GUID novo. Ambos têm gate offline; nenhum tem evidência IDE.
 
 **O que não é.** Não invalida os quatro PASS do núcleo V4/posse/terceiro/B115. Não é o
-`B126` (confirmação vs Description). Não substitui a próxima ação única (`B124`).
+`B126` (confirmação vs Description). Não substitui a próxima ação única (`B125`).
 
 **Entrega deste item.** Reinstalar a DLL vigente; (1) metadata com GUID A e Folder vivo B →
 confirmação/contagem **sem** anunciar o Folder; (2) Apply/Sync sobre Folder homônimo novo

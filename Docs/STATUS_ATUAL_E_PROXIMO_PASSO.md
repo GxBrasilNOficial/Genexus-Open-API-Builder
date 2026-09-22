@@ -219,7 +219,7 @@ porque indeterminação não se produz por clique. Tabela critério × evidênci
 **entregue e commitado em 2026-09-18** (`scripts/Apply-TextPatch.ps1`, gate `tests.textPatch`,
 plano `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`). ~~O `B123` entrou no
 código em 2026-09-20; a próxima ação única vigente é o **smoke na IDE** (plano §6).~~
-**Superado em 2026-09-20:** `B123` fechado (smoke §6 do núcleo PASS; `B127` para IDE dos hardenings); vigente = `B124`. Nota operacional do `B122` permanece no
+**Superado em 2026-09-20:** `B123` fechado (smoke §6 do núcleo PASS; `B127` para IDE dos hardenings); ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; vigente = `B125`. Nota operacional do `B122` permanece no
 documento 06.
 
 **Duas coisas precisam ser sabidas antes de testar.** A primeira: uma segunda remoção da mesma
@@ -327,7 +327,7 @@ evidência `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`). Etapas 1A 
 da KB grande é DLL `ce30374`; emissor de SDT mudou em `0568677`/`cfb73b0` (números conservadores
 da 1A).
 
-O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. ~~A próxima ação única vigente é `B122`.~~ **Superado em 2026-09-18:** `B122` commitado. ~~vigente = `B123`~~ **Superado em 2026-09-20:** `B123` fechado; vigente = `B124` (ver seção «Próxima ação única»).
+O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. ~~A próxima ação única vigente é `B122`.~~ **Superado em 2026-09-18:** `B122` commitado. ~~vigente = `B123`~~ **Superado em 2026-09-20:** `B123` fechado; ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; vigente = `B125` (ver seção «Próxima ação única»).
 
 A conclusão da `S-B111` não fechou automaticamente o `B082`: no encerramento, por decisão declarada (item 135), o residual 1B/2/3 ficou fora da sprint e da pauta imediata; o que a sprint absorveu (ordem do API Object, seam de persistência, remoção por fila) já está nas fases F1–F3. O fechamento do residual veio depois, na retomada de 2026-09-16 (Etapas 2+3) e no aceite 1B de 2026-09-17.
 
@@ -667,7 +667,7 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 158. Em 2026-09-20, **`B123` fechado**: schema V4 + posse histórica + smoke IDE §6 (quatro cenários) + conserto `IntentKind` no Remover sobre B115. Próxima ação única = `B124`. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
 159. Em 2026-09-21, **escopo da evidência §6**: o smoke IDE mede a DLL de `05da79a` (+ IntentKind); não cobre `86ef414` (Preview/GUID) nem `c358fb2` (homônimo sem herdar posse). Ambos com gate offline; residual `B127` no documento 06. `Validated`/`plano` alinhados. Próxima ação única permanece `B124`.
 
-160. Em 2026-09-21, **`B124` fechado**: regra do documento de evidência de campo publicada no documento 15 §18.2 (régua «na dúvida cria» + piso G1–G6 + molde proporcional + momento + nomeação) e no `AGENTS.md` («Promoção de frente», «Revisão pré-push», «Corte de release»); aviso não bloqueante `evidence-doc-required:checkpoint|validated|fixed` no canal `warnings` do checker, com contrato de teste. Primeira aplicação retroativa (itens 142–149): `Docs/Implementation/2026-09-16-B082-ETAPAS-2-3-SESSAO-B-ACEITE-IDE.md` — DLL da Sessão B declarada **não registrada**. Sem mudança de runtime; sem instalação. Próxima ação única = `B125`. Plano: `Docs/Implementation/2026-09-21-B124-PLANO-REGRA-DOCUMENTO-EVIDENCIA-IDE.md`.
+160. Em 2026-09-21, **`B124` fechado**: regra do documento de evidência de campo publicada no documento 15 §18.2 (régua «na dúvida cria» + piso G1–G6 + molde proporcional + momento + nomeação) e no `AGENTS.md` («Promoção de frente», «Revisão pré-push», «Corte de release»); aviso não bloqueante `evidence-doc-required:checkpoint|validated|fixed` no canal `warnings` do checker, com contrato de teste. Primeira aplicação retroativa (itens 142–149): `Docs/Implementation/2026-09-16-B082-ETAPAS-2-3-SESSAO-B-ACEITE-IDE.md` — DLL da Sessão B declarada **não registrada**. Sem mudança de runtime; sem instalação. `B124: sem documento dedicado porque sessão de 2026-09-21 foi só publicação da regra/checker (sem IDE/HTTP); G1–G6 não aplicáveis`. Próxima ação única = `B125`. Plano: `Docs/Implementation/2026-09-21-B124-PLANO-REGRA-DOCUMENTO-EVIDENCIA-IDE.md`.
 
 ## Bloqueios e fatos ainda não validados
 
