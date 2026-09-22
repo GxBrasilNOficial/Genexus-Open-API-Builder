@@ -15,9 +15,9 @@ checkpoint —, em vez da condicional N1/N2, que classificava casos mas não dav
 trivial. O molde de §3.4 ganhou profundidade proporcional. A primeira aplicação (§6) permanece: o
 princípio de não migrar histórico por padrão não a dispensa.
 
-**Revisão 2 — 2026-09-21 (parecer externo).** O §6 mandava o `Validated` da `alpha.8` (linha 88)
+**Revisão 2 — 2026-09-21 (parecer externo).** O §6 mandava o `Validated` da `alpha.8` (linha 89)
 passar a citar o doc retroativo — e essa linha está em seção de versão **publicada**, imutável pelo
-`AGENTS.md`. Corrigido: linhas 62/88 não são tocadas; o laço fecha pela entrada nova de
+`AGENTS.md`. Corrigido: linhas 63/89 não são tocadas; o laço fecha pela entrada nova de
 `[Unreleased]` e pela rastreabilidade do próprio doc retroativo (§3.5, §4 e §6).
 
 **Revisão 3 — 2026-09-21 (painel de pares: Codex GPT-5.6-terra e Claude Opus 5).** Os dois pareceres
@@ -136,7 +136,7 @@ A regra nunca foi escrita. O resultado é assimétrico:
 - **Não há evidência dedicada** para a Sessão B do `B082` (itens **142–149** do checkpoint): os
   **oito cenários** de §6 — um deles com falha, conserto e reteste — registrados só no log do
   checkpoint, no
-  parágrafo de progresso do plano `B082` e no `Validated` do `CHANGELOG` (linha 88). Quem retoma a
+  parágrafo de progresso do plano `B082` e no `Validated` do `CHANGELOG` (linha 89). Quem retoma a
   frente numa sessão nova precisa remontar a bateria a partir de um parágrafo longo do log — foi
   exatamente esse o sintoma que abriu o `B124` (nota do documento 06, linhas 355–361).
 
@@ -159,7 +159,7 @@ falta é o **critério** que decide quando esse registro é exigido, e não deix
 | Documento 15, §18 (linhas 359–372) | «Registrar: prints, logs, KB teste usada, versão GeneXus, casos executados, falhas encontradas.» Não define obrigatoriedade, molde, momento nem onde vive |
 | Documento 15, §18.1 | KB de teste pequena, fora de produção, com backup |
 | Documento 24 | Prática consolidada: cita o arquivo de evidência de cada item/frente (ex.: linhas 332–333, 395–403, 415) |
-| `CHANGELOG.md` `Validated` | Cita arquivo de `Docs/Implementation/` quando existe (linhas 87, 90–94) ou apenas itens do checkpoint quando não existe (linha 88) |
+| `CHANGELOG.md` `Validated` | Cita arquivo de `Docs/Implementation/` quando existe (linhas 88, 91–94) ou apenas itens do checkpoint quando não existe (linha 89) |
 | `AGENTS.md`, «Revisão semântica de contrato runtime» (item 6) | Exige, para cada mudança de contrato, declarar evidência de runtime e «evidência de runtime cuja DLL precede alguma mudança de emissor» — escopo de contrato, não regra de evidência de aceite |
 | `AGENTS.md`, «Promoção de frente» | Varredura do ID concluído e do próximo; **receberá** (proposto) o item de conferência da régua — **não existe** uma seção «checklist de fechamento de frente» |
 | `AGENTS.md`, «Fechamento de spikes» | Checklist de retirada de sonda e reinstalação; vale só para `B000`–`B006` |
@@ -189,7 +189,7 @@ declara isso, não infere.
 
 ### 2.3 O que o release promete
 
-O `Validated` da `0.1.0-alpha.8` (linha 88) cita os itens 142–151 do checkpoint como evidência de
+O `Validated` da `0.1.0-alpha.8` (linha 89) cita os itens 142–151 do checkpoint como evidência de
 uma entrega que **saiu em release**. A nota do corte em `Docs/Releases/0.1.0-alpha.8.md` linka
 `Docs/Implementation/` para outro assunto (`B088`, linha 77), mas não aponta doc dedicado para o
 aceite da Sessão B — que não existe. É o caso mais forte de obrigatoriedade: quem lê o release não
@@ -373,9 +373,9 @@ Documentos:
    142–149 — `B124`» passa a apontar o doc retroativo.
 6. `CHANGELOG.md` — **proposta revista: entrada curta em `[Unreleased]`**, como no precedente
    `B122`, registrando a regra como mudança de processo (sem mudança de runtime). **Não tocar as
-   seções publicadas** — em particular a `0.1.0-alpha.8` (linhas 59–94, incluindo as linhas 62 e
-   88). A entrada nova **cita o plano e o doc retroativo** (`…-SESSAO-B-ACEITE-IDE.md`), e a
-   rastreabilidade do próprio doc cita a linha 88 — é esse par que fecha o laço, sem editar a seção
+   seções publicadas** — em particular a `0.1.0-alpha.8` (linhas 60–95, incluindo as linhas 63 e
+   89). A entrada nova **cita o plano e o doc retroativo** (`…-SESSAO-B-ACEITE-IDE.md`), e a
+   rastreabilidade do próprio doc cita a linha 89 — é esse par que fecha o laço, sem editar a seção
    publicada. A alternativa «sem entrada» está descartada por D5; se voltasse, o registro seria **no
    próprio checkpoint/plano `B124`**, não no corte — o corte apenas reflete o que foi publicado.
 7. Varredura de `B124` no repositório — **cinco documentos** o citam: 06, checkpoint, plano `B082`
@@ -463,12 +463,12 @@ princípio «não migrar por padrão» vale fora desta dívida nomeada, como ref
 
 O doc deve declarar, no cabeçalho: «redigido em 2026-09-21 sob a regra `B124`, a partir dos itens
 142–149; onde o item não registrou dado, o doc marca "não registrado" em vez de inferir». O laço de
-citação fecha **sem tocar seção publicada**: a linha 88 do `CHANGELOG` (entrada `Validated` da
-`alpha.8`, seção 85–94) permanece como está — é registro datado —, e o encadeamento se faz (a) pela
+citação fecha **sem tocar seção publicada**: a linha 89 do `CHANGELOG` (entrada `Validated` da
+`alpha.8`, seção 86–95) permanece como está — é registro datado —, e o encadeamento se faz (a) pela
 entrada nova de `[Unreleased]` (D5), cuja redação mínima **cita este doc**, e (b) pelo campo de
 rastreabilidade do próprio
-doc, que cita a linha 88 como a entrada que registrou a sessão. **Recorte:** a entrada da linha 88
-abrange **142–151**; 150–151 (Etapa 1B) têm doc próprio citado na linha 87, e este doc retroativo
+doc, que cita a linha 89 como a entrada que registrou a sessão. **Recorte:** a entrada da linha 89
+abrange **142–151**; 150–151 (Etapa 1B) têm doc próprio citado na linha 88, e este doc retroativo
 cobre **142–149** — a rastreabilidade declara isso. A linha 56 do plano `B082` é documento de
 trabalho e passa a apontar o doc.
 
@@ -536,7 +536,7 @@ retroativo o referencia como achado da sessão, não o revalida.
   `Docs/Implementation/2026-09-16-B082-ETAPAS-2-3-SESSAO-B-ACEITE-IDE.md`; plano:
   `Docs/Implementation/2026-09-21-B124-PLANO-REGRA-DOCUMENTO-EVIDENCIA-IDE.md`.» — **a exceção da
   frase fixa não vale para o G6** (piso), e a citação do doc retroativo é o que fecha o laço com a
-  linha 88 publicada. Se o aviso do checker for cortado, a seção volta a exigir decisão (`Changed`).
+  linha 89 publicada. Se o aviso do checker for cortado, a seção volta a exigir decisão (`Changed`).
 - **D6 — sem gate mecânico** nesta versão; verificação por checklist e pré-push semântico.
   **Decidida em 2026-09-21: opção A — julgamento com P1 ancorado na revisão semântica; check
   automático só como ideia futura.**
@@ -576,7 +576,7 @@ retroativo o referencia como achado da sessão, não o revalida.
 | P1 de §5 solto, sem âncora no `AGENTS.md` | Consumidor 2 de §4 e §5 passam a exigir a alteração da seção «Revisão semântica de contrato runtime» — **superado na v2**: a âncora correta é «Promoção de frente» + «Revisão pré-push» (segunda rodada, abaixo) |
 | Próxima ação única em aberto; recomendação `B125` | Registrada em §4 (consumidor 4), §7 e §9 (D8) |
 | D5: precedente `B122` pende para entrada curta | D5 revista: proposta passa a ser entrada curta em `[Unreleased]`; «sem entrada» exige registro no corte |
-| §6 mandava o `Validated` da `alpha.8` (linha 88) citar o doc retroativo — seção publicada e imutável | Corrigido: linhas 62/88 intocadas; ligação pela entrada nova de `[Unreleased]` (D5) e pela rastreabilidade do doc retroativo; regra geral em §3.5 |
+| §6 mandava o `Validated` da `alpha.8` (linha 89) citar o doc retroativo — seção publicada e imutável | Corrigido: linhas 63/89 intocadas; ligação pela entrada nova de `[Unreleased]` (D5) e pela rastreabilidade do doc retroativo; regra geral em §3.5 |
 
 ### Segunda rodada — painel de pares de 2026-09-21 (Codex e Claude Opus)
 
@@ -631,7 +631,7 @@ retroativo o referencia como achado da sessão, não o revalida.
 | Codex P2: fechar D5 (seção e redação) | Corrigido: D5 fechada — seção `Added`, redação mínima registrada |
 | Codex P2: contrato de teste do aviso | Corrigido: positivos (só checkpoint, só `Validated`, ambos) e negativo (histórico) no consumidor 9 |
 | Opus P2: para G1 o adiamento colapsa no mesmo commit | Corrigido: «Nota do G1» em §3.5 |
-| Opus P2: a entrada da linha 88 cobre 142–151; o doc cobre 142–149 | Corrigido: recorte declarado em §6 |
+| Opus P2: a entrada da linha 89 cobre 142–151; o doc cobre 142–149 | Corrigido: recorte declarado em §6 |
 | Opus P2: declarar qual rascunho de `Temp/` é promovido | Corrigido: §7, passo 2, nomeia o promovido e descarta o outro |
 | Opus P3: nota do 06 vai até 381; «P8 (partes 1–4)» e `B102` não se sustentam; qualificar «(parcial)» do `B123` §6 | Corrigidos: §0 (347–381), §1 (série P0–P7 + ressalva do `B102`) e §3.4 («parcial quanto ao alcance») |
 
