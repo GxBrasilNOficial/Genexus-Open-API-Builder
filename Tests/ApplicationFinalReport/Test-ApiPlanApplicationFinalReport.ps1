@@ -94,6 +94,18 @@ Assert-True ($report.BuildReadableBody() -match 'Resultado: Criados=4; Atualizad
 Assert-True ($report.BuildReadableBody() -notmatch 'Guid persistido do objeto principal') 'Corpo legivel normal não deve exibir GUID técnico.'
 Assert-True ($report.BuildReadableBody() -notmatch '\[Folder\] ContratoOpenApi') 'Corpo legivel normal não deve listar cada objeto criado.'
 
+# Uma recuperação concluída precisa deixar no relatório seu resumo final sem virar aviso.
+$recovery = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalReportCollector]::new('Recuperar', 'Teste', 'apiTeste')
+$recovery.AddDeletedItems(@('SDT:sdtTeste_API_UpdateRequest'))
+$recovery.AddInformation('A remoção foi retomada e concluída: 15 objeto(s) saíram da KB nesta continuação.')
+$recoveryReport = $recovery.Build([timespan]::FromMilliseconds(10))
+$recoveryBody = $recoveryReport.BuildReadableBody()
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalOutcome]::Success) $recoveryReport.Outcome 'Informação não deve transformar recuperação concluída em aviso.'
+Assert-Equal 0 $recoveryReport.WarningCount 'Informação não incrementa Avisos.'
+Assert-Equal 1 $recoveryReport.Information.Count 'Recuperação deve guardar um resumo final informativo.'
+Assert-True ($recoveryBody -match 'Informações \(1\):') 'Relatório deve abrir a seção informativa quando houver resumo de recuperação.'
+Assert-True ($recoveryBody -match 'A remoção foi retomada e concluída: 15 objeto\(s\) saíram da KB nesta continuação\.') 'Relatório deve mostrar o resumo da continuação.'
+
 $persistenceSuccess = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanPersistenceLog]::new()
 $successScope = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanPersistenceCore]::Begin($persistenceSuccess)
 try {

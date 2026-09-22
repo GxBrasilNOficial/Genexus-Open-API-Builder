@@ -822,11 +822,20 @@ public sealed class Package : AbstractPackageUI
         }
 
         stopwatch.Stop();
+        var queue = removal.Queue;
         var report = new ApiPlanApplicationFinalReportCollector("Recuperar", envelope.TransactionName, removal.ApiName);
         report.SetApiName(removal.ApiName);
         report.AddDeletedItems(removal.DeletedItems.ToArray());
         report.AddPreservedNonEmptyFolders(removal.PreservedNonEmptyFolders);
         CloseRemovalJournal(journal, report, removal, envelope.TransactionName);
+        if (queue is not null && queue.IsComplete)
+        {
+            report.AddInformation(string.Format(
+                System.Globalization.CultureInfo.InvariantCulture,
+                "A remoção foi retomada e concluída: {0} objeto(s) saíram da KB nesta continuação.",
+                removal.DeletedItems.Count));
+        }
+
         foreach (var telemetryLine in removal.TelemetryLines)
         {
             WriteOutput($"[Genexus Open API Builder][B082] Retomada {telemetryLine}");
@@ -834,7 +843,6 @@ public sealed class Package : AbstractPackageUI
 
         ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, persistenceLog: persistenceLog);
 
-        var queue = removal.Queue;
         if (queue is not null && !queue.IsComplete)
         {
             return ApiPlanRecoveryResult.Blocked(

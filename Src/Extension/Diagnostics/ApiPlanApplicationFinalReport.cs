@@ -32,7 +32,8 @@ public sealed class ApiPlanApplicationFinalReport
         string? finalApiWriter = null,
         int apiSaveCount = 0,
         bool apiSaveAttempted = false,
-        ApiPlanPersistenceLog? persistenceLog = null)
+        ApiPlanPersistenceLog? persistenceLog = null,
+        IReadOnlyList<string>? information = null)
     {
         Operation = operation ?? throw new ArgumentNullException(nameof(operation));
         TransactionName = transactionName ?? throw new ArgumentNullException(nameof(transactionName));
@@ -58,6 +59,7 @@ public sealed class ApiPlanApplicationFinalReport
         ApiSaveCount = apiSaveCount;
         ApiSaveAttempted = apiSaveAttempted;
         PersistenceLog = persistenceLog;
+        Information = information ?? Array.Empty<string>();
     }
 
     public string Operation { get; }
@@ -81,6 +83,9 @@ public sealed class ApiPlanApplicationFinalReport
     public IReadOnlyList<ApiPlanApplicationFinalReportItem> Blocked { get; }
 
     public IReadOnlyList<string> Warnings { get; }
+
+    /// <summary>Informações de conclusão que não representam aviso nem bloqueio.</summary>
+    public IReadOnlyList<string> Information { get; }
 
     public string? MainObjectName { get; }
 
@@ -122,7 +127,7 @@ public sealed class ApiPlanApplicationFinalReport
         builder.Append($"PlannedApiName='{PlannedApiName ?? string.Empty}', PersistedMainObjectName='{PersistedMainObjectName ?? string.Empty}', PersistedMainObjectGuid='{PersistedMainObjectGuid?.ToString() ?? string.Empty}', ");
         builder.Append($"FinalApiWriter='{FinalApiWriter ?? string.Empty}', ApiSaveAttempted={ApiSaveAttempted}, ApiSaveCount={ApiSaveCount}, ");
         builder.Append($"Resultado='{Outcome}', Criados={CreatedCount}, Atualizados={UpdatedCount}, Removidos={DeletedCount}, ");
-        builder.Append($"Bloqueados={BlockedCount}, Avisos={WarningCount}, PersistenceReceipts={PersistenceReceipts.Count}, PersistenceStageFailures={PersistenceStageFailures.Count}, DuraçãoMs={(int)Elapsed.TotalMilliseconds}, Título='{Headline}'.");
+        builder.Append($"Bloqueados={BlockedCount}, Avisos={WarningCount}, Informações={Information.Count}, PersistenceReceipts={PersistenceReceipts.Count}, PersistenceStageFailures={PersistenceStageFailures.Count}, DuraçãoMs={(int)Elapsed.TotalMilliseconds}, Título='{Headline}'.");
         return builder.ToString();
     }
 
@@ -169,6 +174,20 @@ public sealed class ApiPlanApplicationFinalReport
         if (requiresTechnicalDetails)
         {
             AppendSection(builder, "Bloqueados", Blocked, Localize);
+        }
+
+        if (Information.Count > 0)
+        {
+            builder.AppendLine(Localize($"Informações ({Information.Count}):"));
+            foreach (var information in Information)
+            {
+                foreach (var line in WrapText("  - " + Localize(information), 96))
+                {
+                    builder.AppendLine(line);
+                }
+            }
+
+            builder.AppendLine();
         }
 
         if (Warnings.Count == 0)
@@ -347,10 +366,12 @@ public sealed class ApiPlanApplicationFinalReportCollector
     private ApiPlanApplicationFinalReportItem[] _updated = Array.Empty<ApiPlanApplicationFinalReportItem>();
     private ApiPlanApplicationFinalReportItem[] _deleted = Array.Empty<ApiPlanApplicationFinalReportItem>();
     private ApiPlanApplicationFinalReportItem[] _blocked = Array.Empty<ApiPlanApplicationFinalReportItem>();
+    private string[] _information = Array.Empty<string>();
     private string[] _warnings = Array.Empty<string>();
     private string[] _createdKeys = Array.Empty<string>();
     private string[] _updatedKeys = Array.Empty<string>();
     private string[] _deletedKeys = Array.Empty<string>();
+    private string[] _informationKeys = Array.Empty<string>();
     private string[] _warningKeys = Array.Empty<string>();
     private ApiPlanPersistenceLog? _persistenceLog;
 
@@ -524,6 +545,23 @@ public sealed class ApiPlanApplicationFinalReportCollector
         AppendWarning(ref _warnings, trimmed);
     }
 
+    public void AddInformation(string information)
+    {
+        if (string.IsNullOrWhiteSpace(information))
+        {
+            return;
+        }
+
+        var trimmed = information.Trim();
+        if (ContainsKey(_informationKeys, trimmed))
+        {
+            return;
+        }
+
+        AppendString(ref _informationKeys, trimmed);
+        AppendWarning(ref _information, trimmed);
+    }
+
     public void AddFromWriteStatus(string objectKind, string name, string status, string? detail = null)
     {
         if (string.Equals(status, "Created", StringComparison.OrdinalIgnoreCase))
@@ -619,7 +657,8 @@ public sealed class ApiPlanApplicationFinalReportCollector
             FinalApiWriter,
             ApiSaveCount,
             ApiSaveAttempted,
-            _persistenceLog);
+            _persistenceLog,
+            _information);
     }
 
     private ApiPlanApplicationFinalOutcome ResolveOutcome()

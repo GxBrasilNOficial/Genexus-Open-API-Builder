@@ -1373,6 +1373,9 @@ internal static class ExtensionOutputLocalization
         // porque a substituição é sequencial e reescreve texto já traduzido. O valor produzido é
         // o certo, e é o que o resto do catálogo usa; a entrada passou a declarar o que faz.
         new("Metadata File:", "Archivo de metadatos:", "Metadata File:"),
+        new("Informações (", "Información (", "Information ("),
+        new("A remoção foi retomada e concluída: ", "La eliminación se reanudó y se completó: ", "Removal was resumed and completed: "),
+        new(" objeto(s) saíram da KB nesta continuação.", " objeto(s) se eliminaron de la KB en esta continuación.", " object(s) were removed from the KB in this continuation."),
         new("Procedures (", "Procedures (", "Procedures ("),
         new("Procedures presentes na KB (", "Procedures presentes en la KB (", "Procedures present in the KB ("),
         new("SDTs próprios (", "SDTs propios (", "Own SDTs ("),
