@@ -33,6 +33,13 @@ function Assert-Contains {
     }
 }
 
+function Assert-NotContains {
+    param([string]$Text, [string]$Needle, [string]$Message)
+    if ($Text.IndexOf($Needle, [StringComparison]::Ordinal) -ge 0) {
+        throw "ASSERT_NOT_CONTAINS_FAILED: $Message"
+    }
+}
+
 function Get-Prop {
     param($Object, [string]$Name)
     $property = $Object.GetType().GetProperty($Name, [System.Reflection.BindingFlags]'Instance, NonPublic, Public')
@@ -162,7 +169,7 @@ try {
     $listsMethod = $planType.GetMethod('BuildConfirmationLists', [System.Reflection.BindingFlags]'Instance, Public')
     $lists = [string]$listsMethod.Invoke($plan, @())
     Assert-Contains $lists "  - sdtTeste_API_ListResponse" 'Lista de confirmacao deve citar cada SDT em linha propria.'
-    Assert-Contains $lists "SDTs próprios (5):" 'Lista de confirmacao deve contar SDTs proprios.'
+    Assert-Contains $lists "SDTs próprios presentes na KB (5):" 'Lista de confirmacao deve contar SDTs proprios.'
 
     $metadataV2 = [Newtonsoft.Json.Linq.JObject]::Parse($metadata.ToString([Newtonsoft.Json.Formatting]::None))
     $metadataV2['schemaVersion'] = [Newtonsoft.Json.Linq.JValue]::new('GOAB_API_METADATA_B060_V2')
@@ -266,6 +273,34 @@ try {
     ))
     $attach = $planType.GetMethod('AttachPreviewCapture', [System.Reflection.BindingFlags]'Instance, NonPublic, Public')
     Assert-True ($null -ne $attach) 'AttachPreviewCapture não encontrado.'
+
+    # B125: o inventário durável permanece completo, mas o Preview só anuncia como exclusão
+    # aquilo que a captura acabou de encontrar na KB; os já ausentes ficam explícitos à parte.
+    $presentAfterPartialAbort = New-Object 'System.Collections.Generic.Dictionary[string,System.Guid]'
+    $presentAfterPartialAbort.Add('Procedure:procTeste_API_Get', [guid]'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee')
+    $presentAfterPartialAbortRo = [System.Collections.ObjectModel.ReadOnlyDictionary[string,System.Guid]]::new($presentAfterPartialAbort)
+    $planAfterPartialAbort = $fromMetadata.Invoke($null, @($metadata, 'Teste', $txGuid))
+    $captureAfterPartialAbort = $captureCtor.Invoke([object[]]@(
+        [guid]$txGuid,
+        [guid]'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+        'GOAB_API_METADATA_B060_V1',
+        $null,
+        $null,
+        $false,
+        $null,
+        $presentAfterPartialAbortRo
+    ))
+    [void]$attach.Invoke($planAfterPartialAbort, @($captureAfterPartialAbort))
+    $listsAfterPartialAbort = [string]$listsMethod.Invoke($planAfterPartialAbort, @())
+    Assert-Equal 4 (Get-Count (Get-Prop $planAfterPartialAbort 'ProcedureNames')) 'B125 não pode reduzir o inventário durável usado pela recuperação.'
+    Assert-Contains $listsAfterPartialAbort 'Procedures presentes na KB (1):' 'Preview pós-aborto deve contar só Procedures ainda presentes.'
+    Assert-Contains $listsAfterPartialAbort '  - procTeste_API_Get' 'Preview pós-aborto deve manter alvo presente.'
+    Assert-NotContains $listsAfterPartialAbort '  - procTeste_API_List' 'Preview pós-aborto não deve anunciar alvo Procedure já ausente como exclusão.'
+    Assert-Contains $listsAfterPartialAbort 'Já ausentes na KB (não serão apagados nesta execução) (9):' 'Preview pós-aborto deve separar os alvos ausentes.'
+    Assert-Contains $listsAfterPartialAbort '  - API Object: apiTeste' 'Preview pós-aborto deve explicitar API Object ausente.'
+    Assert-Contains $listsAfterPartialAbort '  - SDT: sdtTeste_API_ListResponse' 'Preview pós-aborto deve explicitar SDT ausente.'
+
     [void]$attach.Invoke($planGuidMismatch, @($captureMismatch))
     Assert-True (-not [bool](Get-Prop $planGuidMismatch 'FolderShouldBeRemoved')) 'GUID divergente no Preview desanuncia o Folder'
     $countDeletes = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanGeneratedApiRemover', $true, $false).
@@ -294,6 +329,9 @@ try {
     $versionListPt = [string]$formatList.Invoke($null, @())
     $locSrc = Get-Content -LiteralPath (Join-Path $repositoryRoot 'Src/Domain/ExtensionOutputLocalization.cs') -Raw
     Assert-Contains $locSrc ('"' + $versionListPt + '"') "Catálogo deve traduzir o fragmento produzido por FormatSupportedVersionList ('$versionListPt')."
+    Assert-Contains $locSrc 'Procedures presentes na KB (' 'Catálogo deve traduzir o cabeçalho B125 de Procedures presentes.'
+    Assert-Contains $locSrc 'SDTs próprios presentes na KB (' 'Catálogo deve traduzir o cabeçalho B125 de SDTs presentes.'
+    Assert-Contains $locSrc 'Já ausentes na KB (não serão apagados nesta execução) (' 'Catálogo deve traduzir a nota B125 de alvos ausentes.'
 
     $metadataV0 = [Newtonsoft.Json.Linq.JObject]::Parse($metadataV4.ToString([Newtonsoft.Json.Formatting]::None))
     $metadataV0['schemaVersion'] = [Newtonsoft.Json.Linq.JValue]::new('GOAB_API_METADATA_B060_V5')

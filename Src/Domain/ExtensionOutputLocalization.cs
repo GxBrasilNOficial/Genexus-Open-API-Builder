@@ -1374,10 +1374,13 @@ internal static class ExtensionOutputLocalization
         // o certo, e é o que o resto do catálogo usa; a entrada passou a declarar o que faz.
         new("Metadata File:", "Archivo de metadatos:", "Metadata File:"),
         new("Procedures (", "Procedures (", "Procedures ("),
+        new("Procedures presentes na KB (", "Procedures presentes en la KB (", "Procedures present in the KB ("),
         new("SDTs próprios (", "SDTs propios (", "Own SDTs ("),
+        new("SDTs próprios presentes na KB (", "SDTs propios presentes en la KB (", "Own SDTs present in the KB ("),
         new("SDTs próprios", "SDTs propios", "Own SDTs"),
         new("SDTs compartilhados preservados (", "SDTs compartidos preservados (", "Preserved shared SDTs ("),
         new("SDTs compartilhados preservados", "SDTs compartidos preservados", "Preserved shared SDTs"),
+        new("Já ausentes na KB (não serão apagados nesta execução) (", "Ya ausentes en la KB (no se eliminarán en esta ejecución) (", "Already absent from the KB (will not be deleted in this operation) ("),
         new("criado pela extensão; apagar só se ficar vazio", "creado por la extensión; eliminar solo si queda vacío", "created by the extension; delete only if it remains empty"),
         new("próprio da API; a remoção apaga se ficar vazio", "propio de la API; la eliminación lo borra si queda vacío", "owned by the API; removal deletes it if it remains empty"),
         new("reutilizado; nunca apagar", "reutilizado; nunca eliminar", "reused; never delete"),

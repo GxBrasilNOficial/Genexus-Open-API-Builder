@@ -334,12 +334,13 @@ a excluir; o dano medido é Preview mentiroso, não exclusão errada.
 
 **Evidência.** Uma observação em 2026-09-16, item 142 de
 `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` (`Teste`/`wsEducacaoSpTeste`). Itens 143–149 **não**
-retestaram este recorte. Nenhuma correção de código foi apontada a este sintoma.
+retestaram este recorte. A correção local separa, no Preview, os alvos presentes dos já ausentes
+sem reduzir o inventário durável usado pela recuperação; o re-smoke na IDE continua necessário.
 
-**Entrega deste item.** (1) Reproduzir na IDE o cenário abort → segundo Remover → inspecionar o
-diálogo; (2) se confirmar, corrigir o Preview para refletir presença real na KB (ou documentar
-por que a lista da metadata é a verdade intencional); (3) se não reproduzir, fechar com evidência.
-Até lá o estado é **observado, não revalidado**.
+**Entrega deste item.** (1) Re-smoke na IDE do cenário abort → segundo Remover → inspecionar o
+diálogo; (2) validar que a correção do Preview reflete a presença real na KB, sem reduzir o
+inventário do diário; (3) se não reproduzir, fechar com evidência. Até lá o estado é
+**observado, não revalidado**.
 
 **Fora de escopo.** Regra de documento de evidência (`B124`); residual do `B082`
 (**fechado** 2026-09-17, `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`);

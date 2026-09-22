@@ -141,15 +141,28 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
 
     public string BuildConfirmationLists()
     {
+        var presentProcedures = FilterToPreviewPresence(JournalObjectType.Procedure, ProcedureNames);
+        var presentOwnSdts = FilterToPreviewPresence(JournalObjectType.Sdt, OwnSdtNames);
+        var alreadyAbsent = BuildAlreadyAbsentItems();
         var builder = new System.Text.StringBuilder();
-        builder.Append("Procedures (").Append(ProcedureNames.Count).AppendLine("):");
-        AppendIndentedItems(builder, ProcedureNames);
+        builder.Append("Procedures presentes na KB (").Append(presentProcedures.Count).AppendLine("):");
+        AppendIndentedItems(builder, presentProcedures);
         builder.AppendLine();
-        builder.Append("SDTs próprios (").Append(OwnSdtNames.Count).AppendLine("):");
-        AppendIndentedItems(builder, OwnSdtNames);
+        builder.Append("SDTs próprios presentes na KB (").Append(presentOwnSdts.Count).AppendLine("):");
+        AppendIndentedItems(builder, presentOwnSdts);
         builder.AppendLine();
         builder.Append("SDTs compartilhados preservados (").Append(SharedSdtNamesPreserved.Count).AppendLine("):");
         AppendIndentedItems(builder, SharedSdtNamesPreserved);
+
+        if (alreadyAbsent.Count > 0)
+        {
+            builder.AppendLine();
+            builder.Append("Já ausentes na KB (não serão apagados nesta execução) (")
+                .Append(alreadyAbsent.Count)
+                .AppendLine("):");
+            AppendIndentedItems(builder, alreadyAbsent);
+        }
+
         return builder.ToString().TrimEnd();
     }
 
@@ -198,6 +211,58 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
         foreach (var item in items)
         {
             builder.Append("  - ").AppendLine(item);
+        }
+    }
+
+    /// <summary>
+    /// B125: o inventário da metadata continua inteiro para o diário e a recuperação, mas o
+    /// Preview não pode anunciar como exclusão um alvo que já está ausente na KB.
+    /// </summary>
+    private IReadOnlyList<string> FilterToPreviewPresence(JournalObjectType objectType, IReadOnlyList<string> names)
+    {
+        if (PreviewCapture is null)
+        {
+            return names;
+        }
+
+        return names
+            .Where(name => PreviewCapture.PresentObjectGuids.ContainsKey(
+                ApiPlanGeneratedApiRemovalPreviewCapture.Key(objectType, name)))
+            .ToArray();
+    }
+
+    private IReadOnlyList<string> BuildAlreadyAbsentItems()
+    {
+        if (PreviewCapture is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        var absent = new List<string>();
+        AddIfAbsent(absent, JournalObjectType.ApiObject, "API Object", ApiName);
+        AddAbsentItems(absent, JournalObjectType.Procedure, "Procedure", ProcedureNames);
+        AddAbsentItems(absent, JournalObjectType.Sdt, "SDT", OwnSdtNames);
+        return absent;
+    }
+
+    private void AddIfAbsent(List<string> absent, JournalObjectType objectType, string label, string name)
+    {
+        if (!PreviewCapture!.PresentObjectGuids.ContainsKey(
+                ApiPlanGeneratedApiRemovalPreviewCapture.Key(objectType, name)))
+        {
+            absent.Add(label + ": " + name);
+        }
+    }
+
+    private void AddAbsentItems(
+        List<string> absent,
+        JournalObjectType objectType,
+        string label,
+        IReadOnlyList<string> names)
+    {
+        foreach (var name in names)
+        {
+            AddIfAbsent(absent, objectType, label, name);
         }
     }
 
