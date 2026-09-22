@@ -253,6 +253,7 @@ do documento 15 §18.2: fechamento sem documento dedicado de evidência em `Docs
 checkpoint — é **gap P1 documental**. Vale também para sessão citada como prova por entrada
 `Validated`/`Fixed` de release (G6). O agente é quem produz o documento na mesma sessão; o
 contrato completo está no documento 15 §18.2, não reproduzido aqui.
+
 ### Bloco `[Unreleased]` do `CHANGELOG.md`
 
 O bloco `[Unreleased]` é **rascunho do próximo release, não registro histórico**. Cada entrada descreve o estado no instante em que foi escrita, e as entradas seguintes mudam esse estado sem tocar nas anteriores — mas no corte todas serão lidas como um texto só, pelo leitor do release, que não acompanhou a cronologia interna.
