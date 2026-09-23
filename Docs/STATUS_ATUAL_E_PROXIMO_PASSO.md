@@ -147,8 +147,11 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**`B128` — check pré-push de referências de linha `Arquivo.cs:NNN` em `Docs/`** — validar no
-orquestrador que refs citadas batem com o código (Nível 1 vs Nível 2 em aberto no documento 06).
+**`B128` — gate incremental de referências C# implementado, revisado e commitado localmente** —
+offline e testes concluídos em 2026-09-23, na branch `main`, sem push. O contrato
+v8 substitui a decisão antiga Nível 1/Nível 2: impede aumento global de referências numéricas
+por linha móvel reconhecidas e valida os endereços fixos excedentes como citações históricas.
+Legado não é migrado e semântica não é provada. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`.
 `B127` fechado em 2026-09-22. **Corte `0.1.0-alpha.8` publicado em 2026-09-17**.
 O estado da branch em relação a `origin/main` se mede com
 `git rev-list --left-right --count origin/main...HEAD`, não se anota aqui como fato permanente.
@@ -497,6 +500,11 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 > **Atualização de 2026-09-22:** `B125`, `B126` e `B127` foram fechados com documento dedicado e
 > evidência IDE; a próxima ação única é `B128`. O relatório desta frente deve conferir o
 > checkpoint, o backlog e o `[Unreleased]` antes de concluir a revisão semântica.
+>
+> **Atualização de 2026-09-23:** o gate `B128` foi implementado, revisado e validado offline (35
+> assertions do tokenizer e harness completo com exit 0). Backlog, `[Unreleased]` e documento de
+> evidência foram atualizados; o conjunto foi commitado localmente em `main`, sem push. Não houve
+> prova IDE/runtime.
 
 - **[Histórico — Sprint 9]** alinhamento documental da promoção à Sprint 9 já commitado, em `main`, com working tree limpa;
 - `origin/main` atualizada, sem commits remotos à frente da frente local;
@@ -508,8 +516,8 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 
 ## Sequência operacional vigente
 
-Vigência atual: `B127` fechado com evidência IDE; a próxima ação única é `B128` (check
-pré-push de refs de linha em `Docs/`).
+Vigência atual: `B127` fechado com evidência IDE; `B128` implementado, revisado e validado offline,
+commitado localmente em `main`. Não foi validado na IDE; sem push.
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
@@ -684,6 +692,8 @@ pré-push de refs de linha em `Docs/`).
 162. Em 2026-09-22, **`B126` fechado**: código offline + smoke IDE na `Teste`/`wsEducacaoSpTeste` — recriação com posse, Description editada, anúncio «será preservado», `Removidos=25`, Folder permanece, aviso tipado no B081. Evidência: `Docs/Implementation/2026-09-22-B126-CONFIRMACAO-FOLDER-DESCRIPTION.md`. Próxima ação única = `B127`.
 
 163. Em 2026-09-22, **`B127` fechado**: re-smoke IDE na `Teste`/`wsEducacaoSpTeste` — Preview com GUID divergente anuncia `reutilizado; nunca apagar` (cancelado sem mutação); Apply com GUID falso regrava `ownedByThisApi=false` e GUID vivo `7dd3ba2b-…`. Evidência: `Docs/Implementation/2026-09-22-B127-RESMOKE-GUID-HOMONIMO.md`. Próxima ação única = `B128`.
+
+164. Em 2026-09-23, **`B128` implementado, revisado e validado offline**: check `docs.csharpLineReferences` compara globalmente as citações incrementais nas árvores `origin/main`/`HEAD`, valida os endereços fixos excedentes, compartilha tokenizer com o teste e emite aviso heurístico não bloqueante sobre referências numéricas prováveis ao `CHANGELOG`. Passaram 35 assertions do tokenizer e o harness completo de `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1` (exit 0), incluindo endereço fixo novo válido, falha `environmentBlocked`, móvel inválido, `notCovered`, warning CHANGELOG com falha Git/decode explícita e somente no diff commitado, e avisos B124. Sem IDE/runtime. Backlog, `[Unreleased]` e evidência: `Docs/Foundation/06-BACKLOG_v0.1.md`, `CHANGELOG.md` e `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`. Commit local em `main`; sem push.
 
 ## Bloqueios e fatos ainda não validados
 

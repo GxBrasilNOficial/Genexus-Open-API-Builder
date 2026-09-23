@@ -18,7 +18,8 @@ o item não registrou dado, este doc marca «não registrado» em vez de inferir
   (11:52) e o que ainda não estava commitado. Os itens 142 (a) e (b) antecedem esse install e
   também não registram a DLL. Proveniência declarada como **não registrada**, não inferida.
 - **Alcance.** Este doc cobre **142–149** (Sessão B + Etapa 3). A Etapa **1B** (itens 150–151)
-  tem doc próprio citado na linha 88 do `CHANGELOG` (`2026-09-17-B082-ETAPA-1B-ACEITE.md`) e
+  tem doc próprio na entrada `B082 Etapa 1B (2026-09-17)` de `Validated` em
+  `[0.1.0-alpha.8]` (`2026-09-17-B082-ETAPA-1B-ACEITE.md`) e
   fica fora deste recorte.
 - **O que a DLL medida não inclui.** Nenhum dos oito cenários reexecutou o `B125` (Preview do
   segundo Remover listando alvos ausentes); o achado foi apenas observado e numerado. O reteste
@@ -135,8 +136,9 @@ casca×relatório, Recuperar). Sem novo clique IDE. PASS (conferência, não exe
 - Plano: `Docs/Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md` («Retomada em duas
   sessões», «Progresso Sessão B»).
 - Itens do checkpoint: 142–149 de `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
-- Entrada que registrou a sessão no `CHANGELOG`: `Validated` da `0.1.0-alpha.8`, linha 89
-  (recorte **142–151**; este doc cobre **142–149**). **Citada, nunca editada** — seção de versão
+- Entrada que registrou a sessão no `CHANGELOG`: `B082 retomada Etapas 2+3 (2026-09-16)` em
+  `Validated` da `0.1.0-alpha.8` (recorte **142–151**; este doc cobre **142–149**). **Citada,
+  nunca editada** — seção de versão
   publicada é imutável.
 - Regra que determinou este doc: `B124` —
   `Docs/Implementation/2026-09-21-B124-PLANO-REGRA-DOCUMENTO-EVIDENCIA-IDE.md` (§6).

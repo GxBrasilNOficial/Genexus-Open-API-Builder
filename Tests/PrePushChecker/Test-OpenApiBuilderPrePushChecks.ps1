@@ -84,6 +84,7 @@ Assert-True ($source -match 'Tests/Localization/Test-ExtensionOutputLocalization
 Assert-True ($source -match 'Tests/Localization/Test-ExtensionOutputLocalizationSelfConsistency\.ps1') 'O checker deve exercer o catálogo de saída contra si mesmo.'
 Assert-True ($source -match 'Tests/IssueForms/Test-GitHubIssueFormsYaml\.ps1') 'O checker deve executar o teste unitário dos YAML / Issue Forms.'
 Assert-True ($source -match 'Tests/TextPatch/Test-ApplyTextPatch\.ps1') 'O checker deve executar o teste unitário da edição textual ancorada B122.'
+Assert-True ($source -match 'Tests/PrePushChecker/Test-B128ReferenceTokenizer\.ps1') 'O checker deve executar o teste do tokenizer compartilhado B128.'
 Assert-True ($source.Contains('\b(B00[0-6])\b')) 'currentFront deve reconhecer somente spikes B000-B006.'
 Assert-True ($source -match 'lista vazia com próxima ação B007\+') 'O JSON notCovered deve declarar que manualRequired vazio fora de B000-B006 não substitui a revisão semântica.'
 Assert-True ($source -match 'evidence-doc-required:checkpoint') 'O checker deve emitir o aviso evidence-doc-required:checkpoint no canal warnings.'
@@ -140,6 +141,7 @@ try {
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\Localization'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\IssueForms'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\TextPatch'))
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Tests\PrePushChecker'))
     & git init --bare (Join-Path $tempRoot 'remote.git') | Out-Null
     Push-Location (Join-Path $tempRoot 'repo')
     try {
@@ -156,6 +158,8 @@ try {
         & dotnet sln Src\GenexusOpenApiBuilder.sln add Src\Fixture\Fixture.csproj | Out-Null
         Assert-True ($LASTEXITCODE -eq 0) 'Não foi possível adicionar o projeto à solution da fixture.'
         [System.IO.File]::Copy($checker, (Join-Path $PWD 'scripts\Invoke-PrePushMechanicalChecks.ps1'))
+        [System.IO.File]::Copy((Join-Path $repositoryRoot 'scripts\B128-ReferenceTokenizer.ps1'), (Join-Path $PWD 'scripts\B128-ReferenceTokenizer.ps1'))
+        [System.IO.File]::Copy((Join-Path $PSScriptRoot 'Test-B128ReferenceTokenizer.ps1'), (Join-Path $PWD 'Tests\PrePushChecker\Test-B128ReferenceTokenizer.ps1'))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ServiceSourceContract\Test-ApiPlanServiceSourceContract.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Service Source contract'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\MetadataIntegrity\Test-ApiPlanMetadataIntegrity.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Metadata Integrity'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\ApiObjectOwnership\Test-ApiPlanApiObjectOwnership.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Api Object Ownership'`n", [System.Text.UTF8Encoding]::new($false))
@@ -285,6 +289,12 @@ try {
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.outputLocalizationSelfConsistency' }).status -eq 'passed') 'A auto-consistência do catálogo de saída deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.issueForms' }).status -eq 'passed') 'O teste unitário dos YAML / Issue Forms deveria passar na fixture.'
         Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.textPatch' }).status -eq 'passed') 'O teste unitário da edição textual ancorada B122 deveria passar na fixture.'
+        Assert-True (($result.checks | Where-Object { $_.name -eq 'tests.b128ReferenceTokenizer' }).status -eq 'passed') 'O teste do tokenizer compartilhado B128 deveria passar na fixture.'
+        $b128Baseline = $result.checks | Where-Object { $_.name -eq 'docs.csharpLineReferences' }
+        Assert-True ($b128Baseline.status -eq 'passed') 'Sem novas citações, o gate B128 deveria passar.'
+        Assert-True ($b128Baseline.evidence.baseCandidates -eq 0 -and $b128Baseline.evidence.headCandidates -eq 0) 'O JSON deve expor a evidência de contagem B128 da fixture.'
+        Assert-True (@($result.notCovered | Where-Object { $_ -match 'Referências legadas deslocadas' }).Count -eq 1 -and @($result.notCovered | Where-Object { $_ -match 'não prova que o texto citado' }).Count -eq 1) 'notCovered deve declarar legado e limite semântico B128.'
+        Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/PrePushChecker/Test-B128ReferenceTokenizer.ps1' }).Count -eq 1) 'O comando do teste B128 deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ServiceSourceContract/Test-ApiPlanServiceSourceContract.ps1' }).Count -eq 1) 'O comando do teste Service Source deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/MetadataIntegrity/Test-ApiPlanMetadataIntegrity.ps1' }).Count -eq 1) 'O comando do teste Metadata Integrity deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/ApiObjectOwnership/Test-ApiPlanApiObjectOwnership.ps1' }).Count -eq 1) 'O comando do teste Api Object Ownership deve aparecer no JSON.'
@@ -326,6 +336,46 @@ try {
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/Installation/Test-InstallExtensionBatPathHandling.ps1' }).Count -eq 1) 'O comando do teste Installation BAT Path Handling deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/TextPatch/Test-ApplyTextPatch.ps1' }).Count -eq 1) 'O comando do teste Text Patch B122 deve aparecer no JSON.'
         Assert-True (@($result.warnings).Count -eq 0) 'O checker não deve registrar "0 Aviso(s)" como warning.'
+
+        $baseCommit = (& git rev-parse HEAD).Trim()
+        [System.IO.Directory]::CreateDirectory((Join-Path $PWD 'Docs')) | Out-Null
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Docs\b128-reference.md'), "$baseCommit`:Src/Fixture/Class1.cs#L1`n", [System.Text.UTF8Encoding]::new($false))
+        & git add Docs\b128-reference.md
+        & git commit -m 'Fixture com endereco fixo valido' | Out-Null
+        $fixedJson = & pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
+        $fixedExit = $LASTEXITCODE
+        $fixedResult = $fixedJson | ConvertFrom-Json
+        Assert-True ($fixedExit -eq 0) 'Endereço fixo novo que aponta para blob ancestral deve passar.'
+        Assert-True (($fixedResult.checks | Where-Object { $_.name -eq 'docs.csharpLineReferences' }).status -eq 'passed') 'Endereço fixo válido deve passar no gate B128.'
+        Assert-True (($fixedResult.checks | Where-Object { $_.name -eq 'docs.csharpLineReferences' }).evidence.excessCandidates -eq 1) 'O JSON deve registrar o endereço fixo excedente avaliado.'
+        & git push origin main | Out-Null
+
+        [System.IO.Directory]::CreateDirectory((Join-Path $PWD 'Artifacts\B128')) | Out-Null
+        [System.IO.File]::WriteAllBytes((Join-Path $PWD 'Artifacts\B128\InvalidUtf8.cs'), [byte[]]@(0xFF, 0x0A))
+        & git add Artifacts\B128\InvalidUtf8.cs
+        & git commit -m 'Fixture com fonte CSharp UTF-8 invalida' | Out-Null
+        $invalidUtf8Commit = (& git rev-parse HEAD).Trim()
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Docs\b128-environment.md'), "$invalidUtf8Commit`:Artifacts/B128/InvalidUtf8.cs#L1`n", [System.Text.UTF8Encoding]::new($false))
+        & git add Docs\b128-environment.md
+        & git commit -m 'Fixture de bloqueio de ambiente B128' | Out-Null
+        $environmentJson = & pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
+        $environmentExit = $LASTEXITCODE
+        $environmentResult = $environmentJson | ConvertFrom-Json
+        $environmentCheck = $environmentResult.checks | Where-Object { $_.name -eq 'docs.csharpLineReferences' }
+        Assert-True ($environmentExit -eq 2 -and $environmentCheck.status -eq 'environmentBlocked') 'Blob CSharp que não decodifica deve bloquear como falha de ambiente no JSON.'
+        Assert-True (@($environmentCheck.evidence.environmentFindings | Where-Object { $_.reason -match 'UTF-8' }).Count -eq 1) 'O JSON deve localizar a causa de ambiente B128.'
+        & git push origin main | Out-Null
+
+        [System.IO.File]::AppendAllText((Join-Path $PWD 'Docs\b128-reference.md'), "Src/Fixture/Class1.cs:1,2`n", [System.Text.UTF8Encoding]::new($false))
+        & git add Docs\b128-reference.md
+        & git commit -m 'Fixture com citacao movel invalida' | Out-Null
+        $mobileJson = & pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
+        $mobileExit = $LASTEXITCODE
+        $mobileResult = $mobileJson | ConvertFrom-Json
+        $mobileCheck = $mobileResult.checks | Where-Object { $_.name -eq 'docs.csharpLineReferences' }
+        Assert-True ($mobileExit -eq 1 -and $mobileCheck.status -eq 'failed') 'Citação móvel malformada deve bloquear o checker.'
+        Assert-True (@($mobileCheck.evidence.findings | Where-Object { $_.reason -match 'localização inválida' }).Count -eq 1) 'O JSON deve localizar a citação móvel inválida.'
+        & git push origin main | Out-Null
 
         $fetchJson = & pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson -Fetch
         $fetchExit = $LASTEXITCODE
@@ -413,6 +463,20 @@ try {
         Assert-True ($baseRun.ExitCode -eq 0) 'Baseline B124 deve passar sem bloqueio.'
         Assert-True (@($baseRun.Result.warnings | Where-Object { $_ -match '^evidence-doc-required' }).Count -eq 0) 'Baseline B124 não deve emitir aviso de evidência.'
 
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Docs\b128-changelog.md'), "CHANGELOG.md linha 89`nCHANGELOG.md line 90`nCHANGELOG.md línea 91`n", [System.Text.UTF8Encoding]::new($false))
+        & git add Docs\b128-changelog.md
+        & git commit -m 'Fixture referencia numerica CHANGELOG' | Out-Null
+        $lineWarningRun = Invoke-FixtureChecker
+        Assert-True ($lineWarningRun.ExitCode -eq 0) 'Aviso heurístico de linha CHANGELOG não bloqueia o checker.'
+        Assert-True (@($lineWarningRun.Result.warnings | Where-Object { $_ -match '^b128-changelog-line-reference' }).Count -eq 3) 'Linhas numéricas próximas a CHANGELOG em português, inglês e espanhol devem emitir avisos B128.'
+        & git push origin main | Out-Null
+
+        [System.IO.File]::AppendAllText((Join-Path $PWD 'Docs\b128-changelog.md'), "CHANGELOG linha 90`n", [System.Text.UTF8Encoding]::new($false))
+        $uncommittedLineRun = Invoke-FixtureChecker
+        Assert-True (@($uncommittedLineRun.Result.warnings | Where-Object { $_ -match '^b128-changelog-line-reference' }).Count -eq 0) 'Aviso B128 CHANGELOG não incorpora alterações da working tree.'
+        & git checkout -- Docs\b128-changelog.md
+        Assert-True ($LASTEXITCODE -eq 0) 'Não foi possível limpar a alteração da fixture B128 CHANGELOG.'
+
         # Positivo — só Validated.
         Append-Commit -File 'CHANGELOG.md' -Anchor '- validação nova' -Extra "`n- validação nova 2"
         $vRun = Invoke-FixtureChecker
@@ -463,4 +527,4 @@ finally {
     if (Test-Path -LiteralPath $tempRoot) { Remove-Item -LiteralPath $tempRoot -Recurse -Force }
 }
 
-'OK: fixtures de classificação, fronteira operacional, Git limpo/sujo, fetch local e aviso de evidência B124 validados.'
+'OK: fixtures de classificação, tokenizer B128, validação de citações fixas/móveis, aviso numérico de CHANGELOG, fronteira operacional, Git limpo/sujo, fetch local e avisos B124 validados.'

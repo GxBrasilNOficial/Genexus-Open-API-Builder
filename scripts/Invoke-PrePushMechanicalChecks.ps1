@@ -14,6 +14,7 @@ if (-not $AsJson) {
 }
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'B128-ReferenceTokenizer.ps1')
 
 function Invoke-ExternalProcess {
     param(
@@ -243,6 +244,46 @@ function Get-EvidenceDocWarnings {
     return @($warnings)
 }
 
+function Get-B128ReferenceCheck {
+    param()
+    if ($null -eq $gitContext.behind) {
+        return [pscustomobject]@{ status = 'skipped'; summary = 'origin/main não pôde ser avaliada; consulte git.remoteBase.'; evidence = [ordered]@{ reason = 'notEvaluated/remoteBaseUnavailable' } }
+    }
+    if ([int]$gitContext.behind -gt 0) {
+        return [pscustomobject]@{ status = 'skipped'; summary = 'origin/main está à frente; as referências não foram comparadas.'; evidence = [ordered]@{ reason = 'notEvaluated/remoteBehind'; behind = $gitContext.behind } }
+    }
+    try {
+        $baseTree = Get-B128TreeCandidates -RepositoryRoot $repositoryRoot -Reference 'origin/main'
+        $headTree = Get-B128TreeCandidates -RepositoryRoot $repositoryRoot -Reference 'HEAD'
+        $excess = @(Get-B128ExcessCandidates -BaseCandidates $baseTree.Candidates -HeadCandidates $headTree.Candidates)
+        $findings = [System.Collections.Generic.List[object]]::new()
+        $environmentFindings = [System.Collections.Generic.List[object]]::new()
+        foreach ($candidate in $excess) {
+            if ($candidate.kind -eq 'mobile') {
+                if (-not $candidate.validSyntax) { $findings.Add([ordered]@{ path = $candidate.path; line = $candidate.line; reference = $candidate.raw; reason = 'nova referência numérica por linha móvel tem localização inválida' }) }
+                else { $findings.Add([ordered]@{ path = $candidate.path; line = $candidate.line; reference = $candidate.raw; reason = 'aumenta a contagem global de referências numéricas por linha móvel' }) }
+                continue
+            }
+            $validation = Test-B128FixedReference -RepositoryRoot $repositoryRoot -Candidate $candidate
+            if ($validation.environmentBlocked) { $environmentFindings.Add([ordered]@{ path = $candidate.path; line = $candidate.line; reference = $candidate.raw; reason = $validation.reason }) }
+            elseif (-not $validation.valid) { $findings.Add([ordered]@{ path = $candidate.path; line = $candidate.line; reference = $candidate.raw; reason = $validation.reason }) }
+        }
+        $evidence = [ordered]@{ baseDocumentsWithCandidates = $baseTree.Documents; headDocumentsWithCandidates = $headTree.Documents; baseCandidates = $baseTree.Candidates.Count; headCandidates = $headTree.Candidates.Count; excessCandidates = $excess.Count; findings = @($findings); environmentFindings = @($environmentFindings) }
+        if ($environmentFindings.Count -gt 0) { return [pscustomobject]@{ status = 'environmentBlocked'; summary = 'Não foi possível validar um ou mais endereços C# fixos novos.'; evidence = $evidence } }
+        if ($findings.Count -gt 0) { return [pscustomobject]@{ status = 'failed'; summary = 'Há citação móvel nova ou endereço C# fixo inválido em Docs/.'; evidence = $evidence } }
+        return [pscustomobject]@{ status = 'passed'; summary = 'Não aumentaram as referências móveis reconhecidas; endereços fixos excedentes são válidos no histórico.'; evidence = $evidence }
+    }
+    catch {
+        return [pscustomobject]@{ status = 'environmentBlocked'; summary = 'Falha ao ler ou comparar as árvores Git para referências C#.'; evidence = [ordered]@{ reason = ConvertTo-SanitizedText $_.Exception.Message } }
+    }
+}
+
+function Get-B128ChangelogWarnings {
+    try { $diff = Invoke-B128GitBytes -Repository $repositoryRoot -Arguments @('diff', '--unified=1', 'origin/main..HEAD', '--', 'Docs') }
+    catch { return @('b128-changelog-warning-incomplete: falha ao iniciar a leitura do diff commitado de Docs/; avisos de linha do CHANGELOG não foram avaliados.') }
+    return @(Get-B128ChangelogWarningsFromDiff -ExitCode $diff.ExitCode -Bytes $diff.Bytes)
+}
+
 $checks = [System.Collections.Generic.List[object]]::new()
 $warnings = [System.Collections.Generic.List[string]]::new()
 $commands = [System.Collections.Generic.List[object]]::new()
@@ -287,6 +328,11 @@ try {
         if ($gitContext.behind -gt 0) { $failed = $true; $checks.Add((New-Check 'git.remoteBase' 'failed' "A main local está $($gitContext.behind) commit(s) atrás de origin/main." $gitContext)) }
         else { $checks.Add((New-Check 'git.remoteBase' 'passed' "Comparação concluída: $($gitContext.ahead) à frente e $($gitContext.behind) atrás." $gitContext)) }
     }
+
+    $b128Check = Get-B128ReferenceCheck
+    $checks.Add((New-Check 'docs.csharpLineReferences' $b128Check.status $b128Check.summary $b128Check.evidence))
+    if ($b128Check.status -eq 'failed') { $failed = $true }
+    elseif ($b128Check.status -eq 'environmentBlocked') { $environmentBlocked = $true }
 
     foreach ($diffSpec in @(
         [ordered]@{ Name = 'git.diffInterval'; Arguments = @('diff', '--check', 'origin/main..HEAD'); Summary = 'O diff contra origin/main não contém erro de whitespace.' },
@@ -377,7 +423,8 @@ try {
         [ordered]@{ Name = 'tests.extensionOutputLocalization'; RelativePath = 'Tests\Localization\Test-ExtensionOutputLocalization.ps1'; Command = 'pwsh -NoProfile -File Tests/Localization/Test-ExtensionOutputLocalization.ps1'; Passed = 'Teste unitário da localização do Output da extensão concluído.'; Failed = 'Teste unitário da localização do Output da extensão falhou.'; Missing = 'Teste unitário da localização do Output da extensão não encontrado.' },
         [ordered]@{ Name = 'tests.outputLocalizationSelfConsistency'; RelativePath = 'Tests\Localization\Test-ExtensionOutputLocalizationSelfConsistency.ps1'; Command = 'pwsh -NoProfile -File Tests/Localization/Test-ExtensionOutputLocalizationSelfConsistency.ps1'; Passed = 'Catálogo de saída exercido contra si mesmo: sem recorte entre entradas e sem Source duplicado.'; Failed = 'Catálogo de saída inconsistente consigo mesmo: alguma entrada recorta outra, ou há Source duplicado.'; Missing = 'Teste de auto-consistência do catálogo de saída não encontrado.' },
         [ordered]@{ Name = 'tests.issueForms'; RelativePath = 'Tests\IssueForms\Test-GitHubIssueFormsYaml.ps1'; Command = 'pwsh -NoProfile -File Tests/IssueForms/Test-GitHubIssueFormsYaml.ps1'; Passed = 'Teste unitário dos YAML / Issue Forms do GitHub concluído.'; Failed = 'Teste unitário dos YAML / Issue Forms do GitHub falhou.'; Missing = 'Teste unitário dos YAML / Issue Forms do GitHub não encontrado.'; EnvironmentBlocked = 'Ambiente sem python3/pyyaml para parse real dos YAML / Issue Forms.' },
-        [ordered]@{ Name = 'tests.textPatch'; RelativePath = 'Tests\TextPatch\Test-ApplyTextPatch.ps1'; Command = 'pwsh -NoProfile -File Tests/TextPatch/Test-ApplyTextPatch.ps1'; Passed = 'Teste unitário da edição textual ancorada B122 concluído.'; Failed = 'Teste unitário da edição textual ancorada B122 falhou.'; Missing = 'Teste unitário da edição textual ancorada B122 não encontrado.' }
+        [ordered]@{ Name = 'tests.textPatch'; RelativePath = 'Tests\TextPatch\Test-ApplyTextPatch.ps1'; Command = 'pwsh -NoProfile -File Tests/TextPatch/Test-ApplyTextPatch.ps1'; Passed = 'Teste unitário da edição textual ancorada B122 concluído.'; Failed = 'Teste unitário da edição textual ancorada B122 falhou.'; Missing = 'Teste unitário da edição textual ancorada B122 não encontrado.' },
+        [ordered]@{ Name = 'tests.b128ReferenceTokenizer'; RelativePath = 'Tests\PrePushChecker\Test-B128ReferenceTokenizer.ps1'; Command = 'pwsh -NoProfile -File Tests/PrePushChecker/Test-B128ReferenceTokenizer.ps1'; Passed = 'Teste do tokenizer compartilhado de referências C# B128 concluído.'; Failed = 'Teste do tokenizer compartilhado de referências C# B128 falhou.'; Missing = 'Teste do tokenizer compartilhado de referências C# B128 não encontrado.' }
     )) {
         $testPath = Join-Path $repositoryRoot $unitTest.RelativePath
         if (Test-Path -LiteralPath $testPath -PathType Leaf) {
@@ -440,6 +487,7 @@ if (Test-Path -LiteralPath $checkpoint -PathType Leaf) {
 }
 $manualRequired = @(Get-ManualRequirements -WorkingDirectory $repositoryRoot -CurrentFront $currentFront)
 foreach ($evidenceWarning in @(Get-EvidenceDocWarnings -RepositoryRoot $repositoryRoot)) { $warnings.Add($evidenceWarning) }
+foreach ($changelogWarning in @(Get-B128ChangelogWarnings)) { $warnings.Add($changelogWarning) }
 $incompleteReasons = [System.Collections.Generic.List[string]]::new()
 if ($workingTreeDirty) { $incompleteReasons.Add('workingTreeDirty') }
 if ($manualRequired.Count -gt 0) { $incompleteReasons.Add('manualRequired') }
@@ -463,7 +511,7 @@ $localReadiness = if ($overallStatus -eq 'passed') { 'ready' } else { 'blocked' 
     warnings = @($warnings)
     incompleteReasons = @($incompleteReasons)
     manualRequired = @($manualRequired)
-    notCovered = @('Validação funcional na IDE GeneXus, acesso a KB, instalação de DLL e scripts em Tools não são executados.', 'manualRequired e workingTreeDirty exigem revisão humana; não comprovam fechamento semântico.', 'currentFront/manualRequired só reconhecem spike B000-B006 vigente no checkpoint; lista vazia com próxima ação B007+ é esperada e não substitui a revisão semântica.', 'aviso de evidência (evidence-doc-required:*) não comprova fechamento semântico.')
+    notCovered = @('Referências legadas deslocadas permanecem sem migração e sem alerta se não aumentarem globalmente.', 'Prosa sem padrão reconhecível, variantes Markdown/HTML fora da gramática e linhas em arquivos fora de Docs/ ficam fora da detecção.', 'Arquivo.cs(linha,coluna) e Arquivo.cs:line N ficam fora da detecção.', 'A heurística CHANGELOG pode ter falsos negativos, inclusive referências sem CHANGELOG adjacente, e falsos positivos.', 'O check não prova que o texto citado descreve corretamente o comportamento semântico do código.', 'Validação funcional na IDE GeneXus, acesso a KB, instalação de DLL e scripts em Tools não são executados.', 'manualRequired e workingTreeDirty exigem revisão humana; não comprovam fechamento semântico.', 'currentFront/manualRequired só reconhecem spike B000-B006 vigente no checkpoint; lista vazia com próxima ação B007+ é esperada e não substitui a revisão semântica.', 'aviso de evidência (evidence-doc-required:*) não comprova fechamento semântico.')
 } | ConvertTo-Json -Depth 8
 
 exit $exitCode
