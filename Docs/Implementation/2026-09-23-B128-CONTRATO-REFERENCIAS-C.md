@@ -8,17 +8,17 @@ O checker do pré-push reduz a entrada de novas referências a linhas C# em Mark
 
 ## Referências móveis por dois-pontos
 
-- O tokenizer reconhece candidatos `.cs:` e `.CS:` no Markdown fonte. A unidade numérica completa é examinada; um prefixo aparentemente válido não pode escapar de um sufixo ou continuação malformada.
+- O tokenizer reconhece a extensão `.cs` sem distinção de caixa no Markdown fonte (`.cs`, `.Cs`, `.cS` e `.CS`). A chave resultante sempre usa `.cs` minúsculo. A unidade numérica completa é examinada; um prefixo aparentemente válido não pode escapar de um sufixo ou continuação malformada.
 - A forma aceita contém uma linha decimal positiva sem zero inicial, ou uma faixa inclusiva crescente ou unitária. Localização vazia, zero inicial, faixa incompleta, coluna e sufixo tornam o candidato inválido.
-- A chave usa o caminho completo, preserva caixa e normaliza `/` e `\`. Formatação Markdown e escape documentados não alteram a chave. Formatos fora da gramática do tokenizer ficam em `notCovered`.
+- A chave preserva a caixa do caminho sem a extensão, normaliza a extensão para `.cs` minúsculo e converte `\` em `/`. Formatação Markdown e escape documentados não alteram a chave. Formatos fora da gramática do tokenizer ficam em `notCovered`.
 - O check compara multiconjuntos globais nas árvores Git `origin/main` e `HEAD`. Qualquer aumento de uma chave reconhecida falha; remoções podem compensar acréscimos da mesma chave em outro documento. Tokens legados sem aumento permanecem sem migração.
 
 ## Referências fixas por âncora
 
-- O canal `.cs#L` reconhece candidatos de intenção permissivamente, mas valida cada ocorrência excedente com rigor. A forma válida é um SHA completo de commit, path Git relativo terminado em `.cs` e linha positiva ou faixa inclusiva crescente.
+- O canal `.cs#L` reconhece extensão e marcador sem distinção de caixa e reconstrói a chave com `.cs#L`. Reconhece candidatos de intenção permissivamente, mas valida cada ocorrência excedente com rigor. A forma válida é um SHA completo de commit, path Git relativo terminado em `.cs` e linha positiva ou faixa inclusiva crescente.
 - O commit precisa ser ancestral de `HEAD`; o path não pode ser absoluto, conter `..` ou usar barras invertidas, e precisa resolver para um blob C# naquele commit. As linhas precisam existir na contagem física do blob, considerando `LF`, `CRLF` e `CR`.
 - Um endereço fixo novo válido passa. Um endereço fixo novo inválido falha. Falha operacional do Git, leitura não confiável ou impossibilidade de provar ancestralidade resulta em `environmentBlocked`, não em referência inválida.
-- A comparação preserva a grafia relevante à validade, incluindo caminho, prefixo e caixa. Não normaliza barras neste canal.
+- A comparação preserva a caixa do prefixo, SHA e path; a extensão e o marcador são normalizados para `.cs#L`. Não normaliza barras do path neste canal.
 
 ## Aviso de CHANGELOG e estados
 
