@@ -27,7 +27,8 @@ Não cobre `B127` (re-smoke GUID/homônimo) nem `B125` (Preview pós-aborto).
 ## Smoke IDE (2026-09-22) — PASS
 
 KB: `wsEducacaoSpTeste` / Transaction `Teste` / Folder `TesteOpenApi`.
-DLL Release instalada manualmente (só DLL; manifesto inalterado).
+DLL Release da árvore de trabalho (depois `babb2bf`); ver Proveniência. Manifesto
+inalterado.
 
 Preparação necessária (o Folder legado sem posse mostrava «reutilizado; nunca apagar» e
 não exercia o `B126`): Remover a API, apagar o Folder vazio à mão, Wizard recriar tudo
@@ -47,9 +48,11 @@ com posse (`criado pela extensão; apagar só se ficar vazio`).
 
 ## Proveniência e alcance
 
-- Commit exercido: `babb2bf` (`B126: anuncia preservação do Folder com Description divergente`).
-- DLL Release instalada manualmente (só DLL; manifesto inalterado). Hash SHA-256 da DLL
-  instalada: não registrado.
+- Smoke sobre DLL Release construída da árvore de trabalho que depois foi commitada como
+  `babb2bf` (`B126: anuncia preservação do Folder com Description divergente`) — código e
+  evidência entraram no mesmo commit.
+- Igualdade DLL ↔ `babb2bf`: inferência pela sequência build → smoke → commit; hash SHA-256
+  da DLL instalada: não registrado. Manifesto inalterado (só DLL).
 - A medição não inclui `B127` (GUID/homônimo) nem `B125` (Preview pós-aborto).
 
 ## Aberto

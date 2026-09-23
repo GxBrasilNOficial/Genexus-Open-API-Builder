@@ -21,8 +21,8 @@ Não muda código nem schema. Não cobre `B126` (Description/contêiner) nem `B1
 ## Preparação
 
 KB: `wsEducacaoSpTeste` / Transaction `Teste` / Folder `TesteOpenApi`.
-DLL Release já instalada (mesma do `B126`; manifesto inalterado). Gates offline dos
-hardenings já PASS.
+DLL Release já instalada (mesma instalação referida no `B126`; ver Proveniência). Gates
+offline dos hardenings já PASS.
 
 Baseline: Wizard Apply criou a API com posse
 (`TransactionFolderGuid='7dd3ba2b-5842-421f-9d3e-eaaa18d5f3cf'`, metadata V4,
@@ -67,10 +67,10 @@ desta API».
 
 ## Proveniência e alcance
 
-- Commits dos hardenings exercidos: `86ef414` (Preview/GUID) e `c358fb2` (homônimo sem
-  herdar posse).
-- DLL Release já instalada (mesma do `B126`; manifesto inalterado). Hash SHA-256 da DLL
-  instalada: não registrado.
+- Hardenings sob teste: `86ef414` (Preview/GUID) e `c358fb2` (homônimo sem herdar posse),
+  ancestrais de `babb2bf`.
+- DLL: mesma instalação referida no `B126` (inferência operacional; sem novo hash).
+  Igualdade dessa DLL com `86ef414`/`c358fb2`: não medida. Manifesto inalterado (só DLL).
 - Documento de evidência desta sessão: `43e2900`.
 - A medição não inclui `B126` (Description/contêiner) nem `B125` (Preview pós-aborto).
 
