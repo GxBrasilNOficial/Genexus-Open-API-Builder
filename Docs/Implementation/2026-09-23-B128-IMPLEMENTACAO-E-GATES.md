@@ -4,7 +4,7 @@ Data: 2026-09-23. Estado: implementação, revisão e validação offline conclu
 
 ## Escopo adotado
 
-O manuscrito v8 (`Temp/revisao-por-pares/B128-20260923-0925/manuscrito-v8.md`) substitui a escolha antiga entre existência de arquivo/linha e âncora textual. O gate passa a controlar incrementos globais de referências numéricas C# por linha móvel e a validar citações históricas fixas novas. Não migra o legado nem verifica se a afirmação ao redor da citação corresponde semanticamente ao código.
+O manuscrito v8 (`Temp/revisao-por-pares/B128-20260923-0925/manuscrito-v8.md`) é proveniência local da discussão e da decisão; `Temp/*` é ignorado pelo Git, e o manuscrito não é normativo. O contrato versionado do comportamento entregue está em `Docs/Implementation/2026-09-23-B128-CONTRATO-REFERENCIAS-C.md`. O gate controla incrementos globais de referências numéricas C# por linha móvel e valida citações históricas fixas novas. Não migra o legado nem verifica se a afirmação ao redor da citação corresponde semanticamente ao código.
 
 A leitura que embasou o plano mediu 45 ocorrências em 37 linhas de cinco documentos B082/B111. É contagem textual; não classifica a correção semântica de cada afirmação.
 

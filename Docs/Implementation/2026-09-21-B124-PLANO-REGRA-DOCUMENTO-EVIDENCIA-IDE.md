@@ -143,7 +143,8 @@ A regra nunca foi escrita. O resultado é assimétrico:
   checkpoint, no parágrafo de progresso do plano `B082` e na entrada `B082 retomada Etapas 2+3
   (2026-09-16)` de `Validated` em `[0.1.0-alpha.8]`. Quem retoma a
   frente numa sessão nova precisa remontar a bateria a partir de um parágrafo longo do log — foi
-  exatamente esse o sintoma que abriu o `B124` (nota do documento 06, linhas 355–361).
+  exatamente esse o sintoma que abriu o `B124` (documento 06, parágrafo «O sintoma» do `B082`;
+  item 142 do checkpoint).
 
 O custo não é hipotético: o item 142 registrou, «observado sem correção», o Preview do segundo
 Remover listando alvos já ausentes; sem doc, aquele achado virou o `B125` apenas como texto, e a
