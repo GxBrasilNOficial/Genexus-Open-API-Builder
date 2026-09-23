@@ -435,6 +435,8 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 
 ## Evidência da frente encerrada
 
+- `B127` (2026-09-22): re-smoke IDE na `Teste`/`wsEducacaoSpTeste` — Preview com GUID divergente anuncia `reutilizado; nunca apagar` (cancelado sem mutação); Apply com GUID falso regrava `ownedByThisApi=false` e o GUID vivo do Folder. Evidência: `Docs/Implementation/2026-09-22-B127-RESMOKE-GUID-HOMONIMO.md`.
+- `B126` (2026-09-22): confirmação/relatório do Remover alinhados à preservação por Description ou contêiner divergente; smoke IDE na `Teste`/`wsEducacaoSpTeste` — anúncio «será preservado», `Removidos=25`, Folder permanece, aviso tipado no B081. Evidência: `Docs/Implementation/2026-09-22-B126-CONFIRMACAO-FOLDER-DESCRIPTION.md`.
 - `B125` (2026-09-22): Preview pós-aborto na `Teste`/`wsEducacaoSpTeste` mostrou apenas os alvos presentes e separou os 10 já ausentes; a confirmação recusada não alterou a KB. A recuperação retomou o mesmo inventário e fechou a fila. No follow-up, o relatório final mostrou `Informações=1` e `Avisos=0`, sem diálogo redundante. Evidência: `Docs/Implementation/2026-09-22-B125-VALIDACAO-IDE-PREVIEW-POS-ABORTO.md`.
 - `B124` (2026-09-21): regra do documento de evidência de campo publicada (documento 15 §18.2; `AGENTS.md` «Promoção de frente», «Revisão pré-push» e «Corte de release»); aviso não bloqueante `evidence-doc-required:checkpoint|validated|fixed` no canal `warnings` do checker, com contrato de teste em `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`. Primeira aplicação: doc retroativo `Docs/Implementation/2026-09-16-B082-ETAPAS-2-3-SESSAO-B-ACEITE-IDE.md` (itens 142–149). Sem mudança de runtime; sem instalação. Plano: `Docs/Implementation/2026-09-21-B124-PLANO-REGRA-DOCUMENTO-EVIDENCIA-IDE.md`.
 
@@ -492,9 +494,9 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 > bloqueantes `evidence-doc-required:*` (B124). Aviso não bloqueia push nem substitui a revisão
 > semântica; exige a conferência da régua de evidência declarada no relatório.
 >
-> **Atualização de 2026-09-22:** `B125` foi fechado com documento dedicado e evidência IDE; a
-> próxima ação única é `B126`. O relatório desta frente deve conferir o checkpoint, o backlog e
-> o `[Unreleased]` antes de concluir a revisão semântica.
+> **Atualização de 2026-09-22:** `B125`, `B126` e `B127` foram fechados com documento dedicado e
+> evidência IDE; a próxima ação única é `B128`. O relatório desta frente deve conferir o
+> checkpoint, o backlog e o `[Unreleased]` antes de concluir a revisão semântica.
 
 - **[Histórico — Sprint 9]** alinhamento documental da promoção à Sprint 9 já commitado, em `main`, com working tree limpa;
 - `origin/main` atualizada, sem commits remotos à frente da frente local;
