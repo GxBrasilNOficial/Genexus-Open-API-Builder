@@ -1,6 +1,6 @@
 # B128 — implementação offline e gates
 
-Data: 2026-09-23. Estado: implementação, revisão e validação offline concluídas; commit local em `main` em 2026-09-23. Sem validação na IDE ou em runtime.
+Data: 2026-09-23. Estado: implementação, revisão e validação offline concluídas; commit de implementação `f5b9016` em `main` em 2026-09-23. Sem validação na IDE ou em runtime.
 
 ## Escopo adotado
 

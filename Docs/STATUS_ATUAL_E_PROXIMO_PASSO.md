@@ -12,7 +12,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Último marco concluído
 
-- `B128` fechado em 2026-09-23: gate incremental de referências C# implementado; 35 assertions do tokenizer e harness integrador aprovados, pré-push local do commit `f5b9016` aprovado. Sem validação de IDE/runtime. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`.
+- `B128` fechado em 2026-09-23: gate incremental de referências C# implementado no commit `f5b9016`; 35 assertions do tokenizer e harness integrador aprovados, pré-push local desse commit de implementação aprovado. Sem validação de IDE/runtime. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`.
 - `B127` concluído em 2026-09-22: re-smoke IDE dos hardenings pós-§6 do `B123` — Preview com GUID divergente desanuncia o Folder; Apply com GUID falso regrava `ownedByThisApi=false` e o GUID vivo. Evidência: `Docs/Implementation/2026-09-22-B127-RESMOKE-GUID-HOMONIMO.md`.
 - `B126` concluído em 2026-09-22: confirmação/relatório do Remover alinhados à preservação por Description ou contêiner divergente; smoke IDE na `Teste`/`wsEducacaoSpTeste` (anúncio, Folder permanece, aviso tipado). Evidência: `Docs/Implementation/2026-09-22-B126-CONFIRMACAO-FOLDER-DESCRIPTION.md`.
 - `B125` concluído em 2026-09-22: o Preview do Remover pós-aborto separa os alvos ainda presentes dos já ausentes, sem reduzir o inventário durável do diário. O re-smoke IDE na `Teste`/`wsEducacaoSpTeste` confirmou a prévia, a recusa sem mutação e a recuperação no mesmo envelope; o resumo da continuação está no relatório final, sem diálogo redundante. Evidência: `Docs/Implementation/2026-09-22-B125-VALIDACAO-IDE-PREVIEW-POS-ABORTO.md`.
@@ -150,7 +150,7 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 `B127` fechado em 2026-09-22. **Corte `0.1.0-alpha.8` publicado em 2026-09-17**.
 **B128 fechado em 2026-09-23** — gate incremental de referências C# implementado e validado offline;
-commit `f5b9016`, pré-push local aprovado. O contrato controla o aumento global de referências
+commit de implementação `f5b9016`, pré-push local desse commit aprovado. O contrato controla o aumento global de referências
 numéricas por linha móvel reconhecidas e valida endereços fixos excedentes como citações históricas.
 Legado não é migrado e semântica não é provada. **Próxima ação única:** após o push, selecionar em
 nova sessão uma ação do backlog. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`.
@@ -439,7 +439,7 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 
 ## Evidência da frente encerrada
 
-- `B128` (2026-09-23): gate `docs.csharpLineReferences`; tokenizer compartilhado; 35 assertions; harness integrado exit 0; pré-push local do commit `f5b9016` aprovado. Sem validação de IDE/runtime. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`.
+- `B128` (2026-09-23): gate `docs.csharpLineReferences`; tokenizer compartilhado; 35 assertions; harness integrado exit 0; pré-push local do commit de implementação `f5b9016` aprovado. Sem validação de IDE/runtime. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`.
 - `B127` (2026-09-22): re-smoke IDE na `Teste`/`wsEducacaoSpTeste` — Preview com GUID divergente anuncia `reutilizado; nunca apagar` (cancelado sem mutação); Apply com GUID falso regrava `ownedByThisApi=false` e o GUID vivo do Folder. Evidência: `Docs/Implementation/2026-09-22-B127-RESMOKE-GUID-HOMONIMO.md`.
 - `B126` (2026-09-22): confirmação/relatório do Remover alinhados à preservação por Description ou contêiner divergente; smoke IDE na `Teste`/`wsEducacaoSpTeste` — anúncio «será preservado», `Removidos=25`, Folder permanece, aviso tipado no B081. Evidência: `Docs/Implementation/2026-09-22-B126-CONFIRMACAO-FOLDER-DESCRIPTION.md`.
 - `B125` (2026-09-22): Preview pós-aborto na `Teste`/`wsEducacaoSpTeste` mostrou apenas os alvos presentes e separou os 10 já ausentes; a confirmação recusada não alterou a KB. A recuperação retomou o mesmo inventário e fechou a fila. No follow-up, o relatório final mostrou `Informações=1` e `Avisos=0`, sem diálogo redundante. Evidência: `Docs/Implementation/2026-09-22-B125-VALIDACAO-IDE-PREVIEW-POS-ABORTO.md`.
@@ -508,7 +508,7 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 > evidência foram atualizados; o conjunto foi commitado localmente em `main`, sem push. Não houve
 > prova IDE/runtime.
 >
-> **Fechamento de 2026-09-23:** o pré-push local do commit `f5b9016` passou (`readyLocal`, zero
+> **Fechamento de 2026-09-23:** o pré-push local do commit de implementação `f5b9016` passou (`readyLocal`, zero
 > commits atrás, working tree limpa, sem razões incompletas nem requisitos manuais). `B128` está
 > fechado; a próxima ação do backlog será escolhida em nova sessão após o push.
 
@@ -522,7 +522,8 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 
 ## Sequência operacional vigente
 
-Vigência atual: `B128` fechado em 2026-09-23 (commit `f5b9016`); pré-push local aprovado. Não foi
+Vigência atual: `B128` fechado em 2026-09-23 (commit de implementação `f5b9016`); pré-push local
+da implementação aprovado. Não foi
 validado na IDE. Após o push, selecionar em outra sessão a próxima ação entre os itens do backlog.
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
