@@ -3,7 +3,7 @@
 Data: 2026-09-20.
 Item de backlog: `B123` (documento 06).
 Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` (próxima ação única vigente).
-Estado: **frente fechada** (2026-09-20). Smoke §6 completo **para o núcleo medido** (DLL de `05da79a` + reteste IntentKind); checkpoint promove `B124`. Hardenings `86ef414`/`c358fb2` → gates offline + residual `B127`.
+Estado: **frente fechada** (2026-09-20). Smoke §6 completo **para o núcleo medido** (DLL de `05da79a` + reteste IntentKind); checkpoint promove `B124`. Hardenings `86ef414`/`c358fb2` → gates offline; re-smoke IDE **fechado em `B127`** (2026-09-22): `Docs/Implementation/2026-09-22-B127-RESMOKE-GUID-HOMONIMO.md`.
 
 **Não** autorizava, neste arquivo, alteração de código, instalação, commit ou push. **Remissão — 2026-09-20:** código e gates da seção 5 executados.
 
@@ -295,7 +295,8 @@ Hierarquia típica: 5 Procedures (incl. Delete), 18 SDTs próprios, 3 compartilh
 (2026-09-20 ~20:02) e o reteste IntentKind daquele ciclo. **Não** cobrem
 `86ef414` (Preview/contagem desanuncia Folder com GUID divergente) nem `c358fb2`
 (homônimo com GUID novo não herda `ownedByThisApi` na escrita) — ambos com gate offline;
-re-smoke IDE numerado em `B127`.
+re-smoke IDE **fechado em `B127`** (2026-09-22):
+`Docs/Implementation/2026-09-22-B127-RESMOKE-GUID-HOMONIMO.md`.
 
 1. **PASS** — Apply criação (`SchemaVersion` V4, Folder Guid `138a527d-…`, metadata
    `wasCreated=true` / `ownedByThisApi=true`). Remover: confirmação «criado pela extensão»;
