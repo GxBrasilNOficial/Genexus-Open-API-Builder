@@ -193,6 +193,26 @@ public static class ApiPlanOwnedObjectDescription
         $"{LegacyTransactionFolderPrefix} - Transaction={transactionName}";
 
     /// <summary>
+    /// B126 / <c>DeleteOwnFolder</c>: só Description canônica do Folder ou sentinela legada
+    /// desta Transaction autorizam apagar. Description vazia ou humana — aceitas no reuso do
+    /// Apply — preservam na remoção.
+    /// </summary>
+    public static bool MatchesOwnedTransactionFolderDescriptionForDelete(
+        string? description,
+        string folderName,
+        string transactionName)
+    {
+        return string.Equals(
+                description,
+                CreateTransactionFolderDescription(folderName),
+                StringComparison.Ordinal)
+            || string.Equals(
+                description,
+                CreateLegacyTransactionFolderDescription(transactionName),
+                StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Folder reutilizável: Description humana/vazia, canônica deste Folder, ou sentinela legada desta Transaction.
     /// Sentinela da extensão de outra Transaction (ou nome divergente) bloqueia.
     /// </summary>

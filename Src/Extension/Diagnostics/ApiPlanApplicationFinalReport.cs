@@ -631,6 +631,34 @@ public sealed class ApiPlanApplicationFinalReportCollector
         }
     }
 
+    /// <summary>
+    /// B126: Folder preservado porque Description ou contêiner divergem do esperado em
+    /// <c>DeleteOwnFolder</c> — aviso tipado, separado do caso não-vazio.
+    /// </summary>
+    public void AddPreservedOwnershipGateFolder(string folderName)
+    {
+        if (string.IsNullOrWhiteSpace(folderName))
+        {
+            throw new ArgumentException("Nome do Folder preservado e obrigatorio.", nameof(folderName));
+        }
+
+        AddWarning(
+            $"Folder '{folderName.Trim()}' nao foi apagado porque a Description ou o contenedor divergem do esperado.");
+    }
+
+    public void AddPreservedOwnershipGateFolders(IReadOnlyList<string> folderNames)
+    {
+        if (folderNames is null)
+        {
+            throw new ArgumentNullException(nameof(folderNames));
+        }
+
+        for (var index = 0; index < folderNames.Count; index++)
+        {
+            AddPreservedOwnershipGateFolder(folderNames[index]);
+        }
+    }
+
     public ApiPlanApplicationFinalReport Build(TimeSpan elapsed)
     {
         var outcome = ResolveOutcome();

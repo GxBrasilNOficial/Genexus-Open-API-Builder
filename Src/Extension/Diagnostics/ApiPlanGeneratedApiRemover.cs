@@ -268,13 +268,18 @@ internal static class ApiPlanGeneratedApiRemover
     /// Folders próprios preservados por não estarem vazios. Viajam tipados — nunca na lista de
     /// removidos como string mágica. Quem chama lê no catch e no relatório B081.
     /// </param>
+    /// <param name="preservedOwnershipGateFolderSink">
+    /// B126: Folders próprios preservados porque Description ou contêiner divergem do esperado
+    /// em <c>DeleteOwnFolder</c>. Tipados no relatório, distintos do caso não-vazio.
+    /// </param>
     internal static ApiPlanGeneratedApiRemovalResult Remove(
         KBModel designModel,
         ApiPlanGeneratedApiRemovalIntent intent,
         ApiPlanBusyProgressSession? progress,
         List<string>? deletedSink = null,
         Func<int, bool>? onPassCompleted = null,
-        List<string>? preservedNonEmptyFolderSink = null)
+        List<string>? preservedNonEmptyFolderSink = null,
+        List<string>? preservedOwnershipGateFolderSink = null)
     {
         if (intent is null)
         {
@@ -292,7 +297,8 @@ internal static class ApiPlanGeneratedApiRemover
             onPassCompleted,
             intent.Plan,
             preservedNonEmptyFolderSink,
-            intent.KbIndex);
+            intent.KbIndex,
+            preservedOwnershipGateFolderSink);
     }
 
     /// <summary>
@@ -312,7 +318,8 @@ internal static class ApiPlanGeneratedApiRemover
         Func<int, bool>? onPassCompleted,
         ApiPlanGeneratedApiRemovalPlan? plan = null,
         List<string>? preservedNonEmptyFolderSink = null,
-        ApiPlanKbObjectNameIndex? kbIndex = null)
+        ApiPlanKbObjectNameIndex? kbIndex = null,
+        List<string>? preservedOwnershipGateFolderSink = null)
     {
         if (designModel is null)
         {
@@ -337,6 +344,8 @@ internal static class ApiPlanGeneratedApiRemover
         deleted.Clear();
         var preservedNonEmptyFolders = preservedNonEmptyFolderSink ?? new List<string>();
         preservedNonEmptyFolders.Clear();
+        var preservedOwnershipGateFolders = preservedOwnershipGateFolderSink ?? new List<string>();
+        preservedOwnershipGateFolders.Clear();
 
         var total = targets.Count(target => target.Queued);
         var current = 0;
@@ -364,6 +373,7 @@ internal static class ApiPlanGeneratedApiRemover
                         target,
                         deleted,
                         preservedNonEmptyFolders,
+                        preservedOwnershipGateFolders,
                         telemetry,
                         kbIndex,
                         out var detail);
@@ -415,7 +425,8 @@ internal static class ApiPlanGeneratedApiRemover
                 telemetry.BuildOutputLines(),
                 interrupted,
                 exception.Message,
-                preservedNonEmptyFolders);
+                preservedNonEmptyFolders,
+                preservedOwnershipGateFolders);
         }
 
         telemetry.MarkPhase("FilaRemocao", phaseWatch.ElapsedMilliseconds);
@@ -431,7 +442,8 @@ internal static class ApiPlanGeneratedApiRemover
             telemetry.BuildOutputLines(),
             queue,
             blockDetail,
-            preservedNonEmptyFolders);
+            preservedNonEmptyFolders,
+            preservedOwnershipGateFolders);
     }
 
     public static int CountPlannedDeletes(ApiPlanGeneratedApiRemovalPlan plan)
@@ -442,7 +454,9 @@ internal static class ApiPlanGeneratedApiRemover
         }
 
         var total = 1 + plan.ProcedureNames.Count + plan.OwnSdtNames.Count + 1;
-        if (plan.FolderShouldBeRemoved && !string.IsNullOrWhiteSpace(plan.FolderName))
+        if (plan.FolderShouldBeRemoved
+            && !plan.FolderPreservedAtPreviewForSafety
+            && !string.IsNullOrWhiteSpace(plan.FolderName))
         {
             total++;
         }
@@ -516,12 +530,20 @@ internal static class ApiPlanGeneratedApiRemover
         present[ApiPlanGeneratedApiRemovalPreviewCapture.Key(JournalObjectType.MetadataFile, metadataFile.Name)] = metadataFile.Guid;
 
         Guid? folderGuid = null;
+        var folderDescriptionMatchesOwned = true;
+        var folderInExpectedContainer = true;
         if (!string.IsNullOrWhiteSpace(plan.FolderName))
         {
             var folder = index.FindFolders(plan.FolderName!).FirstOrDefault();
             if (folder is not null)
             {
                 folderGuid = folder.Guid;
+                folderDescriptionMatchesOwned =
+                    ApiPlanOwnedObjectDescription.MatchesOwnedTransactionFolderDescriptionForDelete(
+                        folder.Description,
+                        plan.FolderName!,
+                        plan.TransactionName);
+                folderInExpectedContainer = ApiPlanTransactionFolder.IsInExpectedContainer(folder, transaction);
             }
         }
 
@@ -537,6 +559,8 @@ internal static class ApiPlanGeneratedApiRemover
             string.IsNullOrWhiteSpace(contractHash) ? null : contractHash,
             ApiPlanOrphanMetadataRecovery.IsImportedRecovery(metadata),
             folderGuid,
+            folderDescriptionMatchesOwned,
+            folderInExpectedContainer,
             present);
     }
 
@@ -751,6 +775,7 @@ internal static class ApiPlanGeneratedApiRemover
         ApiPlanRemovalTarget target,
         List<string> deleted,
         List<string> preservedNonEmptyFolders,
+        List<string> preservedOwnershipGateFolders,
         ApiPlanScanTelemetry telemetry,
         ApiPlanKbObjectNameIndex? kbIndex,
         out string blockDetail)
@@ -779,6 +804,7 @@ internal static class ApiPlanGeneratedApiRemover
                         target,
                         deleted,
                         preservedNonEmptyFolders,
+                        preservedOwnershipGateFolders,
                         telemetry,
                         kbIndex);
 
@@ -1243,6 +1269,7 @@ internal static class ApiPlanGeneratedApiRemover
     /// que o plano. Preservar não impede a operação de terminar em <c>Removed</c>.
     /// B082 Etapa 2 / D10: também exige GUID do Preview e contêiner esperado — sem copiar a
     /// permissividade de Description vazia do Apply.
+    /// B126: preservação por Description/contêiner gera aviso tipado no relatório (não silencioso).
     /// </summary>
     private static ApiPlanRemovalAttemptResult DeleteOwnFolder(
         KBModel designModel,
@@ -1250,6 +1277,7 @@ internal static class ApiPlanGeneratedApiRemover
         ApiPlanRemovalTarget target,
         List<string> deleted,
         List<string> preservedNonEmptyFolders,
+        List<string> preservedOwnershipGateFolders,
         ApiPlanScanTelemetry? telemetry,
         ApiPlanKbObjectNameIndex? kbIndex)
     {
@@ -1274,15 +1302,17 @@ internal static class ApiPlanGeneratedApiRemover
             var transaction = Transaction.Get(designModel, context.TransactionGuid);
             if (transaction is null || !ApiPlanTransactionFolder.IsInExpectedContainer(folder, transaction))
             {
+                preservedOwnershipGateFolders.Add(target.Name);
                 return ApiPlanRemovalAttemptResult.Preserved;
             }
         }
 
-        var expectedDescription = ApiPlanOwnedObjectDescription.CreateTransactionFolderDescription(target.Name);
-        var legacyDescription = ApiPlanOwnedObjectDescription.CreateLegacyTransactionFolderDescription(context.TransactionName);
-        if (!string.Equals(folder.Description, expectedDescription, StringComparison.Ordinal)
-            && !string.Equals(folder.Description, legacyDescription, StringComparison.Ordinal))
+        if (!ApiPlanOwnedObjectDescription.MatchesOwnedTransactionFolderDescriptionForDelete(
+                folder.Description,
+                target.Name,
+                context.TransactionName))
         {
+            preservedOwnershipGateFolders.Add(target.Name);
             return ApiPlanRemovalAttemptResult.Preserved;
         }
 
@@ -1675,7 +1705,8 @@ internal sealed class ApiPlanGeneratedApiRemovalResult
         IReadOnlyList<string>? telemetryLines = null,
         ApiPlanRemovalQueueResult? queue = null,
         string blockDetail = "",
-        IReadOnlyList<string>? preservedNonEmptyFolders = null)
+        IReadOnlyList<string>? preservedNonEmptyFolders = null,
+        IReadOnlyList<string>? preservedOwnershipGateFolders = null)
     {
         Plan = plan;
         Context = context ?? throw new ArgumentNullException(nameof(context));
@@ -1684,6 +1715,7 @@ internal sealed class ApiPlanGeneratedApiRemovalResult
         Queue = queue;
         BlockDetail = blockDetail ?? string.Empty;
         PreservedNonEmptyFolders = preservedNonEmptyFolders ?? Array.Empty<string>();
+        PreservedOwnershipGateFolders = preservedOwnershipGateFolders ?? Array.Empty<string>();
     }
 
     /// <summary>
@@ -1704,6 +1736,12 @@ internal sealed class ApiPlanGeneratedApiRemovalResult
     /// <see cref="DeletedItems"/> — o relatório B081 os recebe tipados.
     /// </summary>
     public IReadOnlyList<string> PreservedNonEmptyFolders { get; }
+
+    /// <summary>
+    /// B126: Folders próprios preservados porque Description ou contêiner divergem.
+    /// Tipados no relatório B081, distintos de <see cref="PreservedNonEmptyFolders"/>.
+    /// </summary>
+    public IReadOnlyList<string> PreservedOwnershipGateFolders { get; }
 
     /// <summary>B082: linhas de medição de custo, para a janela Output. Diagnóstico apenas.</summary>
     public IReadOnlyList<string> TelemetryLines { get; }

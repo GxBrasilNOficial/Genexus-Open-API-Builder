@@ -21,13 +21,26 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Changed
 
-- `B123` — posse histórica do Folder na metadata (`GOAB_API_METADATA_B060_V4`): `objects.transactionFolder` passa a gravar `guid` e `ownedByThisApi`; `wasCreated` continua descrevendo só esta execução. A fila de remoção enfileira o Folder pela posse histórica e pelo GUID persistido, quando houver, e não mais pelo `wasCreated` da operação corrente — um segundo Apply deixava de apagar Folder que a extensão criou. Leitura continua tolerando V1–V3; V3 com `wasCreated=true` e sem o campo novo é adotada na primeira regravação. B115 segue sem reivindicar dono. «Nunca apagar» só para Folder sem posse. Após o Preview, GUID divergente também desanuncia o Folder na confirmação/contagem (não só na fila). Na **escrita**, posse só se preserva com o mesmo GUID vivo — homônimo não herda `ownedByThisApi`. Em `DeleteOwnFolder`, Description própria e contêiner esperado ainda preservam (confirmação «apaga se vazio» pode mentir se a Description foi editada — residual `B126`). Documento 28 alinhado (nota 12). Gates da seção 5 passaram em 2026-09-20. Os dois hardenings de Preview/escrita (`86ef414`, `c358fb2`) têm gate offline; IDE em `B127`. Smoke IDE §6 (quatro cenários) mede o núcleo V4/posse — ver Validated. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
+- `B123` — posse histórica do Folder na metadata (`GOAB_API_METADATA_B060_V4`): `objects.transactionFolder` passa a gravar `guid` e `ownedByThisApi`; `wasCreated` continua descrevendo só esta execução. A fila de remoção enfileira o Folder pela posse histórica e pelo GUID persistido, quando houver, e não mais pelo `wasCreated` da operação corrente — um segundo Apply deixava de apagar Folder que a extensão criou. Leitura continua tolerando V1–V3; V3 com `wasCreated=true` e sem o campo novo é adotada na primeira regravação. B115 segue sem reivindicar dono. «Nunca apagar» só para Folder sem posse. Após o Preview, GUID divergente também desanuncia o Folder na confirmação/contagem (não só na fila). Na **escrita**, posse só se preserva com o mesmo GUID vivo — homônimo não herda `ownedByThisApi`. Em `DeleteOwnFolder`, Description própria e contêiner esperado ainda preservam; desde `B126` a confirmação/relatório anunciam essa preservação em vez de prometer «apaga se vazio». Documento 28 alinhado (nota 12). Gates da seção 5 passaram em 2026-09-20. Os dois hardenings de Preview/escrita (`86ef414`, `c358fb2`) têm gate offline; IDE em `B127`. Smoke IDE §6 (quatro cenários) mede o núcleo V4/posse — ver Validated. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
 
 ### Validated
+
+- `B126` — smoke IDE na `Teste`/`wsEducacaoSpTeste` (2026-09-22): anúncio de preservação com
+  Description divergente, Folder permanece após Remover (`Removidos=25`), aviso tipado no B081.
+  Evidência: `Docs/Implementation/2026-09-22-B126-CONFIRMACAO-FOLDER-DESCRIPTION.md`.
 
 - `B123` — smoke IDE §6 na KB `wsEducacaoSpTeste` / Transaction `Teste` (2026-09-20), DLL de `05da79a` (+ reteste IntentKind): criação+Remover apaga Folder; segundo Apply preserva `ownedByThisApi` e Remover apaga Folder; Folder de terceiro permanece; B115 sem posse + Remover deixa Folder vazio. **Não** cobre Preview com GUID divergente nem herança de posse em homônimo (`86ef414`/`c358fb2` → offline + `B127`). Evidência no plano e itens 155–158 do checkpoint.
 
 ### Fixed
+
+- `B126` — confirmação do Remover deixa de prometer «apaga se ficar vazio» quando o Folder
+  próprio já tem Description ou contêiner divergente no Preview: anuncia preservação explícita,
+  exclui o Folder da contagem planejada e, se a execução preservar pelo mesmo motivo, o
+  relatório B081 emite aviso tipado (separado do caso não-vazio). **Validado na IDE** em
+  `wsEducacaoSpTeste` / `Teste` (2026-09-22): após recriação com posse, Description editada →
+  anúncio «será preservado», `Removidos=25`, Folder permanece, aviso tipado no B081. O defeito
+  de confirmação mentirosa é pré-Alpha nesta linha e fecha neste bloco `[Unreleased]`. Evidência:
+  `Docs/Implementation/2026-09-22-B126-CONFIRMACAO-FOLDER-DESCRIPTION.md`.
 
 - `B125` — após uma remoção abortada, o Preview deixa de anunciar como exclusão objetos que já
   saíram da KB: Procedures e SDTs próprios são filtrados pela captura corrente e os ausentes

@@ -255,7 +255,7 @@ try {
     $emptyGuids = New-Object 'System.Collections.Generic.Dictionary[string,System.Guid]'
     $emptyGuidsRo = [System.Collections.ObjectModel.ReadOnlyDictionary[string,System.Guid]]::new($emptyGuids)
     $captureCtor = $captureType.GetConstructors([System.Reflection.BindingFlags]'Instance, NonPublic, Public') |
-        Where-Object { $_.GetParameters().Count -eq 9 } |
+        Where-Object { $_.GetParameters().Count -eq 11 } |
         Select-Object -First 1
     Assert-True ($null -ne $captureCtor) 'Construtor da PreviewCapture não encontrado.'
     $planGuidMismatch = $fromMetadata.Invoke($null, @($metadataV4, 'Teste', $txGuid))
@@ -269,6 +269,8 @@ try {
         $null,
         $false,
         $otherGuid,
+        $true,
+        $true,
         $emptyGuidsRo
     ))
     $attach = $planType.GetMethod('AttachPreviewCapture', [System.Reflection.BindingFlags]'Instance, NonPublic, Public')
@@ -289,6 +291,8 @@ try {
         $null,
         $false,
         $null,
+        $true,
+        $true,
         $presentAfterPartialAbortRo
     ))
     [void]$attach.Invoke($planAfterPartialAbort, @($captureAfterPartialAbort))
@@ -316,12 +320,59 @@ try {
         $null,
         $false,
         $sameGuid,
+        $true,
+        $true,
         $emptyGuidsRo
     ))
     [void]$attach.Invoke($planGuidMatch, @($captureMatch))
     Assert-True ([bool](Get-Prop $planGuidMatch 'FolderShouldBeRemoved')) 'GUID igual no Preview mantém o anúncio do Folder'
+    Assert-True (-not [bool](Get-Prop $planGuidMatch 'FolderPreservedAtPreviewForSafety')) 'GUID igual e Description/contêiner ok não marca preservação B126'
     $plannedAfterMatch = [int]$countDeletes.Invoke($null, @($planGuidMatch))
     Assert-True ($plannedAfterMatch -eq ($plannedAfterMismatch + 1)) 'Contagem do Preview deve incluir o Folder só quando o GUID casa'
+
+    # B126: Description ou contêiner divergente — Folder permanece na posse, mas a confirmação
+    # não promete apagar e a contagem exclui o Folder.
+    $planDescMismatch = $fromMetadata.Invoke($null, @($metadataV4, 'Teste', $txGuid))
+    $captureDescMismatch = $captureCtor.Invoke([object[]]@(
+        [guid]$txGuid,
+        [guid]'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+        'GOAB_API_METADATA_B060_V4',
+        $null,
+        $null,
+        $false,
+        $sameGuid,
+        $false,
+        $true,
+        $emptyGuidsRo
+    ))
+    [void]$attach.Invoke($planDescMismatch, @($captureDescMismatch))
+    Assert-True ([bool](Get-Prop $planDescMismatch 'FolderShouldBeRemoved')) 'B126 mantém posse/fila quando só a Description diverge'
+    Assert-True ([bool](Get-Prop $planDescMismatch 'FolderPreservedAtPreviewForSafety')) 'B126 marca preservação por Description divergente'
+    $summaryDesc = [string]$planType.GetMethod('BuildConfirmationSummary', [System.Reflection.BindingFlags]'Instance, Public').Invoke($planDescMismatch, @())
+    Assert-Contains $summaryDesc 'será preservado — Description ou contêiner divergente' 'B126 deve anunciar preservação na confirmação'
+    Assert-NotContains $summaryDesc 'a remoção apaga se ficar vazio' 'B126 não pode prometer apagar com Description divergente'
+    $plannedAfterDesc = [int]$countDeletes.Invoke($null, @($planDescMismatch))
+    Assert-True ($plannedAfterDesc -eq $plannedAfterMismatch) 'B126 exclui o Folder da contagem quando preserva por Description'
+
+    $planContainerMismatch = $fromMetadata.Invoke($null, @($metadataV4, 'Teste', $txGuid))
+    $captureContainerMismatch = $captureCtor.Invoke([object[]]@(
+        [guid]$txGuid,
+        [guid]'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+        'GOAB_API_METADATA_B060_V4',
+        $null,
+        $null,
+        $false,
+        $sameGuid,
+        $true,
+        $false,
+        $emptyGuidsRo
+    ))
+    [void]$attach.Invoke($planContainerMismatch, @($captureContainerMismatch))
+    Assert-True ([bool](Get-Prop $planContainerMismatch 'FolderPreservedAtPreviewForSafety')) 'B126 marca preservação por contêiner divergente'
+    $plannedAfterContainer = [int]$countDeletes.Invoke($null, @($planContainerMismatch))
+    Assert-True ($plannedAfterContainer -eq $plannedAfterMismatch) 'B126 exclui o Folder da contagem quando preserva por contêiner'
 
     # Gate: FormatSupportedVersionList() deve existir como fragmento no catálogo de l10n.
     $schemaType = $assembly.GetType('GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanMetadataSchema', $true, $false)
@@ -332,6 +383,8 @@ try {
     Assert-Contains $locSrc 'Procedures presentes na KB (' 'Catálogo deve traduzir o cabeçalho B125 de Procedures presentes.'
     Assert-Contains $locSrc 'SDTs próprios presentes na KB (' 'Catálogo deve traduzir o cabeçalho B125 de SDTs presentes.'
     Assert-Contains $locSrc 'Já ausentes na KB (não serão apagados nesta execução) (' 'Catálogo deve traduzir a nota B125 de alvos ausentes.'
+    Assert-Contains $locSrc 'será preservado — Description ou contêiner divergente' 'Catálogo deve traduzir o anúncio B126 de preservação.'
+    Assert-Contains $locSrc 'nao foi apagado porque a Description ou o contenedor divergem do esperado.' 'Catálogo deve traduzir o aviso B126 do relatório.'
 
     $metadataV0 = [Newtonsoft.Json.Linq.JObject]::Parse($metadataV4.ToString([Newtonsoft.Json.Formatting]::None))
     $metadataV0['schemaVersion'] = [Newtonsoft.Json.Linq.JValue]::new('GOAB_API_METADATA_B060_V5')

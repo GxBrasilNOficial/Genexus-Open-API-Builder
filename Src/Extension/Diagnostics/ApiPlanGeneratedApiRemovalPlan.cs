@@ -53,6 +53,14 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
     /// cair a <c>false</c> quando o GUID persistido diverge do Folder na KB.
     /// </summary>
     public bool FolderShouldBeRemoved { get; private set; }
+
+    /// <summary>
+    /// B126: após o Preview, Folder próprio permanece na fila mas a confirmação
+    /// não promete apagar — Description ou contêiner já divergem do que
+    /// <c>DeleteOwnFolder</c> exige.
+    /// </summary>
+    public bool FolderPreservedAtPreviewForSafety { get; private set; }
+
     public IReadOnlyList<string> ProcedureNames { get; }
     public IReadOnlyList<string> OwnSdtNames { get; }
     public IReadOnlyList<string> SharedSdtNamesPreserved { get; }
@@ -66,6 +74,7 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
     internal void AttachPreviewCapture(ApiPlanGeneratedApiRemovalPreviewCapture capture)
     {
         PreviewCapture = capture ?? throw new ArgumentNullException(nameof(capture));
+        FolderPreservedAtPreviewForSafety = false;
 
         // Homônimo com GUID divergente: a fila já preservava em BuildTargets;
         // alinhar anúncio/contagem/confirmação ao mesmo critério.
@@ -73,6 +82,14 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
             && !ApiPlanTransactionFolderOwnership.MatchesPersistedGuid(FolderGuid, capture.FolderGuid))
         {
             FolderShouldBeRemoved = false;
+            return;
+        }
+
+        // B126: posse e GUID ok, mas Description/contêiner já impediriam o Delete.
+        if (FolderShouldBeRemoved
+            && (!capture.FolderDescriptionMatchesOwned || !capture.FolderInExpectedContainer))
+        {
+            FolderPreservedAtPreviewForSafety = true;
         }
     }
 
@@ -178,26 +195,40 @@ public sealed class ApiPlanGeneratedApiRemovalPlan
         if (!string.IsNullOrWhiteSpace(FolderName))
         {
             builder.AppendLine();
-            if (FolderShouldBeRemoved)
-            {
-                if (FolderWasCreated)
-                {
-                    builder.Append("Folder: ").Append(FolderName).AppendLine(" (criado pela extensão; apagar só se ficar vazio)");
-                }
-                else
-                {
-                    builder.Append("Folder: ").Append(FolderName).AppendLine(" (próprio da API; a remoção apaga se ficar vazio)");
-                }
-            }
-            else
-            {
-                builder.Append("Folder: ").Append(FolderName).AppendLine(" (reutilizado; nunca apagar)");
-            }
+            builder.AppendLine(BuildFolderConfirmationLine());
         }
 
         builder.AppendLine();
         builder.Append("Business Component da Transaction: não será revertido.");
         return builder.ToString();
+    }
+
+    /// <summary>
+    /// Linha do Folder na confirmação/Preview. B126 distingue posse com Description/contêiner
+    /// divergente do anúncio «apaga se ficar vazio».
+    /// </summary>
+    public string BuildFolderConfirmationLine()
+    {
+        if (string.IsNullOrWhiteSpace(FolderName))
+        {
+            return string.Empty;
+        }
+
+        if (!FolderShouldBeRemoved)
+        {
+            return "Folder: " + FolderName + " (reutilizado; nunca apagar)";
+        }
+
+        if (FolderPreservedAtPreviewForSafety)
+        {
+            return FolderWasCreated
+                ? "Folder: " + FolderName + " (criado pela extensão; será preservado — Description ou contêiner divergente)"
+                : "Folder: " + FolderName + " (próprio da API; será preservado — Description ou contêiner divergente)";
+        }
+
+        return FolderWasCreated
+            ? "Folder: " + FolderName + " (criado pela extensão; apagar só se ficar vazio)"
+            : "Folder: " + FolderName + " (próprio da API; a remoção apaga se ficar vazio)";
     }
 
     private static void AppendIndentedItems(System.Text.StringBuilder builder, IReadOnlyList<string> items)

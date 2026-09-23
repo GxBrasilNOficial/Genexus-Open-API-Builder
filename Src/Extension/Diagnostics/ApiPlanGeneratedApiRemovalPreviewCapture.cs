@@ -21,6 +21,8 @@ internal sealed class ApiPlanGeneratedApiRemovalPreviewCapture
         string? contractHash,
         bool isImportedRecovery,
         Guid? folderGuid,
+        bool folderDescriptionMatchesOwned,
+        bool folderInExpectedContainer,
         IReadOnlyDictionary<string, Guid> presentObjectGuids)
     {
         TransactionGuid = transactionGuid;
@@ -31,6 +33,8 @@ internal sealed class ApiPlanGeneratedApiRemovalPreviewCapture
         ContractHash = contractHash;
         IsImportedRecovery = isImportedRecovery;
         FolderGuid = folderGuid;
+        FolderDescriptionMatchesOwned = folderDescriptionMatchesOwned;
+        FolderInExpectedContainer = folderInExpectedContainer;
         PresentObjectGuids = presentObjectGuids ?? throw new ArgumentNullException(nameof(presentObjectGuids));
     }
 
@@ -54,6 +58,17 @@ internal sealed class ApiPlanGeneratedApiRemovalPreviewCapture
 
     /// <summary>GUID do Folder no Preview, quando encontrado; nulo se ausente ou não aplicável.</summary>
     internal Guid? FolderGuid { get; }
+
+    /// <summary>
+    /// B126: Description do Folder vivo casa com a canônica/legada exigida por
+    /// <c>DeleteOwnFolder</c>. Sem Folder vivo, permanece <c>true</c> (não há divergência a anunciar).
+    /// </summary>
+    internal bool FolderDescriptionMatchesOwned { get; }
+
+    /// <summary>
+    /// B126: Folder vivo está no contêiner esperado da Transaction. Sem Folder vivo, <c>true</c>.
+    /// </summary>
+    internal bool FolderInExpectedContainer { get; }
 
     /// <summary>
     /// GUIDs dos alvos destrutivos presentes no Preview, chave

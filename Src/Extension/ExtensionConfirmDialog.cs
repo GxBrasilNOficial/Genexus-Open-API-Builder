@@ -283,21 +283,13 @@ internal sealed class ExtensionConfirmDialog : Form
 
     private static string BuildNotes(ApiPlanGeneratedApiRemovalPlan plan)
     {
-        if (string.IsNullOrWhiteSpace(plan.FolderName))
+        var folderLine = plan.BuildFolderConfirmationLine();
+        if (string.IsNullOrWhiteSpace(folderLine))
         {
             return "Business Component da Transaction: não será revertido.";
         }
 
-        if (plan.FolderShouldBeRemoved)
-        {
-            return "Folder: " + plan.FolderName + (plan.FolderWasCreated
-                ? " (criado pela extensão; apagar só se ficar vazio)"
-                : " (próprio da API; a remoção apaga se ficar vazio)")
-                + Environment.NewLine
-                + "Business Component da Transaction: não será revertido.";
-        }
-
-        return "Folder: " + plan.FolderName + " (reutilizado; nunca apagar)"
+        return folderLine
             + Environment.NewLine
             + "Business Component da Transaction: não será revertido.";
     }

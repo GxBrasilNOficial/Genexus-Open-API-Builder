@@ -250,4 +250,5 @@ Um Folder reencontrado com posse histórica pode ser apagado se ficar vazio — 
 Description e contêiner ainda forem os esperados em `DeleteOwnFolder`. O texto das
 seções 7/9 foi alinhado nesta mesma data; o contrato detalhado permanece no plano
 `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md` e no documento 08
-(remissão `B123`).
+(remissão `B123`). Remissão `B126` (2026-09-22): a confirmação do Remover anuncia
+preservação quando Description/contêiner já divergem no Preview; o relatório tipa o aviso.

@@ -116,6 +116,11 @@ Assert-Order $saveExecutor `
 # --- 3. Preview→Remove por referência (decisão 7) --------------------------------------------
 Assert-Contains $plan 'AttachPreviewCapture(' 'O plano deve aceitar a captura do Preview.'
 Assert-Contains $remover 'plan.AttachPreviewCapture(CapturePreviewIdentities(' 'O Preview deve anexar a captura na mesma instância.'
+Assert-Contains $remover 'folderDescriptionMatchesOwned' 'Preview deve capturar casamento de Description do Folder (B126).'
+Assert-Contains $remover 'folderInExpectedContainer' 'Preview deve capturar contêiner esperado do Folder (B126).'
+Assert-Contains $plan 'FolderPreservedAtPreviewForSafety' 'Plano deve expor preservação B126 no Preview.'
+Assert-Contains $plan 'BuildFolderConfirmationLine(' 'Confirmação do Folder deve passar por linha compartilhada.'
+
 Assert-Contains $remover 'ApiPlanGeneratedApiRemovalPlan confirmedPlan' 'ResolveIntent deve receber o plano confirmado.'
 Assert-Contains $remover 'AssertPreviewStillMatches(' 'ResolveIntent deve conferir identidades do Preview.'
 Assert-Contains $remover 'BuildPreviewDivergence(' 'Divergência deve bloquear com mensagem própria.'

@@ -259,25 +259,31 @@ Assert-True ($unchangedReport.BuildReadableBody() -notmatch 'sdtDocumentoFiscal_
 $remove = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalReportCollector]::new('Remover', 'Teste', 'apiTeste')
 $remove.AddDeletedItems(@('API:apiTeste', 'Procedure:procTeste_API_List', 'SDT:sdtTeste_API_Response', 'File:apiTeste_Metadata', 'Folder:TesteOpenApi'))
 $remove.AddPreservedNonEmptyFolder('OtherOpenApi')
+$remove.AddPreservedOwnershipGateFolder('OwnedOpenApi')
 $removeReport = $remove.Build([timespan]::Zero)
 Assert-Equal 'API removida com avisos.' $removeReport.Headline 'Folder preservado vira aviso.'
 Assert-Equal 5 $removeReport.DeletedCount 'Cinco removidos reais.'
-Assert-Equal 1 $removeReport.WarningCount 'Aviso do Folder preservado.'
+Assert-equal 2 $removeReport.WarningCount 'Avisos tipados: nao-vazio e Description/conteiner.'
 Assert-Equal 'API Object' $removeReport.Deleted[0].ObjectKind 'API: mapeia para API Object.'
 Assert-True ($removeReport.Warnings[0] -match "Folder 'OtherOpenApi' nao foi apagado") 'Aviso tipado nomeia o Folder preservado.'
+Assert-True ($removeReport.Warnings[1] -match "Folder 'OwnedOpenApi' nao foi apagado porque a Description ou o contenedor") 'B126 aviso tipado de Description/conteiner.'
 Assert-True ($removeReport.BuildReadableBody($false) -notmatch '(?m)^API removida') 'Corpo sem headline nao repete o titulo.'
 Assert-True ($removeReport.BuildReadableBody($false) -notmatch 'PreservedNonEmpty') 'String magica PreservedNonEmpty nao aparece no corpo.'
 Assert-True (($removeReport.Deleted | ForEach-Object Name) -notcontains 'OtherOpenApi:PreservedNonEmpty') 'Folder preservado nao entra como removido.'
 Assert-True (($removeReport.Deleted | ForEach-Object Name) -notcontains 'OtherOpenApi') 'Folder preservado tipado nao conta como Deleted.'
 
 Assert-True ($source -match 'AddPreservedNonEmptyFolder') 'Relatorio B081 expoe Folder preservado tipado.'
+Assert-True ($source -match 'AddPreservedOwnershipGateFolder') 'Relatorio B081 expoe Folder preservado por Description/conteiner (B126).'
 Assert-True ($source -notmatch 'TryParsePreservedFolder') 'Parsing da string magica PreservedNonEmpty foi removido.'
 $removerSource = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanGeneratedApiRemover.cs')
 Assert-True ($removerSource -match 'preservedNonEmptyFolders\.Add\(target\.Name\)') 'Produtor tipado registra o nome do Folder.'
+Assert-True ($removerSource -match 'preservedOwnershipGateFolders\.Add\(target\.Name\)') 'B126 registra Folder preservado por Description/conteiner.'
 Assert-True ($removerSource -notmatch 'Folder:\{target\.Name\}:PreservedNonEmpty') 'Produtor nao emite mais string magica na lista de removidos.'
 Assert-True ($removerSource -match 'PreservedNonEmptyFolders') 'Resultado de remocao expoe Folders preservados tipados.'
+Assert-True ($removerSource -match 'PreservedOwnershipGateFolders') 'Resultado de remocao expoe Folders B126 tipados.'
 $packageFatiaB = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\..\Src\Extension\Package.cs')
 Assert-True (([regex]::Matches($packageFatiaB, 'AddPreservedNonEmptyFolders')).Count -ge 4) 'Package entrega Folders preservados tipados nos caminhos Remover/Recuperar.'
+Assert-True (([regex]::Matches($packageFatiaB, 'AddPreservedOwnershipGateFolders')).Count -ge 4) 'Package entrega Folders B126 tipados nos caminhos Remover/Recuperar.'
 
 $dialogSource = Get-Content -Raw -LiteralPath $dialogPath
 Assert-True ($dialogSource -match 'EnsureBodyScrollBars') 'Dialogo B081 deve recalcular a rolagem apos o layout.'
