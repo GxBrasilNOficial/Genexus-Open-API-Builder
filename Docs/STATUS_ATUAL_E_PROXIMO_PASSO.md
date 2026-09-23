@@ -12,6 +12,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Último marco concluído
 
+- `B128` fechado em 2026-09-23: gate incremental de referências C# implementado; 35 assertions do tokenizer e harness integrador aprovados, pré-push local do commit `f5b9016` aprovado. Sem validação de IDE/runtime. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`.
 - `B127` concluído em 2026-09-22: re-smoke IDE dos hardenings pós-§6 do `B123` — Preview com GUID divergente desanuncia o Folder; Apply com GUID falso regrava `ownedByThisApi=false` e o GUID vivo. Evidência: `Docs/Implementation/2026-09-22-B127-RESMOKE-GUID-HOMONIMO.md`.
 - `B126` concluído em 2026-09-22: confirmação/relatório do Remover alinhados à preservação por Description ou contêiner divergente; smoke IDE na `Teste`/`wsEducacaoSpTeste` (anúncio, Folder permanece, aviso tipado). Evidência: `Docs/Implementation/2026-09-22-B126-CONFIRMACAO-FOLDER-DESCRIPTION.md`.
 - `B125` concluído em 2026-09-22: o Preview do Remover pós-aborto separa os alvos ainda presentes dos já ausentes, sem reduzir o inventário durável do diário. O re-smoke IDE na `Teste`/`wsEducacaoSpTeste` confirmou a prévia, a recusa sem mutação e a recuperação no mesmo envelope; o resumo da continuação está no relatório final, sem diálogo redundante. Evidência: `Docs/Implementation/2026-09-22-B125-VALIDACAO-IDE-PREVIEW-POS-ABORTO.md`.
@@ -147,12 +148,12 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-**`B128` — gate incremental de referências C# implementado, revisado e commitado localmente** —
-offline e testes concluídos em 2026-09-23, na branch `main`, sem push. O contrato
-v8 substitui a decisão antiga Nível 1/Nível 2: impede aumento global de referências numéricas
-por linha móvel reconhecidas e valida os endereços fixos excedentes como citações históricas.
-Legado não é migrado e semântica não é provada. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`.
 `B127` fechado em 2026-09-22. **Corte `0.1.0-alpha.8` publicado em 2026-09-17**.
+**B128 fechado em 2026-09-23** — gate incremental de referências C# implementado e validado offline;
+commit `f5b9016`, pré-push local aprovado. O contrato controla o aumento global de referências
+numéricas por linha móvel reconhecidas e valida endereços fixos excedentes como citações históricas.
+Legado não é migrado e semântica não é provada. **Próxima ação única:** após o push, selecionar em
+nova sessão uma ação do backlog. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`.
 O estado da branch em relação a `origin/main` se mede com
 `git rev-list --left-right --count origin/main...HEAD`, não se anota aqui como fato permanente.
 
@@ -222,7 +223,7 @@ porque indeterminação não se produz por clique. Tabela critério × evidênci
 **entregue e commitado em 2026-09-18** (`scripts/Apply-TextPatch.ps1`, gate `tests.textPatch`,
 plano `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`). ~~O `B123` entrou no
 código em 2026-09-20; a próxima ação única vigente é o **smoke na IDE** (plano §6).~~
-**Superado em 2026-09-20:** `B123` fechado (smoke §6 do núcleo PASS; `B127` para IDE dos hardenings); ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; ~~vigente = `B125`~~ **Superado em 2026-09-22:** `B125` fechado; ~~vigente = `B126`~~ **Superado em 2026-09-22:** `B126` fechado; ~~vigente = `B127`~~ **Superado em 2026-09-22:** `B127` fechado; vigente = `B128`. Nota operacional do `B122` permanece no
+**Superado em 2026-09-20:** `B123` fechado (smoke §6 do núcleo PASS; `B127` para IDE dos hardenings); ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; ~~vigente = `B125`~~ **Superado em 2026-09-22:** `B125` fechado; ~~vigente = `B126`~~ **Superado em 2026-09-22:** `B126` fechado; ~~vigente = `B127`~~ **Superado em 2026-09-22:** `B127` fechado; **Superado em 2026-09-23:** `B128` fechado; próxima ação será escolhida do backlog após o push. Nota operacional do `B122` permanece no
 documento 06.
 
 **Duas coisas precisam ser sabidas antes de testar.** A primeira: uma segunda remoção da mesma
@@ -330,7 +331,7 @@ evidência `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`). Etapas 1A 
 da KB grande é DLL `ce30374`; emissor de SDT mudou em `0568677`/`cfb73b0` (números conservadores
 da 1A).
 
-O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. ~~A próxima ação única vigente é `B122`.~~ **Superado em 2026-09-18:** `B122` commitado. ~~vigente = `B123`~~ **Superado em 2026-09-20:** `B123` fechado; ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; ~~vigente = `B125`~~ **Superado em 2026-09-22:** `B125` fechado; ~~vigente = `B126`~~ **Superado em 2026-09-22:** `B126` fechado; ~~vigente = `B127`~~ **Superado em 2026-09-22:** `B127` fechado; vigente = `B128` (ver seção «Próxima ação única»).
+O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. ~~A próxima ação única vigente é `B122`.~~ **Superado em 2026-09-18:** `B122` commitado. ~~vigente = `B123`~~ **Superado em 2026-09-20:** `B123` fechado; ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; ~~vigente = `B125`~~ **Superado em 2026-09-22:** `B125` fechado; ~~vigente = `B126`~~ **Superado em 2026-09-22:** `B126` fechado; ~~vigente = `B127`~~ **Superado em 2026-09-22:** `B127` fechado; **Superado em 2026-09-23:** `B128` fechado. A próxima ação será escolhida do backlog após o push.
 
 A conclusão da `S-B111` não fechou automaticamente o `B082`: no encerramento, por decisão declarada (item 135), o residual 1B/2/3 ficou fora da sprint e da pauta imediata; o que a sprint absorveu (ordem do API Object, seam de persistência, remoção por fila) já está nas fases F1–F3. O fechamento do residual veio depois, na retomada de 2026-09-16 (Etapas 2+3) e no aceite 1B de 2026-09-17.
 
@@ -438,6 +439,7 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 
 ## Evidência da frente encerrada
 
+- `B128` (2026-09-23): gate `docs.csharpLineReferences`; tokenizer compartilhado; 35 assertions; harness integrado exit 0; pré-push local do commit `f5b9016` aprovado. Sem validação de IDE/runtime. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`.
 - `B127` (2026-09-22): re-smoke IDE na `Teste`/`wsEducacaoSpTeste` — Preview com GUID divergente anuncia `reutilizado; nunca apagar` (cancelado sem mutação); Apply com GUID falso regrava `ownedByThisApi=false` e o GUID vivo do Folder. Evidência: `Docs/Implementation/2026-09-22-B127-RESMOKE-GUID-HOMONIMO.md`.
 - `B126` (2026-09-22): confirmação/relatório do Remover alinhados à preservação por Description ou contêiner divergente; smoke IDE na `Teste`/`wsEducacaoSpTeste` — anúncio «será preservado», `Removidos=25`, Folder permanece, aviso tipado no B081. Evidência: `Docs/Implementation/2026-09-22-B126-CONFIRMACAO-FOLDER-DESCRIPTION.md`.
 - `B125` (2026-09-22): Preview pós-aborto na `Teste`/`wsEducacaoSpTeste` mostrou apenas os alvos presentes e separou os 10 já ausentes; a confirmação recusada não alterou a KB. A recuperação retomou o mesmo inventário e fechou a fila. No follow-up, o relatório final mostrou `Informações=1` e `Avisos=0`, sem diálogo redundante. Evidência: `Docs/Implementation/2026-09-22-B125-VALIDACAO-IDE-PREVIEW-POS-ABORTO.md`.
@@ -505,6 +507,10 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 > assertions do tokenizer e harness completo com exit 0). Backlog, `[Unreleased]` e documento de
 > evidência foram atualizados; o conjunto foi commitado localmente em `main`, sem push. Não houve
 > prova IDE/runtime.
+>
+> **Fechamento de 2026-09-23:** o pré-push local do commit `f5b9016` passou (`readyLocal`, zero
+> commits atrás, working tree limpa, sem razões incompletas nem requisitos manuais). `B128` está
+> fechado; a próxima ação do backlog será escolhida em nova sessão após o push.
 
 - **[Histórico — Sprint 9]** alinhamento documental da promoção à Sprint 9 já commitado, em `main`, com working tree limpa;
 - `origin/main` atualizada, sem commits remotos à frente da frente local;
@@ -516,8 +522,8 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 
 ## Sequência operacional vigente
 
-Vigência atual: `B127` fechado com evidência IDE; `B128` implementado, revisado e validado offline,
-commitado localmente em `main`. Não foi validado na IDE; sem push.
+Vigência atual: `B128` fechado em 2026-09-23 (commit `f5b9016`); pré-push local aprovado. Não foi
+validado na IDE. Após o push, selecionar em outra sessão a próxima ação entre os itens do backlog.
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
