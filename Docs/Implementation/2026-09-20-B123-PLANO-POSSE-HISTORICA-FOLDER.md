@@ -3,7 +3,7 @@
 Data: 2026-09-20.
 Item de backlog: `B123` (documento 06).
 Checkpoint: `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` (próxima ação única vigente).
-Estado: **frente fechada** (2026-09-20). Smoke §6 completo **para o núcleo medido** (DLL de `05da79a` + reteste IntentKind); checkpoint promove `B124`. Hardenings `86ef414`/`c358fb2` → gates offline; re-smoke IDE **fechado em `B127`** (2026-09-22): `Docs/Implementation/2026-09-22-B127-RESMOKE-GUID-HOMONIMO.md`.
+Estado: **frente fechada** (2026-09-20). Smoke §6 completo **para o núcleo medido** (DLL de `05da79a` + reteste IntentKind); checkpoint promove `B124`. Hardenings `86ef414`/`c358fb2` → gates offline; re-smoke IDE **fechado em `B127`** (2026-09-22): `Docs/Implementation/2026-09-22-B127-RESMOKE-GUID-HOMONIMO.md`. Residual de confirmação Description/contêiner **fechado em `B126`** (2026-09-22): `Docs/Implementation/2026-09-22-B126-CONFIRMACAO-FOLDER-DESCRIPTION.md`.
 
 **Não** autorizava, neste arquivo, alteração de código, instalação, commit ou push. **Remissão — 2026-09-20:** código e gates da seção 5 executados.
 
@@ -77,7 +77,8 @@ escrita de SDT/Procedure — e, desde esta frente, também na metadata. A Descri
 enfileira o Folder (`ownedByThisApi` + nome + GUID o fazem). Em `DeleteOwnFolder`, porém,
 Description canônica/legada e contêiner esperado ainda **preservam** se divergirem — gate de
 execução, não de fila. Residual de confirmação mentindo «apaga se vazio» quando a Description
-foi editada: `B126`.
+foi editada: **fechado em `B126`** (2026-09-22) —
+`Docs/Implementation/2026-09-22-B126-CONFIRMACAO-FOLDER-DESCRIPTION.md`.
 
 `IsFolderEmpty` já conta WebPanel (correção de 2026-09-16, item 147 do checkpoint). Folder
 próprio que não ficou vazio não deve ser apagado; isso permanece.

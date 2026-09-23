@@ -44,7 +44,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   relatório B081 emite aviso tipado (separado do caso não-vazio). **Validado na IDE** em
   `wsEducacaoSpTeste` / `Teste` (2026-09-22): após recriação com posse, Description editada →
   anúncio «será preservado», `Removidos=25`, Folder permanece, aviso tipado no B081. O defeito
-  de confirmação mentirosa é pré-Alpha nesta linha e fecha neste bloco `[Unreleased]`. Evidência:
+  de confirmação mentirosa é visível desde a `0.1.0-alpha.8` (Folder criado pela extensão); o
+  `B123` ampliou o alcance ao reencontrar Folders com posse. Evidência:
   `Docs/Implementation/2026-09-22-B126-CONFIRMACAO-FOLDER-DESCRIPTION.md`.
 
 - `B125` — após uma remoção abortada, o Preview deixa de anunciar como exclusão objetos que já

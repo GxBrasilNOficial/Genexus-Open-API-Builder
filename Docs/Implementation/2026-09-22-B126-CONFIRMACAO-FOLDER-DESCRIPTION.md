@@ -44,3 +44,25 @@ com posse (`criado pela extensão; apagar só se ficar vazio`).
    Persistência `Confirmados=25; Pendências=0`. Tempo ~4,7 s.
 
 **Conclusão:** anúncio, preservação e aviso tipado alinhados. `B126` fechado.
+
+## Proveniência e alcance
+
+- Commit exercido: `babb2bf` (`B126: anuncia preservação do Folder com Description divergente`).
+- DLL Release instalada manualmente (só DLL; manifesto inalterado). Hash SHA-256 da DLL
+  instalada: não registrado.
+- A medição não inclui `B127` (GUID/homônimo) nem `B125` (Preview pós-aborto).
+
+## Aberto
+
+- Contêiner divergente com Description ainda canônica/legada não foi exercido na IDE nesta
+  sessão — só a Description editada.
+- Caminho B115 / Folder sem posse permanece fora de escopo (já coberto pelo anúncio
+  «reutilizado; nunca apagar»).
+
+## Rastreabilidade
+
+- Backlog: `B126` em `Docs/Foundation/06-BACKLOG_v0.1.md`.
+- Checkpoint: item 162 de `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
+- Release em preparação: entradas `B126` de `### Fixed` e `### Validated` em `[Unreleased]`
+  no `CHANGELOG.md`.
+- Plano de origem do residual: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.

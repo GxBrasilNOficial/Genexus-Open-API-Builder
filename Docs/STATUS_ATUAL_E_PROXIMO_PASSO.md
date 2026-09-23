@@ -8,7 +8,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-22.
+2026-09-23.
 
 ## Último marco concluído
 

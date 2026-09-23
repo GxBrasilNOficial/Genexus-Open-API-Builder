@@ -64,3 +64,27 @@ Aviso B081 alinhado: Folder preexistente reutilizado; «nunca será removido pel
 desta API».
 
 **Conclusão:** os dois hardenings têm evidência IDE. `B127` fechado.
+
+## Proveniência e alcance
+
+- Commits dos hardenings exercidos: `86ef414` (Preview/GUID) e `c358fb2` (homônimo sem
+  herdar posse).
+- DLL Release já instalada (mesma do `B126`; manifesto inalterado). Hash SHA-256 da DLL
+  instalada: não registrado.
+- Documento de evidência desta sessão: `43e2900`.
+- A medição não inclui `B126` (Description/contêiner) nem `B125` (Preview pós-aborto).
+
+## Aberto
+
+- Contêiner divergente e Description divergente não foram reexercidos aqui (cobertos pelo
+  `B126`).
+- O realinhamento do fingerprint após a edição externa do GUID foi preparação da bateria,
+  não critério de aceite do `B127`.
+
+## Rastreabilidade
+
+- Backlog: `B127` em `Docs/Foundation/06-BACKLOG_v0.1.md`.
+- Checkpoint: item 163 de `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
+- Release em preparação: entradas `B127` / `B123` de `### Validated` em `[Unreleased]` no
+  `CHANGELOG.md`.
+- Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md` (§6 alcance).
