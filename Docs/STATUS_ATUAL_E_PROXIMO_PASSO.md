@@ -528,8 +528,9 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 > fechado; a próxima ação do backlog será escolhida em nova sessão após o push.
 >
 > **Atualização de 2026-09-24:** `B120` fechado (código flat + A2 + aceite IDE/HTTP). Remissão
-> normativa nos Foundation 10/12/13/26. A próxima ação do backlog fica para sessão nova após o
-> push. Evidência: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
+> normativa nos Foundation 05, 10, 11, 12, 13, 15, 16 e 26. A próxima ação do backlog fica para
+> sessão nova após o push. Evidência:
+> `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
 
 - **[Histórico — Sprint 9]** alinhamento documental da promoção à Sprint 9 já commitado, em `main`, com working tree limpa;
 - `origin/main` atualizada, sem commits remotos à frente da frente local;
