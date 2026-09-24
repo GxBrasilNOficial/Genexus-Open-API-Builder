@@ -34,7 +34,11 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   nuance: .NET Core pode omitir `AppliedFilters`/coleções vazias). Remissão normativa no
   registro de decisões (`Emenda técnica — 2026-09-24`) e nos Foundation 08, 10, 11, 12, 13,
   15, 16, 26 e 27. Higiene pós-aceite: método morto `CreateListResponseSdt` removido;
-  inventário do protótipo e travas offline alinhados. Plano:
+  inventário do protótipo e travas offline alinhados. No reencontro sem metadata,
+  `IsB070ApiObject` (API sem Business Component) aceita também as variáveis da
+  `alpha.8` (`ListResponse` + `ErrorResponse` + `RestStatusCode`); legado só
+  `ListResponse` permanece — trava offline `tests.listProcedureReencounterPolicy`
+  (defeito e correção no mesmo bloco `[Unreleased]`, nunca publicados). Plano:
   `Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`.
   Evidência: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
 
@@ -54,16 +58,6 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - `B123` — smoke IDE §6 na KB `wsEducacaoSpTeste` / Transaction `Teste` (2026-09-20), DLL de `05da79a` (+ reteste IntentKind): criação+Remover apaga Folder; segundo Apply preserva `ownedByThisApi` e Remover apaga Folder; Folder de terceiro permanece; B115 sem posse + Remover deixa Folder vazio. Preview com GUID divergente e herança de posse em homônimo cobertos depois pelo `B127` (2026-09-22). Evidência no plano, itens 155–158 do checkpoint e `Docs/Implementation/2026-09-22-B127-RESMOKE-GUID-HOMONIMO.md`.
 
 ### Fixed
-
-- `B120` — `IsB070ApiObject` no ramo sem Business Component passa a reconhecer o conjunto de
-  variáveis do API Object gerado na `alpha.8` / pré-flat (`ListResponse` + `ErrorResponse` +
-  `RestStatusCode`). Com o flat, `ApiVariableSpecs` deixou de casar esse objeto; o fallback
-  `PreviousB070ApiVariableSpecs` omitia os dois últimos e o match exato falhava quando a
-  metadata estava ausente (com metadata a posse segue pelo hash). Mantido um legado só com
-  `ListResponse`. Gate: `tests.listProcedureReencounterPolicy` (prova deste recorte; sem
-  smoke IDE — nesta máquina não há API produto List-only em envelope sem metadata). Defeito
-  do reencontro sem metadata estreia no mesmo bloco `[Unreleased]` que o flat; na
-  `0.1.0-alpha.8` o match ainda vinha de `ApiVariableSpecs` com envelope.
 
 - `B126` — confirmação do Remover deixa de prometer «apaga se ficar vazio» quando o Folder
   próprio já tem Description ou contêiner divergente no Preview: anuncia preservação explícita,
