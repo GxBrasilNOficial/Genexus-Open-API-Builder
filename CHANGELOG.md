@@ -28,9 +28,12 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   de dados tem coleção. **Breaking change** para consumidores Framework que liam
   `body.ListResponse…` (o flat já era o corpo efetivo no PostgreSQL). No reapply Wizard/Sync,
   o SDT `*ListResponse` órfão de posse da extensão é apagado (A2). Código, baselines
-  offline e aceite IDE/HTTP §6 fechados em 2026-09-24. Remissão normativa nos Foundation
-  05, 10, 11, 12, 13, 15, 16, 26 e 27 (corpo flat; analogia histórica `ListResponse.Items`
-  no 27 marcada). Higiene pós-aceite: método morto `CreateListResponseSdt` removido;
+  offline e aceite IDE/HTTP §6 fechados em 2026-09-24 (`Teste`/`wsEducacaoSpTeste`:
+  401/200/filtro/400 flat nos dois environments; YAML sem `ListResponse`; regressão
+  Get/Create/Update/Delete; wrapper sem unwrap prejudicial; Sync sem recriar envelope;
+  nuance: .NET Core pode omitir `AppliedFilters`/coleções vazias). Remissão normativa no
+  registro de decisões (`Emenda técnica — 2026-09-24`) e nos Foundation 08, 10, 11, 12, 13,
+  15, 16, 26 e 27. Higiene pós-aceite: método morto `CreateListResponseSdt` removido;
   inventário do protótipo e travas offline alinhados. Plano:
   `Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`.
   Evidência: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
@@ -38,12 +41,6 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 - `B123` — posse histórica do Folder na metadata (`GOAB_API_METADATA_B060_V4`): `objects.transactionFolder` passa a gravar `guid` e `ownedByThisApi`; `wasCreated` continua descrevendo só esta execução. A fila de remoção enfileira o Folder pela posse histórica e pelo GUID persistido, quando houver, e não mais pelo `wasCreated` da operação corrente — um segundo Apply deixava de apagar Folder que a extensão criou. Leitura continua tolerando V1–V3; V3 com `wasCreated=true` e sem o campo novo é adotada na primeira regravação. B115 segue sem reivindicar dono. «Nunca apagar» só para Folder sem posse. Após o Preview, GUID divergente também desanuncia o Folder na confirmação/contagem (não só na fila). Na **escrita**, posse só se preserva com o mesmo GUID vivo — homônimo não herda `ownedByThisApi`. Em `DeleteOwnFolder`, Description própria e contêiner esperado ainda preservam; desde `B126` a confirmação/relatório anunciam essa preservação em vez de prometer «apaga se vazio». Documento 28 alinhado (nota 12). Gates da seção 5 passaram em 2026-09-20. Os dois hardenings de Preview/escrita (`86ef414`, `c358fb2`) têm gate offline e, desde `B127` (2026-09-22), evidência IDE. Smoke IDE §6 (quatro cenários) mede o núcleo V4/posse — ver Validated. Plano: `Docs/Implementation/2026-09-20-B123-PLANO-POSSE-HISTORICA-FOLDER.md`.
 
 ### Validated
-
-- `B120` — aceite IDE/HTTP na `Teste`/`wsEducacaoSpTeste` (2026-09-24): smoke List §6
-  flat nos dois environments (401/200/filtro/400); YAML sem `ListResponse`; regressão
-  Get/Create/Update/Delete; wrapper sem unwrap prejudicial; Sync sem recriar
-  `*ListResponse`. Nuance: .NET Core pode omitir `AppliedFilters`/coleções vazias.
-  Evidência: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
 
 - `B127` — re-smoke IDE na `Teste`/`wsEducacaoSpTeste` (2026-09-22): Preview com GUID
   divergente anuncia `Folder: TesteOpenApi (reutilizado; nunca apagar)` (cancelado sem

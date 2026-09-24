@@ -451,12 +451,12 @@ Query: `Apipage` / `Apipagesize`. Base Framework e PostgreSQL locais.
 8. Gatilho operacional para documentação interna: **membro coleção no SDT out
    de dados** ⇒ unwrap no .NET Core quando `nonNullCount == 1`.
 
-## 14. Plano de implementação na extensão (handoff — nova sessão)
+## 14. Plano de implementação na extensão (fechado — 2026-09-24)
 
-**Pré-condição:** investigação completa (§3, §10–§12). Não reabrir Opt1/terceiro
-`out` nesta frente. **Não** editar `*_services.cs` gerado nem a instalação do
-GeneXus. **Não** promover `B120` à «próxima ação única» do checkpoint sem
-autorização humana — este §14 é o roteiro quando a frente for aberta.
+**Estado:** implementação + smoke §6 + evidência concluídos. Os §§14.2–14.6 abaixo
+permanecem como registro do handoff executado; não reabrir Opt1/terceiro `out`.
+**Não** editar `*_services.cs` gerado nem a instalação do GeneXus. Escolha da
+próxima ação do backlog: sessão nova após o push (sem promover ID aqui).
 
 ### 14.1 Decisão travada
 

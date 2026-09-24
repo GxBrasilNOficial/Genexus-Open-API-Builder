@@ -275,7 +275,7 @@ Campos de origem de migração não são auditoria operacional. Um campo como `P
 | UpdateRequestSdtName | texto |
 | ResponseSdtName | texto |
 | ListFiltersSdtName | texto |
-| ListResponseSdtName | texto |
+| ListResponseSdtName | texto — **Remissão 2026-09-24 (`B120`):** nome residual do antigo envelope; SDT **não gerado**; usado na limpeza A2 do órfão |
 | SharedSdtNames | lista texto |
 | TransactionFolderName | texto |
 | TransactionFolderWasCreated | boolean |

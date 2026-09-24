@@ -528,8 +528,8 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 > fechado; a próxima ação do backlog será escolhida em nova sessão após o push.
 >
 > **Atualização de 2026-09-24:** `B120` fechado (código flat + A2 + aceite IDE/HTTP). Remissão
-> normativa nos Foundation 05, 10, 11, 12, 13, 15, 16, 26 e 27. A próxima ação do backlog fica para
-> sessão nova após o push. Evidência:
+> normativa no registro de decisões (`Emenda técnica — 2026-09-24`) e nos Foundation 08, 10, 11,
+> 12, 13, 15, 16, 26 e 27. A próxima ação do backlog fica para sessão nova após o push. Evidência:
 > `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
 
 - **[Histórico — Sprint 9]** alinhamento documental da promoção à Sprint 9 já commitado, em `main`, com working tree limpa;
@@ -724,11 +724,13 @@ próxima ação no backlog em sessão nova. `B128` permanece fechado (2026-09-23
 
 165. Em 2026-09-24, **`B120` fechado**: outs flat do `List` (`Items`/`Pagination`/`AppliedFilters`/`ErrorResponse`) sem SDT `*ListResponse`; limpeza A2 do órfão no reapply; baselines e gates offline; install U14+; Wizard + `Build All` nos dois environments; smoke HTTP §6 (401/200/filtro/400) flat nos dois; regressão Get/Create/Update/Delete; wrapper sem unwrap prejudicial; Sync `SuccessWithWarnings` sem recriar `ListResponse`. Nuance: .NET Core pode omitir `AppliedFilters`/coleções vazias. Evidência: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`. Após o push, próxima ação a escolher em sessão nova.
 
-166. Em 2026-09-24, **remissão normativa pós-B120**: Foundation 05, 10, 11, 12, 13, 15, 16, 26 e 27 alinhados ao corpo HTTP flat (sem SDT envelope; o 27 só com remissão da analogia histórica `ListResponse.Items`); cadeias históricas do checkpoint deixam de afirmar «próxima ação após o push» do B128 como ponte vigente; seção canônica sem item promovido — escolha em sessão nova após o push. Sem mudança de runtime.
+166. Em 2026-09-24, **remissão normativa pós-B120**: Foundation 08, 10, 11, 12, 13, 15, 16, 26 e 27 alinhados ao corpo HTTP flat (sem SDT envelope; o 27 só com remissão da analogia histórica `ListResponse.Items`); registro de decisões emendado no item 169; cadeias históricas do checkpoint deixam de afirmar «próxima ação após o push» do B128 como ponte vigente; seção canônica sem item promovido — escolha em sessão nova após o push. Sem mudança de runtime.
 
 167. Em 2026-09-24, **`B109` ramo C registrado** (sem promover próxima ação): Apply Wizard `Empresa`/`fabricabrasil18test` — Get/Create OK; confirmação de `procEmpresa_API_Update` com `Unreadable` + `TargetInvocationException`; diário `Partial`; List/API/metadata não executaram. Distinto dos ramos A (`Collection was modified`) e B (`ValidationException`, fechado). Prioridade de investigação pós-push. Documento 06 e seção de investigação BC atualizados. `B124: sem documento dedicado porque o registro é ramo C do B109 já aberto (não item novo nem fechamento de frente); a reprodução cabe no enunciado do ramo no documento 06 e neste item; G1–G4 e G6 não aplicáveis; G5 descartado — não há ID novo de backlog cuja reprodução dependa de passos além desse texto`.
 
 168. Em 2026-09-24, **higiene e correção documental pós-B120** (sem promover próxima ação): evidência sem overclaim de detalhe Deleted no Output B081; plano §4.2 sem termos vencidos; remissão Foundation 27; removido `CreateListResponseSdt` morto; inventário do protótipo e travas `OpenApiClientContractValidity` / mensagem do baseline alinhados. Build Release OK. Escolha da próxima ação continua após o push.
+
+169. Em 2026-09-24, **emenda B120 no registro de decisões** (sem promover próxima ação): `Emenda técnica — 2026-09-24` em `Docs/Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md` (flat canônico + A2 + remissões nos trechos ListResponse); `CHANGELOG` com uma entrada `B120` em `Changed` (aceite IDE absorvido); plano §14 fechado; Foundation 08 com remissão de `ListResponseSdtName`. Sem mudança de runtime.
 
 ## Bloqueios e fatos ainda não validados
 

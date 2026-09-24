@@ -116,6 +116,8 @@ Na mesma data, uma segunda revisão examinou o **plano de trabalho** da Sprint 9
 
 1. **Forma do corpo de erro, agora condicionada a experimento.** A `Emenda técnica — 2026-08-03` retirou `Errors[]` depois que a IDE recusou uma tentativa com **subestrutura aninhada** dentro do próprio SDT (`sdt_API_ErrorResponse.Error`). Coleção tipada por um SDT **separado** é mecanismo distinto — o mesmo de `ListResponse.Items` — e nunca foi testado no corpo de erro. `B102` executa o experimento: aceito, o corpo ganha o membro coleção `Messages` tipado por `sdt_API_ErrorMessage`, preenchido a partir de `GetMessages()`; recusado, as mensagens vão concatenadas por `" | "`. Em ambos os casos `Message` permanece top-level e preenchido, e nenhuma das formas correlaciona mensagem com índice de linha.
 
+**Remissão — 2026-09-24 (`B120`):** a analogia `ListResponse.Items` é histórica quanto ao SDT envelope; ver `Emenda técnica — 2026-09-24`. O mecanismo (coleção tipada por SDT separado) permanece válido.
+
 **Remissão — 2026-08-24.** O experimento da decisão 1 fechou com coleção aceita; ver `Emenda técnica — 2026-08-24`.
 
 2. **Tipo e limite da `Message`.** Passa a `LongVarChar`, com truncamento explícito pela geração em cerca de 2K. Tipo sem limite não é conteúdo sem limite: um Business Component com muitas rules produziria corpo de erro arbitrariamente grande. Somente mensagens de **erro** são repassadas.
@@ -181,6 +183,45 @@ Permanecem: reutilizar Folder `NomeOpenApi` no contêiner correto com aviso; nã
 conteúdo preexistente; remoção só pelo comando explícito; confirmação antes de apagar; preservar
 Folder que ainda contenha objetos alheios; SDTs compartilhados em `GxOpenAPI` preservados; não
 apagar objetos alheios (gate 10).
+
+## Emenda técnica — 2026-09-24 — Envelope HTTP flat do `List` (`B120`)
+
+### Fato que motivou a emenda
+
+O gerador .NET Core unwrapa o SDT de dados do `List` quando esse SDT contém coleção
+(`Items`), de modo que Framework/SQL Server e .NET/PostgreSQL devolviam corpos HTTP
+divergentes para o mesmo YAML (`ListResponse` aninhado vs membros na raiz). Probes e
+matriz §6 fecharam o contorno: outs flat na raiz, sem SDT envelope. Plano:
+`Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`. Evidência:
+`Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`. Foundation remidos: 08, 10,
+11, 12, 13, 15, 16, 26 e 27.
+
+### Decisões
+
+1. **Contrato HTTP canônico do `List`.** Em sucesso (`200`) e no schema OpenAPI do serviço,
+   a raiz expõe `Items`, `Pagination`, `AppliedFilters` e `ErrorResponse` — **sem** propriedade
+   nem SDT envelope `sdt<Nome>_API_ListResponse`. É **breaking change** para consumidores
+   Framework que liam `body.ListResponse…` (o flat já era o corpo efetivo no PostgreSQL).
+2. **SDT envelope.** Deixa de ser gerado. O nome `ListResponseSdtName` /
+   `sdt<Nome>_API_ListResponse` permanece no `ApiPlan` só para localizar e apagar o órfão
+   (A2) no reapply Wizard/Sync, quando a posse for da extensão.
+3. **`ListFilters` e `Pagination`.** Continuam: `ListFilters` tipa o out `AppliedFilters`;
+   `sdt_API_Pagination` tipa o out `Pagination` — ambos na raiz do serviço, não como membros
+   de um SDT envelope.
+4. **Tipo de `Items`.** Inalterado pela emenda 2026-08-23 (4-A): nível único → coleção de
+   `Response`; com subnível → `ListResponse_Item` + contadores.
+5. **NoAccept / elegibilidade de saída.** Atributos `NoAccept` seguem elegíveis aos contratos
+   de saída do `List` (`Items` / filtros), não a um SDT `ListResponse` inexistente.
+6. **Analogia histórica.** A menção a `ListResponse.Items` como exemplo de coleção tipada por
+   SDT separado (emendas de erro / `B102`) permanece só como analogia de mecanismo; o envelope
+   deixou de existir.
+
+### O que a emenda não altera
+
+Permanecem: query params de paginação/filtros do B070; `ErrorResponse` público; serviços
+Get/Create/Update/Delete e seus SDTs; `ListResponse_Item` quando houver subnível; remoção
+governada e Sync. Risco declarado do A2: a exclusão do órfão corre após os `Save` flat e, se
+abortar, pode deixar contrato flat com o SDT envelope ainda na KB (ver plano §14.1).
 
 ## Emenda técnica — 2026-08-03
 
@@ -525,6 +566,8 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 
 **Emenda técnica de 2026-08-12 — `NoAccept`:** atributos cobertos por uma regra `NoAccept` continuam visíveis na aba `Requests`, mas ficam desabilitados no `CreateRequest` e no `UpdateRequest`, porque a geração de assignments para o BC causa `spc0018` por propriedade somente leitura. Eles permanecem candidatos a `Response`, `ListResponse` e `ListFilters`. A evidência A/B e a implementação estão em `Docs/Implementation/2026-08-12-NOACCEPT-READONLY-BUSINESS-COMPONENT.md`.
 
+**Remissão — 2026-09-24 (`B120`):** «candidato a `ListResponse`» lê-se como elegível aos outs de saída do `List` (`Items` / filtros aplicados); o SDT envelope deixou de ser gerado — ver `Emenda técnica — 2026-09-24`.
+
 **Emenda técnica de 2026-08-20 — Subníveis:** atributos de subníveis selecionados passam a ser elegíveis e entram como coleções aninhadas no `CreateRequest`, conforme detalhado na `Emenda técnica — 2026-08-20` e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`.
 
 ## CreateRequest — presença dos membros no JSON
@@ -574,6 +617,7 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 - `Get` retornará `200 OK` com `sdtNomeDaTransacao_API_Response` quando encontrar o registro.
 - Chave inexistente em `Get` retornará `404 Not Found` com o contrato uniforme de erro.
 - Uma consulta válida de `List` retornará sempre `200 OK` com `sdtNomeDaTransacao_API_ListResponse`.
+- **Remissão — 2026-09-24 (`B120`):** o `200` do `List` usa outs flat na raiz (`Items`, `Pagination`, `AppliedFilters`, `ErrorResponse`), sem SDT envelope — ver `Emenda técnica — 2026-09-24`.
 - Quando nenhum registro corresponder aos filtros, `List` não retornará `404`; retornará coleção vazia, total zero, metadados de paginação e confirmação dos filtros recebidos.
 - Parâmetro ou filtro inválido retornará `400 Bad Request` com o contrato uniforme de erro.
 
@@ -624,6 +668,7 @@ A rejeição da pluralização automática foi sustentada por 184 nomes reais de
 - `Errors` será subestrutura do próprio `sdt_API_ErrorResponse`; não será criado `sdt_API_ErrorDetail` separado no MVP.
 - Remissão — 2026-08-24: desde o fechamento de `B102` o conjunto compartilhado passa a três SDTs — `sdt_API_ErrorMessage`, `sdt_API_ErrorResponse` e `sdt_API_Pagination`. `sdt_API_ErrorResponse` contém `Code`, `Message` (`LongVarChar` 2097152) e `Messages[]` tipado por `sdt_API_ErrorMessage`; `Errors` como subestrutura interna e `Field` ficam fora do contrato entregue. Ver `Emenda técnica — 2026-08-24`.
 - `sdt_API_Pagination` terá `Page`, `PageSize`, `TotalCount` e `TotalPages` e será usado pelo membro `Pagination` dos `ListResponse` específicos.
+- **Remissão — 2026-09-24 (`B120`):** `Pagination` tipa o out homônimo na raiz do serviço `List`, não um membro de SDT envelope — ver `Emenda técnica — 2026-09-24`.
 - Os SDTs compartilhados serão criados uma única vez, reutilizados pelas gerações seguintes e nunca sobrescritos silenciosamente quando houver estrutura incompatível.
 - O Folder e seus objetos não serão apagados automaticamente ao remover uma API nem ao desinstalar a extensão.
 - `sdt_API_ListOptions` não integrará o MVP: `page` e `pageSize` continuarão parâmetros simples do serviço; um objeto apenas interno acrescentaria mapeamento e dependência sem centralizar a lógica de validação.
@@ -662,6 +707,7 @@ sdtNomeDaTransacao_API_ListFilters
 sdtNomeDaTransacao_API_ListResponse
 ```
 
+- **Remissão — 2026-09-24 (`B120`):** `sdtNomeDaTransacao_API_ListResponse` saiu do inventário gerado; o nome residual no `ApiPlan` serve à limpeza A2 — ver `Emenda técnica — 2026-09-24`. Com subnível, permanece `sdtNomeDaTransacao_API_ListResponse_Item`.
 - O marcador `_API_` separará visualmente os contratos gerados dos muitos SDTs preexistentes relacionados à mesma Transaction.
 - Os objetos continuarão agrupados alfabeticamente pelo prefixo `sdtNomeDaTransacao`.
 - Os nomes são válidos para objetos `SDT` GeneXus e para chaves de componentes OpenAPI.
@@ -674,6 +720,7 @@ sdtNomeDaTransacao_API_ListResponse
 - Terá uma única responsabilidade: representar, na resposta, os filtros que a API reconheceu.
 - Não será parâmetro de entrada do serviço `List`; os filtros permanecerão parâmetros planos da query string.
 - Será o tipo do membro `AppliedFilters` de `sdtNomeDaTransacao_API_ListResponse`.
+- **Remissão — 2026-09-24 (`B120`):** tipa o out `AppliedFilters` na raiz do `List`, sem SDT envelope — ver `Emenda técnica — 2026-09-24`.
 - Terá somente membros correspondentes aos filtros escolhidos no wizard.
 - Filtros por igualdade, `Contém` e `Começa com` usarão membro com o mesmo nome e tipo público do parâmetro.
 - Períodos usarão membros `NomeDoAtributoFrom` e `NomeDoAtributoTo`; intervalos numéricos usarão `NomeDoAtributoMin` e `NomeDoAtributoMax`.
@@ -683,6 +730,12 @@ sdtNomeDaTransacao_API_ListResponse
 - Um spike validará `AllowNull` e a serialização JSON desse SDT no GeneXus 18. Se o comportamento nativo não preservar a distinção, o contrato deverá ser reavaliado antes da implementação.
 
 ## `sdtNomeDaTransacao_API_ListResponse` — estrutura
+
+**Remissão — 2026-09-24 (`B120`):** esta seção descreve o SDT envelope **histórico**. Desde o
+fechamento do `B120` esse objeto **não é gerado**; o contrato HTTP público do `List` é flat na
+raiz (`Items`, `Pagination`, `AppliedFilters`, `ErrorResponse`). Ver
+`Emenda técnica — 2026-09-24`. O texto abaixo permanece como registro da decisão original de
+2026-07-14.
 
 - Terá somente três membros: `Items`, `Pagination` e `AppliedFilters`.
 - `Items` será coleção de `sdtNomeDaTransacao_API_Response`.

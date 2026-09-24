@@ -116,10 +116,11 @@ nulos/vazios no .NET Core registrada acima.
 ## Rastreabilidade
 
 - Backlog: `B120` em `Docs/Foundation/06-BACKLOG_v0.1.md` (fechado).
-- Checkpoint: itens 165–168 de `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
-- Release em preparação: entradas `B120` em `### Changed` / `### Validated` de
-  `[Unreleased]` no `CHANGELOG.md`.
-- Remissão normativa: Foundation 05, 10, 11, 12, 13, 15, 16, 26 e 27.
+- Checkpoint: itens 165–169 de `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
+- Release em preparação: entrada `B120` em `### Changed` de `[Unreleased]` no
+  `CHANGELOG.md` (aceite IDE absorvido na mesma entrada).
+- Remissão normativa: registro de decisões (`Emenda técnica — 2026-09-24`) e
+  Foundation 08, 10, 11, 12, 13, 15, 16, 26 e 27.
 
 ## Aberto / residual (fora do aceite HTTP)
 
