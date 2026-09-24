@@ -77,7 +77,7 @@ No MVP:
 | Update | sdt<NomeBase>_API_UpdateRequest |
 | Saída item | sdt<NomeBase>_API_Response |
 | Filtros | sdt<NomeBase>_API_ListFilters |
-| Saída lista | sdt<NomeBase>_API_ListResponse |
+| Saída lista | ~~sdt<NomeBase>_API_ListResponse~~ **Remissão — 2026-09-24 (`B120`):** SDT envelope não gerado; outs flat na raiz (`Items` / `Pagination` / `AppliedFilters` / `ErrorResponse`) |
 
 [NOM-F11][SDT-F13]
 

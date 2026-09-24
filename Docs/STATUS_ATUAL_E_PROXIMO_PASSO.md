@@ -725,7 +725,7 @@ próxima ação no backlog em sessão nova. `B128` permanece fechado (2026-09-23
 
 166. Em 2026-09-24, **remissão normativa pós-B120**: Foundation 10, 12, 13 e 26 alinhados ao corpo HTTP flat (sem SDT envelope); cadeias históricas do checkpoint deixam de afirmar «próxima ação após o push» do B128 como ponte vigente; seção canônica sem item promovido — escolha em sessão nova após o push. Sem mudança de runtime.
 
-167. Em 2026-09-24, **`B109` ramo C registrado** (sem promover próxima ação): Apply Wizard `Empresa`/`fabricabrasil18test` — Get/Create OK; confirmação de `procEmpresa_API_Update` com `Unreadable` + `TargetInvocationException`; diário `Partial`; List/API/metadata não executaram. Distinto dos ramos A (`Collection was modified`) e B (`ValidationException`, fechado). Prioridade de investigação pós-push. Documento 06 e seção de investigação BC atualizados.
+167. Em 2026-09-24, **`B109` ramo C registrado** (sem promover próxima ação): Apply Wizard `Empresa`/`fabricabrasil18test` — Get/Create OK; confirmação de `procEmpresa_API_Update` com `Unreadable` + `TargetInvocationException`; diário `Partial`; List/API/metadata não executaram. Distinto dos ramos A (`Collection was modified`) e B (`ValidationException`, fechado). Prioridade de investigação pós-push. Documento 06 e seção de investigação BC atualizados. `B124: sem documento dedicado porque o registro é ramo C do B109 já aberto (não item novo nem fechamento de frente); a reprodução cabe no enunciado do ramo no documento 06 e neste item; G1–G4 e G6 não aplicáveis; G5 descartado — não há ID novo de backlog cuja reprodução dependa de passos além desse texto`.
 
 ## Bloqueios e fatos ainda não validados
 
