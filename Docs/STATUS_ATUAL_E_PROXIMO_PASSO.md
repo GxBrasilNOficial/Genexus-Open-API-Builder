@@ -17,6 +17,7 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
   `Teste`/`wsEducacaoSpTeste`; Sync sem recriar `ListResponse`. Evidência:
   `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`. Plano:
   `Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`.
+  **Corte `0.1.0-alpha.9` publicado** em 2026-09-24 (tag `v0.1.0-alpha.9`).
 - `B128` fechado em 2026-09-23: gate incremental de referências C# implementado no commit `f5b9016`; 35 assertions do tokenizer e harness integrador aprovados, pré-push local desse commit de implementação aprovado. Sem validação de IDE/runtime. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`.
 - `B127` concluído em 2026-09-22: re-smoke IDE dos hardenings pós-§6 do `B123` — Preview com GUID divergente desanuncia o Folder; Apply com GUID falso regrava `ownedByThisApi=false` e o GUID vivo. Evidência: `Docs/Implementation/2026-09-22-B127-RESMOKE-GUID-HOMONIMO.md`.
 - `B126` concluído em 2026-09-22: confirmação/relatório do Remover alinhados à preservação por Description ou contêiner divergente; smoke IDE na `Teste`/`wsEducacaoSpTeste` (anúncio, Folder permanece, aviso tipado). Evidência: `Docs/Implementation/2026-09-22-B126-CONFIRMACAO-FOLDER-DESCRIPTION.md`.
@@ -153,8 +154,9 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-Após o push desta frente (`B120` fechado em 2026-09-24), escolher a próxima ação no backlog
-em **sessão nova**. Nenhum item é promovido aqui nesta data.
+**Corte `0.1.0-alpha.9` publicado em 2026-09-24** (tag `v0.1.0-alpha.9` + GitHub Release
+pre-release, dois assets DLL). Pacote documental no commit `562fb70`. Escolher a próxima
+ação no backlog em **sessão nova**. Nenhum item é promovido aqui nesta data.
 
 ~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
 ainda não mencionam o File do diário `GxOpenApiBuilder_OperationJournal`, o bloqueio que ele
@@ -733,6 +735,8 @@ próxima ação no backlog em sessão nova. `B128` permanece fechado (2026-09-23
 169. Em 2026-09-24, **emenda B120 no registro de decisões** (sem promover próxima ação): `Emenda técnica — 2026-09-24` em `Docs/Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md` (flat canônico + A2 + remissões nos trechos ListResponse); `CHANGELOG` com uma entrada `B120` em `Changed` (aceite IDE absorvido); plano §14 fechado; Foundation 08 com remissão de `ListResponseSdtName`. Sem mudança de runtime.
 
 170. Em 2026-09-24, **correção `IsB070ApiObject` sem BC** (sem promover próxima ação): `PreviousB070ApiVariableSpecs(false)` alinha a `ListResponse`+`ErrorResponse`+`RestStatusCode` (alpha.8 / envelope); legado só `ListResponse` permanece; trava em `tests.listProcedureReencounterPolicy`. Build Release OK. `B124: sem documento dedicado porque a prova deste recorte é o gate offline; G1–G4 e G6 não aplicáveis — não há Validated/Fixed de release citando sessão IDE deste item; G5 descartado — nesta máquina não há API produto List-only em envelope sem metadata (`wsEducacaoSpTeste` só tem probes Opt1 sem Wizard; `FabricaBrasil18Test` só `apiEmpresa` já flat com BC e metadata); smoke IDE deste cenário fica para KB futura com alvo adequado`. Escolha da próxima ação continua após o push.
+
+171. Em 2026-09-24, **corte `0.1.0-alpha.9` publicado**: tag `v0.1.0-alpha.9` + GitHub Release pre-release; assets U14+ (`SHA-256` `4D96E34F…`) e U13− (`FEF693F2…`); corpo trilíngue com alerta de breaking no `List` (contrato flat para todos os geradores; defeito motivador no wrapper REST .NET; smoke HTTP só nos dois .NET). Pacote documental `562fb70`. Próxima ação a escolher em sessão nova. `B124: sem documento dedicado porque esta sessão foi só rito de corte/publicação (sem IDE/HTTP novo); G1–G6 não aplicáveis`.
 
 ## Bloqueios e fatos ainda não validados
 
