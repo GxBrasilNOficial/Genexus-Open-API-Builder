@@ -281,7 +281,7 @@ Em `NETPostgreSQL155\web\apiprobeb120_services.cs` **não há** `nonNullCount` /
 
 ### 10.3 Smoke HTTP
 
-Base .NET: `http://localhost/wsEducacaoSpTesteNETPostgreSQL`  
+Base .NET: `http://localhost/wsEducacaoSpTesteNETPostgreSQL`
 Base Framework: `http://localhost/wsEducacaoSpTesteNETFrameworkSQLServer`
 
 Query params gerados: `Apipage` / `Apipagesize` (não `page` / `pageSize`).

@@ -86,7 +86,10 @@ $allowedOutsideSeam = @(
     # tem rotina própria de durabilidade, confirmada por FileId, bytes e hash, e atualiza
     # `journalDurability` separadamente dos recibos dos objetos de negócio. Contar o Save do
     # diário como persistência de negócio misturaria as duas contagens.
-    @{ File = 'Diagnostics\ApiPlanOperationJournalStore.cs'; Invocation = 'file.Save' }
+    @{ File = 'Diagnostics\ApiPlanOperationJournalStore.cs'; Invocation = 'file.Save' },
+    # B120 A2: Delete do SDT ListResponse órfão fica fora do Persist(...) porque o diário do
+    # Apply não admite inventory[].action=Delete (schema V1). Confirmação só por GetAll.
+    @{ File = 'Diagnostics\ApiPlanListResponseOrphanCleanup.cs'; Invocation = 'sdt.Delete' }
 )
 foreach ($allowed in $allowedOutsideSeam) {
 [void]$actualCalls.RemoveAll([Predicate[object]]{
