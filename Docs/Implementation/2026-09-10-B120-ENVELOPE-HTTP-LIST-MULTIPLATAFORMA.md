@@ -469,7 +469,17 @@ autorização humana — este §14 é o roteiro quando a frente for aberta.
 | Terceiro `out` dummy | **Inútil** (§11) |
 | U16 como fix | **Não** (§3.4) |
 | Prova de contorno | Probe `apiProbeB120` (§10) |
-| Estado 2026-09-24 | Código na extensão + baselines; falta install + smoke §6 |
+| Estado 2026-09-24 | **Fechado** — código + smoke §6 + evidência |
+
+**Risco operacional do A2 (declarado):** a limpeza do órfão roda **depois** dos
+`Save` flat de Procedure/API (`ApiPlanListProcedureWriter`), fora do
+`Persist(..., Delete)` do diário do Apply (schema V1 não admite
+`inventory[].action=Delete`). Se a exclusão abortar (órfão não único, sem
+Description de posse, ou `Delete`/`confirmação` falhar), o Apply pode terminar
+com contrato List já flat e o SDT `*ListResponse` ainda presente — escrita
+parcial relativa ao A2. Não há preflight que antecipe esses casos antes do
+primeiro `Save` do List. Contorno: recuperar/encerrar o diário se `Partial`,
+corrigir a colisão/posse na KB e reaplicar Wizard/Sync, ou apagar o órfão à mão.
 
 ### 14.2 Contrato alvo (HTTP + YAML)
 
