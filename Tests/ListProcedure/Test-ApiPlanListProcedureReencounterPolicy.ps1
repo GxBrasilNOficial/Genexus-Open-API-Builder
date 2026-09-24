@@ -100,4 +100,20 @@ apiContrato
 '@
 Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB070($apiObjectSource.Replace('procContrato_API_List', 'procContrato_API_CustomList'), 'apiContrato', 'Contrato', 'Root Module', $services, $primaryKey, $listFilters, $true)) 'API Object com chamada externa divergente deve continuar recusado pelo contrato B070.'
 
+# Trava: fallback de variáveis do API Object pré-flat / alpha.8 (sem BC) inclui
+# ErrorResponse + RestStatusCode — sem isso, IsB070ApiObject falha o match exato quando
+# ApiVariableSpecs já é flat (B120) e a metadata está ausente.
+$listWriterPath = Join-Path $PSScriptRoot '..\..\Src\Extension\Diagnostics\ApiPlanListProcedureWriter.cs'
+$listWriterSource = Get-Content -LiteralPath $listWriterPath -Raw
+$previousSpecsMatch = [regex]::Match(
+    $listWriterSource,
+    '(?s)private static IReadOnlyList<VariableSpec> PreviousB070ApiVariableSpecs\(ApiPlan plan, bool includeBusinessComponentParameters\)\s*\{(?<body>.*?)private static IReadOnlyList<VariableSpec> LegacyPreviousB070ApiVariableSpecsWithoutListError')
+Assert-True $previousSpecsMatch.Success 'PreviousB070ApiVariableSpecs deve existir antes do legado sem ErrorResponse.'
+$previousBody = $previousSpecsMatch.Groups['body'].Value
+$beforeBcBranch = ($previousBody -split 'if \(includeBusinessComponentParameters\)')[0]
+Assert-True ($beforeBcBranch.Contains('ListResponse')) 'PreviousB070ApiVariableSpecs (sem BC) deve declarar ListResponse.'
+Assert-True ($beforeBcBranch.Contains('ErrorResponse')) 'PreviousB070ApiVariableSpecs (sem BC) deve declarar ErrorResponse (contrato alpha.8 / envelope).'
+Assert-True ($beforeBcBranch.Contains('RestStatusCode')) 'PreviousB070ApiVariableSpecs (sem BC) deve declarar RestStatusCode (contrato alpha.8 / envelope).'
+Assert-True ($listWriterSource.Contains('LegacyPreviousB070ApiVariableSpecsWithoutListError(plan)')) 'IsB070ApiObject deve OR o legado só com ListResponse (sem ErrorResponse).'
+
 Write-Output 'PASS: ApiPlanListProcedureReencounterPolicy'

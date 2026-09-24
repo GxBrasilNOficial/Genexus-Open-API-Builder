@@ -55,6 +55,15 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Fixed
 
+- `B120` — `IsB070ApiObject` no ramo sem Business Component passa a reconhecer o conjunto de
+  variáveis do API Object gerado na `alpha.8` / pré-flat (`ListResponse` + `ErrorResponse` +
+  `RestStatusCode`). Com o flat, `ApiVariableSpecs` deixou de casar esse objeto; o fallback
+  `PreviousB070ApiVariableSpecs` omitia os dois últimos e o match exato falhava quando a
+  metadata estava ausente (com metadata a posse segue pelo hash). Mantido um legado só com
+  `ListResponse`. Gate: `tests.listProcedureReencounterPolicy`. Defeito do reencontro sem
+  metadata estreia no mesmo bloco `[Unreleased]` que o flat; na `0.1.0-alpha.8` o match ainda
+  vinha de `ApiVariableSpecs` com envelope.
+
 - `B126` — confirmação do Remover deixa de prometer «apaga se ficar vazio» quando o Folder
   próprio já tem Description ou contêiner divergente no Preview: anuncia preservação explícita,
   exclui o Folder da contagem planejada e, se a execução preservar pelo mesmo motivo, o

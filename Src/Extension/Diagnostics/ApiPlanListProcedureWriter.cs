@@ -116,7 +116,8 @@ internal static class ApiPlanListProcedureWriter
 
         return (IsB070ServiceGroupSource(plan, api.ServiceGroupSource.Source, includeBusinessComponentParameters: false) &&
                 (HasExpectedVariables(model, kbIndex, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: false))) ||
-                 HasExpectedVariables(model, kbIndex, api, CoalesceVariableSpecs(PreviousB070ApiVariableSpecs(plan, includeBusinessComponentParameters: false)))))
+                 HasExpectedVariables(model, kbIndex, api, CoalesceVariableSpecs(PreviousB070ApiVariableSpecs(plan, includeBusinessComponentParameters: false))) ||
+                 HasExpectedVariables(model, kbIndex, api, CoalesceVariableSpecs(LegacyPreviousB070ApiVariableSpecsWithoutListError(plan)))))
             || (IsB070ServiceGroupSource(plan, api.ServiceGroupSource.Source, includeBusinessComponentParameters: true) &&
                 (HasExpectedVariables(model, kbIndex, api, CoalesceVariableSpecs(ApiVariableSpecs(plan, includeBusinessComponentParameters: true))) ||
                  HasExpectedVariables(model, kbIndex, api, CoalesceVariableSpecs(PreviousB070ApiVariableSpecs(plan, includeBusinessComponentParameters: true)))) &&
@@ -893,6 +894,12 @@ internal static class ApiPlanListProcedureWriter
         return CoalesceVariableSpecs(variables);
     }
 
+    /// <summary>
+    /// Variáveis do API Object no contrato List com envelope (pré-B120 / alpha.8):
+    /// <c>ListResponse</c> + <c>ErrorResponse</c> + <c>RestStatusCode</c>.
+    /// Sem BC, esses três já estavam no objeto; o fallback antigo omitia os dois últimos e
+    /// falhava o match exato de <see cref="HasExpectedVariables"/>.
+    /// </summary>
     private static IReadOnlyList<VariableSpec> PreviousB070ApiVariableSpecs(ApiPlan plan, bool includeBusinessComponentParameters)
     {
         var variables = new List<VariableSpec>
@@ -900,6 +907,8 @@ internal static class ApiPlanListProcedureWriter
             new(PageVariableName, "Numeric(9.0)"),
             new(PageSizeVariableName, "Numeric(9.0)"),
             new("ListResponse", plan.ListResponseSdtName),
+            new("ErrorResponse", "sdt_API_ErrorResponse"),
+            new("RestStatusCode", "Numeric(3.0)"),
         };
         variables.AddRange(plan.ListFilters.SelectMany(FilterVariableSpecs));
         if (includeBusinessComponentParameters)
@@ -910,10 +919,24 @@ internal static class ApiPlanListProcedureWriter
             variables.Add(new VariableSpec("CreateResponse", plan.ResponseSdtName));
             variables.Add(new VariableSpec("UpdateRequest", plan.UpdateRequestSdtName, isServiceRequired: true));
             variables.Add(new VariableSpec("UpdateResponse", plan.ResponseSdtName));
-            variables.Add(new VariableSpec("ErrorResponse", "sdt_API_ErrorResponse"));
-            variables.Add(new VariableSpec("RestStatusCode", "Numeric(3.0)"));
         }
 
+        return CoalesceVariableSpecs(variables);
+    }
+
+    /// <summary>
+    /// List ainda mais antigo: só <c>ListResponse</c> nas variáveis do API Object (sem
+    /// <c>ErrorResponse</c>/<c>RestStatusCode</c>). Mantido para não perder reencontro sem metadata.
+    /// </summary>
+    private static IReadOnlyList<VariableSpec> LegacyPreviousB070ApiVariableSpecsWithoutListError(ApiPlan plan)
+    {
+        var variables = new List<VariableSpec>
+        {
+            new(PageVariableName, "Numeric(9.0)"),
+            new(PageSizeVariableName, "Numeric(9.0)"),
+            new("ListResponse", plan.ListResponseSdtName),
+        };
+        variables.AddRange(plan.ListFilters.SelectMany(FilterVariableSpecs));
         return CoalesceVariableSpecs(variables);
     }
 
