@@ -140,7 +140,7 @@ Validar geração de:
 - sdtCliente_API_UpdateRequest
 - sdtCliente_API_Response
 - sdtCliente_API_ListFilters
-- sdtCliente_API_ListResponse
+- ~~sdtCliente_API_ListResponse~~ **Remissão — 2026-09-24 (`B120`):** SDT envelope não gerado; validar outs flat `Items`/`Pagination`/`AppliedFilters`/`ErrorResponse`
 - sdt_API_ErrorMessage
 - sdt_API_ErrorResponse
 - sdt_API_Pagination

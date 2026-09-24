@@ -94,7 +94,7 @@ Produto utilizável internamente.
 
 - geração por Transaction
 - apiCliente padrão
-- CreateRequest / UpdateRequest / Response / ListResponse
+- CreateRequest / UpdateRequest / Response / ListFilters — **Remissão 2026-09-24 (`B120`):** sem SDT envelope `ListResponse`; outs flat no `List`
 - 4 serviços básicos
 - regeneração por metadata confiável
 - logs claros

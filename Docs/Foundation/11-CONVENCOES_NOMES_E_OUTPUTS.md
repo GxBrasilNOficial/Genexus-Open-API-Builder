@@ -155,14 +155,14 @@ Se uma versão futura do GeneXus expuser nova propriedade de extração do `File
 | Update | sdt<NomeBase>_API_UpdateRequest |
 | Response | sdt<NomeBase>_API_Response |
 | Filtros | sdt<NomeBase>_API_ListFilters |
-| Lista | sdt<NomeBase>_API_ListResponse |
+| Lista | ~~sdt<NomeBase>_API_ListResponse~~ **Remissão — 2026-09-24 (`B120`):** SDT envelope não gerado; outs flat na raiz |
 
 ## Exemplos
 
 | Transaction | Create | Update | Response | List |
 |------------|--------|--------|----------|------|
-| Cliente | sdtCliente_API_CreateRequest | sdtCliente_API_UpdateRequest | sdtCliente_API_Response | sdtCliente_API_ListResponse |
-| Produto | sdtProduto_API_CreateRequest | sdtProduto_API_UpdateRequest | sdtProduto_API_Response | sdtProduto_API_ListResponse |
+| Cliente | sdtCliente_API_CreateRequest | sdtCliente_API_UpdateRequest | sdtCliente_API_Response | ~~sdtCliente_API_ListResponse~~ outs flat (`B120`) |
+| Produto | sdtProduto_API_CreateRequest | sdtProduto_API_UpdateRequest | sdtProduto_API_Response | ~~sdtProduto_API_ListResponse~~ outs flat (`B120`) |
 
 **Nota de revisão — 2026-08-23 — Suporte a Subníveis:** a tabela acima permanece exata para transação de nível único. Havendo subníveis selecionados, cada subnível gera um SDT próprio **por contrato**, nomeado `sdt<NomeBase>_API_<Papel>_<Subnível>`:
 
@@ -443,7 +443,7 @@ Resultado previsível.
 | Critério | Resultado Esperado |
 |------|--------------------|
 | Cliente gera REST | apiCliente |
-| Cliente gera SDTs | sdtCliente_API_CreateRequest / Response / ListResponse |
+| Cliente gera SDTs | sdtCliente_API_CreateRequest / Response / ListFilters — **Remissão 2026-09-24 (`B120`):** sem SDT envelope `ListResponse`; outs flat no `List` |
 | Safe com conflito externo | bloqueia colisão |
 | Produto RestPath | produto |
 | ClienteSenha | desmarcado com alerta |

@@ -342,7 +342,7 @@ Reuso arbitrário por similaridade de estrutura fica pós-MVP.
 - `sdt<Nome>_API_UpdateRequest`
 - `sdt<Nome>_API_Response`
 - `sdt<Nome>_API_ListFilters`
-- `sdt<Nome>_API_ListResponse`
+- ~~`sdt<Nome>_API_ListResponse`~~ **Remissão — 2026-09-24 (`B120`):** SDT envelope não gerado; outs flat no serviço `List`
 
 [DP-F04][AF-F05]
 

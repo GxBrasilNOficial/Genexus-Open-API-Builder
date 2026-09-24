@@ -88,6 +88,28 @@ Aceite IDE/HTTP do `B120` **fechado** na `Teste`/`wsEducacaoSpTeste` nos dois
 environments. Critérios §14.5 do plano atendidos, com a nuance de omissão de
 nulos/vazios no .NET Core registrada acima.
 
+## Proveniência e alcance
+
+- Frente: `B120` (opção A + A2); plano
+  `Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`.
+- DLL: canônica U14+ instalada manualmente nesta sessão (Release local; manifesto
+  `.package` inalterado). Hash da DLL instalada: não capturado neste documento.
+- Commits de implementação/fechamento na `main` local (intervalo pós-`origin/main`
+  na data da redação): incluem `650629f` (código + aceite), follow-ups mecânicos e
+  remissões Foundation; tip `ahead` variável — conferir `git log` no push.
+- Smoke adicional na `NotaFiscal` (API legada + A2) na mesma KB: confirmação
+  operacional; não substitui a matriz §6 da `Teste` como aceite primário.
+- Fora do alcance: `README`/`Docs/Public/*` (rito de corte); ramo C do `B109` na
+  `Empresa`/`fabricabrasil18test`.
+
+## Rastreabilidade
+
+- Backlog: `B120` em `Docs/Foundation/06-BACKLOG_v0.1.md` (fechado).
+- Checkpoint: itens 165–166 de `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
+- Release em preparação: entradas `B120` em `### Changed` / `### Validated` de
+  `[Unreleased]` no `CHANGELOG.md`.
+- Remissão normativa: Foundation 05, 10, 11, 12, 13, 15, 16, 26.
+
 ## Aberto / residual (fora do aceite HTTP)
 
 - Probes descartáveis `ProbeB120` na KB: arquivar/remover quando conveniente

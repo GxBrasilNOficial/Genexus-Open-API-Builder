@@ -195,8 +195,8 @@ tem caminho medido na extensão: o gerador .NET unwrapa justamente esse desenho.
 | 4b | Testar preservar `ListResponse` + terceiro `out` | Feito — **falhou** (§11) |
 | 4c | Testar Opt1 (forma do SDT / coleção) | Feito — gatilho = coleção (§12) |
 | 5 | Decidir dono + envelope canônico | **Feito** — flat (§4.2, §14) |
-| 6 | Aplicar na extensão + Build All + HTTP | **Código + baselines offline** (2026-09-24); smoke HTTP §6 **pendente** |
-| 7 | Atualizar OpenAPI público / docs / testes do produto | Parcial (CHANGELOG); HTTP/YAML de produto após smoke |
+| 6 | Aplicar na extensão + Build All + HTTP | **Feito** (2026-09-24) — código flat + A2; smoke §6 e regressão; evidência `2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md` |
+| 7 | Atualizar OpenAPI público / docs / testes do produto | **Parcial** — CHANGELOG + remissão Foundation (10/11/12/13/15/05/16/26); README/Public no rito de corte |
 
 ## 6. Matriz de aceitação
 
