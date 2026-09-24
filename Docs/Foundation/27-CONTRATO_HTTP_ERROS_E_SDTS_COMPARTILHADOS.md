@@ -92,6 +92,12 @@ Continuam válidas as regras de `Code` principal, de idioma de `Message` e de n�
 
 **Correção de premissa — 2026-08-23.** "Caminho viável" era leitura forte demais da evidência. O que a IDE recusou foi **subestrutura aninhada** dentro do próprio SDT (`sdt_API_ErrorResponse.Error`). Membro coleção tipado por um SDT **separado** é outro mecanismo — o mesmo que já funciona em `ListResponse.Items` — e nunca foi testado no corpo de erro. `B102` executa esse experimento: aceito, o corpo ganha `Messages`, coleção de `sdt_API_ErrorMessage` preenchida a partir de `GetMessages()`, e as regras suspensas voltam a ser decidíveis; recusado, as mensagens vão concatenadas em `Message` e a recusa fica registrada como evidência, agora sim do mecanismo certo. Em qualquer dos dois desfechos `Message` permanece top-level e preenchida, e nenhuma das formas correlaciona mensagem com índice de linha de subnível.
 
+**Remissão B120 (2026-09-24).** A analogia `ListResponse.Items` no parágrafo
+acima é **histórica**: desde o B120 o SDT envelope `*ListResponse` deixou de ser
+gerado; a coleção pública do `List` é `Items` na raiz do corpo HTTP. O mecanismo
+citado (coleção tipada por SDT separado) permanece válido; só o exemplo deixou
+de ser o envelope.
+
 **Remissão — 2026-08-24.** O experimento descrito no parágrafo anterior foi executado e aceito: as regras de `Errors[]` permanecem fora do contrato entregue, e o caminho viável fechado por `B102` é `Messages[]` tipado por SDT separado, sem `Field`. Não ler os dois parágrafos acima como estado aberto. Ver Acréscimo e Gate humano abaixo.
 
 ## Nota de revisão — 2026-08-23 — `Message` do `422` (`B102`)

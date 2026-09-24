@@ -21,12 +21,13 @@ function Assert-Contains {
 }
 
 # 1. Nomes _API_ e SDTs compartilhados no plano (ApiPlan.cs)
+# B120: _API_ListResponse saiu do contrato HTTP público; o nome residual
+# ListResponseSdtName / sdt*_API_ListResponse permanece só para limpeza A2.
 $expectedSdtPatterns = @(
     '_API_CreateRequest',
     '_API_UpdateRequest',
     '_API_Response',
     '_API_ListFilters',
-    '_API_ListResponse',
     'sdt_API_ErrorMessage',
     'sdt_API_ErrorResponse',
     'sdt_API_Pagination'
@@ -35,6 +36,9 @@ $expectedSdtPatterns = @(
 foreach ($pattern in $expectedSdtPatterns) {
     Assert-Contains $apiPlanSource $pattern "O padrao de nome de SDT '$pattern' deve permanecer declarado em ApiPlan.cs."
 }
+
+Assert-Contains $apiPlanSource 'ListResponseSdtName' "ListResponseSdtName deve permanecer em ApiPlan.cs para limpeza A2 do orfao."
+Assert-Contains $apiPlanSource '_API_ListResponse' "O sufixo de nome residual _API_ListResponse deve permanecer em ApiPlan.cs para A2."
 
 $expectedNestedPatterns = @(
     '_API_CreateRequest_',

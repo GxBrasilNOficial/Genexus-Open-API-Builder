@@ -159,7 +159,8 @@ Decisão humana explícita na sessão:
    só sai **sem** coleção no SDT; com `Items` o unwrap volta;
 5. **contornar sem `ListResponse`**, expondo outs flat → **validado** (§10).
 
-Envelope candidato a canônico do `List` (ainda não emitido pela extensão):
+Envelope canônico do `List` (**emitido** pela extensão no fechamento B120,
+2026-09-24 — ver §14 e evidência IDE/HTTP):
 
 ```text
 raiz:
@@ -169,17 +170,17 @@ raiz:
   ErrorResponse    (sdt_API_ErrorResponse; presente também no sucesso, vazio)
 ```
 
-Implicações quando a frente for implementada na extensão (ainda pendente):
+Implicações da implementação (**cumpridas** no fechamento; residual de docs
+públicos no rito de corte — §5 item 7):
 
-- atualizar writer (`ApiPlanListProcedureWriter` / Service Source / Variables);
-- atualizar SDT plan (deixar de publicar `ListResponse` como out do serviço, ou
-  reaproveitar só internamente se fizer sentido);
-- atualizar YAML OpenAPI, testes de contrato, docs públicos;
-- regenerar nos dois environments e repetir a matriz §6;
-- não quebrar `Get` / `Create` / `Update` / `Delete` (já usam `*Response` +
-  `ErrorResponse` sem o unwrap do List);
-- comunicar breaking change a consumidores Framework que já leem
-  `body.ListResponse…` (o flat unifica com o que o PostgreSQL já devolve hoje).
+- writer (`ApiPlanListProcedureWriter` / Service Source / Variables) com outs
+  flat;
+- SDT plan sem gerar o envelope `ListResponse`; A2 limpa órfão no reapply;
+- YAML OpenAPI, testes de contrato e remissão Foundation alinhados; `README` /
+  `Docs/Public/*` no corte;
+- regeneração nos dois environments + matriz §6 (evidência);
+- regressão `Get` / `Create` / `Update` / `Delete` na mesma evidência;
+- breaking change Framework (`body.ListResponse…`) no `CHANGELOG` `[Unreleased]`.
 
 Manter `ListResponse` **com** `Items` no contrato HTTP multiplataforma **não**
 tem caminho medido na extensão: o gerador .NET unwrapa justamente esse desenho.

@@ -516,21 +516,6 @@ internal static class ApiPlanSdtGenerationPlanBuilder
         return new ApiPlanSdtDefinition(name, "B098", "ListResponse_Item", scope, members);
     }
 
-    private static ApiPlanSdtDefinition CreateListResponseSdt(string name, string itemSdtName, string listFiltersSdtName, string scope)
-    {
-        return new ApiPlanSdtDefinition(
-            name,
-            "B044",
-            "ListResponse",
-            scope,
-            new[]
-            {
-                new ApiPlanSdtMember("Items", itemSdtName, 0, 0, false, true, itemSdtName, "ListResponse"),
-                new ApiPlanSdtMember("Pagination", "sdt_API_Pagination", 0, 0, false, false, string.Empty, "ListResponse"),
-                new ApiPlanSdtMember("AppliedFilters", listFiltersSdtName, 0, 0, true, false, string.Empty, "ListResponse"),
-            });
-    }
-
     private static ApiPlanSdtDefinition CreateErrorMessageSdt()
     {
         return new ApiPlanSdtDefinition(

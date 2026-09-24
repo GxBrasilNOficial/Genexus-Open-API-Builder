@@ -132,7 +132,7 @@ try {
 
     $sdtPlanSource = [System.IO.File]::ReadAllText((Join-Path $repositoryRoot 'Src\Domain\ApiPlanSdtGenerationPlan.cs'))
     Assert-True ($sdtPlanSource.Contains('CreateFlatOwnSdts(')) 'O plano de SDTs deve separar a montagem plana para selecionar contratos de List.'
-    Assert-True ($sdtPlanSource.Contains('if (hasListService)')) 'ListFilters/ListResponse devem ser condicionados à seleção de List.'
+    Assert-True ($sdtPlanSource.Contains('if (hasListService)')) 'ListFilters (e demais contratos de List) devem ser condicionados à seleção de List.'
     Assert-True ($sdtPlanSource.Contains('if (!hasListService)')) 'O plano hierárquico também deve omitir contratos de List sem o serviço.'
 
     $fixtures = @($createFixtures.Invoke($null, @()))

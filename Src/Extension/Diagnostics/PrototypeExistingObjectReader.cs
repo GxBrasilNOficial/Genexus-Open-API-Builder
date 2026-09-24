@@ -21,7 +21,7 @@ internal static class PrototypeExistingObjectReader
         "UpdateRequest",
         "Response",
         "ListFilters",
-        "ListResponse",
+        // B120: envelope ListResponse deixou de ser gerado; órfão é limpeza A2, não inventário planejado.
     };
 
     public static PrototypeExistingObjectsSnapshot Read(KBModel designModel, Transaction transaction)

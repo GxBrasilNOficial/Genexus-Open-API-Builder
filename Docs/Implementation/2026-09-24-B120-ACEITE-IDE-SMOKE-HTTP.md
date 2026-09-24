@@ -101,20 +101,23 @@ nulos/vazios no .NET Core registrada acima.
   matriz §6 flat nos dois environments; captura
   `Temp/b120-notafiscal-smoke-2026-09-24.json` (não versionado). Não substitui a
   matriz da `Teste` como aceite primário.
-- A2 na `NotaFiscal`: observado no Output do Wizard (`Removidos=1`, detalhe
-  «B120 ListResponse órfão» no relatório B081) — **não** arquivado em JSON nem
-  citado no item 165 / `Validated`; fica como observação de sessão, não como
-  prova versionada do A2.
+- A2 na `NotaFiscal`: **não** atribuir detalhe «B120 ListResponse órfão» ao
+  Output B081 — essa string só existe em `Package.cs` (`AddDeleted`); o body
+  legível só detalha Bloqueados, e `ShowFinalReport` escreve resumo + bloqueados
+  + avisos. O Output pode mostrar `Removidos=N` no resumo e o progresso
+  «Removendo SDT ListResponse órfão». Nesta sessão não há dump arquivado que
+  prove `Removidos=1` na NotaFiscal; A2 versionado fica no aceite da `Teste`
+  (Sync sem recriar envelope) e na leitura do código A2.
 - Fora do alcance: `README`/`Docs/Public/*` (rito de corte); ramo C do `B109` na
   `Empresa`/`fabricabrasil18test`.
 
 ## Rastreabilidade
 
 - Backlog: `B120` em `Docs/Foundation/06-BACKLOG_v0.1.md` (fechado).
-- Checkpoint: itens 165–166 de `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
+- Checkpoint: itens 165–168 de `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`.
 - Release em preparação: entradas `B120` em `### Changed` / `### Validated` de
   `[Unreleased]` no `CHANGELOG.md`.
-- Remissão normativa: Foundation 05, 10, 11, 12, 13, 15, 16, 26.
+- Remissão normativa: Foundation 05, 10, 11, 12, 13, 15, 16, 26 e 27.
 
 ## Aberto / residual (fora do aceite HTTP)
 

@@ -728,6 +728,8 @@ próxima ação no backlog em sessão nova. `B128` permanece fechado (2026-09-23
 
 167. Em 2026-09-24, **`B109` ramo C registrado** (sem promover próxima ação): Apply Wizard `Empresa`/`fabricabrasil18test` — Get/Create OK; confirmação de `procEmpresa_API_Update` com `Unreadable` + `TargetInvocationException`; diário `Partial`; List/API/metadata não executaram. Distinto dos ramos A (`Collection was modified`) e B (`ValidationException`, fechado). Prioridade de investigação pós-push. Documento 06 e seção de investigação BC atualizados. `B124: sem documento dedicado porque o registro é ramo C do B109 já aberto (não item novo nem fechamento de frente); a reprodução cabe no enunciado do ramo no documento 06 e neste item; G1–G4 e G6 não aplicáveis; G5 descartado — não há ID novo de backlog cuja reprodução dependa de passos além desse texto`.
 
+168. Em 2026-09-24, **higiene e correção documental pós-B120** (sem promover próxima ação): evidência sem overclaim de detalhe Deleted no Output B081; plano §4.2 sem termos vencidos; remissão Foundation 27; removido `CreateListResponseSdt` morto; inventário do protótipo e travas `OpenApiClientContractValidity` / mensagem do baseline alinhados. Build Release OK. Escolha da próxima ação continua após o push.
+
 ## Bloqueios e fatos ainda não validados
 
 - ~~**Corte de release com a etapa P2 da F3 dentro exige decisão documental.** … nada disso está na documentação pública.~~ **Superado:** pacote `0.1.0-alpha.8` documentou o File/bloqueio/Recuperar e foi **publicado** em 2026-09-17 (`v0.1.0-alpha.8`).
