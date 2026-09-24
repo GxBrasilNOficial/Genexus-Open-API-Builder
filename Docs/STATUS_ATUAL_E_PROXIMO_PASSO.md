@@ -386,9 +386,10 @@ Ao retirar qualquer um: executar `Tools/Test-ExtensionCommandRegistration.ps1` s
 
 `ApiPlanScanProbe` **não** é temporária: é instrumentação de produção do `B082`, usada por vários writers.
 
-## Investigação da falha do Business Component na KB grande — ramo B encerrado, ramo A aberto (2026-09-05)
+## Investigação da falha do Business Component na KB grande — ramos A e C abertos; B encerrado
 
-**Só um dos dois ramos foi fechado.** `B109` reúne duas causas distintas sob a mesma etapa, e o encerramento vale apenas para a segunda.
+**Três ramos sob `B109`.** O encerramento de 2026-09-05 vale só para o ramo B. Em 2026-09-24
+foi registrado o **ramo C** (confirmação `Unreadable` / `TargetInvocationException` no Update).
 
 O **ramo A** — `Collection was modified; enumeration operation may not execute`, quatro ocorrências — **permanece sem causa confirmada**. Ele não voltou a ocorrer na sequência limpa, o que é ausência de reprodução, não explicação. A hipótese da reentrância por `Application.DoEvents()` segue **não testada**: o interruptor está instalado e nunca foi acionado. Desde 2026-09-06 ele é a preferência **«Suprimir a atualização da tela durante as gravações»**, em Preferências do Wizard → Diagnóstico e recuperação, desligada por padrão e gravada na KB; antes disso era a variável de ambiente `GOAB_B109_SUPPRESS_PUMP`, que dependia do Windows e não tinha onde avisar o efeito colateral. Vale no Apply do Wizard, onde estão as quatro ocorrências. É frente condicionada à reprodução — se o sintoma reaparecer, o experimento mínimo é repetir a mesma operação com o Pump suprimido e comparar.
 
@@ -398,7 +399,17 @@ O resultado B081 da reaplicação foi `SuccessWithWarnings`, com `Criados=50`, `
 
 O experimento também fechou o baseline: o `Build All` sem API passou nos dois environments; após a reaplicação, o `CSharpModel` passou novamente com os objetos recém-gerados. O `NETFrameworkPostgreSQL` ainda falhou na compilação C# dos SDTs com conversões `bool`/`decimal`/`short`; essa frente é específica do environment e fica fora do encerramento do caso BC. Evidência completa: `Docs/Implementation/2026-09-05-ENCERRAMENTO-BC-EMPRESA.md`.
 
-**Instrumentação instalada, para retomar o ramo A** (sondas temporárias; ver o checklist de reversão):
+O **ramo C** — registrado em 2026-09-24: no Apply Wizard da `Empresa` (`fabricabrasil18test`),
+`procEmpresa_API_Get` e `procEmpresa_API_Create` confirmaram; a confirmação pós-Save de
+`procEmpresa_API_Update` falhou com `Confirmation='Unreadable'` e
+`System.Reflection.TargetInvocationException` (Detail sem `InnerException`). Source preparado
+~153 KB / ~82 vars; List/API/metadata não rodaram; diário `Partial`; relatório
+`Interrupted` / `Criados=49` / `Bloqueados=1`. Distinto de A e de B. Prioridade de
+investigação na sessão pós-push; **não** promovido como próxima ação única neste registro.
+Instrumentação útil: dump `[B109]` já emitido; preferência de suprimir Pump no reteste;
+capturar `InnerException` se a falha repetir.
+
+**Instrumentação instalada, para retomar os ramos A e C** (sondas temporárias; ver o checklist de reversão):
 
 - `B109ExceptionProbe` publica na Output a cadeia completa de exceções — tipo, mensagem, `Source`, `TargetSite` e stack de cada nível —, além de Rules, `ExpectedVariables` × `CurrentVariables` e `SourceLines` da Procedure recusada;
 - `ApiPlanSaveBoundaryProbe` registra as fronteiras Pump/Save com fingerprint do estado em memória antes e depois de cada uma, para separar mutação externa de falha intrínseca de validação — publica sob o rótulo `[B109]`;
@@ -407,7 +418,9 @@ O experimento também fechou o baseline: o `Build All` sem API passou nos dois e
 
 **Como reproduzir o cenário**, se o ramo A voltar: apagar **apenas** o API Object antes de cada tentativa. Com ele presente e sem metadata, o Wizard desliga as etapas de consumidor e a falha não ocorre — ou aceitar a recuperação de metadata órfã, que devolve o File e reabilita `Remover`. Desde 2026-09-06 ela é oferecida na **abertura** do Wizard, e o `Sincronizar` continua bloqueado depois dela: a metadata recuperada registra posse e inventário, não o contrato. Ver a seção 13 do plano da F3.
 
-**`B109` precisa ser reescrito** como família de falhas, com um ramo por causa, em vez de "bug intermitente na etapa de Business Component". O enunciado atual não descreve o que se observou.
+**`B109` precisa ser tratado** como família de falhas (A aberto, B fechado, C aberto), com um
+ramo por causa, em vez de "bug intermitente na etapa de Business Component". O enunciado
+original do backlog ainda descreve só o ramo A.
 
 ## Validação manual da F1
 
@@ -423,8 +436,8 @@ tentado, mas continua sem comprovação isolada e está registrado no `B121`. Ev
 `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md` e
 `Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`.
 
-De `B109`, apenas o ramo B foi encerrado; o ramo A não tem pauta própria, por depender de
-reprodução — se o sintoma voltar, ele passa à frente. O `Rebuild All` do
+De `B109`, o ramo B foi encerrado; os ramos A e C permanecem abertos, sem pauta promovida
+nesta data (investigação pós-push). O `Rebuild All` do
 `NETFrameworkPostgreSQL` é pendência separada de environment e não bloqueia a F1. `B108` e o
 residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as quatro validadas na IDE.
 
@@ -711,6 +724,8 @@ próxima ação no backlog em sessão nova. `B128` permanece fechado (2026-09-23
 165. Em 2026-09-24, **`B120` fechado**: outs flat do `List` (`Items`/`Pagination`/`AppliedFilters`/`ErrorResponse`) sem SDT `*ListResponse`; limpeza A2 do órfão no reapply; baselines e gates offline; install U14+; Wizard + `Build All` nos dois environments; smoke HTTP §6 (401/200/filtro/400) flat nos dois; regressão Get/Create/Update/Delete; wrapper sem unwrap prejudicial; Sync `SuccessWithWarnings` sem recriar `ListResponse`. Nuance: .NET Core pode omitir `AppliedFilters`/coleções vazias. Evidência: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`. Após o push, próxima ação a escolher em sessão nova.
 
 166. Em 2026-09-24, **remissão normativa pós-B120**: Foundation 10, 12, 13 e 26 alinhados ao corpo HTTP flat (sem SDT envelope); cadeias históricas do checkpoint deixam de afirmar «próxima ação após o push» do B128 como ponte vigente; seção canônica sem item promovido — escolha em sessão nova após o push. Sem mudança de runtime.
+
+167. Em 2026-09-24, **`B109` ramo C registrado** (sem promover próxima ação): Apply Wizard `Empresa`/`fabricabrasil18test` — Get/Create OK; confirmação de `procEmpresa_API_Update` com `Unreadable` + `TargetInvocationException`; diário `Partial`; List/API/metadata não executaram. Distinto dos ramos A (`Collection was modified`) e B (`ValidationException`, fechado). Prioridade de investigação pós-push. Documento 06 e seção de investigação BC atualizados.
 
 ## Bloqueios e fatos ainda não validados
 
