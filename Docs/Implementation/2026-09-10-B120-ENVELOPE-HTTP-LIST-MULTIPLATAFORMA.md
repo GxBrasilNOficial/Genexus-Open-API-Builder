@@ -1,9 +1,10 @@
 # B120 — Envelope HTTP do `List` entre environments
 
 **Estado:** aberto; urgente; diagnóstico e contorno de plataforma **confirmados**
-(2026-09-24); tentativa de preservar `ListResponse` com terceiro `out` **refutada**
-pelo probe wrap (mesma data). A extensão **ainda não** mudou o contrato emitido.
-Falta desenhar e aplicar a mudança no writer/YAML/testes.
+(2026-09-24). Tentativas de preservar `ListResponse` com `Items` no .NET —
+terceiro `out` (§11) e “gerar como o Get” com coleção no envelope (§12) —
+**refutadas**. Contorno validado: outs flat (§10). A extensão **ainda não**
+mudou o contrato emitido.
 
 **Correlato de backlog:** [`B120`](../Foundation/06-BACKLOG_v0.1.md).
 
@@ -13,8 +14,8 @@ seção «Primeiro smoke HTTP de `List` após os Build All».
 **Evidência de contorno (2026-09-24):** probe descartável `apiProbeB120` (flat) na KB
 `wsEducacaoSpTeste` (pasta `ProbeB120`) — ver §10.
 
-**Evidência negativa (2026-09-24):** probe descartável `apiProbeB120Wrap` (terceiro
-`out` `KeepAlive`) — ver §11. Não evita o unwrap no .NET.
+**Evidência negativa (2026-09-24):** `apiProbeB120Wrap` (terceiro `out`) — §11;
+probes Opt1 A–D (forma do SDT de dados) — §12.
 
 ## 1. Decisão de encaminhamento
 
@@ -33,10 +34,11 @@ do checkpoint e antes de considerar o contrato HTTP do `List` validado de forma 
 
 **Atualização 2026-09-24:** apenas documentar a limitação **não** resolve (APIs para BFF /
 front fora do GeneXus). Mitigação que mantém o sucesso achatado **também não**. Acrescentar
-um terceiro `out` para “empatar” `nonNullCount` e preservar `ListResponse` **também não**
-(§11). O caminho validado por probe é **deixar de usar `ListResponse`** e expor outs flat
-(`Items` + `Pagination` + `AppliedFilters` + `ErrorResponse`). Isso ainda não foi
-aplicado na extensão.
+um terceiro `out` (§11) **também não**. Fazer o envelope “como o Get” **só funciona
+sem coleção no SDT de dados** (§12 A/B); com `Items` (coleção de SDT ou de
+`VARCHAR`) o unwrap volta (§12 C/D). O caminho validado para o `List` de produto é
+**deixar de usar `ListResponse`** e expor outs flat (`Items` + `Pagination` +
+`AppliedFilters` + `ErrorResponse`). Isso ainda não foi aplicado na extensão.
 
 ## 2. Problema observado
 
@@ -88,23 +90,22 @@ No artefato `NETPostgreSQL155\web\apinotafiscal_services.cs` (e no probe wrap
    achatando o envelope;
 4. caso contrário, retornar o objeto `data` completo.
 
-No `List` de `apiNotaFiscal` e no método `Wrap` do probe:
+No `List` de `apiNotaFiscal` e nos probes com **coleção** no SDT de dados
+(§11, §12 C/D):
 
-- só `ListResponse` passa por `if (!…ListResponse.IsNull)` e incrementa
-  `nonNullCount`;
-- `ErrorResponse` (e qualquer outro out “satélite”, p.ex. `KeepAlive`) é
-  atribuído a `data`, mas **nunca** entra no contador;
-- no sucesso, `ListResponse` não é null → `nonNullCount == 1` → unwrap → corpo =
-  conteúdo de `ListResponse` (`Items` / `Pagination` / `AppliedFilters`);
-- no `400` do produto, a Procedure já fez `&ListResponse = new()` no início → o
-  SDT continua “não null” → o unwrap devolve o `ListResponse` (muitas vezes só
-  com filtros) e o `ErrorResponse` some do HTTP.
+- só esse SDT passa por `if (!…IsNull)` e incrementa `nonNullCount`;
+- `ErrorResponse` (e outs satélite como `KeepAlive`) vão a `data` **sem**
+  entrar no contador;
+- no sucesso, `nonNullCount == 1` → unwrap → corpo = conteúdo do SDT
+  (`Items` / `Pagination` / …);
+- no `400` do produto, `&ListResponse = new()` cedo mantém o SDT “não null” →
+  unwrap devolve o envelope interno e o `ErrorResponse` some do HTTP.
 
-No `Get` / `Create` / `Update` do **mesmo** `apinotafiscal_services.cs`, o
-gerador **não** incrementa `nonNullCount` para o SDT de dados (atribui direto a
-`data` e deixa o contador em 0) → sempre `GetResponse(data)` → envelope estável
-com `*Response` + `ErrorResponse`. Por isso Get/Create/Update parecem “ok” nos
-dois environments enquanto o `List` quebra no .NET.
+**Gatilho medido (§12):** o ramo `IsNull`/`nonNullCount++` aparece quando o SDT
+de dados declara um membro **coleção** (`Items` de SDT **ou** de `VARCHAR`).
+Sem coleção no SDT (Opt1 A) ou com SDT folha estilo Get (Opt1 B), o gerador
+atribui direto a `data` e o contador fica 0 — mesmo padrão de
+`Get`/`Create`/`Update` no `apinotafiscal_services.cs`.
 
 Símbolos úteis no gerador (`Artech.Generator.DotNetCore.dll`):
 `WRAP_SINGLE_API_OUTPUT`, `unwrap` / `unwrap_rest_parm`, `nonNullCount`,
@@ -120,7 +121,9 @@ Versão medida na sessão: GeneXus 18 **U15** (`18.0.15.188745`).
 - diferença de totais entre bancos;
 - “faltou ErrorResponse no Source da Procedure” (ele é preenchido; o wrapper
   descarta na serialização);
-- “faltou um terceiro out para empurrar `nonNullCount`” — refutado no §11.
+- “faltou um terceiro out para empurrar `nonNullCount`” — refutado no §11;
+- “dá para manter `ListResponse` com `Items` se o gerador emitir como o Get” —
+  refutado no §12 (A/B sem coleção envelopam; C/D com coleção unwrapam).
 
 ### 3.4 GeneXus 18 Upgrade 16
 
@@ -149,11 +152,12 @@ Decisão humana explícita na sessão:
 
 1. só documentar a limitação → **rejeitado** (APIs críticas para BFF/front);
 2. mitigar mantendo sucesso achatado → **rejeitado**;
-3. preservar `ListResponse` acrescentando um terceiro `out` para evitar
-   `nonNullCount == 1` → **testado e refutado** (§11); o gerador não conta o
-   out extra;
-4. **contornar sem `ListResponse`**, expondo outs flat → **validado por probe**
-   (§10) antes de redesenhar o produto na extensão.
+3. preservar `ListResponse` acrescentando um terceiro `out` → **refutado**
+   (§11);
+4. preservar `ListResponse` com `Items` fazendo o gerador emitir como o `Get`
+   → **parcialmente esclarecido e fechado para o produto** (§12): o padrão Get
+   só sai **sem** coleção no SDT; com `Items` o unwrap volta;
+5. **contornar sem `ListResponse`**, expondo outs flat → **validado** (§10).
 
 Envelope candidato a canônico do `List` (ainda não emitido pela extensão):
 
@@ -177,19 +181,19 @@ Implicações quando a frente for implementada na extensão (ainda pendente):
 - comunicar breaking change a consumidores Framework que já leem
   `body.ListResponse…` (o flat unifica com o que o PostgreSQL já devolve hoje).
 
-Caminho ainda **não** medido para manter `ListResponse`: fazer o `List` gerar
-como o `Get` (sem ramo `IsNull`/`nonNullCount` no SDT de dados). Não confundir
-com o terceiro `out`, já descartado.
+Manter `ListResponse` **com** `Items` no contrato HTTP multiplataforma **não**
+tem caminho medido na extensão: o gerador .NET unwrapa justamente esse desenho.
 
 ## 5. Plano de investigação — status
 
 | # | Item | Status 2026-09-24 |
 | --- | --- | --- |
 | 1 | Versões GX / busca de correção oficial (U16, SAC) | Feito — sem fix anunciado |
-| 2 | Reprodução mínima descartável (flat e wrap) | Feito — `apiProbeB120` + `apiProbeB120Wrap` |
-| 3 | Comparar código gerado, YAML e HTTP sucesso/erro | Feito — ver §3, §10 e §11 |
-| 4 | Testar alternativa flat outs | Feito — passou nos dois envs (§10) |
-| 4b | Testar preservar `ListResponse` + terceiro `out` | Feito — **falhou** no .NET (§11) |
+| 2 | Reprodução mínima descartável (flat, wrap, Opt1) | Feito — §10–§12 |
+| 3 | Comparar código gerado, YAML e HTTP sucesso/erro | Feito — §3, §10–§12 |
+| 4 | Testar alternativa flat outs | Feito — passou (§10) |
+| 4b | Testar preservar `ListResponse` + terceiro `out` | Feito — **falhou** (§11) |
+| 4c | Testar Opt1 (forma do SDT / coleção) | Feito — gatilho = coleção (§12) |
 | 5 | Decidir dono + envelope canônico | Direção tomada (flat); falta desenho na extensão |
 | 6 | Aplicar na extensão + Build All + HTTP | Pendente |
 | 7 | Atualizar OpenAPI público / docs / testes do produto | Pendente (após §6) |
@@ -222,18 +226,17 @@ envelope flat (não mais `ListResponse` + `ErrorResponse` como único par raiz).
   serializada do runtime.
 - Não fechar `B120` com base apenas em uma correção observada no PostgreSQL; os
   dois environments precisam ser comparados na mesma rodada.
-- Probes `apiProbeB120` / `apiProbeB120Wrap` / pasta `ProbeB120` na KB de teste
-  são **descartáveis**; não são entrega do produto e não substituem a mudança
-  na extensão.
-- Não reabrir a hipótese do terceiro `out` sem evidência nova de que o gerador
-  passou a contar esse out em `nonNullCount`.
+- Probes `apiProbeB120` / `apiProbeB120Wrap` / `apiProbeB120Opt1*` / pasta
+  `ProbeB120` na KB de teste são **descartáveis**; não são entrega do produto.
+- Não reabrir terceiro `out` nem “ListResponse com Items gerando como Get” sem
+  evidência nova de mudança no gerador GeneXus.
 
 ## 8. Dependências e saída esperada
 
 Dependências: GeneXus 18 e seus dois geradores configurados, KB de teste,
-`apiNotaFiscal` (sintoma), probes `apiProbeB120` / `apiProbeB120Wrap`,
-autenticação quando o serviço exigir, `Build All` / Build With These Only
-reproduzível.
+`apiNotaFiscal` (sintoma), probes `apiProbeB120` / `apiProbeB120Wrap` /
+`apiProbeB120Opt1*`, autenticação quando o serviço exigir, `Build All` /
+Build With These Only reproduzível.
 
 Saída esperada (ainda aberta): implementação na extensão do envelope flat,
 evidência HTTP `200`/`400` nos dois environments sobre o `List` de produto
@@ -357,9 +360,8 @@ Query: `Apipage` / `Apipagesize`.
 dummy como trata `ErrorResponse`: coloca em `data`, não conta. No Framework o
 envelope já era estável; o terceiro out não muda o problema multiplataforma.
 
-Hipótese residual (não medida nesta sessão): fazer o `List` gerar no padrão do
-`Get` (sem ramo `IsNull`/`nonNullCount` no SDT de dados). Isso **não** é o mesmo
-que “mais um out”.
+Hipótese “gerar como o Get” foi medida no §12: válida só sem coleção no SDT;
+com `Items` (o desenho do produto) o unwrap permanece.
 
 ### 11.5 Detalhe de compilação no Framework
 
@@ -369,32 +371,86 @@ CS1031. Contorno do probe: `new()` só em variável tipada local
 (`&Pagination = new()` … `&ListResponse.Pagination = &Pagination`). Irrelevante
 para o produto se o writer já seguir esse padrão.
 
-## 12. Notas úteis para a implementação futura
+## 12. Probes Opt1 A–D — forma do SDT de dados (2026-09-24)
+
+Objetivo: descobrir o que faz o gerador .NET emitir o ramo `IsNull`/`nonNullCount`
+(padrão List) versus atribuição direta (padrão Get), sem terceiro `out`. Flat e
+wrap **não** foram alterados.
+
+### 12.1 Matriz dos quatro probes
+
+| Id | API / rota | SDT de dados | Pergunta |
+| --- | --- | --- | --- |
+| A | `apiProbeB120Opt1A` `/probe-b120-opt1-a` | `ListResponse` com `Pagination`+`Note` (**sem** coleção) | Envelope sem `Items` gera como Get? |
+| B | `apiProbeB120Opt1B` `/probe-b120-opt1-b` | `LeafResponse` folha (`Label`) | Controle estilo Get |
+| C | `apiProbeB120Opt1C` `/probe-b120-opt1-c` | `ListResponse` com `Items` (coleção de SDT) + Pagination + Filters | Baseline produto |
+| D | `apiProbeB120Opt1D` `/probe-b120-opt1-d` | `ListResponse` com `Items` (coleção de `VARCHAR`) + Pagination | Coleção de primitivo também unwrapa? |
+
+Assinatura comum (exceto B, que usa `LeafResponse`):
+
+```text
+Run(in: &ApiPage, in: &ApiPageSize, out: &ListResponse|&LeafResponse, out: &ErrorResponse)
+  => procProbeB120_Opt1*(..., &RestStatusCode);
+```
+
+### 12.2 Wrapper gerado (.NET / PostgreSQL)
+
+| Probe | `if (!….IsNull) nonNullCount++` no `*_services.cs`? |
+| --- | --- |
+| A | **Não** — `data.ListResponse = …;` direto (contador fica 0) |
+| B | **Não** — `data.LeafResponse = …;` direto |
+| C | **Sim** — só `ListResponse` |
+| D | **Sim** — só `ListResponse` |
+
+### 12.3 Smoke HTTP
+
+Query: `Apipage` / `Apipagesize`. Base Framework e PostgreSQL locais.
+
+| Probe | Env | 200 keys | 400 keys |
+| --- | --- | --- | --- |
+| A | Framework | `ListResponse`,`ErrorResponse` | `ListResponse`,`ErrorResponse` |
+| A | .NET (PG) | `ListResponse`,`ErrorResponse` | `ListResponse`,`ErrorResponse` |
+| B | Framework | `LeafResponse`,`ErrorResponse` | `LeafResponse`,`ErrorResponse` |
+| B | .NET (PG) | `LeafResponse`,`ErrorResponse` | `LeafResponse`,`ErrorResponse` |
+| C | Framework | `ListResponse`,`ErrorResponse` | `Code`,`Message` (corpo achatado de erro) |
+| C | .NET (PG) | **unwrap** `Items`,`Pagination`,`AppliedFilters` | `ErrorResponse` |
+| D | Framework | `ListResponse`,`ErrorResponse` | `Code`,`Message` |
+| D | .NET (PG) | **unwrap** `Items`,`Pagination` | `ErrorResponse` |
+
+### 12.4 Conclusão Opt1
+
+1. O padrão Get (sem unwrap) **é reproduzível** no método “List” quando o SDT de
+   dados **não tem membro coleção** (A, B) — envelope estável nos dois envs.
+2. Qualquer `Items` coleção no envelope — de SDT (C) ou de `VARCHAR` (D) —
+   restaura o ramo `IsNull` e o unwrap no .NET.
+3. Para o `List` de produto, que **precisa** de coleção de itens, a opção 1
+   **não** entrega `ListResponse` intacto no HTTP do .NET. O contorno continua
+   sendo outs flat (§10).
+
+## 13. Notas úteis para a implementação futura
 
 1. **Não** tentar “consertar” o PostgreSQL editando `*_services.cs` gerado.
-2. Alinhar o `List` ao padrão que o gerador .NET já trata bem nos outros
-   verbos: múltiplas propriedades no `ResponseData` **sem** o ramo
-   `if (!*.IsNull) nonNullCount++` associado a um único SDT envelope — **ou**
-   expor outs flat como no §10 (caminho já medido).
-3. Expor `Items` como coleção + SDTs satélite + `ErrorResponse` foi suficiente
-   no probe flat para o gerador emitir sempre o envelope completo.
-4. No erro, a Procedure do produto hoje instancia `ListResponse` cedo; com outs
+2. Expor `Items` como coleção + SDTs satélite + `ErrorResponse` (flat) foi
+   suficiente no §10 para o gerador emitir sempre o envelope completo.
+3. No erro, a Procedure do produto hoje instancia `ListResponse` cedo; com outs
    flat, garantir que `ErrorResponse` seja preenchido e que o status
    (`&RestStatusCode` / evento `*.After`) continue propagando `400`.
-5. Diff esperado no YAML: sumir `ListOutput.ListResponse`; aparecer
+4. Diff esperado no YAML: sumir `ListOutput.ListResponse`; aparecer
    `Items` / `Pagination` / `AppliedFilters` / `ErrorResponse` no nível do
    schema de resposta do List (detalhe a fechar no desenho).
-6. Consumidores BFF/front que já parseiam o achatado do PostgreSQL **e** o
+5. Consumidores BFF/front que já parseiam o achatado do PostgreSQL **e** o
    envelopado do Framework hoje estão em contrato divergente; a mudança flat
    unifica, mas é breaking para quem já acoplou a `ListResponse` no Framework.
-7. Sessão SAC: login em `myaccount`/`developers` **não** autentica
+6. Sessão SAC: login em `myaccount`/`developers` **não** autentica
    automaticamente `sac.genexus.com`; o banner “SIGNING IN…” some só após login
    no próprio SAC. Irrelevante para o runtime; útil para próximas varreduras de
    RN.
-8. Não investir em “mais outs” na esperança de `nonNullCount ≠ 1` sem prova de
-   que o gerador passou a contar esses outs.
+7. Não investir em “mais outs” (§11) nem em `ListResponse` com `Items` “estilo
+   Get” (§12) sem mudança comprovada no gerador GeneXus.
+8. Gatilho operacional para documentação interna: **membro coleção no SDT out
+   de dados** ⇒ unwrap no .NET Core quando `nonNullCount == 1`.
 
-## 13. Próximo passo técnico (quando a frente for aberta na extensão)
+## 14. Próximo passo técnico (quando a frente for aberta na extensão)
 
 1. Desenhar o contrato flat do `List` (nomes JSON, SDTs, YAML, testes).
 2. Implementar no writer e no plano de SDT; remover out `ListResponse` do
