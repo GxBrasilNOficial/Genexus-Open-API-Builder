@@ -104,10 +104,12 @@ nulos/vazios no .NET Core registrada acima.
 - A2 na `NotaFiscal`: **não** atribuir detalhe «B120 ListResponse órfão» ao
   Output B081 — essa string só existe em `Package.cs` (`AddDeleted`); o body
   legível só detalha Bloqueados, e `ShowFinalReport` escreve resumo + bloqueados
-  + avisos. O Output pode mostrar `Removidos=N` no resumo e o progresso
-  «Removendo SDT ListResponse órfão». Nesta sessão não há dump arquivado que
-  prove `Removidos=1` na NotaFiscal; A2 versionado fica no aceite da `Teste`
-  (Sync sem recriar envelope) e na leitura do código A2.
+  + avisos. O Output pode mostrar `Removidos=N` no resumo B081; a mensagem
+  «Removendo SDT ListResponse órfão» vai à janela de progresso
+  (`ExtensionBusyProgressScope` / `ApiPlanBusyProgressSession`), não ao Output.
+  Nesta sessão não há dump arquivado que prove `Removidos=1` na NotaFiscal; A2
+  versionado fica no aceite da `Teste` (Sync sem recriar envelope) e na leitura
+  do código A2.
 - Fora do alcance: `README`/`Docs/Public/*` (rito de corte); ramo C do `B109` na
   `Empresa`/`fabricabrasil18test`.
 
