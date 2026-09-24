@@ -97,8 +97,14 @@ nulos/vazios no .NET Core registrada acima.
 - Commits de implementação/fechamento na `main` local (intervalo pós-`origin/main`
   na data da redação): incluem `650629f` (código + aceite), follow-ups mecânicos e
   remissões Foundation; tip `ahead` variável — conferir `git log` no push.
-- Smoke adicional na `NotaFiscal` (API legada + A2) na mesma KB: confirmação
-  operacional; não substitui a matriz §6 da `Teste` como aceite primário.
+- Smoke HTTP adicional na `NotaFiscal` (mesma KB, após Wizard em API legada):
+  matriz §6 flat nos dois environments; captura
+  `Temp/b120-notafiscal-smoke-2026-09-24.json` (não versionado). Não substitui a
+  matriz da `Teste` como aceite primário.
+- A2 na `NotaFiscal`: observado no Output do Wizard (`Removidos=1`, detalhe
+  «B120 ListResponse órfão» no relatório B081) — **não** arquivado em JSON nem
+  citado no item 165 / `Validated`; fica como observação de sessão, não como
+  prova versionada do A2.
 - Fora do alcance: `README`/`Docs/Public/*` (rito de corte); ramo C do `B109` na
   `Empresa`/`fabricabrasil18test`.
 
@@ -116,6 +122,8 @@ nulos/vazios no .NET Core registrada acima.
   (não são entrega).
 - Remover com alvo já ausente ainda na metadata (`TargetAbsentBeforeDelete`) —
   observado na recuperação da sessão; não bloqueia o flat do List.
+- A2 após `Save` flat: se a exclusão do órfão abortar, Procedure/API já podem
+  estar no contrato novo com `*ListResponse` ainda na KB (ver plano §14.1).
 - Documentação pública (`README` / `Docs/Public/*`) sobre o envelope flat do
   List: parcial no `CHANGELOG`; alinhar no próximo corte se o contrato for
   anunciado ao consumidor.
