@@ -1,10 +1,8 @@
 # B120 — Envelope HTTP do `List` entre environments
 
-**Estado:** aberto; urgente; diagnóstico e contorno de plataforma **confirmados**
-(2026-09-24). Tentativas de preservar `ListResponse` com `Items` no .NET —
-terceiro `out` (§11) e “gerar como o Get” com coleção no envelope (§12) —
-**refutadas**. Contorno validado: outs flat (§10). A extensão **ainda não**
-mudou o contrato emitido.
+**Estado:** investigação **fechada** (2026-09-24); implementação na extensão
+**pendente**. Contorno canônico = outs flat do `List` (§10, §14). Probes na KB
+de teste documentados em §10–§12. **Handoff para nova sessão: executar §14.**
 
 **Correlato de backlog:** [`B120`](../Foundation/06-BACKLOG_v0.1.md).
 
@@ -194,8 +192,8 @@ tem caminho medido na extensão: o gerador .NET unwrapa justamente esse desenho.
 | 4 | Testar alternativa flat outs | Feito — passou (§10) |
 | 4b | Testar preservar `ListResponse` + terceiro `out` | Feito — **falhou** (§11) |
 | 4c | Testar Opt1 (forma do SDT / coleção) | Feito — gatilho = coleção (§12) |
-| 5 | Decidir dono + envelope canônico | Direção tomada (flat); falta desenho na extensão |
-| 6 | Aplicar na extensão + Build All + HTTP | Pendente |
+| 5 | Decidir dono + envelope canônico | **Feito** — flat (§4.2, §14) |
+| 6 | Aplicar na extensão + Build All + HTTP | **Pendente** — plano §14 |
 | 7 | Atualizar OpenAPI público / docs / testes do produto | Pendente (após §6) |
 
 ## 6. Matriz de aceitação
@@ -238,9 +236,9 @@ Dependências: GeneXus 18 e seus dois geradores configurados, KB de teste,
 `apiProbeB120Opt1*`, autenticação quando o serviço exigir, `Build All` /
 Build With These Only reproduzível.
 
-Saída esperada (ainda aberta): implementação na extensão do envelope flat,
-evidência HTTP `200`/`400` nos dois environments sobre o `List` de produto
-(não só o probe), YAML e docs alinhados.
+Saída esperada: executar o **§14** na extensão; evidência HTTP `200`/`400` nos
+dois environments sobre o `List` de produto; YAML e docs alinhados; evidência
+B124 no fechamento.
 
 ## 9. Relação com o estado atual
 
@@ -450,14 +448,116 @@ Query: `Apipage` / `Apipagesize`. Base Framework e PostgreSQL locais.
 8. Gatilho operacional para documentação interna: **membro coleção no SDT out
    de dados** ⇒ unwrap no .NET Core quando `nonNullCount == 1`.
 
-## 14. Próximo passo técnico (quando a frente for aberta na extensão)
+## 14. Plano de implementação na extensão (handoff — nova sessão)
 
-1. Desenhar o contrato flat do `List` (nomes JSON, SDTs, YAML, testes).
-2. Implementar no writer e no plano de SDT; remover out `ListResponse` do
-   serviço público.
-3. Regenerar APIs de teste nos dois environments; Build All; smoke `200`/`400`
-   em `apiNotaFiscal` (ou sucessor) **e** regressão Get/Create/Update/Delete.
-4. Atualizar `CHANGELOG`, docs públicos afetados e este documento com o
-   fechamento.
-5. Remover ou arquivar os probes `ProbeB120` na KB quando não forem mais
-   necessários.
+**Pré-condição:** investigação completa (§3, §10–§12). Não reabrir Opt1/terceiro
+`out` nesta frente. **Não** editar `*_services.cs` gerado nem a instalação do
+GeneXus. **Não** promover `B120` à «próxima ação única» do checkpoint sem
+autorização humana — este §14 é o roteiro quando a frente for aberta.
+
+### 14.1 Decisão travada
+
+| Decisão | Valor |
+| --- | --- |
+| Envelope HTTP canônico do `List` | Flat: `Items`, `Pagination`, `AppliedFilters`, `ErrorResponse` na raiz |
+| `ListResponse` como `out` do API Object / Procedure | **Remover** do contrato público |
+| Manter `ListResponse` com `Items` “como o Get” | **Impossível** com o gerador medido (§12) |
+| Terceiro `out` dummy | **Inútil** (§11) |
+| U16 como fix | **Não** (§3.4) |
+| Prova de contorno | Probe `apiProbeB120` (§10) |
+
+### 14.2 Contrato alvo (HTTP + YAML)
+
+```text
+200:
+  Items            // coleção (mesmo tipo de item de hoje: Response ou ListResponse_Item)
+  Pagination       // sdt_API_Pagination (ou equivalente já emitido)
+  AppliedFilters   // SDT de filtros do List
+  ErrorResponse    // sdt_API_ErrorResponse (vazio no sucesso)
+
+400 (ex.: pageSize inválido):
+  status 400
+  ErrorResponse.Code / Message presentes
+  mesma forma de chaves nos dois environments (não depender de unwrap)
+```
+
+Query params do produto continuam os do B070 (`pApiPage` / nomes já
+publicados) — o probe usou `Apipage` só por naming local; **não** copiar o
+naming do probe no produto.
+
+### 14.3 Escopo de código (ponto de partida)
+
+Arquivos / áreas a tocar (lista orientativa; varrer o repo pelo termo
+`ListResponse` e `CreateB070ServiceGroupSource` antes de editar):
+
+1. `Src/Extension/Diagnostics/ApiPlanListProcedureWriter.cs`
+   - `CreateB070ServiceGroupSource` / variantes: `out: &Items`, `&Pagination`,
+     `&AppliedFilters`, `&ErrorResponse` (sem `&ListResponse`);
+   - Variables do API Object e da Procedure List;
+   - `CreateCurrentListSource` / Source: preencher outs flat; no erro, **não**
+     contar com `ListResponse` “não null”; preencher `ErrorResponse` +
+     `RestStatusCode`;
+   - parm Rules da Procedure alinhado aos outs.
+2. Plano / naming de SDTs (`ApiPlan*`, builders hierárquicos B096/B098):
+   - decidir se o objeto KB `sdt*_API_ListResponse` **deixa de ser gerado**,
+     fica só interno, ou permanece no inventário Sync/Remover sem ser `out`
+     do serviço — **fechar no desenho da sessão** com impacto em Remover
+     (ordem ListResponse→Response) e metadata;
+   - `Items` precisa de tipo (Response ou `ListResponse_Item`); isso permanece.
+3. Contratos / testes offline / ouro / gates que afirmam `out:&ListResponse`
+   ou schema `ListOutput.ListResponse` (baselines Generation, ListHierarchical,
+   ServiceSource, etc.).
+4. Documentação pública afetada: `CHANGELOG` `[Unreleased]`, READMEs /
+   `Docs/Public/*` se o contrato HTTP for visível ao consumidor; este
+   documento (§1 / §14) no fechamento.
+5. **Não** alterar writers de Get/Create/Update/Delete além do necessário para
+   não quebrar compartilhamento de helpers.
+
+### 14.4 Sequência operacional sugerida
+
+1. **Desenho curto (mesmo PR/commit da implementação ou commit prévio):**
+   destino do SDT `ListResponse` (remover vs interno); nomes JSON finais;
+   impacto Sync/Remover/metadata; lista de testes a atualizar.
+2. **Implementar** writers + contratos + testes offline; build Release da
+   extensão (U14+ e satélite U13 se o writer for compartilhado).
+3. **Install manual** da DLL (BAT do repositório; IDE fechada; Admin).
+4. **Reaplicar Wizard** (ou Sync) numa API de teste (`apiNotaFiscal` /
+   equivalente) nos **dois** environments; `Build All`.
+5. **Smoke HTTP** matriz §6: `401`, `200` autenticado, filtro, `400` de
+   paginação — **mesmas chaves raiz** Framework e PostgreSQL; YAML coerente
+   com o corpo.
+6. **Regressão** Get/Create/Update/Delete smoke já existente.
+7. **Docs + CHANGELOG**; documento de evidência em `Docs/Implementation/`
+   (régua B124 / doc 15 §18.2) ou frase de dispensa no checkpoint.
+8. **Probes `ProbeB120`:** arquivar/remover na KB só depois do aceite HTTP do
+   produto (não são entrega).
+
+### 14.5 Critérios de aceite (fechamento)
+
+- [ ] YAML do List declara `Items` / `Pagination` / `AppliedFilters` /
+      `ErrorResponse` (sem `ListResponse` no schema de resposta do serviço).
+- [ ] HTTP `200` nos dois envs: mesmas chaves raiz flat.
+- [ ] HTTP `400` nos dois envs: `ErrorResponse` presente; status `400`.
+- [ ] Wrapper .NET (`*_services.cs`) do List **sem** unwrap prejudicial
+      (como o probe flat: sem `nonNullCount` útil no caminho, ou contador ≠ 1
+      com envelope completo).
+- [ ] Get/Create/Update/Delete sem regressão.
+- [ ] Breaking change comunicado no `CHANGELOG` (Framework deixava de expor
+      `ListResponse`).
+
+### 14.6 Fora de escopo desta implementação
+
+- Pedir fix à GeneXus / depender de U16+.
+- Editar artefatos gerados em `C:\KBs\...`.
+- “Empatar” `nonNullCount` com outs extras.
+- Manter `body.ListResponse.Items` no .NET.
+- Mudar a próxima ação única do checkpoint sem pedido humano.
+
+### 14.7 Contexto rápido para a sessão nova
+
+- KB de prova: `wsEducacaoSpTeste`; pasta `ProbeB120`.
+- Bases HTTP locais: ver `Temp/wsEducacaoSpTeste-local-test-environments.md`
+  (não versionado).
+- GX medido: 18 U15; gerador .NET Core unwrapa SDT out **com coleção**.
+- Commit de investigação recente: documentação deste arquivo na `main` do
+  repositório da extensão (histórico `B120` / Opt1).
