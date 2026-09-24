@@ -272,10 +272,6 @@ Depois de publicada, a seção da versão é imutável: correção posterior ent
 
 Antes de qualquer push:
 
-### Referências móveis a linhas C# (B128)
-
-Em Markdown sob `Docs/`, não aumente o multiconjunto global reconhecido de localizadores móveis `Arquivo.cs:NNN` ou faixas: o check `docs.csharpLineReferences` compara `origin/main` e `HEAD` e bloqueia qualquer aumento líquido, inclusive candidato malformado. Não exige migrar o legado. Para código atual, prefira símbolo/tipo/membro; para citação histórica, use SHA completo, caminho C# relativo e linha conforme o contrato versionado `Docs/Implementation/2026-09-23-B128-CONTRATO-REFERENCIAS-C.md`. O check é sintático e não prova a semântica da afirmação.
-
 **Aviso obrigatório:** a rotina pré-push deste repositório deve ser executada somente depois de a frente estar commitada. Não tratar execução sobre working tree suja como rotina pré-push válida; nesse caso, no máximo é diagnóstico intermediário. Primeiro criar o commit local da frente e só então executar os passos abaixo para revisar o intervalo commitado contra `origin/main`.
 
 1. executar `git fetch origin` separadamente para atualizar `origin/main`;
@@ -298,6 +294,10 @@ pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
 **Afrouxamento de regra normativa é evento de risco, não detalhe de redação.** Quando o intervalo revisado transformar uma regra de `não existe` em `não existe por padrão`, de `deve` em `deveria`, de absoluto em condicional, ou passar a descrever comportamento no presente condicional, isso vira **verificação obrigatória contra o código** — mesmo que todos os documentos concordem entre si. A varredura semântica procura divergência; convergência na direção errada passa limpo por ela. Um critério de aceite que proíbe reprova uma implementação parcial; um que já prevê o caso não reprova nada.
 
 Registrado em 2026-08-24, depois de três documentos normativos passarem a descrever, no presente condicional, um checkbox de `Delete` no Wizard e objetos `proc<Nome>_API_Delete` que **não existem** — a lista de serviços é fechada em `PrototypeWizardContract.ServiceNames`. O afrouxamento aumentou a coerência entre os documentos e, por isso, sobreviveu a três rodadas de revisão semântica; uma delas chegou a citar a redação afrouxada como texto vigente correto. Só caiu quando alguém foi ler o código em vez de comparar documentos entre si.
+
+### Referências móveis a linhas C# (B128)
+
+Em Markdown sob `Docs/`, o check `docs.csharpLineReferences` compara multiconjuntos globais entre `origin/main` e `HEAD`, por chave normalizada de caminho e localização. Qualquer ocorrência excedente de uma chave reprova, inclusive candidato malformado; remoções só compensam acréscimos da mesma chave. Não exige migrar o legado. Para código atual, prefira símbolo/tipo/membro. Para citação histórica, use `<sha-40>:<caminho-relativo>.cs#L<n>` ou `<sha-40>:<caminho-relativo>.cs#L<n>-L<m>`; substitua os placeholders por SHA de commit ancestral a `HEAD` com 40 caracteres hexadecimais, caminho Git relativo com `/` e sem segmento `..`, e números de linha positivos existentes no blob. Em uma faixa, `<m>` deve ser maior ou igual a `<n>`. O contrato versionado está em `Docs/Implementation/2026-09-23-B128-CONTRATO-REFERENCIAS-C.md`. O check é sintático e não prova a semântica da afirmação.
 
 ### Revisão semântica de contrato runtime
 
