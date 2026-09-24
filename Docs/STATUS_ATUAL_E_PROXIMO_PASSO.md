@@ -732,7 +732,7 @@ próxima ação no backlog em sessão nova. `B128` permanece fechado (2026-09-23
 
 169. Em 2026-09-24, **emenda B120 no registro de decisões** (sem promover próxima ação): `Emenda técnica — 2026-09-24` em `Docs/Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md` (flat canônico + A2 + remissões nos trechos ListResponse); `CHANGELOG` com uma entrada `B120` em `Changed` (aceite IDE absorvido); plano §14 fechado; Foundation 08 com remissão de `ListResponseSdtName`. Sem mudança de runtime.
 
-170. Em 2026-09-24, **correção `IsB070ApiObject` sem BC** (sem promover próxima ação): `PreviousB070ApiVariableSpecs(false)` alinha a `ListResponse`+`ErrorResponse`+`RestStatusCode` (alpha.8 / envelope); legado só `ListResponse` permanece; trava em `tests.listProcedureReencounterPolicy`. Build Release OK. Escolha da próxima ação continua após o push.
+170. Em 2026-09-24, **correção `IsB070ApiObject` sem BC** (sem promover próxima ação): `PreviousB070ApiVariableSpecs(false)` alinha a `ListResponse`+`ErrorResponse`+`RestStatusCode` (alpha.8 / envelope); legado só `ListResponse` permanece; trava em `tests.listProcedureReencounterPolicy`. Build Release OK. `B124: sem documento dedicado porque a prova deste recorte é o gate offline; G1–G4 e G6 não aplicáveis — não há Validated/Fixed de release citando sessão IDE deste item; G5 descartado — nesta máquina não há API produto List-only em envelope sem metadata (`wsEducacaoSpTeste` só tem probes Opt1 sem Wizard; `FabricaBrasil18Test` só `apiEmpresa` já flat com BC e metadata); smoke IDE deste cenário fica para KB futura com alvo adequado`. Escolha da próxima ação continua após o push.
 
 ## Bloqueios e fatos ainda não validados
 
