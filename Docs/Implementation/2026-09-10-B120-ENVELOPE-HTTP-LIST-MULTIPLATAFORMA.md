@@ -1,16 +1,20 @@
 # B120 — Envelope HTTP do `List` entre environments
 
 **Estado:** aberto; urgente; diagnóstico e contorno de plataforma **confirmados**
-(2026-09-24); a extensão **ainda não** mudou o contrato emitido. Falta desenhar e
-aplicar a mudança no writer/YAML/testes.
+(2026-09-24); tentativa de preservar `ListResponse` com terceiro `out` **refutada**
+pelo probe wrap (mesma data). A extensão **ainda não** mudou o contrato emitido.
+Falta desenhar e aplicar a mudança no writer/YAML/testes.
 
 **Correlato de backlog:** [`B120`](../Foundation/06-BACKLOG_v0.1.md).
 
 **Evidência principal (abertura):** [`B071-B073-B079-GET-CREATE-UPDATE-HTTP.md`](B071-B073-B079-GET-CREATE-UPDATE-HTTP.md),
 seção «Primeiro smoke HTTP de `List` após os Build All».
 
-**Evidência de contorno (2026-09-24):** probe descartável `apiProbeB120` na KB
+**Evidência de contorno (2026-09-24):** probe descartável `apiProbeB120` (flat) na KB
 `wsEducacaoSpTeste` (pasta `ProbeB120`) — ver §10.
+
+**Evidência negativa (2026-09-24):** probe descartável `apiProbeB120Wrap` (terceiro
+`out` `KeepAlive`) — ver §11. Não evita o unwrap no .NET.
 
 ## 1. Decisão de encaminhamento
 
@@ -28,8 +32,9 @@ Sync já não são a pendência que condiciona este item. `B120` deve ser retoma
 do checkpoint e antes de considerar o contrato HTTP do `List` validado de forma multiplataforma.
 
 **Atualização 2026-09-24:** apenas documentar a limitação **não** resolve (APIs para BFF /
-front fora do GeneXus). Mitigação que mantém o sucesso achatado **também não**. O caminho
-validado por probe é **deixar de usar `ListResponse`** e expor outs flat
+front fora do GeneXus). Mitigação que mantém o sucesso achatado **também não**. Acrescentar
+um terceiro `out` para “empatar” `nonNullCount` e preservar `ListResponse` **também não**
+(§11). O caminho validado por probe é **deixar de usar `ListResponse`** e expor outs flat
 (`Items` + `Pagination` + `AppliedFilters` + `ErrorResponse`). Isso ainda não foi
 aplicado na extensão.
 
@@ -74,8 +79,8 @@ Dono do sintoma: **wrapper REST gerado pelo GeneXus** (artefato
 
 ### 3.2 Mecanismo no gerador .NET (Core)
 
-No artefato `NETPostgreSQL155\web\apiprobeb120_services.cs` / `apinotafiscal_services.cs`,
-o padrão gerado é:
+No artefato `NETPostgreSQL155\web\apinotafiscal_services.cs` (e no probe wrap
+`apiprobeb120wrap_services.cs`), o padrão gerado é:
 
 1. montar um `*_ResponseData` com as propriedades de saída;
 2. contar quantas saídas “não nulas” entram em `nonNullCount`;
@@ -83,16 +88,17 @@ o padrão gerado é:
    achatando o envelope;
 4. caso contrário, retornar o objeto `data` completo.
 
-No `List` de `apiNotaFiscal`:
+No `List` de `apiNotaFiscal` e no método `Wrap` do probe:
 
-- só `ListResponse` passa por `if (!AV8ListResponse.IsNull)` e incrementa
+- só `ListResponse` passa por `if (!…ListResponse.IsNull)` e incrementa
   `nonNullCount`;
-- `ErrorResponse` é atribuído a `data`, mas **nunca** entra no contador;
+- `ErrorResponse` (e qualquer outro out “satélite”, p.ex. `KeepAlive`) é
+  atribuído a `data`, mas **nunca** entra no contador;
 - no sucesso, `ListResponse` não é null → `nonNullCount == 1` → unwrap → corpo =
   conteúdo de `ListResponse` (`Items` / `Pagination` / `AppliedFilters`);
-- no `400`, a Procedure já fez `&ListResponse = new()` no início → o SDT
-  continua “não null” → o unwrap devolve o `ListResponse` (muitas vezes só com
-  filtros) e o `ErrorResponse` some do HTTP.
+- no `400` do produto, a Procedure já fez `&ListResponse = new()` no início → o
+  SDT continua “não null” → o unwrap devolve o `ListResponse` (muitas vezes só
+  com filtros) e o `ErrorResponse` some do HTTP.
 
 No `Get` / `Create` / `Update` do **mesmo** `apinotafiscal_services.cs`, o
 gerador **não** incrementa `nonNullCount` para o SDT de dados (atribui direto a
@@ -113,7 +119,8 @@ Versão medida na sessão: GeneXus 18 **U15** (`18.0.15.188745`).
 - autenticação / IIS / DLL antiga da extensão;
 - diferença de totais entre bancos;
 - “faltou ErrorResponse no Source da Procedure” (ele é preenchido; o wrapper
-  descarta na serialização).
+  descarta na serialização);
+- “faltou um terceiro out para empurrar `nonNullCount`” — refutado no §11.
 
 ### 3.4 GeneXus 18 Upgrade 16
 
@@ -136,14 +143,17 @@ da extensão (contrato emitido).
 Enquanto só havia o sintoma em `apiNotaFiscal`, o documento exigia preservar
 `ListOutput` com `ListResponse` + `ErrorResponse` nos dois environments.
 
-### 4.2 Direção após o probe (2026-09-24)
+### 4.2 Direção após os probes (2026-09-24)
 
 Decisão humana explícita na sessão:
 
 1. só documentar a limitação → **rejeitado** (APIs críticas para BFF/front);
 2. mitigar mantendo sucesso achatado → **rejeitado**;
-3. **contornar sem `ListResponse`**, expondo outs flat → **validado por probe**
-   antes de redesenhar o produto na extensão.
+3. preservar `ListResponse` acrescentando um terceiro `out` para evitar
+   `nonNullCount == 1` → **testado e refutado** (§11); o gerador não conta o
+   out extra;
+4. **contornar sem `ListResponse`**, expondo outs flat → **validado por probe**
+   (§10) antes de redesenhar o produto na extensão.
 
 Envelope candidato a canônico do `List` (ainda não emitido pela extensão):
 
@@ -163,16 +173,23 @@ Implicações quando a frente for implementada na extensão (ainda pendente):
 - atualizar YAML OpenAPI, testes de contrato, docs públicos;
 - regenerar nos dois environments e repetir a matriz §6;
 - não quebrar `Get` / `Create` / `Update` / `Delete` (já usam `*Response` +
-  `ErrorResponse` sem o unwrap do List).
+  `ErrorResponse` sem o unwrap do List);
+- comunicar breaking change a consumidores Framework que já leem
+  `body.ListResponse…` (o flat unifica com o que o PostgreSQL já devolve hoje).
+
+Caminho ainda **não** medido para manter `ListResponse`: fazer o `List` gerar
+como o `Get` (sem ramo `IsNull`/`nonNullCount` no SDT de dados). Não confundir
+com o terceiro `out`, já descartado.
 
 ## 5. Plano de investigação — status
 
 | # | Item | Status 2026-09-24 |
 | --- | --- | --- |
 | 1 | Versões GX / busca de correção oficial (U16, SAC) | Feito — sem fix anunciado |
-| 2 | Reprodução mínima descartável (duas formas de outs) | Feito — `apiProbeB120` |
-| 3 | Comparar código gerado, YAML e HTTP sucesso/erro | Feito — ver §3 e §10 |
-| 4 | Testar alternativa de contrato suportada (flat outs) | Feito — passou nos dois envs |
+| 2 | Reprodução mínima descartável (flat e wrap) | Feito — `apiProbeB120` + `apiProbeB120Wrap` |
+| 3 | Comparar código gerado, YAML e HTTP sucesso/erro | Feito — ver §3, §10 e §11 |
+| 4 | Testar alternativa flat outs | Feito — passou nos dois envs (§10) |
+| 4b | Testar preservar `ListResponse` + terceiro `out` | Feito — **falhou** no .NET (§11) |
 | 5 | Decidir dono + envelope canônico | Direção tomada (flat); falta desenho na extensão |
 | 6 | Aplicar na extensão + Build All + HTTP | Pendente |
 | 7 | Atualizar OpenAPI público / docs / testes do produto | Pendente (após §6) |
@@ -205,14 +222,18 @@ envelope flat (não mais `ListResponse` + `ErrorResponse` como único par raiz).
   serializada do runtime.
 - Não fechar `B120` com base apenas em uma correção observada no PostgreSQL; os
   dois environments precisam ser comparados na mesma rodada.
-- Probe `apiProbeB120` / pasta `ProbeB120` na KB de teste é **descartável**; não
-  é entrega do produto e não substitui a mudança na extensão.
+- Probes `apiProbeB120` / `apiProbeB120Wrap` / pasta `ProbeB120` na KB de teste
+  são **descartáveis**; não são entrega do produto e não substituem a mudança
+  na extensão.
+- Não reabrir a hipótese do terceiro `out` sem evidência nova de que o gerador
+  passou a contar esse out em `nonNullCount`.
 
 ## 8. Dependências e saída esperada
 
 Dependências: GeneXus 18 e seus dois geradores configurados, KB de teste,
-`apiNotaFiscal` (sintoma), probe `apiProbeB120` (contorno), autenticação quando
-o serviço exigir, `Build All` / Build With These Only reproduzível.
+`apiNotaFiscal` (sintoma), probes `apiProbeB120` / `apiProbeB120Wrap`,
+autenticação quando o serviço exigir, `Build All` / Build With These Only
+reproduzível.
 
 Saída esperada (ainda aberta): implementação na extensão do envelope flat,
 evidência HTTP `200`/`400` nos dois environments sobre o `List` de produto
@@ -228,7 +249,7 @@ evidência HTTP `200`/`400` nos dois environments sobre o `List` de produto
 - A abertura de `B120` não promove a F1, não fecha sua lacuna de Sync e não
   altera a decisão de manter `B108` estacionado.
 
-## 10. Probe `apiProbeB120` (2026-09-24)
+## 10. Probe `apiProbeB120` — outs flat (2026-09-24)
 
 ### 10.1 Objetos (KB `wsEducacaoSpTeste`, pasta `ProbeB120`)
 
@@ -260,6 +281,8 @@ Em `NETPostgreSQL155\web\apiprobeb120_services.cs` **não há** `nonNullCount` /
 Base .NET: `http://localhost/wsEducacaoSpTesteNETPostgreSQL`  
 Base Framework: `http://localhost/wsEducacaoSpTesteNETFrameworkSQLServer`
 
+Query params gerados: `Apipage` / `Apipagesize` (não `page` / `pageSize`).
+
 | Env | Caso | Status | Observação |
 | --- | --- | --- | --- |
 | .NET (PG) | `Apipage=1&Apipagesize=10` | `200` | `Items`+`Pagination`+`AppliedFilters`+`ErrorResponse` |
@@ -282,14 +305,79 @@ Warnings `spc0022` (`&ApiPage` / `&ApiPageSize` input-only atribuídos):
 cosméticos no probe; o padrão do produto usa parâmetros `pApiPage` e cópia
 interna.
 
-## 11. Notas úteis para a implementação futura
+## 11. Probe `apiProbeB120Wrap` — terceiro `out` (2026-09-24)
+
+Objetivo: manter `ListResponse` + `ErrorResponse` e acrescentar um `out` dummy
+(`KeepAlive`) sempre preenchido, na hipótese de `nonNullCount` sair de 1 e o
+gerador deixar de fazer unwrap. O flat (§10) **não** foi alterado.
+
+### 11.1 Objetos
+
+| Objeto | Papel |
+| --- | --- |
+| `apiProbeB120Wrap` | API; `GET /probe-b120-wrap`; `SecurityLevel(None)` |
+| `procProbeB120_WrapList` | Preenche `ListResponse` + `ErrorResponse` + `KeepAlive` |
+| `sdtProbeB120Wrap_ListResponse` | `Items` / `Pagination` / `AppliedFilters` (reusa SDTs do flat) |
+| `sdtProbeB120Wrap_KeepAlive` | Dummy (`Marker`); preenchido no `200` e no `400` |
+
+Assinatura:
+
+```text
+Wrap(in: &ApiPage, in: &ApiPageSize,
+     out: &ListResponse, out: &ErrorResponse, out: &KeepAlive)
+  => procProbeB120_WrapList(..., &RestStatusCode);
+```
+
+### 11.2 Wrapper gerado (.NET / PostgreSQL)
+
+Em `NETPostgreSQL155\web\apiprobeb120wrap_services.cs`:
+
+- só `ListResponse` tem `if (!AV8ListResponse.IsNull) { nonNullCount++; … }`;
+- `ErrorResponse` e `KeepAlive` são atribuídos a `data` **sem** incrementar o
+  contador;
+- no sucesso, `nonNullCount == 1` → `GetResponse(nonNullData)` → unwrap.
+
+O YAML OpenAPI declara `WrapOutput` com as três propriedades; o HTTP do .NET no
+`200` **não** respeita esse schema.
+
+### 11.3 Smoke HTTP
+
+Query: `Apipage` / `Apipagesize`.
+
+| Env | Caso | Status | Corpo observado |
+| --- | --- | --- | --- |
+| Framework | `Apipage=1&Apipagesize=10` | `200` | envelope `ListResponse`+`ErrorResponse`+`KeepAlive` |
+| Framework | `Apipagesize=101` | `400` | `ErrorResponse`+`KeepAlive` |
+| .NET (PG) | `Apipage=1&Apipagesize=10` | `200` | **unwrap** `Items`+`Pagination`+`AppliedFilters` (sem `KeepAlive`) |
+| .NET (PG) | `Apipagesize=101` | `400` | `ErrorResponse`+`KeepAlive` (`ListResponse` omitido; `nonNullCount` ficou 0) |
+
+### 11.4 Conclusão
+
+**Acrescentar um terceiro `out` não evita o unwrap no .NET.** O gerador trata o
+dummy como trata `ErrorResponse`: coloca em `data`, não conta. No Framework o
+envelope já era estável; o terceiro out não muda o problema multiplataforma.
+
+Hipótese residual (não medida nesta sessão): fazer o `List` gerar no padrão do
+`Get` (sem ramo `IsNull`/`nonNullCount` no SDT de dados). Isso **não** é o mesmo
+que “mais um out”.
+
+### 11.5 Detalhe de compilação no Framework
+
+`&ListResponse.Pagination = new()` no Source GeneXus gerou `= new();`
+(target-typed `new` do C# moderno) e falhou no MSBuild do Framework 4 com
+CS1031. Contorno do probe: `new()` só em variável tipada local
+(`&Pagination = new()` … `&ListResponse.Pagination = &Pagination`). Irrelevante
+para o produto se o writer já seguir esse padrão.
+
+## 12. Notas úteis para a implementação futura
 
 1. **Não** tentar “consertar” o PostgreSQL editando `*_services.cs` gerado.
 2. Alinhar o `List` ao padrão que o gerador .NET já trata bem nos outros
    verbos: múltiplas propriedades no `ResponseData` **sem** o ramo
-   `if (!*.IsNull) nonNullCount++` associado a um único SDT envelope.
+   `if (!*.IsNull) nonNullCount++` associado a um único SDT envelope — **ou**
+   expor outs flat como no §10 (caminho já medido).
 3. Expor `Items` como coleção + SDTs satélite + `ErrorResponse` foi suficiente
-   no probe para o gerador emitir sempre o envelope completo.
+   no probe flat para o gerador emitir sempre o envelope completo.
 4. No erro, a Procedure do produto hoje instancia `ListResponse` cedo; com outs
    flat, garantir que `ErrorResponse` seja preenchido e que o status
    (`&RestStatusCode` / evento `*.After`) continue propagando `400`.
@@ -303,8 +391,10 @@ interna.
    automaticamente `sac.genexus.com`; o banner “SIGNING IN…” some só após login
    no próprio SAC. Irrelevante para o runtime; útil para próximas varreduras de
    RN.
+8. Não investir em “mais outs” na esperança de `nonNullCount ≠ 1` sem prova de
+   que o gerador passou a contar esses outs.
 
-## 12. Próximo passo técnico (quando a frente for aberta na extensão)
+## 13. Próximo passo técnico (quando a frente for aberta na extensão)
 
 1. Desenhar o contrato flat do `List` (nomes JSON, SDTs, YAML, testes).
 2. Implementar no writer e no plano de SDT; remover out `ListResponse` do
@@ -313,4 +403,5 @@ interna.
    em `apiNotaFiscal` (ou sucessor) **e** regressão Get/Create/Update/Delete.
 4. Atualizar `CHANGELOG`, docs públicos afetados e este documento com o
    fechamento.
-5. Remover ou arquivar o probe `ProbeB120` na KB quando não for mais necessário.
+5. Remover ou arquivar os probes `ProbeB120` na KB quando não forem mais
+   necessários.
