@@ -77,7 +77,6 @@ internal static class ApiPlanGeneratedApiRemovalInventory
 
         return new[]
         {
-            apiPlan.ListResponseSdtName,
             apiPlan.CreateRequestSdtName,
             apiPlan.UpdateRequestSdtName,
             apiPlan.ListFiltersSdtName,
@@ -125,12 +124,12 @@ internal static class ApiPlanGeneratedApiRemovalInventory
         var updateRequest = sdts["updateRequest"]?.Value<string>();
         var response = sdts["response"]?.Value<string>();
         var listFilters = sdts["listFilters"]?.Value<string>();
+        // B120: listResponse pode estar ausente em metadata nova (outs flat); Remover flat ainda lê se existir.
         var listResponse = sdts["listResponse"]?.Value<string>();
         if (string.IsNullOrWhiteSpace(createRequest)
             || string.IsNullOrWhiteSpace(updateRequest)
             || string.IsNullOrWhiteSpace(response)
-            || string.IsNullOrWhiteSpace(listFilters)
-            || string.IsNullOrWhiteSpace(listResponse))
+            || string.IsNullOrWhiteSpace(listFilters))
         {
             return null;
         }
@@ -140,7 +139,9 @@ internal static class ApiPlanGeneratedApiRemovalInventory
         var updateRequestName = updateRequest!;
         var responseName = response!;
         var listFiltersName = listFilters!;
-        var listResponseName = listResponse!;
+        var listResponseName = string.IsNullOrWhiteSpace(listResponse)
+            ? "sdt" + transaction + "_API_ListResponse"
+            : listResponse!;
 
         var apiName = metadata.SelectToken("ownership.apiName")?.Value<string>()
             ?? metadata.SelectToken("api.name")?.Value<string>()

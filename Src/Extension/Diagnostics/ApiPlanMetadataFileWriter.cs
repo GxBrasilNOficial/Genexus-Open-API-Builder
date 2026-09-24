@@ -443,7 +443,8 @@ internal static class ApiPlanMetadataFileWriter
                     ["updateRequest"] = apiPlan.UpdateRequestSdtName,
                     ["response"] = apiPlan.ResponseSdtName,
                     ["listFilters"] = apiPlan.ListFiltersSdtName,
-                    ["listResponse"] = apiPlan.ListResponseSdtName,
+                    // B120: envelope ListResponse deixou de ser gerado; campo omitido na metadata nova.
+                    // Remover de APIs legadas ainda lê listResponse via BuildFlatOwnSdtNames.
                     ["own"] = ToStringArray(ApiPlanGeneratedApiRemovalInventory.BuildOwnSdtNamesForRemoval(apiPlan)),
                     ["shared"] = ToStringArray(apiPlan.SharedSdtNames),
                 },

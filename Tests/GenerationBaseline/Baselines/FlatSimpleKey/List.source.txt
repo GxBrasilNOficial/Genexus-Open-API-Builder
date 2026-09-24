@@ -1,7 +1,6 @@
 &RestStatusCode = 200
-&ListResponse = new()
+&Pagination = new()
 &AppliedFilters = new()
-&ListResponse.AppliedFilters = &AppliedFilters
 &ApiPage = &pApiPage
 &ApiPageSize = &pApiPageSize
 If &ApiPage.IsEmpty()
@@ -46,14 +45,14 @@ For each
         &Item.FlatSimpleKeyId = FlatSimpleKeyId
         &Item.FlatSimpleKeyName = FlatSimpleKeyName
         &Item.FlatSimpleKeyActive = FlatSimpleKeyActive
-        &ListResponse.Items.Add(&Item)
+        &Items.Add(&Item)
     EndIf
 EndFor
-&ListResponse.Pagination.Page = &ApiPage
-&ListResponse.Pagination.PageSize = &ApiPageSize
-&ListResponse.Pagination.TotalCount = &TotalCount
+&Pagination.Page = &ApiPage
+&Pagination.PageSize = &ApiPageSize
+&Pagination.TotalCount = &TotalCount
 If &TotalCount = 0
-    &ListResponse.Pagination.TotalPages = 0
+    &Pagination.TotalPages = 0
 Else
-    &ListResponse.Pagination.TotalPages = Int((&TotalCount + &ApiPageSize - 1) / &ApiPageSize)
+    &Pagination.TotalPages = Int((&TotalCount + &ApiPageSize - 1) / &ApiPageSize)
 EndIf

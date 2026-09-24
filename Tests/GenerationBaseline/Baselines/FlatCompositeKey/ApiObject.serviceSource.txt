@@ -3,8 +3,8 @@ apiFlatCompositeKey
     [Description("List FlatCompositeKey")]
     [RestPath("/flatcompositekey")]
     [SecurityLevel(Authentication)]
-    List(in: &ApiPage, in: &ApiPageSize, in: &FlatCompositeKeyCompanyId, in: &FlatCompositeKeyDescription, out: &ListResponse, out: &ErrorResponse)
-        => procFlatCompositeKey_API_List(&ApiPage, &ApiPageSize, &FlatCompositeKeyCompanyId, &FlatCompositeKeyDescription, &ListResponse, &ErrorResponse, &RestStatusCode);
+    List(in: &ApiPage, in: &ApiPageSize, in: &FlatCompositeKeyCompanyId, in: &FlatCompositeKeyDescription, out: &Items, out: &Pagination, out: &AppliedFilters, out: &ErrorResponse)
+        => procFlatCompositeKey_API_List(&ApiPage, &ApiPageSize, &FlatCompositeKeyCompanyId, &FlatCompositeKeyDescription, &Items, &Pagination, &AppliedFilters, &ErrorResponse, &RestStatusCode);
 
     [Description("Get FlatCompositeKey")]
     [RestPath("/flatcompositekey/{&FlatCompositeKeyCompanyId}/{&FlatCompositeKeyItemId}/{&FlatCompositeKeyCode}")]

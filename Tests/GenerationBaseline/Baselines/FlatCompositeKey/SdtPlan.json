@@ -144,44 +144,6 @@
           "source": "ListFilters"
         }
       ]
-    },
-    {
-      "name": "sdtFlatCompositeKey_API_ListResponse",
-      "backlogId": "B044",
-      "kind": "ListResponse",
-      "scope": "TransactionModuleFolder:FlatCompositeKeyOpenApi",
-      "members": [
-        {
-          "name": "Items",
-          "dataType": "sdtFlatCompositeKey_API_Response",
-          "length": 0,
-          "decimals": 0,
-          "isNullable": false,
-          "isCollection": true,
-          "collectionItemType": "sdtFlatCompositeKey_API_Response",
-          "source": "ListResponse"
-        },
-        {
-          "name": "Pagination",
-          "dataType": "sdt_API_Pagination",
-          "length": 0,
-          "decimals": 0,
-          "isNullable": false,
-          "isCollection": false,
-          "collectionItemType": "",
-          "source": "ListResponse"
-        },
-        {
-          "name": "AppliedFilters",
-          "dataType": "sdtFlatCompositeKey_API_ListFilters",
-          "length": 0,
-          "decimals": 0,
-          "isNullable": true,
-          "isCollection": false,
-          "collectionItemType": "",
-          "source": "ListResponse"
-        }
-      ]
     }
   ],
   "sharedSdts": [

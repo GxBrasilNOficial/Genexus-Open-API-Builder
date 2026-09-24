@@ -94,13 +94,17 @@ internal static class ApiPlanListProcedureWriter
         }
         ApiPlanSaveStepExecutor.Execute(saveSteps, progress, onSaveCompleted);
 
+        // B120 A2 — após Procedure/API flat, apagar SDT envelope ListResponse órfão se ainda existir.
+        var removedOrphan = ApiPlanListResponseOrphanCleanup.TryDeleteOwnedOrphan(model, plan, kbIndex, progress);
+
         return new ApiPlanListProcedureWriteResult(
             procedure.Guid,
             api.Guid,
             plan.ListFilters.Count,
             plan.StaticOrder.Count,
             plan.DefaultPageSize,
-            plan.MaximumPageSize);
+            plan.MaximumPageSize,
+            removedOrphan);
     }
 
     internal static bool IsB070ApiObject(KBModel model, ApiPlanKbObjectNameIndex kbIndex, ApiPlan plan, API api)
@@ -137,6 +141,15 @@ internal static class ApiPlanListProcedureWriter
                 NormalizeForComparison(CreateB070ServiceGroupSource(plan, includeBusinessComponentParameters)),
                 StringComparison.Ordinal) ||
             ApiPlanServiceSourceContract.MatchesCurrentB070(
+                source,
+                plan.ApiName,
+                plan.TransactionName,
+                plan.ModuleTarget,
+                plan.Services.Select(service => service.Name),
+                plan.PrimaryKey.Select(field => field.Name),
+                plan.ListFilters.SelectMany(FilterVariableNames),
+                includeBusinessComponentParameters) ||
+            ApiPlanServiceSourceContract.MatchesPreviousB070ListEnvelope(
                 source,
                 plan.ApiName,
                 plan.TransactionName,
@@ -344,7 +357,78 @@ internal static class ApiPlanListProcedureWriter
         var lines = new List<string>();
         if (useExplicitErrors)
         {
+            // B120 — outs flat (Items/Pagination/AppliedFilters/ErrorResponse). Sem envelope ListResponse.
             lines.Add("&RestStatusCode = 200");
+            lines.Add("&Pagination = new()");
+            if (initializeAppliedFilters && useAppliedFiltersVariable)
+            {
+                lines.Add("&AppliedFilters = new()");
+            }
+
+            if (includeParameterCopy)
+            {
+                lines.Add($"&{PageVariableName} = &{PageParameterName}");
+                lines.Add($"&{PageSizeVariableName} = &{PageSizeParameterName}");
+            }
+
+            lines.AddRange(new[]
+            {
+                $"If &{PageVariableName}.IsEmpty()",
+                $"    &{PageVariableName} = 1",
+                "EndIf",
+                $"If &{PageSizeVariableName}.IsEmpty()",
+                $"    &{PageSizeVariableName} = {plan.DefaultPageSize}",
+                "EndIf",
+            });
+
+            lines.AddRange(InvalidRequestCondition(
+                $"If &{PageVariableName} < 1",
+                useExplicitErrors,
+                "page must be greater than or equal to 1"));
+            lines.AddRange(InvalidRequestCondition(
+                $"If &{PageSizeVariableName} < 1",
+                useExplicitErrors,
+                "pageSize must be greater than or equal to 1"));
+            lines.AddRange(InvalidRequestCondition(
+                $"If &{PageSizeVariableName} > {plan.MaximumPageSize}",
+                useExplicitErrors,
+                "pageSize exceeds the configured maximum"));
+
+            lines.AddRange(ValidateRanges(plan, useExplicitErrors));
+            lines.Add($"&FirstRecord = ((&{PageVariableName} - 1) * &{PageSizeVariableName}) + 1");
+            lines.Add($"&LastRecord = &{PageVariableName} * &{PageSizeVariableName}");
+            lines.Add("&TotalCount = 0");
+            lines.AddRange(AssignAppliedFilters(plan, assignThroughResponse: false, trackAppliedFilters: false));
+
+            lines.Add("For each");
+            var flatOrder = ResolveDeterministicOrder(plan);
+            if (flatOrder.Count > 0)
+            {
+                lines.Add("    order " + string.Join(", ", flatOrder.Select(FormatOrderPart)));
+            }
+
+            lines.AddRange(FilterWhereClauses(plan));
+            lines.Add("    &TotalCount += 1");
+            lines.Add("    If &TotalCount >= &FirstRecord and &TotalCount <= &LastRecord");
+            lines.Add("        &Item = new()");
+            lines.AddRange(plan.ResponseFields.Select(field => $"        &Item.{field.Name} = {field.Name}"));
+            foreach (var count in ResolveListCountAssignments(plan))
+            {
+                lines.Add($"        &Item.{count.MemberName} = count({count.AggregateAttributeName})");
+            }
+
+            lines.Add("        &Items.Add(&Item)");
+            lines.Add("    EndIf");
+            lines.Add("EndFor");
+            lines.Add($"&Pagination.Page = &{PageVariableName}");
+            lines.Add($"&Pagination.PageSize = &{PageSizeVariableName}");
+            lines.Add("&Pagination.TotalCount = &TotalCount");
+            lines.Add("If &TotalCount = 0");
+            lines.Add("    &Pagination.TotalPages = 0");
+            lines.Add("Else");
+            lines.Add($"    &Pagination.TotalPages = Int((&TotalCount + &{PageSizeVariableName} - 1) / &{PageSizeVariableName})");
+            lines.Add("EndIf");
+            return string.Join(Environment.NewLine, lines);
         }
 
         lines.Add("&ListResponse = new()");
@@ -595,7 +679,7 @@ internal static class ApiPlanListProcedureWriter
     {
         var parameters = new List<string> { $"in:&{PageParameterName}", $"in:&{PageSizeParameterName}" };
         parameters.AddRange(plan.ListFilters.SelectMany(FilterVariableNames).Select(name => "in:&" + name));
-        parameters.AddRange(new[] { "out:&ListResponse", "out:&ErrorResponse", "out:&RestStatusCode" });
+        parameters.AddRange(new[] { "out:&Items", "out:&Pagination", "out:&AppliedFilters", "out:&ErrorResponse", "out:&RestStatusCode" });
         return "parm(" + string.Join(", ", parameters) + ");";
     }
 
@@ -639,7 +723,9 @@ internal static class ApiPlanListProcedureWriter
         {
             var parameters = new List<string> { $"in: &{PageVariableName}", $"in: &{PageSizeVariableName}" };
             parameters.AddRange(plan.ListFilters.SelectMany(FilterVariableNames).Select(name => "in: &" + name));
-            parameters.Add("out: &ListResponse");
+            parameters.Add("out: &Items");
+            parameters.Add("out: &Pagination");
+            parameters.Add("out: &AppliedFilters");
             if (exposeErrorResponse)
             {
                 parameters.Add("out: &ErrorResponse");
@@ -647,7 +733,9 @@ internal static class ApiPlanListProcedureWriter
 
             var arguments = new List<string> { $"&{PageVariableName}", $"&{PageSizeVariableName}" };
             arguments.AddRange(plan.ListFilters.SelectMany(FilterVariableNames).Select(name => "&" + name));
-            arguments.Add("&ListResponse");
+            arguments.Add("&Items");
+            arguments.Add("&Pagination");
+            arguments.Add("&AppliedFilters");
             if (exposeErrorResponse)
             {
                 arguments.AddRange(new[] { "&ErrorResponse", "&RestStatusCode" });
@@ -690,10 +778,11 @@ internal static class ApiPlanListProcedureWriter
             new(PageSizeParameterName, "Numeric(9.0)"),
             new(PageVariableName, "Numeric(9.0)"),
             new(PageSizeVariableName, "Numeric(9.0)"),
-            new("ListResponse", plan.ListResponseSdtName),
+            new("Items", ResolveListItemSdtName(plan), isCollection: true),
+            new("Pagination", "sdt_API_Pagination"),
+            new("AppliedFilters", plan.ListFiltersSdtName),
             new("ErrorResponse", "sdt_API_ErrorResponse"),
             new("RestStatusCode", "Numeric(3.0)"),
-            new("AppliedFilters", plan.ListFiltersSdtName),
             new("Item", ResolveListItemSdtName(plan)),
             new("FirstRecord", "Numeric(18.0)"),
             new("LastRecord", "Numeric(18.0)"),
@@ -782,7 +871,9 @@ internal static class ApiPlanListProcedureWriter
         {
             new(PageVariableName, "Numeric(9.0)"),
             new(PageSizeVariableName, "Numeric(9.0)"),
-            new("ListResponse", plan.ListResponseSdtName),
+            new("Items", ResolveListItemSdtName(plan), isCollection: true),
+            new("Pagination", "sdt_API_Pagination"),
+            new("AppliedFilters", plan.ListFiltersSdtName),
             new("ErrorResponse", "sdt_API_ErrorResponse"),
             new("RestStatusCode", "Numeric(3.0)"),
         };
@@ -1108,6 +1199,7 @@ internal static class ApiPlanListProcedureWriter
             if (!TrySetAttributeBasedOn(kbIndex, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
                 throw new InvalidOperationException($"B070 bloqueado: tipo da variavel '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
 
+            item.IsCollection = variable.IsCollection;
             procedure.Variables.Variables.Add(item);
         }
     }
@@ -1125,6 +1217,7 @@ internal static class ApiPlanListProcedureWriter
             if (!TrySetAttributeBasedOn(kbIndex, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
                 throw new InvalidOperationException($"B070 bloqueado: tipo da variavel de API '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
 
+            item.IsCollection = variable.IsCollection;
             ConfigureServiceRequired(item, variable);
             api.Variables.Variables.Add(item);
         }
@@ -1164,6 +1257,7 @@ internal static class ApiPlanListProcedureWriter
         if (current is null) return false;
         var expected = new Variable(variable.Name, procedure.Variables);
         if (!TrySetAttributeBasedOn(kbIndex, expected, variable.DataType) && !DataType.ParseInto(model, variable.DataType, expected)) return false;
+        expected.IsCollection = variable.IsCollection;
         return MatchesVariableSpec(current, expected);
     }
 
@@ -1173,11 +1267,13 @@ internal static class ApiPlanListProcedureWriter
         if (current is null) return false;
         var expected = new Variable(variable.Name, api.Variables);
         if (!TrySetAttributeBasedOn(kbIndex, expected, variable.DataType) && !DataType.ParseInto(model, variable.DataType, expected)) return false;
+        expected.IsCollection = variable.IsCollection;
         return MatchesVariableSpec(current, expected);
     }
 
     private static bool MatchesVariableSpec(Variable current, Variable expected) =>
         current.Type == expected.Type &&
+        current.IsCollection == expected.IsCollection &&
         SameKbObject(current.AttributeBasedOn, expected.AttributeBasedOn) &&
         SameKbObject(current.DomainBasedOn, expected.DomainBasedOn) &&
         Equals(current.DomainKey, expected.DomainKey) &&
@@ -1289,7 +1385,14 @@ internal static class ApiPlanListProcedureWriter
 
 internal sealed class ApiPlanListProcedureWriteResult
 {
-    public ApiPlanListProcedureWriteResult(Guid listProcedureGuid, Guid apiObjectGuid, int filters, int orderParts, int defaultPageSize, int maximumPageSize)
+    public ApiPlanListProcedureWriteResult(
+        Guid listProcedureGuid,
+        Guid apiObjectGuid,
+        int filters,
+        int orderParts,
+        int defaultPageSize,
+        int maximumPageSize,
+        string? removedOrphanListResponseSdtName = null)
     {
         ListProcedureGuid = listProcedureGuid;
         ApiObjectGuid = apiObjectGuid;
@@ -1297,6 +1400,7 @@ internal sealed class ApiPlanListProcedureWriteResult
         OrderParts = orderParts;
         DefaultPageSize = defaultPageSize;
         MaximumPageSize = maximumPageSize;
+        RemovedOrphanListResponseSdtName = removedOrphanListResponseSdtName;
     }
 
     public Guid ListProcedureGuid { get; }
@@ -1305,4 +1409,5 @@ internal sealed class ApiPlanListProcedureWriteResult
     public int OrderParts { get; }
     public int DefaultPageSize { get; }
     public int MaximumPageSize { get; }
+    public string? RemovedOrphanListResponseSdtName { get; }
 }

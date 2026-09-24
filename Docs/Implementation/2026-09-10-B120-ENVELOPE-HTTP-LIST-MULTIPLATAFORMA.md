@@ -1,8 +1,10 @@
 # B120 — Envelope HTTP do `List` entre environments
 
-**Estado:** investigação **fechada** (2026-09-24); implementação na extensão
-**pendente**. Contorno canônico = outs flat do `List` (§10, §14). Probes na KB
-de teste documentados em §10–§12. **Handoff para nova sessão: executar §14.**
+**Estado:** **fechado** (2026-09-24). Investigação + implementação (opção A + A2) +
+aceite IDE/HTTP §6 na `Teste`/`wsEducacaoSpTeste`. Contorno canônico = outs flat do
+`List` (§10, §14). Probes na KB de teste documentados em §10–§12 (descartáveis).
+Evidência de fechamento:
+[`2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`](2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md).
 
 **Correlato de backlog:** [`B120`](../Foundation/06-BACKLOG_v0.1.md).
 
@@ -36,7 +38,7 @@ um terceiro `out` (§11) **também não**. Fazer o envelope “como o Get” **s
 sem coleção no SDT de dados** (§12 A/B); com `Items` (coleção de SDT ou de
 `VARCHAR`) o unwrap volta (§12 C/D). O caminho validado para o `List` de produto é
 **deixar de usar `ListResponse`** e expor outs flat (`Items` + `Pagination` +
-`AppliedFilters` + `ErrorResponse`). Isso ainda não foi aplicado na extensão.
+`AppliedFilters` + `ErrorResponse`). **Aplicado na extensão e aceito em 2026-09-24.**
 
 ## 2. Problema observado
 
@@ -193,8 +195,8 @@ tem caminho medido na extensão: o gerador .NET unwrapa justamente esse desenho.
 | 4b | Testar preservar `ListResponse` + terceiro `out` | Feito — **falhou** (§11) |
 | 4c | Testar Opt1 (forma do SDT / coleção) | Feito — gatilho = coleção (§12) |
 | 5 | Decidir dono + envelope canônico | **Feito** — flat (§4.2, §14) |
-| 6 | Aplicar na extensão + Build All + HTTP | **Pendente** — plano §14 |
-| 7 | Atualizar OpenAPI público / docs / testes do produto | Pendente (após §6) |
+| 6 | Aplicar na extensão + Build All + HTTP | **Código + baselines offline** (2026-09-24); smoke HTTP §6 **pendente** |
+| 7 | Atualizar OpenAPI público / docs / testes do produto | Parcial (CHANGELOG); HTTP/YAML de produto após smoke |
 
 ## 6. Matriz de aceitação
 
@@ -461,10 +463,13 @@ autorização humana — este §14 é o roteiro quando a frente for aberta.
 | --- | --- |
 | Envelope HTTP canônico do `List` | Flat: `Items`, `Pagination`, `AppliedFilters`, `ErrorResponse` na raiz |
 | `ListResponse` como `out` do API Object / Procedure | **Remover** do contrato público |
+| Destino do SDT envelope na KB | **Opção A** — deixa de ser gerado |
+| Órfão em reapply (APIs antigas) | **A2** — apagar se posse da extensão (`ApiPlanListResponseOrphanCleanup`) |
 | Manter `ListResponse` com `Items` “como o Get” | **Impossível** com o gerador medido (§12) |
 | Terceiro `out` dummy | **Inútil** (§11) |
 | U16 como fix | **Não** (§3.4) |
 | Prova de contorno | Probe `apiProbeB120` (§10) |
+| Estado 2026-09-24 | Código na extensão + baselines; falta install + smoke §6 |
 
 ### 14.2 Contrato alvo (HTTP + YAML)
 
@@ -534,16 +539,19 @@ Arquivos / áreas a tocar (lista orientativa; varrer o repo pelo termo
 
 ### 14.5 Critérios de aceite (fechamento)
 
-- [ ] YAML do List declara `Items` / `Pagination` / `AppliedFilters` /
+- [x] YAML do List declara `Items` / `Pagination` / `AppliedFilters` /
       `ErrorResponse` (sem `ListResponse` no schema de resposta do serviço).
-- [ ] HTTP `200` nos dois envs: mesmas chaves raiz flat.
-- [ ] HTTP `400` nos dois envs: `ErrorResponse` presente; status `400`.
-- [ ] Wrapper .NET (`*_services.cs`) do List **sem** unwrap prejudicial
+- [x] HTTP `200` nos dois envs: mesmas chaves raiz flat.
+- [x] HTTP `400` nos dois envs: `ErrorResponse` presente; status `400`.
+- [x] Wrapper .NET (`*_services.cs`) do List **sem** unwrap prejudicial
       (como o probe flat: sem `nonNullCount` útil no caminho, ou contador ≠ 1
       com envelope completo).
-- [ ] Get/Create/Update/Delete sem regressão.
-- [ ] Breaking change comunicado no `CHANGELOG` (Framework deixava de expor
+- [x] Get/Create/Update/Delete sem regressão.
+- [x] Breaking change comunicado no `CHANGELOG` (Framework deixava de expor
       `ListResponse`).
+
+Fechamento registrado em
+[`2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`](2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md).
 
 ### 14.6 Fora de escopo desta implementação
 

@@ -88,7 +88,40 @@ public static class ApiPlanServiceSourceContract
             exposeErrorResponse: true,
             validateRestMethods: true,
             validateSecurityLevel: true,
-            includeListErrorResponse: true);
+            includeListErrorResponse: true,
+            useFlatListOutputs: true);
+    }
+
+    /// <summary>
+    /// B120 — contrato List imediatamente anterior aos outs flat:
+    /// <c>out:&ListResponse</c> + <c>out:&ErrorResponse</c> (envelope).
+    /// </summary>
+    public static bool MatchesPreviousB070ListEnvelope(
+        string source,
+        string apiName,
+        string transactionName,
+        string moduleTarget,
+        IEnumerable<string> services,
+        IEnumerable<string> primaryKeyNames,
+        IEnumerable<string> listFilterNames,
+        bool includeBusinessComponentParameters)
+    {
+        return Matches(
+            source,
+            apiName,
+            transactionName,
+            moduleTarget,
+            services,
+            primaryKeyNames,
+            includeBusinessComponentParameters,
+            listFilterNames,
+            hasListContract: true,
+            hasRestRuntimeContract: true,
+            exposeErrorResponse: true,
+            validateRestMethods: true,
+            validateSecurityLevel: true,
+            includeListErrorResponse: true,
+            useFlatListOutputs: false);
     }
 
     public static bool MatchesB079(
@@ -212,7 +245,8 @@ public static class ApiPlanServiceSourceContract
         bool exposeErrorResponse,
         bool validateRestMethods = true,
         bool validateSecurityLevel = true,
-        bool includeListErrorResponse = false)
+        bool includeListErrorResponse = false,
+        bool useFlatListOutputs = false)
     {
         if (string.IsNullOrWhiteSpace(source) ||
             string.IsNullOrWhiteSpace(apiName) ||
@@ -278,14 +312,14 @@ public static class ApiPlanServiceSourceContract
 
         return normalizedServices.All(service =>
         {
-            var servicePrefix = ServiceSignature(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters, normalizedListFilterNames, hasListContract, hasRestRuntimeContract, exposeErrorResponse, includeListErrorResponse) + "=>";
+            var servicePrefix = ServiceSignature(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters, normalizedListFilterNames, hasListContract, hasRestRuntimeContract, exposeErrorResponse, includeListErrorResponse, useFlatListOutputs) + "=>";
             if (!TryReadProcedureCall(compactSource, servicePrefix, out var calledObject, out var calledArguments))
             {
                 return false;
             }
 
             return string.Equals(calledObject, ExpectedProcedureReference(moduleTarget, transactionName, service), StringComparison.Ordinal) &&
-                string.Equals(calledArguments, ProcedureArguments(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters, normalizedListFilterNames, hasListContract, hasRestRuntimeContract, includeListErrorResponse), StringComparison.Ordinal);
+                string.Equals(calledArguments, ProcedureArguments(service, normalizedPrimaryKeyNames, includeBusinessComponentParameters, normalizedListFilterNames, hasListContract, hasRestRuntimeContract, includeListErrorResponse, useFlatListOutputs), StringComparison.Ordinal);
         });
     }
 
@@ -297,13 +331,25 @@ public static class ApiPlanServiceSourceContract
         bool hasListContract,
         bool hasRestRuntimeContract,
         bool exposeErrorResponse,
-        bool includeListErrorResponse)
+        bool includeListErrorResponse,
+        bool useFlatListOutputs)
     {
         if (hasListContract && string.Equals(service, "List", StringComparison.OrdinalIgnoreCase))
         {
-            var outputs = includeListErrorResponse
-                ? new[] { "out:&ListResponse", "out:&ErrorResponse" }
-                : new[] { "out:&ListResponse" };
+            string[] outputs;
+            if (useFlatListOutputs)
+            {
+                outputs = includeListErrorResponse
+                    ? new[] { "out:&Items", "out:&Pagination", "out:&AppliedFilters", "out:&ErrorResponse" }
+                    : new[] { "out:&Items", "out:&Pagination", "out:&AppliedFilters" };
+            }
+            else
+            {
+                outputs = includeListErrorResponse
+                    ? new[] { "out:&ListResponse", "out:&ErrorResponse" }
+                    : new[] { "out:&ListResponse" };
+            }
+
             return "List(" + string.Join(",", new[] { "in:&ApiPage", "in:&ApiPageSize" }.Concat(listFilterNames.Select(name => "in:&" + name)).Concat(outputs)) + ")";
         }
 
@@ -342,13 +388,25 @@ public static class ApiPlanServiceSourceContract
         IReadOnlyList<string> listFilterNames,
         bool hasListContract,
         bool hasRestRuntimeContract,
-        bool includeListErrorResponse)
+        bool includeListErrorResponse,
+        bool useFlatListOutputs)
     {
         if (hasListContract && string.Equals(service, "List", StringComparison.OrdinalIgnoreCase))
         {
-            var outputs = includeListErrorResponse
-                ? new[] { "&ListResponse", "&ErrorResponse", "&RestStatusCode" }
-                : new[] { "&ListResponse" };
+            string[] outputs;
+            if (useFlatListOutputs)
+            {
+                outputs = includeListErrorResponse
+                    ? new[] { "&Items", "&Pagination", "&AppliedFilters", "&ErrorResponse", "&RestStatusCode" }
+                    : new[] { "&Items", "&Pagination", "&AppliedFilters" };
+            }
+            else
+            {
+                outputs = includeListErrorResponse
+                    ? new[] { "&ListResponse", "&ErrorResponse", "&RestStatusCode" }
+                    : new[] { "&ListResponse" };
+            }
+
             return string.Join(",", new[] { "&ApiPage", "&ApiPageSize" }.Concat(listFilterNames.Select(name => "&" + name)).Concat(outputs));
         }
 

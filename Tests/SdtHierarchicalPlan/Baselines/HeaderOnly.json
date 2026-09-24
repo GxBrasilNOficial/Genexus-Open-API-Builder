@@ -83,44 +83,6 @@
       "kind": "ListFilters",
       "scope": "TransactionModuleFolder:HeaderOnlyOpenApi",
       "members": []
-    },
-    {
-      "name": "sdtHeaderOnly_API_ListResponse",
-      "backlogId": "B044",
-      "kind": "ListResponse",
-      "scope": "TransactionModuleFolder:HeaderOnlyOpenApi",
-      "members": [
-        {
-          "name": "Items",
-          "dataType": "sdtHeaderOnly_API_Response",
-          "length": 0,
-          "decimals": 0,
-          "isNullable": false,
-          "isCollection": true,
-          "collectionItemType": "sdtHeaderOnly_API_Response",
-          "source": "ListResponse"
-        },
-        {
-          "name": "Pagination",
-          "dataType": "sdt_API_Pagination",
-          "length": 0,
-          "decimals": 0,
-          "isNullable": false,
-          "isCollection": false,
-          "collectionItemType": "",
-          "source": "ListResponse"
-        },
-        {
-          "name": "AppliedFilters",
-          "dataType": "sdtHeaderOnly_API_ListFilters",
-          "length": 0,
-          "decimals": 0,
-          "isNullable": true,
-          "isCollection": false,
-          "collectionItemType": "",
-          "source": "ListResponse"
-        }
-      ]
     }
   ],
   "sharedSdts": [

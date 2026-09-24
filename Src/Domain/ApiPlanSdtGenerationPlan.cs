@@ -78,13 +78,13 @@ internal static class ApiPlanSdtGenerationPlanBuilder
                 "Response"),
         };
 
-        // ListFilters/ListResponse are dependencies of the List endpoint only.
+        // ListFilters is a dependency of the List endpoint only.
         // Emitting an empty ListFilters SDT for BC-only makes the GeneXus SDK
         // reject the new object during B040-B046 validation.
+        // B120: ListResponse envelope SDT is no longer generated (HTTP outs are flat).
         if (hasListService)
         {
             ownSdts.Add(CreateListFiltersSdt(apiPlan, transactionFolderScope));
-            ownSdts.Add(CreateListResponseSdt(apiPlan.ListResponseSdtName, apiPlan.ResponseSdtName, apiPlan.ListFiltersSdtName, transactionFolderScope));
         }
 
         return ownSdts;
@@ -167,11 +167,7 @@ internal static class ApiPlanSdtGenerationPlanBuilder
             apiPlan.ResponseFields,
             listContract.Counts,
             transactionFolderScope));
-        ownSdts.Add(CreateListResponseSdt(
-            apiPlan.ListResponseSdtName,
-            listContract.ListResponseItemSdtName,
-            apiPlan.ListFiltersSdtName,
-            transactionFolderScope));
+        // B120: sem SDT envelope ListResponse — Items flat tipa ListResponse_Item diretamente.
         return ownSdts;
     }
 

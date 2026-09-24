@@ -429,9 +429,10 @@ try {
 }
 '@)
     $dynamicOwn = $resolveOwn.Invoke($null, @(, $dynamic))
-    Assert-True ((Get-Count $dynamicOwn) -gt 5) 'Inventário dinâmico hierárquico sem own'
-    Assert-Equal 'sdtTeste_API_ListResponse' (Get-ItemAt $dynamicOwn 0) 'Ordem dinâmica preserva ListResponse primeiro'
-
+    $dynamicOwnList = @($dynamicOwn)
+    Assert-True ((Get-Count $dynamicOwn) -ge 4) 'Inventário dinâmico hierárquico sem own devolve SDTs do plano'
+    Assert-True ($dynamicOwnList -contains 'sdtTeste_API_ListResponse_Item' -or (Get-Count $dynamicOwn) -ge 6) 'Com levels hierárquicos o inventário inclui ListResponse_Item ou o conjunto expandido'
+    Assert-True (-not ($dynamicOwnList -contains 'sdtTeste_API_ListResponse')) 'B120: envelope ListResponse nao entra no inventário dinâmico do plano novo'
     $corrupt = [Newtonsoft.Json.Linq.JObject]::Parse($dynamic.ToString([Newtonsoft.Json.Formatting]::None))
     $corruptLevels = $corrupt['levels']
     Assert-True ($corruptLevels -is [Newtonsoft.Json.Linq.JObject]) 'levels do caso dinâmico deve ser JObject.'

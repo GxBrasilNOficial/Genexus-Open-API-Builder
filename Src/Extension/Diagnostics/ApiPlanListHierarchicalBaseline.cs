@@ -75,16 +75,7 @@ internal static class ApiPlanListHierarchicalBaseline
                 contract.ListResponseItemSdtName + "' vs '" + item.Name + "'.");
         }
 
-        var listResponse = sdtPlan.OwnSdts.Single(sdt =>
-            string.Equals(sdt.Kind, "ListResponse", StringComparison.Ordinal));
-        var items = listResponse.Members.Single(member =>
-            string.Equals(member.Name, "Items", StringComparison.Ordinal));
-        if (!items.IsCollection ||
-            !string.Equals(items.CollectionItemType, contract.ListResponseItemSdtName, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                "ListResponse.Items must be a collection of ListResponse_Item.");
-        }
+        // B120: não há mais SDT Kind=ListResponse; Items flat tipa ListResponse_Item.
 
         foreach (var count in contract.Counts)
         {

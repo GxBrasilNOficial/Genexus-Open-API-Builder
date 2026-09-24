@@ -100,9 +100,17 @@ apiSimulationResult
 }
 '@
 
-$currentB070 = $b079.Replace('out: &ListResponse)', 'out: &ListResponse, out: &ErrorResponse)').Replace('&SimulationResultId, &ListResponse);', '&SimulationResultId, &ListResponse, &ErrorResponse, &RestStatusCode);')
-Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesCurrentB070($currentB070, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B070 atual deve aceitar ErrorResponse publico e status interno na List.'
+$currentB070 = $b079.Replace(
+    'List(in: &ApiPage, in: &ApiPageSize, in: &SimulationResultId, out: &ListResponse)',
+    'List(in: &ApiPage, in: &ApiPageSize, in: &SimulationResultId, out: &Items, out: &Pagination, out: &AppliedFilters, out: &ErrorResponse)').Replace(
+    '&SimulationResultId, &ListResponse);',
+    '&SimulationResultId, &Items, &Pagination, &AppliedFilters, &ErrorResponse, &RestStatusCode);')
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesCurrentB070($currentB070, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B070 atual deve aceitar outs flat Items/Pagination/AppliedFilters/ErrorResponse na List.'
 Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesCurrentB070($b079, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B070 atual deve distinguir a List historica sem ErrorResponse publico.'
+
+$previousB070Envelope = $b079.Replace('out: &ListResponse)', 'out: &ListResponse, out: &ErrorResponse)').Replace('&SimulationResultId, &ListResponse);', '&SimulationResultId, &ListResponse, &ErrorResponse, &RestStatusCode);')
+Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesPreviousB070ListEnvelope($previousB070Envelope, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B070 envelope ListResponse+ErrorResponse permanece reconhecivel para reencontro.'
+Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesCurrentB070($previousB070Envelope, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B070 atual flat nao deve confundir com o envelope ListResponse.'
 
 Assert-True ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079($b079, 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B079 deve aceitar Get/Create/Update com status e erro internos preservando List B070.'
 Assert-False ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanServiceSourceContract]::MatchesB079($b079.Replace('&ErrorResponse, &RestStatusCode', '&RestStatusCode, &ErrorResponse'), 'apiSimulationResult', 'SimulationResult', 'Entities', $services, $primaryKey, $listFilters, $true)) 'B079 deve rejeitar argumentos internos de status/erro divergentes.'

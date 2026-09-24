@@ -3,8 +3,8 @@ apiFlatNoAccept
     [Description("List FlatNoAccept")]
     [RestPath("/flatnoaccept")]
     [SecurityLevel(Authentication)]
-    List(in: &ApiPage, in: &ApiPageSize, in: &FlatNoAcceptTitle, out: &ListResponse, out: &ErrorResponse)
-        => procFlatNoAccept_API_List(&ApiPage, &ApiPageSize, &FlatNoAcceptTitle, &ListResponse, &ErrorResponse, &RestStatusCode);
+    List(in: &ApiPage, in: &ApiPageSize, in: &FlatNoAcceptTitle, out: &Items, out: &Pagination, out: &AppliedFilters, out: &ErrorResponse)
+        => procFlatNoAccept_API_List(&ApiPage, &ApiPageSize, &FlatNoAcceptTitle, &Items, &Pagination, &AppliedFilters, &ErrorResponse, &RestStatusCode);
 
     [Description("Get FlatNoAccept")]
     [RestPath("/flatnoaccept/{&FlatNoAcceptId}")]

@@ -487,6 +487,11 @@ public sealed class Package : AbstractPackageUI
                 report?.AddUpdated("Procedure", listProcedure, "List");
             }
 
+            if (!string.IsNullOrWhiteSpace(result.RemovedOrphanListResponseSdtName))
+            {
+                report?.AddDeleted("SDT", result.RemovedOrphanListResponseSdtName!, "B120 ListResponse órfão");
+            }
+
             report?.SetPlannedApiName(apiPlan.ApiName);
             if (apiContext is null || (apiContext.PersistApiObject && string.Equals(apiContext.FinalWriter, "List", StringComparison.Ordinal)))
             {

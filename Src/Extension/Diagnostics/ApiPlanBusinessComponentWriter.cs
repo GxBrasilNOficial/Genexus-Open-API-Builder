@@ -792,6 +792,7 @@ internal static class ApiPlanBusinessComponentWriter
                 throw new InvalidOperationException($"B055 bloqueado: tipo da variavel '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
             }
 
+            item.IsCollection = variable.IsCollection;
             procedure.Variables.Variables.Add(item);
         }
     }
@@ -811,6 +812,7 @@ internal static class ApiPlanBusinessComponentWriter
                 throw new InvalidOperationException($"B055 bloqueado: tipo da variavel de API '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
             }
 
+            item.IsCollection = variable.IsCollection;
             ConfigureServiceRequired(item, variable);
             api.Variables.Variables.Add(item);
         }
@@ -939,6 +941,7 @@ internal static class ApiPlanBusinessComponentWriter
             return false;
         }
 
+        expected.IsCollection = variable.IsCollection;
         return MatchesVariableSpec(current, expected);
     }
 
@@ -956,11 +959,13 @@ internal static class ApiPlanBusinessComponentWriter
             return false;
         }
 
+        expected.IsCollection = variable.IsCollection;
         return MatchesVariableSpec(current, expected);
     }
 
     private static bool MatchesVariableSpec(Variable current, Variable expected) =>
         current.Type == expected.Type &&
+        current.IsCollection == expected.IsCollection &&
         SameKbObject(current.AttributeBasedOn, expected.AttributeBasedOn) &&
         SameKbObject(current.DomainBasedOn, expected.DomainBasedOn) &&
         Equals(current.DomainKey, expected.DomainKey) &&
@@ -3165,16 +3170,18 @@ internal static class ApiPlanBusinessComponentWriter
 
 internal sealed class VariableSpec
 {
-    public VariableSpec(string name, string dataType, bool isServiceRequired = false)
+    public VariableSpec(string name, string dataType, bool isServiceRequired = false, bool isCollection = false)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
         DataType = dataType ?? throw new ArgumentNullException(nameof(dataType));
         IsServiceRequired = isServiceRequired;
+        IsCollection = isCollection;
     }
 
     public string Name { get; }
     public string DataType { get; }
     public bool IsServiceRequired { get; }
+    public bool IsCollection { get; }
 }
 
 internal sealed class ApiPlanBusinessComponentWriteResult

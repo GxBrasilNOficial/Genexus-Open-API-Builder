@@ -255,7 +255,6 @@ try {
     $linesResponse = Find-OwnSdt $one 'sdtOrder_API_Response_Lines'
     $headerCreate = Find-OwnSdt $one 'sdtOrder_API_CreateRequest'
     $headerUpdate = Find-OwnSdt $one 'sdtOrder_API_UpdateRequest'
-    $listResponse = Find-OwnSdt $one 'sdtOrder_API_ListResponse'
     $listItem = Find-OwnSdt $one 'sdtOrder_API_ListResponse_Item'
     Assert-True ($null -ne $linesCreate) 'OneSublevel deve emitir SDT Create das linhas.'
     Assert-True ($null -ne $linesUpdate) 'OneSublevel deve emitir SDT Update das linhas.'
@@ -271,10 +270,9 @@ try {
     Assert-True ($null -ne $listItem) 'OneSublevel deve emitir ListResponse_Item.'
     Assert-True ($null -ne (Find-Member $listItem 'LinesCount')) 'ListResponse_Item leva contador do subnivel direto.'
     Assert-True ($null -eq (($listItem.members | Where-Object { $_.isCollection } | Select-Object -First 1))) 'ListResponse_Item nao publica colecoes.'
-    $items = Find-Member $listResponse 'Items'
-    Assert-True ([string]$items.collectionItemType -eq 'sdtOrder_API_ListResponse_Item') 'ListResponse.Items tipa ListResponse_Item quando ha subnivel.'
+    Assert-True ($null -eq (Find-OwnSdt $one 'sdtOrder_API_ListResponse')) 'B120: envelope ListResponse nao e mais gerado.'
     Assert-True ((Get-OwnSdtIndex $one 'sdtOrder_API_CreateRequest_Lines') -lt (Get-OwnSdtIndex $one 'sdtOrder_API_CreateRequest')) 'Create das linhas em pos-ordem, antes do cabecalho.'
-    Assert-True ((Get-OwnSdtIndex $one 'sdtOrder_API_ListResponse_Item') -lt (Get-OwnSdtIndex $one 'sdtOrder_API_ListResponse')) 'ListResponse_Item antes do envelope ListResponse.'
+    Assert-True ((Get-OwnSdtIndex $one 'sdtOrder_API_ListResponse_Item') -ge 0) 'ListResponse_Item permanece no plano hierarquico.'
 
     $three = $captured['ThreeDeep'] | ConvertFrom-Json
     Assert-True ($null -ne (Find-OwnSdt $three 'sdtDay_API_CreateRequest_Shift_Worker')) 'Profundidade 3 acumula o caminho no qualificador.'
@@ -312,7 +310,7 @@ try {
     Assert-True ([bool](Find-Member $collisionCreate 'Notes1').isCollection) 'Notes1 e colecao.'
 
     $headerOnly = $captured['HeaderOnly'] | ConvertFrom-Json
-    Assert-True (@($headerOnly.ownSdts).Count -eq 5) 'Cabecalho sem filhos permanece nos 5 SDTs planos.'
+    Assert-True (@($headerOnly.ownSdts).Count -eq 4) 'Cabecalho sem filhos: Create/Update/Response/ListFilters (sem ListResponse B120).'
     foreach ($sdt in @($headerOnly.ownSdts)) {
         Assert-True ([string]$sdt.backlogId -ne 'B096') 'HeaderOnly nao deve emitir backlog B096.'
     }

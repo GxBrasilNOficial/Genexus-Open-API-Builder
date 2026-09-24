@@ -8,10 +8,15 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-23.
+2026-09-24.
 
 ## Último marco concluído
 
+- `B120` fechado em 2026-09-24: envelope HTTP flat do `List` (opção A + A2) na
+  extensão; smoke HTTP §6 e regressão CRUD nos dois environments da
+  `Teste`/`wsEducacaoSpTeste`; Sync sem recriar `ListResponse`. Evidência:
+  `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`. Plano:
+  `Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`.
 - `B128` fechado em 2026-09-23: gate incremental de referências C# implementado no commit `f5b9016`; 35 assertions do tokenizer e harness integrador aprovados, pré-push local desse commit de implementação aprovado. Sem validação de IDE/runtime. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`.
 - `B127` concluído em 2026-09-22: re-smoke IDE dos hardenings pós-§6 do `B123` — Preview com GUID divergente desanuncia o Folder; Apply com GUID falso regrava `ownedByThisApi=false` e o GUID vivo. Evidência: `Docs/Implementation/2026-09-22-B127-RESMOKE-GUID-HOMONIMO.md`.
 - `B126` concluído em 2026-09-22: confirmação/relatório do Remover alinhados à preservação por Description ou contêiner divergente; smoke IDE na `Teste`/`wsEducacaoSpTeste` (anúncio, Folder permanece, aviso tipado). Evidência: `Docs/Implementation/2026-09-22-B126-CONFIRMACAO-FOLDER-DESCRIPTION.md`.
@@ -148,14 +153,11 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-`B127` fechado em 2026-09-22. **Corte `0.1.0-alpha.8` publicado em 2026-09-17**.
-**B128 fechado em 2026-09-23** — gate incremental de referências C# implementado e validado offline;
-commit de implementação `f5b9016`, pré-push local desse commit aprovado. O contrato controla o aumento global de referências
-numéricas por linha móvel reconhecidas e valida endereços fixos excedentes como citações históricas.
-Legado não é migrado e semântica não é provada. **Próxima ação única:** após o push, selecionar em
-nova sessão uma ação do backlog. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`.
-O estado da branch em relação a `origin/main` se mede com
-`git rev-list --left-right --count origin/main...HEAD`, não se anota aqui como fato permanente.
+`B121` — tornar explícita a seleção das etapas `Business Component` e `List` no Sync,
+sem inferir a intenção pela lista de serviços. Exceção formal do encerramento da F1 da
+`S-B111`: o perfil Sync somente List isolado permanece não comprovado. Plano:
+`Docs/Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md`.
+`B120` permanece fechado (2026-09-24).
 
 ~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
 ainda não mencionam o File do diário `GxOpenApiBuilder_OperationJournal`, o bloqueio que ele
@@ -439,6 +441,9 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 
 ## Evidência da frente encerrada
 
+- `B120` (2026-09-24): outs flat do `List` + A2; smoke HTTP §6 e regressão CRUD nos dois
+  environments (`apiTeste`); Sync sem recriar `*ListResponse`. Evidência:
+  `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
 - `B128` (2026-09-23): gate `docs.csharpLineReferences`; tokenizer compartilhado; 35 assertions; harness integrado exit 0; pré-push local do commit de implementação `f5b9016` aprovado. Sem validação de IDE/runtime. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`.
 - `B127` (2026-09-22): re-smoke IDE na `Teste`/`wsEducacaoSpTeste` — Preview com GUID divergente anuncia `reutilizado; nunca apagar` (cancelado sem mutação); Apply com GUID falso regrava `ownedByThisApi=false` e o GUID vivo do Folder. Evidência: `Docs/Implementation/2026-09-22-B127-RESMOKE-GUID-HOMONIMO.md`.
 - `B126` (2026-09-22): confirmação/relatório do Remover alinhados à preservação por Description ou contêiner divergente; smoke IDE na `Teste`/`wsEducacaoSpTeste` — anúncio «será preservado», `Removidos=25`, Folder permanece, aviso tipado no B081. Evidência: `Docs/Implementation/2026-09-22-B126-CONFIRMACAO-FOLDER-DESCRIPTION.md`.
@@ -511,6 +516,10 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 > **Fechamento de 2026-09-23:** o pré-push local do commit de implementação `f5b9016` passou (`readyLocal`, zero
 > commits atrás, working tree limpa, sem razões incompletas nem requisitos manuais). `B128` está
 > fechado; a próxima ação do backlog será escolhida em nova sessão após o push.
+>
+> **Atualização de 2026-09-24:** `B120` fechado (código flat + A2 + aceite IDE/HTTP). A próxima
+> ação única vigente é `B121`. Evidência:
+> `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
 
 - **[Histórico — Sprint 9]** alinhamento documental da promoção à Sprint 9 já commitado, em `main`, com working tree limpa;
 - `origin/main` atualizada, sem commits remotos à frente da frente local;
@@ -522,9 +531,9 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 
 ## Sequência operacional vigente
 
-Vigência atual: `B128` fechado em 2026-09-23 (commit de implementação `f5b9016`); pré-push local
-da implementação aprovado. Não foi
-validado na IDE. Após o push, selecionar em outra sessão a próxima ação entre os itens do backlog.
+Vigência atual: `B120` fechado em 2026-09-24 (código flat + A2 + aceite IDE/HTTP na
+`Teste`/`wsEducacaoSpTeste`). Próxima ação única = `B121` (seleção explícita BC/List no
+Sync). `B128` permanece fechado (2026-09-23).
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
@@ -702,28 +711,40 @@ validado na IDE. Após o push, selecionar em outra sessão a próxima ação ent
 
 164. Em 2026-09-23, **`B128` implementado, revisado e validado offline**: check `docs.csharpLineReferences` compara globalmente as citações incrementais nas árvores `origin/main`/`HEAD`, valida os endereços fixos excedentes, compartilha tokenizer com o teste e emite aviso heurístico não bloqueante sobre referências numéricas prováveis ao `CHANGELOG`. Passaram 35 assertions do tokenizer e o harness completo de `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1` (exit 0), incluindo endereço fixo novo válido, falha `environmentBlocked`, móvel inválido, `notCovered`, warning CHANGELOG com falha Git/decode explícita e somente no diff commitado, e avisos B124. Sem IDE/runtime. Backlog, `[Unreleased]` e evidência: `Docs/Foundation/06-BACKLOG_v0.1.md`, `CHANGELOG.md` e `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`. Commit local em `main`; sem push.
 
+165. Em 2026-09-24, **`B120` fechado**: outs flat do `List` (`Items`/`Pagination`/`AppliedFilters`/`ErrorResponse`) sem SDT `*ListResponse`; limpeza A2 do órfão no reapply; baselines e gates offline; install U14+; Wizard + `Build All` nos dois environments; smoke HTTP §6 (401/200/filtro/400) flat nos dois; regressão Get/Create/Update/Delete; wrapper sem unwrap prejudicial; Sync `SuccessWithWarnings` sem recriar `ListResponse`. Nuance: .NET Core pode omitir `AppliedFilters`/coleções vazias. Evidência: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`. Próxima ação única = `B121`.
+
 ## Bloqueios e fatos ainda não validados
 
 - ~~**Corte de release com a etapa P2 da F3 dentro exige decisão documental.** … nada disso está na documentação pública.~~ **Superado:** pacote `0.1.0-alpha.8` documentou o File/bloqueio/Recuperar e foi **publicado** em 2026-09-17 (`v0.1.0-alpha.8`).
 
-O reteste de 2026-09-11 atualizou a situação do `List` da `Laudo`: a execução
+~~O reteste de 2026-09-11 atualizou a situação do `List` da `Laudo`: a execução
 funcional passou nos dois environments, e somente a forma do envelope permanece
 pendente no `B120`. Os itens históricos 105 e 106 acima registram as tentativas
-anteriores, antes do contrato B070 parametrizado e do novo Build All.
+anteriores, antes do contrato B070 parametrizado e do novo Build All.~~
+**Superado em 2026-09-24:** `B120` fechou o envelope flat do `List` nos dois
+environments (`apiTeste`). Evidência:
+`Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
 
-- Situação atual do `List`: `401` sem token, OAuth `200`, consulta autenticada
+- ~~Situação atual do `List`: `401` sem token, OAuth `200`, consulta autenticada
   `200`, filtro válido, filtro sem resultado e paginação passaram nos dois
   environments. O Framework entrega `ListResponse` + `ErrorResponse`; o
   PostgreSQL achata a resposta para `Items` + `Pagination` + `AppliedFilters`.
-  A divergência de envelope permanece no `B120`.
-- `Laudo` / B076: execução funcional do `List` **aceita com ressalva**; o
+  A divergência de envelope permanece no `B120`.~~ **Superado em 2026-09-24**
+  (`B120`).
+- ~~`Laudo` / B076: execução funcional do `List` **aceita com ressalva**; o
   contrato HTTP multiplataforma ainda não está uniformemente aceito. Os avisos
-  `spc0024` de `Get`, `Create` e `Update` são separados desta validação.
+  `spc0024` de `Get`, `Create` e `Update` são separados desta validação.~~
+  **Superado em 2026-09-24** quanto ao envelope (`B120`); avisos `spc0024` de
+  Get/Create/Update continuam separados.
 
 - HTTP do Delete (contrato 401/404/200/422 e nível próprio Authorization vs Authentication no C#/IIS): **fechado** em 2026-08-31. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §3.
-- Smoke HTTP atual do `List`: autenticação, consulta, filtro e paginação passaram nos dois environments, mas o envelope divergiu do contrato declarado no YAML entre Framework e PostgreSQL; a validação HTTP uniforme permanece pendente no `B120`. Evidência: `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md` e `Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`.
-- `Laudo` / B076: o API Object foi corrigido para o contrato B070 parametrizado e os dois environments foram rebuildados. O HTTP funcional do `List` passou com filtro válido, filtro sem resultado e paginação; permanece a ressalva do envelope multiplataforma registrada no `B120`. Evidência: `Docs/Implementation/2026-09-11-B076-LIST-HTTP-POS-PERMISSAO.md`.
-- `B121` — seleção explícita de consumidores no Sync: planejado para sessão futura, fora da sprint `S-B111`; tentativa na `Contrato` em 2026-09-11 confirmou BC executado antes de List mesmo sem escolha de BC no diálogo; o perfil Sync somente List continua não comprovado isoladamente, mas isso foi aceito como exceção para encerrar a F1 e não bloqueia a avaliação da F2. Evidência e plano: `Docs/Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md`.
+- ~~Smoke HTTP atual do `List`: autenticação, consulta, filtro e paginação passaram nos dois environments, mas o envelope divergiu do contrato declarado no YAML entre Framework e PostgreSQL; a validação HTTP uniforme permanece pendente no `B120`. Evidência: `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md` e `Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`.~~ **Superado em 2026-09-24** (`B120`). Fechamento: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
+- ~~`Laudo` / B076: o API Object foi corrigido para o contrato B070 parametrizado e os dois environments foram rebuildados. O HTTP funcional do `List` passou com filtro válido, filtro sem resultado e paginação; permanece a ressalva do envelope multiplataforma registrada no `B120`. Evidência: `Docs/Implementation/2026-09-11-B076-LIST-HTTP-POS-PERMISSAO.md`.~~ **Superado em 2026-09-24** quanto ao envelope.
+- `B121` — seleção explícita de consumidores no Sync: **próxima ação única**
+  (2026-09-24); fora da sprint `S-B111`; tentativa na `Contrato` em 2026-09-11
+  confirmou BC executado antes de List mesmo sem escolha de BC no diálogo; o
+  perfil Sync somente List continua não comprovado isoladamente. Evidência e
+  plano: `Docs/Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md`.
 - Add > Local por usuário externo em máquina nunca usada com a extensão (o relato U14 usou cópia em `Packages` + `/install`); instalação sem elevação alguma continua sem comprovação.
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação. Em `Remover API gerada` (B086), ambiguidade e posse de API/Procedures/SDTs próprios passam a ser validadas antes do primeiro `Delete()` (`ValidateRemovalTargets` em Preview e Remove); permanece residual a falha IDE/SDK no meio da sequência de exclusões já iniciada.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.
@@ -768,6 +789,7 @@ A ausência do instalador Platform SDK não é bloqueio para U14+, porque a comp
 - [2026-09-02 — B082 plano de hardening e desempenho medido (Etapa 1A aceita)](Implementation/2026-09-02-B082-PLANO-HARDENING-E-DESEMPENHO.md)
 - [2026-08-31 — B108 plano preferências e retração (estacionado desde 2026-09-05)](Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md)
 - [2026-09-10 — B120 envelope HTTP do `List` entre environments](Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md)
+- [2026-09-24 — B120 aceite IDE e smoke HTTP](Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md)
 - [2026-09-10 — B121 seleção explícita de BC/List no Sync](Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md)
 - [2026-09-14 — S-B111 F3 etapas P0 e P1 implementadas offline](Implementation/2026-09-14-S-B111-F3-P0-P1-IMPLEMENTACAO-OFFLINE.md)
 - [2026-09-14 — S-B111 F3 etapa P2: o diário durável na KB](Implementation/2026-09-14-S-B111-F3-P2-DIARIO-NA-KB.md)
