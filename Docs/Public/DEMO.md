@@ -1,6 +1,8 @@
 # Demo rápida — Genexus Open API Builder
 
-Roteiro visual da Alpha `0.1.0-alpha.8` (Transaction de exemplo: `NotaFiscal`).
+Roteiro visual da Alpha `0.1.0-alpha.9` (Transaction de exemplo: `NotaFiscal`).
+
+**Breaking — List:** o corpo HTTP do `List` é flat na raiz (`Items`, `Pagination`, `AppliedFilters`, `ErrorResponse`), sem `ListResponse`, para qualquer gerador. Após atualizar a DLL, reabra o Wizard/Sync. Detalhe: [notas 0.1.0-alpha.9](../Releases/0.1.0-alpha.9.md).
 
 Use sempre uma **KB de teste**, com backup. Não execute na KB de produção.
 
@@ -119,7 +121,7 @@ Completar REST via Business Component (Get, Create, Update; Delete se marcado). 
 
 ## 18. List
 
-Completar listagem paginada e sincronizar o API Object.
+Completar listagem paginada e sincronizar o API Object. Desde `0.1.0-alpha.9`, o JSON HTTP do `List` é **flat na raiz** (`Items`, `Pagination`, `AppliedFilters`, `ErrorResponse`) — sem envelope `ListResponse` — em **qualquer gerador**. Após atualizar a extensão, reaplique esta etapa nas APIs existentes.
 
 ![List](../Images/alpha-wizard-list.png)
 
@@ -202,8 +204,9 @@ Confirmação com o plano: objetos próprios a apagar; SDTs compartilhados e Fol
 - Classificação de campos sensíveis/auditoria ainda usa política default
 - Validação prática principal no Upgrade 15
 - Diário de operação: Apply/Sync interrompidos não têm retomada automática; use Recuperar para encerrar o registro
+- Contrato flat do List (`0.1.0-alpha.9`): clientes que liam `ListResponse` precisam ser atualizados; smoke HTTP desta Alpha nos dois .NET — em Java e demais geradores confira um `GET` após reaplicar
 
-Detalhes: [notas 0.1.0-alpha.8](../Releases/0.1.0-alpha.8.md).
+Detalhes: [notas 0.1.0-alpha.9](../Releases/0.1.0-alpha.9.md).
 
 ## Índice das capturas
 

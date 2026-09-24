@@ -4,7 +4,7 @@
 
 Herramienta open source para acelerar la generación de APIs REST a partir de **Transactions GeneXus**.
 
-Alpha pública: **[`0.1.0-alpha.8`](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.8)** — elija la DLL correspondiente a su versión de GeneXus en el Release.
+Alpha pública: **[`0.1.0-alpha.9`](https://github.com/GxBrasilNOficial/Genexus-Open-API-Builder/releases/tag/v0.1.0-alpha.9)** — elija la DLL correspondiente a su versión de GeneXus en el Release. **Atención:** el contrato HTTP del `List` cambió (breaking) — ver abajo.
 
 Menos repetición. Más entrega. Más valor para la comunidad GeneXus.
 
@@ -34,9 +34,13 @@ A partir de una Transaction:
 - Metadata persistente para una regeneración conservadora
 - Ciclo de vida en la IDE: Wizard, Sincronizar con la Transaction, Remover API generada, Recuperar operación interrumpida
 
+### Contrato HTTP del List (desde `0.1.0-alpha.9`) — breaking
+
+El cuerpo del `List` deja de usar el envelope `ListResponse`. Los campos salen en la **raíz** del JSON (`Items`, `Pagination`, `AppliedFilters`, `ErrorResponse`). Vale para **todas** las APIs regeneradas con esta versión, **cualquier generador** del environment (incluido Java). Motivación: el wrapper REST del generador .NET desenvuelve el SDT cuando hay colección; unificamos el contrato flat en la extensión. Smoke HTTP de esta Alpha en los dos .NET; en Java y demás generadores verifique un `GET` tras reaplicar el Wizard. Quien leía `body.ListResponse…` debe ajustar el cliente. Detalle: [notas 0.1.0-alpha.9](Docs/Releases/0.1.0-alpha.9.es.md).
+
 ### Contrato de error HTTP (desde `0.1.0-alpha.4`)
 
-Si el Business Component rechaza una regla, `Create` y `Update` responden **HTTP 422** con `ErrorResponse.Code = validation_error`, el texto de las rules en `Message` y la colección `Messages[]` (solo mensajes de error). En las validaciones del payload, cualquier infracción responde **HTTP 400**, todas las infracciones se conservan en `Messages[]` y el `Message` principal reúne los textos. El `Delete` opt-in, cuando está marcado, responde **HTTP 422** ante rechazo por integridad referencial, con el mismo SDT. El Source de cada API solo cambia al reabrir el Wizard sobre ella; el SDT compartido `sdt_API_ErrorResponse` es único en la KB, así que regenerar cualquier API actualiza el schema de error publicado por todas. Quien comparaba la cadena fija `"Business rules rejected the request."` debe pasar a decidir por el `Code`. Detalle del contrato de reglas y opción de desactivar: [notas 0.1.0-alpha.4](Docs/Releases/0.1.0-alpha.4.es.md). Contrato completo de validación del payload: [documento 27](Docs/Foundation/27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md). Subniveles y el marcador `<Subnivel>Replace`: [notas 0.1.0-alpha.5](Docs/Releases/0.1.0-alpha.5.es.md). `Delete` opt-in: [notas 0.1.0-alpha.6](Docs/Releases/0.1.0-alpha.6.es.md). Progreso B082: [notas 0.1.0-alpha.7](Docs/Releases/0.1.0-alpha.7.es.md). Diario de operación y recuperación: [notas 0.1.0-alpha.8](Docs/Releases/0.1.0-alpha.8.es.md).
+Si el Business Component rechaza una regla, `Create` y `Update` responden **HTTP 422** con `ErrorResponse.Code = validation_error`, el texto de las rules en `Message` y la colección `Messages[]` (solo mensajes de error). En las validaciones del payload, cualquier infracción responde **HTTP 400**, todas las infracciones se conservan en `Messages[]` y el `Message` principal reúne los textos. El `Delete` opt-in, cuando está marcado, responde **HTTP 422** ante rechazo por integridad referencial, con el mismo SDT. El Source de cada API solo cambia al reabrir el Wizard sobre ella; el SDT compartido `sdt_API_ErrorResponse` es único en la KB, así que regenerar cualquier API actualiza el schema de error publicado por todas. Quien comparaba la cadena fija `"Business rules rejected the request."` debe pasar a decidir por el `Code`. Detalle del contrato de reglas y opción de desactivar: [notas 0.1.0-alpha.4](Docs/Releases/0.1.0-alpha.4.es.md). Contrato completo de validación del payload: [documento 27](Docs/Foundation/27-CONTRATO_HTTP_ERROS_E_SDTS_COMPARTILHADOS.md). Subniveles y el marcador `<Subnivel>Replace`: [notas 0.1.0-alpha.5](Docs/Releases/0.1.0-alpha.5.es.md). `Delete` opt-in: [notas 0.1.0-alpha.6](Docs/Releases/0.1.0-alpha.6.es.md). Progreso B082: [notas 0.1.0-alpha.7](Docs/Releases/0.1.0-alpha.7.es.md). Diario de operación y recuperación: [notas 0.1.0-alpha.8](Docs/Releases/0.1.0-alpha.8.es.md). Contrato flat del List: [notas 0.1.0-alpha.9](Docs/Releases/0.1.0-alpha.9.es.md).
 
 ## Estado actual
 
@@ -44,14 +48,14 @@ Si el Business Component rechaza una regla, `Create` y `Update` responden **HTTP
 |------|--------|
 | Wizard funcional del MVP | Completado (GeneXus 18 U15) |
 | Ciclo de vida (propiedad, sincronización, eliminación, informe) | Completado |
-| Alpha pública `0.1.0-alpha.8` | Paquete de esta release (diario de operación + residual B082), con assets U14+ y U13− |
+| Alpha pública `0.1.0-alpha.9` | Paquete de esta release (contrato flat del List + endurecimientos de eliminación/Folder), con assets U14+ y U13− |
 | Upgrade 13 y anteriores (**U13−**) | DLL satélite `GenexusOpenApiBuilder.Extension-gx18u13.dll`; validación formal en U13 |
 | Upgrade 14 | Confirmado por un usuario externo (Alpha `0.1.0-alpha.1`; carga + generación) |
 | Upgrade 15 | Base del desarrollo; uso confirmado por un usuario externo mediante el camino del mantenedor (build local + `Install-ExtensionForGeneXus18.bat`) |
 
 ### Qué DLL descargar
 
-El Release `0.1.0-alpha.8` contiene dos DLLs. Instale solamente la correspondiente a su instalación:
+El Release `0.1.0-alpha.9` contiene dos DLLs. Instale solamente la correspondiente a su instalación:
 
 | Archivo en el GitHub Release | Sirve para | Observación |
 |---|---|---|
@@ -73,7 +77,7 @@ El sufijo `-gx18u13` identifica solamente el asset de descarga. No cambie el nom
 
 1. [Instalar la extensión](Docs/Public/INSTALL.md)
 2. [Seguir la demo rápida](Docs/Public/DEMO.md)
-3. Leer las [notas de la Alpha](Docs/Releases/0.1.0-alpha.8.es.md)
+3. Leer las [notas de la Alpha](Docs/Releases/0.1.0-alpha.9.es.md)
 
 ## Capturas
 
@@ -139,7 +143,7 @@ Detalles: [Docs/Public/INSTALL.md](Docs/Public/INSTALL.md).
 | [INSTALL](Docs/Public/INSTALL.md) | Instalación |
 | [DEMO](Docs/Public/DEMO.md) | Guion corto |
 | [CHANGELOG](CHANGELOG.md) | Historial de cambios |
-| [0.1.0-alpha.8](Docs/Releases/0.1.0-alpha.8.es.md) | Notas ES; [PT-BR](Docs/Releases/0.1.0-alpha.8.md); [EN](Docs/Releases/0.1.0-alpha.8.en.md) — elección de la DLL |
+| [0.1.0-alpha.9](Docs/Releases/0.1.0-alpha.9.es.md) | Notas ES; [PT-BR](Docs/Releases/0.1.0-alpha.9.md); [EN](Docs/Releases/0.1.0-alpha.9.en.md) — elección de la DLL; **breaking List** |
 | [Decisiones del MVP](Docs/Decisions/2026-07-14-REGISTRO_DECISOES_FUNCIONAIS_MVP.md) | Fuente primaria funcional |
 | [Foundation](Docs/Foundation/00-MASTER_INDEX_DO_PROJETO.md) | Contratos y planificación |
 | [Checkpoint operativo](Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md) | Estado interno del proyecto |

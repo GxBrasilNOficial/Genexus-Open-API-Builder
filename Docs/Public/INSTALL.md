@@ -1,6 +1,8 @@
 # Instalação — Genexus Open API Builder
 
-Guia para instalar a extensão no **GeneXus 18**. A Alpha `0.1.0-alpha.8` publica duas DLLs: uma para a linha **U14+** e outra para a linha **U13−** (Upgrade 13 e anteriores). A validação principal da linha canônica foi feita no **Upgrade 15**; o Upgrade 14 foi confirmado por usuário externo com a Alpha `0.1.0-alpha.1` (carregamento + geração), ver [evidência 2026-08-12](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md). A linha **U13−** foi validada formalmente no **Upgrade 13**; upgrades anteriores podem funcionar, sem matriz completa nesta Alpha.
+Guia para instalar a extensão no **GeneXus 18**. A Alpha `0.1.0-alpha.9` publica duas DLLs: uma para a linha **U14+** e outra para a linha **U13−** (Upgrade 13 e anteriores). A validação principal da linha canônica foi feita no **Upgrade 15**; o Upgrade 14 foi confirmado por usuário externo com a Alpha `0.1.0-alpha.1` (carregamento + geração), ver [evidência 2026-08-12](../Implementation/2026-08-12-EVIDENCIA-USUARIO-EXTERNO-U14-ALPHA.md). A linha **U13−** foi validada formalmente no **Upgrade 13**; upgrades anteriores podem funcionar, sem matriz completa nesta Alpha.
+
+**Atenção — breaking no List:** desde `0.1.0-alpha.9` o corpo HTTP do `List` é flat na raiz (sem `ListResponse`), para **qualquer gerador**. Após instalar, reabra o Wizard/Sync nas APIs existentes. Detalhe: [notas 0.1.0-alpha.9](../Releases/0.1.0-alpha.9.md).
 
 Há dois caminhos:
 
@@ -20,7 +22,7 @@ Fonte factual: evidência [B094](../Implementation/B094-INSTALACAO-APENAS-COM-A-
 
 ### Escolha da DLL
 
-No GitHub Release `0.1.0-alpha.8`, baixe somente um dos arquivos:
+No GitHub Release `0.1.0-alpha.9`, baixe somente um dos arquivos:
 
 | Arquivo | Use quando | Não use quando |
 |---|---|---|
@@ -166,7 +168,7 @@ Siga o roteiro curto em [DEMO.md](DEMO.md).
 
 ## Notas da Alpha
 
-- Notas de release: [0.1.0-alpha.8](../Releases/0.1.0-alpha.8.md)
-- Español: [notas 0.1.0-alpha.8](../Releases/0.1.0-alpha.8.es.md)
-- English: [release notes 0.1.0-alpha.8](../Releases/0.1.0-alpha.8.en.md)
+- Notas de release: [0.1.0-alpha.9](../Releases/0.1.0-alpha.9.md)
+- Español: [notas 0.1.0-alpha.9](../Releases/0.1.0-alpha.9.es.md)
+- English: [release notes 0.1.0-alpha.9](../Releases/0.1.0-alpha.9.en.md)
 - Changelog: [CHANGELOG.md](../../CHANGELOG.md)

@@ -10,6 +10,19 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
+### Planned
+
+- `B108` (plano aprovado 2026-08-31; estacionado desde 2026-09-05): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. As três fases da sprint `S-B111` foram encerradas em 2026-09-15, mantendo `B121` fora dela. Ver o checkpoint e o documento 06.
+- Escrita parcial do BC (incidente histórico de 2026-09-03): o `ApiPlanBusinessComponentWriter.Apply` então gravava o API Object antes das Procedures, permitindo drift API↔metadata B067 se o Sync/Apply abortasse no meio. O P1 de reordenar os Saves foi absorvido e concluído na F1 da **`S-B111`**; o seam de persistência e recibos da F2 foi aceito na IDE em 2026-09-13. O guard B055 de BC sem habilitação passou no preflight com zero gravações, e o perfil Sync somente List permanece não comprovado isoladamente no `B121`. A F3 foi encerrada em 2026-09-15 (durabilidade e remoção entregues e validadas na IDE); a continuação de Apply/Sync interrompido permanece fora do escopo entregue, por decisão declarada. A orientação anterior de recuperação por "Remover + Wizard" **não vale quando a metadata está ausente**: nesse estado, `Remover` e `Sincronizar` bloqueiam e o `Wizard` degrada o plano; a saída é a recuperação de metadata órfã acima, ou limpeza manual (`B115`). Planos em `Docs/Implementation/2026-09-04-B111-F1-…`, `…-F2-…` e `…-F3-…`; medições históricas em `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`.
+- ~~Higiene de teste: absorver `Tests/SdtReencounter/Test-SdtCollectionItemNameProbe.ps1` em `Tests/KbIndexReuse/Test-ApiPlanKbIndexReuse.ps1` e remover a pasta; não criar gate no orquestrador. Anotado no plano B082 (pendência 3).~~ **Feito em 2026-09-16** (Fatia A da Etapa 3 do B082).
+- ~~Matcher SDT: `idJsonInclude=idJsonJsonNull` só é conferido no sentido plano→KB; propriedade obsoleta na KB pode passar `Unchanged`. Anotado no plano B082 (pendência 4).~~ **Feito em 2026-09-16** (matcher bidirecional + limpeza no writer; lint `tests.kbIndexReuse`).
+
+---
+
+# [0.1.0-alpha.9] - 2026-09-24
+
+Release focada no **contrato HTTP flat do `List`** (`B120`, breaking change para todos os geradores) e nos endurecimentos de remoção/Folder pós-`alpha.8`. Publicado em 2026-09-24 (tag `v0.1.0-alpha.9` + GitHub Release pre-release, dois assets DLL). Notas: [PT-BR](Docs/Releases/0.1.0-alpha.9.md) · [ES](Docs/Releases/0.1.0-alpha.9.es.md) · [EN](Docs/Releases/0.1.0-alpha.9.en.md).
+
 ### Added
 
 - `B122` — ferramenta versionada de edição textual ancorada: `scripts/Apply-TextPatch.ps1`
@@ -22,23 +35,26 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Changed
 
-- `B120` — envelope HTTP do `List` unificado nos dois environments: outs flat na raiz
-  (`Items`, `Pagination`, `AppliedFilters`, `ErrorResponse`), sem SDT envelope
-  `*ListResponse` no contrato público. Contorna o unwrap do gerador .NET Core quando o SDT
-  de dados tem coleção. **Breaking change** para consumidores Framework que liam
-  `body.ListResponse…` (o flat já era o corpo efetivo no PostgreSQL). No reapply Wizard/Sync,
-  o SDT `*ListResponse` órfão de posse da extensão é apagado (A2). Código, baselines
-  offline e aceite IDE/HTTP §6 fechados em 2026-09-24 (`Teste`/`wsEducacaoSpTeste`:
-  401/200/filtro/400 flat nos dois environments; YAML sem `ListResponse`; regressão
-  Get/Create/Update/Delete; wrapper sem unwrap prejudicial; Sync sem recriar envelope;
-  nuance: .NET Core pode omitir `AppliedFilters`/coleções vazias). Remissão normativa no
-  registro de decisões (`Emenda técnica — 2026-09-24`) e nos Foundation 08, 10, 11, 12, 13,
-  15, 16, 26 e 27. Higiene pós-aceite: método morto `CreateListResponseSdt` removido;
-  inventário do protótipo e travas offline alinhados. No reencontro sem metadata,
-  `IsB070ApiObject` (API sem Business Component) aceita também as variáveis da
-  `alpha.8` (`ListResponse` + `ErrorResponse` + `RestStatusCode`); legado só
-  `ListResponse` permanece — trava offline `tests.listProcedureReencounterPolicy`
-  (defeito e correção no mesmo bloco `[Unreleased]`, nunca publicados). Plano:
+- `B120` — envelope HTTP do `List` unificado: outs flat na raiz (`Items`, `Pagination`,
+  `AppliedFilters`, `ErrorResponse`), sem SDT envelope `*ListResponse` no contrato público.
+  **Breaking change para todos os geradores** (incluindo Java e outros além dos .NET): a
+  extensão deixa de emitir `ListResponse` em qualquer environment regenerado com esta versão.
+  Motivação medida no wrapper REST do gerador **.NET** (U15), que desembrulha o SDT de saída
+  quando há coleção; no Framework o envelope antigo era estável, mas o contrato gerado passa a
+  ser o mesmo flat em todos. Contornos que preservariam `ListResponse` com coleção de itens
+  falharam. No reapply Wizard/Sync, o SDT `*ListResponse` órfão de posse da extensão é apagado
+  (A2). Smoke HTTP desta Alpha nos environments .NET Framework/SQL Server e .NET/PostgreSQL
+  (`Teste`/`wsEducacaoSpTeste`: 401/200/filtro/400 flat; YAML sem `ListResponse`; regressão
+  Get/Create/Update/Delete; Sync sem recriar envelope; nuance: .NET Core pode omitir
+  `AppliedFilters`/coleções vazias). Java e demais geradores recebem o mesmo contrato gerado
+  sem matriz runtime nossa nesta release. Remissão normativa no registro de decisões
+  (`Emenda técnica — 2026-09-24`) e nos Foundation 08, 10, 11, 12, 13, 15, 16, 26 e 27.
+  Higiene pós-aceite: método morto `CreateListResponseSdt` removido; inventário do protótipo e
+  travas offline alinhados. No reencontro sem metadata, `IsB070ApiObject` (API sem Business
+  Component) aceita também as variáveis da `alpha.8` (`ListResponse` + `ErrorResponse` +
+  `RestStatusCode`); legado só `ListResponse` permanece — trava offline
+  `tests.listProcedureReencounterPolicy` (defeito e correção no mesmo bloco, nunca publicados
+  antes deste corte). Plano:
   `Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`.
   Evidência: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
 
@@ -76,17 +92,10 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   transformar o sucesso em aviso e sem repetir o diálogo informativo. **Validado na IDE** em
   `wsEducacaoSpTeste` / `Teste`: abortar, recusar o segundo Remover sem mutação e recuperar a
   mesma fila. O Preview incorreto e o diálogo legado já eram visíveis desde a
-  `0.1.0-alpha.8`; a duplicidade só surgiu neste bloco `[Unreleased]`, quando o resumo foi
-  incluído no relatório final, e foi corrigida antes de publicação. Evidência:
+  `0.1.0-alpha.8`; a duplicidade do resumo no relatório final surgiu neste intervalo pós-`alpha.8`
+  e foi corrigida antes desta publicação. Evidência:
   `Docs/Implementation/2026-09-22-B125-VALIDACAO-IDE-PREVIEW-POS-ABORTO.md`.
 - Remover sobre metadata reconstruída pelo B115: o diário recusava o envelope com `plan.contractHash` nulo quando a metadata tinha `ownership.applicationId` (forma V3/V4 do B115) porque `IntentKind` só olhava a presença do identificador e saía `Current`. O Preview do Folder estava certo; nenhuma exclusão ocorria. Agora `recovery.imported` força `IntentKind=Imported`, reutilizando o `applicationId` gravado. Visível desde a `0.1.0-alpha.8` (B115 com `applicationId`). Descoberto e **revalidado na IDE** no smoke do `B123` (2026-09-20).
-
-### Planned
-
-- `B108` (plano aprovado 2026-08-31; estacionado desde 2026-09-05): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. As três fases da sprint `S-B111` foram encerradas em 2026-09-15, mantendo `B121` fora dela. Ver o checkpoint e o documento 06.
-- Escrita parcial do BC (incidente histórico de 2026-09-03): o `ApiPlanBusinessComponentWriter.Apply` então gravava o API Object antes das Procedures, permitindo drift API↔metadata B067 se o Sync/Apply abortasse no meio. O P1 de reordenar os Saves foi absorvido e concluído na F1 da **`S-B111`**; o seam de persistência e recibos da F2 foi aceito na IDE em 2026-09-13. O guard B055 de BC sem habilitação passou no preflight com zero gravações, e o perfil Sync somente List permanece não comprovado isoladamente no `B121`. A F3 foi encerrada em 2026-09-15 (durabilidade e remoção entregues e validadas na IDE); a continuação de Apply/Sync interrompido permanece fora do escopo entregue, por decisão declarada. A orientação anterior de recuperação por "Remover + Wizard" **não vale quando a metadata está ausente**: nesse estado, `Remover` e `Sincronizar` bloqueiam e o `Wizard` degrada o plano; a saída é a recuperação de metadata órfã acima, ou limpeza manual (`B115`). Planos em `Docs/Implementation/2026-09-04-B111-F1-…`, `…-F2-…` e `…-F3-…`; medições históricas em `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`.
-- ~~Higiene de teste: absorver `Tests/SdtReencounter/Test-SdtCollectionItemNameProbe.ps1` em `Tests/KbIndexReuse/Test-ApiPlanKbIndexReuse.ps1` e remover a pasta; não criar gate no orquestrador. Anotado no plano B082 (pendência 3).~~ **Feito em 2026-09-16** (Fatia A da Etapa 3 do B082).
-- ~~Matcher SDT: `idJsonInclude=idJsonJsonNull` só é conferido no sentido plano→KB; propriedade obsoleta na KB pode passar `Unchanged`. Anotado no plano B082 (pendência 4).~~ **Feito em 2026-09-16** (matcher bidirecional + limpeza no writer; lint `tests.kbIndexReuse`).
 
 ---
 
