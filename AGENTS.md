@@ -295,7 +295,7 @@ pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
 
 Registrado em 2026-08-24, depois de três documentos normativos passarem a descrever, no presente condicional, um checkbox de `Delete` no Wizard e objetos `proc<Nome>_API_Delete` que **não existem** — a lista de serviços é fechada em `PrototypeWizardContract.ServiceNames`. O afrouxamento aumentou a coerência entre os documentos e, por isso, sobreviveu a três rodadas de revisão semântica; uma delas chegou a citar a redação afrouxada como texto vigente correto. Só caiu quando alguém foi ler o código em vez de comparar documentos entre si.
 
-### Referências móveis a linhas C# (B128)
+### Referências móveis e citações históricas fixas em C# (B128)
 
 Em Markdown sob `Docs/`, o check `docs.csharpLineReferences` compara multiconjuntos globais entre `origin/main` e `HEAD`, por chave normalizada de caminho e localização. Qualquer ocorrência excedente de uma chave reprova, inclusive candidato malformado; remoções só compensam acréscimos da mesma chave. Não exige migrar o legado. Para código atual, prefira símbolo/tipo/membro. Para citação histórica, use `<sha-40>:<caminho-relativo>.cs#L<n>` ou `<sha-40>:<caminho-relativo>.cs#L<n>-L<m>`; substitua os placeholders por SHA de commit ancestral a `HEAD` com 40 caracteres hexadecimais, caminho Git relativo com `/` e sem segmento `..`, e números de linha positivos existentes no blob. Em uma faixa, `<m>` deve ser maior ou igual a `<n>`. O contrato versionado está em `Docs/Implementation/2026-09-23-B128-CONTRATO-REFERENCIAS-C.md`. O check é sintático e não prova a semântica da afirmação.
 
