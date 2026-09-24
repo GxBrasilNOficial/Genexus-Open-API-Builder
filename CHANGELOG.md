@@ -28,7 +28,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   de dados tem coleção. **Breaking change** para consumidores Framework que liam
   `body.ListResponse…` (o flat já era o corpo efetivo no PostgreSQL). No reapply Wizard/Sync,
   o SDT `*ListResponse` órfão de posse da extensão é apagado (A2). Código, baselines
-  offline e aceite IDE/HTTP §6 fechados em 2026-09-24. Plano:
+  offline e aceite IDE/HTTP §6 fechados em 2026-09-24. Remissão normativa nos Foundation
+  10, 12, 13 e 26 (corpo flat; SDT envelope fora do contrato). Plano:
   `Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`.
   Evidência: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
 

@@ -154,7 +154,7 @@ Cada SDT próprio tem responsabilidade específica e não deve ser reencontrado 
 | `sdt<NomeBase>_API_UpdateRequest` | entrada selecionada para substituição completa via `PUT` |
 | `sdt<NomeBase>_API_Response` | representação pública do registro |
 | `sdt<NomeBase>_API_ListFilters` | filtros reconhecidos e aplicados na resposta |
-| `sdt<NomeBase>_API_ListResponse` | envelope de lista |
+| `sdt<NomeBase>_API_ListResponse` | ~~envelope de lista~~ **Remissão — 2026-09-24 (`B120`):** SDT envelope **não gerado**; outs flat na raiz do serviço |
 
 [SDT-F13]
 
@@ -169,7 +169,7 @@ Ao criar:
 | Create | sdtCliente_API_CreateRequest |
 | Update | sdtCliente_API_UpdateRequest |
 | Saída | sdtCliente_API_Response |
-| Lista | sdtCliente_API_ListResponse |
+| Lista | ~~sdtCliente_API_ListResponse~~ **Remissão — 2026-09-24 (`B120`):** envelope não gerado; ver outs flat do `List` |
 
 ## Estrutura
 
@@ -283,28 +283,37 @@ Regras:
 
 ## ListResponse
 
-Nome sempre distinto de Response.
+**Remissão — 2026-09-24 (`B120`):** o SDT envelope `sdt<NomeBase>_API_ListResponse` **deixou
+de ser gerado**. O HTTP do `List` expõe `Items`, `Pagination`, `AppliedFilters` e
+`ErrorResponse` na raiz. O nome desta seção e as regras de membros abaixo descrevem o
+**conteúdo** da resposta (e, no caminho hierárquico, o tipo dos elementos de `Items` via
+`ListResponse_Item`), não um objeto SDT envelope na KB. APIs legadas: limpeza A2 no reapply.
+Evidência: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
 
-Estrutura deve conter exatamente três membros:
+Nome histórico do envelope era sempre distinto de Response.
+
+A resposta do `List` deve conter na raiz os membros de dados:
 
 - `Items`
 - `Pagination`
 - `AppliedFilters`
 
+(mais `ErrorResponse` como out público, alinhado aos demais serviços — documento 27.)
+
 Regras:
 
-- `Items` é coleção de `sdt<NomeBase>_API_Response`
+- `Items` é coleção de `sdt<NomeBase>_API_Response` (caminho plano)
 - `Pagination` usa `sdt_API_Pagination`
 - `AppliedFilters` usa `sdt<NomeBase>_API_ListFilters`
-- os três membros aparecem em toda resposta `200`
+- os membros de dados aparecem na resposta `200` (no .NET Core, serialização pode omitir nulos/vazios)
 - sem registros, `Items` é coleção vazia, `TotalCount = 0` e `TotalPages = 0`
 - `Pagination` reflete página e tamanho efetivamente aplicados
-- não inclui `Success`, `Message`, `Status`, links nem outro envelope
+- não inclui `Success`, `Message`, `Status`, links nem outro envelope além do flat
 - dentro da KB usa PascalCase
 - externamente usa `items`, `pagination`, `appliedFilters`, `page`, `pageSize`, `totalCount` e `totalPages`
 - um spike deve validar a estrutura no YAML gerado pelo GeneXus
 
-**Nota de revisão — 2026-08-23 — Suporte a Subníveis:** o envelope continua com exatamente três membros. O que fica condicionado é o **tipo dos elementos de `Items`**: em transação de nível único, permanece coleção de `sdt<NomeBase>_API_Response`, sem alteração; havendo subnível selecionado, passa a ser coleção de `sdt<NomeBase>_API_ListResponse_Item`, que traz os mesmos campos de cabeçalho, **sem** os membros de coleção, mais os contadores `<Subnível>Count` dos subníveis diretos. O motivo é que o `List` não preenche as coleções: reusar o `Response` publicaria arrays permanentemente vazios, que o consumidor leria como ausência de linhas — o mesmo defeito que motivou a retirada de `Errors[]` do `sdt_API_ErrorResponse`. **Atualização de 2026-08-26 (B098):** o plano hierárquico emite `ListResponse_Item` e tipa `Items` quando `ApiPlan.Levels` tem filhos; caminho plano permanece coleção de `Response`. Detalhes na `Emenda técnica — 2026-08-23` e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, seção 7-A.
+**Nota de revisão — 2026-08-23 — Suporte a Subníveis:** ~~o envelope continua com exatamente três membros.~~ **Atualização de 2026-09-24 (B120):** os três membros de dados + `ErrorResponse` ficam na raiz do serviço, sem SDT envelope. O que permanece condicionado é o **tipo dos elementos de `Items`**: em transação de nível único, permanece coleção de `sdt<NomeBase>_API_Response`, sem alteração; havendo subnível selecionado, passa a ser coleção de `sdt<NomeBase>_API_ListResponse_Item`, que traz os mesmos campos de cabeçalho, **sem** os membros de coleção, mais os contadores `<Subnível>Count` dos subníveis diretos. O motivo é que o `List` não preenche as coleções: reusar o `Response` publicaria arrays permanentemente vazios, que o consumidor leria como ausência de linhas — o mesmo defeito que motivou a retirada de `Errors[]` do `sdt_API_ErrorResponse`. **Atualização de 2026-08-26 (B098):** o plano hierárquico emite `ListResponse_Item` e tipa `Items` quando `ApiPlan.Levels` tem filhos; caminho plano permanece coleção de `Response`. Detalhes na `Emenda técnica — 2026-08-23` e em `Docs/Implementation/2026-08-20-SUPORTE-TRANSACTIONS-SUBNIVEIS.md`, seção 7-A.
 
 [SDT-F13]
 
@@ -369,7 +378,7 @@ Se nome oficial já existir mas incompatível:
 | SDT externo sem metadata | bloqueia se colidir |
 | Campo senha | desmarcado com alerta |
 | Nome ocupado | bloqueia se metadata incompatível |
-| ListResponse | envelope completo |
+| ListResponse | ~~envelope completo~~ **Remissão 2026-09-24 (`B120`):** SDT envelope não gerado; outs flat |
 
 [SDT-F13]
 

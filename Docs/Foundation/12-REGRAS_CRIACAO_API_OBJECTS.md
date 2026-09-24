@@ -152,7 +152,7 @@ Não degradar chave composta para uso parcial.
 | Create | sdt<NomeBase>_API_CreateRequest |
 | Update | sdt<NomeBase>_API_UpdateRequest |
 | Get | sdt<NomeBase>_API_Response |
-| List | sdt<NomeBase>_API_ListResponse |
+| List | ~~sdt<NomeBase>_API_ListResponse~~ outs flat na raiz (`Items` + `Pagination` + `AppliedFilters` + `ErrorResponse`) — **Remissão 2026-09-24 (`B120`)** |
 
 [NOM-F11][API-F12]
 
@@ -162,7 +162,7 @@ Não degradar chave composta para uso parcial.
 
 | Serviço | Estrutura mínima |
 |---------|------------------|
-| List | serviço criado + retorno ListResponse |
+| List | serviço criado + outs flat (`Items` / `Pagination` / `AppliedFilters` / `ErrorResponse`) — **Remissão 2026-09-24 (`B120`)**; sem SDT envelope |
 | Get | serviço criado + chave completa |
 | Create | serviço criado + CreateRequest |
 | Update | serviço `PUT` criado + chave completa no RestPath + UpdateRequest |
@@ -329,7 +329,7 @@ Se objeto já existir:
 | Create usa CreateRequest | Sim |
 | Update usa UpdateRequest | Sim |
 | Get usa Response | Sim |
-| List usa ListResponse com envelope | Sim |
+| List usa outs flat (sem SDT envelope `ListResponse`) | Sim — **Remissão 2026-09-24 (`B120`)** |
 | Campo senha | desmarcado com alerta |
 | PK composta | suportada sem degradação parcial |
 | Update | usa PUT e chave completa no RestPath |

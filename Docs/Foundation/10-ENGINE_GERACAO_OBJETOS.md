@@ -88,7 +88,7 @@ Receber `ApiPlan`.
 | UpdateRequestSdtName | entrada de Update |
 | ResponseSdtName | saída |
 | ListFiltersSdtName | filtros de List |
-| ListResponseSdtName | envelope de List |
+| ListResponseSdtName | nome canônico do antigo envelope de List — **Remissão 2026-09-24 (`B120`):** SDT **não gerado**; o campo permanece no `ApiPlan` para limpeza A2 do órfão |
 | SharedSdtNames | SDTs compartilhados em `GxOpenAPI` |
 | SecurityLevel | valor aplicado aos serviços |
 | DefaultPageSize | paginação padrão |
@@ -104,7 +104,10 @@ Receber `ApiPlan`.
 
 - **Já em B095:** a **árvore de níveis** (`ApiPlanLevel`: nome, profundidade, nível pai, ordem, chave primária própria e campos candidatos da estrutura por nível — `Fields`; seleção por contrato = B099a), conforme a seção 21 de `08-MODELO_DADOS_E_METADATA.md`, exposta de forma aditiva em `ApiPlan.Levels`.
 - **Já em B096:** o **plano de SDT** consome `Levels` quando há filhos e emite SDTs derivados por contrato (`sdt<NomeBase>_API_<Papel>_<Subnível>`), com desambiguação e encurtamento de objeto a 128.
-- **Já em B098:** com subníveis o plano emite `sdt<NomeBase>_API_ListResponse_Item` e tipa `ListResponse.Items`; contadores default ligados via `IncludeListCount`.
+- **Já em B098:** com subníveis o plano emite `sdt<NomeBase>_API_ListResponse_Item` e tipa
+  `Items` (coleção desse item); contadores default ligados via `IncludeListCount`.
+  **Remissão — 2026-09-24 (`B120`):** não há SDT envelope `ListResponse` cujos membros sejam
+  tipados; `Items` é out na raiz do serviço/plano.
 - **Já em B099a:** o Wizard consome o leitor, poda `Levels` pela seleção (seletor compartilhado, dependência pai/filho, contador desligável, aviso de profundidade). Transação de nível único permanece no caminho flat.
 - **Fase 6 (`B099b`, concluída 2026-08-28):** metadata `schemaVersion` V2, sincronização hierárquica, integridade com árvore e remoção via `objects.sdts.own`. Apply, Sync e Remover liberados para API com subníveis.
 

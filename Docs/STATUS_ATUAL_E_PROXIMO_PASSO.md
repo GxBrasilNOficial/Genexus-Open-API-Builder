@@ -153,11 +153,8 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 
 ## Próxima ação única
 
-`B121` — tornar explícita a seleção das etapas `Business Component` e `List` no Sync,
-sem inferir a intenção pela lista de serviços. Exceção formal do encerramento da F1 da
-`S-B111`: o perfil Sync somente List isolado permanece não comprovado. Plano:
-`Docs/Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md`.
-`B120` permanece fechado (2026-09-24).
+Após o push desta frente (`B120` fechado em 2026-09-24), escolher a próxima ação no backlog
+em **sessão nova**. Nenhum item é promovido aqui nesta data.
 
 ~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
 ainda não mencionam o File do diário `GxOpenApiBuilder_OperationJournal`, o bloqueio que ele
@@ -225,7 +222,7 @@ porque indeterminação não se produz por clique. Tabela critério × evidênci
 **entregue e commitado em 2026-09-18** (`scripts/Apply-TextPatch.ps1`, gate `tests.textPatch`,
 plano `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`). ~~O `B123` entrou no
 código em 2026-09-20; a próxima ação única vigente é o **smoke na IDE** (plano §6).~~
-**Superado em 2026-09-20:** `B123` fechado (smoke §6 do núcleo PASS; `B127` para IDE dos hardenings); ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; ~~vigente = `B125`~~ **Superado em 2026-09-22:** `B125` fechado; ~~vigente = `B126`~~ **Superado em 2026-09-22:** `B126` fechado; ~~vigente = `B127`~~ **Superado em 2026-09-22:** `B127` fechado; **Superado em 2026-09-23:** `B128` fechado; próxima ação será escolhida do backlog após o push. Nota operacional do `B122` permanece no
+**Superado em 2026-09-20:** `B123` fechado (smoke §6 do núcleo PASS; `B127` para IDE dos hardenings); ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; ~~vigente = `B125`~~ **Superado em 2026-09-22:** `B125` fechado; ~~vigente = `B126`~~ **Superado em 2026-09-22:** `B126` fechado; ~~vigente = `B127`~~ **Superado em 2026-09-22:** `B127` fechado; **Superado em 2026-09-23:** `B128` fechado; ~~próxima ação será escolhida do backlog após o push.~~ **Superado em 2026-09-24:** `B120` fechado; a ponte operacional dessa cadeia ficou obsoleta — a escolha efetiva da próxima ação fica para sessão nova após o push desta frente. Nota operacional do `B122` permanece no
 documento 06.
 
 **Duas coisas precisam ser sabidas antes de testar.** A primeira: uma segunda remoção da mesma
@@ -333,7 +330,7 @@ evidência `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`). Etapas 1A 
 da KB grande é DLL `ce30374`; emissor de SDT mudou em `0568677`/`cfb73b0` (números conservadores
 da 1A).
 
-O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. ~~A próxima ação única vigente é `B122`.~~ **Superado em 2026-09-18:** `B122` commitado. ~~vigente = `B123`~~ **Superado em 2026-09-20:** `B123` fechado; ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; ~~vigente = `B125`~~ **Superado em 2026-09-22:** `B125` fechado; ~~vigente = `B126`~~ **Superado em 2026-09-22:** `B126` fechado; ~~vigente = `B127`~~ **Superado em 2026-09-22:** `B127` fechado; **Superado em 2026-09-23:** `B128` fechado. A próxima ação será escolhida do backlog após o push.
+O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. ~~A próxima ação única vigente é `B122`.~~ **Superado em 2026-09-18:** `B122` commitado. ~~vigente = `B123`~~ **Superado em 2026-09-20:** `B123` fechado; ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; ~~vigente = `B125`~~ **Superado em 2026-09-22:** `B125` fechado; ~~vigente = `B126`~~ **Superado em 2026-09-22:** `B126` fechado; ~~vigente = `B127`~~ **Superado em 2026-09-22:** `B127` fechado; **Superado em 2026-09-23:** `B128` fechado. ~~A próxima ação será escolhida do backlog após o push.~~ **Superado em 2026-09-24:** `B120` fechado; escolha da próxima ação em sessão nova após o push desta frente.
 
 A conclusão da `S-B111` não fechou automaticamente o `B082`: no encerramento, por decisão declarada (item 135), o residual 1B/2/3 ficou fora da sprint e da pauta imediata; o que a sprint absorveu (ordem do API Object, seam de persistência, remoção por fila) já está nas fases F1–F3. O fechamento do residual veio depois, na retomada de 2026-09-16 (Etapas 2+3) e no aceite 1B de 2026-09-17.
 
@@ -517,9 +514,9 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 > commits atrás, working tree limpa, sem razões incompletas nem requisitos manuais). `B128` está
 > fechado; a próxima ação do backlog será escolhida em nova sessão após o push.
 >
-> **Atualização de 2026-09-24:** `B120` fechado (código flat + A2 + aceite IDE/HTTP). A próxima
-> ação única vigente é `B121`. Evidência:
-> `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
+> **Atualização de 2026-09-24:** `B120` fechado (código flat + A2 + aceite IDE/HTTP). Remissão
+> normativa nos Foundation 10/12/13/26. A próxima ação do backlog fica para sessão nova após o
+> push. Evidência: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
 
 - **[Histórico — Sprint 9]** alinhamento documental da promoção à Sprint 9 já commitado, em `main`, com working tree limpa;
 - `origin/main` atualizada, sem commits remotos à frente da frente local;
@@ -532,8 +529,8 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 ## Sequência operacional vigente
 
 Vigência atual: `B120` fechado em 2026-09-24 (código flat + A2 + aceite IDE/HTTP na
-`Teste`/`wsEducacaoSpTeste`). Próxima ação única = `B121` (seleção explícita BC/List no
-Sync). `B128` permanece fechado (2026-09-23).
+`Teste`/`wsEducacaoSpTeste`, remissão normativa Foundation alinhada). Após o push, escolher a
+próxima ação no backlog em sessão nova. `B128` permanece fechado (2026-09-23).
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
@@ -711,7 +708,9 @@ Sync). `B128` permanece fechado (2026-09-23).
 
 164. Em 2026-09-23, **`B128` implementado, revisado e validado offline**: check `docs.csharpLineReferences` compara globalmente as citações incrementais nas árvores `origin/main`/`HEAD`, valida os endereços fixos excedentes, compartilha tokenizer com o teste e emite aviso heurístico não bloqueante sobre referências numéricas prováveis ao `CHANGELOG`. Passaram 35 assertions do tokenizer e o harness completo de `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1` (exit 0), incluindo endereço fixo novo válido, falha `environmentBlocked`, móvel inválido, `notCovered`, warning CHANGELOG com falha Git/decode explícita e somente no diff commitado, e avisos B124. Sem IDE/runtime. Backlog, `[Unreleased]` e evidência: `Docs/Foundation/06-BACKLOG_v0.1.md`, `CHANGELOG.md` e `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`. Commit local em `main`; sem push.
 
-165. Em 2026-09-24, **`B120` fechado**: outs flat do `List` (`Items`/`Pagination`/`AppliedFilters`/`ErrorResponse`) sem SDT `*ListResponse`; limpeza A2 do órfão no reapply; baselines e gates offline; install U14+; Wizard + `Build All` nos dois environments; smoke HTTP §6 (401/200/filtro/400) flat nos dois; regressão Get/Create/Update/Delete; wrapper sem unwrap prejudicial; Sync `SuccessWithWarnings` sem recriar `ListResponse`. Nuance: .NET Core pode omitir `AppliedFilters`/coleções vazias. Evidência: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`. Próxima ação única = `B121`.
+165. Em 2026-09-24, **`B120` fechado**: outs flat do `List` (`Items`/`Pagination`/`AppliedFilters`/`ErrorResponse`) sem SDT `*ListResponse`; limpeza A2 do órfão no reapply; baselines e gates offline; install U14+; Wizard + `Build All` nos dois environments; smoke HTTP §6 (401/200/filtro/400) flat nos dois; regressão Get/Create/Update/Delete; wrapper sem unwrap prejudicial; Sync `SuccessWithWarnings` sem recriar `ListResponse`. Nuance: .NET Core pode omitir `AppliedFilters`/coleções vazias. Evidência: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`. Após o push, próxima ação a escolher em sessão nova.
+
+166. Em 2026-09-24, **remissão normativa pós-B120**: Foundation 10, 12, 13 e 26 alinhados ao corpo HTTP flat (sem SDT envelope); cadeias históricas do checkpoint deixam de afirmar «próxima ação após o push» do B128 como ponte vigente; seção canônica sem item promovido — escolha em sessão nova após o push. Sem mudança de runtime.
 
 ## Bloqueios e fatos ainda não validados
 
@@ -740,11 +739,11 @@ environments (`apiTeste`). Evidência:
 - HTTP do Delete (contrato 401/404/200/422 e nível próprio Authorization vs Authentication no C#/IIS): **fechado** em 2026-08-31. Evidência: `Docs/Implementation/2026-08-30-B100-DELETE-OPT-IN.md` §3.
 - ~~Smoke HTTP atual do `List`: autenticação, consulta, filtro e paginação passaram nos dois environments, mas o envelope divergiu do contrato declarado no YAML entre Framework e PostgreSQL; a validação HTTP uniforme permanece pendente no `B120`. Evidência: `Docs/Implementation/B071-B073-B079-GET-CREATE-UPDATE-HTTP.md` e `Docs/Implementation/2026-09-10-B120-ENVELOPE-HTTP-LIST-MULTIPLATAFORMA.md`.~~ **Superado em 2026-09-24** (`B120`). Fechamento: `Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
 - ~~`Laudo` / B076: o API Object foi corrigido para o contrato B070 parametrizado e os dois environments foram rebuildados. O HTTP funcional do `List` passou com filtro válido, filtro sem resultado e paginação; permanece a ressalva do envelope multiplataforma registrada no `B120`. Evidência: `Docs/Implementation/2026-09-11-B076-LIST-HTTP-POS-PERMISSAO.md`.~~ **Superado em 2026-09-24** quanto ao envelope.
-- `B121` — seleção explícita de consumidores no Sync: **próxima ação única**
-  (2026-09-24); fora da sprint `S-B111`; tentativa na `Contrato` em 2026-09-11
-  confirmou BC executado antes de List mesmo sem escolha de BC no diálogo; o
-  perfil Sync somente List continua não comprovado isoladamente. Evidência e
-  plano: `Docs/Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md`.
+- `B121` — seleção explícita de consumidores no Sync: melhoria fora da sprint `S-B111`;
+  tentativa na `Contrato` em 2026-09-11 confirmou BC executado antes de List mesmo sem escolha
+  de BC no diálogo; o perfil Sync somente List continua não comprovado isoladamente. Não
+  promovido como próxima ação nesta data. Evidência e plano:
+  `Docs/Implementation/2026-09-10-B121-SYNC-SELECAO-BC-LIST.md`.
 - Add > Local por usuário externo em máquina nunca usada com a extensão (o relato U14 usou cópia em `Packages` + `/install`); instalação sem elevação alguma continua sem comprovação.
 - atomicidade ou rollback explícito para gravações multiobjeto ainda não foi implementado; os fluxos atuais devem validar o trio afetado antes do primeiro `Save()` planejado, mas falha interna da IDE/SDK durante um `Save()` pode exigir reparação manual ou frente futura de recuperação. Em `Remover API gerada` (B086), ambiguidade e posse de API/Procedures/SDTs próprios passam a ser validadas antes do primeiro `Delete()` (`ValidateRemovalTargets` em Preview e Remove); permanece residual a falha IDE/SDK no meio da sequência de exclusões já iniciada.
 - reexecução B055 quando o conjunto de `CreateRequired` muda em Procedure Create já própria: o preflight pode bloquear em vez de migrar; contorno atual é recriar a API. Gap residual fora do escopo fechado do Passo 4.

@@ -33,7 +33,9 @@ O MVP deve gerar `List` com:
 - filtros por atributos elegíveis
 - paginação
 - ordenação determinística
-- envelope de resposta com itens, paginação e filtros aplicados
+- ~~envelope de resposta com itens, paginação e filtros aplicados~~ resposta com itens,
+  paginação e filtros aplicados **na raiz** (mais `ErrorResponse`) — **Remissão 2026-09-24
+  (`B120`)**; sem SDT envelope `ListResponse`
 
 Não faz parte do MVP:
 
@@ -182,15 +184,33 @@ Regras:
 
 # 7. ListResponse
 
-`ListResponse` deve conter:
+**Remissão — 2026-09-24 (`B120`):** o título histórico desta seção nomeava o SDT envelope
+`sdt<NomeBase>_API_ListResponse`. Esse SDT **deixou de ser gerado**. O contrato HTTP público
+do `List` é **flat na raiz** — `Items`, `Pagination`, `AppliedFilters` e `ErrorResponse` —
+sem nesting `body.ListResponse…`. É breaking change para consumidores Framework que liam o
+envelope aninhado. Evidência:
+`Docs/Implementation/2026-09-24-B120-ACEITE-IDE-SMOKE-HTTP.md`.
+
+A resposta do `List` deve expor na raiz:
 
 - `items`
 - `pagination`
 - `appliedFilters`
+- `errorResponse` (irmão dos três membros de dados; mesmo SDT compartilhado do documento 27)
 
-`items` contém elementos do SDT de resposta principal.
+`items` contém elementos do SDT de resposta principal (caminho plano) ou de
+`sdt<NomeBase>_API_ListResponse_Item` quando há subnível selecionado.
 
-**Nota de revisão — 2026-08-23 — Suporte a Subníveis:** a regra acima permanece exata para transação de nível único. Havendo subnível selecionado, `items` passa a conter elementos de `sdt<NomeBase>_API_ListResponse_Item`: os mesmos campos de cabeçalho do `Response`, **sem** os membros de coleção, mais os contadores `<Subnível>Count` dos subníveis diretos. A listagem continua não aninhando as coleções, por decisão de performance; publicar o `Response` aqui traria arrays permanentemente vazios, que o consumidor leria como ausência de linhas. **Atualização de 2026-08-26 (B098):** o tipo de `items` com subníveis é emitido no plano offline; caminho plano permanece coleção de `Response`. Detalhes na `Emenda técnica — 2026-08-23`.
+**Nota de revisão — 2026-08-23 — Suporte a Subníveis:** a regra do tipo de `items` permanece
+exata para transação de nível único. Havendo subnível selecionado, `items` passa a conter
+elementos de `sdt<NomeBase>_API_ListResponse_Item`: os mesmos campos de cabeçalho do
+`Response`, **sem** os membros de coleção, mais os contadores `<Subnível>Count` dos subníveis
+diretos. A listagem continua não aninhando as coleções, por decisão de performance; publicar o
+`Response` aqui traria arrays permanentemente vazios, que o consumidor leria como ausência de
+linhas. **Atualização de 2026-08-26 (B098):** o tipo de `items` com subníveis é emitido no
+plano offline; caminho plano permanece coleção de `Response`. Detalhes na
+`Emenda técnica — 2026-08-23`. **Atualização de 2026-09-24 (B120):** esses membros deixam de
+viver dentro de um SDT envelope; passam a outs/propriedades na raiz do serviço.
 
 **Confirmação de restrição — 2026-08-23:** a decisão de não oferecer atributos de subnível como filtro (seções 3 e 9) **permanece deliberada** depois da frente de subníveis, e não é pendência a resolver. Filtros continuam vindo somente do primeiro nível.
 
