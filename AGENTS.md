@@ -274,7 +274,7 @@ Antes de qualquer push:
 
 ### Referências móveis a linhas C# (B128)
 
-Em Markdown sob `Docs/`, não acrescente novos localizadores móveis `Arquivo.cs:NNN` ou faixas: o check `docs.csharpLineReferences` compara o multiconjunto global reconhecido entre `origin/main` e `HEAD` e bloqueia qualquer aumento, inclusive candidato malformado. Não exige migrar o legado. Para código atual, prefira símbolo/tipo/membro; para citação histórica, use SHA completo, caminho C# relativo e linha conforme o contrato versionado `Docs/Implementation/2026-09-23-B128-CONTRATO-REFERENCIAS-C.md`. O check é sintático e não prova a semântica da afirmação.
+Em Markdown sob `Docs/`, não aumente o multiconjunto global reconhecido de localizadores móveis `Arquivo.cs:NNN` ou faixas: o check `docs.csharpLineReferences` compara `origin/main` e `HEAD` e bloqueia qualquer aumento líquido, inclusive candidato malformado. Não exige migrar o legado. Para código atual, prefira símbolo/tipo/membro; para citação histórica, use SHA completo, caminho C# relativo e linha conforme o contrato versionado `Docs/Implementation/2026-09-23-B128-CONTRATO-REFERENCIAS-C.md`. O check é sintático e não prova a semântica da afirmação.
 
 **Aviso obrigatório:** a rotina pré-push deste repositório deve ser executada somente depois de a frente estar commitada. Não tratar execução sobre working tree suja como rotina pré-push válida; nesse caso, no máximo é diagnóstico intermediário. Primeiro criar o commit local da frente e só então executar os passos abaixo para revisar o intervalo commitado contra `origin/main`.
 
