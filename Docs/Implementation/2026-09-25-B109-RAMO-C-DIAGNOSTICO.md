@@ -422,6 +422,13 @@ destino e nada sobra na fila, e falha do destino não derruba a leitura e cai na
 cobertura do seam, o `Initialize` precisa configurar o destino. Build canônica com 0 avisos;
 satélite U13 com 0 erros. Exige reinstalar a DLL; manifesto e registro não mudam.
 
+**Remissão — mesma data, segunda revisão externa.** A reserva não cobria a Output indisponível:
+`WriteOutputCore` retorna em silêncio nesse caso, sem exceção, e o destino imediato dava a linha
+como escrita. O destino passou a devolver se escreveu (`Func<string, bool>`; no pacote,
+`TryWriteOutput`), e a linha vai para a fila também quando ele devolve `false`. O esvaziamento no
+relatório final só roda com a Output disponível; sem ela, a fila fica guardada para o próximo
+relatório. Gate do núcleo com o caso «Output indisponível, sem exceção».
+
 ## 13. Mitigação validada em campo (2026-09-25)
 
 DLL do commit `53736d2` (repetição com critério ampliado e publicação imediata), conferida por

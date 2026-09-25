@@ -34,7 +34,7 @@ public sealed class Package : AbstractPackageUI
 
         // B109: linha de leitura repetida vai à Output na hora, no trecho da operação que a
         // provocou; guardada para o relatório final, poderia ser atribuída à operação seguinte.
-        ApiPlanSdkReadRetry.Sink = line => WriteOutput("[Genexus Open API Builder]" + line);
+        ApiPlanSdkReadRetry.Sink = line => TryWriteOutput("[Genexus Open API Builder]" + line);
 
         AddCommand(new CommandKey(Id, "Configurar Preferências do Wizard"), ExecuteConfigureWizardPreferences, QueryConfigureWizardPreferencesPortuguese);
         AddCommand(new CommandKey(Id, "Configurar preferencias del Wizard"), ExecuteConfigureWizardPreferences, QueryConfigureWizardPreferencesSpanish);
@@ -2769,10 +2769,14 @@ public sealed class Package : AbstractPackageUI
         ExtensionBusyProgressScope.CloseCurrent();
 
         // B109: rede de segurança. As linhas de leitura repetida vão à Output na hora (Sink);
-        // aqui saem só as que o destino imediato não conseguiu escrever.
-        foreach (var retryLine in ApiPlanSdkReadRetry.Drain())
+        // aqui saem só as que o destino imediato não conseguiu escrever. Sem Output, a fila
+        // fica guardada para o próximo relatório, em vez de ser esvaziada no vazio.
+        if (IsOutputWritable())
         {
-            WriteOutput("[Genexus Open API Builder]" + retryLine);
+            foreach (var retryLine in ApiPlanSdkReadRetry.Drain())
+            {
+                WriteOutput("[Genexus Open API Builder]" + retryLine);
+            }
         }
 
         // B082: a apresentacao do relatorio roda dentro do escopo de medicao do Sync,
@@ -2992,6 +2996,25 @@ public sealed class Package : AbstractPackageUI
     private static void WriteOutput(string message)
     {
         WriteOutputCore(message, forceShow: true);
+    }
+
+    /// <summary>
+    /// Mesmas condições de <see cref="WriteOutputCore"/>, que retorna em silêncio quando não há
+    /// Output: quem precisa saber se a linha saiu — a repetição de leitura do B109, que guarda a
+    /// linha na fila de reserva — pergunta antes.
+    /// </summary>
+    private static bool IsOutputWritable() =>
+        CommonServices.IsOutputAvailable && CommonServices.Output is IOutputService2;
+
+    private static bool TryWriteOutput(string message)
+    {
+        if (!IsOutputWritable())
+        {
+            return false;
+        }
+
+        WriteOutput(message);
+        return true;
     }
 
     private static void WriteOutputCore(string message, bool forceShow)

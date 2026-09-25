@@ -794,10 +794,11 @@ internal static class ApiPlanSdkReadRetry
     /// Destino imediato das linhas — a Output, configurada pelo pacote no <c>Initialize</c>. A
     /// linha sai no trecho da operação em que a repetição aconteceu: guardada para o relatório
     /// final, uma repetição na abertura de um Wizard cancelado apareceria no relatório da
-    /// operação seguinte e poderia ser atribuída a ela. Sem destino, ou se ele falhar, a linha vai
+    /// operação seguinte e poderia ser atribuída a ela. O destino devolve se escreveu: sem
+    /// destino, quando ele devolve <c>false</c> (Output indisponível) ou quando lança, a linha vai
     /// para a fila de <see cref="Drain"/>.
     /// </summary>
-    internal static Action<string>? Sink { get; set; }
+    internal static Func<string, bool>? Sink { get; set; }
 
     public static bool IsSdkDeserializationRace(Exception? exception)
     {
@@ -914,8 +915,10 @@ internal static class ApiPlanSdkReadRetry
         {
             try
             {
-                sink(line);
-                return;
+                if (sink(line))
+                {
+                    return;
+                }
             }
             catch (Exception)
             {

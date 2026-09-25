@@ -161,18 +161,25 @@ public static class SdkReadRetryHarness
         return Finish(result);
     }
 
-    public static SdkReadRetryResult RunWithSink(System.Func<System.Exception> race, bool sinkFails)
+    // sinkMode: 0 = escreve; 1 = lança; 2 = devolve false (Output indisponível, sem exceção).
+    public static SdkReadRetryResult RunWithSink(System.Func<System.Exception> race, int sinkMode)
     {
         var sinkLines = new System.Collections.Generic.List<string>();
         var result = Prepare();
         ApiPlanSdkReadRetry.Sink = line =>
         {
-            if (sinkFails)
+            if (sinkMode == 1)
             {
                 throw new System.InvalidOperationException("Output indisponível");
             }
 
+            if (sinkMode == 2)
+            {
+                return false;
+            }
+
             sinkLines.Add(line);
+            return true;
         };
         try
         {
@@ -731,12 +738,18 @@ Assert-True ($persisted.Lines.Contains("Ponto='Confirmação de Sdt sdtFixture'"
 
 # Destino imediato: a linha sai no trecho da operação que a provocou e não sobra na fila para a
 # operação seguinte — o caso de um Wizard cancelado depois de ler o contrato existente.
-$sinked = $retry::RunWithSink($race, $false)
+$sinked = $retry::RunWithSink($race, 0)
 Assert-True ($sinked.SinkLines.Contains("Ponto='fixture-sink', Tentativa=2/5, Resultado=Recuperada")) 'Com destino configurado, a linha vai na hora para ele.'
 Assert-Equal '' $sinked.Lines 'Com destino configurado, nada sobra na fila para a operação seguinte.'
-$sinkFailed = $retry::RunWithSink($race, $true)
+$sinkFailed = $retry::RunWithSink($race, 1)
 Assert-Equal 2 $sinkFailed.Calls 'Falha do destino não derruba a leitura recuperada.'
 Assert-True ($sinkFailed.Lines.Contains("Ponto='fixture-sink'")) 'Se o destino falhar, a linha cai na fila de reserva.'
+# Output indisponível: WriteOutputCore retorna em silêncio, sem exceção. O destino devolve false,
+# e a linha tem de ir para a fila, não ser dada como escrita.
+$sinkUnavailable = $retry::RunWithSink($race, 2)
+Assert-Equal 2 $sinkUnavailable.Calls 'Output indisponível não derruba a leitura recuperada.'
+Assert-Equal '' $sinkUnavailable.SinkLines 'Output indisponível não escreve nada.'
+Assert-True ($sinkUnavailable.Lines.Contains("Ponto='fixture-sink'")) 'Com a Output indisponível, a linha fica na fila de reserva.'
 
 Remove-Item -LiteralPath $sdkRaceFakesPath -ErrorAction SilentlyContinue
 

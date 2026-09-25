@@ -193,6 +193,6 @@ $packageSource = Get-Content -Raw -LiteralPath (Join-Path $sourceRoot 'Package.c
 $initializeStart = $packageSource.IndexOf('public override void Initialize(', [StringComparison]::Ordinal)
 Assert-True ($initializeStart -ge 0) 'Package.cs deve ter Initialize.'
 $initializeBody = $packageSource.Substring($initializeStart, [Math]::Min(1500, $packageSource.Length - $initializeStart))
-Assert-True ($initializeBody.Contains('ApiPlanSdkReadRetry.Sink = ')) 'Package.Initialize deve configurar o destino imediato das linhas B109.'
+Assert-True ($initializeBody.Contains('ApiPlanSdkReadRetry.Sink = line => TryWriteOutput(')) 'Package.Initialize deve configurar o destino imediato das linhas B109, que informa se escreveu.'
 
 Write-Output 'PASS: ApiPlanPersistenceSeamCoverage'
