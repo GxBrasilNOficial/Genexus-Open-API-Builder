@@ -16,7 +16,7 @@ Registro original no checkpoint e no backlog. No Apply do Wizard da `Empresa`, n
 - Source preparado com cerca de 153 KB e 82 variáveis; List, API Object e metadata não rodaram;
   diário `Partial`; relatório `Interrupted`, `Criados=49`, `Bloqueados=1`.
 
-## 2. Estado atual da KB (conferido em 2026-09-25)
+## 2. Estado da KB antes dos testes de 2026-09-25
 
 Leitura pela MCP `genexus18mcp`, somente leitura, e pelo File do diário exportado pelo usuário
 (`GxOpenApiBuilder_OperationJournal`, cujo conteúdo a leitura por `Source` da MCP não expõe):
@@ -92,6 +92,8 @@ revisão registrada em `B129`), também passou com 0 erros e só o `MSB3277` con
 - **Próximo passo sugerido:** instalar a DLL com esta correção, repetir o Apply da `Empresa` na
   `fabricabrasil18test` (Remover e Wizard) algumas vezes e, se a falha voltar, ler o inner. Se
   não voltar, o ramo C fica como o ramo A: condicionado à reprodução, com a captura já pronta.
+  **Feito na mesma data:** uma reprodução (seção 6) e dois retestes sem falha (seção 7); o ramo C
+  ficou condicionado à reprodução.
 
 Manifesto e registro da extensão não mudaram; a instalação da DLL não exige `genexus /install`.
 
