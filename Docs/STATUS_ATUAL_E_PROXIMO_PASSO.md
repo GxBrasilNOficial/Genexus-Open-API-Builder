@@ -433,7 +433,7 @@ reabertura na seção 15. Os parágrafos abaixo são o registro anterior à unif
 **Três ramos sob `B109` (registro até 2026-09-24).** O encerramento de 2026-09-05 vale só para o ramo B. Em 2026-09-24
 foi registrado o **ramo C** (confirmação `Unreadable` / `TargetInvocationException` no Update).
 
-O **ramo A** — `Collection was modified; enumeration operation may not execute`, quatro ocorrências — **permanece sem causa confirmada**. Ele não voltou a ocorrer na sequência limpa, o que é ausência de reprodução, não explicação. A hipótese da reentrância por `Application.DoEvents()` segue **não testada**: o interruptor está instalado e nunca foi acionado. Desde 2026-09-06 ele é a preferência **«Suprimir a atualização da tela durante as gravações»**, em Preferências do Wizard → Diagnóstico e recuperação, desligada por padrão e gravada na KB; antes disso era a variável de ambiente `GOAB_B109_SUPPRESS_PUMP`, que dependia do Windows e não tinha onde avisar o efeito colateral. Vale no Apply do Wizard, onde estão as quatro ocorrências. É frente condicionada à reprodução — se o sintoma reaparecer, o experimento mínimo é repetir a mesma operação com o Pump suprimido e comparar. **2026-09-25:** o experimento não chegou a ser executado; a preferência foi retirada (item 183), e a stack síncrona da corrida do SDK enfraqueceu a hipótese do `DoEvents`.
+**Registro até 2026-09-24 — superado; ver a remissão no fim.** O **ramo A** — `Collection was modified; enumeration operation may not execute`, quatro ocorrências — **permanece sem causa confirmada**. Ele não voltou a ocorrer na sequência limpa, o que é ausência de reprodução, não explicação. A hipótese da reentrância por `Application.DoEvents()` segue **não testada**: o interruptor está instalado e nunca foi acionado. Desde 2026-09-06 ele é a preferência **«Suprimir a atualização da tela durante as gravações»**, em Preferências do Wizard → Diagnóstico e recuperação, desligada por padrão e gravada na KB; antes disso era a variável de ambiente `GOAB_B109_SUPPRESS_PUMP`, que dependia do Windows e não tinha onde avisar o efeito colateral. Vale no Apply do Wizard, onde estão as quatro ocorrências. É frente condicionada à reprodução — se o sintoma reaparecer, o experimento mínimo é repetir a mesma operação com o Pump suprimido e comparar. **2026-09-25:** o experimento não chegou a ser executado; a preferência foi retirada (item 183), e a stack síncrona da corrida do SDK enfraqueceu a hipótese do `DoEvents`.
 
 O **ramo B** — `ValidationException` em `KBObjectManager.PrepareSave`, uma ocorrência — foi encerrado após remoção limpa, `Build All` nos dois environments, reaplicação limpa e novo `Build All` no environment de referência `CSharpModel`.
 
@@ -441,7 +441,7 @@ O resultado B081 da reaplicação foi `SuccessWithWarnings`, com `Criados=50`, `
 
 O experimento também fechou o baseline: o `Build All` sem API passou nos dois environments; após a reaplicação, o `CSharpModel` passou novamente com os objetos recém-gerados. O `NETFrameworkPostgreSQL` ainda falhou na compilação C# dos SDTs com conversões `bool`/`decimal`/`short`; essa frente é específica do environment e fica fora do encerramento do caso BC. Evidência completa: `Docs/Implementation/2026-09-05-ENCERRAMENTO-BC-EMPRESA.md`.
 
-O **ramo C** — registrado em 2026-09-24: no Apply Wizard da `Empresa` (`fabricabrasil18test`),
+**Registro de 2026-09-24 — superado; o `B109` foi fechado por mitigação (item 186).** O **ramo C** — registrado em 2026-09-24: no Apply Wizard da `Empresa` (`fabricabrasil18test`),
 `procEmpresa_API_Get` e `procEmpresa_API_Create` confirmaram; a confirmação pós-Save de
 `procEmpresa_API_Update` falhou com `Confirmation='Unreadable'` e
 `System.Reflection.TargetInvocationException` (Detail sem `InnerException`). Source preparado
@@ -452,7 +452,7 @@ investigação na sessão pós-push; **não** promovido como próxima ação ún
 Instrumentação útil: dump `[B109]` já emitido; preferência de suprimir Pump no reteste (retirada em 2026-09-25);
 capturar `InnerException` se a falha repetir.
 
-**2026-09-25 — captura do ramo C corrigida; causa aberta.** O `InnerException` não podia
+**Registro da manhã de 2026-09-25 — superado: a causa foi localizada à tarde (item 177) e o `B109` fechado (item 186).** **2026-09-25 — captura do ramo C corrigida; causa aberta.** O `InnerException` não podia
 aparecer: a confirmação ilegível guardava só tipo + mensagem da camada externa, e a exceção
 «Persistência ... não foi confirmada» saía sem inner, então a sonda `[B109]` via uma cadeia de
 um nível só. Agora a confirmação carrega a exceção (`PersistenceConfirmation.Cause`), o
