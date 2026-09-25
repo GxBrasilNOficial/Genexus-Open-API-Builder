@@ -31,7 +31,9 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   resolução de tipo por nome e estrutura de SDT — quando a falha vem desse ponto do SDK
   (`PropertyManager.SetInitialValues` na stack, com ou sem embrulho), até três tentativas, com a linha `[B109] Leitura repetida` na Output; `Save()` nunca é repetido. Até
   aqui, essa falha interrompia o Apply ou o Sync ao acaso — observada desde 2026-09-04 e
-  presente nas versões publicadas, porque o defeito é do SDK. Sem validação na IDE. Evidência:
+  presente nas versões publicadas, porque o defeito é do SDK. Na IDE foi exercido só o caminho
+  sem corrida (três gerações limpas da `Empresa`); a repetição em si ainda não ocorreu em campo.
+  Evidência:
   `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
 ### Planned

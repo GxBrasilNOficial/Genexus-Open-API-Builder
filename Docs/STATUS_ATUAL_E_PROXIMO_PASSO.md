@@ -166,8 +166,10 @@ novo à tarde, com stack completa (item 177): defeito do SDK na desserializaçã
 SDT, ramos A e C unificados. ~~Próxima ação única = desenhar e aprovar a mitigação escolhida e
 implementá-la~~ — implementada offline (item 178); uma rodada na IDE sem corrida passou limpa, e
 os ramos foram unificados num defeito só, com o critério da repetição sem exigir `UdmException`
-(item 179). **Próxima ação única = repetir na IDE o ciclo que reproduziu (Remover, reabrir a KB,
-Wizard) na `Empresa`, observando as linhas `[B109] Leitura repetida`**. Evidência:
+(item 179). ~~Próxima ação única = repetir na IDE o ciclo que reproduziu~~ — mais duas rodadas
+limpas, sem corrida (item 180). **`B109` fica aberto e em espera**, com mitigação e captura
+instaladas, e volta a ser tratado se o sintoma reaparecer. **Próxima ação única = publicar esta
+frente (push) e escolher a próxima ação no backlog.** Evidência:
 `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
 ~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
@@ -412,8 +414,8 @@ do ramo A (reentrância por `DoEvents`) perdeu a base com a stack síncrona. O a
 `Collection was modified` fora do `SetInitialValues` seria outro defeito, com item próprio; a
 sonda mostra de onde veio. Mitigação: repetição de leitura (`ApiPlanSdkReadRetry`), com critério
 pelo frame `SetInitialValues`, com ou sem `UdmException`. Evidência:
-`Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seções 8 a 10. Os parágrafos abaixo
-são o registro anterior à unificação.
+`Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seções 8 a 10. **Estado em 2026-09-25:** aberto e em espera; volta a ser tratado se o sintoma reaparecer
+(seção 11 do documento de evidência). Os parágrafos abaixo são o registro anterior à unificação.
 
 **Três ramos sob `B109` (registro até 2026-09-24).** O encerramento de 2026-09-05 vale só para o ramo B. Em 2026-09-24
 foi registrado o **ramo C** (confirmação `Unreadable` / `TargetInvocationException` no Update).
@@ -793,6 +795,8 @@ permanece fechado (2026-09-23).
 178. Em 2026-09-25, **mitigação do `B109` implementada offline**: `ApiPlanSdkReadRetry` repete, até três vezes, leituras que falham com `UdmException` e `PropertyManager.SetInitialValues` na stack do inner — confirmação pós-Save no seam, `DataType.ParseInto` (8) e `SDTStructure.Root` (5); `Save()` nunca é repetido; linha `[B109] Leitura repetida` na Output. Leitura das DLLs do SDK: definições de propriedades num cache estático por tipo, percorridas sem trava e alteradas sob trava da instância. Gates no núcleo e na cobertura do seam; build canônica com 0 avisos e satélite U13 com 0 erros. Não validado na IDE. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 9.
 
 179. Em 2026-09-25, **`B109` unificado num defeito só e critério da repetição ampliado**: uma rodada na IDE com a DLL da mitigação, depois de remoção manual da API e do diário, passou limpa sem corrida (`Criados=51`, 29,8 s — contra 110 s a 120 s dos Applies anteriores, sem explicação) e prova só que o caminho normal não regrediu. Os ramos A e C viraram um defeito (a corrida do SDK), com as ocorrências do A atribuídas por hipótese; o ramo B segue como ocorrência distinta e encerrada. O critério de `ApiPlanSdkReadRetry.IsSdkDeserializationRace` passou a aceitar o frame `SetInitialValues` com ou sem `UdmException`, cobrindo o formato das ocorrências antigas; um `Collection was modified` de outra origem continua sem repetição. Build canônica com 0 avisos, satélite U13 com 0 erros, gates verdes. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seções 9 e 10.
+
+180. Em 2026-09-25, **`B109` em espera**: mais duas rodadas da `Empresa` com a DLL do critério ampliado (remover, reabrir a IDE, Wizard), ambas limpas e sem linha `[B109] Leitura repetida` (130 s e 29 s). No dia, duas falhas em sete rodadas, ambas num estado lento da sessão (contrato aberto em 1,6 s a 2,3 s, `GetAll` de Files em 18 ms a 26 ms), contra rodadas rápidas de ~30 s — observação sem hipótese firmada. Por decisão do usuário, o `B109` fica aberto, com mitigação e captura instaladas, e volta a ser tratado se o sintoma reaparecer; a mitigação conta como validada na primeira linha `Resultado=Recuperada`. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 11.
 
 ## Bloqueios e fatos ainda não validados
 

@@ -364,3 +364,37 @@ corrida; o embrulho não acrescentava segurança. Continua sem repetição um `C
 modified` de outra origem, e `Save()` continua nunca repetido. O gate do núcleo ganhou o caso da
 corrida sem embrulho (repete) e manteve o de `Collection was modified` sem o frame (não repete).
 Build canônica com 0 avisos; satélite U13 com 0 erros.
+
+## 11. Estado em que a frente fica (2026-09-25)
+
+Applies da `Empresa` na `fabricabrasil18test` no dia, com as mesmas opções (List, Get, Create,
+Update, Delete e Business Component; 13 subníveis):
+
+| # | Momento | DLL | Resultado | Tempo | Abertura do contrato | `GetAll` Files | Avisos de Stencil |
+|---|---|---|---|---|---|---|---|
+| 1 | manhã | captura corrigida (`c4202c6`) | falhou no 1º SDT | 5,5 s | 1.638 ms | 19 ms | sim |
+| 2 | reteste 1 | sondas nas etapas (`f033c6d`) | ok | 113 s | 1.738 ms | 24 ms | não |
+| 3 | reteste 2 | idem | ok | 120 s | 1.628 ms | 26 ms | sim |
+| 4 | tarde | idem | falhou na metadata, com stack | 110 s | 2.327 ms | 24 ms | sim |
+| 5 | mitigação | repetição, critério original | ok, sem corrida | 30 s | 570 ms | 0 ms | não |
+| 6 | mitigação | repetição, critério ampliado (`7886a44`) | ok, sem corrida | 130 s | 1.943 ms | 18 ms | sim |
+| 7 | mitigação | idem | ok, sem corrida | 29 s | 590 ms | 0 ms | não |
+
+Duas falhas em sete rodadas; nenhuma corrida nas três rodadas com a mitigação, que, portanto, não
+foi exercida em campo. As rodadas 6 e 7 rodaram com a DLL instalada igual à build do critério
+ampliado (`Test-InstalledExtension.ps1`, `InstalledMatchesBuild : True`).
+
+**Observação, sem hipótese firmada.** As rodadas se separam em dois estados da sessão da IDE: um
+rápido (29 s a 30 s; contrato aberto em ~0,6 s; `GetAll` de Files em 0 ms) e um lento (110 s a
+130 s; contrato em 1,6 s a 2,3 s; `GetAll` em 18 ms a 26 ms). **As duas falhas vieram no estado
+lento.** O aviso de Stencil não separa os dois: a rodada 2, lenta, não o teve. Se o estado lento
+for sinal de trabalho de fundo da IDE, casaria com a hipótese de outra thread alterando a coleção
+de definições (seção 9) — mas duas amostras rápidas não sustentam conclusão.
+
+**Decisão do usuário.** O `B109` fica **aberto e em espera**, com a mitigação (`ApiPlanSdkReadRetry`)
+e a captura (sonda em todas as etapas, inner no `Detail`) instaladas, e **volta a ser tratado se o
+sintoma reaparecer** numa geração. Critério para dar a mitigação como validada em campo: a primeira
+linha `[B109] Leitura repetida ... Resultado=Recuperada` numa operação que termine bem. Uma linha
+`Resultado=Esgotada`, ou uma falha com `Collection was modified` fora do `SetInitialValues`, reabre
+a investigação com a stack da sonda. Ao reabrir, anotar também o estado da sessão (tempos de
+abertura do contrato e do `GetAll`).
