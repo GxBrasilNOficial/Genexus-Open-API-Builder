@@ -125,7 +125,8 @@ internal static class ApiPlanMetadataFileWriter
         if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
         {
             throw new InvalidOperationException(
-                $"Persistência da metadata '{apiPlan.MetadataFileName}' não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.");
+                $"Persistência da metadata '{apiPlan.MetadataFileName}' não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.",
+                receipt.ConfirmationCause);
         }
 
         var persisted = WikiFileKBObject.GetAll(designModel)
@@ -186,7 +187,7 @@ internal static class ApiPlanMetadataFileWriter
         }
         catch (Exception exception)
         {
-            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+            return PersistenceConfirmation.Unreadable(exception);
         }
     }
 

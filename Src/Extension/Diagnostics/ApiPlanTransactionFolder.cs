@@ -82,7 +82,7 @@ internal static class ApiPlanTransactionFolder
         }
         catch (Exception exception)
         {
-            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+            return PersistenceConfirmation.Unreadable(exception);
         }
     }
 
@@ -96,7 +96,8 @@ internal static class ApiPlanTransactionFolder
             if (receipt.Outcome != PersistenceOutcome.Confirmed)
             {
                 throw new InvalidOperationException(
-                    $"Persistência de {description} não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.");
+                    $"Persistência de {description} não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.",
+                    receipt.ConfirmationCause);
             }
 
             return;
@@ -107,7 +108,8 @@ internal static class ApiPlanTransactionFolder
             confirmation.PhysicalState != PersistencePhysicalState.Present)
         {
             throw new InvalidOperationException(
-                $"Persistência de {description} não foi confirmada: Confirmation='{confirmation.Status}', PhysicalState='{confirmation.PhysicalState}', Detail='{confirmation.Detail}'.");
+                $"Persistência de {description} não foi confirmada: Confirmation='{confirmation.Status}', PhysicalState='{confirmation.PhysicalState}', Detail='{confirmation.Detail}'.",
+                confirmation.Cause);
         }
     }
 

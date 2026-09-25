@@ -138,4 +138,19 @@ foreach ($group in @($expectedCalls | Group-Object File)) {
 $executorSource = Get-Content -Raw -LiteralPath (Join-Path $sourceRoot 'Diagnostics\ApiPlanSaveStepExecutor.cs')
 Assert-True ($executorSource.Contains('ApiPlanSaveBoundaryProbe.Persist(')) 'O executor único deve encaminhar cada ApiPlanSaveStep ao seam comum.'
 
+# B109 ramo C: confirmação ilegível por exceção precisa preservar a exceção. A forma antiga
+# guardava só tipo + mensagem da camada externa, e uma TargetInvocationException chegava à
+# Output sem a causa real. Toda exceção «não foi confirmada» repassa a causa como inner.
+foreach ($path in $productionFiles) {
+    $relativePath = [IO.Path]::GetRelativePath($sourceRoot, $path)
+    $source = Get-Content -Raw -LiteralPath $path
+    Assert-True (-not [regex]::IsMatch($source, 'PersistenceConfirmation\.Unreadable\(\s*exception\.GetType\(\)')) "$relativePath descarta a cadeia da exceção na confirmação; use PersistenceConfirmation.Unreadable(exception)."
+    foreach ($match in [regex]::Matches($source, '(?s)throw new InvalidOperationException\(\s*\$"Persist[^"]*não foi confirmada:[^"]*",\s*([A-Za-z_.]+)\);')) {
+        Assert-True ($match.Groups[1].Value -in @('receipt.ConfirmationCause', 'confirmation.Cause')) "$relativePath lança «não foi confirmada» sem repassar a causa: $($match.Groups[1].Value)."
+    }
+    $unconfirmedThrows = [regex]::Matches($source, 'throw new InvalidOperationException\(\s*\$"Persist[^"]*não foi confirmada:').Count
+    $withCause = [regex]::Matches($source, '(?s)throw new InvalidOperationException\(\s*\$"Persist[^"]*não foi confirmada:[^"]*",\s*(receipt\.ConfirmationCause|confirmation\.Cause)\);').Count
+    Assert-Equal $unconfirmedThrows $withCause "$relativePath tem exceção «não foi confirmada» sem a causa da confirmação como inner."
+}
+
 Write-Output 'PASS: ApiPlanPersistenceSeamCoverage'

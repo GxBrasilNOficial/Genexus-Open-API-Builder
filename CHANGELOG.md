@@ -10,6 +10,19 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
+### Fixed
+
+- `B109` ramo C — diagnóstico de confirmação ilegível: quando a releitura pós-Save de um objeto
+  lançava exceção, o recibo guardava só o tipo e a mensagem da camada externa, e a exceção
+  «Persistência ... não foi confirmada» saía sem inner. Uma `TargetInvocationException` chegava
+  à Output com a mensagem genérica e sem a causa real, mesmo com a sonda `[B109]` instalada.
+  Agora o `Detail` do recibo resume a cadeia inteira de exceções, e a exceção original segue
+  como inner até a sonda, que publica tipo, mensagem e stack de cada nível. Vale para as catorze
+  confirmações do seam de persistência e para os doze pontos que lançam a não confirmação. A
+  lacuna existia desde a `0.1.0-alpha.8`; é só diagnóstico e não muda o que é gravado nem o
+  resultado da operação. A causa da falha observada em 2026-09-24 continua aberta. Evidência:
+  `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
+
 ### Planned
 
 - `B108` (plano aprovado 2026-08-31; estacionado desde 2026-09-05): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. As três fases da sprint `S-B111` foram encerradas em 2026-09-15, mantendo `B121` fora dela. Ver o checkpoint e o documento 06.

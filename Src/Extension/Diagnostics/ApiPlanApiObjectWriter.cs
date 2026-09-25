@@ -328,7 +328,8 @@ internal static class ApiPlanApiObjectWriter
         if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
         {
             throw new InvalidOperationException(
-                $"Persistência do API Object '{api.Name}' não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.");
+                $"Persistência do API Object '{api.Name}' não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.",
+                receipt.ConfirmationCause);
         }
 
         var persisted = RequirePersistedApiObject(designModel, api.Guid, apiPlan.ApiName, isB055ApiObject ? "B055" : "B054");
@@ -381,7 +382,7 @@ internal static class ApiPlanApiObjectWriter
         }
         catch (Exception exception)
         {
-            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+            return PersistenceConfirmation.Unreadable(exception);
         }
     }
 

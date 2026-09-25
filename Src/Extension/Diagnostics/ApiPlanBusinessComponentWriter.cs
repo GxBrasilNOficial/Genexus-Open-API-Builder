@@ -635,7 +635,7 @@ internal static class ApiPlanBusinessComponentWriter
         }
         catch (Exception exception)
         {
-            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+            return PersistenceConfirmation.Unreadable(exception);
         }
     }
 
@@ -749,7 +749,7 @@ internal static class ApiPlanBusinessComponentWriter
         }
         catch (Exception exception)
         {
-            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+            return PersistenceConfirmation.Unreadable(exception);
         }
     }
 

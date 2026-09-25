@@ -1122,7 +1122,7 @@ internal static class ApiPlanListProcedureWriter
         }
         catch (Exception exception)
         {
-            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+            return PersistenceConfirmation.Unreadable(exception);
         }
     }
 
@@ -1205,7 +1205,7 @@ internal static class ApiPlanListProcedureWriter
         }
         catch (Exception exception)
         {
-            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + exception.Message);
+            return PersistenceConfirmation.Unreadable(exception);
         }
     }
 

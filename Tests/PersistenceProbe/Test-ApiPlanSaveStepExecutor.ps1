@@ -90,11 +90,19 @@ public sealed class ExecutorHarnessResult
     public int BeforeSaveCount { get; set; }
     public int SavedCount { get; set; }
     public int FailedCount { get; set; }
+    public string InnerExceptionType { get; set; } = string.Empty;
+    public string InnermostMessage { get; set; } = string.Empty;
+    public string FirstConfirmationDetail { get; set; } = string.Empty;
 }
 
 public static class ApiPlanSaveStepExecutorHarness
 {
-    public static ExecutorHarnessResult Execute(PersistenceFaultAction beforeAction, PersistenceFaultAction afterAction)
+    public static ExecutorHarnessResult Execute(PersistenceFaultAction beforeAction, PersistenceFaultAction afterAction) =>
+        Execute(beforeAction, afterAction, unreadableByException: false);
+
+    // B109 ramo C: a confirmação lança TargetInvocationException, cuja mensagem é genérica e
+    // cuja causa real está no inner. O writer a converte em Unreadable(exception).
+    public static ExecutorHarnessResult Execute(PersistenceFaultAction beforeAction, PersistenceFaultAction afterAction, bool unreadableByException)
     {
         var firstPrepareCount = 0;
         var firstPersistCount = 0;
@@ -124,9 +132,12 @@ public static class ApiPlanSaveStepExecutorHarness
                     PersistenceFaultPoint.ProcedureSave,
                     () => firstPrepareCount++,
                     () => firstPersistCount++,
-                    () => beforeAction == PersistenceFaultAction.ReturnWithoutMutation
-                        ? PersistenceConfirmation.Absent("fixture sem mutação")
-                        : PersistenceConfirmation.Confirmed("procFixture_API_List"),
+                    () => unreadableByException
+                        ? PersistenceConfirmation.Unreadable(new System.Reflection.TargetInvocationException(
+                            new InvalidOperationException("causa real da fixture B109")))
+                        : beforeAction == PersistenceFaultAction.ReturnWithoutMutation
+                            ? PersistenceConfirmation.Absent("fixture sem mutação")
+                            : PersistenceConfirmation.Confirmed("procFixture_API_List"),
                     () => "first"),
                 new ApiPlanSaveStep(
                     "apiFixture",
@@ -169,6 +180,9 @@ public static class ApiPlanSaveStepExecutorHarness
             BeforeSaveCount = ApiPlanSaveBoundaryProbe.BeforeSaveCount,
             SavedCount = ApiPlanSaveBoundaryProbe.SavedCount,
             FailedCount = ApiPlanSaveBoundaryProbe.FailedCount,
+            InnerExceptionType = exception?.InnerException?.GetType().FullName ?? string.Empty,
+            InnermostMessage = exception?.InnerException?.InnerException?.Message ?? string.Empty,
+            FirstConfirmationDetail = log.Receipts.Count == 0 ? string.Empty : log.Receipts[0].ConfirmationDetail ?? string.Empty,
         };
     }
 }
@@ -232,5 +246,15 @@ Assert-Equal 0 $invalidBefore.ReceiptCount 'Ação posterior em Before não pode
 Assert-Equal 1 $invalidBefore.StageFailureCount 'Ação posterior em Before deve registrar falha de etapa.'
 Assert-True ($invalidBefore.ExceptionMessage -match 'só pode ser injetado depois') 'Executor deve propagar a restrição de Before.'
 Assert-Equal 1 $invalidBefore.FailedCount 'Probe deve registrar a falha de Before inválido.'
+
+$unreadable = $harness::Execute($actionType::None, $actionType::None, $true)
+Assert-Equal 1 $unreadable.FirstPersistCount 'Confirmação ilegível ocorre depois do delegate físico.'
+Assert-Equal 0 $unreadable.SecondPersistCount 'Executor deve parar após confirmação ilegível.'
+Assert-Equal $outcomeType::OutcomeUnknown $unreadable.FirstOutcome 'Confirmação ilegível deve ser OutcomeUnknown.'
+Assert-True ($unreadable.ExceptionMessage -match 'não foi confirmada') 'Executor deve propagar a confirmação ilegível.'
+Assert-Equal 'System.Reflection.TargetInvocationException' $unreadable.InnerExceptionType 'B109 ramo C: a exceção do executor deve carregar a causa da confirmação como inner.'
+Assert-Equal 'causa real da fixture B109' $unreadable.InnermostMessage 'B109 ramo C: o inner da TargetInvocationException deve chegar até a sonda.'
+Assert-True ($unreadable.FirstConfirmationDetail.Contains('System.InvalidOperationException: causa real da fixture B109')) 'B109 ramo C: o Detail do recibo deve resumir a cadeia inteira, não só a mensagem genérica.'
+Assert-Equal 1 $unreadable.FailedCount 'Probe deve registrar a falha por confirmação ilegível.'
 
 Write-Output 'PASS: ApiPlanSaveStepExecutor'

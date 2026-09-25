@@ -2525,7 +2525,8 @@ public sealed class Package : AbstractPackageUI
             if (receipt is not null && receipt.Outcome != PersistenceOutcome.Confirmed)
             {
                 throw new InvalidOperationException(
-                    $"Persistência da habilitação de Business Component não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.");
+                    $"Persistência da habilitação de Business Component não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.",
+                    receipt.ConfirmationCause);
             }
 
             if (!transaction.IsBusinessComponent)

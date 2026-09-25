@@ -83,6 +83,9 @@ public sealed class PersistenceReceipt
 
     public string? ConfirmationDetail { get; private set; }
 
+    /// <summary>B109 ramo C — ver <see cref="PersistenceConfirmation.Cause"/>. Não vai para o diário.</summary>
+    public Exception? ConfirmationCause { get; private set; }
+
     internal void Complete(
         PersistenceAttemptState attemptState,
         PersistenceOutcome outcome,
@@ -97,6 +100,7 @@ public sealed class PersistenceReceipt
         PhysicalState = observation.PhysicalState;
         ObservedIdentity = observation.ObservedIdentity;
         ConfirmationDetail = observation.Detail;
+        ConfirmationCause = observation.Cause;
         FinishedAt = finished;
         DurationMs = Math.Max(0L, (long)(finished - StartedAt).TotalMilliseconds);
         ConfirmationRead = confirmationRead;

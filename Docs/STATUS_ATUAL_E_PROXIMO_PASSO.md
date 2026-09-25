@@ -155,8 +155,12 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 ## Próxima ação única
 
 **Corte `0.1.0-alpha.9` publicado em 2026-09-24** (tag `v0.1.0-alpha.9` + GitHub Release
-pre-release, dois assets DLL). Pacote documental no commit `562fb70`. Escolher a próxima
-ação no backlog em **sessão nova**. Nenhum item é promovido aqui nesta data.
+pre-release, dois assets DLL). Pacote documental no commit `562fb70`. ~~Escolher a próxima
+ação no backlog em **sessão nova**. Nenhum item é promovido aqui nesta data.~~ **Superado em
+2026-09-25:** escolhido `B109` ramo C. A captura do diagnóstico foi corrigida offline (item 172);
+**próxima ação única = reinstalar a DLL e tentar reproduzir o ramo C** no Apply da `Empresa`
+(`fabricabrasil18test`), lendo a cadeia `[B109]` se a falha voltar. Evidência:
+`Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
 ~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
 ainda não mencionam o File do diário `GxOpenApiBuilder_OperationJournal`, o bloqueio que ele
@@ -224,7 +228,7 @@ porque indeterminação não se produz por clique. Tabela critério × evidênci
 **entregue e commitado em 2026-09-18** (`scripts/Apply-TextPatch.ps1`, gate `tests.textPatch`,
 plano `Docs/Implementation/2026-09-18-B122-PLANO-EDICAO-TEXTUAL-ANCORADA.md`). ~~O `B123` entrou no
 código em 2026-09-20; a próxima ação única vigente é o **smoke na IDE** (plano §6).~~
-**Superado em 2026-09-20:** `B123` fechado (smoke §6 do núcleo PASS; `B127` para IDE dos hardenings); ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; ~~vigente = `B125`~~ **Superado em 2026-09-22:** `B125` fechado; ~~vigente = `B126`~~ **Superado em 2026-09-22:** `B126` fechado; ~~vigente = `B127`~~ **Superado em 2026-09-22:** `B127` fechado; **Superado em 2026-09-23:** `B128` fechado; ~~próxima ação será escolhida do backlog após o push.~~ **Superado em 2026-09-24:** `B120` fechado; a ponte operacional dessa cadeia ficou obsoleta — a escolha efetiva da próxima ação fica para sessão nova após o push desta frente. Nota operacional do `B122` permanece no
+**Superado em 2026-09-20:** `B123` fechado (smoke §6 do núcleo PASS; `B127` para IDE dos hardenings); ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; ~~vigente = `B125`~~ **Superado em 2026-09-22:** `B125` fechado; ~~vigente = `B126`~~ **Superado em 2026-09-22:** `B126` fechado; ~~vigente = `B127`~~ **Superado em 2026-09-22:** `B127` fechado; **Superado em 2026-09-23:** `B128` fechado; ~~próxima ação será escolhida do backlog após o push.~~ **Superado em 2026-09-24:** `B120` fechado; a ponte operacional dessa cadeia ficou obsoleta — ~~a escolha efetiva da próxima ação fica para sessão nova após o push desta frente.~~ **Superado em 2026-09-25:** escolhido `B109` ramo C (item 172). Nota operacional do `B122` permanece no
 documento 06.
 
 **Duas coisas precisam ser sabidas antes de testar.** A primeira: uma segunda remoção da mesma
@@ -332,7 +336,7 @@ evidência `Docs/Implementation/2026-09-17-B082-ETAPA-1B-ACEITE.md`). Etapas 1A 
 da KB grande é DLL `ce30374`; emissor de SDT mudou em `0568677`/`cfb73b0` (números conservadores
 da 1A).
 
-O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. ~~A próxima ação única vigente é `B122`.~~ **Superado em 2026-09-18:** `B122` commitado. ~~vigente = `B123`~~ **Superado em 2026-09-20:** `B123` fechado; ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; ~~vigente = `B125`~~ **Superado em 2026-09-22:** `B125` fechado; ~~vigente = `B126`~~ **Superado em 2026-09-22:** `B126` fechado; ~~vigente = `B127`~~ **Superado em 2026-09-22:** `B127` fechado; **Superado em 2026-09-23:** `B128` fechado. ~~A próxima ação será escolhida do backlog após o push.~~ **Superado em 2026-09-24:** `B120` fechado; escolha da próxima ação em sessão nova após o push desta frente.
+O P1 daquele plano — escrita parcial do BC, gravar o API Object por último — saiu da anotação e virou a sprint `S-B111`, **encerrada em 2026-09-15**. Linha de base de campo em `Docs/Implementation/2026-09-04-EVIDENCIA-IDE-DRIFT-API-OBJECT.md`. Dois defeitos independentes descobertos naquela medição foram numerados: `B109` e `B110`. ~~A próxima ação única vigente é `B122`.~~ **Superado em 2026-09-18:** `B122` commitado. ~~vigente = `B123`~~ **Superado em 2026-09-20:** `B123` fechado; ~~vigente = `B124`~~ **Superado em 2026-09-21:** `B124` fechado; ~~vigente = `B125`~~ **Superado em 2026-09-22:** `B125` fechado; ~~vigente = `B126`~~ **Superado em 2026-09-22:** `B126` fechado; ~~vigente = `B127`~~ **Superado em 2026-09-22:** `B127` fechado; **Superado em 2026-09-23:** `B128` fechado. ~~A próxima ação será escolhida do backlog após o push.~~ **Superado em 2026-09-24:** `B120` fechado; ~~escolha da próxima ação em sessão nova após o push desta frente.~~ **Superado em 2026-09-25:** escolhido `B109` ramo C (item 172).
 
 A conclusão da `S-B111` não fechou automaticamente o `B082`: no encerramento, por decisão declarada (item 135), o residual 1B/2/3 ficou fora da sprint e da pauta imediata; o que a sprint absorveu (ordem do API Object, seam de persistência, remoção por fila) já está nas fases F1–F3. O fechamento do residual veio depois, na retomada de 2026-09-16 (Etapas 2+3) e no aceite 1B de 2026-09-17.
 
@@ -379,7 +383,7 @@ Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-
 
 | Instrumento | Por que continua | Sai quando |
 |---|---|---|
-| `B109ExceptionProbe` | sem ela, uma reincidência volta a chegar como uma linha de mensagem, sem stack | `B109` fechado nos dois ramos |
+| `B109ExceptionProbe` | sem ela, uma reincidência volta a chegar como uma linha de mensagem, sem stack | `B109` fechado nos ramos abertos (A e C) |
 | `ApiPlanSaveBoundaryProbe` (rótulo `[B109]`) | é o adaptador observável do seam da F2 e preserva o diagnóstico de mutação entre Pump e Save para o ramo A de B109 | F2 aceita; retirar somente no fechamento explícito de B109 |
 | preferência «Suprimir a atualização da tela durante as gravações» | é o experimento do ramo A, e nunca foi acionado | idem |
 | `ApiPlanMetadataVisibilityProbe` (rótulo `[B115]`) | diagnóstico de metadata órfã | `B115` fechado |
@@ -407,9 +411,21 @@ O **ramo C** — registrado em 2026-09-24: no Apply Wizard da `Empresa` (`fabric
 `System.Reflection.TargetInvocationException` (Detail sem `InnerException`). Source preparado
 ~153 KB / ~82 vars; List/API/metadata não rodaram; diário `Partial`; relatório
 `Interrupted` / `Criados=49` / `Bloqueados=1`. Distinto de A e de B. Prioridade de
-investigação na sessão pós-push; **não** promovido como próxima ação única neste registro.
+investigação na sessão pós-push; **não** promovido como próxima ação única neste registro
+(**superado em 2026-09-25**: promovido; ver o parágrafo abaixo e o item 172).
 Instrumentação útil: dump `[B109]` já emitido; preferência de suprimir Pump no reteste;
 capturar `InnerException` se a falha repetir.
+
+**2026-09-25 — captura do ramo C corrigida; causa aberta.** O `InnerException` não podia
+aparecer: a confirmação ilegível guardava só tipo + mensagem da camada externa, e a exceção
+«Persistência ... não foi confirmada» saía sem inner, então a sonda `[B109]` via uma cadeia de
+um nível só. Agora a confirmação carrega a exceção (`PersistenceConfirmation.Cause`), o
+`Detail` resume a cadeia inteira e a causa segue como inner até a sonda — nos catorze `catch` de
+confirmação e nos doze pontos que lançam. Gates offline em `Test-ApiPlanSaveStepExecutor.ps1` e
+`Test-ApiPlanPersistenceSeamCoverage.ps1`. A `Empresa` já tinha sido reaplicada em 2026-09-24
+sem reproduzir (diário `Completed`, 56 recibos `Confirmed`). **Não validado na IDE**: a falha
+não se provoca por clique. Próximo passo sugerido: instalar a DLL e repetir o Apply da `Empresa`
+para tentar reproduzir. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
 **Instrumentação instalada, para retomar os ramos A e C** (sondas temporárias; ver o checklist de reversão):
 
@@ -438,8 +454,8 @@ tentado, mas continua sem comprovação isolada e está registrado no `B121`. Ev
 `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md` e
 `Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`.
 
-De `B109`, o ramo B foi encerrado; os ramos A e C permanecem abertos, sem pauta promovida
-nesta data (investigação pós-push). O `Rebuild All` do
+De `B109`, o ramo B foi encerrado; os ramos A e C permanecem abertos; ~~sem pauta promovida
+nesta data (investigação pós-push)~~ o ramo C foi promovido em 2026-09-25 (item 172). O `Rebuild All` do
 `NETFrameworkPostgreSQL` é pendência separada de environment e não bloqueia a F1. `B108` e o
 residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as quatro validadas na IDE.
 
@@ -545,8 +561,10 @@ residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as 
 ## Sequência operacional vigente
 
 Vigência atual: `B120` fechado em 2026-09-24 (código flat + A2 + aceite IDE/HTTP na
-`Teste`/`wsEducacaoSpTeste`, remissão normativa Foundation alinhada). Após o push, escolher a
-próxima ação no backlog em sessão nova. `B128` permanece fechado (2026-09-23).
+`Teste`/`wsEducacaoSpTeste`, remissão normativa Foundation alinhada). ~~Após o push, escolher a
+próxima ação no backlog em sessão nova.~~ **Superado em 2026-09-25:** frente vigente = `B109`
+ramo C (captura corrigida offline; próxima ação = reproduzir na IDE, item 172). `B128`
+permanece fechado (2026-09-23).
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
@@ -737,6 +755,8 @@ próxima ação no backlog em sessão nova. `B128` permanece fechado (2026-09-23
 170. Em 2026-09-24, **correção `IsB070ApiObject` sem BC** (sem promover próxima ação): `PreviousB070ApiVariableSpecs(false)` alinha a `ListResponse`+`ErrorResponse`+`RestStatusCode` (alpha.8 / envelope); legado só `ListResponse` permanece; trava em `tests.listProcedureReencounterPolicy`. Build Release OK. `B124: sem documento dedicado porque a prova deste recorte é o gate offline; G1–G4 e G6 não aplicáveis — não há Validated/Fixed de release citando sessão IDE deste item; G5 descartado — nesta máquina não há API produto List-only em envelope sem metadata (`wsEducacaoSpTeste` só tem probes Opt1 sem Wizard; `FabricaBrasil18Test` só `apiEmpresa` já flat com BC e metadata); smoke IDE deste cenário fica para KB futura com alvo adequado`. Escolha da próxima ação continua após o push.
 
 171. Em 2026-09-24, **corte `0.1.0-alpha.9` publicado**: tag `v0.1.0-alpha.9` + GitHub Release pre-release; assets U14+ (`SHA-256` `4D96E34F…`) e U13− (`FEF693F2…`); corpo trilíngue com alerta de breaking no `List` (contrato flat para todos os geradores; defeito motivador no wrapper REST .NET; smoke HTTP só nos dois .NET). Pacote documental `562fb70`. Próxima ação a escolher em sessão nova. `B124: sem documento dedicado porque esta sessão foi só rito de corte/publicação (sem IDE/HTTP novo); G1–G6 não aplicáveis`.
+
+172. Em 2026-09-25, **`B109` ramo C escolhido e captura corrigida**: a confirmação ilegível passa a carregar a exceção (`PersistenceConfirmation.Cause`), o `Detail` resume a cadeia e a causa segue como inner até a sonda `[B109]` — catorze `catch` e doze pontos que lançam; gates em `Test-ApiPlanSaveStepExecutor.ps1` e `Test-ApiPlanPersistenceSeamCoverage.ps1`; build Release com 0 avisos. `Empresa` conferida: reaplicada em 2026-09-24, diário `Completed`. Causa aberta; não validado na IDE. Próxima ação única = reinstalar a DLL e tentar reproduzir o ramo C na `Empresa` (`fabricabrasil18test`). Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
 ## Bloqueios e fatos ainda não validados
 

@@ -226,12 +226,14 @@ public sealed class PersistenceConfirmation
         PersistenceConfirmationStatus status,
         PersistencePhysicalState physicalState,
         string observedIdentity,
-        string detail)
+        string detail,
+        Exception? cause = null)
     {
         Status = status;
         PhysicalState = physicalState;
         ObservedIdentity = observedIdentity ?? string.Empty;
         Detail = detail ?? string.Empty;
+        Cause = cause;
     }
 
     public PersistenceConfirmationStatus Status { get; }
@@ -241,6 +243,13 @@ public sealed class PersistenceConfirmation
     public string ObservedIdentity { get; }
 
     public string Detail { get; }
+
+    /// <summary>
+    /// B109 ramo C — exceção que tornou a confirmação ilegível. Fica só em memória: não vai
+    /// para o diário. Quem lança «Persistência ... não foi confirmada» a repassa como inner,
+    /// para que a <see cref="B109ExceptionProbe"/> publique a cadeia e a stack da causa real.
+    /// </summary>
+    public Exception? Cause { get; }
 
     public static PersistenceConfirmation Confirmed(string observedIdentity = "", string detail = "") =>
         new PersistenceConfirmation(
@@ -269,6 +278,47 @@ public sealed class PersistenceConfirmation
             PersistencePhysicalState.Unknown,
             string.Empty,
             detail);
+
+    /// <summary>
+    /// Confirmação ilegível por exceção. O <see cref="Detail"/> resume a cadeia inteira de
+    /// exceções — a mensagem de uma <c>TargetInvocationException</c> é genérica, e a causa
+    /// real está no inner —, e <see cref="Cause"/> guarda o objeto para o diagnóstico completo.
+    /// </summary>
+    public static PersistenceConfirmation Unreadable(Exception exception) =>
+        new PersistenceConfirmation(
+            PersistenceConfirmationStatus.Unreadable,
+            PersistencePhysicalState.Unknown,
+            string.Empty,
+            DescribeExceptionChain(exception),
+            exception);
+
+    internal static string DescribeExceptionChain(Exception? exception)
+    {
+        const int maxDepth = 6;
+        const int maxLength = 1000;
+        var parts = new List<string>();
+        var current = exception;
+        var depth = 0;
+        while (current is not null && depth < maxDepth)
+        {
+            parts.Add(current.GetType().FullName + ": " + FlattenMessage(current.Message));
+            current = current.InnerException;
+            depth++;
+        }
+
+        if (current is not null)
+        {
+            parts.Add("…");
+        }
+
+        var text = string.Join(" → ", parts);
+        return text.Length <= maxLength ? text : text.Substring(0, maxLength) + "…";
+    }
+
+    private static string FlattenMessage(string? message) =>
+        string.IsNullOrEmpty(message)
+            ? "<vazia>"
+            : message!.Replace("\r", " ").Replace("\n", " ").Trim();
 
     public static PersistenceConfirmation NotAttempted(PersistencePhysicalState physicalState, string detail = "")
     {
@@ -518,7 +568,7 @@ public static class ApiPlanPersistenceCore
         }
         catch (Exception exception)
         {
-            return PersistenceConfirmation.Unreadable(exception.GetType().FullName + ": " + Clean(exception.Message));
+            return PersistenceConfirmation.Unreadable(exception);
         }
     }
 
@@ -680,8 +730,6 @@ public static class ApiPlanPersistenceCore
 
         return value;
     }
-
-    private static string Clean(string value) => (value ?? string.Empty).Replace("\r", " ").Replace("\n", " ");
 
     private sealed class Scope : IDisposable
     {

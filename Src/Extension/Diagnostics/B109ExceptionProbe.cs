@@ -19,7 +19,11 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// Esta classe formata tipo, mensagem, origem e stack de cada nível da cadeia de exceções.
 /// Não altera fluxo: os chamadores continuam tratando a exceção como antes.
 ///
-/// Sonda temporária: sai com as demais no fechamento da sprint S-B111.
+/// A cadeia só chega aqui inteira se quem lança preservar o inner. Uma confirmação pós-Save
+/// ilegível carrega a exceção em <see cref="PersistenceConfirmation.Cause"/>, repassada como
+/// inner de «Persistência ... não foi confirmada» (B109 ramo C, 2026-09-25).
+///
+/// Sonda temporária: sai no fechamento explícito de B109, nos ramos A e C.
 /// </summary>
 internal static class B109ExceptionProbe
 {

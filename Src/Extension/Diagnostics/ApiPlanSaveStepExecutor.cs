@@ -101,7 +101,8 @@ internal static class ApiPlanSaveStepExecutor
                     if (receipt.Outcome != PersistenceOutcome.Confirmed)
                     {
                         throw new InvalidOperationException(
-                            $"Persistência de '{step.Label}' não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.");
+                            $"Persistência de '{step.Label}' não foi confirmada: Outcome='{receipt.Outcome}', Confirmation='{receipt.Confirmation}', Detail='{receipt.ConfirmationDetail}'.",
+                            receipt.ConfirmationCause);
                     }
                 }
                 else
@@ -111,7 +112,8 @@ internal static class ApiPlanSaveStepExecutor
                         || confirmation.PhysicalState != PersistencePhysicalState.Present)
                     {
                         throw new InvalidOperationException(
-                            $"Persistência de '{step.Label}' não foi confirmada: Confirmation='{confirmation.Status}', PhysicalState='{confirmation.PhysicalState}', Detail='{confirmation.Detail}'.");
+                            $"Persistência de '{step.Label}' não foi confirmada: Confirmation='{confirmation.Status}', PhysicalState='{confirmation.PhysicalState}', Detail='{confirmation.Detail}'.",
+                            confirmation.Cause);
                     }
                 }
 
