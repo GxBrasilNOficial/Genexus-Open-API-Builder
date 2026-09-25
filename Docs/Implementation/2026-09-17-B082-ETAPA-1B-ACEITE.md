@@ -59,3 +59,12 @@ Com 1A (2026-09-03), Etapas 2 e 3 (2026-09-16) e 1B (2026-09-17, este aceite), o
 hardening/desempenho do `B082` no plano de 2026-09-02 fica **fechado**. Próxima ação única do
 checkpoint permanece `B122` (não displace). Push e corte de release continuam a exigir
 autorização humana explícita.
+
+## Remissão — 2026-09-25: a meta de tempo não é gate
+
+Em 2026-09-25, três Removers da `Empresa` na mesma KB, com DLLs da frente `B109`, levaram 24,6 s,
+26,5 s e 29,7 s, contra o teto de ~20 s deste aceite. O mantenedor declarou que desvio dessa ordem
+não é relevante e que a meta de tempo é fonte de ruído. **A meta de tempo da 1B não é critério
+ativo:** desvio de ~10 s no Remover não abre item nem pede remedição. As marcas estruturais da 1B
+continuam valendo. Registro de campo:
+`Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seções 6 e 7.

@@ -197,6 +197,30 @@ Quando houver, desde o ultimo `genexus /install` bem-sucedido, alteracao em `Src
 - Não substituir a instalação por uma chamada direta a `Tools/Copy-ExtensionForGeneXus18.ps1`. O `.ps1` é implementação interna exclusiva da etapa de cópia e validação; ele não registra a extensão.
 - Ao avisar que chegou a hora de atualizar e testar, declarar explicitamente se o manifesto/registro mudou e solicitar `genexus /install` somente nesse caso.
 
+## Colaboração com o mantenedor
+
+Regras de trabalho acordadas com o mantenedor ao longo das sessões. Valem para qualquer agente.
+
+- **Termos de git e de release** (`HEAD`, tag anotada, `ahead`/`behind`, pre-release, changelog):
+  explicar em uma linha na primeira vez que aparecem na conversa, e explicar as consequências de
+  cada passo de publicação antes de pedir decisão. O critério técnico do mantenedor é forte; o
+  vocabulário de release é o que não se presume.
+- **Revisão com vários achados vira entrevista, não relatório.** Apresentar antes uma fila numerada,
+  com o tipo de cada questão (sim/não ou discussão), e conduzir **uma pergunta por mensagem**, na
+  ordem, mesmo quando parecem independentes. Em questão de discussão, comparar as opções e dar
+  sempre uma recomendação. Perguntar em texto corrido no chat — não pela caixa de opções da
+  ferramenta de perguntas, cuja letra é pequena demais. Registrar cada decisão antes de passar à
+  seguinte e só gravar o conjunto depois da aprovação.
+- **Validação na IDE: o agente compila, o mantenedor instala e testa.** Não pedir a ele para
+  recompilar. O roteiro de teste começa pela instalação da DLL e diz explicitamente se
+  `genexus /install` é necessário (só quando manifesto ou registro mudaram) ou se basta trocar a
+  DLL.
+- **Não inferir o estado da máquina do mantenedor.** Build em andamento, IDE ocupada ou KB aberta
+  envelhecem a cada mensagem; antes de condicionar um plano a isso, conferir se algo que ele fez
+  depois já contradiz a suposição, e na dúvida propor o trabalho e deixar o adiamento com ele. O
+  que é verificável, o agente verifica — a DLL instalada contra a build, por
+  `Tools/Test-InstalledExtension.ps1`.
+
 ## Registro de comandos no menu de contexto
 
 Cada inclusão, alteração ou remoção de comando do menu de contexto deve manter sincronizadas, no mesmo passo, estas três camadas:
@@ -245,6 +269,28 @@ O checkpoint `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` continua sendo a fonte canô
 
 Na varredura, tratar **contagens como termo de estado**: `dois defeitos`, `três correções`, `cinco cenários`, `N checkpoints`. Números envelhecem como qualquer afirmação — um defeito a mais encontrado no meio da frente deixa divergentes todos os documentos que citavam o total anterior. Varrer também os termos do que **ainda falta**, que é o que mais envelhece: `pendente`, `restam`, `falta`, `aguarda`, `ainda não`, `sem validação`. E, depois de editar um documento longo por trecho, varrer o **próprio arquivo** pelo fato que mudou, porque editar seção a seção deixa contradição interna.
 
+Como varrer sem deixar resíduo — cada item nasceu de um resíduo real achado por revisor
+externo:
+
+- buscar pelo **radical curto** (`andamento`, `abert`, `estacionad`, `pendente`), não pela frase
+  que se espera encontrar: redação com parêntese no meio ou com outro gênero escapa ao padrão longo;
+- em arquivo de parágrafos longos, `grep ... | cut -c1-N` esconde o casamento; usar `grep -o` com
+  recorte em volta do termo;
+- a lista de símbolos removidos se extrai do diff (`git diff --diff-filter=D --name-only`, nomes
+  de classes e métodos apagados), não de memória;
+- antes de escrever «o único», «os dois únicos» ou «não existe outro», refazer a busca em `Src/`
+  inteiro, nunca num arquivo só;
+- «é histórico» só vale quando o documento **diz** que é, com nota datada.
+
+**Adiar documentação de etapa planejada** só cabe se o que o próximo agente vai ler no lugar
+estiver correto. Se o material disponível estiver desatualizado ou desmentido por medição,
+escrever agora, ainda que em menor profundidade, isolando a incerteza numa seção de bifurcação.
+
+**Documento em `Temp/` não orienta trabalho.** `Temp/` e `Docs/Temp/` estão no `.gitignore`.
+Antes de basear trabalho num documento, confirmar que é versionado (`git ls-files <caminho>`);
+havendo outro do mesmo assunto em `Docs/Implementation/`, ler os dois antes de decidir qual rege.
+Se um artefato de `Temp/` estiver de fato orientando trabalho, promovê-lo ao repositório.
+
 ### Documento de evidência de campo (B124)
 
 Ao fechar uma frente/etapa — e antes de commitar a promoção da próxima ação —, conferir a régua
@@ -267,6 +313,23 @@ Por isso, enquanto a versão não for publicada:
 - a **cronologia interna** — quem descobriu o quê, quando, em que ordem — pertence ao log numerado do checkpoint e aos documentos de `Docs/Implementation/`, que são o lugar onde ela serve a alguém.
 
 Depois de publicada, a seção da versão é imutável: correção posterior entra como entrada nova ou como remissão datada, nunca reescrevendo o que já saiu.
+
+## Escrita de texto normativo
+
+Antes de submeter regra nova a revisão — de `AGENTS.md`, plano ou contrato —, varrer o texto
+contra os modos de falha já medidos neste repositório:
+
+- causalidade afirmada como fato quando a observação admite outros mecanismos;
+- flag, parâmetro ou API citados de memória, sem verificar;
+- permissão mais ampla que a pretendida, aberta ao consertar outra coisa;
+- exemplo que viola a regra que o próprio texto enuncia;
+- instrução ambígua que leva à ação destrutiva.
+
+Quando os consertos começam a acumular guardas, perguntar se a ação que exige tanta guarda
+precisa existir: «o molho não pode sair mais caro que o peixe». Uma subseção deste arquivo passou
+de 2,5 KB a 5,1 KB em onze rodadas de revisão por pares só para tornar segura uma deleção; tirada
+a deleção, as guardas saíram junto. Quando dois revisores discordam sobre um fato mensurável,
+medir em vez de escolher lado — revisores erram também.
 
 ## Revisão pré-push do repositório
 
@@ -350,3 +413,17 @@ Antes de concluir e commitar qualquer item de spike `B000`–`B006`, o agente de
 - atualizar no mesmo fechamento o `CHANGELOG.md`, `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md`, `Docs/Foundation/24-PLANO_IMPLEMENTACAO_REAL_POR_SPRINTS.md` e os documentos que ainda indiquem a frente encerrada como próxima;
 - buscar no repositório inteiro o ID encerrado, o ID seguinte, os nomes dos comandos e os nomes das classes de sonda para localizar referências operacionais contraditórias;
 - só considerar o marco pronto para revisão pré-push depois dessas validações.
+
+**Medir antes de revisar.** Quando um plano depende de comportamento do SDK, uma sonda na IDE vale
+mais que outra rodada de revisão de papel: em 2026-09-04 uma sessão de sondas derrubou uma seção
+inteira do plano do `B111`, que estava na 24ª versão, e revelou três defeitos (`B112` a `B114`).
+Revisão avalia coerência; não descobre que um `Get` não aceita GUID nem quanto custa um `Save`.
+Rodar a sonda em KB pequena **e** grande, e mais de uma vez — uma execução isolada já levou a
+conclusão errada. Número medido não é matéria de debate: contestá-lo exige reexecutar a sonda.
+
+As DLLs do SDK na instalação têm corpos de método protegidos: `Artech.Udm.Framework.Entity.EnsureDeserialization`,
+por exemplo, é `nop nop nop ret` no disco e troca o código em tempo de execução. Leitura estática
+serve onde o assembly não é protegido (`Artech.Common.Properties`, lido em 2026-09-25) e não
+substitui medir. Ao procurar texto dentro de uma DLL, decodificar UTF-16 nas duas alinhações
+(offset 0 e 1) e sempre com um controle positivo — um termo que com certeza está lá —, porque o
+heap de strings pode começar em offset ímpar.
