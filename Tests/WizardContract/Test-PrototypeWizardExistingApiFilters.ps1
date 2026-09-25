@@ -67,7 +67,9 @@ Assert-Contains $existingReader 'pagination.defaultPageSize' 'A metadata deve re
 Assert-Contains $existingReader 'ReadStaticOrder' 'A metadata deve restaurar a ordenação.'
 Assert-Contains $existingReader 'ApiPlanOwnedObjectDescription.IsOwnedMetadataFile' 'Somente metadata própria deve alimentar o reencounter.'
 Assert-Contains $existingReader 'ReadOwnedSdtFields' 'SDTs próprios devem ser fallback quando a metadata não estiver disponível.'
-Assert-Contains $existingReader 'foreach (SDTItem item in matches[0].SDTStructure.Root.Items)' 'A leitura de membros de SDT deve iterar StructureItemCollection sem cast genérico inválido.'
+# B109: a leitura da estrutura passa pela repetição de leitura; a iteração segue sem cast genérico.
+Assert-Contains $existingReader "foreach (SDTItem item in ApiPlanSdkReadRetry.Run(" 'A leitura de membros de SDT deve iterar StructureItemCollection sem cast genérico inválido.'
+Assert-Contains $existingReader '() => matches[0].SDTStructure.Root).Items)' 'A leitura de membros de SDT deve iterar os Items da estrutura, pela repetição de leitura B109.'
 Assert-Contains $existingReader 'PersistedHierarchicalRoot' 'Contrato existente deve expor levels persistidos para o Wizard.'
 Assert-Contains $existingReader 'ApiPlanMetadataLevelsCodec.TryReadRoot' 'Reader deve reler levels V2 da metadata.'
 Assert-Contains $dialog 'ApplyPersistedPrune' 'Wizard deve restaurar seleção hierárquica no reencontro.'
