@@ -86,6 +86,7 @@ public sealed class SdkReadRetryResult
     public int Calls { get; set; }
     public int Pauses { get; set; }
     public bool Threw { get; set; }
+    public string SinkLines { get; set; } = string.Empty;
     public string Lines { get; set; } = string.Empty;
     public PersistenceConfirmationStatus Status { get; set; }
     public PersistenceOutcome Outcome { get; set; }
@@ -160,9 +161,45 @@ public static class SdkReadRetryHarness
         return Finish(result);
     }
 
+    public static SdkReadRetryResult RunWithSink(System.Func<System.Exception> race, bool sinkFails)
+    {
+        var sinkLines = new System.Collections.Generic.List<string>();
+        var result = Prepare();
+        ApiPlanSdkReadRetry.Sink = line =>
+        {
+            if (sinkFails)
+            {
+                throw new System.InvalidOperationException("Output indisponível");
+            }
+
+            sinkLines.Add(line);
+        };
+        try
+        {
+            ApiPlanSdkReadRetry.Run("fixture-sink", () =>
+            {
+                result.Calls++;
+                if (result.Calls == 1)
+                {
+                    throw race();
+                }
+
+                return result.Calls;
+            });
+        }
+        finally
+        {
+            ApiPlanSdkReadRetry.Sink = null;
+        }
+
+        result.SinkLines = string.Join("\n", sinkLines);
+        return Finish(result);
+    }
+
     private static SdkReadRetryResult Prepare()
     {
         var result = new SdkReadRetryResult();
+        ApiPlanSdkReadRetry.Sink = null;
         ApiPlanSdkReadRetry.Drain();
         ApiPlanSdkReadRetry.Pause = milliseconds => result.Pauses++;
         return result;
@@ -687,6 +724,15 @@ $persisted = $retry::PersistWithRaceOnFirstConfirmation($race)
 Assert-Equal $outcomeType::Confirmed $persisted.Outcome 'O seam relê a confirmação e o recibo sai Confirmed.'
 Assert-Equal 2 $persisted.Calls 'O seam chama a confirmação duas vezes; o delegate físico não é repetido.'
 Assert-True ($persisted.Lines.Contains("Confirmação de Sdt 'sdtFixture'")) 'O ponto da repetição identifica o objeto.'
+
+# Destino imediato: a linha sai no trecho da operação que a provocou e não sobra na fila para a
+# operação seguinte — o caso de um Wizard cancelado depois de ler o contrato existente.
+$sinked = $retry::RunWithSink($race, $false)
+Assert-True ($sinked.SinkLines.Contains("Ponto='fixture-sink', Tentativa=2/3, Resultado=Recuperada")) 'Com destino configurado, a linha vai na hora para ele.'
+Assert-Equal '' $sinked.Lines 'Com destino configurado, nada sobra na fila para a operação seguinte.'
+$sinkFailed = $retry::RunWithSink($race, $true)
+Assert-Equal 2 $sinkFailed.Calls 'Falha do destino não derruba a leitura recuperada.'
+Assert-True ($sinkFailed.Lines.Contains("Ponto='fixture-sink'")) 'Se o destino falhar, a linha cai na fila de reserva.'
 
 Remove-Item -LiteralPath $sdkRaceFakesPath -ErrorAction SilentlyContinue
 

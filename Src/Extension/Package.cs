@@ -32,6 +32,10 @@ public sealed class Package : AbstractPackageUI
     {
         base.Initialize(services);
 
+        // B109: linha de leitura repetida vai à Output na hora, no trecho da operação que a
+        // provocou; guardada para o relatório final, poderia ser atribuída à operação seguinte.
+        ApiPlanSdkReadRetry.Sink = line => WriteOutput("[Genexus Open API Builder]" + line);
+
         AddCommand(new CommandKey(Id, "Configurar Preferências do Wizard"), ExecuteConfigureWizardPreferences, QueryConfigureWizardPreferencesPortuguese);
         AddCommand(new CommandKey(Id, "Configurar preferencias del Wizard"), ExecuteConfigureWizardPreferences, QueryConfigureWizardPreferencesSpanish);
         AddCommand(new CommandKey(Id, "Configure Wizard Preferences"), ExecuteConfigureWizardPreferences, QueryConfigureWizardPreferencesEnglish);
@@ -2774,8 +2778,8 @@ public sealed class Package : AbstractPackageUI
         // caminhos — sucesso, bloqueio, falha de etapa e aborto.
         ExtensionBusyProgressScope.CloseCurrent();
 
-        // B109: leituras repetidas pela corrida do SDK na desserialização de SDT. Publicadas
-        // aqui porque todo caminho que mostra relatório passa por este ponto.
+        // B109: rede de segurança. As linhas de leitura repetida vão à Output na hora (Sink);
+        // aqui saem só as que o destino imediato não conseguiu escrever.
         foreach (var retryLine in ApiPlanSdkReadRetry.Drain())
         {
             WriteOutput("[Genexus Open API Builder]" + retryLine);

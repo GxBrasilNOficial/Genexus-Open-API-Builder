@@ -187,4 +187,12 @@ foreach ($path in $productionFiles) {
 }
 Assert-True ($sdkReadCalls -ge 13) "A trava de leitura B109 deveria encontrar ao menos 13 chamadas; encontrou $sdkReadCalls."
 
+# B109: as linhas de leitura repetida vão à Output na hora. O pacote configura o destino no
+# Initialize; sem isso, elas esperariam o relatório final e poderiam cair na operação seguinte.
+$packageSource = Get-Content -Raw -LiteralPath (Join-Path $sourceRoot 'Package.cs')
+$initializeStart = $packageSource.IndexOf('public override void Initialize(', [StringComparison]::Ordinal)
+Assert-True ($initializeStart -ge 0) 'Package.cs deve ter Initialize.'
+$initializeBody = $packageSource.Substring($initializeStart, [Math]::Min(1500, $packageSource.Length - $initializeStart))
+Assert-True ($initializeBody.Contains('ApiPlanSdkReadRetry.Sink = ')) 'Package.Initialize deve configurar o destino imediato das linhas B109.'
+
 Write-Output 'PASS: ApiPlanPersistenceSeamCoverage'

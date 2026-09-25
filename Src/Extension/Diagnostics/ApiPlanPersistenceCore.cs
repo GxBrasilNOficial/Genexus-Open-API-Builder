@@ -788,6 +788,15 @@ internal static class ApiPlanSdkReadRetry
     /// <summary>Gancho de teste: substitui a pausa real.</summary>
     internal static Action<int> Pause { get; set; } = milliseconds => System.Threading.Thread.Sleep(milliseconds);
 
+    /// <summary>
+    /// Destino imediato das linhas — a Output, configurada pelo pacote no <c>Initialize</c>. A
+    /// linha sai no trecho da operação em que a repetição aconteceu: guardada para o relatório
+    /// final, uma repetição na abertura de um Wizard cancelado apareceria no relatório da
+    /// operação seguinte e poderia ser atribuída a ela. Sem destino, ou se ele falhar, a linha vai
+    /// para a fila de <see cref="Drain"/>.
+    /// </summary>
+    internal static Action<string>? Sink { get; set; }
+
     public static bool IsSdkDeserializationRace(Exception? exception)
     {
         var current = exception;
@@ -885,7 +894,7 @@ internal static class ApiPlanSdkReadRetry
         return observation;
     }
 
-    /// <summary>Linhas pendentes para a Output; esvazia a fila.</summary>
+    /// <summary>Linhas que não foram ao destino imediato; esvazia a fila.</summary>
     public static IReadOnlyList<string> Drain()
     {
         lock (Gate)
@@ -898,6 +907,20 @@ internal static class ApiPlanSdkReadRetry
 
     private static void Record(string line)
     {
+        var sink = Sink;
+        if (sink is not null)
+        {
+            try
+            {
+                sink(line);
+                return;
+            }
+            catch (Exception)
+            {
+                // A Output indisponível não pode derrubar a leitura que acabou de dar certo.
+            }
+        }
+
         lock (Gate)
         {
             Events.Add(line);

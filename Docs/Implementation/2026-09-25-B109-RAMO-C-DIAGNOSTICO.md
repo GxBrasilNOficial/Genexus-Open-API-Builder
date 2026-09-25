@@ -297,7 +297,8 @@ Output; nunca repetir `Save()`. Desenho e diff a aprovar antes da implementaçã
   é repetido (**ampliado na mesma data** para dispensar a `UdmException`; ver a seção 10);
 - até 3 tentativas, pausas de 200 ms e 500 ms, sem `DoEvents`;
 - cada recuperação ou esgotamento vira uma linha `[B109] Leitura repetida: Ponto='…',
-  Tentativa=n/3, Resultado=Recuperada|Esgotada`, publicada na Output no início do relatório final;
+  Tentativa=n/3, Resultado=Recuperada|Esgotada`, publicada na Output ~~no início do relatório final~~
+  **na hora da repetição** (correção da seção 12);
 - esgotadas as tentativas, a exceção original segue, com a stack pela sonda.
 
 **Onde se aplica — só leituras; `Save()` nunca é repetido:**
@@ -394,7 +395,28 @@ de definições (seção 9) — mas duas amostras rápidas não sustentam conclu
 **Decisão do usuário.** O `B109` fica **aberto e em espera**, com a mitigação (`ApiPlanSdkReadRetry`)
 e a captura (sonda em todas as etapas, inner no `Detail`) instaladas, e **volta a ser tratado se o
 sintoma reaparecer** numa geração. Critério para dar a mitigação como validada em campo: a primeira
-linha `[B109] Leitura repetida ... Resultado=Recuperada` numa operação que termine bem. Uma linha
+linha `[B109] Leitura repetida ... Resultado=Recuperada` numa operação que termine bem — a linha
+conta para a operação em cujo trecho da Output ela aparece (seção 12). Uma linha
 `Resultado=Esgotada`, ou uma falha com `Collection was modified` fora do `SetInitialValues`, reabre
 a investigação com a stack da sonda. Ao reabrir, anotar também o estado da sessão (tempos de
 abertura do contrato e do `GetAll`).
+
+## 12. Atribuição das linhas de repetição (revisão externa, 2026-09-25)
+
+**Achado.** Uma revisão por outro agente, sobre o intervalo pronto para push, apontou por leitura
+de código — sem reprodução — que as linhas `[B109] Leitura repetida` eram guardadas numa fila
+global e só publicadas no início do relatório final. O leitor do contrato existente lê estrutura
+de SDT na **abertura** do Wizard, e os cancelamentos do Wizard, do Sync e do Remover terminam sem
+relatório final. Uma repetição acontecida numa operação cancelada apareceria no relatório da
+operação seguinte, talvez de outra Transaction. Como o critério da seção 11 valida a mitigação pela
+primeira linha `Resultado=Recuperada` numa operação que termine bem, a fila poderia **validar a
+mitigação por engano**. Conferido no código; procede. Nenhuma evidência registrada foi atingida:
+nenhuma linha de repetição apareceu nas rodadas do dia.
+
+**Correção.** `ApiPlanSdkReadRetry.Sink`, configurado em `Package.Initialize`, escreve a linha na
+Output no momento da repetição, no trecho da operação que a provocou; a atribuição passa a ser pela
+posição. A fila ficou como reserva, para quando não há destino (testes) ou ele falha; o
+esvaziamento no relatório final permanece como rede de segurança. Gates: no núcleo, a linha vai ao
+destino e nada sobra na fila, e falha do destino não derruba a leitura e cai na reserva; na
+cobertura do seam, o `Initialize` precisa configurar o destino. Build canônica com 0 avisos;
+satélite U13 com 0 erros. Exige reinstalar a DLL; manifesto e registro não mudam.

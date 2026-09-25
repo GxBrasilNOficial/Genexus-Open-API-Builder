@@ -798,6 +798,8 @@ permanece fechado (2026-09-23).
 
 180. Em 2026-09-25, **`B109` em espera**: mais duas rodadas da `Empresa` com a DLL do critério ampliado (remover, reabrir a IDE, Wizard), ambas limpas e sem linha `[B109] Leitura repetida` (130 s e 29 s). No dia, duas falhas em sete rodadas, ambas num estado lento da sessão (contrato aberto em 1,6 s a 2,3 s, `GetAll` de Files em 18 ms a 26 ms), contra rodadas rápidas de ~30 s — observação sem hipótese firmada. Por decisão do usuário, o `B109` fica aberto, com mitigação e captura instaladas, e volta a ser tratado se o sintoma reaparecer; a mitigação conta como validada na primeira linha `Resultado=Recuperada`. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 11.
 
+181. Em 2026-09-25, **atribuição das linhas `[B109] Leitura repetida` corrigida**, a partir de revisão externa por leitura de código: a fila global só era esvaziada no relatório final, e uma repetição na abertura de um Wizard (ou num Sync/Remover) cancelado cairia no relatório da operação seguinte — o que poderia validar a mitigação por engano. Agora a linha vai à Output na hora (`ApiPlanSdkReadRetry.Sink`, configurado no `Initialize`), com a fila como reserva. Nenhuma evidência registrada foi atingida. Gates no núcleo e na cobertura do seam; build canônica e satélite OK. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 12.
+
 ## Bloqueios e fatos ainda não validados
 
 - ~~**Corte de release com a etapa P2 da F3 dentro exige decisão documental.** … nada disso está na documentação pública.~~ **Superado:** pacote `0.1.0-alpha.8` documentou o File/bloqueio/Recuperar e foi **publicado** em 2026-09-17 (`v0.1.0-alpha.8`).
