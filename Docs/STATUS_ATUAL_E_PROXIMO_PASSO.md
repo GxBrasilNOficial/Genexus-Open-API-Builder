@@ -810,6 +810,8 @@ permanece fechado (2026-09-23).
 
 183. Em 2026-09-25, **limpeza da instrumentação do `B109`**, por decisão do usuário: saíram as impressões digitais de `ApiPlanSaveBoundaryProbe` (fingerprints por gravação, log e publicador do Apply) e a preferência «Suprimir a atualização da tela durante as gravações», publicada como experimental desde a `0.1.0-alpha.8`; o codec deixa de gravar a chave e continua lendo Files antigos que a tragam. A `B109ExceptionProbe` passou a diagnóstico permanente. Build canônica com 0 avisos, satélite U13 com 0 erros. `B124: sem documento dedicado porque é remoção de instrumentação sem sessão de campo; o registro está na seção 14 do documento do ramo C`.
 
+184. Em 2026-09-25, **segunda recuperação do `B109` em campo, no caminho da confirmação**: com a DLL da limpeza (`81f83d1`), o Wizard da `Empresa` sobre a API existente registrou `[B109] Leitura repetida: Ponto='Confirmação de Procedure procEmpresa_API_Get', Tentativa=2/5, Resultado=Recuperada` e terminou em `SuccessWithWarnings`, `Bloqueados=0`. Os dois tipos de ponto da mitigação — resolução de tipo e confirmação pós-Save — ficaram exercidos em campo. As duas gerações sobre API existente tiveram corrida, contra duas em cinco do zero: indício, não conclusão. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 13.
+
 ## Bloqueios e fatos ainda não validados
 
 - ~~**Corte de release com a etapa P2 da F3 dentro exige decisão documental.** … nada disso está na documentação pública.~~ **Superado:** pacote `0.1.0-alpha.8` documentou o File/bloqueio/Recuperar e foi **publicado** em 2026-09-17 (`v0.1.0-alpha.8`).

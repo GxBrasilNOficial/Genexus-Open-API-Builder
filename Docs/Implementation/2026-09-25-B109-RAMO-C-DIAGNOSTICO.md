@@ -464,6 +464,26 @@ extensão a contorna com validação em campo. A mitigação e a captura ficam i
 sonda ou fechar o item de vez é decisão posterior. Uma linha `Resultado=Esgotada`, ou um
 `Collection was modified` fora do `SetInitialValues`, reabre a investigação.
 
+**Segunda recuperação em campo, no caminho da confirmação (2026-09-25).** DLL da limpeza da
+seção 14 (commit `81f83d1`), com a opção de recuperação de metadata órfã ligada nas preferências.
+Wizard da `Empresa` de novo sobre a API existente (reencontro: `Created=0`, 46 SDTs e 5
+Procedures reencontrados):
+
+```text
+[B109] Leitura repetida: Ponto='Confirmação de Procedure procEmpresa_API_Get', Tentativa=2/5, Resultado=Recuperada.
+```
+
+A geração terminou em `SuccessWithWarnings`, `Atualizados=53`, `Bloqueados=0`, 12 recibos
+confirmados, diário `Completed/Completed`, 78 s. É a confirmação pós-Save no núcleo do seam — o
+formato da ocorrência de 2026-09-24 em `procEmpresa_API_Update` —, e agora os dois tipos de ponto
+da mitigação (resolução de tipo e confirmação) foram exercidos em campo. A recuperação veio na 2ª
+tentativa, dentro da margem nova. A opção de recuperação de metadata órfã ligada não ofereceu nada,
+porque a metadata existia, e publicou a linha `[B115] Recuperação não oferecida`, como previsto.
+
+Observação sem conclusão: as duas gerações sobre API existente tiveram corrida; das gerações do
+zero, duas em cinco. O reencontro compara mais objetos existentes com o planejado e dispara mais
+leituras que desserializam SDT — coerente com o mecanismo, mas duas amostras são só indício.
+
 ## 14. Limpeza da instrumentação (2026-09-25)
 
 Por decisão do usuário, com o `B109` mitigado:
