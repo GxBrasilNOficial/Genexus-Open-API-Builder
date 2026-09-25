@@ -463,3 +463,25 @@ avisos; satélite U13 com 0 erros.
 extensão a contorna com validação em campo. A mitigação e a captura ficam instaladas. Retirar a
 sonda ou fechar o item de vez é decisão posterior. Uma linha `Resultado=Esgotada`, ou um
 `Collection was modified` fora do `SetInitialValues`, reabre a investigação.
+
+## 14. Limpeza da instrumentação (2026-09-25)
+
+Por decisão do usuário, com o `B109` mitigado:
+
+- **Retiradas** as impressões digitais de `ApiPlanSaveBoundaryProbe`: o fingerprint de Source,
+  Rules e variáveis tirado três vezes por gravação (antes do Pump, depois do Pump, depois do Save)
+  nas etapas de Business Component e List, o `ApiPlanSaveBoundaryLog` e o publicador `[B109]` do
+  Apply. O custo estimado era de dezenas de milissegundos por Apply — pequeno —, mas eram mais um
+  leitor dos objetos durante a gravação e existiam só para a hipótese de reentrância por
+  `DoEvents`. A classe ficou como adaptador do seam da F2; `ApiPlanSaveStep` perdeu o delegate de
+  snapshot.
+- **Retirada** a preferência «Suprimir a atualização da tela durante as gravações» (modelo, codec,
+  diálogo, traduções e o parâmetro de `ExtensionBusyProgressScope.Show`). Nunca foi ligada. O codec
+  não grava mais `suppressProgressPumpDuringSaves` e continua lendo Files antigos que a tragam; o
+  gate de preferências cobre os dois lados.
+- **Mantida e promovida a permanente** a `B109ExceptionProbe`: custo zero no caminho normal, e foi
+  ela que localizou a causa.
+
+Sem sessão de campo: é remoção de código de diagnóstico. Build canônica com 0 avisos; satélite U13
+com 0 erros; gates de executor, preferências, idioma, núcleo e cobertura do seam verdes. Exige
+reinstalar a DLL; manifesto e registro não mudam.

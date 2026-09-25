@@ -42,8 +42,6 @@ public sealed class PrototypeWizardPreferenceValues
 
     /// <summary>B111/F3 P6 — oferta proativa da recuperação quando o diário bloqueia.</summary>
     public bool ShowRecoveryOptionProactively { get; set; } = true;
-
-    public bool SuppressProgressPumpDuringSaves { get; set; }
 }
 
 public static class PrototypeWizardPreferencesCodec
@@ -108,7 +106,8 @@ public static class PrototypeWizardPreferencesCodec
             // Ausente no File, vale ligada: um arquivo gravado antes da P6 não deve esconder a
             // única saída de um envelope interrompido.
             ShowRecoveryOptionProactively = ReadOptionalBool(defaults, "showRecoveryOptionProactively", true),
-            SuppressProgressPumpDuringSaves = ReadOptionalBool(defaults, "suppressProgressPumpDuringSaves", false),
+            // `suppressProgressPumpDuringSaves` foi retirado em 2026-09-25 (B109). Files gravados
+            // antes o trazem; campo desconhecido é ignorado, e a gravação seguinte o descarta.
         };
 
         Validate(preferences);
@@ -148,7 +147,6 @@ public static class PrototypeWizardPreferencesCodec
                 ["includeBusinessComponentErrorMessages"] = preferences.IncludeBusinessComponentErrorMessagesByDefault,
                 ["offerOrphanMetadataRecovery"] = preferences.OfferOrphanMetadataRecovery,
                 ["showRecoveryOptionProactively"] = preferences.ShowRecoveryOptionProactively,
-                ["suppressProgressPumpDuringSaves"] = preferences.SuppressProgressPumpDuringSaves,
                 ["pagination"] = new JObject
                 {
                     ["defaultPageSize"] = preferences.DefaultPageSizeByDefault,

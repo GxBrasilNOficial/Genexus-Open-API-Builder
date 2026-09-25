@@ -390,13 +390,18 @@ Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-
 
 **Retirado em 2026-09-05 e 2026-09-13**, com as perguntas respondidas e os resultados registrados em `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`: o comando `Sonda B111` das três camadas, as sondas `B111IdentityProbe`, `B111JournalProbe` e `B111SaveCostProbe`, a exceção `$temporaryProbeCreateSymbols` que a sonda do diário exigia no teste de origem única do índice e, no fechamento da F2, `B111CallSiteProbe`. O manifesto voltou ao estado publicado: o comando entrou e saiu dentro do mesmo bloco de commits, e contra `origin/main` o arquivo está idêntico. Quem instalar a partir do publicado não precisa de nada além da DLL. **Nesta máquina, sim**: a DLL instalada ainda registra `Sonda B111`, e desregistrá-lo exige `genexus /install`.
 
+**Retirado em 2026-09-25**, com o `B109` mitigado: as impressões digitais de
+`ApiPlanSaveBoundaryProbe` (fingerprint de Source, Rules e variáveis antes e depois do Pump e do
+Save, o log e o publicador `[B109]` do Apply) e a preferência «Suprimir a atualização da tela
+durante as gravações». Os dois existiam para a hipótese de reentrância por `DoEvents`, que a stack
+de 2026-09-25 enfraqueceu. A classe `ApiPlanSaveBoundaryProbe` ficou só como adaptador do seam da
+F2, que é produção. A `B109ExceptionProbe` passou a diagnóstico **permanente**: roda só quando uma
+etapa falha e foi o que localizou a causa.
+
 **Continua instalado**, com o motivo e o momento de sair:
 
 | Instrumento | Por que continua | Sai quando |
 |---|---|---|
-| `B109ExceptionProbe` | sem ela, uma reincidência volta a chegar como uma linha de mensagem, sem stack | `B109` fechado |
-| `ApiPlanSaveBoundaryProbe` (rótulo `[B109]`) | é o adaptador observável do seam da F2 e preserva o diagnóstico de mutação entre Pump e Save (hipótese do antigo ramo A) | F2 aceita; retirar somente no fechamento explícito de B109 |
-| preferência «Suprimir a atualização da tela durante as gravações» | é o experimento da hipótese `DoEvents`, nunca acionado; a stack de 2026-09-25 a enfraqueceu | idem |
 | `ApiPlanMetadataVisibilityProbe` (rótulo `[B115]`) | diagnóstico de metadata órfã | `B115` fechado |
 
 Ao retirar qualquer um: executar `Tools/Test-ExtensionCommandRegistration.ps1` se o manifesto for tocado, e o gate mecânico em seguida.
@@ -451,7 +456,7 @@ sem reproduzir (diário `Completed`, 56 recibos `Confirmed`). **Não validado na
 não se provoca por clique. Próximo passo sugerido: instalar a DLL e repetir o Apply da `Empresa`
 para tentar reproduzir. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
-**Instrumentação instalada para o `B109`** (sondas temporárias; ver o checklist de reversão):
+**Instrumentação do `B109`** (registro até 2026-09-25; as impressões digitais e a preferência de Pump foram retiradas nessa data, e a `B109ExceptionProbe` ficou permanente — ver a instrumentação temporária acima):
 
 - `B109ExceptionProbe` publica na Output a cadeia completa de exceções — tipo, mensagem, `Source`, `TargetSite` e stack de cada nível —, além de Rules, `ExpectedVariables` × `CurrentVariables` e `SourceLines` da Procedure recusada;
 - `ApiPlanSaveBoundaryProbe` registra as fronteiras Pump/Save com fingerprint do estado em memória antes e depois de cada uma, para separar mutação externa de falha intrínseca de validação — publica sob o rótulo `[B109]`;
@@ -802,6 +807,8 @@ permanece fechado (2026-09-23).
 181. Em 2026-09-25, **atribuição das linhas `[B109] Leitura repetida` corrigida**, a partir de revisão externa por leitura de código: a fila global só era esvaziada no relatório final, e uma repetição na abertura de um Wizard (ou num Sync/Remover) cancelado cairia no relatório da operação seguinte — o que poderia validar a mitigação por engano. Agora a linha vai à Output na hora (`ApiPlanSdkReadRetry.Sink`, configurado no `Initialize`), com a fila como reserva. Nenhuma evidência registrada foi atingida. Gates no núcleo e na cobertura do seam; build canônica e satélite OK. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 12.
 
 182. Em 2026-09-25, **mitigação do `B109` validada em campo**: com a DLL `53736d2`, o Wizard da `Empresa` sobre a API existente registrou `[B109] Leitura repetida: Ponto='Tipo 'sdtEmpresa_API_Response'', Tentativa=3/3, Resultado=Recuperada` na verificação de posse antes da metadata — o ponto da falha da tarde — e terminou em `SuccessWithWarnings`, `Bloqueados=0`, sem divergência. Estado lento da sessão, como nas falhas. Como a recuperação veio na última tentativa, o limite passou a 5, com pausas de 200 ms a 2 s, e o ponto saiu sem aspas aninhadas. `B109` passa a mitigado. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 13.
+
+183. Em 2026-09-25, **limpeza da instrumentação do `B109`**, por decisão do usuário: saíram as impressões digitais de `ApiPlanSaveBoundaryProbe` (fingerprints por gravação, log e publicador do Apply) e a preferência «Suprimir a atualização da tela durante as gravações», publicada como experimental desde a `0.1.0-alpha.8`; o codec deixa de gravar a chave e continua lendo Files antigos que a tragam. A `B109ExceptionProbe` passou a diagnóstico permanente. Build canônica com 0 avisos, satélite U13 com 0 erros. `B124: sem documento dedicado porque é remoção de instrumentação sem sessão de campo; o registro está na seção 14 do documento do ramo C`.
 
 ## Bloqueios e fatos ainda não validados
 

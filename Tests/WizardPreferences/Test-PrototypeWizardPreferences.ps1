@@ -73,7 +73,6 @@ Assert-Equal 200 $defaults.MaximumPageSizeByDefault 'Paginação máxima default
 Assert-True $defaults.IncludeBusinessComponentErrorMessagesByDefault 'Default deve incluir mensagens de erro do Business Component.'
 Assert-False $defaults.OfferOrphanMetadataRecovery 'Recuperação de metadata órfã deve iniciar desligada.'
 Assert-True $defaults.ShowRecoveryOptionProactively 'Oferta proativa da recuperação deve iniciar ligada: desligada, um envelope interrompido bloqueia a KB sem apresentar a saída.'
-Assert-False $defaults.SuppressProgressPumpDuringSaves 'Supressão do Pump durante as gravações deve iniciar desligada.'
 
 $values = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferenceValues]::new()
 $values.GenerateSdtsByDefault = $true
@@ -92,7 +91,6 @@ $values.DefaultPageSizeByDefault = 40
 $values.MaximumPageSizeByDefault = 100
 $values.OfferOrphanMetadataRecovery = $true
 $values.ShowRecoveryOptionProactively = $false
-$values.SuppressProgressPumpDuringSaves = $true
 
 $json = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Serialize($values)
 $parsed = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Parse($json)
@@ -114,7 +112,13 @@ Assert-Equal 100 $parsed.MaximumPageSizeByDefault 'Serialização deve preservar
 Assert-True $parsed.IncludeBusinessComponentErrorMessagesByDefault 'Serialização deve preservar o default ligado do repasse de mensagens do BC.'
 Assert-True $parsed.OfferOrphanMetadataRecovery 'Serialização deve preservar a oferta de recuperação de metadata órfã.'
 Assert-False $parsed.ShowRecoveryOptionProactively 'Serialização deve gravar a oferta proativa desligada: sem a chave no File, o fallback ligado apagaria a escolha.'
-Assert-True $parsed.SuppressProgressPumpDuringSaves 'Serialização deve preservar a supressão do Pump durante as gravações.'
+# B109: a supressão do Pump foi retirada em 2026-09-25. A gravação não escreve mais a chave, e um
+# File antigo que a traga continua válido — o codec ignora campo desconhecido.
+Assert-True ($json.IndexOf('suppressProgressPumpDuringSaves', [StringComparison]::Ordinal) -lt 0) 'A preferência retirada não deve mais ser gravada.'
+$withRetiredKey = $json.Replace('"showRecoveryOptionProactively": false', '"showRecoveryOptionProactively": false, "suppressProgressPumpDuringSaves": true')
+Assert-True ($withRetiredKey -ne $json) 'O fixture precisa conter a chave retirada.'
+$parsedRetired = [GenexusOpenApiBuilder.Extension.Diagnostics.PrototypeWizardPreferencesCodec]::Parse($withRetiredKey)
+Assert-Equal 40 $parsedRetired.DefaultPageSizeByDefault 'File antigo com a chave retirada deve continuar sendo lido.'
 
 $legacyJson = @'
 {

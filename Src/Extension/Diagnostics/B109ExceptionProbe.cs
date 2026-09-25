@@ -8,13 +8,11 @@ using System.Text;
 namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 
 /// <summary>
-/// B109 — captura o diagnóstico completo de uma exceção que hoje chega ao relatório
-/// reduzida a uma linha de mensagem.
+/// Diagnóstico completo de uma exceção de etapa, que o relatório reduz a uma linha de mensagem.
 ///
-/// Os <c>catch</c> das etapas do Apply registram apenas <c>ex.Message</c> e a mensagem do
-/// inner, e **descartam a stack trace**. Sem ela, a origem de
-/// <c>Collection was modified; enumeration operation may not execute</c> — observada quatro
-/// vezes, em Business Component, em List e num Save de API isolado — permanece hipótese.
+/// Os <c>catch</c> das etapas registram apenas <c>ex.Message</c> e a mensagem do inner, e
+/// **descartam a stack trace**. Foi esta classe que localizou a causa do <c>B109</c>: a
+/// corrida do SDK em <c>PropertyManager.SetInitialValues</c>, vista pela stack de 2026-09-25.
 ///
 /// Esta classe formata tipo, mensagem, origem e stack de cada nível da cadeia de exceções.
 /// Não altera fluxo: os chamadores continuam tratando a exceção como antes.
@@ -23,7 +21,8 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// ilegível carrega a exceção em <see cref="PersistenceConfirmation.Cause"/>, repassada como
 /// inner de «Persistência ... não foi confirmada» (B109 ramo C, 2026-09-25).
 ///
-/// Sonda temporária: sai no fechamento explícito de B109 (unificado num defeito só em 2026-09-25).
+/// Diagnóstico permanente desde 2026-09-25: só roda quando uma etapa falha, sem custo no caminho
+/// normal. O nome guarda a origem.
 /// </summary>
 internal static class B109ExceptionProbe
 {

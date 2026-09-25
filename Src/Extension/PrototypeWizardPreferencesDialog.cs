@@ -23,7 +23,6 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
     private readonly CheckBox _includeBcErrorMessagesCheck = CreateCheckBox(string.Empty);
     private readonly CheckBox _offerOrphanMetadataRecoveryCheck = CreateCheckBox(string.Empty);
     private readonly CheckBox _showRecoveryOptionProactivelyCheck = CreateCheckBox(string.Empty);
-    private readonly CheckBox _suppressProgressPumpCheck = CreateCheckBox(string.Empty);
     private readonly NumericUpDown _defaultPageSizeInput = CreateNumericInput();
     private readonly NumericUpDown _maximumPageSizeInput = CreateNumericInput();
     private TableLayoutPanel? _root;
@@ -225,8 +224,7 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
 
         // Quadro próprio, e por último: nenhuma destas opções pertence ao uso normal. A de
         // recuperação nasceu ocupando a linha de folga do quadro de geração, onde não é um
-        // default de geração; a de supressão do Pump substitui a variável de ambiente
-        // GOAB_B109_SUPPRESS_PUMP, que dependia do Windows e não tinha onde ser avisada.
+        // default de geração. A supressão do Pump (B109) saiu em 2026-09-25.
         var diagnosticsGroup = CreateContentGroup(_texts.Translate("Diagnostico e recuperacao"));
 
         var diagnostics = new TableLayoutPanel
@@ -235,10 +233,9 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             AutoSize = true,
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 3,
         };
         diagnostics.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        diagnostics.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         diagnostics.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         diagnostics.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         diagnostics.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -250,7 +247,6 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             0);
         diagnostics.Controls.Add(_offerOrphanMetadataRecoveryCheck, 0, 1);
         diagnostics.Controls.Add(_showRecoveryOptionProactivelyCheck, 0, 2);
-        diagnostics.Controls.Add(_suppressProgressPumpCheck, 0, 3);
         diagnosticsGroup.Controls.Add(diagnostics);
         // Faixa de baixo, à direita.
         root.Controls.Add(diagnosticsGroup, 1, 3);
@@ -302,7 +298,6 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         _generateMetadataCheck.Checked = preferences.GenerateMetadataByDefault;
         _offerOrphanMetadataRecoveryCheck.Checked = preferences.OfferOrphanMetadataRecovery;
         _showRecoveryOptionProactivelyCheck.Checked = preferences.ShowRecoveryOptionProactively;
-        _suppressProgressPumpCheck.Checked = preferences.SuppressProgressPumpDuringSaves;
         _applyListCheck.Checked = preferences.ApplyListByDefault;
         _applyBusinessComponentCheck.Checked = preferences.ApplyBusinessComponentByDefault;
         _listServiceCheck.Checked = preferences.ListServiceByDefault;
@@ -358,7 +353,6 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
             IncludeBusinessComponentErrorMessagesByDefault = _includeBcErrorMessagesCheck.Checked,
             OfferOrphanMetadataRecovery = _offerOrphanMetadataRecoveryCheck.Checked,
             ShowRecoveryOptionProactively = _showRecoveryOptionProactivelyCheck.Checked,
-            SuppressProgressPumpDuringSaves = _suppressProgressPumpCheck.Checked,
             DefaultPageSizeByDefault = (int)_defaultPageSizeInput.Value,
             MaximumPageSizeByDefault = (int)_maximumPageSizeInput.Value,
         };
@@ -382,7 +376,6 @@ internal sealed class PrototypeWizardPreferencesDialog : Form
         _generateMetadataCheck.Text = _texts.Translate("Marcar metadata da API por padrao");
         _offerOrphanMetadataRecoveryCheck.Text = _texts.Translate("Oferecer recuperacao de metadata orfa no Wizard");
         _showRecoveryOptionProactivelyCheck.Text = _texts.Translate("Oferecer a recuperacao quando o diario bloquear uma operacao");
-        _suppressProgressPumpCheck.Text = _texts.Translate("Suprimir a atualizacao da tela durante as gravacoes - a janela congela e Abortar nao responde (B109)");
         _applyListCheck.Text = _texts.Translate("Marcar listagem por padrao");
         _applyBusinessComponentCheck.Text = _texts.Translate("Marcar REST via Business Component por padrao");
         _includeBcErrorMessagesCheck.Text = _texts.Translate("Incluir mensagens de erro do Business Component no corpo HTTP 422");

@@ -22,6 +22,10 @@
 > ser a preferência «Suprimir a atualização da tela durante as gravações», em Preferências do
 > Wizard → Diagnóstico e recuperação. O experimento continua não executado; o resto deste
 > documento é o registro do dia 2026-09-05 e não foi alterado.
+>
+> **Atualização de 2026-09-25.** A preferência foi retirada sem o experimento ter sido executado:
+> a stack completa localizou o `B109` numa corrida do SDK, síncrona, e a hipótese do Pump perdeu a
+> base. Ver `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seções 8 e 14.
 
 ## Pergunta inicial
 

@@ -1072,8 +1072,7 @@ internal static class ApiPlanListProcedureWriter
             PersistenceFaultPoint.ProcedureSave,
             () => PrepareProcedure(model, kbIndex, procedure, source, variables, rules),
             () => procedure.Save(),
-            () => ConfirmProcedure(model, kbIndex, procedure, source, variables, rules),
-            () => ApiPlanSaveBoundaryProbe.Snapshot(procedure));
+            () => ConfirmProcedure(model, kbIndex, procedure, source, variables, rules));
     }
 
     private static void PrepareProcedure(
@@ -1087,10 +1086,6 @@ internal static class ApiPlanListProcedureWriter
         ReplaceVariables(model, kbIndex, procedure, variables);
         procedure.Rules.Source = rules;
         procedure.ProcedurePart.Source = source;
-        ApiPlanSaveBoundaryProbe.PreparedProcedure(
-            "List",
-            procedure,
-            variables.Select(variable => variable.Name + ":" + variable.DataType));
     }
 
     private static PersistenceConfirmation ConfirmProcedure(
@@ -1151,8 +1146,7 @@ internal static class ApiPlanListProcedureWriter
                 api.Save();
                 onApiPhysicalSave?.Invoke(api.Guid);
             },
-            () => ConfirmApi(model, kbIndex, api, plan, variables, onApiSaveCompleted),
-            () => ApiPlanSaveBoundaryProbe.Snapshot(api));
+            () => ConfirmApi(model, kbIndex, api, plan, variables, onApiSaveCompleted));
     }
 
     private static void PrepareApi(
@@ -1172,7 +1166,6 @@ internal static class ApiPlanListProcedureWriter
         }
 
         ReplaceVariables(model, kbIndex, api, variables);
-        ApiPlanSaveBoundaryProbe.PreparedApi("List", api);
     }
 
     private static PersistenceConfirmation ConfirmApi(

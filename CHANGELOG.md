@@ -37,6 +37,17 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   terminou sem bloqueio. Evidência:
   `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
+### Changed
+
+- Instrumentação temporária do `B109` retirada, com o defeito mitigado: a preferência
+  **«Suprimir a atualização da tela durante as gravações»** saiu de Preferências do Wizard →
+  Diagnóstico e recuperação — publicada como experimental desde a `0.1.0-alpha.8`, nunca
+  necessária no uso normal; Files de preferências gravados com ela continuam válidos, e a chave é
+  descartada na gravação seguinte —, e o Apply deixou de tirar impressões digitais de cada objeto
+  gravado e de publicar o dump `[B109]` de mutação entre Pump e Save. O diagnóstico de exceção
+  `[B109]`, com a stack completa quando uma etapa falha, continua e passou a permanente. Evidência:
+  `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 14.
+
 ### Planned
 
 - `B108` (plano aprovado 2026-08-31; estacionado desde 2026-09-05): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. As três fases da sprint `S-B111` foram encerradas em 2026-09-15, mantendo `B121` fora dela. Ver o checkpoint e o documento 06.

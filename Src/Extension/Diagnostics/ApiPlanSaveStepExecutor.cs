@@ -21,8 +21,7 @@ internal sealed class ApiPlanSaveStep
         PersistenceFaultPoint faultPoint,
         Action prepare,
         Action persist,
-        Func<PersistenceConfirmation> confirm,
-        Func<string> snapshot)
+        Func<PersistenceConfirmation> confirm)
     {
         Label = label ?? throw new ArgumentNullException(nameof(label));
         ObjectType = objectType ?? throw new ArgumentNullException(nameof(objectType));
@@ -31,7 +30,6 @@ internal sealed class ApiPlanSaveStep
         Prepare = prepare ?? throw new ArgumentNullException(nameof(prepare));
         Persist = persist ?? throw new ArgumentNullException(nameof(persist));
         Confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
-        Snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
         FaultPoint = faultPoint;
     }
 
@@ -50,8 +48,6 @@ internal sealed class ApiPlanSaveStep
     public Action Persist { get; }
 
     public Func<PersistenceConfirmation> Confirm { get; }
-
-    public Func<string> Snapshot { get; }
 }
 
 /// <summary>Executor único dos antigos laços de Save do BC e do List.</summary>
@@ -73,13 +69,9 @@ internal static class ApiPlanSaveStepExecutor
         {
             // B082 Etapa 2: Report → Pump (eventos) → ThrowIfAbort → só então mutar.
             saveIndex++;
-            var beforePumpSnapshot = step.Snapshot();
             progress?.Report(step.Stage, saveIndex, materialized.Length, step.Label);
             progress?.Pump();
             progress?.ThrowIfAbortRequested();
-            var afterPumpSnapshot = step.Snapshot();
-            ApiPlanSaveBoundaryProbe.PumpBoundary(step.Stage, step.Label, beforePumpSnapshot, afterPumpSnapshot);
-            ApiPlanSaveBoundaryProbe.BeforeSave(step.Stage, step.Label, afterPumpSnapshot);
             var persistenceStarted = false;
             var sw = Stopwatch.StartNew();
             try
@@ -118,7 +110,6 @@ internal static class ApiPlanSaveStepExecutor
                 }
 
                 sw.Stop();
-                ApiPlanSaveBoundaryProbe.Saved(step.Stage, step.Label, step.Snapshot());
                 onSaveCompleted?.Invoke(step.Stage, step.Label, sw.ElapsedMilliseconds);
             }
             catch (Exception exception)
@@ -131,7 +122,6 @@ internal static class ApiPlanSaveStepExecutor
                         exception.Message);
                 }
 
-                ApiPlanSaveBoundaryProbe.Failed(step.Stage, step.Label, exception, step.Snapshot());
                 throw;
             }
 

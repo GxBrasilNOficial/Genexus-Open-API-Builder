@@ -585,8 +585,7 @@ internal static class ApiPlanBusinessComponentWriter
                         ex);
                 }
             },
-            () => ConfirmProcedure(model, kbIndex, procedure, content, variables, rules),
-            () => ApiPlanSaveBoundaryProbe.Snapshot(procedure));
+            () => ConfirmProcedure(model, kbIndex, procedure, content, variables, rules));
     }
 
     private static void PrepareProcedure(
@@ -600,10 +599,6 @@ internal static class ApiPlanBusinessComponentWriter
         ReplaceVariables(model, kbIndex, procedure, variables);
         procedure.Rules.Source = rules;
         procedure.ProcedurePart.Source = content;
-        ApiPlanSaveBoundaryProbe.PreparedProcedure(
-            "Business Component",
-            procedure,
-            variables.Select(variable => variable.Name + ":" + variable.DataType));
     }
 
     private static PersistenceConfirmation ConfirmProcedure(
@@ -697,8 +692,7 @@ internal static class ApiPlanBusinessComponentWriter
                 api.Save();
                 onApiPhysicalSave?.Invoke(api.Guid);
             },
-            () => ConfirmApi(model, kbIndex, api, plan, variables, onApiSaveCompleted),
-            () => ApiPlanSaveBoundaryProbe.Snapshot(api));
+            () => ConfirmApi(model, kbIndex, api, plan, variables, onApiSaveCompleted));
     }
 
     private static void PrepareApi(
@@ -714,7 +708,6 @@ internal static class ApiPlanBusinessComponentWriter
         api.ServiceGroupSource.Source = source;
         api.Events.Source = CreateB079ApiEventsForPlan(plan);
         ReplaceVariables(model, kbIndex, api, variables);
-        ApiPlanSaveBoundaryProbe.PreparedApi("Business Component", api);
     }
 
     private static PersistenceConfirmation ConfirmApi(

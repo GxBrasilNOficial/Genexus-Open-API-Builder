@@ -60,8 +60,6 @@ internal sealed class PrototypeWizardPreferences
     /// </summary>
     public bool ShowRecoveryOptionProactively { get; set; } = true;
 
-    public bool SuppressProgressPumpDuringSaves { get; set; }
-
     public static PrototypeWizardPreferences CreateDefault()
     {
         return FromPreferenceValues(PrototypeWizardPreferencesCodec.CreateDefault());
@@ -88,7 +86,6 @@ internal sealed class PrototypeWizardPreferences
             IncludeBusinessComponentErrorMessagesByDefault = IncludeBusinessComponentErrorMessagesByDefault,
             OfferOrphanMetadataRecovery = OfferOrphanMetadataRecovery,
             ShowRecoveryOptionProactively = ShowRecoveryOptionProactively,
-            SuppressProgressPumpDuringSaves = SuppressProgressPumpDuringSaves,
         };
     }
 
@@ -123,7 +120,6 @@ internal sealed class PrototypeWizardPreferences
             IncludeBusinessComponentErrorMessagesByDefault = values.IncludeBusinessComponentErrorMessagesByDefault,
             OfferOrphanMetadataRecovery = values.OfferOrphanMetadataRecovery,
             ShowRecoveryOptionProactively = values.ShowRecoveryOptionProactively,
-            SuppressProgressPumpDuringSaves = values.SuppressProgressPumpDuringSaves,
         };
     }
 
@@ -148,7 +144,6 @@ internal sealed class PrototypeWizardPreferences
             IncludeBusinessComponentErrorMessagesByDefault = IncludeBusinessComponentErrorMessagesByDefault,
             OfferOrphanMetadataRecovery = OfferOrphanMetadataRecovery,
             ShowRecoveryOptionProactively = ShowRecoveryOptionProactively,
-            SuppressProgressPumpDuringSaves = SuppressProgressPumpDuringSaves,
         };
     }
 }

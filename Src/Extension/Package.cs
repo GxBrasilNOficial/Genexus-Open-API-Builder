@@ -126,7 +126,7 @@ public sealed class Package : AbstractPackageUI
         catch (Exception ex)
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
-            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            // B109: diagnostico permanente - publica a stack completa, que o log de uma linha descarta.
             foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Preferências do Wizard")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][Prefs] Gravacao de preferencias bloqueada ou falhou antes de concluir: Error='{errorDetail}'");
         }
@@ -172,7 +172,7 @@ public sealed class Package : AbstractPackageUI
         }
         catch (Exception ex)
         {
-            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            // B109: diagnostico permanente - publica a stack completa, que o log de uma linha descarta.
             foreach (var b109Line in B109ExceptionProbe.Describe(ex, "SDTs")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B040-B046] Criacao de SDTs bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
             report?.AddBlocked("SDTs", "B040-B046", ex.Message);
@@ -212,7 +212,7 @@ public sealed class Package : AbstractPackageUI
         }
         catch (Exception ex)
         {
-            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            // B109: diagnostico permanente - publica a stack completa, que o log de uma linha descarta.
             foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Procedures")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][{ApiPlanProcedureWriter.FormatOutputStage(apiPlan)}] Criacao de Procedures bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
             report?.AddBlocked("Procedures", ApiPlanProcedureWriter.FormatOutputStage(apiPlan), ex.Message);
@@ -266,7 +266,7 @@ public sealed class Package : AbstractPackageUI
         }
         catch (Exception ex)
         {
-            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            // B109: diagnostico permanente - publica a stack completa, que o log de uma linha descarta.
             foreach (var b109Line in B109ExceptionProbe.Describe(ex, "API Object")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B054] Criacao de API Object bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
             report?.AddBlocked("API Object", apiPlan.ApiName, ex.Message);
@@ -316,7 +316,7 @@ public sealed class Package : AbstractPackageUI
         }
         catch (Exception ex)
         {
-            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            // B109: diagnostico permanente - publica a stack completa, que o log de uma linha descarta.
             foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Preparação do API Object")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B054] Preparacao de API Object bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
             report?.AddBlocked("API Object", apiPlan.ApiName, ex.Message);
@@ -357,7 +357,7 @@ public sealed class Package : AbstractPackageUI
         catch (Exception ex)
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
-            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            // B109: diagnostico permanente - publica a stack completa, que o log de uma linha descarta.
             foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Metadata File")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B060] Gravacao de metadata bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{errorDetail}'");
             report?.AddBlocked("File", apiPlan.MetadataFileName, errorDetail);
@@ -442,7 +442,7 @@ public sealed class Package : AbstractPackageUI
         catch (Exception ex)
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
-            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            // B109: diagnostico permanente - publica a stack completa, que o log de uma linha descarta.
             foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Business Component")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B071-B073/B079] Aplicacao REST via Business Component bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{errorDetail}'");
             report?.AddBlocked("Business Component", "REST", errorDetail);
@@ -520,7 +520,7 @@ public sealed class Package : AbstractPackageUI
         catch (Exception ex)
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
-            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            // B109: diagnostico permanente - publica a stack completa, que o log de uma linha descarta.
             foreach (var b109Line in B109ExceptionProbe.Describe(ex, "List")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B070] Aplicacao do List bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{errorDetail}'");
             report?.AddBlocked("List", "B070", errorDetail);
@@ -1123,7 +1123,7 @@ public sealed class Package : AbstractPackageUI
                 catch (Exception ex) when (ex is not ApiPlanBusyAbortedException)
                 {
                     var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
-                    // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+                    // B109: diagnostico permanente - publica a stack completa, que o log de uma linha descarta.
                     foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Sync")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
                     WriteOutput($"[Genexus Open API Builder][B085] Sincronizacao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}'");
                     AppendCollisionConflictsToReport(report, syncState.CollectCollisionConflicts());
@@ -1336,7 +1336,7 @@ public sealed class Package : AbstractPackageUI
         catch (Exception ex)
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
-            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            // B109: diagnostico permanente - publica a stack completa, que o log de uma linha descarta.
             foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Sync")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B085] Sincronizacao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}'");
             var report = new ApiPlanApplicationFinalReportCollector("Sincronizar", transaction.Name, null);
@@ -1575,7 +1575,7 @@ public sealed class Package : AbstractPackageUI
         catch (Exception ex)
         {
             var errorDetail = ex.InnerException is null ? ex.Message : $"{ex.Message} | Inner='{ex.InnerException.Message}'";
-            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            // B109: diagnostico permanente - publica a stack completa, que o log de uma linha descarta.
             foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Remover")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B086] Remocao bloqueada ou falhou: Transaction='{transaction.Name}', Error='{errorDetail}', JaRemovidos={deletedBeforeFailure.Count}, Items='{string.Join("; ", deletedBeforeFailure)}'");
             var report = new ApiPlanApplicationFinalReportCollector("Remover", transaction.Name, null);
@@ -1975,26 +1975,16 @@ public sealed class Package : AbstractPackageUI
         // B082: mede o custo das varreduras de catalogo ao longo de todo o Apply.
         var scanTelemetry = new ApiPlanScanTelemetry();
         using var scanScope = ApiPlanScanProbe.Begin(scanTelemetry);
-        var saveBoundaryLog = new ApiPlanSaveBoundaryLog();
-        using var saveBoundaryScope = ApiPlanSaveBoundaryProbe.Begin(saveBoundaryLog);
-        using var saveBoundaryPublisher = new ApiPlanSaveBoundaryPublisher(saveBoundaryLog, "Wizard");
         var persistenceLog = new ApiPlanPersistenceLog();
         using var persistenceScope = ApiPlanSaveBoundaryProbe.BeginPersistence(persistenceLog);
         report.SetPersistenceLog(persistenceLog);
         // B111/F3: o diário vive fora do try para que o aborto do usuário também seja
         // registrado como interrupção, e não desapareça com o escopo.
         ApiPlanOperationJournalSession? journal = null;
-        var suppressProgressPump = preferencesLoadResult!.Preferences.SuppressProgressPumpDuringSaves;
         try
         {
-            using var busy = ExtensionBusyProgressScope.Show(applyOwner, texts.BusyProgressTitleApply, texts, suppressProgressPump);
+            using var busy = ExtensionBusyProgressScope.Show(applyOwner, texts.BusyProgressTitleApply, texts);
             WriteOutput($"[Genexus Open API Builder][B082] Apply Wizard iniciado: Transaction='{transaction.Name}'.");
-            if (suppressProgressPump)
-            {
-                // Sem esta linha, um Apply com a tela congelada chega ao log indistinguivel
-                // de um Apply travado.
-                WriteOutput("[Genexus Open API Builder][B109] Atualizacao da tela suprimida por preferencia durante as gravacoes: a janela nao responde ate o fim, e o botao Abortar fica inativo. Experimento da hipotese de reentrancia do Pump.");
-            }
             var (generationState, kbIndexForApply) = ApiPlanGenerationStateReader.ReadForIntentionalChangeWithIndex(
                 knowledgeBase.DesignModel,
                 transaction,
@@ -2146,7 +2136,7 @@ public sealed class Package : AbstractPackageUI
                 }
                 catch (Exception ex) when (ex is not ApiPlanBusyAbortedException)
                 {
-                    // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+                    // B109: diagnostico permanente - publica a stack completa, que o log de uma linha descarta.
                     foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Habilitação do Business Component")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
                     WriteOutput($"[Genexus Open API Builder][B035] Habilitacao de Business Component falhou depois do preflight agregado: Transaction='{transaction.Name}', Error='{ex.Message}'. Nenhum objeto dependente sera persistido.");
                     report.AddBlocked("Business Component", "B035", ex.Message);
@@ -2641,7 +2631,7 @@ public sealed class Package : AbstractPackageUI
         catch (Exception ex)
         {
             var detail = DescribeException(ex);
-            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            // B109: diagnostico permanente - publica a stack completa, que o log de uma linha descarta.
             foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Recuperação de metadata B115")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B115] Recuperação de metadata falhou: File='{metadataName}', Error='{detail}'. Nenhuma etapa posterior foi executada.");
             System.Windows.Forms.MessageBox.Show(
@@ -2963,48 +2953,6 @@ public sealed class Package : AbstractPackageUI
         // ActiveForm primeiro posicionava o Wizard no monitor primário quando o
         // owner não era um Form WinForms.
         return ExtensionIdeScreenPlacement.ResolveOwner();
-    }
-
-    /// <summary>
-    /// B109 — publica a sonda temporária das fronteiras Pump/Save no final do Apply.
-    /// A publicação nunca pode alterar o resultado da operação medida.
-    /// </summary>
-    private sealed class ApiPlanSaveBoundaryPublisher : IDisposable
-    {
-        private readonly ApiPlanSaveBoundaryLog _log;
-        private readonly string _operation;
-        private bool _disposed;
-
-        public ApiPlanSaveBoundaryPublisher(ApiPlanSaveBoundaryLog log, string operation)
-        {
-            _log = log;
-            _operation = operation;
-        }
-
-        public void Dispose()
-        {
-            if (_disposed)
-            {
-                return;
-            }
-
-            _disposed = true;
-            try
-            {
-                if (!_log.HasAnomaly)
-                {
-                    return;
-                }
-
-                foreach (var line in _log.Render())
-                {
-                    WriteOutput($"[Genexus Open API Builder][B109][{_operation}] {line}");
-                }
-            }
-            catch
-            {
-            }
-        }
     }
 
     private static void WriteProbePhase(string phaseName, long elapsedMs)
