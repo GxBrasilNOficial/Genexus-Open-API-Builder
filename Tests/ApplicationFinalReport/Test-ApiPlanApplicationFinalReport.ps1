@@ -345,7 +345,9 @@ Assert-Equal 3 ([regex]::Matches($apiObjectWriterSource + $businessComponentWrit
 Assert-Equal 2 ([regex]::Matches($packageSource, 'onSaveCompleted: null').Count) 'Em sucesso normal, os callbacks B111 não devem despejar um trace por Save físico no Output.'
 Assert-True ($packageSource -match 'if \(forceShow\)\s*\{\s*output\.Show\(outputId\);\s*\}') 'A exibição do Output deve ser condicional ao modo solicitado.'
 Assert-True ($packageSource -notmatch 'WriteOutputWithoutShow') 'Sem trace B111 por Save, a variante de Output sem exibição deixa de ser necessária.'
-Assert-True ($packageSource -match 'if \(!_log\.HasAnomaly\)') 'O dump B109 deve ser publicado somente quando a sonda detectar uma anomalia.'
+# B109: o dump de impressões digitais Pump/Save foi retirado em 2026-09-25; o Output normal não
+# volta a recebê-lo. O diagnóstico de exceção [B109] continua, e só roda quando uma etapa falha.
+Assert-True ($packageSource -notmatch 'ApiPlanSaveBoundaryPublisher|ApiPlanSaveBoundaryLog') 'O dump de impressões digitais B109 retirado não deve voltar ao Apply.'
 Assert-True ($packageSource -match 'if \(System\.Diagnostics\.Debugger\.IsAttached\)') 'A telemetria detalhada B082 deve ficar fora do Output normal.'
 Assert-True ($packageSource -notmatch '\[B081\] Criado:') 'O Output normal não deve repetir a lista de itens criados já consolidada no relatório final.'
 Assert-True ($packageSource -notmatch '\[B081\] Atualizado:') 'O Output normal não deve repetir a lista de itens atualizados já consolidada no relatório final.'
