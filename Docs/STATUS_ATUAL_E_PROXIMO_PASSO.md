@@ -601,7 +601,7 @@ Vigência atual: `B120` fechado em 2026-09-24 (código flat + A2 + aceite IDE/HT
 `Teste`/`wsEducacaoSpTeste`, remissão normativa Foundation alinhada). ~~Após o push, escolher a
 próxima ação no backlog em sessão nova.~~ ~~**Superado em 2026-09-25:** frente vigente = `B109`
 ramo C (captura corrigida offline; próxima ação = reproduzir na IDE, item 172).~~ **Superado na
-mesma data:** `B109` mitigado (itens 179 a 184); próxima ação = push desta frente e escolha no
+mesma data:** `B109` fechado por mitigação (itens 179 a 186); próxima ação = push desta frente e escolha no
 backlog, conforme a Próxima ação única. `B128` permanece fechado (2026-09-23).
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
