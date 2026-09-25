@@ -185,3 +185,182 @@ SDT. O ramo C passa a ser tratado como o ramo A: **condicionado à reprodução*
 completa (inner no `Detail` e stack pela sonda em todas as etapas). Hipóteses em aberto:
 reentrância por `Application.DoEvents()` durante a releitura e enumeração concorrente por trabalho
 da IDE em outra thread; a stack da próxima ocorrência separa as duas.
+
+## 8. Segunda reprodução, com stack completa (2026-09-25, tarde)
+
+DLL do commit `f033c6d` (sondas nas seis etapas). Sequência na `fabricabrasil18test`, `Empresa`:
+`Build All` nos dois environments com sucesso; KB fechada e reaberta; Remover com sucesso; KB
+fechada e reaberta; Wizard com as mesmas opções.
+
+SDTs (43 criados), Procedures (5), Business Component e List passaram; o API Object foi gravado
+(`ApiSaveCount=1`, writer List). A falha veio na **etapa de metadata**, antes do `Save()` do File:
+`Resultado='Interrupted'`, `Criados=50`, `Bloqueados=1` (`apiEmpresa_Metadata`).
+
+Stack publicada pela sonda (resumida; o registro completo está na Output da sessão):
+
+```text
+exceção: Artech.Udm.Framework.Exceptions.UdmException: Unable to Deserialize Data.
+  at Artech.Udm.Framework.Entity.EnsureDeserialization()
+  at Artech.Architecture.Common.Objects.KBObjectPart.OnPartRead()
+  ...
+  at Artech.Genexus.Common.Objects.SDT.get_SDTStructure()
+  at Artech.Genexus.Common.Types.SDTTypeInfo..ctor(SDT sdtObject)
+  at Artech.Genexus.Common.Objects.Sdt.SDTLoader.GetDatatype(KBModel, Boolean, String)
+  ...
+  at Artech.Genexus.Common.Types.DataType.ParseInto(KBModel, String, ITypedObject)
+  at ApiPlanListProcedureWriter.MatchesVariableSpec(..., API api, VariableSpec variable)
+  at ApiPlanListProcedureWriter.HasExpectedVariables(...)
+  at ApiPlanListProcedureWriter.IsB070ApiObject(...)
+  at ApiPlanBusinessComponentWriter.IsManagedApiObject(...)
+  at ApiPlanApiObjectWriter.DiagnoseOwnership / IsOwnedApiObject / IsOwnedApiObjectForIntentionalWrite
+  at ApiPlanApiObjectWriter.PreflightExistingApiObjectForMetadataRefresh(...)
+  at ApiPlanMetadataFileWriter.PreflightApiObject / CreateOrReencounter(...)
+  at Package.TryWriteMetadataFile(...)
+inner 1: System.InvalidOperationException: Collection was modified; enumeration operation may not execute.
+  at System.Collections.Generic.List`1.Enumerator.MoveNext()
+  at Artech.Common.Properties.PropertyManager.SetInitialValues()
+  at Artech.Common.Properties.PropertiesObject..ctor()
+  at Artech.Udm.Framework.Entity..ctor(UdmKnowledgeBase kb, Model model, Guid typeId)
+  at Artech.Genexus.Common.Parts.SDT.SDTItemEntity..ctor(SDTStructurePart part)
+  at Artech.Genexus.Common.Parts.SDT.SDTItem.ReadItemInfo(XmlNode node)
+  ...
+  at Artech.Genexus.Common.Parts.SDTStructurePart.DeserializeData(BinaryStream data)
+  at Artech.Udm.Framework.Entity.EnsureDeserialization()
+```
+
+**Leitura.**
+
+- A falha está **dentro do SDK**, na desserialização sob demanda da estrutura de um SDT: cada
+  item vira uma `SDTItemEntity`, cujo construtor percorre uma `List<>` em
+  `PropertyManager.SetInitialValues()`, e essa lista muda durante a enumeração. A extensão só
+  dispara a leitura — aqui, ao resolver por nome o tipo de uma variável do API Object
+  (`DataType.ParseInto`) na verificação de posse que precede a gravação da metadata.
+- Isso explica a dispersão das ocorrências: releitura de SDT, releitura de Procedure grande,
+  etapa de List, `Save()` de API. Todos os caminhos resolvem tipos SDT; a falha aparece onde a
+  primeira desserialização calhar.
+- **Ramos A e C são o mesmo defeito**: o A é o `Collection was modified` chegando sem camada
+  externa; o C, a mesma exceção embrulhada (`TargetInvocationException`, `UdmException`).
+- **Reentrância por `Application.DoEvents()` praticamente descartada para esta ocorrência**: a
+  cadeia é síncrona do `TryWriteMetadataFile` até o `MoveNext()`, sem frame de interface. Restam
+  duas hipóteses, sem decisão: (i) outra thread da IDE alterando a mesma lista de definições de
+  propriedades, que parece compartilhada e sem trava; (ii) o corpo do laço alterando a própria
+  lista numa primeira inicialização. A (ii) casa mal com a intermitência.
+- Padrão de campo: as duas falhas de 2026-09-25 vieram no primeiro Apply depois de reabrir a KB,
+  quando nada estava desserializado; um dos Applies bem-sucedidos também veio logo após
+  reabrir. É tendência, não regra.
+
+**Achado colateral 1 — diário `Completed` com metadata ausente.** No Wizard, o retorno de
+`TryWriteMetadataFile` é ignorado e o `CompleteJournal` roda em seguida; no Sync, a mesma falha
+lança `SYNC_METADATA_FAILED`. O relatório disse `Interrupted`, o diário `Completed/Completed`.
+Efeito observado: depois de reabrir a IDE, `Recuperar operação interrompida` respondeu «A última
+operação registrada está encerrada. Não há nada a recuperar» — com a KB no estado `B115` (API
+Object, Procedures, SDTs e Folder, sem `apiEmpresa_Metadata`). Pode ser escolha da F3 — depois do
+API gravado não há o que a recuperação refaça —, mas o diário deixa de sinalizar o estado que o
+`B110`/`B115` descrevem. A conferir contra o plano da F3 antes de classificar como defeito. A
+saída prevista para esse estado é a recuperação de metadata órfã, oferecida na **abertura do
+Wizard**, e não o comando `Recuperar`.
+
+**Achado colateral 2 — `B130` também em operação concluída.** O inventário desse Apply, concluído,
+lista `Folder EmpresaOpenApi — previsto: Update`, embora o Folder tenha sido criado nesse Apply (o
+Remover anterior o apagara, por ter posse). SDTs, Procedures e API Object saem como `Create`. O
+Folder, ao que parece, nunca entra na lista de criados do relatório. Somado ao `B130`.
+
+**Decisão da sessão.** Opção escolhida para mitigar: **repetir a leitura** quando uma leitura
+(confirmação, preflight, verificação de posse) receber `UdmException` com inner `Collection was
+modified`, relendo depois de pausa curta, com número máximo de tentativas e linha de medição na
+Output; nunca repetir `Save()`. Desenho e diff a aprovar antes da implementação.
+
+## 9. Mitigação: repetição de leitura (implementada offline em 2026-09-25)
+
+**Leitura do SDK, só leitura, antes do código.** Por reflexão sobre as DLLs da instalação:
+
+- `Artech.Udm.Framework.Entity.EnsureDeserialization` tem no disco o corpo `nop nop nop ret`: o
+  assembly é protegido e o código real é trocado em tempo de execução. Não foi possível saber
+  estaticamente se uma desserialização interrompida deixa a parte marcada como carregada. A
+  interface `IEntityDeserializationStatus` (`DeserializedData`, `DeserializedProperties`) existe,
+  o que indica que o estado é rastreado, mas o momento da marca não é observável daqui.
+- `Artech.Common.Properties` não é protegido e confirma o mecanismo. O construtor sem parâmetros
+  de `PropertiesObject` chama `SetExtendedType` → `LoadPropDefinition`, que busca a coleção de
+  definições num cache **estático por tipo** (`ConcurrentDictionary.GetOrAdd`): todas as
+  instâncias de um tipo — por exemplo, todas as `SDTItemEntity` — compartilham a mesma
+  `PropDefinitionCollection`. `PropertyManager.SetInitialValues()` percorre essa coleção **sem
+  trava**; `PropertyManager.AddDefinition` a altera sob `Monitor.Enter(this)`, trava **da
+  instância**, que não protege as demais. Qualquer `AddDefinition` de outra instância durante a
+  enumeração produz o `Collection was modified`. O corpo do laço de `SetInitialValues` só escreve
+  em `m_InitializedDefinitions`, outra lista: a hipótese de o laço alterar a própria coleção
+  perde força, e a de outra thread da IDE ganha.
+
+**Desenho.** `ApiPlanSdkReadRetry`, no mesmo arquivo do núcleo do seam e sem dependência do SDK:
+
+- critério estreito: a cadeia contém `Artech.Udm.Framework.Exceptions.UdmException` **e** uma
+  `InvalidOperationException` com `PropertyManager.SetInitialValues` na stack; nenhum outro erro
+  é repetido (**ampliado na mesma data** para dispensar a `UdmException`; ver a seção 10);
+- até 3 tentativas, pausas de 200 ms e 500 ms, sem `DoEvents`;
+- cada recuperação ou esgotamento vira uma linha `[B109] Leitura repetida: Ponto='…',
+  Tentativa=n/3, Resultado=Recuperada|Esgotada`, publicada na Output no início do relatório final;
+- esgotadas as tentativas, a exceção original segue, com a stack pela sonda.
+
+**Onde se aplica — só leituras; `Save()` nunca é repetido:**
+
+- confirmação pós-Save, num ponto só: `ApiPlanPersistenceCore.Persist` relê o `confirm()` quando
+  ele volta `Unreadable` com causa que casa — cobre as catorze confirmações do seam;
+- resolução de tipo por nome, `DataType.ParseInto`: uma chamada no writer de Business Component,
+  seis no de List, uma no de SDT;
+- estrutura de SDT, `SDTStructure.Root`: três no writer de SDT, uma no Sync, uma no leitor do
+  contrato existente.
+
+Fica fora, declarado: falha dentro do próprio `Save()` (o SDK também resolve tipos ali) e a
+confirmação do caminho sem log de persistência do executor, que não ocorre no Apply, no Sync nem
+no Remover.
+
+**Risco residual.** Como a marca de desserialização não é observável, uma leitura repetida
+poderia, em tese, ver uma estrutura incompleta sem erro. As comparações que seguem são estritas:
+estrutura incompleta aparece como `Divergent` e bloqueia, em vez de passar calada. A linha
+`Resultado=Recuperada` na Output é o que permite auditar cada caso.
+
+**Gates.** `Tests/PersistenceProbe/Test-ApiPlanPersistenceCore.ps1`: critério com cadeias
+fabricadas com os nomes reais do SDK (casa com `UdmException` → `SetInitialValues`, casa
+embrulhada em `TargetInvocationException`, não casa com `Collection was modified` de outra origem
+nem sem `UdmException`); recuperação na segunda tentativa; esgotamento na terceira com a exceção
+original; outro erro sem repetição; confirmação recuperada e esgotada; e o seam relendo a
+confirmação sem repetir o delegate físico. `Test-ApiPlanPersistenceSeamCoverage.ps1`: nenhuma
+chamada a `DataType.ParseInto` ou `SDTStructure` fora da repetição (13 encontradas). Build
+canônica com 0 avisos; satélite U13 com 0 erros.
+
+**Validação na IDE pendente.** Instalar a DLL e repetir o ciclo que reproduziu — Remover, reabrir
+a KB, Wizard — observando as linhas `[B109] Leitura repetida`. Ausência de linha é ausência de
+corrida, não prova da mitigação.
+
+**Primeira rodada na IDE com a DLL da mitigação (2026-09-25).** Antes da rodada, o usuário apagou
+à mão a API da `Empresa` e o File do diário, e fechou a IDE. Reabertura e Wizard com as mesmas
+opções: `SuccessWithWarnings`, `Criados=51`, `Atualizados=3`, `Bloqueados=0`, 56 recibos
+confirmados, diário recriado (`Created=True`, `FileId=148`) e `Completed/Completed`. Nenhuma linha
+`[B109] Leitura repetida`: a corrida não ocorreu e a mitigação não foi exercida; a rodada prova só
+que o caminho normal não regrediu. Observação sem hipótese: 29,8 s, contra 110 s a 120 s dos
+Applies bem-sucedidos do dia; abertura do contrato em 570 ms, contra 1,6 s a 2,3 s; nenhum aviso
+de Stencil — mas o reteste 1, de 113 s, também não teve aviso.
+
+## 10. Unificação e ampliação do critério (2026-09-25)
+
+**Um defeito só.** O `B109` deixa de ser família de ramos:
+
+- antigo **ramo C** (confirmação `Unreadable` com `TargetInvocationException` ou `UdmException`):
+  reproduzido duas vezes, com stack na segunda — é a corrida do SDK;
+- antigo **ramo A** (`Collection was modified` sem embrulho; quatro ocorrências em 2026-09-04 e
+  2026-09-05, sem stack): atribuído à mesma corrida **por hipótese** — mesma exceção, mesmos
+  caminhos (Business Component, List, `Save()` de API). A hipótese própria dele, reentrância por
+  `Application.DoEvents()`, perdeu a base com a stack síncrona da seção 8;
+- antigo **ramo B** (`ValidationException` em `KBObjectManager.PrepareSave`): ocorrência distinta,
+  encerrada em 2026-09-05, fora da família.
+
+Um `Collection was modified` fora do `SetInitialValues` seria outro defeito, com item próprio. A
+sonda, instalada em todas as etapas, mostra de onde vem.
+
+**Critério ampliado.** As ocorrências do antigo ramo A chegaram sem o embrulho `UdmException`. Com
+o critério original, a mesma corrida nesse formato não seria repetida. O critério de
+`ApiPlanSdkReadRetry.IsSdkDeserializationRace` passou a exigir só uma `InvalidOperationException`
+com `PropertyManager.SetInitialValues` na stack, em qualquer nível da cadeia. O frame identifica a
+corrida; o embrulho não acrescentava segurança. Continua sem repetição um `Collection was
+modified` de outra origem, e `Save()` continua nunca repetido. O gate do núcleo ganhou o caso da
+corrida sem embrulho (repete) e manteve o de `Collection was modified` sem o frame (não repete).
+Build canônica com 0 avisos; satélite U13 com 0 erros.

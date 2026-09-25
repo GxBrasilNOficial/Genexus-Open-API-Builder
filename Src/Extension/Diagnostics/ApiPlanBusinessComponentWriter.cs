@@ -974,7 +974,7 @@ internal static class ApiPlanBusinessComponentWriter
 
     private static bool TrySetVariableType(KBModel model, ApiPlanKbObjectNameIndex kbIndex, Variable variable, string dataType) =>
         TrySetAttributeBasedOn(kbIndex, variable, dataType) ||
-        DataType.ParseInto(model, dataType, variable);
+        ApiPlanSdkReadRetry.Run("Tipo '" + dataType + "'", () => DataType.ParseInto(model, dataType, variable));
 
     private static bool SameKbObject(KBObject? current, KBObject? expected)
     {

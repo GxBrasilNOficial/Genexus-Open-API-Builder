@@ -1035,7 +1035,7 @@ internal static class ApiPlanListProcedureWriter
         foreach (var variable in variables)
         {
             var item = new Variable("GOABB070TypeProbe" + index, procedure.Variables);
-            if (!TrySetAttributeBasedOn(kbIndex, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            if (!TrySetAttributeBasedOn(kbIndex, item, variable.DataType) && !ApiPlanSdkReadRetry.Run("Tipo '" + variable.DataType + "'", () => DataType.ParseInto(model, variable.DataType, item)))
                 throw new InvalidOperationException($"B070 bloqueado: tipo da variavel '&{variable.Name}' nao foi resolvido antes da escrita: '{variable.DataType}'. Nenhuma alteracao foi feita.");
             index++;
         }
@@ -1047,7 +1047,7 @@ internal static class ApiPlanListProcedureWriter
         foreach (var variable in variables)
         {
             var item = new Variable("GOABB070ApiTypeProbe" + index, api.Variables);
-            if (!TrySetAttributeBasedOn(kbIndex, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            if (!TrySetAttributeBasedOn(kbIndex, item, variable.DataType) && !ApiPlanSdkReadRetry.Run("Tipo '" + variable.DataType + "'", () => DataType.ParseInto(model, variable.DataType, item)))
                 throw new InvalidOperationException($"B070 bloqueado: tipo da variavel de API '&{variable.Name}' nao foi resolvido antes da escrita: '{variable.DataType}'. Nenhuma alteracao foi feita.");
             index++;
         }
@@ -1219,7 +1219,7 @@ internal static class ApiPlanListProcedureWriter
         foreach (var variable in variables)
         {
             var item = new Variable(variable.Name, procedure.Variables);
-            if (!TrySetAttributeBasedOn(kbIndex, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            if (!TrySetAttributeBasedOn(kbIndex, item, variable.DataType) && !ApiPlanSdkReadRetry.Run("Tipo '" + variable.DataType + "'", () => DataType.ParseInto(model, variable.DataType, item)))
                 throw new InvalidOperationException($"B070 bloqueado: tipo da variavel '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
 
             item.IsCollection = variable.IsCollection;
@@ -1237,7 +1237,7 @@ internal static class ApiPlanListProcedureWriter
         foreach (var variable in variables)
         {
             var item = new Variable(variable.Name, api.Variables);
-            if (!TrySetAttributeBasedOn(kbIndex, item, variable.DataType) && !DataType.ParseInto(model, variable.DataType, item))
+            if (!TrySetAttributeBasedOn(kbIndex, item, variable.DataType) && !ApiPlanSdkReadRetry.Run("Tipo '" + variable.DataType + "'", () => DataType.ParseInto(model, variable.DataType, item)))
                 throw new InvalidOperationException($"B070 bloqueado: tipo da variavel de API '&{variable.Name}' nao foi resolvido: '{variable.DataType}'. Nenhuma alteracao foi feita.");
 
             item.IsCollection = variable.IsCollection;
@@ -1279,7 +1279,7 @@ internal static class ApiPlanListProcedureWriter
         var current = procedure.Variables.GetVariable(variable.Name, false);
         if (current is null) return false;
         var expected = new Variable(variable.Name, procedure.Variables);
-        if (!TrySetAttributeBasedOn(kbIndex, expected, variable.DataType) && !DataType.ParseInto(model, variable.DataType, expected)) return false;
+        if (!TrySetAttributeBasedOn(kbIndex, expected, variable.DataType) && !ApiPlanSdkReadRetry.Run("Tipo '" + variable.DataType + "'", () => DataType.ParseInto(model, variable.DataType, expected))) return false;
         expected.IsCollection = variable.IsCollection;
         return MatchesVariableSpec(current, expected);
     }
@@ -1289,7 +1289,7 @@ internal static class ApiPlanListProcedureWriter
         var current = api.Variables.GetVariable(variable.Name, false);
         if (current is null) return false;
         var expected = new Variable(variable.Name, api.Variables);
-        if (!TrySetAttributeBasedOn(kbIndex, expected, variable.DataType) && !DataType.ParseInto(model, variable.DataType, expected)) return false;
+        if (!TrySetAttributeBasedOn(kbIndex, expected, variable.DataType) && !ApiPlanSdkReadRetry.Run("Tipo '" + variable.DataType + "'", () => DataType.ParseInto(model, variable.DataType, expected))) return false;
         expected.IsCollection = variable.IsCollection;
         return MatchesVariableSpec(current, expected);
     }

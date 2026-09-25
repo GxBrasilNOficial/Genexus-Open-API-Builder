@@ -2774,6 +2774,13 @@ public sealed class Package : AbstractPackageUI
         // caminhos — sucesso, bloqueio, falha de etapa e aborto.
         ExtensionBusyProgressScope.CloseCurrent();
 
+        // B109: leituras repetidas pela corrida do SDK na desserialização de SDT. Publicadas
+        // aqui porque todo caminho que mostra relatório passa por este ponto.
+        foreach (var retryLine in ApiPlanSdkReadRetry.Drain())
+        {
+            WriteOutput("[Genexus Open API Builder]" + retryLine);
+        }
+
         // B082: a apresentacao do relatorio roda dentro do escopo de medicao do Sync,
         // mas nao faz parte da operacao medida. Suspender evita atribuir a ela as
         // leituras de TryResolveMainObjectFromKb e de qualquer consulta futura daqui.

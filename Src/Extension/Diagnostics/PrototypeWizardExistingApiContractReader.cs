@@ -352,7 +352,7 @@ internal static class PrototypeWizardExistingApiContractReader
         // StructureItemCollection não implementa IEnumerable<SDTItem>; o cast genérico falha em runtime.
         // O padrão validado em ApiPlanTransactionSyncOrchestrator é foreach (SDTItem item in Items).
         var names = new List<string>();
-        foreach (SDTItem item in matches[0].SDTStructure.Root.Items)
+        foreach (SDTItem item in ApiPlanSdkReadRetry.Run("Estrutura do SDT '" + matches[0].Name + "'", () => matches[0].SDTStructure.Root).Items)
         {
             if (!string.IsNullOrWhiteSpace(item.Name))
             {

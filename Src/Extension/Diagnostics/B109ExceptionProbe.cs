@@ -23,7 +23,7 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// ilegível carrega a exceção em <see cref="PersistenceConfirmation.Cause"/>, repassada como
 /// inner de «Persistência ... não foi confirmada» (B109 ramo C, 2026-09-25).
 ///
-/// Sonda temporária: sai no fechamento explícito de B109, nos ramos A e C.
+/// Sonda temporária: sai no fechamento explícito de B109 (unificado num defeito só em 2026-09-25).
 /// </summary>
 internal static class B109ExceptionProbe
 {

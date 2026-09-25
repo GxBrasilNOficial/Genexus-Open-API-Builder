@@ -28,9 +28,157 @@ public static class PersistenceTestFaultScope
         ApiPlanPersistenceCore.BeginFaultInjection(injector);
 }
 "@
+# B109: exceções com os nomes reais do SDK. Ficam num assembly à parte porque o núcleo usa
+# namespace de arquivo, que não admite outros namespaces na mesma unidade de compilação.
+$sdkRaceFakesSource = @"
+namespace Artech.Udm.Framework.Exceptions
+{
+    public class UdmException : System.Exception
+    {
+        public UdmException(string message, System.Exception inner) : base(message, inner) { }
+    }
+}
+namespace Artech.Common.Properties
+{
+    public static class PropertyManager
+    {
+        public static void SetInitialValues()
+        {
+            throw new System.InvalidOperationException("Collection was modified; enumeration operation may not execute.");
+        }
+    }
+}
+namespace SdkRaceFakes
+{
+    public static class Thrower
+    {
+        public static System.Exception Race()
+        {
+            try { Artech.Common.Properties.PropertyManager.SetInitialValues(); }
+            catch (System.Exception inner) { return new Artech.Udm.Framework.Exceptions.UdmException("Unable to Deserialize Data.", inner); }
+            return null;
+        }
+
+        public static System.Exception WrappedRace() => new System.Reflection.TargetInvocationException(Race());
+
+        public static System.Exception BareRace()
+        {
+            try { Artech.Common.Properties.PropertyManager.SetInitialValues(); }
+            catch (System.Exception race) { return race; }
+            return null;
+        }
+
+        public static System.Exception CollectionModifiedElsewhere()
+        {
+            try { throw new System.InvalidOperationException("Collection was modified; enumeration operation may not execute."); }
+            catch (System.Exception inner) { return new Artech.Udm.Framework.Exceptions.UdmException("Unable to Deserialize Data.", inner); }
+        }
+    }
+}
+"@
+$sdkRaceFakesPath = Join-Path ([IO.Path]::GetTempPath()) ("SdkRaceFakes-" + [Guid]::NewGuid().ToString('N') + '.dll')
+Add-Type -TypeDefinition $sdkRaceFakesSource -OutputAssembly $sdkRaceFakesPath -OutputType Library
+[void][Reflection.Assembly]::LoadFrom($sdkRaceFakesPath)
+
+$retryHarnessSource = @"
+public sealed class SdkReadRetryResult
+{
+    public int Calls { get; set; }
+    public int Pauses { get; set; }
+    public bool Threw { get; set; }
+    public string Lines { get; set; } = string.Empty;
+    public PersistenceConfirmationStatus Status { get; set; }
+    public PersistenceOutcome Outcome { get; set; }
+}
+public static class SdkReadRetryHarness
+{
+    public static bool IsRace(System.Exception exception) => ApiPlanSdkReadRetry.IsSdkDeserializationRace(exception);
+
+    public static SdkReadRetryResult RunFailing(int failures, System.Func<System.Exception> failure)
+    {
+        var result = Prepare();
+        try
+        {
+            ApiPlanSdkReadRetry.Run("fixture", () =>
+            {
+                result.Calls++;
+                if (result.Calls <= failures)
+                {
+                    throw failure();
+                }
+
+                return result.Calls;
+            });
+        }
+        catch (System.Exception)
+        {
+            result.Threw = true;
+        }
+
+        return Finish(result);
+    }
+
+    public static SdkReadRetryResult ConfirmFailing(int failures, System.Func<System.Exception> race)
+    {
+        var result = Prepare();
+        var observation = ApiPlanSdkReadRetry.Confirm("fixture", () =>
+        {
+            result.Calls++;
+            return result.Calls <= failures
+                ? PersistenceConfirmation.Unreadable(race())
+                : PersistenceConfirmation.Confirmed("fixture");
+        });
+        result.Status = observation.Status;
+        return Finish(result);
+    }
+
+    public static SdkReadRetryResult PersistWithRaceOnFirstConfirmation(System.Func<System.Exception> race)
+    {
+        var result = Prepare();
+        var log = new ApiPlanPersistenceLog(System.Guid.NewGuid());
+        using (ApiPlanPersistenceCore.Begin(log))
+        {
+            var receipt = ApiPlanPersistenceCore.Persist(
+                PersistenceFaultPoint.SdtSave,
+                "Save",
+                "Sdt",
+                "SDTs",
+                "sdtFixture",
+                new GuidIdentity(System.Guid.NewGuid()),
+                () => { },
+                () =>
+                {
+                    result.Calls++;
+                    return result.Calls == 1
+                        ? PersistenceConfirmation.Unreadable(race())
+                        : PersistenceConfirmation.Confirmed("sdtFixture");
+                });
+            result.Outcome = receipt!.Outcome;
+            result.Status = receipt.Confirmation;
+        }
+
+        return Finish(result);
+    }
+
+    private static SdkReadRetryResult Prepare()
+    {
+        var result = new SdkReadRetryResult();
+        ApiPlanSdkReadRetry.Drain();
+        ApiPlanSdkReadRetry.Pause = milliseconds => result.Pauses++;
+        return result;
+    }
+
+    private static SdkReadRetryResult Finish(SdkReadRetryResult result)
+    {
+        result.Lines = string.Join("\n", ApiPlanSdkReadRetry.Drain());
+        return result;
+    }
+}
+"@
+
 $logBody = $logSource -replace '(?m)^#nullable enable\r?\n', '' -replace '(?m)^using [^\r\n]+\r?\n', '' -replace '(?m)^namespace [^\r\n]+\r?\n', ''
 $injectorBody = $injectorSource -replace '(?m)^using [^\r\n]+\r?\n', ''
-Add-Type -TypeDefinition ("using System.Linq;`r`n" + $coreSource + [Environment]::NewLine + $logBody + [Environment]::NewLine + $injectorBody)
+Add-Type -TypeDefinition ("using System.Linq;`r`n" + $coreSource + [Environment]::NewLine + $logBody + [Environment]::NewLine + $injectorBody + [Environment]::NewLine + $retryHarnessSource)
 
 function Assert-True {
     param([bool]$Condition, [string]$Message)
@@ -495,5 +643,51 @@ Assert-True ($newFileIdentity.StableKey -ne $reusedFileIdentity.StableKey) 'File
 Assert-True ($newFileIdentity.Display -match 'apiTeste_Metadata') 'Identidade File nova deve preservar o nome canônico.'
 Assert-True ($newFileIdentity.StableKey -match 'sha256-new') 'Identidade File nova deve preservar os bytes esperados.'
 Assert-True ($reusedFileIdentity.StableKey -match 'sha256-reused') 'Identidade File reutilizada deve preservar os bytes esperados.'
+
+# B109: repetição de leitura pela corrida do SDK na desserialização sob demanda.
+$retry = [GenexusOpenApiBuilder.Extension.Diagnostics.SdkReadRetryHarness]
+$race = [Func[Exception]] { [SdkRaceFakes.Thrower]::Race() }
+$wrappedRace = [Func[Exception]] { [SdkRaceFakes.Thrower]::WrappedRace() }
+$otherError = [Func[Exception]] { [InvalidOperationException]::new('outro erro') }
+$statusType = [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceConfirmationStatus]
+$outcomeType = [GenexusOpenApiBuilder.Extension.Diagnostics.PersistenceOutcome]
+Assert-True ($retry::IsRace([SdkRaceFakes.Thrower]::Race())) 'UdmException com SetInitialValues na stack do inner é a corrida.'
+Assert-True ($retry::IsRace([SdkRaceFakes.Thrower]::WrappedRace())) 'A corrida embrulhada em TargetInvocationException também casa.'
+Assert-True (-not $retry::IsRace([SdkRaceFakes.Thrower]::CollectionModifiedElsewhere())) 'Collection was modified fora de SetInitialValues não casa: o critério é estreito.'
+Assert-True ($retry::IsRace([SdkRaceFakes.Thrower]::BareRace())) 'A corrida sem o embrulho UdmException também casa: é o formato das ocorrências de 2026-09-04 e 2026-09-05.'
+Assert-True (-not $retry::IsRace([InvalidOperationException]::new('Collection was modified; enumeration operation may not execute.'))) 'Collection was modified sem SetInitialValues na stack não casa.'
+
+$recovered = $retry::RunFailing(1, $race)
+Assert-Equal 2 $recovered.Calls 'Uma corrida: a leitura é repetida uma vez.'
+Assert-Equal 1 $recovered.Pauses 'Uma pausa antes da segunda tentativa.'
+Assert-True (-not $recovered.Threw) 'Leitura recuperada não propaga exceção.'
+Assert-True ($recovered.Lines.Contains("Ponto='fixture', Tentativa=2/3, Resultado=Recuperada")) 'A recuperação é registrada para a Output.'
+
+$exhausted = $retry::RunFailing(3, $race)
+Assert-Equal 3 $exhausted.Calls 'O limite é de três tentativas.'
+Assert-Equal 2 $exhausted.Pauses 'Duas pausas entre três tentativas.'
+Assert-True $exhausted.Threw 'Esgotadas as tentativas, a exceção original segue.'
+Assert-True ($exhausted.Lines.Contains('Tentativa=3/3, Resultado=Esgotada')) 'O esgotamento é registrado para a Output.'
+
+$other = $retry::RunFailing(1, $otherError)
+Assert-Equal 1 $other.Calls 'Outro erro não é repetido.'
+Assert-True $other.Threw 'Outro erro propaga na primeira tentativa.'
+Assert-Equal '' $other.Lines 'Outro erro não gera linha de repetição.'
+
+$confirmRecovered = $retry::ConfirmFailing(1, $wrappedRace)
+Assert-Equal $statusType::Confirmed $confirmRecovered.Status 'Confirmação ilegível pela corrida é relida e confirma.'
+Assert-Equal 2 $confirmRecovered.Calls 'A confirmação é lida duas vezes.'
+Assert-True ($confirmRecovered.Lines.Contains('Resultado=Recuperada')) 'A confirmação recuperada é registrada.'
+
+$confirmExhausted = $retry::ConfirmFailing(3, $wrappedRace)
+Assert-Equal $statusType::Unreadable $confirmExhausted.Status 'Esgotadas as tentativas, a confirmação continua ilegível.'
+Assert-Equal 3 $confirmExhausted.Calls 'A confirmação é lida no máximo três vezes.'
+
+$persisted = $retry::PersistWithRaceOnFirstConfirmation($race)
+Assert-Equal $outcomeType::Confirmed $persisted.Outcome 'O seam relê a confirmação e o recibo sai Confirmed.'
+Assert-Equal 2 $persisted.Calls 'O seam chama a confirmação duas vezes; o delegate físico não é repetido.'
+Assert-True ($persisted.Lines.Contains("Confirmação de Sdt 'sdtFixture'")) 'O ponto da repetição identifica o objeto.'
+
+Remove-Item -LiteralPath $sdkRaceFakesPath -ErrorAction SilentlyContinue
 
 Write-Output 'PASS: ApiPlanPersistenceCore'

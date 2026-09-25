@@ -12,7 +12,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ### Fixed
 
-- `B109` ramo C — diagnóstico de confirmação ilegível: quando a releitura pós-Save de um objeto
+- `B109` — falha intermitente `Collection was modified` no Apply e no Sync; diagnóstico e mitigação: quando a releitura pós-Save de um objeto
   lançava exceção, o recibo guardava só o tipo e a mensagem da camada externa, e a exceção
   «Persistência ... não foi confirmada» saía sem inner. Uma `TargetInvocationException` chegava
   à Output com a mensagem genérica e sem a causa real, mesmo com a sonda `[B109]` instalada.
@@ -25,7 +25,13 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   lacunas existiam desde a `0.1.0-alpha.8`; é só diagnóstico e não muda o que é gravado nem o
   resultado da operação. A primeira ocorrência depois da correção (2026-09-25, primeiro SDT da
   `Empresa`) trouxe `UdmException: Unable to Deserialize Data` com `Collection was modified` como
-  inner, o que aproxima os ramos A e C. A causa continua aberta. Evidência:
+  inner, e a segunda, com stack completa, localizou a falha no SDK: a desserialização sob
+  demanda da estrutura de um SDT percorre sem trava uma coleção de definições de propriedades
+  compartilhada por tipo. A extensão passou a **repetir a leitura** — confirmação pós-Save,
+  resolução de tipo por nome e estrutura de SDT — quando a falha vem desse ponto do SDK
+  (`PropertyManager.SetInitialValues` na stack, com ou sem embrulho), até três tentativas, com a linha `[B109] Leitura repetida` na Output; `Save()` nunca é repetido. Até
+  aqui, essa falha interrompia o Apply ou o Sync ao acaso — observada desde 2026-09-04 e
+  presente nas versões publicadas, porque o defeito é do SDK. Sem validação na IDE. Evidência:
   `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
 ### Planned

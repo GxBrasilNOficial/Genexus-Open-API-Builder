@@ -478,7 +478,9 @@ public static class ApiPlanPersistenceCore
             var afterAction = GetFaultAction(faultPoint, attempt, after: true);
             ApplyAfterFault(afterAction);
 
-            var observation = Confirm(confirm, ref confirmationRead);
+            var observation = ApiPlanSdkReadRetry.Confirm(
+                "Confirmação de " + objectType + " '" + plannedName + "'",
+                () => Confirm(confirm, ref confirmationRead));
             observation = OverrideConfirmation(observation, afterAction);
             var outcome = ResolveOutcome(operationKind, observation);
             log.CompleteReceipt(
@@ -753,6 +755,152 @@ public static class ApiPlanPersistenceCore
             _disposed = true;
             _restore();
             _onDispose?.Invoke();
+        }
+    }
+}
+
+/// <summary>
+/// B109 — repetição de leitura para a corrida do SDK na desserialização sob demanda.
+///
+/// Medido em 2026-09-25: ao desserializar a estrutura de um SDT, cada item vira uma entidade
+/// cujo construtor percorre, em <c>PropertyManager.SetInitialValues()</c>, a coleção de
+/// definições de propriedades do tipo. Essa coleção é compartilhada por todas as instâncias do
+/// tipo (cache estático em <c>PropertiesObject</c>); <c>AddDefinition</c> a altera sob trava da
+/// instância, e <c>SetInitialValues</c> a percorre sem trava. Quando alguém acrescenta uma
+/// definição no meio da enumeração, a leitura falha com <c>UdmException</c> e inner
+/// <c>Collection was modified</c>.
+///
+/// Só leituras passam por aqui — confirmação pós-Save, resolução de tipo por nome, estrutura de
+/// SDT. <c>Save()</c> nunca é repetido. O critério é estreito de propósito: uma
+/// <c>InvalidOperationException</c> com <c>SetInitialValues</c> na stack, em qualquer nível da
+/// cadeia. O embrulho <c>UdmException</c> não é exigido: as ocorrências de 2026-09-04 e 2026-09-05
+/// chegaram sem ele, e o frame já identifica a corrida.
+/// </summary>
+internal static class ApiPlanSdkReadRetry
+{
+    internal const int MaxAttempts = 3;
+
+    private const string RaceFrame = "PropertyManager.SetInitialValues";
+    private static readonly int[] PausesMs = { 200, 500 };
+    private static readonly object Gate = new object();
+    private static readonly List<string> Events = new List<string>();
+
+    /// <summary>Gancho de teste: substitui a pausa real.</summary>
+    internal static Action<int> Pause { get; set; } = milliseconds => System.Threading.Thread.Sleep(milliseconds);
+
+    public static bool IsSdkDeserializationRace(Exception? exception)
+    {
+        var current = exception;
+        for (var depth = 0; current is not null && depth < 10; depth++)
+        {
+            if (current is InvalidOperationException
+                && (current.StackTrace ?? string.Empty).IndexOf(RaceFrame, StringComparison.Ordinal) >= 0)
+            {
+                return true;
+            }
+
+            current = current.InnerException;
+        }
+
+        return false;
+    }
+
+    public static T Run<T>(string point, Func<T> read)
+    {
+        if (read is null)
+        {
+            throw new ArgumentNullException(nameof(read));
+        }
+
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                var result = read();
+                if (attempt > 1)
+                {
+                    Record($"[B109] Leitura repetida: Ponto='{point}', Tentativa={attempt}/{MaxAttempts}, Resultado=Recuperada.");
+                }
+
+                return result;
+            }
+            catch (Exception exception) when (IsSdkDeserializationRace(exception))
+            {
+                if (attempt >= MaxAttempts)
+                {
+                    Record($"[B109] Leitura repetida: Ponto='{point}', Tentativa={attempt}/{MaxAttempts}, Resultado=Esgotada.");
+                    throw;
+                }
+
+                Pause(PausesMs[Math.Min(attempt - 1, PausesMs.Length - 1)]);
+            }
+        }
+    }
+
+    public static void Run(string point, Action read)
+    {
+        if (read is null)
+        {
+            throw new ArgumentNullException(nameof(read));
+        }
+
+        Run(point, () =>
+        {
+            read();
+            return true;
+        });
+    }
+
+    /// <summary>
+    /// Confirmação ilegível pela corrida: relê até o limite. As confirmações do seam capturam a
+    /// exceção e a devolvem em <see cref="PersistenceConfirmation.Cause"/>, por isso a decisão
+    /// é tomada pelo resultado, não por <c>catch</c>.
+    /// </summary>
+    public static PersistenceConfirmation Confirm(string point, Func<PersistenceConfirmation> confirm)
+    {
+        if (confirm is null)
+        {
+            throw new ArgumentNullException(nameof(confirm));
+        }
+
+        var observation = confirm();
+        for (var attempt = 1;
+            observation.Status == PersistenceConfirmationStatus.Unreadable && IsSdkDeserializationRace(observation.Cause);
+            attempt++)
+        {
+            if (attempt >= MaxAttempts)
+            {
+                Record($"[B109] Leitura repetida: Ponto='{point}', Tentativa={attempt}/{MaxAttempts}, Resultado=Esgotada.");
+                return observation;
+            }
+
+            Pause(PausesMs[Math.Min(attempt - 1, PausesMs.Length - 1)]);
+            observation = confirm();
+            if (observation.Status != PersistenceConfirmationStatus.Unreadable || !IsSdkDeserializationRace(observation.Cause))
+            {
+                Record($"[B109] Leitura repetida: Ponto='{point}', Tentativa={attempt + 1}/{MaxAttempts}, Resultado=Recuperada.");
+            }
+        }
+
+        return observation;
+    }
+
+    /// <summary>Linhas pendentes para a Output; esvazia a fila.</summary>
+    public static IReadOnlyList<string> Drain()
+    {
+        lock (Gate)
+        {
+            var lines = Events.ToArray();
+            Events.Clear();
+            return lines;
+        }
+    }
+
+    private static void Record(string line)
+    {
+        lock (Gate)
+        {
+            Events.Add(line);
         }
     }
 }

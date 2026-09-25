@@ -161,9 +161,13 @@ ação no backlog em **sessão nova**. Nenhum item é promovido aqui nesta data.
 ~~próxima ação única = reinstalar a DLL e tentar reproduzir o ramo C~~ — reproduziu na mesma
 data (item 174), e a sonda faltava na etapa de SDTs. ~~Próxima ação única = reinstalar a DLL,
 `Recuperar operação interrompida` e repetir o Apply da `Empresa`~~ — feito; dois retestes sem
-reprodução (item 176). **`B109` ramos A e C ficam condicionados à reprodução**, com captura
-completa instalada. **Próxima ação única = publicar esta frente (commit + pré-push) e escolher a
-próxima ação no backlog**; `B130` subiu para média no mesmo dia. Evidência:
+reprodução (item 176). ~~`B109` ramos A e C ficam condicionados à reprodução~~ — reproduziu de
+novo à tarde, com stack completa (item 177): defeito do SDK na desserialização sob demanda de
+SDT, ramos A e C unificados. ~~Próxima ação única = desenhar e aprovar a mitigação escolhida e
+implementá-la~~ — implementada offline (item 178); uma rodada na IDE sem corrida passou limpa, e
+os ramos foram unificados num defeito só, com o critério da repetição sem exigir `UdmException`
+(item 179). **Próxima ação única = repetir na IDE o ciclo que reproduziu (Remover, reabrir a KB,
+Wizard) na `Empresa`, observando as linhas `[B109] Leitura repetida`**. Evidência:
 `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
 ~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
@@ -387,18 +391,31 @@ Medições que sustentam os planos: `Docs/Implementation/2026-09-04-B111-SONDAS-
 
 | Instrumento | Por que continua | Sai quando |
 |---|---|---|
-| `B109ExceptionProbe` | sem ela, uma reincidência volta a chegar como uma linha de mensagem, sem stack | `B109` fechado nos ramos abertos (A e C) |
-| `ApiPlanSaveBoundaryProbe` (rótulo `[B109]`) | é o adaptador observável do seam da F2 e preserva o diagnóstico de mutação entre Pump e Save para o ramo A de B109 | F2 aceita; retirar somente no fechamento explícito de B109 |
-| preferência «Suprimir a atualização da tela durante as gravações» | é o experimento do ramo A, e nunca foi acionado | idem |
+| `B109ExceptionProbe` | sem ela, uma reincidência volta a chegar como uma linha de mensagem, sem stack | `B109` fechado |
+| `ApiPlanSaveBoundaryProbe` (rótulo `[B109]`) | é o adaptador observável do seam da F2 e preserva o diagnóstico de mutação entre Pump e Save (hipótese do antigo ramo A) | F2 aceita; retirar somente no fechamento explícito de B109 |
+| preferência «Suprimir a atualização da tela durante as gravações» | é o experimento da hipótese `DoEvents`, nunca acionado; a stack de 2026-09-25 a enfraqueceu | idem |
 | `ApiPlanMetadataVisibilityProbe` (rótulo `[B115]`) | diagnóstico de metadata órfã | `B115` fechado |
 
 Ao retirar qualquer um: executar `Tools/Test-ExtensionCommandRegistration.ps1` se o manifesto for tocado, e o gate mecânico em seguida.
 
 `ApiPlanScanProbe` **não** é temporária: é instrumentação de produção do `B082`, usada por vários writers.
 
-## Investigação da falha do Business Component na KB grande — ramos A e C abertos; B encerrado
+## Investigação do `B109` — corrida do SDK na desserialização de SDT; `ValidationException` encerrada
 
-**Três ramos sob `B109`.** O encerramento de 2026-09-05 vale só para o ramo B. Em 2026-09-24
+**Unificado em 2026-09-25.** O `B109` é **um defeito só**: a corrida do SDK na desserialização sob
+demanda da estrutura de um SDT (`PropertyManager.SetInitialValues` percorre sem trava uma coleção
+de definições compartilhada por tipo). O antigo **ramo C** foi reproduzido duas vezes com essa
+causa; as quatro ocorrências do antigo **ramo A** (`Collection was modified` sem embrulho, sem
+stack) são atribuídas a ela **por hipótese** — mesma exceção, mesmos caminhos, e a hipótese própria
+do ramo A (reentrância por `DoEvents`) perdeu a base com a stack síncrona. O antigo **ramo B**
+(`ValidationException`) é ocorrência distinta, encerrada em 2026-09-05, fora da família. Um
+`Collection was modified` fora do `SetInitialValues` seria outro defeito, com item próprio; a
+sonda mostra de onde veio. Mitigação: repetição de leitura (`ApiPlanSdkReadRetry`), com critério
+pelo frame `SetInitialValues`, com ou sem `UdmException`. Evidência:
+`Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seções 8 a 10. Os parágrafos abaixo
+são o registro anterior à unificação.
+
+**Três ramos sob `B109` (registro até 2026-09-24).** O encerramento de 2026-09-05 vale só para o ramo B. Em 2026-09-24
 foi registrado o **ramo C** (confirmação `Unreadable` / `TargetInvocationException` no Update).
 
 O **ramo A** — `Collection was modified; enumeration operation may not execute`, quatro ocorrências — **permanece sem causa confirmada**. Ele não voltou a ocorrer na sequência limpa, o que é ausência de reprodução, não explicação. A hipótese da reentrância por `Application.DoEvents()` segue **não testada**: o interruptor está instalado e nunca foi acionado. Desde 2026-09-06 ele é a preferência **«Suprimir a atualização da tela durante as gravações»**, em Preferências do Wizard → Diagnóstico e recuperação, desligada por padrão e gravada na KB; antes disso era a variável de ambiente `GOAB_B109_SUPPRESS_PUMP`, que dependia do Windows e não tinha onde avisar o efeito colateral. Vale no Apply do Wizard, onde estão as quatro ocorrências. É frente condicionada à reprodução — se o sintoma reaparecer, o experimento mínimo é repetir a mesma operação com o Pump suprimido e comparar.
@@ -431,18 +448,19 @@ sem reproduzir (diário `Completed`, 56 recibos `Confirmed`). **Não validado na
 não se provoca por clique. Próximo passo sugerido: instalar a DLL e repetir o Apply da `Empresa`
 para tentar reproduzir. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
-**Instrumentação instalada, para retomar os ramos A e C** (sondas temporárias; ver o checklist de reversão):
+**Instrumentação instalada para o `B109`** (sondas temporárias; ver o checklist de reversão):
 
 - `B109ExceptionProbe` publica na Output a cadeia completa de exceções — tipo, mensagem, `Source`, `TargetSite` e stack de cada nível —, além de Rules, `ExpectedVariables` × `CurrentVariables` e `SourceLines` da Procedure recusada;
 - `ApiPlanSaveBoundaryProbe` registra as fronteiras Pump/Save com fingerprint do estado em memória antes e depois de cada uma, para separar mutação externa de falha intrínseca de validação — publica sob o rótulo `[B109]`;
 - `ApiPlanMetadataVisibilityProbe` varre os Files e tenta a leitura direta por `Id` da metadata — rótulo `[B115]`. Desde 2026-09-06 a segunda passagem, que mede a estabilidade do `GetAll`, e o detalhamento dos Files só rodam quando a metadata está **ausente** na primeira: no caminho normal a sonda custa uma varredura e uma leitura pontual;
 - a preferência «Suprimir a atualização da tela durante as gravações» suprime os `Application.DoEvents()` entre os Saves no Apply do Wizard; enquanto ativa, a janela congela e o botão Abortar não responde, e o Apply publica uma linha `[B109]` dizendo isso.
 
-**Como reproduzir o cenário**, se o ramo A voltar: apagar **apenas** o API Object antes de cada tentativa. Com ele presente e sem metadata, o Wizard desliga as etapas de consumidor e a falha não ocorre — ou aceitar a recuperação de metadata órfã, que devolve o File e reabilita `Remover`. Desde 2026-09-06 ela é oferecida na **abertura** do Wizard, e o `Sincronizar` continua bloqueado depois dela: a metadata recuperada registra posse e inventário, não o contrato. Ver a seção 13 do plano da F3.
+**Como reproduzir o cenário**, se o `B109` voltar: apagar **apenas** o API Object antes de cada tentativa. Com ele presente e sem metadata, o Wizard desliga as etapas de consumidor e a falha não ocorre — ou aceitar a recuperação de metadata órfã, que devolve o File e reabilita `Remover`. Desde 2026-09-06 ela é oferecida na **abertura** do Wizard, e o `Sincronizar` continua bloqueado depois dela: a metadata recuperada registra posse e inventário, não o contrato. Ver a seção 13 do plano da F3.
 
-**`B109` precisa ser tratado** como família de falhas (A aberto, B fechado, C aberto), com um
+~~**`B109` precisa ser tratado** como família de falhas (A aberto, B fechado, C aberto), com um
 ramo por causa, em vez de "bug intermitente na etapa de Business Component". O enunciado
-original do backlog ainda descreve só o ramo A.
+original do backlog ainda descreve só o ramo A.~~ **Superado em 2026-09-25:** unificado num defeito
+só (abertura desta seção).
 
 ## Validação manual da F1
 
@@ -458,7 +476,7 @@ tentado, mas continua sem comprovação isolada e está registrado no `B121`. Ev
 `Docs/Implementation/2026-09-10-S-B111-F1-ACEITE-IDE.md` e
 `Docs/Implementation/2026-09-10-S-B111-F1-RECONCILIACAO-EVIDENCIA.md`.
 
-De `B109`, o ramo B foi encerrado; os ramos A e C permanecem abertos; ~~sem pauta promovida
+De `B109`, o ramo B foi encerrado; ~~os ramos A e C permanecem abertos~~ (unificados em 2026-09-25, item 179); ~~sem pauta promovida
 nesta data (investigação pós-push)~~ o ramo C foi promovido em 2026-09-25 (item 172). O `Rebuild All` do
 `NETFrameworkPostgreSQL` é pendência separada de environment e não bloqueia a F1. `B108` e o
 residual `B082` 1B/2/3 não competem com a F3, que entregou P0, P1, P2 e P3, as quatro validadas na IDE.
@@ -769,6 +787,12 @@ permanece fechado (2026-09-23).
 175. Em 2026-09-25, **`B130` registrado** (sem mudar a próxima ação única): o diário marca como `Update` objetos criados numa etapa interrompida, porque Create/Update vem da lista de criados do relatório final; observado no diálogo da recuperação da `Empresa`. Urgência baixa-média, com gatilho antes de qualquer uso de `inventory[].action` para decidir remoção ou reversão. `B124: sem documento dedicado porque é registro de backlog; a evidência está na seção 6 do documento do ramo C`.
 
 176. Em 2026-09-25, **dois retestes do ramo C sem reprodução** na `Empresa`: depois da recuperação (`Criados=49`, SDT da tentativa falhada reencontrado sem divergência — o defeito está na releitura, não no `Save()`) e nas mesmas condições da falha (Remover, Folder apagado à mão, IDE reaberta: `Criados=51`). Uma falha em três Applies; ramo C condicionado à reprodução. O reteste 1 mostrou que o Folder criado pelo Apply interrompido perde a posse e sobrevive ao Remover: `B130` elevado para média. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 7.
+
+177. Em 2026-09-25, **segunda reprodução do `B109`, com stack completa**: Build All nos dois environments, Remover e Wizard na `Empresa`, cada passo após reabrir a KB; a etapa de metadata falhou na verificação de posse do API Object (`DataType.ParseInto` → `SDT.get_SDTStructure` → `EnsureDeserialization` → `PropertyManager.SetInitialValues` → `Collection was modified`). Defeito no SDK; ramos A e C são o mesmo; `DoEvents` praticamente descartado para essa ocorrência. Achados colaterais: diário `Completed` com metadata ausente no Wizard (o `Recuperar` responde «nada a recuperar» no estado `B115`; a conferir contra o plano da F3) e o `B130` também em operação concluída (Folder). Mitigação escolhida pelo usuário: repetir a leitura. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 8.
+
+178. Em 2026-09-25, **mitigação do `B109` implementada offline**: `ApiPlanSdkReadRetry` repete, até três vezes, leituras que falham com `UdmException` e `PropertyManager.SetInitialValues` na stack do inner — confirmação pós-Save no seam, `DataType.ParseInto` (8) e `SDTStructure.Root` (5); `Save()` nunca é repetido; linha `[B109] Leitura repetida` na Output. Leitura das DLLs do SDK: definições de propriedades num cache estático por tipo, percorridas sem trava e alteradas sob trava da instância. Gates no núcleo e na cobertura do seam; build canônica com 0 avisos e satélite U13 com 0 erros. Não validado na IDE. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 9.
+
+179. Em 2026-09-25, **`B109` unificado num defeito só e critério da repetição ampliado**: uma rodada na IDE com a DLL da mitigação, depois de remoção manual da API e do diário, passou limpa sem corrida (`Criados=51`, 29,8 s — contra 110 s a 120 s dos Applies anteriores, sem explicação) e prova só que o caminho normal não regrediu. Os ramos A e C viraram um defeito (a corrida do SDK), com as ocorrências do A atribuídas por hipótese; o ramo B segue como ocorrência distinta e encerrada. O critério de `ApiPlanSdkReadRetry.IsSdkDeserializationRace` passou a aceitar o frame `SetInitialValues` com ou sem `UdmException`, cobrindo o formato das ocorrências antigas; um `Collection was modified` de outra origem continua sem repetição. Build canônica com 0 avisos, satélite U13 com 0 erros, gates verdes. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seções 9 e 10.
 
 ## Bloqueios e fatos ainda não validados
 

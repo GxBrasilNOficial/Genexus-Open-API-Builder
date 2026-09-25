@@ -169,4 +169,22 @@ for ($index = 0; $index -lt $packageLines.Count; $index++) {
     Assert-True ($block -match 'B109ExceptionProbe\.Describe\(') "Package.cs:$($index + 1) registra bloqueio de etapa sem publicar a cadeia pela B109ExceptionProbe."
 }
 
+# B109: resolução de tipo por nome e estrutura de SDT disparam a desserialização sob demanda em
+# que o SDK tem a corrida de PropertyManager.SetInitialValues. Toda chamada passa pela repetição
+# de leitura, na mesma linha.
+$sdkReadCalls = 0
+foreach ($path in $productionFiles) {
+    $relativePath = [IO.Path]::GetRelativePath($sourceRoot, $path)
+    $lineNumber = 0
+    foreach ($line in Get-Content -LiteralPath $path) {
+        $lineNumber++
+        if ($line.TrimStart().StartsWith('//', [StringComparison]::Ordinal)) { continue }
+        if ($line -match 'DataType\.ParseInto\(|\.SDTStructure\b') {
+            $sdkReadCalls++
+            Assert-True ($line.Contains('ApiPlanSdkReadRetry.Run(')) "${relativePath}:$lineNumber lê tipo ou estrutura de SDT sem ApiPlanSdkReadRetry.Run."
+        }
+    }
+}
+Assert-True ($sdkReadCalls -ge 13) "A trava de leitura B109 deveria encontrar ao menos 13 chamadas; encontrou $sdkReadCalls."
+
 Write-Output 'PASS: ApiPlanPersistenceSeamCoverage'
