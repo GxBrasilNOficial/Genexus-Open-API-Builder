@@ -295,7 +295,8 @@ Output; nunca repetir `Save()`. Desenho e diff a aprovar antes da implementaçã
 - critério estreito: a cadeia contém `Artech.Udm.Framework.Exceptions.UdmException` **e** uma
   `InvalidOperationException` com `PropertyManager.SetInitialValues` na stack; nenhum outro erro
   é repetido (**ampliado na mesma data** para dispensar a `UdmException`; ver a seção 10);
-- até 3 tentativas, pausas de 200 ms e 500 ms, sem `DoEvents`;
+- até 3 tentativas, pausas de 200 ms e 500 ms, sem `DoEvents` (**ampliado para 5**, com pausas até
+  2 s, depois da validação em campo; ver a seção 13);
 - cada recuperação ou esgotamento vira uma linha `[B109] Leitura repetida: Ponto='…',
   Tentativa=n/3, Resultado=Recuperada|Esgotada`, publicada na Output ~~no início do relatório final~~
   **na hora da repetição** (correção da seção 12);
@@ -420,3 +421,45 @@ esvaziamento no relatório final permanece como rede de segurança. Gates: no n�
 destino e nada sobra na fila, e falha do destino não derruba a leitura e cai na reserva; na
 cobertura do seam, o `Initialize` precisa configurar o destino. Build canônica com 0 avisos;
 satélite U13 com 0 erros. Exige reinstalar a DLL; manifesto e registro não mudam.
+
+## 13. Mitigação validada em campo (2026-09-25)
+
+DLL do commit `53736d2` (repetição com critério ampliado e publicação imediata), conferida por
+`Test-InstalledExtension.ps1` (`InstalledMatchesBuild : True`). Com a IDE reaberta: os comandos
+do menu de contexto da Transaction apareceram — o `Initialize` alterado rodou —, e o Wizard da
+`Empresa` foi aplicado **sobre a API existente** (caminho de reencontro: `Created=0`,
+`Reencountered=46` SDTs e 5 Procedures).
+
+Entre as linhas do List e da metadata, a Output registrou:
+
+```text
+[B109] Leitura repetida: Ponto='Tipo 'sdtEmpresa_API_Response'', Tentativa=3/3, Resultado=Recuperada.
+```
+
+A operação terminou em `SuccessWithWarnings`, `Criados=0`, `Atualizados=53`, `Bloqueados=0`,
+12 recibos confirmados, metadata `Reencountered`, diário `Completed/Completed`, 71 s. Um Wizard
+aberto e cancelado em seguida não deixou linha para trás.
+
+**Leitura.**
+
+- A corrida ocorreu e foi contornada: a resolução do tipo `sdtEmpresa_API_Response` falhou duas
+  vezes e passou na terceira. Sem a mitigação, a geração teria sido interrompida.
+- O ponto é o mesmo da falha da seção 8 — a verificação de posse do API Object antes da gravação
+  da metadata —, localizado pela posição da linha na Output (seção 12).
+- A estrutura lida depois da repetição estava íntegra: nenhuma divergência nem bloqueio. O risco
+  residual da seção 9 não se manifestou.
+- Estado lento da sessão (contrato aberto em 1.647 ms; `GetAll` de Files em 28 ms), como nas duas
+  falhas (seção 11).
+- **Margem curta:** a recuperação veio na última tentativa. As pausas de 200 ms e 500 ms não
+  bastaram; a janela da corrida passou de 0,7 s.
+
+**Ajustes depois da validação.** Limite de 3 para **5 tentativas**, com pausas de 200 ms, 500 ms,
+1 s e 2 s (até ~3,7 s de espera, só quando há corrida). O ponto passou a sair sem aspas aninhadas
+(`Ponto='Tipo sdtEmpresa_API_Response'`). O gate do núcleo cobre o limite novo e o caso de campo:
+duas corridas seguidas recuperam na terceira tentativa, agora com margem. Build canônica com 0
+avisos; satélite U13 com 0 erros.
+
+**Estado.** O `B109` passa a **mitigado**: a causa está no SDK, fora do alcance da extensão, e a
+extensão a contorna com validação em campo. A mitigação e a captura ficam instaladas. Retirar a
+sonda ou fechar o item de vez é decisão posterior. Uma linha `Resultado=Esgotada`, ou um
+`Collection was modified` fora do `SetInitialValues`, reabre a investigação.

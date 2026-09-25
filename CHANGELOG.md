@@ -29,11 +29,12 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   demanda da estrutura de um SDT percorre sem trava uma coleção de definições de propriedades
   compartilhada por tipo. A extensão passou a **repetir a leitura** — confirmação pós-Save,
   resolução de tipo por nome e estrutura de SDT — quando a falha vem desse ponto do SDK
-  (`PropertyManager.SetInitialValues` na stack, com ou sem embrulho), até três tentativas, com a linha `[B109] Leitura repetida` na Output; `Save()` nunca é repetido. Até
+  (`PropertyManager.SetInitialValues` na stack, com ou sem embrulho), até cinco tentativas, com a
+  linha `[B109] Leitura repetida` na Output; `Save()` nunca é repetido. Até
   aqui, essa falha interrompia o Apply ou o Sync ao acaso — observada desde 2026-09-04 e
-  presente nas versões publicadas, porque o defeito é do SDK. Na IDE foi exercido só o caminho
-  sem corrida (três gerações limpas da `Empresa`); a repetição em si ainda não ocorreu em campo.
-  Evidência:
+  presente nas versões publicadas, porque o defeito é do SDK. Validado na IDE: numa geração da
+  `Empresa` sobre a API existente, a leitura falhou duas vezes, passou na terceira e a geração
+  terminou sem bloqueio. Evidência:
   `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
 ### Planned

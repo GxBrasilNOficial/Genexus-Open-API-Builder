@@ -474,7 +474,7 @@ internal static class ApiPlanSdtWriter
 
     private static void ConfigureSdt(KBModel designModel, SDT sdt, ApiPlanSdtDefinition definition, ApiPlanKbObjectNameIndex kbIndex)
     {
-        var root = ApiPlanSdkReadRetry.Run("Estrutura do SDT '" + sdt.Name + "'", () => sdt.SDTStructure.Root);
+        var root = ApiPlanSdkReadRetry.Run("Estrutura do SDT " + sdt.Name, () => sdt.SDTStructure.Root);
         root.Items.Clear();
         root.Name = definition.Name;
 
@@ -592,7 +592,7 @@ internal static class ApiPlanSdtWriter
         IReadOnlyCollection<string>? allowedMissingMemberNames = null)
     {
         mismatch = null;
-        var rootName = ApiPlanSdkReadRetry.Run("Estrutura do SDT '" + sdt.Name + "'", () => sdt.SDTStructure.Root).Name ?? string.Empty;
+        var rootName = ApiPlanSdkReadRetry.Run("Estrutura do SDT " + sdt.Name, () => sdt.SDTStructure.Root).Name ?? string.Empty;
         if (!string.Equals(rootName, definition.Name, StringComparison.OrdinalIgnoreCase) &&
             !SameSdtTypeName(rootName, definition.Name))
         {
@@ -607,7 +607,7 @@ internal static class ApiPlanSdtWriter
         var actualItems = new List<SDTItem>();
         var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var extraNames = new List<string>();
-        foreach (SDTItem item in ApiPlanSdkReadRetry.Run("Estrutura do SDT '" + sdt.Name + "'", () => sdt.SDTStructure.Root).Items)
+        foreach (SDTItem item in ApiPlanSdkReadRetry.Run("Estrutura do SDT " + sdt.Name, () => sdt.SDTStructure.Root).Items)
         {
             if (string.IsNullOrWhiteSpace(item.Name))
             {
@@ -960,7 +960,7 @@ internal static class ApiPlanSdtWriter
         {
             var item = root.AddItem(member.Name, eDBType.GX_SDT);
             ConfigureJsonNullSerialization(item, member);
-            if (!ApiPlanSdkReadRetry.Run("Tipo '" + member.DataType + "'", () => DataType.ParseInto(designModel, member.DataType, item)))
+            if (!ApiPlanSdkReadRetry.Run("Tipo " + member.DataType, () => DataType.ParseInto(designModel, member.DataType, item)))
             {
                 throw new InvalidOperationException($"Tipo SDT nao resolvido para membro '{member.Name}': '{member.DataType}'. Nenhuma alteracao foi feita.");
             }

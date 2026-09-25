@@ -698,13 +698,17 @@ $recovered = $retry::RunFailing(1, $race)
 Assert-Equal 2 $recovered.Calls 'Uma corrida: a leitura é repetida uma vez.'
 Assert-Equal 1 $recovered.Pauses 'Uma pausa antes da segunda tentativa.'
 Assert-True (-not $recovered.Threw) 'Leitura recuperada não propaga exceção.'
-Assert-True ($recovered.Lines.Contains("Ponto='fixture', Tentativa=2/3, Resultado=Recuperada")) 'A recuperação é registrada para a Output.'
+Assert-True ($recovered.Lines.Contains("Ponto='fixture', Tentativa=2/5, Resultado=Recuperada")) 'A recuperação é registrada para a Output.'
 
-$exhausted = $retry::RunFailing(3, $race)
-Assert-Equal 3 $exhausted.Calls 'O limite é de três tentativas.'
-Assert-Equal 2 $exhausted.Pauses 'Duas pausas entre três tentativas.'
+$exhausted = $retry::RunFailing(5, $race)
+Assert-Equal 5 $exhausted.Calls 'O limite é de cinco tentativas.'
+Assert-Equal 4 $exhausted.Pauses 'Quatro pausas entre cinco tentativas.'
 Assert-True $exhausted.Threw 'Esgotadas as tentativas, a exceção original segue.'
-Assert-True ($exhausted.Lines.Contains('Tentativa=3/3, Resultado=Esgotada')) 'O esgotamento é registrado para a Output.'
+Assert-True ($exhausted.Lines.Contains('Tentativa=5/5, Resultado=Esgotada')) 'O esgotamento é registrado para a Output.'
+
+$late = $retry::RunFailing(2, $race)
+Assert-Equal 3 $late.Calls 'Duas corridas seguidas, como em campo em 2026-09-25: recupera na terceira.'
+Assert-True ($late.Lines.Contains('Tentativa=3/5, Resultado=Recuperada')) 'A terceira tentativa ainda deixa margem.'
 
 $other = $retry::RunFailing(1, $otherError)
 Assert-Equal 1 $other.Calls 'Outro erro não é repetido.'
@@ -716,19 +720,19 @@ Assert-Equal $statusType::Confirmed $confirmRecovered.Status 'Confirmação ileg
 Assert-Equal 2 $confirmRecovered.Calls 'A confirmação é lida duas vezes.'
 Assert-True ($confirmRecovered.Lines.Contains('Resultado=Recuperada')) 'A confirmação recuperada é registrada.'
 
-$confirmExhausted = $retry::ConfirmFailing(3, $wrappedRace)
+$confirmExhausted = $retry::ConfirmFailing(5, $wrappedRace)
 Assert-Equal $statusType::Unreadable $confirmExhausted.Status 'Esgotadas as tentativas, a confirmação continua ilegível.'
-Assert-Equal 3 $confirmExhausted.Calls 'A confirmação é lida no máximo três vezes.'
+Assert-Equal 5 $confirmExhausted.Calls 'A confirmação é lida no máximo cinco vezes.'
 
 $persisted = $retry::PersistWithRaceOnFirstConfirmation($race)
 Assert-Equal $outcomeType::Confirmed $persisted.Outcome 'O seam relê a confirmação e o recibo sai Confirmed.'
 Assert-Equal 2 $persisted.Calls 'O seam chama a confirmação duas vezes; o delegate físico não é repetido.'
-Assert-True ($persisted.Lines.Contains("Confirmação de Sdt 'sdtFixture'")) 'O ponto da repetição identifica o objeto.'
+Assert-True ($persisted.Lines.Contains("Ponto='Confirmação de Sdt sdtFixture'")) 'O ponto da repetição identifica o objeto.'
 
 # Destino imediato: a linha sai no trecho da operação que a provocou e não sobra na fila para a
 # operação seguinte — o caso de um Wizard cancelado depois de ler o contrato existente.
 $sinked = $retry::RunWithSink($race, $false)
-Assert-True ($sinked.SinkLines.Contains("Ponto='fixture-sink', Tentativa=2/3, Resultado=Recuperada")) 'Com destino configurado, a linha vai na hora para ele.'
+Assert-True ($sinked.SinkLines.Contains("Ponto='fixture-sink', Tentativa=2/5, Resultado=Recuperada")) 'Com destino configurado, a linha vai na hora para ele.'
 Assert-Equal '' $sinked.Lines 'Com destino configurado, nada sobra na fila para a operação seguinte.'
 $sinkFailed = $retry::RunWithSink($race, $true)
 Assert-Equal 2 $sinkFailed.Calls 'Falha do destino não derruba a leitura recuperada.'

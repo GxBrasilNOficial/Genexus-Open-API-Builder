@@ -494,7 +494,7 @@ internal static class ApiPlanTransactionSyncOrchestrator
         }
 
         var actualNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (SDTItem item in ApiPlanSdkReadRetry.Run("Estrutura do SDT '" + sdt.Name + "'", () => sdt.SDTStructure.Root).Items)
+        foreach (SDTItem item in ApiPlanSdkReadRetry.Run("Estrutura do SDT " + sdt.Name, () => sdt.SDTStructure.Root).Items)
         {
             if (!string.IsNullOrWhiteSpace(item.Name))
             {

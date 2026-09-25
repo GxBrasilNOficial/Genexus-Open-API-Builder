@@ -479,7 +479,7 @@ public static class ApiPlanPersistenceCore
             ApplyAfterFault(afterAction);
 
             var observation = ApiPlanSdkReadRetry.Confirm(
-                "Confirmação de " + objectType + " '" + plannedName + "'",
+                "Confirmação de " + objectType + " " + plannedName,
                 () => Confirm(confirm, ref confirmationRead));
             observation = OverrideConfirmation(observation, afterAction);
             var outcome = ResolveOutcome(operationKind, observation);
@@ -771,17 +771,19 @@ public static class ApiPlanPersistenceCore
 /// <c>Collection was modified</c>.
 ///
 /// Só leituras passam por aqui — confirmação pós-Save, resolução de tipo por nome, estrutura de
-/// SDT. <c>Save()</c> nunca é repetido. O critério é estreito de propósito: uma
+/// SDT. <c>Save()</c> nunca é repetido; até cinco tentativas. O critério é estreito de propósito: uma
 /// <c>InvalidOperationException</c> com <c>SetInitialValues</c> na stack, em qualquer nível da
 /// cadeia. O embrulho <c>UdmException</c> não é exigido: as ocorrências de 2026-09-04 e 2026-09-05
 /// chegaram sem ele, e o frame já identifica a corrida.
 /// </summary>
 internal static class ApiPlanSdkReadRetry
 {
-    internal const int MaxAttempts = 3;
+    internal const int MaxAttempts = 5;
 
     private const string RaceFrame = "PropertyManager.SetInitialValues";
-    private static readonly int[] PausesMs = { 200, 500 };
+    // Em 2026-09-25 a primeira recuperação em campo precisou da 3ª de 3 tentativas: a janela da
+    // corrida passou de 0,7 s. Cinco tentativas somam até ~3,7 s de espera, só quando há corrida.
+    private static readonly int[] PausesMs = { 200, 500, 1000, 2000 };
     private static readonly object Gate = new object();
     private static readonly List<string> Events = new List<string>();
 

@@ -167,9 +167,10 @@ SDT, ramos A e C unificados. ~~Próxima ação única = desenhar e aprovar a mit
 implementá-la~~ — implementada offline (item 178); uma rodada na IDE sem corrida passou limpa, e
 os ramos foram unificados num defeito só, com o critério da repetição sem exigir `UdmException`
 (item 179). ~~Próxima ação única = repetir na IDE o ciclo que reproduziu~~ — mais duas rodadas
-limpas, sem corrida (item 180). **`B109` fica aberto e em espera**, com mitigação e captura
-instaladas, e volta a ser tratado se o sintoma reaparecer. **Próxima ação única = publicar esta
-frente (push) e escolher a próxima ação no backlog.** Evidência:
+limpas, sem corrida (item 180). ~~`B109` fica aberto e em espera~~ — **mitigação validada em
+campo** na mesma tarde, com recuperação na 3ª tentativa, e margem ampliada para 5 (item 182):
+**`B109` mitigado**. **Próxima ação única = publicar esta frente (push) e escolher a próxima ação no
+backlog.** Evidência:
 `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
 ~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
@@ -414,8 +415,8 @@ do ramo A (reentrância por `DoEvents`) perdeu a base com a stack síncrona. O a
 `Collection was modified` fora do `SetInitialValues` seria outro defeito, com item próprio; a
 sonda mostra de onde veio. Mitigação: repetição de leitura (`ApiPlanSdkReadRetry`), com critério
 pelo frame `SetInitialValues`, com ou sem `UdmException`. Evidência:
-`Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seções 8 a 10. **Estado em 2026-09-25:** aberto e em espera; volta a ser tratado se o sintoma reaparecer
-(seção 11 do documento de evidência). Os parágrafos abaixo são o registro anterior à unificação.
+`Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seções 8 a 10. **Estado em 2026-09-25:** ~~aberto e em espera~~ **mitigado** — repetição validada em campo
+(seção 13 do documento de evidência); a causa está no SDK. Os parágrafos abaixo são o registro anterior à unificação.
 
 **Três ramos sob `B109` (registro até 2026-09-24).** O encerramento de 2026-09-05 vale só para o ramo B. Em 2026-09-24
 foi registrado o **ramo C** (confirmação `Unreadable` / `TargetInvocationException` no Update).
@@ -799,6 +800,8 @@ permanece fechado (2026-09-23).
 180. Em 2026-09-25, **`B109` em espera**: mais duas rodadas da `Empresa` com a DLL do critério ampliado (remover, reabrir a IDE, Wizard), ambas limpas e sem linha `[B109] Leitura repetida` (130 s e 29 s). No dia, duas falhas em sete rodadas, ambas num estado lento da sessão (contrato aberto em 1,6 s a 2,3 s, `GetAll` de Files em 18 ms a 26 ms), contra rodadas rápidas de ~30 s — observação sem hipótese firmada. Por decisão do usuário, o `B109` fica aberto, com mitigação e captura instaladas, e volta a ser tratado se o sintoma reaparecer; a mitigação conta como validada na primeira linha `Resultado=Recuperada`. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 11.
 
 181. Em 2026-09-25, **atribuição das linhas `[B109] Leitura repetida` corrigida**, a partir de revisão externa por leitura de código: a fila global só era esvaziada no relatório final, e uma repetição na abertura de um Wizard (ou num Sync/Remover) cancelado cairia no relatório da operação seguinte — o que poderia validar a mitigação por engano. Agora a linha vai à Output na hora (`ApiPlanSdkReadRetry.Sink`, configurado no `Initialize`), com a fila como reserva. Nenhuma evidência registrada foi atingida. Gates no núcleo e na cobertura do seam; build canônica e satélite OK. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 12.
+
+182. Em 2026-09-25, **mitigação do `B109` validada em campo**: com a DLL `53736d2`, o Wizard da `Empresa` sobre a API existente registrou `[B109] Leitura repetida: Ponto='Tipo 'sdtEmpresa_API_Response'', Tentativa=3/3, Resultado=Recuperada` na verificação de posse antes da metadata — o ponto da falha da tarde — e terminou em `SuccessWithWarnings`, `Bloqueados=0`, sem divergência. Estado lento da sessão, como nas falhas. Como a recuperação veio na última tentativa, o limite passou a 5, com pausas de 200 ms a 2 s, e o ponto saiu sem aspas aninhadas. `B109` passa a mitigado. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 13.
 
 ## Bloqueios e fatos ainda não validados
 
