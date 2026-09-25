@@ -8,10 +8,16 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-24.
+2026-09-25.
 
 ## Último marco concluído
 
+- `B109` fechado por mitigação em 2026-09-25: a falha intermitente `Collection was modified`
+  foi localizada numa corrida do SDK na desserialização sob demanda de SDT; a extensão repete a
+  leitura (nunca o `Save()`), com validação em campo nos dois tipos de ponto — resolução de tipo
+  e confirmação pós-Save —; instrumentação temporária retirada e diagnóstico de exceção
+  permanente. Ressalvas e critério de reabertura: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`,
+  seção 15.
 - `B120` fechado em 2026-09-24: envelope HTTP flat do `List` (opção A + A2) na
   extensão; smoke HTTP §6 e regressão CRUD nos dois environments da
   `Teste`/`wsEducacaoSpTeste`; Sync sem recriar `ListResponse`. Evidência:
@@ -169,8 +175,8 @@ os ramos foram unificados num defeito só, com o critério da repetição sem ex
 (item 179). ~~Próxima ação única = repetir na IDE o ciclo que reproduziu~~ — mais duas rodadas
 limpas, sem corrida (item 180). ~~`B109` fica aberto e em espera~~ — **mitigação validada em
 campo** na mesma tarde, com recuperação na 3ª tentativa, e margem ampliada para 5 (item 182):
-**`B109` mitigado**. **Próxima ação única = publicar esta frente (push) e escolher a próxima ação no
-backlog.** Evidência:
+**`B109` mitigado** — e **fechado por mitigação** no fim do dia (item 186). **Próxima ação única =
+publicar esta frente (push) e escolher a próxima ação no backlog.** Evidência:
 `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
 ~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
@@ -367,7 +373,7 @@ Planejamento concluído, avaliação técnica inicial realizada e **a F1 foi imp
 
 **O que mudou no território da sprint depois de 2026-09-05**, por necessidade de campo e fora das fases — registrado na seção 13 do plano da F3:
 
-- os writers de Business Component e de List passaram a usar o executor único e a instrumentação `ApiPlanSaveBoundaryProbe`; o cronômetro por objeto para antes do fingerprint da sonda, que antes era contabilizado;
+- os writers de Business Component e de List passaram a usar o executor único e a instrumentação `ApiPlanSaveBoundaryProbe` (impressões digitais retiradas em 2026-09-25, item 183; a classe ficou como adaptador do seam); o cronômetro por objeto para antes do fingerprint da sonda, que antes era contabilizado;
 - a **remoção** deixou de depender de a lista de SDTs vir na ordem de dependência: o que a IDE recusa volta para a fila e é tentado na passada seguinte;
 - uma remoção interrompida passou a listar no relatório final o que já saiu da KB;
 - nasceu a recuperação de metadata órfã (`B115`), que ocupa parte do que a seção 4.3 da F3 normatiza. Ela cobre dois estados: o File ausente, e o File presente que ficou apontando para um API Object removido — este último travava o Wizard em `OwnershipSchemaApiNameOrGuidMismatch` sem saída pela ferramenta. Metadata **completa** com esse mesmo descompasso segue exigindo intervenção humana.
@@ -408,7 +414,7 @@ Ao retirar qualquer um: executar `Tools/Test-ExtensionCommandRegistration.ps1` s
 
 `ApiPlanScanProbe` **não** é temporária: é instrumentação de produção do `B082`, usada por vários writers.
 
-## Investigação do `B109` — corrida do SDK na desserialização de SDT; `ValidationException` encerrada
+## Investigação do `B109` — fechado por mitigação em 2026-09-25 (corrida do SDK na desserialização de SDT)
 
 **Unificado em 2026-09-25.** O `B109` é **um defeito só**: a corrida do SDK na desserialização sob
 demanda da estrutura de um SDT (`PropertyManager.SetInitialValues` percorre sem trava uma coleção
@@ -420,13 +426,14 @@ do ramo A (reentrância por `DoEvents`) perdeu a base com a stack síncrona. O a
 `Collection was modified` fora do `SetInitialValues` seria outro defeito, com item próprio; a
 sonda mostra de onde veio. Mitigação: repetição de leitura (`ApiPlanSdkReadRetry`), com critério
 pelo frame `SetInitialValues`, com ou sem `UdmException`. Evidência:
-`Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seções 8 a 10. **Estado em 2026-09-25:** ~~aberto e em espera~~ **mitigado** — repetição validada em campo
-(seção 13 do documento de evidência); a causa está no SDK. Os parágrafos abaixo são o registro anterior à unificação.
+`Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seções 8 a 10. **Estado em 2026-09-25:** ~~aberto e em espera~~ ~~mitigado~~ **fechado por mitigação** — repetição
+validada em campo (seção 13 do documento de evidência); a causa está no SDK; ressalvas e critério de
+reabertura na seção 15. Os parágrafos abaixo são o registro anterior à unificação.
 
 **Três ramos sob `B109` (registro até 2026-09-24).** O encerramento de 2026-09-05 vale só para o ramo B. Em 2026-09-24
 foi registrado o **ramo C** (confirmação `Unreadable` / `TargetInvocationException` no Update).
 
-O **ramo A** — `Collection was modified; enumeration operation may not execute`, quatro ocorrências — **permanece sem causa confirmada**. Ele não voltou a ocorrer na sequência limpa, o que é ausência de reprodução, não explicação. A hipótese da reentrância por `Application.DoEvents()` segue **não testada**: o interruptor está instalado e nunca foi acionado. Desde 2026-09-06 ele é a preferência **«Suprimir a atualização da tela durante as gravações»**, em Preferências do Wizard → Diagnóstico e recuperação, desligada por padrão e gravada na KB; antes disso era a variável de ambiente `GOAB_B109_SUPPRESS_PUMP`, que dependia do Windows e não tinha onde avisar o efeito colateral. Vale no Apply do Wizard, onde estão as quatro ocorrências. É frente condicionada à reprodução — se o sintoma reaparecer, o experimento mínimo é repetir a mesma operação com o Pump suprimido e comparar.
+O **ramo A** — `Collection was modified; enumeration operation may not execute`, quatro ocorrências — **permanece sem causa confirmada**. Ele não voltou a ocorrer na sequência limpa, o que é ausência de reprodução, não explicação. A hipótese da reentrância por `Application.DoEvents()` segue **não testada**: o interruptor está instalado e nunca foi acionado. Desde 2026-09-06 ele é a preferência **«Suprimir a atualização da tela durante as gravações»**, em Preferências do Wizard → Diagnóstico e recuperação, desligada por padrão e gravada na KB; antes disso era a variável de ambiente `GOAB_B109_SUPPRESS_PUMP`, que dependia do Windows e não tinha onde avisar o efeito colateral. Vale no Apply do Wizard, onde estão as quatro ocorrências. É frente condicionada à reprodução — se o sintoma reaparecer, o experimento mínimo é repetir a mesma operação com o Pump suprimido e comparar. **2026-09-25:** o experimento não chegou a ser executado; a preferência foi retirada (item 183), e a stack síncrona da corrida do SDK enfraqueceu a hipótese do `DoEvents`.
 
 O **ramo B** — `ValidationException` em `KBObjectManager.PrepareSave`, uma ocorrência — foi encerrado após remoção limpa, `Build All` nos dois environments, reaplicação limpa e novo `Build All` no environment de referência `CSharpModel`.
 
@@ -442,7 +449,7 @@ O **ramo C** — registrado em 2026-09-24: no Apply Wizard da `Empresa` (`fabric
 `Interrupted` / `Criados=49` / `Bloqueados=1`. Distinto de A e de B. Prioridade de
 investigação na sessão pós-push; **não** promovido como próxima ação única neste registro
 (**superado em 2026-09-25**: promovido; ver o parágrafo abaixo e o item 172).
-Instrumentação útil: dump `[B109]` já emitido; preferência de suprimir Pump no reteste;
+Instrumentação útil: dump `[B109]` já emitido; preferência de suprimir Pump no reteste (retirada em 2026-09-25);
 capturar `InnerException` se a falha repetir.
 
 **2026-09-25 — captura do ramo C corrigida; causa aberta.** O `InnerException` não podia
@@ -459,9 +466,9 @@ para tentar reproduzir. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-
 **Instrumentação do `B109`** (registro até 2026-09-25; as impressões digitais e a preferência de Pump foram retiradas nessa data, e a `B109ExceptionProbe` ficou permanente — ver a instrumentação temporária acima):
 
 - `B109ExceptionProbe` publica na Output a cadeia completa de exceções — tipo, mensagem, `Source`, `TargetSite` e stack de cada nível —, além de Rules, `ExpectedVariables` × `CurrentVariables` e `SourceLines` da Procedure recusada;
-- `ApiPlanSaveBoundaryProbe` registra as fronteiras Pump/Save com fingerprint do estado em memória antes e depois de cada uma, para separar mutação externa de falha intrínseca de validação — publica sob o rótulo `[B109]`;
+- ~~`ApiPlanSaveBoundaryProbe` registra as fronteiras Pump/Save com fingerprint do estado em memória antes e depois de cada uma, para separar mutação externa de falha intrínseca de validação — publica sob o rótulo `[B109]`;~~ Retirado em 2026-09-25 (item 183).
 - `ApiPlanMetadataVisibilityProbe` varre os Files e tenta a leitura direta por `Id` da metadata — rótulo `[B115]`. Desde 2026-09-06 a segunda passagem, que mede a estabilidade do `GetAll`, e o detalhamento dos Files só rodam quando a metadata está **ausente** na primeira: no caminho normal a sonda custa uma varredura e uma leitura pontual;
-- a preferência «Suprimir a atualização da tela durante as gravações» suprime os `Application.DoEvents()` entre os Saves no Apply do Wizard; enquanto ativa, a janela congela e o botão Abortar não responde, e o Apply publica uma linha `[B109]` dizendo isso.
+- ~~a preferência «Suprimir a atualização da tela durante as gravações» suprime os `Application.DoEvents()` entre os Saves no Apply do Wizard; enquanto ativa, a janela congela e o botão Abortar não responde, e o Apply publica uma linha `[B109]` dizendo isso.~~ Retirado em 2026-09-25 (item 183).
 
 **Como reproduzir o cenário**, se o `B109` voltar: apagar **apenas** o API Object antes de cada tentativa. Com ele presente e sem metadata, o Wizard desliga as etapas de consumidor e a falha não ocorre — ou aceitar a recuperação de metadata órfã, que devolve o File e reabilita `Remover`. Desde 2026-09-06 ela é oferecida na **abertura** do Wizard, e o `Sincronizar` continua bloqueado depois dela: a metadata recuperada registra posse e inventário, não o contrato. Ver a seção 13 do plano da F3.
 
@@ -814,6 +821,8 @@ backlog, conforme a Próxima ação única. `B128` permanece fechado (2026-09-23
 184. Em 2026-09-25, **segunda recuperação do `B109` em campo, no caminho da confirmação**: com a DLL da limpeza (`81f83d1`), o Wizard da `Empresa` sobre a API existente registrou `[B109] Leitura repetida: Ponto='Confirmação de Procedure procEmpresa_API_Get', Tentativa=2/5, Resultado=Recuperada` e terminou em `SuccessWithWarnings`, `Bloqueados=0`. Os dois tipos de ponto da mitigação — resolução de tipo e confirmação pós-Save — ficaram exercidos em campo. As duas gerações sobre API existente tiveram corrida, contra duas em cinco do zero: indício, não conclusão. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 13.
 
 185. Em 2026-09-25, **`B131` registrado** (sem mudar a próxima ação única): o relatório do `Sincronizar` sem diferenças sai como aviso e com `DuraçãoMs=0`; causa lida no código (`AddWarning` e `TimeSpan.Zero` no ramo sem diferença). Urgência baixa, só texto. `B124: sem documento dedicado porque é registro de backlog; a observação e a causa estão na nota operacional do B131`.
+
+186. Em 2026-09-25, **`B109` fechado por mitigação**, por decisão do usuário: causa localizada (corrida do SDK em `PropertyManager.SetInitialValues`, por stack de campo e leitura do SDK), mitigação validada em campo nos dois tipos de ponto, instrumentação temporária retirada. Ressalvas declaradas: falha dentro do próprio `Save()` não é coberta; as quatro ocorrências antigas do ramo A são atribuídas por hipótese; o risco de estrutura incompleta depois de uma repetição não é observável. Reabre com `Resultado=Esgotada`, com falha de `Save()` com `SetInitialValues` na stack, ou com `Collection was modified` fora do `SetInitialValues` (defeito novo). O defeito será comunicado ao suporte da GeneXus por e-mail, sem item de backlog. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 15.
 
 ## Bloqueios e fatos ainda não validados
 

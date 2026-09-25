@@ -1,7 +1,9 @@
 # B109 ramo C — confirmação ilegível sem causa: diagnóstico e correção da captura
 
-Data: 2026-09-25. Item: `B109` (`Docs/Foundation/06-BACKLOG_v0.1.md`). Estado do ramo C
-**aberto**: esta frente corrige a **captura** do diagnóstico, não a causa da falha.
+Data: 2026-09-25. Item: `B109` (`Docs/Foundation/06-BACKLOG_v0.1.md`). ~~Estado do ramo C
+**aberto**: esta frente corrige a **captura** do diagnóstico, não a causa da falha.~~ **Estado ao
+fim da data: `B109` fechado por mitigação** (seção 15). O documento cresceu com a frente: começa na
+correção da captura (seções 1 a 5) e segue até a causa, a mitigação e o fechamento (seções 6 a 15).
 
 ## 1. O que aconteceu em campo (2026-09-24)
 
@@ -512,3 +514,32 @@ Por decisão do usuário, com o `B109` mitigado:
 Sem sessão de campo: é remoção de código de diagnóstico. Build canônica com 0 avisos; satélite U13
 com 0 erros; gates de executor, preferências, idioma, núcleo e cobertura do seam verdes. Exige
 reinstalar a DLL; manifesto e registro não mudam.
+
+## 15. Fechamento (2026-09-25)
+
+Por decisão do usuário, o `B109` é **fechado por mitigação**.
+
+**O que sustenta o fechamento.** A causa foi localizada por duas evidências independentes — a
+stack completa de campo (seção 8) e a leitura do SDK (seção 9: coleção de definições compartilhada
+por tipo, percorrida sem trava). A mitigação está implementada, com gates, e foi exercida em campo
+duas vezes, nos dois tipos de ponto: resolução de tipo, recuperada na 3ª tentativa, e confirmação
+pós-Save, na 2ª (seção 13); as duas gerações terminaram sem bloqueio. A instrumentação temporária
+saiu e o diagnóstico de exceção ficou permanente (seção 14). A correção de fundo é do SDK, fora do
+alcance da extensão; o defeito será comunicado ao suporte da GeneXus por e-mail, sem item de
+backlog, porque a extensão não depende dessa correção.
+
+**Ressalvas.**
+
+1. Falha dentro do próprio `Save()` não é coberta: o SDK também desserializa ao gravar, e `Save()`
+   nunca é repetido. Se a corrida acontecer ali, a geração ainda interrompe, agora com a stack
+   completa.
+2. As quatro ocorrências antigas do antigo ramo A (2026-09-04 e 2026-09-05) são atribuídas à
+   mesma causa por hipótese; não há stack delas.
+3. O risco de estrutura incompleta depois de uma repetição não é observável no SDK protegido. Não se
+   manifestou nas duas recuperações, e as comparações estritas bloqueiam em vez de passar caladas.
+
+**Critério de reabertura.**
+
+- uma linha `[B109] Leitura repetida … Resultado=Esgotada`;
+- uma falha de `Save()` com `PropertyManager.SetInitialValues` na stack;
+- um `Collection was modified` fora do `SetInitialValues` — defeito novo, com item próprio.

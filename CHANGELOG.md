@@ -34,7 +34,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   aqui, essa falha interrompia o Apply ou o Sync ao acaso — observada desde 2026-09-04 e
   presente nas versões publicadas, porque o defeito é do SDK. Validado na IDE: numa geração da
   `Empresa` sobre a API existente, a leitura falhou duas vezes, passou na terceira e a geração
-  terminou sem bloqueio. Evidência:
+  terminou sem bloqueio. Fica fora da mitigação a corrida dentro do próprio `Save()`, que ainda
+  interrompe a operação, agora com a stack completa na Output. Evidência:
   `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
 ### Changed
