@@ -153,4 +153,20 @@ foreach ($path in $productionFiles) {
     Assert-Equal $unconfirmedThrows $withCause "$relativePath tem exceção «não foi confirmada» sem a causa da confirmação como inner."
 }
 
+# B109: o inner só serve se alguém o imprime. Todo catch de etapa em Package.cs que registra
+# bloqueio no relatório chama a B109ExceptionProbe. Em 2026-09-25 a etapa de SDTs não chamava,
+# e a primeira ocorrência depois da correção da captura chegou sem stack. O preflight agregado
+# fica fora: seus bloqueios são validações esperadas, não exceções do SDK.
+$packageLines = @(Get-Content -LiteralPath (Join-Path $sourceRoot 'Package.cs'))
+for ($index = 0; $index -lt $packageLines.Count; $index++) {
+    if ($packageLines[$index] -notmatch 'catch \(Exception') { continue }
+    $last = [Math]::Min($index + 10, $packageLines.Count - 1)
+    $block = $packageLines[$index..$last] -join "`n"
+    $end = $block.IndexOf('return ', [StringComparison]::Ordinal)
+    if ($end -ge 0) { $block = $block.Substring(0, $end) }
+    if ($block -notmatch 'report\??\.AddBlocked\(') { continue }
+    if ($block -match 'Preflight agregado bloqueou') { continue }
+    Assert-True ($block -match 'B109ExceptionProbe\.Describe\(') "Package.cs:$($index + 1) registra bloqueio de etapa sem publicar a cadeia pela B109ExceptionProbe."
+}
+
 Write-Output 'PASS: ApiPlanPersistenceSeamCoverage'

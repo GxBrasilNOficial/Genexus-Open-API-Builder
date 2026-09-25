@@ -158,8 +158,12 @@ Em 2026-08-23 a revisão do plano de trabalho fechou quinze pontos de exequibili
 pre-release, dois assets DLL). Pacote documental no commit `562fb70`. ~~Escolher a próxima
 ação no backlog em **sessão nova**. Nenhum item é promovido aqui nesta data.~~ **Superado em
 2026-09-25:** escolhido `B109` ramo C. A captura do diagnóstico foi corrigida offline (item 172);
-**próxima ação única = reinstalar a DLL e tentar reproduzir o ramo C** no Apply da `Empresa`
-(`fabricabrasil18test`), lendo a cadeia `[B109]` se a falha voltar. Evidência:
+~~próxima ação única = reinstalar a DLL e tentar reproduzir o ramo C~~ — reproduziu na mesma
+data (item 174), e a sonda faltava na etapa de SDTs. ~~Próxima ação única = reinstalar a DLL,
+`Recuperar operação interrompida` e repetir o Apply da `Empresa`~~ — feito; dois retestes sem
+reprodução (item 176). **`B109` ramos A e C ficam condicionados à reprodução**, com captura
+completa instalada. **Próxima ação única = publicar esta frente (commit + pré-push) e escolher a
+próxima ação no backlog**; `B130` subiu para média no mesmo dia. Evidência:
 `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
 ~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
@@ -757,6 +761,14 @@ permanece fechado (2026-09-23).
 171. Em 2026-09-24, **corte `0.1.0-alpha.9` publicado**: tag `v0.1.0-alpha.9` + GitHub Release pre-release; assets U14+ (`SHA-256` `4D96E34F…`) e U13− (`FEF693F2…`); corpo trilíngue com alerta de breaking no `List` (contrato flat para todos os geradores; defeito motivador no wrapper REST .NET; smoke HTTP só nos dois .NET). Pacote documental `562fb70`. Próxima ação a escolher em sessão nova. `B124: sem documento dedicado porque esta sessão foi só rito de corte/publicação (sem IDE/HTTP novo); G1–G6 não aplicáveis`.
 
 172. Em 2026-09-25, **`B109` ramo C escolhido e captura corrigida**: a confirmação ilegível passa a carregar a exceção (`PersistenceConfirmation.Cause`), o `Detail` resume a cadeia e a causa segue como inner até a sonda `[B109]` — catorze `catch` e doze pontos que lançam; gates em `Test-ApiPlanSaveStepExecutor.ps1` e `Test-ApiPlanPersistenceSeamCoverage.ps1`; build Release com 0 avisos. `Empresa` conferida: reaplicada em 2026-09-24, diário `Completed`. Causa aberta; não validado na IDE. Próxima ação única = reinstalar a DLL e tentar reproduzir o ramo C na `Empresa` (`fabricabrasil18test`). Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
+
+173. Em 2026-09-25, **`B129` registrado** (sem mudar a próxima ação única): rever a D45, que deixa a DLL satélite U13 fora do pré-push mecânico; urgência média, com prazo antes do próximo corte. A build satélite do `c4202c6`, feita à mão, passou com 0 erros. `B124: sem documento dedicado porque é registro de backlog, sem sessão de campo nem aceite`.
+
+174. Em 2026-09-25, **ramo C reproduzido com a captura nova**: Remover limpo da `Empresa`, IDE reaberta, Apply falhou na releitura do primeiro SDT (`sdtEmpresa_API_CreateRequest_CriacaoVolumes`) com `UdmException: Unable to Deserialize Data` → `Collection was modified` — o sintoma do ramo A como inner do ramo C. Diário `Partial/NotStarted`, `Criados=1`. A stack não veio porque o `catch` da etapa de SDTs não chamava a sonda; seis `catch` de etapa passaram a chamá-la, com trava em `Test-ApiPlanPersistenceSeamCoverage.ps1`. Build canônica e satélite OK. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 6.
+
+175. Em 2026-09-25, **`B130` registrado** (sem mudar a próxima ação única): o diário marca como `Update` objetos criados numa etapa interrompida, porque Create/Update vem da lista de criados do relatório final; observado no diálogo da recuperação da `Empresa`. Urgência baixa-média, com gatilho antes de qualquer uso de `inventory[].action` para decidir remoção ou reversão. `B124: sem documento dedicado porque é registro de backlog; a evidência está na seção 6 do documento do ramo C`.
+
+176. Em 2026-09-25, **dois retestes do ramo C sem reprodução** na `Empresa`: depois da recuperação (`Criados=49`, SDT da tentativa falhada reencontrado sem divergência — o defeito está na releitura, não no `Save()`) e nas mesmas condições da falha (Remover, Folder apagado à mão, IDE reaberta: `Criados=51`). Uma falha em três Applies; ramo C condicionado à reprodução. O reteste 1 mostrou que o Folder criado pelo Apply interrompido perde a posse e sobrevive ao Remover: `B130` elevado para média. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 7.
 
 ## Bloqueios e fatos ainda não validados
 

@@ -168,6 +168,8 @@ public sealed class Package : AbstractPackageUI
         }
         catch (Exception ex)
         {
+            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "SDTs")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B040-B046] Criacao de SDTs bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
             report?.AddBlocked("SDTs", "B040-B046", ex.Message);
             return false;
@@ -206,6 +208,8 @@ public sealed class Package : AbstractPackageUI
         }
         catch (Exception ex)
         {
+            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Procedures")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][{ApiPlanProcedureWriter.FormatOutputStage(apiPlan)}] Criacao de Procedures bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
             report?.AddBlocked("Procedures", ApiPlanProcedureWriter.FormatOutputStage(apiPlan), ex.Message);
             return false;
@@ -258,6 +262,8 @@ public sealed class Package : AbstractPackageUI
         }
         catch (Exception ex)
         {
+            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "API Object")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B054] Criacao de API Object bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
             report?.AddBlocked("API Object", apiPlan.ApiName, ex.Message);
             return false;
@@ -306,6 +312,8 @@ public sealed class Package : AbstractPackageUI
         }
         catch (Exception ex)
         {
+            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Preparação do API Object")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B054] Preparacao de API Object bloqueada por preflight ou falhou antes de concluir: Trigger='{triggerSource}', Error='{ex.Message}'");
             report?.AddBlocked("API Object", apiPlan.ApiName, ex.Message);
             return false;
@@ -2134,6 +2142,8 @@ public sealed class Package : AbstractPackageUI
                 }
                 catch (Exception ex) when (ex is not ApiPlanBusyAbortedException)
                 {
+                    // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+                    foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Habilitação do Business Component")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
                     WriteOutput($"[Genexus Open API Builder][B035] Habilitacao de Business Component falhou depois do preflight agregado: Transaction='{transaction.Name}', Error='{ex.Message}'. Nenhum objeto dependente sera persistido.");
                     report.AddBlocked("Business Component", "B035", ex.Message);
                     InterruptJournal(journal, report, JournalBlockReason.StageFailed);
@@ -2627,6 +2637,8 @@ public sealed class Package : AbstractPackageUI
         catch (Exception ex)
         {
             var detail = DescribeException(ex);
+            // B109: sonda temporaria - publica a stack completa, que o log de uma linha descarta.
+            foreach (var b109Line in B109ExceptionProbe.Describe(ex, "Recuperação de metadata B115")) { WriteOutput("[Genexus Open API Builder]" + b109Line); }
             WriteOutput($"[Genexus Open API Builder][B115] Recuperação de metadata falhou: File='{metadataName}', Error='{detail}'. Nenhuma etapa posterior foi executada.");
             System.Windows.Forms.MessageBox.Show(
                 owner,

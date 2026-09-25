@@ -18,9 +18,14 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   à Output com a mensagem genérica e sem a causa real, mesmo com a sonda `[B109]` instalada.
   Agora o `Detail` do recibo resume a cadeia inteira de exceções, e a exceção original segue
   como inner até a sonda, que publica tipo, mensagem e stack de cada nível. Vale para as catorze
-  confirmações do seam de persistência e para os doze pontos que lançam a não confirmação. A
-  lacuna existia desde a `0.1.0-alpha.8`; é só diagnóstico e não muda o que é gravado nem o
-  resultado da operação. A causa da falha observada em 2026-09-24 continua aberta. Evidência:
+  confirmações do seam de persistência e para os doze pontos que lançam a não confirmação. As
+  etapas de SDTs, Procedures, API Object (criação e preparação), habilitação do Business
+  Component e recuperação de metadata B115 também passaram a publicar a cadeia pela sonda — antes
+  só as de metadata, Business Component, List, Recuperar, Sync e Remover o faziam. As duas
+  lacunas existiam desde a `0.1.0-alpha.8`; é só diagnóstico e não muda o que é gravado nem o
+  resultado da operação. A primeira ocorrência depois da correção (2026-09-25, primeiro SDT da
+  `Empresa`) trouxe `UdmException: Unable to Deserialize Data` com `Collection was modified` como
+  inner, o que aproxima os ramos A e C. A causa continua aberta. Evidência:
   `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
 ### Planned
