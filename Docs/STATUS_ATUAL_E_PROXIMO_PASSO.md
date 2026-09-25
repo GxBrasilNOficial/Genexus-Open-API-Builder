@@ -812,6 +812,8 @@ permanece fechado (2026-09-23).
 
 184. Em 2026-09-25, **segunda recuperação do `B109` em campo, no caminho da confirmação**: com a DLL da limpeza (`81f83d1`), o Wizard da `Empresa` sobre a API existente registrou `[B109] Leitura repetida: Ponto='Confirmação de Procedure procEmpresa_API_Get', Tentativa=2/5, Resultado=Recuperada` e terminou em `SuccessWithWarnings`, `Bloqueados=0`. Os dois tipos de ponto da mitigação — resolução de tipo e confirmação pós-Save — ficaram exercidos em campo. As duas gerações sobre API existente tiveram corrida, contra duas em cinco do zero: indício, não conclusão. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 13.
 
+185. Em 2026-09-25, **`B131` registrado** (sem mudar a próxima ação única): o relatório do `Sincronizar` sem diferenças sai como aviso e com `DuraçãoMs=0`; causa lida no código (`AddWarning` e `TimeSpan.Zero` no ramo sem diferença). Urgência baixa, só texto. `B124: sem documento dedicado porque é registro de backlog; a observação e a causa estão na nota operacional do B131`.
+
 ## Bloqueios e fatos ainda não validados
 
 - ~~**Corte de release com a etapa P2 da F3 dentro exige decisão documental.** … nada disso está na documentação pública.~~ **Superado:** pacote `0.1.0-alpha.8` documentou o File/bloqueio/Recuperar e foi **publicado** em 2026-09-17 (`v0.1.0-alpha.8`).

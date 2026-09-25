@@ -287,6 +287,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B128 | Gate incremental no pré-push para reduzir a entrada de novas referências C# por linha móvel em `Docs/` e validar citações históricas fixas novas | **Fechado em 2026-09-23** (commit de implementação `f5b9016`; pré-push local da implementação aprovado). O contrato versionado não migra referências legadas nem prova semântica; impede aumento global dos tokens móveis reconhecidos e valida endereços fixos excedentes contra commit ancestral, blob C# e linhas físicas existentes. Mediu 45 ocorrências em 37 linhas de cinco planos; não migradas. Integra `docs.csharpLineReferences`, tokenizer comum ao checker/teste, aviso heurístico não bloqueante para referência numérica provável ao `CHANGELOG` e `notCovered` explícito. Evidência: `Docs/Implementation/2026-09-23-B128-IMPLEMENTACAO-E-GATES.md`; contrato versionado: `Docs/Implementation/2026-09-23-B128-CONTRATO-REFERENCIAS-C.md`. Proveniência local não normativa: `Temp/revisao-por-pares/B128-20260923-0925/manuscrito-v8.md` (ignorado pelo Git). |
 | B129 | Rever a decisão D45 (pré-push mecânico só compila a DLL canônica): entre dois cortes, uma mudança pode compilar no canônico e quebrar a DLL satélite U13 sem que nenhum gate perceba | Média — **rever antes do próximo corte de release**. Registrado em 2026-09-25. Não bloqueia push nem frente em andamento; ver a nota operacional abaixo |
 | B130 | O diário registra `inventory[].action=Update` para objeto **criado** numa etapa que falhou: a decisão Create/Update vem da lista de criados do relatório final, que só recebe o objeto quando a etapa termina bem | Média — registrado em 2026-09-25 como baixa-média e **elevado na mesma data**: além do texto errado, um Apply interrompido que cria o Folder da API perde a posse dele, e o Folder fica órfão depois do próximo Remover. **Gatilho:** resolver antes de qualquer uso desse campo para decidir remoção ou reversão; ver a nota operacional abaixo |
+| B131 | Relatório do `Sincronizar` sem diferenças: a ausência de diferença sai como **aviso** (`SuccessWithWarnings`, `Avisos=1`) e a duração como `DuraçãoMs=0`, embora a pré-visualização tenha rodado | Baixa — registrado em 2026-09-25; só texto do relatório, sem efeito na KB; ver a nota operacional abaixo |
 
 ### Nota operacional — B129, registrada em 2026-09-25
 
@@ -327,6 +328,22 @@ frente tende a crescer — por isso a revisão tem prazo: antes do próximo cort
    de frente.
 
 Relaciona-se a `B117` (localização da saída satélite) e `B118` (build satélite dentro do Codex).
+
+### Nota operacional — B131, registrada em 2026-09-25
+
+**Observado.** Na `Empresa` da `fabricabrasil18test`, logo depois de um Wizard, o `Sincronizar`
+não encontrou diferença (221 campos inalterados) e o relatório final saiu com
+`Resultado='SuccessWithWarnings'`, `Avisos=1` («Nenhuma diferença entre Transaction e metadata…»)
+e `DuraçãoMs=0`, embora a Output registrasse `Sync PreviewMs=4920`.
+
+**Causa, lida no código.** No ramo sem diferença do Sync, em `Package`, o relatório é montado com
+`noOpReport.AddWarning(...)` e exibido com `ShowFinalReport(noOpReport, TimeSpan.Zero, ...)`. O
+coletor já tem `AddInformation`, e o cronômetro da pré-visualização (`previewWatch`) está
+disponível no mesmo método.
+
+**Correção sugerida, sem decisão.** Registrar a ausência de diferença como informação — o
+resultado passaria a `Success` — e passar ao relatório o tempo da pré-visualização. Conferir antes
+se algum gate ou documento público descreve o `SuccessWithWarnings` desse caso.
 
 ### Nota operacional — B130, registrada em 2026-09-25
 
