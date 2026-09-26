@@ -556,6 +556,12 @@ backlog, porque a extensão não depende dessa correção.
    mesma causa por hipótese; não há stack delas.
 3. O risco de estrutura incompleta depois de uma repetição não é observável no SDK protegido. Não se
    manifestou nas duas recuperações, e as comparações estritas bloqueiam em vez de passar caladas.
+4. Confirmação depois de um `Delete()` que lançou exceção (acrescentado em 2026-09-26, por revisão
+   externa): nesse caminho, `ApiPlanPersistenceCore.Persist` relê o alvo por `TryConfirm`, fora da
+   repetição de leitura. O risco é baixo — exige que a exclusão física falhe **e** que a releitura
+   caia na corrida, e as confirmações do Remover leem o catálogo, não a estrutura interna de SDT —,
+   e o desfecho é seguro: `OutcomeUnknown`, remoção bloqueada, saída por `Recuperar`. Mantido sem
+   repetição por decisão, sem ocorrência observada.
 
 **Critério de reabertura.**
 
