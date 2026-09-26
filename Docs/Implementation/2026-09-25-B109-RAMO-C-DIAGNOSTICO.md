@@ -305,7 +305,10 @@ Output; nunca repetir `Save()`. Desenho e diff a aprovar antes da implementaçã
   `DoEvents`. Sem corrida não há pausa (declarado depois de revisão externa, em 2026-09-26);
 - cada recuperação ou esgotamento vira uma linha `[B109] Leitura repetida: Ponto='…',
   Tentativa=n/3, Resultado=Recuperada|Esgotada`, publicada na Output ~~no início do relatório final~~
-  **na hora da repetição** (correção da seção 12);
+  **na hora da repetição** (correção da seção 12). Formato atual: `Tentativa=n/5`, desde a
+  ampliação da seção 13; no caminho da confirmação, também `Resultado=Leitura recuperada,
+  confirmação <status>` quando a releitura sai da corrida mas não confirma (ajustes de 2026-09-26,
+  seção 13);
 - esgotadas as tentativas, a exceção original segue, com a stack pela sonda.
 
 **Onde se aplica — só leituras; `Save()` nunca é repetido:**
