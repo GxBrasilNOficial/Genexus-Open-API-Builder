@@ -299,6 +299,10 @@ Output; nunca repetir `Save()`. Desenho e diff a aprovar antes da implementaçã
   é repetido (**ampliado na mesma data** para dispensar a `UdmException`; ver a seção 10);
 - até 3 tentativas, pausas de 200 ms e 500 ms, sem `DoEvents` (**ampliado para 5**, com pausas até
   2 s, depois da validação em campo; ver a seção 13);
+- as pausas usam `Thread.Sleep` na thread da interface: quando há corrida, a janela fica sem
+  responder e o botão Abortar inerte durante a espera — até ~3,7 s com o limite de 5 tentativas —,
+  como já acontece num `Save()` longo. Bombear mensagens na pausa reabriria a reentrância por
+  `DoEvents`. Sem corrida não há pausa (declarado depois de revisão externa, em 2026-09-26);
 - cada recuperação ou esgotamento vira uma linha `[B109] Leitura repetida: Ponto='…',
   Tentativa=n/3, Resultado=Recuperada|Esgotada`, publicada na Output ~~no início do relatório final~~
   **na hora da repetição** (correção da seção 12);
@@ -492,6 +496,18 @@ porque a metadata existia, e publicou a linha `[B115] Recuperação não ofereci
 Observação sem conclusão: as duas gerações sobre API existente tiveram corrida; das gerações do
 zero, duas em cinco. O reencontro compara mais objetos existentes com o planejado e dispara mais
 leituras que desserializam SDT — coerente com o mecanismo, mas duas amostras são só indício.
+
+**Ajustes de 2026-09-26, depois de revisão externa.**
+
+- No caminho da confirmação, a linha dizia `Resultado=Recuperada` sempre que a corrida passava,
+  mesmo que a releitura terminasse divergente, ausente ou ilegível por outra causa. Agora
+  `Recuperada` só quando a confirmação confirma; nos demais casos, `Resultado=Leitura recuperada,
+  confirmação <status>`. As duas recuperações de campo desta seção terminaram em operação limpa,
+  então a evidência não é afetada. Gate do núcleo com o caso «corrida, depois divergente».
+- O caminho normal com a DLL do `203c5d7` (destino imediato que informa se escreveu) foi exercido
+  na IDE em 2026-09-26: `InstalledMatchesBuild : True` na véspera, e um Wizard da `Empresa` sobre a
+  API existente terminou em `SuccessWithWarnings`, `Atualizados=53`, `Bloqueados=0`, sem corrida.
+  O caso «Output indisponível» segue coberto só pelo gate offline, porque não se provoca pela IDE.
 
 ## 14. Limpeza da instrumentação (2026-09-25)
 

@@ -775,6 +775,12 @@ public static class ApiPlanPersistenceCore
 /// <c>InvalidOperationException</c> com <c>SetInitialValues</c> na stack, em qualquer nível da
 /// cadeia. O embrulho <c>UdmException</c> não é exigido: as ocorrências de 2026-09-04 e 2026-09-05
 /// chegaram sem ele, e o frame já identifica a corrida.
+///
+/// As pausas entre tentativas usam <c>Thread.Sleep</c> na thread da interface, de propósito sem
+/// <c>DoEvents</c> — bombear mensagens reabriria a reentrância que se quer evitar. Efeito colateral:
+/// quando há corrida, a janela fica sem responder e o botão Abortar inerte por até ~3,7 s (as
+/// quatro pausas somadas), como já acontece durante um <c>Save()</c> longo. Sem corrida, não há
+/// pausa.
 /// </summary>
 internal static class ApiPlanSdkReadRetry
 {
@@ -890,7 +896,13 @@ internal static class ApiPlanSdkReadRetry
             observation = confirm();
             if (observation.Status != PersistenceConfirmationStatus.Unreadable || !IsSdkDeserializationRace(observation.Cause))
             {
-                Record($"[B109] Leitura repetida: Ponto='{point}', Tentativa={attempt + 1}/{MaxAttempts}, Resultado=Recuperada.");
+                // A corrida passou, mas «Recuperada» só quando a confirmação confirma: a releitura
+                // pode terminar divergente, ausente ou ilegível por outra causa, e a linha não pode
+                // sugerir o contrário.
+                var outcome = observation.Status == PersistenceConfirmationStatus.Confirmed
+                    ? "Recuperada"
+                    : "Leitura recuperada, confirmação " + observation.Status;
+                Record($"[B109] Leitura repetida: Ponto='{point}', Tentativa={attempt + 1}/{MaxAttempts}, Resultado={outcome}.");
             }
         }
 

@@ -133,6 +133,21 @@ public static class SdkReadRetryHarness
         return Finish(result);
     }
 
+    // A corrida passa, mas a releitura termina divergente: não pode sair «Recuperada».
+    public static SdkReadRetryResult ConfirmRaceThenDivergent(System.Func<System.Exception> race)
+    {
+        var result = Prepare();
+        var observation = ApiPlanSdkReadRetry.Confirm("fixture-divergente", () =>
+        {
+            result.Calls++;
+            return result.Calls == 1
+                ? PersistenceConfirmation.Unreadable(race())
+                : PersistenceConfirmation.Divergent("fixture", "estrutura diferente do plano");
+        });
+        result.Status = observation.Status;
+        return Finish(result);
+    }
+
     public static SdkReadRetryResult PersistWithRaceOnFirstConfirmation(System.Func<System.Exception> race)
     {
         var result = Prepare();
@@ -726,6 +741,11 @@ $confirmRecovered = $retry::ConfirmFailing(1, $wrappedRace)
 Assert-Equal $statusType::Confirmed $confirmRecovered.Status 'Confirmação ilegível pela corrida é relida e confirma.'
 Assert-Equal 2 $confirmRecovered.Calls 'A confirmação é lida duas vezes.'
 Assert-True ($confirmRecovered.Lines.Contains('Resultado=Recuperada')) 'A confirmação recuperada é registrada.'
+
+$raceThenDivergent = $retry::ConfirmRaceThenDivergent($race)
+Assert-Equal $statusType::Divergent $raceThenDivergent.Status 'A releitura divergente é devolvida como está.'
+Assert-True ($raceThenDivergent.Lines.Contains('Resultado=Leitura recuperada, confirmação Divergent')) 'Releitura que sai da corrida mas diverge é registrada como tal.'
+Assert-True (-not $raceThenDivergent.Lines.Contains('Resultado=Recuperada')) 'Releitura divergente não pode ser registrada como Recuperada.'
 
 $confirmExhausted = $retry::ConfirmFailing(5, $wrappedRace)
 Assert-Equal $statusType::Unreadable $confirmExhausted.Status 'Esgotadas as tentativas, a confirmação continua ilegível.'
