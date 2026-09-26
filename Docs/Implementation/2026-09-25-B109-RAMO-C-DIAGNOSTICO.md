@@ -301,8 +301,10 @@ Output; nunca repetir `Save()`. Desenho e diff a aprovar antes da implementaçã
   2 s, depois da validação em campo; ver a seção 13);
 - as pausas usam `Thread.Sleep` na thread da interface: quando há corrida, a janela fica sem
   responder e o botão Abortar inerte durante a espera — até ~3,7 s com o limite de 5 tentativas —,
-  como já acontece num `Save()` longo. Bombear mensagens na pausa reabriria a reentrância por
-  `DoEvents`. Sem corrida não há pausa (declarado depois de revisão externa, em 2026-09-26);
+  como já acontece num `Save()` longo. Não bombear mensagens na pausa evita reintroduzir a
+  reentrância por `DoEvents` — hipótese enfraquecida pela stack de 2026-09-25, mas não descartada
+  para as ocorrências antigas. Sem corrida não há pausa (declarado depois de revisão externa, em
+  2026-09-26);
 - cada recuperação ou esgotamento vira uma linha `[B109] Leitura repetida: Ponto='…',
   Tentativa=n/3, Resultado=Recuperada|Esgotada`, publicada na Output ~~no início do relatório final~~
   **na hora da repetição** (correção da seção 12). Formato atual: `Tentativa=n/5`, desde a
@@ -557,11 +559,17 @@ backlog, porque a extensão não depende dessa correção.
 3. O risco de estrutura incompleta depois de uma repetição não é observável no SDK protegido. Não se
    manifestou nas duas recuperações, e as comparações estritas bloqueiam em vez de passar caladas.
 4. Confirmação depois de um `Delete()` que lançou exceção (acrescentado em 2026-09-26, por revisão
-   externa): nesse caminho, `ApiPlanPersistenceCore.Persist` relê o alvo por `TryConfirm`, fora da
-   repetição de leitura. O risco é baixo — exige que a exclusão física falhe **e** que a releitura
-   caia na corrida, e as confirmações do Remover leem o catálogo, não a estrutura interna de SDT —,
-   e o desfecho é seguro: `OutcomeUnknown`, remoção bloqueada, saída por `Recuperar`. Mantido sem
-   repetição por decisão, sem ocorrência observada.
+   externa; corrigido na mesma data, também por revisão externa). Nesse caminho há **duas**
+   leituras, e nenhuma passa pela repetição do B109: o seam (`ApiPlanPersistenceCore.Persist`)
+   relê o alvo por `TryConfirm`, completa o recibo e relança; o Remover captura a exceção e faz uma
+   segunda releitura própria, por `SafeConfirm` em `ApiPlanGeneratedApiRemover.Execute`, que é a
+   que classifica — alvo ausente, exclusão confirmada; alvo presente, volta à fila para a passada
+   seguinte; ilegível, `OutcomeUnknown` e remoção bloqueada, com saída por `Recuperar`. O bloqueio,
+   portanto, só ocorre se a **segunda** leitura também ficar ilegível. O risco é baixo — exige que a
+   exclusão física falhe **e** que as releituras caiam na corrida, e as confirmações do Remover leem
+   o catálogo, não a estrutura interna de SDT — e o desfecho é seguro. **Sem teste do caso
+   combinado** (`Delete()` lança e as duas confirmações ficam ilegíveis). Mantido sem repetição por
+   decisão, sem ocorrência observada.
 
 **Critério de reabertura.**
 

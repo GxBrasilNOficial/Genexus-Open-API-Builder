@@ -777,7 +777,8 @@ public static class ApiPlanPersistenceCore
 /// chegaram sem ele, e o frame já identifica a corrida.
 ///
 /// As pausas entre tentativas usam <c>Thread.Sleep</c> na thread da interface, de propósito sem
-/// <c>DoEvents</c> — bombear mensagens reabriria a reentrância que se quer evitar. Efeito colateral:
+/// <c>DoEvents</c>: evita reintroduzir a reentrância por <c>DoEvents</c>, hipótese enfraquecida pela
+/// stack de 2026-09-25, mas não descartada para as ocorrências antigas. Efeito colateral:
 /// quando há corrida, a janela fica sem responder e o botão Abortar inerte por até ~3,7 s (as
 /// quatro pausas somadas), como já acontece durante um <c>Save()</c> longo. Sem corrida, não há
 /// pausa.
