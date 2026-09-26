@@ -421,7 +421,7 @@ demanda da estrutura de um SDT (`PropertyManager.SetInitialValues` percorre sem 
 de definições compartilhada por tipo). O antigo **ramo C** foi reproduzido duas vezes com essa
 causa; as quatro ocorrências do antigo **ramo A** (`Collection was modified` sem embrulho, sem
 stack) são atribuídas a ela **por hipótese** — mesma exceção, mesmos caminhos, e a hipótese própria
-do ramo A (reentrância por `DoEvents`) perdeu a base com a stack síncrona. O antigo **ramo B**
+do ramo A (reentrância por `DoEvents`) ficou enfraquecida pela stack síncrona, mas não descartada para essas ocorrências antigas. O antigo **ramo B**
 (`ValidationException`) é ocorrência distinta, encerrada em 2026-09-05, fora da família. Um
 `Collection was modified` fora do `SetInitialValues` seria outro defeito, com item próprio; a
 sonda mostra de onde veio. Mitigação: repetição de leitura (`ApiPlanSdkReadRetry`), com critério
@@ -822,7 +822,7 @@ backlog, conforme a Próxima ação única. `B128` permanece fechado (2026-09-23
 
 185. Em 2026-09-25, **`B131` registrado** (sem mudar a próxima ação única): o relatório do `Sincronizar` sem diferenças sai como aviso e com `DuraçãoMs=0`; causa lida no código (`AddWarning` e `TimeSpan.Zero` no ramo sem diferença). Urgência baixa, só texto. `B124: sem documento dedicado porque é registro de backlog; a observação e a causa estão na nota operacional do B131`.
 
-186. Em 2026-09-25, **`B109` fechado por mitigação**, por decisão do usuário: causa localizada (corrida do SDK em `PropertyManager.SetInitialValues`, por stack de campo e leitura do SDK), mitigação validada em campo nos dois tipos de ponto, instrumentação temporária retirada. Ressalvas declaradas: falha dentro do próprio `Save()` não é coberta; as quatro ocorrências antigas do ramo A são atribuídas por hipótese; o risco de estrutura incompleta depois de uma repetição não é observável. Reabre com `Resultado=Esgotada`, com falha de `Save()` com `SetInitialValues` na stack, ou com `Collection was modified` fora do `SetInitialValues` (defeito novo). O defeito será comunicado ao suporte da GeneXus por e-mail, sem item de backlog. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 15.
+186. Em 2026-09-25, **`B109` fechado por mitigação**, por decisão do usuário: causa localizada (corrida do SDK em `PropertyManager.SetInitialValues`, por stack de campo e leitura do SDK), mitigação validada em campo nos dois tipos de ponto, instrumentação temporária retirada. Ressalvas declaradas: falha dentro do próprio `Save()` não é coberta; as quatro ocorrências antigas do ramo A são atribuídas por hipótese; o risco de estrutura incompleta depois de uma repetição não é observável (2026-09-26: quarta ressalva — confirmação depois de um `Delete()` que lançou exceção; ver a seção 15). Reabre com `Resultado=Esgotada`, com falha de `Save()` com `SetInitialValues` na stack, ou com `Collection was modified` fora do `SetInitialValues` (defeito novo). O defeito será comunicado ao suporte da GeneXus por e-mail, sem item de backlog. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 15.
 
 ## Bloqueios e fatos ainda não validados
 

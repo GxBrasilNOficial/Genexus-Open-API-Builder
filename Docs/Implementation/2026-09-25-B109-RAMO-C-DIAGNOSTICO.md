@@ -362,7 +362,8 @@ de Stencil — mas o reteste 1, de 113 s, também não teve aviso.
 - antigo **ramo A** (`Collection was modified` sem embrulho; quatro ocorrências em 2026-09-04 e
   2026-09-05, sem stack): atribuído à mesma corrida **por hipótese** — mesma exceção, mesmos
   caminhos (Business Component, List, `Save()` de API). A hipótese própria dele, reentrância por
-  `Application.DoEvents()`, perdeu a base com a stack síncrona da seção 8;
+  `Application.DoEvents()`, ficou enfraquecida pela stack síncrona da seção 8, mas não descartada
+  para essas ocorrências antigas;
 - antigo **ramo B** (`ValidationException` em `KBObjectManager.PrepareSave`): ocorrência distinta,
   encerrada em 2026-09-05, fora da família.
 
@@ -562,7 +563,8 @@ backlog, porque a extensão não depende dessa correção.
    externa; corrigido na mesma data, também por revisão externa). Nesse caminho há **duas**
    leituras, e nenhuma passa pela repetição do B109: o seam (`ApiPlanPersistenceCore.Persist`)
    relê o alvo por `TryConfirm`, completa o recibo e relança; o Remover captura a exceção e faz uma
-   segunda releitura própria, por `SafeConfirm` em `ApiPlanGeneratedApiRemover.Execute`, que é a
+   segunda releitura própria, por `SafeConfirm` no `Execute` privado de `ApiPlanGeneratedApiRemover`
+   — o que trata cada tentativa e recebe `persist` e `confirm` —, que é a
    que classifica — alvo ausente, exclusão confirmada; alvo presente, volta à fila para a passada
    seguinte; ilegível, `OutcomeUnknown` e remoção bloqueada, com saída por `Recuperar`. O bloqueio,
    portanto, só ocorre se a **segunda** leitura também ficar ilegível. O risco é baixo — exige que a
