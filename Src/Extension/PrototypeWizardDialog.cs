@@ -17,6 +17,7 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly ExtensionTexts _texts;
     private readonly KBModel _designModel;
     private readonly Transaction _transaction;
+    private readonly bool _transactionHasSublevels;
     private readonly PrototypeWizardContractSnapshot _snapshot;
     private readonly PrototypeBusinessComponentSnapshot _businessComponentSnapshot;
     private readonly PrototypeWizardPreferences _preferences;
@@ -122,6 +123,7 @@ internal sealed class PrototypeWizardDialog : Form
         _texts = texts ?? throw new ArgumentNullException(nameof(texts));
         _designModel = designModel ?? throw new ArgumentNullException(nameof(designModel));
         _transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
+        _transactionHasSublevels = transaction.Structure.Root.Levels.Any();
         _snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
         _businessComponentSnapshot = businessComponentSnapshot ?? throw new ArgumentNullException(nameof(businessComponentSnapshot));
         _preferences = preferences?.Clone() ?? throw new ArgumentNullException(nameof(preferences));
@@ -1921,7 +1923,8 @@ internal sealed class PrototypeWizardDialog : Form
             || string.Equals(tabName, _texts.Translate("API Object"), StringComparison.Ordinal)
             || string.Equals(tabName, _texts.Translate("Business Component"), StringComparison.Ordinal)
             || string.Equals(tabName, _texts.Translate("List"), StringComparison.Ordinal)
-            || string.Equals(tabName, _texts.Translate("Metadata"), StringComparison.Ordinal);
+            || string.Equals(tabName, _texts.Translate("Metadata"), StringComparison.Ordinal)
+            || string.Equals(tabName, TranslateB110("Contrato reconstruído"), StringComparison.Ordinal);
     }
 
     private bool CompletePendingExplicitActions()
@@ -2401,7 +2404,7 @@ internal sealed class PrototypeWizardDialog : Form
                     + (edited.Contains(section, StringComparer.Ordinal) ? " — " + TranslateB110("alterado nesta execução") : string.Empty);
             }));
         var hierarchyBlocked = ReconstructedContractAcknowledgement.IsHierarchyBlocked(provenance.Imported,
-            provenance.HasLevelsKey, _hierarchicalSelection?.HasSublevels == true);
+            provenance.HasLevelsKey, _transactionHasSublevels);
         _reconstructedContractConfirm.Visible = !hierarchyBlocked;
         _reconstructedContractConfirm.Enabled = !hierarchyBlocked;
         if (hierarchyBlocked) _reconstructedContractConfirm.Checked = false;
@@ -2423,7 +2426,7 @@ internal sealed class PrototypeWizardDialog : Form
         var existing = _snapshot.ExistingApiContract;
         var provenance = existing.Provenance;
         var recoveryAccepted = ReconstructedContractAcknowledgement.IsAccepted(provenance.Imported,
-            provenance.HasLevelsKey, _hierarchicalSelection?.HasSublevels == true,
+            provenance.HasLevelsKey, _transactionHasSublevels,
             provenance.ReconstructedSections,
             _reconstructedContractConfirm.Checked ? new ReconstructedContractAcknowledgement(provenance.ReconstructedSections) : null);
         var healthy = apiState is not null && !apiState.IsBlocked && recoveryAccepted
@@ -2458,7 +2461,7 @@ internal sealed class PrototypeWizardDialog : Form
         {
             var cause = !recoveryAccepted
                 ? TranslateB110(ReconstructedContractAcknowledgement.IsHierarchyBlocked(provenance.Imported,
-                    provenance.HasLevelsKey, _hierarchicalSelection?.HasSublevels == true)
+                    provenance.HasLevelsKey, _transactionHasSublevels)
                     ? ReconstructedContractAcknowledgement.HierarchyBlocked : ReconstructedContractAcknowledgement.ConfirmationRequired)
                 : FormatGenerationState(apiState, false);
             var collisions = state?.CollectCollisionConflicts(true, true, true, false);
