@@ -60,6 +60,12 @@ Assert-True $bcScope.RequireApiObject 'Business Component exige API Object.'
 Assert-False $bcScope.RequireMetadataFile 'Business Component sem GenerateMetadata não deve exigir Metadata File.'
 
 $noneScope = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanWritePreflightScope]::FromSelection($false, $false, $false, $false, $false, $false)
+foreach ($selection in @(@($true,$false), @($false,$true), @($true,$true))) {
+    $scope = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanWritePreflightScope]::FromSelection($selection[0], $selection[1], $false, $false, $false, $false)
+    Assert-True ($scope.RequireSdts -and $scope.RequireProcedures -and $scope.RequireApiObject) 'Qualquer escritor exige as três etapas saudáveis.'
+    Assert-False $scope.RequireMetadataFile 'Sem seleção de metadata, o File não entra no escopo.'
+    Assert-SequenceEqual @('SDTs', 'Procedures', 'API Object') $scope.SelectBlockedStageNames($blocks) 'SDTs/Procedures isolados preservam a origem da cascata.'
+}
 Assert-False $noneScope.RequireSdts 'Sem etapas, SDTs não devem ser exigidos.'
 Assert-False $noneScope.RequireProcedures 'Sem etapas, Procedures não devem ser exigidas.'
 Assert-False $noneScope.RequireApiObject 'Sem etapas, API Object não deve ser exigido.'

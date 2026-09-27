@@ -2010,6 +2010,11 @@ public sealed class Package : AbstractPackageUI
                 .Cast<ApiPlanGenerationStageState>()
                 .Where(stage => stage.IsBlocked)
                 .ToArray();
+            if (!b111ManagedApply && !selection.GenerateSdts && !selection.GenerateProcedures)
+            {
+                WriteOutput($"[Genexus Open API Builder][B040-B046/B060] Nenhuma etapa de escrita foi confirmada no wizard para Transaction='{transaction.Name}'. Nenhuma escrita foi solicitada.");
+                return true;
+            }
             if (blockedGenerationStages.Length > 0)
             {
                 var collisions = generationState.CollectCollisionConflicts(
@@ -2017,14 +2022,17 @@ public sealed class Package : AbstractPackageUI
                     preflightScope.RequireProcedures,
                     preflightScope.RequireApiObject,
                     preflightScope.RequireMetadataFile);
-                var collisionText = collisions.Count == 0
-                    ? string.Empty
-                    : Environment.NewLine + ApiPlanCollisionConflict.FormatList(collisions);
-                WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Estado bloqueado detectado no wizard antes de confirmar escrita: Transaction='{transaction.Name}', BlockedStages='{string.Join(",", blockedGenerationStages.Select(stage => stage.StageName))}', Details='{string.Join(" | ", blockedGenerationStages.Select(stage => stage.Detail))}'{collisionText}. Nenhum Save foi solicitado.");
-            }
-            if (!b111ManagedApply && !selection.GenerateSdts && !selection.GenerateProcedures)
-            {
-                WriteOutput($"[Genexus Open API Builder][B040-B046/B060] Nenhuma etapa de escrita foi confirmada no wizard para Transaction='{transaction.Name}'. Nenhuma escrita foi solicitada.");
+                var detail = ApiPlanWriteBlockMessage.Build(
+                    "Apply bloqueado antes do primeiro Save(): ",
+                    blockedGenerationStages.Select(stage => stage.StageName), collisions,
+                    ". Nenhum objeto planejado foi criado ou alterado.",
+                    blockedGenerationStages.Select(stage => stage.Detail));
+                AppendCollisionConflictsToReport(report, collisions);
+                report.AddBlocked("Preflight", "B110", detail);
+                WriteOutput("[Genexus Open API Builder][B110] " + detail);
+                stopwatch.Stop();
+                WriteApplyScanTelemetry(scanTelemetry, applyFromConfirm.ElapsedMilliseconds);
+                ShowFinalReport(report, stopwatch.Elapsed, knowledgeBase.DesignModel, apiPlan);
                 return true;
             }
 

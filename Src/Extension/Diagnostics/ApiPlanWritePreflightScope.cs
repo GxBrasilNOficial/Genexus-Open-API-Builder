@@ -45,11 +45,12 @@ public sealed class ApiPlanWritePreflightScope
         bool applyList,
         bool applyBusinessComponent)
     {
-        return new ApiPlanWritePreflightScope(
-            generateSdts || generateProcedures || generateApiObject || generateMetadata || applyList || applyBusinessComponent,
-            generateProcedures || generateApiObject || generateMetadata || applyList || applyBusinessComponent,
-            generateApiObject || generateMetadata || applyList || applyBusinessComponent,
-            generateMetadata);
+        // B110: SDTs, Procedures e API precisam estar saudáveis para qualquer escrita
+        // do Apply. Não indica quais objetos serão escritos: aceita a cascata que
+        // bloqueia inclusive SDT isolado por colisão em Procedure, com API ausente.
+        var anyWriter = generateSdts || generateProcedures || generateApiObject
+            || generateMetadata || applyList || applyBusinessComponent;
+        return new ApiPlanWritePreflightScope(anyWriter, anyWriter, anyWriter, generateMetadata);
     }
 
     public string[] SelectBlockedStageNames(IEnumerable<ApiPlanWritePreflightStageBlock> stages)

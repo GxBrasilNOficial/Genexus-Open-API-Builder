@@ -170,7 +170,7 @@ internal static class ApiPlanWritePreflight
         }
 
         var collisions = state.CollectCollisionConflicts(requireSdts, requireProcedures, requireApiObject, requireMetadataFile);
-        throw new InvalidOperationException(BuildBlockedMessage(
+        throw new InvalidOperationException(ApiPlanWriteBlockMessage.Build(
             $"{operationCode} bloqueado antes do primeiro Save(): baseline da extensao ou objetos proprios ausentes, externos ou ambiguos em ",
             blocked,
             collisions,
@@ -207,21 +207,6 @@ internal static class ApiPlanWritePreflight
                 apiPlan.TransactionGuid,
                 apiPlan.TransactionName));
         }
-    }
-
-    private static string BuildBlockedMessage(
-        string prefix,
-        IReadOnlyList<string> blockedStages,
-        IReadOnlyList<ApiPlanCollisionConflict> collisions,
-        string suffix)
-    {
-        var message = prefix + string.Join(", ", blockedStages);
-        if (collisions.Count > 0)
-        {
-            message += ". " + ApiPlanCollisionConflict.FormatList(collisions);
-        }
-
-        return message + suffix;
     }
 
     private static ApiPlanWritePreflightStageBlock ToStageBlock(ApiPlanWritePreflightStageKind stageKind, ApiPlanGenerationStageState stage)
