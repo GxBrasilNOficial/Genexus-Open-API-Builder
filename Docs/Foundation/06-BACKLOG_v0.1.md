@@ -288,6 +288,8 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B129 | Rever a decisão D45 (pré-push mecânico só compila a DLL canônica): entre dois cortes, uma mudança pode compilar no canônico e quebrar a DLL satélite U13 sem que nenhum gate perceba | Média — **rever antes do próximo corte de release**. Registrado em 2026-09-25. Não bloqueia push nem frente em andamento; ver a nota operacional abaixo |
 | B130 | O diário registra `inventory[].action=Update` para objeto **criado** numa etapa que falhou: a decisão Create/Update vem da lista de criados do relatório final, que só recebe o objeto quando a etapa termina bem | Média — registrado em 2026-09-25 como baixa-média e **elevado na mesma data**: além do texto errado, um Apply interrompido que cria o Folder da API perde a posse dele, e o Folder fica órfão depois do próximo Remover. **Gatilho:** resolver antes de qualquer uso desse campo para decidir remoção ou reversão; ver a nota operacional abaixo |
 | B131 | Relatório do `Sincronizar` sem diferenças: a ausência de diferença sai como **aviso** (`SuccessWithWarnings`, `Avisos=1`) e a duração como `DuraçãoMs=0`, embora a pré-visualização tenha rodado | Baixa — registrado em 2026-09-25; só texto do relatório, sem efeito na KB; ver a nota operacional abaixo |
+| B132 | Subníveis podados podem voltar incluídos ao reabrir metadata completa com `levels: null` | A avaliar — inferência de leitura registrada em 2026-09-27 na §4.5 do plano B110; requer medição, fora do B110 |
+| B133 | Metadata obsoleta com API ausente: criação da API sem regravar metadata pode deixar GUID divergente | A avaliar — registrado em 2026-09-27 na §8 do plano B110; requer diagnóstico, fora do B110 |
 
 ### Nota operacional — B129, registrada em 2026-09-25
 
