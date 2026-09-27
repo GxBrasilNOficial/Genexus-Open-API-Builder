@@ -27,6 +27,10 @@ internal sealed class PrototypeWizardDialog : Form
     private readonly FlowLayoutPanel _responseFieldsList = CreateChoicePanel();
     private readonly FlowLayoutPanel _filtersList = CreateChoicePanel();
     private readonly TextBox _apiNameText = CreateSingleLineTextBox();
+    private readonly CheckBox _reconstructedContractConfirm = new() { AutoSize = true, Dock = DockStyle.Top };
+    private readonly TextBox _reconstructedContractText = CreateReadOnlyTextBox();
+    private readonly Label _reconstructedContractNotice = new() { AutoSize = true, Dock = DockStyle.Top, MaximumSize = new Size(1500, 0) };
+    private IReadOnlyDictionary<string, string>? _initialReconstructedValues;
     private readonly TextBox _servicesBasePathText = CreateSingleLineTextBox();
     private readonly TextBox _restPathText = CreateSingleLineTextBox();
     private readonly TextBox _endpointsText = CreateReadOnlyTextBox();
@@ -145,6 +149,9 @@ internal sealed class PrototypeWizardDialog : Form
         WireServiceSelectionRefresh();
         WireBusinessComponentErrorMessageWarning();
         ApplyWizardPreferences();
+        _initialReconstructedValues = ReadReconstructedValues();
+        _reconstructedContractConfirm.CheckedChanged += (_, _) => RefreshGenerationPreviewUnlessSuppressed();
+        RefreshGenerationPreview(forceRefresh: false);
     }
 
     public PrototypeWizardFlowSelection? Selection { get; private set; }
@@ -205,6 +212,8 @@ internal sealed class PrototypeWizardDialog : Form
 
         root.Controls.Add(_headerLabel, 0, 0);
 
+        if (_snapshot.ExistingApiContract.Provenance.Imported)
+            _tabs.TabPages.Add(CreateReconstructedContractTab());
         _tabs.TabPages.Add(CreateListTab(_texts.Translate("Serviços"), _servicesList, _texts.Translate("Serviços REST. List, Get, Create e Update iniciam habilitados. Delete é opcional e inicia desmarcado.")));
         _tabs.TabPages.Add(CreateRequestTab());
         _tabs.TabPages.Add(CreateResponseTab());
@@ -604,7 +613,12 @@ internal sealed class PrototypeWizardDialog : Form
         AddField(fields, 2, "RestPath", _restPathText);
 
         panel.Controls.Add(fields, 0, 0);
-        panel.Controls.Add(CreateGroup(_texts.Translate("Paths dos serviços"), _endpointsText), 0, 1);
+        var pathsBody = new Panel { Dock = DockStyle.Fill };
+        pathsBody.Controls.Add(CreateGroup(_texts.Translate("Paths dos serviços"), _endpointsText));
+        if (_snapshot.ExistingApiContract.ApiGuid.HasValue)
+            pathsBody.Controls.Add(new Label { Dock = DockStyle.Top, AutoSize = true,
+                Text = TranslateB110("Nome da API existente somente leitura: renomear API gerada não é suportado.") });
+        panel.Controls.Add(pathsBody, 0, 1);
         tab.Controls.Add(panel);
         return tab;
     }
@@ -954,6 +968,11 @@ internal sealed class PrototypeWizardDialog : Form
         var apiName = existingApi.ApiName ?? "api" + _snapshot.TransactionName;
         var servicesBasePath = existingApi.ServicesBasePath ?? apiName;
         _apiNameText.Text = apiName;
+        if (existingApi.ApiGuid.HasValue)
+        {
+            _apiNameText.Text = existingApi.ResolvedApiName ?? apiName;
+            _apiNameText.ReadOnly = true;
+        }
         _servicesBasePathText.Text = servicesBasePath;
         _restPathText.Text = existingApi.RestPath ?? "/" + ToKebabCase(_snapshot.TransactionName);
         _servicesBasePathEditedManually = !string.Equals(apiName, servicesBasePath, StringComparison.Ordinal);
@@ -994,7 +1013,6 @@ internal sealed class PrototypeWizardDialog : Form
                 _generateProceduresCheck.Checked = false;
             }
 
-            _generateProceduresCheck.Enabled = _generateSdtsCheck.Checked;
             RefreshGenerationPreviewUnlessSuppressed();
         };
         _generateProceduresCheck.Enabled = false;
@@ -2008,7 +2026,10 @@ internal sealed class PrototypeWizardDialog : Form
             _generateMetadataCheck.Checked,
             _applyListCheck.Checked,
             applyBusinessComponent,
-            _hierarchicalSelection);
+            _hierarchicalSelection,
+            _reconstructedContractConfirm.Checked
+                ? new ReconstructedContractAcknowledgement(_snapshot.ExistingApiContract.Provenance.ReconstructedSections,
+                    GetEditedReconstructedSections()) : null);
         return true;
     }
     private void ShowSummary()
@@ -2288,6 +2309,109 @@ internal sealed class PrototypeWizardDialog : Form
             _hierarchicalSelection?.Fingerprint() ?? string.Empty);
     }
 
+    private string TranslateB110(string text) => ExtensionOutputLocalization.Translate(text, _texts.Language);
+
+    private TabPage CreateReconstructedContractTab()
+    {
+        var tab = new TabPage(TranslateB110("Contrato reconstruído"));
+        var panel = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Padding = new Padding(8) };
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.Controls.Add(CreateWrappingLabel(TranslateB110("Revise as seções reconstruídas antes de confirmar qualquer escrita. As edições não retiram seções desta lista.")), 0, 0);
+        panel.Controls.Add(_reconstructedContractText, 0, 1);
+        _reconstructedContractConfirm.Text = TranslateB110("Confirmo o contrato reconstruído listado, incluindo minhas alterações nesta execução.");
+        panel.Controls.Add(_reconstructedContractConfirm, 0, 2);
+        panel.Controls.Add(_reconstructedContractNotice, 0, 3);
+        tab.Controls.Add(panel);
+        return tab;
+    }
+
+    private IReadOnlyDictionary<string, string> ReadReconstructedValues()
+    {
+        string Fields(FlowLayoutPanel panel) => string.Join(", ", GetCheckedValues(panel).OrderBy(name => name, StringComparer.Ordinal));
+        return new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["services"] = Fields(_servicesList),
+            ["descriptions.services"] = string.Join("; ", _snapshot.ExistingApiContract.ServiceDescriptions.OrderBy(pair => pair.Key).Select(pair => pair.Key + ": " + pair.Value)),
+            ["security.level"] = GetSelectedSecurityLevel(),
+            ["api.restPath"] = _restPathText.Text.Trim(),
+            ["fields.createRequest"] = Fields(_createFieldsList),
+            ["fields.updateRequest"] = Fields(_updateFieldsList),
+            ["fields.response"] = Fields(_responseFieldsList),
+            ["fields.listFilters"] = GetCheckedValues(_filtersList).Count + " — " + Fields(_filtersList),
+            ["fields.required"] = Fields(_createRequiredList),
+            ["pagination.defaultPageSize"] = _defaultPageSize.Value.ToString(CultureInfo.InvariantCulture),
+            ["pagination.maximumPageSize"] = _maximumPageSize.Value.ToString(CultureInfo.InvariantCulture),
+            ["order"] = string.Join(", ", GetStaticOrder().Select(item => item.AttributeName + " " + item.Direction)),
+            ["api.servicesBasePath"] = _servicesBasePathText.Text.Trim(),
+            ["levels"] = _hierarchicalSelection?.Fingerprint() ?? string.Empty,
+            ["errorDetail.includeBusinessComponentMessages"] = _includeBcErrorMessagesCheck.Checked.ToString(),
+        };
+    }
+
+    private string[] GetEditedReconstructedSections()
+    {
+        if (_initialReconstructedValues is null) return Array.Empty<string>();
+        var current = ReadReconstructedValues();
+        return _snapshot.ExistingApiContract.Provenance.ReconstructedSections
+            .Where(key => !string.Equals(_initialReconstructedValues[key], current[key], StringComparison.Ordinal)).ToArray();
+    }
+
+    private string ReconstructedSectionLabel(string section) => section switch
+    {
+        "services" => _texts.Translate("Serviços"),
+        "descriptions.services" => TranslateB110("Descrições dos serviços"),
+        "security.level" => _texts.Translate("Security Level"),
+        "api.restPath" => "RestPath",
+        "fields.createRequest" => _texts.RoleLabel("CreateRequest"),
+        "fields.updateRequest" => _texts.RoleLabel("UpdateRequest"),
+        "fields.response" => _texts.RoleLabel("Response"),
+        "fields.listFilters" => _texts.Translate("Filtros List"),
+        "fields.required" => _texts.Translate("Obrigatório no payload (editável)"),
+        "pagination.defaultPageSize" => "Default Page Size",
+        "pagination.maximumPageSize" => "Maximum Page Size",
+        "order" => _texts.Translate("Ordenação"),
+        "api.servicesBasePath" => _texts.Translate("Services base path"),
+        "levels" => TranslateB110("Hierarquia"),
+        _ => _texts.Translate("Incluir mensagens de erro do Business Component no corpo HTTP 422"),
+    };
+
+    private void RefreshReconstructedContractPanel()
+    {
+        var provenance = _snapshot.ExistingApiContract.Provenance;
+        if (!provenance.Imported) return;
+        var values = ReadReconstructedValues();
+        var edited = GetEditedReconstructedSections();
+        _reconstructedContractText.Text = string.Join(Environment.NewLine + Environment.NewLine,
+            provenance.ReconstructedSections.Select(section =>
+            {
+                var value = values[section];
+                if (section == "levels")
+                    value = _hierarchicalSelection?.HasSublevels == true
+                        ? string.Join(", ", _hierarchicalSelection.Options.Where(node => !node.IsRoot).Select(node => node.DisplayPath))
+                        : TranslateB110("sem subníveis");
+                if (string.IsNullOrEmpty(value))
+                    value = section == "order" ? TranslateB110("chave primária em ordem ascendente") : TranslateB110("nenhum valor selecionado");
+                var origin = provenance.Sections[section] == ApiPlanContractOrigin.Default
+                    ? TranslateB110("padrão fixo do Wizard — suas preferências não se aplicam a API existente")
+                    : TranslateB110("reconstruído do Source do API ou dos SDTs próprios");
+                return ReconstructedSectionLabel(section) + ": " + value + " — " + origin
+                    + (edited.Contains(section, StringComparer.Ordinal) ? " — " + TranslateB110("alterado nesta execução") : string.Empty);
+            }));
+        var hierarchyBlocked = ReconstructedContractAcknowledgement.IsHierarchyBlocked(provenance.Imported,
+            provenance.HasLevelsKey, _hierarchicalSelection?.HasSublevels == true);
+        _reconstructedContractConfirm.Visible = !hierarchyBlocked;
+        _reconstructedContractConfirm.Enabled = !hierarchyBlocked;
+        if (hierarchyBlocked) _reconstructedContractConfirm.Checked = false;
+        _reconstructedContractNotice.Text = TranslateB110(hierarchyBlocked
+            ? ReconstructedContractAcknowledgement.HierarchyBlocked
+            : _generateMetadataCheck.Checked
+                ? "Ao concluir com Gerar metadata, os valores serão gravados, a marca de recuperação desaparecerá e o contrato será a referência do Sincronizar."
+                : "Sem Gerar metadata, a marca de recuperação permanece e este painel reaparecerá na próxima abertura do Wizard.");
+    }
+
     private void ApplyGenerationPreviewState(ApiPlanGenerationState? state)
     {
         _generationContext = FormatGenerationContext(state);
@@ -2296,18 +2420,29 @@ internal sealed class PrototypeWizardDialog : Form
         var procedureState = state?.Procedures;
         var apiState = state?.ApiObject;
         var metadataState = state?.MetadataFile;
-
+        var existing = _snapshot.ExistingApiContract;
+        var provenance = existing.Provenance;
+        var recoveryAccepted = ReconstructedContractAcknowledgement.IsAccepted(provenance.Imported,
+            provenance.HasLevelsKey, _hierarchicalSelection?.HasSublevels == true,
+            provenance.ReconstructedSections,
+            _reconstructedContractConfirm.Checked ? new ReconstructedContractAcknowledgement(provenance.ReconstructedSections) : null);
+        var healthy = apiState is not null && !apiState.IsBlocked && recoveryAccepted
+            && !ApiPlanExistingNamePolicy.IsRenameBlocked(existing.HasExistingApi, existing.ApiGuid,
+                existing.ResolvedApiName, _apiNameText.Text.Trim());
+        // B110: desmarcar as confirmações antes de calcular dependências, BC e List.
+        ApplyGenerationControlState(_generateSdtsCheck, sdtState, healthy);
         var sdtsAvailable = IsDependencyAvailable(sdtState, _generateSdtsCheck.Checked);
+        ApplyGenerationControlState(_generateProceduresCheck, procedureState, healthy && sdtsAvailable);
         var proceduresAvailable = IsDependencyAvailable(procedureState, _generateProceduresCheck.Checked);
+        ApplyGenerationControlState(_generateApiObjectCheck, apiState, healthy && proceduresAvailable);
         var baseApiObjectAvailable = IsDependencyAvailable(apiState, _generateApiObjectCheck.Checked);
-        ApplyBusinessComponentControlState(sdtsAvailable, proceduresAvailable, baseApiObjectAvailable);
+        ApplyBusinessComponentControlState(healthy && sdtsAvailable, healthy && proceduresAvailable, healthy && baseApiObjectAvailable);
         var businessComponentConfirmed = _applyBusinessComponentCheck.Checked && IsBusinessComponentReady();
         var apiObjectAvailable = baseApiObjectAvailable || businessComponentConfirmed;
-        ApplyGenerationControlState(_generateSdtsCheck, sdtState, true);
-        ApplyGenerationControlState(_generateProceduresCheck, procedureState, sdtsAvailable);
-        ApplyGenerationControlState(_generateApiObjectCheck, apiState, proceduresAvailable);
-        ApplyListControlState(apiState, apiObjectAvailable);
-        ApplyGenerationControlState(_generateMetadataCheck, metadataState, apiObjectAvailable);
+        ApplyListControlState(apiState, healthy && apiObjectAvailable);
+        ApplyGenerationControlState(_generateMetadataCheck, metadataState, healthy && apiObjectAvailable);
+        _enableBusinessComponentCheck.Enabled = healthy && !_businessComponentSnapshot.IsBusinessComponent && !_businessComponentEnabledDuringWizard;
+        if (!healthy) _enableBusinessComponentCheck.Checked = false;
 
         _sdtGenerationText.Text = FormatGenerationState(sdtState, _generateSdtsCheck.Checked);
         _procedureGenerationText.Text = FormatGenerationState(procedureState, _generateProceduresCheck.Checked) + Environment.NewLine + Environment.NewLine +
@@ -2319,6 +2454,20 @@ internal sealed class PrototypeWizardDialog : Form
             $"{_texts.Translate("Filtros planejados")}: {GetCheckedValues(_filtersList).Count}; {_texts.Translate("Paginacao")} Default={_defaultPageSize.Value}, Maximum={_maximumPageSize.Value}.";
         _metadataGenerationText.Text = FormatGenerationState(metadataState, _generateMetadataCheck.Checked) + Environment.NewLine + Environment.NewLine +
             $"{_texts.Translate("Dependencia")} List/API Object: {FormatDependencyState(apiState, _generateApiObjectCheck.Checked || businessComponentConfirmed || _applyListCheck.Checked)}";
+        if (!healthy)
+        {
+            var cause = !recoveryAccepted
+                ? TranslateB110(ReconstructedContractAcknowledgement.IsHierarchyBlocked(provenance.Imported,
+                    provenance.HasLevelsKey, _hierarchicalSelection?.HasSublevels == true)
+                    ? ReconstructedContractAcknowledgement.HierarchyBlocked : ReconstructedContractAcknowledgement.ConfirmationRequired)
+                : FormatGenerationState(apiState, false);
+            var collisions = state?.CollectCollisionConflicts(true, true, true, false);
+            if (collisions is not null && collisions.Count > 0)
+                cause += Environment.NewLine + ExtensionOutputLocalization.Translate(ApiPlanCollisionConflict.FormatList(collisions), _texts.Language);
+            _sdtGenerationText.Text += Environment.NewLine + cause;
+            _procedureGenerationText.Text += Environment.NewLine + cause;
+        }
+        RefreshReconstructedContractPanel();
     }
 
     private void ApplyBusinessComponentControlState(bool sdtsAvailable, bool proceduresAvailable, bool apiObjectAvailable)
@@ -2391,7 +2540,8 @@ internal sealed class PrototypeWizardDialog : Form
 
     private static bool IsDependencyAvailable(ApiPlanGenerationStageState? state, bool confirmed)
     {
-        return confirmed || string.Equals(state?.Action, "Reencontrar e validar", StringComparison.Ordinal);
+        return state is not null && !state.IsBlocked
+            && (confirmed || string.Equals(state.Action, "Reencontrar e validar", StringComparison.Ordinal));
     }
 
     private string FormatDependencyState(ApiPlanGenerationStageState? state, bool confirmed)
