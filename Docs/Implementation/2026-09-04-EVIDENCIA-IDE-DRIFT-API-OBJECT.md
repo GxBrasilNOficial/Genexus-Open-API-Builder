@@ -190,6 +190,17 @@ para SDTs e Procedures que ainda estavam íntegros. Isto é relevante para qualq
 mexa na ordem de gravação, e também, independentemente dela, para o desenho do próprio
 comportamento de bloqueio parcial.
 
+**Remissão datada — 2026-09-27 (B110).** Esta seção registrou corretamente o plano com
+`ListFilters=0` e as cinco gravações, mas inferiu que o membro `EmpresaId` saiu do SDT
+persistido e que as Procedures incorporaram o contrato reduzido. Nenhuma inspeção desses
+objetos foi feita nesta sessão antes da remoção da §8.1; a perda persistida aqui alegada não
+é demonstrável retroativamente. A perda de filtros no plano veio da precedência do leitor:
+até `0902455`, o Source do `List` prevalecia mesmo com metadata íntegra; esse commit tornou a
+metadata autoritativa e saiu na `v0.1.0-alpha.8`. O defeito B110 que permaneceu foi permitir
+gravações a partir de uma intenção derivada de API bloqueada. O documento de validação
+`2026-09-27-B110-VALIDACAO-IDE.md` registra a barreira nova. Esta nota qualifica a conclusão
+histórica sem reescrever a captura de 04/09 como se tivesse medido o estado persistido.
+
 ## 8. Estado degradado e reparo
 
 Ao fim das capturas a `Empresa` estava **degradada**:
@@ -198,6 +209,12 @@ Ao fim das capturas a `Empresa` estava **degradada**:
 - `sdtEmpresa_API_ListFilters` sem o membro `EmpresaId`;
 - quatro Procedures regravadas conforme o contrato empobrecido;
 - metadata ainda no baseline da geração íntegra.
+
+**Remissão datada — 2026-09-27 (B110).** A lista acima mistura observação (`apiEmpresa`
+divergente, metadata presente, recibos de regravação) com a inferência não confirmada de
+perda do membro e de alteração efetiva dos Sources das Procedures. Os objetos foram removidos
+na §8.1; esta sessão não deixou um estado consultável que permita confirmar aquelas duas
+afirmações. O alcance seguro da evidência é plano empobrecido seguido de cinco gravações.
 
 ### 8.1 Reparo executado — Remover API gerada
 

@@ -505,6 +505,12 @@ execução. Não foram inspecionadas. Se o Source delas foi regravado a partir d
 filtros, o dano existiria ali e não no SDT. Verificar `procEmpresa_API_List` fecharia essa
 lacuna.
 
+**Remissão datada — 2026-09-27 (B110).** A pendência acima não pode mais ser fechada por
+inspeção do Source daquela execução: o API Object e as Procedures foram regravados na §10.7,
+e a leitura atual não identifica seus bytes anteriores. Permanecem comprovadas a degradação
+do plano e a regravação das quatro Procedures, não a alteração efetiva de seus Sources. O
+bloqueio B110 foi validado em outra KB/rodada, com esse limite histórico preservado.
+
 **A F1 não resolve isso.** A F1 impede que o API seja persistido antes dos consumidores; ela
 não impede que um Apply com etapa bloqueada continue gravando as demais a partir de um plano
 derivado do estado bloqueado. `B110` continua sendo item próprio e independente.
@@ -541,6 +547,11 @@ sem o membro `EmpresaId` e as quatro Procedures regravadas com o contrato reduzi
 estado é evidência útil e pode ser usado para exercitar o cenário J (Sincronizar a partir do
 estado divergente), que segue sem linha de base. Se for descartado, o caminho medido como
 seguro é o comando de remoção (fato 3.2.6 do plano original).
+
+**Remissão datada — 2026-09-27 (B110).** A inspeção na §10.2 mostrou que o membro
+`EmpresaId` permanecia no SDT; a frase «sem o membro» acima descrevia o plano em memória,
+não a estrutura persistida. O API Object e as Procedures foram regravados na §10.7, de modo
+que o estado exato delas antes dessa regravação não é mais demonstrável por inspeção da KB.
 
 ### 10.5 Cenário J fechado — o Sincronizar bloqueia, não degrada
 

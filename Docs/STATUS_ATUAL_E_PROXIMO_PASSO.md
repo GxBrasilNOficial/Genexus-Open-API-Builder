@@ -8,10 +8,15 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-25.
+2026-09-27.
 
 ## Último marco concluído
 
+- `B110` fechado em 2026-09-27: bloqueio T1 antes do diário para todos os escritores e
+  barreira T2 do contrato recuperado B115. A bateria de IDE foi aceita com exceção explícita
+  para o diálogo do cenário 14, validado offline sem diário interrompido na KB; o cenário 11
+  tem preservação independente antes/depois em dois bloqueios, dentro do alcance declarado.
+  Evidência: `Docs/Implementation/2026-09-27-B110-VALIDACAO-IDE.md`.
 - `B109` fechado por mitigação em 2026-09-25: a falha intermitente `Collection was modified`
   foi localizada numa corrida do SDK na desserialização sob demanda de SDT; a extensão repete a
   leitura (nunca o `Save()`), com validação em campo nos dois tipos de ponto — resolução de tipo
@@ -175,9 +180,13 @@ os ramos foram unificados num defeito só, com o critério da repetição sem ex
 (item 179). ~~Próxima ação única = repetir na IDE o ciclo que reproduziu~~ — mais duas rodadas
 limpas, sem corrida (item 180). ~~`B109` fica aberto e em espera~~ — **mitigação validada em
 campo** na mesma tarde, com recuperação na 3ª tentativa, e margem ampliada para 5 (item 182):
-**`B109` mitigado** — e **fechado por mitigação** no fim do dia (item 186). **Próxima ação única =
-publicar esta frente (push) e escolher a próxima ação no backlog.** Evidência:
-`Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
+**`B109` mitigado** — e **fechado por mitigação** no fim do dia (item 186).
+~~Próxima ação única = publicar esta frente (push) e escolher a próxima ação no backlog.~~
+**Superado em 2026-09-27:** `B110` fechado com a exceção de campo do cenário 14 declarada
+(item 187). **Próxima ação única = escolher a próxima frente do backlog.** A publicação dos
+commits locais de `B109`/`B110` por push é decisão separada, ainda sem autorização nesta
+conversa. Evidências: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md` e
+`Docs/Implementation/2026-09-27-B110-VALIDACAO-IDE.md`.
 
 ~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
 ainda não mencionam o File do diário `GxOpenApiBuilder_OperationJournal`, o bloqueio que ele
@@ -601,8 +610,9 @@ Vigência atual: `B120` fechado em 2026-09-24 (código flat + A2 + aceite IDE/HT
 `Teste`/`wsEducacaoSpTeste`, remissão normativa Foundation alinhada). ~~Após o push, escolher a
 próxima ação no backlog em sessão nova.~~ ~~**Superado em 2026-09-25:** frente vigente = `B109`
 ramo C (captura corrigida offline; próxima ação = reproduzir na IDE, item 172).~~ **Superado na
-mesma data:** `B109` fechado por mitigação (itens 179 a 186); próxima ação = push desta frente e escolha no
-backlog, conforme a Próxima ação única. `B128` permanece fechado (2026-09-23).
+mesma data:** `B109` fechado por mitigação (itens 179 a 186). ~~Próxima ação = push desta frente
+e escolha no backlog.~~ **Superado em 2026-09-27:** `B110` fechado (item 187); próxima ação =
+escolher frente no backlog, com push separado. `B128` permanece fechado (2026-09-23).
 
 1. Sprint 0 executou a Fase 0 (`B010`–`B012`) e deixou a base de build reproduzível.
 2. Sprint 1 concluiu e aprovou no U15 o pacote inicial de viabilidade da Fase -1 (`B000`–`B006`).
@@ -823,6 +833,8 @@ backlog, conforme a Próxima ação única. `B128` permanece fechado (2026-09-23
 185. Em 2026-09-25, **`B131` registrado** (sem mudar a próxima ação única): o relatório do `Sincronizar` sem diferenças sai como aviso e com `DuraçãoMs=0`; causa lida no código (`AddWarning` e `TimeSpan.Zero` no ramo sem diferença). Urgência baixa, só texto. `B124: sem documento dedicado porque é registro de backlog; a observação e a causa estão na nota operacional do B131`.
 
 186. Em 2026-09-25, **`B109` fechado por mitigação**, por decisão do usuário: causa localizada (corrida do SDK em `PropertyManager.SetInitialValues`, por stack de campo e leitura do SDK), mitigação validada em campo nos dois tipos de ponto, instrumentação temporária retirada. Ressalvas declaradas: falha dentro do próprio `Save()` não é coberta; as quatro ocorrências antigas do ramo A são atribuídas por hipótese; o risco de estrutura incompleta depois de uma repetição não é observável (2026-09-26: quarta ressalva — confirmação depois de um `Delete()` que lançou exceção; ver a seção 15). Reabre com `Resultado=Esgotada`, com falha de `Save()` com `SetInitialValues` na stack, ou com `Collection was modified` fora do `SetInitialValues` (defeito novo). O defeito será comunicado ao suporte da GeneXus por e-mail, sem item de backlog. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 15.
+
+187. Em 2026-09-27, **`B110` fechado com exceção de campo explícita**: T1 bloqueou todos os escritores antes do diário; T2 exigiu confirmação do contrato B115 reconstruído e recusou Transaction hierárquica sem `levels`. Onze cenários tiveram PASS individual na IDE; o cenário 11 preservou objetos em dois bloqueios medidos por snapshots independentes, sem extrapolar aos demais; o cenário 3 era offline; no cenário 9 a variante V1 não tinha fixture. O cenário 14 passou no teste offline do texto de recuperação, mas o diálogo não foi visto na IDE porque o diário disponível estava `Completed`; o mantenedor aceitou essa exceção, sem convertê-la em prova de IDE. Nenhum novo teste de IDE é requisito para o fechamento. Evidência: `Docs/Implementation/2026-09-27-B110-VALIDACAO-IDE.md`. Próxima ação: escolher frente do backlog; push separado.
 
 ## Bloqueios e fatos ainda não validados
 

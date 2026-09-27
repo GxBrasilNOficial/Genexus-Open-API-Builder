@@ -1003,6 +1003,12 @@ persistida existem **somente** na metadata. Reconstruí-los seria inventar.
 inventasse faria o `Sincronizar` comparar a API real contra uma descrição falsa e propor
 mudanças destrutivas. Por isso a marca da seção 13.4 bloqueia o Sync.
 
+**Remissão datada — 2026-09-27 (B110).** Ao reabrir uma API existente após B115, as seções
+não recuperadas usam os padrões **fixos** do leitor do Wizard; as preferências de criação da
+KB não se aplicam à API existente. O painel novo lista essas seções e exige confirmação
+específica antes de gravar. Para Transaction hierárquica sem `levels`, a confirmação não é
+oferecida e o Wizard bloqueia a escrita.
+
 ### 13.4 A marca
 
 ```json
@@ -1020,6 +1026,12 @@ vocabulário novo. Enquanto a marca existir:
 - **`Remover` funciona.** Tem o inventário completo de alvos, que é tudo o que consome.
 - **`Sincronizar` recusa**, com mensagem própria: não há contrato com que comparar.
 - Um `Wizard` + Apply completo reescreve a metadata inteira e a marca desaparece.
+
+**Remissão datada — 2026-09-27 (B110).** A última linha agora é condicional: o Apply após
+B115 exige confirmação explícita do contrato reconstruído. Sem confirmação, nenhuma escrita
+começa; com Transaction hierárquica e `levels` ausente, o fluxo fica bloqueado e orienta
+`Remover API gerada` antes de uma nova geração. A decisão 13.5.1 sobre a permissão de Apply
+com metadata importada permanece válida **sob essa nova barreira**.
 
 ### 13.5 Decisões aprovadas para a consolidação
 
@@ -1083,6 +1095,12 @@ Primeira execução real do caminho. O File `apiTeste_Metadata` foi apagado à m
 | Apply completo | `SuccessWithWarnings`, `Criados=0`, `Atualizados=7`, `Bloqueados=0`. A metadata foi reescrita **no mesmo File** (`Guid='43be3a1b…'`), passando de 2290 para `Bytes=117926`. A marca desapareceu com a substituição do JSON. |
 
 Dois números confirmam o desenho: **2290 bytes** contra os **117926** da metadata completa — a diferença é exatamente o contrato que a 13.3 diz não recuperar —, e o **mesmo GUID** nas duas pontas, provando que o Apply reencontra e sobrescreve o File da recuperação em vez de criar um segundo.
+
+**Remissão datada — 2026-09-27 (B110).** O Apply completo registrado nesta seção ocorreu
+antes da confirmação T2 introduzida pela B110. Ele prova a substituição da metadata e a
+remoção da marca naquela execução histórica, não que o fluxo atual permita concluir sem
+revisar e confirmar as seções reconstruídas. O cenário 7 do documento
+`2026-09-27-B110-VALIDACAO-IDE.md` exercitou o fluxo novo em Transaction plana.
 
 ### 13.7 O `Remover` sobre a metadata recuperada — e o defeito que ele expôs
 

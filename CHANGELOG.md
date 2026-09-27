@@ -38,6 +38,20 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   interrompe a operação, agora com a stack completa na Output. Evidência:
   `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`.
 
+- `B110` — Apply sobre API existente com posse/baseline inválido podia deixar SDTs e Procedures
+  gravarem a partir de um plano derivado do estado bloqueado, sob resultado de sucesso com avisos.
+  Agora o bloqueio T1 alcança todos os escritores antes do diário. A recuperação B115, visível
+  desde a `v0.1.0-alpha.8`, também podia levar a um Apply completo sem revisão das seções que a
+  metadata não recuperou: o caminho T2 exige confirmação específica e bloqueia Transaction
+  hierárquica sem `levels`. Uma colisão em Procedure bloqueia também a confirmação de SDTs;
+  o nome do API Object existente permanece somente leitura no Wizard. A perda de filtros da
+  variante de 04/09 vinha da precedência do leitor e já foi corrigida em `0902455`, publicada
+  na mesma `alpha.8`; a perda persistida do membro do SDT não foi comprovada. Validação IDE
+  aceita em 2026-09-27 com exceção explícita: o texto de `Recuperar operação interrompida`
+  passou no teste offline, mas seu diálogo não foi observado porque não havia diário
+  interrompido. Evidência:
+  `Docs/Implementation/2026-09-27-B110-VALIDACAO-IDE.md`.
+
 ### Changed
 
 - Instrumentação temporária do `B109` retirada, com o defeito mitigado: a preferência
@@ -52,7 +66,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 ### Planned
 
 - `B108` (plano aprovado 2026-08-31; estacionado desde 2026-09-05): preferências só na criação; reencontro espelha KB; desmarcar confirma e rebaixa/remove no Apply (Delete some com BC). Plano: `Docs/Implementation/2026-08-31-B108-PLANO-PREFERENCIAS-E-RETRACAO.md`. As três fases da sprint `S-B111` foram encerradas em 2026-09-15, mantendo `B121` fora dela. Ver o checkpoint e o documento 06.
-- Escrita parcial do BC (incidente histórico de 2026-09-03): o `ApiPlanBusinessComponentWriter.Apply` então gravava o API Object antes das Procedures, permitindo drift API↔metadata B067 se o Sync/Apply abortasse no meio. O P1 de reordenar os Saves foi absorvido e concluído na F1 da **`S-B111`**; o seam de persistência e recibos da F2 foi aceito na IDE em 2026-09-13. O guard B055 de BC sem habilitação passou no preflight com zero gravações, e o perfil Sync somente List permanece não comprovado isoladamente no `B121`. A F3 foi encerrada em 2026-09-15 (durabilidade e remoção entregues e validadas na IDE); a continuação de Apply/Sync interrompido permanece fora do escopo entregue, por decisão declarada. A orientação anterior de recuperação por "Remover + Wizard" **não vale quando a metadata está ausente**: nesse estado, `Remover` e `Sincronizar` bloqueiam e o `Wizard` degrada o plano; a saída é a recuperação de metadata órfã acima, ou limpeza manual (`B115`). Planos em `Docs/Implementation/2026-09-04-B111-F1-…`, `…-F2-…` e `…-F3-…`; medições históricas em `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`.
+- Escrita parcial do BC (incidente histórico de 2026-09-03): o `ApiPlanBusinessComponentWriter.Apply` então gravava o API Object antes das Procedures, permitindo drift API↔metadata B067 se o Sync/Apply abortasse no meio. O P1 de reordenar os Saves foi absorvido e concluído na F1 da **`S-B111`**; o seam de persistência e recibos da F2 foi aceito na IDE em 2026-09-13. O guard B055 de BC sem habilitação passou no preflight com zero gravações, e o perfil Sync somente List permanece não comprovado isoladamente no `B121`. A F3 foi encerrada em 2026-09-15 (durabilidade e remoção entregues e validadas na IDE); a continuação de Apply/Sync interrompido permanece fora do escopo entregue, por decisão declarada. A orientação anterior de recuperação por "Remover + Wizard" **não vale quando a metadata está ausente**: nesse estado, `Remover` e `Sincronizar` bloqueiam. A recuperação de metadata órfã `B115` depende de elegibilidade; quando não se aplica, a orientação é remover manualmente o API Object e o File de metadata para gerar de novo. O `B110` impede Apply parcial enquanto a posse e o contrato não forem confirmados. Planos em `Docs/Implementation/2026-09-04-B111-F1-…`, `…-F2-…` e `…-F3-…`; medições históricas em `Docs/Implementation/2026-09-04-B111-SONDAS-IDENTIDADE-E-DIARIO.md`.
 - ~~Higiene de teste: absorver `Tests/SdtReencounter/Test-SdtCollectionItemNameProbe.ps1` em `Tests/KbIndexReuse/Test-ApiPlanKbIndexReuse.ps1` e remover a pasta; não criar gate no orquestrador. Anotado no plano B082 (pendência 3).~~ **Feito em 2026-09-16** (Fatia A da Etapa 3 do B082).
 - ~~Matcher SDT: `idJsonInclude=idJsonJsonNull` só é conferido no sentido plano→KB; propriedade obsoleta na KB pode passar `Unchanged`. Anotado no plano B082 (pendência 4).~~ **Feito em 2026-09-16** (matcher bidirecional + limpeza no writer; lint `tests.kbIndexReuse`).
 
