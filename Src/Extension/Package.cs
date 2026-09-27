@@ -2057,6 +2057,12 @@ public sealed class Package : AbstractPackageUI
             phaseWatch.Restart();
             try
             {
+                var existingContract = PrototypeWizardExistingApiContractReader.Read(knowledgeBase.DesignModel, transaction);
+                if (ApiPlanExistingNamePolicy.IsRenameBlocked(existingContract.HasExistingApi,
+                    existingContract.ApiGuid, existingContract.ResolvedApiName, apiPlan.ApiName))
+                {
+                    throw new InvalidOperationException(ApiPlanExistingNamePolicy.Describe(existingContract.ResolvedApiName, apiPlan.ApiName));
+                }
                 PrototypeWizardBusinessComponentNavigationPolicy.ThrowIfDeleteWithoutBusinessComponent(
                     apiPlan.Services.Select(service => service.Name),
                     selection.ApplyBusinessComponent);

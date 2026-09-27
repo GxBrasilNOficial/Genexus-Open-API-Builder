@@ -126,7 +126,8 @@ internal static class PrototypeWizardExistingApiContractReader
             source.DuplicateServiceNames,
             includeBusinessComponentErrorMessages,
             persistedHierarchicalRoot,
-            api?.Guid);
+            api?.Guid,
+            api?.Name);
     }
 
     private static API? ResolveApiObject(
@@ -738,7 +739,8 @@ internal sealed class PrototypeWizardExistingApiContract
         IReadOnlyList<string> duplicateServiceNames,
         bool includeBusinessComponentErrorMessages = true,
         ApiPlanLevel? persistedHierarchicalRoot = null,
-        Guid? apiGuid = null)
+        Guid? apiGuid = null,
+        string? resolvedApiName = null)
     {
         HasExistingApi = hasExistingApi;
         // A primeira declaração de cada nome vence: contrato de origem malformado não pode
@@ -775,6 +777,7 @@ internal sealed class PrototypeWizardExistingApiContract
         IncludeBusinessComponentErrorMessages = includeBusinessComponentErrorMessages;
         PersistedHierarchicalRoot = persistedHierarchicalRoot;
         ApiGuid = apiGuid;
+        ResolvedApiName = resolvedApiName;
     }
 
     public bool HasExistingApi { get; }
@@ -793,6 +796,7 @@ internal sealed class PrototypeWizardExistingApiContract
     public bool IncludeBusinessComponentErrorMessages { get; }
     public ApiPlanLevel? PersistedHierarchicalRoot { get; }
     public Guid? ApiGuid { get; }
+    public string? ResolvedApiName { get; }
 
     public bool TryGetServiceSelection(string name, out bool selected)
     {
