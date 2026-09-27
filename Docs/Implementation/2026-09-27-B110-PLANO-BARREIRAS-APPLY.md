@@ -1,6 +1,11 @@
 # B110 — Plano detalhado de ação — v6
 
-**Estado:** etapas 0 a 6 implementadas e validadas localmente em 2026-09-27; aguarda instalação e matriz IDE da etapa 7. A etapa 8 depende da evidência de campo.
+**Estado em 2026-09-27:** etapas 0 a 8 concluídas. A matriz IDE da etapa 7 foi aceita
+com exceção de campo explícita para o diálogo do cenário 14, validado offline e não
+observado na IDE por falta de diário interrompido. A etapa 8 registrou a evidência dedicada,
+as remissões documentais e a rotina pré-push local. O fechamento e seus limites estão em
+`2026-09-27-B110-VALIDACAO-IDE.md`; o checkpoint vigente está em
+`../STATUS_ATUAL_E_PROXIMO_PASSO.md`. Push, tag e release não fazem parte do fechamento.
 
 **Data:** 2026-09-27.
 **Origem da v6:** parecer solo (Opus 5.5) sobre a v5, conferido contra o código e o git, e três
@@ -102,7 +107,8 @@ válida: T2 não a revoga, apenas exige que esse Apply seja consciente.
 
 ### 2.1 Fatos medidos
 
-- B110 aberto no backlog.
+- Na abertura deste plano, B110 estava aberto no backlog; o fechamento em 2026-09-27 está
+  registrado no estado acima e no documento de evidência dedicado.
 - **04/09** `[v4-2]`: API bloqueado por `BaselineServiceSourceHashMismatch` (EVIDENCIA §7.1),
   metadata íntegra (`FingerprintOk=True`). `ListFilters` de 1 para 0 no plano; SDT e quatro
   Procedures gravados; `SuccessWithWarnings`, `Bloqueados=0` (EVIDENCIA §7.2). No mesmo dia o
@@ -686,9 +692,10 @@ Medição separada, fora do aceite: o critério de revogação da §4.5, na `Tes
 
 ## 10. Ordem de execução `[v6-3]`
 
-Vale quando a promoção e a implementação forem autorizadas (§8); até lá, esta seção descreve a
-sequência, não autoriza nenhuma etapa. Cada etapa de código termina com a validação indicada e
-um commit local; push, tag e release continuam exigindo autorização própria.
+Sequência autorizada e executada em 2026-09-27, mantida aqui para rastreio. As etapas de
+código terminaram com as validações e os commits locais indicados; a etapa 7 foi aceita com
+a exceção de campo declarada no estado deste plano. Push, tag e release continuam exigindo
+autorização própria.
 
 | Etapa | Conteúdo | Validação ao fim |
 |---|---|---|
