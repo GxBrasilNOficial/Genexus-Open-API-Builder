@@ -1,7 +1,8 @@
 # B110 — Plano detalhado de ação — v6
 
-**Estado:** execução autorizada pelo mantenedor em 2026-09-27; etapas 0 a 7 em andamento.  
-**Data:** 2026-09-27.  
+**Estado:** etapas 0 a 6 implementadas e validadas localmente em 2026-09-27; aguarda instalação e matriz IDE da etapa 7. A etapa 8 depende da evidência de campo.
+
+**Data:** 2026-09-27.
 **Origem da v6:** parecer solo (Opus 5.5) sobre a v5, conferido contra o código e o git, e três
 decisões do mantenedor em 2026-09-27, marcadas como `[v6-n]`. A v5 veio de parecer solo sobre a
 v4 e de sete decisões do mantenedor (`[v5-n]`). As marcas `[v5-n]`, `[v4-n]` e `[v3-n]` foram
