@@ -1874,8 +1874,8 @@ public sealed class Package : AbstractPackageUI
         WriteOutput($"[Genexus Open API Builder][B082] Abertura total ate ShowDialog={openingWatch.ElapsedMilliseconds} ms.");
 
         // B115: a oferta vem ANTES do diálogo, e não depois de ele concluir. Sem a metadata o
-        // Wizard abre bloqueado, e a única ação disponível é Cancelar — o que fazia a oferta,
-        // posicionada após a conclusão, nunca ser alcançada no único cenário que ela resolve.
+        // B110 bloqueia todas as escritas com API sem metadata. A oferta vem antes para
+        // permitir recuperar o inventário; a reabertura exige aceite T2 ou bloqueia hierarquia.
         var recoveryOutcome = OfferOrphanMetadataRecoveryIfEnabled(
             ResolveFinalReportOwner(),
             knowledgeBase.DesignModel,
@@ -2639,6 +2639,11 @@ public sealed class Package : AbstractPackageUI
             plan.ProcedureNames.Count,
             plan.OwnSdtNames.Count,
             plan.SharedSdtNames.Count);
+        var contractRecoveryNotice = transaction.Structure.Root.Levels.Any()
+            ? "Após a recuperação, o Wizard bloqueará esta Transaction hierárquica sem o contrato de níveis; use Remover API gerada e depois gere novamente."
+            : "Após a recuperação, o Wizard listará as seções reconstruídas e os padrões fixos e exigirá confirmação antes de qualquer escrita. Services base path e mensagens de erro do Business Component também voltam aos padrões fixos do Wizard.";
+        message += Environment.NewLine + Environment.NewLine
+            + ExtensionOutputLocalization.Translate(contractRecoveryNotice, texts.Language);
         var answer = System.Windows.Forms.MessageBox.Show(
             owner,
             message,

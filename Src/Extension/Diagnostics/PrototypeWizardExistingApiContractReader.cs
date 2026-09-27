@@ -19,8 +19,8 @@ namespace GenexusOpenApiBuilder.Extension.Diagnostics;
 /// <summary>
 /// B034/B070: reconstrói, em modo somente leitura, as decisões já persistidas
 /// pelo API Object e pela metadata própria antes de abrir o Wizard.
-/// O usuário pode alterar qualquer decisão; a leitura apenas evita que uma
-/// reexecução comece com defaults e apague escolhas existentes.
+/// As decisões editáveis começam no contrato existente; B110 mantém o nome da API
+/// resolvida e informa a proveniência antes de autorizar contrato reconstruído após B115.
 /// </summary>
 internal static class PrototypeWizardExistingApiContractReader
 {

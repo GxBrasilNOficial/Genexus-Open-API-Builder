@@ -264,7 +264,9 @@ try {
     Assert-True ([bool]$operation.CanExecute) 'O encerramento do registro é executável pela ferramenta'
     Assert-True ([bool]$operation.RequiresStateAwareness) 'Encerrar exige mostrar o estado da KB antes'
     Assert-True ($operation.Summary.Contains('não apaga nada') -or $operation.Summary.Contains('nada é apagado')) 'O resumo precisa dizer que nada é apagado'
-    Assert-True ($operation.Summary.Contains('Wizard')) 'O resumo nomeia as duas saídas posteriores'
+    Assert-True ($operation.Summary.Contains('abra o Wizard para avaliar o estado atual')) 'O resumo remete ao diagnóstico do estado atual'
+    Assert-True (-not $operation.Summary.Contains('reaplicar pelo Wizard')) 'Encerrar não deve prometer Apply sobre estado sem metadata'
+    Assert-True ($operation.Summary.Contains('Encerrar o registro não recupera o contrato original')) 'Encerrar não recupera o contrato'
 
     # --- 4.1 Envelope interrompido sem recibo nenhum ----------------------------------------------
     # O caso mais comum de aborto: quem desiste, desiste cedo. Dizer que ele «gravou objetos e

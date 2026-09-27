@@ -322,9 +322,8 @@ internal static class ApiPlanGenerationStateReader
     /// a orientação anterior — que mandava apagar apenas o File — levava direto a
     /// `MetadataMissing`.
     ///
-    /// Os demais descompassos de posse ficam sem sugestão: Description alheia, integridade
-    /// divergente e Service Source fora do contrato não se resolvem apagando nada, e sugerir isso
-    /// destruiria o baseline por um problema de outro lugar.
+    /// B110: Service Source fora do baseline, com metadata presente, tem a saída medida
+    /// Remover API gerada (2026-09-04). Os demais descompassos não recebem sugestão destrutiva.
     /// </summary>
     private static string? DescribeApiObjectCause(
         string? failingClause,
@@ -333,6 +332,8 @@ internal static class ApiPlanGenerationStateReader
         string metadataFileName,
         string apiName)
     {
+        if (string.Equals(failingClause, "BaselineServiceSourceHashMismatch", StringComparison.Ordinal))
+            return failingClause + " — O Source do API diverge do baseline da metadata. Use Remover API gerada e depois gere novamente pelo Wizard. Nenhuma escrita foi solicitada.";
         var guidDivergent = !string.IsNullOrWhiteSpace(actualApiGuid)
             && !string.IsNullOrWhiteSpace(metadataApiGuid)
             && !string.Equals(actualApiGuid, metadataApiGuid, StringComparison.OrdinalIgnoreCase);
@@ -348,6 +349,8 @@ internal static class ApiPlanGenerationStateReader
             : "a metadata da API não está na KB, e sem ela a posse do API Object existente não pode ser confirmada";
         var guidance = cause
             + $". Para regerar a API a partir do que restou, apague o API Object '{apiName}' e o File '{metadataFileName}' — os dois, porque um sem o outro apenas troca este bloqueio pelo seguinte — e execute o Wizard de novo: os SDTs e as Procedures existentes são reencontrados, e o API Object e a metadata são recriados. Paginação, ordenação e campos obrigatórios voltam aos padrões das preferências, porque só existiam na metadata apagada.";
+        if (metadataMissing)
+            guidance += " Consulte a preferência Oferecer recuperação de metadata órfã no Wizard; a oferta depende da elegibilidade da recuperação B115.";
         return string.IsNullOrWhiteSpace(failingClause) ? guidance : failingClause + " — " + guidance;
     }
 

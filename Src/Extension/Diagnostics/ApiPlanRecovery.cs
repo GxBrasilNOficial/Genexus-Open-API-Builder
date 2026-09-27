@@ -140,8 +140,8 @@ public static class ApiPlanRecoveryRehydrator
                 + "foi confirmado — não o contrato em si —, então retomar o pipeline a partir dele seria "
                 + "inventar um plano. O que a ferramenta pode fazer é encerrar este registro: a Knowledge "
                 + "Base é liberada, nada é apagado, e o que ficou pela metade continua como está. Depois "
-                + "disso, as duas saídas são reaplicar pelo Wizard sobre o estado atual — o reencontro "
-                + "conservador cuida do que já existe — ou remover a API gerada.",
+                + "disso, abra o Wizard para avaliar o estado atual: ele indicará a saída conforme a metadata "
+                + "e o API Object encontrados. Encerrar o registro não recupera o contrato original.",
                 journal.OperationKind,
                 journal.OperationState,
                 journal.LogicalStage));

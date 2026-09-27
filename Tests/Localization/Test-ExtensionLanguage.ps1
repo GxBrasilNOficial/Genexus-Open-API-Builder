@@ -110,3 +110,6 @@ Assert-Contains $localization 'Preferences' 'A casca B082 em inglês deve traduz
 Assert-Contains $localization 'Eliminando ' 'A casca B082 em espanhol deve traduzir Removendo.'
 
 Write-Output 'PASS: ExtensionLanguage'
+Assert-Contains $localization 'ele indicará a saída conforme a metadata e o API Object encontrados' 'B110: encerramento remete ao estado atual em português.'
+Assert-Contains $localization 'indicará la salida según los metadatos y el API Object encontrados' 'B110: encerramento remete ao estado atual em espanhol.'
+Assert-Contains $localization 'it will indicate the way forward according to the metadata and API Object found' 'B110: encerramento remete ao estado atual em inglês.'
