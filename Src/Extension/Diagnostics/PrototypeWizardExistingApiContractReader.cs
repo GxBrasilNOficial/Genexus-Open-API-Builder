@@ -30,10 +30,6 @@ internal static class PrototypeWizardExistingApiContractReader
         @"(?<annotations>(?:\s*\[[^\r\n]*\]\s*)*)(?<![\w.])(?<service>List|Get|Create|Update|Delete)\s*\((?<parameters>[^)]*)\)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
-    private static readonly Regex InputParameterPattern = new(
-        @"(?<direction>in|out)\s*:\s*&(?<name>[A-Za-z_][A-Za-z0-9_]*)",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
-
     private static readonly Regex AnnotationPattern = new(
         @"\[(?<name>Description|RestPath|SecurityLevel|RestMethod)\s*\(\s*(?:""(?<value>[^""]*)""|(?<bare>[^)]*))\s*\)\]",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
@@ -127,7 +123,11 @@ internal static class PrototypeWizardExistingApiContractReader
             includeBusinessComponentErrorMessages,
             persistedHierarchicalRoot,
             api?.Guid,
-            api?.Name);
+            api?.Name,
+            ApiPlanContractProvenance.Read(metadata.Document, source.ServicesAvailable,
+                source.Services.Any(item => !string.IsNullOrWhiteSpace(item.Description)),
+                source.ListRestPath is not null, source.SecurityLevel is not null, source.FiltersAvailable,
+                createFields.IsAvailable, updateFields.IsAvailable, responseFields.IsAvailable));
     }
 
     private static API? ResolveApiObject(
@@ -310,31 +310,17 @@ internal static class PrototypeWizardExistingApiContractReader
         ISet<string> attributeNames,
         IReadOnlyDictionary<string, PrototypeWizardExistingFilter> metadataFilters)
     {
-        var inputNames = new HashSet<string>(
-            InputParameterPattern.Matches(parameters)
-                .Cast<Match>()
-                .Where(match => string.Equals(match.Groups["direction"].Value, "in", StringComparison.OrdinalIgnoreCase))
-                .Select(match => match.Groups["name"].Value),
-            StringComparer.OrdinalIgnoreCase);
-
         var filters = new List<PrototypeWizardExistingFilter>();
-        foreach (var attributeName in attributeNames)
+        foreach (var sourceFilter in ApiPlanContractProvenance.ReadFilters(parameters, attributeNames))
         {
-            var usesPeriod = inputNames.Contains(attributeName + "From") && inputNames.Contains(attributeName + "To");
-            var usesRange = inputNames.Contains(attributeName + "Min") && inputNames.Contains(attributeName + "Max");
-            var selected = inputNames.Contains(attributeName) || usesPeriod || usesRange;
-            if (!selected)
-            {
-                continue;
-            }
-
+            var attributeName = sourceFilter.Name;
             if (metadataFilters.TryGetValue(attributeName, out var metadataFilter))
             {
                 filters.Add(metadataFilter);
                 continue;
             }
 
-            filters.Add(new PrototypeWizardExistingFilter(attributeName, null, usesPeriod, usesRange));
+            filters.Add(new PrototypeWizardExistingFilter(attributeName, null, sourceFilter.UsesPeriod, sourceFilter.UsesRange));
         }
 
         return filters;
@@ -740,7 +726,8 @@ internal sealed class PrototypeWizardExistingApiContract
         bool includeBusinessComponentErrorMessages = true,
         ApiPlanLevel? persistedHierarchicalRoot = null,
         Guid? apiGuid = null,
-        string? resolvedApiName = null)
+        string? resolvedApiName = null,
+        ApiPlanContractProvenance? provenance = null)
     {
         HasExistingApi = hasExistingApi;
         // A primeira declaração de cada nome vence: contrato de origem malformado não pode
@@ -778,6 +765,7 @@ internal sealed class PrototypeWizardExistingApiContract
         PersistedHierarchicalRoot = persistedHierarchicalRoot;
         ApiGuid = apiGuid;
         ResolvedApiName = resolvedApiName;
+        Provenance = provenance ?? ApiPlanContractProvenance.Read(null, false, false, false, false, false, false, false, false);
     }
 
     public bool HasExistingApi { get; }
@@ -797,6 +785,7 @@ internal sealed class PrototypeWizardExistingApiContract
     public ApiPlanLevel? PersistedHierarchicalRoot { get; }
     public Guid? ApiGuid { get; }
     public string? ResolvedApiName { get; }
+    public ApiPlanContractProvenance Provenance { get; }
 
     public bool TryGetServiceSelection(string name, out bool selected)
     {
