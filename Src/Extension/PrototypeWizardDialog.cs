@@ -2888,7 +2888,8 @@ internal sealed class PrototypeWizardFlowSelection
         bool generateMetadata,
         bool applyList,
         bool applyBusinessComponent,
-        ApiPlanHierarchicalWizardSelection? hierarchicalSelection = null)
+        ApiPlanHierarchicalWizardSelection? hierarchicalSelection = null,
+        ReconstructedContractAcknowledgement? reconstructedContractAcknowledgement = null)
     {
         ContractSelection = contractSelection ?? throw new ArgumentNullException(nameof(contractSelection));
         ReviewSelection = reviewSelection ?? throw new ArgumentNullException(nameof(reviewSelection));
@@ -2901,6 +2902,7 @@ internal sealed class PrototypeWizardFlowSelection
         ApplyList = applyList;
         ApplyBusinessComponent = applyBusinessComponent;
         HierarchicalSelection = hierarchicalSelection;
+        ReconstructedContractAcknowledgement = reconstructedContractAcknowledgement;
     }
 
     public PrototypeWizardContractSelection ContractSelection { get; }
@@ -2924,6 +2926,7 @@ internal sealed class PrototypeWizardFlowSelection
     public bool ApplyBusinessComponent { get; }
 
     public ApiPlanHierarchicalWizardSelection? HierarchicalSelection { get; }
+    public ReconstructedContractAcknowledgement? ReconstructedContractAcknowledgement { get; }
 }
 
 internal sealed class PrototypeWizardBusinessComponentSelection

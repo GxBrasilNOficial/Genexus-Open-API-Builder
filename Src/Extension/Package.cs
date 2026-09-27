@@ -2063,6 +2063,30 @@ public sealed class Package : AbstractPackageUI
                 {
                     throw new InvalidOperationException(ApiPlanExistingNamePolicy.Describe(existingContract.ResolvedApiName, apiPlan.ApiName));
                 }
+                var provenance = existingContract.Provenance;
+                var hasSublevels = transaction.Structure.Root.Levels.Any();
+                if (!ReconstructedContractAcknowledgement.IsAccepted(provenance.Imported,
+                    provenance.HasLevelsKey, hasSublevels, provenance.ReconstructedSections,
+                    selection.ReconstructedContractAcknowledgement))
+                {
+                    throw new InvalidOperationException(ReconstructedContractAcknowledgement.IsHierarchyBlocked(
+                        provenance.Imported, provenance.HasLevelsKey, hasSublevels)
+                        ? ReconstructedContractAcknowledgement.HierarchyBlocked
+                        : ReconstructedContractAcknowledgement.ConfirmationRequired);
+                }
+                if (provenance.Imported)
+                {
+                    report.AddWarning("Contrato reconstruído confirmado pelo usuário.");
+                    foreach (var section in provenance.ReconstructedSections)
+                    {
+                        var edited = selection.ReconstructedContractAcknowledgement!.EditedSections.Contains(section, StringComparer.Ordinal)
+                            ? " — alterado nesta execução" : string.Empty;
+                        report.AddWarning($"Seção reconstruída: {section} ({provenance.Sections[section]}){edited}.");
+                    }
+                    report.AddWarning(selection.GenerateMetadata
+                        ? "Ao concluir a gravação da metadata, recovery.imported será removida e os valores serão o contrato de referência do Sincronizar."
+                        : "Sem Gerar metadata, recovery.imported permanece e o painel reaparecerá na próxima abertura do Wizard.");
+                }
                 PrototypeWizardBusinessComponentNavigationPolicy.ThrowIfDeleteWithoutBusinessComponent(
                     apiPlan.Services.Select(service => service.Name),
                     selection.ApplyBusinessComponent);

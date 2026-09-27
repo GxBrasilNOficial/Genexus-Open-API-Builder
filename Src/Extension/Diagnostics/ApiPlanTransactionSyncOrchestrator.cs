@@ -253,7 +253,8 @@ internal static class ApiPlanTransactionSyncOrchestrator
                 || string.Equals(name, "Create", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(name, "Update", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(name, "Delete", StringComparison.OrdinalIgnoreCase)),
-            hierarchicalSelection);
+            hierarchicalSelection,
+            reconstructedContractAcknowledgement: null); // Sync já recusa recovery.imported.
     }
 
     private static void ApplyHierarchicalIncludeAdded(
