@@ -232,6 +232,12 @@ válida: T2 não a revoga, apenas exige que esse Apply seja consciente.
   incluir API Object no escopo produz bloqueio efetivo para `MetadataMissing` e para
   `BaselineServiceSourceHashMismatch` (cláusula de posse vira conflito em `CreateState`).
 
+**Atualização de 2026-09-27 (`a7ac102`).** O segundo item desta lista, sobre o código genérico
+`B063/B064/B067`, registra a leitura estática da v2. No Apply atual, as recusas T2 e de
+renomeação registram `B110` no relatório e na Output; as demais falhas do preflight agregado
+mantêm `B063/B064/B067`. Ver o complemento em
+[`2026-09-27-B110-VALIDACAO-IDE.md`](2026-09-27-B110-VALIDACAO-IDE.md).
+
 ### 2.4 Perguntas de campo
 
 - **Não demonstrável pelos artefatos disponíveis** `[v4-2]`: o Source persistido das

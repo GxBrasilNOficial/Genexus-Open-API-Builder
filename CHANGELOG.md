@@ -45,7 +45,8 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   metadata não recuperou: o caminho T2 exige confirmação específica e bloqueia Transaction
   hierárquica sem `levels`. Uma colisão em Procedure bloqueia também a confirmação de SDTs;
   o nome do API Object existente permanece somente leitura no Wizard. As recusas T2 e de
-  renomeação agora aparecem com o código `B110` no relatório e na Output. A perda de filtros da
+  renomeação agora aparecem com o código `B110` no relatório e na Output (atribuição validada
+  offline, sem reteste dessa atribuição na IDE). A perda de filtros da
   variante de 04/09 vinha da precedência do leitor e já foi corrigida em `0902455`, publicada
   na mesma `alpha.8`; a perda persistida do membro do SDT não foi comprovada. Validação IDE
   aceita em 2026-09-27 com exceção explícita: o texto de `Recuperar operação interrompida`
