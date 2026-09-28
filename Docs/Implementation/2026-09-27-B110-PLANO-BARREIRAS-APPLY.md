@@ -635,6 +635,12 @@ Medição separada, fora do aceite: o critério de revogação da §4.5, na `Tes
    API existente (§3.6) `[v5-1]` `[v5-2]`. No mesmo passo, revisar a frase da entrada `Planned`
    «Escrita parcial do BC» que afirma que o Wizard «degrada o plano». `Validated` só depois da
    IDE.
+
+   **Fechamento documental de 2026-09-27.** A entrada B110 ficou única em `Fixed`, com o bloqueio
+   e as duas mudanças visíveis descritos no mesmo texto. A separação adicional em `Changed`
+   prevista acima não foi feita para respeitar a regra “uma entrega, uma entrada” do `AGENTS.md`;
+   esta nota preserva a decisão sem reescrever a proposta histórica.
+
 7. Varredura de promoção: B110, B115, `recovery.imported`, `notRecovered`, «Apply completo»,
    «Cancelar é a única», `degrada o plano`, `limpeza manual`, `alpha.9`, «reaplicar pelo
    Wizard», «padrão das preferências», «renomear», termos de próximo passo e contagens `[v4-6]`

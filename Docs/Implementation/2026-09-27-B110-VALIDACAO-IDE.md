@@ -143,7 +143,6 @@ Esperado pelo plano: em uma Transaction sem subníveis, com API Object próprio 
 | Metadata 7a | File `apiCarga_Metadata` reencontrado no mesmo GUID `f10e5793-414f-46c2-9017-d5ec48bc4cd5`; schema V4, 40.700 bytes; SHA-256 `E80C9100250836B59F0493BEF4CFFFB0AF5322CD6F71F44CD472998815698482`. Integridade B067 gravada; PlannedContractHash `5A8E6028F71E2C7341E17B460A1D1DF95F28537E95F40C2B9A35B1EDDDCC89A6`. |
 | Relatório T2 7a | Registrou contrato reconstruído confirmado pelo usuário e 15 seções reconstruídas, incluindo `api.servicesBasePath` e `errorDetail.includeBusinessComponentMessages`; esta última identificada como alterada nesta execução. A mensagem sobre remover `recovery.imported` está no futuro; não substitui a inspeção da metadata gravada ou a verificação da próxima abertura. |
 | Reabertura após 7a | Captura e confirmação do mantenedor: aba `Contrato reconstruído` ausente e mensagens de erro BC continuam desmarcadas. Direct-Get reencontrou FileId 117, mesmo GUID, 40.700 bytes. B115 informou que o File existe e não foi produzido pela recuperação; recuperação não se aplica. O comportamento confirma o encerramento do estado importado, sem inspeção literal do JSON. Cancelamento B034: nenhum ApiPlan criado, nenhuma alteração na KB nesta invocação. |
-| Output final e persistência | Na reabertura, o direct-Get reencontrou `apiCarga_Metadata`, FileId 117, GUID `f10e5793-414f-46c2-9017-d5ec48bc4cd5`, 1.479 bytes. B115 não foi oferecida porque o File já registra o API Object atual. O Output final informa: `Nenhuma etapa de escrita foi confirmada no wizard para Transaction='Carga'. Nenhuma escrita foi solicitada.` |
 
 Resultado: **PASS para o ramo 7a**, com confirmação, edição de seção, relatório, persistência concluída e reabertura sem painel T2, preservando mensagens BC `False`. A saída do estado importado foi verificada pelo comportamento do Wizard e diagnóstico B115, sem leitura literal da chave JSON.
 
@@ -292,5 +291,14 @@ Resultado: **PASS para cenário 15** pela observação dos dois estados na IDE, 
 - Cenário 9: V2 Laudo e V3 Escola validadas; V1 sem `errorDetail` não localizada entre os seis Files de metadata inventariados na KB, variante condicional não exercitada.
 - Cenário 10: 10a, 10b e 10c concluídos, com restauração via MCP. Reabertura apta confirmada após 10a/10b; após 10c não foi repetida, pois a matriz pede a mensagem específica e a restauração foi conferida diretamente no MCP. No cenário 1, a explicação de Paths foi observada, mas o campo não foi submetido a uma tentativa de edição; a condição `ReadOnly` do controle foi conferida no código para o cenário 15.
 - Cenário 14: texto validado offline, mas sem exibição do diálogo na IDE porque o diário atual está concluído; o mantenedor aceitou essa exceção em 2026-09-27.
-- A contagem de Folder junto aos SDTs é uma questão de rótulo da interface, registrada para avaliação separada em `B134`; não altera o bloqueio de escrita medido nesta bateria.
+- A contagem de Folder junto aos SDTs é uma questão de rótulo da interface, registrada para avaliação separada em `B135`; não altera o bloqueio de escrita medido nesta bateria.
 - A aceitação da bateria é qualificada pelos limites acima. As remissões documentais e os gates locais do plano foram conferidos no fechamento da frente; a rotina pré-push tem relatório próprio e não transforma o cenário 14 em prova de IDE.
+
+## Complemento de 2026-09-27 — código do bloqueio no relatório
+
+Uma revisão posterior encontrou que as recusas T2 e de renomeação, embora ocorressem antes do
+primeiro `Save()`, chegavam ao relatório e à Output com o código genérico `B063/B064/B067`.
+O Apply agora distingue essas recusas pelo tipo de exceção e as identifica como `B110`, mantendo
+o código anterior para as demais falhas do preflight agregado. O teste
+`Tests/WritePreflight/Test-ApiPlanB110Preflight.ps1` exercita os dois bloqueios e a ligação com
+o relatório. Esta correção de atribuição foi validada offline; não houve nova rodada na IDE.

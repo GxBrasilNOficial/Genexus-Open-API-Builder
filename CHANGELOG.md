@@ -44,12 +44,15 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   desde a `v0.1.0-alpha.8`, também podia levar a um Apply completo sem revisão das seções que a
   metadata não recuperou: o caminho T2 exige confirmação específica e bloqueia Transaction
   hierárquica sem `levels`. Uma colisão em Procedure bloqueia também a confirmação de SDTs;
-  o nome do API Object existente permanece somente leitura no Wizard. A perda de filtros da
+  o nome do API Object existente permanece somente leitura no Wizard. As recusas T2 e de
+  renomeação agora aparecem com o código `B110` no relatório e na Output. A perda de filtros da
   variante de 04/09 vinha da precedência do leitor e já foi corrigida em `0902455`, publicada
   na mesma `alpha.8`; a perda persistida do membro do SDT não foi comprovada. Validação IDE
   aceita em 2026-09-27 com exceção explícita: o texto de `Recuperar operação interrompida`
   passou no teste offline, mas seu diálogo não foi observado porque não havia diário
-  interrompido. Evidência:
+  interrompido. A orientação publicada na `alpha.8` para escolher diretamente entre reaplicar
+  pelo Wizard e remover após encerrar o diário é histórica: o texto atual manda abrir o Wizard
+  para avaliar o estado encontrado, sujeito às barreiras T1/T2. Evidência:
   `Docs/Implementation/2026-09-27-B110-VALIDACAO-IDE.md`.
 
 ### Changed

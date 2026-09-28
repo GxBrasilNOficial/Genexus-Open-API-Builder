@@ -221,7 +221,7 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\IssueForms\Test-GitHubIssueFormsYaml.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Issue Forms Yaml'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\TextPatch\Test-ApplyTextPatch.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Text Patch'`n", [System.Text.UTF8Encoding]::new($false))
         & git add .gitignore README.md Src scripts Tests
-        foreach ($b110Test in @('Test-ApiPlanWriteBlockMessage.ps1', 'Test-ApiPlanExistingNamePolicy.ps1', 'Test-ApiPlanContractProvenance.ps1', 'Test-ReconstructedContractAcknowledgement.ps1')) {
+        foreach ($b110Test in @('Test-ApiPlanWriteBlockMessage.ps1', 'Test-ApiPlanExistingNamePolicy.ps1', 'Test-ApiPlanContractProvenance.ps1', 'Test-ReconstructedContractAcknowledgement.ps1', 'Test-ApiPlanB110Preflight.ps1')) {
             [IO.File]::WriteAllText((Join-Path $PWD "Tests\WritePreflight\$b110Test"), "#requires -Version 7.4`nWrite-Output 'PASS: fixture B110'`n", [Text.UTF8Encoding]::new($false))
         }
         & git add Tests/WritePreflight
@@ -233,7 +233,7 @@ try {
         $checkerExit = $LASTEXITCODE
         $result = $json | ConvertFrom-Json
         Assert-True ($checkerExit -eq 0) 'A fixture limpa deve concluir todos os checks mecânicos.'
-        foreach ($b110Check in @('tests.writeBlockMessage', 'tests.existingNamePolicy', 'tests.contractProvenance', 'tests.reconstructedAcknowledgement')) {
+        foreach ($b110Check in @('tests.writeBlockMessage', 'tests.existingNamePolicy', 'tests.contractProvenance', 'tests.reconstructedAcknowledgement', 'tests.b110Preflight')) {
             Assert-True (($result.checks | Where-Object name -eq $b110Check).status -eq 'passed') "Check B110 não executado: $b110Check"
         }
         Assert-True ($result.gitContext.branch -eq 'main') 'O checker não reconheceu a branch main na fixture.'

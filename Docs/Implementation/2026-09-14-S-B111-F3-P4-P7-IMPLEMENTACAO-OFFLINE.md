@@ -178,6 +178,11 @@ A ação implementa exatamente isso, e nada além:
 Depois do encerramento, as duas saídas são as de sempre: reaplicar pelo Wizard sobre o estado
 atual, com o reencontro conservador cuidando do que já existe, ou remover a API gerada.
 
+**Atualização de 2026-09-27 (B110).** A frase acima registra a orientação vigente nesta etapa
+histórica. O diálogo atual orienta abrir o Wizard para avaliar a metadata e o API Object
+encontrados; a possibilidade de Apply depende das barreiras T1/T2. Ver
+[`2026-09-27-B110-VALIDACAO-IDE.md`](2026-09-27-B110-VALIDACAO-IDE.md), cenário 14 e limites.
+
 ## 4. P6 — o comando e a preferência
 
 `Recuperar operação interrompida` / `Recuperar operación interrumpida` /
@@ -260,7 +265,8 @@ descreve continua sendo o que as etapas P4 a P7 entregaram offline.
   não reenfileira o Folder. Não há diário anterior em produção: a P2 estreou ontem.
 - **A continuação de Apply e Sync não existe** (3.2). Um Apply interrompido exige decisão
   humana entre reaplicar pelo Wizard ou remover; o que a ferramenta faz por ele é encerrar o
-  registro (3.4), liberando a KB sem apagar nada.
+  registro (3.4), liberando a KB sem apagar nada. Esta é a leitura histórica da P5; a orientação
+  atual do diálogo e as barreiras B110 estão na atualização datada da seção 3.4.
 - **O encerramento de registro é a ação mais delicada da recuperação**: ela libera a KB sem
   concluir a operação, e a KB pode ficar com objetos pela metade. A defesa é a confirmação
   informada — inventário à vista — e as três recusas de 3.4. Se na P8 ficar claro que o texto

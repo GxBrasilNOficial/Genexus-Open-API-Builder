@@ -2058,22 +2058,13 @@ public sealed class Package : AbstractPackageUI
             try
             {
                 var existingContract = PrototypeWizardExistingApiContractReader.Read(knowledgeBase.DesignModel, transaction);
-                if (ApiPlanExistingNamePolicy.IsRenameBlocked(existingContract.HasExistingApi,
-                    existingContract.ApiGuid, existingContract.ResolvedApiName, apiPlan.ApiName))
-                {
-                    throw new InvalidOperationException(ApiPlanExistingNamePolicy.Describe(existingContract.ResolvedApiName, apiPlan.ApiName));
-                }
+                ApiPlanB110Preflight.RequireExistingName(existingContract.HasExistingApi,
+                    existingContract.ApiGuid, existingContract.ResolvedApiName, apiPlan.ApiName);
                 var provenance = existingContract.Provenance;
                 var hasSublevels = transaction.Structure.Root.Levels.Any();
-                if (!ReconstructedContractAcknowledgement.IsAccepted(provenance.Imported,
+                ApiPlanB110Preflight.RequireReconstructedContract(provenance.Imported,
                     provenance.HasLevelsKey, hasSublevels, provenance.ReconstructedSections,
-                    selection.ReconstructedContractAcknowledgement))
-                {
-                    throw new InvalidOperationException(ReconstructedContractAcknowledgement.IsHierarchyBlocked(
-                        provenance.Imported, provenance.HasLevelsKey, hasSublevels)
-                        ? ReconstructedContractAcknowledgement.HierarchyBlocked
-                        : ReconstructedContractAcknowledgement.ConfirmationRequired);
-                }
+                    selection.ReconstructedContractAcknowledgement);
                 if (provenance.Imported)
                 {
                     report.AddWarning("Contrato reconstruído confirmado pelo usuário.");
@@ -2115,10 +2106,12 @@ public sealed class Package : AbstractPackageUI
             catch (Exception ex) when (ex is not ApiPlanBusyAbortedException)
             {
                 WriteProbePhase("PreflightAgregado", phaseWatch.ElapsedMilliseconds);
-                WriteOutput($"[Genexus Open API Builder][B063/B064/B067] Preflight agregado bloqueou o wizard antes do primeiro Save(): Transaction='{transaction.Name}', Error='{ex.Message}'");
+                var reportCode = ex is ApiPlanB110PreflightException
+                    ? ApiPlanB110PreflightException.ReportCode : "B063/B064/B067";
+                WriteOutput($"[Genexus Open API Builder][{reportCode}] Preflight agregado bloqueou o wizard antes do primeiro Save(): Transaction='{transaction.Name}', Error='{ex.Message}'");
                 if (!report.HasInterrupted)
                 {
-                    report.AddBlocked("Preflight", "B063/B064/B067", ex.Message);
+                    report.AddBlocked("Preflight", reportCode, ex.Message);
                 }
 
                 stopwatch.Stop();

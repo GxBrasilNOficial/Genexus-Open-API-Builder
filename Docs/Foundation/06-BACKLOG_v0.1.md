@@ -291,6 +291,7 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B132 | Subníveis podados podem voltar incluídos ao reabrir metadata completa com `levels: null` | A avaliar — inferência de leitura registrada em 2026-09-27 na §4.5 do plano B110; requer medição, fora do B110 |
 | B133 | Metadata obsoleta com API ausente: criação da API sem regravar metadata pode deixar GUID divergente | A avaliar — registrado em 2026-09-27 na §8 do plano B110; requer diagnóstico, fora do B110 |
 | B134 | Avaliar se as etapas de SDTs e Procedures devem permanecer em abas separadas ou ser agrupadas no Wizard | A avaliar — estudo de UX levantado em 2026-09-27; ao desmarcar SDTs, Procedures também é desmarcada. Considerar clareza da dependência, necessidade de controles distintos e espaço disponível na tela; ver a nota operacional abaixo |
+| B135 | Corrigir ou esclarecer a contagem exibida como “SDTs” quando inclui o Folder da Transaction | A avaliar — na validação IDE da B110, `Teste` mostrou 21 planejados sob “SDTs”, enquanto o Output registrou 20 SDTs; a leitura estática atribuiu a diferença ao Folder. Confirmar a composição do contador e ajustar o rótulo ou a contagem, sem alterar a barreira de escrita; evidência em `Docs/Implementation/2026-09-27-B110-VALIDACAO-IDE.md`, “Observações e limites” |
 
 ### Nota operacional — B129, registrada em 2026-09-25
 
@@ -383,8 +384,9 @@ instalada.
 ### Nota operacional — B134, registrada em 2026-09-27
 
 **Observação de campo.** Durante a validação IDE do `B110`, o mantenedor notou que desmarcar
-SDTs também desmarca Procedures. A observação foi registrada no cenário 6 da seção 6.2, na
-Transaction `Contrato` da KB `wsEducacaoSpTeste`.
+SDTs também desmarca Procedures. A observação está registrada em “Observações e limites” de
+`Docs/Implementation/2026-09-27-B110-VALIDACAO-IDE.md`; o registro não a vincula ao cenário 6
+nem a uma Transaction específica.
 
 **Questão a estudar.** Comparar uma aba comum com seções de SDTs e Procedures com a organização
 atual em abas separadas. Avaliar se as abas atuais ajudam a distinguir os artefatos e decisões

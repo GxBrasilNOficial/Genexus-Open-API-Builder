@@ -16,6 +16,8 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
   barreira T2 do contrato recuperado B115. A bateria de IDE foi aceita com exceção explícita
   para o diálogo do cenário 14, validado offline sem diário interrompido na KB; o cenário 11
   tem preservação independente antes/depois em dois bloqueios, dentro do alcance declarado.
+  Revisão posterior corrigiu offline o código de relatório das recusas T2/renomeação para
+  `B110`, sem nova observação na IDE.
   Evidência: `Docs/Implementation/2026-09-27-B110-VALIDACAO-IDE.md`.
 - `B109` fechado por mitigação em 2026-09-25: a falha intermitente `Collection was modified`
   foi localizada numa corrida do SDK na desserialização sob demanda de SDT; a extensão repete a
@@ -187,6 +189,12 @@ campo** na mesma tarde, com recuperação na 3ª tentativa, e margem ampliada pa
 commits locais de `B109`/`B110` por push é decisão separada, ainda sem autorização nesta
 conversa. Evidências: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md` e
 `Docs/Implementation/2026-09-27-B110-VALIDACAO-IDE.md`.
+
+**Pendência do próximo corte, não do fechamento B110:** atualizar os três `README`,
+`Docs/Public/INSTALL.md` e `Docs/Public/DEMO.md` para explicar a aba `Contrato reconstruído`,
+a confirmação T2, o bloqueio antes de escrever e o nome somente leitura de API existente.
+Esses arquivos ainda descrevem a DLL pública `0.1.0-alpha.9`; o conteúdo novo deve acompanhar
+o release que levar a B110.
 
 ~~**Pendência registrada para o corte, não para agora.** `Docs/Public/DEMO.md` e os três `README`
 ainda não mencionam o File do diário `GxOpenApiBuilder_OperationJournal`, o bloqueio que ele
