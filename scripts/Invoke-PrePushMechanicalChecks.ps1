@@ -15,12 +15,14 @@ if (-not $AsJson) {
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'B128-ReferenceTokenizer.ps1')
+. (Join-Path $PSScriptRoot 'B129-SatelliteChecks.ps1')
 
 function Invoke-ExternalProcess {
     param(
         [Parameter(Mandatory)] [string]$FileName,
         [Parameter(Mandatory)] [string[]]$Arguments,
-        [Parameter(Mandatory)] [string]$WorkingDirectory
+        [Parameter(Mandatory)] [string]$WorkingDirectory,
+        [hashtable]$Environment = @{}
     )
 
     $info = [System.Diagnostics.ProcessStartInfo]::new()
@@ -32,6 +34,8 @@ function Invoke-ExternalProcess {
     $info.StandardOutputEncoding = [System.Text.Encoding]::UTF8
     $info.StandardErrorEncoding = [System.Text.Encoding]::UTF8
     foreach ($argument in $Arguments) { [void]$info.ArgumentList.Add($argument) }
+    # Variáveis só do processo filho; o ambiente do checker não muda.
+    foreach ($key in $Environment.Keys) { $info.Environment[[string]$key] = [string]$Environment[$key] }
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo = $info
     [void]$process.Start()
@@ -294,6 +298,8 @@ $remoteFetchStatus = if ($Fetch) { 'notRun' } else { 'notRequested' }
 $remoteReadiness = if ($Fetch) { 'pending' } else { 'unverified' }
 $pushReadiness = 'readyLocal'
 $gitContext = [ordered]@{ branch = $null; ahead = $null; behind = $null; baseRef = 'origin/main'; workingTreeDirty = $false; preexistingChanges = @(); newNonIgnoredChanges = @() }
+# null só quando o check satélite não chegou a rodar (falha do próprio checker).
+$satelliteRefs = $null
 
 try {
     $gitContext.preexistingChanges = @(Get-GitStatusSnapshot -WorkingDirectory $repositoryRoot)
@@ -450,6 +456,22 @@ try {
         }
     }
 
+    # B129 — guarda da D15: Package.cs não pode conter #if.
+    $packageSource = Join-Path $repositoryRoot 'Src\Extension\Package.cs'
+    if (-not (Test-Path -LiteralPath $packageSource -PathType Leaf)) {
+        $failed = $true
+        $checks.Add((New-Check 'source.packageNoIfDirective' 'failed' 'Src/Extension/Package.cs não encontrado.' ([ordered]@{ kind = 'packageSourceMissing' })))
+    }
+    else {
+        $ifLines = @(Get-B129IfDirectiveLines -Lines @(Get-Content -LiteralPath $packageSource))
+        if ($ifLines.Count -eq 0) { $checks.Add((New-Check 'source.packageNoIfDirective' 'passed' 'Package.cs não contém diretiva #if (D15).' $null)) }
+        else {
+            $failed = $true
+            $checks.Add((New-Check 'source.packageNoIfDirective' 'failed' 'Package.cs contém diretiva #if, proibida pela D15.' ([ordered]@{ kind = 'ifDirectiveFound'; lines = $ifLines })))
+        }
+    }
+
+    $dotnetStatus = @{}
     foreach ($dotnetSpec in @(
         [ordered]@{ Name = 'dotnet.restore'; Phase = 'restore'; Arguments = @('restore', 'Src\GenexusOpenApiBuilder.sln', '--locked-mode'); Command = 'dotnet restore Src\GenexusOpenApiBuilder.sln --locked-mode' },
         [ordered]@{ Name = 'dotnet.build'; Phase = 'build'; Arguments = @('build', 'Src\GenexusOpenApiBuilder.sln', '--configuration', 'Release', '--no-restore'); Command = 'dotnet build Src\GenexusOpenApiBuilder.sln --configuration Release --no-restore' }
@@ -458,11 +480,143 @@ try {
         $output = ConvertTo-SanitizedText ($commandResult.StdOut + $commandResult.StdErr)
         Add-DiagnosticWarnings -Output $output
         $commands.Add([ordered]@{ command = $dotnetSpec.Command; exitCode = $commandResult.ExitCode; output = $output })
-        if ($commandResult.ExitCode -eq 0) { $checks.Add((New-Check $dotnetSpec.Name 'passed' "$($dotnetSpec.Phase) concluído." $null)); continue }
+        if ($commandResult.ExitCode -eq 0) { $dotnetStatus[$dotnetSpec.Name] = 'passed'; $checks.Add((New-Check $dotnetSpec.Name 'passed' "$($dotnetSpec.Phase) concluído." $null)); continue }
         $kind = Get-FailureKind -Output $output -Phase $dotnetSpec.Phase
         $status = if ($kind -in @('networkOrFeedUnavailable', 'sdkUnavailable')) { 'environmentBlocked' } else { 'failed' }
         if ($status -eq 'environmentBlocked') { $environmentBlocked = $true } else { $failed = $true }
+        $dotnetStatus[$dotnetSpec.Name] = $status
         $checks.Add((New-Check $dotnetSpec.Name $status "$($dotnetSpec.Phase) falhou: $kind." $output))
+    }
+
+    # B129 — paridade dos itens Compile avaliados. Roda sempre: só avalia, não depende de restore.
+    $srcRoot = Join-Path $repositoryRoot 'Src'
+    $parityProjects = [ordered]@{
+        canonical = 'Src\Extension\GenexusOpenApiBuilder.Extension.csproj'
+        satellite = 'Src\Extension\GenexusOpenApiBuilder.Extension.Gx18u13.csproj'
+    }
+    $presentProjects = @($parityProjects.Keys | Where-Object { Test-Path -LiteralPath (Join-Path $repositoryRoot $parityProjects[$_]) -PathType Leaf })
+    if ($presentProjects.Count -eq 0) {
+        $checks.Add((New-Check 'msbuild.compileSetParity' 'skipped' 'Nenhum dos dois .csproj da extensão existe.' ([ordered]@{ kind = 'projectsAbsent' })))
+    }
+    elseif ($presentProjects.Count -eq 1) {
+        $failed = $true
+        $checks.Add((New-Check 'msbuild.compileSetParity' 'failed' 'Só um dos dois .csproj da extensão existe.' ([ordered]@{ kind = 'projectMissing'; present = $presentProjects })))
+    }
+    else {
+        $parityEvidence = [ordered]@{ kind = $null; targetFrameworks = [ordered]@{}; itemCounts = [ordered]@{} }
+        $parityPaths = @{}
+        $parityProblem = $null
+        foreach ($projectName in $parityProjects.Keys) {
+            $projectPath = $parityProjects[$projectName]
+            $propertyResult = Invoke-ExternalProcess -FileName 'dotnet' -Arguments @('msbuild', $projectPath, '-getProperty:TargetFramework', '-getProperty:TargetFrameworks') -WorkingDirectory $repositoryRoot
+            # stdout de sucesso não entra em commands: o JSON do -getItem tem ~100 KB. Em falha, entra inteiro.
+            $commands.Add([ordered]@{ command = "dotnet msbuild $projectPath -getProperty:TargetFramework -getProperty:TargetFrameworks"; exitCode = $propertyResult.ExitCode; output = ConvertTo-SanitizedText $(if ($propertyResult.ExitCode -eq 0) { $propertyResult.StdErr } else { $propertyResult.StdOut + $propertyResult.StdErr }) })
+            if ($propertyResult.ExitCode -ne 0) { $parityProblem = [ordered]@{ project = $projectName; result = $propertyResult; classification = Get-B129FailureClassification -StdOut $propertyResult.StdOut -StdErr $propertyResult.StdErr -RepositoryRoot $repositoryRoot }; break }
+            $target = Get-B129TargetFramework $propertyResult.StdOut
+            if (-not $target.Readable) { $parityProblem = [ordered]@{ project = $projectName; result = $propertyResult; classification = [pscustomobject]@{ Kind = 'unreadableOutput'; Status = 'failed' } }; break }
+            $parityEvidence.targetFrameworks[$projectName] = $target.Target
+
+            $itemResult = Invoke-ExternalProcess -FileName 'dotnet' -Arguments @('msbuild', $projectPath, '-getItem:Compile', '-p:Configuration=Release', "-p:TargetFramework=$($target.Target)") -WorkingDirectory $repositoryRoot
+            $commands.Add([ordered]@{ command = "dotnet msbuild $projectPath -getItem:Compile -p:Configuration=Release -p:TargetFramework=$($target.Target)"; exitCode = $itemResult.ExitCode; output = ConvertTo-SanitizedText $(if ($itemResult.ExitCode -eq 0) { $itemResult.StdErr } else { $itemResult.StdOut + $itemResult.StdErr }) })
+            if ($itemResult.ExitCode -ne 0) { $parityProblem = [ordered]@{ project = $projectName; result = $itemResult; classification = Get-B129FailureClassification -StdOut $itemResult.StdOut -StdErr $itemResult.StdErr -RepositoryRoot $repositoryRoot }; break }
+            $items = Get-B129CompileItems -Text $itemResult.StdOut -SrcRoot $srcRoot
+            if (-not $items.Readable) { $parityProblem = [ordered]@{ project = $projectName; result = $itemResult; classification = [pscustomobject]@{ Kind = 'unreadableOutput'; Status = 'failed' } }; break }
+            $parityPaths[$projectName] = $items.Paths
+            $parityEvidence.itemCounts[$projectName] = $items.Paths.Count
+        }
+        if ($null -ne $parityProblem) {
+            $parityEvidence.kind = $parityProblem.classification.Kind
+            $parityEvidence.project = $parityProblem.project
+            $parityEvidence.output = ConvertTo-SanitizedText ($parityProblem.result.StdOut + $parityProblem.result.StdErr)
+            if ($parityProblem.classification.Status -eq 'environmentBlocked') { $environmentBlocked = $true } else { $failed = $true }
+            $checks.Add((New-Check 'msbuild.compileSetParity' $parityProblem.classification.Status "A avaliação dos itens Compile falhou: $($parityProblem.classification.Kind)." $parityEvidence))
+        }
+        else {
+            $comparison = Compare-B129CompileSets -CanonicalPaths $parityPaths['canonical'] -SatellitePaths $parityPaths['satellite']
+            if ($comparison.Passed) {
+                $parityEvidence.Remove('kind')
+                $checks.Add((New-Check 'msbuild.compileSetParity' 'passed' 'Os itens Compile avaliados dos projetos canônico e satélite são equivalentes.' $parityEvidence))
+            }
+            else {
+                $failed = $true
+                $parityEvidence.kind = 'parityMismatch'
+                $parityEvidence.onlyCanonical = $comparison.OnlyCanonical
+                $parityEvidence.onlySatellite = $comparison.OnlySatellite
+                $parityEvidence.forbiddenInCanonical = $comparison.ForbiddenInCanonical
+                $parityEvidence.forbiddenInSatellite = $comparison.ForbiddenInSatellite
+                $parityEvidence.duplicates = $comparison.Duplicates
+                $paritySummary = 'Os itens Compile avaliados divergem entre os projetos canônico e satélite.'
+                if ($comparison.ForbiddenInCanonical.Count -gt 0) { $paritySummary += ' O projeto canônico compila código de Line.Gx18u13; pela D46, ao criar Line.* o canônico passa a EnableDefaultCompileItems=false e importa Compile.Shared.props.' }
+                $checks.Add((New-Check 'msbuild.compileSetParity' 'failed' $paritySummary $parityEvidence))
+            }
+        }
+    }
+
+    # B129 — build da DLL satélite U13. Precedência: contrato do .props, falha canônica, estado das refs.
+    $satelliteProjectDirectory = Join-Path $repositoryRoot 'Src\Extension'
+    $satelliteLibDirectory = Join-Path $repositoryRoot 'Src\Lib\Gx18u13'
+    $contract = Test-B129ReferencesContract -PropsPath (Join-Path $satelliteProjectDirectory 'Lib.Gx18u13.References.props') -ProjectDirectory $satelliteProjectDirectory -LibDirectory $satelliteLibDirectory
+    $refsState = Get-B129SatelliteRefsState -Contract $contract -LibDirectory $satelliteLibDirectory
+    $satelliteRefs = $refsState.State
+    $satelliteEvidence = [ordered]@{
+        kind = $null
+        refsState = $refsState.State
+        refsExpected = @($contract.ExpectedFiles | ForEach-Object { [System.IO.Path]::GetRelativePath($repositoryRoot, $_).Replace('\', '/') })
+        refsMissing = @($refsState.Missing | ForEach-Object { [System.IO.Path]::GetRelativePath($repositoryRoot, $_).Replace('\', '/') })
+    }
+    if (-not $contract.Valid) {
+        $failed = $true
+        $satelliteEvidence.kind = 'propsContractViolation'
+        $satelliteEvidence.violations = $contract.Violations
+        $checks.Add((New-Check 'dotnet.buildSatellite' 'failed' 'O Lib.Gx18u13.References.props viola o contrato D34; o satélite não foi compilado.' $satelliteEvidence))
+    }
+    elseif ($dotnetStatus['dotnet.restore'] -ne 'passed') {
+        $satelliteEvidence.kind = 'canonicalRestoreFailed'
+        $checks.Add((New-Check 'dotnet.buildSatellite' 'skipped' 'O restore canônico falhou; o satélite não foi compilado.' $satelliteEvidence))
+    }
+    elseif ($dotnetStatus['dotnet.build'] -ne 'passed') {
+        $satelliteEvidence.kind = 'canonicalBuildFailed'
+        $checks.Add((New-Check 'dotnet.buildSatellite' 'skipped' 'O build canônico falhou; o satélite não foi compilado.' $satelliteEvidence))
+    }
+    elseif ($refsState.State -eq 'absent') {
+        $satelliteEvidence.kind = 'satelliteRefsAbsent'
+        $checks.Add((New-Check 'dotnet.buildSatellite' 'skipped' 'Src/Lib/Gx18u13 não existe neste clone; a compilação da DLL satélite U13 não foi verificada.' $satelliteEvidence))
+    }
+    elseif ($refsState.State -eq 'incomplete') {
+        $environmentBlocked = $true
+        $satelliteEvidence.kind = 'satelliteRefsIncomplete'
+        $checks.Add((New-Check 'dotnet.buildSatellite' 'environmentBlocked' 'Src/Lib/Gx18u13 existe, mas falta referência pinada. Repetir não resolve: repopule a pasta a partir da instalação U13 (D44).' $satelliteEvidence))
+    }
+    else {
+        $satelliteCommand = 'dotnet build Src\GenexusOpenApiBuilder.Gx18u13.sln --configuration Release -nodeReuse:false -tl:off'
+        $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+        $satelliteResult = Invoke-ExternalProcess -FileName 'dotnet' -Arguments @('build', 'Src\GenexusOpenApiBuilder.Gx18u13.sln', '--configuration', 'Release', '-nodeReuse:false', '-tl:off') -WorkingDirectory $repositoryRoot -Environment @{ DOTNET_CLI_UI_LANGUAGE = 'en' }
+        $stopwatch.Stop()
+        $satelliteOutput = ConvertTo-SanitizedText ($satelliteResult.StdOut + $satelliteResult.StdErr)
+        $commands.Add([ordered]@{ command = "DOTNET_CLI_UI_LANGUAGE=en $satelliteCommand"; exitCode = $satelliteResult.ExitCode; output = $satelliteOutput })
+        # A saída do satélite não passa por Add-DiagnosticWarnings: só pelo classificador B129.
+        $satelliteWarnings = Get-B129SatelliteWarnings -Output $satelliteOutput
+        foreach ($entry in $satelliteWarnings.Warnings) { $warnings.Add($entry) }
+        $satelliteEvidence.knownWarnings = $satelliteWarnings.KnownWarnings
+        $satelliteEvidence.headerLanguage = $satelliteWarnings.HeaderLanguage
+        $satelliteEvidence.warningOccurrences = $satelliteWarnings.Occurrences
+        $satelliteEvidence.unknownWarningGroups = $satelliteWarnings.UnknownGroups
+        $satelliteEvidence.durationMs = $stopwatch.ElapsedMilliseconds
+        if ($satelliteResult.ExitCode -eq 0) {
+            $satelliteEvidence.Remove('kind')
+            $checks.Add((New-Check 'dotnet.buildSatellite' 'passed' 'Build Release da solution satélite U13 concluído.' $satelliteEvidence))
+        }
+        else {
+            $classification = Get-B129FailureClassification -StdOut $satelliteResult.StdOut -StdErr $satelliteResult.StdErr -RepositoryRoot $repositoryRoot
+            $satelliteEvidence.kind = $classification.Kind
+            $satelliteSummary = switch ($classification.Kind) {
+                'fileLocked' { 'Arquivo em uso no build satélite. Rode dotnet build-server shutdown e repita; se persistir com a IDE GeneXus aberta, feche-a (causa 1 da seção «Build local da extensão» do AGENTS.md).' }
+                'accessDenied' { 'Acesso negado no build satélite. Pare e reporte; repetir não resolve (causa 2 da seção «Build local da extensão» do AGENTS.md).' }
+                default { "Build Release da solution satélite U13 falhou: $($classification.Kind)." }
+            }
+            if ($classification.Status -eq 'environmentBlocked') { $environmentBlocked = $true } else { $failed = $true }
+            $checks.Add((New-Check 'dotnet.buildSatellite' $classification.Status $satelliteSummary $satelliteEvidence))
+        }
     }
 }
 catch {
@@ -511,12 +665,13 @@ $localReadiness = if ($overallStatus -eq 'passed') { 'ready' } else { 'blocked' 
     remoteReadiness = $remoteReadiness
     remoteFetchStatus = $remoteFetchStatus
     gitContext = $gitContext
+    satelliteRefs = $satelliteRefs
     commands = @($commands)
     checks = @($checks)
     warnings = @($warnings)
     incompleteReasons = @($incompleteReasons)
     manualRequired = @($manualRequired)
-    notCovered = @('Referências legadas deslocadas permanecem sem migração e sem alerta se não aumentarem globalmente.', 'Prosa sem padrão reconhecível, variantes Markdown/HTML fora da gramática e linhas em arquivos fora de Docs/ ficam fora da detecção.', 'Arquivo.cs(linha,coluna) e Arquivo.cs:line N ficam fora da detecção.', 'A heurística CHANGELOG pode ter falsos negativos, inclusive referências sem CHANGELOG adjacente, e falsos positivos.', 'O check não prova que o texto citado descreve corretamente o comportamento semântico do código.', 'Validação funcional na IDE GeneXus, acesso a KB, instalação de DLL e scripts em Tools não são executados.', 'manualRequired e workingTreeDirty exigem revisão humana; não comprovam fechamento semântico.', 'currentFront/manualRequired só reconhecem spike B000-B006 vigente no checkpoint; lista vazia com próxima ação B007+ é esperada e não substitui a revisão semântica.', 'aviso de evidência (evidence-doc-required:*) não comprova fechamento semântico.')
+    notCovered = @('Referências legadas deslocadas permanecem sem migração e sem alerta se não aumentarem globalmente.', 'Prosa sem padrão reconhecível, variantes Markdown/HTML fora da gramática e linhas em arquivos fora de Docs/ ficam fora da detecção.', 'Arquivo.cs(linha,coluna) e Arquivo.cs:line N ficam fora da detecção.', 'A heurística CHANGELOG pode ter falsos negativos, inclusive referências sem CHANGELOG adjacente, e falsos positivos.', 'O check não prova que o texto citado descreve corretamente o comportamento semântico do código.', 'Validação funcional na IDE GeneXus, acesso a KB, instalação de DLL e scripts em Tools não são executados.', 'manualRequired e workingTreeDirty exigem revisão humana; não comprovam fechamento semântico.', 'currentFront/manualRequired só reconhecem spike B000-B006 vigente no checkpoint; lista vazia com próxima ação B007+ é esperada e não substitui a revisão semântica.', 'aviso de evidência (evidence-doc-required:*) não comprova fechamento semântico.', 'Sem Src/Lib/Gx18u13, a compilação da DLL satélite U13 não é verificada (check skipped).', 'satelliteRefs=complete indica referências pinadas presentes, não a identidade U13 delas; proveniência fica com a D31 no corte.', 'A paridade compara itens Compile avaliados, só no primeiro alvo de cada projeto; não cobre targets de geração, flags de compilação, recurso .package, carimbo GxLine nem PackageCompatibility.', 'Em máquina sem o targeting pack net471, o restore do satélite pode depender do feed.', '-nodeReuse:false não encerra o VBCSCompiler; só dotnet build-server shutdown cobre os dois processos da causa 1 do AGENTS.md, e o checker não o executa.', 'Só o Lib.Gx18u13.References.props é validado; Reference declarado direto no csproj satélite não passa pelo contrato D34.', 'Na fixture do meta-teste, o multi-alvo do canônico vem de TargetFrameworks declarado, não do SDK GeneXus.', 'A guarda de #if lê por linha e não distingue comentário nem string.', 'Divergência de comportamento do SDK U13 em runtime não é coberta por gate de build.')
 } | ConvertTo-Json -Depth 8
 
 exit $exitCode

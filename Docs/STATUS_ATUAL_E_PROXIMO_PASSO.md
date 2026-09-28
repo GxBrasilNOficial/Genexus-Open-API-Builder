@@ -185,9 +185,13 @@ campo** na mesma tarde, com recuperação na 3ª tentativa, e margem ampliada pa
 **`B109` mitigado** — e **fechado por mitigação** no fim do dia (item 186).
 ~~Próxima ação única = publicar esta frente (push) e escolher a próxima ação no backlog.~~
 **Superado em 2026-09-27:** `B110` fechado com a exceção de campo do cenário 14 declarada
-(item 187). **Próxima ação única = escolher a próxima frente do backlog.** A publicação dos
+(item 187). ~~**Próxima ação única = escolher a próxima frente do backlog.**~~ **Escolhido em
+2026-09-28: `B129`** — emenda da D45, com os checks `msbuild.compileSetParity`,
+`dotnet.buildSatellite` e `source.packageNoIfDirective` no pré-push. Plano e evidência:
+`Docs/Implementation/2026-09-28-B129-EMENDA-D45-COBERTURA-SATELITE.md`. ~~A publicação dos
 commits locais de `B109`/`B110` por push é decisão separada, ainda sem autorização nesta
-conversa. Evidências: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md` e
+conversa.~~ **Superado:** em 2026-09-28 os commits de `B109`/`B110` já estavam em `origin/main`
+(conferido por `git log origin/main`). Evidências: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md` e
 `Docs/Implementation/2026-09-27-B110-VALIDACAO-IDE.md`.
 
 **Pendência do próximo corte, não do fechamento B110:** atualizar os três `README`,

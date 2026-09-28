@@ -91,6 +91,21 @@ Assert-True ($source -match 'evidence-doc-required:checkpoint') 'O checker deve 
 Assert-True ($source -match 'evidence-doc-required:validated') 'O checker deve emitir o aviso evidence-doc-required:validated no canal warnings.'
 Assert-True ($source -match 'evidence-doc-required:fixed') 'O checker deve emitir o aviso evidence-doc-required:fixed no canal warnings.'
 
+# B129 — asserções estáticas do checker e do módulo de funções puras.
+$b129Module = Join-Path $repositoryRoot 'scripts\B129-SatelliteChecks.ps1'
+Assert-True (Test-Path -LiteralPath $b129Module -PathType Leaf) "Módulo B129 não encontrado: $b129Module"
+$b129ModuleSource = Get-Content -LiteralPath $b129Module -Raw
+Assert-True ($source -match 'GenexusOpenApiBuilder\.Gx18u13\.sln') 'O checker deve compilar a solution satélite U13.'
+Assert-True ($source -match "Join-Path \`$PSScriptRoot 'B129-SatelliteChecks\.ps1'") 'O checker deve carregar o módulo B129 por dot-source.'
+foreach ($b129Source in @(@{ Name = 'checker'; Text = $source }, @{ Name = 'módulo B129'; Text = $b129ModuleSource })) {
+    Assert-True ($b129Source.Text -notmatch '(?i)LoadFile|LoadFrom|Add-Type\s+-Path|\[(System\.)?Reflection\.Assembly\]') "O $($b129Source.Name) não pode carregar assembly."
+    Assert-True ($b129Source.Text -notmatch '(?im)^\s*(?:&|\.)\s+.*\bTools[\\/]') "O $($b129Source.Name) não pode invocar scripts de Tools."
+    Assert-True ($b129Source.Text -notmatch '(?i)Invoke-Expression|ScriptBlock::Create|&\s*\(') "O $($b129Source.Name) não pode usar invocação dinâmica."
+    Assert-True ($b129Source.Text -notmatch '(?i)(?:C:|%ProgramFiles%)\\[^\r\n]*Program Files|C:\\GxModels') "O $($b129Source.Name) não pode acessar Program Files nem uma KB local."
+    Assert-True ($b129Source.Text -notmatch '(?i)Start-Process\s+.*(?:genexus|dll)') "O $($b129Source.Name) não pode iniciar IDE ou operações de DLL."
+}
+. $b129Module
+
 $fixtures = @(
     @{ Text = 'error NU1004: The package lock file is inconsistent.'; Phase = 'restore'; Expected = 'lockFileInconsistent' },
     @{ Text = 'NU1301: Unable to load the service index for source.'; Phase = 'restore'; Expected = 'networkOrFeedUnavailable' },
@@ -103,6 +118,134 @@ foreach ($fixture in $fixtures) {
 
 $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("OpenApiBuilderPrePushChecker-" + [guid]::NewGuid().ToString('N'))
 try {
+    # --- B129: casos de função, sem execução do checker ---
+    $utf8 = [System.Text.UTF8Encoding]::new($false)
+
+    # Paridade (seção 4.1).
+    Assert-True ((Compare-B129CompileSets -CanonicalPaths @('Extension/A.cs', 'Domain/D.cs') -SatellitePaths @('domain/d.cs', 'extension/a.cs')).Passed) 'Paridade: conjuntos iguais (sem distinção de caixa) devem passar.'
+    $b129Diff = Compare-B129CompileSets -CanonicalPaths @('Extension/A.cs', 'Extension/OnlyC.cs') -SatellitePaths @('Extension/A.cs', 'Extension/OnlyS.cs')
+    Assert-True (-not $b129Diff.Passed -and @($b129Diff.OnlyCanonical) -contains 'Extension/OnlyC.cs' -and @($b129Diff.OnlySatellite) -contains 'Extension/OnlyS.cs') 'Paridade: onlyCanonical/onlySatellite.'
+    $b129Rule1 = Compare-B129CompileSets -CanonicalPaths @('Extension/A.cs', 'Extension/Line.Gx18u13/X.cs') -SatellitePaths @('Extension/A.cs', 'Extension/Line.Gx18u13/X.cs')
+    Assert-True (-not $b129Rule1.Passed -and @($b129Rule1.ForbiddenInCanonical).Count -eq 1 -and @($b129Rule1.OnlySatellite).Count -eq 0) 'Paridade: regra 1 (Line.Gx18u13 no canônico).'
+    $b129Rule2 = Compare-B129CompileSets -CanonicalPaths @('Extension/A.cs') -SatellitePaths @('Extension/A.cs', 'Extension/Line.Gx18u14plus/Y.cs')
+    Assert-True (-not $b129Rule2.Passed -and @($b129Rule2.ForbiddenInSatellite).Count -eq 1) 'Paridade: regra 2 (Line.Gx18u14plus no satélite).'
+    $b129Rule4 = Compare-B129CompileSets -CanonicalPaths @('Extension/A.cs') -SatellitePaths @('Extension/A.cs', 'Extension/a.cs')
+    Assert-True (-not $b129Rule4.Passed -and @($b129Rule4.Duplicates).Count -eq 1 -and @($b129Rule4.Duplicates)[0].count -eq 2 -and @($b129Rule4.Duplicates)[0].project -eq 'satellite') 'Paridade: regra 4 (duplicata).'
+    Assert-True (-not (Get-B129CompileItems -Text 'MSBUILD : error MSB1009: Project file does not exist.' -SrcRoot $tempRoot).Readable) 'Paridade: saída não JSON é ilegível.'
+    Assert-True (-not (Get-B129CompileItems -Text '{"Items":{"Compile":[{"Identity":"A.cs"}]}}' -SrcRoot $tempRoot).Readable) 'Paridade: item sem FullPath é ilegível.'
+    foreach ($b129EmptyJson in @('{"Items":{"Compile":[]}}', '{"Items":{}}', '{}')) {
+        $b129Empty = Get-B129CompileItems -Text $b129EmptyJson -SrcRoot $tempRoot
+        Assert-True ($b129Empty.Readable -and @($b129Empty.Paths).Count -eq 0) "Paridade: Items.Compile vazio ou ausente vira lista vazia ($b129EmptyJson)."
+    }
+    $b129ItemJson = '{"Items":{"Compile":[{"FullPath":' + ((Join-Path $tempRoot 'Src\Extension\Sub\B.cs') | ConvertTo-Json) + '}]}}'
+    Assert-True (@((Get-B129CompileItems -Text $b129ItemJson -SrcRoot (Join-Path $tempRoot 'Src')).Paths)[0] -eq 'Extension/Sub/B.cs') 'Paridade: FullPath normalizado relativo a Src/ com separador /.'
+    Assert-True ((Get-B129TargetFramework '{"Properties":{"TargetFramework":"","TargetFrameworks":"net471;net48"}}').Target -eq 'net471') 'Paridade: alvo = primeiro de TargetFrameworks.'
+    Assert-True ((Get-B129TargetFramework '{"Properties":{"TargetFramework":"net471","TargetFrameworks":""}}').Target -eq 'net471') 'Paridade: alvo = TargetFramework.'
+    Assert-True (-not (Get-B129TargetFramework 'texto').Readable) 'Paridade: -getProperty ilegível.'
+
+    # Contrato do .props e estado das refs (seção 4.2).
+    $b129CaseProject = Join-Path $tempRoot 'b129-contract\Src\Extension'
+    $b129CaseLib = Join-Path $tempRoot 'b129-contract\Src\Lib\Gx18u13'
+    $b129CaseProps = Join-Path $b129CaseProject 'Lib.Gx18u13.References.props'
+    [void][System.IO.Directory]::CreateDirectory($b129CaseProject)
+    function Test-B129ContractCase {
+        param([string]$Body, [switch]$NoNamespace, [switch]$Missing)
+        if (Test-Path -LiteralPath $b129CaseProps) { Remove-Item -LiteralPath $b129CaseProps -Force }
+        if (-not $Missing) {
+            $namespace = if ($NoNamespace) { '' } else { ' xmlns="http://schemas.microsoft.com/developer/msbuild/2003"' }
+            [System.IO.File]::WriteAllText($b129CaseProps, "<Project$namespace><ItemGroup>$Body</ItemGroup></Project>", $utf8)
+        }
+        return Test-B129ReferencesContract -PropsPath $b129CaseProps -ProjectDirectory $b129CaseProject -LibDirectory $b129CaseLib
+    }
+    $b129GoodRef = '<Reference Include="A"><HintPath>..\Lib\Gx18u13\A.dll</HintPath><Private>false</Private></Reference>'
+    $b129Framework = '<Reference Include="System.Drawing" /><Reference Include="System.Windows.Forms" />'
+    Assert-True (Test-B129ContractCase ($b129GoodRef + $b129Framework)).Valid 'Contrato: namespace MSBuild e referências de framework sem HintPath.'
+    Assert-True (Test-B129ContractCase $b129GoodRef -NoNamespace).Valid 'Contrato: sem namespace.'
+    $b129MissingProps = Test-B129ContractCase -Missing
+    Assert-True (-not $b129MissingProps.Valid -and @($b129MissingProps.Violations)[0] -match 'não existe') 'Contrato: .props ausente.'
+    Assert-True (-not (Test-B129ContractCase $b129Framework).Valid) 'Contrato: nenhum HintPath.'
+    Assert-True (-not (Test-B129ContractCase ($b129GoodRef + '<Reference Include="Artech.Nova" />')).Valid) 'Contrato: Reference sem HintPath fora da lista fechada.'
+    Assert-True (-not (Test-B129ContractCase '<Reference Include="A"><HintPath>..\Lib\Gx18u13\A.dll</HintPath></Reference>').Valid) 'Contrato: HintPath sem Private=false.'
+    Assert-True (Test-B129ContractCase '<Reference Include="A" Private="False"><HintPath>..\Lib\Gx18u13\A.dll</HintPath></Reference>').Valid 'Contrato: Private=false como atributo, outra caixa.'
+    Assert-True (Test-B129ContractCase '<Reference Include="A"><HintPath>..\Lib\Gx18u13\A.dll</HintPath><Private>FALSE</Private></Reference>').Valid 'Contrato: Private=false como elemento, outra caixa.'
+    Assert-True (-not (Test-B129ContractCase ('<Reference Include="A"><HintPath>' + (Join-Path $b129CaseLib 'A.dll') + '</HintPath><Private>false</Private></Reference>')).Valid) 'Contrato: HintPath absoluto.'
+    Assert-True (-not (Test-B129ContractCase '<Reference Include="A"><HintPath>..\Lib\Gx18u13\*.dll</HintPath><Private>false</Private></Reference>').Valid) 'Contrato: HintPath com curinga.'
+    Assert-True (-not (Test-B129ContractCase '<Reference Include="A"><HintPath>..\Lib\Outra\A.dll</HintPath><Private>false</Private></Reference>').Valid) 'Contrato: HintPath fora de Src/Lib/Gx18u13.'
+    Assert-True (-not (Test-B129ContractCase '<Reference Include="A"><HintPath>..\Lib\Gx18u13\..\..\A.dll</HintPath><Private>false</Private></Reference>').Valid) 'Contrato: HintPath que escapa por ..'
+    Assert-True (Test-B129ContractCase '<Reference Include="A"><HintPath>..\lib\GX18U13\A.dll</HintPath><Private>false</Private></Reference>').Valid 'Contrato: diferença de caixa no HintPath não o tira de Src/Lib/Gx18u13.'
+    [System.IO.File]::WriteAllText($b129CaseProps, '<Project><ItemGroup><Reference', $utf8)
+    $b129Malformed = Test-B129ReferencesContract -PropsPath $b129CaseProps -ProjectDirectory $b129CaseProject -LibDirectory $b129CaseLib
+    Assert-True (-not $b129Malformed.Valid) 'Contrato: XML malformado reprova sem exceção.'
+    Assert-True ((Get-B129SatelliteRefsState -Contract $b129Malformed -LibDirectory $b129CaseLib).State -eq 'absent') 'Refs: pasta ausente com contrato violado = absent.'
+    $b129Valid = Test-B129ContractCase $b129GoodRef
+    Assert-True ((Get-B129SatelliteRefsState -Contract $b129Valid -LibDirectory $b129CaseLib).State -eq 'absent') 'Refs: pasta ausente = absent.'
+    [void][System.IO.Directory]::CreateDirectory($b129CaseLib)
+    Assert-True ((Get-B129SatelliteRefsState -Contract $b129Malformed -LibDirectory $b129CaseLib).State -eq 'unverifiable') 'Refs: pasta presente com XML malformado = unverifiable.'
+    $b129Incomplete = Get-B129SatelliteRefsState -Contract $b129Valid -LibDirectory $b129CaseLib
+    Assert-True ($b129Incomplete.State -eq 'incomplete' -and @($b129Incomplete.Missing).Count -eq 1) 'Refs: arquivo pinado faltando = incomplete.'
+    [System.IO.File]::WriteAllBytes((Join-Path $b129CaseLib 'A.dll'), [byte[]]@(0))
+    Assert-True ((Get-B129SatelliteRefsState -Contract $b129Valid -LibDirectory $b129CaseLib).State -eq 'complete') 'Refs: todos presentes = complete.'
+
+    # Avisos do satélite (seção 4.2).
+    $b129Proj = 'C:\f\Sat.csproj(9,5)'
+    $b129Orphan = "${b129Proj}: warning MSB3277: Linha MSB3277 orfa sem cabecalho [x]"
+    $b129MsHeader = "${b129Proj}: warning MSB3277: Found conflicts between different versions of `"mscorlib`" that could not be resolved. [x]"
+    $b129MsCont = "${b129Proj}: warning MSB3277: continuacao do mscorlib [x]"
+    $b129PtHeader = "${b129Proj}: warning MSB3277: foram encontrados conflitos entre diferentes versões do `"FixtureAssembly`" que não puderam ser resolvidas. [x]"
+    $b129PtCont = "${b129Proj}: warning MSB3277: continuacao do outro assembly [x]"
+    $b129Block = @($b129Orphan, $b129MsHeader, $b129MsCont, $b129MsCont, $b129PtHeader, $b129PtCont)
+    $b129Present = Get-B129SatelliteWarnings -Output ((@('Restore complete') + $b129Block + @('Sat -> C:\f\Sat.dll', 'Build succeeded.') + $b129Block + @('    6 Warning(s)', '    0 Error(s)')) -join "`n")
+    Assert-True ($b129Present.KnownWarnings.groups -eq 2 -and $b129Present.KnownWarnings.continuationLines -eq 4) 'Avisos: dois grupos mscorlib conhecidos, repetidos.'
+    Assert-True (@($b129Present.Warnings).Count -eq 2 -and @($b129Present.Occurrences | Where-Object { $_.occurrences -eq 2 }).Count -eq 2) 'Avisos: grupo desconhecido e órfão deduplicados, 2 ocorrências cada.'
+    Assert-True ($b129Present.HeaderLanguage -eq 'mixed') 'Avisos: cabeçalho em inglês e português = mixed.'
+    $b129Real = Get-B129SatelliteWarnings -Output ((@($b129MsHeader, $b129MsCont, 'csc -> ok', 'Build succeeded.', $b129MsHeader, $b129MsCont, '    1 Warning(s)')) -join "`n")
+    Assert-True ($b129Real.KnownWarnings.groups -eq 2 -and @($b129Real.Warnings).Count -eq 0 -and $b129Real.HeaderLanguage -eq 'en') 'Avisos: saída real (dois blocos mscorlib) sem nada em warnings.'
+    $b129OnlyMs = Get-B129SatelliteWarnings -Output $b129MsHeader
+    Assert-True ($b129OnlyMs.KnownWarnings.groups -eq 1 -and $b129OnlyMs.KnownWarnings.continuationLines -eq 0 -and @($b129OnlyMs.Warnings).Count -eq 0) 'Avisos: cabeçalho sem continuação é grupo conhecido com 0 continuações.'
+    Assert-True (@((Get-B129SatelliteWarnings -Output $b129Orphan).Warnings).Count -eq 1) 'Avisos: só órfão vai para warnings.'
+    $b129Interleaved = Get-B129SatelliteWarnings -Output (@($b129MsHeader, $b129PtHeader, $b129MsCont) -join "`n")
+    Assert-True ($b129Interleaved.KnownWarnings.groups -eq 1 -and $b129Interleaved.KnownWarnings.continuationLines -eq 0 -and @($b129Interleaved.Warnings).Count -eq 1 -and @($b129Interleaved.Warnings)[0] -match '2 linha') 'Avisos: cabeçalho intercalado leva a continuação para o grupo seguinte.'
+    $b129Separated = Get-B129SatelliteWarnings -Output (@($b129MsHeader, 'outra linha', $b129MsCont) -join "`n")
+    Assert-True ($b129Separated.KnownWarnings.continuationLines -eq 0 -and @($b129Separated.Warnings).Count -eq 1) 'Avisos: continuação separada do cabeçalho vira órfã.'
+    $b129Other = Get-B129SatelliteWarnings -Output (@('C:\f\Sat.csproj : warning : aviso sem codigo', 'C:\f\A.cs(1,1): warning CS0168: variavel', '    2 Aviso(s)', '    0 Erro(s)') -join "`n")
+    Assert-True (@($b129Other.Warnings).Count -eq 2 -and @($b129Other.Warnings | Where-Object { $_ -notmatch '^satellite-build: ' }).Count -eq 0 -and $b129Other.HeaderLanguage -eq 'none') 'Avisos: aviso com e sem código vão para warnings com prefixo; contagens excluídas.'
+
+    # Classificação de falhas (seção 4.4).
+    $b129Root = Join-Path $tempRoot 'b129-root'
+    $b129Outside = 'C:\B129SdkAusente\Sdk\Sdk.props'
+    $b129Inside = Join-Path $b129Root 'Src\Extension\Ausente.props'
+    $b129Failures = @(
+        @{ Out = 'C:\p.csproj : error MSB4236: The SDK specified could not be found.'; Kind = 'sdkUnavailable'; Status = 'environmentBlocked' },
+        @{ Out = "C:\p.csproj(1,1): error MSB4019: The imported project `"$b129Outside`" was not found."; Kind = 'sdkUnavailable'; Status = 'environmentBlocked' },
+        @{ Out = "C:\p.csproj(1,1): error MSB4019: O projeto importado `"$b129Inside`" não foi encontrado."; Kind = 'repositoryImportMissing'; Status = 'failed' },
+        @{ Out = 'C:\p.csproj(1,1): error MSB4019: The imported project was not found.'; Kind = 'unclassified'; Status = 'failed' },
+        @{ Out = "C:\t.targets(1,1): error MSB3021: Unable to copy file `"a`" to `"b`". Access to the path 'b' is denied."; Kind = 'accessDenied'; Status = 'environmentBlocked' },
+        @{ Out = "C:\t.targets(1,1): error MSB3021: Não é possível copiar o arquivo. Acesso ao caminho 'b' foi negado."; Kind = 'accessDenied'; Status = 'environmentBlocked' },
+        @{ Out = "C:\t.targets(1,1): warning MSB3026: Could not copy. Beginning retry 1. Access to the path 'b' is denied.`nC:\t.targets(1,1): error MSB3027: Could not copy. Exceeded retry count of 10. Failed."; Kind = 'accessDenied'; Status = 'environmentBlocked' },
+        @{ Out = 'C:\t.targets(1,1): error MSB3027: Could not copy. Exceeded retry count of 10. Failed.'; Kind = 'fileLocked'; Status = 'environmentBlocked' },
+        @{ Out = 'C:\t.targets(1,1): error MSB3021: Unable to copy. The process cannot access the file because it is being used by another process.'; Kind = 'fileLocked'; Status = 'environmentBlocked' },
+        @{ Out = 'C:\t.targets(1,1): error MSB3021: Não é possível copiar: o arquivo está sendo usado por outro processo.'; Kind = 'fileLocked'; Status = 'environmentBlocked' },
+        @{ Out = "C:\t.targets(1,1): error MSB3021: Unable to copy file `"a`" to `"b`". Could not find file 'a'."; Kind = 'compilationOrBuildFailure'; Status = 'failed' },
+        @{ Out = 'C:\p.csproj : error NETSDK1045: The current .NET SDK does not support targeting .NET 99.'; Kind = 'sdkUnavailable'; Status = 'environmentBlocked' },
+        @{ Out = 'C:\p.csproj : error NETSDK1013: The TargetFramework value was not recognized.'; Kind = 'compilationOrBuildFailure'; Status = 'failed' },
+        @{ Out = 'C:\global.json : error : A compatible installed .NET SDK for global.json version was not found.'; Kind = 'sdkUnavailable'; Status = 'environmentBlocked' },
+        @{ Out = 'C:\p.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json.'; Kind = 'networkOrFeedUnavailable'; Status = 'environmentBlocked' },
+        @{ Out = 'C:\p.csproj : error NU1101: Unable to find package Inexistente.'; Kind = 'compilationOrBuildFailure'; Status = 'failed' },
+        @{ Out = 'C:\p.csproj : error : No such host is known.'; Kind = 'networkOrFeedUnavailable'; Status = 'environmentBlocked' },
+        @{ Out = 'C:\A.cs(3,9): error CS0103: The name ProxyClient does not exist; the Proxy call timed out.'; Kind = 'compilationOrBuildFailure'; Status = 'failed' },
+        @{ Out = "C:\t.targets(1,1): error MSB3030: Could not copy the file `"ProxyHelper.dll`" because it was not found."; Kind = 'compilationOrBuildFailure'; Status = 'failed' },
+        @{ Out = "C:\f\Sat.csproj(9,5): warning MSB3277: Found conflicts between different versions of `"ProxyLib`" that timed out.`nC:\A.cs(1,1): error CS1002: ; expected"; Kind = 'compilationOrBuildFailure'; Status = 'failed' },
+        @{ Out = "Build FAILED.`nC:\f\Sat.csproj : warning : nada de erro"; Kind = 'unclassified'; Status = 'failed' }
+    )
+    foreach ($b129Failure in $b129Failures) {
+        $b129Classified = Get-B129FailureClassification -StdOut $b129Failure.Out -StdErr '' -RepositoryRoot $b129Root
+        Assert-True ($b129Classified.Kind -eq $b129Failure.Kind -and $b129Classified.Status -eq $b129Failure.Status) "Classificação B129 divergente: esperado $($b129Failure.Kind), obtido $($b129Classified.Kind) para '$($b129Failure.Out)'."
+    }
+
+    # Guarda da D15 (seção 4.3).
+    $b129IfLines = @(Get-B129IfDirectiveLines -Lines @('using X;', '#if DEBUG', '  # if B', '#IF C', '#ifdef D', '#endif'))
+    Assert-True ($b129IfLines.Count -eq 2 -and $b129IfLines[0].line -eq 2 -and $b129IfLines[1].line -eq 3) 'Guarda D15: #if casa com -cmatch, inclusive com espaço; #IF e #ifdef não.'
+
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'remote.git'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\scripts'))
     [void][System.IO.Directory]::CreateDirectory((Join-Path $tempRoot 'repo\Src'))
@@ -157,6 +300,75 @@ try {
         Assert-True ($LASTEXITCODE -eq 0) 'Não foi possível criar o projeto mínimo da fixture.'
         & dotnet sln Src\GenexusOpenApiBuilder.sln add Src\Fixture\Fixture.csproj | Out-Null
         Assert-True ($LASTEXITCODE -eq 0) 'Não foi possível adicionar o projeto à solution da fixture.'
+
+        # B129 — pares canônico/satélite nos caminhos relativos de produção (plano B129, seção 4.7).
+        $productionBuildProps = [System.IO.File]::ReadAllText((Join-Path $repositoryRoot 'Directory.Build.props'))
+        $d47Block = [regex]::Match($productionBuildProps, "(?s)[ \t]*<PropertyGroup Condition=`"'\`$\(MSBuildProjectName\)' == 'GenexusOpenApiBuilder\.Extension\.Gx18u13'`">.*?</PropertyGroup>")
+        Assert-True $d47Block.Success 'O bloco condicional D47 não foi encontrado no Directory.Build.props de produção.'
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Directory.Build.props'), "<Project>`n$($d47Block.Value)`n</Project>`n", $utf8)
+        [void][System.IO.Directory]::CreateDirectory((Join-Path $PWD 'Src\Extension'))
+        [void][System.IO.Directory]::CreateDirectory((Join-Path $PWD 'Src\Domain'))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Src\Domain\DomainItem.cs'), "namespace B129Fixture.Domain;`n`npublic static class DomainItem { }`n", $utf8)
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Src\Extension\Package.cs'), "namespace B129Fixture;`n`npublic static class Package { }`n", $utf8)
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Src\Extension\GenexusOpenApiBuilder.Extension.csproj'), @'
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net10.0</TargetFrameworks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\Domain\**\*.cs" LinkBase="Domain" />
+    <Compile Remove="Temp\**\*.cs" />
+    <Compile Remove="Only.Sat\**" />
+  </ItemGroup>
+</Project>
+'@, $utf8)
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Src\Extension\Compile.Shared.props'), @'
+<Project>
+  <ItemGroup>
+    <Compile Include="**\*.cs" Exclude="bin\**;obj\**;Temp\**;Line.*\**;Only.Sat\**" LinkBase="Extension" />
+    <Compile Include="..\Domain\**\*.cs" LinkBase="Domain" />
+  </ItemGroup>
+</Project>
+'@, $utf8)
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Src\Extension\GenexusOpenApiBuilder.Extension.Gx18u13.csproj'), @'
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <Import Project="Compile.Shared.props" />
+  <Import Project="Lib.Gx18u13.References.props" />
+  <ItemGroup>
+    <Compile Include="Only.Sat\**\*.cs" />
+    <Compile Include="Line.Gx18u13\**\*.cs" LinkBase="Line.Gx18u13" />
+  </ItemGroup>
+  <Target Name="B129FixtureWarnings" BeforeTargets="CoreCompile" Condition="Exists('B129.warnings.flag')">
+    <Warning Code="MSB3277" Text="Linha MSB3277 orfa sem cabecalho" />
+    <Warning Code="MSB3277" Text="Found conflicts between different versions of &quot;mscorlib&quot; that could not be resolved." />
+    <Warning Code="MSB3277" Text="continuacao do mscorlib 1" />
+    <Warning Code="MSB3277" Text="continuacao do mscorlib 2" />
+    <Warning Code="MSB3277" Text="foram encontrados conflitos entre diferentes versões do &quot;FixtureAssembly&quot; que não puderam ser resolvidas." />
+    <Warning Code="MSB3277" Text="continuacao do outro assembly" />
+  </Target>
+</Project>
+'@, $utf8)
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Src\Extension\Lib.Gx18u13.References.props'), @'
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Reference Include="FakeRef">
+      <HintPath>..\Lib\Gx18u13\FakeRef.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>
+'@, $utf8)
+        & dotnet new sln --name GenexusOpenApiBuilder.Gx18u13 --output Src --format sln | Out-Null
+        Assert-True ($LASTEXITCODE -eq 0) 'Não foi possível criar a solution satélite da fixture.'
+        & dotnet sln Src\GenexusOpenApiBuilder.Gx18u13.sln add Src\Extension\GenexusOpenApiBuilder.Extension.Gx18u13.csproj | Out-Null
+        Assert-True ($LASTEXITCODE -eq 0) 'Não foi possível adicionar o satélite à solution satélite da fixture.'
+        [System.IO.File]::AppendAllText((Join-Path $PWD '.gitignore'), "artifacts/gx18u13/`nSrc/Lib/Gx18u13/`n", $utf8)
+        [System.IO.File]::Copy($b129Module, (Join-Path $PWD 'scripts\B129-SatelliteChecks.ps1'))
+
         [System.IO.File]::Copy($checker, (Join-Path $PWD 'scripts\Invoke-PrePushMechanicalChecks.ps1'))
         [System.IO.File]::Copy((Join-Path $repositoryRoot 'scripts\B128-ReferenceTokenizer.ps1'), (Join-Path $PWD 'scripts\B128-ReferenceTokenizer.ps1'))
         [System.IO.File]::Copy((Join-Path $PSScriptRoot 'Test-B128ReferenceTokenizer.ps1'), (Join-Path $PWD 'Tests\PrePushChecker\Test-B128ReferenceTokenizer.ps1'))
@@ -220,7 +432,7 @@ try {
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\Localization\Test-ExtensionOutputLocalizationSelfConsistency.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Output Localization Self Consistency'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\IssueForms\Test-GitHubIssueFormsYaml.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Issue Forms Yaml'`n", [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::WriteAllText((Join-Path $PWD 'Tests\TextPatch\Test-ApplyTextPatch.ps1'), "#requires -Version 7.4`nWrite-Output 'PASS: fixture Text Patch'`n", [System.Text.UTF8Encoding]::new($false))
-        & git add .gitignore README.md Src scripts Tests
+        & git add .gitignore README.md Directory.Build.props Src scripts Tests
         foreach ($b110Test in @('Test-ApiPlanWriteBlockMessage.ps1', 'Test-ApiPlanExistingNamePolicy.ps1', 'Test-ApiPlanContractProvenance.ps1', 'Test-ReconstructedContractAcknowledgement.ps1', 'Test-ApiPlanB110Preflight.ps1')) {
             [IO.File]::WriteAllText((Join-Path $PWD "Tests\WritePreflight\$b110Test"), "#requires -Version 7.4`nWrite-Output 'PASS: fixture B110'`n", [Text.UTF8Encoding]::new($false))
         }
@@ -343,6 +555,17 @@ try {
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/Installation/Test-InstallExtensionBatPathHandling.ps1' }).Count -eq 1) 'O comando do teste Installation BAT Path Handling deve aparecer no JSON.'
         Assert-True (@($result.commands | Where-Object { $_.command -eq 'pwsh -NoProfile -File Tests/TextPatch/Test-ApplyTextPatch.ps1' }).Count -eq 1) 'O comando do teste Text Patch B122 deve aparecer no JSON.'
         Assert-True (@($result.warnings).Count -eq 0) 'O checker não deve registrar "0 Aviso(s)" como warning.'
+        # B129 — execução base: pares iguais, Package.cs limpo, sem Src/Lib/Gx18u13.
+        Assert-True (($result.checks | Where-Object name -eq 'git.statusPre').status -eq 'passed') 'B129 base: a fixture deve partir de working tree limpa.'
+        $b129BaseParity = $result.checks | Where-Object name -eq 'msbuild.compileSetParity'
+        Assert-True ($b129BaseParity.status -eq 'passed') 'B129 base: a paridade deveria passar.'
+        Assert-True ($b129BaseParity.evidence.targetFrameworks.canonical -eq 'net10.0' -and $b129BaseParity.evidence.targetFrameworks.satellite -eq 'net10.0') 'B129 base: a descoberta do alvo deveria rodar nos dois projetos.'
+        Assert-True ($b129BaseParity.evidence.itemCounts.canonical -eq 2 -and $b129BaseParity.evidence.itemCounts.satellite -eq 2) 'B129 base: cada projeto deveria avaliar Package.cs e o .cs de Domain.'
+        Assert-True (($result.checks | Where-Object name -eq 'source.packageNoIfDirective').status -eq 'passed') 'B129 base: a guarda de #if deveria passar.'
+        $b129BaseSatellite = $result.checks | Where-Object name -eq 'dotnet.buildSatellite'
+        Assert-True ($b129BaseSatellite.status -eq 'skipped' -and $b129BaseSatellite.evidence.kind -eq 'satelliteRefsAbsent') 'B129 base: sem refs, o satélite deveria sair skipped/satelliteRefsAbsent.'
+        Assert-True ($result.satelliteRefs -eq 'absent') 'B129 base: satelliteRefs deveria ser absent.'
+        Assert-True (@($result.notCovered | Where-Object { $_ -match 'Src/Lib/Gx18u13' }).Count -ge 1) 'B129 base: notCovered deveria declarar a cobertura condicional do satélite.'
 
         $baseCommit = (& git rev-parse HEAD).Trim()
         [System.IO.Directory]::CreateDirectory((Join-Path $PWD 'Docs')) | Out-Null
@@ -525,6 +748,92 @@ try {
         Append-Commit -File 'CHANGELOG.md' -Anchor '- item novo' -Extra "`n- item novo 2"
         $aRun = Invoke-FixtureChecker
         Assert-True (@($aRun.Result.warnings | Where-Object { $_ -match '^evidence-doc-required:(validated|fixed)' }).Count -eq 0) 'Tocar Added não deve emitir aviso de Validated/Fixed.'
+
+        # --- B129: cenários do satélite, depois de toda a bateria existente ---
+        # Cada cenário com mudança rastreada commita, roda o checker e desfaz com git revert + push.
+        & git push origin main | Out-Null
+        Assert-True ($LASTEXITCODE -eq 0) 'B129: push antes dos cenários falhou.'
+
+        function Invoke-B129Commit {
+            param([string]$Message)
+            & git add -A Src | Out-Null
+            Assert-True ($LASTEXITCODE -eq 0) "B129: git add falhou ($Message)."
+            & git commit -m $Message | Out-Null
+            Assert-True ($LASTEXITCODE -eq 0) "B129: git commit falhou ($Message)."
+        }
+        function Undo-B129Commit {
+            & git revert --no-edit HEAD | Out-Null
+            Assert-True ($LASTEXITCODE -eq 0) 'B129: git revert falhou.'
+            & git push origin main | Out-Null
+            Assert-True ($LASTEXITCODE -eq 0) 'B129: push depois do revert falhou.'
+        }
+        function Get-B129Check {
+            param([object]$Run, [string]$Name)
+            return $Run.Result.checks | Where-Object name -eq $Name
+        }
+
+        # Defeitos de fonte: arquivo só do satélite, Line.Gx18u13 no canônico e #if no Package.cs.
+        [void][System.IO.Directory]::CreateDirectory((Join-Path $PWD 'Src\Extension\Only.Sat'))
+        [void][System.IO.Directory]::CreateDirectory((Join-Path $PWD 'Src\Extension\Line.Gx18u13'))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Src\Extension\Only.Sat\B129OnlySat.cs'), "namespace B129Fixture;`n`npublic static class B129OnlySat { }`n", $utf8)
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Src\Extension\Line.Gx18u13\B129Line.cs'), "namespace B129Fixture;`n`npublic static class B129Line { }`n", $utf8)
+        [System.IO.File]::AppendAllText((Join-Path $PWD 'Src\Extension\Package.cs'), "#if DEBUG`n#endif`n", $utf8)
+        Invoke-B129Commit 'B129 defeitos de fonte'
+        $b129SourceRun = Invoke-FixtureChecker
+        $b129SourceParity = Get-B129Check $b129SourceRun 'msbuild.compileSetParity'
+        Assert-True ($b129SourceRun.ExitCode -eq 1) "B129 defeitos de fonte: exit esperado 1, obtido $($b129SourceRun.ExitCode)."
+        Assert-True ($b129SourceParity.status -eq 'failed' -and $b129SourceParity.evidence.kind -eq 'parityMismatch') 'B129 defeitos de fonte: a paridade deveria falhar.'
+        Assert-True (@($b129SourceParity.evidence.onlySatellite) -contains 'Extension/Only.Sat/B129OnlySat.cs') 'B129 defeitos de fonte: o arquivo de Only.Sat deveria estar em onlySatellite.'
+        Assert-True (@($b129SourceParity.evidence.forbiddenInCanonical) -contains 'Extension/Line.Gx18u13/B129Line.cs') 'B129 defeitos de fonte: o arquivo de Line.Gx18u13 deveria estar em forbiddenInCanonical.'
+        Assert-True (@($b129SourceParity.evidence.duplicates).Count -eq 0) 'B129 defeitos de fonte: a exclusão com curinga deveria evitar duplicata no satélite.'
+        Assert-True ($b129SourceParity.summary -match 'D46') 'B129 defeitos de fonte: a mensagem deveria citar a D46.'
+        $b129IfCheck = Get-B129Check $b129SourceRun 'source.packageNoIfDirective'
+        Assert-True ($b129IfCheck.status -eq 'failed' -and $b129IfCheck.evidence.kind -eq 'ifDirectiveFound') 'B129 defeitos de fonte: a guarda de #if deveria falhar.'
+        Undo-B129Commit
+
+        # Satélite presente: refs completas e grupos de aviso emitidos pela fixture.
+        $fakeRefRoot = Join-Path $tempRoot 'fakeref'
+        & dotnet new classlib --name FakeRef --output $fakeRefRoot --framework net10.0 | Out-Null
+        Assert-True ($LASTEXITCODE -eq 0) 'B129: não foi possível criar o FakeRef.'
+        & dotnet build (Join-Path $fakeRefRoot 'FakeRef.csproj') --configuration Release -nodeReuse:false | Out-Null
+        Assert-True ($LASTEXITCODE -eq 0) 'B129: não foi possível compilar o FakeRef.'
+        $fakeRefLib = Join-Path $PWD 'Src\Lib\Gx18u13'
+        [void][System.IO.Directory]::CreateDirectory($fakeRefLib)
+        [System.IO.File]::Copy((Join-Path $fakeRefRoot 'bin\Release\net10.0\FakeRef.dll'), (Join-Path $fakeRefLib 'FakeRef.dll'))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Src\Extension\B129.warnings.flag'), "b129`n", $utf8)
+        Invoke-B129Commit 'B129 satelite presente'
+        $b129PresentRun = Invoke-FixtureChecker
+        $b129PresentSatellite = Get-B129Check $b129PresentRun 'dotnet.buildSatellite'
+        Assert-True ($b129PresentRun.ExitCode -eq 0) "B129 satélite presente: exit esperado 0, obtido $($b129PresentRun.ExitCode)."
+        Assert-True ($b129PresentSatellite.status -eq 'passed') 'B129 satélite presente: o build satélite deveria passar.'
+        Assert-True ($b129PresentRun.Result.satelliteRefs -eq 'complete') 'B129 satélite presente: satelliteRefs deveria ser complete.'
+        Assert-True ($b129PresentSatellite.evidence.knownWarnings.groups -eq 2) "B129 satélite presente: esperados 2 grupos mscorlib conhecidos, obtidos $($b129PresentSatellite.evidence.knownWarnings.groups)."
+        $b129PresentWarnings = @($b129PresentRun.Result.warnings | Where-Object { $_ -match '^satellite-build: ' })
+        Assert-True ($b129PresentWarnings.Count -eq 2) "B129 satélite presente: esperadas 2 entradas satellite-build, obtidas $($b129PresentWarnings.Count): $($b129PresentWarnings -join ' | ')"
+        Assert-True (@($b129PresentWarnings | Where-Object { $_ -match 'FixtureAssembly' }).Count -eq 1 -and @($b129PresentWarnings | Where-Object { $_ -match 'orfa sem cabecalho' }).Count -eq 1) 'B129 satélite presente: grupo do outro assembly e linha órfã, uma vez cada.'
+        Assert-True (@($b129PresentSatellite.evidence.warningOccurrences | Where-Object { $_.occurrences -eq 2 }).Count -eq 2) 'B129 satélite presente: cada entrada deduplicada deveria registrar 2 ocorrências.'
+        Assert-True ($b129PresentSatellite.evidence.headerLanguage -eq 'mixed') 'B129 satélite presente: headerLanguage deveria ser mixed.'
+        Undo-B129Commit
+
+        # Satélite quebrado: refs presentes e .cs inválido só do satélite.
+        [void][System.IO.Directory]::CreateDirectory((Join-Path $PWD 'Src\Extension\Only.Sat'))
+        [System.IO.File]::WriteAllText((Join-Path $PWD 'Src\Extension\Only.Sat\B129Broken.cs'), "namespace B129Fixture;`n`npublic static class B129Broken { public static int M() { return ; } }`n", $utf8)
+        Invoke-B129Commit 'B129 satelite quebrado'
+        $b129BrokenRun = Invoke-FixtureChecker
+        $b129BrokenSatellite = Get-B129Check $b129BrokenRun 'dotnet.buildSatellite'
+        Assert-True ($b129BrokenRun.ExitCode -eq 1) "B129 satélite quebrado: exit esperado 1, obtido $($b129BrokenRun.ExitCode)."
+        Assert-True ($b129BrokenSatellite.status -eq 'failed' -and $b129BrokenSatellite.evidence.kind -eq 'compilationOrBuildFailure') "B129 satélite quebrado: o build satélite deveria falhar (kind $($b129BrokenSatellite.evidence.kind))."
+        Assert-True ((Get-B129Check $b129BrokenRun 'msbuild.compileSetParity').status -eq 'failed') 'B129 satélite quebrado: a paridade também deveria falhar.'
+        Undo-B129Commit
+
+        # Refs incompletas: pasta mantida, referência pinada apagada. Sem mudança rastreada: sem commit nem revert.
+        Remove-Item -LiteralPath (Join-Path $fakeRefLib 'FakeRef.dll') -Force
+        $b129IncompleteRun = Invoke-FixtureChecker
+        $b129IncompleteSatellite = Get-B129Check $b129IncompleteRun 'dotnet.buildSatellite'
+        Assert-True ($b129IncompleteRun.ExitCode -eq 2) "B129 refs incompletas: exit esperado 2, obtido $($b129IncompleteRun.ExitCode)."
+        Assert-True ($b129IncompleteSatellite.status -eq 'environmentBlocked' -and $b129IncompleteSatellite.evidence.kind -eq 'satelliteRefsIncomplete') 'B129 refs incompletas: o satélite deveria sair environmentBlocked/satelliteRefsIncomplete.'
+        Assert-True ($b129IncompleteRun.Result.satelliteRefs -eq 'incomplete') 'B129 refs incompletas: satelliteRefs deveria ser incomplete.'
+        Remove-Item -LiteralPath $fakeRefLib -Recurse -Force
     }
     finally {
         Pop-Location
@@ -534,4 +843,4 @@ finally {
     if (Test-Path -LiteralPath $tempRoot) { Remove-Item -LiteralPath $tempRoot -Recurse -Force }
 }
 
-'OK: fixtures de classificação, tokenizer B128, validação de citações fixas/móveis, aviso numérico de CHANGELOG, fronteira operacional, Git limpo/sujo, fetch local e avisos B124 validados.'
+'OK: fixtures de classificação, tokenizer B128, validação de citações fixas/móveis, aviso numérico de CHANGELOG, fronteira operacional, Git limpo/sujo, fetch local, avisos B124 e checks B129 do satélite validados.'
