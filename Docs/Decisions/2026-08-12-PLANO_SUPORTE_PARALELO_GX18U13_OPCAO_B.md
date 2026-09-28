@@ -23,7 +23,7 @@ Dois artefatos oficiais, quando ambos validados:
 
 | Artefato no Release | Faixa GeneXus | Como se obtém |
 |---------------------|---------------|---------------|
-| `GenexusOpenApiBuilder.Extension.dll` | U14+ (canônico) | CI/build oficial: `GeneXus.Package.UI.Sdk` + NuGet `18.13.2` |
+| `GenexusOpenApiBuilder.Extension.dll` | U14+ (canônico) | CI/build oficial: `GeneXus.Package.UI.Sdk` + NuGet `18.13.2` *(2026-09-28, declarado pelo mantenedor: a DLL canônica do release é compilada na máquina dele, do código da tag; o workflow só reempacota o asset publicado)* |
 | `GenexusOpenApiBuilder.Extension-gx18u13.dll` | GX18 Upgrade 13 | Build **local** do satélite (refs em `Src/Lib/Gx18u13`, não versionadas no git público) |
 
 Texto público: **“linha Gx18u13 — testada em GeneXus 18 Upgrade 13”**. GX17/U12 = não anunciados.
@@ -45,7 +45,7 @@ Na pasta `Packages` da IDE o arquivo instalado chama-se sempre `GenexusOpenApiBu
 
 Não haverá CI público que compile o satélite Gx18u13 (evita expor/precisar DLLs Artech no runner público e evita self-hosted na 1ª entrega).
 
-- CI GitHub continua responsável **só** pela linha U14+ (e feed NuGet canônico).
+- CI GitHub continua responsável **só** pela linha U14+ (e feed NuGet canônico). *(2026-09-28, declarado pelo mantenedor: a DLL canônica do release também é compilada na máquina dele, do código da tag; o workflow reempacota o asset publicado, não o compila.)*
 - Build Gx18u13: **manual pelo mantenedor** (máquina com `Src/Lib/Gx18u13` local, gitignored).
 - Antes de anexar ao Release: obrigatório `Test-ReleasedExtension.ps1` (checksum + carimbo `GxLine=Gx18u13` + manifesto + **nome de asset** `GenexusOpenApiBuilder.Extension-gx18u13.dll` + Version/InformationalVersion = D30).
 - Contribuidor (Igor) valida na IDE U13. O asset publicado no Release é **sempre** o recompilado pelo mantenedor (D8/D27); o contribuidor **não** publica binário próprio no Release.
@@ -83,7 +83,7 @@ Evolução futura (fora da 1ª entrega): runner self-hosted opcional.
 - Não enumerar cada `.cs` compartilhado em `Compile.Shared.props` (D36).
 - Não abrir pastas `Line.*` antes do Exp-APIs exigir divergência (D39).
 - Não usar HintPath absoluto de máquina no satélite (D34).
-- Não colocar build do satélite no checker pré-push público (D45).
+- Não colocar build do satélite no checker pré-push público (D45). *(Emendado em 2026-09-28 pela D55 (`B129`): o checker passa a compilar o satélite quando `Src/Lib/Gx18u13` existe.)*
 - Não forçar `EnableDefaultCompileItems=false` no canônico enquanto não existir `Line.*` (D46).
 - Não condicionar `publish-github-packages.yml` para evitar inflação de versão em hotfix U13 (D50).
 
@@ -104,10 +104,10 @@ Evolução futura (fora da 1ª entrega): runner self-hosted opcional.
 7. **Bats Gx18u13:** `-GeneXusDirectory` obrigatório (erro imediato se ausente).
 8. **ExpectedLine = bat**, não faixa da pasta. Carimbo `GxLine` deve igualar ExpectedLine **antes** do Copy.
 9. **Carimbo bilateral.** `AssemblyMetadata("GxLine","Gx18u14plus")` e `("GxLine","Gx18u13")`. “Sem carimbo = erro” só a partir da versão que introduzir carimbos. No canônico, o carimbo entra via `AssemblyAttribute` no `.csproj` (D39), não via pasta Line prematura.
-10. **Proibido `#if` em `Package.cs`.** Stubs = runtime ou tipos/`partial` em `Line.*`.
+10. **Proibido `#if` em `Package.cs`.** Stubs = runtime ou tipos/`partial` em `Line.*`. *(Guarda implementada pelo `B129` em 2026-09-28: check `source.packageNoIfDirective` do pré-push.)*
 11. **PackageCompatibility:** canônico = SDK NuGet. Satélite = `AssemblyAttribute` manual com número do **Exp-Compat**.
 12. **Gate U14+:** build canônico + checker + U15 quando canônico mudar; Exp-Build: satélite → canônico → `git status` limpo.
-13. **Pré-push mecânico = só canônico.** `scripts/Invoke-PrePushMechanicalChecks.ps1` restaura e constrói **apenas** `Src\GenexusOpenApiBuilder.sln`. O satélite **não** entra nesse gate. Presença de `Src/Lib/Gx18u13` é campo informativo no JSON (`satelliteRefs: absent|present`), **fora** de `warnings[]` (D45). Build do satélite = checklist de Release/D31 na máquina do mantenedor.
+13. **Pré-push mecânico = só canônico.** `scripts/Invoke-PrePushMechanicalChecks.ps1` restaura e constrói **apenas** `Src\GenexusOpenApiBuilder.sln`. O satélite **não** entra nesse gate. Presença de `Src/Lib/Gx18u13` é campo informativo no JSON (`satelliteRefs: absent|present`), **fora** de `warnings[]` (D45). Build do satélite = checklist de Release/D31 na máquina do mantenedor. *(Emendado em 2026-09-28 pela D55 (`B129`): o pré-push roda a paridade dos itens `Compile` sempre e compila o satélite quando `Src/Lib/Gx18u13` existe; `satelliteRefs` nasce com `absent|unverifiable|incomplete|complete`. O asset de release continua saindo da build a partir da tag, no corte.)*
 
 ---
 
@@ -129,7 +129,7 @@ Evolução futura (fora da 1ª entrega): runner self-hosted opcional.
 | D12 | Carimbar as duas linhas |
 | D13 | Modos validação: contribuidor e artefato Release |
 | D14 | Satélite embute `.package` com nome lógico igual ao canônico |
-| D15 | Checker rejeita qualquer `#if` em `Package.cs` |
+| D15 | Checker rejeita qualquer `#if` em `Package.cs` *(guarda implementada pelo `B129` em 2026-09-28: `source.packageNoIfDirective`)* |
 | D16 | Coexistência U13+U14: tolerada, não oficial |
 | D17 | Isolamento físico em `artifacts/gx18u13` |
 | D18 | `-GeneXusDirectory` obrigatório nos bats Gx18u13 |
@@ -159,7 +159,7 @@ Evolução futura (fora da 1ª entrega): runner self-hosted opcional.
 | D42 | Workflow `publish-github-packages.yml` permanece com pattern literal `GenexusOpenApiBuilder.Extension.dll` |
 | D43 | Ao **iniciar** a execução deste plano, atualizar `Docs/STATUS_ATUAL_E_PROXIMO_PASSO.md` (Fase 1 como frente ativa, ou Sprint 9 + Gx18u13 em paralelo explícito) |
 | D44 | `Src/Lib/Gx18u13` é populado a partir da instalação U13 do contribuidor (cópia local gitignored), não a partir de Program Files do mantenedor |
-| D45 | Pré-push mecânico só canônico. JSON: `satelliteRefs` informativo, **não** `warnings[]`. Build satélite = Release/D31. O meta-teste `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1` exige `warnings.Count -eq 0` e proíbe o checker de invocar `Tools/`, Program Files ou DLL |
+| D45 | Pré-push mecânico só canônico. JSON: `satelliteRefs` informativo, **não** `warnings[]`. Build satélite = Release/D31. O meta-teste `Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1` exige `warnings.Count -eq 0` e proíbe o checker de invocar `Tools/`, Program Files ou DLL. *Emendada em 2026-09-28 pela D55 (`B129`).* |
 | D46 | `EnableDefaultCompileItems=false` no **canônico** só quando existir `Line.*`. O risco de embed do `.package` é `EnableDefaultItems` / `EnableDefaultEmbeddedResourceItems`, não o switch de Compile |
 | D47 | Isolamento `obj`/`bin` do satélite: `Directory.Build.props` condicional `MSBuildProjectName == GenexusOpenApiBuilder.Extension.Gx18u13` (antes do SDK). Dois csproj na mesma pasta `Src/Extension/` |
 | D48 | **Nomes** das DLLs pinadas: deriváveis localmente (usings + `packages.lock.json` / `project.assets.json`). **Arquivos** U13: só via Igor (D44). A lista de nomes não espera o contribuidor |
@@ -169,6 +169,7 @@ Evolução futura (fora da 1ª entrega): runner self-hosted opcional.
 | D52 | `Copy-ExtensionForGeneXus18.ps1`: elevação só se o destino não for gravável pelo usuário atual (típico Program Files). Path gravável tipo `C:\GeneXus\Gx18\U13` **não** exige Admin por política |
 | D53 | `Compile.Shared.props` preserva `LinkBase="Domain"` no glob `..\Domain\**\*.cs` |
 | D54 | Exp-Carga separa evidência: menu principal (autocontido) vs menu de contexto (depende de `KBObjectGrp` / GUID `98121D96-A7D8-468b-9310-B1F468F812AE` no `.package`) |
+| D55 | **D45 emendada pelo `B129` em 2026-09-28.** O pré-push roda **sempre** a paridade dos itens `Compile` avaliados dos dois `.csproj` (`msbuild.compileSetParity`) e compila `GenexusOpenApiBuilder.Gx18u13.sln` (`dotnet.buildSatellite`) quando `Src/Lib/Gx18u13` existe. Pasta ausente = `skipped`, fora de `warnings[]`; pasta presente com referência pinada faltando = `environmentBlocked` — defeito da máquina, não do commit; repetir não resolve, a ação é repopular a pasta (D44). Compilar contra `Src/Lib/Gx18u13` é leitura de referência pelo MSBuild, não «invocar DLL»: mesma régua em qualquer clone, cobertura declarada no JSON; o afrouxamento é travado por asserção estática do meta-teste, que garante que nem o checker nem o módulo `scripts/B129-SatelliteChecks.ps1` carregam assembly. O campo `satelliteRefs` **nasce** no `B129` com `absent\|unverifiable\|incomplete\|complete` — o `absent\|present` da D45 só existia no papel, sem emissor nem consumidor; `complete` significa referências pinadas presentes, **não** identidade U13 (proveniência continua com a D31). O `Lib.Gx18u13.References.props` é validado sempre (contrato D34). `Compile.Shared.props` passa a excluir `Temp\**` e `Line.*\**`; o restante do alinhamento ao esqueleto D36 (hoje o props usa `**\*.cs`, divergente do texto da invariante 5) fica para quando `Line.*` existir. A guarda da D15 entra junto (`source.packageNoIfDirective`). Evidência: `Docs/Implementation/2026-09-28-B129-EMENDA-D45-COBERTURA-SATELITE.md` |
 
 ### 4.1 Gates abertos
 
@@ -314,8 +315,8 @@ Medido no Exp-ParidadeEmpacote a partir da DLL canônica atual (`Tools/Test-Inst
 | Fluxo | Passos |
 |-------|--------|
 | Contribuidor (Igor) — §6.5.1 | Build local → `Install-ExtensionForGx18u13.bat` com `-GeneXusDirectory` → `Test-InstalledExtension` → checklist IDE §6.5.1. |
-| Release U13 (mantenedor) | Checkout tag N limpo → registrar D31 → build satélite (`GenexusOpenApiBuilder.Gx18u13.sln`, **não** o checker pré-push) → renomear/copiar para `…-gx18u13.dll` → `Test-ReleasedExtension` → anexa assets (+ checksums). |
-| Release U14+ | CI/build oficial → `Test-ReleasedExtension` no asset canônico (R1 independente). |
+| Release U13 (mantenedor) | Checkout tag N limpo → registrar D31 → build satélite (`GenexusOpenApiBuilder.Gx18u13.sln`, **não** o checker pré-push) → renomear/copiar para `…-gx18u13.dll` → `Test-ReleasedExtension` → anexa assets (+ checksums). *(2026-09-28, D55: continua verdadeiro para o asset, que sai da build a partir da tag; o pré-push passa a compilar o satélite como verificação, não como origem do asset.)* |
+| Release U14+ | CI/build oficial → `Test-ReleasedExtension` no asset canônico (R1 independente). *(2026-09-28, declarado pelo mantenedor: a DLL canônica é compilada na máquina dele, do código da tag.)* |
 
 #### 6.5.1 Checklist de validação do contribuidor (Igor) na IDE U13 (D33 + D54)
 
@@ -379,7 +380,7 @@ Registrar por experimento: entrada, comando, esperado, observado, artefato.
 
 ## 8. Fases 2–6
 
-**Fase 2:** satélite §5 (D47/D46); Compatibility=N; `Version.Shared.props` (D22/D49); scripts §6 (parâmetros; PEReader completo e D52 ficam na Fase 3 se o canônico ainda usar `LoadFile` / Admin incondicional); checker `#if`; D45 (`satelliteRefs` se o checker passar a emitir o campo — atualizar o meta-teste **sem** colocar isso em `warnings[]`); `.gitignore` Lib/artifacts com `git check-ignore -v`.
+**Fase 2:** satélite §5 (D47/D46); Compatibility=N; `Version.Shared.props` (D22/D49); scripts §6 (parâmetros; PEReader completo e D52 ficam na Fase 3 se o canônico ainda usar `LoadFile` / Admin incondicional); checker `#if`; D45 (`satelliteRefs` se o checker passar a emitir o campo — atualizar o meta-teste **sem** colocar isso em `warnings[]`); `.gitignore` Lib/artifacts com `git check-ignore -v`. *(2026-09-28: o checker `#if` e o campo `satelliteRefs` foram implementados pelo `B129` — D55.)*
 **Fase 3:** bats (§5.0 Install vs Register); D51/D52; pré-Copy; Test-Released (D32 + D49); inspeção PEReader sem `LoadFile`; `/install` só se manifesto/registro mudou.
 **Fase 4:** paridade funcional U13.
 **Fase 5:** Release R1–R6 + D27/D31/D50; docs (`INSTALL.md`, checkpoint); NuGet só U14+ (D42).
@@ -413,7 +414,7 @@ Path observado no PR (não vira default de script): `C:\GeneXus\Gx18\U13`.
 | Embed `.package` no canônico | não mexer em `EnableDefaultEmbeddedResourceItems`; D46 |
 | Checkpoint Sprint 9 vs esta frente | D43 antes de código de produto |
 | Contrato Register U13 ≠ U15 | D41; não copiar o Admin do PR #2 sem evidência |
-| Warning de Lib quebra o meta-teste pré-push | D45 |
+| Warning de Lib quebra o meta-teste pré-push | D45 → D55 (2026-09-28): `Lib/` ausente segue fora de `warnings[]`; avisos `MSB3277` de `mscorlib` do satélite vão para `knownWarnings` |
 | Inflação NuGet em hotfix U13 | D50 (aceita) |
 | Admin inútil em path gravável | D52 |
 
@@ -434,7 +435,7 @@ Path observado no PR (não vira default de script): `C:\GeneXus\Gx18\U13`.
 
 ## 12. Critério “chegamos em B”
 
-R1–R6; D27/D31/D32/D33; D34–D54 vigentes no código/docs; INSTALL; solution canônica limpa; go/no-go §7.1; §6 implementado; evidência U13; U15 pós-carimbo; docs; checker `#if`; `.package` pinado; checksums na tag dual; workflow NuGet sem o asset `-gx18u13`; pré-push sem warning por `Lib/` ausente.
+R1–R6; D27/D31/D32/D33; D34–D54 vigentes no código/docs; INSTALL; solution canônica limpa; go/no-go §7.1; §6 implementado; evidência U13; U15 pós-carimbo; docs; checker `#if`; `.package` pinado; checksums na tag dual; workflow NuGet sem o asset `-gx18u13`; pré-push sem warning por `Lib/` ausente. *(2026-09-28: «checker `#if`» e «pré-push sem warning por `Lib/` ausente» atendidos pelo `B129` — D55.)*
 
 ---
 
@@ -456,6 +457,7 @@ PR #2; B000; B010; wikis PackageCompatibility; `Directory.Build.props` e `Src/Ex
 | 2026-08-12 | **v10** — pós-GLM seletivo: (1) redação §1.2 publicação só mantenedor; (2) §5.0 Install vs Register Gx18u13 (= `AGENTS.md`). Descartados do GLM: G5b–G5e e O5b–O5d (já cobertos, pedantismo ou escopo precoce) |
 | 2026-08-12 | **v11** — pré-execução contra o repositório real: D34–D44 |
 | 2026-08-12 | **v12** — absorve Opus 5: D20→D45 (pré-push só canônico; `satelliteRefs` fora de `warnings[]`); D46 Line.* tardio no canônico; D47 isolamento via `Directory.Build.props` condicional; D48 nomes locais vs arquivos U13; D49 versão no Test-Released + Version.Shared.props na Fase 2; D50 inflação NuGet aceita; D51 `-GeneXusDirectory` único; D52 Admin só se destino não gravável; D53 `LinkBase=Domain`; D54 menu principal vs contexto. Fase 2 esqueleto após N + lista de nomes; go/no-go item 5 exige artefato de produto |
+| 2026-09-28 | **D55** — `B129` emenda a D45: paridade dos itens `Compile` sempre, build satélite condicional a `Src/Lib/Gx18u13`, guarda da D15 e contrato D34 validado no pré-push; remissões datadas em §1, §1.2, §2, invariantes 10 e 13, D15, D45, §6.5, §8, §10 e §12 |
 
 ---
 

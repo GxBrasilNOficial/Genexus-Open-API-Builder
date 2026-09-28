@@ -132,6 +132,7 @@ Nesta ordem, e tudo reversível de propósito:
 - Diante de qualquer das duas, o agente **não** encerra processos de terceiros nem altera a instalação do GeneXus.
 - Se o bloqueio persistir **com a IDE GeneXus aberta**, quem segura a DLL é a IDE, e a única saída é fechá-la. Nenhuma configuração de MSBuild ou limpeza de artefato alcança esse caso.
 - `MSBUILDDISABLENODEREUSE=1` cobre apenas os nodes do MSBuild, não o `VBCSCompiler`, e não tem efeito sobre a causa 2; o `build-server shutdown` cobre os dois processos da causa 1.
+- Desde o `B129` (2026-09-28), o pré-push também compila o satélite em `artifacts/gx18u13/` quando `Src/Lib/Gx18u13` existe, reescrevendo a DLL e o asset local `GenexusOpenApiBuilder.Extension-gx18u13.dll`. O asset de release sai **sempre** da build a partir da tag, no corte. Acesso negado nessa build sai `environmentBlocked` (`accessDenied`): pare e reporte, pela causa 2.
 
 Ambas as causas foram diagnosticadas em 2026-08-23, em rodadas distintas de agente sobre este repositório: a causa 1 com bloqueio em `Src\Extension\obj\Release\net471\GenexusOpenApiBuilder.Extension.dll` e build limpa após o shutdown; a causa 2 com os artefatos de `obj/` e `bin/` divididos entre `ANTONIOJOSE` e `CodexSandboxOffline`.
 
@@ -347,7 +348,8 @@ pwsh -NoProfile -File scripts/Invoke-PrePushMechanicalChecks.ps1 -AsJson
 3. ler `pushReadiness`, `incompleteReasons`, `manualRequired`, `warnings` e `notCovered` no JSON;
 4. na resposta final da rotina, terminar sempre com uma frase explícita: `Sem impedimento para push.` quando `pushReadiness` estiver pronto, `behind=0`, working tree limpa, `manualRequired=[]`, `incompleteReasons=[]` e a revisão semântica não tiver gap bloqueante; caso contrário, terminar com `Com impedimento para push:` seguido do motivo objetivo; aviso `evidence-doc-required:*` no canal `warnings` não impede push, mas exige a conferência da régua de evidência declarada no relatório semântico.
 5. concluir a revisão semântica exigida pelas instruções globais; `exit 0` mecânico não substitui essa revisão; fechamento de frente/etapa sem documento dedicado de evidência — ou sem a frase de dispensa `B124:` no item — é gap P1 documental (documento 15 §18.2).
-6. quando o checker ou seu teste mudar, executar também `pwsh -NoProfile -File Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`.
+6. quando o checker, o módulo `scripts/B129-SatelliteChecks.ps1` ou o teste mudar, executar também `pwsh -NoProfile -File Tests/PrePushChecker/Test-OpenApiBuilderPrePushChecks.ps1`.
+7. declarar no relatório o status de `dotnet.buildSatellite` e o valor de `satelliteRefs` (`B129`); na máquina do mantenedor, `skipped` por `satelliteRefsAbsent` é anomalia a reportar, porque ali a DLL satélite U13 deveria ser compilada.
 
 - `scripts/Invoke-PrePushMechanicalChecks.ps1` é o nome canônico e não deve divergir do contrato global.
 - `manualRequired` no JSON **não** é a revisão semântica. Só dispara quando a `Próxima ação única` do checkpoint é um spike `B000`–`B006` e o intervalo menciona esse ID (checklist de encerramento de sonda). Lista vazia com próxima ação `B007+` é o comportamento esperado, não falso verde. Os avisos `evidence-doc-required:*` do canal `warnings` (B124) valem também para `B007+` e são outra coisa: sinalizam a conferência da régua de evidência, não bloqueiam push e não substituem a revisão semântica.

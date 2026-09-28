@@ -10,6 +10,18 @@ O formato segue princípios de changelog legível e versionamento progressivo.
 
 ## [Unreleased]
 
+### Added
+
+- `B129` — o pré-push mecânico (`scripts/Invoke-PrePushMechanicalChecks.ps1`) passa a cobrir a
+  DLL satélite U13 com três checks: `msbuild.compileSetParity` compara os itens `Compile`
+  avaliados dos projetos canônico e satélite, com regras direcionais para `Line.*` e detecção de
+  duplicata; `dotnet.buildSatellite` compila `GenexusOpenApiBuilder.Gx18u13.sln` quando
+  `Src/Lib/Gx18u13` existe — pasta ausente sai `skipped`, fora de `warnings[]`, e pasta com
+  referência pinada faltando sai `environmentBlocked` —, validando sempre o contrato do
+  `Lib.Gx18u13.References.props`; e `source.packageNoIfDirective` proíbe `#if` no `Package.cs`
+  (D15). O JSON ganha o campo `satelliteRefs`. Emenda a D45 do plano da Opção B (D55). Não altera
+  a extensão. Evidência: `Docs/Implementation/2026-09-28-B129-EMENDA-D45-COBERTURA-SATELITE.md`.
+
 ### Fixed
 
 - `B109` — falha intermitente `Collection was modified` no Apply e no Sync; diagnóstico e mitigação: quando a releitura pós-Save de um objeto
@@ -55,6 +67,13 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   pelo Wizard e remover após encerrar o diário é histórica: o texto atual manda abrir o Wizard
   para avaliar o estado encontrado, sujeito às barreiras T1/T2. Evidência:
   `Docs/Implementation/2026-09-27-B110-VALIDACAO-IDE.md`.
+
+- `B129` — o `Compile.Shared.props`, que monta os fontes do projeto satélite U13, não excluía
+  `Src/Extension/Temp/`, que o projeto canônico exclui desde 2026-09-13: um `.cs` deixado ali
+  entraria só na DLL satélite. O check de paridade novo pegou a divergência com um arquivo
+  sentinela. Defeito de build que nunca chegou a DLL publicada: nenhuma tag contém `.cs` nessa
+  pasta, e nenhum commit versionou arquivo ali. Evidência:
+  `Docs/Implementation/2026-09-28-B129-EMENDA-D45-COBERTURA-SATELITE.md`, seção 11.6.
 
 ### Changed
 

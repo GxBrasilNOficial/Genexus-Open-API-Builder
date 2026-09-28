@@ -79,7 +79,7 @@ Build Release da DLL canônica com 0 avisos e 0 erros. Os dois gates acima,
 `Test-ApiPlanPersistenceCore.ps1` e `Test-ApiPlanOperationJournalReceipts.ps1` passaram.
 Depois do commit `c4202c6`, a build Release da DLL satélite U13
 (`GenexusOpenApiBuilder.Gx18u13.sln`), feita à mão porque o orquestrador não a compila (D45;
-revisão registrada em `B129`), também passou com 0 erros e só o `MSB3277` conhecido.
+revisão registrada em `B129`, que em 2026-09-28 passou a compilá-la no orquestrador), também passou com 0 erros e só o `MSB3277` conhecido.
 
 ## 5. O que continua aberto
 

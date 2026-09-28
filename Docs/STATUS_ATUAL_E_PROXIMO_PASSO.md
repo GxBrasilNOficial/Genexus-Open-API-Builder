@@ -8,10 +8,15 @@ Ele não define requisitos funcionais nem contratos técnicos. Para essas decis�
 
 ## Última atualização
 
-2026-09-27.
+2026-09-28.
 
 ## Último marco concluído
 
+- `B129` fechado em 2026-09-28: a D45 foi emendada pela D55, e o pré-push mecânico passou a
+  cobrir a DLL satélite U13 — paridade dos itens `Compile` sempre, build da solution satélite
+  quando `Src/Lib/Gx18u13` existe e guarda da D15. De passagem, o `Compile.Shared.props` passou a
+  excluir `Temp\**` e `Line.*\**`. Não muda a extensão. Evidência:
+  `Docs/Implementation/2026-09-28-B129-EMENDA-D45-COBERTURA-SATELITE.md`.
 - `B110` fechado em 2026-09-27: bloqueio T1 antes do diário para todos os escritores e
   barreira T2 do contrato recuperado B115. A bateria de IDE foi aceita com exceção explícita
   para o diálogo do cenário 14, validado offline sem diário interrompido na KB; o cenário 11
@@ -188,7 +193,9 @@ campo** na mesma tarde, com recuperação na 3ª tentativa, e margem ampliada pa
 (item 187). ~~**Próxima ação única = escolher a próxima frente do backlog.**~~ **Escolhido em
 2026-09-28: `B129`** — emenda da D45, com os checks `msbuild.compileSetParity`,
 `dotnet.buildSatellite` e `source.packageNoIfDirective` no pré-push. Plano e evidência:
-`Docs/Implementation/2026-09-28-B129-EMENDA-D45-COBERTURA-SATELITE.md`. ~~A publicação dos
+`Docs/Implementation/2026-09-28-B129-EMENDA-D45-COBERTURA-SATELITE.md`. **`B129` fechado na
+mesma data** (item 188). **Próxima ação única = escolher a próxima frente do backlog.** O push
+dos dois commits do `B129` depende de autorização do mantenedor. ~~A publicação dos
 commits locais de `B109`/`B110` por push é decisão separada, ainda sem autorização nesta
 conversa.~~ **Superado:** em 2026-09-28 os commits de `B109`/`B110` já estavam em `origin/main`
 (conferido por `git log origin/main`). Evidências: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md` e
@@ -847,6 +854,8 @@ escolher frente no backlog, com push separado. `B128` permanece fechado (2026-09
 186. Em 2026-09-25, **`B109` fechado por mitigação**, por decisão do usuário: causa localizada (corrida do SDK em `PropertyManager.SetInitialValues`, por stack de campo e leitura do SDK), mitigação validada em campo nos dois tipos de ponto, instrumentação temporária retirada. Ressalvas declaradas: falha dentro do próprio `Save()` não é coberta; as quatro ocorrências antigas do ramo A são atribuídas por hipótese; o risco de estrutura incompleta depois de uma repetição não é observável (2026-09-26: quarta ressalva — confirmação depois de um `Delete()` que lançou exceção; ver a seção 15). Reabre com `Resultado=Esgotada`, com falha de `Save()` com `SetInitialValues` na stack, ou com `Collection was modified` fora do `SetInitialValues` (defeito novo). O defeito será comunicado ao suporte da GeneXus por e-mail, sem item de backlog. Evidência: `Docs/Implementation/2026-09-25-B109-RAMO-C-DIAGNOSTICO.md`, seção 15.
 
 187. Em 2026-09-27, **`B110` fechado com exceção de campo explícita**: T1 bloqueou todos os escritores antes do diário; T2 exigiu confirmação do contrato B115 reconstruído e recusou Transaction hierárquica sem `levels`. Onze cenários tiveram PASS individual na IDE; o cenário 11 preservou objetos em dois bloqueios medidos por snapshots independentes, sem extrapolar aos demais; o cenário 3 era offline; no cenário 9 a variante V1 não tinha fixture. O cenário 14 passou no teste offline do texto de recuperação, mas o diálogo não foi visto na IDE porque o diário disponível estava `Completed`; o mantenedor aceitou essa exceção, sem convertê-la em prova de IDE. Nenhum novo teste de IDE é requisito para o fechamento. Evidência: `Docs/Implementation/2026-09-27-B110-VALIDACAO-IDE.md`. Próxima ação: escolher frente do backlog; push separado.
+
+188. Em 2026-09-28, **`B129` fechado**: a D45 foi emendada pela D55. O pré-push mecânico ganhou `msbuild.compileSetParity` (paridade dos itens `Compile` avaliados dos dois `.csproj`, com regras direcionais para `Line.*` e duplicata), `dotnet.buildSatellite` (build da solution satélite quando `Src/Lib/Gx18u13` existe; ausente = `skipped` fora de `warnings[]`, incompleta = `environmentBlocked`; contrato do `.props` de referências validado sempre) e `source.packageNoIfDirective` (D15), com o campo `satelliteRefs` no JSON. O sentinela em `Src/Extension/Temp/` provou a deriva do `Compile.Shared.props` (paridade `failed` antes da correção, `passed` depois). Meta-teste verde em 697 s; orquestrador na árvore limpa em 79 s, com o satélite compilado e só os avisos `mscorlib` conhecidos. Commit de implementação `46ce082`. Evidência: `Docs/Implementation/2026-09-28-B129-EMENDA-D45-COBERTURA-SATELITE.md`, seção 11. Próxima ação: escolher frente do backlog; push dos commits do `B129` depende de autorização.
 
 ## Bloqueios e fatos ainda não validados
 

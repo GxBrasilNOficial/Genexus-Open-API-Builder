@@ -436,7 +436,7 @@ A build satélite no caminho padrão reescreve `artifacts/gx18u13/GenexusOpenApi
   3. fora dessas duas pastas, os conjuntos são **iguais**;
   4. nenhum projeto contém o mesmo arquivo duas vezes (comparação como multiconjunto; o
      `-getItem` preserva duplicatas, seção 3.7).
-  
+
   Violação de qualquer regra → `failed`, com `onlyCanonical[]`, `onlySatellite[]`,
   `forbiddenInCanonical[]`, `forbiddenInSatellite[]` e `duplicates[]` (projeto, caminho e
   contagem) em `evidence`. Em qualquer status, `evidence.targetFrameworks` registra o alvo usado
@@ -827,7 +827,7 @@ Nenhuma remissão cita linha de arquivo `.cs` por número (regra B128); usar sí
    2. aplicar a correção do `Compile.Shared.props` (seção 4.8) e rodar de novo: o check sai
       `passed` (status global `incomplete`, exit 3, por causa da árvore suja);
    3. apagar o sentinela.
-   
+
    Nas duas execuções o critério lê o status **do check**, não o global. Elas não são a rotina
    pré-push, que o `AGENTS.md` só aceita sobre a frente commitada.
 3. **Meta-teste** verde e cronometrado (ele monta a própria fixture e não depende da árvore do
@@ -910,11 +910,115 @@ nem versionado à mão, mas **é reescrito** pela build satélite do pré-push, 
 
 ## 11. Execução e evidência
 
-*(Reservada. Preenchida na implementação: commits, tempos do orquestrador e do meta-teste depois
-da mudança, build satélite com fonte alterada, restore offline ou não, resultado do sentinela
-pós-correção, conferência das tags para o `Fixed`, saída resumida dos três checks no repositório
-real, recibos das rodadas de revisão por pares e o que ficou fora de cobertura. A Fase 0 está na
-seção 3.)*
+Executado em 2026-09-28, numa sessão do Claude Code (Opus 5.5), com autorização do mantenedor
+na própria sessão: «se não achar nada contra, execute o plano». Medições da máquina do mantenedor,
+com `Src/Lib/Gx18u13` presente; a Fase 0 está na seção 3.
+
+### 11.1 Conferência prévia
+
+Nada contra a execução foi encontrado: a próxima ação do checkpoint era escolher a próxima frente;
+o `B129` constava do backlog; `main` coincidia com `origin/main`; o checker, o meta-teste, os dois
+`.csproj`, o `Compile.Shared.props`, o `.props` de referências e o `Directory.Build.props`
+coincidiam com o que as seções 1 a 4 descrevem. De passagem, o checkpoint ainda dizia que o push
+de `B109`/`B110` aguardava autorização, mas os commits já estavam em `origin/main`; a frase foi
+marcada como superada.
+
+### 11.2 Commits
+
+- `46ce082` — módulo `scripts/B129-SatelliteChecks.ps1`, três checks e `satelliteRefs` no
+  orquestrador, meta-teste, correção do `Compile.Shared.props`, este documento promovido e o
+  `B129` escolhido no checkpoint;
+- commit seguinte — D55 e remissões, `AGENTS.md`, backlog, checkpoint, `CHANGELOG.md` e esta
+  seção.
+
+### 11.3 Tempos
+
+| Medida | Antes (seção 3.1) | Depois |
+|---|---|---|
+| Orquestrador completo, árvore limpa, com o satélite compilado | 74,7 s | 79 s (79 checks) |
+| Meta-teste (`Test-OpenApiBuilderPrePushChecks.ps1`) | 481 s | 697 s, verde na primeira execução |
+| Build satélite dentro do orquestrador, sem mudança de fonte (`durationMs`) | — | 1,3 s |
+| Build satélite com fonte alterada (só a data do `Package.cs`), mesmos parâmetros | 4,3 s | 2,0 s |
+
+A primeira execução com o sentinela levou 348 s, dos quais 55 s na build satélite, que recompilou
+tudo; a segunda, 106 s. A diferença não foi investigada: pode ser recompilação depois da troca de
+DLL e das builds do meta-teste, mas isso não foi medido. O restore do satélite não foi remedido —
+vale a medição da seção 3.7 (`libraries` vazio, sem acesso ao feed).
+
+### 11.4 Sentinela (critério 3)
+
+`Src/Extension/Temp/B129Sentinel.cs`, compilável, criado com a implementação ainda não
+commitada:
+
+- **antes** da correção do `Compile.Shared.props`: `msbuild.compileSetParity` = `failed`, kind
+  `parityMismatch`, canônico 104 × satélite 105, `onlySatellite` =
+  `Extension/Temp/B129Sentinel.cs`; status global `failed`, exit 1;
+- **depois** da correção: `passed`, 104 × 104; status global `incomplete`, exit 3, pela árvore
+  suja.
+
+O sentinela foi apagado em seguida. As duas execuções são diagnóstico intermediário, não a rotina
+pré-push.
+
+### 11.5 Orquestrador no repositório real (critério 2)
+
+Sobre `46ce082`, com a árvore limpa (os documentos desta frente estavam guardados em `git stash`):
+
+- `msbuild.compileSetParity` = `passed`: alvo `net471` nos dois projetos, 104 × 104 itens;
+- `dotnet.buildSatellite` = `passed`: `satelliteRefs=complete`, nove referências esperadas e
+  nenhuma faltando; `knownWarnings` com 2 grupos, 2 cabeçalhos e 124 linhas, todos `mscorlib`;
+  `headerLanguage=en`, isto é, o `DOTNET_CLI_UI_LANGUAGE=en` foi obedecido; nenhuma entrada
+  `satellite-build:` em `warnings[]`;
+- `source.packageNoIfDirective` = `passed`;
+- `git.statusPost` = `passed`; `warnings[]` só com `evidence-doc-required:checkpoint`, esperado.
+
+Um check saiu `failed`, e não era dos novos: `git.diffInterval`, por espaço em branco no fim de
+duas linhas deste documento, herdado do texto em `Temp/`. A correção entrou no commit seguinte, e
+o critério 2 fecha com a execução do pré-push da frente sobre os dois commits (seção 11.8).
+
+### 11.6 Conferência das tags para o `Fixed`
+
+O canônico passou a excluir `Temp\**\*.cs` em `f2967cc` (2026-09-13); o `Compile.Shared.props`
+nasceu em `711f086` (2026-08-12) e está em todas as tags desde `v0.1.0-alpha.2`. Nenhuma tag, de
+`v0.1.0-alpha.1` a `v0.1.0-alpha.9`, contém `.cs` em `Src/Extension/Temp/` (`git ls-tree`), e
+nenhum commit de nenhum ramo jamais versionou arquivo ali (`git log --all`). Como o asset sai da
+build a partir da tag (D31), o defeito nunca chegou a DLL publicada.
+
+### 11.7 Desvios de implementação em relação ao texto da v8
+
+1. **Regra 6 dos avisos.** O padrão implementado é `: warning( [A-Z]+[0-9]+)? ?:`, não
+   `: warning( [A-Z]+[0-9]+)?:`: o MSBuild escreve aviso sem código como
+   `arquivo : warning : texto`, com espaço antes dos dois-pontos, e o padrão literal não pegaria
+   justamente o caso que a B7 quis cobrir. Coberto por caso de função.
+2. **`evidence.kind` do check de `#if`.** A lista fechada da seção 4.4 não trazia os motivos
+   desse check; a regra «kind em todo check novo que não saia `passed`» exigiu dois:
+   `ifDirectiveFound` e `packageSourceMissing`.
+3. **Falha da avaliação da paridade.** Com código de saída diferente de zero, vale direto o kind
+   da tabela da seção 4.4 — a regra 9 casa sempre que há linha de erro, e sem linha de erro o kind
+   é `unclassified` —; `unreadableOutput` fica para saída zero com JSON ilegível.
+4. **`commands[]` da paridade.** Em sucesso, o stdout do `-getItem` (cerca de 98 KB de JSON por
+   projeto) não é copiado; fica só o stderr. Em falha, a saída entra inteira.
+5. **Linhas órfãs consecutivas** formam um só grupo órfão, e portanto uma entrada em `warnings[]`.
+6. **`knownWarnings`** traz `groups`, `headers`, `continuationLines` e `totalLines`; o check
+   satélite registra também `warningOccurrences` (deduplicação) e `unknownWarningGroups`.
+7. **Ordem dos commits.** A promoção deste documento e a escolha no checkpoint (passo 0) entraram
+   no commit da implementação, para que a validação do passo 5 rodasse sobre árvore limpa; a D55 e
+   o `AGENTS.md`, redigidos antes, ficaram de fora por `git stash` durante a validação.
+8. **Duas redações** do corpo foram trocadas na promoção para não formar citação móvel de linha
+   C# (B128): a da Y2 e a da medição de multi-alvo da seção 3.7.
+
+### 11.8 Pré-push da frente, cobertura e revisão
+
+- O pré-push da frente roda sobre os dois commits, com o meta-teste repetido porque o checker
+  mudou; o resultado vai no relatório da sessão e não é reescrito aqui, para não mudar o intervalo
+  revisado.
+- **Revisão por pares:** nenhuma rodada nesta execução. Os recibos das consultas de desenho
+  (rodadas `B129-20260928-v1` a `v4` e os pareceres da v5 à v7) estão em
+  `Temp/revisao-por-pares/B129-*`, ignorado pelo Git.
+- **Fora de cobertura** — além do `notCovered` do JSON (seção 4.6): o caso «sem refs» está provado
+  só pela fixture, e a pasta do mantenedor não foi renomeada; a identidade U13 das referências não
+  é verificada; nenhuma validação na IDE, porque a extensão não muda — `Temp/` e `Line.*` não têm
+  `.cs`, e a DLL satélite reescrita pelo orquestrador em `artifacts/gx18u13/` sai do mesmo
+  código.
 
 ---
 
