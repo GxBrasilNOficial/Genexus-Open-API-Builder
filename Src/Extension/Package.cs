@@ -1009,6 +1009,7 @@ public sealed class Package : AbstractPackageUI
         {
             var owner = ResolveFinalReportOwner();
             ApiPlanTransactionSyncPreview preview;
+            TimeSpan previewElapsed;
             // B082: o Preview e fase distinta do Apply/Sync e cria o proprio indice.
             // Escopo separado para que seu custo nao se misture ao da escrita.
             var syncPreviewTelemetry = new ApiPlanScanTelemetry();
@@ -1032,6 +1033,7 @@ public sealed class Package : AbstractPackageUI
                 }
 
                 previewWatch.Stop();
+                previewElapsed = previewWatch.Elapsed;
                 WriteOutput($"[Genexus Open API Builder][B082] Sync PreviewMs={previewWatch.ElapsedMilliseconds}.");
             }
 
@@ -1048,8 +1050,10 @@ public sealed class Package : AbstractPackageUI
                     ?? $"api{transaction.Name}";
                 var noOpReport = new ApiPlanApplicationFinalReportCollector("Sincronizar", transaction.Name, apiName);
                 noOpReport.HeadlineOverride = "Nenhuma sincronizacao necessaria.";
-                noOpReport.AddWarning("Nenhuma diferenca entre Transaction e metadata. Nenhuma alteracao foi feita na KB.");
-                ShowFinalReport(noOpReport, TimeSpan.Zero, knowledgeBase.DesignModel);
+                // B131: ausencia de diferenca e o desfecho esperado, nao aviso; a duracao e a da
+                // pre-visualizacao, unica fase executada neste caminho.
+                noOpReport.AddInformation("Nenhuma diferenca entre Transaction e metadata. Nenhuma alteracao foi feita na KB.");
+                ShowFinalReport(noOpReport, previewElapsed, knowledgeBase.DesignModel);
                 return true;
             }
 

@@ -463,4 +463,182 @@ Assert-True ($wizardSource -notmatch 'FormStartPosition\.CenterParent') 'CenterP
 Assert-True ($busySource -match 'StartPosition = FormStartPosition\.Manual') 'Quadro de progresso deve posicionar-se no monitor da IDE.'
 Assert-True ($busySource -notmatch 'FormStartPosition\.CenterScreen') 'CenterScreen abre no monitor primário.'
 
+# B131: o Sync sem diferença sai como Success, com a frase em Informações e a duração recebida.
+$syncNoDiff = [GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalReportCollector]::new('Sincronizar', 'Teste', 'apiTeste')
+$syncNoDiff.HeadlineOverride = 'Nenhuma sincronizacao necessaria.'
+$syncNoDiff.AddInformation('Nenhuma diferenca entre Transaction e metadata. Nenhuma alteracao foi feita na KB.')
+$syncNoDiffReport = $syncNoDiff.Build([timespan]::FromMilliseconds(4920))
+Assert-Equal ([GenexusOpenApiBuilder.Extension.Diagnostics.ApiPlanApplicationFinalOutcome]::Success) $syncNoDiffReport.Outcome 'B131: ausência de diferença deve sair como Success.'
+Assert-Equal 0 $syncNoDiffReport.WarningCount 'B131: ausência de diferença não conta como aviso.'
+Assert-Equal 1 $syncNoDiffReport.Information.Count 'B131: a frase de ausência de diferença fica em Informações.'
+Assert-Equal 'Nenhuma sincronizacao necessaria.' $syncNoDiffReport.Headline 'B131: o título vem do override.'
+$syncNoDiffSummary = $syncNoDiffReport.BuildOutputSummary()
+Assert-True ($syncNoDiffSummary -match "Resultado='Success'") 'B131: o resumo deve dizer Success.'
+Assert-True ($syncNoDiffSummary -match 'Avisos=0, Informações=1') 'B131: o resumo deve contar Avisos=0 e Informações=1.'
+Assert-True ($syncNoDiffSummary -match 'DuraçãoMs=4920') 'B131: o resumo deve mostrar a duração recebida, que é a da pré-visualização.'
+# A cultura é fixada em pt-BR só para a montagem do corpo, porque FormatElapsed usa a cultura corrente.
+$previousCulture = [System.Threading.Thread]::CurrentThread.CurrentCulture
+try {
+    [System.Threading.Thread]::CurrentThread.CurrentCulture = [cultureinfo]::GetCultureInfo('pt-BR')
+    $syncNoDiffBody = $syncNoDiffReport.BuildReadableBody()
+}
+finally {
+    [System.Threading.Thread]::CurrentThread.CurrentCulture = $previousCulture
+}
+Assert-True ($syncNoDiffBody -match 'Informações \(1\):') 'B131: o corpo abre a seção Informações com a contagem.'
+Assert-True ($syncNoDiffBody -match 'Avisos: \(nenhum\)') 'B131: o corpo mostra Avisos: (nenhum).'
+Assert-True ($syncNoDiffBody -match 'Tempo: 4,9 s') 'B131: o corpo mostra a duração da pré-visualização em segundos.'
+
+# B131: recorte do método do Sync e travas/asserções sobre o ramo sem diferença (plano, seção 7.1, item 2).
+# Limite declarado: comentário no fim de uma linha de código e bloco /* */ não são retirados.
+$syncMethodStart = 'private static bool ExecuteSynchronizeWithTransactionCore('
+$syncMethodEnd = 'private static bool ExecuteRemoveGeneratedApi('
+$syncBranchStart = 'if (!preview.Diff.HasDifferences && preview.SdtConflicts.Count == 0)'
+$syncInformationCall = 'noOpReport.AddInformation("Nenhuma diferenca entre Transaction e metadata. Nenhuma alteracao foi feita na KB.")'
+$syncFailureMessages = @{
+    'R1' = 'R1: o método do Sync deve conter exatamente uma chamada previewWatch.Stop() fora de comentários.'
+    'R2' = 'R2: o método do Sync não pode conter a string Remover PreviewMs.'
+    'R3' = 'R3: o ramo sem diferença deve ser encontrado, não vazio e terminar em return true;.'
+    'A1' = 'A1: previewElapsed = previewWatch.Elapsed deve vir depois de previewWatch.Stop().'
+    'A2' = 'A2: o ramo sem diferença deve chamar noOpReport.AddInformation com a frase literal.'
+    'A3' = 'A3: o ramo sem diferença não pode chamar noOpReport.AddWarning.'
+    'A4' = 'A4: o ramo sem diferença deve chamar ShowFinalReport com previewElapsed.'
+    'A5' = 'A5: o ramo sem diferença não pode chamar ShowFinalReport com TimeSpan.Zero.'
+}
+
+function Get-SyncMethodCut {
+    param([string]$Source)
+    $start = $Source.IndexOf($syncMethodStart, [System.StringComparison]::Ordinal)
+    if ($start -lt 0) { throw 'B131: início do método do Sync não encontrado.' }
+    $end = $Source.IndexOf($syncMethodEnd, $start + $syncMethodStart.Length, [System.StringComparison]::Ordinal)
+    if ($end -lt 0) { throw 'B131: fim do método do Sync não encontrado.' }
+    return $Source.Substring($start, $end - $start)
+}
+
+function Remove-CommentLines {
+    param([string]$Text)
+    $kept = New-Object System.Collections.Generic.List[string]
+    foreach ($line in ($Text -split '\r?\n')) {
+        if ($line.TrimStart().StartsWith('//', [System.StringComparison]::Ordinal)) { continue }
+        $kept.Add($line)
+    }
+    return ($kept -join "`n")
+}
+
+function Get-SyncMethodFailures {
+    param([string]$MethodText)
+    $failures = New-Object System.Collections.Generic.List[string]
+    $clean = Remove-CommentLines -Text $MethodText
+    $stopCount = @([regex]::Matches($clean, [regex]::Escape('previewWatch.Stop()'))).Count
+    if ($stopCount -ne 1) { $failures.Add('R1') }
+    if ($clean.Contains('Remover PreviewMs')) { $failures.Add('R2') }
+    $stopIndex = $clean.IndexOf('previewWatch.Stop()', [System.StringComparison]::Ordinal)
+    $assignIndex = $clean.IndexOf('previewElapsed = previewWatch.Elapsed', [System.StringComparison]::Ordinal)
+    if ($stopIndex -lt 0 -or $assignIndex -lt 0 -or $stopIndex -ge $assignIndex) { $failures.Add('A1') }
+    $branch = ''
+    $branchStart = $clean.IndexOf($syncBranchStart, [System.StringComparison]::Ordinal)
+    if ($branchStart -ge 0) {
+        $returnToken = 'return true;'
+        $returnIndex = $clean.IndexOf($returnToken, $branchStart, [System.StringComparison]::Ordinal)
+        if ($returnIndex -ge 0) { $branch = $clean.Substring($branchStart, $returnIndex + $returnToken.Length - $branchStart) }
+    }
+    if ($branch.Length -eq 0 -or -not $branch.EndsWith('return true;', [System.StringComparison]::Ordinal)) {
+        $failures.Add('R3')
+        return $failures.ToArray()
+    }
+    if (-not $branch.Contains($syncInformationCall)) { $failures.Add('A2') }
+    if ($branch.Contains('noOpReport.AddWarning(')) { $failures.Add('A3') }
+    if (-not [regex]::IsMatch($branch, 'ShowFinalReport\(noOpReport,\s*previewElapsed')) { $failures.Add('A4') }
+    if ([regex]::IsMatch($branch, 'ShowFinalReport\(noOpReport,\s*TimeSpan\.Zero')) { $failures.Add('A5') }
+    return $failures.ToArray()
+}
+
+function Edit-SyncModel {
+    param([string]$Text, [string]$From, [string]$To)
+    if (-not $Text.Contains($From)) { throw "B131 autoteste: substituição não casou: $From" }
+    return $Text.Replace($From, $To)
+}
+
+function Assert-SyncFailures {
+    param([string]$Caso, [string]$Texto, [string[]]$Esperado)
+    $obtido = @(Get-SyncMethodFailures -MethodText $Texto) -join ','
+    $esperadoTexto = $Esperado -join ','
+    if ($obtido -cne $esperadoTexto) { throw "B131 autoteste '$Caso': esperado [$esperadoTexto], obtido [$obtido]" }
+}
+
+$realSyncCut = Get-SyncMethodCut -Source $packageSource
+foreach ($anchor in @($syncBranchStart, 'previewWatch.Stop()', 'ShowFinalReport(noOpReport')) {
+    Assert-True ($realSyncCut.Contains($anchor)) ("B131: âncora ausente no recorte real: $anchor")
+}
+foreach ($failureId in @(Get-SyncMethodFailures -MethodText $realSyncCut)) {
+    throw $syncFailureMessages[$failureId]
+}
+
+# Modelo correto embutido: o autoteste prova que cada asserção reprova pelo seu próprio defeito.
+$syncModel = @'
+    private static bool ExecuteSynchronizeWithTransactionCore(CommandData data)
+    {
+        TimeSpan previewElapsed;
+        using (var loading = ExtensionBusyProgressScope.Show(owner, texts.BusyProgressTitleLoadingSync, texts))
+        {
+            var previewWatch = Stopwatch.StartNew();
+            try
+            {
+                preview = ApiPlanTransactionSyncOrchestrator.Preview(designModel, transaction, loading.Session, kbIndex);
+            }
+            catch (ApiPlanBusyAbortedException abortEx)
+            {
+                WriteOutput("[Genexus Open API Builder][B082] Sync preview abortado.");
+                return true;
+            }
+
+            previewWatch.Stop();
+            previewElapsed = previewWatch.Elapsed;
+            WriteOutput($"[Genexus Open API Builder][B082] Sync PreviewMs={previewWatch.ElapsedMilliseconds}.");
+        }
+
+        if (!preview.Diff.HasDifferences && preview.SdtConflicts.Count == 0)
+        {
+            WriteOutput("[Genexus Open API Builder][B085] Nenhuma diferenca entre Transaction e metadata. Nenhuma alteracao foi feita na KB.");
+            var noOpReport = new ApiPlanApplicationFinalReportCollector("Sincronizar", transaction.Name, apiName);
+            noOpReport.HeadlineOverride = "Nenhuma sincronizacao necessaria.";
+            noOpReport.AddInformation("Nenhuma diferenca entre Transaction e metadata. Nenhuma alteracao foi feita na KB.");
+            ShowFinalReport(noOpReport, previewElapsed, knowledgeBase.DesignModel);
+            return true;
+        }
+
+        return false;
+    }
+'@
+foreach ($anchor in @($syncBranchStart, 'previewWatch.Stop()', 'ShowFinalReport(noOpReport')) {
+    Assert-True ($syncModel.Contains($anchor)) ("B131: âncora ausente no modelo do autoteste: $anchor")
+}
+Assert-SyncFailures -Caso 'modelo correto' -Texto $syncModel -Esperado @()
+
+$defeitoA1 = Edit-SyncModel $syncModel 'previewElapsed = previewWatch.Elapsed;' ''
+$defeitoA1 = Edit-SyncModel $defeitoA1 'previewWatch.Stop();' ("previewElapsed = previewWatch.Elapsed;`n            previewWatch.Stop();")
+Assert-SyncFailures -Caso 'A1 atribuição antes do Stop' -Texto $defeitoA1 -Esperado @('A1')
+
+$defeitoA2Frase = Edit-SyncModel $syncModel $syncInformationCall 'noOpReport.AddInformation("Nenhuma diferenca entre Transaction e metadata. Nenhuma alteracao foi feita.")'
+Assert-SyncFailures -Caso 'A2 frase trocada' -Texto $defeitoA2Frase -Esperado @('A2')
+
+$defeitoA2Linha = Edit-SyncModel $syncModel $syncInformationCall ''
+Assert-SyncFailures -Caso 'A2 linha retirada' -Texto $defeitoA2Linha -Esperado @('A2')
+
+$defeitoA3 = Edit-SyncModel $syncModel 'ShowFinalReport(noOpReport, previewElapsed, knowledgeBase.DesignModel);' ('noOpReport.AddWarning("Aviso indevido.");' + "`n            " + 'ShowFinalReport(noOpReport, previewElapsed, knowledgeBase.DesignModel);')
+Assert-SyncFailures -Caso 'A3 AddWarning acrescentado' -Texto $defeitoA3 -Esperado @('A3')
+
+$defeitoA4 = Edit-SyncModel $syncModel 'ShowFinalReport(noOpReport, previewElapsed, knowledgeBase.DesignModel);' 'ShowFinalReport(noOpReport, TimeSpan.FromSeconds(1), knowledgeBase.DesignModel);'
+Assert-SyncFailures -Caso 'A4 duração fixa' -Texto $defeitoA4 -Esperado @('A4')
+
+$defeitoA5 = Edit-SyncModel $syncModel 'ShowFinalReport(noOpReport, previewElapsed, knowledgeBase.DesignModel);' ('ShowFinalReport(noOpReport, TimeSpan.Zero, knowledgeBase.DesignModel);' + "`n            " + 'ShowFinalReport(noOpReport, previewElapsed, knowledgeBase.DesignModel);')
+Assert-SyncFailures -Caso 'A5 chamada com Zero extra' -Texto $defeitoA5 -Esperado @('A5')
+
+$comentado = Edit-SyncModel $syncModel $syncInformationCall ('// noOpReport.AddWarning("Aviso comentado.");' + "`n            " + $syncInformationCall)
+Assert-SyncFailures -Caso 'AddWarning comentado' -Texto $comentado -Esperado @()
+
+$semNoRamo = Edit-SyncModel $syncModel $syncInformationCall ''
+$foraDoRamo = Edit-SyncModel $semNoRamo $syncBranchStart ($syncInformationCall + ';' + "`n        " + $syncBranchStart)
+Assert-SyncFailures -Caso 'AddInformation fora do ramo' -Texto $foraDoRamo -Esperado @('A2')
+
 Write-Host 'Test-ApiPlanApplicationFinalReport.ps1 OK'
