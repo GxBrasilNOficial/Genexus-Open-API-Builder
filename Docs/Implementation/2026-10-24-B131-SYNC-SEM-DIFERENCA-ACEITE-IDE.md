@@ -1,6 +1,6 @@
 # B131 — Aceite na IDE: relatório do `Sincronizar` sem diferenças
 
-- **Datas das sessões:** 2026-10-23 (cenário 1) e 2026-10-24 (cenário 2 e reconferências por leitura).
+- **Datas das sessões:** 2026-10-23 (cenário 1) e 2026-10-24 (cenário 2, reconferências por leitura e execução com Wizard seguido de Sync na `Tributacao`).
 - **Item:** `B131` (`Docs/Foundation/06-BACKLOG_v0.1.md`, nota operacional de 2026-09-25).
 - **Plano:** [2026-09-27-B131-PLANO-SYNC-SEM-DIFERENCA.md](2026-09-27-B131-PLANO-SYNC-SEM-DIFERENCA.md), versão v6.
 - **Commit da DLL medida:** `6fb98d0` (Commit A). A DLL foi compilada a partir dele, com árvore limpa.
@@ -8,7 +8,7 @@
 - **Instalação:** conferida em 2026-10-23 por `Tools/Test-InstalledExtension.ps1`, com `InstalledMatchesBuild = True`. Foi só troca de DLL, sem `genexus /install`, porque manifesto e registro não mudaram.
 - **GeneXus:** 18.0.15.188745 (U15).
 - **Idioma:** português nas duas KBs, confirmado pelo operador antes de cada cenário.
-- **Resultado:** cenário 1 **PASS**. Cenário 2 **PASS com ressalvas**, listadas na seção 4. A D6 fica cumprida com a `Empresa`, nas duas execuções.
+- **Resultado:** cenário 1 **PASS**. Cenário 2 **PASS com ressalvas**, listadas na seção 4. A D6 fica cumprida com a `Empresa`, nas duas execuções. A condição registrada em 2026-09-25 (Wizard seguido de Sync sem diferença) foi reproduzida na `Tributacao` (seção 3A), sem ressalva sobre o Wizard.
 
 ## 1. Proveniência e alcance
 
@@ -89,10 +89,49 @@ Adicionados: 0; Removidos: 0; Renomeados: 0; Modificados: 0; Inalterados: 221
 
 **Estado da KB.** Antes das execuções: `Empresa` (Transaction) com `lastUpdate` 2026-06-30; `apiEmpresa` com 2026-09-27T22:15:48Z; `apiEmpresa_Metadata` com 2026-09-27T22:15:50Z. Verificado em 2026-10-24, depois das duas execuções, por leitura no MCP: nenhuma mudou. O GUID do objeto principal não é exposto pelo relatório.
 
+## 3A. Execução com Wizard seguido de Sync imediato — `Tributacao` (`fabricabrasil18test`)
+
+Execução do operador em 2026-10-24. A Transaction `Tributacao` não tinha API. O Wizard criou a API e a metadata, e logo depois o Sincronizar foi rodado. Essa é a condição do registro de 2026-09-25 («logo depois de um Wizard»), com a sequência conhecida. O Wizard gravou na KB; essa escrita foi ação do operador, que é o mantenedor deste plano. A ressalva sobre o Wizard da `Empresa` (seção 4) não se aplica a esta execução.
+
+Relatório final do Wizard, transcrito pelo operador (sem critério do B131; registrado para a sequência):
+
+```text
+[Genexus Open API Builder][B081] Relatório final: Operação='Wizard', Transaction='Tributacao', ApiName='apiTributacao', PlannedApiName='apiTributacao', PersistedMainObjectName='apiTributacao', PersistedMainObjectGuid='595a992a-03e0-4f79-8110-6d61df11c840', FinalApiWriter='List', ApiSaveAttempted=True, ApiSaveCount=1, Resultado='SuccessWithWarnings', Criados=33, Atualizados=3, Removidos=0, Bloqueados=0, Avisos=1, Informações=0, PersistenceReceipts=37, PersistenceStageFailures=0, DuraçãoMs=38910, Título='API gerada com avisos.'.
+[Genexus Open API Builder][B081] Aviso: Descricoes de servico usaram fallback em ingles (idioma da KB ainda nao validado por API publica).
+```
+
+O aviso do Wizard é de descrições em inglês e não tem relação com o B131.
+
+Sincronizar imediato, Output transcrito pelo operador:
+
+```text
+[Genexus Open API Builder][B082] Sync PreviewMs=2668.
+[Genexus Open API Builder][B085] Diff para Transaction='Tributacao':
+Adicionados: 0; Removidos: 0; Renomeados: 0; Modificados: 0; Inalterados: 91
+[Genexus Open API Builder][B085] Nenhuma diferenca entre Transaction e metadata. Nenhuma alteracao foi feita na KB.
+[Genexus Open API Builder][B081] Relatório final: Operação='Sincronizar', Transaction='Tributacao', ApiName='apiTributacao', PlannedApiName='apiTributacao', PersistedMainObjectName='', PersistedMainObjectGuid='', FinalApiWriter='', ApiSaveAttempted=False, ApiSaveCount=0, Resultado='Success', Criados=0, Atualizados=0, Removidos=0, Bloqueados=0, Avisos=0, Informações=1, PersistenceReceipts=0, PersistenceStageFailures=0, DuraçãoMs=2668, Título='Nenhuma sincronizacao necessaria.'.
+```
+
+Diálogo do relatório, pela captura do operador: cabeçalho «Nenhuma sincronizacao necessaria.»; `Operação: Sincronizar`; `Transaction: Tributacao`; `API: apiTributacao`; `Resultado: Criados=0; Atualizados=0; Removidos=0.`; `Tempo: 2,7 s`; seção «Informações (1)» com a frase de ausência de diferença; `Avisos: (nenhum)`. Os botões «Abrir objeto principal» e «Fechar» aparecem.
+
+| Item | Esperado | Obtido |
+|---|---|---|
+| `PreviewMs` | `1000 ≤ N < 60000` | 2668 |
+| `DuraçãoMs` igual a `PreviewMs` | igualdade exata | 2668 = 2668 |
+| `Resultado` | `Success` | `Success` |
+| Avisos / Informações | 0 / 1 | 0 / 1 |
+| Inalterados | sem delta | 91 |
+| Tempo do diálogo | em segundos | `Tempo: 2,7 s` |
+| Cabeçalho do diálogo | «Nenhuma sincronizacao necessaria.» | confere (captura) |
+| Botão «Abrir objeto principal» | registrar | aparece (captura) |
+| `ApiSaveAttempted` / `ApiSaveCount` | `False` / 0 | `False` / 0 |
+
+**Estado da KB.** Lido pelo MCP em 2026-10-24, depois do Sync: `apiTributacao` (API) com `lastUpdate` 2026-10-24T18:38:51Z; `apiTributacao_Metadata` com 2026-10-24T18:38:52Z. Nenhuma mudou depois dessa data, então o Sync não gravou nada. A Transaction `Tributacao` tem `lastUpdate` 2026-07-01T19:17:38Z. O horário exato do Sync não foi registrado: ele foi rodado depois do Wizard, e a metadata não mudou depois de 18:38:52 UTC. `OperationId` e limpeza manual: não aplicáveis ao Sync.
+
 ## 4. Ressalvas do cenário 2
 
-1. **Relação com o Wizard não confirmada.** O último save do `apiEmpresa` foi em 2026-09-27 às 22:15:48, e a metadata 2 segundos depois. Esse padrão é compatível com uma aplicação completa (Wizard), e não com recuperação de metadata órfã, que regrava só a metadata. O operador não tem a data exata do último Wizard. O registro de 2026-09-25 descreve a Empresa «logo depois de um Wizard», e essa relação não foi confirmada. O operador aceitou a Empresa com essa ressalva em 2026-10-24.
-2. **Cabeçalho do diálogo não transcrito** nas duas execuções. O Título do Output confere com a frase esperada, mas a captura do cabeçalho não foi recebida. Pendência declarada.
+1. **Relação com o Wizard não confirmada.** O último save do `apiEmpresa` foi em 2026-09-27 às 22:15:48, e a metadata 2 segundos depois. Esse padrão é compatível com uma aplicação completa (Wizard), e não com recuperação de metadata órfã, que regrava só a metadata. O operador não tem a data exata do último Wizard. O registro de 2026-09-25 descreve a Empresa «logo depois de um Wizard», e essa relação não foi confirmada. O operador aceitou a Empresa com essa ressalva em 2026-10-24. A execução com a `Tributacao` (seção 3A) reproduz essa condição com a sequência conhecida; por isso a ressalva vale só para a `Empresa`.
+2. **Cabeçalho do diálogo não transcrito** nas duas execuções. O Título do Output confere com a frase esperada, mas a captura do cabeçalho não foi recebida. Pendência declarada apenas para a `Empresa`; na `Tributacao` (seção 3A), a captura mostra o cabeçalho.
 3. **Botão «Abrir objeto principal»:** aparece na execução B. Na execução A, o diálogo foi fechado antes da cópia do Output, então não foi verificado. Ao clicar, o objeto abre por baixo do relatório, e só fica visível depois de fechar o relatório. Isso não é critério do B131 e fica como observação de usabilidade.
 4. **Tempo do diálogo na execução B** não foi registrado. O `DuraçãoMs` do Output é 3868.
 
