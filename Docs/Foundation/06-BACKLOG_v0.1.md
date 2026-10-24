@@ -292,6 +292,30 @@ Limitação assumida e documentada: campo obrigatório cujo valor legítimo seja
 | B133 | Metadata obsoleta com API ausente: criação da API sem regravar metadata pode deixar GUID divergente | A avaliar — registrado em 2026-09-27 na §8 do plano B110; requer diagnóstico, fora do B110 |
 | B134 | Avaliar se as etapas de SDTs e Procedures devem permanecer em abas separadas ou ser agrupadas no Wizard | A avaliar — estudo de UX levantado em 2026-09-27; ao desmarcar SDTs, Procedures também é desmarcada. Considerar clareza da dependência, necessidade de controles distintos e espaço disponível na tela; ver a nota operacional abaixo |
 | B135 | Corrigir ou esclarecer a contagem exibida como “SDTs” quando inclui o Folder da Transaction | A avaliar — na validação IDE da B110, `Teste` mostrou 21 planejados sob “SDTs”, enquanto o Output registrou 20 SDTs; a leitura estática atribuiu a diferença ao Folder. Confirmar a composição do contador e ajustar o rótulo ou a contagem, sem alterar a barreira de escrita; evidência em `Docs/Implementation/2026-09-27-B110-VALIDACAO-IDE.md`, “Observações e limites” |
+| B136 | Relatório final de falha inesperada do `Sincronizar` e do `Remover API gerada` sai com `DuraçãoMs=0`: o `catch` externo dos dois comandos passa `TimeSpan.Zero` ao relatório | Baixa — registrado em 2026-10-24, por decisão do mantenedor no fechamento do `B131` (decisão D4 do plano do `B131`); só a duração exibida no relatório de falha, sem efeito na KB nem no resultado; ver a nota operacional abaixo |
+
+### Nota operacional — B136, registrada em 2026-10-24
+
+**Origem.** No plano do `B131`
+(`Docs/Implementation/2026-09-27-B131-PLANO-SYNC-SEM-DIFERENCA.md`, decisão D4), o mesmo vício
+corrigido no ramo sem diferença do Sync foi encontrado em mais dois pontos e deixado fora do
+escopo: o `catch` externo de `ExecuteSynchronizeWithTransactionCore` e o de
+`ExecuteRemoveGeneratedApiCore` chamam `ShowFinalReport(report, TimeSpan.Zero, …)`. Observado na
+validação do `B131` em 2026-10-23: um Sync na `Teste` (`wsEducacaoSpTeste`), bloqueado porque a
+metadata reconstruída pela recuperação de metadata órfã não tinha o contrato, terminou com
+`Resultado='Interrupted'` e `DuraçãoMs=0` (`Docs/Implementation/2026-10-24-B131-SYNC-SEM-DIFERENCA-ACEITE-IDE.md`,
+seção 2).
+
+**Por que não é só trocar o argumento.** Nos dois métodos o cronômetro do relatório
+(`stopwatch`) é declarado dentro do `try`, e o `catch` externo não o enxerga. Corrigir exige
+declarar um cronômetro visível no `catch` e decidir o que a duração mede numa falha: do início
+do comando até o erro, ou só a fase que estava em andamento.
+
+**Impacto.** Só apresentação: o resultado («interrompido») e a mensagem de erro já saem certos, e
+nada é gravado na KB por causa disso. Quem lê o relatório vê «0 ms» numa operação que levou
+segundos.
+
+**Sem decisão tomada** sobre a semântica da duração na falha.
 
 ### Nota operacional — B129, registrada em 2026-09-25
 

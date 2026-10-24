@@ -299,7 +299,7 @@ Outros registros:
 
 ## 8. Pendências e observações (fora do critério do B131)
 
-1. **D4 — `catch` externo.** Nas falhas, o `DuraçãoMs` do relatório sai zero, como na execução bloqueada da `Teste`. É um caso anterior ao B131 e fica fora do escopo. Cabe ao mantenedor decidir se abre item de backlog.
+1. **D4 — `catch` externo.** Nas falhas, o `DuraçãoMs` do relatório sai zero, como na execução bloqueada da `Teste`. É um caso anterior ao B131 e fica fora do escopo. ~~Cabe ao mantenedor decidir se abre item de backlog.~~ **Decidido em 2026-10-24:** o mantenedor abriu o item `B136` no backlog (`Docs/Foundation/06-BACKLOG_v0.1.md`).
 2. **D5 — acentuação em pt-BR.** Não alterada, como decidido.
 3. **Rótulo `Informações=`** no resumo da Output não tem entrada no catálogo (seção 8.3 do plano).
 4. **Registro de 2026-08-08 do `B085`** diz «sem janela» para o Sync sem mudança. Não foi editado, porque é registro datado.
