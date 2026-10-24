@@ -290,7 +290,7 @@ v0.1.0-alpha.8
 v0.1.0-alpha.9
 ```
 
-A origem do defeito é `abb585b`, que está em todas as Alphas publicadas, da `0.1.0-alpha.1` à `0.1.0-alpha.9`. O commit `6fb98d0` aparece nas duas buscas `-S` porque é o commit que remove essas strings. O commit `6e8b28f`, que trouxe os rótulos `Resultado=`, `Avisos=` e `DuraçãoMs=`, não é ancestral da `0.1.0-alpha.1`, e por isso o `CHANGELOG` diz que a entrada vale a partir da `alpha.3`.
+A origem do defeito é `abb585b`, que está em todas as Alphas publicadas, da `0.1.0-alpha.1` à `0.1.0-alpha.9`. O commit `6fb98d0` aparece nas duas buscas `-S` porque é o commit que remove essas strings. O commit `6e8b28f`, que trouxe os rótulos `Resultado=`, `Avisos=` e `DuraçãoMs=`, não é ancestral da `0.1.0-alpha.1`: os rótulos atuais existem a partir da `alpha.3`, e na `alpha.1` e na `alpha.2` o resumo usava `Outcome=`, `Warnings=` e `DurationMs=`. Por isso o `CHANGELOG` descreve o defeito pelo significado, sem citar rótulos, e diz que ele é visível desde a `0.1.0-alpha.1`. *Correção de 2026-10-24: uma redação anterior desta frase dizia que o `CHANGELOG` situava a entrada a partir da `alpha.3`, o que não corresponde ao texto do `CHANGELOG`.*
 
 Outros registros:
 - Plano: `Docs/Implementation/2026-09-27-B131-PLANO-SYNC-SEM-DIFERENCA.md`, seções 5, 8.2 e 14.
