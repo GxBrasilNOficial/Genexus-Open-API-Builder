@@ -4,7 +4,8 @@ $ErrorActionPreference = 'Stop'
 
 # Trava YAML versionado e Issue Forms do GitHub.
 # Camada 1 (sempre): lint estrutural em PowerShell puro.
-# Camada 2: parse real via python3 + pyyaml; ausência => exit 2 (environmentBlocked).
+# Camada 2: parse real via Python + pyyaml; o interpretador é resolvido em Resolve-PythonInterpreter
+# (python3, python ou py -3), sem aceitar alias de execução de WindowsApps; ausência => exit 2 (environmentBlocked).
 # Exit 0 = passed; 1 = failed; 2 = environmentBlocked.
 
 $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
@@ -137,20 +138,61 @@ function Test-StructuralYamlFile {
     }
 }
 
+function Test-IsWindowsAppsAlias {
+    param([string]$Path)
+    # Alias de execução da Microsoft Store: arquivo de 0 byte com ponto de reparse em WindowsApps.
+    # Não é um Python; chamá-lo abre a Store ou só imprime uma mensagem.
+    return ($Path -match '\\WindowsApps\\')
+}
+
+function Resolve-PythonInterpreter {
+    $candidates = @(
+        [pscustomobject]@{ Name = 'python3'; Arguments = @() }
+        [pscustomobject]@{ Name = 'python'; Arguments = @() }
+        [pscustomobject]@{ Name = 'py'; Arguments = @('-3') }
+    )
+
+    foreach ($candidate in $candidates) {
+        foreach ($command in @(Get-Command -Name $candidate.Name -CommandType Application -All -ErrorAction SilentlyContinue)) {
+            if (Test-IsWindowsAppsAlias -Path $command.Source) {
+                continue
+            }
+
+            $item = Get-Item -LiteralPath $command.Source -ErrorAction SilentlyContinue
+            if ($null -eq $item -or $item.Length -eq 0) {
+                continue
+            }
+
+            $version = & $command.Source @($candidate.Arguments) '--version' 2>&1
+            if ($LASTEXITCODE -eq 0 -and ((($version | Out-String).Trim()) -match '^Python 3\.')) {
+                return [pscustomobject]@{ Path = $command.Source; Arguments = @($candidate.Arguments) }
+            }
+        }
+    }
+
+    return $null
+}
+
+function Invoke-Python {
+    param([Parameter(Mandatory)][string[]]$Arguments)
+    $allArguments = @($script:PythonInterpreter.Arguments) + @($Arguments)
+    & $script:PythonInterpreter.Path @allArguments
+}
+
 function Test-PythonYamlEnvironment {
-    $python = Get-Command -Name 'python3' -ErrorAction SilentlyContinue
-    if ($null -eq $python) {
-        $environmentBlockReasons.Add('python3 não está disponível no PATH.')
+    $script:PythonInterpreter = Resolve-PythonInterpreter
+    if ($null -eq $script:PythonInterpreter) {
+        $environmentBlockReasons.Add('nenhum Python utilizável: testados python3, python e py -3; alias de execução da Microsoft Store (WindowsApps) não conta como Python.')
         return $false
     }
 
-    $probe = & python3 -c "import yaml; print(getattr(yaml, '__version__', 'ok'))" 2>&1
+    $probe = Invoke-Python -Arguments @('-c', "import yaml; print(getattr(yaml, '__version__', 'ok'))") 2>&1
     if ($LASTEXITCODE -ne 0) {
         $detail = (($probe | Out-String).Trim())
         if ([string]::IsNullOrWhiteSpace($detail)) {
             $detail = "exit=$LASTEXITCODE"
         }
-        $environmentBlockReasons.Add("pyyaml não está importável via python3 ($detail).")
+        $environmentBlockReasons.Add("pyyaml não está importável em $($script:PythonInterpreter.Path) ($detail).")
         return $false
     }
 
@@ -165,7 +207,7 @@ function Test-ParseYamlWithPyYaml {
 
     $escaped = $FullPath.Replace('\', '\\').Replace('"', '\"')
     $code = "import sys, yaml; yaml.safe_load(open(r`"$escaped`", encoding='utf-8')); print('ok')"
-    $parseOutput = & python3 -c $code 2>&1
+    $parseOutput = Invoke-Python -Arguments @('-c', $code) 2>&1
     if ($LASTEXITCODE -ne 0) {
         $detail = (($parseOutput | Out-String).Trim())
         if ([string]::IsNullOrWhiteSpace($detail)) {
@@ -173,6 +215,14 @@ function Test-ParseYamlWithPyYaml {
         }
         Add-Failure "${RelativePath}: parse YAML (pyyaml) falhou: $detail"
     }
+}
+
+# Autoteste da resolução: alias de WindowsApps nunca é aceito como Python, e Python real não é descartado.
+if (-not (Test-IsWindowsAppsAlias -Path 'C:\Users\x\AppData\Local\Microsoft\WindowsApps\python3.exe')) {
+    Add-Failure 'autoteste: alias de WindowsApps não foi reconhecido como alias.'
+}
+if (Test-IsWindowsAppsAlias -Path 'C:\Python314\python.exe') {
+    Add-Failure 'autoteste: Python real foi tratado como alias de WindowsApps.'
 }
 
 $yamlPaths = @(Get-VersionedYamlRelativePaths)
@@ -217,7 +267,7 @@ if ($failures.Count -gt 0) {
 }
 
 if (-not $pythonReady) {
-    Write-Output 'ENVIRONMENT_BLOCKED: camada 1 ok, mas a camada 2 (python3 + pyyaml) não está disponível.'
+    Write-Output 'ENVIRONMENT_BLOCKED: camada 1 ok, mas a camada 2 (Python + pyyaml) não está disponível.'
     foreach ($item in $environmentBlockReasons) {
         Write-Output " - $item"
     }
