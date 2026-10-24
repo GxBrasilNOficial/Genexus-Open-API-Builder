@@ -75,7 +75,7 @@ O formato segue princípios de changelog legível e versionamento progressivo.
   pasta, e nenhum commit versionou arquivo ali. Evidência:
   `Docs/Implementation/2026-09-28-B129-EMENDA-D45-COBERTURA-SATELITE.md`, seção 11.6.
 
-- `B131` — relatório final do `Sincronizar` sem diferenças: a ausência de diferença saía como aviso, com o resultado «com avisos», e a duração saía zero, embora a pré-visualização tivesse rodado. Agora o resultado é de sucesso, a frase aparece em «Informações» e a duração é a da pré-visualização. Visível desde a `0.1.0-alpha.1`; só apresentação, sem efeito na KB. Validação na IDE pendente.
+- `B131` — relatório final do `Sincronizar` sem diferenças: a ausência de diferença saía como aviso, com o resultado «com avisos», e a duração saía zero, embora a pré-visualização tivesse rodado. Agora o resultado é de sucesso, a frase aparece em «Informações» e a duração é a da pré-visualização. Visível desde a `0.1.0-alpha.1`; só apresentação, sem efeito na KB. Validado na IDE nas KBs pequena e grande. Evidência: `Docs/Implementation/2026-10-24-B131-SYNC-SEM-DIFERENCA-ACEITE-IDE.md`.
 
 ### Changed
 

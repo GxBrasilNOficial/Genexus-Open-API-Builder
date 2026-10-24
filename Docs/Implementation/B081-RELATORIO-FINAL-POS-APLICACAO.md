@@ -26,7 +26,7 @@ Após Wizard, Sync ou Remover, exibir relatório estruturado (criados / atualiza
 Transaction `Teste`, KB de teste.
 
 1. **Wizard completo** (após remoção prévia): `Created=11`, `Updated=2` (SDTs compartilhados), `Warnings=1` (fallback inglês), `DurationMs≈10455`; botão Abrir objeto principal habilitado; Output alinhada.
-2. **Sync sem diff**: relatório `Nenhuma sincronizacao necessaria.` + aviso correspondente; zero escrita.
+2. **Sync sem diff**: relatório `Nenhuma sincronizacao necessaria.` + aviso correspondente; zero escrita. *Remissão de 2026-10-24: a frase deixou de ser aviso e passou a informação (`Success`), no B131; evidência em `Docs/Implementation/2026-10-24-B131-SYNC-SEM-DIFERENCA-ACEITE-IDE.md`.*
 3. **Sync com add** (`TesteObs3`, `TesteObs4`): UI de Sync; Aplicar; `Updated=13`, `Warnings=1` (fallback), `DurationMs≈12126`; Output alinhada.
 4. **Remover**: confirmação; `Deleted=11` (API, 4 Procedures, 5 SDTs próprios, metadata); Folder reutilizado e SDTs `GxOpenAPI`/BC preservados; `Outcome='Success'`, `DurationMs≈1789`.
 5. **Remover sem metadata** (corrida anterior): `Remocao interrompida` com bloqueio explícito — esperado.

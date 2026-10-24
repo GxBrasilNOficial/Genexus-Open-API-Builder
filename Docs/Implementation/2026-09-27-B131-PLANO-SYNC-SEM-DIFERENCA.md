@@ -7,9 +7,9 @@
   o plano e executá-lo em sessão nova: a prova passa ao código, ao gate e à validação na IDE. Isso
   **não** é convergência do painel: a v6 não foi submetida a ele (seção 14). Redação delegada pelo
   mantenedor; precisão da D6 ratificada por ele (seção 5).
-- **Estado:** decisões D1–D7 tomadas pelo mantenedor em 2026-09-28 (seção 5); implementado em
-  2026-10-22, aguardando validação na IDE. No Commit B o campo passa a «executado em <data>»
-  (seção 9, item 10).
+- **Estado:** decisões D1–D7 tomadas pelo mantenedor em 2026-09-28 (seção 5); executado em
+  2026-10-24, com validação na IDE nas duas KBs e ressalvas declaradas no documento de evidência
+  `Docs/Implementation/2026-10-24-B131-SYNC-SEM-DIFERENCA-ACEITE-IDE.md` (seção 9, item 10).
 - **Local:** redigido em `Temp/` em 2026-09-27 e movido para `Docs/Implementation/` em 2026-09-28
   por decisão D7 (regra do `AGENTS.md` sobre `Temp/`).
 - **Conferência de deriva em 2026-09-28:** entre `f043416` (base do plano) e `d570163` o
